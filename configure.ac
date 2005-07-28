@@ -2,7 +2,7 @@
 AC_PREREQ(2.59)
 AC_INIT([dlvex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
-AC_CONFIG_HEADER([src/config.h])
+#AC_CONFIG_HEADER([src/config.h])
 
 AM_INIT_AUTOMAKE
 
