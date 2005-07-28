@@ -1,6 +1,6 @@
 
 AC_PREREQ(2.59)
-AC_INIT(dlvex, 0.1, roman@kr.tuwien.ac.at)
+AC_INIT([dlvex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -40,9 +40,10 @@ DX_INIT_DOXYGEN(dlvex, doxygen.cfg, documentation)
 
 AM_PATH_CPPUNIT(1.10.2)
 
-AC_OUTPUT( \
+AC_CONFIG_FILES([\
            Makefile \
            src/dlvex/Makefile \
            src/testsuite/Makefile \
            src/extModules/rdf/Makefile \
-)
+])
+AC_OUTPUT
