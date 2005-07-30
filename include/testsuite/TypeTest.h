@@ -35,6 +35,7 @@ private:
     
     CPPUNIT_TEST_SUITE(AtomTest);
     CPPUNIT_TEST(testConstruction);
+    CPPUNIT_TEST(testUnification);
     CPPUNIT_TEST_SUITE_END();
 
     ATOM *fo, *ho;
@@ -47,6 +48,7 @@ public:
 
     void testConstruction();
 
+	void testUnification();
 };
 
 

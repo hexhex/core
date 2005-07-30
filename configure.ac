@@ -2,7 +2,13 @@
 AC_PREREQ([2.59])
 AC_INIT([dlvex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
-#AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADER([src/config.h])
+
+if test "$DLVPATH" = ""; then
+    DLVPATH = dlv
+fi
+    
+AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 AM_INIT_AUTOMAKE
 
@@ -11,6 +17,20 @@ AC_PROG_CXX
 AC_PROG_CC
 AM_PROG_LEX
 AC_PROG_YACC
+
+#
+# this has to be done properly:
+# - checking if the optionally specified dlv exists at config-time
+# - displaying some line for --help
+#
+
+#AC_CHECK_PROG([have_dlv], ${}, [yes], [no])
+#if test "$have_dlv" = "no"; then
+#    AC_MSG_ERROR([dlv not found! \
+#The Answer-Set Solver DLV is needed for dlvex. It can be obtained at \
+#http://www.dbai.tuwien.ac.at/proj/dlv/#download. If you have it on \
+#your system, be sure, that it is executable under the name dlv!])
+#fi
 
 # Checks for libraries.
 
@@ -63,4 +83,3 @@ AC_OUTPUT
 #dlvex build summary:
 #  RDF library available     : $have_raptor
 #])
-

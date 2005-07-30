@@ -46,18 +46,19 @@ void TermTest::testComparison()
 }
 
 
-CPPUNIT_TEST_SUITE_REGISTRATION( AtomTest );
+CPPUNIT_TEST_SUITE_REGISTRATION(AtomTest);
 
 void AtomTest::setUp()
 {
-    fo = new ATOM("p(X,Y,z)");
+    fo = new ATOM("p(X,Y,\"a small string\")");
     
     TERMLIST tl;
     
-    tl.push_back(TERM("a"));
-    tl.push_back(TERM("X"));
+    tl.push_back(TERM("foo"));
+    tl.push_back(TERM("Var"));
+    tl.push_back(TERM("S"));
     
-    ho = new ATOM("foobar", tl);
+    ho = new ATOM("Bob", tl);
 }
 
 void AtomTest::tearDown() 
@@ -68,6 +69,56 @@ void AtomTest::tearDown()
 
 void AtomTest::testConstruction()
 {
-    ATOM a;
-    //CPPUNIT_ASSERT_ASSERTION_FAIL(a = ATOM("P(q)"));
+    CPPUNIT_ASSERT((*ho).getPredicate().getVariable() == "Bob");
+    CPPUNIT_ASSERT((*ho).getArgument(1).getString() == "foo");
+    CPPUNIT_ASSERT((*ho).getArgument(2).getVariable() == "Var");
+    CPPUNIT_ASSERT((*ho).getArgument(3).getVariable() == "S");
+	
+    CPPUNIT_ASSERT((*fo).getPredicate().getString() == "p");
+    CPPUNIT_ASSERT((*fo).getArgument(1).getVariable() == "X");
+    CPPUNIT_ASSERT((*fo).getArgument(2).getVariable() == "Y");
+    CPPUNIT_ASSERT((*fo).getArgument(3).getUnquotedString() == "a small string");
+}
+
+void AtomTest::testUnification()
+{
+	CPPUNIT_ASSERT((*fo).unifiesWith(*ho));
+	
+	ATOM a("p(c,d,E)");
+    
+    //
+    // should unifiy only with *fo
+    //
+    CPPUNIT_ASSERT((*fo).unifiesWith(a));
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(a));
+    
+	ATOM b("n(foo,t,s)");
+    
+    //
+    // should unifiy only with *ho
+    //
+    CPPUNIT_ASSERT(!(*fo).unifiesWith(b));
+    CPPUNIT_ASSERT((*ho).unifiesWith(b));
+    
+    TERMLIST tl;
+    
+    tl.push_back(TERM("foo"));
+    tl.push_back(TERM("const"));
+    tl.push_back(TERM("\"a small string\""));
+    
+    ATOM ho2("M", tl);
+    
+    //
+    // should unifiy with both
+    //
+    CPPUNIT_ASSERT((*fo).unifiesWith(ho2));
+    CPPUNIT_ASSERT((*ho).unifiesWith(ho2));
+    
+	ATOM c("q(E,F,G,H)");
+    
+    //
+    // different arity:
+    //
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(c));
+    CPPUNIT_ASSERT(!c.unifiesWith(*ho));
 }
