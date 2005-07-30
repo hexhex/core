@@ -40,7 +40,7 @@ DX_INIT_DOXYGEN([dlvex], [doxygen.cfg], [documentation])
 
 AM_PATH_CPPUNIT([1.10.2])
 
-AM_PATH_RAPTOR([1.4.7], [have_raptor=yes], [have_raptor=no])
+AM_PATH_RAPTOR([1.3.2], [have_raptor=yes], [have_raptor=no])
 AM_CONDITIONAL(HAVE_RAPTOR, test x$have_raptor = xyes)
 
 AC_CONFIG_FILES([\
@@ -49,4 +49,18 @@ AC_CONFIG_FILES([\
            src/testsuite/Makefile \
            src/extModules/rdf/Makefile \
 ])
+
+if test "$have_raptor" = "no"; then
+    AC_MSG_NOTICE([])
+    AC_MSG_NOTICE([libraptor not found or too old (needed: >= 1.3.2)])
+    AC_MSG_NOTICE([the RDF-library will not be built!])
+    AC_MSG_NOTICE([])
+fi
+
 AC_OUTPUT
+
+#AC_MSG_RESULT([
+#dlvex build summary:
+#  RDF library available     : $have_raptor
+#])
+

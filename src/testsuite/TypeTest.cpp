@@ -1,7 +1,7 @@
 #include "testsuite/TypeTest.h"
 
 // Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION( TermTest );
+CPPUNIT_TEST_SUITE_REGISTRATION(TermTest);
 
 void TermTest::setUp()
 {

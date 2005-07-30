@@ -8,7 +8,7 @@ dlvexTS_SOURCES = \
     TestSuite.cpp \
     TypeTest.cpp
     
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 
