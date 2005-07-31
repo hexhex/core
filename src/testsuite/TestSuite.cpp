@@ -10,11 +10,11 @@ int main(int argc, char* argv[])
 
   // Adds the test to the list of test to run
   CppUnit::TextUi::TestRunner runner;
-  runner.addTest( suite );
+  runner.addTest(suite);
 
   // Change the default outputter to a compiler error format outputter
-  runner.setOutputter( new CppUnit::CompilerOutputter( &runner.result(),
-                                                       std::cerr ) );
+  runner.setOutputter(new CppUnit::CompilerOutputter(&runner.result(),std::cerr));
+    
   // Run the tests.
   bool wasSucessful = runner.run();
 

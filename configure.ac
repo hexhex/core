@@ -5,7 +5,7 @@ AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
 if test "$DLVPATH" = ""; then
-    DLVPATH = dlv
+    DLVPATH=dlv
 fi
     
 AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
