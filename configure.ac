@@ -61,13 +61,17 @@ DX_INIT_DOXYGEN([dlvex], [doxygen.cfg], [documentation])
 AM_PATH_CPPUNIT([1.10.2])
 
 AM_PATH_RAPTOR([1.3.2], [have_raptor=yes], [have_raptor=no])
-AM_CONDITIONAL(HAVE_RAPTOR, test x$have_raptor = xyes)
+AM_CONDITIONAL([HAVE_RAPTOR], [test "x$have_raptor" = xyes])
+
+AM_PATH_ACE
+AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 
 AC_CONFIG_FILES([\
            Makefile \
            src/dlvex/Makefile \
            src/testsuite/Makefile \
            src/extModules/rdf/Makefile \
+           src/extModules/racer/Makefile \
 ])
 
 if test "$have_raptor" = "no"; then
