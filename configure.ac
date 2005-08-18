@@ -10,6 +10,13 @@ fi
     
 AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
+if test "$RACERPATH" = ""; then
+    RACERPATH=RacerPro
+fi
+    
+AC_DEFINE_UNQUOTED(RACERPATH,"$RACERPATH",[Path of RACER executable])
+
+
 AM_INIT_AUTOMAKE
 
 # Checks for programs.
