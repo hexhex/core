@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 
+SUBDIRS = extModules/racer
+
 TESTS = dlvexTS
 
 check_PROGRAMS = $(TESTS)

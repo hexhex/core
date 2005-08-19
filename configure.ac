@@ -77,6 +77,7 @@ AC_CONFIG_FILES([\
            Makefile \
            src/dlvex/Makefile \
            src/testsuite/Makefile \
+           src/testsuite/extModules/racer/Makefile \
            src/extModules/rdf/Makefile \
            src/extModules/racer/Makefile \
 ])
