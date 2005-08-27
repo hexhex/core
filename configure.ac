@@ -4,6 +4,11 @@ AC_INIT([dlvex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
+#
+# set system-wide plugin dir
+#
+CPPFLAGS="$CPPLAGS -DPLUGIN_DIR='\$(pkglibdir)'"
+
 if test "$DLVPATH" = ""; then
     DLVPATH=dlv
 fi
@@ -76,7 +81,7 @@ AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 AC_CONFIG_FILES([\
            Makefile \
            src/dlvex/Makefile \
-           src/testsuite/Makefile \
+           src/testsuite/dlvex/Makefile \
            src/testsuite/extModules/racer/Makefile \
            src/extModules/rdf/Makefile \
            src/extModules/racer/Makefile \
