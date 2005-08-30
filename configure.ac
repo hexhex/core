@@ -80,6 +80,10 @@ AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 
 AC_CONFIG_FILES([\
            Makefile \
+	   include/dlvex/Makefile \
+	   include/extModules/racer/Makefile \
+	   include/testsuite/dlvex/Makefile \
+	   include/testsuite/extModules/racer/Makefile \
            src/dlvex/Makefile \
            src/testsuite/dlvex/Makefile \
            src/testsuite/extModules/racer/Makefile \
