@@ -7,8 +7,13 @@ AC_CONFIG_HEADER([src/config.h])
 #
 # set system-wide plugin dir
 #
-CPPFLAGS="$CPPLAGS -DPLUGIN_DIR='\$(pkglibdir)'"
+CPPFLAGS="$CPPFLAGS -DPLUGIN_DIR='\"\$(pkglibdir)\"'"
 
+#
+# this has to be done properly:
+# - checking if the optionally specified dlv exists at config-time
+# - displaying some line for --help
+#
 if test "$DLVPATH" = ""; then
     DLVPATH=dlv
 fi
@@ -30,19 +35,6 @@ AC_PROG_CC
 AM_PROG_LEX
 AC_PROG_YACC
 
-#
-# this has to be done properly:
-# - checking if the optionally specified dlv exists at config-time
-# - displaying some line for --help
-#
-
-#AC_CHECK_PROG([have_dlv], ${}, [yes], [no])
-#if test "$have_dlv" = "no"; then
-#    AC_MSG_ERROR([dlv not found! \
-#The Answer-Set Solver DLV is needed for dlvex. It can be obtained at \
-#http://www.dbai.tuwien.ac.at/proj/dlv/#download. If you have it on \
-#your system, be sure, that it is executable under the name dlv!])
-#fi
 
 # Checks for libraries.
 
@@ -58,6 +50,8 @@ AC_C_CONST
 AC_PROG_LIBTOOL
 
 # doxygen stuff
+#
+# these are the defaults, can be overridden by --enable-doxygen-...
 DX_HTML_FEATURE([ON])
 DX_CHM_FEATURE([OFF])
 DX_CHI_FEATURE([OFF])
@@ -65,10 +59,9 @@ DX_MAN_FEATURE([OFF])
 DX_RTF_FEATURE([OFF])
 DX_XML_FEATURE([OFF])
 DX_PDF_FEATURE([OFF])
-DX_PS_FEATURE([OFF])
+DX_PS_FEATURE([ON])
 DX_INIT_DOXYGEN([dlvex], [doxygen.cfg], [documentation])
 
-#AC_CONFIG_FILES([src/dlvex/Makefile])
 
 AM_PATH_CPPUNIT([1.10.2])
 
@@ -78,18 +71,18 @@ AM_CONDITIONAL([HAVE_RAPTOR], [test "x$have_raptor" = xyes])
 AM_PATH_ACE
 AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 
-AC_CONFIG_FILES([\
-           Makefile \
-	   include/dlvex/Makefile \
-	   include/extModules/racer/Makefile \
-	   include/testsuite/dlvex/Makefile \
-	   include/testsuite/extModules/racer/Makefile \
-           src/dlvex/Makefile \
-           src/testsuite/dlvex/Makefile \
-           src/testsuite/extModules/racer/Makefile \
-           src/extModules/rdf/Makefile \
-           src/extModules/racer/Makefile \
+AC_CONFIG_FILES([
+           Makefile 
+           include/dlvex/Makefile
+           include/testsuite/dlvex/Makefile
+           src/dlvex/Makefile
+           src/extModules/rdf/Makefile
+           src/testsuite/dlvex/Makefile
 ])
+#           include/extModules/racer/Makefile
+#           include/testsuite/extModules/racer/Makefile
+#           src/extModules/racer/Makefile 
+#           src/testsuite/extModules/racer/Makefile
 
 if test "$have_raptor" = "no"; then
     AC_MSG_NOTICE([])
