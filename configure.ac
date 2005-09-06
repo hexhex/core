@@ -73,16 +73,17 @@ AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 
 AC_CONFIG_FILES([
            Makefile 
+	   examples/Makefile
            include/dlvex/Makefile
+           include/extModules/racer/Makefile
+           include/testsuite/extModules/racer/Makefile
            include/testsuite/dlvex/Makefile
            src/dlvex/Makefile
            src/extModules/rdf/Makefile
+           src/extModules/racer/Makefile 
+           src/testsuite/extModules/racer/Makefile
            src/testsuite/dlvex/Makefile
 ])
-#           include/extModules/racer/Makefile
-#           include/testsuite/extModules/racer/Makefile
-#           src/extModules/racer/Makefile 
-#           src/testsuite/extModules/racer/Makefile
 
 if test "$have_raptor" = "no"; then
     AC_MSG_NOTICE([])
