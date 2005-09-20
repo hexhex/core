@@ -5,8 +5,8 @@
   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
   xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-  xmlns="file://shop#"
-  xml:base="file://shop">
+  xmlns="http://www.kr.tuwien.ac.at/staff/roman/shop#"
+  xml:base="http://www.kr.tuwien.ac.at/staff/roman/shop">
 
   <owl:Ontology rdf:ID="shop"/>
 
@@ -83,15 +83,15 @@
     <provides rdf:resource="#fan" />
   </Shop>
 
-  <Part rdf:ID="#cpu" />
-  <Part rdf:ID="#case" />
-  <Part rdf:ID="#harddisk" />
-  <Part rdf:ID="#memory" />
-  <Part rdf:ID="#fan" />
-  <Part rdf:ID="#cdrom" />
-  <Part rdf:ID="#dvdrom" />
-  <Part rdf:ID="#soundcard" />
-  <Part rdf:ID="#wlan" />
-  <Part rdf:ID="#graphiccard" />
+  <Part rdf:ID="cpu" />
+  <Part rdf:ID="case" />
+  <Part rdf:ID="harddisk" />
+  <Part rdf:ID="memory" />
+  <Part rdf:ID="fan" />
+  <Part rdf:ID="cdrom" />
+  <Part rdf:ID="dvdrom" />
+  <Part rdf:ID="soundcard" />
+  <Part rdf:ID="wlan" />
+  <Part rdf:ID="graphiccard" />
 
 </rdf:RDF>
