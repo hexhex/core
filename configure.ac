@@ -79,6 +79,7 @@ AC_CONFIG_FILES([
            include/testsuite/extModules/racer/Makefile
            include/testsuite/dlvex/Makefile
            src/dlvex/Makefile
+           src/extModules/test/Makefile
            src/extModules/rdf/Makefile
            src/extModules/racer/Makefile 
            src/testsuite/extModules/racer/Makefile

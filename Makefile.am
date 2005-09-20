@@ -8,7 +8,8 @@ SUBDIRS = \
           include/testsuite/dlvex \
           include/testsuite/extModules/racer \
           src/dlvex \
-          src/extModules/rdf \
+          src/extModules/test \
           src/extModules/racer \
+          src/extModules/rdf \
           src/testsuite/dlvex \
           src/testsuite/extModules/racer
