@@ -1,6 +1,6 @@
 
 AC_PREREQ([2.59])
-AC_INIT([dlvex],[0.1],[roman@kr.tuwien.ac.at])
+AC_INIT([dlvhex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -60,7 +60,7 @@ DX_RTF_FEATURE([OFF])
 DX_XML_FEATURE([OFF])
 DX_PDF_FEATURE([OFF])
 DX_PS_FEATURE([ON])
-DX_INIT_DOXYGEN([dlvex], [doxygen.cfg], [documentation])
+DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [documentation])
 
 
 AM_PATH_CPPUNIT([1.10.2])
