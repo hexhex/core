@@ -155,10 +155,11 @@ public:
     }
 
     /**
-     * @brief Fills a termlist with the constant universe of the plugin's KB.
+     * @brief Fills a termlist with the constant universe of the KB
+     * specified by a URI.
      */
     virtual void
-    getUniverse(std::list<Term>&)
+    getUniverse(std::string&, std::list<Term>&)
     { }
 
     /**

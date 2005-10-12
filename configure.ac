@@ -76,10 +76,10 @@ AC_CONFIG_FILES([
 	   examples/Makefile
            include/dlvhex/Makefile
            include/testsuite/extModules/racer/Makefile
-           include/testsuite/dlvex/Makefile
+           include/testsuite/dlvhex/Makefile
            src/dlvhex/Makefile
            src/testsuite/extModules/racer/Makefile
-           src/testsuite/dlvex/Makefile
+           src/testsuite/dlvhex/Makefile
 ])
 #           include/extModules/racer/Makefile
 #           src/extModules/test/Makefile

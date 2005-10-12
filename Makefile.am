@@ -4,10 +4,10 @@ include aminclude.am
 SUBDIRS = \
           examples \
           include/dlvhex \
-          include/testsuite/dlvex \
+          include/testsuite/dlvhex \
           include/testsuite/extModules/racer \
           src/dlvhex \
-          src/testsuite/dlvex \
+          src/testsuite/dlvhex \
           src/testsuite/extModules/racer
 
 #          src/extModules/test 
