@@ -1,7 +1,7 @@
 
 AC_PREREQ([2.59])
 AC_INIT([dlvhex],[0.1],[roman@kr.tuwien.ac.at])
-AC_CONFIG_SRCDIR([src/dlvex/dlvex.cpp])
+AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
 #
@@ -74,17 +74,17 @@ AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 AC_CONFIG_FILES([
            Makefile 
 	   examples/Makefile
-           include/dlvex/Makefile
-           include/extModules/racer/Makefile
+           include/dlvhex/Makefile
            include/testsuite/extModules/racer/Makefile
            include/testsuite/dlvex/Makefile
-           src/dlvex/Makefile
-           src/extModules/test/Makefile
-           src/extModules/rdf/Makefile
-           src/extModules/racer/Makefile 
+           src/dlvhex/Makefile
            src/testsuite/extModules/racer/Makefile
            src/testsuite/dlvex/Makefile
 ])
+#           include/extModules/racer/Makefile
+#           src/extModules/test/Makefile
+#           src/extModules/rdf/Makefile
+#           src/extModules/racer/Makefile 
 
 if test "$have_raptor" = "no"; then
     AC_MSG_NOTICE([])
@@ -96,6 +96,6 @@ fi
 AC_OUTPUT
 
 #AC_MSG_RESULT([
-#dlvex build summary:
+#dlvhex build summary:
 #  RDF library available     : $have_raptor
 #])

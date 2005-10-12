@@ -3,13 +3,14 @@ include aminclude.am
 
 SUBDIRS = \
           examples \
-          include/dlvex \
-          include/extModules/racer \
+          include/dlvhex \
           include/testsuite/dlvex \
           include/testsuite/extModules/racer \
-          src/dlvex \
-          src/extModules/test \
-          src/extModules/racer \
-          src/extModules/rdf \
+          src/dlvhex \
           src/testsuite/dlvex \
           src/testsuite/extModules/racer
+
+#          src/extModules/test 
+#          src/extModules/racer 
+#          include/extModules/racer 
+#          src/extModules/rdf 

@@ -1,0 +1,504 @@
+%{
+//////////////////////////////////////////////////////////////////////////////
+// parser.ypp
+
+#include <iostream>
+
+#include "dlvhex/Term.h"
+#include "dlvhex/Atom.h"
+#include "dlvhex/Literal.h"
+#include "dlvhex/Rule.h"
+#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/globals.h"
+
+
+extern "C" int inputerror(const char*);
+extern "C" int inputlex();
+
+extern unsigned parser_errors;
+extern const char *parser_file;
+extern unsigned parser_line;
+ 
+extern Rules IDB;
+extern GAtomSet EDB;
+//extern std::vector<ExternalAtom> externalAtoms;
+
+//////////////////////////////////////////////////////////////////////////////
+
+%}
+
+%name-prefix="input"
+
+%union {
+    char*           string;
+    Term*          term;
+    Tuple*      terms;
+    Atom*          atom;
+    ExternalAtom*       extatom;
+    Literal*        literal;
+    std::vector<Literal>* body;
+    Rule*           rule;
+/*    BUILTIN        builtin;
+    TERMS*         terms;
+    TERM*          term;
+    Atom*          atom;
+    STERM*         sterm;
+    STERMLIST*     stermlist;
+    DISJUNCTION*   head;
+    Literal*       literal;
+    CONJUNCTION*   conjunction;
+    AGGREGATE_TYPE*aggregate_type;
+    AGGREGATEPRED* aggregate_pred;
+    Rule*          rule;
+    unsigned       integer;
+    WEIGHTS*       weights;
+    OIDindices*    oids;
+    std::vector<std::string>* stringvector;
+    */
+    }
+
+%token <string> ID NUM EXTERNAL_ATOM_ID
+%type  <string> ident
+%type  <string> number number_param
+//%type  <string> param_sans_maxint
+%type  <term> term
+//%type  <string> MAXINTEGER_EQUALS_param
+//%type  <string> ident_or_fixedpt ident_or_number
+//%type  <string> binop tertop
+%type  <terms> terms// terms1 terms2 terms3
+//%type  <string> user_pred builtin_pred propositional_atom aggregate external_atom
+%type  <atom> user_pred propositional_atom
+//%type  <string> builtin_pred aggregate
+%type  <literal> literal
+%type  <atom> head
+%type  <atom> fact
+%type  <body> body
+%type <extatom> external_atom    
+//%type  <string> aggregate_type
+//%type  <string> aggregate_pred
+//%type  <rule> rule rule0
+//%type  <string> strictrule
+//%type  <string> weights
+//%type  <string> fixedpt
+//%type  <string> object_id
+//%type  <string> object_ids inherit
+
+
+%token ERROR
+
+%token NEWLINE
+%token COMMA DOT COLON SEMICOLON EXCLAMATION PLUS ASTERISK EQUALS VERTICAL_BAR AMPERSAND
+
+%token ID_OR_VEL CONS WEAK_CONS ANON_VAR
+%token PARAM_OPEN PARAM_CLOSE
+%token BRACKET_OPEN BRACKET_CLOSE
+%token CURLY_OPEN CURLY_CLOSE
+%token PRED_EQUAL PRED_UNEQUAL PRED_LESS PRED_GREATER
+%token PRED_LESS_OR_EQ PRED_GREATER_OR_EQ
+%token PRED_INT PRED_SUCC
+%token PRED_ANY PRED_AVG PRED_COUNT PRED_MAX PRED_MIN PRED_SUM PRED_TIMES
+%token NOT TRUE_NOT
+%token MAXINTEGER
+%token EXT_INCLUDE SHARP
+
+%token BOOL_QUERY
+%token META_IMPORT META_EXPORT
+
+%token EXT_MAPPING_OP_PLUS EXT_MAPPING_OP_MINUS
+
+%start input
+%%
+
+//HEAD_SEPARATOR  : ID_OR_VEL | VERTICAL_BAR | SEMICOLON;
+
+TAIL_SEPARATOR  : COMMA;
+
+PARAM_SEPARATOR : COMMA;
+
+//OBJECTID_SEPARATOR : COMMA;
+
+
+input     :
+          | input line
+          | error { parser_errors++; }
+          ;
+
+/* line      : meta_rule NEWLINE
+ *           | clause
+ *           | query
+ *           | MAXINTEGER_EQUALS_param DOT
+ *           ;
+ */
+
+line      : clause
+//          | ext_include
+//          | query
+          ;
+
+/* clauses   :
+ *           | clauses clause
+ *           ;
+ */
+
+clause    : rule
+          | fact
+//          | strictrule
+//          | constraint        { } 
+//          | wconstraint       { } 
+          ;
+
+//MAXINTEGER_EQUALS_param : MAXINTEGER EQUALS term
+//                        ;
+
+//meta_rule : import
+//          | export
+//          ;
+
+/* import    : META_IMPORT PARAM_OPEN ID COMMA ID COMMA ID COMMA ID COMMA ID
+ *             COMMA ID PARAM_CLOSE DOT;
+ * export    : META_EXPORT PARAM_OPEN ID COMMA ID COMMA ID COMMA ID COMMA ID
+ *             PARAM_CLOSE DOT
+ *           | META_EXPORT PARAM_OPEN ID COMMA ID COMMA ID COMMA ID COMMA ID
+ *             COMMA ID PARAM_CLOSE DOT
+ *           ;
+ */
+
+/*
+rule      : rule0 {
+                      IDB.push_back(*$1);
+    
+                      delete $1;
+                  }
+          ;
+*/
+
+/*
+strictrule: rule0 EXCLAMATION
+          ;
+*/
+
+fact      : head DOT
+            {
+                $$ = new Atom(*$1);
+
+                if (!(*$$).isGround())
+                {
+                    inputerror("fact not safe.");
+
+                    parser_errors++;
+                }
+
+                EDB.insert(Atom(*$1));
+    
+                delete $1;
+            } 
+          ;
+
+/*
+disj      : head HEAD_SEPARATOR head
+          | disj HEAD_SEPARATOR head
+          ;
+*/
+
+rule      : head CONS body DOT
+            {
+//                $$ = new Rule(*$1, *$3);
+
+                IDB.push_back(Rule(*$1, *$3));
+    
+                delete $1;
+                
+                delete $3;
+            }
+//          | head CONS
+//          | ident PARAM_OPEN number_param DOT DOT number_param PARAM_CLOSE
+          ;
+
+/*
+constraint: CONS body DOT
+          ;
+
+wconstraint: WEAK_CONS body DOT weights
+          ;
+
+weights   : { }
+	  | BRACKET_OPEN COLON ident_or_number BRACKET_CLOSE
+	  | BRACKET_OPEN ident_or_fixedpt COLON BRACKET_CLOSE
+	  | BRACKET_OPEN ident_or_fixedpt COLON ident_or_number BRACKET_CLOSE
+	  ;
+
+ident_or_fixedpt : ident
+          | fixedpt
+          ;
+
+ident_or_number : ident
+          | number
+          ;
+
+fixedpt	  : number
+	  | number DOT NUM
+	  ;
+
+query     : body BOOL_QUERY
+          ;
+*/
+
+head      : user_pred { }
+//          | head HEAD_SEPARATOR user_pred
+          ;
+
+
+body      : literal
+            {
+                $$ = new std::vector<Literal>;
+                
+                $$->push_back(*$1);
+
+                delete $1;
+            }
+          
+          | body TAIL_SEPARATOR literal
+            {
+                $1->push_back(*$3);
+                
+                $$ = $1;
+                
+                delete $3;
+            }
+          ;
+
+
+
+literal   : user_pred
+            {
+                $$ = new Literal($1);
+                
+                delete $1;
+            }
+          | NOT user_pred
+            {
+                $$ = new Literal($2, true);
+    
+                delete $2;
+            }
+//          | builtin_pred
+//          | aggregate
+//          | NOT aggregate
+	      | external_atom
+            {
+                $$ = new Literal($1);
+    
+                delete $1;
+    
+            }
+          ;
+
+
+user_pred : propositional_atom
+              {
+                  $$ = $1;
+              }
+          | ident PARAM_OPEN terms PARAM_CLOSE
+              {
+                  //
+                  // in higher-order mode, we throw away the
+                  // (meaningless) predicate symbol
+                  //
+                  //if (global::optionNoPredicate)
+                  //    $$ = new Atom(*$3);
+                  //else
+                      $$ = new Atom(std::string($1), *$3);
+                  
+                  delete $3;
+                  
+                  delete[] $1;
+              }
+          | TRUE_NOT ident PARAM_OPEN terms PARAM_CLOSE
+              {
+                  std::string negname("-" + (std::string)$2);
+                  
+                  //
+                  // negated atoms cannot come from the higher-order preparser,
+                  // so this will be a first order atom (third argument is
+                  // false by default)
+                  //
+                  $$ = new Atom(negname, *$4);
+                  
+                  delete $4;
+                  
+                  delete[] $2;
+              }
+          ;
+
+
+external_atom : AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE PARAM_OPEN terms PARAM_CLOSE
+                  {
+                      $$ = new ExternalAtom($2, *$7, *$4, parser_line);
+
+                      delete[] $2;
+                      delete $4;
+                      delete $7;
+                  }
+              ;
+
+
+
+propositional_atom : ident {
+                               $$ = new Atom($1);
+    
+                               delete[] $1;
+                           }
+          | TRUE_NOT ident {
+                               std::string negname("-" + (std::string)$2);
+              
+                               $$ = new Atom(negname);
+    
+                               delete[] $2;
+                           }
+          ;
+
+
+terms    : {
+               $$ = new Tuple;
+           }
+         | term {
+                    $$ = new Tuple;
+    
+                    $$->push_back(*$1);
+    
+                    delete $1;
+                }
+         | terms PARAM_SEPARATOR term {
+                                          $1->push_back(*$3);
+                        
+                                          $$ = $1;
+             
+                                          delete $3;
+                                      }
+         ;
+
+
+ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
+
+/*
+builtin_pred : binop terms2
+          | term binop term
+          | PRED_INT terms1
+          | PRED_SUCC terms2
+          | tertop terms3
+          | param_sans_maxint EQUALS term tertop term
+          | MAXINTEGER_EQUALS_param tertop term
+	  ;
+
+aggregate : term PRED_LESS aggregate_pred
+          | term PRED_LESS_OR_EQ aggregate_pred
+          | param_sans_maxint EQUALS aggregate_pred
+          | term PRED_GREATER_OR_EQ aggregate_pred
+          | term PRED_GREATER aggregate_pred
+          | aggregate_pred PRED_LESS term
+          | aggregate_pred PRED_LESS_OR_EQ term
+          | aggregate_pred EQUALS term
+          | aggregate_pred PRED_GREATER_OR_EQ term
+          | aggregate_pred PRED_GREATER term
+          | term PRED_LESS aggregate_pred PRED_LESS term
+          | term PRED_LESS aggregate_pred PRED_LESS_OR_EQ term
+          | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS term
+          | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS_OR_EQ term
+          ;
+
+binop    : PRED_EQUAL
+         | PRED_UNEQUAL
+         | PRED_LESS
+         | PRED_GREATER
+         | PRED_LESS_OR_EQ
+         | PRED_GREATER_OR_EQ
+         ;
+
+tertop   : PLUS
+         | ASTERISK
+	 ;
+
+aggregate_pred : aggregate_type CURLY_OPEN terms COLON body CURLY_CLOSE
+         ;
+
+aggregate_type: PRED_ANY
+         | PRED_AVG
+         | PRED_COUNT
+         | PRED_MAX
+         | PRED_MIN
+         | PRED_SUM                   
+         | PRED_TIMES
+         ;
+	  
+terms1   : PARAM_OPEN term PARAM_CLOSE
+         ;
+
+terms2   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+
+terms3   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+*/
+
+term     : ident {
+                     $$ = new Term($1);
+    
+                     delete[] $1;
+                 }
+         | number_param {
+                            $$ = new Term($1);
+    
+                            delete[] $1;
+                        }
+         | ANON_VAR {
+                        $$ = new Term();
+                    }
+//         | maxinteger
+//         | TRUE_NOT term
+         ;
+
+
+/*
+param_sans_maxint : ident
+         | number_param
+         | ANON_VAR
+         ;
+*/
+
+
+ident    : ID { $$ = $1; }
+         | ID_OR_VEL {
+                         $$ = new char[2];
+                         $$[0] = 'v';
+                         $$[1] = 0;
+                     }
+         ;
+
+number_param: number { $$ = $1; }
+         ;
+
+number   : NUM 
+	  ;
+
+/*
+maxinteger : MAXINTEGER
+         ;
+*/
+
+%%
+
+int inputerror(char const* s) // Error handler for YACC
+{
+    if( strlen(parser_file) > 0 )
+        std::cerr << parser_file << ": ";
+    std::cerr << "line " << parser_line;
+    
+    std::cerr << ": ";
+    
+    std::cerr << s << "." << std::endl;
+        
+    parser_errors++;
+
+    return 0;
+}
+

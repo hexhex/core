@@ -1,0 +1,159 @@
+%{
+//////////////////////////////////////////////////////////////////////////////
+// DLVresultParser.ypp
+
+#include <iostream>
+
+#include "dlvhex/Term.h"
+#include "dlvhex/Atom.h"
+#include "dlvhex/ASPsolver.h"
+#include "dlvhex/globals.h"
+
+extern "C" int dlvresulterror(const char*);
+extern "C" int dlvresultlex();
+
+namespace solverResult
+{
+    extern unsigned returncode;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+#define YYDEBUG 1
+%}
+
+%name-prefix="dlvresult"
+
+
+
+%union {
+    char*          string;
+    Term*          term;
+    Tuple*      terms;
+    GAtom*         gatom;
+    GAtomSet*     answerset;
+    }
+
+
+%type  <string> ident
+%type  <term> groundterm
+%type  <terms> groundterms
+%type  <gatom> fact
+%type  <answerset> factlist
+
+
+%token <string> ID NUM MESSAGE
+%token ERROR
+%token NEWLINE
+%token COMMA
+%token TRUE_NOT
+%token CURLY_OPEN CURLY_CLOSE PARAM_OPEN PARAM_CLOSE
+
+%%
+
+result : dlvresult NUM NEWLINE { solverResult::returncode = atoi($2); }
+       ;
+
+dlvresult : result_line
+          | dlvresult result_line
+          | ERROR
+          ;
+
+result_line : NEWLINE
+            | MESSAGE NEWLINE { solverResult::addMessage($1); }
+            | CURLY_OPEN factlist CURLY_CLOSE NEWLINE
+            ;
+
+factlist : {
+               $$ = solverResult::createNewAnswerset();
+           }
+         | fact
+           {
+               $$ = solverResult::createNewAnswerset();
+
+               $$->insert(*$1);
+
+               delete $1;
+           }
+         | factlist COMMA fact
+           {
+               $1->insert(*$3);
+
+               $$ = $1;
+             
+               delete $3;
+           }
+         ;
+
+fact : ident
+        {
+            $$ = new GAtom($1);
+
+            delete[] $1;
+        }
+          | ident PARAM_OPEN groundterms PARAM_CLOSE
+              {
+                  //
+                  // in higher-order mode, we throw away the
+                  // (meaningless) predicate symbol
+                  //
+                  std::cout << *$3 << std::endl;
+                  if (global::optionNoPredicate)
+                      $$ = new GAtom(*$3);
+                  else
+                      $$ = new GAtom(std::string($1), *$3);
+                  
+                  delete $3;
+                  
+                  delete[] $1;
+              }
+          ;
+
+groundterms : groundterm
+              {
+                  $$ = new Tuple;
+    
+                  $$->push_back(*$1);
+    
+                  delete $1;
+              }
+         | groundterms COMMA groundterm
+              {
+                  $1->push_back(*$3);
+                        
+                  $$ = $1;
+             
+                  delete $3;
+              }
+         ;
+
+groundterm     : ident {
+                     $$ = new Term($1);
+    
+                     delete[] $1;
+                 }
+         ;
+
+ident : ID
+      | NUM
+     ;
+
+
+%%
+
+
+int dlvresulterror(char const* s) // Error handler for YACC
+{
+    std::cerr << "internal dlv result parser error: " << s << std::endl;
+    return 0;
+}
+
+
+
+
+
+// Local Variables:
+// mode: c++
+// c-file-style: "dl"
+// End:

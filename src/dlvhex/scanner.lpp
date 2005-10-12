@@ -1,0 +1,204 @@
+%{
+/////////////////////////////////////////////////////////////////////////////
+// scanner.lpp
+
+#include <stdio.h>
+#include <assert.h>
+
+#include "dlvhex/Term.h"
+#include "dlvhex/Atom.h"
+#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/Rule.h"
+#include "dlvhex/parser.h"
+
+extern "C" int inputerror(const char*);
+extern "C" int inputlex();
+
+extern unsigned parser_line;
+extern unsigned parser_errors;
+
+bool ParserStateInternal = false;
+
+// Max. length of numeric constants. This should match MAX_MAXINT.
+#define NUM_LENGTH 9
+
+
+// We don't need unput, and it can yield a "defined but not used"-warning.
+#define YY_NO_UNPUT
+%}
+
+%option noyywrap
+%option prefix="input" outfile="lex.yy.c"
+
+BLANK       ([ \t]+)
+NEWLINE     \15?\n
+                       // some OSs use \r\n as end-of-line instead of \n
+
+ANON_VAR    _
+
+ID          ([A-Za-z][A-Za-z_0-9]*)
+SPECIAL_ID  (_[A-Za-z][A-Za-z_,0-9]*)
+INTERNAL_ID ([A-Z]?$[A-Za-z_0-9$]*)
+QUOTED_ID   (\"[^\"]+\")
+
+
+NUM         ([0-9]+)
+
+
+    //%START WANT_NEWLINE
+                       // Declares start condition WANT_NEWLINE.
+                       //
+                       // Only in state WANT_NEWLINE a newline
+                       // token for the parser is generated, while
+                       // normally newlines are simply skipped.
+
+%%
+
+	// Newline is normally skipped, except when explicitly
+	// requested with WANT_NEWLINE. (e.g. by a construct that is
+	// terminated by a newline.)
+
+  //<WANT_NEWLINE>{NEWLINE} { 
+    //                     parser_line++;
+      //                   BEGIN(INITIAL);
+        //                 return NEWLINE;
+	//		}
+{NEWLINE}		{ 
+                            parser_line++;
+                        }
+
+","			{ return COMMA;		}
+"."			{ return DOT;		}
+":"                     { return COLON;         }
+";"                     { return SEMICOLON;     }
+"-"			|
+"~"			{ return TRUE_NOT;	}
+"!"                     { return EXCLAMATION;   }
+"+"			{ return PLUS;		}
+"*"			{ return ASTERISK;	}
+"="			{ return EQUALS;	}
+"|"                     { return VERTICAL_BAR;  }
+"&"                     { return AMPERSAND;     }
+"#"                     { return SHARP;         }
+
+"v"			{ return ID_OR_VEL;	}
+"<-"			| 
+":-"			{ return CONS;		}
+
+":~"			{ return WEAK_CONS;	}
+
+"("			{ return PARAM_OPEN;	}
+")"			{ return PARAM_CLOSE;	}
+
+"["			{ return BRACKET_OPEN;	}
+"]"			{ return BRACKET_CLOSE;	}
+
+"{"			{ return CURLY_OPEN;	}
+"}"			{ return CURLY_CLOSE;	}
+
+"=="			{ return PRED_EQUAL;	}
+"<>"			|
+"!="			{ return PRED_UNEQUAL;		}
+"<"			{ return PRED_LESS;		}
+">"			{ return PRED_GREATER;		}
+"<="			{ return PRED_LESS_OR_EQ;	}
+">="			{ return PRED_GREATER_OR_EQ;	}
+
+"+="                    { return EXT_MAPPING_OP_PLUS;   }
+"-="                    { return EXT_MAPPING_OP_MINUS;  }
+"#any"                  { return PRED_ANY;              }
+"#avg"                  { return PRED_AVG;              }
+"#count"                { return PRED_COUNT;            }
+"#max"                  { return PRED_MAX;              }
+"#min"                  { return PRED_MIN;              }
+"#sum"                  { return PRED_SUM;              }
+"#times"                { return PRED_TIMES;            }
+
+"#include"              { return EXT_INCLUDE;            }
+
+"not"                   |
+"non"                   { return NOT;           }
+
+"?"			{
+                          return BOOL_QUERY;
+			}
+
+#maxint			{ return MAXINTEGER;		}
+
+#int			{ return PRED_INT;		}
+#succ			{ return PRED_SUCC;		}
+
+^({BLANK}?)#import      {
+                        //  BEGIN(WANT_NEWLINE); return META_IMPORT;
+                        }
+^({BLANK}?)#export      {
+                        //  BEGIN(WANT_NEWLINE); return META_EXPORT;
+                        }
+
+{ANON_VAR}              { return ANON_VAR; }
+
+{ID}			|
+{QUOTED_ID}		{
+			  inputlval.string=new char[strlen(yytext)+1];
+                          strcpy(inputlval.string,yytext);
+                          return ID;
+			}
+{SPECIAL_ID}            {
+                          // This used to be supported in special cases.
+                          inputerror("identifier starts with an underscore");
+                          parser_errors++;
+                          return ERROR;
+                        }
+
+
+{INTERNAL_ID}           {
+                          // IDs starting with '$' are only allowed
+                          // during internal calls to the scanner
+                          if(ParserStateInternal)
+                              {
+                              inputlval.string=new char[strlen(yytext)+1];
+                              strcpy(inputlval.string,yytext);
+                              return ID;
+                              } 
+                          inputerror("identifier starts with '$'");
+                          parser_errors++;
+                          return ERROR;
+                        }
+
+
+{NUM}			{ 
+			  if( strlen(yytext) > NUM_LENGTH )
+			      {
+			      char s[1024];
+			      sprintf( s,
+			               "numeric constant %s is too long",
+			               yytext );
+			      inputerror(s);
+
+                              parser_errors++;
+			      return ERROR;
+			      }
+			  else
+			      {
+			      inputlval.string=new char[strlen(yytext)+1];
+			      strcpy(inputlval.string,yytext);
+			      }
+
+			  return NUM; 
+			}
+
+\%.*			{ /* Skip comments */	}
+{BLANK}			{ /* Skip blanks */	}
+
+
+.			{ // Anything not matching one of the patterns
+			  // given above is considered an error.
+			  char s[1024];
+
+			  assert(yytext[1]==0);
+			  sprintf(s,"syntax error (%s)",yytext); 
+			  inputerror(s);
+
+                          parser_errors++;
+                          return ERROR;
+			}
