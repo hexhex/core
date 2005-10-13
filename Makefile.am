@@ -1,6 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
 include aminclude.am
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = dlvhex.pc
+
+EXTRA_DIST = dlvhex.pc.in
+
 SUBDIRS = \
           examples \
           include/dlvhex \

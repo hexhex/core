@@ -73,6 +73,7 @@ AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
 
 AC_CONFIG_FILES([
            Makefile 
+           dlvhex.pc
 	   examples/Makefile
            include/dlvhex/Makefile
            include/testsuite/extModules/racer/Makefile
