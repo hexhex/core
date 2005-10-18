@@ -199,7 +199,7 @@ main (int argc, char *argv[])
     {
         filename = files[i - 1]->d_name;
 
-        if (filename.substr(0,8) == "libdlvhex")
+        if (filename.substr(0,9) == "libdlvhex")
         {
             if (filename.substr(filename.size() - 3, 3) == ".so")
             {
