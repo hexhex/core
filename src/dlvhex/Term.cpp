@@ -151,9 +151,12 @@ Term::getString() const
 std::string
 Term::getUnquotedString() const
 {
-    assert(type == String);
+    assert((type == String) || (type == Symbol));
     
-    return constantString.substr(1, constantString.length() - 2);
+    if (type == String)
+        return constantString.substr(1, constantString.length() - 2);
+    else
+        return constantString;
 }
 
 int

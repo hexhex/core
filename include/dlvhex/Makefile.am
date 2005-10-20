@@ -24,6 +24,7 @@ pkginclude_HEADERS = \
                  Term.h \
                  Atom.h \
                  Literal.h \
+                 Interpretation.h \
                  PluginContainer.h \
                  PluginInterface.h \
                  helper.h \

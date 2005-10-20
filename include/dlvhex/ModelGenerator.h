@@ -36,7 +36,7 @@ public:
      */
     virtual void
     computeModels(const std::vector<Component> &components,
-                  const Interpretation &I,
+                  const GAtomSet &I,
                   std::vector<GAtomSet> &models) = 0;
 
 protected:
@@ -62,7 +62,7 @@ public:
      */
     virtual void
     computeModels(const std::vector<Component> &components,
-                  const Interpretation &I,
+                  const GAtomSet &I,
                   std::vector<GAtomSet> &models);
 };
 

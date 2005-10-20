@@ -10,12 +10,12 @@ SUBDIRS = \
           examples \
           include/dlvhex \
           include/testsuite/dlvhex \
-          include/testsuite/extModules/racer \
           src/dlvhex \
-          src/testsuite/dlvhex \
-          src/testsuite/extModules/racer
+          src/testsuite/dlvhex
 
 #          src/extModules/test 
 #          src/extModules/racer 
 #          include/extModules/racer 
 #          src/extModules/rdf 
+#          include/testsuite/extModules/racer
+#          src/testsuite/extModules/racer

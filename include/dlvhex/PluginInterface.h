@@ -16,13 +16,16 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <assert.h>
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
+#include "dlvhex/Interpretation.h"
 #include "dlvhex/errorHandling.h"
 
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
+
 
 /**
  * @brief Base class for custom rewriters, which preparse the HEX-program.
@@ -32,6 +35,7 @@ class PluginRewriter
 protected:
 
     std::istream& input;
+
     std::ostream& output;
 
     PluginRewriter(std::istream& i, std::ostream& o)
@@ -55,66 +59,105 @@ public:
  */
 class PluginAtom
 {
+public:
+
+    /**
+     * @brief Type of input parameter.
+     */
+    enum InputType { PREDICATE, CONSTANT };
+
+
 protected:
 
+    /// Ctor
     PluginAtom()
     {
     }
 
+
 public:
+
+    /// Dtor
     virtual
     ~PluginAtom()
     { }
 
-    /**
-    * @brief Type of external atom input.
-    */
-    typedef std::vector<GAtomSet> FACTSETVECTOR;
 
     /**
-    * @brief Type of external atom boolean query.
-    */
-    typedef std::vector<Tuple> TUPLEVECTOR;
+     * @brief Adds an input parameter of type PREDICATE.
+     */
+    void
+    addInputPredicate()
+    {
+        inputType.push_back(PREDICATE);
+    }
+
+
+    /**
+     * @brief Adds an input parameter of type CONSTANT.
+     */
+    void
+    addInputConstant()
+    {
+        inputType.push_back(CONSTANT);
+    }
+
+
+    /**
+     * @brief Specifies the output arity of the external Atom.
+     */
+    void
+    setOutputArity(unsigned arity)
+    {
+        outputSize = arity;
+    }
+
+
+    /**
+     * @brief Returns the output arity of the external atom, which was specified by the
+     * plugin author.
+     */
+    unsigned
+    getOutputArity() const
+    {
+        return outputSize;
+    }
+    
 
     /**
      * @brief Returns all tuples of this Atom wrt. the given input.
+     *
+     * Input to an external atom is an interpretation together with the
+     * input parameters, which is ground at call time.
      */
     virtual void
-    retrieve(FACTSETVECTOR&, TUPLEVECTOR&) throw(PluginError) = 0;
+    retrieve(const Interpretation&, const Tuple&, std::vector<Tuple>&) throw(PluginError) = 0;
+
 
     /**
      * @brief Boolean query for a specific tuple wrt. the given input.
      */
     virtual bool
-    query(FACTSETVECTOR&, Tuple&) throw(PluginError) = 0;
+    query(const Interpretation&, const Tuple&, Tuple&) throw(PluginError) = 0;
 
-    /**
-     * @brief Specifies the required arities of the atom.
-     */
-    void
-    setArities(unsigned in, unsigned out)
+
+    InputType
+    getInputType(unsigned index)
     {
-        inputSize = in;
-        outputSize = out;
+        assert(index < inputType.size());
+
+        return inputType[index];
     }
 
-    /**
-     * @brief Tests for the required arities.
-     */
-    bool
-    testArities(unsigned in, unsigned out) const
-    {
-        if ((in != inputSize) || (out != outputSize))
-            return false;
-
-        return true;
-    }
 
 private:
 
     unsigned inputSize;
 
     unsigned outputSize;
+
+    std::vector<InputType> inputType;
+
 };
 
 

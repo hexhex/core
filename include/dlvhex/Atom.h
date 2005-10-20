@@ -29,7 +29,7 @@ public:
     /**
      * Type of the atom.
      */
-    enum TYPE { internal, external };
+    enum Type { INTERNAL, EXTERNAL };
 
     /**
      * Default constructor.
@@ -82,7 +82,7 @@ public:
     getArguments() const;
 
     /**
-     * @brief Returns the specified argumtn term.
+     * @brief Returns the specified argument term.
      *
      * The arguments of an atom are numbered from 1 to n. An index of 0 returns
      * the predicate symbol of the atom.
@@ -122,7 +122,7 @@ public:
     /**
      * @brief Returns the type (internal - external) of the atom.
      */
-    virtual TYPE
+    virtual Type
     getType() const;
 
     /**
@@ -133,7 +133,7 @@ public:
     
 protected:
 
-    TYPE type;
+    Type type;
 
     Tuple arguments;
 
@@ -182,7 +182,7 @@ public:
 /**
  * @brief Set (list) of ground atoms.
  */
-typedef std::list<GAtom> GAtomList;
+//typedef std::list<GAtom> GAtomList;
 
 
 /**
@@ -205,13 +205,14 @@ operator<< (std::ostream &out, const GAtomSet &groundatom);
 // we will see what turns out to be more practical
 //
 
-typedef GAtomSet Interpretation;
+//typedef GAtomSet Interpretation;
 
-
+/*
 void
 matchPredicate(const GAtomSet &g,
                const std::string pred,
                GAtomSet &atomset);
+*/
 
 void
 printGAtomSet(const GAtomSet &g,

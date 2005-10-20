@@ -74,7 +74,7 @@ public:
      * @brief Build facts for DLV.
      */
     virtual void
-    buildFacts(const GAtomList &);
+    buildFacts(const GAtomSet &);
 
     /**
      * @brief Build facts for DLV from an interpretation.

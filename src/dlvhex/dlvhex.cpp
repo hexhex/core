@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "dlvhex/Atom.h"
+#include "dlvhex/Interpretation.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
@@ -355,11 +356,12 @@ main (int argc, char *argv[])
     
     std::ostringstream finaloutput;
     GAtomSet* res;
-    GAtomSet iout, filtered;
+    GAtomSet filtered;
+    Interpretation iout;
     
     while ((res = gp.getNextModel()) != NULL)
     {
-        iout = *res;
+        iout.replaceBy(*res);
        
         if (optionFilter.size() > 0)
         {
@@ -367,14 +369,14 @@ main (int argc, char *argv[])
             
             for (std::vector<std::string>::const_iterator f = optionFilter.begin(); f != optionFilter.end(); f++)
             {
-                matchPredicate(iout, *f, g);
+                iout.matchPredicate(*f, g);
              
                 filtered.insert(g.begin(), g.end());
             }
         }
         else
         {
-            filtered = iout;
+            filtered = (*iout.getAtomSet());
         }
 
         printGAtomSet(filtered, finaloutput, 0);

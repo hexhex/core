@@ -65,9 +65,9 @@ ProgramDLVBuilder::buildRule(const Rule& rule) // throw (???Error)
 
 
 void
-ProgramDLVBuilder::buildFacts(const GAtomList &facts) // throw (???Error)
+ProgramDLVBuilder::buildFacts(const GAtomSet &facts) // throw (???Error)
 {
-    for (GAtomList::const_iterator f = facts.begin();
+    for (GAtomSet::const_iterator f = facts.begin();
          f != facts.end();
          f++)
     {

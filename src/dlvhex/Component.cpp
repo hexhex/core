@@ -45,7 +45,7 @@ Component::addNode(Node *n)
     const std::vector<Literal>* b = n->getRule()->getBody();
     
     for (std::vector<Literal>::const_iterator l = b->begin(); l != b->end(); l++)
-        if (l->getAtom()->getType() == Atom::external)
+        if (l->getAtom()->getType() == Atom::EXTERNAL)
             externalAtoms.push_back((ExternalAtom*)l->getAtom());
 }
 

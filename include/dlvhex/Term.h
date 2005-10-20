@@ -102,8 +102,8 @@ public:
     getString() const; 
 
     /**
-     * Returns a string without quotes. An assertion ensures that the term is of
-     * type 'String'.
+     * Returns a string without quotes. The term needs to be of type 'Constant'
+     * or 'String'.
      */
     std::string
     getUnquotedString() const; 

@@ -46,11 +46,11 @@ libtypes_la_SOURCES = \
                       Term.cpp \
                       Atom.cpp \
                       Literal.cpp \
+                      Interpretation.cpp \
                       PluginContainer.cpp \
                       Rule.cpp \
                       ExternalAtom.cpp \
                       helper.cpp
-#                      Interpretation.cpp
 
 #libplugin_la_SOURCES = \
 #                      PluginInterface.h

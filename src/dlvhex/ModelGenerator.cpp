@@ -15,7 +15,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/globals.h"
-
+#include "dlvhex/Interpretation.h"
 
 /*
 void
@@ -32,7 +32,7 @@ FixpointModelGenerator::FixpointModelGenerator()
 
 void
 FixpointModelGenerator::computeModels(const std::vector<Component> &components,
-                                      const Interpretation &I,
+                                      const GAtomSet &I,
                                       std::vector<GAtomSet> &models)
 {
     models.clear();
@@ -70,7 +70,7 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
     //
     // we need an interpretation for the iteration, which starts with I
     //
-    GAtomSet currentI(I);
+    Interpretation currentI(I);
 
     //
     // part of currentI that is input to extatoms
@@ -105,13 +105,18 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
     GAtomSet extresult;
 
     //
+    // input parameters of an external atom
+    //
+    Tuple extInputParms;
+
+    //
     // the result facts of the external atoms will always be first order
     //
     ProgramDLVBuilder externalfacts(false);
 
     bool firstrun = true;
 
-    int i(0);
+//    int i(0);
     do
     {
         //
@@ -119,7 +124,8 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         //
         currentI.clear();
 
-        std::insert_iterator<GAtomSet> ins = std::inserter(currentI, currentI.begin());
+        std::insert_iterator<GAtomSet> ins = std::inserter((*currentI.getAtomSet()),
+                                                           (*currentI.getAtomSet()).begin());
 
         std::set_union(I.begin(), I.end(),
                        dlvResult.begin(), dlvResult.end(),
@@ -130,14 +136,20 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         //
         oldinputPart = inputPart;
 
+        inputPart = (*currentI.getAtomSet());
+        /*
+         * TODO: as input part, we take the entire I - can we cut down this somehow?
+
         inputPart.clear();
 
         for (std::vector<Term>::const_iterator t = inputTerms.begin();
              t != inputTerms.end();
              t++)
         {
-            matchPredicate(currentI, (*t).getString(), inputPart);
+            currentI.matchPredicate((*t).getString(), inputPart);
         }
+
+        */
 
         //std::cout << "input I: ";printGAtomSet(inputPart, std::cout, 0);std::cout << std::endl;
 
@@ -155,10 +167,20 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
              a != extatoms.end();
              a++)
         {
+            //
+            // TODO: if one of the input parameters is a variable, we have
+            // to evaluate the rest of the body first, and then replace the
+            // variable by the resulting constant.
+            //
+            // now: take input list as it is.
+            //
+
+            (**a).getInputTerms(extInputParms);
+
             try
             {
                 // std::cout << "currenti: " << currentI << std::endl;
-                (**a).evaluate(currentI, extresult);
+                (**a).evaluate(currentI, extInputParms, extresult);
             }
             catch (generalError&)
             {
@@ -214,7 +236,7 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
 
         firstrun = false;
 
-    } while (dlvResult != currentI);
+    } while (dlvResult != (*currentI.getAtomSet()));
 
-    models.push_back(currentI);
+    models.push_back((*currentI.getAtomSet()));
 }

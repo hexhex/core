@@ -76,16 +76,16 @@ AC_CONFIG_FILES([
            dlvhex.pc
 	   examples/Makefile
            include/dlvhex/Makefile
-           include/testsuite/extModules/racer/Makefile
            include/testsuite/dlvhex/Makefile
            src/dlvhex/Makefile
-           src/testsuite/extModules/racer/Makefile
            src/testsuite/dlvhex/Makefile
 ])
 #           include/extModules/racer/Makefile
 #           src/extModules/test/Makefile
 #           src/extModules/rdf/Makefile
 #           src/extModules/racer/Makefile 
+#           include/testsuite/extModules/racer/Makefile
+#           src/testsuite/extModules/racer/Makefile
 
 if test "$have_raptor" = "no"; then
     AC_MSG_NOTICE([])

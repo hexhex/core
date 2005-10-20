@@ -10,6 +10,7 @@
  * 
  */
 
+#include <assert.h>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -20,11 +21,10 @@
 #include "dlvhex/errorHandling.h"
 
 
-#include <assert.h>
-
 ExternalAtom::ExternalAtom()
 {
 }
+
 
 ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
     : Atom(extatom.arguments),
@@ -32,29 +32,48 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
       functionName(extatom.functionName),
       replacementName(extatom.replacementName),
       line(extatom.line),
-      externalPlugin(extatom.externalPlugin)
+      pluginAtom(extatom.pluginAtom)
 {
     type = extatom.type;
 }
 
+
 ExternalAtom::ExternalAtom(std::string name,
-                           const Tuple &params,
-                           const Tuple &input,
+                           const Tuple& params,
+                           const Tuple& input,
                            unsigned line)
-    : Atom(params),
+    : functionName(name),
+      Atom(params),
       line(line)
 {
-    /*
-    for (Tuple::const_iterator t = input.begin(); t != input.end(); t++)
+    type = EXTERNAL;
+
+    //
+    // first, get respective PluginAtom object
+    //
+    pluginAtom = PluginContainer::Instance()->getAtom(functionName);
+    
+    std::ostringstream errorstr;
+
+    if (pluginAtom == 0)
     {
-        assert(!t->isVariable());
+        errorstr << "Function " << functionName <<
+                    " in line " << line << " unknown";
+
+        throw generalError(errorstr.str());
     }
-    */
+
+    //
+    // is the desired arity equal to the parsed arity?
+    //
+    if ((*pluginAtom).getOutputArity() != getArity())
+    {
+        errorstr << "Arity mismatch in line " << line;
+
+        throw generalError(errorstr.str());
+    }
+
     inputList = input;
-    
-    functionName = name;
-    
-    type = external;
     
     std::stringstream ss;
     
@@ -64,36 +83,20 @@ ExternalAtom::ExternalAtom(std::string name,
 
     uniqueNumber++;
 
-    externalPlugin = PluginContainer::Instance()->getAtom(functionName);
-    
-    std::ostringstream errorstr;
-
-    if (externalPlugin == 0)
-    {
-        errorstr << "Function " << functionName <<
-                    " in line " << line << " unknown";
-
-        throw generalError(errorstr.str());
-    }
-
-    if (!(*externalPlugin).testArities(input.size(), params.size()))
-    {
-        errorstr << "Arity mismatch in line " << line;
-
-        throw generalError(errorstr.str());
-    }
-
 }
+
 
 std::string ExternalAtom::getFunctionName() const
 {
     return functionName;
 }
 
+
 std::string ExternalAtom::getReplacementName() const
 {
     return replacementName;
 }
+
 
 void
 ExternalAtom::getInputTerms(Tuple &it) const
@@ -101,37 +104,59 @@ ExternalAtom::getInputTerms(Tuple &it) const
     it = inputList;
 }
 
-void ExternalAtom::evaluate(const Interpretation &i, GAtomSet &result) const
+
+void ExternalAtom::evaluate(const Interpretation& i,
+                            const Tuple& inputParms,
+                            GAtomSet& result) const
 {
     std::string fnc(getFunctionName());
 
-    PluginAtom::FACTSETVECTOR extinput;
-    
+    Interpretation inputSet;
+
     GAtomSet factlist;
     
-    //
-    // collect all facts from interpretation that we need for the input
-    // of the external atom
-    //
-    for (Tuple::const_iterator il = inputList.begin();
-         il != inputList.end();
-         il++)
+    for (int s = 0; s < inputList.size(); s++)
     {
-        factlist.clear();
+        switch(pluginAtom->getInputType(s))
+        {
+        case PluginAtom::CONSTANT:
+            break;
 
-        assert(!il->isVariable());
+        case PluginAtom::PREDICATE:
 
-        matchPredicate(i, il->getString(), factlist);
+            //
+            // collect all facts from interpretation that we need for the input
+            // of the external atom
+            //
+            for (Tuple::const_iterator il = inputList.begin();
+                il != inputList.end();
+                il++)
+            {
+                factlist.clear();
 
-        extinput.push_back(factlist);
-    }
+                assert(!il->isVariable());
+
+                i.matchPredicate(il->getString(), factlist);
+
+                inputSet.add(factlist);
+                //extinput.push_back(factlist);
+            }
     
+            break;
 
-    PluginAtom::TUPLEVECTOR extoutput;
+        default:
+
+            assert(0);
+            break;
+        }
+    }
+
+
+    std::vector<Tuple> extoutput;
     
     try
     {
-        externalPlugin->retrieve(extinput, extoutput);
+        pluginAtom->retrieve(inputSet, inputParms, extoutput);
     }
     catch (PluginError& e)
     {
@@ -146,17 +171,18 @@ void ExternalAtom::evaluate(const Interpretation &i, GAtomSet &result) const
         throw e;
     }
     
-    for (PluginAtom::TUPLEVECTOR::const_iterator s = extoutput.begin();
+    for (std::vector<Tuple>::const_iterator s = extoutput.begin();
          s != extoutput.end();
          s++)
     {
-        std::cout << *s << std::endl;
+        //std::cout << *s << std::endl;
         result.insert(GAtom(getReplacementName(), *s));
     }
 }
 
+
 std::ostream&
-ExternalAtom::print(std::ostream &out, const bool ho) const
+ExternalAtom::print(std::ostream& out, const bool ho) const
 {
     out << getReplacementName();
 
@@ -185,3 +211,4 @@ Atom* ExternalAtom::clone()
 }
 
 unsigned ExternalAtom::uniqueNumber = 0;
+

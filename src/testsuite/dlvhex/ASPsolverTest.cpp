@@ -13,6 +13,7 @@
 
 #include "testsuite/dlvhex/ASPsolverTest.h"
 #include "dlvhex/errorHandling.h"
+#include "dlvhex/globals.h"
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(ASPsolverTest);
@@ -21,6 +22,8 @@ void
 ASPsolverTest::setUp()
 {
     solver = new ASPsolver();
+
+    global::optionNoPredicate = 0;
 }
 
 void
@@ -76,7 +79,7 @@ ASPsolverTest::testResult()
     prg = "p.q:-p.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
     
     //
@@ -85,16 +88,16 @@ ASPsolverTest::testResult()
     prg = "p(X):-not q(X),s(X).q(X):-not p(X),s(X).s(a).";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
 
     //
     // strings
     //
     std::string str("\"quoted string, includes some (nasty) special-characters!+#'*[]{}\"");
-    prg = "a(" + str + ").";
+    prg = "a(" + str + ") :- b. b.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
     CPPUNIT_ASSERT(as->size() == 1);

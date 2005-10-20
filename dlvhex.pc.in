@@ -7,7 +7,6 @@ pkglibdir=${libdir}/@PACKAGE@
 Name: @PACKAGE@
 Description: 
 Version: @VERSION@
-URL: http://www.kr.tuwien.ac.at/staff/roman
 Libs: -L${pkglibdir} -ltypes
 Cflags: -I${includedir}
 

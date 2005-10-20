@@ -1,2 +1,0 @@
-tr(X,Y,Z) :- &rdf[in](X,Y,Z).
-in("http://www.kr.tuwien.ac.at/staff/roman/foaf.rdf").

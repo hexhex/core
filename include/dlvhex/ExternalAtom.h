@@ -59,7 +59,9 @@ public:
      * @brief
      */
     void
-    evaluate(const Interpretation &i, GAtomSet &result) const;
+    evaluate(const Interpretation &i,
+             const Tuple& inputParms,
+             GAtomSet& result) const;
 
     /**
      * @brief
@@ -96,7 +98,7 @@ private:
      * @brief Pointer to the PluginAtom object that matches the atom's
      * function name
      */
-    PluginAtom* externalPlugin;
+    PluginAtom* pluginAtom;
 
 };
 

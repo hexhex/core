@@ -18,7 +18,7 @@
 
 
 Atom::Atom()
-    : type(internal)
+    : type(INTERNAL)
 {
 }
 
@@ -29,13 +29,13 @@ Atom::~Atom()
 
 
 Atom::Atom(const Atom &atom2)
-    : type(internal),
+    : type(INTERNAL),
       arguments(atom2.arguments)//, isHigherOrder(atom2.isHigherOrder)
 {
 }
 
 Atom::Atom(std::string atom)
-    : type(internal)//, isHigherOrder(false)
+    : type(INTERNAL)//, isHigherOrder(false)
 {
     arguments.clear();
     
@@ -84,7 +84,7 @@ Atom::Atom(std::string pred, Term arg)
 	
 
 Atom::Atom(std::string pred, Tuple arg)
-    : type(internal)
+    : type(INTERNAL)
 {
     arguments.push_back(Term(pred));
     
@@ -96,7 +96,7 @@ Atom::Atom(std::string pred, Tuple arg)
 	
 
 Atom::Atom(Tuple arg)
-    : type(internal)
+    : type(INTERNAL)
 {
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
         arguments.push_back(*t);
@@ -208,7 +208,7 @@ Atom::clone()
 }
 
 
-Atom::TYPE
+Atom::Type
 Atom::getType() const
 {
     return type;
@@ -378,7 +378,7 @@ GAtom::operator< (const GAtom &gatom2) const
 // a dedicated class like interpretation
 // we will see what turns out to be more practical
 //
-
+/*
 void
 matchPredicate(const GAtomSet &g,
                const std::string pred,
@@ -390,7 +390,7 @@ matchPredicate(const GAtomSet &g,
             atomset.insert(*a);
     }
 }
-
+*/
 
 void
 printGAtomSet(const GAtomSet &g,

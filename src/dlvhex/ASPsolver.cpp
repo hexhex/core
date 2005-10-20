@@ -84,7 +84,7 @@ void ASPsolver::callSolver(std::string prg)
     dlvresultparse ();
     fclose(dlvresultin);
 
-    //cout << solverResult::returncode << endl;
+    //std::cout << solverResult::returncode << std::endl;
     
     if (solverResult::returncode == 127)
     {
