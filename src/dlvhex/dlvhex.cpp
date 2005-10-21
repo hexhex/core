@@ -7,8 +7,23 @@
  * 
  * @brief  main().
  * 
- * 
  */
+
+/** @mainpage dlvhex Documentation
+ *
+ * @section intro_sec Introduction
+ *
+ * TODO
+ *
+ * @section install_sec Installation
+ *
+ * TODO
+ *
+ * @section Writing Plugins for dlvhex
+ *  
+ * see \ref plugininterface_page "The Plugin Interface"
+ */
+
 
 #include <iostream>
 #include <sstream>
