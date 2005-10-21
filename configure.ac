@@ -65,12 +65,6 @@ DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [documentation])
 
 AM_PATH_CPPUNIT([1.10.2])
 
-AM_PATH_RAPTOR([1.3.2], [have_raptor=yes], [have_raptor=no])
-AM_CONDITIONAL([HAVE_RAPTOR], [test "x$have_raptor" = xyes])
-
-AM_PATH_ACE
-AM_CONDITIONAL([HAVE_ACE], [test "x$ACE_LIBS" != x])
-
 AC_CONFIG_FILES([
            Makefile 
            dlvhex.pc
@@ -80,23 +74,7 @@ AC_CONFIG_FILES([
            src/dlvhex/Makefile
            src/testsuite/dlvhex/Makefile
 ])
-#           include/extModules/racer/Makefile
-#           src/extModules/test/Makefile
-#           src/extModules/rdf/Makefile
-#           src/extModules/racer/Makefile 
-#           include/testsuite/extModules/racer/Makefile
-#           src/testsuite/extModules/racer/Makefile
 
-if test "$have_raptor" = "no"; then
-    AC_MSG_NOTICE([])
-    AC_MSG_NOTICE([libraptor not found or too old (needed: >= 1.3.2)])
-    AC_MSG_NOTICE([the RDF-library will not be built!])
-    AC_MSG_NOTICE([])
-fi
 
 AC_OUTPUT
 
-#AC_MSG_RESULT([
-#dlvhex build summary:
-#  RDF library available     : $have_raptor
-#])

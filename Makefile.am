@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-include aminclude.am
+include doxygen.am
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = dlvhex.pc
@@ -12,10 +12,3 @@ SUBDIRS = \
           include/testsuite/dlvhex \
           src/dlvhex \
           src/testsuite/dlvhex
-
-#          src/extModules/test 
-#          src/extModules/racer 
-#          include/extModules/racer 
-#          src/extModules/rdf 
-#          include/testsuite/extModules/racer
-#          src/testsuite/extModules/racer
