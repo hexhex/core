@@ -70,7 +70,7 @@ void ASPsolver::callSolver(std::string prg)
     //
     helper::escapeQuotes(prg);
     
-    std::string execdlv("echo \"" + prg + "\" | " + lpcommand + " -nofacts -- foo 2>&1; echo $?");
+    std::string execdlv("echo \"" + prg + "\" | " + lpcommand + " -nofacts -- 2>&1; echo $?");
 
     //std::cout << execdlv << std::endl;
     //std::cout << "program: " << prg << std::endl;

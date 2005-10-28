@@ -224,7 +224,16 @@ main (int argc, char *argv[])
                 // TODO: test if we really have to add the slash to the path!
                 filename = (std::string)PLUGIN_DIR + '/' + filename;
 
-                PluginContainer::Instance()->importPlugin(filename);
+                try
+                {
+                    PluginContainer::Instance()->importPlugin(filename);
+                }
+                catch (fatalError &e)
+                {
+                    std::cerr << e.getErrorMsg() << std::endl;
+                    
+                    exit(1);
+                }
             }
         }
     }
@@ -304,24 +313,30 @@ main (int argc, char *argv[])
 
             FILE* fp = fopen(parser_file, "r");
 
-            //
-            // we start line numbering with 1
-            //
-            parser_line = 1;
-
-            inputin = fp;
-
-            try
+            if (fp == 0)
             {
-                inputparse ();
+                std::cerr << "file " << parser_file << " not found" << std::endl;
             }
-            catch (generalError& e)
+            else
             {
-                std::cerr << e.getErrorMsg() << std::endl;
-                
-                exit(1);
-            }
+                //
+                // we start line numbering with 1
+                //
+                parser_line = 1;
 
+                inputin = fp;
+
+                try
+                {
+                    inputparse ();
+                }
+                catch (generalError& e)
+                {
+                    std::cerr << e.getErrorMsg() << std::endl;
+
+                    exit(1);
+                }
+            }
         }
     }
 
