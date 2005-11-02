@@ -122,21 +122,16 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         //
         // add the last result to I
         //
-        currentI.clear();
+        currentI.replaceBy(I);
 
-        std::insert_iterator<GAtomSet> ins = std::inserter((*currentI.getAtomSet()),
-                                                           (*currentI.getAtomSet()).begin());
-
-        std::set_union(I.begin(), I.end(),
-                       dlvResult.begin(), dlvResult.end(),
-                       ins);
+        currentI.add(dlvResult);
 
         //
         // find part of the current I that is input to the extatom(s)
         //
         oldinputPart = inputPart;
 
-        inputPart = (*currentI.getAtomSet());
+        inputPart = currentI.getAtomSet();
         /*
          * TODO: as input part, we take the entire I - can we cut down this somehow?
 
@@ -236,7 +231,7 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
 
         firstrun = false;
 
-    } while (dlvResult != (*currentI.getAtomSet()));
+    } while (dlvResult != currentI.getAtomSet());
 
-    models.push_back((*currentI.getAtomSet()));
+    models.push_back(currentI.getAtomSet());
 }

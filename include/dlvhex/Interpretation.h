@@ -39,8 +39,8 @@ public:
     void
     replaceBy(const GAtomSet &atomset);
 
-    GAtomSet*
-    getAtomSet();
+    const GAtomSet&
+    getAtomSet() const;
 
     GAtomSet::const_iterator
     begin() const;

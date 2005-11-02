@@ -46,10 +46,10 @@ Interpretation::replaceBy(const GAtomSet &atomset)
 }
 
 
-GAtomSet*
-Interpretation::getAtomSet()
+const GAtomSet&
+Interpretation::getAtomSet() const
 {
-    return &positive;
+    return positive;
 }
 
 

@@ -406,7 +406,7 @@ main (int argc, char *argv[])
         }
         else
         {
-            filtered = (*iout.getAtomSet());
+            filtered = iout.getAtomSet();
         }
 
         printGAtomSet(filtered, finaloutput, 0);
