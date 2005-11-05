@@ -114,7 +114,9 @@ NUM         ([0-9]+)
 "#sum"                  { return PRED_SUM;              }
 "#times"                { return PRED_TIMES;            }
 
-"#include"              { return EXT_INCLUDE;            }
+"#include"              { return EXT_INCLUDE;           }
+
+"#namespace"            { return NAMESPACE;             }
 
 "not"                   |
 "non"                   { return NOT;           }

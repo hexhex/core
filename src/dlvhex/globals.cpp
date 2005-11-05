@@ -1,10 +1,13 @@
-/* @file globals.c
- * Global stuff
- * 
- * @date 2005.07.17
- * @author Roman Schindlauer
- **/
+/* -*- C++ -*- */
 
+/**
+ * @file   globals.cpp
+ * @author Roman Schindlauer
+ * @date   Sat Nov  5 15:26:18 CET 2005
+ * 
+ * @brief  Global variable definitions.
+ * 
+ */
 
 #include "dlvhex/globals.h"
 
@@ -12,6 +15,8 @@
 namespace global
 {
     bool optionNoPredicate = true;
+
+    bool optionSilent = false;
 
     std::vector<std::string> Messages;    
 }

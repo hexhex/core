@@ -17,7 +17,7 @@
 
 
 Term::Term()
-    : type(NullConst), constantString(""), variableString("")
+    : type(NullConst), constantString(names.end()), variableString("")
 {
 }
 
@@ -25,7 +25,7 @@ Term::Term()
 Term::Term(const Term &term2)
     : type(term2.type)
 {
-    if( this != &term2 )
+    if (this != &term2)
     {
         if (!term2.isVariable())
         {
@@ -42,16 +42,20 @@ Term::Term(const Term &term2)
 
 Term::Term(const std::string name, bool isString)
 {
-    if( name[0] == '\"')
+    if (name[0] == '\"')
     {
-        constantString = name;
+        //constantString = names.insert(names.end(), name);
+        constantString = names.insert(name.substr(1, name.length() - 2));
+        //constantString = name;
         type = String;
     }
     else
     {
         if (isString)
         {
-            constantString = "\"" + name + "\"";
+            //constantString = "\"" + name + "\"";
+            //constantString = names.insert(names.end(), "\"" + name + "\"");
+            constantString = names.insert(name);
             type = String;
         }
         else
@@ -66,7 +70,8 @@ Term::Term(const std::string name, bool isString)
             }
             else
             {
-                constantString = name;
+                //constantString = name;
+                constantString = names.insert(name);
                 type = Symbol;
             }
         }
@@ -75,16 +80,21 @@ Term::Term(const std::string name, bool isString)
 
 Term::Term(const char* name, bool isString)
 {
-    if( name[0] == '\"')
+    if (name[0] == '\"')
     {
-        constantString = (std::string)name;
+        //constantString = (std::string)name;
+        //constantString = names.insert(names.end(), (std::string)name);
+        std::string n(name);
+        constantString = names.insert(n.substr(1, n.length() - 2));
         type = String;
     }
     else
     {
         if (isString)
         {
-            constantString = "\"" + (std::string)name + "\"";
+            //constantString = "\"" + (std::string)name + "\"";
+            //constantString = names.insert(names.end(), "\"" + (std::string)name + "\"");
+            constantString = names.insert((std::string)name);
             type = String;
         }
         else
@@ -99,7 +109,8 @@ Term::Term(const char* name, bool isString)
             }
             else
             {
-                constantString = name;
+                //constantString = name;
+                constantString = names.insert((std::string)name);
                 type = Symbol;
             }
         }
@@ -144,8 +155,17 @@ std::string
 Term::getString() const
 {
     assert((type == String) || (type == Symbol));
+
+    assert(constantString != names.end());
+
+    std::string ret(*constantString);
+
+    if (type == String)
+    {
+        ret = "\"" + (std::string)ret + "\"";
+    }
     
-    return constantString;
+    return ret;
 }
 
 std::string
@@ -153,10 +173,12 @@ Term::getUnquotedString() const
 {
     assert((type == String) || (type == Symbol));
     
-    if (type == String)
-        return constantString.substr(1, constantString.length() - 2);
-    else
-        return constantString;
+    assert(constantString != names.end());
+    
+//    if (type == String)
+//        return (*constantString).substr(1, (*constantString).length() - 2);
+//    else
+        return *constantString;
 }
 
 int
@@ -196,7 +218,7 @@ Term::unifiesWith(const Term &term2) const
     //
     if (type != term2.type)
         return 0;
-    
+ 
     //
     // now, only equal constant types are left. they unify if they
     // are equal
@@ -236,10 +258,14 @@ Term::operator!= (const Term &term2) const
             return constantInteger - term2.getInt();
         
         case Symbol:
-            return constantString.compare(term2.getString());
+            assert(constantString != names.end());
+    
+            return (*constantString).compare(term2.getString());
         
         case String:
-            return constantString.compare(term2.getString());
+            assert(constantString != names.end());
+
+            return (*constantString).compare(term2.getUnquotedString());
         
         case Variable:
             //
@@ -338,3 +364,7 @@ operator<< (std::ostream &out, const Tuple &tuple)
 
     return out;
 }
+
+std::vector<std::pair<std::string, std::string> > Term::namespaces;
+
+NamesTable<std::string> Term::names;

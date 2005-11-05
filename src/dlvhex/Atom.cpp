@@ -46,8 +46,7 @@ Atom::Atom(std::string atom)
     //
     if ((par = atom.find("(", 0)) != std::string::npos)
     {
-        std::vector<std::string> termlist = helper::stringExplode(atom.substr(par + 1, atom.length() - par - 2),
-                                             ",");
+        std::vector<std::string> termlist = helper::stringExplode(atom.substr(par + 1, atom.length() - par - 2), ",");
 
         arguments.push_back(Term(atom.substr(0, par)));
         
@@ -173,7 +172,7 @@ Atom::print(std::ostream &stream, const bool ho) const
             stream << getArgument(i);
             
             if (i < getArity() - 1)
-                stream << ",";
+                stream << ", ";
         }
         
         stream << ")";
@@ -191,7 +190,7 @@ Atom::print(std::ostream &stream, const bool ho) const
                 stream << getArgument(i);
                 
                 if (i < getArity() - 1)
-                    stream << ",";
+                    stream << ", ";
             }
             
             stream << ")";

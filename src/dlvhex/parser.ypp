@@ -99,7 +99,7 @@ extern GAtomSet EDB;
 %token PRED_ANY PRED_AVG PRED_COUNT PRED_MAX PRED_MIN PRED_SUM PRED_TIMES
 %token NOT TRUE_NOT
 %token MAXINTEGER
-%token EXT_INCLUDE SHARP
+%token NAMESPACE EXT_INCLUDE SHARP
 
 %token BOOL_QUERY
 %token META_IMPORT META_EXPORT
@@ -131,7 +131,7 @@ input     :
  */
 
 line      : clause
-//          | ext_include
+          | namespace
 //          | query
           ;
 
@@ -139,6 +139,25 @@ line      : clause
  *           | clauses clause
  *           ;
  */
+
+namespace : NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE
+          ;
+
+nsdef : ident COMMA ident 
+        {
+            std::string ns($1);
+            std::string prefix($3);
+
+            if (prefix[0] == '\"')
+                prefix = prefix.substr(1, prefix.length() - 2);
+
+            if (ns[0] == '\"')
+                ns = ns.substr(1, ns.length() - 2);
+
+            Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
+        }
+      | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); }
+      ;
 
 clause    : rule
           | fact
@@ -378,7 +397,9 @@ terms    : {
          ;
 
 
+/*
 ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
+*/
 
 /*
 builtin_pred : binop terms2

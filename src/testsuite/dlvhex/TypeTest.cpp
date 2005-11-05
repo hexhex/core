@@ -57,6 +57,19 @@ TermTest::testComparison()
     
     CPPUNIT_ASSERT((*str).unifiesWith(*var));
     CPPUNIT_ASSERT(!(*sym).unifiesWith(*num));
+
+    //
+    // Additional Term tests:
+    //
+    Term t1("M");
+    Term t2("foo");
+    Term t3("const");
+    Term t4("\"a small string\"");
+
+    CPPUNIT_ASSERT(t1.unifiesWith(Term("p")));
+    CPPUNIT_ASSERT(t2.unifiesWith(Term("X")));
+    CPPUNIT_ASSERT(t3.unifiesWith(Term("Y")));
+    CPPUNIT_ASSERT(t4.unifiesWith(Term("\"a small string\"")));
     
     Term b("blah");
     Term n(4);
@@ -135,6 +148,7 @@ AtomTest::testUnification()
     //
     // should unifiy with both
     //
+
     CPPUNIT_ASSERT((*fo).unifiesWith(ho2));
     CPPUNIT_ASSERT((*ho).unifiesWith(ho2));
     

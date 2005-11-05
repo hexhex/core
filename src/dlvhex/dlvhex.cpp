@@ -134,6 +134,73 @@ extern int inputparse();
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/GraphProcessor.h"
 
+void
+insertNamespaces()
+{
+    if (Term::namespaces.size() == 0)
+        return;
+
+    std::string prefix, fullns;
+
+    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+         nm != Term::names.end();
+         ++nm)
+    {
+        for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
+            ns != Term::namespaces.end();
+            ns++)
+        {
+            prefix = ns->second + ":";
+
+            if ((*nm).find(prefix, 0) == 0)
+            {
+                std::string r(*nm);
+
+                r.replace(0, prefix.length(), ns->first);
+
+                Term::names.modify(nm, r);
+
+                std::cout << "modified: " << r << std::endl;
+            }
+        }
+        
+    }
+}
+
+void
+removeNamespaces()
+{
+    if (Term::namespaces.size() == 0)
+        return;
+
+    std::string prefix, fullns;
+
+    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+         nm != Term::names.end();
+         ++nm)
+    {
+        for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
+            ns != Term::namespaces.end();
+            ns++)
+        {
+            fullns = ns->first;
+
+            prefix = ns->second + ":";
+
+            if ((*nm).find(fullns, 0) == 0)
+            {
+                std::string r(*nm);
+
+                r.replace(0, fullns.length(), prefix);
+
+                Term::names.modify(nm, r);
+            }
+        }
+        
+    }
+}
+
+
 int
 main (int argc, char *argv[])
 {
@@ -146,7 +213,6 @@ main (int argc, char *argv[])
     //
     
     bool optionPipe = false;
-    bool optionSilent = false;
     std::vector<std::string> optionFilter;
     
     std::vector<std::string> allFiles;
@@ -158,7 +224,7 @@ main (int argc, char *argv[])
             if (!strcmp(argv[j],"-fo"))
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j], "-silent"))
-                optionSilent = true;
+                global::optionSilent = true;
             else if (!strncmp(argv[j], "-filter=", 8))
                 optionFilter = helper::stringExplode(std::string(argv[j] + 8), ",");
             else if (!strcmp(argv[j], "--"))
@@ -186,7 +252,7 @@ main (int argc, char *argv[])
         }
     }
 
-    if (!optionSilent)
+    if (!global::optionSilent)
         printLogo();
 
 
@@ -219,8 +285,6 @@ main (int argc, char *argv[])
         {
             if (filename.substr(filename.size() - 3, 3) == ".so")
             {
-                //cout << "Opening " << filename << "..." << std::endl;
-
                 // TODO: test if we really have to add the slash to the path!
                 filename = (std::string)PLUGIN_DIR + '/' + filename;
 
@@ -238,61 +302,6 @@ main (int argc, char *argv[])
         }
     }
 
-/*
-    std::string hoSwitch;
-    
-    if (global::optionNoPredicate)
-        hoSwitch = "-dlw:higherorder ";
-    else
-        hoSwitch = "";
-                
-    if (optionPipe)
-    {
-        parser_file="";
-        parser_line=1;
-
-        inputin=stdin;
-
-        inputparse();
-    }
-    else
-    {
-        for (std::vector<std::string>::const_iterator f = allFiles.begin();
-             f != allFiles.end();
-             f++)
-        {
-            parser_file = f->c_str();
-            
-            
-            std::string execPreParser("dlt -silent -preparsing " + hoSwitch + *f);
-            
-            FILE *preparser;
-
-            if ((preparser = popen(execPreParser.c_str(), "r")) == NULL)
-            {
-                std::cerr << "unable to call preparser: " << execPreParser << std::endl;
-                exit(1);
-            }
-   
-            parser_line = 0;
-    
-            inputin = preparser;
-
-            try
-            {
-                inputparse ();
-            }
-            catch (generalError& e)
-            {
-                std::cerr << e.getErrorMsg() << std::endl;
-                
-                exit(1);
-            }
-
-            fclose (inputin);
-        }
-    }
-*/
 
     if (optionPipe)
     {
@@ -367,6 +376,8 @@ main (int argc, char *argv[])
     
     */
 
+    insertNamespaces();
+
     GraphBuilder* sgb = new SimpleGraphBuilder;
 
     DependencyGraph dg(IDB, sgb);
@@ -383,7 +394,14 @@ main (int argc, char *argv[])
         
         exit(1);
     }
+
+
+    //removeNamespaces();
+
     
+    //
+    // filtering result models
+    //
     std::ostringstream finaloutput;
     GAtomSet* res;
     GAtomSet filtered;
@@ -419,31 +437,7 @@ main (int argc, char *argv[])
          l++)
         std::cout << *l << std::endl;
     
+
     std::cout << finaloutput.str() << std::endl;
 
-    //
-    // escape quotes for shell command execution with echo!
-    //
-/*    helper::escapeQuotes(result);
-
-    std::string execPostParser("echo \"" + result + "\" | dlt -silent -postparsing");
-
-    FILE *postparser;
-    
-    if ((postparser = popen(execPostParser.c_str(), "r")) == NULL)
-    {
-        std::cerr << "unable to call postparser" << std::endl;
-        exit(1);
-    }
-
-    char buf[1000];
-    
-    std::vector<std::string> resultlines;
-
-    while (!feof(postparser))
-    {
-        if (fgets(buf, 1000, postparser) != NULL)
-            std::cout << buf;
-    }
-  */  
 }

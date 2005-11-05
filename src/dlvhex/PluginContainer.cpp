@@ -15,6 +15,7 @@
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
+#include "dlvhex/globals.h"
 
 
 typedef PluginInterface* (*t_import)();
@@ -43,7 +44,8 @@ PluginContainer::~PluginContainer()
 void
 PluginContainer::importPlugin(std::string filename)
 {
-    std::cout << "opening " << filename << std::endl;
+    if (!global::optionSilent)
+        std::cout << "opening " << filename << std::endl;
 
     void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
 
