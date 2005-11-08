@@ -160,7 +160,7 @@ insertNamespaces()
 
                 Term::names.modify(nm, r);
 
-                std::cout << "modified: " << r << std::endl;
+                //std::cout << "modified: " << r << std::endl;
             }
         }
         
@@ -320,7 +320,7 @@ main (int argc, char *argv[])
         {
             parser_file = f->c_str();
 
-            FILE* fp = fopen(parser_file, "r");
+/*            FILE* fp = fopen(parser_file, "r");
 
             if (fp == 0)
             {
@@ -345,7 +345,42 @@ main (int argc, char *argv[])
 
                     exit(1);
                 }
+
+                ///@todo TO TEST:
+                fclose(fp);
             }
+            */
+
+            parser_file = f->c_str();
+            
+            
+            std::string execPreParser("dlt -silent -preparsing " + *f);
+            
+            FILE *preparser;
+
+            if ((preparser = popen(execPreParser.c_str(), "r")) == NULL)
+            {
+                std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+
+                exit(1);
+            }
+   
+            parser_line = 0;
+    
+            inputin = preparser;
+
+            try
+            {
+                inputparse ();
+            }
+            catch (generalError& e)
+            {
+                std::cerr << e.getErrorMsg() << std::endl;
+                
+                exit(1);
+            }
+
+            fclose (inputin);
         }
     }
 
@@ -396,7 +431,7 @@ main (int argc, char *argv[])
     }
 
 
-    //removeNamespaces();
+    removeNamespaces();
 
     
     //
