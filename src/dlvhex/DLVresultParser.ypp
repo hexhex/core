@@ -52,7 +52,11 @@ namespace solverResult
 
 %%
 
-result : dlvresult NUM NEWLINE { solverResult::returncode = atoi($2); }
+result : dlvresult NUM NEWLINE 
+       {
+           solverResult::returncode = atoi($2);
+           delete[] $2;
+       }
        ;
 
 dlvresult : result_line
@@ -61,7 +65,11 @@ dlvresult : result_line
           ;
 
 result_line : NEWLINE
-            | MESSAGE NEWLINE { solverResult::addMessage($1); }
+            | MESSAGE NEWLINE
+            {
+                solverResult::addMessage($1);
+                delete[] $1;
+            }
             | CURLY_OPEN factlist CURLY_CLOSE NEWLINE
             ;
 

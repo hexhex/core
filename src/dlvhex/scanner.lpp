@@ -38,7 +38,6 @@ ANON_VAR    _
 
 ID          ([A-Za-z][A-Za-z_0-9]*)
 SPECIAL_ID  (_[A-Za-z][A-Za-z_,0-9]*)
-INTERNAL_ID ([A-Z]?$[A-Za-z_0-9$]*)
 QUOTED_ID   (\"[^\"]+\")
 
 
@@ -152,20 +151,6 @@ NUM         ([0-9]+)
                           return ERROR;
                         }
 
-
-{INTERNAL_ID}           {
-                          // IDs starting with '$' are only allowed
-                          // during internal calls to the scanner
-                          if(ParserStateInternal)
-                              {
-                              inputlval.string=new char[strlen(yytext)+1];
-                              strcpy(inputlval.string,yytext);
-                              return ID;
-                              } 
-                          inputerror("identifier starts with '$'");
-                          parser_errors++;
-                          return ERROR;
-                        }
 
 
 {NUM}			{ 

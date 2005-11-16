@@ -145,8 +145,8 @@ namespace : NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE
 
 nsdef : ident COMMA ident 
         {
-            std::string prefix($1);
             std::string ns($3);
+            std::string prefix($1);
 
             if (prefix[0] == '\"')
                 prefix = prefix.substr(1, prefix.length() - 2);
@@ -155,6 +155,9 @@ nsdef : ident COMMA ident
                 ns = ns.substr(1, ns.length() - 2);
 
             Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
+
+            delete[] $1;
+            delete[] $3;
         }
 /*      | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); } */
       ;

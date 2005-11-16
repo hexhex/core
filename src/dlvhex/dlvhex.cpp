@@ -292,6 +292,19 @@ main (int argc, char *argv[])
                 libfilelist.push_back((std::string)PLUGIN_DIR + '/' + filename);
     }
 
+    //
+    // clean up scandir mess
+    //
+    while(count--)
+    {
+        free(files[count]);
+    }
+    free(files); 
+
+
+    //
+    // now look into user's home
+    //
     std::string userhome(getpwnam(getlogin())->pw_dir);
 
     userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
@@ -306,6 +319,17 @@ main (int argc, char *argv[])
             if (filename.substr(filename.size() - 3, 3) == ".so")
                 libfilelist.push_back(userhome + '/' + filename);
     }
+
+    //
+    // clean up scandir mess
+    //
+    while(count--)
+    {
+        free(files[count]);
+    }
+    free(files); 
+
+
 
     //
     // import found plugin-libs
@@ -480,4 +504,8 @@ main (int argc, char *argv[])
 
     std::cout << finaloutput.str() << std::endl;
 
+    //
+    // cleaning up:
+    //
+    free(sgb);
 }
