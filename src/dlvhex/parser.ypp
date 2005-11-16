@@ -156,7 +156,7 @@ nsdef : ident COMMA ident
 
             Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
         }
-      | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); }
+/*      | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); } */
       ;
 
 clause    : rule

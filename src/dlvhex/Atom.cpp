@@ -172,7 +172,7 @@ Atom::print(std::ostream &stream, const bool ho) const
             stream << getArgument(i);
             
             if (i < getArity() - 1)
-                stream << ", ";
+                stream << ",";
         }
         
         stream << ")";
@@ -190,7 +190,7 @@ Atom::print(std::ostream &stream, const bool ho) const
                 stream << getArgument(i);
                 
                 if (i < getArity() - 1)
-                    stream << ", ";
+                    stream << ",";
             }
             
             stream << ")";

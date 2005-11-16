@@ -44,21 +44,25 @@ ExternalAtom::ExternalAtom(std::string name,
                            unsigned line)
     : functionName(name),
       Atom(params),
-      line(line)
+      line(line),
+      inputList(input)
 {
+    //
+    // set parent class type
+    //
     type = EXTERNAL;
+
+    std::ostringstream errorstr;
 
     //
     // first, get respective PluginAtom object
     //
     pluginAtom = PluginContainer::Instance()->getAtom(functionName);
     
-    std::ostringstream errorstr;
-
     if (pluginAtom == 0)
     {
-        errorstr << "Function " << functionName <<
-                    " in line " << line << " unknown";
+        errorstr << "Line " << line << ": "
+                 << "Function " << functionName << " unknown";
 
         throw generalError(errorstr.str());
     }
@@ -66,15 +70,45 @@ ExternalAtom::ExternalAtom(std::string name,
     //
     // is the desired arity equal to the parsed arity?
     //
-    if ((*pluginAtom).getOutputArity() != getArity())
+//    std::cout << "out: " << (*pluginAtom).getOutputArity() << std::endl;
+//    std::cout << "here: " << getArity() << std::endl;
+    if ((*pluginAtom).getInputArity() != inputList.size())
     {
-        errorstr << "Arity mismatch in line " << line;
+        errorstr << "Line " << line << ": "
+                 << "Arity mismatch in function " << functionName;
 
         throw generalError(errorstr.str());
     }
-
-    inputList = input;
     
+
+    if ((*pluginAtom).getOutputArity() != getArity())
+    {
+        errorstr << "Line " << line << ": "
+                 << "Arity mismatch in function " << functionName;
+
+        throw generalError(errorstr.str());
+    }
+    
+    //
+    // at the moment, we don't allow variable input arguments:
+    //
+    for (Tuple::const_iterator il = inputList.begin();
+         il != inputList.end();
+         il++)
+    {
+        if (il->isVariable())
+        {
+            errorstr << "Line " << line << ": "
+                     << "Variable input arguments not allowed";
+
+            throw generalError(errorstr.str());
+        }
+    }
+
+    //
+    // if we got here, the syntax is fine!
+    //
+
     std::stringstream ss;
     
     ss << functionName << "_" << uniqueNumber;
@@ -86,13 +120,15 @@ ExternalAtom::ExternalAtom(std::string name,
 }
 
 
-std::string ExternalAtom::getFunctionName() const
+std::string
+ExternalAtom::getFunctionName() const
 {
     return functionName;
 }
 
 
-std::string ExternalAtom::getReplacementName() const
+std::string
+ExternalAtom::getReplacementName() const
 {
     return replacementName;
 }
@@ -105,7 +141,8 @@ ExternalAtom::getInputTerms(Tuple &it) const
 }
 
 
-void ExternalAtom::evaluate(const Interpretation& i,
+void
+ExternalAtom::evaluate(const Interpretation& i,
                             const Tuple& inputParms,
                             GAtomSet& result) const
 {
@@ -117,6 +154,8 @@ void ExternalAtom::evaluate(const Interpretation& i,
     
     for (int s = 0; s < inputList.size(); s++)
     {
+        const Term* inputTerm = &inputList[s];
+
         switch(pluginAtom->getInputType(s))
         {
         case PluginAtom::CONSTANT:
@@ -128,19 +167,16 @@ void ExternalAtom::evaluate(const Interpretation& i,
             // collect all facts from interpretation that we need for the input
             // of the external atom
             //
-            for (Tuple::const_iterator il = inputList.begin();
-                il != inputList.end();
-                il++)
-            {
-                factlist.clear();
+            factlist.clear();
 
-                assert(!il->isVariable());
+            //
+            // at this point, of course everything needs to be ground!
+            //
+            assert(!inputTerm->isVariable());
 
-                i.matchPredicate(il->getString(), factlist);
+            i.matchPredicate(inputTerm->getString(), factlist);
 
-                inputSet.add(factlist);
-                //extinput.push_back(factlist);
-            }
+            inputSet.add(factlist);
     
             break;
 
@@ -205,7 +241,8 @@ ExternalAtom::print(std::ostream& out, const bool ho) const
 }   
 
 
-Atom* ExternalAtom::clone()
+Atom*
+ExternalAtom::clone()
 {
     return new ExternalAtom(*this);
 }

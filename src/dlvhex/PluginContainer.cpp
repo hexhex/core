@@ -45,7 +45,7 @@ void
 PluginContainer::importPlugin(std::string filename)
 {
     if (!global::optionSilent)
-        std::cout << "opening " << filename << std::endl;
+        std::cout << "opening plugin " << filename << std::endl;
 
     void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
 

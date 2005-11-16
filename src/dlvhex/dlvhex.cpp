@@ -9,19 +9,10 @@
  * 
  */
 
-/** @mainpage dlvhex Documentation
- *
- * @section intro_sec Introduction
+/** @mainpage dlvhex Source Documentation
  *
  * TODO
  *
- * @section install_sec Installation
- *
- * TODO
- *
- * @section Writing Plugins for dlvhex
- *  
- * see \ref plugininterface_page "The Plugin Interface"
  */
 
 
@@ -142,8 +133,10 @@ insertNamespaces()
 
     std::string prefix, fullns;
 
-    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-         nm != Term::names.end();
+    NamesTable<std::string> names = Term::getNamesTable();
+
+    for (NamesTable<std::string>::const_iterator nm = names.begin();
+         nm != names.end();
          ++nm)
     {
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
@@ -158,7 +151,7 @@ insertNamespaces()
 
                 r.replace(0, prefix.length(), ns->first);
 
-                Term::names.modify(nm, r);
+                names.modify(nm, r);
 
                 //std::cout << "modified: " << r << std::endl;
             }
@@ -175,8 +168,10 @@ removeNamespaces()
 
     std::string prefix, fullns;
 
-    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-         nm != Term::names.end();
+    NamesTable<std::string> names = Term::getNamesTable();
+
+    for (NamesTable<std::string>::const_iterator nm = names.begin();
+         nm != names.end();
          ++nm)
     {
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
@@ -193,13 +188,14 @@ removeNamespaces()
 
                 r.replace(0, fullns.length(), prefix);
 
-                Term::names.modify(nm, r);
+                names.modify(nm, r);
             }
         }
         
     }
 }
 
+#include "pwd.h"
 
 int
 main (int argc, char *argv[])
@@ -213,15 +209,23 @@ main (int argc, char *argv[])
     //
     
     bool optionPipe = false;
+
+    //
+    // dlt switch should be temporary until we have a proper rewriter for flogic!
+    //
+    bool optiondlt = false;
+
     std::vector<std::string> optionFilter;
     
     std::vector<std::string> allFiles;
     
     for (int j = 1; j < argc; j++)
-	{
+    {
         if (argv[j][0] == '-')
         {
-            if (!strcmp(argv[j],"-fo"))
+            if (!strcmp(argv[j],"-dlt"))
+                optiondlt = true;
+            else if (!strcmp(argv[j],"-fo"))
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j], "-silent"))
                 global::optionSilent = true;
@@ -275,34 +279,61 @@ main (int argc, char *argv[])
     struct dirent **files;
     std::string filename;
 
+    std::vector<std::string> libfilelist;
+
     count = scandir(PLUGIN_DIR, &files, 0, alphasort);
 
-    for (i = 1; i < count + 1; ++i)
+    for (i = 0; i < count; ++i)
     {
-        filename = files[i - 1]->d_name;
+        filename = files[i]->d_name;
 
         if (filename.substr(0,9) == "libdlvhex")
-        {
             if (filename.substr(filename.size() - 3, 3) == ".so")
-            {
-                // TODO: test if we really have to add the slash to the path!
-                filename = (std::string)PLUGIN_DIR + '/' + filename;
+                libfilelist.push_back((std::string)PLUGIN_DIR + '/' + filename);
+    }
 
-                try
-                {
-                    PluginContainer::Instance()->importPlugin(filename);
-                }
-                catch (fatalError &e)
-                {
-                    std::cerr << e.getErrorMsg() << std::endl;
-                    
-                    exit(1);
-                }
-            }
+    std::string userhome(getpwnam(getlogin())->pw_dir);
+
+    userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
+
+    count = scandir(userhome.c_str(), &files, 0, alphasort);
+
+    for (i = 0; i < count; ++i)
+    {
+        filename = files[i]->d_name;
+
+        if (filename.substr(0,9) == "libdlvhex")
+            if (filename.substr(filename.size() - 3, 3) == ".so")
+                libfilelist.push_back(userhome + '/' + filename);
+    }
+
+    //
+    // import found plugin-libs
+    //
+    for (std::vector<std::string>::const_iterator si = libfilelist.begin();
+         si != libfilelist.end();
+         si++)
+    {
+        try
+        {
+            PluginContainer::Instance()->importPlugin(*si);
+        }
+        catch (fatalError &e)
+        {
+            std::cerr << e.getErrorMsg() << std::endl;
+            
+            exit(1);
         }
     }
 
+    if (!global::optionSilent)
+        std::cout << std::endl;
 
+    
+    //
+    // parse input
+    //
+    
     if (optionPipe)
     {
         parser_file = "";
@@ -320,54 +351,28 @@ main (int argc, char *argv[])
         {
             parser_file = f->c_str();
 
-/*            FILE* fp = fopen(parser_file, "r");
+            FILE *inputfile;
 
-            if (fp == 0)
-            {
-                std::cerr << "file " << parser_file << " not found" << std::endl;
-            }
-            else
-            {
-                //
-                // we start line numbering with 1
-                //
-                parser_line = 1;
-
-                inputin = fp;
-
-                try
-                {
-                    inputparse ();
-                }
-                catch (generalError& e)
-                {
-                    std::cerr << e.getErrorMsg() << std::endl;
-
-                    exit(1);
-                }
-
-                ///@todo TO TEST:
-                fclose(fp);
-            }
-            */
-
-            parser_file = f->c_str();
-            
-            
             std::string execPreParser("dlt -silent -preparsing " + *f);
-            
-            FILE *preparser;
+                
+            if (optiondlt)
+                inputfile = popen(execPreParser.c_str(), "r");
+            else
+                inputfile = fopen(parser_file, "r");
 
-            if ((preparser = popen(execPreParser.c_str(), "r")) == NULL)
+            if (inputfile == NULL)
             {
-                std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+                if (optiondlt)
+                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+                else
+                    std::cerr << "file " << parser_file << " not found" << std::endl;
 
                 exit(1);
             }
-   
-            parser_line = 0;
+
+            parser_line = 1;
     
-            inputin = preparser;
+            inputin = inputfile;
 
             try
             {
@@ -380,7 +385,7 @@ main (int argc, char *argv[])
                 exit(1);
             }
 
-            fclose (inputin);
+            fclose(inputin);
         }
     }
 

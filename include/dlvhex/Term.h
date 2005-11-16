@@ -33,8 +33,6 @@ class NamesTable
 
 public:
 
-//    typedef typename lookup_t::const_iterator const_iterator;
-
     
     class const_iterator
     {
@@ -311,8 +309,11 @@ public:
     bool
     operator>= (const Term &term2) const; 
 
-
-    static NamesTable<std::string> names;
+    /**
+     * @brief Provides access to the static names table.
+     */
+    static NamesTable<std::string>&
+    getNamesTable();
 
     static std::vector<std::pair<std::string, std::string> > namespaces;
 
@@ -320,7 +321,11 @@ private:
     
     Type type;
 
-    //std::string constantString;
+    /**
+     * @brief Table of all constant names of a program.
+     */
+    static NamesTable<std::string> names;
+
     NamesTable<std::string>::const_iterator constantString;
 
     int constantInteger;

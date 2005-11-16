@@ -1,8 +1,12 @@
-/** @file ASPsolver.cpp
- * Definition of ASP solver class
- *  
- * @date 2005.07.05
- * @author Renato Umeton
+/* -*- C++ -*- */
+
+/**
+ * @file   dlvhex.cpp
+ * @author Roman Schindlauer
+ * @date   Tue Nov 15 17:29:45 CET 2005
+ * 
+ * @brief  Definition of ASP solver class.
+ * 
  */
 
 #include "dlvhex/ASPsolver.h"
@@ -10,6 +14,7 @@
 #include "dlvhex/helper.h"
 
 #include "../config.h"
+
 
 namespace solverResult
 {
@@ -19,14 +24,16 @@ namespace solverResult
 
     std::string message;
 
-    GAtomSet* createNewAnswerset()
+    GAtomSet*
+    createNewAnswerset()
     {
         solverResult::answersets.push_back(GAtomSet());
 
         return &(solverResult::answersets.back());
     }
 
-    void addMessage(std::string msg)
+    void
+    addMessage(std::string msg)
     {
         message += msg + '\n';
     }
@@ -43,7 +50,8 @@ ASPsolver::ASPsolver()
 }
 
 
-GAtomSet* ASPsolver::getNextAnswerSet()
+GAtomSet*
+ASPsolver::getNextAnswerSet()
 {
     if (answerSetIndex != solverResult::answersets.end())
         return &(*(answerSetIndex++));
@@ -52,37 +60,69 @@ GAtomSet* ASPsolver::getNextAnswerSet()
 }
 
 
-extern "C" FILE * dlvresultin;         // Where LEX reads its input from
+//
+// Where LEX reads its input from:
+//
+extern "C" FILE * dlvresultin;
+
 extern int dlvresultparse();
+
 extern bool dlvresultdebug;
 
-void ASPsolver::callSolver(std::string prg)
+
+void
+ASPsolver::callSolver(std::string prg)
 {
     solverResult::answersets.clear();
     solverResult::message = "";
     
-    FILE *fp;
     
-    //std::cout << prg << std::endl;
+//    std::cout << prg << std::endl << std::endl;
     
     //
     // escape quotes for shell command execution with echo!
     //
-    helper::escapeQuotes(prg);
-    
-    std::string execdlv("echo \"" + prg + "\" | " + lpcommand + " -nofacts -- 2>&1; echo $?");
 
-    //std::cout << execdlv << std::endl;
-    //std::cout << "program: " << prg << std::endl;
-    
-    fp = popen(execdlv.c_str(), "r");
+    //char tempfile[] = "/tmp/dlvXXXXXX";
+    char tempfile[L_tmpnam];
+
+    std::string execdlv;
+
+    //
+    // if-branch: using a temporary file for the asp-program
+    // else-branch: passing the program to dlv via echo and pipe
+    //
+    if (1)
+    {
+        tmpnam(tempfile);
+
+        FILE* dlvinput = fopen(tempfile, "w");
+//        FILE* dlvinput = mkstemp(tempfile);
+
+        if (dlvinput == NULL)
+            throw fatalError("LP solver temp-file " + (std::string)tempfile + " could not be created!");
+
+        fputs(prg.c_str(), dlvinput);
+        fflush(dlvinput);
+        fclose(dlvinput);
+
+        execdlv = lpcommand + " -nofacts " + (std::string)tempfile + " 2>&1; echo $?";
+    }
+    else
+    {
+        helper::escapeQuotes(prg);
+        
+        execdlv = "echo \"" + prg + "\" | " + lpcommand + " -nofacts -- 2>&1; echo $?";
+    }
 
 
-    // dlvresultdebug = 1;
+    dlvresultin = popen(execdlv.c_str(), "r");
 
-    dlvresultin = fp;
     dlvresultparse ();
+
     fclose(dlvresultin);
+
+    //unlink(tempfile);
 
     //std::cout << solverResult::returncode << std::endl;
     
@@ -115,10 +155,3 @@ void ASPsolver::callSolver(std::string prg)
         */
 }
 
-
-
-/******************************************************************************
- *
- * PRIVATE MEMBER FUNCTIONS
- *
- */

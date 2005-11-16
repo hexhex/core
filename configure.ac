@@ -10,6 +10,11 @@ AC_CONFIG_HEADER([src/config.h])
 CPPFLAGS="$CPPFLAGS -DPLUGIN_DIR='\"\$(pkglibdir)\"'"
 
 #
+# set user plugin dir (relative to home)
+#
+CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\".dlvhex/lib\"'"
+
+#
 # this has to be done properly:
 # - checking if the optionally specified dlv exists at config-time
 # - displaying some line for --help

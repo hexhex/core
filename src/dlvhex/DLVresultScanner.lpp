@@ -30,7 +30,7 @@ extern "C" int dlvresultlex();
 NEWLINE     \15?\n
                        // some OSs use \r\n as end-of-line instead of \n
 
-MSG         ([a-zA-Z].+)
+MSG         ([a-zA-Z/].+) // need the slash for path-strings at the beginning!
 
 ID          ([A-Za-z][A-Za-z_0-9]*)
 
@@ -71,7 +71,7 @@ NUM         ([0-9]+)
 
 
 ^{MSG}                  {
-                            // something starting with a letter at the beginning of a line
+                            // something starting not with a '{' at the beginning of a line
                             // this is some dlv-(error-)message
                             dlvresultlval.string=new char[strlen(yytext)+1];
                             strcpy(dlvresultlval.string,yytext);
