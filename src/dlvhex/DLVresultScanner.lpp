@@ -28,9 +28,10 @@ extern "C" int dlvresultlex();
 
 
 NEWLINE     \15?\n
-                       // some OSs use \r\n as end-of-line instead of \n
+                        // some OSs use \r\n as end-of-line instead of \n
 
-MSG         ([a-zA-Z/].+) // need the slash for path-strings at the beginning!
+MSG         ([a-zA-Z/].+)
+                        // need the slash for path-strings at the beginning!
 
 ID          ([A-Za-z][A-Za-z_0-9]*)
 
