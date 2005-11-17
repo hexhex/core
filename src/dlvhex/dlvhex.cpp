@@ -295,17 +295,19 @@ main (int argc, char *argv[])
     //
     // clean up scandir mess
     //
-    while(count--)
+    if (count != -1)
     {
-        free(files[count]);
+        while(count--)
+            free(files[count]);
+
+        free(files); 
     }
-    free(files); 
 
 
     //
     // now look into user's home
     //
-    std::string userhome(getpwnam(getlogin())->pw_dir);
+    std::string userhome(::getpwuid(::geteuid())->pw_dir);
 
     userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
@@ -323,12 +325,13 @@ main (int argc, char *argv[])
     //
     // clean up scandir mess
     //
-    while(count--)
+    if (count != -1)
     {
-        free(files[count]);
-    }
-    free(files); 
+        while(count--)
+            free(files[count]);
 
+        free(files); 
+    }
 
 
     //
