@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file Conponent.cpp
+ * @file Component.cpp
  * @author Roman Schindlauer
  * @date Mon Sep 19 13:14:56 CEST 2005
  *

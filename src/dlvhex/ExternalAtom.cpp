@@ -143,8 +143,8 @@ ExternalAtom::getInputTerms(Tuple &it) const
 
 void
 ExternalAtom::evaluate(const Interpretation& i,
-                            const Tuple& inputParms,
-                            GAtomSet& result) const
+                       const Tuple& inputParms,
+                       GAtomSet& result) const
 {
     std::string fnc(getFunctionName());
 
@@ -152,9 +152,9 @@ ExternalAtom::evaluate(const Interpretation& i,
 
     GAtomSet factlist;
     
-    for (int s = 0; s < inputList.size(); s++)
+    for (int s = 0; s < inputParms.size(); s++)
     {
-        const Term* inputTerm = &inputList[s];
+        const Term* inputTerm = &inputParms[s];
 
         switch(pluginAtom->getInputType(s))
         {
@@ -187,12 +187,13 @@ ExternalAtom::evaluate(const Interpretation& i,
         }
     }
 
+    PluginAtom::Query query(inputSet, inputParms, getArguments());
 
-    std::vector<Tuple> extoutput;
+    PluginAtom::Answer answer;
     
     try
     {
-        pluginAtom->retrieve(inputSet, inputParms, extoutput);
+        pluginAtom->retrieve(query, answer);
     }
     catch (PluginError& e)
     {
@@ -207,8 +208,8 @@ ExternalAtom::evaluate(const Interpretation& i,
         throw e;
     }
     
-    for (std::vector<Tuple>::const_iterator s = extoutput.begin();
-         s != extoutput.end();
+    for (std::vector<Tuple>::const_iterator s = (*answer.getTuples()).begin();
+         s != (*answer.getTuples()).end();
          s++)
     {
         //std::cout << *s << std::endl;

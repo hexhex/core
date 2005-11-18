@@ -73,6 +73,79 @@ class PluginAtom
 public:
 
     /**
+     * @brief Query class for wrapping the input of an external atom call.
+     */
+    class Query
+    {
+    public:
+        /// Ctor.
+        Query(const Interpretation&,
+              const Tuple&,
+              const Tuple&);
+
+        /**
+         * @brief Returns the input interpretation.
+         */
+        const Interpretation&
+        getInterpretation() const;
+
+        /**
+         * @brief Returns the input parameter tuple.
+         */
+        const Tuple&
+        getInputTuple() const;
+
+        /**
+         * @brief Return the input pattern.
+         */
+        const Tuple&
+        getPatternTuple() const;
+
+
+    private:
+
+        const Interpretation& interpretation;
+
+        Tuple input;
+
+        Tuple pattern;
+    };
+
+
+    /**
+     * @brief Answer class for wrapping the output of an external atom call.
+     */
+    class Answer
+    {
+    public:
+        /// Ctor.
+        Answer();
+
+        /**
+         * @brief Adds an output tuple to the answer object.
+         */
+        void
+        addTuple(const Tuple&);
+
+        /**
+         * @brief Adds a set of tuples to the output of the answer object.
+         */
+        void
+        addTuples(const std::vector<Tuple>&);
+
+        /**
+         * @brief Returns the output tuples of the answer object.
+         */
+        const std::vector<Tuple>*
+        getTuples() const;
+
+    private:
+
+        std::vector<Tuple> output;
+    };
+
+
+    /**
      * @brief Type of input parameter.
      *
      * Currently, two types of input parameters can be specified: PREDICATE and
@@ -91,7 +164,7 @@ public:
 
 protected:
 
-    /// Ctor
+    /// Ctor.
     PluginAtom()
     {
     }
@@ -111,11 +184,7 @@ public:
      * See InputType.
      */
     void
-    addInputPredicate()
-    {
-        inputType.push_back(PREDICATE);
-    }
-
+    addInputPredicate();
 
     /**
      * @brief Adds an input parameter of type CONSTANT.
@@ -123,11 +192,7 @@ public:
      * See InputType.
      */
     void
-    addInputConstant()
-    {
-        inputType.push_back(CONSTANT);
-    }
-
+    addInputConstant();
 
     /**
      * @brief Returns the input arity of the external atom.
@@ -136,48 +201,34 @@ public:
      * addInputPredicate and addInputConstant).
      */
     unsigned
-    getInputArity() const
-    {
-        return inputType.size();
-    }
-    
+    getInputArity() const;
 
     /**
      * @brief Specifies the output arity of the external Atom.
      */
     void
-    setOutputArity(unsigned arity)
-    {
-        outputSize = arity;
-    }
-
+    setOutputArity(unsigned arity);
 
     /**
      * @brief Returns the output arity of the external atom, which was specified by the
      * plugin author.
      */
     unsigned
-    getOutputArity() const
-    {
-        return outputSize;
-    }
-    
+    getOutputArity() const;
 
     /**
-     * @brief Returns all tuples of this Atom wrt. the given input.
+     * @brief Retrieve answer object according to query.
      *
-     * Input to an external atom is an interpretation together with the
-     * input parameters, which is ground at call time.
      */
     virtual void
-    retrieve(const Interpretation&, const Tuple&, std::vector<Tuple>&) throw(PluginError) = 0;
+    retrieve(const Query&, Answer&) throw(PluginError) = 0;
 
 
     /**
      * @brief Boolean query for a specific tuple wrt. the given input.
      */
-    virtual bool
-    query(const Interpretation&, const Tuple&, Tuple&) throw(PluginError) = 0;
+//    virtual bool
+//    query(const Interpretation&, const Tuple&, Tuple&) throw(PluginError) = 0;
 
 
     /**
@@ -185,12 +236,7 @@ public:
      * (starting with 0).
      */
     InputType
-    getInputType(unsigned index)
-    {
-        assert(index < inputType.size());
-
-        return inputType[index];
-    }
+    getInputType(unsigned index);
 
 
 private:

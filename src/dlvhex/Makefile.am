@@ -48,6 +48,7 @@ libtypes_la_SOURCES = \
                       Literal.cpp \
                       Interpretation.cpp \
                       PluginContainer.cpp \
+                      PluginInterface.cpp \
                       Rule.cpp \
                       ExternalAtom.cpp \
                       helper.cpp

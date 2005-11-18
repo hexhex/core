@@ -297,10 +297,10 @@ main (int argc, char *argv[])
     //
     if (count != -1)
     {
-        while(count--)
-            free(files[count]);
+        while (count--)
+            delete files[count];
 
-        free(files); 
+        delete files; 
     }
 
 
@@ -327,10 +327,10 @@ main (int argc, char *argv[])
     //
     if (count != -1)
     {
-        while(count--)
-            free(files[count]);
+        while (count--)
+            delete files[count];
 
-        free(files); 
+        delete files; 
     }
 
 
@@ -510,5 +510,5 @@ main (int argc, char *argv[])
     //
     // cleaning up:
     //
-    free(sgb);
+    delete sgb;
 }
