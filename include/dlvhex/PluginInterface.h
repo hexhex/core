@@ -134,6 +134,12 @@ public:
         addTuples(const std::vector<Tuple>&);
 
         /**
+         * @brief Replace the output of the answer object.
+         */
+        void
+        setTuples(const std::vector<Tuple>&);
+
+        /**
          * @brief Returns the output tuples of the answer object.
          */
         const std::vector<Tuple>*

@@ -187,7 +187,7 @@ ExternalAtom::evaluate(const Interpretation& i,
         }
     }
 
-    PluginAtom::Query query(inputSet, inputParms, getArguments());
+    PluginAtom::Query query(inputSet, inputParms, arguments);
 
     PluginAtom::Answer answer;
     

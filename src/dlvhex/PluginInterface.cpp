@@ -63,6 +63,11 @@ PluginAtom::Answer::addTuples(const std::vector<Tuple>& out)
     output.insert(output.end(), out.begin(), out.end());
 }
 
+void
+PluginAtom::Answer::setTuples(const std::vector<Tuple>& out)
+{
+    output = out;
+}
 
 const std::vector<Tuple>*
 PluginAtom::Answer::getTuples() const
