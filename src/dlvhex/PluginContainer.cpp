@@ -51,14 +51,14 @@ PluginContainer::importPlugin(std::string filename)
 
     if (!dlHandle)
     {
-        throw fatalError("Cannot open library " + filename + ": " + dlerror());
+        throw FatalError("Cannot open library " + filename + ": " + dlerror());
     }
 
     t_import getplugin = (t_import) dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING);
 
     if (!getplugin)
     {
-        throw fatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
+        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
     }
 
     PluginInterface::AtomFunctionMap pa;

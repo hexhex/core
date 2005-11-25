@@ -1,12 +1,12 @@
 /* -*- C++ -*- */
 
 /**
- * @file ModelGenerator.cpp
+ * @file FixpointModelGenerator.cpp
  * @author Roman Schindlauer
  * @date Tue Sep 13 18:45:17 CEST 2005
  *
- * @brief Abstract strategy class for computing the model of a program from
- * its graph.
+ * @brief Strategy class for computing the model of a subprogram by fixpoint
+ * iteration.
  *
  *
  */
@@ -83,7 +83,7 @@ FixpointModelGenerator::compute(const Program& program,
     //
     // part of currentI that is input to extatoms
     //
-    GAtomSet inputPart, oldinputPart;
+//    GAtomSet inputPart, oldinputPart;
 
     //
     // the result of each iteration
@@ -126,14 +126,14 @@ FixpointModelGenerator::compute(const Program& program,
         //
         // find part of the current I that is input to the extatom(s)
         //
-        oldinputPart = inputPart;
+//        oldinputPart = inputPart;
 
-        inputPart = currentI.getAtomSet();
+//        inputPart = currentI.getAtomSet();
 
-        if (!firstrun && (oldinputPart == inputPart))
-        {
-            break;
-        }
+//        if (!firstrun && (oldinputPart == inputPart))
+//        {
+//            break;
+//        }
 
         extresult.clear();
 
@@ -158,7 +158,7 @@ FixpointModelGenerator::compute(const Program& program,
                               (*a).getInputTerms(),
                               extresult);
             }
-            catch (generalError&)
+            catch (GeneralError&)
             {
                 throw;
             }
@@ -193,18 +193,24 @@ FixpointModelGenerator::compute(const Program& program,
         {
             Solver.callSolver(fixpointProgram);
         }
-        catch (fatalError e)
+        catch (GeneralError e)
         {
             throw e;
         }
 
-        GAtomSet *as = Solver.getNextAnswerSet();
+        GAtomSet* as = Solver.getNextAnswerSet();
 
         //
         // no answerset: no model!
         //
         if (as == NULL)
             return;
+
+        //
+        // more than one answerset: this is not a stratified component!
+        //
+        if (Solver.numAnswerSets() > 1)
+            throw FatalError("Fixpoint model generator called with unstratified program!");
 
         // std::cout << "dlv result: ";printGAtomSet(*as, std::cout, 0);std::cout << std::endl;
 

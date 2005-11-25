@@ -45,6 +45,7 @@ void
 SimpleGraphBuilder::build(Program& program, std::vector<Subgraph*>& subgraphs)
 {
     ModelGenerator* fpmg = new FixpointModelGenerator;
+//    ModelGenerator* fpmg = new OrdinaryModelGenerator;
 
     Component* c = new ProgramComponent(program, fpmg);
 

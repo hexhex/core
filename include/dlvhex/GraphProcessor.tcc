@@ -60,7 +60,7 @@ GraphProcessor<SubgraphType, ComponentType>::solve(ComponentType* c)
         {
             solve(*pi);
         }
-        catch (generalError&)
+        catch (GeneralError&)
         {
             throw;
         }
@@ -96,7 +96,7 @@ GraphProcessor<SubgraphType, ComponentType>::solve(ComponentType* c)
     {
         c->evaluate(input);
     }
-    catch (generalError&)
+    catch (GeneralError&)
     {
         throw;
     }
@@ -145,7 +145,7 @@ GraphProcessor<SubgraphType, ComponentType>::run(const GAtomSet &in)
             {
                 solve(*ci);
             }
-            catch (generalError&)
+            catch (GeneralError&)
             {
                 throw;
             }

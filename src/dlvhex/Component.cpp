@@ -118,7 +118,7 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
         {
             modelGenerator->compute(program, *ii, res);
         }
-        catch (generalError&)
+        catch (GeneralError&)
         {
             throw;
         }

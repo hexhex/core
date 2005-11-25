@@ -18,6 +18,8 @@
 
 /**
  * @brief Abstract strategy class for building a dependency graph from rules.
+ *
+ * A GraphBuilder creates a dependency graph for a program.
  */
 class GraphBuilder
 {

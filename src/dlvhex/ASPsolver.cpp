@@ -60,6 +60,14 @@ ASPsolver::getNextAnswerSet()
 }
 
 
+unsigned
+ASPsolver::numAnswerSets()
+{
+    return solverResult::answersets.size();
+}
+
+
+
 //
 // Where LEX reads its input from:
 //
@@ -100,7 +108,7 @@ ASPsolver::callSolver(std::string prg)
 //        FILE* dlvinput = mkstemp(tempfile);
 
         if (dlvinput == NULL)
-            throw fatalError("LP solver temp-file " + (std::string)tempfile + " could not be created!");
+            throw FatalError("LP solver temp-file " + (std::string)tempfile + " could not be created!");
 
         fputs(prg.c_str(), dlvinput);
         fflush(dlvinput);
@@ -128,7 +136,7 @@ ASPsolver::callSolver(std::string prg)
     
     if (solverResult::returncode == 127)
     {
-        throw fatalError("LP solver command not found!");
+        throw FatalError("LP solver command not found!");
     }
     
     //
@@ -136,7 +144,7 @@ ASPsolver::callSolver(std::string prg)
     //
     if (solverResult::returncode != 0)
     {
-        throw fatalError("LP solver aborted due to program errors!");
+        throw FatalError("LP solver aborted due to program errors!");
     }
     
     // TODO: what to do with solverResult::message?

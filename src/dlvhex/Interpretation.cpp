@@ -25,6 +25,20 @@ Interpretation::Interpretation(const GAtomSet& facts)
 }
 
 
+int
+Interpretation::operator== (const Interpretation& i2)
+{
+    return (positive == i2.positive);
+}
+
+
+int
+Interpretation::operator!= (const Interpretation& i2)
+{
+    return !(positive == i2.positive);
+}
+
+
 void
 Interpretation::clear()
 {

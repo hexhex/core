@@ -69,6 +69,12 @@ public:
     GAtomSet*
     getNextAnswerSet();
 
+    /**
+     * @brief Returns the number of answer sets of the last result.
+     */
+    unsigned
+    numAnswerSets();
+
 private:
     
     /**

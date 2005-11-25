@@ -5,7 +5,7 @@
  * @author Roman Schindlauer
  * @date Thu Jun 30 12:39:40 2005
  *
- * @brief Rule class.
+ * @brief Rule and Program class.
  *
  * Momentarily , these rules are 'real' rules, i.e., they have
  * to have a body and a head. Facts are stored somewhere else and
@@ -62,6 +62,11 @@ private:
 typedef std::vector<Rule> Rules;
 
 
+/**
+ * @brief Program class.
+ *
+ * The Program class encapsulates rules and external atoms to represent a subprogram
+ */
 class Program
 {
 public:

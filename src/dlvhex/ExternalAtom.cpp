@@ -64,7 +64,7 @@ ExternalAtom::ExternalAtom(const std::string name,
         errorstr << "Line " << line << ": "
                  << "Function " << functionName << " unknown";
 
-        throw generalError(errorstr.str());
+        throw FatalError(errorstr.str());
     }
 
     //
@@ -77,7 +77,7 @@ ExternalAtom::ExternalAtom(const std::string name,
         errorstr << "Line " << line << ": "
                  << "Arity mismatch in function " << functionName;
 
-        throw generalError(errorstr.str());
+        throw FatalError(errorstr.str());
     }
     
 
@@ -86,7 +86,7 @@ ExternalAtom::ExternalAtom(const std::string name,
         errorstr << "Line " << line << ": "
                  << "Arity mismatch in function " << functionName;
 
-        throw generalError(errorstr.str());
+        throw FatalError(errorstr.str());
     }
     
     //
@@ -101,7 +101,7 @@ ExternalAtom::ExternalAtom(const std::string name,
             errorstr << "Line " << line << ": "
                      << "Variable input arguments not allowed";
 
-            throw generalError(errorstr.str());
+            throw FatalError(errorstr.str());
         }
     }
 

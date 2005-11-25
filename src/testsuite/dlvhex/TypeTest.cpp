@@ -40,10 +40,10 @@ TermTest::tearDown()
 void
 TermTest::testTypes()
 {
-    CPPUNIT_ASSERT((*num).getType() == Term::Integer);
-    CPPUNIT_ASSERT((*sym).getType() == Term::Symbol);
-    CPPUNIT_ASSERT((*str).getType() == Term::String);
-    CPPUNIT_ASSERT((*var).getType() == Term::Variable);
+    CPPUNIT_ASSERT((*num).getType() == Term::INTEGER);
+    CPPUNIT_ASSERT((*sym).getType() == Term::SYMBOL);
+    CPPUNIT_ASSERT((*str).getType() == Term::STRING);
+    CPPUNIT_ASSERT((*var).getType() == Term::VARIABLE);
 }
 
 void
@@ -186,114 +186,88 @@ AtomTest::testSerialization()
 }
 
 
-/*
+void
+AtomTest::testGAtomSet()
+{
+    GAtomSet s1, s2;
+
+    GAtom ga1("a(b,c)");
+    GAtom ga2("xx(yy)");
+    GAtom ga3("foo(\"bar:blah\")");
+
+    s1.insert(ga1);
+    s1.insert(ga2);
+    s2.insert(ga2);
+    s2.insert(ga3);
+
+    CPPUNIT_ASSERT(s1 != s2);
+
+    s1.clear();
+
+    CPPUNIT_ASSERT(s1 != s2);
+
+    s2.clear();
+
+    //
+    // order of adding GAtoms shouldn't matter for the set
+    //
+    s1.insert(ga1);
+    s1.insert(ga2);
+    s2.insert(ga2);
+    s2.insert(ga1);
+
+    CPPUNIT_ASSERT(s1 == s2);
+
+    //
+    // no duplicates are kept in GAtomSet
+    //
+    s1.insert(ga1);
+
+    CPPUNIT_ASSERT(s1 == s2);
+
+    s1.clear();
+    s2.clear();
+
+    CPPUNIT_ASSERT(s1 == s2);
+}
+
+
 CPPUNIT_TEST_SUITE_REGISTRATION(InterpretationTest);
 
 void
-InterpretationTest::setUp()
+InterpretationTest::testConstruction()
 {
-    i = new INTERPRETATION();
+    Interpretation i1;
+
+    GAtomSet s1, s2;
+
+    GAtom ga1("a(b,c)");
+    GAtom ga2("xx(yy)");
+    GAtom ga3("foo(\"bar:blah\")");
+
+    s1.insert(ga1);
+    s1.insert(ga2);
+    s1.insert(ga3);
+
+    Interpretation i2(s1);
+
+    //
+    // i2 has three GAtoms, i1 is empty
+    //
+    CPPUNIT_ASSERT(i1 != i2);
+
+    i1.add(s1);
+
+    //
+    // both are equal now
+    //
+    CPPUNIT_ASSERT(i1 == i2);
+
+    s1.clear();
+    s2.clear();
+
+    i2.matchPredicate("xx", s1);
+
+    CPPUNIT_ASSERT(s1 != s2);
 }
 
-void
-InterpretationTest::tearDown() 
-{
-    delete i;
-}
-
-void
-InterpretationTest::testAlteration() 
-{    
-    CPPUNIT_ASSERT((*i).getSize() == 0);
-    
-    GAtomList a;
-    Tuple tl;
-    
-    a.push_back(GAtom("p(a)"));
-    a.push_back(GAtom("p(b)"));
-    
-    tl.push_back("\"a string\"");
-    tl.push_back("\"two words\"");
-    a.push_back(GAtom(tl));
-    
-    (*i).addPositive(a);
-    
-    CPPUNIT_ASSERT((*i).getSize() == 3);
-    
-    //
-    // add one duplicate and one new
-    //
-    GAtomList b;
-    b.push_back(GAtom("p(a)"));
-    b.push_back(GAtom("q(a)"));
-    
-    (*i).addPositive(b);
-    
-    CPPUNIT_ASSERT((*i).getSize() == 4);
-
-    //
-    // add single
-    //
-    (*i).addPositive(GAtom("bar(foo)"));
-    
-    CPPUNIT_ASSERT((*i).getSize() == 5);
-
-    //
-    // remove
-    //
-    (*i).removePredicate("p");  
-    CPPUNIT_ASSERT((*i).getSize() == 3);
-    
-    (*i).removePredicate("\"a string\"");  
-    CPPUNIT_ASSERT((*i).getSize() == 2);
-    
-    //
-    // replace by
-    //
-    GAtomList c;
-    (*i).replaceBy(c);
-    
-    CPPUNIT_ASSERT((*i).getSize() == 0);    
-}
-
-void
-InterpretationTest::testChecks() 
-{
-    GAtomList a;
-    Tuple tl;
-    
-    a.push_back(GAtom("p(a)"));
-    a.push_back(GAtom("p(b)"));
-    a.push_back(GAtom("q(a)"));
-    a.push_back(GAtom("r(a,b)"));
-    
-    tl.push_back("\"a string\"");
-    tl.push_back("\"two words\"");
-    a.push_back(GAtom(tl));
-    
-    (*i).addPositive(a);
-
-    GAtom g1("q(a)");
-    CPPUNIT_ASSERT((*i).isTrue(g1));
-    
-    GAtom g2("q(a,b)");
-    CPPUNIT_ASSERT(!(*i).isTrue(g2));
-    
-    //
-    // unification
-    //
-    tl.clear();
-    tl.push_back("X");
-    tl.push_back("a");
-    Atom m(tl);
-    GAtomList s;
-    (*i).matchAtom(m, s);
-    
-    CPPUNIT_ASSERT(s.size() == 2);
-    
-    s.clear();
-    (*i).matchPredicate("q", s);
-    
-    CPPUNIT_ASSERT(s.size() == 1);
-}
-*/

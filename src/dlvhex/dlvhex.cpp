@@ -37,7 +37,7 @@ const char*  WhoAmI;
 
 
 /**
- * @brief Stores the entire program.
+ * @brief Stores the rules of the program.
  */
 Program IDB;
 
@@ -47,9 +47,6 @@ Program IDB;
  */
 GAtomSet EDB;
 
-
-
-//std::vector<ExternalAtom> externalAtoms;
 
 
 /**
@@ -347,7 +344,7 @@ main (int argc, char *argv[])
         {
             PluginContainer::Instance()->importPlugin(*si);
         }
-        catch (fatalError &e)
+        catch (GeneralError &e)
         {
             std::cerr << e.getErrorMsg() << std::endl;
             
@@ -407,7 +404,7 @@ main (int argc, char *argv[])
             {
                 inputparse ();
             }
-            catch (generalError& e)
+            catch (GeneralError& e)
             {
                 std::cerr << e.getErrorMsg() << std::endl;
                 
@@ -456,7 +453,7 @@ main (int argc, char *argv[])
     {
         gp.run(EDB); 
     }
-    catch (generalError &e)
+    catch (GeneralError &e)
     {
         std::cerr << e.getErrorMsg() << std::endl;
         

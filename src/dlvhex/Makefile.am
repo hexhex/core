@@ -12,7 +12,8 @@ dlvhex_SOURCES = \
                 DependencyGraph.cpp \
                 GraphBuilder.cpp \
                 Component.cpp \
-                ModelGenerator.cpp \
+                FixpointModelGenerator.cpp \
+                OrdinaryModelGenerator.cpp \
                 GraphProcessor.cpp \
                 ProgramBuilder.cpp
 

@@ -43,7 +43,7 @@ public:
     /**
      * @brief Computes all answer sets of a given set of nodes.
      *
-     * 
+     *todo: do we need the program here, too? it's already in the initialize method! 
      */
     virtual void
     compute(const Program&,
@@ -110,6 +110,53 @@ private:
 //    std::vector<ExternalAtom*> externalAtoms;
 
 };
+
+
+
+/**
+ * @brief Concrete Strategy for computing the model by a single solver call.
+ *
+ * This strategy can be used for any type of component without external atoms
+ * (stratified or unstratified).
+ */
+class OrdinaryModelGenerator : public ModelGenerator
+{
+public:
+
+    /// Ctor
+    OrdinaryModelGenerator();
+
+
+    virtual void
+    initialize(const Program&);
+
+
+    /**
+     * Build the textual representation of the program.
+     */
+//    void
+//    serializeProgram(const Program&);
+
+
+    /**
+     * Return the text program.
+     */
+//    const std::string&
+//    getSerializedProgram() const;
+
+    /**
+     * @brief Computes models of a set of nodes by iteration.
+     */
+    virtual void
+    compute(const Program&,
+            const GAtomSet& I,
+            std::vector<GAtomSet>& models);
+
+private:
+
+
+};
+
 
 
 #endif /* _MODELGENERATOR_H */

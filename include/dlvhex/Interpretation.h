@@ -37,6 +37,20 @@ public:
 
 
     /**
+     * @brief Equality operator.
+     */
+    int
+    operator== (const Interpretation&);
+
+
+    /**
+     * @brief Inequality operator.
+     */
+    int
+    operator!= (const Interpretation&);
+
+
+    /**
      * @brief Removes all facts from the interpretation.
      */
     void
@@ -44,8 +58,8 @@ public:
 
     
     /**
-     * @brief Fill atomset with all groundatoms whose predicate unifies with
-     * pred. atomset is not cleared before!
+     * @brief Fill atomset with all groundatoms whose predicate is equal
+     * the given string. atomset is not cleared before!
      */
     void
     matchPredicate(const std::string, GAtomSet&) const;

@@ -19,7 +19,7 @@
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
-//#include "dlvhex/Interpretation.h"
+#include "dlvhex/Interpretation.h"
 
 class TermTest : public CppUnit::TestFixture
 {
@@ -57,6 +57,7 @@ private:
     CPPUNIT_TEST(testConstruction);
     CPPUNIT_TEST(testUnification);
     CPPUNIT_TEST(testSerialization);
+    CPPUNIT_TEST(testGAtomSet);
     CPPUNIT_TEST_SUITE_END();
 
     Atom *fo, *ho;
@@ -77,35 +78,27 @@ public:
 
     void
     testSerialization();
+
+    void
+    testGAtomSet();
 };
 
 
-/*
+
 class InterpretationTest : public CppUnit::TestFixture
 {
 private:
     
     CPPUNIT_TEST_SUITE(InterpretationTest);
-    CPPUNIT_TEST(testAlteration);
-    CPPUNIT_TEST(testChecks);
+    CPPUNIT_TEST(testConstruction);
     CPPUNIT_TEST_SUITE_END();
 
-    Interpretation *i;
-
 public:
-    
+  
     void
-    setUp();
-    
-    void
-    tearDown();
+    testConstruction();
 
-    void
-    testAlteration();
-
-    void
-    testChecks();
 };
-*/
+
 
 #endif /* _TYPETEST_H_ */
