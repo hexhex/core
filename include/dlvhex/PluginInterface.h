@@ -229,7 +229,7 @@ public:
      *
      */
     virtual void
-    retrieve(const Query&, Answer&) const throw(PluginError) = 0;
+    retrieve(const Query&, Answer&) throw(PluginError) = 0;
 
 
     /**
