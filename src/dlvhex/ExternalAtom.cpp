@@ -38,10 +38,10 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
 }
 
 
-ExternalAtom::ExternalAtom(std::string name,
+ExternalAtom::ExternalAtom(const std::string name,
                            const Tuple& params,
                            const Tuple& input,
-                           unsigned line)
+                           const unsigned line)
     : functionName(name),
       Atom(params),
       line(line),
@@ -116,7 +116,6 @@ ExternalAtom::ExternalAtom(std::string name,
     replacementName = ss.str();
 
     uniqueNumber++;
-
 }
 
 
@@ -134,10 +133,10 @@ ExternalAtom::getReplacementName() const
 }
 
 
-void
-ExternalAtom::getInputTerms(Tuple &it) const
+const Tuple&
+ExternalAtom::getInputTerms() const
 {
-    it = inputList;
+    return inputList;
 }
 
 
@@ -208,11 +207,11 @@ ExternalAtom::evaluate(const Interpretation& i,
         throw e;
     }
     
+
     for (std::vector<Tuple>::const_iterator s = (*answer.getTuples()).begin();
          s != (*answer.getTuples()).end();
-         s++)
+         ++s)
     {
-        //std::cout << *s << std::endl;
         result.insert(GAtom(getReplacementName(), *s));
     }
 }

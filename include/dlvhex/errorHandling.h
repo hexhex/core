@@ -1,8 +1,13 @@
-/** @file errorHandling.h
- * Declaration of exception class
- *  
- * @date 2005.07.05
+/* -*- C++ -*- */
+
+/**
+ * @file   errorHandling.h
  * @author Roman Schindlauer
+ * @date   Thu Nov 24 23:59:33 CET 2005
+ * 
+ * @brief  Exception classes.
+ * 
+ * 
  */
 
 #ifndef _ERRORHANDLING_H
@@ -10,30 +15,63 @@
 
 #include <string>
 
+/**
+ * @brief General exception class.
+ *
+ *todo: derive from anything?
+ */
 class generalError
 {
 public:
 
+    /// Ctor.
     generalError() {}
-        
-    generalError(std::string msg) : errorMsg(msg) {}
+      
+
+    /**
+     * With this constructor, the exception instance is initialized with
+     * an error string.
+     */
+    generalError(const std::string msg)
+        : errorMsg(msg)
+    {
+    }
     
+
+    /**
+     * Returns error string.
+     */
     std::string
-    getErrorMsg() const { return errorMsg; }
+    getErrorMsg() const
+    {
+        return errorMsg;
+    }
         
 protected:
         
     std::string errorMsg;
 };
 
+
+/**
+ * Severe Error, supposed to be followed by program termination.
+ */
 class fatalError : public generalError
 {
 public:
     
-    fatalError(std::string msg) : generalError(msg) {}
+    fatalError(const std::string msg)
+        : generalError(msg)
+    {
+    }
 
 };
 
+
+/**
+ * A problem is an error that does not necessarily cause the program
+ * to stop. Its message might be dumped as a warning.
+ */
 class Problem : public generalError
 {
 public:
@@ -42,6 +80,10 @@ public:
 
 };
 
+
+/**
+ * A plugin error is thrown by plugins and catched inside dlvhex.
+ */
 class PluginError : public generalError
 {
 public:
@@ -52,11 +94,11 @@ public:
     }
 
     void
-    setContext(std::string atomname)
+    setContext(const std::string atomname)
     {
         errorMsg = "Plugin Error at Atom " + atomname + ": " + errorMsg;
     }
 
 };
 
-#endif // _ERRORHANDLING_H
+#endif /* _ERRORHANDLING_H */

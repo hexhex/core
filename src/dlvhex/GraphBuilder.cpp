@@ -11,27 +11,55 @@
  */
 
 #include "dlvhex/GraphBuilder.h"
+#include "dlvhex/Component.h"
 
 
 void
-GraphBuilder::buildNodes(Rules &program, std::vector<Node> &nodes)
+GraphBuilder::createNodes(Rules& program)
 {
+    //
+    // each rule head is a node
+    //
     for (Rules::iterator r = program.begin();
          r != program.end();
          r++)
     {
-        nodes.push_back(Node(&(*r)));
-    }
+        nodes.push_back(RuleNode(&(*r)));
 
-    //
-    // TODO: dependencies!
-    //
+        //
+        // and each external atom is a node
+        // (collect them from each rule)
+        //
+        /*
+        for (std::vector<ExternalAtom*>::const_iterator e = (*r).getExternalAtoms().begin();
+            e != (*r).getExternalAtoms().end();
+            e++)
+        {
+            nodes.push_back(ExternalNode(*e));
+        }*/
+    }
+}
+
+
+void
+SimpleGraphBuilder::build(Program& program, std::vector<Subgraph*>& subgraphs)
+{
+    ModelGenerator* fpmg = new FixpointModelGenerator;
+
+    Component* c = new ProgramComponent(program, fpmg);
+
+    Subgraph* sg = new Subgraph;
+
+    sg->addComponent(c);
+
+    subgraphs.push_back(sg);
 }
 
 
 SimpleGraphBuilder::SimpleGraphBuilder()
 { }
 
+/*
 void
 SimpleGraphBuilder::findComponents(std::vector<Node> &nodes,
                                    std::vector<Component> &components)
@@ -48,4 +76,6 @@ SimpleGraphBuilder::findComponents(std::vector<Node> &nodes,
         c.addNode(&(*n));
     
     components.push_back(c);
+
 }
+*/

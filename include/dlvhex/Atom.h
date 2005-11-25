@@ -21,6 +21,8 @@
 
 /**
  * @brief An Atom has a predicate and (if not propositional) an optional list of arguments.
+ *
+ * Strongly negated atoms simply have a different predicate symbol.
  */
 class Atom
 {
@@ -29,7 +31,7 @@ public:
     /**
      * Type of the atom.
      */
-    enum Type { INTERNAL, EXTERNAL };
+    typedef enum { INTERNAL, EXTERNAL } Type;
 
     /**
      * Default constructor.
@@ -39,12 +41,13 @@ public:
     /**
      * Destructor.
      */
-    virtual ~Atom();
+    virtual
+    ~Atom();
 
     /**
      * Copy constructor.
      */
-    Atom(const Atom &atom2);
+    Atom(const Atom&);
 
     /**
      * Constructs an atom from a string. This can be:
@@ -52,14 +55,14 @@ public:
      * - A first order atom, like 'p(X)' or 'q(a,b,Z)'.
      * An atom constructed this way is always a first-order atom.
      */
-    Atom(std::string atom);
+    Atom(const std::string);
 
     /**
      * Constructs an atom from a predicate string and a tuple. An atom
      * constructed this way is always a first-order atom (an assertion fails,
      * if pred is not a constant).
      */
-    Atom(std::string pred, Tuple arg);
+    Atom(const std::string, const Tuple&);
 
     /**
      * Constructs an atom from a list of arguments. This represents a higher-order
@@ -67,7 +70,7 @@ public:
      * The first element of 'arg' is considered to be the predicate - this is
      * important for the usage of getPredicate() and getArguments().
      */
-    Atom(Tuple arg);
+    Atom(const Tuple&);
 
     /**
      * Returns the predicate of the atom.
@@ -88,7 +91,7 @@ public:
      * the predicate symbol of the atom.
      */
     Term
-    getArgument(unsigned index) const;
+    getArgument(const unsigned index) const;
 
     /**
      * Returns the arity of an atom (number of arguments).
@@ -103,13 +106,13 @@ public:
      * (including the predicate symbols) unify pairwise.
      */
     bool
-    unifiesWith(const Atom &atom2) const;
+    unifiesWith(const Atom&) const;
 
     /**
      * @brief Prints the atom.
      */
     virtual std::ostream&
-    print(std::ostream &stream, const bool ho) const;
+    print(std::ostream&, const bool) const;
 
     /**
      * Clone function. this function returns a pointer to a newly created Atom
@@ -144,7 +147,7 @@ protected:
  * the first-order notation.
  */
 std::ostream&
-operator<< (std::ostream &out, const Atom &atom);
+operator<< (std::ostream&, const Atom&);
 
 
 
@@ -160,29 +163,23 @@ public:
      */
     GAtom();
 
-    GAtom(const Atom &);
+    GAtom(const Atom&);
 
-    GAtom(std::string);
+    GAtom(const std::string);
 	
-    GAtom(std::string, Term);
+//    GAtom(std::string, Term);
 
-    GAtom(std::string, Tuple);
+    GAtom(const std::string, const Tuple&);
 
-    GAtom(Tuple);
+    GAtom(const Tuple&);
 
     bool
-    operator== (const GAtom &gatom2) const;
+    operator== (const GAtom& gatom2) const;
 
     int
-    operator< (const GAtom &gatom2) const;
+    operator< (const GAtom& gatom2) const;
 };
 
-
-
-/**
- * @brief Set (list) of ground atoms.
- */
-//typedef std::list<GAtom> GAtomList;
 
 
 /**
@@ -195,7 +192,7 @@ typedef std::set<GAtom> GAtomSet;
  * This operator should only be used for dumping the output.
  */
 std::ostream&
-operator<< (std::ostream &out, const GAtomSet &groundatom);
+operator<< (std::ostream& out, const GAtomSet& groundatom);
 
 
 //
@@ -205,18 +202,12 @@ operator<< (std::ostream &out, const GAtomSet &groundatom);
 // we will see what turns out to be more practical
 //
 
-//typedef GAtomSet Interpretation;
-
-/*
-void
-matchPredicate(const GAtomSet &g,
-               const std::string pred,
-               GAtomSet &atomset);
-*/
 
 void
-printGAtomSet(const GAtomSet &g,
+printGAtomSet(const GAtomSet& g,
               std::ostream& stream,
               const bool ho);
               
+
 #endif /* _ATOM_H */
+

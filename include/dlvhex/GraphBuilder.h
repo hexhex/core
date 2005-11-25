@@ -26,21 +26,27 @@ public:
     ~GraphBuilder()
     { }
 
+    void
+    createNodes(Rules& program);
+
+    
     /**
      * @brief Creates nodes and their dependencies from rules.
      */
     virtual void
-    buildNodes(Rules &program, std::vector<Node> &nodes);
+    build(Program& program, std::vector<Subgraph*>& subgraphs) = 0;
 
     /**
      * @brief Finds components from a set of nodes.
      */
-    virtual void
-    findComponents(std::vector<Node> &nodes,
-                   std::vector<Component> &components) = 0;
+//    virtual void
+//    findComponents(std::vector<Node> &nodes,
+//                   std::vector<Component> &components) = 0;
 
 
 protected:
+
+    std::vector<Node> nodes;
 
     GraphBuilder()
     { }
@@ -53,8 +59,10 @@ public:
     SimpleGraphBuilder();
 
     virtual void
-    findComponents(std::vector<Node> &nodes,
-                   std::vector<Component> &components);
+    build(Program& program, std::vector<Subgraph*>& subgraphs);
+//    virtual void
+//    findComponents(std::vector<Node> &nodes,
+//                   std::vector<Component> &components);
 };
 
 

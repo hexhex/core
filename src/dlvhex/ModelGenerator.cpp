@@ -6,7 +6,7 @@
  * @date Tue Sep 13 18:45:17 CEST 2005
  *
  * @brief Abstract strategy class for computing the model of a program from
- * it's graph.
+ * its graph.
  *
  *
  */
@@ -17,32 +17,24 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/Interpretation.h"
 
-/*
-void
-ModelGenerator::getLeastModel(const std::string &program,
-                              const Interpretation &facts,
-                              GAtomSet &result)
-{
-}
-*/
 
 
 FixpointModelGenerator::FixpointModelGenerator()
-{ }
+{
+    serializedProgram.clear();
+}
+
 
 void
-FixpointModelGenerator::computeModels(const std::vector<Component> &components,
-                                      const GAtomSet &I,
-                                      std::vector<GAtomSet> &models)
+FixpointModelGenerator::initialize(const Program& p)
 {
-    models.clear();
+    serializeProgram(p);
+}
 
-    ASPsolver Solver;
-    
-    std::string IDBprogram, EDBprogram, program;
 
-    std::vector<ExternalAtom*> extatoms;
-
+void
+FixpointModelGenerator::serializeProgram(const Program& p)
+{
     //
     // make a textual representation of the components' rules
     // (with external atoms replaced)
@@ -51,21 +43,37 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
     //
     // the rules will be in higher-order-syntax, if dlvhex was called in ho-mode
     //
+
+    ///todo: remove modelgenerator instantiation from here. should be somewhere outside!
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
 
-    //
-    // build IDB-rules (this is only needed once) and find all external atoms
-    //
-    for (std::vector<Component>::const_iterator c = components.begin();
-         c != components.end();
-         c++)
-    {
-        (*c).buildProgram(&dlvprogram);
+    dlvprogram.buildProgram(p);
 
-        (*c).getExtAtoms(extatoms);
-    }
+    serializedProgram = dlvprogram.getString();
+}
 
-    IDBprogram = dlvprogram.getString();
+
+const std::string&
+FixpointModelGenerator::getSerializedProgram() const
+{
+    return serializedProgram;
+}
+
+
+void
+FixpointModelGenerator::compute(const Program& program,
+                                const GAtomSet &I,
+                                std::vector<GAtomSet> &models)
+{
+    models.clear();
+
+    ASPsolver Solver;
+    
+    std::string EDBprogram, fixpointProgram;
+
+    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+
+    std::vector<ExternalAtom> extatoms(program.getExternalAtoms());
 
     //
     // we need an interpretation for the iteration, which starts with I
@@ -86,18 +94,7 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
 
     Tuple it;
 
-    std::vector<Term> inputTerms;
-    //
-    // collect all the input predicate names
-    //
-    for (std::vector<ExternalAtom*>::const_iterator a = extatoms.begin();
-         a != extatoms.end();
-         a++)
-    {
-        (**a).getInputTerms(it);
 
-        inputTerms.insert(inputTerms.begin(), it.begin(), it.end());
-    }
 
     //
     // result of the external atoms
@@ -132,21 +129,6 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         oldinputPart = inputPart;
 
         inputPart = currentI.getAtomSet();
-        /*
-         * TODO: as input part, we take the entire I - can we cut down this somehow?
-
-        inputPart.clear();
-
-        for (std::vector<Term>::const_iterator t = inputTerms.begin();
-             t != inputTerms.end();
-             t++)
-        {
-            currentI.matchPredicate((*t).getString(), inputPart);
-        }
-
-        */
-
-        //std::cout << "input I: ";printGAtomSet(inputPart, std::cout, 0);std::cout << std::endl;
 
         if (!firstrun && (oldinputPart == inputPart))
         {
@@ -158,7 +140,7 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         //
         // evaluating all external atoms wrt. the current interpretation
         //
-        for (std::vector<ExternalAtom*>::const_iterator a = extatoms.begin();
+        for (std::vector<ExternalAtom>::const_iterator a = extatoms.begin();
              a != extatoms.end();
              a++)
         {
@@ -170,12 +152,11 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
             // now: take input list as it is.
             //
 
-            (**a).getInputTerms(extInputParms);
-
             try
             {
-                // std::cout << "currenti: " << currentI << std::endl;
-                (**a).evaluate(currentI, extInputParms, extresult);
+                (*a).evaluate(currentI,
+                              (*a).getInputTerms(),
+                              extresult);
             }
             catch (generalError&)
             {
@@ -202,13 +183,15 @@ FixpointModelGenerator::computeModels(const std::vector<Component> &components,
         //
         // put everything together: rules, current facts, external facts
         //
-        program = IDBprogram + dlvprogram.getString() + externalfacts.getString();
+        fixpointProgram = getSerializedProgram() + 
+                          dlvprogram.getString() + 
+                          externalfacts.getString();
 
         //std::cout << "solver input: " << program << std::endl;
 
         try
         {
-            Solver.callSolver(program);
+            Solver.callSolver(fixpointProgram);
         }
         catch (fatalError e)
         {

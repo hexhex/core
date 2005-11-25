@@ -98,7 +98,7 @@ PluginAtom::getInputArity() const
 
 
 void
-PluginAtom::setOutputArity(unsigned arity)
+PluginAtom::setOutputArity(const unsigned arity)
 {
     outputSize = arity;
 }
@@ -112,7 +112,7 @@ PluginAtom::getOutputArity() const
 
 
 PluginAtom::InputType
-PluginAtom::getInputType(unsigned index)
+PluginAtom::getInputType(const unsigned index) const
 {
     assert(index < inputType.size());
 

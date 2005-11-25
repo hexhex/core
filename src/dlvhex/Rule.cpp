@@ -19,9 +19,10 @@
 
 
  
-Rule::Rule(const Atom &head, const std::vector<Literal> &b)
+Rule::Rule(const Atom& head, const std::vector<Literal>& b)
     : head(head)
 {
+    ///todo: initialize body?
     body = b;
 }
 
@@ -52,6 +53,7 @@ Rule::getBody() const
     return &body;
 }
 
+
 /*
 ostream& operator<< (ostream& out, const Rule& rule)
 {
@@ -75,3 +77,61 @@ ostream& operator<< (ostream& out, const Rule& rule)
     return out;
 }
 */
+
+
+Program::Program()
+{
+}
+
+Program::Program(Rules& r)
+{
+    setRules(r);
+}
+
+
+void
+Program::setRules(const Rules& r)
+{
+    for (Rules::const_iterator ri = r.begin();
+         ri != r.end();
+         ++ri)
+    {
+        addRule(*ri);
+    }
+}
+
+
+void
+Program::addRule(const Rule& r)
+{
+    rules.push_back(r);
+
+    for (std::vector<Literal>::const_iterator li = r.getBody()->begin();
+         li != r.getBody()->end();
+         ++li)
+    {
+        if ((*li).getAtom()->getType() == Atom::EXTERNAL)
+            externalAtoms.push_back(*(ExternalAtom*)(*li).getAtom());
+    }
+}
+
+
+void
+Program::setExternalAtoms(std::vector<ExternalAtom>& ex)
+{
+    externalAtoms = ex;
+}
+
+
+const Rules&
+Program::getRules() const
+{
+    return rules;
+}
+
+
+const std::vector<ExternalAtom>&
+Program::getExternalAtoms() const
+{
+    return externalAtoms;
+}

@@ -16,41 +16,76 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/ExternalAtom.h"
 
+
+/**
+ * @brief Literal class.
+ *
+ * A literal is the constituting part of a rule body. It can be an atom or a 
+ * weakly negated Atom. The atom of a literal can both be
+ * an ordinary as well as an external atom.
+ */
 class Literal
 {
 public:
+
     /// Ctor
     Literal();
+
 
     /// Dtor
     ~Literal();
 
+
     /**
      * @brief Copy constructor.
      */
-    Literal(const Literal &literal2);
+    Literal(const Literal&);
 
-    Literal(const Atom *atom, bool naf = false);
 
-    Literal(const ExternalAtom *atom, bool naf = false);
+    /**
+     * @brief Construct a literal from an atom, possibly weakly negated.
+     */
+    Literal(const Atom&, bool naf = false);
 
+
+    /**
+     * @brief Construct a literal from an external atom, possibly weakly negated.
+     */
+    Literal(const ExternalAtom&, bool naf = false);
+
+
+    /**
+     * @brief returns a pointer to the atom of the literal.
+     */
     Atom*
     getAtom() const;
 
+
+    /**
+     * @brief returns true if the literal's atom is weakly negated, otherwise false.
+     */
     bool
     isNAF() const;
 
+
+    /**
+     * @brief Serializes the literal.
+     *
+     * If the second argument is set to true, the literal is serialized in higher
+     * order syntax, i.e., with its predicate symbol as an argument and a generic
+     * new predicate symbol according to the number of its arguments.
+     */
     std::ostream&
-    print(std::ostream &stream, const bool ho) const;
+    print(std::ostream&, const bool) const;
 
 private:
 
-    Atom *atom;
+    Atom* atom;
 
     bool isWeaklyNegated;
     
 };
 
-//ostream& operator<< (ostream& out, const Literal& literal);
 
 #endif /* _LITERAL_H */
+

@@ -1,8 +1,13 @@
-/** @file helper.h
- * Declaration of helper functions
- *  
- * @date 2005.07.09
+/* -*- C++ -*- */
+
+/**
+ * @file   helper.h
  * @author Roman Schindlauer
+ * @date   Thu Nov 24 23:59:33 CET 2005
+ * 
+ * @brief  Declaration of helper functions.
+ * 
+ * 
  */
 
 #ifndef _HELPER_H
@@ -11,11 +16,25 @@
 #include <string>
 #include <vector>
 
+
+/**
+ * The helper functions are kept in a namespace in order to keep global stuff
+ * together.
+ */
 namespace helper
 {
-    std::vector<std::string> stringExplode(const std::string &inString, const std::string &separator);
+    /**
+     * Explodes a string by a specified delimiter string.
+     */
+    std::vector<std::string>
+    stringExplode(const std::string&, const std::string&);
     
-    void escapeQuotes(std::string &str);
+
+    /**
+     * Escapes quotes in a string (e.g. to use it for shell commands).
+     */
+    void
+    escapeQuotes(std::string &str);
 }
 
-#endif // _HELPER_H
+#endif /* _HELPER_H */

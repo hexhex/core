@@ -55,12 +55,14 @@ protected:
     { }
 
 public:
+
     virtual
     ~PluginRewriter()
     { }
 
     virtual void
     rewrite() = 0;
+
 };
 
 
@@ -213,7 +215,7 @@ public:
      * @brief Specifies the output arity of the external Atom.
      */
     void
-    setOutputArity(unsigned arity);
+    setOutputArity(const unsigned arity);
 
     /**
      * @brief Returns the output arity of the external atom, which was specified by the
@@ -227,7 +229,7 @@ public:
      *
      */
     virtual void
-    retrieve(const Query&, Answer&) throw(PluginError) = 0;
+    retrieve(const Query&, Answer&) const throw(PluginError) = 0;
 
 
     /**
@@ -242,7 +244,7 @@ public:
      * (starting with 0).
      */
     InputType
-    getInputType(unsigned index);
+    getInputType(const unsigned index) const;
 
 
 private:

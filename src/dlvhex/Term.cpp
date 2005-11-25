@@ -17,12 +17,12 @@
 
 
 Term::Term()
-    : type(NullConst), constantString(names.end()), variableString("")
+    : type(NULLCONST), constantString(names.end()), variableString("")
 {
 }
 
 
-Term::Term(const Term &term2)
+Term::Term(const Term& term2)
     : type(term2.type)
 {
     if (this != &term2)
@@ -44,19 +44,15 @@ Term::Term(const std::string name, bool isString)
 {
     if (name[0] == '\"')
     {
-        //constantString = names.insert(names.end(), name);
         constantString = names.insert(name.substr(1, name.length() - 2));
-        //constantString = name;
-        type = String;
+        type = STRING;
     }
     else
     {
         if (isString)
         {
-            //constantString = "\"" + name + "\"";
-            //constantString = names.insert(names.end(), "\"" + name + "\"");
             constantString = names.insert(name);
-            type = String;
+            type = STRING;
         }
         else
         {
@@ -66,36 +62,32 @@ Term::Term(const std::string name, bool isString)
             if (isupper(name[0]))
             {
                 variableString = name;
-                type = Variable;
+                type = VARIABLE;
             }
             else
             {
-                //constantString = name;
                 constantString = names.insert(name);
-                type = Symbol;
+                type = SYMBOL;
             }
         }
     }
 }
+
 
 Term::Term(const char* name, bool isString)
 {
     if (name[0] == '\"')
     {
-        //constantString = (std::string)name;
-        //constantString = names.insert(names.end(), (std::string)name);
         std::string n(name);
         constantString = names.insert(n.substr(1, n.length() - 2));
-        type = String;
+        type = STRING;
     }
     else
     {
         if (isString)
         {
-            //constantString = "\"" + (std::string)name + "\"";
-            //constantString = names.insert(names.end(), "\"" + (std::string)name + "\"");
             constantString = names.insert((std::string)name);
-            type = String;
+            type = STRING;
         }
         else
         {
@@ -105,62 +97,68 @@ Term::Term(const char* name, bool isString)
             if (isupper(name[0]))
             {
                 variableString = name;
-                type = Variable;
+                type = VARIABLE;
             }
             else
             {
-                //constantString = name;
                 constantString = names.insert((std::string)name);
-                type = Symbol;
+                type = SYMBOL;
             }
         }
     }
 }
 
-Term::Term(const int &num)
-    : type(Integer), constantInteger(num)
+
+Term::Term(const int& num)
+    : type(INTEGER), constantInteger(num)
 {
 }
+
 
 Term::Type Term::getType() const
 {
     return type;
 } 
 
+
 bool
 Term::isInt() const
 {
-    return type == Integer;
+    return type == INTEGER;
 }
+
 
 bool
 Term::isString() const
 {
-    return type == String;
+    return type == STRING;
 }
+
 
 bool
 Term::isSymbol() const
 {
-    return type == Symbol;
+    return type == SYMBOL;
 }
+
 
 bool
 Term::isVariable() const
 {
-    return type == Variable;
+    return type == VARIABLE;
 }
+
 
 std::string
 Term::getString() const
 {
-    assert((type == String) || (type == Symbol));
+    assert((type == STRING) || (type == SYMBOL));
 
     assert(constantString != names.end());
 
     std::string ret(*constantString);
 
-    if (type == String)
+    if (type == STRING)
     {
         ret = "\"" + (std::string)ret + "\"";
     }
@@ -168,44 +166,45 @@ Term::getString() const
     return ret;
 }
 
+
 std::string
 Term::getUnquotedString() const
 {
-    assert((type == String) || (type == Symbol));
+    assert((type == STRING) || (type == SYMBOL));
     
     assert(constantString != names.end());
     
-//    if (type == String)
-//        return (*constantString).substr(1, (*constantString).length() - 2);
-//    else
-        return *constantString;
+    return *constantString;
 }
+
 
 int
 Term::getInt() const
 {
-    assert(type == Integer);
+    assert(type == INTEGER);
 
     return constantInteger;
 }
 
+
 std::string
 Term::getVariable() const
 {
-    assert(type == Variable);
+    assert(type == VARIABLE);
     
     return variableString;
 }
 
+
 bool
 Term::isNull() const
 {
-    return type == NullConst;
+    return type == NULLCONST;
 }
 
 
 bool
-Term::unifiesWith(const Term &term2) const
+Term::unifiesWith(const Term& term2) const
 {
     //
     // If at least one of the is variable, they unify
@@ -234,7 +233,7 @@ Term::unifiesWith(const Term &term2) const
 
 
 Term&
-Term::operator= (const Term &term2)
+Term::operator= (const Term& term2)
 {
     if( this != &term2 )
     {
@@ -246,28 +245,29 @@ Term::operator= (const Term &term2)
     return *this;
 }
 
+
 int
-Term::operator!= (const Term &term2) const
+Term::operator!= (const Term& term2) const
 {
     if( type != term2.type )
         return (int)type - (int)term2.type;
 
     switch (type)
     {
-        case Integer:
+        case INTEGER:
             return constantInteger - term2.getInt();
         
-        case Symbol:
+        case SYMBOL:
             assert(constantString != names.end());
     
             return (*constantString).compare(term2.getString());
         
-        case String:
+        case STRING:
             assert(constantString != names.end());
 
             return (*constantString).compare(term2.getUnquotedString());
         
-        case Variable:
+        case VARIABLE:
             //
             // TODO:
             // when are two variables unequal???        
@@ -280,40 +280,46 @@ Term::operator!= (const Term &term2) const
     }
 }
 
+
 bool
-Term::operator== (const Term &term2) const
+Term::operator== (const Term& term2) const
 {
     return ( *this != term2 ) == 0;
 }
 
+
 bool
-Term::operator== (const std::string &str) const
+Term::operator== (const std::string& str) const
 {
     Term t2(str);
     
     return *this == t2;
 }
 
+
 bool
-Term::operator< (const Term &term2) const
+Term::operator< (const Term& term2) const
 {
     return ( *this != term2 ) < 0;
 }
 
+
 bool
-Term::operator<= (const Term &term2) const
+Term::operator<= (const Term& term2) const
 {
     return ( *this != term2 ) <= 0;
 }
 
+
 bool
-Term::operator> (const Term &term2) const
+Term::operator> (const Term& term2) const
 {
     return ( *this != term2 ) > 0;
 }
 
+
 bool
-Term::operator>= (const Term &term2) const
+Term::operator>= (const Term& term2) const
 {
     return ( *this != term2 ) >= 0;
 }
@@ -325,28 +331,29 @@ Term::getNamesTable()
     return Term::names;
 }
 
+
 std::ostream&
-operator<< (std::ostream &out, const Term &term)
+operator<< (std::ostream& out, const Term& term)
 {
     switch (term.getType())
     {
-        case Term::Integer:
+        case Term::INTEGER:
             out << term.getInt();
             break;
         
-        case Term::Symbol:
+        case Term::SYMBOL:
             out << term.getString();
             break;
         
-        case Term::String:
+        case Term::STRING:
             out << term.getString();
             break;
         
-        case Term::Variable:
+        case Term::VARIABLE:
             out << term.getVariable();
             break;
         
-        case Term::NullConst:
+        case Term::NULLCONST:
             out << "_";
             break;
         
@@ -358,8 +365,9 @@ operator<< (std::ostream &out, const Term &term)
     return out;
 }
 
+
 std::ostream&
-operator<< (std::ostream &out, const Tuple &tuple)
+operator<< (std::ostream& out, const Tuple& tuple)
 {
     for (unsigned i = 0; i < tuple.size(); i++)
     {
@@ -372,6 +380,11 @@ operator<< (std::ostream &out, const Tuple &tuple)
     return out;
 }
 
+
+//
+// initializing static members
+//
 std::vector<std::pair<std::string, std::string> > Term::namespaces;
 
 NamesTable<std::string> Term::names;
+

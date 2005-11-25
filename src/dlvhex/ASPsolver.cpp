@@ -55,8 +55,8 @@ ASPsolver::getNextAnswerSet()
 {
     if (answerSetIndex != solverResult::answersets.end())
         return &(*(answerSetIndex++));
-    else
-        return NULL;
+
+    return NULL;
 }
 
 

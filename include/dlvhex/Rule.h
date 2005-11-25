@@ -44,11 +44,11 @@ public:
     //bool
     //hasBody() const;
 
-    const Atom
-    *getHead() const;
+    const Atom*
+    getHead() const;
 
-    const std::vector<Literal>
-    *getBody() const;
+    const std::vector<Literal>*
+    getBody() const;
 
 private:
 
@@ -61,6 +61,36 @@ private:
 
 typedef std::vector<Rule> Rules;
 
+
+class Program
+{
+public:
+
+    Program();
+
+    Program(Rules&);
+
+void
+    setRules(const Rules&);
+
+    void
+    addRule(const Rule&);
+
+    void
+    setExternalAtoms(std::vector<ExternalAtom>&);
+
+    const Rules&
+    getRules() const;
+
+    const std::vector<ExternalAtom>&
+    getExternalAtoms() const;
+
+private:
+
+    Rules rules;
+
+    std::vector<ExternalAtom> externalAtoms;
+};
 
 
 #endif /* _RULE_H */

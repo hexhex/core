@@ -40,7 +40,7 @@ public:
      * @param rule
      */
     virtual void
-    buildRule(const Rule &rule) = 0;
+    buildRule(const Rule& rule) = 0;
 
     std::string
     getString();
@@ -68,19 +68,25 @@ public:
      * @brief Build rule for DLV.
      */
     virtual void
-    buildRule(const Rule &);
+    buildRule(const Rule&);
 
     /**
      * @brief Build facts for DLV.
      */
     virtual void
-    buildFacts(const GAtomSet &);
+    buildFacts(const GAtomSet&);
 
     /**
      * @brief Build facts for DLV from an interpretation.
      */
     virtual void
-    buildFacts(const Interpretation &);
+    buildFacts(const Interpretation&);
+
+    /**
+     * @brief Build program for DLV from set of rules.
+     */
+    virtual void
+    buildProgram(const Program&);
 
 private:
     /**

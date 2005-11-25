@@ -23,23 +23,29 @@
 
 DependencyGraph::DependencyGraph()
 {
+    currentSubgraph = subgraphs.begin();
 }
 
 
-DependencyGraph::DependencyGraph(Rules &program,
-                                 GraphBuilder *gb)
+DependencyGraph::DependencyGraph(Program& program,
+                                 GraphBuilder* gb)
 {
-    for (Rules::iterator r = program.begin();
-         r != program.end();
-         r++)
-    {
-        nodes.push_back(Node(&(*r)));
-    }
+    gb->build(program, subgraphs);
+
+    currentSubgraph = subgraphs.begin();
+
     
-    // FindDependencies();
+//    (*gb).findComponents(nodes, components);
+/*    
+    StratifiedComponent* c = new StratifiedComponent;
     
-    (*gb).findComponents(nodes, components);
-    //FindComponentsFromNodes();
+    for (std::vector<Node>::iterator n = nodes.begin();
+         n != nodes.end();
+         n++)
+        (*c).addRuleNode((RuleNode*)&(*n));
+    
+    components.push_back(c);
+    */
 }
 
 
@@ -61,10 +67,54 @@ void DependencyGraph::FindComponentsFromNodes()
 }
 */
 
-
-std::vector<Cluster>*
-DependencyGraph::getClusters()
+Subgraph*
+DependencyGraph::getNextSubgraph()
 {
-    return &clusters;
+    if (currentSubgraph != subgraphs.end())
+        return *(currentSubgraph++);
+
+    return NULL;
 }
 
+
+std::vector<Component*>
+DependencyGraph::getPredecessors(Component* c) const
+{
+    std::vector<Component*> foo;
+
+    return foo;
+}
+
+
+std::vector<Component*>
+DependencyGraph::getComponents(const Subgraph* sg) const
+{
+    return sg->getComponents();
+}
+
+
+DependencyGraph::~DependencyGraph()
+{
+    for (std::vector<Subgraph*>::const_iterator si = subgraphs.begin();
+         si != subgraphs.end();
+         ++si)
+    {
+        delete *si;
+    }
+}
+
+/*
+DependencyGraph::
+{
+}
+
+
+DependencyGraph::
+{
+}
+
+
+DependencyGraph::
+{
+}
+*/

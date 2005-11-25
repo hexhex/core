@@ -16,27 +16,69 @@
 
 
 #include "dlvhex/Rule.h"
-#include "dlvhex/ProgramBuilder.h"
+#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/ModelGenerator.h"
 
 
 /**
- * @brief Node class.
+ * @brief Abstract Node class.
  *
- * A node is the smallest entity of the dependency graph. It consists of
- * a single (head) literal and contains also a reference to the respective
- * rule body.
+ * A node is the smallest entity of the dependency graph.
  */
 class Node
 {
 public:
     
-    /// Ctor
+    typedef enum { RULE, EXTATOM } NodeType;
+
+protected:
+        
+    /// Ctor.
     Node();
+
+    unsigned id;
+
+    NodeType type;
+
+public:
+    
+    /**
+     * @brief Returns the node's type.
+     */
+    NodeType
+    getType() const;
+
+    /**
+     * @brief Returns the node's index.
+     */
+    unsigned
+    getId() const;
+
+private:
+
+    static unsigned nodecount;
+
+};
+
+unsigned Node::nodecount = 0;
+
+/**
+ * @brief Node that represents a rule.
+ *
+ * A rule node consists of a single (head) literal and contains also
+ * a reference to the respective rule body.
+ */
+class RuleNode : public Node
+{
+public:
+    
+    /// Ctor.
+    RuleNode();
 
     /**
      * @brief Initializing the node with a rule.
      */
-    Node(Rule *rule);
+    RuleNode(Rule *rule);
 
     /**
      * @brief Returns the body of the rule that belongs to this node.
@@ -54,48 +96,164 @@ private:
 
 
 /**
+ * @brief Node that represents an external atom.
+ */
+class ExternalNode : public Node
+{
+public:
+    
+    /// Ctor
+    ExternalNode();
+
+    /**
+     * @brief Initializing the node with an external atom.
+     */
+    ExternalNode(ExternalAtom *atom);
+
+    /**
+     * @brief Returns the external atom.
+     */
+    const ExternalAtom*
+    getExternalAtom() const;
+
+private:
+
+    ExternalAtom* externalAtom;
+};
+
+
+/**
  * @brief Component class.
  *
- * A component contains a set of nodes.
+ * A component consists a set of nodes in the dependency graph of the
+ * program and thus corresponds to a subprogram.
  */
 class Component
 {
 public:
 
+    /// Dtor.
+    virtual
+    ~Component();
+
+    /**
+     * @brief Computes the Model(s) of the component.
+     */
+    virtual void
+    evaluate(std::vector<GAtomSet>&) = 0;
+
+    unsigned
+    numResults() const;
+
+    const std::vector<GAtomSet>&
+    getResult() const;
+
+    bool
+    wasEvaluated() const;
+    
+protected:
+    
     /// Ctor.
     Component();
+
+    bool evaluated;
+
+    std::vector<GAtomSet> result;
+};
+
+
+/**
+ * @brief A ProgramComponent is a subprogram consisting of a set of hex-rules.
+ */
+class ProgramComponent : public Component
+{
+public:
+
+    /// Ctor.
+    //ProgramComponent();
+
+    ProgramComponent(Program&, ModelGenerator*);
+
+    /// Dtor.
+    ~ProgramComponent();
+
+    /**
+     * @brief Computes the model(s) of the subprogram of this component.
+     */
+    virtual void
+    evaluate(std::vector<GAtomSet>&);
+
 
     /**
      * @brief Adds a node pointer to the component.
      */
-    void
-    addNode(Node *n);
+//    void
+//    addRuleNode(RuleNode *rn);
 
-    /**
-     * @brief Converts the component's rules into a textual representation
-     * by using a specific subclass of ProgramBuilder.
-     */
-    void
-    buildProgram(ProgramBuilder *builder) const;
-
-    /**
-     * @brief Returns the external Atoms that occur in this component.
-     */
-    void
-    getExtAtoms(std::vector<ExternalAtom*> &extatoms) const;
+protected:
     
-private:
+    /**
+     * @brief Model Generator that suits this particular component type
+     */
+    ModelGenerator* modelGenerator;
     
     /**
      * @brief Nodes of this component.
      */
-    std::vector<Node*> nodes;
+  //  std::vector<RuleNode*> ruleNodes;
+    Program program;
+};
+
+
+/**
+ * @brief An external component is a single external atom.
+ */
+class ExternalComponent : public Component
+{
+public:
 
     /**
-     * @brief External Atoms of this component.
+     * @brief Computes the result of the external computation.
      */
-    std::vector<ExternalAtom*> externalAtoms;
+    virtual void
+    evaluate(std::vector<GAtomSet>&);
+
+private:
+
+    /**
+     * @brief External atom of this component.
+     */
+    ExternalAtom* externalAtom;
+};
+
+
+
+class Subgraph
+{
+public:
+
+    /// Ctor.
+    Subgraph();
+
+
+    /// Dtor.
+    ~Subgraph();
+
+    void
+    addComponent(Component*);
+
+    std::vector<Component*>
+    getComponents() const;
+
+private:
+    
+    /**
+     * @brief Components in this subgraph.
+     */
+    std::vector<Component*> components;
 
 };
+
+
 
 #endif /* _COMPONENT_H_ */

@@ -19,7 +19,7 @@ extern unsigned parser_errors;
 extern const char *parser_file;
 extern unsigned parser_line;
  
-extern Rules IDB;
+extern Program IDB;
 extern GAtomSet EDB;
 //extern std::vector<ExternalAtom> externalAtoms;
 
@@ -226,11 +226,16 @@ rule      : head CONS body DOT
             {
 //                $$ = new Rule(*$1, *$3);
 
-                IDB.push_back(Rule(*$1, *$3));
+                //IDB.push_back(Rule(*$1, *$3));
+
+                Rule r(*$1, *$3);
+
+                IDB.addRule(r);
     
                 delete $1;
-                
                 delete $3;
+                //std::cout << (*(IDB.getRules()[0].getBody()->begin())).getAtom() << std::endl;
+    
             }
 //          | head CONS
 //          | ident PARAM_OPEN number_param DOT DOT number_param PARAM_CLOSE
@@ -293,13 +298,13 @@ body      : literal
 
 literal   : user_pred
             {
-                $$ = new Literal($1);
+                $$ = new Literal(*$1);
                 
                 delete $1;
             }
           | NOT user_pred
             {
-                $$ = new Literal($2, true);
+                $$ = new Literal(*$2, true);
     
                 delete $2;
             }
@@ -308,10 +313,9 @@ literal   : user_pred
 //          | NOT aggregate
 	      | external_atom
             {
-                $$ = new Literal($1);
+                $$ = new Literal(*$1);
     
                 delete $1;
-    
             }
           ;
 

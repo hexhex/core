@@ -28,13 +28,14 @@ Atom::~Atom()
 }
 
 
-Atom::Atom(const Atom &atom2)
+Atom::Atom(const Atom& atom2)
     : type(INTERNAL),
       arguments(atom2.arguments)//, isHigherOrder(atom2.isHigherOrder)
 {
 }
 
-Atom::Atom(std::string atom)
+
+Atom::Atom(const std::string atom)
     : type(INTERNAL)//, isHigherOrder(false)
 {
     arguments.clear();
@@ -50,7 +51,9 @@ Atom::Atom(std::string atom)
 
         arguments.push_back(Term(atom.substr(0, par)));
         
-        for (std::vector<std::string>::const_iterator g = termlist.begin(); g != termlist.end(); g++)
+        for (std::vector<std::string>::const_iterator g = termlist.begin();
+             g != termlist.end();
+             g++)
         {
             arguments.push_back(Term(*g));
         }
@@ -70,19 +73,7 @@ Atom::Atom(std::string atom)
 }
 	
 
-/*
-Atom::Atom(std::string pred, Term arg)
-    : type(internal)
-{
-    assert(0);
-
-    arguments.push_back(Term(pred));
-    
-	arguments.push_back(arg);
-}*/
-	
-
-Atom::Atom(std::string pred, Tuple arg)
+Atom::Atom(const std::string pred, const Tuple& arg)
     : type(INTERNAL)
 {
     arguments.push_back(Term(pred));
@@ -94,7 +85,7 @@ Atom::Atom(std::string pred, Tuple arg)
 }
 	
 
-Atom::Atom(Tuple arg)
+Atom::Atom(const Tuple& arg)
     : type(INTERNAL)
 {
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
@@ -125,7 +116,7 @@ Atom::getArguments() const
 
 
 Term
-Atom::getArgument(unsigned index) const
+Atom::getArgument(const unsigned index) const
 {
     assert(index <= arguments.size());
 
@@ -141,7 +132,7 @@ Atom::getArity() const
 
 
 bool
-Atom::unifiesWith(const Atom &atom2) const
+Atom::unifiesWith(const Atom& atom2) const
 {
     if (getArity() != atom2.getArity())
         return false;
@@ -159,7 +150,7 @@ Atom::unifiesWith(const Atom &atom2) const
 
 
 std::ostream&
-Atom::print(std::ostream &stream, const bool ho) const
+Atom::print(std::ostream& stream, const bool ho) const
 {
     if (ho)
     {
@@ -228,7 +219,7 @@ Atom::isGround() const
 
 
 std::ostream&
-operator<< (std::ostream &out, const Atom &atom)
+operator<< (std::ostream& out, const Atom& atom)
 {
     return atom.print(out, false);
 }
@@ -242,7 +233,7 @@ GAtom::GAtom()
 }
 
 
-GAtom::GAtom(const Atom &atom)
+GAtom::GAtom(const Atom& atom)
     : Atom(atom)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
@@ -252,7 +243,7 @@ GAtom::GAtom(const Atom &atom)
 }
 
 
-GAtom::GAtom(std::string atom) : Atom(atom)
+GAtom::GAtom(const std::string atom) : Atom(atom)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
     {
@@ -261,7 +252,7 @@ GAtom::GAtom(std::string atom) : Atom(atom)
 }
 
 
-GAtom::GAtom(std::string pred, Tuple arg)
+GAtom::GAtom(const std::string pred, const Tuple& arg)
     : Atom(pred, arg)
 {
     //std::cout << arg << std::endl;
@@ -273,7 +264,7 @@ GAtom::GAtom(std::string pred, Tuple arg)
 }
 
 
-GAtom::GAtom(Tuple arg)
+GAtom::GAtom(const Tuple& arg)
     : Atom(arg)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
@@ -282,7 +273,7 @@ GAtom::GAtom(Tuple arg)
 
 
 bool
-GAtom::operator== (const GAtom &gatom2) const
+GAtom::operator== (const GAtom& gatom2) const
 {
     if (getArity() != gatom2.getArity())
         return false;
@@ -301,14 +292,14 @@ GAtom::operator== (const GAtom &gatom2) const
 
 
 std::ostream&
-operator<< (std::ostream &out, const GAtom &groundatom)
+operator<< (std::ostream& out, const GAtom& groundatom)
 {
     return groundatom.print(out, false);
 }
 
 
 std::ostream&
-operator<< (std::ostream &out, const GAtomSet &gatomset)
+operator<< (std::ostream& out, const GAtomSet& gatomset)
 {
     out << "{";
 
@@ -325,7 +316,7 @@ operator<< (std::ostream &out, const GAtomSet &gatomset)
 
 
 int
-GAtom::operator< (const GAtom &gatom2) const
+GAtom::operator< (const GAtom& gatom2) const
 {
     if (getPredicate() < gatom2.getPredicate())
     {
@@ -377,22 +368,9 @@ GAtom::operator< (const GAtom &gatom2) const
 // a dedicated class like interpretation
 // we will see what turns out to be more practical
 //
-/*
-void
-matchPredicate(const GAtomSet &g,
-               const std::string pred,
-               GAtomSet &atomset)
-{
-    for (GAtomSet::const_iterator a = g.begin(); a != g.end(); a++)
-    {
-        if (a->getPredicate() == pred)
-            atomset.insert(*a);
-    }
-}
-*/
 
 void
-printGAtomSet(const GAtomSet &g,
+printGAtomSet(const GAtomSet& g,
               std::ostream& stream,
               const bool ho)
 {

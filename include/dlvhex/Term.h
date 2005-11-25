@@ -148,7 +148,7 @@ public:
     /**
      * @brief Type of the term.
      */
-    enum Type { Integer, Symbol, String, Variable, NullConst };
+    typedef enum { INTEGER, SYMBOL, STRING, VARIABLE, NULLCONST } Type;
 
     /**
      * @brief Default Constructor.
@@ -158,27 +158,27 @@ public:
     /**
      * Copy constructor.
      */
-    Term(const Term &);
+    Term(const Term&);
 
     /**
      * @brief Creates a constant string term.
      *
      * If the second Parameter is true, the
      * string will be quoted (if not already quoted) and the type of the term
-     * will be 'String'. Otherwise it is a 'Symbol', if the first character
-     * is lowercase, or a 'Variable' if uppercase.
+     * will be 'STRING'. Otherwise it is a 'SYMBOL', if the first character
+     * is lowercase, or a 'VARIABLE' if uppercase.
      */
-    Term(const std::string name, bool isString = false); 
+    Term(const std::string, bool isString = false); 
 
     /**
      * @brief Same as Term(const string name, bool isString = false).
      */
-    Term(const char *name, bool isString = false); 
+    Term(const char*, bool isString = false); 
 
     /**
-     * @brief Creates a constant integer term. Type will be 'Integer'.
+     * @brief Creates a constant integer term. Type will be 'INTEGER'.
      */
-    Term(const int &num);
+    Term(const int&);
 
     /**
      * @brief Returns the Type of the term.
@@ -211,8 +211,8 @@ public:
     isVariable() const;
 
     /**
-     * Returns the symbol string, if the constant is of type 'Symbol'.
-     * In case of a 'String' constant, the quoted string is returned.
+     * Returns the symbol string, if the constant is of type 'SYMBOL'.
+     * In case of a 'STRING' constant, the quoted string is returned.
      * other term types cause an assertion to fail.
      */
     std::string
@@ -220,13 +220,13 @@ public:
 
     /**
      * Returns a string without quotes. The term needs to be of type 'Constant'
-     * or 'String'.
+     * or 'STRING'.
      */
     std::string
     getUnquotedString() const; 
 
     /**
-     * Returns the constant integer. If the term is not of type 'Integer', an
+     * Returns the constant integer. If the term is not of type 'INTEGER', an
      * assertion fails.
      */
     int
@@ -234,7 +234,7 @@ public:
 
     /**
      * Returns the original variable identifier the term was constructed with.
-     * If the term is not of type 'Variable', an assertion fails.
+     * If the term is not of type 'VARIABLE', an assertion fails.
      */
     std::string
     getVariable() const;
@@ -251,13 +251,13 @@ public:
      * Two constants unify, if they are equal.
      */
     bool
-    unifiesWith(const Term &term2) const;
+    unifiesWith(const Term&) const;
 
     /**
      * @brief Assignment operator.
      */
     Term
-    &operator= (const Term &term2);
+    &operator= (const Term&);
 
     /**
      * Inequality operator.
@@ -267,20 +267,20 @@ public:
      * behaviour??).
      */
     int
-    operator!= (const Term &term2) const;  
+    operator!= (const Term&) const;  
 
     /**
      * Equality operator, compares two terms. Returns the negation of !=.
      */
     bool
-    operator== (const Term &term2) const; 
+    operator== (const Term&) const; 
 
     /**
      * Another equality operator, which first constructs a term of a given string
      * (see constructor) and then compares the two terms.
      */
     bool
-    operator== (const std::string &term2) const; 
+    operator== (const std::string&) const; 
 
     /**
      * Less-than operator. If the terms are of different type, the operator retuns
@@ -289,25 +289,25 @@ public:
      * behaviour??)
      */
     bool
-    operator< (const Term &term2) const;
+    operator< (const Term&) const;
 
     /**
      * @brief Less-or-equal operator.
      */
     bool
-    operator<= (const Term &term2) const;
+    operator<= (const Term&) const;
 
     /**
      * @brief Greater-than operator (see Less-than operator).
      */
     bool
-    operator> (const Term &term2) const;
+    operator> (const Term&) const;
 
     /**
      * @brief Greater-or-equal operator.
      */
     bool
-    operator>= (const Term &term2) const; 
+    operator>= (const Term&) const; 
 
     /**
      * @brief Provides access to the static names table.
@@ -335,11 +335,11 @@ private:
 
 
 /**
- * Serializes a term. For a variable term, the original variable Symbol is used.
+ * Serializes a term. For a variable term, the original variable symbol is used.
  * A symbol, string and variable term is serialized as expected.
  */
 std::ostream&
-operator<< (std::ostream &out, const Term &term);
+operator<< (std::ostream&, const Term&);
 
 
 /**
@@ -348,7 +348,12 @@ operator<< (std::ostream &out, const Term &term);
 typedef std::vector<Term> Tuple;
 
 
+/**
+ * Serializes a tuple, separating the tuple's terms with commas.
+ */
 std::ostream&
-operator<< (std::ostream &out, const Tuple &tuple);
+operator<< (std::ostream&, const Tuple&);
+
 
 #endif /* _TERM_H */
+

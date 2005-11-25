@@ -27,15 +27,17 @@ public:
     /// Ctor.
     ExternalAtom();
 
-    ExternalAtom(const ExternalAtom& extatom);
+
+    ExternalAtom(const ExternalAtom&);
+
 
     /**
      * @brief Constructor.
      */
-    ExternalAtom(std::string name,
-                 const Tuple &params,
-                 const Tuple &input,
-                 unsigned line);
+    ExternalAtom(const std::string name,
+                 const Tuple& params,
+                 const Tuple& input,
+                 const unsigned line);
 
     /**
      * @brief Returns the function name of the external atom.
@@ -45,6 +47,7 @@ public:
      */
     std::string
     getFunctionName() const;
+
 
     /**
      * @brief Returns the atom's replacement name.
@@ -56,12 +59,14 @@ public:
     std::string
     getReplacementName() const;
 
+
     /**
      * @brief Returns the tuple of input arguments as they were specified
      * in the logic program.
      */
-    void
-    getInputTerms(Tuple &it) const;
+    const Tuple&
+    getInputTerms() const;
+
 
     /**
      * @brief Evaluates the external atom w.r.t. to an interpretation and a
@@ -76,6 +81,7 @@ public:
              const Tuple& inputParms,
              GAtomSet& result) const;
 
+
     /**
      * @brief Serialize the external atom.
      *
@@ -83,8 +89,9 @@ public:
      * An external atom is serialized as &name[a,b,...](X,Y,...).
      */
     virtual std::ostream&
-    print(std::ostream &stream, const bool ho) const;
+    print(std::ostream&, const bool) const;
 
+    
     /**
      * @brief Clone function. see Atom::clone.
      */

@@ -15,8 +15,8 @@
 #ifndef _MODELGENERATOR_H
 #define _MODELGENERATOR_H
 
-#include "dlvhex/Component.h"
 #include "dlvhex/Atom.h"
+#include "dlvhex/ProgramBuilder.h"
 
 /**
  * @brief Abstract strategy class for computing the model of a program from
@@ -30,20 +30,38 @@ public:
     { }
 
     /**
-     * @brief Computes all answer sets of a given set of components.
+     * @brief Initialization of a model generator.
+     *
+     * An instance of a model generator might be used several times to
+     * compute the result of a subprogram. This function initializes everything
+     * that will not change on subsequent calls of the compute function.
+     */
+    virtual void
+    initialize(const Program& p) = 0;
+
+
+    /**
+     * @brief Computes all answer sets of a given set of nodes.
      *
      * 
      */
     virtual void
-    computeModels(const std::vector<Component> &components,
-                  const GAtomSet &I,
-                  std::vector<GAtomSet> &models) = 0;
+    compute(const Program&,
+            const GAtomSet& I,
+            std::vector<GAtomSet>& models) = 0;
 
 protected:
 
-    /// Ctor
+    /// Ctor.
     ModelGenerator()
     { }
+
+    /**
+     * @brief Subprogram to be evaluated.
+     */
+//    Program program;
+
+    std::string serializedProgram;
 };
 
 
@@ -57,13 +75,40 @@ public:
     /// Ctor
     FixpointModelGenerator();
 
+
+    virtual void
+    initialize(const Program&);
+
+
     /**
-     * @brief Computes models of a set of components by iteration.
+     * Build the textual representation of the program.
+     */
+    void
+    serializeProgram(const Program&);
+
+
+    /**
+     * Return the text program.
+     */
+    const std::string&
+    getSerializedProgram() const;
+
+    /**
+     * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    computeModels(const std::vector<Component> &components,
-                  const GAtomSet &I,
-                  std::vector<GAtomSet> &models);
+    compute(const Program&,
+            const GAtomSet& I,
+            std::vector<GAtomSet>& models);
+
+private:
+
+
+//    const std::vector<ExternalAtom*>&
+//    getExternalAtoms() const;
+
+//    std::vector<ExternalAtom*> externalAtoms;
+
 };
 
 

@@ -18,6 +18,7 @@ noinst_HEADERS = \
                  PluginInterface.h \
                  ProgramBuilder.h \
                  GraphProcessor.h \
+                 GraphProcessor.tcc \
                  Rule.h
 
 pkginclude_HEADERS = \

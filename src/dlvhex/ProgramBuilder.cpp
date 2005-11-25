@@ -65,7 +65,7 @@ ProgramDLVBuilder::buildRule(const Rule& rule) // throw (???Error)
 
 
 void
-ProgramDLVBuilder::buildFacts(const GAtomSet &facts) // throw (???Error)
+ProgramDLVBuilder::buildFacts(const GAtomSet& facts) // throw (???Error)
 {
     for (GAtomSet::const_iterator f = facts.begin();
          f != facts.end();
@@ -79,7 +79,7 @@ ProgramDLVBuilder::buildFacts(const GAtomSet &facts) // throw (???Error)
 
 
 void
-ProgramDLVBuilder::buildFacts(const Interpretation &I) // throw (???Error)
+ProgramDLVBuilder::buildFacts(const Interpretation& I) // throw (???Error)
 {
     for (GAtomSet::const_iterator f = I.begin();
          f != I.end();
@@ -88,5 +88,19 @@ ProgramDLVBuilder::buildFacts(const Interpretation &I) // throw (???Error)
         (*f).print(stream, higherOrder);
 
         stream << "." << std::endl;
+    }
+}
+
+
+void
+ProgramDLVBuilder::buildProgram(const Program& program)
+{
+    Rules rules(program.getRules());
+
+    for (Rules::const_iterator r = rules.begin();
+         r != rules.end();
+         r++)
+    {
+        buildRule(*r);
     }
 }

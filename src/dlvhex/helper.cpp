@@ -1,14 +1,21 @@
-/** @file helper.c
- * Definition of helper functions
- *  
- * @date 2005.07.09
+/* -*- C++ -*- */
+
+/**
+ * @file   helper.cpp
  * @author Roman Schindlauer
- */
+ * @date   Thu Nov 24 23:59:33 CET 2005
+ *  
+ * @brief  Definition of helper functions.
+ *  
+ *  
+ */ 
+
 
 #include "dlvhex/helper.h"
 
 
-std::vector<std::string> helper::stringExplode(const std::string &inString, const std::string &separator)
+std::vector<std::string>
+helper::stringExplode(const std::string& inString, const std::string& separator)
 {
     std::vector<std::string> returnVector;
     
@@ -26,7 +33,9 @@ std::vector<std::string> helper::stringExplode(const std::string &inString, cons
     return returnVector;
 }
 
-void helper::escapeQuotes(std::string &str)
+
+void
+helper::escapeQuotes(std::string& str)
 {
     std::string single_quote = "\"";
     std::string escape_quote = "\\\"";
@@ -38,3 +47,4 @@ void helper::escapeQuotes(std::string &str)
         i += 2;
     }
 }
+

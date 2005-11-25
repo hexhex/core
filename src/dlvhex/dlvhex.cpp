@@ -37,19 +37,19 @@ const char*  WhoAmI;
 
 
 /**
- * @brief Stores the rules of the program in a structure.
+ * @brief Stores the entire program.
  */
-Rules IDB;
+Program IDB;
 
 
 /**
- * @brief Stores the facts of the program in a structure.
+ * @brief Stores the facts of the program.
  */
 GAtomSet EDB;
 
 
 
-//std::vector<EXTATOM> externalAtoms;
+//std::vector<ExternalAtom> externalAtoms;
 
 
 /**
@@ -196,6 +196,8 @@ removeNamespaces()
 }
 
 #include "pwd.h"
+
+#include "dlvhex/Component.h"
 
 int
 main (int argc, char *argv[])
@@ -424,23 +426,21 @@ main (int argc, char *argv[])
     }
 
     
+
+    /*    
     // testing the parser:
-    
-    /*
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
-    for (Rules::const_iterator r = IDB.begin(); r != IDB.end(); r++)
-        dlvprogram.buildRule(*r);
+    dlvprogram.buildProgram(IDB);
     std::cout << "parser test: " << std::endl;
     std::cout << "IDB: " << std::endl << dlvprogram.getString() << std::endl;
     std::cout << "EDB: " << std::endl;
     printGAtomSet(EDB, std::cout, 0);
     std::cout << std::endl;
-    //exit(0);
-    */
-    
-/*    for (vector<EXTATOM>::const_iterator r = externalAtoms.begin(); r != externalAtoms.end(); r++)
-        std::cout << (*r) << std::endl;
-    
+    std::cout << "External Atoms: " << std::endl;
+    for (std::vector<ExternalAtom>::const_iterator exi = IDB.getExternalAtoms().begin();
+         exi != IDB.getExternalAtoms().end();
+         ++exi)
+        std::cout << *exi << std::endl;
     */
 
     insertNamespaces();
@@ -449,7 +449,8 @@ main (int argc, char *argv[])
 
     DependencyGraph dg(IDB, sgb);
     
-    GraphProcessor gp(&dg);
+    GraphProcessor<Subgraph, Component> gp(&dg);
+
     
     try
     {
@@ -461,7 +462,7 @@ main (int argc, char *argv[])
         
         exit(1);
     }
-
+    
 
     removeNamespaces();
 
@@ -498,7 +499,7 @@ main (int argc, char *argv[])
 
         finaloutput << std::endl;
     }
-
+    
     for (std::vector<std::string>::const_iterator l = global::Messages.begin();
          l != global::Messages.end();
          l++)
