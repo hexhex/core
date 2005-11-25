@@ -39,11 +39,11 @@ ASPsolverTest::testExecution()
     // fatal error:
     //
     std::string prg("p.q");
-    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), fatalError);
+    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), FatalError);
     prg = "p(X):-q.";
-    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), fatalError);
+    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), FatalError);
     prg = "p(a,b).p(c).";
-    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), fatalError);
+    CPPUNIT_ASSERT_THROW(solver->callSolver(prg), FatalError);
 
     //
     // TODO: if we parametrize the solver-executable later, test
