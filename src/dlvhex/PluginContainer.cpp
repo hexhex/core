@@ -44,9 +44,6 @@ PluginContainer::~PluginContainer()
 void
 PluginContainer::importPlugin(std::string filename)
 {
-    if (!global::optionSilent)
-        std::cout << "opening plugin " << filename << std::endl;
-
     void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
 
     if (!dlHandle)
@@ -58,8 +55,12 @@ PluginContainer::importPlugin(std::string filename)
 
     if (!getplugin)
     {
-        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
+//        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
+        return;
     }
+
+    if (!global::optionSilent)
+        std::cout << "opening plugin " << filename << std::endl;
 
     PluginInterface::AtomFunctionMap pa;
 
@@ -76,6 +77,10 @@ PluginContainer::importPlugin(std::string filename)
         //
         // TODO: check if this function name already exists!
         //
+
+        if (global::optionVerbose)
+            std::cout << "Registering external atom " << (*it).first << std::endl;
+
         pluginAtoms[(*it).first] = (*it).second;
     }
 }

@@ -262,9 +262,7 @@ public:
     /**
      * Inequality operator.
      * Two terms are not equal, if they are of different type, or if their
-     * constants (numbers, strings or symbols) differ. If both strings are
-     * variables, they are considered to be equal (TODO: is this the right
-     * behaviour??).
+     * constants (numbers, strings, variables or symbols) differ.
      */
     int
     operator!= (const Term&) const;  

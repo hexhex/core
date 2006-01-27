@@ -3,9 +3,9 @@
 /**
  * @file GraphBuilder.h
  * @author Roman Schindlauer
- * @date Fri Sep  9 14:40:26 CEST 2005
+ * @date Wed Jan 18 17:43:21 CET 2006
  *
- * @brief Abstract strategy class for building a dependency graph from rules.
+ * @brief Abstract strategy class for finding the dependency edges of a program.
  *
  *
  */
@@ -13,58 +13,42 @@
 #ifndef _GRAPHBUILDER_H
 #define _GRAPHBUILDER_H
 
+#include <iostream>
+
 #include "dlvhex/Component.h"
 #include "dlvhex/Rule.h"
 
 /**
- * @brief Abstract strategy class for building a dependency graph from rules.
+ * @brief
  *
- * A GraphBuilder creates a dependency graph for a program.
  */
 class GraphBuilder
 {
 public:
-    virtual
-    ~GraphBuilder()
-    { }
 
+    /**
+     * @brief Takes a set of rules and builds the according node graph.
+     *
+     */
     void
-    createNodes(Rules& program);
-
-    
-    /**
-     * @brief Creates nodes and their dependencies from rules.
-     */
-    virtual void
-    build(Program& program, std::vector<Subgraph*>& subgraphs) = 0;
+    run(const Rules&, NodeGraph&);
 
     /**
-     * @brief Finds components from a set of nodes.
+     * @brief Debug dump.
      */
-//    virtual void
-//    findComponents(std::vector<Node> &nodes,
-//                   std::vector<Component> &components) = 0;
+    void
+    dumpGraph(const NodeGraph&, std::ostream&) const;
 
 
-protected:
 
-    std::vector<Node> nodes;
+private:
 
-    GraphBuilder()
-    { }
-};
-
-class SimpleGraphBuilder : public GraphBuilder
-{
-public:
-
-    SimpleGraphBuilder();
-
-    virtual void
-    build(Program& program, std::vector<Subgraph*>& subgraphs);
-//    virtual void
-//    findComponents(std::vector<Node> &nodes,
-//                   std::vector<Component> &components);
+    /**
+     * @brief Update two AtomNodes with a dependency.
+     *
+     */
+    void
+    addDep(AtomNode*, AtomNode*, Dependency::Type);
 };
 
 

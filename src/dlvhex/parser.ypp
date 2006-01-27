@@ -36,6 +36,7 @@ extern GAtomSet EDB;
     Atom*          atom;
     ExternalAtom*       extatom;
     Literal*        literal;
+    std::vector<Atom>* head;
     std::vector<Literal>* body;
     Rule*           rule;
 /*    BUILTIN        builtin;
@@ -70,8 +71,8 @@ extern GAtomSet EDB;
 %type  <atom> user_pred propositional_atom
 //%type  <string> builtin_pred aggregate
 %type  <literal> literal
-%type  <atom> head
 %type  <atom> fact
+%type  <head> head
 %type  <body> body
 %type <extatom> external_atom    
 //%type  <string> aggregate_type
@@ -109,7 +110,7 @@ extern GAtomSet EDB;
 %start input
 %%
 
-//HEAD_SEPARATOR  : ID_OR_VEL | VERTICAL_BAR | SEMICOLON;
+HEAD_SEPARATOR  : ID_OR_VEL | VERTICAL_BAR | SEMICOLON;
 
 TAIL_SEPARATOR  : COMMA;
 
@@ -199,7 +200,7 @@ strictrule: rule0 EXCLAMATION
           ;
 */
 
-fact      : head DOT
+fact      : user_pred DOT
             {
                 $$ = new Atom(*$1);
 
@@ -216,11 +217,13 @@ fact      : head DOT
             } 
           ;
 
+
 /*
 disj      : head HEAD_SEPARATOR head
           | disj HEAD_SEPARATOR head
           ;
-*/
+          */
+
 
 rule      : head CONS body DOT
             {
@@ -270,8 +273,22 @@ query     : body BOOL_QUERY
           ;
 */
 
-head      : user_pred { }
-//          | head HEAD_SEPARATOR user_pred
+head      : user_pred
+            {
+                $$ = new std::vector<Atom>;
+                
+                $$->push_back(*$1);
+
+                delete $1;
+            }
+          | head HEAD_SEPARATOR user_pred
+            {
+                $1->push_back(*$3);
+                
+                $$ = $1;
+                
+                delete $3;
+            }
           ;
 
 
@@ -359,7 +376,16 @@ user_pred : propositional_atom
 
 external_atom : AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE PARAM_OPEN terms PARAM_CLOSE
                   {
-                      $$ = new ExternalAtom($2, *$7, *$4, parser_line);
+                      // TODO: two external atoms with same name and input?
+                      // how "equal" are they?
+
+
+                      //ExternalAtom* ea(IDB.findExternalAtom($2, *$7));
+
+                      //if (!ea)
+                          $$ = new ExternalAtom($2, *$7, *$4, parser_line);
+                      //else
+                      //    $$ = ea;
 
                       delete[] $2;
                       delete $4;

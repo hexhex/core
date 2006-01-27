@@ -18,5 +18,7 @@ namespace global
 
     bool optionSilent = false;
 
+    bool optionVerbose = false;
+
     std::vector<std::string> Messages;    
 }

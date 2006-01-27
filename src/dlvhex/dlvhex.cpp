@@ -23,6 +23,9 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/Interpretation.h"
 #include "dlvhex/GraphProcessor.h"
+#include "dlvhex/GraphBuilder.h"
+#include "dlvhex/ComponentFinder.h"
+#include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/errorHandling.h"
@@ -72,17 +75,38 @@ printLogo()
 void
 printUsage(std::ostream &out, bool full)
 {
-    out  << "usage: " << WhoAmI 
-         << " [-silent]"
-         << " [-filter=foo,bar,...]"
-         << " [filename [filename [...]]]" << std::endl
-         << std::endl;
+    //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+    out << "usage: " << WhoAmI 
+        << " [--silent]"
+        << " [--firstorder]"
+        << " [--verbose]"
+        << " [--plugindir=dir]"
+        << " [--filter=foo,bar,...]"
+        << " [filename [filename [...]]]" << std::endl
+        << std::endl;
 
-    if (full)
-    { 
+    if (!full)
+    {
+        out << "Specify -h or --help for more detailed usage information." << std::endl
+            << std::endl;
+
+        return;
     }
     
-    return;
+    //
+    // As soos as we have more options, we can introduce sections here!
+    //
+    //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+    out << "--silent           Do not display anything than the actual result." << std::endl
+        << "--firstorder       No higher-order reasoning." << std::endl
+        << "--verbose          dump also various intermediate information." << std::endl
+        << "--plugindir=dir    Specify additional directory where to look for plugin" << std::endl
+        << "                   libraries." << std::endl
+        << "                   (Additionally to the installation plugin-dir and" << std::endl
+        << "                   $HOME/.dlvhex/plugins)" << std::endl
+        << "--filter=foo[,bar[,...]]" << std::endl
+        << "                   Only display instances of the specified predicate(s)." << std::endl
+        << std::endl;
 }
         
 
@@ -199,7 +223,6 @@ removeNamespaces()
 int
 main (int argc, char *argv[])
 {
-
     WhoAmI = argv[0];
 
     
@@ -208,6 +231,7 @@ main (int argc, char *argv[])
     //
     
     bool optionPipe = false;
+    std::string optionPlugindir("");
 
     //
     // dlt switch should be temporary until we have a proper rewriter for flogic!
@@ -224,19 +248,23 @@ main (int argc, char *argv[])
         {
             if (!strcmp(argv[j],"-dlt"))
                 optiondlt = true;
-            else if (!strcmp(argv[j],"-fo"))
+            else if (!strncmp(argv[j],"--plugindir=", 11))
+                optionPlugindir = std::string(argv[j] + 11);
+            else if (!strcmp(argv[j],"--firstorder"))
                 global::optionNoPredicate = false;
-            else if (!strcmp(argv[j], "-silent"))
+            else if (!strcmp(argv[j], "--silent"))
                 global::optionSilent = true;
-            else if (!strncmp(argv[j], "-filter=", 8))
+            else if (!strcmp(argv[j], "--verbose"))
+                global::optionVerbose = true;
+            else if (!strncmp(argv[j], "--filter=", 8))
                 optionFilter = helper::stringExplode(std::string(argv[j] + 8), ",");
             else if (!strcmp(argv[j], "--"))
 //                optionPipe = true;
                 { std::cout << "Piping not working yet, sorry!" << std::endl; exit(-1); }
-            else if (!strcmp(argv[j], "-h") || !strcmp(argv[j], "-help"))
+            else if (!strcmp(argv[j], "-h") || !strcmp(argv[j], "--help"))
             {
                 printLogo();
-                printUsage(std::cout, false);
+                printUsage(std::cout, true);
                 exit(0);
             }
             else 
@@ -244,7 +272,7 @@ main (int argc, char *argv[])
                 // TODO:
                 // for now: don't consider unknown options!
                 printLogo();
-                printUsage(std::cout,true);
+                printUsage(std::cout, false);
                 exit(-1);
             }
         }
@@ -271,35 +299,37 @@ main (int argc, char *argv[])
     }
 
 
-    //
-    // look for all shared libraries we find
-    //
     int count, i;
     struct dirent **files;
     std::string filename;
-
-    std::vector<std::string> libfilelist;
-
-    count = scandir(PLUGIN_DIR, &files, 0, alphasort);
-
-    for (i = 0; i < count; ++i)
-    {
-        filename = files[i]->d_name;
-
-        if (filename.substr(0,9) == "libdlvhex")
-            if (filename.substr(filename.size() - 3, 3) == ".so")
-                libfilelist.push_back((std::string)PLUGIN_DIR + '/' + filename);
-    }
-
+    std::set<std::string> libfilelist;
     //
-    // clean up scandir mess
+    // first look into specified plugin dir
     //
-    if (count != -1)
+    if (!optionPlugindir.empty())
     {
-        while (count--)
-            delete files[count];
+        count = scandir(optionPlugindir.c_str(), &files, 0, alphasort);
 
-        delete files; 
+        for (i = 0; i < count; ++i)
+        {
+            filename = files[i]->d_name;
+
+    //        if (filename.substr(0,9) == "libdlvhex")
+            if  (filename.size() > 3)
+                if (filename.substr(filename.size() - 3, 3) == ".so")
+                    libfilelist.insert(optionPlugindir + '/' + filename);
+        }
+
+        //
+        // clean up scandir mess
+        //
+        if (count != -1)
+        {
+            while (count--)
+                delete files[count];
+
+            delete files; 
+        }
     }
 
 
@@ -316,9 +346,38 @@ main (int argc, char *argv[])
     {
         filename = files[i]->d_name;
 
-        if (filename.substr(0,9) == "libdlvhex")
+//        if (filename.substr(0,9) == "libdlvhex")
+        if  (filename.size() > 3)
             if (filename.substr(filename.size() - 3, 3) == ".so")
-                libfilelist.push_back(userhome + '/' + filename);
+                libfilelist.insert(userhome + '/' + filename);
+    }
+
+    //
+    // clean up scandir mess
+    //
+    if (count != -1)
+    {
+        while (count--)
+            delete files[count];
+
+        delete files; 
+    }
+
+
+    //
+    // eventually look into system plugin dir
+    //
+    count = scandir(SYS_PLUGIN_DIR, &files, 0, alphasort);
+
+    for (i = 0; i < count; ++i)
+    {
+        filename = files[i]->d_name;
+
+//        if (filename.substr(0,9) == "libdlvhex")
+        if  (filename.size() > 3)
+            if (filename.substr(filename.size() - 3, 3) == ".so")
+                libfilelist.insert((std::string)SYS_PLUGIN_DIR + '/' + filename);
+        
     }
 
     //
@@ -336,7 +395,7 @@ main (int argc, char *argv[])
     //
     // import found plugin-libs
     //
-    for (std::vector<std::string>::const_iterator si = libfilelist.begin();
+    for (std::set<std::string>::const_iterator si = libfilelist.begin();
          si != libfilelist.end();
          si++)
     {
@@ -423,31 +482,32 @@ main (int argc, char *argv[])
     }
 
     
-
-    /*    
-    // testing the parser:
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
-    dlvprogram.buildProgram(IDB);
-    std::cout << "parser test: " << std::endl;
-    std::cout << "IDB: " << std::endl << dlvprogram.getString() << std::endl;
-    std::cout << "EDB: " << std::endl;
-    printGAtomSet(EDB, std::cout, 0);
-    std::cout << std::endl;
-    std::cout << "External Atoms: " << std::endl;
-    for (std::vector<ExternalAtom>::const_iterator exi = IDB.getExternalAtoms().begin();
-         exi != IDB.getExternalAtoms().end();
-         ++exi)
-        std::cout << *exi << std::endl;
-    */
+    if (global::optionVerbose)
+    {
+        std::cout << "Parsed Rules: " << std::endl;
+        IDB.dump(std::cout);
+        std::cout << std::endl;
+        std::cout << "Parsed EDB: " << std::endl;
+        printGAtomSet(EDB, std::cout, 0);
+        std::cout << std::endl;
+        std::cout << std::endl;
+    }
 
     insertNamespaces();
 
-    GraphBuilder* sgb = new SimpleGraphBuilder;
 
-    DependencyGraph dg(IDB, sgb);
+//    Atom* a = new Atom("p(q)");
+//    std::stringstream out;
+//    a->print(out, 0);
+//    std::cout << "---" << out.str() << "---";
+
+    GraphBuilder* gb = new GraphBuilder;
+
+    ComponentFinder* cf = new BoostComponentFinder;
+
+    DependencyGraph dg(IDB, gb, cf);
     
-    GraphProcessor<Subgraph, Component> gp(&dg);
-
+    GraphProcessor gp(&dg);
     
     try
     {
@@ -505,8 +565,11 @@ main (int argc, char *argv[])
 
     std::cout << finaloutput.str() << std::endl;
 
+
     //
     // cleaning up:
     //
-    delete sgb;
+    delete cf;
+
+    delete gb;
 }

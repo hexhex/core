@@ -161,10 +161,15 @@ AtomTest::testUnification()
     CPPUNIT_ASSERT(!c.unifiesWith(*ho));
 }
 
+
 void
 AtomTest::testSerialization()
 {
     std::stringstream out;
+
+    Atom* a = new Atom("p(q)");
+    a->print(out, 0);
+    std::cout << "-" << out.str() << "-" << std::endl;
     
     (*ho).print(out, 0);
     CPPUNIT_ASSERT(out.str() == "Bob(foo,Var,S)");

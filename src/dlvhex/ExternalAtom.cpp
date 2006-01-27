@@ -140,6 +140,13 @@ ExternalAtom::getInputTerms() const
 }
 
 
+PluginAtom::InputType
+ExternalAtom::getInputType(unsigned idx) const
+{
+    return pluginAtom->getInputType(idx);
+}
+
+
 void
 ExternalAtom::evaluate(const Interpretation& i,
                        const Tuple& inputParms,
@@ -216,6 +223,23 @@ ExternalAtom::evaluate(const Interpretation& i,
     }
 }
 
+
+
+bool
+ExternalAtom::unifiesWith(const Atom& atom) const
+{
+//    std::cout << " trying to unify external!" << std::endl;
+    return 0;
+}
+
+
+bool
+ExternalAtom::operator== (const Atom& atom2) const
+{
+    // TODO: how does this work - inheriting an operator?
+    // and what is the right behaviour here?
+    return 0;
+}
 
 std::ostream&
 ExternalAtom::print(std::ostream& out, const bool ho) const

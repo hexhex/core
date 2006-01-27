@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = foreign
 
 bin_PROGRAMS = dlvhex
 
-pkglib_LTLIBRARIES = libtypes.la
+pkglib_LTLIBRARIES = libdlvhexbase.la
 
 
 dlvhex_SOURCES = \
@@ -11,6 +11,8 @@ dlvhex_SOURCES = \
                 dlvhex.cpp \
                 DependencyGraph.cpp \
                 GraphBuilder.cpp \
+                ComponentFinder.cpp \
+                BoostComponentFinder.cpp \
                 Component.cpp \
                 FixpointModelGenerator.cpp \
                 OrdinaryModelGenerator.cpp \
@@ -29,7 +31,7 @@ dlvhex_LDFLAGS = -ldl -Wl,-rpath,.
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = libtypes.la libaspsolver.la # libplugin.la
+dlvhex_LDADD = libdlvhexbase.la libaspsolver.la # libplugin.la
 
 #
 # bison flags
@@ -42,7 +44,7 @@ AM_YFLAGS = -y -d
 noinst_LTLIBRARIES = \
                      libaspsolver.la
 
-libtypes_la_SOURCES = \
+libdlvhexbase_la_SOURCES = \
                       Term.cpp \
                       Atom.cpp \
                       Literal.cpp \
@@ -62,4 +64,4 @@ libaspsolver_la_SOURCES = \
                       DLVresultParser.ypp \
                       DLVresultScanner.lpp
 
-libaspsolver_la_LIBADD = libtypes.la
+libaspsolver_la_LIBADD = libdlvhexbase.la

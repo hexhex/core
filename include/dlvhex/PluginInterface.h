@@ -167,7 +167,7 @@ public:
      * improving the dependency information used by the internal
      * evaluation strategies of dlvhex.
      */
-    enum InputType { PREDICATE, CONSTANT };
+    typedef enum { PREDICATE, CONSTANT } InputType;
 
 
 protected:

@@ -17,12 +17,31 @@
 #include <vector>
 
 
+/**
+ * @brief Definition of global variables.
+ */
 namespace global
 {
+    /**
+     * If optionNoPredicate is true, higher-order reasoning is assumed, treating
+     * each predicate like an argument and introducing artificial per-arity predicates.
+     */
     extern bool optionNoPredicate;
 
+    /**
+     * Suppressing any other output than the actual result.
+     */
     extern bool optionSilent;
 
+    /**
+     * Dumping internal and intermediate computation information.
+     */
+    extern bool optionVerbose;
+
+    /**
+     * Messages returned from external computation sources, which do not necessarily
+     * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
+     */
     extern std::vector<std::string> Messages;
 }
 

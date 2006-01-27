@@ -149,6 +149,29 @@ Atom::unifiesWith(const Atom& atom2) const
 }
 
 
+
+bool
+Atom::operator== (const Atom& atom2) const
+{
+    if (getArity() != atom2.getArity())
+        return false;
+    
+    if (getType() != atom2.getType())
+        return false;
+    
+    bool ret = true;
+    
+    for (unsigned i = 0; i < getArity(); i++)
+    {
+        if (getArgument(i) != atom2.getArgument(i))
+            ret = false;
+    }
+    
+    return ret;
+}
+
+
+
 std::ostream&
 Atom::print(std::ostream& stream, const bool ho) const
 {
@@ -270,6 +293,7 @@ GAtom::GAtom(const Tuple& arg)
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
         assert(!t->isVariable());
 }
+
 
 
 bool

@@ -57,7 +57,7 @@ public:
     /**
      * @brief returns a pointer to the atom of the literal.
      */
-    Atom*
+    const Atom*
     getAtom() const;
 
 
@@ -67,6 +67,15 @@ public:
     bool
     isNAF() const;
 
+
+    /**
+     * @brief Test for equality.
+     *
+     * Two Literals are equal, if they contain the same atom and the same
+     * type of negation.
+     */
+    bool
+    operator== (const Literal& lit2) const;
 
     /**
      * @brief Serializes the literal.

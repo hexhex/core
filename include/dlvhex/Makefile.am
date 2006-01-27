@@ -8,6 +8,8 @@ noinst_HEADERS = \
                  ExternalAtom.h \
                  globals.h \
                  GraphBuilder.h \
+                 ComponentFinder.h \
+                 BoostComponentFinder.h \
                  helper.h \
                  Interpretation.h \
                  Term.h \
@@ -26,7 +28,6 @@ pkginclude_HEADERS = \
                  Atom.h \
                  Literal.h \
                  Interpretation.h \
-                 PluginContainer.h \
                  PluginInterface.h \
                  helper.h \
                  errorHandling.h

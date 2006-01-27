@@ -3,10 +3,12 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 pkglibdir=${libdir}/@PACKAGE@
+sysplugindir=@sysplugindir@
+userplugindir=@userplugindir@
 
 Name: @PACKAGE@
 Description: 
 Version: @VERSION@
-Libs: -L${pkglibdir} -ltypes
+Libs: -L${pkglibdir} -ldlvhexbase
 Cflags: -I${includedir}
 

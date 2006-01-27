@@ -270,9 +270,12 @@ Term::operator!= (const Term& term2) const
         case VARIABLE:
             //
             // TODO:
-            // when are two variables unequal???        
+            // when are two variables unequal???
             //
-            return 0;
+            // for now: only if their strings are the same
+            //
+            return (variableString).compare(term2.getVariable());
+            //return 0;
         
         default:
             assert(0);

@@ -18,31 +18,32 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/Component.h"
 
+
 /**
  * @brief Control center for traversing and evaluating the program graph.
  */
-template <class SubgraphType, class ComponentType>
 class GraphProcessor
 {
 public:
 
-    GraphProcessor(DependencyGraph *depgraph);
+    /// Ctor.
+    GraphProcessor(DependencyGraph*);
 
     void
-    run(const GAtomSet &in);
-
-    void
-    solve(ComponentType* c);
+    run(const GAtomSet&);
 
     GAtomSet*
     getNextModel();
 
 private:
 
-    unsigned returnPointer;
+    /**
+     * @brief Internal result retrieval pointer.
+     */
+    std::vector<GAtomSet>::iterator resultSetIndex;
 
-    void
-    combine(std::vector<GAtomSet>&, std::vector<GAtomSet>&);
+//    void
+//    combine(std::vector<GAtomSet>&, std::vector<GAtomSet>&);
 
     /**
      * @brief Result of all connected components (= the entire program).
@@ -53,14 +54,14 @@ private:
     /**
      * @brief input EDB.
      */
-    GAtomSet
-    startFacts;
+//    GAtomSet
+//    startFacts;
 
     /**
      * @brief Result of all CompactCs in a single connected component.
      */
-    std::vector<GAtomSet>
-    singleSubgraphAnswer;
+//    std::vector<GAtomSet>
+//    singleSubgraphAnswer;
 
 
     /**
@@ -77,7 +78,7 @@ private:
 //
 // include implementation of templates
 //
-#include "dlvhex/GraphProcessor.tcc"
+//#include "dlvhex/GraphProcessor.tcc"
 
 
 #endif /* _GRAPHPROCESSOR_H */

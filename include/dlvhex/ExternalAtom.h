@@ -69,6 +69,15 @@ public:
 
 
     /**
+     * @brief Returns the input Type of the input parameter with index idx.
+     *
+     * (see also PluginAtom::InputType)
+     */
+    PluginAtom::InputType
+    getInputType(unsigned idx) const;
+
+
+    /**
      * @brief Evaluates the external atom w.r.t. to an interpretation and a
      * list of input parameters.
      *
@@ -80,6 +89,17 @@ public:
     evaluate(const Interpretation &i,
              const Tuple& inputParms,
              GAtomSet& result) const;
+
+
+    /**
+     * @brief An External Atom never unifies.
+     */
+    virtual bool
+    unifiesWith(const Atom&) const;
+
+
+    virtual bool
+    operator== (const Atom& atom2) const;
 
 
     /**

@@ -31,7 +31,7 @@ public:
     /**
      * @brief Constructs a rule from a head and a body.
      */
-    Rule(const Atom &h, const std::vector<Literal> &b);
+    Rule(const std::vector<Atom> &h, const std::vector<Literal> &b);
 
     /**
      * Constructs a rule without a body (fact).
@@ -44,20 +44,39 @@ public:
     //bool
     //hasBody() const;
 
-    const Atom*
+    const std::vector<Atom>&
     getHead() const;
 
-    const std::vector<Literal>*
+    const std::vector<Literal>&
     getBody() const;
+
+    /**
+     * @brief Test for equality.
+     *
+     * Two rules are equal, if they contain the same atoms in the body and the head.
+     */
+    bool
+    operator== (const Rule& rule2) const;
 
 private:
 
-    Atom head;
-        
+    /**
+     * @brief The head Atoms are related by disjunction.
+     */
+    std::vector<Atom> head;
+       
+    /**
+     * @brief The body atoms are related by conjunction.
+     */
     std::vector<Literal> body;
 };
 
-//ostream& operator<< (ostream& out, const Rule& rule);
+//
+// only for verbose and debugging.
+//
+std::ostream&
+operator<< (std::ostream& out, const Rule& rule);
+
 
 typedef std::vector<Rule> Rules;
 
@@ -75,7 +94,7 @@ public:
 
     Program(Rules&);
 
-void
+    void
     setRules(const Rules&);
 
     void
@@ -89,6 +108,21 @@ void
 
     const std::vector<ExternalAtom>&
     getExternalAtoms() const;
+
+    /**
+     * @brief Returns the pointer to an External Atom that matches the specified name
+     * and input parameters, or NULL if such an atom does not exist.
+     *
+     */
+    ExternalAtom*
+    findExternalAtom(const std::string, const Tuple&);
+
+    /**
+     * Only for debugging purposes. The real output functions are implemented
+     * by the ProgramBuilder class!
+     */
+    void
+    dump(std::ostream&) const;
 
 private:
 

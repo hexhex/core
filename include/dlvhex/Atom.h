@@ -105,8 +105,19 @@ public:
      * Two atoms unify if they have the same arity and all of their arguments
      * (including the predicate symbols) unify pairwise.
      */
-    bool
+    virtual bool
     unifiesWith(const Atom&) const;
+
+    /**
+     * @brief Tests for equality.
+     *
+     * Two Atoms are equal, if they have the same arity and list of arguments
+     * (inlcuding the predicate). Two variable arguments are equal in this context, if
+     * their strings are equal.
+     * Two atoms of different type are always inequal.
+     */
+    virtual bool
+    operator== (const Atom& atom2) const;
 
     /**
      * @brief Prints the atom.

@@ -19,8 +19,7 @@
 #include "dlvhex/Rule.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/GraphBuilder.h"
-
-
+#include "dlvhex/ComponentFinder.h"
 
 
 /**
@@ -31,7 +30,7 @@ class DependencyGraph
 public:
     
     /// Ctor.
-    DependencyGraph();
+//    DependencyGraph();
 
 
     /// Dtor.
@@ -40,47 +39,71 @@ public:
     /**
      * @brief Constructor that builds the dependency graph.
      *
-     * The dependency graph is built from
-     * a set of program rules with an algorithm provided by the
-     * strategy class GraphBuilder.
-     *
-     *TODO: if we have a possibility of getting an external atom
-     *from a literal, then extract external nodes from the Rules
-     * - we don't need the gloabl externalAtoms then!
      */
     DependencyGraph(Program&,
-                    GraphBuilder*);
+                    GraphBuilder*,
+                    ComponentFinder*);
 
+
+    /**
+     * @brief Creates weakly connected components from AtomNodes.
+     */
+    void
+    getWeakComponents(const std::vector<AtomNode*>&,
+                      std::vector<std::vector<AtomNode*> >&);
+
+    /**
+     * @brief Creates strongly connected components from AtomNodes.
+     */
+    void
+    getStrongComponents(const std::vector<AtomNode*>&,
+                        std::vector<std::vector<AtomNode*> >&);
+
+    void
+    createComponent(const std::vector<AtomNode*>&,
+                    Component*);
+
+    /*
+    void
+    prune(Edges&, const Component&);
+    */
+    /*
     std::vector<Component*>
     getPredecessors(Component* c) const;
 
     std::vector<Component*>
     getComponents(const Subgraph*) const;
-
+*/
     Subgraph*
     getNextSubgraph();
+
     
 private:
     
     /**
      * @brief All nodes.
      */
-    std::vector<Node>
-    nodes;
+    NodeGraph nodegraph;
+    
+
+    /**
+     * @brief All components (strongly connected components).
+     */
+    std::vector<Component*> components;
 
     /**
      * @brief All subgraphs (connected components).
      */
-    std::vector<Subgraph*>
-    subgraphs;
+    std::vector<Subgraph> subgraphs;
 
     /**
      * @brief Current subgraph pointer.
      */
-    std::vector<Subgraph*>::iterator
+    std::vector<Subgraph>::iterator
     currentSubgraph;
 
 
+    ComponentFinder* componentFinder;
     /**
      * @brief
      */

@@ -44,7 +44,7 @@ Literal::Literal(const ExternalAtom& at, bool naf)
 }
 
 
-Atom*
+const Atom*
 Literal::getAtom() const
 {
     return atom;
@@ -55,6 +55,19 @@ bool
 Literal::isNAF() const
 {
     return isWeaklyNegated;
+}
+
+
+bool
+Literal::operator== (const Literal& lit2) const
+{
+    if (!(*atom == *(lit2.getAtom())))
+        return 0;
+
+    if (isWeaklyNegated != lit2.isNAF())
+        return 0;
+
+    return 1;
 }
 
 

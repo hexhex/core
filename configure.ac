@@ -7,12 +7,36 @@ AC_CONFIG_HEADER([src/config.h])
 #
 # set system-wide plugin dir
 #
-CPPFLAGS="$CPPFLAGS -DPLUGIN_DIR='\"\$(pkglibdir)\"'"
+#CPPFLAGS="$CPPFLAGS -DPLUGIN_DIR='\"\$(pkglibdir)\"'"
 
 #
-# set user plugin dir (relative to home)
+# the default system-wide plugin dir $(pkglibdir)\plugins can be
+# overridden by setting PLUGIN_DIR=... at configure-time
 #
-CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\".dlvhex/lib\"'"
+if test "$SYS_PLUGIN_DIR" = ""; then
+    sysplugindir="\${pkglibdir}/plugins"
+else
+    sysplugindir="$SYS_PLUGIN_DIR"
+fi
+
+AC_SUBST(sysplugindir)
+
+CPPFLAGS="$CPPFLAGS -DSYS_PLUGIN_DIR='\"$sysplugindir\"'"
+
+#
+# the user plugin dir consists of the user home concatenated with
+# and USER_PLUGIN_DIR, which is .dlvhex/plugins by default and can be
+# overridden by setting USER_PLUGIN_DIR=... at configure-time
+#
+if test "$USER_PLUGIN_DIR" = ""; then
+    userplugindir=".dlvhex/plugins"
+else
+    userplugindir="$USER_PLUGIN_DIR"
+fi
+
+AC_SUBST(userplugindir)
+
+CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 #
 # this has to be done properly:
