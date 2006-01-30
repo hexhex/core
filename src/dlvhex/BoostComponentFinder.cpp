@@ -32,14 +32,15 @@ BoostComponentFinder::makeEdges(const std::vector<AtomNode*>& nodes,
         ComponentFinder::Vertex v1 = (*node)->getId();
 
         //
-        // considering all types of depencies
+        // considering all types of dependencies
         //
-        for (std::vector<Dependency>::const_iterator d = (*node)->getPreceding().begin();
-            d != (*node)->getPreceding().end();
+        for (std::vector<Dependency>::const_iterator d = (*node)->getSucceeding().begin();
+            d != (*node)->getSucceeding().end();
             ++d)
         {
             ComponentFinder::Vertex v2 = (*d).getAtomNode()->getId();
 
+            //std::cout << "making edge from " << v1 << " to " << v2 << std::endl;
             edges.push_back(ComponentFinder::Edge(v1, v2));
         }
 

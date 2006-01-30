@@ -6,18 +6,19 @@ pkglib_LTLIBRARIES = libdlvhexbase.la
 
 
 dlvhex_SOURCES = \
-                parser.ypp \
-                scanner.lpp \
-                dlvhex.cpp \
-                DependencyGraph.cpp \
-                GraphBuilder.cpp \
-                ComponentFinder.cpp \
                 BoostComponentFinder.cpp \
                 Component.cpp \
+                ComponentFinder.cpp \
+                DependencyGraph.cpp \
+                dlvhex.cpp \
                 FixpointModelGenerator.cpp \
-                OrdinaryModelGenerator.cpp \
+                GuessCheckModelGenerator.cpp \
+                GraphBuilder.cpp \
                 GraphProcessor.cpp \
-                ProgramBuilder.cpp
+                OrdinaryModelGenerator.cpp \
+                parser.ypp \
+                ProgramBuilder.cpp \
+                scanner.lpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src
 
@@ -45,23 +46,23 @@ noinst_LTLIBRARIES = \
                      libaspsolver.la
 
 libdlvhexbase_la_SOURCES = \
-                      Term.cpp \
                       Atom.cpp \
-                      Literal.cpp \
+                      ExternalAtom.cpp \
+                      helper.cpp \
                       Interpretation.cpp \
+                      Literal.cpp \
                       PluginContainer.cpp \
                       PluginInterface.cpp \
                       Rule.cpp \
-                      ExternalAtom.cpp \
-                      helper.cpp
+                      Term.cpp
 
 #libplugin_la_SOURCES = \
 #                      PluginInterface.h
 
 libaspsolver_la_SOURCES = \
-                      globals.cpp \
                       ASPsolver.cpp \
                       DLVresultParser.ypp \
-                      DLVresultScanner.lpp
+                      DLVresultScanner.lpp \
+                      globals.cpp
 
 libaspsolver_la_LIBADD = libdlvhexbase.la

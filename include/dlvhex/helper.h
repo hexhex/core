@@ -35,6 +35,13 @@ namespace helper
      */
     void
     escapeQuotes(std::string &str);
+
+    /**
+     * Builds the cartesian product of a number of input sets.
+     */
+//    void
+//    multiplySets(const std::vector<GAtomSet>&
+//                 GAtomSet&);
 }
 
 #endif /* _HELPER_H */

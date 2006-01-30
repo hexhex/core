@@ -48,8 +48,7 @@ private:
     /**
      * @brief Result of all connected components (= the entire program).
      */
-    std::vector<GAtomSet>
-    resultModels;
+    std::vector<GAtomSet> resultModels;
 
     /**
      * @brief input EDB.

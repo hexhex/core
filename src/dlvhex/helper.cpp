@@ -48,3 +48,15 @@ helper::escapeQuotes(std::string& str)
     }
 }
 
+/*
+void
+helper::multiplySets(const std::vector<GAtomSet>& sets,
+                     GAtomSet& result)
+{
+    for (std::vector<GAtomSet>::const_iterator in = sets.begin();
+         in != sets.end();
+         ++in)
+    {
+    }
+}
+*/

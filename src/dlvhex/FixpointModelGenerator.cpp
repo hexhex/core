@@ -44,7 +44,6 @@ FixpointModelGenerator::serializeProgram(const Program& p)
     // the rules will be in higher-order-syntax, if dlvhex was called in ho-mode
     //
 
-    ///todo: remove modelgenerator instantiation from here. should be somewhere outside!
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
 
     dlvprogram.buildProgram(p);

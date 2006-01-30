@@ -63,7 +63,7 @@ OrdinaryModelGenerator::compute(const Program& program,
     
     try
     {
-        std::cout << p << std::endl;
+//        std::cout << p << std::endl;
         Solver.callSolver(p);
     }
     catch (FatalError e)

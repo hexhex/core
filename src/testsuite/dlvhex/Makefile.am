@@ -16,5 +16,5 @@ dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) -ldl
 
 dlvhexTS_LDADD = \
-                $(top_builddir)/src/dlvhex/libtypes.la \
+                $(top_builddir)/src/dlvhex/libdlvhexbase.la \
                 $(top_builddir)/src/dlvhex/libaspsolver.la

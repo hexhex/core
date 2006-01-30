@@ -1,14 +1,14 @@
-/* -*- C++ -*- */
+    /* -*- C++ -*- */
 
-/**
- * @file DependencyGraph.cpp
- * @author Roman Schindlauer
- * @date Mon Sep 19 12:19:38 CEST 2005
- *
- * @brief Classes for the dependency graph class and its subparts.
- *
- *
- */
+    /**
+    * @file DependencyGraph.cpp
+    * @author Roman Schindlauer
+    * @date Mon Sep 19 12:19:38 CEST 2005
+    *
+    * @brief Classes for the dependency graph class and its subparts.
+    *
+    *
+    */
 
 #include <sstream>
 
@@ -29,8 +29,8 @@ DependencyGraph::DependencyGraph()
 
 
 DependencyGraph::DependencyGraph(Program& program,
-                                 GraphBuilder* gb,
-                                 ComponentFinder* cf)
+                                GraphBuilder* gb,
+                                ComponentFinder* cf)
     : componentFinder(cf)
 {
     //
@@ -47,52 +47,41 @@ DependencyGraph::DependencyGraph(Program& program,
 
     std::vector<std::vector<AtomNode*> > weakComponents;
 
-    //
-    // get WCCs form the entire nodegraph
-    //
-    getWeakComponents(nodegraph.getNodes(), weakComponents);
+    const std::vector<AtomNode*> allnodes = nodegraph.getNodes();
+
+    Subgraph subgraph;
+
+    std::vector<std::vector<AtomNode*> > strongComponents;
 
     //
-    // creating subgraphs from weak components
+    // keep track of the nodes that belong to a SCC
     //
-    for (std::vector<std::vector<AtomNode*> >::iterator wcc = weakComponents.begin();
-         wcc != weakComponents.end();
-         ++wcc)
+    std::vector<AtomNode*> visited;
+
+    //
+    // find all strong components within this WCC
+    //
+    getStrongComponents(allnodes, strongComponents);
+
+    for (std::vector<std::vector<AtomNode*> >::const_iterator scc = strongComponents.begin();
+        scc != strongComponents.end();
+        ++scc)
     {
-        Subgraph subgraph;
-
-        std::vector<std::vector<AtomNode*> > strongComponents;
-
         //
-        // keep track of the nodes that belong to a SCC
+        // for each found SCC we create a component-object
         //
-        std::vector<AtomNode*> visited;
-
-        //
-        // find all strong components within this WCC
-        //
-        getStrongComponents(*wcc, strongComponents);
-
-        for (std::vector<std::vector<AtomNode*> >::const_iterator scc = strongComponents.begin();
-             scc != strongComponents.end();
-             ++scc)
+        if (hasNegEdge(*scc) && isExternal(*scc))
         {
-            //
-            // for each found SCC we create a component-object
-            //
+            Component* comp = createStrongComponent(*scc);
 
-            Component* comp;
-
-            createComponent(*scc, comp);
-
-            //
-            // component-object is finished, add it to the dependency graph
-            //
+        //
+        // component-object is finished, add it to the dependency graph
+        //
             components.push_back(comp);
 
-            //
-            // add it also to the current subgraph
-            //
+        //
+        // add it also to the current subgraph
+        //
             subgraph.addComponent(comp);
 
             //
@@ -106,52 +95,57 @@ DependencyGraph::DependencyGraph(Program& program,
                 visited.push_back(*ni);
             }
         }
+    }
 
+    //
+    // now, after processing all SCCs of this WCC, let's see if there is any
+    // external atom left that was not in any SCC
+    //
+    for (std::vector<AtomNode*>::const_iterator weaknode = allnodes.begin();
+            weaknode != allnodes.end();
+            ++weaknode)
+    {
         //
-        // now, after processing all SCCs of this WCC, let's see if there is any
-        // external atom left that was not in any SCC
+        // add atomnodes to subgraph!
         //
-        for (std::vector<AtomNode*>::const_iterator weaknode = (*wcc).begin();
-             weaknode != (*wcc).end();
-             ++weaknode)
+        subgraph.addNode(*weaknode);
+
+        if (find(visited.begin(), visited.end(), *weaknode) == visited.end())
         {
-            if (find(visited.begin(), visited.end(), *weaknode) == visited.end())
+            if ((*weaknode)->getAtom()->getType() == Atom::EXTERNAL)
             {
-                if ((*weaknode)->getAtom()->getType() == Atom::EXTERNAL)
-                {
-                    //std::cout << "single node external atom!" << std::endl;
-                    Component* comp = new ExternalComponent();
+                //std::cout << "single node external atom!" << std::endl;
+                Component* comp = new ExternalComponent();
 
-                    //
-                    // the ExternalComponent-object only consists of a single
-                    // node
-                    //
-                    comp->addAtomNode(*weaknode);
+                //
+                // the ExternalComponent-object only consists of a single
+                // node
+                //
+                comp->addAtomNode(*weaknode);
 
-                    //
-                    // keep track of the component-objects
-                    //
-                    components.push_back(comp);
+                //
+                // keep track of the component-objects
+                //
+                components.push_back(comp);
 
-                    //
-                    // add it also to the current subgraph
-                    //
-                    subgraph.addComponent(comp);
-                }
+                //
+                // add it also to the current subgraph
+                //
+                subgraph.addComponent(comp);
             }
         }
-        
-
-        if (global::optionVerbose)
-        {
-            subgraph.dump(std::cout);
-        }
-
-        //
-        // this WCC is through, so the corresponding subgraph is finished!
-        //
-        subgraphs.push_back(subgraph);
     }
+    
+
+    if (global::optionVerbose)
+    {
+        subgraph.dump(std::cout);
+    }
+
+    //
+    // this WCC is through, so the corresponding subgraph is finished!
+    //
+    subgraphs.push_back(subgraph);
 
     //
     // reset subgraph iterator
@@ -181,9 +175,103 @@ DependencyGraph::~DependencyGraph()
 
 
 
-void
-DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
-                                 Component* component)
+//
+// TODO: this function is actually meant for sccs - otherwise we would have to
+// go thorugh succeeding as well!
+//
+bool
+DependencyGraph::hasNegEdge(const std::vector<AtomNode*>& nodes)
+{
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+         ni != nodes.end();
+         ++ni)
+    {
+        //
+        // since an SCC is always cyclic, we only have to consider preceding,
+        // not preceding AND succeeding!
+        //
+        for (std::vector<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
+                di != (*ni)->getPreceding().end();
+                ++di)
+        {
+            if ((*di).getType() == Dependency::NEG_PRECEDING)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool
+DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
+{
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+         ni != nodes.end();
+         ++ni)
+    {
+        if ((*ni)->getAtom()->getType() == Atom::EXTERNAL)
+            return true;
+    }
+
+    return false;
+}
+
+Component*
+DependencyGraph::createWeakComponent(const std::vector<AtomNode*>& nodes)
+{
+    Program p;
+
+    //
+    // go through all nodes of this WCC
+    //
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+         ni != nodes.end();
+         ++ni)
+    {
+        //
+        // add all rules from this node to a temporary program-object
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
+                ri != (*ni)->getRules().end();
+                ++ri)
+        {
+            if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
+                p.getRules().end())
+                p.addRule(**ri);
+
+        }
+    }
+
+    ModelGenerator* mg = new OrdinaryModelGenerator();
+
+
+    //
+    // now that we have the subprogram and the suitable model
+    // generator, we can create the component-object
+    //
+    Component* component = new ProgramComponent(p, mg);
+    
+    //
+    // now that we have created the component-object, go through the nodes
+    // again and add them
+    //
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+            ni != nodes.end();
+            ++ni)
+    {
+        //
+        // add this node to the component-object
+        //
+        component->addAtomNode(*ni);
+    }
+    
+    return component;
+}
+
+
+Component*
+DependencyGraph::createStrongComponent(const std::vector<AtomNode*>& nodes)
 {
     Program p;
 
@@ -205,6 +293,10 @@ DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
                 ri != (*ni)->getRules().end();
                 ++ri)
         {
+            //
+            // add each rule only once - if we have disjunctive nodes, they both
+            // have the same rule!
+            // 
             if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
                 p.getRules().end())
                 p.addRule(**ri);
@@ -215,7 +307,7 @@ DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
         // look through all dependencies of this Vertex - if we find a
         // NEG_PRECEDING, this is an unstratified SCC!
         //
-        // since an SCC is always cyclid, we only have to consider preceding,
+        // since an SCC is always cyclic, we only have to consider preceding,
         // not preceding AND succeeding!
         //
         for (std::vector<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
@@ -230,8 +322,8 @@ DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
     //
     // now decide which model generator we need:
     //
-    // pure ordinary SCC (no ext atoms): call-dlv-once-mg (fixpoint should work)
-    // strat, with ext atoms: fixpoint
+    // pure ordinary SCC (no ext atoms): call-dlv-once-mg (also for disjunctive)
+    // strat, with ext atoms: fixpoint (one model)
     // unstrat, with ext atoms: guess&check
     //
 
@@ -246,15 +338,14 @@ DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
     }
     else
     {
-        mg = new FixpointModelGenerator();
-        std::cout << "*** guess and check not implemented yet! ***" << std::endl;
+        mg = new GuessCheckModelGenerator();
     }
 
     //
     // now that we have the subprogram and the suitable model
     // generator, we can create the component-object
     //
-    component = new ProgramComponent(p, mg);
+    Component* component = new ProgramComponent(p, mg);
     
     //
     // now that we have created the component-object, go through the nodes
@@ -269,6 +360,8 @@ DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
         //
         component->addAtomNode(*ni);
     }
+
+    return component;
 }
 
 

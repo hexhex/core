@@ -192,7 +192,6 @@ public:
 };
 
 
-
 /**
  * @brief Ordered set of ground atoms.
  */
@@ -219,6 +218,14 @@ printGAtomSet(const GAtomSet& g,
               std::ostream& stream,
               const bool ho);
               
+//
+// temp solution here too:
+//
+void
+multiplySets(std::vector<GAtomSet>& s1,
+             std::vector<GAtomSet>& s2,
+             std::vector<GAtomSet>& result);
+
 
 #endif /* _ATOM_H */
 

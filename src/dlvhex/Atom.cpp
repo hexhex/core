@@ -410,3 +410,40 @@ printGAtomSet(const GAtomSet& g,
 
     stream << "}";
 }
+
+
+void
+multiplySets(std::vector<GAtomSet>& s1,
+             std::vector<GAtomSet>& s2,
+             std::vector<GAtomSet>& result)
+{
+    //
+    // write result into temporary vector. in case the result parameter
+    // is one of the two input vectors
+    //
+    std::vector<GAtomSet> tmpset;
+
+    GAtomSet un;
+
+    for (std::vector<GAtomSet>::iterator i1 = s1.begin();
+            i1 != s1.end();
+            ++i1)
+    {
+        for (std::vector<GAtomSet>::iterator i2 = s2.begin();
+                i2 != s2.end();
+                ++i2)
+        {
+            un = *i1;
+            un.insert((*i2).begin(), (*i2).end());
+            //std::cout << "inserted: " << un << std::endl;
+
+            tmpset.push_back(un);
+        }
+    }
+
+    //
+    // now we can write the result
+    //
+    swap(result, tmpset);
+}
+

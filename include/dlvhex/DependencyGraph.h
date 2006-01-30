@@ -59,9 +59,17 @@ public:
     getStrongComponents(const std::vector<AtomNode*>&,
                         std::vector<std::vector<AtomNode*> >&);
 
-    void
-    createComponent(const std::vector<AtomNode*>&,
-                    Component*);
+    /**
+     * @brief Creates a component-object from a WCC.
+     */
+    Component*
+    createWeakComponent(const std::vector<AtomNode*>&);
+
+    /**
+     * @brief Creates a component-object from a SCC.
+     */
+    Component*
+    createStrongComponent(const std::vector<AtomNode*>&);
 
     /*
     void
@@ -79,6 +87,12 @@ public:
 
     
 private:
+
+    bool
+    hasNegEdge(const std::vector<AtomNode*>&);
+
+    bool
+    isExternal(const std::vector<AtomNode*>&);
     
     /**
      * @brief All nodes.

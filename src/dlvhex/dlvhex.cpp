@@ -509,6 +509,7 @@ main (int argc, char *argv[])
     
     GraphProcessor gp(&dg);
     
+    
     try
     {
         gp.run(EDB); 
@@ -520,6 +521,47 @@ main (int argc, char *argv[])
         exit(1);
     }
     
+    
+    /*
+    GAtom a("a");
+    GAtom b("b");
+    GAtom c("c");
+    GAtom d("d");
+    GAtom e("e");
+    GAtom f("a");
+
+    GAtomSet s1;
+    s1.insert(a);
+    GAtomSet s2;
+    s2.insert(b);
+    s2.insert(c);
+    std::vector<GAtomSet> r1;
+    r1.push_back(s1);
+    r1.push_back(s2);
+
+    GAtomSet s3;
+    s3.insert(d);
+    s3.insert(e);
+    GAtomSet s4;
+    s4.insert(f);
+    std::vector<GAtomSet> r2;
+    r2.push_back(s3);
+    r2.push_back(s4);
+
+    std::vector<GAtomSet> resu;
+
+    multiplySets(r1, r2, r1);
+   // r1 = resu;
+   // multiplySets(r1, r3, resu);
+
+    std::cout << "multiplying: " << std::endl;
+    for (std::vector<GAtomSet>::iterator ii = r1.begin();
+         ii != r1.end();
+         ++ii)
+    {
+        std::cout << *ii << std::endl;
+    }
+*/
 
     removeNamespaces();
 

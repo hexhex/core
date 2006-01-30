@@ -37,7 +37,7 @@ public:
      * that will not change on subsequent calls of the compute function.
      */
     virtual void
-    initialize(const Program& p) = 0;
+    initialize(const Program&) = 0;
 
 
     /**
@@ -129,6 +129,54 @@ public:
 
     virtual void
     initialize(const Program&);
+
+
+    /**
+     * Build the textual representation of the program.
+     */
+//    void
+//    serializeProgram(const Program&);
+
+
+    /**
+     * Return the text program.
+     */
+//    const std::string&
+//    getSerializedProgram() const;
+
+    /**
+     * @brief Computes models of a set of nodes by iteration.
+     */
+    virtual void
+    compute(const Program&,
+            const GAtomSet& I,
+            std::vector<GAtomSet>& models);
+
+private:
+
+
+};
+
+
+
+/**
+ * @brief Concrete Strategy for computing the model by a guess & checl algorithm.
+ *
+ * If a component is completely unstratified (neither stratified nor e-stratified,
+ * we can only use a guess and check algorithm, which guesses all possible values
+ * for the external atoms first and filters out those models which are consistent.
+ */
+class GuessCheckModelGenerator : public ModelGenerator
+{
+public:
+
+    /// Ctor
+    GuessCheckModelGenerator();
+
+
+    virtual void
+    initialize(const Program&)
+    { }
 
 
     /**

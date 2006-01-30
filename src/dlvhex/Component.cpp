@@ -426,6 +426,11 @@ Component::Component()
 }
 
 
+Component::~Component()
+{
+}
+
+
 bool
 Component::isSolved() const
 {
@@ -448,11 +453,53 @@ Component::getNodes() const
 }
 
 
-
-Component::~Component()
+void
+Component::getResult(std::vector<GAtomSet>& r)
 {
-}
+    r = result;
+    /*
+    r.clear();
 
+    for (std::vector<GAtomSet>::iterator gi = result.begin();
+         gi != result.end();
+         ++gi)
+    {
+        r.push_back(&(*gi));
+    }
+    */
+
+/*    if (input.size() == 0)
+    {
+        input.push_back(in);
+    }
+    else
+    {
+        std::vector<GAtomSet> newinput;
+
+        GAtomSet un;
+
+        for (std::vector<GAtomSet>::const_iterator gi = input.begin();
+             gi != input.end();
+             ++gi)
+        {
+//            for (std::vector<GAtomSet>::const_iterator ngi = in.begin();
+//                 ngi != in.end();
+//                 ++ngi)
+//            {
+                un.clear();
+
+                set_union(gi->begin(), gi->end(),
+                          in.begin(), in.end(),
+                          un.begin());
+
+                newinput.push_back(un);
+//            }
+        }
+
+        input = newinput;
+    }
+    */
+}
 
 
 
@@ -481,31 +528,40 @@ ProgramComponent::setProgram(Program& p)
 
 
 void
-ProgramComponent::evaluate()
+ProgramComponent::evaluate(std::vector<GAtomSet>& input)
 {
-    std::cout << "evaluating program component" << std::endl;
+//    std::cout << "evaluating program component" << std::endl;
+//    std::cout << "program:" << std::endl;
 
-/*    std::vector<GAtomSet> res, previous;
+    program.dump(std::cout);
+
+
+
+    std::vector<GAtomSet> res, previous;
 
 
     //
     // compute model for each input factset
     //
-    for (std::vector<Node*>::const_iterator ni = incomingNodes.begin();
-         ni != incomingNodes.end();
-         ++ni)
+    for (std::vector<GAtomSet>::const_iterator in = input.begin();
+         in != input.end();
+         ++in)
     {
-        (*ni)->getResult(previous);
+    //std::cout << "input facts:" << std::endl;
+    //printGAtomSet(*in, std::cout, 0);
+        //(*ci)->getResult(previous);
         
-        for (std::vector<GAtomSet*>::const_iterator gi = previous.begin();
-             gi != previous.end();
-             ++gi)
-        {
+        //for (std::vector<GAtomSet*>::const_iterator gi = previous.begin();
+        //     gi != previous.end();
+        //     ++gi)
+        //{
             res.clear();
 
             try
             {
-                modelGenerator->compute(program, **gi, res);
+                modelGenerator->compute(program, *in, res);
+      //          std::cout << "result:" << std::endl;
+      //          printGAtomSet(res[0], std::cout, 0);
             }
             catch (GeneralError&)
             {
@@ -515,10 +571,10 @@ ProgramComponent::evaluate()
             result.insert(result.end(), res.begin(), res.end());
     //        for (std::vector<Node>::iterator ni = outgoingNodes.begin();
     //                addInput(res)
-        }
+        //}
     }
 
-*/
+
     evaluated = true;
 }
 
@@ -548,7 +604,7 @@ ProgramComponent::dump(std::ostream& out) const
 
 
 void
-ExternalComponent::evaluate()
+ExternalComponent::evaluate(std::vector<GAtomSet>& input)
 {
     std::cout << "evaluating external component" << std::endl;
 
@@ -572,6 +628,21 @@ ExternalComponent::dump(std::ostream& out) const
 
 Subgraph::Subgraph()
 {
+    atomnodes.clear();
+
+    components.clear();
+}
+
+
+Subgraph::Subgraph(const Subgraph& sg2)
+{
+    atomnodes = sg2.atomnodes;
+
+    components = sg2.components;
+
+    nodeComponentMap = sg2.nodeComponentMap;
+
+    lastResult = sg2.lastResult;
 }
 
 
@@ -594,7 +665,7 @@ Subgraph::addComponent(Component* c)
     components.push_back(c);
 
     //
-    // store also which node belongs to which component, wen need that later
+    // store also which node belongs to which component, we need that later
     //
 
     std::vector<const AtomNode*> compnodes = c->getNodes();
@@ -605,6 +676,13 @@ Subgraph::addComponent(Component* c)
     {
         nodeComponentMap[*ni] = c;
     }
+}
+
+
+void
+Subgraph::addNode(AtomNode* an)
+{
+    atomnodes.push_back(an);
 }
 
 
@@ -686,6 +764,7 @@ Subgraph::removeNode(const AtomNode* an)
 const std::vector<AtomNode*>&
 Subgraph::getNodes() const
 {
+    return atomnodes;
 }
 
 
@@ -702,6 +781,7 @@ Subgraph::getPredecessors(Component* comp)
          ni != compnodes.end();
          ++ni)
     {
+        //std::cout << "looking at " << **ni <<std::endl;
         //
         // go through all predecessors of this node
         //
@@ -709,6 +789,7 @@ Subgraph::getPredecessors(Component* comp)
             d != (*ni)->getPreceding().end();
             ++d)
         {
+            //std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
             //
             // for each preceding node - get the component this node belongs to
             //
@@ -716,12 +797,19 @@ Subgraph::getPredecessors(Component* comp)
                 assert(0);
 
             c = nodeComponentMap[(*d).getAtomNode()];
+            //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
 
             //
-            // did we find this component already?
+            // don't add this component itself
             //
-            if (find(pred.begin(), pred.end(), c) == pred.end())
-                pred.push_back(c);
+            if (comp != c)
+            {
+                //
+                // did we find this component already?
+                //
+                if (find(pred.begin(), pred.end(), c) == pred.end())
+                    pred.push_back(c);
+            }
         }
 
     }
@@ -751,7 +839,7 @@ Subgraph::getSuccessors(Component* comp)
             ++d)
         {
             //
-            // for each preceding node - get the component this node belongs to
+            // for each succeeding node - get the component this node belongs to
             //
             if (nodeComponentMap.find((*d).getAtomNode()) == nodeComponentMap.end())
                 assert(0);
@@ -811,15 +899,62 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 }
 
 
+/*
+void
+Subgraph::evaluateComponent(Component* comp,
+                            std::vector<const GAtomSet>& input)
+{
+    comp->evaluate(input);
+
+    comp->getResult(lastResult);
+}
+*/
+
+bool
+Subgraph::unsolvedComponentsLeft()
+{
+    for (std::vector<Component*>::const_iterator ci = components.begin();
+         ci != components.end();
+         ++ci)
+    {
+        if (!(*ci)->isSolved())
+            return true;
+    }
+
+    return false;
+}
+
+std::vector<GAtomSet*>&
+Subgraph::getLastResult()
+{
+    return lastResult;
+}
+
+
 void
 Subgraph::dump(std::ostream& out) const
 {
+    std::cout << "Subgraph components:" << std::endl;
+
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();
          ci++)
     {
         (*ci)->dump(out);
     }
+
+    std::cout << std::endl;
+
+    std::cout << "Subgraph nodes:" << std::endl;
+
+    for (std::vector<AtomNode*>::const_iterator ni = atomnodes.begin();
+         ni != atomnodes.end();
+         ni++)
+    {
+        out << **ni << std::endl;;
+    }
+
+    std::cout << std::endl;
 }
 
 
@@ -935,49 +1070,6 @@ Component::getResult() const
 
 
 /*
-void
-Component::getResult(std::vector<GAtomSet*>& r)
-{
-    r.clear();
-
-    for (std::vector<GAtomSet>::iterator gi = result.begin();
-         gi != result.end();
-         ++gi)
-    {
-        r.push_back(&(*gi));
-    }
-
-    if (input.size() == 0)
-    {
-        input.push_back(in);
-    }
-    else
-    {
-        std::vector<GAtomSet> newinput;
-
-        GAtomSet un;
-
-        for (std::vector<GAtomSet>::const_iterator gi = input.begin();
-             gi != input.end();
-             ++gi)
-        {
-//            for (std::vector<GAtomSet>::const_iterator ngi = in.begin();
-//                 ngi != in.end();
-//                 ++ngi)
-//            {
-                un.clear();
-
-                set_union(gi->begin(), gi->end(),
-                          in.begin(), in.end(),
-                          un.begin());
-
-                newinput.push_back(un);
-//            }
-        }
-
-        input = newinput;
-    }
-}
 */
 
 

@@ -204,8 +204,7 @@ public:
  * @brief Component class.
  *
  * A component consists a set of nodes in the dependency graph of the
- * program and thus corresponds to a subprogram. It can be either a strongly
- * connected component (possibly containing external atoms) or a single external atom.
+ * program and thus corresponds to a subprogram. 
  * The base class is pure vurtual.
  */
 class Component
@@ -217,24 +216,26 @@ public:
     ~Component();
 
     /**
-     * @brief Computes the Model(s) of the component.
+     * @brief Computes the Model(s) of the component, based on a set of inputs.
      */
     virtual void
-    evaluate() = 0;
+    evaluate(std::vector<GAtomSet>&) = 0;
 
-
-//    unsigned
-//    numResults() const;
-
-//    const std::vector<GAtomSet>&
-//    getResult() const;
-
+    /**
+     * @brief Returns true if this component was already evaluated.
+     */
     bool
     isSolved() const;
 
+    /**
+     * @brief Adds an AtomNode to the component.
+     */
     void
     addAtomNode(const AtomNode*);
 
+    /**
+     * @brief Returns all AtomNodes of this component.
+     */
     const std::vector<const AtomNode*>&
     getNodes() const;
     
@@ -244,14 +245,11 @@ public:
     virtual void
     dump(std::ostream& out) const = 0;
 
-
-    /*
+    /**
+     * @brief Returns the result of the component's evaluation.
+     */
     void
-    getResult(std::vector<GAtomSet*>&);
-
-    const std::vector<Node*>
-    getOutgoingNodes() const;
-    */
+    getResult(std::vector<GAtomSet>&);
 
 protected:
     
@@ -265,17 +263,14 @@ protected:
 
     bool evaluated;
 
-private:
-
     std::vector<GAtomSet> result;
 
-//    std::vector<GAtomSet> input;
+private:
 
     std::vector<AtomNode*> incomingNodes;
 
     std::vector<Rule*> bottom;
 
-//    std::vector<Node*> outgoingNodes;
 };
 
 
@@ -312,7 +307,7 @@ public:
      * @brief Computes the model(s) of the subprogram of this component.
      */
     virtual void
-    evaluate();
+    evaluate(std::vector<GAtomSet>&);
 
 
     /**
@@ -359,7 +354,7 @@ public:
      * @brief Computes the result of the external computation.
      */
     virtual void
-    evaluate();
+    evaluate(std::vector<GAtomSet>&);
 
     /**
      * Serialize component to stream out for verbose and debugging.
@@ -390,12 +385,19 @@ public:
     /// Ctor.
     Subgraph();
 
+    /**
+     * Copy constructor.
+     */
+    Subgraph(const Subgraph&);
 
     /// Dtor.
     ~Subgraph();
 
     void
     addComponent(Component*);
+
+    void
+    addNode(AtomNode*);
 
     /**
      * @brief Removes components from the subgraph.
@@ -436,6 +438,17 @@ public:
     std::vector<Component*>
     getSuccessors(Component*);
 
+    bool
+    unsolvedComponentsLeft();
+
+    /**
+     * @brief Evaluates a component and stores the result as the last
+     * result in the subgraph.
+     */
+//    void
+//    evaluateComponent(Component*,
+//                      std::vector<const GAtomSet>&);
+
 //    std::vector<Component*>
 //    getComponents() const;
 
@@ -456,6 +469,10 @@ public:
     void
     removeNode(const AtomNode*);
 
+
+    std::vector<GAtomSet*>&
+    getLastResult();
+    
     /**
      * Serialize subgraph to stream out for verbose and debugging.
      */
@@ -491,9 +508,10 @@ private:
     std::map<const AtomNode*, Component*> nodeComponentMap;
 
 
-//    Edges edgelist;
-
-//    Tree tree;
+    /**
+     * @brief Most recent component result.
+     */
+    std::vector<GAtomSet*> lastResult;
 
 };
 

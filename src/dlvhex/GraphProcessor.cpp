@@ -21,146 +21,145 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 
 
 void
-GraphProcessor::run(const GAtomSet &in)
+GraphProcessor::run(const GAtomSet& in)
 {
-    
-//    std::vector<Subgraph> subgraphs(depGraph->getSubgraphs());
-
-/*    Subgraph tmpgraph;
-
-    std::vector<Component> weakcomponents;
-
-    Component* ptrComponent;
-*/
+    //
+    // start with empty set
+    //
+    resultModels.push_back(GAtomSet());
 
     Subgraph* sg;
 
     Component* leafComponent;
 
     //
-    // go thorugh all weak components of the entire program
+    // go through all subgraphs
     //
-    //for (std::vector<Subgraph>::const_iterator si = subgraphs.begin();
-    //     si != subgraphs.end();
-    //     ++si)
     while (sg = depGraph->getNextSubgraph())
     {
-        
-        std::vector<Component*> leaves;
-        
-        sg->getUnsolvedLeaves(leaves);
+        std::vector<GAtomSet> current;
 
         //
-        // solve the leaves first
+        // sgresult is the result of the entire subgraph
         //
-        for (std::vector<Component*>::iterator ci = leaves.begin();
-             ci != leaves.end();
-             ++ci)
+        std::vector<GAtomSet> sgresult;
+
+        //
+        // each subgraph starts with input set
+        //
+        sgresult.push_back(in);
+
+        do
         {
-            leafComponent->evaluate();
-        }
+            std::vector<Component*> leaves;
+            
+            sg->getUnsolvedLeaves(leaves);
 
-        //
-        // make copy of subgraph
-        //
-        Subgraph tmpsg(*sg);
+            current.clear();
 
-        //
-        // remove components from temp subgraph
-        // the result is a subgraph without any SCCs
-        //
-        tmpsg.pruneComponents();
+            //
+            // start with empty set
+            //
+            current.push_back(GAtomSet());
 
-        //
-        // from the nodes left in the subgraph, find all WCCs
-        //
-        std::vector<std::vector<AtomNode*> > wccs;
+            std::vector<GAtomSet> compresult;
 
-        depGraph->getWeakComponents(tmpsg.getNodes(), wccs);
+            //
+            // solve the leaves first
+            // if we didn't have any leaves - current = input
+            //
+            if (leaves.size() == 0)
+            {
+                current = sgresult;
+            }
+            else
+            {
+                for (std::vector<Component*>::iterator ci = leaves.begin();
+                    ci != leaves.end();
+                    ++ci)
+                {
+                    //
+                    // evaluate each component based on the last result
+                    //
+                    (*ci)->evaluate(sgresult);
 
-        //
-        // go through all found WCCs and create component-object for them
-        //
-        for (std::vector<std::vector<AtomNode*> >::iterator wcc = wccs.begin();
-            wcc != wccs.end();
-            ++wcc)
-        {
-            Component* weakComponent;
+                    (*ci)->getResult(compresult);
 
+                    if (compresult.size() == 0)
+                    {
+                        //
+                        // inconsistent!
+                        //
+                        current.clear();
+
+                        break;
+                    }
+
+                    multiplySets(current, compresult, current);
+                }
+            }
+
+            if (current.size() == 0)
+            {
+                //
+                // inconsistent!
+                //
+                sgresult.clear();
+
+                break;
+            }
+
+
+            //
+            // make copy of subgraph
+            //
+            Subgraph tmpsg(*sg);
+
+            //
+            // remove components from temp subgraph
+            // the result is a subgraph without any SCCs
+            //
+            tmpsg.pruneComponents();
+
+    //        std::cout << "after pruning, tpsg has nodes: " << tmpsg.getNodes().size() << std::endl;
             //
             // make a component from the node-set
             //
-            depGraph->createComponent(*wcc, weakComponent);
+            Component* weakComponent = depGraph->createWeakComponent(tmpsg.getNodes());
 
             //
             // add the weak component to the subgraph
             //
             sg->addComponent(weakComponent);
 
-            //
-            // and solve it
-            //
-            weakComponent->evaluate();
-        }
+            weakComponent->evaluate(current);
 
-    }
+            weakComponent->getResult(sgresult);
 
-/*    {
-        //
-        // repeat while this subgraph has nodes left
-        //
-        while (sg->countNodes() > 0)
+            if (sgresult.size() == 0)
+            {
+                //
+                // inconsistent!
+                //
+                break;
+            }
+
+        } while (sg->unsolvedComponentsLeft());
+
+        if (sgresult.size() == 0)
         {
             //
-            // go through all Components of the subgraph
+            // inconsistent!
             //
-//            for (std::vector<Component*>::const_iterator ci = sg->getComponents().begin();
-//                 ci != sg->getComponents().end();
-//                 ++ci)
+            resultModels.clear();
 
-            //
-            // solve all leaf components until none is left
-            //
-            while (ptrComponent = sg->getNextLeafComponent())
-            {
-//                if (sg->isLeaf(*ci))
-                ptrComponent->solve();
-            }
-
-            tmpgraph = *sg;
-
-            //
-            // remove all other components and everything 'above' them
-            //
-//            for (std::vector<Component*>::const_iterator ci = sg->getComponents().begin();
-//                 ci != sg->getComponents().end();
-//                 ++ci)
-            while (ptrComponent = tmpgraph->getNextComponent())
-            {
-                tmpgraph.pruneComponent(ptrComponent);
-            }
-
-            //
-            // from what is left, we compute all weak components
-            //
-            depGraph->getWeakComponents(tmpgraph, weakComponents);
-
-            for (std::vector<Component>::const_iterator wi = weakComponents.begin();
-                wi != weakComponents.end();
-                ++wi)
-            {
-                //
-                // and evaluate them
-                //
-                wi->solve();
-
-                //
-                // and remove them from the subgraph's tree
-                //
-                sg->removeComponent(wi);
-            }
+            break;
         }
-    }*/
+
+        multiplySets(resultModels, sgresult, resultModels);
+    }
+
+    resultSetIndex = resultModels.begin();
 }
 
 
