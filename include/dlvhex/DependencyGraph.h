@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "dlvhex/Rule.h"
+#include "dlvhex/AtomNode.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/ComponentFinder.h"
@@ -62,14 +63,14 @@ public:
     /**
      * @brief Creates a component-object from a WCC.
      */
-    Component*
-    createWeakComponent(const std::vector<AtomNode*>&);
+//    Component*
+//    createWeakComponent(const std::vector<AtomNode*>&);
 
     /**
      * @brief Creates a component-object from a SCC.
      */
-    Component*
-    createStrongComponent(const std::vector<AtomNode*>&);
+//    Component*
+//    createStrongComponent(const std::vector<AtomNode*>&);
 
     /*
     void

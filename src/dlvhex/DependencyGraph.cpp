@@ -59,29 +59,52 @@ DependencyGraph::DependencyGraph(Program& program,
     std::vector<AtomNode*> visited;
 
     //
-    // find all strong components within this WCC
+    // find all strong components
     //
     getStrongComponents(allnodes, strongComponents);
 
+    //
+    // go through strong components
+    //
     for (std::vector<std::vector<AtomNode*> >::const_iterator scc = strongComponents.begin();
         scc != strongComponents.end();
         ++scc)
     {
         //
-        // for each found SCC we create a component-object
+        // we need a component object for each component that needs a special
+        // evaluation procedure:
+        // (i) stratified SCC with external atoms: fixpoint iteration
+        // (ii) unstratified SCC with external atoms: guess&check
         //
-        if (hasNegEdge(*scc) && isExternal(*scc))
+        if (isExternal(*scc))
         {
-            Component* comp = createStrongComponent(*scc);
+            ModelGenerator* mg;
 
-        //
-        // component-object is finished, add it to the dependency graph
-        //
+            //
+            // if we have a negated edge in this nodeset, we have an unstratifed
+            // component (because the nodeset is already a SCC!)
+            //
+            if (hasNegEdge(*scc))
+            {
+                ModelGenerator* mg = new GuessCheckModelGenerator();
+            }
+            else
+            {
+                ModelGenerator* mg = new FixpointModelGenerator();
+            }
+
+            Component* comp = new ProgramComponent(*scc, mg);
+
+//            Component* comp = createStrongComponent(*scc);
+
+            //
+            // component-object is finished, add it to the dependency graph
+            //
             components.push_back(comp);
 
-        //
-        // add it also to the current subgraph
-        //
+            //
+            // add it also to the current subgraph
+            //
             subgraph.addComponent(comp);
 
             //
@@ -115,7 +138,7 @@ DependencyGraph::DependencyGraph(Program& program,
             if ((*weaknode)->getAtom()->getType() == Atom::EXTERNAL)
             {
                 //std::cout << "single node external atom!" << std::endl;
-                Component* comp = new ExternalComponent();
+                Component* comp = new ExternalComponent(*weaknode);
 
                 //
                 // the ExternalComponent-object only consists of a single
@@ -175,6 +198,60 @@ DependencyGraph::~DependencyGraph()
 
 
 
+/*
+Component*
+DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
+                                 ModelGenerator* mg)
+{
+    Program p;
+
+    //
+    // go through all nodes
+    //
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+         ni != nodes.end();
+         ++ni)
+    {
+        //
+        // add all rules from this node to a temporary program-object
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
+                ri != (*ni)->getRules().end();
+                ++ri)
+        {
+            //
+            // but add rules only once
+            // (we could have the same rules several times, because if we have a
+            // disjunctive head, each head node has the rule!
+            //
+            if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
+                p.getRules().end())
+                p.addRule(**ri);
+
+        }
+    }
+
+    Component* component = new ProgramComponent(p, mg);
+    
+    //
+    // now that we have created the component-object, go through the nodes
+    // again and add them
+    //
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+            ni != nodes.end();
+            ++ni)
+    {
+        //
+        // add this node to the component-object
+        //
+        component->addAtomNode(*ni);
+    }
+    
+    return component;
+}
+*/
+
+
 //
 // TODO: this function is actually meant for sccs - otherwise we would have to
 // go thorugh succeeding as well!
@@ -217,6 +294,8 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
     return false;
 }
 
+
+/*
 Component*
 DependencyGraph::createWeakComponent(const std::vector<AtomNode*>& nodes)
 {
@@ -363,6 +442,7 @@ DependencyGraph::createStrongComponent(const std::vector<AtomNode*>& nodes)
 
     return component;
 }
+*/
 
 
 void

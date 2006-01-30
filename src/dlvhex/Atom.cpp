@@ -257,7 +257,8 @@ GAtom::GAtom()
 
 
 GAtom::GAtom(const Atom& atom)
-    : Atom(atom)
+    : Atom(atom),
+      alwaysFirstOrder(0)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
     {
@@ -266,7 +267,9 @@ GAtom::GAtom(const Atom& atom)
 }
 
 
-GAtom::GAtom(const std::string atom) : Atom(atom)
+GAtom::GAtom(const std::string atom)
+    : Atom(atom),
+      alwaysFirstOrder(0)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
     {
@@ -275,8 +278,9 @@ GAtom::GAtom(const std::string atom) : Atom(atom)
 }
 
 
-GAtom::GAtom(const std::string pred, const Tuple& arg)
-    : Atom(pred, arg)
+GAtom::GAtom(const std::string pred, const Tuple& arg, const bool strictfo)
+    : Atom(pred, arg),
+      alwaysFirstOrder(strictfo)
 {
     //std::cout << arg << std::endl;
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
@@ -288,7 +292,8 @@ GAtom::GAtom(const std::string pred, const Tuple& arg)
 
 
 GAtom::GAtom(const Tuple& arg)
-    : Atom(arg)
+    : Atom(arg),
+      alwaysFirstOrder(0)
 {
     for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
         assert(!t->isVariable());
@@ -313,6 +318,19 @@ GAtom::operator== (const GAtom& gatom2) const
     return ret;
 }
 
+
+std::ostream&
+GAtom::print(std::ostream& stream, const bool ho) const
+{
+    if (alwaysFirstOrder)
+    {
+        Atom::print(stream, 0);
+    }
+    else
+    {
+        Atom::print(stream, ho);
+    }
+}
 
 
 std::ostream&

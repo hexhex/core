@@ -5,7 +5,7 @@
  * @author Roman Schindlauer
  * @date Mon Sep 19 13:14:56 CEST 2005
  *
- * @brief Conponent and Node Class.
+ * @brief Conponent and Subgraph Class.
  *
  *
  */
@@ -14,408 +14,6 @@
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
-
-
-unsigned AtomNode::nodeCount = 0;
-
-
-AtomNode::AtomNode()
-{
-}
-
-
-AtomNode::AtomNode(const Atom* atom)
-    : atom(atom),
-      inHead(0),
-      inBody(0)
-{
-    //
-    // TODO: here, we increase the nodecounter and assign it to the node id.
-    // can we be sure that every time a new node is created - and only then! -
-    // this constructor is called?
-    //
-    nodeId = nodeCount++;
-}
-
-
-void
-AtomNode::setHead()
-{
-    inHead = 1;
-}
-
-
-void
-AtomNode::setBody()
-{
-    inBody = 1;
-}
-
-
-bool
-AtomNode::isHead()
-{
-    return inHead;
-}
-
-
-bool
-AtomNode::isBody()
-{
-    return inBody;
-}
-
-
-void
-AtomNode::addRule(const Rule* rule)
-{
-    rules.push_back(rule);
-}
-
-
-void
-AtomNode::addPreceding(const Dependency& dep)
-{
-    preceding.push_back(dep);
-}
-
-
-void
-AtomNode::addSucceeding(const Dependency& dep)
-{
-    succeeding.push_back(dep);
-
-/*    std::cout << "  will add dep to node" << dep.getAtomNode() << std::endl;
-    std::cout << "     points to atom: " << dep.getAtomNode()->getAtom() << std::endl;
-    std::cout << "  successor added: " << getSucceeding().begin()->getAtomNode() << std::endl;
-    std::cout << "     points to atom: " << getSucceeding().begin()->getAtomNode()->getAtom() << std::endl;
-    std::vector<Dependency> brr = getSucceeding();
-    std::vector<Dependency>::const_iterator fii = getSucceeding().begin();
-
-    std::cout << "  successor added: " << fii->getAtomNode() << std::endl;
-    std::cout << "     points to atom: " << fii->getAtomNode()->getAtom() << std::endl;
-    */
-}
-
-
-const Atom*
-AtomNode::getAtom() const
-{
-    return atom;
-}
-
-
-const std::vector<Dependency>&
-AtomNode::getPreceding() const
-{
-    return preceding;
-}
-
-
-const std::vector<Dependency>&
-AtomNode::getSucceeding() const
-{
-//    std::cout << "inside getSucceeding: " << succeeding.begin()->getAtomNode()->getAtom() << std::endl;
-    return succeeding;
-}
-
-
-const std::vector<const Rule*>&
-AtomNode::getRules() const
-{
-    return rules;
-}
-
-
-unsigned
-AtomNode::getId() const
-{
-    return nodeId;
-}
-
-std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
-{
-    out << *(atomnode.getAtom());
-
-    out << " #" << atomnode.getId();
-
-    if (atomnode.getPreceding().size() > 0)
-    {
-        out << " pre:";
-
-        for (std::vector<Dependency>::const_iterator d = atomnode.getPreceding().begin();
-            d != atomnode.getPreceding().end();
-            ++d)
-        {
-            out << " " << *d;
-        }
-    }
-
-    if (atomnode.getSucceeding().size() > 0)
-    {
-        out << " succ:";
-
-    //    std::cout << "listing succ for : " << &atomnode << std::endl;
-    //    std::cout << "  atomnode address: " << atomnode.getSucceeding().begin()->getAtomNode() << std::endl;
-
-    
-    //    std::vector<Dependency> succ = atomnode.getSucceeding();
-        
-        for (std::vector<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
-            d != atomnode.getSucceeding().end();
-            ++d)
-        {
-            out << " " << *d;
-        }
-    }
-
-    if (atomnode.getRules().size() > 0)
-        out << " rules:";
-
-    for (std::vector<const Rule*>::const_iterator ri = atomnode.getRules().begin();
-         ri != atomnode.getRules().end();
-         ++ri)
-    {
-        out << " " << *(*ri);
-    }
-    
-    return out;
-}
-
-
-
-Dependency::Dependency()
-{
-}
-
-
-Dependency::Dependency(const Dependency& dep2)
-    : atomNode(dep2.atomNode),
-      type(dep2.type)
-{
-}
-
-
-Dependency::Dependency(const AtomNode* an, Type t)
-    : atomNode(an), type(t)
-{
-}
-
-
-const Dependency::Type
-Dependency::getType() const
-{
-    return type;
-}
-
-
-const AtomNode*
-Dependency::getAtomNode() const
-{
-    assert(atomNode);
-
-    return atomNode;
-}
-
-
-std::ostream& operator<< (std::ostream& out, const Dependency& dep)
-{
-    out << *(dep.getAtomNode()->getAtom()) << "[";
-
-    switch (dep.getType())
-    {
-    case Dependency::UNIFYING:
-        out << "u";
-        break;
-
-    case Dependency::PRECEDING:
-        out << "p";
-        break;
-
-    case Dependency::NEG_PRECEDING:
-        out << "n";
-        break;
-
-    case Dependency::DISJUNCTIVE:
-        out << "d";
-        break;
-
-    case Dependency::EXTERNAL:
-        out << "e";
-        break;
-
-    default:
-        assert(0);
-        break;
-    }
-
-    out << "]";
-
-    return out;
-}
-
-
-
-NodeGraph::~NodeGraph()
-{
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
-        delete *an;
-    }
-}
-
-
-const std::vector<AtomNode*>&
-NodeGraph::getNodes() const
-{
-    return atomNodes;
-}
-
-
-const AtomNode*
-NodeGraph::getNode(unsigned nodeId)
-{
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
-        if ((*an)->getId() == nodeId)
-            return *an;
-    }
-}
-
-
-AtomNode*
-NodeGraph::addUniqueHeadNode(const Atom* atom)
-{
-    //
-    // does a node with exactly this atom already exist?
-    // (same predicate, same arguments)
-    //
-    AtomNode* newnode = findNode(atom);
-
-    if (!newnode)
-    {
-        //
-        // no - create node
-        //
-        newnode = new AtomNode(atom);
-
-        newnode->setHead();
-        
-        //
-        // search for all exisitng nodes if an atom exists that unifies
-        // with this new one - then we can add the unifying-dependency to both
-        //
-        for (std::vector<AtomNode*>::const_iterator oldnode = atomNodes.begin();
-             oldnode != atomNodes.end();
-             ++oldnode)
-        {
-            if ((*oldnode)->getAtom()->unifiesWith(*atom))
-            {
-                if ((*oldnode)->isBody())
-                {
-               //     Dependency dep1(newnode, Dependency::UNIFYING);
-                    Dependency dep2(*oldnode, Dependency::UNIFYING);
-
-                    newnode->addSucceeding(dep2);
-                    newnode->addPreceding(dep2);
-                 //   (*oldnode)->addSucceeding(dep1);
-                 //   (*oldnode)->addPreceding(dep1);
-                }
-            }
-        }
-
-        //
-        // add the new node to the graph
-        //
-        atomNodes.push_back(newnode);
-    }
-
-    return newnode;
-}
-
-
-AtomNode*
-NodeGraph::addUniqueBodyNode(const Atom* atom)
-{
-    //
-    // does a node with exactly this atom already exist?
-    // (same predicate, same arguments)
-    //
-    AtomNode* newnode = findNode(atom);
-
-    if (!newnode)
-    {
-        //
-        // no - create node
-        //
-        newnode = new AtomNode(atom);
-
-        newnode->setBody();
-        
-        //
-        // search for all exisitng nodes if an atom exists that unifies
-        // with this new one - then we can add the unifying-dependency to both
-        //
-        for (std::vector<AtomNode*>::const_iterator oldnode = atomNodes.begin();
-             oldnode != atomNodes.end();
-             ++oldnode)
-        {
-            if ((*oldnode)->getAtom()->unifiesWith(*atom))
-            {
-                if ((*oldnode)->isHead())
-                {
-                    Dependency dep1(newnode, Dependency::UNIFYING);
-               //     Dependency dep2(*oldnode, Dependency::UNIFYING);
-
-                 //   newnode->addSucceeding(dep2);
-                 //   newnode->addPreceding(dep2);
-                    (*oldnode)->addSucceeding(dep1);
-                    (*oldnode)->addPreceding(dep1);
-                }
-            }
-        }
-
-        //
-        // add the new node to the graph
-        //
-        atomNodes.push_back(newnode);
-    }
-
-    return newnode;
-}
-
-
-void
-NodeGraph::addNode(AtomNode* atomnode)
-{
-    atomNodes.push_back(atomnode);
-}
-
-
-AtomNode*
-NodeGraph::findNode(const Atom* atom) const
-{
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
-        if (*atom == *(*an)->getAtom())
-        {
-            return *an;
-        }
-    }
-
-    return NULL;
-}
-
-
-void NodeGraph::removeNode()
-{
-}
 
 
 
@@ -503,6 +101,46 @@ Component::getResult(std::vector<GAtomSet>& r)
 
 
 
+ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
+                                   ModelGenerator* mg)
+    : modelGenerator(mg)
+{
+    //
+    // go thorugh all nodes
+    //
+    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+         ni != nodes.end();
+         ++ni)
+    {
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
+                ri != (*ni)->getRules().end();
+                ++ri)
+        {
+            //
+            // but add rules only once
+            // (we could have the same rules several times, because if we have a
+            // disjunctive head, each head node has the rule!
+            //
+            // TODO: let program.addRule add rules only uniquely! then we don't
+            // need that here!
+            //
+            if (find(program.getRules().begin(), program.getRules().end(), **ri) == 
+                program.getRules().end())
+                program.addRule(**ri);
+
+        }
+
+        //
+        // add this node to the component-object
+        //
+        addAtomNode(*ni);
+    }
+}
+
+
 ProgramComponent::ProgramComponent(Program& p, ModelGenerator* mg)
 //ProgramComponent::ProgramComponent(ModelGenerator* mg)
     : program(p),
@@ -530,15 +168,13 @@ ProgramComponent::setProgram(Program& p)
 void
 ProgramComponent::evaluate(std::vector<GAtomSet>& input)
 {
-//    std::cout << "evaluating program component" << std::endl;
-//    std::cout << "program:" << std::endl;
-
-    program.dump(std::cout);
-
-
+    if (global::optionVerbose)
+    {
+        std::cout << "Evaluating program component:" << std::endl;
+        program.dump(std::cout);
+    }
 
     std::vector<GAtomSet> res, previous;
-
 
     //
     // compute model for each input factset
@@ -547,8 +183,13 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
          in != input.end();
          ++in)
     {
-    //std::cout << "input facts:" << std::endl;
-    //printGAtomSet(*in, std::cout, 0);
+        if (global::optionVerbose)
+        {
+            std::cout << "Input set: ";
+            printGAtomSet(*in, std::cout, 0);
+            std::cout << std::endl;
+        }
+
         //(*ci)->getResult(previous);
         
         //for (std::vector<GAtomSet*>::const_iterator gi = previous.begin();
@@ -574,6 +215,20 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
         //}
     }
 
+    if (global::optionVerbose)
+    {
+        std::cout << "Result set(s): ";
+
+        for (std::vector<GAtomSet>::const_iterator out = result.begin();
+            out != result.end();
+            ++out)
+        {
+            printGAtomSet(*out, std::cout, 0);
+            std::cout << std::endl;
+        }
+
+        std::cout << std::endl;
+    }
 
     evaluated = true;
 }
@@ -603,10 +258,67 @@ ProgramComponent::dump(std::ostream& out) const
 
 
 
+ExternalComponent::ExternalComponent(AtomNode* node)
+    : externalAtom((ExternalAtom*)node->getAtom())
+{
+}
+
 void
 ExternalComponent::evaluate(std::vector<GAtomSet>& input)
 {
-    std::cout << "evaluating external component" << std::endl;
+    if (global::optionVerbose)
+    {
+        std::cout << "evaluating external component" << std::endl;
+    }
+
+    //
+    // compute model for each input factset
+    //
+    for (std::vector<GAtomSet>::const_iterator in = input.begin();
+         in != input.end();
+         ++in)
+    {
+        if (global::optionVerbose)
+        {
+            std::cout << "Input set: ";
+            printGAtomSet(*in, std::cout, 0);
+            std::cout << std::endl;
+        }
+
+        GAtomSet res;
+
+        res.clear();
+
+        Interpretation i(*in);
+
+        try
+        {
+            externalAtom->evaluate(i, externalAtom->getInputTerms(), res);
+    //          std::cout << "result:" << std::endl;
+    //          printGAtomSet(res[0], std::cout, 0);
+        }
+        catch (GeneralError&)
+        {
+            throw;
+        }
+
+        result.push_back(res);
+    }
+
+    if (global::optionVerbose)
+    {
+        std::cout << "Result set(s): ";
+
+        for (std::vector<GAtomSet>::const_iterator out = result.begin();
+            out != result.end();
+            ++out)
+        {
+            printGAtomSet(*out, std::cout, 0);
+            std::cout << std::endl;
+        }
+
+        std::cout << std::endl;
+    }
 
     evaluated = true;
 }
@@ -696,8 +408,8 @@ Subgraph::collectUp(const AtomNode* n,
     // go through all succecessors of this node
     //
     for (std::vector<Dependency>::const_iterator d = n->getSucceeding().begin();
-        d != n->getSucceeding().end();
-        ++d)
+         d != n->getSucceeding().end();
+         ++d)
     {
         //
         // did we add this node to our list already?
@@ -715,6 +427,9 @@ Subgraph::pruneComponents()
 {
     std::vector<const AtomNode*> toBeRemoved;
 
+    //
+    // go through all components of the subgraph
+    //
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();
          ++ci)
@@ -745,12 +460,21 @@ Subgraph::pruneComponents()
         }
     }
 
+    //
+    // now we can remove all components from the subgraph
+    //
+    components.clear();
+
     for (std::vector<const AtomNode*>::const_iterator ni = toBeRemoved.begin();
         ni != toBeRemoved.end();
         ++ni)
     {
         removeNode(*ni);
+
+        //std::cout << "prune: removing node " << **ni << std::endl;
     }
+
+    
 }
 
 
@@ -958,353 +682,3 @@ Subgraph::dump(std::ostream& out) const
 }
 
 
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//
-// OLD CLASSES
-//
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-
-
-unsigned Node::nodecount = 0;
-
-Node::Node()
-{
-//    id = nodecount++;
-}
-
-
-Node::Node(const Node& n2)
-    : id(n2.id),
-      type(n2.type),
-      atom(n2.atom)
-{
-}
-
-
-Node::Node(const Atom* a)
-    : atom(a),
-      type(RULE)
-{
-    id = nodecount++;
-}
-
-Node::NodeType
-Node::getType() const
-{
-    return type;
-}
-
-unsigned
-Node::getId() const
-{
-    return id;
-}
-
-const Atom*
-Node::getAtom() const
-{
-    assert(atom != NULL);
-
- //   std::cout << "ins: " << atom << std::endl;
-    return atom;
-}
-
-int
-Node::operator< (const Node& node2) const
-{
-    if (getId() < node2.getId())
-    {
-        return true;
-    }
-
-    return false;
-}
-
-
-RuleNode::RuleNode(Rule *r)
-    : rule(r),
-      Node()
-{
-    type = RULE;
-}
-
-const Rule*
-RuleNode::getRule() const
-{
-    return rule;
-}
-
-ExternalNode::ExternalNode(ExternalAtom *atom)
-    : externalAtom(atom),
-      Node()
-{
-    type = EXTATOM;
-}
-
-const ExternalAtom*
-ExternalNode::getExternalAtom() const
-{
-    return externalAtom;
-}
-
-
-/*
-unsigned
-Component::numResults() const
-{
-    return result.size();
-}
-
-
-const std::vector<GAtomSet>&
-Component::getResult() const
-{
-    return result;
-}
-
-*/
-
-
-/*
-*/
-
-
-/*
-const std::vector<Node*>
-Component::getNodes() const
-{
-    return nodes;
-}
-
-
-const std::vector<Node*>
-Component::getOutgoingNodes() const
-{
-    return outgoingNodes;
-}
-*/
-
-    
-/*
-*/
-
-
-/*
-*/
-
-
-/*
-std::vector<Component*>
-Subgraph::getComponents() const
-{
-    return components;
-}
-*/
-
-
-/*
-Edges
-Subgraph::getEdges() const
-{
-    return edgelist;
-}
-*/
-
-/*
-unsigned
-Subgraph::countNodes()
-{
-    return tree.size();
-}
-
-
-Component*
-getNextLeafComponent()
-{
-    if (leafComponents.size() > 0)
-        return &leafComponents[0];
-
-    return NULL;
-}
-
-
-Component*
-getNextComponent()
-{
-    if (component.size() > 0)
-        return &components[0];
-
-    return NULL;
-}
-*/
-
-/*
-void
-Subgraph::removeComponent(Component* c)
-{
-    std::vector<Edge>::const_iterator pos;
-
-    for (std::vector<Edge>::const_iterator ei = Edges.begin();
-         ei != Edges.end();
-         ++ei)
-    {
-        pos = find(edgelist.begin(), edgelist.end(), *ei);
-
-        edgelist.erase(ei);
-    }
-
-    Tree::Nodes nodes = c->getNodes();
-
-    for (Tree:Nodes::iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        tree.removeNode(&(*ni));
-    }
-}
-
-*/
-
-
-Graph::~Graph()
-{
-    for (Nodes::iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        delete *ni;
-    }
-}
-
-
-void
-Graph::insertEdge(const Node* from, const Node* to)
-{
-    //
-    // see if this pair already exists...
-    //
-    std::pair<Edges::const_iterator, Edges::const_iterator> e = edges.equal_range(from);
-    
-    for (Edges::const_iterator i = e.first; i != e.second; ++i)
-    {
-        if (i->second == to)
-            return;
-    }
-
-    std::pair<const Node*, const Node*> p(from, to);
-
-    edges.insert(p);
-}
-
-
-void
-Graph::insertNode(Node* n)
-{
-    Nodes::iterator i = std::find(nodes.begin(), nodes.end(), n);
-
-    if (i == nodes.end())
-    {
-        std::cout << "adding: " << *(n->getAtom()) << std::endl;
-        nodes.push_back(n);
-    }
-}
-
-const Graph::Nodes&
-Graph::getNodes() const
-{
-    return nodes;
-}
-
-void
-Graph::dump(std::ostream& out)
-{
-    out << "Adjacency list:" << std::endl;
-
-    for (Nodes::iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        out << (*ni)->getId() << ": " << *(*ni)->getAtom() << " edges: ";
-        
-        std::pair<Edges::const_iterator, Edges::const_iterator> e = edges.equal_range(*ni);
-
-        for (Edges::const_iterator i = e.first; i != e.second; ++i)
-        {
-            out << i->second->getId() << " ";
-        }
-
-        std::cout << std::endl;
-        
-    }
-}
-
-/*
-
-void
-Tree::recremove(Node* n)
-{
-    Nodes succ = n->getSuccessors();
-
-    for (Nodes::iterator ni = succ.begin();
-         ni != succ.end();
-         ++ni)
-    {
-        recremove(*ni);
-    }
-
-    removeNode(*ni);
-}
-*/
-
-//void
-//Tree::removeNode(Node* n)
-//{
-/*    Edges tmp;
-
-    for (Edges::iterator ei = edges.begin();
-         ei != edges.end();
-         ++ei)
-    {
-        if (!(ei->first == n) && !(ei->second == n))
-            tmp.push_back(*ei);
-    }
-
-    edges = tmp;
-*/
-
-/*
-    std::vector<Vertex>::iterator pos = nodemap[n];
-
-    std::vector<Vertex*> pred = pos->getPred();
-
-    std::vector<Vertex*>::iterator vptr;
-
-    for (std::vector<Vertex*>::iterator vi = pred.begin();
-         vi != pred.end();
-         ++vi)
-    {
-        vptr = (*vi)->succ.find(n);
-
-        (*vi)->succ(
-    }
-
-    nodes.erase(pos);
-    */
-//}
-
-/*
-void
-Tree::pruneNode(Node* n)
-{
-}
-
-
-void
-Tree::pruneComponent(Component* c)
-{
-}
-*/

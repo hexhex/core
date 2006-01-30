@@ -235,10 +235,9 @@ Program::dump(std::ostream& out) const
         out << "." << std::endl;
     }
 
+    /*
     if (externalAtoms.size() > 0)
     {
-//        out << std::endl;
-
         out << "External Atoms: " << std::endl;
 
         for (std::vector<ExternalAtom>::const_iterator exi = getExternalAtoms().begin();
@@ -248,4 +247,5 @@ Program::dump(std::ostream& out) const
             out << *exi << std::endl;
         }
     }
+    */
 }

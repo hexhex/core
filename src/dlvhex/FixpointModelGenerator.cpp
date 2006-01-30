@@ -64,6 +64,8 @@ FixpointModelGenerator::compute(const Program& program,
                                 const GAtomSet &I,
                                 std::vector<GAtomSet> &models)
 {
+    initialize(program);
+
     models.clear();
 
     ASPsolver Solver;

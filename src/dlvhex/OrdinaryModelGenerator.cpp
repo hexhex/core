@@ -42,8 +42,10 @@ OrdinaryModelGenerator::compute(const Program& program,
                                 const GAtomSet &I,
                                 std::vector<GAtomSet> &models)
 {
-    if (program.getExternalAtoms().size() != 0)
-        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
+//    if (program.getExternalAtoms().size() != 0)
+//        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
+
+    initialize(program);
 
     models.clear();
 
@@ -63,7 +65,6 @@ OrdinaryModelGenerator::compute(const Program& program,
     
     try
     {
-//        std::cout << p << std::endl;
         Solver.callSolver(p);
     }
     catch (FatalError e)

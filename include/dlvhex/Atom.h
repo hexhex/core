@@ -180,7 +180,7 @@ public:
 	
 //    GAtom(std::string, Term);
 
-    GAtom(const std::string, const Tuple&);
+    GAtom(const std::string, const Tuple&, const bool = 0);
 
     GAtom(const Tuple&);
 
@@ -189,6 +189,23 @@ public:
 
     int
     operator< (const GAtom& gatom2) const;
+
+    /**
+     * @brief Prints the GAtom.
+     */
+    virtual std::ostream&
+    print(std::ostream&, const bool) const;
+
+private:
+
+    /**
+     * @brief Flag for preventing higher-order syntax.
+     *
+     * A GAtom that comes from the result of an external atom evaluation
+     * should never be printed in higher-order syntax. With this flag, we can
+     * explicitly prevent higher-order output.
+     */
+    bool alwaysFirstOrder;
 };
 
 

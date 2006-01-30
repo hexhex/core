@@ -6,6 +6,7 @@ pkglib_LTLIBRARIES = libdlvhexbase.la
 
 
 dlvhex_SOURCES = \
+		AtomNode.cpp \
                 BoostComponentFinder.cpp \
                 Component.cpp \
                 ComponentFinder.cpp \

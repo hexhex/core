@@ -246,18 +246,18 @@ main (int argc, char *argv[])
     {
         if (argv[j][0] == '-')
         {
-            if (!strcmp(argv[j],"-dlt"))
+            if (!strcmp(argv[j],"--dlt"))
                 optiondlt = true;
-            else if (!strncmp(argv[j],"--plugindir=", 11))
-                optionPlugindir = std::string(argv[j] + 11);
+            else if (!strncmp(argv[j],"--plugindir=", 12))
+                optionPlugindir = std::string(argv[j] + 12);
             else if (!strcmp(argv[j],"--firstorder"))
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j], "--silent"))
                 global::optionSilent = true;
             else if (!strcmp(argv[j], "--verbose"))
                 global::optionVerbose = true;
-            else if (!strncmp(argv[j], "--filter=", 8))
-                optionFilter = helper::stringExplode(std::string(argv[j] + 8), ",");
+            else if (!strncmp(argv[j], "--filter=", 9))
+                optionFilter = helper::stringExplode(std::string(argv[j] + 9), ",");
             else if (!strcmp(argv[j], "--"))
 //                optionPipe = true;
                 { std::cout << "Piping not working yet, sorry!" << std::endl; exit(-1); }
@@ -501,17 +501,37 @@ main (int argc, char *argv[])
 //    a->print(out, 0);
 //    std::cout << "---" << out.str() << "---";
 
+    //
+    // The GraphBuilder creates nodes and dependency edges from the raw program.
+    //
     GraphBuilder* gb = new GraphBuilder;
 
+    //
+    // The ComponentFinder provides functions for finding SCCs and WCCs from a
+    // set of nodes.
+    //
     ComponentFinder* cf = new BoostComponentFinder;
 
+    //
+    // Initializing the DependencyGraph. Its constructor uses the GraphBuilder
+    // to construct the graph and the ComponentFinder to find relevant graph
+    // properties for the subsequent processing stage.
+    //
     DependencyGraph dg(IDB, gb, cf);
     
+    //
+    // The GraphProcessor provides the actual strategy of how to compute the
+    // hex-models of a given dependency graph.
+    //
     GraphProcessor gp(&dg);
     
     
     try
     {
+        //
+        // The GraphProcessor starts its computation with the program's ground
+        // facts as input.
+        //
         gp.run(EDB); 
     }
     catch (GeneralError &e)
@@ -571,19 +591,37 @@ main (int argc, char *argv[])
     //
     std::ostringstream finaloutput;
     GAtomSet* res;
-    GAtomSet filtered;
     Interpretation iout;
-    
+   
+    //
+    // go through all result models of the GraphProcessor
+    //
     while ((res = gp.getNextModel()) != NULL)
     {
+        GAtomSet filtered;
+
+        //
+        // initialize iout to the result model
+        //
         iout.replaceBy(*res);
        
+        //
+        // do we have to filter the result?
+        //
         if (optionFilter.size() > 0)
         {
             GAtomSet g;
             
-            for (std::vector<std::string>::const_iterator f = optionFilter.begin(); f != optionFilter.end(); f++)
+            //
+            // take each filter predicate
+            //
+            for (std::vector<std::string>::const_iterator f = optionFilter.begin();
+                 f != optionFilter.end();
+                 f++)
             {
+                //
+                // extract matching facts from the current result set
+                //
                 iout.matchPredicate(*f, g);
              
                 filtered.insert(g.begin(), g.end());
@@ -591,20 +629,36 @@ main (int argc, char *argv[])
         }
         else
         {
+            //
+            // no filters - the take the entire model
             filtered = iout.getAtomSet();
         }
 
+        //
+        // stringify the result set
+        //
         printGAtomSet(filtered, finaloutput, 0);
 
+        //
+        // build output stream
+        //
         finaloutput << std::endl;
     }
     
+    //
+    // was there anything non-error the user should know? dump it directly
+    //
     for (std::vector<std::string>::const_iterator l = global::Messages.begin();
          l != global::Messages.end();
          l++)
+    {
         std::cout << *l << std::endl;
+    }
     
 
+    //
+    // eventually, display the result
+    //
     std::cout << finaloutput.str() << std::endl;
 
 

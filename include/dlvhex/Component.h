@@ -5,7 +5,7 @@
  * @author Roman Schindlauer
  * @date Mon Sep 19 13:14:56 CEST 2005
  *
- * @brief Component and Node class.
+ * @brief Component and Subgraph classes.
  *
  *
  */
@@ -15,189 +15,12 @@
 #define _COMPONENT_H
 
 
-#include "dlvhex/Rule.h"
-#include "dlvhex/ExternalAtom.h"
-#include "dlvhex/ModelGenerator.h"
 #include <utility>
 
+#include "dlvhex/AtomNode.h"
+#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/ModelGenerator.h"
 
-
-class Dependency;
-
-/**
- * @brief Single Node of a dependency Graph.
- *
- */
-class AtomNode
-{
-public:
-
-    /// Ctor.
-    AtomNode();
-
-    AtomNode(const Atom*);
-    
-    void
-    setHead();
-
-    void
-    setBody();
-
-    bool
-    isHead();
-
-    bool
-    isBody();
-
-    void
-    addPreceding(const Dependency&);
-
-    void
-    addSucceeding(const Dependency&);
-
-    void
-    addRule(const Rule*);
-
-    const Atom*
-    getAtom() const;
-
-    const std::vector<Dependency>&
-    getPreceding() const;
-
-    const std::vector<Dependency>&
-    getSucceeding() const;
-
-    const std::vector<const Rule*>&
-    getRules() const;
-
-    unsigned
-    getId() const;
-
-private:
-
-    const Atom* atom;
-
-    bool inHead;
-
-    bool inBody;
-
-    std::vector<const Rule*> rules;
-
-    std::vector<Dependency> preceding;
-
-    std::vector<Dependency> succeeding;
-
-    /**
-     * @brief Mantaining also a numerical index to facilitate interfacing of
-     * Component finder algorithms.
-     */
-    unsigned nodeId;
-
-    static unsigned
-    nodeCount;
-};
-
-
-std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode);
-
-
-/**
- * @brief Dependency between two AtomNodes.
- *
- */
-class Dependency
-{
-public:
-
-    typedef enum { UNIFYING = 0,
-                   PRECEDING,
-                   NEG_PRECEDING,
-                   DISJUNCTIVE,
-                   EXTERNAL } Type;
-
-    /// Ctor.
-    Dependency();
-
-    /**
-     * Copy constructor.
-     */
-    Dependency(const Dependency&);
-
-    Dependency(const AtomNode*, Type);
-
-    const Type
-    getType() const;
-
-    const AtomNode*
-    getAtomNode() const;
-
-private:
-
-    const AtomNode* atomNode;
-
-    Type type;
-
-};
-
-std::ostream& operator<< (std::ostream& out, const Dependency& dep);
-
-
-/**
- * @brief Class for storing simple nodes of a dependency graph.
- *
- */
-class NodeGraph
-{
-private:
-
-    std::vector<AtomNode*> atomNodes;
-
-public:
-
-    /// Dtor.
-    ~NodeGraph();
-
-    const std::vector<AtomNode*>&
-    getNodes() const;
-
-    /**
-     * @brief Get node from node id.
-     */
-    const AtomNode*
-    getNode(unsigned);
-
-    void
-    addNode(AtomNode*);
-
-    /**
-     * @brief Create a new node for this head atom and return its pointer or
-     * return pointer to already existing node that matches this atom.
-     *
-     * If a new node is created, all existing nodes are searched for atoms
-     * that unify with the new one. If a node is found, whose atom occured
-     * in a rule's body, a unifying dependency from the new node to the
-     * found one is created.
-     */
-    AtomNode*
-    addUniqueHeadNode(const Atom*);
-
-    /**
-     * @brief Create a new node for this body atom and return its pointer or
-     * return pointer to already existing node that matches this atom.
-     *
-     * See also addUniqueHeadNode. All exisitng nods are searched for a node that
-     * unfies with the new one. If one is found that occured in a rule's head,
-     * a unifying dependency from the existing one to the new one is creates.
-     */
-    AtomNode*
-    addUniqueBodyNode(const Atom*);
-
-    AtomNode*
-    findNode(const Atom*) const;
-
-    void
-    removeNode();
-};
 
 
 /**
@@ -228,7 +51,7 @@ public:
     isSolved() const;
 
     /**
-     * @brief Adds an AtomNode to the component.
+     * @brief Adds an AtomNode to the comonent.
      */
     void
     addAtomNode(const AtomNode*);
@@ -294,6 +117,9 @@ public:
     /// Ctor.
     //ProgramComponent();
 
+    ProgramComponent(const std::vector<AtomNode*>&,
+                     ModelGenerator*);
+
     ProgramComponent(Program&, ModelGenerator*);
     //ProgramComponent(ModelGenerator*);
 
@@ -348,7 +174,7 @@ class ExternalComponent : public Component
 public:
 
     /// Ctor.
-//    ExternalComponent(ExternalAtom*);
+    ExternalComponent(AtomNode*);
 
     /**
      * @brief Computes the result of the external computation.
@@ -367,7 +193,7 @@ private:
     /**
      * @brief External atom of this component.
      */
- //   ExternalAtom* externalAtom;
+    ExternalAtom* externalAtom;
 };
 
 
@@ -514,227 +340,6 @@ private:
     std::vector<GAtomSet*> lastResult;
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////
-//
-//
-// OLD CLASSES
-//
-//
-/////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * @brief Abstract Node class.
- *
- * A node is the smallest entity of the dependency graph.
- */
-class Node
-{
-public:
-    
-    typedef enum { RULE, EXTATOM } NodeType;
-
-    /**
-     * Copy constructor.
-     */
-    Node(const Node&);
-
-    Node(const Atom*);
-
-    const Atom*
-    getAtom() const;
-
-    int
-    operator< (const Node& node2) const;
-
-protected:
-    /// Ctor.
-    Node();
-
-        
-    unsigned id;
-
-    NodeType type;
-
-public:
-    
-    /**
-     * @brief Returns the node's type.
-     */
-    NodeType
-    getType() const;
-
-    /**
-     * @brief Returns the node's index.
-     */
-    unsigned
-    getId() const;
-
-private:
-
-    static unsigned nodecount;
-
-    const Atom* atom;
-
-};
-
-
-/**
- * @brief Node that represents a rule.
- *
- * A rule node consists of a single (head) literal and contains also
- * a reference to the respective rule body.
- */
-class RuleNode : public Node
-{
-public:
-    
-    /// Ctor.
-    RuleNode();
-
-    /**
-     * @brief Initializing the node with a rule.
-     */
-    RuleNode(Rule *rule);
-
-    /**
-     * @brief Returns the body of the rule that belongs to this node.
-     */
-    const Rule*
-    getRule() const;
-
-private:
-
-    /**
-     * @brief Rule belonging to this node.
-     */
-    Rule* rule;
-};
-
-
-/**
- * @brief Node that represents an external atom.
- */
-class ExternalNode : public Node
-{
-public:
-    
-    /// Ctor
-    ExternalNode();
-
-    /**
-     * @brief Initializing the node with an external atom.
-     */
-    ExternalNode(ExternalAtom *atom);
-
-    /**
-     * @brief Returns the external atom.
-     */
-    const ExternalAtom*
-    getExternalAtom() const;
-
-private:
-
-    ExternalAtom* externalAtom;
-};
-
-
-typedef std::vector<Node> Nodes;
-
-typedef std::vector<std::pair<Node*, Node*> > Edges;
-
-
-
-
-class Graph
-{
-private:
-
-public:
-
-    /// Dtor.
-    ~Graph();
-
-    typedef std::vector<Node*> Nodes;
-
-//    typedef std::pair<const Node*, const Node*> Edge;
-
-//    typedef std::set<Edge> Edges;
-    typedef std::multimap<const Node*, const Node*> Edges;
-
-    void
-    insertNode(Node*);
-
-    void
-    insertEdge(const Node* from, const Node* to);
-
-    const Nodes&
-    getNodes() const;
-
-//    void
-//    removeNode(Node*);
-    
-//    void
-//    removeComponent(Component*);
-
-//    void
-//    pruneNode(Node*);
-
-//    void
-//    pruneComponent(Component*);
-
-    void
-    dump(std::ostream&);
-
-private:
-
-    /*
-    class Vertex
-    {
-    public:
-
-        std::vector<Vertex*>
-        getSucc()
-        {
-            return succ;
-        }
-
-        std::vector<Vertex*>
-        getPred()
-        {
-            return pred;
-        }
-
-    private:
-
-        std::vector<Vertex*> pred, succ;
-
-        Node* node;
-    };
-
-*/
-    Nodes nodes;
-
-    Edges edges;
-
-/*
-    std::vector<Vertex> nodes;
-
-    std::map<Node*, std::vector<Vertex>::iterator> nodemap;
-*/
-};
-
 
 
 #endif /* _COMPONENT_H_ */

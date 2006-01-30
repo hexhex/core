@@ -4,6 +4,7 @@ AUTOMAKE_OPTIONS = foreign
 noinst_HEADERS = \
                  ASPsolver.h \
                  Atom.h \
+		 AtomNode.h \
                  BoostComponentFinder.h \
                  ComponentFinder.h \
 		 Component.h \

@@ -85,11 +85,8 @@ ASPsolver::callSolver(std::string prg)
     solverResult::message = "";
     
     
-//    std::cout << prg << std::endl << std::endl;
+    //std::cout << prg << std::endl << std::endl;
     
-    //
-    // escape quotes for shell command execution with echo!
-    //
 
     //char tempfile[] = "/tmp/dlvXXXXXX";
     char tempfile[L_tmpnam];
@@ -118,6 +115,9 @@ ASPsolver::callSolver(std::string prg)
     }
     else
     {
+        //
+        // escape quotes for shell command execution with echo!
+        //
         helper::escapeQuotes(prg);
         
         execdlv = "echo \"" + prg + "\" | " + lpcommand + " -nofacts -- 2>&1; echo $?";

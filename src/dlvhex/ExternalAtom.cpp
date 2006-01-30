@@ -219,7 +219,14 @@ ExternalAtom::evaluate(const Interpretation& i,
          s != (*answer.getTuples()).end();
          ++s)
     {
-        result.insert(GAtom(getReplacementName(), *s));
+        //
+        // construct the GAtom with the third parameter 'true' - this will set
+        // the alwaysFirstOrder flag of the GAtom and ensure, that this GAtom
+        // will never be serialized in higher-order-syntax! since the
+        // replacement predicate for external atoms is always first order, the
+        // corresponding facts need to be fo, too!
+        //
+        result.insert(GAtom(getReplacementName(), *s, 1));
     }
 }
 

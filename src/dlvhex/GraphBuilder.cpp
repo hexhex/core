@@ -38,6 +38,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
     //
     std::multimap<Term, AtomNode*> extinputs;
 
+    //
+    // go through all rules of the given program
+    //
     for (Rules::const_iterator r = rules.begin();
          r != rules.end();
          r++)
@@ -55,8 +58,8 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
              ++hi)
         {
             //
-            // add a head atom node. This function will take care of also adding the appropriate
-            // unifying dependency for all existing nodes.
+            // add a head atom node. This function will take care of also adding
+            // the appropriate unifying dependency for all existing nodes.
             //
             AtomNode* hn = nodegraph.addUniqueHeadNode(&(*hi));
 

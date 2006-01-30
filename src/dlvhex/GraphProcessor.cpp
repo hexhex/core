@@ -10,6 +10,7 @@
  *
  */
 
+#include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/errorHandling.h"
@@ -23,6 +24,9 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const GAtomSet& in)
 {
+    if (global::optionVerbose)
+        std::cout << "Starting Graph Processor" << std::endl;
+
     //
     // start with empty set
     //
@@ -71,6 +75,9 @@ GraphProcessor::run(const GAtomSet& in)
             if (leaves.size() == 0)
             {
                 current = sgresult;
+
+                if (global::optionVerbose)
+                    std::cout << "No leaf components" << std::endl;
             }
             else
             {
@@ -78,6 +85,13 @@ GraphProcessor::run(const GAtomSet& in)
                     ci != leaves.end();
                     ++ci)
                 {
+                    if (global::optionVerbose)
+                    {
+                        std::cout << "Evaluating leaf component:" << std::endl;
+
+                        (*ci)->dump(std::cout);
+                    }
+
                     //
                     // evaluate each component based on the last result
                     //
@@ -121,18 +135,29 @@ GraphProcessor::run(const GAtomSet& in)
             //
             tmpsg.pruneComponents();
 
-    //        std::cout << "after pruning, tpsg has nodes: " << tmpsg.getNodes().size() << std::endl;
+            //std::cout << "after pruning: " << std::endl;
+            //tmpsg.dump(std::cout);
+            //std::cout << std::endl;
+
             //
             // make a component from the node-set
             //
-            Component* weakComponent = depGraph->createWeakComponent(tmpsg.getNodes());
+//            Component* weakComponent = depGraph->createWeakComponent(tmpsg.getNodes());
+            ModelGenerator* mg = new OrdinaryModelGenerator();
+
+            Component* weakComponent = new ProgramComponent(tmpsg.getNodes(), mg);
+
+            //std::cout << "wcc created." << std::endl;
 
             //
             // add the weak component to the subgraph
             //
             sg->addComponent(weakComponent);
+            //std::cout << "wcc added to sg:" << std::endl;
+            //weakComponent->dump(std::cout);
 
             weakComponent->evaluate(current);
+            //std::cout << "wcc evaluated." << std::endl;
 
             weakComponent->getResult(sgresult);
 

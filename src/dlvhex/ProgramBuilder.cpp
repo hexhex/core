@@ -35,7 +35,8 @@ ProgramBuilder::clearString()
 
 
 ProgramDLVBuilder::ProgramDLVBuilder(bool ho)
-  : ProgramBuilder(), higherOrder(ho)
+    : ProgramBuilder(),
+      higherOrder(ho)
 { }
 
 

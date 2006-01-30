@@ -19,7 +19,7 @@
 #include "dlvhex/Rule.h"
 
 /**
- * @brief
+ * @brief Class for building a dependency graph from a given program.
  *
  */
 class GraphBuilder
@@ -33,6 +33,7 @@ public:
     void
     run(const Rules&, NodeGraph&);
 
+
     /**
      * @brief Debug dump.
      */
@@ -44,11 +45,12 @@ public:
 private:
 
     /**
-     * @brief Update two AtomNodes with a dependency.
+     * @brief Add a dependency information to two AtomNodes.
      *
      */
     void
     addDep(AtomNode*, AtomNode*, Dependency::Type);
+
 };
 
 
