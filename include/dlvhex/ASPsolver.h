@@ -52,19 +52,19 @@ public:
     /**
      * @brief Calls the answer set solver with a program.
      * 
-     * The result will be stored within the class and can be
-     * retrieved by getNextAnswerSet().
-     * Currently, though the solver command can be set at configure time,
-     * only DLV is supported. We use it with switch '-nofacts' to avoid having
-     * facts in the answer set that were already present in the program.
-     * Using a different solver would make it necessary to get the same behavior.
-     * Probably this could be tested at configure time.
+     * @param noEDB include the program's facts in the result(s).
+     *
+     * The result will be stored within the class and can be retrieved by
+     * getNextAnswerSet().  Currently, though the solver command can be set at
+     * configure time, only DLV is supported. 
      */
     void
-    callSolver(std::string prg);
+    callSolver(std::string prg, bool noEDB = 0);
 
     /**
      * @brief Retrieves an Answer set, incrementing the internal result pointer.
+     *
+     * If the last answer set was already retrieved, NULL is returned.
      */
     GAtomSet*
     getNextAnswerSet();

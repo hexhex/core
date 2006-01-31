@@ -37,7 +37,15 @@ DependencyGraph::DependencyGraph(Program& program,
     // the graphbuilder creates nodes from the program and puts it into
     // the nodegraph
     //
-    gb->run(program.getRules(), nodegraph);
+
+    try
+    {
+        gb->run(program.getRules(), nodegraph);
+    }
+    catch (GeneralError&)
+    {
+        throw;
+    }
 
     if (global::optionVerbose)
     {
@@ -198,58 +206,6 @@ DependencyGraph::~DependencyGraph()
 
 
 
-/*
-Component*
-DependencyGraph::createComponent(const std::vector<AtomNode*>& nodes,
-                                 ModelGenerator* mg)
-{
-    Program p;
-
-    //
-    // go through all nodes
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        //
-        // add all rules from this node to a temporary program-object
-        //
-        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
-                ri != (*ni)->getRules().end();
-                ++ri)
-        {
-            //
-            // but add rules only once
-            // (we could have the same rules several times, because if we have a
-            // disjunctive head, each head node has the rule!
-            //
-            if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
-                p.getRules().end())
-                p.addRule(**ri);
-
-        }
-    }
-
-    Component* component = new ProgramComponent(p, mg);
-    
-    //
-    // now that we have created the component-object, go through the nodes
-    // again and add them
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-            ni != nodes.end();
-            ++ni)
-    {
-        //
-        // add this node to the component-object
-        //
-        component->addAtomNode(*ni);
-    }
-    
-    return component;
-}
-*/
 
 
 //
@@ -293,156 +249,6 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
 
     return false;
 }
-
-
-/*
-Component*
-DependencyGraph::createWeakComponent(const std::vector<AtomNode*>& nodes)
-{
-    Program p;
-
-    //
-    // go through all nodes of this WCC
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        //
-        // add all rules from this node to a temporary program-object
-        //
-        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
-                ri != (*ni)->getRules().end();
-                ++ri)
-        {
-            if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
-                p.getRules().end())
-                p.addRule(**ri);
-
-        }
-    }
-
-    ModelGenerator* mg = new OrdinaryModelGenerator();
-
-
-    //
-    // now that we have the subprogram and the suitable model
-    // generator, we can create the component-object
-    //
-    Component* component = new ProgramComponent(p, mg);
-    
-    //
-    // now that we have created the component-object, go through the nodes
-    // again and add them
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-            ni != nodes.end();
-            ++ni)
-    {
-        //
-        // add this node to the component-object
-        //
-        component->addAtomNode(*ni);
-    }
-    
-    return component;
-}
-
-
-Component*
-DependencyGraph::createStrongComponent(const std::vector<AtomNode*>& nodes)
-{
-    Program p;
-
-
-    bool isStratified = true;
-
-    //
-    // go through all nodes of this SCC
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-
-        //
-        // add all rules from this node to a temporary program-object
-        //
-        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
-                ri != (*ni)->getRules().end();
-                ++ri)
-        {
-            //
-            // add each rule only once - if we have disjunctive nodes, they both
-            // have the same rule!
-            // 
-            if (find(p.getRules().begin(), p.getRules().end(), **ri) == 
-                p.getRules().end())
-                p.addRule(**ri);
-
-        }
-
-        //
-        // look through all dependencies of this Vertex - if we find a
-        // NEG_PRECEDING, this is an unstratified SCC!
-        //
-        // since an SCC is always cyclic, we only have to consider preceding,
-        // not preceding AND succeeding!
-        //
-        for (std::vector<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
-                di != (*ni)->getPreceding().end();
-                ++di)
-        {
-            if ((*di).getType() == Dependency::NEG_PRECEDING)
-                isStratified = false;
-        }
-    }
-
-    //
-    // now decide which model generator we need:
-    //
-    // pure ordinary SCC (no ext atoms): call-dlv-once-mg (also for disjunctive)
-    // strat, with ext atoms: fixpoint (one model)
-    // unstrat, with ext atoms: guess&check
-    //
-
-    ModelGenerator* mg;
-
-    if (isStratified)
-    {
-        if (p.getExternalAtoms().size() > 0)
-            mg = new FixpointModelGenerator();
-        else
-            mg = new OrdinaryModelGenerator();
-    }
-    else
-    {
-        mg = new GuessCheckModelGenerator();
-    }
-
-    //
-    // now that we have the subprogram and the suitable model
-    // generator, we can create the component-object
-    //
-    Component* component = new ProgramComponent(p, mg);
-    
-    //
-    // now that we have created the component-object, go through the nodes
-    // again and add them
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-            ni != nodes.end();
-            ++ni)
-    {
-        //
-        // add this node to the component-object
-        //
-        component->addAtomNode(*ni);
-    }
-
-    return component;
-}
-*/
 
 
 void

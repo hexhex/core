@@ -31,7 +31,7 @@ public:
     /**
      * Type of the atom.
      */
-    typedef enum { INTERNAL, EXTERNAL } Type;
+    typedef enum { INTERNAL, EXTERNAL, BUILTIN } Type;
 
     /**
      * Default constructor.
@@ -243,6 +243,49 @@ multiplySets(std::vector<GAtomSet>& s1,
              std::vector<GAtomSet>& s2,
              std::vector<GAtomSet>& result);
 
+
+
+/**
+ * @brief Builtin Atom.
+ *
+ * This class represents atoms for builtin-predicates of dlv. For now, we just
+ * pass the string on to the ASP solver and do not process it in any other way.
+ */
+class BuiltinPredicate : public Atom
+{
+public:
+
+    BuiltinPredicate(const BuiltinPredicate& bp)
+    {
+        type = BUILTIN;
+
+        builtin = bp.builtin;
+    }
+
+    Atom*
+    clone()
+    {
+        return new BuiltinPredicate(*this);
+    }
+
+    BuiltinPredicate(std::string b)
+        : builtin(b)
+    {
+        type = BUILTIN;
+    }
+
+    /**
+     * @brief Prints the atom.
+     */
+    virtual std::ostream&
+    print(std::ostream& stream, const bool ho) const
+    {
+        return stream << builtin;
+    }
+
+
+    std::string builtin;
+};
 
 #endif /* _ATOM_H */
 

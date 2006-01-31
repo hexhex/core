@@ -192,7 +192,13 @@ FixpointModelGenerator::compute(const Program& program,
 
         try
         {
-            Solver.callSolver(fixpointProgram);
+            //
+            // call the ASP solver with noEDB turned on - we don't want the
+            // initial set of facts in the result here!
+            //
+            /// @TODO: revise this entire model generator.
+            //
+            Solver.callSolver(fixpointProgram, 1);
         }
         catch (GeneralError e)
         {

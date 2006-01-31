@@ -3,6 +3,7 @@
 // parser.ypp
 
 #include <iostream>
+#include <sstream>
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
@@ -39,6 +40,7 @@ extern GAtomSet EDB;
     std::vector<Atom>* head;
     std::vector<Literal>* body;
     Rule*           rule;
+    BuiltinPredicate* builtin;
 /*    BUILTIN        builtin;
     TERMS*         terms;
     TERM*          term;
@@ -60,12 +62,13 @@ extern GAtomSet EDB;
 
 %token <string> ID NUM EXTERNAL_ATOM_ID
 %type  <string> ident
+%type  <string> binop
 %type  <string> number number_param
 //%type  <string> param_sans_maxint
 %type  <term> term
 //%type  <string> MAXINTEGER_EQUALS_param
 //%type  <string> ident_or_fixedpt ident_or_number
-//%type  <string> binop tertop
+//%type  <string> tertop
 %type  <terms> terms// terms1 terms2 terms3
 //%type  <string> user_pred builtin_pred propositional_atom aggregate external_atom
 %type  <atom> user_pred propositional_atom
@@ -75,6 +78,7 @@ extern GAtomSet EDB;
 %type  <head> head
 %type  <body> body
 %type <extatom> external_atom    
+%type <builtin> builtin_pred    
 //%type  <string> aggregate_type
 //%type  <string> aggregate_pred
 //%type  <rule> rule rule0
@@ -306,6 +310,8 @@ body      : literal
                 $1->push_back(*$3);
                 
                 $$ = $1;
+
+                //$1->back().print(std::cout, 0);
                 
                 delete $3;
             }
@@ -325,10 +331,15 @@ literal   : user_pred
     
                 delete $2;
             }
-//          | builtin_pred
 //          | aggregate
 //          | NOT aggregate
 	      | external_atom
+            {
+                $$ = new Literal(*$1);
+    
+                delete $1;
+            }
+          | builtin_pred
             {
                 $$ = new Literal(*$1);
     
@@ -434,16 +445,24 @@ terms    : {
 ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
 */
 
-/*
-builtin_pred : binop terms2
-          | term binop term
-          | PRED_INT terms1
+
+builtin_pred : /*binop terms2
+          |*/ term binop term
+           {
+               std::ostringstream s;
+               s << *$1 << $2 << *$3;
+//               std::cout << "creating builtin: " << s.str() << std::endl;
+               $$ = new BuiltinPredicate(s.str());
+           }
+          /*| PRED_INT terms1
           | PRED_SUCC terms2
           | tertop terms3
           | param_sans_maxint EQUALS term tertop term
           | MAXINTEGER_EQUALS_param tertop term
+          */
 	  ;
 
+/*
 aggregate : term PRED_LESS aggregate_pred
           | term PRED_LESS_OR_EQ aggregate_pred
           | param_sans_maxint EQUALS aggregate_pred
@@ -459,15 +478,17 @@ aggregate : term PRED_LESS aggregate_pred
           | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS term
           | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS_OR_EQ term
           ;
+*/
 
-binop    : PRED_EQUAL
-         | PRED_UNEQUAL
-         | PRED_LESS
-         | PRED_GREATER
-         | PRED_LESS_OR_EQ
-         | PRED_GREATER_OR_EQ
+binop    : PRED_EQUAL { $$ = "=="; }
+         | PRED_UNEQUAL { $$ = "!="; }
+         | PRED_LESS { $$ = "<"; }
+         | PRED_GREATER { $$ = ">"; }
+         | PRED_LESS_OR_EQ { $$ = "<="; }
+         | PRED_GREATER_OR_EQ { $$ = ">="; }
          ;
 
+/*
 tertop   : PLUS
          | ASTERISK
 	 ;

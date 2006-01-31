@@ -76,6 +76,15 @@ public:
     PluginAtom::InputType
     getInputType(unsigned idx) const;
 
+    //
+    /// @todo: we have to override this member, because the original one of Atom
+    // does not return the first argument!
+    //
+    Tuple
+    getArguments() const
+    {
+        assert(0);
+    }
 
     /**
      * @brief Evaluates the external atom w.r.t. to an interpretation and a
@@ -117,6 +126,19 @@ public:
      */
     Atom*
     clone();
+
+    unsigned
+    getLine() const;
+
+    /*
+    typedef struct
+    {
+        std::string predicate;
+        unsigned argument;
+    } binding;
+
+    std::vector<binding> inputBinding;
+    */
 
 private:
 

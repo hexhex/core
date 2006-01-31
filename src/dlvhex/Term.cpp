@@ -328,13 +328,6 @@ Term::operator>= (const Term& term2) const
 }
 
 
-NamesTable<std::string>&
-Term::getNamesTable()
-{
-    return Term::names;
-}
-
-
 std::ostream&
 operator<< (std::ostream& out, const Term& term)
 {

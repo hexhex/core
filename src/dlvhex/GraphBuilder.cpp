@@ -84,6 +84,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
         }
 
 
+        std::vector<AtomNode*> currentOrdinaryBodyNodes;
+        std::vector<AtomNode*> currentExternalBodyNodes;
+
         //
         // go through rule body
         //
@@ -91,12 +94,28 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 li != r->getBody().end();
                 ++li)
         {
+            //
+            // builtins do not contribute to dependencies (yet)
+            //
+            if (li->getAtom()->getType() == Atom::BUILTIN)
+                continue;
 
             //
             // add a body atom node. This function will take care of also adding the appropriate
             // unifying dependency for all existing nodes.
             //
             AtomNode* bn = nodegraph.addUniqueBodyNode(li->getAtom());
+
+            //
+            // save normal and external atoms of this body - after we are through the entire
+            // body, we might have to update EXTERNAL dependencies inside the
+            // rule!
+            //
+            if (li->getAtom()->getType() == Atom::INTERNAL)
+                currentOrdinaryBodyNodes.push_back(bn);
+
+            if (li->getAtom()->getType() == Atom::EXTERNAL)
+                currentExternalBodyNodes.push_back(bn);
 
             //
             // add dependency from this body atom to each head atom
@@ -115,7 +134,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 // external dependencies - between its arguments (but only those of type
                 // PREDICATE) and any other atom in the program that matches this argument.
                 //
-                // What we iwll do here is to build a multimap, which stores each input
+                // What we will do here is to build a multimap, which stores each input
                 // predicate symbol together with the AtomNode of this external atom.
                 // If we are through all rules, we will go through the complete set
                 // of AtomNodes and search for matches with this multimap.
@@ -148,6 +167,102 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                             extinputs.insert(std::pair<Term, AtomNode*>(ext->getInputTerms()[s], bn));
                         }
                     }
+                }
+            }
+        } // body finished
+
+        //
+        // now we go through the ordinary and external atoms of the body again
+        // and see if we have to add any internal dependencies
+        //
+        for (std::vector<AtomNode*>::iterator currextbody = currentExternalBodyNodes.begin();
+             currextbody != currentExternalBodyNodes.end();
+             ++currextbody)
+        {
+            ExternalAtom* ext = (ExternalAtom*)(*currextbody)->getAtom();
+
+            Tuple extinput = ext->getInputTerms();
+
+            Atom* tmpatom = new Atom("tmpatom", extinput);
+
+            std::vector<Atom> tmphead;
+
+            tmphead.push_back(*tmpatom);
+
+//            AtomNode* helpnode = new AtomNode(tmpatom);
+            AtomNode* helpheadnode = nodegraph.addUniqueHeadNode(tmpatom);
+
+
+            std::vector<Literal> tmpbody;
+
+            for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
+                currbody != currentOrdinaryBodyNodes.end();
+                ++currbody)
+            {
+                tmpbody.push_back(Literal(*((*currbody)->getAtom())));
+            
+                AtomNode* helpbodynode = nodegraph.addUniqueBodyNode(tmpbody.back().getAtom());
+                
+                addDep(helpbodynode, helpheadnode, Dependency::PRECEDING);
+            }
+
+            Rule* tmprule = new Rule(tmphead, tmpbody);
+
+            helpheadnode->addRule(tmprule);
+
+            addDep(helpheadnode, *currextbody, Dependency::EXTERNAL);
+
+            //
+            // for each input term of the external atom: if it is a variable, in
+            // which ordinary body atom does it occur?
+            //
+            for (Tuple::const_iterator ti = extinput.begin();
+                 ti != extinput.end();
+                 ++ti)
+            {
+                if ((*ti).isVariable())
+                {
+/*                    bool unsafe = 1;
+
+                    //
+                    // go through all ordinary atoms of this rule
+                    //
+                    for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
+                        currbody != currentOrdinaryBodyNodes.end();
+                        ++currbody)
+                    {
+                        //
+                        // and look at each atom's arguments
+                        //
+                        const Atom* ord = (*currbody)->getAtom();
+
+                        Tuple ordargs = ord->getArguments();
+
+                        for (Tuple::const_iterator tti = ordargs.begin();
+                             tti != ordargs.end();
+                             ++tti)
+                        {
+                            //
+                            // if we find any argument of an ordinary atom that
+                            // matches the external atom's input variable, then
+                            // this inout variable is safe
+                            //
+                            std::cout << "comparing " << *tti << " with " << *ti << std::endl;
+                            if (*tti == *ti)
+                                unsafe = 0;
+                        }
+                    }
+
+                    if (unsafe)
+                    {
+                        std::ostringstream errorstr;
+                        
+                        errorstr << "Line " << ext->getLine() << ": "
+                                 << "External Atom " << ext->getFunctionName()
+                                 << " is unsafe";
+
+                        throw FatalError(errorstr.str());
+                    }*/
                 }
             }
         }

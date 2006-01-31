@@ -89,6 +89,7 @@ ExternalAtom::ExternalAtom(const std::string name,
         throw FatalError(errorstr.str());
     }
     
+    /*
     //
     // at the moment, we don't allow variable input arguments:
     //
@@ -104,6 +105,7 @@ ExternalAtom::ExternalAtom(const std::string name,
             throw FatalError(errorstr.str());
         }
     }
+    */
 
     //
     // if we got here, the syntax is fine!
@@ -158,6 +160,9 @@ ExternalAtom::evaluate(const Interpretation& i,
 
     GAtomSet factlist;
     
+    //
+    // collect parameters and input set
+    //
     for (int s = 0; s < inputParms.size(); s++)
     {
         const Term* inputTerm = &inputParms[s];
@@ -165,6 +170,30 @@ ExternalAtom::evaluate(const Interpretation& i,
         switch(pluginAtom->getInputType(s))
         {
         case PluginAtom::CONSTANT:
+
+            if (inputTerm->isVariable())
+            {
+                //
+                // the input argument is of type constant, but we have a
+                // variable here - now we have to instantiate it!
+                //
+/*                GAtomSet relevant;
+
+                i.matchPredicate(inputBinding[s].predicate, relevant);
+
+                for (GAtomSet::const_iterator at = relevant.begin();
+                     at != relevant.end();
+                     ++at)
+                {
+                }*/
+            }
+            else
+            {
+                //
+                // the input constant is already there - do nothing
+                //
+            }
+
             break;
 
         case PluginAtom::PREDICATE:
@@ -176,7 +205,7 @@ ExternalAtom::evaluate(const Interpretation& i,
             factlist.clear();
 
             //
-            // at this point, of course everything needs to be ground!
+            /// @todo: this is not allowed yet!
             //
             assert(!inputTerm->isVariable());
 
@@ -280,3 +309,9 @@ ExternalAtom::clone()
 
 unsigned ExternalAtom::uniqueNumber = 0;
 
+
+unsigned
+ExternalAtom::getLine() const
+{
+    return line;
+}

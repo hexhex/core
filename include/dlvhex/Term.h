@@ -308,26 +308,43 @@ public:
     operator>= (const Term&) const; 
 
     /**
-     * @brief Provides access to the static names table.
-     */
-    static NamesTable<std::string>&
-    getNamesTable();
-
-    static std::vector<std::pair<std::string, std::string> > namespaces;
-
-private:
-    
-    Type type;
-
-    /**
      * @brief Table of all constant names of a program.
      */
     static NamesTable<std::string> names;
 
+    /**
+     * @brief List of namespaces.
+     *
+     * Each entry in the list contains the namespace string and the abbreviation
+     * string.
+     */
+    static std::vector<std::pair<std::string, std::string> > namespaces;
+
+private:
+    
+    /**
+     * Type of the Term.
+     */
+    Type type;
+
+    /**
+     * Reference to the constant in the global names table if the Term is a
+     * constant.
+     *
+     * Since the UNA is valid for us, we store all constants in a global
+     * (static) table and let each constant term only refer to the respective
+     * table entry.
+     */
     NamesTable<std::string>::const_iterator constantString;
 
+    /**
+     * Integer value if this Term is of type INTEGER.
+     */
     int constantInteger;
 
+    /**
+     * Variable identifier if term is of type VARIABLE.
+     */
     std::string variableString;
 };
 

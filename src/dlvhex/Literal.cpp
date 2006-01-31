@@ -23,6 +23,11 @@ Literal::~Literal()
 }
 
 
+//
+/// @todo: do not create new atoms here, rather take the pointers from the
+// parser!
+//
+
 Literal::Literal(const Literal &literal2)
     : isWeaklyNegated(literal2.isWeaklyNegated)
 {
@@ -34,6 +39,20 @@ Literal::Literal(const Atom& at, bool naf)
     : isWeaklyNegated(naf)
 {
     atom = new Atom(at);
+}
+
+
+Literal::Literal(const BuiltinPredicate& at, bool naf)
+    : isWeaklyNegated(naf)
+{
+    //
+    /// @todo: can we weakly negate a builtin?
+    //
+    assert(!naf);
+
+    atom = new BuiltinPredicate(at.builtin);
+
+//    std::cout << "created builtin with type " << atom->getType() << std::endl;
 }
 
 

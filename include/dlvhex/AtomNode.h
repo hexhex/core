@@ -300,7 +300,7 @@ public:
      * @brief Create a new node for this body atom and return its pointer or
      * return pointer to already existing node that matches this atom.
      *
-     * See also addUniqueHeadNode. All exisitng nods are searched for a node
+     * See also addUniqueHeadNode. All existing nods are searched for a node
      * that unfies with the new one. If one is found that occured in a rule's
      * head, a unifying dependency from the existing one to the new one is
      * creates.

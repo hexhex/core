@@ -49,6 +49,12 @@ public:
 
 
     /**
+     * @brief Construct a literal from a builtin predicate.
+     */
+    Literal(const BuiltinPredicate&, bool naf = false);
+
+
+    /**
      * @brief Construct a literal from an external atom, possibly weakly negated.
      */
     Literal(const ExternalAtom&, bool naf = false);

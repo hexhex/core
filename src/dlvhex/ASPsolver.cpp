@@ -79,13 +79,17 @@ extern bool dlvresultdebug;
 
 
 void
-ASPsolver::callSolver(std::string prg)
+ASPsolver::callSolver(std::string prg, bool noEDB)
 {
     solverResult::answersets.clear();
     solverResult::message = "";
     
+    std::string dlvOptions("");
+
+    if (noEDB)
+        dlvOptions = "-nofacts";
     
-    //std::cout << prg << std::endl << std::endl;
+    //std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
     
 
     //char tempfile[] = "/tmp/dlvXXXXXX";
@@ -111,7 +115,9 @@ ASPsolver::callSolver(std::string prg)
         fflush(dlvinput);
         fclose(dlvinput);
 
-        execdlv = lpcommand + " -nofacts " + (std::string)tempfile + " 2>&1; echo $?";
+        execdlv = lpcommand + " " +
+                  dlvOptions + " " +
+                  (std::string)tempfile + " 2>&1; echo $?";
     }
     else
     {
@@ -120,9 +126,12 @@ ASPsolver::callSolver(std::string prg)
         //
         helper::escapeQuotes(prg);
         
-        execdlv = "echo \"" + prg + "\" | " + lpcommand + " -nofacts -- 2>&1; echo $?";
+        execdlv = "echo \"" + prg + "\" | " +
+                  lpcommand + " " + 
+                  dlvOptions + " -- 2>&1; echo $?";
     }
 
+    //std::cout << execdlv << std::endl;
 
     dlvresultin = popen(execdlv.c_str(), "r");
 
@@ -130,7 +139,7 @@ ASPsolver::callSolver(std::string prg)
 
     fclose(dlvresultin);
 
-    //unlink(tempfile);
+    unlink(tempfile);
 
     //std::cout << solverResult::returncode << std::endl;
     
@@ -144,7 +153,7 @@ ASPsolver::callSolver(std::string prg)
     //
     if (solverResult::returncode != 0)
     {
-        throw FatalError("LP solver aborted due to program errors!");
+        throw FatalError("LP solver aborted due to program errors! Maybe unsafe rules?");
     }
     
     // TODO: what to do with solverResult::message?

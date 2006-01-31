@@ -136,6 +136,8 @@ extern int inputparse();
 #include <sys/dir.h>
 #include <dirent.h>
 
+#include "pwd.h"
+
 //
 // definition for getwd ie MAXPATHLEN etc
 //
@@ -145,6 +147,8 @@ extern int inputparse();
 
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/GraphProcessor.h"
+#include "dlvhex/Component.h"
+
 
 void
 insertNamespaces()
@@ -154,12 +158,14 @@ insertNamespaces()
 
     std::string prefix, fullns;
 
-    NamesTable<std::string> names = Term::getNamesTable();
+    //NamesTable<std::string>* names = Term::getNamesTable();
 
-    for (NamesTable<std::string>::const_iterator nm = names.begin();
-         nm != names.end();
+    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+         nm != Term::names.end();
          ++nm)
     {
+        std::cout << "orig: nametable entry: " << *nm << std::endl;
+
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
             ns != Term::namespaces.end();
             ns++)
@@ -172,13 +178,28 @@ insertNamespaces()
 
                 r.replace(0, prefix.length(), ns->first);
 
-                names.modify(nm, r);
+                Term::names.modify(nm, r);
 
                 //std::cout << "modified: " << r << std::endl;
             }
         }
         
+        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
     }
+
+    /*
+    NamesTable<std::string> names2 = Term::getNamesTable();
+
+    std::cout << "addr1: " << &names << std::endl;
+    std::cout << "addr2: " << &names2 << std::endl;
+
+    for (NamesTable<std::string>::const_iterator nm = names2.begin();
+         nm != names2.end();
+         ++nm)
+    {
+        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
+    }
+    */
 }
 
 void
@@ -189,10 +210,10 @@ removeNamespaces()
 
     std::string prefix, fullns;
 
-    NamesTable<std::string> names = Term::getNamesTable();
+//    NamesTable<std::string> names = Term::getNamesTable();
 
-    for (NamesTable<std::string>::const_iterator nm = names.begin();
-         nm != names.end();
+    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+         nm != Term::names.end();
          ++nm)
     {
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
@@ -209,23 +230,18 @@ removeNamespaces()
 
                 r.replace(0, fullns.length(), prefix);
 
-                names.modify(nm, r);
+                Term::names.modify(nm, r);
             }
         }
-        
     }
 }
 
-#include "pwd.h"
-
-#include "dlvhex/Component.h"
 
 int
 main (int argc, char *argv[])
 {
     WhoAmI = argv[0];
 
-    
     //
     // Option handling
     //
@@ -482,6 +498,20 @@ main (int argc, char *argv[])
     }
 
     
+    insertNamespaces();
+
+    /*
+    NamesTable<std::string> names = Term::getNamesTable();
+
+    for (NamesTable<std::string>::const_iterator nm = names.begin();
+         nm != names.end();
+         ++nm)
+    {
+        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
+    }
+*/
+
+
     if (global::optionVerbose)
     {
         std::cout << "Parsed Rules: " << std::endl;
@@ -492,8 +522,6 @@ main (int argc, char *argv[])
         std::cout << std::endl;
         std::cout << std::endl;
     }
-
-    insertNamespaces();
 
 
 //    Atom* a = new Atom("p(q)");
@@ -512,18 +540,31 @@ main (int argc, char *argv[])
     //
     ComponentFinder* cf = new BoostComponentFinder;
 
+    /// @todo: when exiting after an exception, we have to cleanup things!
+
     //
     // Initializing the DependencyGraph. Its constructor uses the GraphBuilder
     // to construct the graph and the ComponentFinder to find relevant graph
     // properties for the subsequent processing stage.
     //
-    DependencyGraph dg(IDB, gb, cf);
+    DependencyGraph* dg;
+
+    try
+    {
+        dg = new DependencyGraph(IDB, gb, cf);
+    }
+    catch (GeneralError &e)
+    {
+        std::cerr << e.getErrorMsg() << std::endl;
+
+        exit(1);
+    }
     
     //
     // The GraphProcessor provides the actual strategy of how to compute the
     // hex-models of a given dependency graph.
     //
-    GraphProcessor gp(&dg);
+    GraphProcessor gp(dg);
     
     
     try
@@ -541,47 +582,6 @@ main (int argc, char *argv[])
         exit(1);
     }
     
-    
-    /*
-    GAtom a("a");
-    GAtom b("b");
-    GAtom c("c");
-    GAtom d("d");
-    GAtom e("e");
-    GAtom f("a");
-
-    GAtomSet s1;
-    s1.insert(a);
-    GAtomSet s2;
-    s2.insert(b);
-    s2.insert(c);
-    std::vector<GAtomSet> r1;
-    r1.push_back(s1);
-    r1.push_back(s2);
-
-    GAtomSet s3;
-    s3.insert(d);
-    s3.insert(e);
-    GAtomSet s4;
-    s4.insert(f);
-    std::vector<GAtomSet> r2;
-    r2.push_back(s3);
-    r2.push_back(s4);
-
-    std::vector<GAtomSet> resu;
-
-    multiplySets(r1, r2, r1);
-   // r1 = resu;
-   // multiplySets(r1, r3, resu);
-
-    std::cout << "multiplying: " << std::endl;
-    for (std::vector<GAtomSet>::iterator ii = r1.begin();
-         ii != r1.end();
-         ++ii)
-    {
-        std::cout << *ii << std::endl;
-    }
-*/
 
     removeNamespaces();
 
@@ -668,4 +668,6 @@ main (int argc, char *argv[])
     delete cf;
 
     delete gb;
+
+    delete dg;
 }

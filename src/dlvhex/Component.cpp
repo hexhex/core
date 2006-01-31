@@ -190,29 +190,18 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
             std::cout << std::endl;
         }
 
-        //(*ci)->getResult(previous);
-        
-        //for (std::vector<GAtomSet*>::const_iterator gi = previous.begin();
-        //     gi != previous.end();
-        //     ++gi)
-        //{
-            res.clear();
+        res.clear();
 
-            try
-            {
-                modelGenerator->compute(program, *in, res);
-      //          std::cout << "result:" << std::endl;
-      //          printGAtomSet(res[0], std::cout, 0);
-            }
-            catch (GeneralError&)
-            {
-                throw;
-            }
+        try
+        {
+            modelGenerator->compute(program, *in, res);
+        }
+        catch (GeneralError&)
+        {
+            throw;
+        }
 
-            result.insert(result.end(), res.begin(), res.end());
-    //        for (std::vector<Node>::iterator ni = outgoingNodes.begin();
-    //                addInput(res)
-        //}
+        result.insert(result.end(), res.begin(), res.end());
     }
 
     if (global::optionVerbose)
