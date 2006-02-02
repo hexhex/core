@@ -308,10 +308,11 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
                     // be in that function), so the dependency goes from the
                     // head into the body.
                     //
-                    Dependency dep2(*oldnode, Dependency::UNIFYING);
+                    Dependency dep1(*oldnode, Dependency::UNIFYING);
+                    Dependency dep2(newnode, Dependency::UNIFYING);
 
-                    newnode->addSucceeding(dep2);
-                    newnode->addPreceding(dep2);
+                    (*oldnode)->addPreceding(dep1);
+                    newnode->addSucceeding(dep1);
                 }
             }
         }
@@ -345,7 +346,7 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
         newnode->setBody();
         
         //
-        // search for all exisitng nodes if an atom exists that unifies
+        // search for all existing nodes if an atom exists that unifies
         // with this new one - then we can add the unifying-dependency to both
         //
         for (std::vector<AtomNode*>::const_iterator oldnode = atomNodes.begin();
@@ -366,10 +367,11 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
                     // in that function), so the dependency goes from the head
                     // into the body.
                     //
-                    Dependency dep1(newnode, Dependency::UNIFYING);
+                    Dependency dep1(*oldnode, Dependency::UNIFYING);
+                    Dependency dep2(newnode, Dependency::UNIFYING);
 
                     (*oldnode)->addSucceeding(dep1);
-                    (*oldnode)->addPreceding(dep1);
+                    newnode->addPreceding(dep1);
                 }
             }
         }

@@ -164,11 +164,14 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
 
     answerSetIndex = solverResult::answersets.begin();
 
+    
     /*
     for (std::vector<GAtomSet>::iterator o = solverResult::answersets.begin();
             o != solverResult::answersets.end();
             o++)
-        cout << "as: " << *o << endl;
-        */
+    {
+        std::cout << "as: " << *o << std::endl;
+    }
+    */
 }
 

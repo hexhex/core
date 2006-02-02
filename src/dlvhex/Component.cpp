@@ -226,7 +226,7 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
 void
 ProgramComponent::dump(std::ostream& out) const
 {
-    out << "ProgramComponent-object:" << std::endl;
+    out << "ProgramComponent-object --------------------------------" << std::endl;
     out << "Nodes:";
 
     for (std::vector<const AtomNode*>::const_iterator ni = atomnodes.begin();
@@ -242,7 +242,9 @@ ProgramComponent::dump(std::ostream& out) const
 
     program.dump(out);
 
-    out << std::endl;
+    out << "ProgramComponent-object end ----------------------------" << std::endl;
+
+//    out << std::endl;
 }
 
 
@@ -316,14 +318,16 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
 void
 ExternalComponent::dump(std::ostream& out) const
 {
-    out << "ExternalComponent-object:" << std::endl;
+    out << "ExternalComponent-object with node ";
 
     //
     // an external component can have only one node
     //
-    out << "Node: " << (*atomnodes.begin())->getId() << std::endl;
+    out << (*atomnodes.begin())->getId() << std::endl;
 
-    out << std::endl;
+    //out << "ExternalComponent-object end ---------------------------" << std::endl;
+
+    //out << std::endl;
 }
 
 
@@ -484,6 +488,9 @@ Subgraph::getNodes() const
 std::vector<Component*>
 Subgraph::getPredecessors(Component* comp)
 {
+    std::cout << "looking for predecessors of" << std::endl;
+    comp->dump(std::cout);
+
     Component* c;
 
     std::vector<Component*> pred;
@@ -494,7 +501,7 @@ Subgraph::getPredecessors(Component* comp)
          ni != compnodes.end();
          ++ni)
     {
-        //std::cout << "looking at " << **ni <<std::endl;
+        std::cout << "looking at " << **ni <<std::endl;
         //
         // go through all predecessors of this node
         //
@@ -502,26 +509,28 @@ Subgraph::getPredecessors(Component* comp)
             d != (*ni)->getPreceding().end();
             ++d)
         {
-            //std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
+            std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
             //
-            // for each preceding node - get the component this node belongs to
+            // for each preceding node:
+            // if the node belongs to a component, get the component this node belongs to
             //
-            if (nodeComponentMap.find((*d).getAtomNode()) == nodeComponentMap.end())
-                assert(0);
-
-            c = nodeComponentMap[(*d).getAtomNode()];
-            //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
-
-            //
-            // don't add this component itself
-            //
-            if (comp != c)
+            if (nodeComponentMap.find((*d).getAtomNode()) != nodeComponentMap.end())
             {
+
+                c = nodeComponentMap[(*d).getAtomNode()];
+                //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
+
                 //
-                // did we find this component already?
+                // don't add this component itself
                 //
-                if (find(pred.begin(), pred.end(), c) == pred.end())
-                    pred.push_back(c);
+                if (comp != c)
+                {
+                    //
+                    // did we find this component already?
+                    //
+                    if (find(pred.begin(), pred.end(), c) == pred.end())
+                        pred.push_back(c);
+                }
             }
         }
 
@@ -580,20 +589,98 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
     // somewhere else!
     //
 
+    std::cout << "Collecting unsolved leaves" << std::endl;
+
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();
          ++ci)
     {
+        bool isLeaf = true;
+
+        //
+        // only look for unsolved components
+        //
         if (!(*ci)->isSolved())
         {
             //
             // does it have any unsolved incoming components?
             //
             
-            bool allsolved = true;
+    //        bool allsolved = true;
 
-            std::vector<Component*> pred = getPredecessors(*ci);
+            //std::vector<Component*> pred = getPredecessors(*ci);
 
+
+
+
+
+
+            //std::cout << "looking for predecessors of" << std::endl;
+            //(*ci)->dump(std::cout);
+
+            Component* c;
+
+            std::vector<Component*> pred;
+
+            std::vector<const AtomNode*> compnodes = (*ci)->getNodes();
+
+            for (std::vector<const AtomNode*>::const_iterator ni = compnodes.begin();
+                ni != compnodes.end();
+                ++ni)
+            {
+      //          std::cout << "looking at " << **ni <<std::endl;
+                //
+                // go through all predecessors of this node
+                //
+                for (std::vector<Dependency>::const_iterator d = (*ni)->getPreceding().begin();
+                    d != (*ni)->getPreceding().end();
+                    ++d)
+                {
+        //            std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
+                    //
+                    // for each preceding node:
+                    // if the node belongs to a component, get the component this node belongs to
+                    //
+                    if (nodeComponentMap.find((*d).getAtomNode()) != nodeComponentMap.end())
+                    {
+
+                        c = nodeComponentMap[(*d).getAtomNode()];
+                        //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
+
+                        //
+                        // don't add this component itself
+                        //
+                        if ((*ci) != c)
+                        {
+                            //
+                            // did we find this component already?
+                            //
+                //            if (find(pred.begin(), pred.end(), c) == pred.end())
+                //                pred.push_back(c);
+                            
+                            if (!c->isSolved())
+                            {
+                                isLeaf = false;
+
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        isLeaf = false;
+
+                        break;
+                    }
+                }
+
+            }
+
+
+
+
+
+/*
             for (std::vector<Component*>::const_iterator pi = pred.begin();
                  pi != pred.end();
                  ++pi)
@@ -601,11 +688,11 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                 if (!(*pi)->isSolved())
                     allsolved = false;
             }
-
+*/
             //
             // so *ci is unsolved, but all preceding are solved - then it is a leaf!
             //
-            if (allsolved)
+            if (isLeaf)
                 leaves.push_back(*ci);
         }
     }

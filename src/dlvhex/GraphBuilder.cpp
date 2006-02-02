@@ -183,18 +183,24 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
 
             Tuple extinput = ext->getInputTerms();
 
-            Atom* tmpatom = new Atom("tmpatom", extinput);
+            //
+            // make a new atom, will be the head of the auxiliary rule
+            //
+            Atom* auxheadatom = new Atom("tmpatom", extinput);
 
-            std::vector<Atom> tmphead;
+            //
+            // add a new head node with this atom
+            //
+            AtomNode* helpheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
 
-            tmphead.push_back(*tmpatom);
-
-//            AtomNode* helpnode = new AtomNode(tmpatom);
-            AtomNode* helpheadnode = nodegraph.addUniqueHeadNode(tmpatom);
-
+            addDep(helpheadnode, *currextbody, Dependency::EXTERNAL);
 
             std::vector<Literal> tmpbody;
 
+            //
+            // the body of the auxiliary rule is the entire ordinary body of the
+            // rule with the external atom
+            //
             for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
                 currbody != currentOrdinaryBodyNodes.end();
                 ++currbody)
@@ -206,11 +212,17 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 addDep(helpbodynode, helpheadnode, Dependency::PRECEDING);
             }
 
+            //
+            // finally, make an auxiliary rule object to add to the head nde
+            //
+            std::vector<Atom> tmphead;
+
+            tmphead.push_back(*auxheadatom);
+
             Rule* tmprule = new Rule(tmphead, tmpbody);
 
             helpheadnode->addRule(tmprule);
 
-            addDep(helpheadnode, *currextbody, Dependency::EXTERNAL);
 
             //
             // for each input term of the external atom: if it is a variable, in

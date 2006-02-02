@@ -303,6 +303,8 @@ main (int argc, char *argv[])
         printLogo();
 
 
+    if (global::optionVerbose)
+        std::cout << std::endl << "@@@ reading input @@@" << std::endl << std::endl;
 
     //
     // no file and no stdin?
@@ -551,6 +553,9 @@ main (int argc, char *argv[])
 
     try
     {
+        if (global::optionVerbose)
+            std::cout << std::endl << "@@@ building dependency graph @@@" << std::endl << std::endl;
+
         dg = new DependencyGraph(IDB, gb, cf);
     }
     catch (GeneralError &e)
@@ -564,11 +569,15 @@ main (int argc, char *argv[])
     // The GraphProcessor provides the actual strategy of how to compute the
     // hex-models of a given dependency graph.
     //
+
     GraphProcessor gp(dg);
     
     
     try
     {
+        if (global::optionVerbose)
+            std::cout << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
+
         //
         // The GraphProcessor starts its computation with the program's ground
         // facts as input.
