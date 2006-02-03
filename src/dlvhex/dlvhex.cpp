@@ -29,6 +29,7 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/errorHandling.h"
+#include "dlvhex/ResultContainer.h"
 
 
 unsigned parser_line;
@@ -595,13 +596,33 @@ main (int argc, char *argv[])
     removeNamespaces();
 
     
+    std::vector<Term> filter;
+
+    for (std::vector<std::string>::const_iterator f = optionFilter.begin();
+         f != optionFilter.end();
+         f++)
+    {
+        filter.push_back(Term(*f));
+    }
+
+    ResultContainer result;
+
+    GAtomSet* res;
+
+    while ((res = gp.getNextModel()) != NULL)
+    {
+        result.addSet(*res);
+    }
+
+    result.print(std::cout);
+
     //
     // filtering result models
     //
     std::ostringstream finaloutput;
-    GAtomSet* res;
     Interpretation iout;
    
+    /*
     //
     // go through all result models of the GraphProcessor
     //
@@ -653,7 +674,8 @@ main (int argc, char *argv[])
         //
         finaloutput << std::endl;
     }
-    
+    */
+
     //
     // was there anything non-error the user should know? dump it directly
     //

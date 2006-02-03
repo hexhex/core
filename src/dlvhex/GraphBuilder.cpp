@@ -16,7 +16,7 @@
 
 
 
-
+/*
 void
 GraphBuilder::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
 {
@@ -26,7 +26,7 @@ GraphBuilder::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
     from->addSucceeding(dep2);
     to->addPreceding(dep1);
 }
-
+*/
 
 
 void
@@ -45,6 +45,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
          r != rules.end();
          r++)
     {
+//        dumpGraph(nodegraph, std::cout);
         //
         // all nodes of the current rule's head
         //
@@ -73,8 +74,8 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 //
                 // and add disjunctive dependency
                 //
-                addDep(hn, *currhead, Dependency::DISJUNCTIVE);
-                addDep(*currhead, hn, Dependency::DISJUNCTIVE);
+                Dependency::addDep(hn, *currhead, Dependency::DISJUNCTIVE);
+                Dependency::addDep(*currhead, hn, Dependency::DISJUNCTIVE);
             }
 
             //
@@ -125,9 +126,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                  ++currhead)
             {
                 if (li->isNAF())
-                    addDep(bn, *currhead, Dependency::NEG_PRECEDING);
+                    Dependency::addDep(bn, *currhead, Dependency::NEG_PRECEDING);
                 else
-                    addDep(bn, *currhead, Dependency::PRECEDING);
+                    Dependency::addDep(bn, *currhead, Dependency::PRECEDING);
 
                 //
                 // if an external atom is in the body, we have to take care of the
@@ -173,7 +174,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
 
         //
         // now we go through the ordinary and external atoms of the body again
-        // and see if we have to add any internal dependencies
+        // and see if we have to add any EXTERNAL_AUX dependencies
         //
         for (std::vector<AtomNode*>::iterator currextbody = currentExternalBodyNodes.begin();
              currextbody != currentExternalBodyNodes.end();
@@ -181,101 +182,65 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
         {
             ExternalAtom* ext = (ExternalAtom*)(*currextbody)->getAtom();
 
-            Tuple extinput = ext->getInputTerms();
-
             //
-            // make a new atom, will be the head of the auxiliary rule
+            // does this external atom have any variable input parameters?
             //
-            Atom* auxheadatom = new Atom("tmpatom", extinput);
-
-            //
-            // add a new head node with this atom
-            //
-            AtomNode* helpheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
-
-            addDep(helpheadnode, *currextbody, Dependency::EXTERNAL);
-
-            std::vector<Literal> tmpbody;
-
-            //
-            // the body of the auxiliary rule is the entire ordinary body of the
-            // rule with the external atom
-            //
-            for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
-                currbody != currentOrdinaryBodyNodes.end();
-                ++currbody)
+            if (!ext->pureGroundInput())
             {
-                tmpbody.push_back(Literal(*((*currbody)->getAtom())));
-            
-                AtomNode* helpbodynode = nodegraph.addUniqueBodyNode(tmpbody.back().getAtom());
-                
-                addDep(helpbodynode, helpheadnode, Dependency::PRECEDING);
-            }
 
-            //
-            // finally, make an auxiliary rule object to add to the head nde
-            //
-            std::vector<Atom> tmphead;
+                Tuple extinput = ext->getInputTerms();
 
-            tmphead.push_back(*auxheadatom);
+                //
+                // make a new atom, will be the head of the auxiliary rule
+                //
+                Atom* auxheadatom = new Atom("aux_" + ext->getReplacementName(), extinput);
 
-            Rule* tmprule = new Rule(tmphead, tmpbody);
+                //
+                // add a new head node with this atom
+                //
+                AtomNode* auxheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
 
-            helpheadnode->addRule(tmprule);
+                //
+                // add aux dependency
+                //
+                Dependency::addDep(auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
+                std::vector<Literal> auxbody;
 
-            //
-            // for each input term of the external atom: if it is a variable, in
-            // which ordinary body atom does it occur?
-            //
-            for (Tuple::const_iterator ti = extinput.begin();
-                 ti != extinput.end();
-                 ++ti)
-            {
-                if ((*ti).isVariable())
+                //
+                // the body of the auxiliary rule is the entire ordinary body of the
+                // rule with the external atom
+                //
+                for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
+                    currbody != currentOrdinaryBodyNodes.end();
+                    ++currbody)
                 {
-/*                    bool unsafe = 1;
-
                     //
-                    // go through all ordinary atoms of this rule
+                    // make new literals with the (ordinary) body atoms of the current rule
                     //
-                    for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
-                        currbody != currentOrdinaryBodyNodes.end();
-                        ++currbody)
-                    {
-                        //
-                        // and look at each atom's arguments
-                        //
-                        const Atom* ord = (*currbody)->getAtom();
-
-                        Tuple ordargs = ord->getArguments();
-
-                        for (Tuple::const_iterator tti = ordargs.begin();
-                             tti != ordargs.end();
-                             ++tti)
-                        {
-                            //
-                            // if we find any argument of an ordinary atom that
-                            // matches the external atom's input variable, then
-                            // this inout variable is safe
-                            //
-                            std::cout << "comparing " << *tti << " with " << *ti << std::endl;
-                            if (*tti == *ti)
-                                unsafe = 0;
-                        }
-                    }
-
-                    if (unsafe)
-                    {
-                        std::ostringstream errorstr;
-                        
-                        errorstr << "Line " << ext->getLine() << ": "
-                                 << "External Atom " << ext->getFunctionName()
-                                 << " is unsafe";
-
-                        throw FatalError(errorstr.str());
-                    }*/
+                    auxbody.push_back(Literal(*((*currbody)->getAtom())));
+                
+                    //
+                    // make node for each of these new atoms
+                    //
+                    AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(auxbody.back().getAtom());
+                    
+                    //
+                    // add the usual body->head dependency
+                    //
+                    Dependency::addDep(auxbodynode, auxheadnode, Dependency::PRECEDING);
                 }
+
+                //
+                // finally, make an auxiliary rule object to add to the head node
+                //
+                std::vector<Atom> auxhead;
+
+                auxhead.push_back(*auxheadatom);
+
+                Rule* auxrule = new Rule(auxhead, auxbody);
+
+                auxheadnode->addRule(auxrule);
             }
         }
 
@@ -316,7 +281,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
         //
         for (mi i = range.first; i != range.second; ++i)
         {
-            addDep(*node, i->second, Dependency::EXTERNAL);
+            Dependency::addDep(*node, i->second, Dependency::EXTERNAL);
         }
     }
 

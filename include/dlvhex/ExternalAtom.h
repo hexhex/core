@@ -61,6 +61,13 @@ public:
 
 
     /**
+     * @brief Returns 1 if all input arguments are ground, 0 otherwise.
+     */
+    bool
+    pureGroundInput() const;
+
+
+    /**
      * @brief Returns the tuple of input arguments as they were specified
      * in the logic program.
      */
@@ -93,6 +100,11 @@ public:
      * The input parameter list here must be the ground version of the
      * input arguments specified in the logic program. The prediate name of the
      * returned ground atoms will be the replacement name of this atom.
+     * What the evaluation function basically does, is to pass the list of
+     * ground input parameters and part of the interpretation to the plugin and let it
+     * evaluate its external atom function there. The passed part of the
+     * interpretation is determined byt those input parameters that are of type
+     * PREDICATE.
      */
     void
     evaluate(const Interpretation &i,

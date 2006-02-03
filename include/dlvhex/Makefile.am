@@ -21,6 +21,7 @@ noinst_HEADERS = \
                  PluginInterface.h \
                  ProgramBuilder.h \
                  GraphProcessor.h \
+                 ResultContainer.h \
                  Rule.h \
                  Term.h
 

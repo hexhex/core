@@ -44,12 +44,8 @@ public:
 
 private:
 
-    /**
-     * @brief Add a dependency information to two AtomNodes.
-     *
-     */
-    void
-    addDep(AtomNode*, AtomNode*, Dependency::Type);
+//    void
+//    addDep(AtomNode*, AtomNode*, Dependency::Type);
 
 };
 

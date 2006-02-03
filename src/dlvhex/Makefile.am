@@ -19,6 +19,7 @@ dlvhex_SOURCES = \
                 OrdinaryModelGenerator.cpp \
                 parser.ypp \
                 ProgramBuilder.cpp \
+                ResultContainer.cpp \
                 scanner.lpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src

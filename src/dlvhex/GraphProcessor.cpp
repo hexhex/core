@@ -53,7 +53,7 @@ GraphProcessor::run(const GAtomSet& in)
         //
         sgresult.push_back(in);
 
-        do
+        do // while unsolved components left
         {
             std::vector<Component*> leaves;
             
@@ -62,10 +62,13 @@ GraphProcessor::run(const GAtomSet& in)
             current.clear();
 
             //
-            // start with empty set
+            // start with empty set as result of the leaves
             //
             current.push_back(GAtomSet());
 
+            //
+            // result of a single leaf component
+            //
             std::vector<GAtomSet> compresult;
 
             //
@@ -109,8 +112,16 @@ GraphProcessor::run(const GAtomSet& in)
                         break;
                     }
 
+                    //
+                    // build the product of the other leaves' result and this
+                    // one
+                    //
                     multiplySets(current, compresult, current);
                 }
+
+//                std::cout << "Leaf Result: ";
+//                printGAtomSet(current[0], std::cout, 0);
+//                std::cout << std::endl;
             }
 
             if (current.size() == 0)

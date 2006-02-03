@@ -89,23 +89,24 @@ ExternalAtom::ExternalAtom(const std::string name,
         throw FatalError(errorstr.str());
     }
     
-    /*
+    
     //
-    // at the moment, we don't allow variable input arguments:
+    // at the moment, we don't allow variable predicate input arguments:
     //
-    for (Tuple::const_iterator il = inputList.begin();
-         il != inputList.end();
-         il++)
+    for (int s = 0; s < inputList.size(); s++)
     {
-        if (il->isVariable())
+        const Term inputTerm = inputList[s];
+
+        if ((inputTerm.isVariable()) &&
+            (pluginAtom->getInputType(s) == PluginAtom::PREDICATE))
         {
             errorstr << "Line " << line << ": "
-                     << "Variable input arguments not allowed";
+                     << "Variable predicate input arguments not allowed";
 
             throw FatalError(errorstr.str());
         }
     }
-    */
+    
 
     //
     // if we got here, the syntax is fine!
@@ -132,6 +133,21 @@ std::string
 ExternalAtom::getReplacementName() const
 {
     return replacementName;
+}
+
+
+bool
+ExternalAtom::pureGroundInput() const
+{
+    for (Tuple::const_iterator ti = inputList.begin();
+         ti != inputList.end();
+         ++ti)
+    {
+        if ((*ti).isVariable())
+            return 0;
+    }
+
+    return 1;
 }
 
 
@@ -167,32 +183,18 @@ ExternalAtom::evaluate(const Interpretation& i,
     {
         const Term* inputTerm = &inputParms[s];
 
+        //
+        // at this point, the entire input list must be ground!
+        //
+        assert(!inputTerm->isVariable());
+
         switch(pluginAtom->getInputType(s))
         {
         case PluginAtom::CONSTANT:
 
-            if (inputTerm->isVariable())
-            {
-                //
-                // the input argument is of type constant, but we have a
-                // variable here - now we have to instantiate it!
-                //
-/*                GAtomSet relevant;
-
-                i.matchPredicate(inputBinding[s].predicate, relevant);
-
-                for (GAtomSet::const_iterator at = relevant.begin();
-                     at != relevant.end();
-                     ++at)
-                {
-                }*/
-            }
-            else
-            {
-                //
-                // the input constant is already there - do nothing
-                //
-            }
+            //
+            // nothing to do, the constant will be passed directly to the plugin
+            //
 
             break;
 
@@ -204,11 +206,6 @@ ExternalAtom::evaluate(const Interpretation& i,
             //
             factlist.clear();
 
-            //
-            /// @todo: this is not allowed yet!
-            //
-            assert(!inputTerm->isVariable());
-
             i.matchPredicate(inputTerm->getString(), factlist);
 
             inputSet.add(factlist);
@@ -218,6 +215,7 @@ ExternalAtom::evaluate(const Interpretation& i,
         default:
 
             assert(0);
+
             break;
         }
     }

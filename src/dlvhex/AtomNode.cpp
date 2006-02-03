@@ -199,6 +199,17 @@ Dependency::getAtomNode() const
 }
 
 
+void
+Dependency::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
+{
+    Dependency dep1(from, type);
+    Dependency dep2(to, type);
+
+    from->addSucceeding(dep2);
+    to->addPreceding(dep1);
+}
+
+
 std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 {
     out << *(dep.getAtomNode()->getAtom()) << "[";
@@ -223,6 +234,10 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 
     case Dependency::EXTERNAL:
         out << "e";
+        break;
+
+    case Dependency::EXTERNAL_AUX:
+        out << "x";
         break;
 
     default:
@@ -284,6 +299,8 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
         //
         newnode = new AtomNode(atom);
 
+        //std::cout << "new headnode: " << *(newnode->getAtom()) << std::endl;
+
         newnode->setHead();
         
         //
@@ -311,8 +328,10 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
                     Dependency dep1(*oldnode, Dependency::UNIFYING);
                     Dependency dep2(newnode, Dependency::UNIFYING);
 
-                    (*oldnode)->addPreceding(dep1);
+                    (*oldnode)->addPreceding(dep2);
                     newnode->addSucceeding(dep1);
+
+                    //std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
                 }
             }
         }
@@ -342,6 +361,8 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
         // no - create node
         //
         newnode = new AtomNode(atom);
+        
+        //std::cout << "new bodynode: " << *(newnode->getAtom()) << std::endl;
 
         newnode->setBody();
         
@@ -370,8 +391,10 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
                     Dependency dep1(*oldnode, Dependency::UNIFYING);
                     Dependency dep2(newnode, Dependency::UNIFYING);
 
-                    (*oldnode)->addSucceeding(dep1);
+                    (*oldnode)->addSucceeding(dep2);
                     newnode->addPreceding(dep1);
+
+                    //std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
                 }
             }
         }

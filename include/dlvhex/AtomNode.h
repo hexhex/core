@@ -200,12 +200,24 @@ public:
 
     /**
      * @brief Type of Dependency.
+     *
+     * UNIFYING: The atoms of two nodes can be unified.
+     * PRECEDING: A preceding dependency points from a body atom node to its head
+     * atom node.
+     * NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
+     * DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
+     * head.
+     * EXTERNAL: If an input argument of an external atom is of type
+     * PluginAtom::PREDICATE, it depends on all atoms with a matching predicate.
+     * EXTERNAL_AUX: If an input argument is nonground, an auxiliary atom will
+     * be created, being the target of a dependency of this type.
      */
     typedef enum { UNIFYING = 0,
                    PRECEDING,
                    NEG_PRECEDING,
                    DISJUNCTIVE,
-                   EXTERNAL } Type;
+                   EXTERNAL,
+                   EXTERNAL_AUX} Type;
 
     /// Ctor.
     Dependency();
@@ -232,6 +244,13 @@ public:
      */
     const AtomNode*
     getAtomNode() const;
+
+    /**
+     * @brief Add a dependency information to two AtomNodes.
+     *
+     */
+    static void
+    addDep(AtomNode*, AtomNode*, Type);
 
 private:
 
