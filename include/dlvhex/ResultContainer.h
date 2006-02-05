@@ -33,10 +33,10 @@ public:
     addSet(GAtomSet&);
 
     void
-    filterOut(const std::vector<Term>&);
+    filterOut(const NamesTable<std::string>&);
 
     void
-    filterIn(const std::vector<Term>&);
+    filterIn(const std::vector<std::string>&);
 
     void
     print(std::ostream&) const;

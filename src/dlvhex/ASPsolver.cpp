@@ -89,7 +89,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     if (noEDB)
         dlvOptions = "-nofacts";
     
-    std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
+   // std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
     
 
     //char tempfile[] = "/tmp/dlvXXXXXX";
@@ -165,13 +165,16 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     answerSetIndex = solverResult::answersets.begin();
 
     
-    
+    /*
     for (std::vector<GAtomSet>::iterator o = solverResult::answersets.begin();
             o != solverResult::answersets.end();
             o++)
     {
         std::cout << "as: " << *o << std::endl;
+        
+        //for (GAtomSet::const_iterator foo = (*o).begin();foo != (*o).end();++foo)
+        //    std::cout << "have predicate: " << foo->getPredicate() << std::endl;
     }
-    
+    */
 }
 

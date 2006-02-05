@@ -384,3 +384,5 @@ std::vector<std::pair<std::string, std::string> > Term::namespaces;
 
 NamesTable<std::string> Term::names;
 
+NamesTable<std::string> Term::auxnames;
+

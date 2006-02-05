@@ -39,25 +39,25 @@ public:
     /**
      * @brief Copy constructor.
      */
-    Literal(const Literal&);
+    //Literal(const Literal&);
 
 
     /**
      * @brief Construct a literal from an atom, possibly weakly negated.
      */
-    Literal(const Atom&, bool naf = false);
+    Literal(const Atom*, bool naf = false);
 
 
     /**
      * @brief Construct a literal from a builtin predicate.
      */
-    Literal(const BuiltinPredicate&, bool naf = false);
+    //Literal(const BuiltinPredicate&, bool naf = false);
 
 
     /**
      * @brief Construct a literal from an external atom, possibly weakly negated.
      */
-    Literal(const ExternalAtom&, bool naf = false);
+    //Literal(const ExternalAtom&, bool naf = false);
 
 
     /**
@@ -95,7 +95,7 @@ public:
 
 private:
 
-    Atom* atom;
+    const Atom* atom;
 
     bool isWeaklyNegated;
     

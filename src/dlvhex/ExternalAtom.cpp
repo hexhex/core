@@ -118,6 +118,8 @@ ExternalAtom::ExternalAtom(const std::string name,
     
     replacementName = ss.str();
 
+    Term::auxnames.insert(replacementName);
+
     uniqueNumber++;
 }
 

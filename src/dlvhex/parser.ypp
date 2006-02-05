@@ -12,6 +12,7 @@
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/globals.h"
 
+#include "dlvhex/Repository.h"
 
 extern "C" int inputerror(const char*);
 extern "C" int inputlex();
@@ -321,31 +322,31 @@ body      : literal
 
 literal   : user_pred
             {
-                $$ = new Literal(*$1);
+                $$ = new Literal($1);
                 
-                delete $1;
+                //delete $1;
             }
           | NOT user_pred
             {
-                $$ = new Literal(*$2, true);
+                $$ = new Literal($2, true);
     
-                delete $2;
+                //delete $2;
             }
 //          | aggregate
 //          | NOT aggregate
 	      | external_atom
             {
-                $$ = new Literal(*$1);
+                $$ = new Literal($1);
     
-                delete $1;
+                //delete $1;
             }
           | builtin_pred
             {
-                $$ = new Literal(*$1);
+                $$ = new Literal($1);
     
-                delete $1;
+                //delete $1;
             }
-          ;
+          
 
 
 user_pred : propositional_atom
@@ -361,8 +362,11 @@ user_pred : propositional_atom
                   //if (global::optionNoPredicate)
                   //    $$ = new Atom(*$3);
                   //else
-                      $$ = new Atom(std::string($1), *$3);
-                  
+
+                  $$ = new Atom(std::string($1), *$3);
+
+                  Repository::Instance()->addAtom($$);
+                    
                   delete $3;
                   
                   delete[] $1;
@@ -377,6 +381,8 @@ user_pred : propositional_atom
                   // false by default)
                   //
                   $$ = new Atom(negname, *$4);
+
+                  Repository::Instance()->addAtom($$);
                   
                   delete $4;
                   
@@ -390,13 +396,9 @@ external_atom : AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE PARAM_OPEN term
                       // TODO: two external atoms with same name and input?
                       // how "equal" are they?
 
+                      $$ = new ExternalAtom($2, *$7, *$4, parser_line);
 
-                      //ExternalAtom* ea(IDB.findExternalAtom($2, *$7));
-
-                      //if (!ea)
-                          $$ = new ExternalAtom($2, *$7, *$4, parser_line);
-                      //else
-                      //    $$ = ea;
+                      Repository::Instance()->addAtom($$);
 
                       delete[] $2;
                       delete $4;
@@ -408,6 +410,8 @@ external_atom : AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE PARAM_OPEN term
 
 propositional_atom : ident {
                                $$ = new Atom($1);
+
+                               Repository::Instance()->addAtom($$);
     
                                delete[] $1;
                            }
@@ -415,6 +419,8 @@ propositional_atom : ident {
                                std::string negname("-" + (std::string)$2);
               
                                $$ = new Atom(negname);
+
+                               Repository::Instance()->addAtom($$);
     
                                delete[] $2;
                            }

@@ -65,7 +65,13 @@ OrdinaryModelGenerator::compute(const Program& program,
     
     try
     {
-        Solver.callSolver(p);
+        //
+        /// @todo: we use the noEDB switch here as well, because we don't want
+        // any extatom-replacement predicates to be in the result - the asp
+        // solver result parser would throw the away (ho) and so we couldn't get
+        // rid of them any more. this is why we have to add the input edb below again!
+        //
+        Solver.callSolver(p, 1);
     }
     catch (FatalError e)
     {
@@ -76,6 +82,10 @@ OrdinaryModelGenerator::compute(const Program& program,
 
     while ((as = Solver.getNextAnswerSet()) != NULL)
     {
-        models.push_back(*as);
+        GAtomSet res(*as);
+
+        res.insert(I.begin(), I.end());
+
+        models.push_back(res);
     }
 }

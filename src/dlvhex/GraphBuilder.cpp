@@ -13,7 +13,7 @@
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
-
+#include "dlvhex/Repository.h"
 
 
 /*
@@ -195,6 +195,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 //
                 Atom* auxheadatom = new Atom("aux_" + ext->getReplacementName(), extinput);
 
+                Repository::Instance()->addAtom(auxheadatom);
+
+                Term::auxnames.insert("aux_" + ext->getReplacementName());
                 //
                 // add a new head node with this atom
                 //
@@ -218,7 +221,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                     //
                     // make new literals with the (ordinary) body atoms of the current rule
                     //
-                    auxbody.push_back(Literal(*((*currbody)->getAtom())));
+                    auxbody.push_back(Literal((*currbody)->getAtom()));
                 
                     //
                     // make node for each of these new atoms

@@ -662,7 +662,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
     // somewhere else!
     //
 
-    std::cout << "Collecting unsolved leaves" << std::endl;
+    //std::cout << "Collecting unsolved leaves" << std::endl;
 
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();

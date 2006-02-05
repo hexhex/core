@@ -165,7 +165,7 @@ insertNamespaces()
          nm != Term::names.end();
          ++nm)
     {
-        std::cout << "orig: nametable entry: " << *nm << std::endl;
+//        std::cout << "orig: nametable entry: " << *nm << std::endl;
 
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
             ns != Term::namespaces.end();
@@ -238,11 +238,14 @@ removeNamespaces()
 }
 
 
+//#include "dlvhex/Repository.h"
+
 int
 main (int argc, char *argv[])
 {
     WhoAmI = argv[0];
 
+//    Atom* foo = Repository::Instance()->makeAtom("foo");
     //
     // Option handling
     //
@@ -614,67 +617,12 @@ main (int argc, char *argv[])
         result.addSet(*res);
     }
 
+    result.filterOut(Term::auxnames);
+
+    if (optionFilter.size() > 0)
+        result.filterIn(optionFilter);
+
     result.print(std::cout);
-
-    //
-    // filtering result models
-    //
-    std::ostringstream finaloutput;
-    Interpretation iout;
-   
-    /*
-    //
-    // go through all result models of the GraphProcessor
-    //
-    while ((res = gp.getNextModel()) != NULL)
-    {
-        GAtomSet filtered;
-
-        //
-        // initialize iout to the result model
-        //
-        iout.replaceBy(*res);
-       
-        //
-        // do we have to filter the result?
-        //
-        if (optionFilter.size() > 0)
-        {
-            GAtomSet g;
-            
-            //
-            // take each filter predicate
-            //
-            for (std::vector<std::string>::const_iterator f = optionFilter.begin();
-                 f != optionFilter.end();
-                 f++)
-            {
-                //
-                // extract matching facts from the current result set
-                //
-                iout.matchPredicate(*f, g);
-             
-                filtered.insert(g.begin(), g.end());
-            }
-        }
-        else
-        {
-            //
-            // no filters - the take the entire model
-            filtered = iout.getAtomSet();
-        }
-
-        //
-        // stringify the result set
-        //
-        printGAtomSet(filtered, finaloutput, 0);
-
-        //
-        // build output stream
-        //
-        finaloutput << std::endl;
-    }
-    */
 
     //
     // was there anything non-error the user should know? dump it directly
@@ -686,12 +634,6 @@ main (int argc, char *argv[])
         std::cout << *l << std::endl;
     }
     
-
-    //
-    // eventually, display the result
-    //
-    std::cout << finaloutput.str() << std::endl;
-
 
     //
     // cleaning up:

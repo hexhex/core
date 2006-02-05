@@ -22,6 +22,7 @@ noinst_HEADERS = \
                  ProgramBuilder.h \
                  GraphProcessor.h \
                  ResultContainer.h \
+                 Repository.h \
                  Rule.h \
                  Term.h
 

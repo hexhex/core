@@ -19,7 +19,7 @@ Literal::Literal()
 
 Literal::~Literal()
 {
-    delete atom;
+//    delete atom;
 }
 
 
@@ -28,20 +28,23 @@ Literal::~Literal()
 // parser!
 //
 
+/*
 Literal::Literal(const Literal &literal2)
     : isWeaklyNegated(literal2.isWeaklyNegated)
 {
-    atom = literal2.atom->clone();
+    //atom = literal2.atom->clone();
 }
+*/
 
 
-Literal::Literal(const Atom& at, bool naf)
-    : isWeaklyNegated(naf)
+Literal::Literal(const Atom* at, bool naf)
+    : isWeaklyNegated(naf),
+      atom(at)
 {
-    atom = new Atom(at);
+//    atom = new Atom(at);
 }
 
-
+/*
 Literal::Literal(const BuiltinPredicate& at, bool naf)
     : isWeaklyNegated(naf)
 {
@@ -56,11 +59,13 @@ Literal::Literal(const BuiltinPredicate& at, bool naf)
 }
 
 
+
 Literal::Literal(const ExternalAtom& at, bool naf)
     : isWeaklyNegated(naf)
 {
     atom = new ExternalAtom(at);
 }
+*/
 
 
 const Atom*
