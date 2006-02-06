@@ -96,16 +96,14 @@ DependencyGraph::DependencyGraph(Program& program,
             //
             if (hasNegEdge(*scc))
             {
-                ModelGenerator* mg = new GuessCheckModelGenerator();
+                mg = new GuessCheckModelGenerator();
             }
             else
             {
-                ModelGenerator* mg = new FixpointModelGenerator();
+                mg = new FixpointModelGenerator();
             }
 
             Component* comp = new ProgramComponent(*scc, mg);
-
-//            Component* comp = createStrongComponent(*scc);
 
             //
             // component-object is finished, add it to the dependency graph

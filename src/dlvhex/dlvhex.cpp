@@ -165,7 +165,7 @@ insertNamespaces()
          nm != Term::names.end();
          ++nm)
     {
-//        std::cout << "orig: nametable entry: " << *nm << std::endl;
+        //std::cout << "orig: nametable entry: " << *nm << std::endl;
 
         for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
             ns != Term::namespaces.end();
@@ -185,7 +185,7 @@ insertNamespaces()
             }
         }
         
-        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
+        //std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
     }
 
     /*
@@ -238,14 +238,12 @@ removeNamespaces()
 }
 
 
-//#include "dlvhex/Repository.h"
 
 int
 main (int argc, char *argv[])
 {
     WhoAmI = argv[0];
 
-//    Atom* foo = Repository::Instance()->makeAtom("foo");
     //
     // Option handling
     //

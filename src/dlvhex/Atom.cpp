@@ -67,7 +67,8 @@ Atom::Atom(const std::string atom)
     }
 
     //
-    // we only accept first-order input!
+    // the predicate itself must be constant (also in ho-mode, then it will be a
+    // constant replacement symbol)
     //
     assert(!arguments.front().isVariable());
 }

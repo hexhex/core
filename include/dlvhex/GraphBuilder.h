@@ -29,6 +29,9 @@ public:
     /**
      * @brief Takes a set of rules and builds the according node graph.
      *
+     * This nodegraph will contain the entire dependency graph of the program,
+     * including any artificial nodes that had to be created for auxiliary
+     * rules, e.g., for external atoms with variable input parameters.
      */
     void
     run(const Rules&, NodeGraph&);

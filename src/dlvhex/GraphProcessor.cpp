@@ -164,10 +164,12 @@ GraphProcessor::run(const GAtomSet& in)
             // add the weak component to the subgraph
             //
             sg->addComponent(weakComponent);
+
             //std::cout << "wcc added to sg:" << std::endl;
             //weakComponent->dump(std::cout);
 
             weakComponent->evaluate(current);
+
             //std::cout << "wcc evaluated." << std::endl;
 
             weakComponent->getResult(sgresult);

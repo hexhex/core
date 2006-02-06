@@ -126,7 +126,7 @@ PARAM_SEPARATOR : COMMA;
 
 input     :
           | input line
-          | error { parser_errors++; }
+//          | error { parser_errors++; }
           ;
 
 /* line      : meta_rule NEWLINE
@@ -151,8 +151,8 @@ namespace : NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE
 
 nsdef : ident COMMA ident 
         {
-            std::string ns($3);
             std::string prefix($1);
+            std::string ns($3);
 
             if (prefix[0] == '\"')
                 prefix = prefix.substr(1, prefix.length() - 2);
@@ -373,7 +373,7 @@ user_pred : propositional_atom
               }
           | TRUE_NOT ident PARAM_OPEN terms PARAM_CLOSE
               {
-                  std::string negname("-" + (std::string)$2);
+                  std::string negname("tneg_" + (std::string)$2);
                   
                   //
                   // negated atoms cannot come from the higher-order preparser,
@@ -580,6 +580,6 @@ int inputerror(char const* s) // Error handler for YACC
         
     parser_errors++;
 
-    return 0;
+    return 1;
 }
 

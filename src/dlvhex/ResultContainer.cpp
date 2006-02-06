@@ -14,8 +14,6 @@
 #include <functional>
 
 #include "dlvhex/ResultContainer.h"
-#include "dlvhex/Interpretation.h"
-
 
 void
 ResultContainer::addSet(GAtomSet& res)
@@ -133,9 +131,9 @@ ResultContainer::print(std::ostream& stream) const
         printGAtomSet(*ri, stream, 0);
 
         //
-        // build output stream
+        // newline and empty line
         //
-        stream << std::endl;
+        stream << std::endl << std::endl;
     }
 }
 

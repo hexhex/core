@@ -468,23 +468,25 @@ void
 Subgraph::collectUp(const AtomNode* n,
                    std::vector<const AtomNode*>& list)
 {
-//    std::vector<Component*> succ = getSuccessors(c);
-
     //
-    // go through all succecessors of this node
+    // did we add this node to our list already?
     //
-    for (std::vector<Dependency>::const_iterator d = n->getSucceeding().begin();
-         d != n->getSucceeding().end();
-         ++d)
+    if (find(list.begin(), list.end(), n) == list.end())
     {
-        //
-        // did we add this node to our list already?
-        //
-        if (find(list.begin(), list.end(), (*d).getAtomNode()) == list.end())
-            collectUp((*d).getAtomNode(), list);
-    }
+        //std::cout << "adding node " << n->getId() << " to the collectup list" << std::endl;
 
-    list.push_back(n);
+        list.push_back(n);
+
+        //
+        // go through all succecessors of this node
+        //
+        for (std::vector<Dependency>::const_iterator d = n->getSucceeding().begin();
+            d != n->getSucceeding().end();
+            ++d)
+        {
+            collectUp((*d).getAtomNode(), list);
+        }
+    }
 }
 
 

@@ -174,7 +174,10 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
 
         //
         // now we go through the ordinary and external atoms of the body again
-        // and see if we have to add any EXTERNAL_AUX dependencies
+        // and see if we have to add any EXTERNAL_AUX dependencies.
+        // An EXTERNAL_AUX dependency arises, if an external atom has variable
+        // input arguments, which makes it necessary to create an auxiliary
+        // rule.
         //
         for (std::vector<AtomNode*>::iterator currextbody = currentExternalBodyNodes.begin();
              currextbody != currentExternalBodyNodes.end();
@@ -188,23 +191,37 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
             if (!ext->pureGroundInput())
             {
 
+                //
+                // ok, gt the parameters
+                //
                 Tuple extinput = ext->getInputTerms();
 
                 //
-                // make a new atom, will be the head of the auxiliary rule
+                // make a new atom with the ext-parameters as arguments, will be
+                // the head of the auxiliary rule
                 //
                 Atom* auxheadatom = new Atom("aux_" + ext->getReplacementName(), extinput);
 
+                //
+                // add this atom to the global atom store
+                //
                 Repository::Instance()->addAtom(auxheadatom);
 
+                //
+                // and add the atom name to the store of auxiliary names (which
+                // we save separately because we don't want to have them in any
+                // output)
+                //
                 Term::auxnames.insert("aux_" + ext->getReplacementName());
+
                 //
                 // add a new head node with this atom
                 //
                 AtomNode* auxheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
 
                 //
-                // add aux dependency
+                // add aux dependency from this new head to the external atom
+                // node
                 //
                 Dependency::addDep(auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
@@ -212,7 +229,8 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
 
                 //
                 // the body of the auxiliary rule is the entire ordinary body of the
-                // rule with the external atom
+                // rule that has the external atom - this might be too much, but
+                // it is easy
                 //
                 for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
                     currbody != currentOrdinaryBodyNodes.end();
@@ -224,7 +242,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                     auxbody.push_back(Literal((*currbody)->getAtom()));
                 
                     //
-                    // make node for each of these new atoms
+                    // make a node for each of these new atoms
                     //
                     AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(auxbody.back().getAtom());
                     
