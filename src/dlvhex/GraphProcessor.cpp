@@ -28,7 +28,7 @@ GraphProcessor::run(const AtomSet& in)
         std::cout << "Starting Graph Processor" << std::endl;
 
     //
-    // start with empty set
+    // start with empty result set
     //
     resultModels.push_back(AtomSet());
 
@@ -59,25 +59,18 @@ GraphProcessor::run(const AtomSet& in)
 
         do // while unsolved components left
         {
-            std::vector<Component*> leaves;
-            
-            sg->getUnsolvedLeaves(leaves);
-
-            current.clear();
-
-            //
-            // start with empty set as result of the leaves
-            //
-            current.push_back(AtomSet());
-
             //
             // result of a single leaf component
             //
             std::vector<AtomSet> compresult;
 
+            std::vector<Component*> leaves;
+            
+            sg->getUnsolvedLeaves(leaves);
+
             //
             // solve the leaves first
-            // if we didn't have any leaves - current = input
+            // if we didn't have any leaves, then current = lastresult
             //
             if (leaves.size() == 0)
             {
@@ -88,17 +81,20 @@ GraphProcessor::run(const AtomSet& in)
             }
             else
             {
+                //
+                // before going through all leaves - start with a single empty
+                // answer set as a base for the set multiplying
+                //
+                current.clear();
+                current.push_back(AtomSet());
+
+                //
+                // we have leaves - so evaluate each:
+                //
                 for (std::vector<Component*>::iterator ci = leaves.begin();
                     ci != leaves.end();
                     ++ci)
                 {
-                    if (global::optionVerbose)
-                    {
-                        std::cout << "Evaluating leaf component:" << std::endl;
-
-                        (*ci)->dump(std::cout);
-                    }
-
                     //
                     // evaluate each component based on the last result
                     //
@@ -112,6 +108,9 @@ GraphProcessor::run(const AtomSet& in)
                         // inconsistent!
                         //
                         current.clear();
+
+                        if (global::optionVerbose)
+                            std::cout << "Leaf Component was inconsistent!" << std::endl;
 
                         break;
                     }
@@ -150,40 +149,53 @@ GraphProcessor::run(const AtomSet& in)
             //
             tmpsg.pruneComponents();
 
-            //std::cout << "after pruning: " << std::endl;
+            //std::cout << "Subgraph after pruning: " << std::endl;
             //tmpsg.dump(std::cout);
             //std::cout << std::endl;
 
             //
-            // make a component from the node-set
+            // anything left?
             //
-//            Component* weakComponent = depGraph->createWeakComponent(tmpsg.getNodes());
-            ModelGenerator* mg = new OrdinaryModelGenerator();
-
-            Component* weakComponent = new ProgramComponent(tmpsg.getNodes(), mg);
-
-            //std::cout << "wcc created." << std::endl;
-
-            //
-            // add the weak component to the subgraph
-            //
-            sg->addComponent(weakComponent);
-
-            //std::cout << "wcc added to sg:" << std::endl;
-            //weakComponent->dump(std::cout);
-
-            weakComponent->evaluate(current);
-
-            //std::cout << "wcc evaluated." << std::endl;
-
-            weakComponent->getResult(sgresult);
-
-            if (sgresult.size() == 0)
+            if (tmpsg.getNodes().size() > 0)
             {
                 //
-                // inconsistent!
+                // make a component from the node-set
                 //
-                break;
+                ModelGenerator* mg = new OrdinaryModelGenerator();
+
+                Component* weakComponent = new ProgramComponent(tmpsg.getNodes(), mg);
+
+                //std::cout << "wcc created." << std::endl;
+
+                //
+                // add the weak component to the subgraph
+                //
+                sg->addComponent(weakComponent);
+
+                //std::cout << "wcc added to sg:" << std::endl;
+                //weakComponent->dump(std::cout);
+                //
+
+                weakComponent->evaluate(current);
+
+                //std::cout << "wcc evaluated." << std::endl;
+
+                weakComponent->getResult(sgresult);
+
+                if (sgresult.size() == 0)
+                {
+                    //
+                    // inconsistent!
+                    //
+                    if (global::optionVerbose)
+                        std::cout << "Program Component was inconsistent!" << std::endl;
+
+                    break;
+                }
+            }
+            else
+            {
+                sgresult = current;
             }
 
         } while (sg->unsolvedComponentsLeft());

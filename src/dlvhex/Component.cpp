@@ -251,7 +251,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
     if (global::optionVerbose)
     {
-        std::cout << "evaluating external component" << std::endl;
+        std::cout << "Evaluating external component" << std::endl;
     }
 
     //
