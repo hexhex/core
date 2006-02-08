@@ -14,7 +14,7 @@
 #include "dlvhex/PluginInterface.h"
 
 
-PluginAtom::Query::Query(const Interpretation& i,
+PluginAtom::Query::Query(const AtomSet& i,
                          const Tuple& in,
                          const Tuple& pat)
     : interpretation(i),
@@ -24,7 +24,7 @@ PluginAtom::Query::Query(const Interpretation& i,
 }
 
 
-const Interpretation&
+const AtomSet&
 PluginAtom::Query::getInterpretation() const
 {
     return interpretation;

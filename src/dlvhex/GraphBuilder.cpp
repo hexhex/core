@@ -13,7 +13,7 @@
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Repository.h"
+//#include "dlvhex/AtomFactory.h"
 
 
 /*
@@ -30,7 +30,7 @@ GraphBuilder::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
 
 
 void
-GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
+GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 {
     //
     // in this multimap, we will store the input arguments of type PREDICATE
@@ -41,9 +41,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
     //
     // go through all rules of the given program
     //
-    for (Rules::const_iterator r = rules.begin();
-         r != rules.end();
-         r++)
+    for (Program::const_iterator r = program.begin();
+         r != program.end();
+         ++r)
     {
 //        dumpGraph(nodegraph, std::cout);
         //
@@ -54,15 +54,15 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
         //
         // go through entire head disjunction
         //
-        for (std::vector<Atom>::const_iterator hi = r->getHead().begin();
-             hi != r->getHead().end();
+        for (RuleHead::const_iterator hi = (*r)->getHead().begin();
+             hi != (*r)->getHead().end();
              ++hi)
         {
             //
             // add a head atom node. This function will take care of also adding
             // the appropriate unifying dependency for all existing nodes.
             //
-            AtomNode* hn = nodegraph.addUniqueHeadNode(&(*hi));
+            AtomNode* hn = nodegraph.addUniqueHeadNode(*hi);
 
             //
             // go through all head atoms that were alreay created for this rule
@@ -91,31 +91,31 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
         //
         // go through rule body
         //
-        for (std::vector<Literal>::const_iterator li = r->getBody().begin();
-                li != r->getBody().end();
+        for (RuleBody::const_iterator li = (*r)->getBody().begin();
+                li != (*r)->getBody().end();
                 ++li)
         {
             //
             // builtins do not contribute to dependencies (yet)
             //
-            if (li->getAtom()->getType() == Atom::BUILTIN)
+            if ((*li)->getAtom()->getType() == Atom::BUILTIN)
                 continue;
 
             //
             // add a body atom node. This function will take care of also adding the appropriate
             // unifying dependency for all existing nodes.
             //
-            AtomNode* bn = nodegraph.addUniqueBodyNode(li->getAtom());
+            AtomNode* bn = nodegraph.addUniqueBodyNode((*li)->getAtom());
 
             //
             // save normal and external atoms of this body - after we are through the entire
             // body, we might have to update EXTERNAL dependencies inside the
             // rule!
             //
-            if (li->getAtom()->getType() == Atom::INTERNAL)
+            if ((*li)->getAtom()->getType() == Atom::INTERNAL)
                 currentOrdinaryBodyNodes.push_back(bn);
 
-            if (li->getAtom()->getType() == Atom::EXTERNAL)
+            if ((*li)->getAtom()->getType() == Atom::EXTERNAL)
                 currentExternalBodyNodes.push_back(bn);
 
             //
@@ -125,7 +125,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                  currhead != currentHeadNodes.end();
                  ++currhead)
             {
-                if (li->isNAF())
+                if ((*li)->isNAF())
                     Dependency::addDep(bn, *currhead, Dependency::NEG_PRECEDING);
                 else
                     Dependency::addDep(bn, *currhead, Dependency::PRECEDING);
@@ -140,9 +140,9 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 // If we are through all rules, we will go through the complete set
                 // of AtomNodes and search for matches with this multimap.
                 //
-                if (li->getAtom()->getType() == Atom::EXTERNAL)
+                if ((*li)->getAtom()->getType() == Atom::EXTERNAL)
                 {
-                    ExternalAtom* ext = (ExternalAtom*)li->getAtom();
+                    ExternalAtom* ext = (ExternalAtom*)(*li)->getAtom();
 
                     //
                     // go through all input terms of this external atom
@@ -205,7 +205,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 //
                 // add this atom to the global atom store
                 //
-                Repository::Instance()->addAtom(auxheadatom);
+                ProgramRepository::Instance()->record(auxheadatom);
 
                 //
                 // and add the atom name to the store of auxiliary names (which
@@ -225,7 +225,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 //
                 Dependency::addDep(auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
-                std::vector<Literal> auxbody;
+                RuleBody auxbody;
 
                 //
                 // the body of the auxiliary rule is the entire ordinary body of the
@@ -239,12 +239,17 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                     //
                     // make new literals with the (ordinary) body atoms of the current rule
                     //
-                    auxbody.push_back(Literal((*currbody)->getAtom()));
+                    //auxbody.push_back(Literal((*currbody)->getAtom()));
+                    Literal* l = new Literal((*currbody)->getAtom());
+
+                    ProgramRepository::Instance()->record(l);
+
+                    auxbody.push_back(l);
                 
                     //
                     // make a node for each of these new atoms
                     //
-                    AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(auxbody.back().getAtom());
+                    AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(l->getAtom());
                     
                     //
                     // add the usual body->head dependency
@@ -255,11 +260,13 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 //
                 // finally, make an auxiliary rule object to add to the head node
                 //
-                std::vector<Atom> auxhead;
+                RuleHead auxhead;
 
-                auxhead.push_back(*auxheadatom);
+                auxhead.push_back(auxheadatom);
 
                 Rule* auxrule = new Rule(auxhead, auxbody);
+
+                ProgramRepository::Instance()->record(auxrule);
 
                 auxheadnode->addRule(auxrule);
             }
@@ -272,7 +279,7 @@ GraphBuilder::run(const Rules& rules, NodeGraph& nodegraph)
                 currhead != currentHeadNodes.end();
                 ++currhead)
         {
-            (*currhead)->addRule(&(*r));
+            (*currhead)->addRule(*r);
         }
 
     }

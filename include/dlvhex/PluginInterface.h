@@ -20,7 +20,7 @@
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
-#include "dlvhex/Interpretation.h"
+#include "dlvhex/AtomSet.h"
 #include "dlvhex/errorHandling.h"
 
 #define PLUGINIMPORTFUNCTION importPlugin
@@ -81,14 +81,14 @@ public:
     {
     public:
         /// Ctor.
-        Query(const Interpretation&,
+        Query(const AtomSet&,
               const Tuple&,
               const Tuple&);
 
         /**
          * @brief Returns the input interpretation.
          */
-        const Interpretation&
+        const AtomSet&
         getInterpretation() const;
 
         /**
@@ -106,7 +106,7 @@ public:
 
     private:
 
-        const Interpretation& interpretation;
+        const AtomSet& interpretation;
 
         Tuple input;
 

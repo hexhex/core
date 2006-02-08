@@ -30,9 +30,9 @@ public:
     GraphProcessor(DependencyGraph*);
 
     void
-    run(const GAtomSet&);
+    run(const AtomSet&);
 
-    GAtomSet*
+    AtomSet*
     getNextModel();
 
 private:
@@ -40,7 +40,7 @@ private:
     /**
      * @brief Internal result retrieval pointer.
      */
-    std::vector<GAtomSet>::iterator resultSetIndex;
+    std::vector<AtomSet>::iterator resultSetIndex;
 
 //    void
 //    combine(std::vector<GAtomSet>&, std::vector<GAtomSet>&);
@@ -48,7 +48,7 @@ private:
     /**
      * @brief Result of all connected components (= the entire program).
      */
-    std::vector<GAtomSet> resultModels;
+    std::vector<AtomSet> resultModels;
 
     /**
      * @brief input EDB.

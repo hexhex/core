@@ -15,7 +15,6 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Interpretation.h"
 
 
 
@@ -69,8 +68,8 @@ FixpointModelGenerator::getSerializedProgram() const
 
 void
 GuessCheckModelGenerator::compute(const Program& program,
-                                  const GAtomSet &I,
-                                  std::vector<GAtomSet> &models)
+                                  const AtomSet &I,
+                                  std::vector<AtomSet> &models)
 {
     models.clear();
 
@@ -80,7 +79,7 @@ GuessCheckModelGenerator::compute(const Program& program,
 
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
 
-    std::vector<ExternalAtom> extatoms(program.getExternalAtoms());
+    std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
 
     std::cout << "*** guess and check not implemented yet! ***" << std::endl;
 

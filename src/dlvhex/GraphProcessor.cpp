@@ -22,7 +22,7 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 
 
 void
-GraphProcessor::run(const GAtomSet& in)
+GraphProcessor::run(const AtomSet& in)
 {
     if (global::optionVerbose)
         std::cout << "Starting Graph Processor" << std::endl;
@@ -30,9 +30,13 @@ GraphProcessor::run(const GAtomSet& in)
     //
     // start with empty set
     //
-    resultModels.push_back(GAtomSet());
+    resultModels.push_back(AtomSet());
 
     Subgraph* sg;
+
+//    std::cout << "input set:" << std::endl;
+//    in.print(std::cout, 0);
+//    std::cout << "input set end." << std::endl;
 
     Component* leafComponent;
 
@@ -41,12 +45,12 @@ GraphProcessor::run(const GAtomSet& in)
     //
     while (sg = depGraph->getNextSubgraph())
     {
-        std::vector<GAtomSet> current;
+        std::vector<AtomSet> current;
 
         //
         // sgresult is the result of the entire subgraph
         //
-        std::vector<GAtomSet> sgresult;
+        std::vector<AtomSet> sgresult;
 
         //
         // each subgraph starts with input set
@@ -64,12 +68,12 @@ GraphProcessor::run(const GAtomSet& in)
             //
             // start with empty set as result of the leaves
             //
-            current.push_back(GAtomSet());
+            current.push_back(AtomSet());
 
             //
             // result of a single leaf component
             //
-            std::vector<GAtomSet> compresult;
+            std::vector<AtomSet> compresult;
 
             //
             // solve the leaves first
@@ -201,7 +205,7 @@ GraphProcessor::run(const GAtomSet& in)
 }
 
 
-GAtomSet*
+AtomSet*
 GraphProcessor::getNextModel()
 {
     if (resultSetIndex != resultModels.end())

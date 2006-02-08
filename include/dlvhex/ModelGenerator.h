@@ -47,8 +47,8 @@ public:
      */
     virtual void
     compute(const Program&,
-            const GAtomSet& I,
-            std::vector<GAtomSet>& models) = 0;
+            const AtomSet& I,
+            std::vector<AtomSet>& models) = 0;
 
 protected:
 
@@ -98,8 +98,8 @@ public:
      */
     virtual void
     compute(const Program&,
-            const GAtomSet& I,
-            std::vector<GAtomSet>& models);
+            const AtomSet& I,
+            std::vector<AtomSet>& models);
 
 private:
 
@@ -149,8 +149,8 @@ public:
      */
     virtual void
     compute(const Program&,
-            const GAtomSet& I,
-            std::vector<GAtomSet>& models);
+            const AtomSet& I,
+            std::vector<AtomSet>& models);
 
 private:
 
@@ -197,8 +197,8 @@ public:
      */
     virtual void
     compute(const Program&,
-            const GAtomSet& I,
-            std::vector<GAtomSet>& models);
+            const AtomSet& I,
+            std::vector<AtomSet>& models);
 
 private:
 

@@ -55,7 +55,7 @@ void
 ASPsolverTest::testResult()
 {
     std::string prg;
-    GAtomSet *as;
+    AtomSet *as;
 
     //
     // no model
@@ -79,7 +79,7 @@ ASPsolverTest::testResult()
     prg = "p.q:-p.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 1);
+    CPPUNIT_ASSERT(as->size() == 2);
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
     
     //
@@ -88,9 +88,9 @@ ASPsolverTest::testResult()
     prg = "p(X):-not q(X),s(X).q(X):-not p(X),s(X).s(a).";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 1);
+    CPPUNIT_ASSERT(as->size() == 2);
     as = solver->getNextAnswerSet();
-    CPPUNIT_ASSERT(as->size() == 1);
+    CPPUNIT_ASSERT(as->size() == 2);
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
 
     //
@@ -98,10 +98,18 @@ ASPsolverTest::testResult()
     //
     std::string str("\"quoted string, includes some (nasty) special-characters!+#'*[]{}\"");
     prg = "a(" + str + ") :- b. b.";
-    CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
+
+    //
+    // now calling with noEDB=1, b should not be in the result then!
+    //
+    CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg, 1));
+    
     as = solver->getNextAnswerSet();
     CPPUNIT_ASSERT(as->size() == 1);
-    CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
     CPPUNIT_ASSERT((*(as->begin())).getArgument(1).getString() == str);
-    
+
+    //
+    // nothing left
+    //
+    CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
 }

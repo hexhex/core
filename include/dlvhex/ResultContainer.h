@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "dlvhex/Atom.h"
+#include "dlvhex/AtomSet.h"
 
 
 /**
@@ -30,7 +31,7 @@ class ResultContainer
 public:
 
     void
-    addSet(GAtomSet&);
+    addSet(AtomSet&);
 
     void
     filterOut(const NamesTable<std::string>&);
@@ -43,7 +44,7 @@ public:
 
 private:
 
-    std::vector<GAtomSet> sets;
+    std::vector<AtomSet> sets;
 
 };
 

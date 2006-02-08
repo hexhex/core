@@ -19,36 +19,80 @@
 
 
  
-Rule::Rule(const std::vector<Atom>& head,
-          const std::vector<Literal>& b)
-    : head(head)
+/*
+RuleBody::RuleBody()
+//    : LogicalObject()
 {
-    ///todo: initialize body?
-    body = b;
 }
 
-/*
-Rule::Rule(const Atom &h)
+
+void
+RuleBody::add(Literal* lit)
 {
-    head = h;
-    body.clear();
+    body.push_back(lit);
+}
+
+
+size_t
+RuleBody::size()
+{
+    return body.size();
+}
+
+
+bool
+RuleBody::exists(const Literal* l)
+{
+    return (find(body.begin(), body.end(), l) != body.end());
+}
+
+
+RuleHead::RuleHead()
+//    : LogicalObject()
+{
+}
+
+
+void
+RuleHead::add(Atom* at)
+{
+    head.push_back(at);
+}
+
+
+size_t
+RuleHead::size()
+{
+    return head.size();
+}
+
+
+bool
+RuleHead::exists(const Atom* a)
+{
+    return (find(head.begin(), head.end(), a) != head.end());
 }
 */
 
-/*
-bool Rule::hasBody() const
-{
-    return (body.size() > 0);
-}
-*/
 
-const std::vector<Atom>&
+Rule::Rule(const RuleHead& head,
+           const RuleBody& body)
+    : head(head),
+      body(body)
+{
+    //body = b;
+}
+
+
+//const std::vector<Atom>&
+const RuleHead&
 Rule::getHead() const
 {
     return head;
 }
 
-const std::vector<Literal>&
+//const std::vector<Literal>&
+const RuleBody&
 Rule::getBody() const
 {
     return body;
@@ -58,26 +102,38 @@ Rule::getBody() const
 bool
 Rule::operator== (const Rule& rule2) const
 {
+    /// @todo: stdlib algorithms here?
+
     if (head.size() != rule2.getHead().size())
         return 0;
 
     if (body.size() != rule2.getBody().size())
         return 0;
 
-    for (std::vector<Atom>::const_iterator hl = rule2.getHead().begin();
-         hl != rule2.getHead().end();
-         hl++)
+    for (RuleHead::const_iterator hi = head.begin();
+         hi != head.end();
+         ++hi)
     {
-        if (find(head.begin(), head.end(), *hl) == head.end())
-            return 0;
+        for (RuleHead::const_iterator hi2 = rule2.getHead().begin();
+            hi2 != rule2.getHead().end();
+            ++hi2)
+        {
+            if (**hi != **hi2)
+                return 0;
+        }
     }
 
-    for (std::vector<Literal>::const_iterator hl = rule2.getBody().begin();
-         hl != rule2.getBody().end();
-         hl++)
+    for (RuleBody::const_iterator bi = body.begin();
+         bi != body.end();
+         ++bi)
     {
-        if (find(body.begin(), body.end(), *hl) == body.end())
-            return 0;
+        for (RuleBody::const_iterator bi2 = rule2.getBody().begin();
+            bi2 != rule2.getBody().end();
+            ++bi2)
+        {
+            if (**bi != **bi2)
+                return 0;
+        }
     }
 
     return 1;
@@ -87,26 +143,26 @@ Rule::operator== (const Rule& rule2) const
 std::ostream&
 operator<< (std::ostream& out, const Rule& rule)
 {
-    for (std::vector<Atom>::const_iterator hl = rule.getHead().begin();
+    for (RuleHead::const_iterator hl = rule.getHead().begin();
          hl != rule.getHead().end();
-         hl++)
+         ++hl)
     {
         if (hl != rule.getHead().begin())
             out << " v ";
         
-        hl->print(out, 0);
+        (*hl)->print(out, 0);
     }
 
     out << " :- ";
             
-    for (std::vector<Literal>::const_iterator l = rule.getBody().begin();
+    for (RuleBody::const_iterator l = rule.getBody().begin();
          l != rule.getBody().end();
-         l++)
+         ++l)
     {
         if (l != rule.getBody().begin())
             out << ", ";
             
-        l->print(out, 0);
+        (*l)->print(out, 0);
     }
 
     out << ".";
@@ -116,66 +172,74 @@ operator<< (std::ostream& out, const Rule& rule)
 
 
 Program::Program()
+//    : LogicalObject()
 {
 }
 
+
+/*
 Program::Program(Rules& r)
 {
     setRules(r);
 }
+*/
 
 
 void
-Program::setRules(const Rules& r)
+Program::addRule(const Rule* r)
 {
-    for (Rules::const_iterator ri = r.begin();
-         ri != r.end();
-         ++ri)
+    if (!exists(r))
     {
-        addRule(*ri);
+        rules.push_back(r);
+
+        //
+        // store the rule's external atoms also separately
+        //
+        for (RuleBody::const_iterator bi = r->getBody().begin();
+            bi != r->getBody().end();
+            ++bi)
+        {
+            if ((*bi)->getAtom()->getType() == Atom::EXTERNAL)
+                externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
+        }
     }
 }
 
 
-void
-Program::addRule(const Rule& r)
+bool
+Program::exists(const Rule* r)
 {
-    rules.push_back(r);
-
-    //
-    // store the rule's external atoms also separately
-    //
-    for (std::vector<Literal>::const_iterator li = r.getBody().begin();
-         li != r.getBody().end();
-         ++li)
-    {
-        if ((*li).getAtom()->getType() == Atom::EXTERNAL)
-            externalAtoms.push_back(*(ExternalAtom*)(*li).getAtom());
-    }
+    return (find(rules.begin(), rules.end(), r) != rules.end());
 }
 
 
+
+/*
 void
 Program::setExternalAtoms(std::vector<ExternalAtom>& ex)
 {
     externalAtoms = ex;
 }
+*/
 
 
+/*
 const Rules&
 Program::getRules() const
 {
     return rules;
 }
+*/
 
 
-const std::vector<ExternalAtom>&
+const std::vector<ExternalAtom*>&
 Program::getExternalAtoms() const
 {
     return externalAtoms;
 }
 
 
+/*
 ExternalAtom*
 Program::findExternalAtom(const std::string name, const Tuple& params)
 {
@@ -194,6 +258,7 @@ Program::findExternalAtom(const std::string name, const Tuple& params)
         }
     }
 }
+*/
 
 
 void
@@ -205,31 +270,31 @@ Program::dump(std::ostream& out) const
     //
     bool higherOrder = 0;
 
-    for (Rules::const_iterator r = rules.begin();
-         r != rules.end();
-         r++)
+    for (const_iterator r = begin();
+         r != end();
+         ++r)
     {
-        for (std::vector<Atom>::const_iterator hl = r->getHead().begin();
-                hl != r->getHead().end();
-                hl++)
+        for (RuleHead::const_iterator hl = (*r)->getHead().begin();
+                hl != (*r)->getHead().end();
+                ++hl)
         {
-            if (hl != r->getHead().begin())
+            if (hl != (*r)->getHead().begin())
                 out << " v ";
             
-            hl->print(out, higherOrder);
+            (*hl)->print(out, higherOrder);
         }
 
-        if (r->getBody().size() > 0)
+        if ((*r)->getBody().size() > 0)
             out << " :- ";
             
-        for (std::vector<Literal>::const_iterator l = r->getBody().begin();
-                l != r->getBody().end();
-                l++)
+        for (RuleBody::const_iterator l = (*r)->getBody().begin();
+                l != (*r)->getBody().end();
+                ++l)
         {
-            if (l != r->getBody().begin())
+            if (l != (*r)->getBody().begin())
                 out << ", ";
             
-            l->print(out, higherOrder);
+            (*l)->print(out, higherOrder);
         }
 
         out << "." << std::endl;

@@ -34,7 +34,7 @@ public:
      * rules, e.g., for external atoms with variable input parameters.
      */
     void
-    run(const Rules&, NodeGraph&);
+    run(const Program&, NodeGraph&);
 
 
     /**

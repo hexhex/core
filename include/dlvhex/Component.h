@@ -42,7 +42,7 @@ public:
      * @brief Computes the Model(s) of the component, based on a set of inputs.
      */
     virtual void
-    evaluate(std::vector<GAtomSet>&) = 0;
+    evaluate(std::vector<AtomSet>&) = 0;
 
     /**
      * @brief Returns true if this component was already evaluated.
@@ -72,7 +72,7 @@ public:
      * @brief Returns the result of the component's evaluation.
      */
     void
-    getResult(std::vector<GAtomSet>&);
+    getResult(std::vector<AtomSet>&);
 
 protected:
     
@@ -86,7 +86,7 @@ protected:
 
     bool evaluated;
 
-    std::vector<GAtomSet> result;
+    std::vector<AtomSet> result;
 
 private:
 
@@ -133,7 +133,7 @@ public:
      * @brief Computes the model(s) of the subprogram of this component.
      */
     virtual void
-    evaluate(std::vector<GAtomSet>&);
+    evaluate(std::vector<AtomSet>&);
 
 
     /**
@@ -180,7 +180,7 @@ public:
      * @brief Computes the result of the external computation.
      */
     virtual void
-    evaluate(std::vector<GAtomSet>&);
+    evaluate(std::vector<AtomSet>&);
 
     /**
      * Serialize component to stream out for verbose and debugging.
@@ -296,7 +296,7 @@ public:
     removeNode(const AtomNode*);
 
 
-    std::vector<GAtomSet*>&
+    std::vector<AtomSet*>&
     getLastResult();
     
     /**
@@ -337,7 +337,7 @@ private:
     /**
      * @brief Most recent component result.
      */
-    std::vector<GAtomSet*> lastResult;
+    std::vector<AtomSet*> lastResult;
 
 };
 

@@ -40,7 +40,7 @@ DependencyGraph::DependencyGraph(Program& program,
 
     try
     {
-        gb->run(program.getRules(), nodegraph);
+        gb->run(program, nodegraph);
     }
     catch (GeneralError&)
     {
@@ -196,12 +196,6 @@ DependencyGraph::~DependencyGraph()
     }
     */
 
-    for (std::vector<Component*>::const_iterator ci = components.begin();
-         ci != components.end();
-         ++ci)
-    {
-        delete *ci;
-    }
 }
 
 

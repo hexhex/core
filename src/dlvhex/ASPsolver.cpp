@@ -18,16 +18,16 @@
 
 namespace solverResult
 {
-    std::vector<GAtomSet> answersets;
+    std::vector<AtomSet> answersets;
 
     unsigned returncode;
 
     std::string message;
 
-    GAtomSet*
+    AtomSet*
     createNewAnswerset()
     {
-        solverResult::answersets.push_back(GAtomSet());
+        solverResult::answersets.push_back(AtomSet());
 
         return &(solverResult::answersets.back());
     }
@@ -50,7 +50,7 @@ ASPsolver::ASPsolver()
 }
 
 
-GAtomSet*
+AtomSet*
 ASPsolver::getNextAnswerSet()
 {
     if (answerSetIndex != solverResult::answersets.end())
@@ -89,7 +89,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     if (noEDB)
         dlvOptions = "-nofacts";
     
-    std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
+    //std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
     
 
     //char tempfile[] = "/tmp/dlvXXXXXX";
@@ -166,13 +166,15 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
 
     
     /*
-    for (std::vector<GAtomSet>::iterator o = solverResult::answersets.begin();
+    for (std::vector<AtomSet>::iterator o = solverResult::answersets.begin();
             o != solverResult::answersets.end();
             o++)
     {
-        std::cout << "as: " << *o << std::endl;
+        std::cout << "as: ";
+        (*o).print(std::cout, 0);
+        std::cout << std::endl;
         
-        //for (GAtomSet::const_iterator foo = (*o).begin();foo != (*o).end();++foo)
+        //for (AtomSet::const_iterator foo = (*o).begin();foo != (*o).end();++foo)
         //    std::cout << "have predicate: " << foo->getPredicate() << std::endl;
     }
     */

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "dlvhex/Atom.h"
+#include "dlvhex/AtomSet.h"
 
 
 //
@@ -30,7 +31,7 @@ namespace solverResult
     /**
      * @brief Adds a solver result to the retrieval interface.
      */
-    GAtomSet* createNewAnswerset();
+    AtomSet* createNewAnswerset();
 
     /**
      * @brief Adds a message to the retrieval interface.
@@ -66,7 +67,7 @@ public:
      *
      * If the last answer set was already retrieved, NULL is returned.
      */
-    GAtomSet*
+    AtomSet*
     getNextAnswerSet();
 
     /**
@@ -85,7 +86,7 @@ private:
     /**
      * @brief Internal result retrieval pointer.
      */
-    std::vector<GAtomSet>::iterator answerSetIndex;
+    std::vector<AtomSet>::iterator answerSetIndex;
 };
 
 #endif // _ASPSOLVER_H

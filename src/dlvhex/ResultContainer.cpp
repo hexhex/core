@@ -10,37 +10,16 @@
  *
  */
 
-#include <algorithm>
-#include <functional>
+#include <vector>
 
 #include "dlvhex/ResultContainer.h"
 
 void
-ResultContainer::addSet(GAtomSet& res)
+ResultContainer::addSet(AtomSet& res)
 {
     sets.push_back(res);
 }
 
-
-struct predicateMatches : public std::binary_function<GAtom, Term, bool>
-{
-    bool operator()(const GAtom& g, const Term& pred) const
-    {
-        return (g.getPredicate() == pred);
-    }
-};
-
-/*
-struct pMatches : public std::binary_function<GAtom, std::string, bool>
-{
-    bool operator()(const GAtom& g, const std::string& pred) const
-    {
-        return (0 == 0);
-    }
-};
-*/
-
-#include <vector>
 
 void
 ResultContainer::filterOut(const NamesTable<std::string>& predicates)
@@ -48,7 +27,7 @@ ResultContainer::filterOut(const NamesTable<std::string>& predicates)
     //
     // go through all atom sets we have
     //
-    for (std::vector<GAtomSet>::iterator ri = sets.begin();
+    for (std::vector<AtomSet>::iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
     {
@@ -59,19 +38,22 @@ ResultContainer::filterOut(const NamesTable<std::string>& predicates)
              pi != predicates.end();
              ++pi)
         {
-            GAtomSet::iterator cur = (*ri).begin();
+            (*ri).remove(*pi);
+            /*
+            AtomSet::iterator cur = (*ri).begin();
 
-            const GAtomSet::iterator last = (*ri).end();
+            const AtomSet::iterator last = (*ri).end();
 
             //
             // does this predicate occur in the atom set?
             //
             while ((cur = std::find_if(cur, last, bind2nd(predicateMatches(), *pi))) != last)
             {
-                GAtomSet::iterator tmp = cur++;
+                AtomSet::iterator tmp = cur++;
 
                 (*ri).erase(tmp);
             }
+            */
         }
     } 
 }
@@ -82,38 +64,10 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
     //
     // go through all atom sets we have
     //
-    for (std::vector<GAtomSet>::iterator ri = sets.begin();
+    for (std::vector<AtomSet>::iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
     {
-        GAtomSet::iterator cur = (*ri).begin();
-
-        const GAtomSet::iterator last = (*ri).end();
-
-        //
-        // go through all facts of this set
-        //
-        while (cur != last)
-        {
-            //
-            // look if the current fact is in the filter set
-            //
-            if ((std::find_if(predicates.begin(),
-                              predicates.end(),
-                              bind1st(predicateMatches(), *cur))) == predicates.end())
-            {
-                //
-                // if not, delete this facte
-                //
-                GAtomSet::iterator tmp = cur++;
-
-                (*ri).erase(tmp);
-            }
-            else
-            {
-                cur++;
-            }
-        }
 
     } 
 }
@@ -121,14 +75,14 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
 void
 ResultContainer::print(std::ostream& stream) const
 {
-    for (std::vector<GAtomSet>::const_iterator ri = sets.begin();
+    for (std::vector<AtomSet>::const_iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
     {
         //
         // stringify the result set
         //
-        printGAtomSet(*ri, stream, 0);
+        (*ri).print(stream, 0);
 
         //
         // newline and empty line

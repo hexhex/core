@@ -17,6 +17,42 @@
 #include "dlvhex/helper.h"
 
 
+//
+// initialize static variable:
+//
+ProgramRepository* ProgramRepository::_instance = 0;
+
+
+ProgramRepository::~ProgramRepository()
+{
+    for (std::vector<ProgramObject*>::iterator pi = objects.begin();
+         pi != objects.end();
+         ++pi)
+    {
+        delete *pi;
+    }
+}
+
+
+ProgramRepository*
+ProgramRepository::Instance()
+{
+    if (_instance == 0)
+    {
+        _instance = new ProgramRepository;
+    }
+
+    return _instance;
+}
+
+
+void
+ProgramRepository::record(ProgramObject* po)
+{
+    objects.push_back(po);
+}
+
+
 Atom::Atom()
     : type(INTERNAL)
 {
@@ -29,14 +65,16 @@ Atom::~Atom()
 
 
 Atom::Atom(const Atom& atom2)
-    : type(INTERNAL),
-      arguments(atom2.arguments)//, isHigherOrder(atom2.isHigherOrder)
+    : arguments(atom2.arguments),
+      type(atom2.type),
+      isStrongNegated(atom2.isStrongNegated)
 {
 }
 
 
-Atom::Atom(const std::string atom)
-    : type(INTERNAL)//, isHigherOrder(false)
+Atom::Atom(const std::string atom, bool neg)
+    : type(INTERNAL),
+      isStrongNegated(neg)
 {
     arguments.clear();
     
@@ -74,11 +112,12 @@ Atom::Atom(const std::string atom)
 }
 	
 
-Atom::Atom(const std::string pred, const Tuple& arg)
-    : type(INTERNAL)
+Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
+    : type(INTERNAL),
+      isStrongNegated(neg)
 {
     arguments.push_back(Term(pred));
-    
+
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
     {
         arguments.push_back(*t);
@@ -86,8 +125,9 @@ Atom::Atom(const std::string pred, const Tuple& arg)
 }
 	
 
-Atom::Atom(const Tuple& arg)
-    : type(INTERNAL)
+Atom::Atom(const Tuple& arg, bool neg)
+    : type(INTERNAL),
+      isStrongNegated(neg)
 {
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
         arguments.push_back(*t);
@@ -159,25 +199,34 @@ Atom::operator== (const Atom& atom2) const
     
     if (getType() != atom2.getType())
         return false;
-    
-    bool ret = true;
-    
+
+    if (isStrongNegated != atom2.isStrongNegated)
+        return false;
+
     for (unsigned i = 0; i < getArity(); i++)
     {
         if (getArgument(i) != atom2.getArgument(i))
-            ret = false;
+            return false;
     }
     
-    return ret;
+    return true;
 }
 
 
+bool
+Atom::operator!= (const Atom& atom2) const
+{
+    return !(*this == atom2);
+}
 
 std::ostream&
 Atom::print(std::ostream& stream, const bool ho) const
 {
     if (ho)
     {
+        if (isStrongNegated)
+            stream << "sneg_";
+
         stream << "a_" << getArity() - 1;
         
         stream << "(";
@@ -194,6 +243,9 @@ Atom::print(std::ostream& stream, const bool ho) const
     }
     else
     {
+        if (isStrongNegated)
+            stream << "-";
+
         stream << getArgument(0);
 
         if (getArity() > 1)
@@ -215,11 +267,13 @@ Atom::print(std::ostream& stream, const bool ho) const
 }
 
 
+/*
 Atom*
 Atom::clone()
 {
     return new Atom(*this);
 }
+*/
 
 
 Atom::Type
@@ -249,123 +303,14 @@ operator<< (std::ostream& out, const Atom& atom)
 }
 
 
-
-
-
-GAtom::GAtom()
-{
-}
-
-
-GAtom::GAtom(const Atom& atom)
-    : Atom(atom),
-      alwaysFirstOrder(0)
-{
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-    {
-        assert(!t->isVariable());
-    }
-}
-
-
-GAtom::GAtom(const std::string atom)
-    : Atom(atom),
-      alwaysFirstOrder(0)
-{
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-    {
-        assert(!t->isVariable());
-    }
-}
-
-
-GAtom::GAtom(const std::string pred, const Tuple& arg, const bool strictfo)
-    : Atom(pred, arg),
-      alwaysFirstOrder(strictfo)
-{
-    //std::cout << arg << std::endl;
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-    {
-      //  std::cout << *t << std::endl;
-        assert(!t->isVariable());
-    }
-}
-
-
-GAtom::GAtom(const Tuple& arg)
-    : Atom(arg),
-      alwaysFirstOrder(0)
-{
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-        assert(!t->isVariable());
-}
-
-
-
-bool
-GAtom::operator== (const GAtom& gatom2) const
-{
-    if (getArity() != gatom2.getArity())
-        return false;
-    
-    bool ret = true;
-    
-    for (unsigned i = 0; i < getArity(); i++)
-    {
-        if (getArgument(i) != gatom2.getArgument(i))
-            ret = false;
-    }
-    
-    return ret;
-}
-
-
-std::ostream&
-GAtom::print(std::ostream& stream, const bool ho) const
-{
-    if (alwaysFirstOrder)
-    {
-        Atom::print(stream, 0);
-    }
-    else
-    {
-        Atom::print(stream, ho);
-    }
-}
-
-
-std::ostream&
-operator<< (std::ostream& out, const GAtom& groundatom)
-{
-    return groundatom.print(out, false);
-}
-
-
-std::ostream&
-operator<< (std::ostream& out, const GAtomSet& gatomset)
-{
-    out << "{";
-
-    for (GAtomSet::const_iterator a = gatomset.begin(); a != gatomset.end(); a++)
-    {
-        if (a != gatomset.begin())
-            out << ", ";
-        
-        out << *a;
-    }
-        
-    return out << "}";    
-}
-
-
 int
-GAtom::operator< (const GAtom& gatom2) const
+Atom::operator< (const Atom& atom2) const
 {
-    if (getPredicate() < gatom2.getPredicate())
+    if (getPredicate() < atom2.getPredicate())
     {
         return true;
     }
-    else if (getPredicate() > gatom2.getPredicate())
+    else if (getPredicate() > atom2.getPredicate())
     {
         return false;
     }
@@ -374,15 +319,15 @@ GAtom::operator< (const GAtom& gatom2) const
     // predicate symbols are equal, now distinguish between arguments
     //
 
-    if (getArity() < gatom2.getArity())
+    if (getArity() < atom2.getArity())
     {
         return true;
     }
 
-    if (getArity() == gatom2.getArity()) // find first mismatch in the arguments
+    if (getArity() == atom2.getArity()) // find first mismatch in the arguments
     {
         Tuple aa1 = getArguments();
-        Tuple aa2 = gatom2.getArguments();
+        Tuple aa2 = atom2.getArguments();
 
         std::pair<Tuple::const_iterator, Tuple::const_iterator> m =
             std::mismatch(aa2.begin(), aa2.end(), aa1.begin());
@@ -405,6 +350,7 @@ GAtom::operator< (const GAtom& gatom2) const
 }
 
 
+
 //
 // temp solution:
 // implementing GAtomSet functions globally here instead of
@@ -412,6 +358,7 @@ GAtom::operator< (const GAtom& gatom2) const
 // we will see what turns out to be more practical
 //
 
+/*
 void
 printGAtomSet(const GAtomSet& g,
               std::ostream& stream,
@@ -429,40 +376,6 @@ printGAtomSet(const GAtomSet& g,
 
     stream << "}";
 }
+*/
 
-
-void
-multiplySets(std::vector<GAtomSet>& s1,
-             std::vector<GAtomSet>& s2,
-             std::vector<GAtomSet>& result)
-{
-    //
-    // write result into temporary vector. in case the result parameter
-    // is one of the two input vectors
-    //
-    std::vector<GAtomSet> tmpset;
-
-    GAtomSet un;
-
-    for (std::vector<GAtomSet>::iterator i1 = s1.begin();
-            i1 != s1.end();
-            ++i1)
-    {
-        for (std::vector<GAtomSet>::iterator i2 = s2.begin();
-                i2 != s2.end();
-                ++i2)
-        {
-            un = *i1;
-            un.insert((*i2).begin(), (*i2).end());
-            //std::cout << "inserted: " << un << std::endl;
-
-            tmpset.push_back(un);
-        }
-    }
-
-    //
-    // now we can write the result
-    //
-    swap(result, tmpset);
-}
 

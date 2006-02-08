@@ -107,9 +107,9 @@ public:
      * PREDICATE.
      */
     void
-    evaluate(const Interpretation &i,
+    evaluate(const AtomSet &i,
              const Tuple& inputParms,
-             GAtomSet& result) const;
+             AtomSet& result) const;
 
 
     /**

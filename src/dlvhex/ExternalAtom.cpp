@@ -168,21 +168,21 @@ ExternalAtom::getInputType(unsigned idx) const
 
 
 void
-ExternalAtom::evaluate(const Interpretation& i,
+ExternalAtom::evaluate(const AtomSet& i,
                        const Tuple& inputParms,
-                       GAtomSet& result) const
+                       AtomSet& result) const
 {
     std::string fnc(getFunctionName());
 
-    Interpretation inputSet;
+    AtomSet inputSet;
 
-    GAtomSet factlist;
-    
     //
     // collect parameters and input set
     //
     for (int s = 0; s < inputParms.size(); s++)
     {
+        //AtomSet factlist;
+
         const Term* inputTerm = &inputParms[s];
 
         //
@@ -206,11 +206,14 @@ ExternalAtom::evaluate(const Interpretation& i,
             // collect all facts from interpretation that we need for the input
             // of the external atom
             //
-            factlist.clear();
 
-            i.matchPredicate(inputTerm->getString(), factlist);
+            //factlist.clear();
 
-            inputSet.add(factlist);
+            /// @todo: since matchpredicate doesn't reet the output list, do we
+            // need that factlist here?
+            i.matchPredicate(inputTerm->getString(), inputSet);
+
+        //    inputSet.addSet(factlist);
     
             break;
 
@@ -255,7 +258,7 @@ ExternalAtom::evaluate(const Interpretation& i,
         // replacement predicate for external atoms is always first order, the
         // corresponding facts need to be fo, too!
         //
-        result.insert(GAtom(getReplacementName(), *s, 1));
+        result.insert(Atom(getReplacementName(), *s, 1));
     }
 }
 

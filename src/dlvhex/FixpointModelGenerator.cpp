@@ -15,7 +15,6 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Interpretation.h"
 
 
 
@@ -61,8 +60,8 @@ FixpointModelGenerator::getSerializedProgram() const
 
 void
 FixpointModelGenerator::compute(const Program& program,
-                                const GAtomSet &I,
-                                std::vector<GAtomSet> &models)
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
 {
     initialize(program);
 
@@ -74,12 +73,12 @@ FixpointModelGenerator::compute(const Program& program,
 
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
 
-    std::vector<ExternalAtom> extatoms(program.getExternalAtoms());
+    std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
 
     //
     // we need an interpretation for the iteration, which starts with I
     //
-    Interpretation currentI(I);
+    //AtomSet currentI(I);
 
     //
     // part of currentI that is input to extatoms
@@ -91,16 +90,11 @@ FixpointModelGenerator::compute(const Program& program,
     // (this is equal to I at the beginning, to avoid looping if we
     // don't need any iteration)
     //
-    GAtomSet dlvResult;
+    AtomSet dlvResult;
 
     Tuple it;
 
 
-
-    //
-    // result of the external atoms
-    //
-    GAtomSet extresult;
 
     //
     // input parameters of an external atom
@@ -114,15 +108,19 @@ FixpointModelGenerator::compute(const Program& program,
 
     bool firstrun = true;
 
+    AtomSet currentI;
+
 //    int i(0);
     do
     {
+        currentI.clear();
+
+        currentI.insert(I);
+
         //
         // add the last result to I
         //
-        currentI.replaceBy(I);
-
-        currentI.add(dlvResult);
+        currentI.insert(dlvResult);
 
         //
         // find part of the current I that is input to the extatom(s)
@@ -136,12 +134,17 @@ FixpointModelGenerator::compute(const Program& program,
 //            break;
 //        }
 
-        extresult.clear();
+        //    extresult.clear();
+        //
+        // result of the external atoms
+        //
+        AtomSet extresult;
+
 
         //
         // evaluating all external atoms wrt. the current interpretation
         //
-        for (std::vector<ExternalAtom>::const_iterator a = extatoms.begin();
+        for (std::vector<ExternalAtom*>::const_iterator a = extatoms.begin();
              a != extatoms.end();
              a++)
         {
@@ -155,9 +158,9 @@ FixpointModelGenerator::compute(const Program& program,
 
             try
             {
-                (*a).evaluate(currentI,
-                              (*a).getInputTerms(),
-                              extresult);
+                (*a)->evaluate(currentI,
+                               (*a)->getInputTerms(),
+                               extresult);
             }
             catch (GeneralError&)
             {
@@ -205,7 +208,7 @@ FixpointModelGenerator::compute(const Program& program,
             throw e;
         }
 
-        GAtomSet* as = Solver.getNextAnswerSet();
+        AtomSet* as = Solver.getNextAnswerSet();
 
         //
         // no answerset: no model!
@@ -227,7 +230,7 @@ FixpointModelGenerator::compute(const Program& program,
 
         firstrun = false;
 
-    } while (dlvResult != currentI.getAtomSet());
+    } while (dlvResult != currentI);
 
-    models.push_back(currentI.getAtomSet());
+    models.push_back(currentI);
 }

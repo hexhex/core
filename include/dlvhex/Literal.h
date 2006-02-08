@@ -24,7 +24,7 @@
  * weakly negated Atom. The atom of a literal can both be
  * an ordinary as well as an external atom.
  */
-class Literal
+class Literal : public ProgramObject
 {
 public:
 
@@ -82,6 +82,9 @@ public:
      */
     bool
     operator== (const Literal& lit2) const;
+
+    bool
+    operator!= (const Literal& lit2) const;
 
     /**
      * @brief Serializes the literal.

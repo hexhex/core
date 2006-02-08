@@ -52,7 +52,7 @@ Component::getNodes() const
 
 
 void
-Component::getResult(std::vector<GAtomSet>& r)
+Component::getResult(std::vector<AtomSet>& r)
 {
     r = result;
     /*
@@ -119,17 +119,7 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
                 ri != (*ni)->getRules().end();
                 ++ri)
         {
-            //
-            // but add rules only once
-            // (we could have the same rules several times, because if we have a
-            // disjunctive head, each head node has the rule!
-            //
-            // TODO: let program.addRule add rules only uniquely! then we don't
-            // need that here!
-            //
-            if (find(program.getRules().begin(), program.getRules().end(), **ri) == 
-                program.getRules().end())
-                program.addRule(**ri);
+            program.addRule(*ri);
 
         }
 
@@ -166,7 +156,7 @@ ProgramComponent::setProgram(Program& p)
 
 
 void
-ProgramComponent::evaluate(std::vector<GAtomSet>& input)
+ProgramComponent::evaluate(std::vector<AtomSet>& input)
 {
     if (global::optionVerbose)
     {
@@ -174,19 +164,20 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
         program.dump(std::cout);
     }
 
-    std::vector<GAtomSet> res, previous;
+    std::vector<AtomSet> res, previous;
 
     //
     // compute model for each input factset
     //
-    for (std::vector<GAtomSet>::const_iterator in = input.begin();
+    for (std::vector<AtomSet>::const_iterator in = input.begin();
          in != input.end();
          ++in)
     {
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
-            printGAtomSet(*in, std::cout, 0);
+            //printGAtomSet(*in, std::cout, 0);
+            (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
 
@@ -208,11 +199,12 @@ ProgramComponent::evaluate(std::vector<GAtomSet>& input)
     {
         std::cout << "Result set(s): ";
 
-        for (std::vector<GAtomSet>::const_iterator out = result.begin();
+        for (std::vector<AtomSet>::const_iterator out = result.begin();
             out != result.end();
             ++out)
         {
-            printGAtomSet(*out, std::cout, 0);
+            //printGAtomSet(*out, std::cout, 0);
+            (*out).print(std::cout, 0);
             std::cout << std::endl;
         }
 
@@ -255,7 +247,7 @@ ExternalComponent::ExternalComponent(AtomNode* node)
 }
 
 void
-ExternalComponent::evaluate(std::vector<GAtomSet>& input)
+ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
     if (global::optionVerbose)
     {
@@ -265,22 +257,23 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
     //
     // compute model for each input factset
     //
-    for (std::vector<GAtomSet>::const_iterator in = input.begin();
+    for (std::vector<AtomSet>::const_iterator in = input.begin();
          in != input.end();
          ++in)
     {
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
-            printGAtomSet(*in, std::cout, 0);
+            //printGAtomSet(*in, std::cout, 0);
+            (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
 
-        GAtomSet res;
+        AtomSet res;
 
-        res.clear();
+        //res.clear();
 
-        Interpretation i(*in);
+        AtomSet i(*in);
 
         std::vector<Tuple> inputArguments;
 
@@ -315,14 +308,14 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
                 //
                 Term auxname = (*di).getAtomNode()->getAtom()->getPredicate();
 
-                GAtomSet arglist;
+                AtomSet arglist;
 
                 //
                 // get all the facts from i that match the auxiliary head atom
                 //
                 i.matchPredicate(auxname.getString(), arglist);
 
-                for (GAtomSet::const_iterator argi = arglist.begin();
+                for (AtomSet::const_iterator argi = arglist.begin();
                      argi != arglist.end();
                      ++argi)
                 {
@@ -340,7 +333,7 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
                  inputi != inputArguments.end();
                  ++inputi)
             {
-                GAtomSet r;
+                AtomSet r;
                 
 //                std::cout << "calling ext reasoner with params " << *inputi << std::endl;
 
@@ -349,7 +342,7 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
 //                std::cout << "result:" << std::endl;
 //                printGAtomSet(r, std::cout, 0);
 
-                res.insert(r.begin(), r.end());
+                res.insert(r);
 
                 //
                 // important: the component result must include also its input
@@ -357,7 +350,8 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
                 // is due to our graphprocessor algorithm.
                 /// @TODO: think about this!
                 //
-                res.insert((*in).begin(), (*in).end());
+                res.insert(*in);
+                //res.insert((*in).begin(), (*in).end());
             }
 
         }
@@ -373,11 +367,12 @@ ExternalComponent::evaluate(std::vector<GAtomSet>& input)
     {
         std::cout << "Result set(s): ";
 
-        for (std::vector<GAtomSet>::const_iterator out = result.begin();
+        for (std::vector<AtomSet>::const_iterator out = result.begin();
             out != result.end();
             ++out)
         {
-            printGAtomSet(*out, std::cout, 0);
+            //printGAtomSet(*out, std::cout, 0);
+            (*out).print(std::cout, 0);
             std::cout << std::endl;
         }
 
@@ -412,6 +407,17 @@ Subgraph::Subgraph()
 }
 
 
+Subgraph::~Subgraph()
+{
+    for (std::vector<Component*>::const_iterator ci = components.begin();
+         ci != components.end();
+         ++ci)
+    {
+        delete *ci;
+    }
+}
+
+
 Subgraph::Subgraph(const Subgraph& sg2)
 {
     atomnodes = sg2.atomnodes;
@@ -421,19 +427,6 @@ Subgraph::Subgraph(const Subgraph& sg2)
     nodeComponentMap = sg2.nodeComponentMap;
 
     lastResult = sg2.lastResult;
-}
-
-
-Subgraph::~Subgraph()
-{
-    /*
-    for (std::vector<Component*>::const_iterator ci = components.begin();
-         ci != components.end();
-         ci++)
-    {
-        delete *ci;
-    }
-    */
 }
 
 
@@ -799,7 +792,7 @@ Subgraph::unsolvedComponentsLeft()
     return false;
 }
 
-std::vector<GAtomSet*>&
+std::vector<AtomSet*>&
 Subgraph::getLastResult()
 {
     return lastResult;

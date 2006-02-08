@@ -45,28 +45,28 @@ ProgramDLVBuilder::~ProgramDLVBuilder()
 
 
 void
-ProgramDLVBuilder::buildRule(const Rule& rule) // throw (???Error)
+ProgramDLVBuilder::buildRule(const Rule* rule) // throw (???Error)
 {
-    for (std::vector<Atom>::const_iterator hl = rule.getHead().begin();
-         hl != rule.getHead().end();
-         hl++)
+    for (RuleHead::const_iterator hl = rule->getHead().begin();
+         hl != rule->getHead().end();
+         ++hl)
     {
-        if (hl != rule.getHead().begin())
+        if (hl != rule->getHead().begin())
             stream << " v ";
         
-        hl->print(stream, higherOrder);
+        (*hl)->print(stream, higherOrder);
     }
 
     stream << " :- ";
         
-    for (std::vector<Literal>::const_iterator l = rule.getBody().begin();
-         l != rule.getBody().end();
-         l++)
+    for (RuleBody::const_iterator l = rule->getBody().begin();
+         l != rule->getBody().end();
+         ++l)
     {
-        if (l != rule.getBody().begin())
+        if (l != rule->getBody().begin())
             stream << ", ";
         
-        l->print(stream, higherOrder);
+        (*l)->print(stream, higherOrder);
     }
 
     stream << "." << std::endl;
@@ -74,11 +74,11 @@ ProgramDLVBuilder::buildRule(const Rule& rule) // throw (???Error)
 
 
 void
-ProgramDLVBuilder::buildFacts(const GAtomSet& facts) // throw (???Error)
+ProgramDLVBuilder::buildFacts(const AtomSet& facts) // throw (???Error)
 {
-    for (GAtomSet::const_iterator f = facts.begin();
+    for (AtomSet::const_iterator f = facts.begin();
          f != facts.end();
-         f++)
+         ++f)
     {
         (*f).print(stream, higherOrder);
 
@@ -87,6 +87,7 @@ ProgramDLVBuilder::buildFacts(const GAtomSet& facts) // throw (???Error)
 }
 
 
+/*
 void
 ProgramDLVBuilder::buildFacts(const Interpretation& I) // throw (???Error)
 {
@@ -99,16 +100,27 @@ ProgramDLVBuilder::buildFacts(const Interpretation& I) // throw (???Error)
         stream << "." << std::endl;
     }
 }
+*/
 
 
 void
 ProgramDLVBuilder::buildProgram(const Program& program)
 {
-    const Rules& rules = program.getRules();
+//    const Rules& rules = program.getRules();
 
+    /*
     for (Rules::const_iterator r = rules.begin();
          r != rules.end();
          r++)
+    {
+        buildRule(*r);
+    }
+    */
+
+    /// @todo: stdlib algorithm instead of loop!
+    for (Program::const_iterator r = program.begin();
+         r != program.end();
+         ++r)
     {
         buildRule(*r);
     }

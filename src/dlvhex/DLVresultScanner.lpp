@@ -7,6 +7,7 @@
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
+#include "dlvhex/AtomSet.h"
 #include "dlvhex/DLVresultParser.h"
 
 extern "C" int dlvresulterror(const char*);

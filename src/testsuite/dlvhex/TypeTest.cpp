@@ -167,9 +167,7 @@ AtomTest::testSerialization()
 {
     std::stringstream out;
 
-    Atom* a = new Atom("p(q)");
-    a->print(out, 0);
-    std::cout << "-" << out.str() << "-" << std::endl;
+    out.str("");
     
     (*ho).print(out, 0);
     CPPUNIT_ASSERT(out.str() == "Bob(foo,Var,S)");
@@ -191,19 +189,22 @@ AtomTest::testSerialization()
 }
 
 
+
+CPPUNIT_TEST_SUITE_REGISTRATION(AtomSetTest);
+
 void
-AtomTest::testGAtomSet()
+AtomSetTest::testConstruction()
 {
-    GAtomSet s1, s2;
+    AtomSet s1, s2;
 
-    GAtom ga1("a(b,c)");
-    GAtom ga2("xx(yy)");
-    GAtom ga3("foo(\"bar:blah\")");
+    Atom a1("a(b,c)");
+    Atom a2("xx(yy)");
+    Atom a3("foo(\"bar:blah\")");
 
-    s1.insert(ga1);
-    s1.insert(ga2);
-    s2.insert(ga2);
-    s2.insert(ga3);
+    s1.insert(a1);
+    s1.insert(a2);
+    s2.insert(a2);
+    s2.insert(a3);
 
     CPPUNIT_ASSERT(s1 != s2);
 
@@ -214,19 +215,19 @@ AtomTest::testGAtomSet()
     s2.clear();
 
     //
-    // order of adding GAtoms shouldn't matter for the set
+    // order of adding Atoms shouldn't matter for the set
     //
-    s1.insert(ga1);
-    s1.insert(ga2);
-    s2.insert(ga2);
-    s2.insert(ga1);
+    s1.insert(a1);
+    s1.insert(a2);
+    s2.insert(a2);
+    s2.insert(a1);
 
     CPPUNIT_ASSERT(s1 == s2);
 
     //
     // no duplicates are kept in GAtomSet
     //
-    s1.insert(ga1);
+    s1.insert(a1);
 
     CPPUNIT_ASSERT(s1 == s2);
 
@@ -234,45 +235,26 @@ AtomTest::testGAtomSet()
     s2.clear();
 
     CPPUNIT_ASSERT(s1 == s2);
-}
-
-
-CPPUNIT_TEST_SUITE_REGISTRATION(InterpretationTest);
-
-void
-InterpretationTest::testConstruction()
-{
-    Interpretation i1;
-
-    GAtomSet s1, s2;
-
-    GAtom ga1("a(b,c)");
-    GAtom ga2("xx(yy)");
-    GAtom ga3("foo(\"bar:blah\")");
-
-    s1.insert(ga1);
-    s1.insert(ga2);
-    s1.insert(ga3);
-
-    Interpretation i2(s1);
-
-    //
-    // i2 has three GAtoms, i1 is empty
-    //
-    CPPUNIT_ASSERT(i1 != i2);
-
-    i1.add(s1);
-
-    //
-    // both are equal now
-    //
-    CPPUNIT_ASSERT(i1 == i2);
 
     s1.clear();
     s2.clear();
 
-    i2.matchPredicate("xx", s1);
+    AtomSet s3;
 
-    CPPUNIT_ASSERT(s1 != s2);
+    //
+    // all in s1
+    //
+    s1.insert(a1);
+    s1.insert(a2);
+    s1.insert(a3);
+
+    //
+    // only one in s2
+    //
+    s2.insert(a2);
+
+    s1.matchPredicate("xx", s3);
+
+    CPPUNIT_ASSERT(s2 == s3);
 }
 

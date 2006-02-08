@@ -20,8 +20,7 @@
 #include <sstream>
 #include <vector>
 
-#include "dlvhex/Atom.h"
-#include "dlvhex/Interpretation.h"
+//#include "dlvhex/Atom.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/ComponentFinder.h"
@@ -30,6 +29,7 @@
 #include "dlvhex/helper.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/ResultContainer.h"
+//#include "dlvhex/AtomFactory.h"
 
 
 unsigned parser_line;
@@ -49,7 +49,8 @@ Program IDB;
 /**
  * @brief Stores the facts of the program.
  */
-GAtomSet EDB;
+//GAtomSet EDB;
+AtomSet EDB;
 
 
 
@@ -346,9 +347,9 @@ main (int argc, char *argv[])
         if (count != -1)
         {
             while (count--)
-                delete files[count];
+                free(files[count]);
 
-            delete files; 
+            free(files); 
         }
     }
 
@@ -373,14 +374,14 @@ main (int argc, char *argv[])
     }
 
     //
-    // clean up scandir mess
+    // clean up scandir mess (it used malloc, so we use free here)
     //
     if (count != -1)
     {
         while (count--)
-            delete files[count];
+            free(files[count]);
 
-        delete files; 
+        free(files); 
     }
 
 
@@ -406,9 +407,9 @@ main (int argc, char *argv[])
     if (count != -1)
     {
         while (count--)
-            delete files[count];
+            free(files[count]);
 
-        delete files; 
+        free(files); 
     }
 
 
@@ -522,16 +523,12 @@ main (int argc, char *argv[])
         IDB.dump(std::cout);
         std::cout << std::endl;
         std::cout << "Parsed EDB: " << std::endl;
-        printGAtomSet(EDB, std::cout, 0);
+        //printGAtomSet(EDB, std::cout, 0);
+        EDB.print(std::cout, 0);
         std::cout << std::endl;
         std::cout << std::endl;
     }
 
-
-//    Atom* a = new Atom("p(q)");
-//    std::stringstream out;
-//    a->print(out, 0);
-//    std::cout << "---" << out.str() << "---";
 
     //
     // The GraphBuilder creates nodes and dependency edges from the raw program.
@@ -584,7 +581,7 @@ main (int argc, char *argv[])
         // The GraphProcessor starts its computation with the program's ground
         // facts as input.
         //
-        gp.run(EDB); 
+        gp.run(EDB);
     }
     catch (GeneralError &e)
     {
@@ -608,7 +605,7 @@ main (int argc, char *argv[])
 
     ResultContainer result;
 
-    GAtomSet* res;
+    AtomSet* res;
 
     while ((res = gp.getNextModel()) != NULL)
     {

@@ -20,7 +20,6 @@ dlvhex_SOURCES = \
                 parser.ypp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \
-                Repository.cpp \
                 scanner.lpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src
@@ -50,9 +49,10 @@ noinst_LTLIBRARIES = \
 
 libdlvhexbase_la_SOURCES = \
                       Atom.cpp \
+		      AtomFactory.cpp \
+                      AtomSet.cpp \
                       ExternalAtom.cpp \
                       helper.cpp \
-                      Interpretation.cpp \
                       Literal.cpp \
                       PluginContainer.cpp \
                       PluginInterface.cpp \

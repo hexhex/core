@@ -14,6 +14,7 @@
 
 
 Literal::Literal()
+//    : LogicalObject()
 { }
 
 
@@ -92,6 +93,13 @@ Literal::operator== (const Literal& lit2) const
         return 0;
 
     return 1;
+}
+
+
+bool
+Literal::operator!= (const Literal& lit2) const
+{
+    return !(*this == lit2);
 }
 
 

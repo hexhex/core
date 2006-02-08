@@ -5,7 +5,7 @@
  * @author Roman Schindlauer
  * @date Mon Sep  5 16:57:17 CEST 2005
  *
- * @brief Atom base class and GroundAtom class.
+ * @brief Atom base class.
  *
  *
  */
@@ -19,12 +19,61 @@
 
 #include "dlvhex/Term.h"
 
+
+/**
+ * @brief Abstract base class for all objects that are part of a program and
+ * dynamically created.
+ */
+class ProgramObject
+{
+protected:
+    ProgramObject() {}
+};
+
+
+/**
+ * @brief Container for all elements of a program.
+ */
+class ProgramRepository
+{
+public:
+
+    /**
+     * @brief Get (unique) instance of the static repository class.
+     */
+    static ProgramRepository* Instance();
+
+    /**
+     * @brief Register a program element.
+     *
+     * By registering a program object here, it is assured that the object will
+     * be destroyed at pogram termination.
+     */
+    void
+    record(ProgramObject*);
+
+protected:
+
+    ProgramRepository()
+    { }
+
+    ~ProgramRepository();
+
+private:
+
+    std::vector<ProgramObject*> objects;
+
+    static ProgramRepository* _instance;
+};
+
+
+
+
 /**
  * @brief An Atom has a predicate and (if not propositional) an optional list of arguments.
  *
- * Strongly negated atoms simply have a different predicate symbol.
  */
-class Atom
+class Atom : public ProgramObject
 {
 public:
 
@@ -53,24 +102,24 @@ public:
      * Constructs an atom from a string. This can be:
      * - A propositional atom, like 'p'
      * - A first order atom, like 'p(X)' or 'q(a,b,Z)'.
-     * An atom constructed this way is always a first-order atom.
+     * The second argument indicates if the atom is strongly negated.
      */
-    Atom(const std::string);
+    Atom(const std::string, bool = false);
 
     /**
-     * Constructs an atom from a predicate string and a tuple. An atom
-     * constructed this way is always a first-order atom (an assertion fails,
-     * if pred is not a constant).
+     * Constructs an atom from a predicate string and a tuple.
+     * The third argument indicates if the atom is strongly negated.
      */
-    Atom(const std::string, const Tuple&);
+    Atom(const std::string, const Tuple&, bool = false);
 
     /**
      * Constructs an atom from a list of arguments. This represents a higher-order
      * atom, where the predicate is just a Term inside the argument list.
      * The first element of 'arg' is considered to be the predicate - this is
      * important for the usage of getPredicate() and getArguments().
+     * The second argument indicates if the atom is strongly negated.
      */
-    Atom(const Tuple&);
+    Atom(const Tuple&, bool = false);
 
     /**
      * Returns the predicate of the atom.
@@ -112,13 +161,19 @@ public:
      * @brief Tests for equality.
      *
      * Two Atoms are equal, if they have the same arity and list of arguments
-     * (inlcuding the predicate). Two variable arguments are equal in this context, if
+     * (including the predicate). Two variable arguments are equal in this context, if
      * their strings are equal.
      * Two atoms of different type are always inequal.
      */
     virtual bool
     operator== (const Atom& atom2) const;
 
+    virtual bool
+    operator!= (const Atom& atom2) const;
+
+    int
+    operator< (const Atom& atom2) const;
+    
     /**
      * @brief Prints the atom.
      */
@@ -130,8 +185,8 @@ public:
      * or derived class (hence virtual). Needed for copy constructors of classes that
      * use dynamic Atom objects (like LITERAL).
      */
-    virtual Atom*
-    clone();
+//    virtual Atom*
+//    clone();
     
     /**
      * @brief Returns the type (internal - external) of the atom.
@@ -151,7 +206,9 @@ protected:
 
     Tuple arguments;
 
+    bool isStrongNegated;
 };
+
 
 /**
  * This operator should only be used for dumping the output; it uses
@@ -161,65 +218,19 @@ std::ostream&
 operator<< (std::ostream&, const Atom&);
 
 
-
-/**
- * @brief A GroundAtom is an Atom without any variable arguments.
- */
-class GAtom : public Atom
-{
-public:
-
-    /**
-     * @brief Default constructor.
-     */
-    GAtom();
-
-    GAtom(const Atom&);
-
-    GAtom(const std::string);
-	
-//    GAtom(std::string, Term);
-
-    GAtom(const std::string, const Tuple&, const bool = 0);
-
-    GAtom(const Tuple&);
-
-    bool
-    operator== (const GAtom& gatom2) const;
-
-    int
-    operator< (const GAtom& gatom2) const;
-
-    /**
-     * @brief Prints the GAtom.
-     */
-    virtual std::ostream&
-    print(std::ostream&, const bool) const;
-
-private:
-
-    /**
-     * @brief Flag for preventing higher-order syntax.
-     *
-     * A GAtom that comes from the result of an external atom evaluation
-     * should never be printed in higher-order syntax. With this flag, we can
-     * explicitly prevent higher-order output.
-     */
-    bool alwaysFirstOrder;
-};
-
-
 /**
  * @brief Ordered set of ground atoms.
  */
-typedef std::set<GAtom> GAtomSet;
+//typedef std::set<Atom> GAtomSet;
+
+typedef Atom GAtom;
 
 
 /**
  * This operator should only be used for dumping the output.
  */
-std::ostream&
-operator<< (std::ostream& out, const GAtomSet& groundatom);
+//std::ostream&
+//operator<< (std::ostream& out, const GAtomSet& groundatom);
 
 
 //
@@ -230,18 +241,12 @@ operator<< (std::ostream& out, const GAtomSet& groundatom);
 //
 
 
+/*
 void
 printGAtomSet(const GAtomSet& g,
               std::ostream& stream,
               const bool ho);
-              
-//
-// temp solution here too:
-//
-void
-multiplySets(std::vector<GAtomSet>& s1,
-             std::vector<GAtomSet>& s2,
-             std::vector<GAtomSet>& result);
+*/            
 
 
 
@@ -262,11 +267,13 @@ public:
         builtin = bp.builtin;
     }
 
+/*
     Atom*
     clone()
     {
         return new BuiltinPredicate(*this);
     }
+    */
 
     BuiltinPredicate(std::string b)
         : builtin(b)
@@ -286,6 +293,7 @@ public:
 
     std::string builtin;
 };
+
 
 #endif /* _ATOM_H */
 

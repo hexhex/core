@@ -15,7 +15,6 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Interpretation.h"
 
 
 
@@ -39,8 +38,8 @@ OrdinaryModelGenerator::initialize(const Program& p)
 
 void
 OrdinaryModelGenerator::compute(const Program& program,
-                                const GAtomSet &I,
-                                std::vector<GAtomSet> &models)
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
 {
 //    if (program.getExternalAtoms().size() != 0)
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
@@ -78,13 +77,13 @@ OrdinaryModelGenerator::compute(const Program& program,
         throw e;
     }
 
-    GAtomSet* as;
+    AtomSet* as;
 
     while ((as = Solver.getNextAnswerSet()) != NULL)
     {
-        GAtomSet res(*as);
+        AtomSet res(*as);
 
-        res.insert(I.begin(), I.end());
+        res.insert(I);
 
         models.push_back(res);
     }
