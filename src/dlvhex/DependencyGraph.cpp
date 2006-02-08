@@ -59,7 +59,7 @@ DependencyGraph::DependencyGraph(Program& program,
 
     const std::vector<AtomNode*> allnodes = nodegraph.getNodes();
 
-    Subgraph subgraph;
+    Subgraph* subgraph = new Subgraph;
 
     std::vector<std::vector<AtomNode*> > strongComponents;
 
@@ -113,7 +113,7 @@ DependencyGraph::DependencyGraph(Program& program,
             //
             // add it also to the current subgraph
             //
-            subgraph.addComponent(comp);
+            subgraph->addComponent(comp);
 
             //
             // mark these scc nodes as visited
@@ -139,7 +139,7 @@ DependencyGraph::DependencyGraph(Program& program,
         //
         // add atomnodes to subgraph!
         //
-        subgraph.addNode(*weaknode);
+        subgraph->addNode(*weaknode);
 
         if (find(visited.begin(), visited.end(), *weaknode) == visited.end())
         {
@@ -162,7 +162,8 @@ DependencyGraph::DependencyGraph(Program& program,
                 //
                 // add it also to the current subgraph
                 //
-                subgraph.addComponent(comp);
+                subgraph->addComponent(comp);
+
             }
         }
     }
@@ -170,7 +171,7 @@ DependencyGraph::DependencyGraph(Program& program,
 
     if (global::optionVerbose)
     {
-        subgraph.dump(std::cout);
+        subgraph->dump(std::cout);
     }
 
     //
@@ -187,15 +188,12 @@ DependencyGraph::DependencyGraph(Program& program,
 
 DependencyGraph::~DependencyGraph()
 {
-    /*
     for (std::vector<Subgraph*>::const_iterator si = subgraphs.begin();
          si != subgraphs.end();
          ++si)
     {
         delete *si;
     }
-    */
-
 }
 
 
@@ -265,7 +263,7 @@ Subgraph*
 DependencyGraph::getNextSubgraph()
 {
     if (currentSubgraph != subgraphs.end())
-        return &(*(currentSubgraph++));
+        return *(currentSubgraph++);
 
     return NULL;
 }

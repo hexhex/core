@@ -14,7 +14,7 @@
 #define _ATOMSET_H
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/AtomFactory.h"
+//#include "dlvhex/AtomFactory.h"
 
 
 /**

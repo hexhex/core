@@ -393,7 +393,7 @@ ExternalComponent::dump(std::ostream& out) const
     //
     out << (*atomnodes.begin())->getId() << std::endl;
 
-    //out << "ExternalComponent-object end ---------------------------" << std::endl;
+    out << "node address: " << *(atomnodes.begin()) << std::endl;
 
     //out << std::endl;
 }
@@ -657,7 +657,6 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
     // somewhere else!
     //
 
-    //std::cout << "Collecting unsolved leaves" << std::endl;
 
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();
@@ -678,14 +677,6 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 
             //std::vector<Component*> pred = getPredecessors(*ci);
 
-
-
-
-
-
-            //std::cout << "looking for predecessors of" << std::endl;
-            //(*ci)->dump(std::cout);
-
             Component* c;
 
             std::vector<Component*> pred;
@@ -696,7 +687,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                 ni != compnodes.end();
                 ++ni)
             {
-      //          std::cout << "looking at " << **ni <<std::endl;
+                //std::cout << "looking at " << **ni <<std::endl;
                 //
                 // go through all predecessors of this node
                 //
@@ -704,7 +695,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                     d != (*ni)->getPreceding().end();
                     ++d)
                 {
-        //            std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
+                    //std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
                     //
                     // for each preceding node:
                     // if the node belongs to a component, get the component this node belongs to

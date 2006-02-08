@@ -109,12 +109,12 @@ private:
     /**
      * @brief All subgraphs (connected components).
      */
-    std::vector<Subgraph> subgraphs;
+    std::vector<Subgraph*> subgraphs;
 
     /**
      * @brief Current subgraph pointer.
      */
-    std::vector<Subgraph>::iterator
+    std::vector<Subgraph*>::iterator
     currentSubgraph;
 
 
