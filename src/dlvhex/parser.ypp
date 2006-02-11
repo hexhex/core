@@ -221,7 +221,9 @@ rule0:
                 parser_errors++;
             }
 
-            EDB.insert(*$1);
+            AtomPtr ap(new Atom(*$1));
+
+            EDB.insert(ap);
             //AtomFactory::Instance()->insert(*$1);
 
             delete $1;
@@ -235,7 +237,9 @@ rule0:
                 parser_errors++;
             }
 
-            EDB.insert(*$1);
+            AtomPtr ap(new Atom(*$1));
+
+            EDB.insert(ap);
 
             delete $1;
         }

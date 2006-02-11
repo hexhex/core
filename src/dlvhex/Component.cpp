@@ -393,9 +393,7 @@ ExternalComponent::dump(std::ostream& out) const
     //
     out << (*atomnodes.begin())->getId() << std::endl;
 
-    out << "node address: " << *(atomnodes.begin()) << std::endl;
-
-    //out << std::endl;
+    out << std::endl;
 }
 
 

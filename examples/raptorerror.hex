@@ -1,0 +1,2 @@
+in("foobar").
+tr(X,Y,Z) :- &rdf[in](X,Y,Z).

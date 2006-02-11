@@ -32,48 +32,26 @@ AtomFactory::Instance()
 }
 
 
-Atom*
-AtomFactory::insert(Atom a)
+void
+AtomFactory::insert(AtomPtr& ap)
 {
-    //std::pair<std::set<Atom>::iterator, bool> p = atoms.insert(a);
+//    AtomPtr ap(new Atom(a));
 
-    
-    /// @todo very inefficient, how can we use std::set?
+    //
+    // insert the atom pointer.
+    // if the Atom that is referenced by ap (see definiton of atoms)
+    // is already in the set, then the
+    // returned iterator points to this atom's AtomPtr.
+    // if not, then the ap is added to the set.
+    // 
+    std::pair<std::set<AtomPtr, AtomCompare>::iterator, bool> p = atoms.insert(ap);
 
-    for (std::vector<Atom*>::iterator ai = atoms.begin();
-         ai != atoms.end();
-         ++ai)
-    {
-        if (**ai == a)
-            return *ai;
-    }
-
-    Atom* ins = new Atom(a);
-
-    atoms.push_back(ins);
-
-//    std::set<Atom>::iterator i = p.first;
-
-//    Atom* u = &(*p.first);
-
-//    std::cout << "created atom: " << (&atoms.back()) << std::endl;
-
-//    std::vector<Atom>::iterator i = 
-//    Atom aa = atoms.back();
-//    std::cout << "inserted atom into factory: " << aa << std::endl;
-    return ins;
+    ap = *(p.first);
 }
 
 
 AtomFactory::~AtomFactory()
 {
-    for (std::vector<Atom*>::iterator ai = atoms.begin();
-         ai != atoms.end();
-         ++ai)
-    {
-        delete *ai;
-    }
-
 }
 
 

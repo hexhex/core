@@ -17,6 +17,7 @@
 #include <list>
 #include <set>
 
+#include "boost/shared_ptr.hpp"
 #include "dlvhex/Term.h"
 
 
@@ -175,6 +176,12 @@ public:
     operator< (const Atom& atom2) const;
     
     /**
+     * @brief Avoids serializing this Atom as a higher-order atom.
+     */
+    void
+    setAlwaysFO();
+
+    /**
      * @brief Prints the atom.
      */
     virtual std::ostream&
@@ -207,6 +214,8 @@ protected:
     Tuple arguments;
 
     bool isStrongNegated;
+
+    bool isAlwaysFO;
 };
 
 
@@ -217,13 +226,15 @@ protected:
 std::ostream&
 operator<< (std::ostream&, const Atom&);
 
+typedef boost::shared_ptr<Atom> AtomPtr;
+
 
 /**
  * @brief Ordered set of ground atoms.
  */
 //typedef std::set<Atom> GAtomSet;
 
-typedef Atom GAtom;
+//typedef Atom GAtom;
 
 
 /**

@@ -15,6 +15,7 @@
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/AtomFactory.h"
 
+
 void
 multiplySets(std::vector<AtomSet>& s1,
              std::vector<AtomSet>& s2,
@@ -100,11 +101,27 @@ AtomSet::size() const
 }
 
 
+/*
 void
 AtomSet::insert(Atom* a)
 {
     insert(*a);
 }
+*/
+
+
+void
+AtomSet::insert(AtomPtr& ap)
+{
+    /// @todo test if *ap really exists
+
+    //
+    // inserting the AtomPtr in the factory ensures that 
+    AtomFactory::Instance()->insert(ap);
+
+    atoms.insert(ap);
+}
+
 
 
 /*
@@ -116,13 +133,15 @@ AtomSet::insert(Atom& a)
 */
 
 
+/*
 void
 AtomSet::insert(Atom a)
 {
-    Atom* pa = AtomFactory::Instance()->insert(a);
+    AtomFactory::AtomPtr pa = AtomFactory::Instance()->insert(a);
 
     atoms.insert(pa);
 }
+*/
 
 
 void
@@ -137,12 +156,12 @@ AtomSet::matchPredicate(const std::string pred,
                         AtomSet& matched) const
 {
     /// @todo: stdlib algorithm!
-    for (std::set<Atom*>::const_iterator a = atoms.begin();
+    for (std::set<AtomPtr>::const_iterator a = atoms.begin();
          a != atoms.end();
          a++)
     {
         if ((*a)->getPredicate() == pred)
-            matched.insert(*a);
+            matched.atoms.insert(*a);
     }
 }
 
@@ -152,7 +171,7 @@ AtomSet::print(std::ostream& stream, const bool ho) const
 {
     stream << "{";
 
-    for (std::set<Atom*>::const_iterator a = atoms.begin();
+    for (std::set<AtomPtr>::const_iterator a = atoms.begin();
          a != atoms.end();
          a++)
     {
@@ -166,9 +185,9 @@ AtomSet::print(std::ostream& stream, const bool ho) const
 }
 
 
-struct predicateMatches : public std::binary_function<Atom*, Term, bool>
+struct predicateMatches : public std::binary_function<AtomPtr, Term, bool>
 {
-    bool operator()(const Atom* g, const Term& pred) const
+    bool operator()(const AtomPtr g, const Term& pred) const
     {
         return (g->getPredicate() == pred);
     }

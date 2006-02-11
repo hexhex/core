@@ -22,9 +22,9 @@ GuessCheckModelGenerator::GuessCheckModelGenerator()
 {
    // serializedProgram.clear();
 
-   std::cout << "!!! non-e-stratified programs cannot be evaluated yet !!!" << std::endl;
+   //std::cout << "!!! non-e-stratified programs cannot be evaluated yet !!!" << std::endl;
 
-   assert(0);
+   //assert(0);
 }
 
 
@@ -71,17 +71,98 @@ GuessCheckModelGenerator::compute(const Program& program,
                                   const AtomSet &I,
                                   std::vector<AtomSet> &models)
 {
+    //std::cout << "*** guess and check: ***" << std::endl;
+
+    return;
+
     models.clear();
+
+    Program guessingprogram(program);
+
+    for (Program::const_iterator ri = program.begin();
+         ri != program.end();
+         ++ri)
+    {
+        for (std::vector<ExternalAtom*>::const_iterator ei = (*ri)->getExternalAtoms().begin();
+            ei != (*ri)->getExternalAtoms().end();
+            ++ei)
+        {
+            RuleHead guesshead;
+
+            Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
+
+            headatom->setAlwaysFO();
+
+            ProgramRepository::Instance()->record(headatom);
+
+            guesshead.push_back(headatom);
+
+            headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
+
+            headatom->setAlwaysFO();
+
+            ProgramRepository::Instance()->record(headatom);
+
+            guesshead.push_back(headatom);
+
+            RuleBody guessbody;
+
+            for (RuleBody::const_iterator bi = (*ri)->getBody().begin();
+                bi != (*ri)->getBody().end();
+                ++bi)
+            {
+                //
+                // don't add the current external atom itself
+                //
+                if ((*bi)->getAtom() != *ei)
+                    guessbody.push_back(*bi);
+            }
+
+            Rule* guessrule = new Rule(guesshead, guessbody);
+
+            ProgramRepository::Instance()->record(guessrule);
+
+            guessingprogram.addRule(guessrule);
+
+            //std::cout << "guessing rule: " << *guessrule << std::endl;
+        }
+        
+    }
+
+    //
+    // serialize input facts
+    //
+    //ProgramDLVBuilder dlvfacts(global::optionNoPredicate);
+    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+
+    dlvprogram.buildFacts(I);
+
+    dlvprogram.buildProgram(guessingprogram);
+
+    std::string serializedProgram = dlvprogram.getString();
 
     ASPsolver Solver;
     
-    std::string EDBprogram, fixpointProgram;
+    try
+    {
+        std::cout << serializedProgram << std::endl;
+        
+        Solver.callSolver(serializedProgram, 0);
+    }
+    catch (FatalError e)
+    {
+        throw e;
+    }
 
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+    //std::cout << serializedProgram << std::endl;
 
-    std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
+    AtomSet* as;
 
-    std::cout << "*** guess and check not implemented yet! ***" << std::endl;
-
+    while ((as = Solver.getNextAnswerSet()) != NULL)
+    {
+        std::cout << "---" << std::endl;
+        as->print(std::cout, 1);
+        std::cout << "---" << std::endl;
+    }
 //    models.push_back(currentI.getAtomSet());
 }

@@ -28,6 +28,7 @@ noinst_HEADERS = \
 pkginclude_HEADERS = \
                  Atom.h \
                  AtomSet.h \
+		 AtomFactory.h \
                  errorHandling.h \
                  helper.h \
                  Literal.h \

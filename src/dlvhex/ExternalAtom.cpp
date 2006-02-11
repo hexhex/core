@@ -252,13 +252,14 @@ ExternalAtom::evaluate(const AtomSet& i,
          ++s)
     {
         //
-        // construct the GAtom with the third parameter 'true' - this will set
-        // the alwaysFirstOrder flag of the GAtom and ensure, that this GAtom
+        // construct the Atom with the third parameter 'true' - this will set
+        // the alwaysFirstOrder flag of the Atom and ensure, that this Atom
         // will never be serialized in higher-order-syntax! since the
         // replacement predicate for external atoms is always first order, the
         // corresponding facts need to be fo, too!
         //
-        result.insert(Atom(getReplacementName(), *s, 1));
+        AtomPtr ap(new Atom(getReplacementName(), *s));
+        result.insert(ap);
     }
 }
 

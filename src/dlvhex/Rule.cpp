@@ -80,7 +80,16 @@ Rule::Rule(const RuleHead& head,
     : head(head),
       body(body)
 {
-    //body = b;
+    //
+    // store the rule's external atoms also separately
+    //
+    for (RuleBody::const_iterator bi = body.begin();
+        bi != body.end();
+        ++bi)
+    {
+        if ((*bi)->getAtom()->getType() == Atom::EXTERNAL)
+            externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
+    }
 }
 
 
@@ -96,6 +105,13 @@ const RuleBody&
 Rule::getBody() const
 {
     return body;
+}
+
+
+const std::vector<ExternalAtom*>&
+Rule::getExternalAtoms() const
+{
+    return externalAtoms;
 }
 
 

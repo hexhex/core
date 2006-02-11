@@ -1,0 +1,5 @@
+new(X) :- &test[new](X).
+new(a).
+
+a(X) :- b(X).
+b(Y) :- c(Y).

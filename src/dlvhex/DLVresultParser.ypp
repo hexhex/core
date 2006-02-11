@@ -87,13 +87,29 @@ factlist:
         {
             $$ = solverResult::createNewAnswerset();
 
-            $$->insert($1);
+            //
+            // inserting the smart pointer into the AtomSet. If no other copy of
+            // it is made there (i.e., actually in the AtomFactory, if this atom
+            // already exists there), the object will be automatically destroyed
+            // as soon as this scope is left (whatever this scope is in bison).
+            // If a copy was made (i.e., because this atom is new), the smart
+            // pointer's internal reference count is increased and the object
+            // will continue living.
+            //
+            AtomPtr ap(new Atom(*$1));
+
+            $$->insert(ap);
 
             delete $1;
         }
     | factlist COMMA fact
         {
-            $1->insert($3);
+            //
+            // cf. comment above.
+            //
+            AtomPtr ap(new Atom(*$3));
+
+            $1->insert(ap);
 
             $$ = $1;
             
@@ -106,6 +122,9 @@ fact:
         {
             //
             // create new atom from string
+            //
+            // we cannot use AtomPtr already here because bison doesn't allow
+            // semantical types with constructors.
             // 
             $$ = new Atom($1);
 

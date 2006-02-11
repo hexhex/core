@@ -14,7 +14,7 @@
 #define _ATOMSET_H
 
 #include "dlvhex/Atom.h"
-//#include "dlvhex/AtomFactory.h"
+#include "dlvhex/AtomFactory.h"
 
 
 /**
@@ -22,17 +22,14 @@
  */
 class AtomSet
 {
-public:
+private:
 
     /**
-     * @brief We actually use pointers here.
-     *
-     * @todo Using some kind of artificial reference would make it easier to use
-     * std::set in the AtomFactory, saving space for big atomsets with a lot of
-     * duplicates. On the other hand, indexing of atoms would probably take
-     * longer than though a normal pointer.
+     * @brief Set of AtomPtr.
      */
-    typedef std::set<Atom*> atomset_t;
+    typedef std::set<AtomPtr> atomset_t;
+
+public:
 
     /**
      * @brief Iterator to traverse the atomset.
@@ -44,9 +41,7 @@ public:
     public:
 
         const_iterator()
-        {
-            //assert(0);
-        }
+        { }
 
         const_iterator(const atomset_t::const_iterator &it1)
             : it(it1)
@@ -120,16 +115,22 @@ public:
     size() const;
 
     /**
-     * @brief Insert an atom from the specified address.
+     * @brief Insert an atom pointer.
      */
     void
-    insert(Atom*);
+    insert(AtomPtr&);
+
+    /**
+     * @brief Insert an atom from the specified address.
+     */
+//    void
+//    insert(Atom*);
 
     /**
      * @brief Insert an Atom.
      */
-    void
-    insert(Atom);
+//    void
+//    insert(Atom);
 
     /**
      * @brief Insert all Atoms from the specifed atomset.

@@ -67,14 +67,16 @@ Atom::~Atom()
 Atom::Atom(const Atom& atom2)
     : arguments(atom2.arguments),
       type(atom2.type),
-      isStrongNegated(atom2.isStrongNegated)
+      isStrongNegated(atom2.isStrongNegated),
+      isAlwaysFO(atom2, isAlwaysFO)
 {
 }
 
 
 Atom::Atom(const std::string atom, bool neg)
     : type(INTERNAL),
-      isStrongNegated(neg)
+      isStrongNegated(neg),
+      isAlwaysFO(0)
 {
     arguments.clear();
     
@@ -114,7 +116,8 @@ Atom::Atom(const std::string atom, bool neg)
 
 Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
     : type(INTERNAL),
-      isStrongNegated(neg)
+      isStrongNegated(neg),
+      isAlwaysFO(0)
 {
     arguments.push_back(Term(pred));
 
@@ -127,7 +130,8 @@ Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
 
 Atom::Atom(const Tuple& arg, bool neg)
     : type(INTERNAL),
-      isStrongNegated(neg)
+      isStrongNegated(neg),
+      isAlwaysFO(0)
 {
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
         arguments.push_back(*t);
@@ -219,10 +223,18 @@ Atom::operator!= (const Atom& atom2) const
     return !(*this == atom2);
 }
 
+
+void
+Atom::setAlwaysFO()
+{
+    isAlwaysFO = 1;
+}
+
+
 std::ostream&
 Atom::print(std::ostream& stream, const bool ho) const
 {
-    if (ho)
+    if (ho && !isAlwaysFO)
     {
         if (isStrongNegated)
             stream << "sneg_";

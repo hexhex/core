@@ -47,12 +47,12 @@ DependencyGraph::DependencyGraph(Program& program,
         throw;
     }
 
-    /*
+    
     if (global::optionVerbose)
     {
         gb->dumpGraph(nodegraph, std::cout);
     }
-    */
+    
 
 
     std::vector<std::vector<AtomNode*> > weakComponents;

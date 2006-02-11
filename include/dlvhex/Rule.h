@@ -202,16 +202,22 @@ public:
          const RuleBody& b);
 
     /**
-     * @brief returns the atom's head.
+     * @brief returns the rule's head.
      */
     const RuleHead&
     getHead() const;
 
     /**
-     * @brief returns the atom's body.
+     * @brief returns the rule's body.
      */
     const RuleBody&
     getBody() const;
+
+    /**
+     * @brief returns the rule's external atoms.
+     */
+    const std::vector<ExternalAtom*>&
+    getExternalAtoms() const;
 
     /**
      * @brief Test for equality.
@@ -226,6 +232,8 @@ private:
     RuleHead head;
 
     RuleBody body;
+
+    std::vector<ExternalAtom*> externalAtoms;
 };
 
 //

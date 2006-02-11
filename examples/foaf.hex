@@ -1,0 +1,12 @@
+
+triple(X,Y,Z) :- &rdf[A](X,Y,Z), input(A).
+
+
+knows(X,Y) :- triple(A, "http://xmlns.com/foaf/0.1/knows", B), name(A,X), name(B,Y).
+name(X,Y) :- triple(X, "http://xmlns.com/foaf/0.1/name", Y).
+
+input(X) :- url(X), url(Y), not input(Y), X != Y.
+
+
+url("http://www.kr.tuwien.ac.at/staff/roman/foaf.rdf").
+url("http://www.kr.tuwien.ac.at/staff/faber/foaf.rdf").
