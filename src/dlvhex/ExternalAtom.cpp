@@ -251,14 +251,16 @@ ExternalAtom::evaluate(const AtomSet& i,
          s != (*answer.getTuples()).end();
          ++s)
     {
+        AtomPtr ap(new Atom(getReplacementName(), *s));
+
         //
-        // construct the Atom with the third parameter 'true' - this will set
-        // the alwaysFirstOrder flag of the Atom and ensure, that this Atom
+        // setting the alwaysFirstOrder flag of the Atom ensures that this Atom
         // will never be serialized in higher-order-syntax! since the
         // replacement predicate for external atoms is always first order, the
         // corresponding facts need to be fo, too!
         //
-        AtomPtr ap(new Atom(getReplacementName(), *s));
+        ap->setAlwaysFO();
+
         result.insert(ap);
     }
 }

@@ -68,7 +68,7 @@ Atom::Atom(const Atom& atom2)
     : arguments(atom2.arguments),
       type(atom2.type),
       isStrongNegated(atom2.isStrongNegated),
-      isAlwaysFO(atom2, isAlwaysFO)
+      isAlwaysFO(atom2.isAlwaysFO)
 {
 }
 

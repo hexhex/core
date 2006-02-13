@@ -43,6 +43,12 @@ namespace global
      * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
      */
     extern std::vector<std::string> Messages;
+
+    /**
+     * Filename of the (first, if more than one were specified) logic program
+     * dlvhex was called with.
+     */
+    extern std::string lpfilename;
 }
 
 #endif // _GLOBALS_H

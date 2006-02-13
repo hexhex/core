@@ -21,4 +21,6 @@ namespace global
     bool optionVerbose = false;
 
     std::vector<std::string> Messages;    
+
+    std::string lpfilename;
 }

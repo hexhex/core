@@ -448,9 +448,13 @@ main (int argc, char *argv[])
         inputin = stdin;
 
         inputparse();
+
+        global::lpfilename = "lpgraph.dot";
     }
     else
     {
+        global::lpfilename = allFiles[0] + ".dot";
+
         for (std::vector<std::string>::const_iterator f = allFiles.begin();
              f != allFiles.end();
              f++)

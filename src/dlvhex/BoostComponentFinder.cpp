@@ -16,8 +16,10 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/strong_components.hpp>
+#include <boost/graph/graphviz.hpp>
 
 #include "dlvhex/BoostComponentFinder.h"
+#include "dlvhex/globals.h"
 
 
 
@@ -81,7 +83,6 @@ BoostComponentFinder::selectNodes(const Vertices& vertices,
 
 
 void
-//BoostComponentFinder::findWeakComponents(const Edges edges, ComponentList& components)
 BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
                                          std::vector<std::vector<AtomNode*> >& wccs)
 {
@@ -154,6 +155,7 @@ BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
 //        for (std::vector<int>::size_type i = 0; i != component.size(); ++i)
 //            std::cout << "Vertex " << i <<" is in component " << component[i] << std::endl;
 //        std::cout << std::endl;
+        
     }
 }
 
@@ -219,6 +221,17 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
 
                 sccs.push_back(scc);
             }
+        }
+
+        if (global::optionVerbose)
+        {
+            //const std::string fn(global::lpfilename);
+
+            std::ofstream out;
+
+            out.open(global::lpfilename.c_str());
+            write_graphviz(out, G);
+            out.close();
         }
     }
 }

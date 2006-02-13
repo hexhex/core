@@ -68,7 +68,7 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
          ri != sets.end();
          ++ri)
     {
-
+        (*ri).keep(predicates);
     } 
 }
 
