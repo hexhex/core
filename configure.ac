@@ -39,21 +39,28 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 #
-# this has to be done properly:
-# - checking if the optionally specified dlv exists at config-time
-# - displaying some line for --help
+# the user didn't supply a path for dlv
 #
-if test "$DLVPATH" = ""; then
-    DLVPATH=dlv
+if test "$DLV" = ""; then
+    # we assume "dlv"
+    DLV=dlv
+    # and check if and where it exists
+    AC_PATH_PROG(DLVPATH, $DLV, notfound)
+else
+    # the user supplied a 'DLV=...'
+    # check if it exists (with search path=/, since the user supplied
+    # an entire path!) and set DLVPATH to it!
+    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound, [/])
 fi
-    
-AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
-if test "$RACERPATH" = ""; then
-    RACERPATH=RacerPro
+if test "$DLVPATH" = notfound; then
+    AC_MSG_ERROR([dlv not found])
 fi
-    
-AC_DEFINE_UNQUOTED(RACERPATH,"$RACERPATH",[Path of RACER executable])
+
+#
+# put the dlv path into config.h
+#
+AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 
 AM_INIT_AUTOMAKE
