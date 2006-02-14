@@ -12,6 +12,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/helper.h"
+#include "dlvhex/globals.h"
 
 #include "../config.h"
 
@@ -153,7 +154,19 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     //
     if (solverResult::returncode != 0)
     {
-        throw FatalError("LP solver aborted due to program errors! Maybe unsafe rules?");
+        std::string dlverror("LP solver failure!");
+
+        if (global::optionVerbose)
+        {
+            dlverror += "\nTry to call dlv manually with this program and see what happens:\n";
+            dlverror += prg + "\n";
+        }
+        else
+        {
+            dlverror += " Run with --verbose for more info.\n";
+        }
+
+        throw FatalError(dlverror);
     }
     
     // TODO: what to do with solverResult::message?

@@ -453,7 +453,12 @@ main (int argc, char *argv[])
     }
     else
     {
-        global::lpfilename = allFiles[0] + ".dot";
+        //
+        // store filename of (first) logic program, we might use this somewhere
+        // else (e.g., when wiritng the graphviz file in the boost-part
+        //
+        std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
+        global::lpfilename = filepath.back() + ".dot";
 
         for (std::vector<std::string>::const_iterator f = allFiles.begin();
              f != allFiles.end();

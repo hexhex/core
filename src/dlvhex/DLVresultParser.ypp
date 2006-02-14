@@ -40,7 +40,7 @@ namespace solverResult
 %type  <string> ident
 %type  <term> groundterm
 %type  <tuple> groundterms
-%type  <gatom> fact prop_fact
+%type  <gatom> fact
 %type  <answerset> factlist
 
 
@@ -203,10 +203,6 @@ fact:
             delete[] $2;
         }
     ;
-
-prop_fact:
-    ;
-
 
 groundterms:
     groundterm

@@ -54,7 +54,7 @@ else
 fi
 
 if test "$DLVPATH" = notfound; then
-    AC_MSG_ERROR([dlv not found])
+    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com])
 fi
 
 #
@@ -67,6 +67,7 @@ AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CXX
+AC_PROG_CXXCPP
 AC_PROG_CC
 AM_PROG_LEX
 AC_PROG_YACC
@@ -77,6 +78,15 @@ AC_PROG_YACC
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
+
+# boost stuff
+AC_LANG_PUSH([C++])
+AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
+                [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
+AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
+                [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
+AC_LANG_POP([C++])
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
