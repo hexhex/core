@@ -229,6 +229,7 @@ operator<< (std::ostream&, const Atom&);
 typedef boost::shared_ptr<Atom> AtomPtr;
 
 
+
 /**
  * @brief Ordered set of ground atoms.
  */

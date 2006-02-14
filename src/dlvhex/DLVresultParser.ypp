@@ -7,6 +7,7 @@
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
+#include "dlvhex/Registry.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 
@@ -87,6 +88,8 @@ factlist:
         {
             $$ = solverResult::createNewAnswerset();
 
+            AtomPtr ap = Registry::Instance()->dispatch($1);
+
             //
             // inserting the smart pointer into the AtomSet. If no other copy of
             // it is made there (i.e., actually in the AtomFactory, if this atom
@@ -96,24 +99,18 @@ factlist:
             // pointer's internal reference count is increased and the object
             // will continue living.
             //
-            AtomPtr ap(new Atom(*$1));
-
             $$->insert(ap);
-
-            delete $1;
         }
     | factlist COMMA fact
         {
             //
             // cf. comment above.
             //
-            AtomPtr ap(new Atom(*$3));
+            AtomPtr ap = Registry::Instance()->dispatch($3);
 
             $1->insert(ap);
 
             $$ = $1;
-            
-            delete $3;
         }
     ;
 
@@ -129,11 +126,6 @@ fact:
             $$ = new Atom($1);
 
             //
-            // create atom in factory
-            //
-            //$$ = AtomFactory::Instance()->insert(Atom($1));
-
-            //
             // delete char*
             //
             delete[] $1;
@@ -141,8 +133,6 @@ fact:
     | TRUE_NOT ident
         {
             $$ = new Atom($2, 1);
-
-//            $$ = AtomFactory::Instance()->insert(Atom($2, 1));
 
             delete[] $2;
         }
@@ -155,11 +145,9 @@ fact:
             if (global::optionNoPredicate)
             {
                 $$ = new Atom(*$3);
-                //$$ = AtomFactory::Instance()->insert(Atom(*$3));
             }
             else
             {
-                //$$ = AtomFactory::Instance()->insert(Atom(std::string($1), *$3));
                 $$ = new Atom(std::string($1), *$3);
             }
             
@@ -183,11 +171,9 @@ fact:
             if (global::optionNoPredicate)
             {
                 $$ = new Atom(*$4, 1);
-                //$$ = AtomFactory::Instance()->insert(Atom(*$4, 1));
             }
             else
             {
-                //$$ = AtomFactory::Instance()->insert(Atom(std::string($2), *$4, 1));
                 $$ = new Atom(std::string($2), *$4, 1);
             }
             

@@ -117,7 +117,7 @@ AtomSet::insert(AtomPtr& ap)
 
     //
     // inserting the AtomPtr in the factory ensures that 
-    AtomFactory::Instance()->insert(ap);
+//    AtomFactory::Instance()->insert(ap);
 
     atoms.insert(ap);
 }

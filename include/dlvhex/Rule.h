@@ -7,10 +7,6 @@
  *
  * @brief Rule and Program class.
  *
- * Momentarily , these rules are 'real' rules, i.e., they have
- * to have a body and a head. Facts are stored somewhere else and
- * disjunctive heads as well as constraints don't exist yet.
- *
  */
 
 
@@ -242,8 +238,6 @@ private:
 std::ostream&
 operator<< (std::ostream& out, const Rule& rule);
 
-
-//typedef std::vector<Rule> Rules;
 
 
 /**

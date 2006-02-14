@@ -11,7 +11,7 @@
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/globals.h"
-//#include "dlvhex/AtomFactory.h"
+#include "dlvhex/Registry.h"
 
 
 extern "C" int inputerror(const char*);
@@ -33,30 +33,19 @@ extern AtomSet EDB;
 %name-prefix="input"
 
 %union {
-    char*           string;
-    Term*          term;
-    Tuple*      terms;
-    Atom*          atom;
-    ExternalAtom*       extatom;
-    Literal*        literal;
-    //std::vector<Atom*>* head;
-    //std::vector<Literal*>* body;
-    RuleHead* disjunction;
-    RuleBody* body;
-    Rule*           rule;
+    char*             string;
+    Term*             term;
+    Tuple*            terms;
+    Atom*             atom;
+    ExternalAtom*     extatom;
+    Literal*          literal;
+    RuleHead*         disjunction;
+    RuleBody*         body;
+    Rule*             rule;
     BuiltinPredicate* builtin;
 /*    BUILTIN        builtin;
-    TERMS*         terms;
-    TERM*          term;
-    Atom*          atom;
-    STERM*         sterm;
-    STERMLIST*     stermlist;
-    DISJUNCTION*   head;
-    Literal*       literal;
-    CONJUNCTION*   conjunction;
     AGGREGATE_TYPE*aggregate_type;
     AGGREGATEPRED* aggregate_pred;
-    Rule*          rule;
     unsigned       integer;
     WEIGHTS*       weights;
     OIDindices*    oids;
@@ -221,12 +210,13 @@ rule0:
                 parser_errors++;
             }
 
-            AtomPtr ap(new Atom(*$1));
+            //
+            // we give the atom pointer to the registry - from now on the
+            // registry takes care of it, we don't have to delete it!
+            //
+            AtomPtr ap = Registry::Instance()->dispatch($1);
 
             EDB.insert(ap);
-            //AtomFactory::Instance()->insert(*$1);
-
-            delete $1;
         }
     | user_pred CONS
         {
@@ -237,11 +227,9 @@ rule0:
                 parser_errors++;
             }
 
-            AtomPtr ap(new Atom(*$1));
+            AtomPtr ap = Registry::Instance()->dispatch($1);
 
             EDB.insert(ap);
-
-            delete $1;
         }
     | user_pred CONS body
         {

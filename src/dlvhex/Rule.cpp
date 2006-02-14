@@ -187,6 +187,10 @@ operator<< (std::ostream& out, const Rule& rule)
 }
 
 
+
+
+
+
 Program::Program()
 //    : LogicalObject()
 {

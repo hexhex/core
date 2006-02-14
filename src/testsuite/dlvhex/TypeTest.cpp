@@ -197,9 +197,9 @@ AtomSetTest::testConstruction()
 {
     AtomSet s1, s2;
 
-    Atom a1("a(b,c)");
-    Atom a2("xx(yy)");
-    Atom a3("foo(\"bar:blah\")");
+    AtomPtr a1(new Atom("a(b,c)"));
+    AtomPtr a2(new Atom("xx(yy)"));
+    AtomPtr a3(new Atom("foo(\"bar:blah\")"));
 
     s1.insert(a1);
     s1.insert(a2);

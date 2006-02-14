@@ -56,6 +56,7 @@ libdlvhexbase_la_SOURCES = \
                       Literal.cpp \
                       PluginContainer.cpp \
                       PluginInterface.cpp \
+	              Registry.cpp \
                       Rule.cpp \
                       Term.cpp
 
