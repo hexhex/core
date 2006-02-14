@@ -42,8 +42,13 @@ BoostComponentFinder::makeEdges(const std::vector<AtomNode*>& nodes,
         {
             ComponentFinder::Vertex v2 = (*d).getAtomNode()->getId();
 
-            //std::cout << "making edge from " << v1 << " to " << v2 << std::endl;
-            edges.push_back(ComponentFinder::Edge(v1, v2));
+            //
+            // making edge from v2 to v1, because the direction is not relevant
+            // for finding WCCs and SCCs and this is the "traditional" direction
+            // for lp-dependency (head->body), and we want these arrows in the
+            // graphviz output (see below)!
+            // 
+            edges.push_back(ComponentFinder::Edge(v2, v1));
         }
 
     }
@@ -169,6 +174,21 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
 
     makeEdges(nodes, edges);
 
+    //
+    // create a label table for the graphviz output
+    //
+    std::string nms[nodes.size()];
+
+    for (int y = 0; y < nodes.size(); ++y)
+    {
+        std::stringstream out;
+        out.str("");
+
+        nodes[y]->getAtom()->print(out,0);
+
+        nms[y] = out.str();
+    }
+
     using namespace boost;
     {
         typedef adjacency_list <vecS, vecS, directedS> Graph;
@@ -225,12 +245,10 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
 
         if (global::optionVerbose)
         {
-            //const std::string fn(global::lpfilename);
-
             std::ofstream out;
 
             out.open(global::lpfilename.c_str());
-            write_graphviz(out, G);
+            write_graphviz(out, G, make_label_writer(nms));
             out.close();
         }
     }
