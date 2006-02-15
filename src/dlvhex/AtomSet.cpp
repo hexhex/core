@@ -244,24 +244,17 @@ AtomSet::keep(const std::vector<std::string>& preds)
     }
 }
 
-struct AtomSetEqual : public std::binary_function<const AtomPtr&, const Atom&, bool>
-{
-    bool operator()(const AtomPtr& a, const Atom& b) const
-    {
-        return *a == b;
-    }
-};
 
 bool
 AtomSet::operator== (const AtomSet& atomset2) const
 {
-  return std::equal(atoms.begin(), atoms.end(),
-		    atomset2.begin(), AtomSetEqual());
+    return this->size() == atomset2.size()
+      && std::equal(this->begin(), this->end(), atomset2.begin());
 }
 
 
 bool
 AtomSet::operator!= (const AtomSet& atomset2) const
 {
-    return !(atoms == atomset2.atoms);
+    return !(*this == atomset2);
 }
