@@ -11,6 +11,7 @@
  */
 
 #include <vector>
+#include <algorithm>
 
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/AtomFactory.h"
@@ -156,7 +157,7 @@ AtomSet::matchPredicate(const std::string pred,
                         AtomSet& matched) const
 {
     /// @todo: stdlib algorithm!
-    for (std::set<AtomPtr>::const_iterator a = atoms.begin();
+    for (atomset_t::const_iterator a = atoms.begin();
          a != atoms.end();
          a++)
     {
@@ -171,7 +172,7 @@ AtomSet::print(std::ostream& stream, const bool ho) const
 {
     stream << "{";
 
-    for (std::set<AtomPtr>::const_iterator a = atoms.begin();
+    for (atomset_t::const_iterator a = atoms.begin();
          a != atoms.end();
          a++)
     {
@@ -243,16 +244,24 @@ AtomSet::keep(const std::vector<std::string>& preds)
     }
 }
 
+struct AtomSetEqual : public std::binary_function<const AtomPtr&, const Atom&, bool>
+{
+    bool operator()(const AtomPtr& a, const Atom& b) const
+    {
+        return *a == b;
+    }
+};
 
 bool
 AtomSet::operator== (const AtomSet& atomset2) const
 {
-    return (atoms == atomset2.atoms);
+  return std::equal(atoms.begin(), atoms.end(),
+		    atomset2.begin(), AtomSetEqual());
 }
 
 
 bool
 AtomSet::operator!= (const AtomSet& atomset2) const
 {
-    return (atoms != atomset2.atoms);
+    return !(atoms == atomset2.atoms);
 }

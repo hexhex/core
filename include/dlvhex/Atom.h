@@ -273,6 +273,7 @@ class BuiltinPredicate : public Atom
 public:
 
     BuiltinPredicate(const BuiltinPredicate& bp)
+        : Atom(bp)
     {
         type = BUILTIN;
 
@@ -297,7 +298,7 @@ public:
      * @brief Prints the atom.
      */
     virtual std::ostream&
-    print(std::ostream& stream, const bool ho) const
+    print(std::ostream& stream, const bool) const
     {
         return stream << builtin;
     }

@@ -52,6 +52,7 @@ libdlvhexbase_la_SOURCES = \
 		      AtomFactory.cpp \
                       AtomSet.cpp \
                       ExternalAtom.cpp \
+                      globals.cpp \
                       helper.cpp \
                       Literal.cpp \
                       PluginContainer.cpp \
@@ -66,7 +67,6 @@ libdlvhexbase_la_SOURCES = \
 libaspsolver_la_SOURCES = \
                       ASPsolver.cpp \
                       DLVresultParser.ypp \
-                      DLVresultScanner.lpp \
-                      globals.cpp
+                      DLVresultScanner.lpp
 
 libaspsolver_la_LIBADD = libdlvhexbase.la

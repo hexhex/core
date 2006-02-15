@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "dlvhex/Atom.h"
-
+#include "dlvhex/AtomSet.h"
 
 /**
  * @brief The Factory stores all (ground) atoms that emerge in the course of
@@ -48,32 +48,7 @@ protected:
 
 private:
 
-    /**
-     * @brief Custom compare operator.
-     *
-     * In order to treat the internal atom storage as a set of Atoms instead of
-     * a set of AtomPtr, we define a custom compare operator that dereferences
-     * the AtomPtrs.
-     */
-    struct AtomCompare
-    {
-        bool 
-        operator() (const AtomPtr& a, const AtomPtr& b)
-        {
-            return *a < *b;
-        }
-    };
-
-    /**
-     * @brief Internal atom storage.
-     *
-     * The atom storage is a set of AtomPtrs, using std::set with a custom
-     * compare operator that dereferences the AtomPtrs. This ensures that not
-     * the pointers are uniquely inserted, but the Atoms themselves
-     * (std::set::insert() uses the compare operator for determining element
-     * existence).
-     */
-    std::set<AtomPtr, AtomCompare> atoms;
+    AtomSet::atomset_t atoms;
 
     static AtomFactory* _instance;
 };

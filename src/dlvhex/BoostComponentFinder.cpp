@@ -20,6 +20,7 @@
 
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/helper.h"
 
 
 
@@ -166,7 +167,6 @@ BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
 
 
 void
-//BoostComponentFinder::findStrongComponents(const Edges edges, ComponentList& components)
 BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
                                            std::vector<std::vector<AtomNode*> >& sccs)
 {
@@ -186,7 +186,11 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
 
         nodes[y]->getAtom()->print(out,0);
 
-        nms[y] = out.str();
+        std::string at(out.str());
+
+        helper::escapeQuotes(at);
+
+        nms[y] = at.c_str();
     }
 
     using namespace boost;
@@ -250,6 +254,8 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
             out.open(global::lpfilename.c_str());
             write_graphviz(out, G, make_label_writer(nms));
             out.close();
+
+            std::cout << "Graph written to " << global::lpfilename << std::endl;
         }
     }
 }

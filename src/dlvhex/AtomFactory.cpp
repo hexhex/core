@@ -44,7 +44,7 @@ AtomFactory::insert(AtomPtr& ap)
     // returned iterator points to this atom's AtomPtr.
     // if not, then the ap is added to the set.
     // 
-    std::pair<std::set<AtomPtr, AtomCompare>::iterator, bool> p = atoms.insert(ap);
+    std::pair<AtomSet::atomset_t::iterator, bool> p = atoms.insert(ap);
 
     ap = *(p.first);
 }

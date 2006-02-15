@@ -65,8 +65,9 @@ Atom::~Atom()
 
 
 Atom::Atom(const Atom& atom2)
-    : arguments(atom2.arguments),
+    : ProgramObject(),
       type(atom2.type),
+      arguments(atom2.arguments),
       isStrongNegated(atom2.isStrongNegated),
       isAlwaysFO(atom2.isAlwaysFO)
 {
@@ -336,28 +337,20 @@ Atom::operator< (const Atom& atom2) const
         return true;
     }
 
-    if (getArity() == atom2.getArity()) // find first mismatch in the arguments
+    // lexicographically compare on the arguments
+    if (getArity() == atom2.getArity())
     {
         Tuple aa1 = getArguments();
         Tuple aa2 = atom2.getArguments();
-
-        std::pair<Tuple::const_iterator, Tuple::const_iterator> m =
-            std::mismatch(aa2.begin(), aa2.end(), aa1.begin());
-
-        if ((unsigned int)(m.first - aa2.begin()) >= aa2.size()) // aa2 = aa1
-        {
-            return false;
-        }
-
-        if (*m.first > *m.second) // first mismatch in aa2 is > aa1
-        {
-            return true;
-        }
+	
+	// lexicographical_compare returns true if the range of
+	// elements [first1, last1) is lexicographically less than the
+	// range of elements [first2, last2), and false otherwise.
+	return std::lexicographical_compare(aa1.begin(), aa1.end(),
+					    aa2.begin(), aa2.end());
     }
 
-    // getArity() > gatom2.getArity()
-    // or
-    // first mismatch in aa2 is <= aa1
+    // getArity() > atom2.getArity()
     return false;
 }
 

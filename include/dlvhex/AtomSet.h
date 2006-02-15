@@ -14,7 +14,6 @@
 #define _ATOMSET_H
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/AtomFactory.h"
 
 
 /**
@@ -22,12 +21,33 @@
  */
 class AtomSet
 {
-private:
+public:
+    /**
+     * @brief Custom compare operator.
+     *
+     * In order to treat the internal atom storage as a set of Atoms instead of
+     * a set of AtomPtr, we define a custom compare operator that dereferences
+     * the AtomPtrs.
+     */
+    struct AtomCompare
+    {
+        bool 
+        operator() (const AtomPtr& a, const AtomPtr& b)
+        {
+            return *a < *b;
+        }
+    };
 
     /**
-     * @brief Set of AtomPtr.
+     * @brief Internal atom storage.
+     *
+     * The atom storage is a set of AtomPtrs, using std::set with a custom
+     * compare operator that dereferences the AtomPtrs. This ensures that not
+     * the pointers are uniquely inserted, but the Atoms themselves
+     * (std::set::insert() uses the compare operator for determining element
+     * existence).
      */
-    typedef std::set<AtomPtr> atomset_t;
+    typedef std::set<AtomPtr, AtomSet::AtomCompare> atomset_t;
 
 public:
 
