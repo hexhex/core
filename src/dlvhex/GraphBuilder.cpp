@@ -200,7 +200,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 // make a new atom with the ext-parameters as arguments, will be
                 // the head of the auxiliary rule
                 //
-                Atom* auxheadatom = new Atom("aux_" + ext->getReplacementName(), extinput);
+                Atom* auxheadatom = new Atom(ext->getAuxPredicate(), extinput);
 
                 //
                 // add this atom to the global atom store

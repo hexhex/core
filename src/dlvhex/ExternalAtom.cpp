@@ -32,7 +32,8 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
       functionName(extatom.functionName),
       replacementName(extatom.replacementName),
       line(extatom.line),
-      pluginAtom(extatom.pluginAtom)
+      pluginAtom(extatom.pluginAtom),
+      auxPredicate(extatom.auxPredicate)
 {
     type = extatom.type;
 }
@@ -89,6 +90,20 @@ ExternalAtom::ExternalAtom(const std::string name,
         throw FatalError(errorstr.str());
     }
     
+    std::stringstream ss;
+    
+    ss << functionName << "_" << uniqueNumber;
+    
+    replacementName = ss.str();
+
+    auxPredicate.clear();
+
+    //
+    // remember this artificial atom name, we need to remove those later, they
+    // shouldn't be in the actual result
+    //
+    Term::auxnames.insert(replacementName);
+
     
     //
     // at the moment, we don't allow variable predicate input arguments:
@@ -101,10 +116,19 @@ ExternalAtom::ExternalAtom(const std::string name,
             (pluginAtom->getInputType(s) == PluginAtom::PREDICATE))
         {
             errorstr << "Line " << line << ": "
-                     << "Variable predicate input arguments not allowed";
+                     << "Variable predicate input arguments not allowed (yet)";
 
             throw FatalError(errorstr.str());
         }
+
+        //
+        // also produce auxiliary predicate name, we need this for the
+        // nonground input list
+        //
+        ss << "_aux";
+        
+        auxPredicate = ss.str();
+
     }
     
 
@@ -112,15 +136,14 @@ ExternalAtom::ExternalAtom(const std::string name,
     // if we got here, the syntax is fine!
     //
 
-    std::stringstream ss;
-    
-    ss << functionName << "_" << uniqueNumber;
-    
-    replacementName = ss.str();
-
-    Term::auxnames.insert(replacementName);
-
     uniqueNumber++;
+}
+
+
+std::string
+ExternalAtom::getAuxPredicate() const
+{
+    return auxPredicate;
 }
 
 
@@ -172,96 +195,148 @@ ExternalAtom::evaluate(const AtomSet& i,
                        const Tuple& inputParms,
                        AtomSet& result) const
 {
-    std::string fnc(getFunctionName());
-
-    AtomSet inputSet;
+    std::vector<Tuple> inputArguments;
 
     //
-    // collect parameters and input set
+    // first, we assume that we only take the original input list
     //
-    for (int s = 0; s < inputParms.size(); s++)
+    inputArguments.push_back(inputList);
+
+    //
+    // did we create an auxiliary predicate before?
+    //
+    if (!auxPredicate.empty())
     {
-        //AtomSet factlist;
+        //
+        // now that we know there are variable input arguments
+        // (otherwise there wouldn't be such a dependency), we can start
+        // over with the input list again and construct it from the
+        // result of the auxiliary rules
+        //
+        inputArguments.clear();
 
-        const Term* inputTerm = &inputParms[s];
+        AtomSet arglist;
 
         //
-        // at this point, the entire input list must be ground!
+        // get all the facts from i that match the auxiliary head atom
+        // the arguments of those facts will be our input lists!
         //
-        assert(!inputTerm->isVariable());
+        i.matchPredicate(auxPredicate, arglist);
 
-        switch(pluginAtom->getInputType(s))
+        for (AtomSet::const_iterator argi = arglist.begin();
+                argi != arglist.end();
+                ++argi)
         {
-        case PluginAtom::CONSTANT:
-
-            //
-            // nothing to do, the constant will be passed directly to the plugin
-            //
-
-            break;
-
-        case PluginAtom::PREDICATE:
-
-            //
-            // collect all facts from interpretation that we need for the input
-            // of the external atom
-            //
-
-            //factlist.clear();
-
-            /// @todo: since matchpredicate doesn't reet the output list, do we
-            // need that factlist here?
-            i.matchPredicate(inputTerm->getString(), inputSet);
-
-        //    inputSet.addSet(factlist);
-    
-            break;
-
-        default:
-
-            assert(0);
-
-            break;
+            inputArguments.push_back((*argi).getArguments());
         }
     }
 
-    PluginAtom::Query query(inputSet, inputParms, arguments);
+    std::string fnc(getFunctionName());
 
-    PluginAtom::Answer answer;
-    
-    try
+    //
+    // evaluate external atom for each input tuple we have now
+    //
+    for (std::vector<Tuple>::const_iterator inputi = inputArguments.begin();
+            inputi != inputArguments.end();
+            ++inputi)
     {
-        pluginAtom->retrieve(query, answer);
-    }
-    catch (PluginError& e)
-    {
-        std::ostringstream atomstr;
-
-        atomstr << functionName << "[" << 
-                   inputList << "](" << arguments << ")" <<
-                   " in line " << line;
-
-        e.setContext(atomstr.str());
-
-        throw e;
-    }
-    
-
-    for (std::vector<Tuple>::const_iterator s = (*answer.getTuples()).begin();
-         s != (*answer.getTuples()).end();
-         ++s)
-    {
-        AtomPtr ap(new Atom(getReplacementName(), *s));
+        AtomSet inputSet;
 
         //
-        // setting the alwaysFirstOrder flag of the Atom ensures that this Atom
-        // will never be serialized in higher-order-syntax! since the
-        // replacement predicate for external atoms is always first order, the
-        // corresponding facts need to be fo, too!
+        // extract input set from i according to the input parameters
         //
-        ap->setAlwaysFO();
+        for (int s = 0; s < (*inputi).size(); s++)
+        {
+            const Term* inputTerm = &(*inputi)[s];
 
-        result.insert(ap);
+            //
+            // at this point, the entire input list must be ground!
+            //
+            assert(!inputTerm->isVariable());
+
+            switch(pluginAtom->getInputType(s))
+            {
+            case PluginAtom::CONSTANT:
+
+                //
+                // nothing to do, the constant will be passed directly to the plugin
+                //
+
+                break;
+
+            case PluginAtom::PREDICATE:
+
+                //
+                // collect all facts from interpretation that we need for the input
+                // of the external atom
+                //
+
+
+                /// @todo: since matchpredicate doesn't neet the output list, do we
+                // need that factlist here?
+                i.matchPredicate(inputTerm->getString(), inputSet);
+
+                break;
+
+            default:
+
+                assert(0);
+
+                break;
+            }
+        }
+
+        //
+        // build a query object:
+        // - interpretation
+        // - input list
+        // - actual arguments of the external atom (maybe it is partly ground,
+        // then the plugin can be more efficient)
+        //
+        PluginAtom::Query query(inputSet, *inputi, arguments);
+
+        PluginAtom::Answer answer;
+        
+        try
+        {
+            pluginAtom->retrieve(query, answer);
+        }
+        catch (PluginError& e)
+        {
+            std::ostringstream atomstr;
+
+            atomstr << functionName << "[" << 
+                    inputList << "](" << arguments << ")" <<
+                    " in line " << line;
+
+            e.setContext(atomstr.str());
+
+            throw e;
+        }
+        
+
+        //
+        // build result with the replacement name for each answer tuple
+        //
+        for (std::vector<Tuple>::const_iterator s = (*answer.getTuples()).begin();
+            s != (*answer.getTuples()).end();
+            ++s)
+        {
+            AtomPtr ap(new Atom(getReplacementName(), *s));
+
+            //
+            // setting the alwaysFirstOrder flag of the Atom ensures that this Atom
+            // will never be serialized in higher-order-syntax! since the
+            // replacement predicate for external atoms is always first order, the
+            // corresponding facts need to be fo, too!
+            //
+            ap->setAlwaysFO();
+
+            result.insert(ap);
+        }
+
+//                std::cout << "result:" << std::endl;
+//                printGAtomSet(r, std::cout, 0);
     }
 }
 

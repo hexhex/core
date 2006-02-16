@@ -40,6 +40,13 @@ public:
                  const unsigned line);
 
     /**
+     * @brief Returns the auxiliary predicate name.
+     */
+    std::string
+    getAuxPredicate() const;
+
+
+    /**
      * @brief Returns the function name of the external atom.
      *
      * The external atom's function name is equal to its identifier string
@@ -164,11 +171,26 @@ private:
      */
     std::string functionName;
 
+    /**
+     * @brief Auxiliary predicate for grounding the input list.
+     */
+    std::string auxPredicate;
     
+    /**
+     * @brief Consecutive number to build a unique replacement name.
+     */
     static unsigned uniqueNumber;
 
+    /**
+     * @brief Replacement name to be used for creating an ordinary logic
+     * program.
+     */
     std::string replacementName;
 
+    /**
+     * @brief Line of the source file where this atom occured (for error
+     * output).
+     */
     unsigned line;
 
     /**

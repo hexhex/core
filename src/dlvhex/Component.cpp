@@ -275,90 +275,27 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         AtomSet i(*in);
 
-        std::vector<Tuple> inputArguments;
-
-        //
-        // first, we assume that we only take the original input list
-        //
-        inputArguments.push_back(externalAtom->getInputTerms());
-
-        //
-        // if we had an auxiliary rule because of variable input arguments, we
-        // have to build the ground input list(s) now:
-        //
-
-        std::vector<Dependency> pred((*atomnodes.begin())->getPreceding());
-
-        for (std::vector<Dependency>::const_iterator di = pred.begin();
-             di != pred.end();
-             ++di)
-        {
-            if ((*di).getType() == Dependency::EXTERNAL_AUX)
-            {
-                //
-                // now that we know there are variable input arguments
-                // (otherwise there wouldn't be such a dependency), we can start
-                // over with the input list again and construct it from the
-                // result of the auxiliary rules
-                //
-                inputArguments.clear();
-
-                //
-                // find out the name of the aux-rule head atom
-                //
-                Term auxname = (*di).getAtomNode()->getAtom()->getPredicate();
-
-                AtomSet arglist;
-
-                //
-                // get all the facts from i that match the auxiliary head atom
-                //
-                i.matchPredicate(auxname.getString(), arglist);
-
-                for (AtomSet::const_iterator argi = arglist.begin();
-                     argi != arglist.end();
-                     ++argi)
-                {
-                    inputArguments.push_back((*argi).getArguments());
-                }
-            }
-        }
 
         try
         {
-            //
-            // evaluate external atom for each input list we have now
-            //
-            for (std::vector<Tuple>::const_iterator inputi = inputArguments.begin();
-                 inputi != inputArguments.end();
-                 ++inputi)
-            {
-                AtomSet r;
-                
-//                std::cout << "calling ext reasoner with params " << *inputi << std::endl;
+            Tuple dummy;
 
-                externalAtom->evaluate(i, *inputi, r);
+            externalAtom->evaluate(i, dummy, res);
 
-//                std::cout << "result:" << std::endl;
-//                printGAtomSet(r, std::cout, 0);
-
-                res.insert(r);
-
-                //
-                // important: the component result must include also its input
-                // (like the EDB, that is always included in the result). This
-                // is due to our graphprocessor algorithm.
-                /// @TODO: think about this!
-                //
-                res.insert(*in);
-                //res.insert((*in).begin(), (*in).end());
-            }
-
+//            res.insert(r);
         }
         catch (GeneralError&)
         {
             throw;
         }
+
+        //
+        // important: the component result must include also its input
+        // (like the EDB, that is always included in the result). This
+        // is due to our graphprocessor algorithm.
+        /// @TODO: think about this!
+        //
+        res.insert(*in);
 
         result.push_back(res);
     }

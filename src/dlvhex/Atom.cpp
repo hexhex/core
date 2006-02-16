@@ -238,7 +238,7 @@ Atom::print(std::ostream& stream, const bool ho) const
     if (ho && !isAlwaysFO)
     {
         if (isStrongNegated)
-            stream << "sneg_";
+            stream << "-";
 
         stream << "a_" << getArity() - 1;
         
@@ -328,13 +328,25 @@ Atom::operator< (const Atom& atom2) const
         return false;
     }
 
+    if (!isStrongNegated && atom2.isStrongNegated)
+    {
+        return true;
+    }
+    else if (isStrongNegated && !atom2.isStrongNegated)
+    {
+        return false;
+    }
+
     //
     // predicate symbols are equal, now distinguish between arguments
     //
 
     if (getArity() < atom2.getArity())
     {
-        return true;
+        //return true;
+        //
+        //this should never happen: equal predicates, different arity!
+        assert(0);
     }
 
     // lexicographically compare on the arguments
