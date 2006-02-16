@@ -235,10 +235,11 @@ Term::unifiesWith(const Term& term2) const
 Term&
 Term::operator= (const Term& term2)
 {
-    if( this != &term2 )
+    if (this != &term2)
     {
         constantString = term2.constantString;
         constantInteger = term2.constantInteger;
+        variableString = term2.variableString;
         type = term2.type;
     }
 

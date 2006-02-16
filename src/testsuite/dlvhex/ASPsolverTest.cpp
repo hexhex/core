@@ -60,14 +60,14 @@ ASPsolverTest::testResult()
     //
     // no model
     //
-    prg = "-p.p.";
+    prg = "-a.a.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
     
     //
     // empty model
     //
-    prg = "p:-q.";
+    prg = "a:-b.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -76,7 +76,7 @@ ASPsolverTest::testResult()
     //
     // single model
     //
-    prg = "p.q:-p.";
+    prg = "a.b:-a.";
     CPPUNIT_ASSERT_NO_THROW(solver->callSolver(prg));
     as = solver->getNextAnswerSet();
     CPPUNIT_ASSERT(as->size() == 2);
@@ -97,7 +97,7 @@ ASPsolverTest::testResult()
     // strings
     //
     std::string str("\"quoted string, includes some (nasty) special-characters!+#'*[]{}\"");
-    prg = "a(" + str + ") :- b. b.";
+    prg = "e(" + str + ") :- b. b.";
 
     //
     // now calling with noEDB=1, b should not be in the result then!

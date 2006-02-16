@@ -347,6 +347,7 @@ Atom::operator< (const Atom& atom2) const
         //
         //this should never happen: equal predicates, different arity!
         assert(0);
+        //std::cout << "diff arity: " << *this << " " << atom2 << std::endl;
     }
 
     // lexicographically compare on the arguments
