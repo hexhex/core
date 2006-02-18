@@ -273,7 +273,9 @@ class BuiltinPredicate : public Atom
 public:
 
     BuiltinPredicate(const BuiltinPredicate& bp)
-        : Atom(bp)
+        : Atom(bp),
+          t1(bp.t1),
+          t2(bp.t2)
     {
         type = BUILTIN;
 
@@ -288,8 +290,10 @@ public:
     }
     */
 
-    BuiltinPredicate(std::string b)
-        : builtin(b)
+    BuiltinPredicate(Term tl, std::string b, Term tr)
+        : builtin(b),
+          t1(tl),
+          t2(tr)
     {
         type = BUILTIN;
     }
@@ -300,9 +304,10 @@ public:
     virtual std::ostream&
     print(std::ostream& stream, const bool) const
     {
-        return stream << builtin;
+        return stream << t1 << builtin << t2;
     }
 
+    Term t1, t2;
 
     std::string builtin;
 };

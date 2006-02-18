@@ -598,9 +598,10 @@ builtin_pred : /*binop terms2
           |*/ term binop term
            {
                std::ostringstream s;
-               s << *$1 << $2 << *$3;
+               //s << *$1 << $2 << *$3;
+               s << $2;
 //               std::cout << "creating builtin: " << s.str() << std::endl;
-               $$ = new BuiltinPredicate(s.str());
+               $$ = new BuiltinPredicate(*$1, $2, *$3);
 
                delete $1;
                delete $3;

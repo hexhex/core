@@ -36,7 +36,7 @@ MSG         ([a-zA-Z/].+)
 
 ID          ([A-Za-z][A-Za-z_0-9]*)
 
-QUOTED_ID   (\"[^\"]+\")
+QUOTED_ID   (\"[^\"]*\")
 
 BLANK       ([ \t]+)
 

@@ -129,6 +129,8 @@ ExternalAtom::ExternalAtom(const std::string name,
             ss << "_aux";
             
             auxPredicate = ss.str();
+
+            Term::auxnames.insert(auxPredicate);
         }
     }
 
@@ -233,7 +235,6 @@ ExternalAtom::evaluate(const AtomSet& i,
 
     std::string fnc(getFunctionName());
 
-    std::cout << "inparg: " << inputList <<std::endl;
     //
     // evaluate external atom for each input tuple we have now
     //
