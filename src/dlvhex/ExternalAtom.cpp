@@ -112,25 +112,25 @@ ExternalAtom::ExternalAtom(const std::string name,
     {
         const Term inputTerm = inputList[s];
 
-        if ((inputTerm.isVariable()) &&
-            (pluginAtom->getInputType(s) == PluginAtom::PREDICATE))
+        if (inputTerm.isVariable())
         {
-            errorstr << "Line " << line << ": "
-                     << "Variable predicate input arguments not allowed (yet)";
+            if (pluginAtom->getInputType(s) == PluginAtom::PREDICATE)
+            {
+                errorstr << "Line " << line << ": "
+                        << "Variable predicate input arguments not allowed (yet)";
 
-            throw FatalError(errorstr.str());
+                throw FatalError(errorstr.str());
+            }
+
+            //
+            // also produce auxiliary predicate name, we need this for the
+            // nonground input list
+            //
+            ss << "_aux";
+            
+            auxPredicate = ss.str();
         }
-
-        //
-        // also produce auxiliary predicate name, we need this for the
-        // nonground input list
-        //
-        ss << "_aux";
-        
-        auxPredicate = ss.str();
-
     }
-    
 
     //
     // if we got here, the syntax is fine!
@@ -233,6 +233,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
     std::string fnc(getFunctionName());
 
+    std::cout << "inparg: " << inputList <<std::endl;
     //
     // evaluate external atom for each input tuple we have now
     //
