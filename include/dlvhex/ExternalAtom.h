@@ -143,8 +143,8 @@ public:
     /**
      * @brief Clone function. see Atom::clone.
      */
-    Atom*
-    clone();
+    //Atom*
+    //clone();
 
     unsigned
     getLine() const;

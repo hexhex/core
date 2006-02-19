@@ -125,7 +125,7 @@ public:
     /**
      * Returns the predicate of the atom.
      */
-    Term
+    virtual Term
     getPredicate() const;
 
     /**
@@ -145,8 +145,13 @@ public:
 
     /**
      * Returns the arity of an atom (number of arguments).
+     *
+     * Note that we treat atoms as higher-order atoms:
+     * p(q)  has arity 2
+     * a     has arity 1
+     * (X,Y) has arity 2
      */
-    unsigned
+    virtual unsigned
     getArity() const;
     
     /**

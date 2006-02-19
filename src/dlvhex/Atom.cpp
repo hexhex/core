@@ -164,7 +164,7 @@ Atom::getArguments() const
 Term
 Atom::getArgument(const unsigned index) const
 {
-    assert(index <= arguments.size());
+    assert(index < arguments.size());
 
     return arguments[index];
 }

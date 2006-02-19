@@ -383,12 +383,13 @@ ExternalAtom::print(std::ostream& out, const bool ho) const
     return out;
 }   
 
-
+/*
 Atom*
 ExternalAtom::clone()
 {
     return new ExternalAtom(*this);
 }
+*/
 
 unsigned ExternalAtom::uniqueNumber = 0;
 

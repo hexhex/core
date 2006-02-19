@@ -297,19 +297,26 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
          ++node)
     {
         //
-        // For this AtomNode: take the predicate term of its atom and extract all
-        // entries in the multimap that match this predicate. Those entries contain
-        // now the AtomNodes of the external atoms that have such an input predicate.
+        // do this only for ordinary atoms, external atoms can't be in the input
+        // list!
         //
-        std::pair<mi, mi> range = extinputs.equal_range((*node)->getAtom()->getPredicate());
-
-        //
-        // add dependency: from this node to the external atom (second in the pair of the
-        // multimap)
-        //
-        for (mi i = range.first; i != range.second; ++i)
+        if (typeid(*(*node)->getAtom()) != typeid(ExternalAtom))
         {
-            Dependency::addDep(*node, i->second, Dependency::EXTERNAL);
+            //
+            // For this AtomNode: take the predicate term of its atom and extract all
+            // entries in the multimap that match this predicate. Those entries contain
+            // now the AtomNodes of the external atoms that have such an input predicate.
+            //
+            std::pair<mi, mi> range = extinputs.equal_range((*node)->getAtom()->getPredicate());
+
+            //
+            // add dependency: from this node to the external atom (second in the pair of the
+            // multimap)
+            //
+            for (mi i = range.first; i != range.second; ++i)
+            {
+                Dependency::addDep(*node, i->second, Dependency::EXTERNAL);
+            }
         }
     }
 

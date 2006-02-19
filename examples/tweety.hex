@@ -1,6 +1,6 @@
 % By default, a bird doesn't fly:
  bird("Bird").
- flies(X) :- &dlC["/home/staff/roman/dlvex/examples/tweety_bird.owl",plusC,minusC,plusR,minusR,"bird"](X).
+ flies(X) :- &dlC["/home/roman/dlvex/examples/tweety_bird.owl",plusC,minusC,plusR,minusR,"bird"](X).
 
 % Single out the non-fliers under default assumption:
  
