@@ -75,15 +75,13 @@ FixpointModelGenerator::compute(const Program& program,
 
     std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
 
-    //
-    // we need an interpretation for the iteration, which starts with I
-    //
-    //AtomSet currentI(I);
 
     //
-    // part of currentI that is input to extatoms
+    // security limit
     //
-//    GAtomSet inputPart, oldinputPart;
+    const unsigned maxIter(10);
+
+    unsigned iter(0);
 
     //
     // the result of each iteration
@@ -113,6 +111,8 @@ FixpointModelGenerator::compute(const Program& program,
 //    int i(0);
     do
     {
+        iter++;
+        
         currentI.clear();
 
         currentI.insert(I);
@@ -230,7 +230,7 @@ FixpointModelGenerator::compute(const Program& program,
 
         firstrun = false;
 
-    } while (dlvResult != currentI);
+    } while ((dlvResult != currentI) && (iter <= maxIter));
 
     models.push_back(currentI);
 }

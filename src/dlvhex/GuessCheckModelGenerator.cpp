@@ -22,9 +22,9 @@ GuessCheckModelGenerator::GuessCheckModelGenerator()
 {
    // serializedProgram.clear();
 
-   std::cout << "!!! non-e-stratified programs cannot be evaluated yet !!!" << std::endl;
+    std::string err("non-e-stratified programs cannot be evaluated yet!");
 
-   assert(0);
+    throw FatalError(err);
 }
 
 

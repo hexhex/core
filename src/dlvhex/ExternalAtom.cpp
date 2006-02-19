@@ -105,15 +105,19 @@ ExternalAtom::ExternalAtom(const std::string name,
     Term::auxnames.insert(replacementName);
 
     
-    //
-    // at the moment, we don't allow variable predicate input arguments:
-    //
+    bool inputIsGround(1);
+
     for (int s = 0; s < inputList.size(); s++)
     {
         const Term inputTerm = inputList[s];
 
         if (inputTerm.isVariable())
         {
+            inputIsGround = 0;
+
+            //
+            // at the moment, we don't allow variable predicate input arguments:
+            //
             if (pluginAtom->getInputType(s) == PluginAtom::PREDICATE)
             {
                 errorstr << "Line " << line << ": "
@@ -121,17 +125,20 @@ ExternalAtom::ExternalAtom(const std::string name,
 
                 throw FatalError(errorstr.str());
             }
-
-            //
-            // also produce auxiliary predicate name, we need this for the
-            // nonground input list
-            //
-            ss << "_aux";
-            
-            auxPredicate = ss.str();
-
-            Term::auxnames.insert(auxPredicate);
         }
+    }
+
+    if (!inputIsGround)
+    {
+        //
+        // also produce auxiliary predicate name, we need this for the
+        // nonground input list
+        //
+        ss << "_aux";
+
+        auxPredicate = ss.str();
+
+        Term::auxnames.insert(auxPredicate);
     }
 
     //

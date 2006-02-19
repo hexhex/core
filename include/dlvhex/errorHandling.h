@@ -61,7 +61,7 @@ class FatalError : public GeneralError
 public:
     
     FatalError(const std::string msg)
-        : GeneralError(msg)
+        : GeneralError("Fatal: " + msg)
     {
     }
 
