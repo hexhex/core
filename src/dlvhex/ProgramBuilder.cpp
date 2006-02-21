@@ -125,3 +125,25 @@ ProgramDLVBuilder::buildProgram(const Program& program)
         buildRule(*r);
     }
 }
+
+
+void
+ProgramXMLBuilder::buildFacts(const AtomSet& facts)
+{
+    stream << "<answerset>";
+
+    for (AtomSet::const_iterator f = facts.begin();
+         f != facts.end();
+         ++f)
+    {
+        stream << "<fact><![CDATA[";
+
+        (*f).print(stream, 0);
+
+        stream << "]]></fact>";// << std::endl;
+        stream << std::endl;
+    }
+
+    stream << "</answerset>";
+    stream << std::endl;
+}

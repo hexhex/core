@@ -17,6 +17,7 @@ dlvhex_SOURCES = \
                 GraphBuilder.cpp \
                 GraphProcessor.cpp \
                 OrdinaryModelGenerator.cpp \
+		OutputBuilder.cpp \
                 parser.ypp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \

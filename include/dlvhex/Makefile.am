@@ -14,13 +14,14 @@ noinst_HEADERS = \
                  ExternalAtom.h \
                  globals.h \
                  GraphBuilder.h \
+                 GraphProcessor.h \
                  helper.h \
                  Literal.h \
                  ModelGenerator.h \
+		 OutputBuilder.h \
                  PluginContainer.h \
                  PluginInterface.h \
                  ProgramBuilder.h \
-                 GraphProcessor.h \
                  ResultContainer.h \
 		 Registry.h \
                  Rule.h \

@@ -211,6 +211,9 @@ public:
      */
     bool
     isGround() const;
+
+    bool
+    isStrongNegated() const;
     
 protected:
 

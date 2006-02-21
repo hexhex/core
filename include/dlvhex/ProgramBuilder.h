@@ -42,6 +42,12 @@ public:
     virtual void
     buildRule(const Rule* rule) = 0;
 
+    /**
+     * @brief Build Facts.
+     */
+    virtual void
+    buildFacts(const AtomSet&) = 0;
+
     std::string
     getString();
 
@@ -77,12 +83,6 @@ public:
     buildFacts(const AtomSet&);
 
     /**
-     * @brief Build facts for DLV from an interpretation.
-     */
-//    virtual void
-//    buildFacts(const AtomSet&);
-
-    /**
      * @brief Build program for DLV from set of rules.
      */
     virtual void
@@ -94,6 +94,35 @@ private:
      */
     bool
     higherOrder;
+};
+
+
+/**
+* @brief A Builder for XML output
+*/
+class ProgramXMLBuilder : public ProgramBuilder
+{
+public:
+
+    ProgramXMLBuilder() {};
+
+    /// Dtor
+    virtual
+    ~ProgramXMLBuilder() {};
+
+    /**
+     * @brief Build rule.
+     */
+    virtual void
+    buildRule(const Rule*) {};
+
+    /**
+     * @brief Build facts.
+     */
+    virtual void
+    buildFacts(const AtomSet&);
+
+private:
 };
 
 

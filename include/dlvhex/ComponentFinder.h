@@ -24,7 +24,7 @@
 #include <vector>
 #include <iostream>
 
-#include "dlvhex/Component.h"
+#include "dlvhex/AtomNode.h"
 
 
 /**

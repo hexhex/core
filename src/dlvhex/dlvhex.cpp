@@ -29,7 +29,7 @@
 #include "dlvhex/helper.h"
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/ResultContainer.h"
-//#include "dlvhex/AtomFactory.h"
+#include "dlvhex/OutputBuilder.h"
 
 
 unsigned parser_line;
@@ -250,6 +250,8 @@ main (int argc, char *argv[])
     //
     
     bool optionPipe = false;
+    bool optionXML = false;
+
     std::string optionPlugindir("");
 
     //
@@ -273,6 +275,8 @@ main (int argc, char *argv[])
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j], "--silent"))
                 global::optionSilent = true;
+            else if (!strcmp(argv[j], "--xml"))
+                optionXML = true;
             else if (!strcmp(argv[j], "--verbose"))
                 global::optionVerbose = true;
             else if (!strncmp(argv[j], "--filter=", 9))
@@ -599,19 +603,12 @@ main (int argc, char *argv[])
         exit(1);
     }
     
-
     removeNamespaces();
 
-    
-    std::vector<Term> filter;
 
-    for (std::vector<std::string>::const_iterator f = optionFilter.begin();
-         f != optionFilter.end();
-         f++)
-    {
-        filter.push_back(Term(*f));
-    }
-
+    //
+    // pack GraphProcessor result into ResultContainer
+    //
     ResultContainer result;
 
     AtomSet* res;
@@ -621,12 +618,41 @@ main (int argc, char *argv[])
         result.addSet(*res);
     }
 
+    //
+    // remove auxiliary atoms
+    //
     result.filterOut(Term::auxnames);
+
+    
+    //
+    // apply filter
+    //
+    std::vector<Term> filter;
+
+    for (std::vector<std::string>::const_iterator f = optionFilter.begin();
+         f != optionFilter.end();
+         f++)
+    {
+        filter.push_back(Term(*f));
+    }
 
     if (optionFilter.size() > 0)
         result.filterIn(optionFilter);
 
-    result.print(std::cout);
+    //
+    // output format
+    //
+    OutputBuilder* outputbuilder;
+    
+    if (optionXML)
+        outputbuilder = new OutputXMLBuilder;
+    else
+        outputbuilder = new OutputTextBuilder;
+
+    //
+    // dump it!
+    //
+    result.print(std::cout, outputbuilder);
 
     //
     // was there anything non-error the user should know? dump it directly

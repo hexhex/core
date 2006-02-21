@@ -20,6 +20,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
+#include "dlvhex/OutputBuilder.h"
 
 
 /**
@@ -40,7 +41,7 @@ public:
     filterIn(const std::vector<std::string>&);
 
     void
-    print(std::ostream&) const;
+    print(std::ostream&, OutputBuilder*) const;
 
 private:
 

@@ -178,6 +178,13 @@ Atom::getArity() const
 
 
 bool
+Atom::isStrongNegated() const
+{
+    return isStrongNegated;
+}
+
+
+bool
 Atom::unifiesWith(const Atom& atom2) const
 {
     if (getArity() != atom2.getArity())
