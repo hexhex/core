@@ -33,6 +33,9 @@ DependencyGraph::DependencyGraph(Program& program,
                                 ComponentFinder* cf)
     : componentFinder(cf)
 {
+    if (global::optionVerbose)
+        std::cout << std::endl << "@@@ building dependency graph @@@" << std::endl << std::endl;
+
     //
     // the graphbuilder creates nodes from the program and puts it into
     // the nodegraph

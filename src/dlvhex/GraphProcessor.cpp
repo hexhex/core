@@ -25,7 +25,7 @@ void
 GraphProcessor::run(const AtomSet& in)
 {
     if (global::optionVerbose)
-        std::cout << "Starting Graph Processor" << std::endl;
+        std::cout << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
 
     //
     // start with empty result set

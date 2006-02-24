@@ -24,7 +24,7 @@ GuessCheckModelGenerator::GuessCheckModelGenerator()
 
     std::string err("non-e-stratified programs cannot be evaluated yet!");
 
-    throw FatalError(err);
+    //throw FatalError(err);
 }
 
 
@@ -71,9 +71,7 @@ GuessCheckModelGenerator::compute(const Program& program,
                                   const AtomSet &I,
                                   std::vector<AtomSet> &models)
 {
-    //std::cout << "*** guess and check: ***" << std::endl;
-
-    return;
+    std::cout << "*** guess and check: ***" << std::endl;
 
     models.clear();
 
@@ -87,11 +85,11 @@ GuessCheckModelGenerator::compute(const Program& program,
             ei != (*ri)->getExternalAtoms().end();
             ++ei)
         {
-            RuleHead guesshead;
+            RuleHead_t guesshead;
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
 
-            headatom->setAlwaysFO();
+//            headatom->setAlwaysFO();
 
             ProgramRepository::Instance()->record(headatom);
 
@@ -99,15 +97,15 @@ GuessCheckModelGenerator::compute(const Program& program,
 
             headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
 
-            headatom->setAlwaysFO();
+//            headatom->setAlwaysFO();
 
             ProgramRepository::Instance()->record(headatom);
 
             guesshead.push_back(headatom);
 
-            RuleBody guessbody;
+            RuleBody_t guessbody;
 
-            for (RuleBody::const_iterator bi = (*ri)->getBody().begin();
+            for (RuleBody_t::const_iterator bi = (*ri)->getBody().begin();
                 bi != (*ri)->getBody().end();
                 ++bi)
             {
@@ -124,7 +122,7 @@ GuessCheckModelGenerator::compute(const Program& program,
 
             guessingprogram.addRule(guessrule);
 
-            //std::cout << "guessing rule: " << *guessrule << std::endl;
+            std::cout << "guessing rule: " << *guessrule << std::endl;
         }
         
     }
@@ -160,6 +158,13 @@ GuessCheckModelGenerator::compute(const Program& program,
 
     while ((as = Solver.getNextAnswerSet()) != NULL)
     {
+        for (std::vector<ExternalAtom*>::const_iterator ei = program.getExternalAtoms().begin();
+            ei != program.getExternalAtoms().end();
+            ++ei)
+        {
+            std::cout << "searching for " << **ei << std::endl;
+        }
+        
         std::cout << "---" << std::endl;
         as->print(std::cout, 1);
         std::cout << "---" << std::endl;

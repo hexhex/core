@@ -47,7 +47,7 @@ ProgramDLVBuilder::~ProgramDLVBuilder()
 void
 ProgramDLVBuilder::buildRule(const Rule* rule) // throw (???Error)
 {
-    for (RuleHead::const_iterator hl = rule->getHead().begin();
+    for (RuleHead_t::const_iterator hl = rule->getHead().begin();
          hl != rule->getHead().end();
          ++hl)
     {
@@ -59,7 +59,7 @@ ProgramDLVBuilder::buildRule(const Rule* rule) // throw (???Error)
 
     stream << " :- ";
         
-    for (RuleBody::const_iterator l = rule->getBody().begin();
+    for (RuleBody_t::const_iterator l = rule->getBody().begin();
          l != rule->getBody().end();
          ++l)
     {

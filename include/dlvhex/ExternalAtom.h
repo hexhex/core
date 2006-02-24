@@ -90,15 +90,16 @@ public:
     PluginAtom::InputType
     getInputType(unsigned idx) const;
 
-    //
-    /// @todo: we have to override this member, because the original one of Atom
-    // does not return the first argument!
-    //
+
+    /**
+     * Returns the arguments of the external atom.
+     *
+     * Overriding the Atom-method here, because the argument-list of an external
+     * atom in fact includes *only* its arguments and not the predicate symbol.
+     */
     Tuple
-    getArguments() const
-    {
-        assert(0);
-    }
+    getArguments() const;
+
 
     /**
      * @brief Evaluates the external atom w.r.t. to an interpretation and a

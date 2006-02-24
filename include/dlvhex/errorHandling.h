@@ -53,6 +53,22 @@ protected:
 };
 
 
+
+/**
+ * Error caused by malformed input program.
+ */
+class InputError : public GeneralError
+{
+public:
+    
+    InputError(const std::string msg)
+        : GeneralError("Input Error: " + msg)
+    {
+    }
+
+};
+
+
 /**
  * Severe Error, supposed to be followed by program termination.
  */

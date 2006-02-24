@@ -179,9 +179,9 @@ private:
 };
 */
 
-typedef std::vector<Atom*> RuleHead;
+typedef std::vector<Atom*> RuleHead_t;
 
-typedef std::vector<Literal*> RuleBody;
+typedef std::vector<Literal*> RuleBody_t;
 
 
 /**
@@ -194,19 +194,19 @@ public:
     /**
      * @brief Constructs a rule from a head and a body.
      */
-    Rule(const RuleHead& h,
-         const RuleBody& b);
+    Rule(const RuleHead_t& h,
+         const RuleBody_t& b);
 
     /**
      * @brief returns the rule's head.
      */
-    const RuleHead&
+    const RuleHead_t&
     getHead() const;
 
     /**
      * @brief returns the rule's body.
      */
-    const RuleBody&
+    const RuleBody_t&
     getBody() const;
 
     /**
@@ -225,9 +225,9 @@ public:
 
 private:
 
-    RuleHead head;
+    RuleHead_t head;
 
-    RuleBody body;
+    RuleBody_t body;
 
     std::vector<ExternalAtom*> externalAtoms;
 };
@@ -249,6 +249,7 @@ class Program
 {
 public:
 
+    /// @todo: we should use a set here!
     typedef std::vector<const Rule*> program_t;
 
     class const_iterator
@@ -341,7 +342,6 @@ private:
 
     //Rules rules;
 
-    /// @todo: we should use a set here!
     program_t rules;
 
     std::vector<ExternalAtom*> externalAtoms;

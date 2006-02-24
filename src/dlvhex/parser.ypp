@@ -11,6 +11,7 @@
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/errorHandling.h"
 #include "dlvhex/Registry.h"
 
 
@@ -39,8 +40,8 @@ extern AtomSet EDB;
     Atom*             atom;
     ExternalAtom*     extatom;
     Literal*          literal;
-    RuleHead*         disjunction;
-    RuleBody*         body;
+    RuleHead_t*         disjunction;
+    RuleBody_t*         body;
     Rule*             rule;
     BuiltinPredicate* builtin;
 /*    BUILTIN        builtin;
@@ -236,7 +237,7 @@ rule0:
             //
             // create rule head
             //
-            RuleHead head;
+            RuleHead_t head;
             
             //
             // add atom pointer to rule head
@@ -260,7 +261,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody());
+            $$ = new Rule(*$1, RuleBody_t());
 
             IDB.addRule($$);
 
@@ -275,7 +276,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody());
+            $$ = new Rule(*$1, RuleBody_t());
 
             IDB.addRule($$);
 
@@ -339,7 +340,7 @@ disj:
             //
             // create rule head
             //
-            $$ = new RuleHead;
+            $$ = new RuleHead_t;
             
             //
             // add both atom pointers to rule head
@@ -366,7 +367,7 @@ body:
             //
             // create rule body
             //
-            $$ = new RuleBody;
+            $$ = new RuleBody_t;
             
             //
             // add literal pointer

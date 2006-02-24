@@ -69,20 +69,20 @@ OutputXMLBuilder::buildAnswerSet(const AtomSet& facts)
 
         stream << "<pred><![CDATA[";
 
-            if ((*f).isStrongNegated())
+            if ((*f).isStronglyNegated())
                 stream << "-";
 
             stream << (*f).getArgument(0);
 
-            if (getArity() > 1)
+            if ((*f).getArity() > 1)
             {
                 stream << "(";
                 
-                for (unsigned i = 1; i < getArity(); i++)
+                for (unsigned i = 1; i < (*f).getArity(); i++)
                 {
-                    stream << getArgument(i);
+                    stream << (*f).getArgument(i);
                     
-                    if (i < getArity() - 1)
+                    if (i < (*f).getArity() - 1)
                         stream << ",";
                 }
                 

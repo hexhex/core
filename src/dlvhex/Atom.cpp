@@ -178,7 +178,7 @@ Atom::getArity() const
 
 
 bool
-Atom::isStrongNegated() const
+Atom::isStronglyNegated() const
 {
     return isStrongNegated;
 }
@@ -353,8 +353,8 @@ Atom::operator< (const Atom& atom2) const
         //return true;
         //
         //this should never happen: equal predicates, different arity!
+        std::cout << "diff arity: " << *this << " " << atom2 << std::endl;
         assert(0);
-        //std::cout << "diff arity: " << *this << " " << atom2 << std::endl;
     }
 
     // lexicographically compare on the arguments

@@ -75,33 +75,70 @@ RuleHead::exists(const Atom* a)
 */
 
 
-Rule::Rule(const RuleHead& head,
-           const RuleBody& body)
+Rule::Rule(const RuleHead_t& head,
+           const RuleBody_t& body)
     : head(head),
       body(body)
 {
     //
     // store the rule's external atoms also separately
     //
-    for (RuleBody::const_iterator bi = body.begin();
+    for (RuleBody_t::const_iterator bi = body.begin();
         bi != body.end();
         ++bi)
     {
         if ((*bi)->getAtom()->getType() == Atom::EXTERNAL)
             externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
     }
+
+    //
+    // testing for simple rule safety:
+    // * Each variable occurs in a positive ordinary atom.
+    // * A variable occurs in the output list of an external atom and all
+    //   input variables occur in a positive ordinary atom.
+    //
+    RuleHead_t::const_iterator hb = head.begin(), he = head.end();
+
+    while (hb != he)
+    {
+        Tuple headarg = (*(hb++))->getArguments();
+
+        //std::cout << "testing head tuple: " << headarg << std::endl;
+        Tuple::const_iterator tupb = headarg.begin(), tube = headarg.end();
+
+        while (tupb != tube)
+        {
+            Term t(*tupb);
+
+            //
+            // does this variable occur in any positive body atom?
+            //
+            if (t.isVariable())
+            {
+                RuleBody_t::const_iterator bb = body.begin(), be = body.end();
+
+                while (bb != be)
+                {
+                    Tuple bodyarg = (*(bb++))->getAtom()->getArguments();
+                    std::cout << "against body tuple: " << bodyarg << std::endl;
+                }
+            }
+
+            tupb++;
+        }
+    } 
 }
 
 
 //const std::vector<Atom>&
-const RuleHead&
+const RuleHead_t&
 Rule::getHead() const
 {
     return head;
 }
 
 //const std::vector<Literal>&
-const RuleBody&
+const RuleBody_t&
 Rule::getBody() const
 {
     return body;
@@ -126,11 +163,11 @@ Rule::operator== (const Rule& rule2) const
     if (body.size() != rule2.getBody().size())
         return 0;
 
-    for (RuleHead::const_iterator hi = head.begin();
+    for (RuleHead_t::const_iterator hi = head.begin();
          hi != head.end();
          ++hi)
     {
-        for (RuleHead::const_iterator hi2 = rule2.getHead().begin();
+        for (RuleHead_t::const_iterator hi2 = rule2.getHead().begin();
             hi2 != rule2.getHead().end();
             ++hi2)
         {
@@ -139,11 +176,11 @@ Rule::operator== (const Rule& rule2) const
         }
     }
 
-    for (RuleBody::const_iterator bi = body.begin();
+    for (RuleBody_t::const_iterator bi = body.begin();
          bi != body.end();
          ++bi)
     {
-        for (RuleBody::const_iterator bi2 = rule2.getBody().begin();
+        for (RuleBody_t::const_iterator bi2 = rule2.getBody().begin();
             bi2 != rule2.getBody().end();
             ++bi2)
         {
@@ -159,7 +196,7 @@ Rule::operator== (const Rule& rule2) const
 std::ostream&
 operator<< (std::ostream& out, const Rule& rule)
 {
-    for (RuleHead::const_iterator hl = rule.getHead().begin();
+    for (RuleHead_t::const_iterator hl = rule.getHead().begin();
          hl != rule.getHead().end();
          ++hl)
     {
@@ -171,7 +208,7 @@ operator<< (std::ostream& out, const Rule& rule)
 
     out << " :- ";
             
-    for (RuleBody::const_iterator l = rule.getBody().begin();
+    for (RuleBody_t::const_iterator l = rule.getBody().begin();
          l != rule.getBody().end();
          ++l)
     {
@@ -215,7 +252,7 @@ Program::addRule(const Rule* r)
         //
         // store the rule's external atoms also separately
         //
-        for (RuleBody::const_iterator bi = r->getBody().begin();
+        for (RuleBody_t::const_iterator bi = r->getBody().begin();
             bi != r->getBody().end();
             ++bi)
         {
@@ -294,7 +331,7 @@ Program::dump(std::ostream& out) const
          r != end();
          ++r)
     {
-        for (RuleHead::const_iterator hl = (*r)->getHead().begin();
+        for (RuleHead_t::const_iterator hl = (*r)->getHead().begin();
                 hl != (*r)->getHead().end();
                 ++hl)
         {
@@ -307,7 +344,7 @@ Program::dump(std::ostream& out) const
         if ((*r)->getBody().size() > 0)
             out << " :- ";
             
-        for (RuleBody::const_iterator l = (*r)->getBody().begin();
+        for (RuleBody_t::const_iterator l = (*r)->getBody().begin();
                 l != (*r)->getBody().end();
                 ++l)
         {

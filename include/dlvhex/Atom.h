@@ -130,6 +130,8 @@ public:
 
     /**
      * Returns the arguments of an atom.
+     *
+     * The predicate is not included here!
      */
     Tuple
     getArguments() const;
@@ -213,7 +215,7 @@ public:
     isGround() const;
 
     bool
-    isStrongNegated() const;
+    isStronglyNegated() const;
     
 protected:
 

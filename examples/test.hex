@@ -1,5 +1,3 @@
-new(X) :- &test[new](X).
-new(a).
-
-a(X) :- b(X).
-b(Y) :- c(Y).
+a(p).
+a(q).
+b(X,Y) v -b(X,Y) :- a(X).

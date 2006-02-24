@@ -444,71 +444,80 @@ main (int argc, char *argv[])
     // parse input
     //
     
-    if (optionPipe)
+    try
     {
-        parser_file = "";
-        parser_line = 1;
-
-        inputin = stdin;
-
-        inputparse();
-
-        global::lpfilename = "lpgraph.dot";
-    }
-    else
-    {
-        //
-        // store filename of (first) logic program, we might use this somewhere
-        // else (e.g., when wiritng the graphviz file in the boost-part
-        //
-        std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
-        global::lpfilename = filepath.back() + ".dot";
-
-        for (std::vector<std::string>::const_iterator f = allFiles.begin();
-             f != allFiles.end();
-             f++)
+        if (optionPipe)
         {
-            parser_file = f->c_str();
-
-            FILE *inputfile;
-
-            std::string execPreParser("dlt -silent -preparsing " + *f);
-                
-            if (optiondlt)
-                inputfile = popen(execPreParser.c_str(), "r");
-            else
-                inputfile = fopen(parser_file, "r");
-
-            if (inputfile == NULL)
-            {
-                if (optiondlt)
-                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
-                else
-                    std::cerr << "file " << parser_file << " not found" << std::endl;
-
-                exit(1);
-            }
-
+            parser_file = "";
             parser_line = 1;
-    
-            inputin = inputfile;
 
-            try
-            {
-                inputparse ();
-            }
-            catch (GeneralError& e)
-            {
-                std::cerr << e.getErrorMsg() << std::endl;
-                
-                exit(1);
-            }
+            inputin = stdin;
 
-            fclose(inputin);
+            inputparse();
+
+            global::lpfilename = "lpgraph.dot";
+        }
+        else
+        {
+            //
+            // store filename of (first) logic program, we might use this somewhere
+            // else (e.g., when wiritng the graphviz file in the boost-part
+            //
+            std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
+            global::lpfilename = filepath.back() + ".dot";
+
+            for (std::vector<std::string>::const_iterator f = allFiles.begin();
+                f != allFiles.end();
+                f++)
+            {
+                parser_file = f->c_str();
+
+                FILE *inputfile;
+
+                std::string execPreParser("dlt -silent -preparsing " + *f);
+                    
+                if (optiondlt)
+                    inputfile = popen(execPreParser.c_str(), "r");
+                else
+                    inputfile = fopen(parser_file, "r");
+
+                if (inputfile == NULL)
+                {
+                    if (optiondlt)
+                        std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+                    else
+                        std::cerr << "file " << parser_file << " not found" << std::endl;
+
+                    exit(1);
+                }
+
+                parser_line = 1;
+        
+                inputin = inputfile;
+
+                try
+                {
+                    inputparse ();
+                }
+                catch (GeneralError& e)
+                {
+                    std::cerr << e.getErrorMsg() << std::endl;
+                    
+                    exit(1);
+                }
+
+                fclose(inputin);
+            }
         }
     }
+    catch (GeneralError &e)
+    {
+        std::cerr << e.getErrorMsg() << std::endl;
 
-    if( parser_errors )
+        exit(1);
+    }
+
+    if (parser_errors)
     {
         std::cerr << "Aborting due to parser errors." << std::endl;
 
@@ -516,6 +525,9 @@ main (int argc, char *argv[])
     }
 
     
+    //
+    // expand constant names
+    //
     insertNamespaces();
 
     /*
@@ -542,33 +554,39 @@ main (int argc, char *argv[])
         std::cout << std::endl;
     }
 
+    /// @todo: when exiting after an exception, we have to cleanup things!
+    // maybe using boost-pointers!
 
     //
     // The GraphBuilder creates nodes and dependency edges from the raw program.
     //
-    GraphBuilder* gb = new GraphBuilder;
+    GraphBuilder* gb;
 
     //
     // The ComponentFinder provides functions for finding SCCs and WCCs from a
     // set of nodes.
     //
-    ComponentFinder* cf = new BoostComponentFinder;
-
-    /// @todo: when exiting after an exception, we have to cleanup things!
-
+    ComponentFinder* cf;
+    
     //
-    // Initializing the DependencyGraph. Its constructor uses the GraphBuilder
-    // to construct the graph and the ComponentFinder to find relevant graph
-    // properties for the subsequent processing stage.
+    // The DependencyGraph identifies and creates the graph components that will
+    // be processed by the GraphProcessor.
     //
     DependencyGraph* dg;
 
     try
     {
-        if (global::optionVerbose)
-            std::cout << std::endl << "@@@ building dependency graph @@@" << std::endl << std::endl;
+        gb = new GraphBuilder;
 
+        cf = new BoostComponentFinder;
+
+        //
+        // Initializing the DependencyGraph. Its constructor uses the GraphBuilder
+        // to construct the graph and the ComponentFinder to find relevant graph
+        // properties for the subsequent processing stage.
+        //
         dg = new DependencyGraph(IDB, gb, cf);
+
     }
     catch (GeneralError &e)
     {
@@ -576,20 +594,15 @@ main (int argc, char *argv[])
 
         exit(1);
     }
-    
+
     //
     // The GraphProcessor provides the actual strategy of how to compute the
     // hex-models of a given dependency graph.
     //
-
     GraphProcessor gp(dg);
-    
     
     try
     {
-        if (global::optionVerbose)
-            std::cout << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
-
         //
         // The GraphProcessor starts its computation with the program's ground
         // facts as input.
@@ -599,10 +612,13 @@ main (int argc, char *argv[])
     catch (GeneralError &e)
     {
         std::cerr << e.getErrorMsg() << std::endl;
-        
+
         exit(1);
     }
     
+    //
+    // contract constant names again
+    //
     removeNamespaces();
 
 

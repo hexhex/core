@@ -19,7 +19,7 @@ rebate(X) :- &dlC[Url,a,b,c,d,"Discount"](X), vendor(X), inputurl(Url).
 c(supplier, X, Y) :- buy_cand(X, Y).
 c(supplier, X, Y) :- contract(X, Y).
 
-buy_cand(X,Y) :- vendor(X), not avoid(X), &dlR[Url,e,f,g,h,"provides"](X,Y), needed(Y), not e(Y), inputurl(Url).
+buy_cand(X,Y) :- vendor(X), not avoid(X), &dlR[Url,ee,f,g,h,"provides"](X,Y), needed(Y), not e(Y), inputurl(Url).
 
 % additional exclusion rules:
 % buy each part only from one vendor, and

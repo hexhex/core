@@ -54,7 +54,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         // go through entire head disjunction
         //
-        for (RuleHead::const_iterator hi = (*r)->getHead().begin();
+        for (RuleHead_t::const_iterator hi = (*r)->getHead().begin();
              hi != (*r)->getHead().end();
              ++hi)
         {
@@ -91,7 +91,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         // go through rule body
         //
-        for (RuleBody::const_iterator li = (*r)->getBody().begin();
+        for (RuleBody_t::const_iterator li = (*r)->getBody().begin();
                 li != (*r)->getBody().end();
                 ++li)
         {
@@ -225,7 +225,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 //
                 Dependency::addDep(auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
-                RuleBody auxbody;
+                RuleBody_t auxbody;
 
                 //
                 // the body of the auxiliary rule is the entire ordinary body of the
@@ -260,7 +260,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 //
                 // finally, make an auxiliary rule object to add to the head node
                 //
-                RuleHead auxhead;
+                RuleHead_t auxhead;
 
                 auxhead.push_back(auxheadatom);
 

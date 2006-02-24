@@ -170,6 +170,16 @@ ExternalAtom::getReplacementName() const
 }
 
 
+Tuple
+ExternalAtom::getArguments() const
+{
+    //
+    // simply return a copy of arguments
+    //
+    return Tuple(arguments);
+}
+
+
 bool
 ExternalAtom::pureGroundInput() const
 {
