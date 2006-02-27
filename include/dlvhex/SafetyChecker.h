@@ -1,0 +1,57 @@
+/* -*- C++ -*- */
+
+/**
+ * @file SafetyChecker.h
+ * @author Roman Schindlauer
+ * @date Mon Feb 27 15:09:49 CET 2006
+ *
+ * @brief Class for checking rule and program safety.
+ *
+ *
+ */
+
+
+#ifndef _SAFETYCHECKER_H
+#define _SAFETYCHECKER_H
+
+
+#include "dlvhex/Rule.h"
+#include "dlvhex/DependencyGraph.h"
+#include "dlvhex/errorHandling.h"
+
+/**
+ * @brief Abstract bae class
+ */
+class SafetyCheckerBase
+{
+public:
+
+protected:
+
+    /// Ctor.
+    SafetyCheckerBase()
+    { }
+
+public:
+
+};
+
+
+/**
+ * @brief Safety checker class.
+ */
+class SafetyChecker : public SafetyCheckerBase
+{
+public:
+
+    SafetyChecker(const Program&, const DependencyGraph*);
+
+    void
+    testRules(const Program&) const;
+
+    void
+    testStrongSafety() const;
+};
+
+
+#endif /* _SAFETYCHECKER_H_ */

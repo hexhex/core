@@ -135,10 +135,6 @@ line:
 //          | query
     ;
 
-/* clauses   :
- *           | clauses clause
- *           ;
- */
 
 namespace:
     NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE
@@ -205,11 +201,7 @@ rule0:
     user_pred
         {
             if (!(*$1).isGround())
-            {
-                inputerror("fact not safe.");
-
-                parser_errors++;
-            }
+                inputerror("fact not safe");
 
             //
             // we give the atom pointer to the registry - from now on the
@@ -222,11 +214,7 @@ rule0:
     | user_pred CONS
         {
             if (!(*$1).isGround())
-            {
-                inputerror("fact not safe.");
-
-                parser_errors++;
-            }
+                inputerror("fact not safe");
 
             AtomPtr ap = Registry::Instance()->dispatch($1);
 
@@ -247,7 +235,7 @@ rule0:
             //
             // create new rule with head and body
             //
-            $$ = new Rule(head, *$3);
+            $$ = new Rule(head, *$3, parser_file, parser_line);
 
             IDB.addRule($$);
 
@@ -261,7 +249,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody_t());
+            $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
 
             IDB.addRule($$);
 
@@ -276,7 +264,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody_t());
+            $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
 
             IDB.addRule($$);
 
@@ -291,7 +279,7 @@ rule0:
             //
             // create new rule
             //
-            $$ = new Rule(*$1, *$3);
+            $$ = new Rule(*$1, *$3, parser_file, parser_line);
 
             IDB.addRule($$);
 
@@ -741,16 +729,20 @@ maxinteger : MAXINTEGER
 
 int inputerror(char const* s) // Error handler for YACC
 {
+    parser_errors++;
+
+    throw InputError(std::string(parser_file), parser_line-1, std::string(s));
+
+/*
     if( strlen(parser_file) > 0 )
         std::cerr << parser_file << ": ";
+
     std::cerr << "line " << parser_line;
     
     std::cerr << ": ";
     
     std::cerr << s << "." << std::endl;
-        
-    parser_errors++;
-
+*/        
     return 1;
 }
 

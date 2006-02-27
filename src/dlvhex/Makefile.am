@@ -21,6 +21,7 @@ dlvhex_SOURCES = \
                 parser.ypp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \
+                SafetyChecker.cpp \
                 scanner.lpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src

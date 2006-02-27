@@ -192,7 +192,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             {
 
                 //
-                // ok, gt the parameters
+                // ok, get the parameters
                 //
                 Tuple extinput = ext->getInputTerms();
 
@@ -236,25 +236,61 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                     currbody != currentOrdinaryBodyNodes.end();
                     ++currbody)
                 {
-                    //
-                    // make new literals with the (ordinary) body atoms of the current rule
-                    //
-                    //auxbody.push_back(Literal((*currbody)->getAtom()));
-                    Literal* l = new Literal((*currbody)->getAtom());
+                    bool thisAtomIsRelevant = false;
 
-                    ProgramRepository::Instance()->record(l);
+                    Tuple currentAtomArguments = (*currbody)->getAtom()->getArguments();
 
-                    auxbody.push_back(l);
-                
                     //
-                    // make a node for each of these new atoms
+                    // go through all variables of the external atom
                     //
-                    AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(l->getAtom());
+                    Tuple::const_iterator inb = extinput.begin(), ine = extinput.end();
+
+                    while (inb != ine)
+                    {
+                        //
+                        // now see if any of the current ordinary body atom
+                        // arguments has a common variable with the external
+                        // atom
+                        //
+                        Tuple::const_iterator bodb = currentAtomArguments.begin();
+                        Tuple::const_iterator bode = currentAtomArguments.end();
+
+                        while (bodb != bode)
+                        {
+                            if (*(bodb++) == *inb)
+                            {
+                                thisAtomIsRelevant = true;
+                            }
+                        }
+
+                        inb++;
+                    }
+
+                    //
+                    // should this atom be in the auxiliary rule body?
+                    //
+                    if (thisAtomIsRelevant)
+                    {
+                        //
+                        // make new literals with the (ordinary) body atoms of the current rule
+                        //
+                        //auxbody.push_back(Literal((*currbody)->getAtom()));
+                        Literal* l = new Literal((*currbody)->getAtom());
+
+                        ProgramRepository::Instance()->record(l);
+
+                        auxbody.push_back(l);
                     
-                    //
-                    // add the usual body->head dependency
-                    //
-                    Dependency::addDep(auxbodynode, auxheadnode, Dependency::PRECEDING);
+                        //
+                        // make a node for each of these new atoms
+                        //
+                        AtomNode* auxbodynode = nodegraph.addUniqueBodyNode(l->getAtom());
+                        
+                        //
+                        // add the usual body->head dependency
+                        //
+                        Dependency::addDep(auxbodynode, auxheadnode, Dependency::PRECEDING);
+                    }
                 }
 
                 //

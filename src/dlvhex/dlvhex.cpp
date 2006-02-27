@@ -20,7 +20,6 @@
 #include <sstream>
 #include <vector>
 
-//#include "dlvhex/Atom.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/ComponentFinder.h"
@@ -30,6 +29,7 @@
 #include "dlvhex/errorHandling.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
+#include "dlvhex/SafetyChecker.h"
 
 
 unsigned parser_line;
@@ -49,7 +49,6 @@ Program IDB;
 /**
  * @brief Stores the facts of the program.
  */
-//GAtomSet EDB;
 AtomSet EDB;
 
 
@@ -239,6 +238,42 @@ removeNamespaces()
 }
 
 
+/**
+ * Search a specific directory for dlvhex-plugins and store their names.
+ */
+void
+searchPlugins(std::string dir, std::set<std::string>& pluginlist)
+{
+    int count, i;
+    struct dirent **files;
+    std::string filename;
+
+    count = scandir(dir.c_str(), &files, 0, alphasort);
+
+    for (i = 0; i < count; ++i)
+    {
+        filename = files[i]->d_name;
+
+//        if (filename.substr(0,9) == "libdlvhex")
+        if  (filename.size() > 3)
+            if (filename.substr(filename.size() - 3, 3) == ".so")
+                pluginlist.insert(dir + '/' + filename);
+        
+    }
+
+    //
+    // clean up scandir mess
+    //
+    if (count != -1)
+    {
+        while (count--)
+            free(files[count]);
+
+        free(files); 
+    }
+
+}
+
 
 int
 main (int argc, char *argv[])
@@ -324,39 +359,12 @@ main (int argc, char *argv[])
     }
 
 
-    int count, i;
-    struct dirent **files;
-    std::string filename;
     std::set<std::string> libfilelist;
     //
     // first look into specified plugin dir
     //
     if (!optionPlugindir.empty())
-    {
-        count = scandir(optionPlugindir.c_str(), &files, 0, alphasort);
-
-        for (i = 0; i < count; ++i)
-        {
-            filename = files[i]->d_name;
-
-    //        if (filename.substr(0,9) == "libdlvhex")
-            if  (filename.size() > 3)
-                if (filename.substr(filename.size() - 3, 3) == ".so")
-                    libfilelist.insert(optionPlugindir + '/' + filename);
-        }
-
-        //
-        // clean up scandir mess
-        //
-        if (count != -1)
-        {
-            while (count--)
-                free(files[count]);
-
-            free(files); 
-        }
-    }
-
+        searchPlugins(optionPlugindir, libfilelist);
 
     //
     // now look into user's home
@@ -365,56 +373,12 @@ main (int argc, char *argv[])
 
     userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
-    count = scandir(userhome.c_str(), &files, 0, alphasort);
-
-    for (i = 0; i < count; ++i)
-    {
-        filename = files[i]->d_name;
-
-//        if (filename.substr(0,9) == "libdlvhex")
-        if  (filename.size() > 3)
-            if (filename.substr(filename.size() - 3, 3) == ".so")
-                libfilelist.insert(userhome + '/' + filename);
-    }
-
-    //
-    // clean up scandir mess (it used malloc, so we use free here)
-    //
-    if (count != -1)
-    {
-        while (count--)
-            free(files[count]);
-
-        free(files); 
-    }
-
+    searchPlugins(userhome, libfilelist);
 
     //
     // eventually look into system plugin dir
     //
-    count = scandir(SYS_PLUGIN_DIR, &files, 0, alphasort);
-
-    for (i = 0; i < count; ++i)
-    {
-        filename = files[i]->d_name;
-
-//        if (filename.substr(0,9) == "libdlvhex")
-        if  (filename.size() > 3)
-            if (filename.substr(filename.size() - 3, 3) == ".so")
-                libfilelist.insert((std::string)SYS_PLUGIN_DIR + '/' + filename);
-        
-    }
-
-    //
-    // clean up scandir mess
-    //
-    if (count != -1)
-    {
-        while (count--)
-            free(files[count]);
-
-        free(files); 
-    }
+    searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
 
     //
@@ -461,7 +425,7 @@ main (int argc, char *argv[])
         {
             //
             // store filename of (first) logic program, we might use this somewhere
-            // else (e.g., when wiritng the graphviz file in the boost-part
+            // else (e.g., when writing the graphviz file in the boost-part
             //
             std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
             global::lpfilename = filepath.back() + ".dot";
@@ -587,6 +551,7 @@ main (int argc, char *argv[])
         //
         dg = new DependencyGraph(IDB, gb, cf);
 
+        SafetyChecker sc(IDB, dg);
     }
     catch (GeneralError &e)
     {

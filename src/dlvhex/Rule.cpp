@@ -76,12 +76,16 @@ RuleHead::exists(const Atom* a)
 
 
 Rule::Rule(const RuleHead_t& head,
-           const RuleBody_t& body)
+           const RuleBody_t& body,
+           std::string file,
+           unsigned line)
     : head(head),
-      body(body)
+      body(body),
+      programFile(file),
+      programLine(line)
 {
     //
-    // store the rule's external atoms also separately
+    // store the rule's external atoms separately
     //
     for (RuleBody_t::const_iterator bi = body.begin();
         bi != body.end();
@@ -91,42 +95,6 @@ Rule::Rule(const RuleHead_t& head,
             externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
     }
 
-    //
-    // testing for simple rule safety:
-    // * Each variable occurs in a positive ordinary atom.
-    // * A variable occurs in the output list of an external atom and all
-    //   input variables occur in a positive ordinary atom.
-    //
-    RuleHead_t::const_iterator hb = head.begin(), he = head.end();
-
-    while (hb != he)
-    {
-        Tuple headarg = (*(hb++))->getArguments();
-
-        //std::cout << "testing head tuple: " << headarg << std::endl;
-        Tuple::const_iterator tupb = headarg.begin(), tube = headarg.end();
-
-        while (tupb != tube)
-        {
-            Term t(*tupb);
-
-            //
-            // does this variable occur in any positive body atom?
-            //
-            if (t.isVariable())
-            {
-                RuleBody_t::const_iterator bb = body.begin(), be = body.end();
-
-                while (bb != be)
-                {
-                    Tuple bodyarg = (*(bb++))->getAtom()->getArguments();
-                    std::cout << "against body tuple: " << bodyarg << std::endl;
-                }
-            }
-
-            tupb++;
-        }
-    } 
 }
 
 
@@ -142,6 +110,20 @@ const RuleBody_t&
 Rule::getBody() const
 {
     return body;
+}
+
+
+std::string
+Rule::getFile() const
+{
+    return programFile;
+}
+
+
+unsigned
+Rule::getLine() const
+{
+    return programLine;
 }
 
 

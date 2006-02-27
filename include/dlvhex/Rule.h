@@ -193,21 +193,38 @@ public:
     
     /**
      * @brief Constructs a rule from a head and a body.
+     *
+     * Third argument is the file name and fourth the line number this rule
+     * appeared in.
      */
     Rule(const RuleHead_t& h,
-         const RuleBody_t& b);
+         const RuleBody_t& b,
+         std::string = "",
+         unsigned = 0);
 
     /**
-     * @brief returns the rule's head.
+     * @brief Returns the rule's head.
      */
     const RuleHead_t&
     getHead() const;
 
     /**
-     * @brief returns the rule's body.
+     * @brief Returns the rule's body.
      */
     const RuleBody_t&
     getBody() const;
+
+    /**
+     * @brief Returns the program file of this rule.
+     */
+    std::string
+    getFile() const;
+
+    /**
+     * @brief Returns the program line number of this rule.
+     */
+    unsigned
+    getLine() const;
 
     /**
      * @brief returns the rule's external atoms.
@@ -230,6 +247,10 @@ private:
     RuleBody_t body;
 
     std::vector<ExternalAtom*> externalAtoms;
+
+    std::string programFile;
+
+    unsigned programLine;
 };
 
 //

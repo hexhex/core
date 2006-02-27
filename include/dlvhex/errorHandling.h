@@ -14,6 +14,7 @@
 #define _ERRORHANDLING_H
 
 #include <string>
+#include <sstream>
 
 /**
  * @brief General exception class.
@@ -61,9 +62,17 @@ class InputError : public GeneralError
 {
 public:
     
-    InputError(const std::string msg)
-        : GeneralError("Input Error: " + msg)
+    InputError(const std::string file,
+               const unsigned line,
+               const std::string msg)
     {
+        std::ostringstream err;
+
+        err << "Input Error in " << file << ": "
+            << msg
+            << " in line " << line;
+
+        errorMsg = err.str();
     }
 
 };

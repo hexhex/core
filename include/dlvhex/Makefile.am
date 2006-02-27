@@ -25,6 +25,7 @@ noinst_HEADERS = \
                  ResultContainer.h \
 		 Registry.h \
                  Rule.h \
+                 SafetyChecker.h \
                  Term.h
 
 pkginclude_HEADERS = \
