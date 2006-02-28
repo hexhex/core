@@ -1,0 +1,13 @@
+% retrieving links for a keyword from del.icio.us
+
+#namespace(rdf,"http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+#namespace(rss,"http://purl.org/rss/1.0/")
+
+% this is the keyword
+tag("goedel+turing").
+
+% build the URL-string
+url(X) :- &concat["http://del.icio.us/rss/tag/",W](X), tag(W).
+
+triple(X,Y,Z) :- &rdf[A](X,Y,Z), url(A).
+link(X) :- triple(X,"rdf:type","rss:item").

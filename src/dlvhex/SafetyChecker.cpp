@@ -16,21 +16,27 @@
 #include "dlvhex/globals.h"
 
 
-SafetyChecker::SafetyChecker(const Program& program,
-                             const DependencyGraph* dg)
+SafetyCheckerBase::SafetyCheckerBase()
 {
     if (global::optionVerbose)
         std::cout << std::endl << "@@@ Checking Safety @@@" << std::endl << std::endl;
+}
 
+
+
+SafetyChecker::SafetyChecker(const Program& program)
+    : SafetyCheckerBase()
+{
     testRules(program);
-
-    testStrongSafety(dg);
 }
 
 
 void
 SafetyChecker::testRules(const Program& program) const
 {
+    if (global::optionVerbose)
+        std::cout << "Checking for rule safety." << std::endl;
+
     Program::const_iterator ruleit = program.begin();
 
     while (ruleit != program.end())
@@ -102,8 +108,12 @@ SafetyChecker::testRules(const Program& program) const
             Tuple::const_iterator inpterm = inp.begin();
 
             while (inpterm != inp.end())
-                if (safevars.find(*inpterm++) == safevars.end())
-                    throw InputError((*ruleit)->getFile(), (*ruleit)->getLine(), "rule not safe");
+            {
+                if ((*inpterm).isVariable())
+                    if (safevars.find(*inpterm) == safevars.end())
+                        throw InputError((*ruleit)->getFile(), (*ruleit)->getLine(), "rule not safe");
+                inpterm++;
+            }
 
             //
             // 3)
@@ -165,9 +175,21 @@ SafetyChecker::testRules(const Program& program) const
 }
 
 
-void
-SafetyChecker::testStrongSafety(const DependencyGraph* dg) const
+
+StrongSafetyChecker::StrongSafetyChecker(const Program& program,
+                                         const DependencyGraph* dg)
+    : SafetyChecker(program)
 {
+    testStrongSafety(dg);
+}
+
+
+void
+StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const
+{
+    if (global::optionVerbose)
+        std::cout << "Checking for strong rule safety." << std::endl;
+
     //
     // testing for strong safety:
     //

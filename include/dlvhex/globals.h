@@ -39,6 +39,11 @@ namespace global
     extern bool optionVerbose;
 
     /**
+     * Should rules be checked for strong safety?
+     */
+    extern bool optionStrongSafety;
+
+    /**
      * Messages returned from external computation sources, which do not necessarily
      * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
      */

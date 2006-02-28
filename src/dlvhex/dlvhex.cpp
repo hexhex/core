@@ -100,6 +100,7 @@ printUsage(std::ostream &out, bool full)
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
     out << "--silent           Do not display anything than the actual result." << std::endl
         << "--firstorder       No higher-order reasoning." << std::endl
+        << "--strongsafety     Check rules also for strong safety." << std::endl
         << "--verbose          dump also various intermediate information." << std::endl
         << "--plugindir=dir    Specify additional directory where to look for plugin" << std::endl
         << "                   libraries." << std::endl
@@ -314,6 +315,8 @@ main (int argc, char *argv[])
                 optionXML = true;
             else if (!strcmp(argv[j], "--verbose"))
                 global::optionVerbose = true;
+            else if (!strcmp(argv[j], "--strongsafety"))
+                global::optionStrongSafety = true;
             else if (!strncmp(argv[j], "--filter=", 9))
                 optionFilter = helper::stringExplode(std::string(argv[j] + 9), ",");
             else if (!strcmp(argv[j], "--"))
@@ -551,7 +554,10 @@ main (int argc, char *argv[])
         //
         dg = new DependencyGraph(IDB, gb, cf);
 
-        SafetyChecker sc(IDB, dg);
+        if (global::optionStrongSafety)
+            StrongSafetyChecker sc(IDB, dg);
+        else
+            SafetyChecker sc(IDB);
     }
     catch (GeneralError &e)
     {

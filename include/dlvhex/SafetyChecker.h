@@ -29,8 +29,7 @@ public:
 protected:
 
     /// Ctor.
-    SafetyCheckerBase()
-    { }
+    SafetyCheckerBase();
 
 public:
 
@@ -44,10 +43,21 @@ class SafetyChecker : public SafetyCheckerBase
 {
 public:
 
-    SafetyChecker(const Program&, const DependencyGraph*);
+    SafetyChecker(const Program&);
 
     void
     testRules(const Program&) const;
+};
+
+
+/**
+ * @brief Strong safety checker class.
+ */
+class StrongSafetyChecker : public SafetyChecker
+{
+public:
+
+    StrongSafetyChecker(const Program&, const DependencyGraph*);
 
     void
     testStrongSafety(const DependencyGraph*) const;
