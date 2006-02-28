@@ -246,11 +246,12 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
 }
 
 
+
 void
 DependencyGraph::getWeakComponents(const std::vector<AtomNode*>& nodes,
                       std::vector<std::vector<AtomNode*> >& wccs)
 {
-    componentFinder->findWeakComponents(nodes, wccs);
+//    componentFinder->findWeakComponents(nodes, wccs);
 }
 
 
@@ -259,6 +260,13 @@ DependencyGraph::getStrongComponents(const std::vector<AtomNode*>& nodes,
                         std::vector<std::vector<AtomNode*> >& sccs)
 {
     componentFinder->findStrongComponents(nodes, sccs);
+}
+
+
+std::vector<Component*>
+DependencyGraph::getComponents() const
+{
+    return components;
 }
 
 

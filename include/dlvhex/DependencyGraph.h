@@ -79,10 +79,14 @@ public:
     /*
     std::vector<Component*>
     getPredecessors(Component* c) const;
-
-    std::vector<Component*>
-    getComponents(const Subgraph*) const;
 */
+
+    /**
+     * @brief Returns all Components.
+     */
+    std::vector<Component*>
+    getComponents() const;
+
     Subgraph*
     getNextSubgraph();
 

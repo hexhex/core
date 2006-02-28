@@ -45,7 +45,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
          r != program.end();
          ++r)
     {
-//        dumpGraph(nodegraph, std::cout);
         //
         // all nodes of the current rule's head
         //

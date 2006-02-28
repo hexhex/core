@@ -222,9 +222,26 @@ FixpointModelGenerator::compute(const Program& program,
         if (Solver.numAnswerSets() > 1)
             throw FatalError("Fixpoint model generator called with unstratified program!");
 
-        // std::cout << "dlv result: ";printGAtomSet(*as, std::cout, 0);std::cout << std::endl;
-
         dlvResult = *as;
+
+        //
+        // to be able to compare them:
+        //
+        dlvResult.insert(I);
+
+        /*
+        std::cout << "fp dlv result: " << std::endl;
+        as->print(std::cout, 0);
+        std::cout << std::endl;
+
+        std::cout << "currentI: " << std::endl;
+        currentI.print(std::cout, 0);
+        std::cout << std::endl;
+
+        std::cout << "equal? " << std::equal(dlvResult.begin(), dlvResult.end(), currentI.begin()) << std::endl;
+        std::cout << "dlv: " << dlvResult.size() << std::endl;
+        std::cout << "curi: " << currentI.size() << std::endl;
+        */
 
         //i++;if (i > 1) break;
 

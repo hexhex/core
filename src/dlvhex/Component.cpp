@@ -51,6 +51,10 @@ Component::getNodes() const
 }
 
 
+/*
+*/
+
+
 void
 Component::getResult(std::vector<AtomSet>& r)
 {
@@ -99,6 +103,26 @@ Component::getResult(std::vector<AtomSet>& r)
     */
 }
 
+
+bool
+Component::isInComponent(const Atom* at) const
+{
+    bool belongsToComp = false;
+
+    std::vector<const AtomNode*>::const_iterator nodeit = atomnodes.begin();
+
+    while (nodeit != atomnodes.end())
+    {
+        if ((*nodeit++)->getAtom() == at)
+        {
+            belongsToComp = true;
+
+            break;
+        }
+    }
+
+    return belongsToComp;
+}
 
 
 ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
@@ -152,6 +176,13 @@ void
 ProgramComponent::setProgram(Program& p)
 {
     program = p;
+}
+
+
+const Program&
+ProgramComponent::getBottom() const
+{
+    return program;
 }
 
 

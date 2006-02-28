@@ -50,7 +50,7 @@ public:
     testRules(const Program&) const;
 
     void
-    testStrongSafety() const;
+    testStrongSafety(const DependencyGraph*) const;
 };
 
 

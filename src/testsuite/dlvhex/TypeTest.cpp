@@ -231,6 +231,19 @@ AtomSetTest::testConstruction()
 
     CPPUNIT_ASSERT(s1 == s2);
 
+    //
+    // creating new atoms, which are equal
+    //
+
+    AtomPtr a4(new Atom("a(b,c)"));
+    AtomPtr a5(new Atom("xx(yy)"));
+    
+    s2.clear();
+    s2.insert(a5);
+    s2.insert(a4);
+
+    CPPUNIT_ASSERT(s1 == s2);
+
     s1.clear();
     s2.clear();
 

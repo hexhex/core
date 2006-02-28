@@ -90,7 +90,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     if (noEDB)
         dlvOptions = "-nofacts";
     
-    std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
+    //std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
     
 
     //char tempfile[] = "/tmp/dlvXXXXXX";

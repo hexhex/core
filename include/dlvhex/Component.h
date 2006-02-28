@@ -63,6 +63,12 @@ public:
     getNodes() const;
     
     /**
+     * @brief Returns the rules that belong to this component.
+     */
+//    const std::vector<Rule*>&
+//    getBottom() const;
+
+    /**
      * Serialize component to stream out for verbose and debugging.
      */
     virtual void
@@ -73,6 +79,12 @@ public:
      */
     void
     getResult(std::vector<AtomSet>&);
+
+    /**
+     * @brief Checks if the spcified Atom occurs in the component.
+     */
+    bool
+    isInComponent(const Atom*) const;
 
 protected:
     
@@ -92,7 +104,7 @@ private:
 
     std::vector<AtomNode*> incomingNodes;
 
-    std::vector<Rule*> bottom;
+//    std::vector<Rule*> bottom;
 
 };
 
@@ -128,6 +140,9 @@ public:
 
     void
     setProgram(Program&);
+
+    const Program&
+    getBottom() const;
 
     /**
      * @brief Computes the model(s) of the subprogram of this component.
