@@ -19,6 +19,7 @@
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/errorHandling.h"
+#include "dlvhex/Registry.h"
 
 
 ExternalAtom::ExternalAtom()
@@ -71,8 +72,6 @@ ExternalAtom::ExternalAtom(const std::string name,
     //
     // is the desired arity equal to the parsed arity?
     //
-//    std::cout << "out: " << (*pluginAtom).getOutputArity() << std::endl;
-//    std::cout << "here: " << getArity() << std::endl;
     if ((*pluginAtom).getInputArity() != inputList.size())
     {
         errorstr << "Line " << line << ": "
@@ -90,13 +89,12 @@ ExternalAtom::ExternalAtom(const std::string name,
         throw FatalError(errorstr.str());
     }
     
+    //
+    // make replacement name
+    //
     std::stringstream ss;
-    
     ss << functionName << "_" << uniqueNumber;
-    
     replacementName = ss.str();
-
-    auxPredicate.clear();
 
     //
     // remember this artificial atom name, we need to remove those later, they
@@ -104,7 +102,9 @@ ExternalAtom::ExternalAtom(const std::string name,
     //
     Term::auxnames.insert(replacementName);
 
-    
+    //
+    // build input list
+    //
     bool inputIsGround(1);
 
     for (int s = 0; s < inputList.size(); s++)
@@ -128,6 +128,11 @@ ExternalAtom::ExternalAtom(const std::string name,
         }
     }
 
+    //
+    // build auxiliary predicate
+    //
+    auxPredicate.clear();
+
     if (!inputIsGround)
     {
         //
@@ -135,17 +140,22 @@ ExternalAtom::ExternalAtom(const std::string name,
         // nonground input list
         //
         ss << "_aux";
-
         auxPredicate = ss.str();
-
         Term::auxnames.insert(auxPredicate);
     }
 
+    //
+    // build base predicate
+    //
+    basePredicate = replacementName + "_base";
+    //Term::auxnames.insert(basePredicate);
+    
     //
     // if we got here, the syntax is fine!
     //
 
     uniqueNumber++;
+
 }
 
 
@@ -153,6 +163,13 @@ std::string
 ExternalAtom::getAuxPredicate() const
 {
     return auxPredicate;
+}
+
+
+std::string
+ExternalAtom::getBasePredicate() const
+{
+    return basePredicate;
 }
 
 
@@ -210,12 +227,9 @@ ExternalAtom::getInputType(unsigned idx) const
 
 
 void
-ExternalAtom::evaluate(const AtomSet& i,
-                       const Tuple& inputParms,
-                       AtomSet& result) const
+ExternalAtom::groundInputList(const AtomSet& i,
+                              std::vector<Tuple>& inputArguments) const
 {
-    std::vector<Tuple> inputArguments;
-
     //
     // first, we assume that we only take the original input list
     //
@@ -249,6 +263,53 @@ ExternalAtom::evaluate(const AtomSet& i,
             inputArguments.push_back((*argi).getArguments());
         }
     }
+}
+
+
+/*
+void
+ExternalAtom::getBase(const AtomSet& i,
+                      AtomSet& result) const
+{
+    //
+    // now get the plugininterface that hosts this atom
+    //
+//    PluginInterface* pluginInterface = PluginContainer::Instance()->getInterface(functionName);
+
+    std::vector<Tuple> inputArguments;
+
+    groundInputList(i, inputArguments);
+
+    std::set<Tuple> universe;
+
+    //
+    // collect univere for each input tuple
+    //
+    std::vector<Tuple>::const_iterator input = inputArguments.begin();
+
+    while (input != inputArguments.end())
+    {
+        pluginAtom->getUniverse(*(input++), universe);
+
+        std::set<Tuple>::const_iterator basetuple = universe.begin();
+
+        while (basetuple != universe.end())
+        {
+            AtomPtr ap = Registry::Instance()->dispatch(new Atom(replacementName + "_base", *(basetuple++)));
+            result.insert(ap);
+        }
+    }
+}
+*/
+
+
+void
+ExternalAtom::evaluate(const AtomSet& i,
+                       AtomSet& result) const
+{
+    std::vector<Tuple> inputArguments;
+
+    groundInputList(i, inputArguments);
 
     std::string fnc(getFunctionName());
 
@@ -349,7 +410,7 @@ ExternalAtom::evaluate(const AtomSet& i,
             // replacement predicate for external atoms is always first order, the
             // corresponding facts need to be fo, too!
             //
-            ap->setAlwaysFO();
+            //ap->setAlwaysFO();
 
             result.insert(ap);
         }
@@ -362,7 +423,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 
 bool
-ExternalAtom::unifiesWith(const Atom& atom) const
+ExternalAtom::unifiesWith(const Atom* atom) const
 {
 //    std::cout << " trying to unify external!" << std::endl;
     return 0;
@@ -380,6 +441,7 @@ ExternalAtom::operator== (const Atom& atom2) const
 std::ostream&
 ExternalAtom::print(std::ostream& out, const bool ho) const
 {
+    /*
     out << getReplacementName();
 
     if (getArity() > 0)
@@ -397,6 +459,12 @@ ExternalAtom::print(std::ostream& out, const bool ho) const
         
         out << ")";
     }
+    return out;*/
+
+    Atom tmp(getReplacementName(), getArguments());
+
+    tmp.print(out, ho);
+
     return out;
 }   
 

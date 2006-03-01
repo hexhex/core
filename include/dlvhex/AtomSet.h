@@ -178,11 +178,17 @@ public:
     remove(const std::string&);
 
     /**
-     * @brief Keep only thos Atoms in the atomset whose predicates are contained
+     * @brief Keep only those Atoms in the atomset whose predicates are contained
      * in the specified vector of strings.
      */
     void
     keep(const std::vector<std::string>&);
+
+    /**
+     * @brief Remove negative atoms from the set.
+     */
+    void
+    keepPos();
 
     bool
     operator== (const AtomSet&) const;

@@ -20,7 +20,7 @@ namespace global
 
     bool optionVerbose = false;
 
-    bool optionStrongSafety = false;
+    bool optionStrongSafety = true;
 
     std::vector<std::string> Messages;    
 

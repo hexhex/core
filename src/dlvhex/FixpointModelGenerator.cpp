@@ -59,10 +59,30 @@ FixpointModelGenerator::getSerializedProgram() const
 
 
 void
-FixpointModelGenerator::compute(const Program& program,
+FixpointModelGenerator::compute(//const Program& program,
+                                const std::vector<const AtomNode*>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
-{
+{ 
+    Program program;
+
+    //
+    // go through all nodes
+    //
+    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    while (node != nodes.end())
+    {
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*node)->getRules().begin();
+                ri != (*node)->getRules().end();
+                ++ri)
+            program.addRule(*ri);
+
+        node++;
+    }
+
     initialize(program);
 
     models.clear();
@@ -159,7 +179,6 @@ FixpointModelGenerator::compute(const Program& program,
             try
             {
                 (*a)->evaluate(currentI,
-                               (*a)->getInputTerms(),
                                extresult);
             }
             catch (GeneralError&)

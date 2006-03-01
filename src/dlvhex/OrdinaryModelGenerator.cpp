@@ -37,12 +37,32 @@ OrdinaryModelGenerator::initialize(const Program& p)
 
 
 void
-OrdinaryModelGenerator::compute(const Program& program,
+OrdinaryModelGenerator::compute(//const Program& program,
+                                const std::vector<const AtomNode*>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
 //    if (program.getExternalAtoms().size() != 0)
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
+
+    Program program;
+
+    //
+    // go through all nodes
+    //
+    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    while (node != nodes.end())
+    {
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*node)->getRules().begin();
+                ri != (*node)->getRules().end();
+                ++ri)
+            program.addRule(*ri);
+
+        node++;
+    }
 
     initialize(program);
 

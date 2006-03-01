@@ -34,6 +34,9 @@ public:
 
     /**
      * @brief Dispatches an atom to a factory.
+     *
+     * Using boost::shared_ptr, the ownership over a is transferred to the
+     * shared pointer. a must not be deleted after this call.
      */
     AtomPtr
     dispatch(Atom* a);

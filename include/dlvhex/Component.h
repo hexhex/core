@@ -65,6 +65,9 @@ public:
     /**
      * @brief Returns the rules that belong to this component.
      */
+    Program
+    getBottom() const;
+
 //    const std::vector<Rule*>&
 //    getBottom() const;
 
@@ -88,6 +91,9 @@ public:
 
 protected:
     
+    /// Ctor.
+//    Component(const std::vector<AtomNode*>&);
+
     /// Ctor.
     Component();
 
@@ -132,17 +138,14 @@ public:
     ProgramComponent(const std::vector<AtomNode*>&,
                      ModelGenerator*);
 
-    ProgramComponent(Program&, ModelGenerator*);
+ //   ProgramComponent(Program&, ModelGenerator*);
     //ProgramComponent(ModelGenerator*);
 
     /// Dtor.
     ~ProgramComponent();
 
-    void
-    setProgram(Program&);
-
-    const Program&
-    getBottom() const;
+//    void
+//    setProgram(Program&);
 
     /**
      * @brief Computes the model(s) of the subprogram of this component.
@@ -175,7 +178,7 @@ protected:
      * @brief Nodes of this component.
      */
   //  std::vector<RuleNode*> ruleNodes;
-    Program program;
+//    Program program;
 };
 
 

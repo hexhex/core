@@ -185,16 +185,22 @@ Atom::isStronglyNegated() const
 
 
 bool
-Atom::unifiesWith(const Atom& atom2) const
+Atom::unifiesWith(const Atom* atom2) const
 {
-    if (getArity() != atom2.getArity())
+    //
+    // atoms only unify with atoms
+    //
+    if (typeid(*atom2) != typeid(Atom))
+        return false;
+
+    if (getArity() != atom2->getArity())
         return false;
     
     bool ret = true;
     
     for (unsigned i = 0; i < getArity(); i++)
     {
-        if (!getArgument(i).unifiesWith(atom2.getArgument(i)))
+        if (!getArgument(i).unifiesWith(atom2->getArgument(i)))
             ret = false;
     }
     

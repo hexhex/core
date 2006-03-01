@@ -82,6 +82,8 @@ PluginContainer::importPlugin(std::string filename)
             std::cout << "Registering external atom " << (*it).first << std::endl;
 
         pluginAtoms[(*it).first] = (*it).second;
+
+//        interfaces[(*it).first] = plugin;
     }
 }
 
@@ -96,3 +98,16 @@ PluginContainer::getAtom(std::string name)
     
     return pa->second;
 }
+
+/*
+PluginInterface*
+PluginContainer::getInterface(std::string name)
+{
+    FunctionInterfaceMap::const_iterator in(interfaces.find(name));
+
+    if (in == interfaces.end())
+        return 0;
+    
+    return in->second;
+}
+*/

@@ -311,7 +311,7 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
              oldnode != atomNodes.end();
              ++oldnode)
         {
-            if ((*oldnode)->getAtom()->unifiesWith(*atom))
+            if ((*oldnode)->getAtom()->unifiesWith(atom))
             {
                 //
                 // in this function, we only search for existing BODY atoms!
@@ -374,7 +374,7 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
              oldnode != atomNodes.end();
              ++oldnode)
         {
-            if ((*oldnode)->getAtom()->unifiesWith(*atom))
+            if ((*oldnode)->getAtom()->unifiesWith(atom))
             {
                 //
                 // in this function, we only search for existing HEAD atoms!

@@ -84,6 +84,8 @@ Rule::Rule(const RuleHead_t& head,
       programFile(file),
       programLine(line)
 {
+    externalAtoms.clear();
+
     //
     // store the rule's external atoms separately
     //
@@ -95,6 +97,7 @@ Rule::Rule(const RuleHead_t& head,
             externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
     }
 
+//    std::cout << " rule has extatoms: " << externalAtoms.size() << std::endl;
 }
 
 
@@ -130,6 +133,8 @@ Rule::getLine() const
 const std::vector<ExternalAtom*>&
 Rule::getExternalAtoms() const
 {
+//    std::cout << "getting extatoms of rule " << this <<  std::endl;
+//    std::cout << " size: " << externalAtoms.size() << std::endl;
     return externalAtoms;
 }
 
@@ -238,7 +243,7 @@ Program::addRule(const Rule* r)
             bi != r->getBody().end();
             ++bi)
         {
-            if ((*bi)->getAtom()->getType() == Atom::EXTERNAL)
+            if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
                 externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
         }
     }

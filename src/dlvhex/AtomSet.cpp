@@ -245,6 +245,32 @@ AtomSet::keep(const std::vector<std::string>& preds)
 }
 
 
+void
+AtomSet::keepPos()
+{
+    atomset_t::iterator cur = atoms.begin();
+
+    atomset_t::const_iterator last = atoms.end();
+
+    //
+    // go through all atoms of this set
+    //
+    while (cur != last)
+    {
+        if ((*cur)->isStronglyNegated())
+        {
+            atomset_t::iterator tmp = cur++;
+
+            atoms.erase(tmp);
+        }
+        else
+        {
+            cur++;
+        }
+    }
+}
+
+
 bool
 AtomSet::operator== (const AtomSet& atomset2) const
 {

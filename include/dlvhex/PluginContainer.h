@@ -25,11 +25,6 @@ class PluginContainer
 {
 public:
     /**
-    * @brief Associative map of external atoms provided by plugins.
-    */
-    PluginInterface::AtomFunctionMap pluginAtoms;
-
-    /**
      * @brief Singleton instance handle.
      */
     static PluginContainer* Instance();
@@ -46,6 +41,12 @@ public:
     PluginAtom*
     getAtom(std::string name);
 
+    /**
+    * @brief returns the plugin interface that hosts the specified atom.
+    */
+//    PluginInterface*
+//    getInterface(std::string name);
+
 protected:
 
     /**
@@ -60,6 +61,14 @@ protected:
 
 private:
 
+    /**
+    * @brief Associative map of external atoms provided by plugins.
+    */
+    PluginInterface::AtomFunctionMap pluginAtoms;
+
+//    typedef std::map<std::string, PluginInterface*> FunctionInterfaceMap;
+
+//    FunctionInterfaceMap interfaces;
     /**
      * @brief Singleton instance.
      */

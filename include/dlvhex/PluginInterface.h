@@ -80,7 +80,21 @@ public:
     class Query
     {
     public:
-        /// Ctor.
+        /**
+         * @brief Query Constructor.
+         *
+         * A query has three components:
+         * * The input interpretation,
+         * * the input arguments, and
+         * * the output tuple.
+         * The input arguments are the ground terms of the input list. The
+         * output tuple corresponds to the atom's output list: If it contains
+         * variables, the query will be a functional one for those missing
+         * values; if it is nullary or completely ground, the query will be a
+         * boolean one. Either way, the answer will contain exactly those tuples
+         * that are in the output of the atom's function for the interpretation
+         * and the input arguments.
+         */
         Query(const AtomSet&,
               const Tuple&,
               const Tuple&);
@@ -225,12 +239,20 @@ public:
     getOutputArity() const;
 
     /**
-     * @brief Retrieve answer object according to query.
-     *
+     * @brief Retrieve answer object according to a query.
      */
     virtual void
-    retrieve(const Query&, Answer&) throw(PluginError) = 0;
+    retrieve(const Query&, Answer&) throw (PluginError) = 0;
 
+
+    /**
+     * @brief Retrieve the atom's universe.
+     *
+     * The universe of an atom is the set of all possible output tuples w.r.t. a
+     * specific input tuple.
+     */
+//    virtual void
+//    getUniverse(const Tuple&, std::set<Tuple>&) throw (PluginError) = 0;
 
     /**
      * @brief Boolean query for a specific tuple wrt. the given input.

@@ -67,42 +67,79 @@ FixpointModelGenerator::getSerializedProgram() const
 */
 
 void
-GuessCheckModelGenerator::compute(const Program& program,
-                                  const AtomSet &I,
-                                  std::vector<AtomSet> &models)
+GuessCheckModelGenerator::compute(//const Program& program,
+                                  const std::vector<const AtomNode*>& nodes,
+                                  const AtomSet& I,
+                                  std::vector<AtomSet>& models)
 {
-    std::cout << "*** guess and check: ***" << std::endl;
+    //std::cout << "*** guess and check: ***" << std::endl;
 
     models.clear();
 
-    Program guessingprogram(program);
+    Program guessingprogram;
+    Program guessingrules;
 
-    for (Program::const_iterator ri = program.begin();
-         ri != program.end();
+    //
+    // go through all nodes
+    //
+    std::set<const ExternalAtom*> extatomInComp;
+
+    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    while (node != nodes.end())
+    {
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<const Rule*>::const_iterator ruleit = (*node)->getRules().begin();
+                ruleit != (*node)->getRules().end();
+                ++ruleit)
+        {
+            guessingprogram.addRule(*ruleit);
+        }
+
+        if (typeid(*(*node)->getAtom()) == typeid(ExternalAtom))
+            extatomInComp.insert(dynamic_cast<const ExternalAtom*>((*node)->getAtom()));
+        
+        node++;
+    }
+
+    for (Program::const_iterator ri = guessingprogram.begin();
+         ri != guessingprogram.end();
          ++ri)
     {
+        //
+        // go through all external atoms in this component and make one guessing
+        // rule each
+        //
         for (std::vector<ExternalAtom*>::const_iterator ei = (*ri)->getExternalAtoms().begin();
             ei != (*ri)->getExternalAtoms().end();
             ++ei)
         {
+            //
+            // for the guessing only consider external atoms that are actually
+            // in the cycle!
+            //
+            if (extatomInComp.find(*ei) == extatomInComp.end())
+                continue;
+
+            //
+            // the head of the guessing rule is the disjunction of the nonground
+            // external replacement atom and its negation
+            //
             RuleHead_t guesshead;
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
-
-//            headatom->setAlwaysFO();
-
             ProgramRepository::Instance()->record(headatom);
-
             guesshead.push_back(headatom);
 
             headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
-
-//            headatom->setAlwaysFO();
-
             ProgramRepository::Instance()->record(headatom);
-
             guesshead.push_back(headatom);
 
+            //
+            // the body contains all remaining rule atoms (to make it more
+            // efficient)
+            //
             RuleBody_t guessbody;
 
             for (RuleBody_t::const_iterator bi = (*ri)->getBody().begin();
@@ -116,13 +153,21 @@ GuessCheckModelGenerator::compute(const Program& program,
                     guessbody.push_back(*bi);
             }
 
+            //
+            // the base atom specifies all possible values for the guessing
+            //
+//            Atom* baseatom = new Atom((*ei)->getBasePredicate(), (*ei)->getArguments());
+//            ProgramRepository::Instance()->record(baseatom);
+//            guesshead.push_back(baseatom);
+
+            //
+            // build the entire guessing rule
+            //
             Rule* guessrule = new Rule(guesshead, guessbody);
-
             ProgramRepository::Instance()->record(guessrule);
+            guessingrules.addRule(guessrule);
 
-            guessingprogram.addRule(guessrule);
-
-            std::cout << "guessing rule: " << *guessrule << std::endl;
+//            std::cout << "guessing rule: " << *guessrule << std::endl;
         }
         
     }
@@ -130,21 +175,31 @@ GuessCheckModelGenerator::compute(const Program& program,
     //
     // serialize input facts
     //
-    //ProgramDLVBuilder dlvfacts(global::optionNoPredicate);
     ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
 
+    //
+    // add I
+    //
     dlvprogram.buildFacts(I);
 
-    dlvprogram.buildProgram(guessingprogram);
+    //
+    // add the base of the external atom
+    //
+//    dlvprogram.buildFacts((*ei)->getBase(*as, universe));
 
+    dlvprogram.buildProgram(guessingprogram);
+    dlvprogram.buildProgram(guessingrules);
     std::string serializedProgram = dlvprogram.getString();
+
+//    std::cout << "guessing program: " << serializedProgram << std::endl;
 
     ASPsolver Solver;
     
+    //
+    // evaluate the guessing program
+    //
     try
     {
-        std::cout << serializedProgram << std::endl;
-        
         Solver.callSolver(serializedProgram, 0);
     }
     catch (FatalError e)
@@ -152,22 +207,49 @@ GuessCheckModelGenerator::compute(const Program& program,
         throw e;
     }
 
-    //std::cout << serializedProgram << std::endl;
-
     AtomSet* as;
 
+    std::vector<AtomSet*> compatibleSets;
+
+    //
+    // now check for each guess if the guessed external atoms are satisfied by
+    // the remaining atoms in the guess
+    //
     while ((as = Solver.getNextAnswerSet()) != NULL)
     {
-        for (std::vector<ExternalAtom*>::const_iterator ei = program.getExternalAtoms().begin();
-            ei != program.getExternalAtoms().end();
+        //std::cout << "---" << std::endl;
+        //as->print(std::cout, 1);
+        //std::cout << "---" << std::endl;
+
+        for (std::set<const ExternalAtom*>::const_iterator ei = extatomInComp.begin();
+            ei != extatomInComp.end();
             ++ei)
         {
-            std::cout << "searching for " << **ei << std::endl;
+            //
+            // extract the (positive) external atom result from the answer set
+            AtomSet extpart;
+            as->matchPredicate((*ei)->getReplacementName(), extpart);
+            extpart.keepPos();
+
+            AtomSet extresult;
+
+            try
+            {
+                (*ei)->evaluate(*as, extresult);
+            }
+            catch (GeneralError&)
+            {
+                throw;
+            }
+
+            if (extpart == extresult)
+                compatibleSets.push_back(as);
         }
         
-        std::cout << "---" << std::endl;
-        as->print(std::cout, 1);
-        std::cout << "---" << std::endl;
     }
-//    models.push_back(currentI.getAtomSet());
+
+    std::vector<AtomSet*>::const_iterator ans = compatibleSets.begin();
+
+    while (ans != compatibleSets.end())
+        models.push_back(**ans++);
 }

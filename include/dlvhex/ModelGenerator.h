@@ -17,6 +17,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/ProgramBuilder.h"
+#include "dlvhex/AtomNode.h"
 
 /**
  * @brief Abstract strategy class for computing the model of a program from
@@ -36,8 +37,8 @@ public:
      * compute the result of a subprogram. This function initializes everything
      * that will not change on subsequent calls of the compute function.
      */
-    virtual void
-    initialize(const Program&) = 0;
+//    virtual void
+//    initialize(const Program&) = 0;
 
 
     /**
@@ -46,7 +47,8 @@ public:
      *todo: do we need the program here, too? it's already in the initialize method! 
      */
     virtual void
-    compute(const Program&,
+    compute(//const Program&,
+            const std::vector<const AtomNode*>&,
             const AtomSet& I,
             std::vector<AtomSet>& models) = 0;
 
@@ -76,7 +78,8 @@ public:
     FixpointModelGenerator();
 
 
-    virtual void
+    //virtual 
+        void
     initialize(const Program&);
 
 
@@ -97,7 +100,8 @@ public:
      * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    compute(const Program&,
+    compute(//const Program&,
+            const std::vector<const AtomNode*>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
 
@@ -127,7 +131,8 @@ public:
     OrdinaryModelGenerator();
 
 
-    virtual void
+    //virtual 
+        void
     initialize(const Program&);
 
 
@@ -148,7 +153,8 @@ public:
      * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    compute(const Program&,
+    compute(//const Program&,
+            const std::vector<const AtomNode*>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
 
@@ -174,9 +180,9 @@ public:
     GuessCheckModelGenerator();
 
 
-    virtual void
-    initialize(const Program&)
-    { }
+    //virtual void
+    //initialize(const Program&)
+    //{ }
 
 
     /**
@@ -196,7 +202,8 @@ public:
      * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    compute(const Program&,
+    compute(//const Program&,
+            const std::vector<const AtomNode*>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
 

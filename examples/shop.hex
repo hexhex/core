@@ -4,7 +4,7 @@ vendor("s9").
 needed("cpu").
 needed("harddisk").
 needed("case").
-inputurl("http://www.kr.tuwien.ac.at/people/roman/swlp/examples/shop.owl").
+inputurl("http://www.kr.tuwien.ac.at/staff/roman/swlp/examples/shop.owl").
 
 % for the case, we already have a contract with a specific vendor
 contract("s9","case").

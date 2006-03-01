@@ -1,15 +1,13 @@
-triple(X,Y,Z) :- &rdf[A](X,Y,Z), inp(A), a(X), a(Y), a(Z).
+vendor("s1").
+vendor("s5").
+vendor("s9").
+needed("cpu").
+needed("harddisk").
+needed("case").
+inputurl("http://www.kr.tuwien.ac.at/staff/roman/swlp/examples/shop.owl").
+
+rebate(X) :- &dlC[Url,a,b,c,d,"Discount"](X), vendor(X), inputurl(Url).
+c(supplier, "s1", "cpu").
+c(supplier, "s1", "case").
 
 
-knows(X,Y) :- triple(A, "http://xmlns.com/foaf/0.1/knows", B), name(A,X), name(B,Y).
-name(X,Y) :- triple(X, "http://xmlns.com/foaf/0.1/name", Y).
-
-inp(X) :- triple(Z,"http://www.w3.org/2000/01/rdf-schema#seeAlso",X).
-
-inp(X) :- input(X).
-
-input(X) :- url(X), not -input(X).
--input(X) :- url(X), input(Y), X != Y.
-
-url("http://www.kr.tuwien.ac.at/staff/roman/foaf.rdf").
-url("http://www.mat.unical.it/~ianni/foaf.rdf").

@@ -163,7 +163,7 @@ public:
      * (including the predicate symbols) unify pairwise.
      */
     virtual bool
-    unifiesWith(const Atom&) const;
+    unifiesWith(const Atom*) const;
 
     /**
      * @brief Tests for equality.

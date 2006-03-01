@@ -1,6 +1,11 @@
 % By default, a bird doesn't fly:
- bird("Bird").
- flies(X) :- &dlC["/home/roman/dlvex/examples/tweety_bird.owl",plusC,minusC,plusR,minusR,"bird"](X).
+% bird("Bird").
+
+bird(X) :- &dlC["/home/staff/roman/dlvex/examples/tweety_bird.owl",a,b,c,d,"Bird"](X).
+flies(X) :- bird(X), not notf(X).
+notf(X) :- &dlC["/home/staff/roman/dlvex/examples/tweety_bird.owl",aa,bb,c,d,"-Flier"](X), bird(X).
+aa("Flier", X) :- flies(X).
+bb("Flier", X) :- notf(X).
 
 % Single out the non-fliers under default assumption:
  
@@ -9,4 +14,5 @@
     % Is the description logic KB inconsistent? 
 %      inconsistent :- DL[Bird]("dummy"), DL[-Bird]("dummy").
 
-
+%f(X) :- DL[B](X), not not_f(X).
+%not_f(X) :- DL[F+=f,F-=not_f;-F](X).

@@ -18,6 +18,14 @@
 
 
 
+/*
+Component::Component(const std::vector<AtomNode*>& nodes)
+    : evaluated(false),
+      atomnodes(nodes)
+{
+}
+*/
+
 Component::Component()
     : evaluated(false)
 {
@@ -51,8 +59,37 @@ Component::getNodes() const
 }
 
 
-/*
-*/
+Program
+Component::getBottom() const
+{
+    Program program;
+
+    //
+    // go through all nodes
+    //
+    std::vector<const AtomNode*>::const_iterator node = atomnodes.begin();
+    while (node != atomnodes.end())
+    {
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<const Rule*>::const_iterator ri = (*node)->getRules().begin();
+                ri != (*node)->getRules().end();
+                ++ri)
+        {
+            program.addRule(*ri);
+        }
+
+        node++;
+
+        //
+        // add this node to the component-object
+        //
+   //     addAtomNode(*ni);
+    }
+
+    return program;
+}
 
 
 void
@@ -127,42 +164,26 @@ Component::isInComponent(const Atom* at) const
 
 ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
                                    ModelGenerator* mg)
-    : modelGenerator(mg)
+    : modelGenerator(mg),
+//      atomnodes(nodes),
+      Component()
 {
-    //
-    // go thorugh all nodes
-    //
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        //
-        // add all rules from this node to the component
-        //
-        for (std::vector<const Rule*>::const_iterator ri = (*ni)->getRules().begin();
-                ri != (*ni)->getRules().end();
-                ++ri)
-        {
-            program.addRule(*ri);
-
-        }
-
-        //
-        // add this node to the component-object
-        //
-        addAtomNode(*ni);
-    }
+    std::vector<AtomNode*>::const_iterator node = nodes.begin();
+    while (node != nodes.end())
+        addAtomNode(*node++);
 }
 
-
-ProgramComponent::ProgramComponent(Program& p, ModelGenerator* mg)
+/*
+ProgramComponent::ProgramComponent(const std::vector<const AtomNode*>& an,
+                                   ModelGenerator* mg)
 //ProgramComponent::ProgramComponent(ModelGenerator* mg)
-    : program(p),
+    : atomnodes(an),
       modelGenerator(mg),
       Component()
 {
-    mg->initialize(program);
+//    mg->initialize(program);
 }
+*/
 
 
 ProgramComponent::~ProgramComponent()
@@ -172,18 +193,13 @@ ProgramComponent::~ProgramComponent()
 }
 
 
+/*
 void
 ProgramComponent::setProgram(Program& p)
 {
     program = p;
 }
-
-
-const Program&
-ProgramComponent::getBottom() const
-{
-    return program;
-}
+*/
 
 
 void
@@ -192,7 +208,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     if (global::optionVerbose)
     {
         std::cout << "Evaluating program component:" << std::endl;
-        program.dump(std::cout);
+        getBottom().dump(std::cout);
     }
 
     std::vector<AtomSet> res, previous;
@@ -216,7 +232,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-            modelGenerator->compute(program, *in, res);
+            modelGenerator->compute(atomnodes, *in, res);
         }
         catch (GeneralError&)
         {
@@ -261,9 +277,9 @@ ProgramComponent::dump(std::ostream& out) const
 
     out << std::endl;
 
-    out << "Program:" << std::endl;
+    out << "Bottom:" << std::endl;
 
-    program.dump(out);
+    getBottom().dump(out);
 
     out << "ProgramComponent-object end ----------------------------" << std::endl;
 
@@ -309,11 +325,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-            Tuple dummy;
-
-            externalAtom->evaluate(i, dummy, res);
-
-//            res.insert(r);
+            externalAtom->evaluate(i, res);
         }
         catch (GeneralError&)
         {

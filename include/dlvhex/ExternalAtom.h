@@ -45,6 +45,12 @@ public:
     std::string
     getAuxPredicate() const;
 
+    /**
+     * @brief Returns the base predicate name.
+     */
+    std::string
+    getBasePredicate() const;
+
 
     /**
      * @brief Returns the function name of the external atom.
@@ -100,23 +106,30 @@ public:
     Tuple
     getArguments() const;
 
+    /**
+     * @brief Returns the set of all possible output values w.r.t. to i.
+     *
+     * The interpretation is needed here because it might be necessary for
+     * creating the ground input list from auxiliary predicates in i.
+     */
+//    void
+//    getBase(const AtomSet& i,
+//            AtomSet&) const;
 
     /**
-     * @brief Evaluates the external atom w.r.t. to an interpretation and a
-     * list of input parameters.
+     * @brief Evaluates the external atom w.r.t. to an interpretation.
      *
-     * The input parameter list here must be the ground version of the
-     * input arguments specified in the logic program. The prediate name of the
-     * returned ground atoms will be the replacement name of this atom.
-     * What the evaluation function basically does, is to pass the list of
-     * ground input parameters and part of the interpretation to the plugin and let it
-     * evaluate its external atom function there. The passed part of the
-     * interpretation is determined byt those input parameters that are of type
-     * PREDICATE.
+     * The prediate name of the returned ground atoms will be the replacement
+     * name of this atom.  What the evaluation function basically does, is to
+     * pass the list of ground input parameters and part of the interpretation
+     * to the plugin and let it evaluate its external atom function there. The
+     * ground input parameters are either the ones originally specified in the
+     * hex-program or produced from auxiliary predicates if they were
+     * non-ground. The passed part of the interpretation is determined by those
+     * input parameters that are of type PREDICATE.
      */
     void
     evaluate(const AtomSet &i,
-             const Tuple& inputParms,
              AtomSet& result) const;
 
 
@@ -124,7 +137,7 @@ public:
      * @brief An External Atom never unifies.
      */
     virtual bool
-    unifiesWith(const Atom&) const;
+    unifiesWith(const Atom*) const;
 
 
     virtual bool
@@ -162,6 +175,18 @@ public:
 
 private:
 
+    /**
+     * @brief Grounds the input arguments w.r.t. a specified interpretation.
+     *
+     * If the input list of an external ato in a hex-program is not completely
+     * ground, auxiliary predicates are generated, grounding the list from the
+     * remaining body atoms. This function creates ground tuples from the
+     * auciliary atoms in the interpretation or simply returns the original
+     * input list, if it was fully ground.
+     */
+    void
+    groundInputList(const AtomSet&, std::vector<Tuple>&) const;
+
     Tuple inputList;
 
     /**
@@ -176,6 +201,11 @@ private:
      * @brief Auxiliary predicate for grounding the input list.
      */
     std::string auxPredicate;
+    
+    /**
+     * @brief Auxiliary predicate for adding the base to the guessing program.
+     */
+    std::string basePredicate;
     
     /**
      * @brief Consecutive number to build a unique replacement name.
