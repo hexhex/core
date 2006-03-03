@@ -10,7 +10,7 @@ noinst_HEADERS = \
                  ComponentFinder.h \
 		 Component.h \
                  DependencyGraph.h \
-                 errorHandling.h \
+                 GeneralError.h \
                  ExternalAtom.h \
                  globals.h \
                  GraphBuilder.h \
@@ -32,7 +32,7 @@ pkginclude_HEADERS = \
                  Atom.h \
                  AtomSet.h \
 		 AtomFactory.h \
-                 errorHandling.h \
+                 GeneralError.h \
                  helper.h \
                  Literal.h \
                  NamesTable.h \

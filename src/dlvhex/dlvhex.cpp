@@ -26,7 +26,7 @@
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
 #include "dlvhex/SafetyChecker.h"
@@ -475,14 +475,14 @@ main (int argc, char *argv[])
     }
     catch (GeneralError &e)
     {
-        std::cerr << e.getErrorMsg() << std::endl;
+        std::cerr << e.getErrorMsg() << std::endl << std::endl;
 
         exit(1);
     }
 
     if (parser_errors)
     {
-        std::cerr << "Aborting due to parser errors." << std::endl;
+        std::cerr << "Aborting due to parser errors." << std::endl << std::endl;
 
         exit(1);
     }
@@ -557,7 +557,7 @@ main (int argc, char *argv[])
     }
     catch (GeneralError &e)
     {
-        std::cerr << e.getErrorMsg() << std::endl;
+        std::cerr << e.getErrorMsg() << std::endl << std::endl;
 
         exit(1);
     }
@@ -578,7 +578,7 @@ main (int argc, char *argv[])
     }
     catch (GeneralError &e)
     {
-        std::cerr << e.getErrorMsg() << std::endl;
+        std::cerr << e.getErrorMsg() << std::endl << std::endl;
 
         exit(1);
     }
@@ -635,17 +635,21 @@ main (int argc, char *argv[])
     //
     // dump it!
     //
+    if (global::optionVerbose)
+        std::cout << "@@@ Final Result @@@" << std::endl << std::endl;
+
     result.print(std::cout, outputbuilder);
 
     //
     // was there anything non-error the user should know? dump it directly
-    //
+    /*
     for (std::vector<std::string>::const_iterator l = global::Messages.begin();
          l != global::Messages.end();
          l++)
     {
         std::cout << *l << std::endl;
     }
+    */
     
 
     //

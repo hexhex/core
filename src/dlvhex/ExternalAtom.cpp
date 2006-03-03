@@ -18,7 +18,7 @@
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/Registry.h"
 
 
@@ -43,9 +43,11 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
 ExternalAtom::ExternalAtom(const std::string name,
                            const Tuple& params,
                            const Tuple& input,
+                           const std::string file,
                            const unsigned line)
     : functionName(name),
       Atom(params),
+      filename(file),
       line(line),
       inputList(input)
 {
@@ -63,10 +65,11 @@ ExternalAtom::ExternalAtom(const std::string name,
     
     if (pluginAtom == 0)
     {
-        errorstr << "Line " << line << ": "
-                 << "Function " << functionName << " unknown";
+        throwSourceError("function " + functionName + " unknown");
+//        errorstr << "Line " << line << ": "
+//                 << "Function " << functionName << " unknown";
 
-        throw FatalError(errorstr.str());
+//        throw FatalError(errorstr.str());
     }
 
     //
@@ -74,10 +77,11 @@ ExternalAtom::ExternalAtom(const std::string name,
     //
     if ((*pluginAtom).getInputArity() != inputList.size())
     {
-        errorstr << "Line " << line << ": "
-                 << "Arity mismatch in function " << functionName;
+        throwSourceError("arity mismatch in function " + functionName);
+//        errorstr << "Line " << line << ": "
+//                 << "Arity mismatch in function " << functionName;
 
-        throw FatalError(errorstr.str());
+//        throw FatalError(errorstr.str());
     }
     
 
@@ -156,6 +160,15 @@ ExternalAtom::ExternalAtom(const std::string name,
 
     uniqueNumber++;
 
+}
+
+
+void
+ExternalAtom::throwSourceError(std::string msg) const
+{
+   //std::string err(msg + " in function " + functionName);
+
+   throw SyntaxError(filename, line, msg);
 }
 
 

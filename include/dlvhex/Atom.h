@@ -110,6 +110,8 @@ public:
     /**
      * Constructs an atom from a predicate string and a tuple.
      * The third argument indicates if the atom is strongly negated.
+     * The tuple can also be empty, then the atom is propositional and consists
+     * only of the predicate identifier.
      */
     Atom(const std::string, const Tuple&, bool = false);
 

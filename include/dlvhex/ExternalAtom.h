@@ -37,7 +37,18 @@ public:
     ExternalAtom(const std::string name,
                  const Tuple& params,
                  const Tuple& input,
+                 const std::string file,
                  const unsigned line);
+
+    /**
+     * @brief Throws an Inputerror Exception.
+     *
+     * If something was wrong with the external atom in the input hex-program,
+     * this function can be used to throw an InputError. It takes care of
+     * throwing the InputError with proper parameters.
+     */
+    void
+    throwSourceError(std::string) const;
 
     /**
      * @brief Returns the auxiliary predicate name.
@@ -217,6 +228,11 @@ private:
      * program.
      */
     std::string replacementName;
+
+    /**
+     * @brief Filename of the source file where this atom occured.
+     */
+    std::string filename;
 
     /**
      * @brief Line of the source file where this atom occured (for error

@@ -21,7 +21,7 @@
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"

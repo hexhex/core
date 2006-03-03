@@ -166,6 +166,12 @@ public:
     matchPredicate(const std::string, AtomSet&) const;
 
     /**
+     * @brief Returns the set difference: *this \ specified atomset.
+     */
+    AtomSet
+    difference(AtomSet&) const;
+
+    /**
      * @brief Prints the atomset to the specified stream.
      */
     void
@@ -176,6 +182,9 @@ public:
      */
     void
     remove(const std::string&);
+
+    void
+    remove(const std::vector<std::string>&);
 
     /**
      * @brief Keep only those Atoms in the atomset whose predicates are contained

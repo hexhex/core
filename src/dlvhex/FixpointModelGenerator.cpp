@@ -13,7 +13,7 @@
 
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/globals.h"
 
 
@@ -64,6 +64,9 @@ FixpointModelGenerator::compute(//const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
+    if (global::optionVerbose)
+        std::cout << "= FixpointModelGenerator =" << std::endl;
+
     Program program;
 
     //
@@ -120,9 +123,9 @@ FixpointModelGenerator::compute(//const Program& program,
     Tuple extInputParms;
 
     //
-    // the result facts of the external atoms will always be first order
+    // the result facts of the external atoms
     //
-    ProgramDLVBuilder externalfacts(false);
+    ProgramDLVBuilder externalfacts(true);
 
     bool firstrun = true;
 

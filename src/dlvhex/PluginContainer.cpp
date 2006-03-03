@@ -12,7 +12,7 @@
 
 #include <dlfcn.h>
 
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/globals.h"

@@ -11,7 +11,7 @@
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/Registry.h"
 
 
@@ -72,6 +72,7 @@ extern AtomSet EDB;
 %type  <body> body
 %type  <rule> rule rule0
 %type <extatom> external_atom    
+%type <terms> external_output
 %type <builtin> builtin_pred    
 //%type  <string> aggregate_type
 //%type  <string> aggregate_pred
@@ -469,7 +470,7 @@ user_pred:
 
 
 external_atom:
-    AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE PARAM_OPEN terms PARAM_CLOSE
+    AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE external_output
         {
             // TODO: two external atoms with same name and input?
             // how "equal" are they?
@@ -480,7 +481,7 @@ external_atom:
             // input parameters
             // arguments
             //
-            $$ = new ExternalAtom($2, *$7, *$4, parser_line);
+            $$ = new ExternalAtom($2, *$6, *$4, parser_file, parser_line);
 
             //
             // register external atom
@@ -496,10 +497,23 @@ external_atom:
             // delete terms
             //
             delete $4;
-            delete $7;
+            delete $6;
         }
     ;
 
+
+external_output:
+        {
+            //
+            // emtpy tuple
+            //
+            $$ = new Tuple;
+        }
+    | PARAM_OPEN terms PARAM_CLOSE
+        {
+            $$ = $2;
+        }
+    ;
 
 
 propositional_atom:
@@ -541,13 +555,14 @@ propositional_atom:
 
 
 terms:
-        {
+     //   {
             //
             // emtpy tuple
             //
-            $$ = new Tuple;
-        }
-    | term
+    //        $$ = new Tuple;
+    //    }
+    //| term
+    term
         {
             $$ = new Tuple;
 
@@ -731,7 +746,7 @@ int inputerror(char const* s) // Error handler for YACC
 {
     parser_errors++;
 
-    throw InputError(std::string(parser_file), parser_line-1, std::string(s));
+    throw SyntaxError(std::string(parser_file), parser_line-1, std::string(s));
 
 /*
     if( strlen(parser_file) > 0 )

@@ -17,7 +17,7 @@
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/DependencyGraph.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 
 /**
  * @brief Abstract bae class
@@ -46,7 +46,7 @@ public:
     SafetyChecker(const Program&);
 
     void
-    testRules(const Program&) const;
+    testRules(const Program&) const throw (SyntaxError);
 };
 
 
@@ -60,7 +60,7 @@ public:
     StrongSafetyChecker(const Program&, const DependencyGraph*);
 
     void
-    testStrongSafety(const DependencyGraph*) const;
+    testStrongSafety(const DependencyGraph*) const throw (SyntaxError);
 };
 
 

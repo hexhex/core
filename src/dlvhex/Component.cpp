@@ -17,15 +17,6 @@
 
 
 
-
-/*
-Component::Component(const std::vector<AtomNode*>& nodes)
-    : evaluated(false),
-      atomnodes(nodes)
-{
-}
-*/
-
 Component::Component()
     : evaluated(false)
 {
@@ -68,6 +59,7 @@ Component::getBottom() const
     // go through all nodes
     //
     std::vector<const AtomNode*>::const_iterator node = atomnodes.begin();
+
     while (node != atomnodes.end())
     {
         //
@@ -81,11 +73,6 @@ Component::getBottom() const
         }
 
         node++;
-
-        //
-        // add this node to the component-object
-        //
-   //     addAtomNode(*ni);
     }
 
     return program;
@@ -96,48 +83,6 @@ void
 Component::getResult(std::vector<AtomSet>& r)
 {
     r = result;
-    /*
-    r.clear();
-
-    for (std::vector<GAtomSet>::iterator gi = result.begin();
-         gi != result.end();
-         ++gi)
-    {
-        r.push_back(&(*gi));
-    }
-    */
-
-/*    if (input.size() == 0)
-    {
-        input.push_back(in);
-    }
-    else
-    {
-        std::vector<GAtomSet> newinput;
-
-        GAtomSet un;
-
-        for (std::vector<GAtomSet>::const_iterator gi = input.begin();
-             gi != input.end();
-             ++gi)
-        {
-//            for (std::vector<GAtomSet>::const_iterator ngi = in.begin();
-//                 ngi != in.end();
-//                 ++ngi)
-//            {
-                un.clear();
-
-                set_union(gi->begin(), gi->end(),
-                          in.begin(), in.end(),
-                          un.begin());
-
-                newinput.push_back(un);
-//            }
-        }
-
-        input = newinput;
-    }
-    */
 }
 
 
@@ -165,25 +110,14 @@ Component::isInComponent(const Atom* at) const
 ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
                                    ModelGenerator* mg)
     : modelGenerator(mg),
-//      atomnodes(nodes),
       Component()
 {
     std::vector<AtomNode*>::const_iterator node = nodes.begin();
+
     while (node != nodes.end())
         addAtomNode(*node++);
 }
 
-/*
-ProgramComponent::ProgramComponent(const std::vector<const AtomNode*>& an,
-                                   ModelGenerator* mg)
-//ProgramComponent::ProgramComponent(ModelGenerator* mg)
-    : atomnodes(an),
-      modelGenerator(mg),
-      Component()
-{
-//    mg->initialize(program);
-}
-*/
 
 
 ProgramComponent::~ProgramComponent()
@@ -191,15 +125,6 @@ ProgramComponent::~ProgramComponent()
     if (modelGenerator != NULL)
         delete modelGenerator;
 }
-
-
-/*
-void
-ProgramComponent::setProgram(Program& p)
-{
-    program = p;
-}
-*/
 
 
 void
@@ -223,7 +148,6 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
-            //printGAtomSet(*in, std::cout, 0);
             (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
@@ -244,13 +168,13 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
     if (global::optionVerbose)
     {
-        std::cout << "Result set(s): ";
+        std::cout << "Result set(s):" << std::endl;
 
         for (std::vector<AtomSet>::const_iterator out = result.begin();
             out != result.end();
             ++out)
         {
-            //printGAtomSet(*out, std::cout, 0);
+            std::cout << "  ";
             (*out).print(std::cout, 0);
             std::cout << std::endl;
         }
@@ -311,17 +235,13 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
-            //printGAtomSet(*in, std::cout, 0);
             (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
 
         AtomSet res;
 
-        //res.clear();
-
         AtomSet i(*in);
-
 
         try
         {
@@ -713,19 +633,6 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 
             }
 
-
-
-
-
-/*
-            for (std::vector<Component*>::const_iterator pi = pred.begin();
-                 pi != pred.end();
-                 ++pi)
-            {
-                if (!(*pi)->isSolved())
-                    allsolved = false;
-            }
-*/
             //
             // so *ci is unsolved, but all preceding are solved - then it is a leaf!
             //
@@ -736,16 +643,6 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 }
 
 
-/*
-void
-Subgraph::evaluateComponent(Component* comp,
-                            std::vector<const GAtomSet>& input)
-{
-    comp->evaluate(input);
-
-    comp->getResult(lastResult);
-}
-*/
 
 bool
 Subgraph::unsolvedComponentsLeft()

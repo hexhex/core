@@ -32,7 +32,7 @@ SafetyChecker::SafetyChecker(const Program& program)
 
 
 void
-SafetyChecker::testRules(const Program& program) const
+SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
 {
     if (global::optionVerbose)
         std::cout << "Checking for rule safety." << std::endl;
@@ -111,7 +111,7 @@ SafetyChecker::testRules(const Program& program) const
             {
                 if ((*inpterm).isVariable())
                     if (safevars.find(*inpterm) == safevars.end())
-                        throw InputError((*ruleit)->getFile(), (*ruleit)->getLine(), "rule not safe");
+                        throw SyntaxError((*ruleit)->getFile(), (*ruleit)->getLine(), "rule not safe");
                 inpterm++;
             }
 
@@ -157,7 +157,7 @@ SafetyChecker::testRules(const Program& program) const
                 {
                     if (find(safevars.begin(), safevars.end(), t) == safevars.end())
                     {
-                        throw InputError((*ruleit)->getFile(),
+                        throw SyntaxError((*ruleit)->getFile(),
                                          (*ruleit)->getLine(),
                                          "rule not safe");
                     }
@@ -167,6 +167,7 @@ SafetyChecker::testRules(const Program& program) const
 
         if (global::optionVerbose)
             std::cout << "Rule in line " << (*ruleit)->getLine() << " is safe." << std::endl;
+        
         //
         // next rule
         //
@@ -185,7 +186,7 @@ StrongSafetyChecker::StrongSafetyChecker(const Program& program,
 
 
 void
-StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const
+StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (SyntaxError)
 {
     if (global::optionVerbose)
         std::cout << "Checking for strong rule safety." << std::endl;
@@ -300,12 +301,16 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const
                         }
 
                         if (argIsUnsafe)
-                            throw InputError((*ruleit)->getFile(),
+                            throw SyntaxError((*ruleit)->getFile(),
                                              (*ruleit)->getLine(),
                                              "rule not safe");
                     }
                 }
-            }
+                
+                if (global::optionVerbose)
+                    std::cout << "Rule in line " << (*ruleit)->getLine() << " is strongly safe." << std::endl;
+        
+            } // rules-loop end
         }
 
         compit++;

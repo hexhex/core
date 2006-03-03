@@ -18,7 +18,7 @@ dlvhex_SOURCES = \
                 GraphProcessor.cpp \
                 OrdinaryModelGenerator.cpp \
 		OutputBuilder.cpp \
-                parser.ypp \
+		parser.ypp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \
                 SafetyChecker.cpp \
@@ -54,6 +54,7 @@ libdlvhexbase_la_SOURCES = \
 		      AtomFactory.cpp \
                       AtomSet.cpp \
                       ExternalAtom.cpp \
+                      GeneralError.cpp \
                       globals.cpp \
                       helper.cpp \
                       Literal.cpp \

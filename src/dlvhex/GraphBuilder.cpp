@@ -13,7 +13,6 @@
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
-//#include "dlvhex/AtomFactory.h"
 
 
 /*

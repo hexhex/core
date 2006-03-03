@@ -11,60 +11,18 @@
  *
  */
 
+#include <sstream>
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/globals.h"
 
 
 
 GuessCheckModelGenerator::GuessCheckModelGenerator()
 {
-   // serializedProgram.clear();
-
-    std::string err("non-e-stratified programs cannot be evaluated yet!");
-
-    //throw FatalError(err);
 }
 
-
-/*
-void
-FixpointModelGenerator::initialize(const Program& p)
-{
-    serializeProgram(p);
-}
-*/
-
-
-/*
-void
-GuessCheckModelGenerator::serializeProgram(const Program& p)
-{
-    //
-    // make a textual representation of the components' rules
-    // (with external atoms replaced)
-    //
-
-    //
-    // the rules will be in higher-order-syntax, if dlvhex was called in ho-mode
-    //
-
-    ///todo: remove modelgenerator instantiation from here. should be somewhere outside!
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
-
-    dlvprogram.buildProgram(p);
-
-    serializedProgram = dlvprogram.getString();
-}
-
-
-const std::string&
-FixpointModelGenerator::getSerializedProgram() const
-{
-    return serializedProgram;
-}
-*/
 
 void
 GuessCheckModelGenerator::compute(//const Program& program,
@@ -72,12 +30,15 @@ GuessCheckModelGenerator::compute(//const Program& program,
                                   const AtomSet& I,
                                   std::vector<AtomSet>& models)
 {
-    //std::cout << "*** guess and check: ***" << std::endl;
+    if (global::optionVerbose)
+        std::cout << "= Guess&Check ModelGenerator =" << std::endl;
 
     models.clear();
 
     Program guessingprogram;
     Program guessingrules;
+
+    std::vector<std::string> externalNames;
 
     //
     // go through all nodes
@@ -132,6 +93,12 @@ GuessCheckModelGenerator::compute(//const Program& program,
             ProgramRepository::Instance()->record(headatom);
             guesshead.push_back(headatom);
 
+            //
+            // record the external atoms names - we will have to remove them
+            // from the guess later!
+            //
+            externalNames.push_back((*ei)->getReplacementName());
+
             headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
             ProgramRepository::Instance()->record(headatom);
             guesshead.push_back(headatom);
@@ -167,7 +134,8 @@ GuessCheckModelGenerator::compute(//const Program& program,
             ProgramRepository::Instance()->record(guessrule);
             guessingrules.addRule(guessrule);
 
-//            std::cout << "guessing rule: " << *guessrule << std::endl;
+            if (global::optionVerbose)
+                std::cout << "adding guessing rule: " << *guessrule << std::endl;
         }
         
     }
@@ -200,26 +168,38 @@ GuessCheckModelGenerator::compute(//const Program& program,
     //
     try
     {
-        Solver.callSolver(serializedProgram, 0);
+        Solver.callSolver(serializedProgram, 1);
     }
     catch (FatalError e)
     {
         throw e;
     }
 
+    std::vector<AtomSet> allguesses;
+    
     AtomSet* as;
 
-    std::vector<AtomSet*> compatibleSets;
+    while ((as = Solver.getNextAnswerSet()) != NULL)
+        allguesses.push_back(*as);
+        
+    std::vector<const AtomSet*> compatibleSets;
 
     //
     // now check for each guess if the guessed external atoms are satisfied by
     // the remaining atoms in the guess
     //
-    while ((as = Solver.getNextAnswerSet()) != NULL)
+    
+    for (std::vector<AtomSet>::iterator guess = allguesses.begin();
+         guess != allguesses.end();
+         ++guess)
+//    while ((guess = Solver.getNextAnswerSet()) != NULL)
     {
-        //std::cout << "---" << std::endl;
-        //as->print(std::cout, 1);
-        //std::cout << "---" << std::endl;
+        if (global::optionVerbose)
+        {
+            std::cout << "  checking guess ";
+            guess->print(std::cout, 1);
+            std::cout << std::endl;
+        }
 
         for (std::set<const ExternalAtom*>::const_iterator ei = extatomInComp.begin();
             ei != extatomInComp.end();
@@ -227,15 +207,16 @@ GuessCheckModelGenerator::compute(//const Program& program,
         {
             //
             // extract the (positive) external atom result from the answer set
+            // //
             AtomSet extpart;
-            as->matchPredicate((*ei)->getReplacementName(), extpart);
+            guess->matchPredicate((*ei)->getReplacementName(), extpart);
             extpart.keepPos();
 
             AtomSet extresult;
 
             try
             {
-                (*ei)->evaluate(*as, extresult);
+                (*ei)->evaluate(*guess, extresult);
             }
             catch (GeneralError&)
             {
@@ -243,12 +224,221 @@ GuessCheckModelGenerator::compute(//const Program& program,
             }
 
             if (extpart == extresult)
-                compatibleSets.push_back(as);
+            {
+                //
+                // now check if the reduct against the (valid) guess yields a
+                // program, whose model equals the guess
+                //
+                // 1) replace each head in P by flp_head (with all vars from
+                //    orig. head) -> P'
+                // 2) eval P' + guess = RED
+                // 3) add to each rule body in P the flp_head -> P''
+                // 4) add RED to P''
+                // 5) is guess a subset-minimal model of P''?
+                // 6) yes - then it is an answr set of P
+                //
+                
+                Program bodyPicker;
+
+                std::vector<Atom*> bodyPickerAtoms;
+
+                Program::const_iterator ruleit = guessingprogram.begin();
+
+                unsigned ruleidx = 0;
+
+                //
+                // 1)
+                // go through all rules
+                while (ruleit != guessingprogram.end())
+                {
+                    const RuleHead_t oldhead((*ruleit)->getHead());
+                    const RuleBody_t oldbody((*ruleit)->getBody());
+
+                    Tuple flpheadargs;
+
+                    RuleHead_t::const_iterator headit = oldhead.begin();
+
+                    //
+                    // collect all vars from head
+                    //
+                    while (headit != oldhead.end())
+                    {
+                        Tuple headargs = (*headit)->getArguments();
+                        for (Tuple::const_iterator argit = headargs.begin();
+                             argit != headargs.end();
+                             ++argit)
+                        {
+                            flpheadargs.push_back(*argit);
+                        }
+
+                        headit++;
+                    }
+
+                    //
+                    // make flp head atom
+                    //
+                    std::ostringstream atomname;
+                    atomname << "flp_head_" << ruleidx++;
+                    Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
+                    ProgramRepository::Instance()->record(flpheadatom);
+//                    flpatoms.at(ruleidx++) = flpheadatom;
+                    bodyPickerAtoms.push_back(flpheadatom);
+
+//                    std::cout << "flphead: " << *flpheadatom << std::endl;
+                    //
+                    // make new head
+                    //
+                    RuleHead_t flphead;
+
+                    flphead.push_back(flpheadatom);
+
+                    //
+                    // make new body (equal to old one)
+                    //
+                    RuleBody_t flpbody((*ruleit)->getBody());
+
+                    //
+                    // make flp rule
+                    //
+                    Rule* flprule = new Rule(flphead, flpbody);
+                    ProgramRepository::Instance()->record(flprule);
+
+//                    std::cout << "flprule: " << *flprule << std::endl;
+
+                    //
+                    // add flp rule to flp program
+                    //
+                    bodyPicker.addRule(flprule);
+
+                    ++ruleit;
+                }
+
+                //
+                // 2)
+                // add guess to flp program and evaluate it
+                //
+                // this is the FLP-reduct: we add the guess to the modified
+                // program, so that each rule "fires" iff guess \models its
+                // body. the resulting artificial head atoms indicate which
+                // bodies are left after the reduct.
+                // 
+
+                ProgramDLVBuilder reductprogram(global::optionNoPredicate);
+
+                reductprogram.buildFacts(*guess);
+                reductprogram.buildProgram(bodyPicker);
+                std::string red = reductprogram.getString();
+
+//                std::cout << "reduct program: " << red << std::endl;
+
+                try
+                {
+                    Solver.callSolver(red, 1);
+                }
+                catch (FatalError e)
+                {
+                    throw e;
+                }
+
+                AtomSet* reductf = Solver.getNextAnswerSet();
+
+                //
+                // remove guess from result
+                //
+                AtomSet reductfacts = reductf->difference(*guess);
+//                std::cout << "reduct program result: ";
+//                reductfacts.print(std::cout, false);
+//                std::cout << std::endl;
+
+                //
+                // 3)
+                // add flpatoms to rules
+                // 
+                Program flpreduced;
+
+                ruleit = guessingprogram.begin();
+
+                ruleidx = 0;
+
+                while (ruleit != guessingprogram.end())
+                {
+                    const RuleHead_t oldhead((*ruleit)->getHead());
+                    const RuleBody_t oldbody((*ruleit)->getBody());
+
+                    RuleBody_t newbody(oldbody);
+
+                    Literal* flplit = new Literal(bodyPickerAtoms.at(ruleidx++));
+                    ProgramRepository::Instance()->record(flplit);
+
+                    newbody.push_back(flplit);
+
+                    //
+                    // make rule
+                    //
+                    Rule* reductrule = new Rule(oldhead, newbody);
+                    ProgramRepository::Instance()->record(reductrule);
+
+//                    std::cout << "reductrule: " << *flprule << std::endl;
+
+                    //
+                    // add flp rule to flp program
+                    //
+                    flpreduced.addRule(reductrule);
+
+                    ++ruleit;
+                }
+
+                //
+                // 4)
+                // now build a program: new rules + reductfacts + original EDB
+                // 
+                ProgramDLVBuilder reducedprogram(global::optionNoPredicate);
+
+                reducedprogram.buildFacts(I);
+                reducedprogram.buildFacts(reductfacts);
+                reducedprogram.buildProgram(flpreduced);
+                std::string reduced = reducedprogram.getString();
+
+//                std::cout << "reduced program: " << reduced << std::endl;
+
+                //
+                // 5)
+                //
+                try
+                {
+                    Solver.callSolver(reduced, 0);
+                }
+                catch (FatalError e)
+                {
+                    throw e;
+                }
+
+                AtomSet* strongf = Solver.getNextAnswerSet();
+                AtomSet strongFacts = strongf->difference(reductfacts);
+
+                AtomSet weakFacts(*guess);
+
+                weakFacts.remove(externalNames);
+
+                if (global::optionVerbose)
+                {
+                    std::cout << "  reduced program result: ";
+                    strongFacts.print(std::cout, false);
+                    std::cout << std::endl;
+                }
+
+                //
+                // 6)
+                //
+
+                if (strongFacts == weakFacts)
+                    compatibleSets.push_back(&(*guess));
+            }
         }
         
     }
 
-    std::vector<AtomSet*>::const_iterator ans = compatibleSets.begin();
+    std::vector<const AtomSet*>::const_iterator ans = compatibleSets.begin();
 
     while (ans != compatibleSets.end())
         models.push_back(**ans++);

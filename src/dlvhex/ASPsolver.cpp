@@ -10,7 +10,7 @@
  */
 
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/globals.h"
 

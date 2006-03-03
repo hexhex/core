@@ -13,7 +13,6 @@
 
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/errorHandling.h"
 #include "dlvhex/globals.h"
 
 
@@ -44,6 +43,9 @@ OrdinaryModelGenerator::compute(//const Program& program,
 {
 //    if (program.getExternalAtoms().size() != 0)
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
+
+    if (global::optionVerbose)
+        std::cout << "= OrdinrayModelGenerator =" << std::endl;
 
     Program program;
 

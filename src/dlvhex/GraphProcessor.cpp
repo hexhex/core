@@ -13,7 +13,6 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
-#include "dlvhex/errorHandling.h"
 
 GraphProcessor::GraphProcessor(DependencyGraph *dg)
     : depGraph(dg)

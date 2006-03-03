@@ -152,6 +152,27 @@ AtomSet::insert(const AtomSet& add)
 }
 
 
+AtomSet
+AtomSet::difference(AtomSet& as) const
+{
+    AtomSet res;
+
+//    std::set_difference(atoms.begin(), atoms.end(),
+//                        as.atoms.begin(), as.atoms.end(),
+//                        res.atoms);
+    
+    /// @todo: stdlib algorithm!
+    for (atomset_t::const_iterator a = atoms.begin();
+         a != atoms.end();
+         a++)
+    {
+        if (as.atoms.find(*a) == as.atoms.end())
+            res.atoms.insert(*a);
+    }
+    return res;
+}
+
+
 void
 AtomSet::matchPredicate(const std::string pred,
                         AtomSet& matched) const
@@ -210,6 +231,17 @@ AtomSet::remove(const std::string& pred)
     }
 }
 
+
+void
+AtomSet::remove(const std::vector<std::string>& preds)
+{
+    for (std::vector<std::string>::const_iterator predit = preds.begin();
+         predit != preds.end();
+         ++predit)
+    {
+        remove(*predit);
+    }
+}
 
 void
 AtomSet::keep(const std::vector<std::string>& preds)

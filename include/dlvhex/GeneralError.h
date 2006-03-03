@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   errorHandling.h
+ * @file   GeneralError.h
  * @author Roman Schindlauer
  * @date   Thu Nov 24 23:59:33 CET 2005
  * 
@@ -10,11 +10,10 @@
  * 
  */
 
-#ifndef _ERRORHANDLING_H
-#define _ERRORHANDLING_H
+#ifndef _GENERALERROR_H
+#define _GENERALERROR_H
 
 #include <string>
-#include <sstream>
 
 /**
  * @brief General exception class.
@@ -58,23 +57,13 @@ protected:
 /**
  * Error caused by malformed input program.
  */
-class InputError : public GeneralError
+class SyntaxError : public GeneralError
 {
 public:
     
-    InputError(const std::string file,
-               const unsigned line,
-               const std::string msg)
-    {
-        std::ostringstream err;
-
-        err << "Input Error in " << file << ": "
-            << msg
-            << " in line " << line;
-
-        errorMsg = err.str();
-    }
-
+    SyntaxError(std::string file,
+                unsigned line,
+                std::string msg);
 };
 
 
@@ -85,28 +74,25 @@ class FatalError : public GeneralError
 {
 public:
     
-    FatalError(const std::string msg)
-        : GeneralError("Fatal: " + msg)
-    {
-    }
-
+    FatalError(const std::string msg);
 };
 
 
 /**
  * A problem is an error that does not necessarily cause the program
  * to stop. Its message might be dumped as a warning.
- */
+ *
 class Problem : public GeneralError
 {
 public:
     
-    Problem(std::string msg)
+    Problem(const std::string msg)
         : GeneralError(msg)
     {
     }
 
 };
+*/
 
 
 /**
@@ -116,17 +102,10 @@ class PluginError : public GeneralError
 {
 public:
 
-    PluginError(std::string msg)
-        : GeneralError(msg)
-    {
-    }
+    PluginError(std::string msg);
 
     void
-    setContext(const std::string atomname)
-    {
-        errorMsg = "Plugin Error at Atom " + atomname + ": " + errorMsg;
-    }
-
+    setContext(std::string atomname);
 };
 
-#endif /* _ERRORHANDLING_H */
+#endif /* _GENERALERROR_H */

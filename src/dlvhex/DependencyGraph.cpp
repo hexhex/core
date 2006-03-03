@@ -15,7 +15,7 @@
 #include "dlvhex/DependencyGraph.h"
 
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramBuilder.h"
 
