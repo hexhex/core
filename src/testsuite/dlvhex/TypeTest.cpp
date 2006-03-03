@@ -119,23 +119,23 @@ AtomTest::testConstruction()
 void
 AtomTest::testUnification()
 {
-    CPPUNIT_ASSERT((*fo).unifiesWith(*ho));
+    CPPUNIT_ASSERT((*fo).unifiesWith(ho));
 	
     Atom a("p(c,d,E)");
     
     //
     // should unifiy only with *fo
     //
-    CPPUNIT_ASSERT((*fo).unifiesWith(a));
-    CPPUNIT_ASSERT(!(*ho).unifiesWith(a));
+    CPPUNIT_ASSERT((*fo).unifiesWith(&a));
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(&a));
     
     Atom b("n(foo,t,s)");
     
     //
     // should unifiy only with *ho
     //
-    CPPUNIT_ASSERT(!(*fo).unifiesWith(b));
-    CPPUNIT_ASSERT((*ho).unifiesWith(b));
+    CPPUNIT_ASSERT(!(*fo).unifiesWith(&b));
+    CPPUNIT_ASSERT((*ho).unifiesWith(&b));
     
     Tuple tl;
     
@@ -149,16 +149,16 @@ AtomTest::testUnification()
     // should unifiy with both
     //
 
-    CPPUNIT_ASSERT((*fo).unifiesWith(ho2));
-    CPPUNIT_ASSERT((*ho).unifiesWith(ho2));
+    CPPUNIT_ASSERT((*fo).unifiesWith(&ho2));
+    CPPUNIT_ASSERT((*ho).unifiesWith(&ho2));
     
     Atom c("q(E,F,G,H)");
     
     //
     // different arity:
     //
-    CPPUNIT_ASSERT(!(*ho).unifiesWith(c));
-    CPPUNIT_ASSERT(!c.unifiesWith(*ho));
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(&c));
+    CPPUNIT_ASSERT(!c.unifiesWith(ho));
 }
 
 

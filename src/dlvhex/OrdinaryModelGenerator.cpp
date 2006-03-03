@@ -45,7 +45,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
 
     if (global::optionVerbose)
-        std::cout << "= OrdinrayModelGenerator =" << std::endl;
+        std::cout << "= OrdinaryModelGenerator =" << std::endl;
 
     Program program;
 

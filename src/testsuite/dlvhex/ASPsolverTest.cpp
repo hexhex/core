@@ -12,7 +12,7 @@
  */
 
 #include "testsuite/dlvhex/ASPsolverTest.h"
-#include "dlvhex/errorHandling.h"
+#include "dlvhex/GeneralError.h"
 #include "dlvhex/globals.h"
 
 // Registers the fixture into the 'registry'

@@ -25,8 +25,7 @@ GuessCheckModelGenerator::GuessCheckModelGenerator()
 
 
 void
-GuessCheckModelGenerator::compute(//const Program& program,
-                                  const std::vector<const AtomNode*>& nodes,
+GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                                   const AtomSet& I,
                                   std::vector<AtomSet>& models)
 {
@@ -168,7 +167,7 @@ GuessCheckModelGenerator::compute(//const Program& program,
     //
     try
     {
-        Solver.callSolver(serializedProgram, 1);
+        Solver.callSolver(serializedProgram, 0);
     }
     catch (FatalError e)
     {
@@ -197,245 +196,270 @@ GuessCheckModelGenerator::compute(//const Program& program,
         if (global::optionVerbose)
         {
             std::cout << "  checking guess ";
-            guess->print(std::cout, 1);
+            guess->print(std::cout, 0);
             std::cout << std::endl;
         }
+
+        //
+        // extract the (positive) external atom result from the answer set
+        //
+        AtomSet externalguess;
+        AtomSet checkresult;
 
         for (std::set<const ExternalAtom*>::const_iterator ei = extatomInComp.begin();
             ei != extatomInComp.end();
             ++ei)
         {
-            //
-            // extract the (positive) external atom result from the answer set
-            // //
-            AtomSet extpart;
-            guess->matchPredicate((*ei)->getReplacementName(), extpart);
-            extpart.keepPos();
-
-            AtomSet extresult;
+            guess->matchPredicate((*ei)->getReplacementName(), externalguess);
+            externalguess.keepPos();
 
             try
             {
-                (*ei)->evaluate(*guess, extresult);
+                (*ei)->evaluate(*guess, checkresult);
             }
             catch (GeneralError&)
             {
                 throw;
             }
 
-            if (extpart == extresult)
+            /*
+            std::cout << "  first check: externalguess: ";
+            externalguess.print(std::cout, 0);
+            std::cout << std::endl;
+            std::cout << "  first check: checkresult: ";
+            checkresult.print(std::cout, 0);
+            std::cout << std::endl;
+            */
+        }
+
+        if (externalguess == checkresult)
+        {
+            if (global::optionVerbose)
+                std::cout << "  checking guess reduct" << std::endl;
+
+            //
+            // now check if the reduct against the (valid) guess yields a
+            // program, whose model equals the guess
+            //
+            // 1) replace each head in P by flp_head (with all vars from
+            //    orig. head) -> P'
+            // 2) eval P' + guess = RED
+            // 3) add to each rule body in P the flp_head -> P''
+            // 4) add RED to P''
+            // 5) is guess a subset-minimal model of P''?
+            // 6) yes - then it is an answr set of P
+            //
+            
+            Program bodyPicker;
+
+            std::vector<Atom*> bodyPickerAtoms;
+
+            Program::const_iterator ruleit = guessingprogram.begin();
+
+            unsigned ruleidx = 0;
+
+            //
+            // 1)
+            // go through all rules
+            while (ruleit != guessingprogram.end())
             {
-                //
-                // now check if the reduct against the (valid) guess yields a
-                // program, whose model equals the guess
-                //
-                // 1) replace each head in P by flp_head (with all vars from
-                //    orig. head) -> P'
-                // 2) eval P' + guess = RED
-                // 3) add to each rule body in P the flp_head -> P''
-                // 4) add RED to P''
-                // 5) is guess a subset-minimal model of P''?
-                // 6) yes - then it is an answr set of P
-                //
-                
-                Program bodyPicker;
+                const RuleHead_t oldhead((*ruleit)->getHead());
+                const RuleBody_t oldbody((*ruleit)->getBody());
 
-                std::vector<Atom*> bodyPickerAtoms;
+                Tuple flpheadargs;
 
-                Program::const_iterator ruleit = guessingprogram.begin();
-
-                unsigned ruleidx = 0;
+                RuleHead_t::const_iterator headit = oldhead.begin();
 
                 //
-                // 1)
-                // go through all rules
-                while (ruleit != guessingprogram.end())
+                // collect all vars from head
+                //
+                while (headit != oldhead.end())
                 {
-                    const RuleHead_t oldhead((*ruleit)->getHead());
-                    const RuleBody_t oldbody((*ruleit)->getBody());
-
-                    Tuple flpheadargs;
-
-                    RuleHead_t::const_iterator headit = oldhead.begin();
-
-                    //
-                    // collect all vars from head
-                    //
-                    while (headit != oldhead.end())
+                    Tuple headargs = (*headit)->getArguments();
+                    for (Tuple::const_iterator argit = headargs.begin();
+                            argit != headargs.end();
+                            ++argit)
                     {
-                        Tuple headargs = (*headit)->getArguments();
-                        for (Tuple::const_iterator argit = headargs.begin();
-                             argit != headargs.end();
-                             ++argit)
-                        {
-                            flpheadargs.push_back(*argit);
-                        }
-
-                        headit++;
+                        flpheadargs.push_back(*argit);
                     }
 
-                    //
-                    // make flp head atom
-                    //
-                    std::ostringstream atomname;
-                    atomname << "flp_head_" << ruleidx++;
-                    Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
-                    ProgramRepository::Instance()->record(flpheadatom);
+                    headit++;
+                }
+
+                //
+                // make flp head atom
+                //
+                std::ostringstream atomname;
+                atomname << "flp_head_" << ruleidx++;
+                Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
+                ProgramRepository::Instance()->record(flpheadatom);
 //                    flpatoms.at(ruleidx++) = flpheadatom;
-                    bodyPickerAtoms.push_back(flpheadatom);
+                bodyPickerAtoms.push_back(flpheadatom);
 
 //                    std::cout << "flphead: " << *flpheadatom << std::endl;
-                    //
-                    // make new head
-                    //
-                    RuleHead_t flphead;
+                //
+                // make new head
+                //
+                RuleHead_t flphead;
 
-                    flphead.push_back(flpheadatom);
+                flphead.push_back(flpheadatom);
 
-                    //
-                    // make new body (equal to old one)
-                    //
-                    RuleBody_t flpbody((*ruleit)->getBody());
+                //
+                // make new body (equal to old one)
+                //
+                RuleBody_t flpbody((*ruleit)->getBody());
 
-                    //
-                    // make flp rule
-                    //
-                    Rule* flprule = new Rule(flphead, flpbody);
-                    ProgramRepository::Instance()->record(flprule);
+                //
+                // make flp rule
+                //
+                Rule* flprule = new Rule(flphead, flpbody);
+                ProgramRepository::Instance()->record(flprule);
 
 //                    std::cout << "flprule: " << *flprule << std::endl;
 
-                    //
-                    // add flp rule to flp program
-                    //
-                    bodyPicker.addRule(flprule);
-
-                    ++ruleit;
-                }
-
                 //
-                // 2)
-                // add guess to flp program and evaluate it
+                // add flp rule to flp program
                 //
-                // this is the FLP-reduct: we add the guess to the modified
-                // program, so that each rule "fires" iff guess \models its
-                // body. the resulting artificial head atoms indicate which
-                // bodies are left after the reduct.
-                // 
+                bodyPicker.addRule(flprule);
 
-                ProgramDLVBuilder reductprogram(global::optionNoPredicate);
+                ++ruleit;
+            }
 
-                reductprogram.buildFacts(*guess);
-                reductprogram.buildProgram(bodyPicker);
-                std::string red = reductprogram.getString();
+            //
+            // 2)
+            // add guess to flp program and evaluate it
+            //
+            // this is the FLP-reduct: we add the guess to the modified
+            // program, so that each rule "fires" iff guess \models its
+            // body. the resulting artificial head atoms indicate which
+            // bodies are left after the reduct.
+            // 
+
+            ProgramDLVBuilder reductprogram(global::optionNoPredicate);
+
+            reductprogram.buildFacts(*guess);
+            reductprogram.buildProgram(bodyPicker);
+            std::string red = reductprogram.getString();
 
 //                std::cout << "reduct program: " << red << std::endl;
 
-                try
-                {
-                    Solver.callSolver(red, 1);
-                }
-                catch (FatalError e)
-                {
-                    throw e;
-                }
+            try
+            {
+                Solver.callSolver(red, 1);
+            }
+            catch (FatalError e)
+            {
+                throw e;
+            }
 
-                AtomSet* reductf = Solver.getNextAnswerSet();
+            AtomSet* reductf = Solver.getNextAnswerSet();
 
-                //
-                // remove guess from result
-                //
-                AtomSet reductfacts = reductf->difference(*guess);
+            //
+            // remove guess from result
+            //
+            AtomSet reductfacts = reductf->difference(*guess);
 //                std::cout << "reduct program result: ";
 //                reductfacts.print(std::cout, false);
 //                std::cout << std::endl;
 
+            //
+            // 3)
+            // add flpatoms to rules
+            // 
+            Program flpreduced;
+
+            ruleit = guessingprogram.begin();
+
+            ruleidx = 0;
+
+            while (ruleit != guessingprogram.end())
+            {
+                const RuleHead_t oldhead((*ruleit)->getHead());
+                const RuleBody_t oldbody((*ruleit)->getBody());
+
+                RuleBody_t newbody(oldbody);
+
+                Literal* flplit = new Literal(bodyPickerAtoms.at(ruleidx++));
+                ProgramRepository::Instance()->record(flplit);
+
+                newbody.push_back(flplit);
+
                 //
-                // 3)
-                // add flpatoms to rules
-                // 
-                Program flpreduced;
-
-                ruleit = guessingprogram.begin();
-
-                ruleidx = 0;
-
-                while (ruleit != guessingprogram.end())
-                {
-                    const RuleHead_t oldhead((*ruleit)->getHead());
-                    const RuleBody_t oldbody((*ruleit)->getBody());
-
-                    RuleBody_t newbody(oldbody);
-
-                    Literal* flplit = new Literal(bodyPickerAtoms.at(ruleidx++));
-                    ProgramRepository::Instance()->record(flplit);
-
-                    newbody.push_back(flplit);
-
-                    //
-                    // make rule
-                    //
-                    Rule* reductrule = new Rule(oldhead, newbody);
-                    ProgramRepository::Instance()->record(reductrule);
+                // make rule
+                //
+                Rule* reductrule = new Rule(oldhead, newbody);
+                ProgramRepository::Instance()->record(reductrule);
 
 //                    std::cout << "reductrule: " << *flprule << std::endl;
 
-                    //
-                    // add flp rule to flp program
-                    //
-                    flpreduced.addRule(reductrule);
-
-                    ++ruleit;
-                }
-
                 //
-                // 4)
-                // now build a program: new rules + reductfacts + original EDB
-                // 
-                ProgramDLVBuilder reducedprogram(global::optionNoPredicate);
+                // add flp rule to flp program
+                //
+                flpreduced.addRule(reductrule);
 
-                reducedprogram.buildFacts(I);
-                reducedprogram.buildFacts(reductfacts);
-                reducedprogram.buildProgram(flpreduced);
-                std::string reduced = reducedprogram.getString();
+                ++ruleit;
+            }
+
+            //
+            // 4)
+            // now build a program: new rules + reductfacts + original EDB
+            // 
+            ProgramDLVBuilder reducedprogram(global::optionNoPredicate);
+
+            reducedprogram.buildFacts(I);
+            reducedprogram.buildFacts(reductfacts);
+            reducedprogram.buildProgram(flpreduced);
+            std::string reduced = reducedprogram.getString();
 
 //                std::cout << "reduced program: " << reduced << std::endl;
 
-                //
-                // 5)
-                //
-                try
-                {
-                    Solver.callSolver(reduced, 0);
-                }
-                catch (FatalError e)
-                {
-                    throw e;
-                }
+            //
+            // 5)
+            //
+            try
+            {
+                Solver.callSolver(reduced, 0);
+            }
+            catch (FatalError e)
+            {
+                throw e;
+            }
 
-                AtomSet* strongf = Solver.getNextAnswerSet();
-                AtomSet strongFacts = strongf->difference(reductfacts);
+            AtomSet* strongf = Solver.getNextAnswerSet();
+            AtomSet strongFacts = strongf->difference(reductfacts);
 
-                AtomSet weakFacts(*guess);
+            AtomSet weakFacts(*guess);
 
-                weakFacts.remove(externalNames);
+            weakFacts.remove(externalNames);
 
+            if (global::optionVerbose)
+            {
+                std::cout << "  guess: ";
+                weakFacts.print(std::cout, false);
+                std::cout << std::endl;
+            }
+
+            if (global::optionVerbose)
+            {
+                std::cout << "  reduced program result: ";
+                strongFacts.print(std::cout, false);
+                std::cout << std::endl;
+            }
+
+            //
+            // 6)
+            //
+
+            if (strongFacts == weakFacts)
+            {
+                compatibleSets.push_back(&(*guess));
+            }
+            else
+            {
                 if (global::optionVerbose)
-                {
-                    std::cout << "  reduced program result: ";
-                    strongFacts.print(std::cout, false);
-                    std::cout << std::endl;
-                }
-
-                //
-                // 6)
-                //
-
-                if (strongFacts == weakFacts)
-                    compatibleSets.push_back(&(*guess));
+                    std::cout << "  reduced model does not match!" << std::endl;
             }
         }
-        
     }
 
     std::vector<const AtomSet*>::const_iterator ans = compatibleSets.begin();
