@@ -94,7 +94,8 @@ printUsage(std::ostream &out, bool full)
     // As soos as we have more options, we can introduce sections here!
     //
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    out << "--silent           Do not display anything than the actual result." << std::endl
+    out << "--                 parse from stdin." << std::endl
+        << "--silent           Do not display anything than the actual result." << std::endl
         << "--firstorder       No higher-order reasoning." << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
         << "--verbose          dump also various intermediate information." << std::endl
@@ -104,6 +105,7 @@ printUsage(std::ostream &out, bool full)
         << "                   $HOME/.dlvhex/plugins)" << std::endl
         << "--filter=foo[,bar[,...]]" << std::endl
         << "                   Only display instances of the specified predicate(s)." << std::endl
+        << "--xml              output in XML (RuleML 0.9) format." << std::endl
         << std::endl;
 }
         
@@ -316,8 +318,8 @@ main (int argc, char *argv[])
             else if (!strncmp(argv[j], "--filter=", 9))
                 optionFilter = helper::stringExplode(std::string(argv[j] + 9), ",");
             else if (!strcmp(argv[j], "--"))
-//                optionPipe = true;
-                { std::cout << "Piping not working yet, sorry!" << std::endl; exit(-1); }
+                optionPipe = true;
+//                { std::cout << "Piping not working yet, sorry!" << std::endl; exit(-1); }
             else if (!strcmp(argv[j], "-h") || !strcmp(argv[j], "--help"))
             {
                 printLogo();
@@ -416,7 +418,16 @@ main (int argc, char *argv[])
 
             inputin = stdin;
 
-            inputparse();
+            try
+            {
+                inputparse ();
+            }
+            catch (GeneralError& e)
+            {
+                std::cerr << e.getErrorMsg() << std::endl;
+                
+                exit(1);
+            }
 
             global::lpfilename = "lpgraph.dot";
         }

@@ -34,6 +34,7 @@ protected:
     ~ProgramBuilder();
 
 public:
+
     /**
      * Building method implemented by the children of ProgramBuilder.
      *

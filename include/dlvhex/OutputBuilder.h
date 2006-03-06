@@ -37,6 +37,12 @@ protected:
 
 public:
 
+    virtual void
+    buildPre() {};
+
+    virtual void
+    buildPost() {};
+
     /**
      * @brief Build answer set.
      */
@@ -85,6 +91,11 @@ public:
     /// Ctor
     OutputXMLBuilder() {};
 
+    virtual void
+    buildPre();
+
+    virtual void
+    buildPost();
     /**
      * @brief Build answer set.
      */

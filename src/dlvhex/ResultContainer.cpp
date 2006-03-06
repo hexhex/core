@@ -75,6 +75,8 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
 void
 ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 {
+    builder->buildPre();
+
     for (std::vector<AtomSet>::const_iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
@@ -84,10 +86,12 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
         //
         builder->buildAnswerSet(*ri);
 
-        stream << builder->getString();
-
 //        builder->clearString();
 //        (*ri).print(stream, 0);
     }
+
+    builder->buildPost();
+        
+    stream << builder->getString();
 }
 

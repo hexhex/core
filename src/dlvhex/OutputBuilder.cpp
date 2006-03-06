@@ -57,40 +57,49 @@ OutputTextBuilder::buildAnswerSet(const AtomSet& facts)
 
 
 void
+OutputXMLBuilder::buildPre()
+{
+    stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+
+    stream << "<RuleML xmlns=\"http://www.ruleml.org/0.9/xsd\"\n"
+           << "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+           << "xsi:schemaLocation=\"http://www.ruleml.org/0.9/xsd http://www.ruleml.org/0.9/xsd/datalog.xsd\">\n";
+}
+
+
+void
+OutputXMLBuilder::buildPost()
+{
+    stream << "</RuleML>";
+    stream << std::endl;
+}
+
+
+void
 OutputXMLBuilder::buildAnswerSet(const AtomSet& facts)
 {
-    stream << "<answerset>";
+    stream << "<Assert mapClosure=\"universal\">\n";
 
     for (AtomSet::const_iterator f = facts.begin();
          f != facts.end();
          ++f)
     {
-        stream << "<fact>";
+        stream << "<Atom>";
 
-        stream << "<pred><![CDATA[";
+        stream << "<Rel>";
+        stream << "<![CDATA[" << (*f).getArgument(0) << "]]>";
+        stream << "</Rel>\n";
 
-            if ((*f).isStronglyNegated())
-                stream << "-";
+        for (unsigned i = 1; i < (*f).getArity(); i++)
+        {
+            stream << "<Ind>";
+            stream << "<![CDATA[" << (*f).getArgument(i) << "]]>";
+            stream << "</Ind>\n";
+        }
 
-            stream << (*f).getArgument(0);
-
-            if ((*f).getArity() > 1)
-            {
-                stream << "(";
-                
-                for (unsigned i = 1; i < (*f).getArity(); i++)
-                {
-                    stream << (*f).getArgument(i);
-                    
-                    if (i < (*f).getArity() - 1)
-                        stream << ",";
-                }
-                
-                stream << ")";
-            }
-
-        stream << "]]></fact>";// << std::endl;
+        stream << "</Atom>" << std::endl;
     }
 
-    stream << "</answerset>" << std::endl;
+    stream << "</Assert>";
+    stream << std::endl;
 }

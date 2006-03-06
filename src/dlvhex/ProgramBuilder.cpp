@@ -130,20 +130,28 @@ ProgramDLVBuilder::buildProgram(const Program& program)
 void
 ProgramXMLBuilder::buildFacts(const AtomSet& facts)
 {
-    stream << "<answerset>";
+    stream << "<Assert mapClosure=\"universal\">\n";
 
     for (AtomSet::const_iterator f = facts.begin();
          f != facts.end();
          ++f)
     {
-        stream << "<fact><![CDATA[";
+        stream << "<Atom>";
 
-        (*f).print(stream, 0);
+        stream << "<Rel>";
+        stream << "<![CDATA[" << (*f).getArgument(0) << "]]>";
+        stream << "</Rel>\n";
 
-        stream << "]]></fact>";// << std::endl;
-        stream << std::endl;
+        for (unsigned i = 1; i < (*f).getArity(); i++)
+        {
+            stream << "<Ind>";
+            stream << "<![CDATA[" << (*f).getArgument(i) << "]]>";
+            stream << "</Ind>\n";
+        }
+
+        stream << "</Atom>" << std::endl;
     }
 
-    stream << "</answerset>";
+    stream << "</Assert>";
     stream << std::endl;
 }

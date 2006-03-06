@@ -6,7 +6,7 @@ knows(X,Y) :- triple(A, "http://xmlns.com/foaf/0.1/knows", B), name(A,X), name(B
 name(X,Y) :- triple(X, "http://xmlns.com/foaf/0.1/name", Y).
 
 input(X) :- url(X), not -input(X).
--input(X) :- url(X), input(Y), X != Y.
+%-input(X) :- url(X), input(Y), X != Y.
 
 
 url("http://www.kr.tuwien.ac.at/staff/roman/foaf.rdf").
