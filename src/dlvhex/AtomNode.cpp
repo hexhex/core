@@ -300,8 +300,6 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
         newnode = new AtomNode(atom);
 
         //std::cout << "new headnode: " << *(newnode->getAtom()) << std::endl;
-
-        newnode->setHead();
         
         //
         // search all existing nodes for an atom that unifies
@@ -342,6 +340,11 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
         atomNodes.push_back(newnode);
     }
 
+    //
+    // wherever this node occured before - now it is a head node!
+    // 
+    newnode->setHead();
+
     return newnode;
 }
 
@@ -364,6 +367,9 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
         
         //std::cout << "new bodynode: " << *(newnode->getAtom()) << std::endl;
 
+        //
+        // set this node to be a body node - but only if we just created it!
+        //
         newnode->setBody();
         
         //

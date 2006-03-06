@@ -68,7 +68,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
          ++ri)
     {
         //
-        // go through all external atoms in this component and make one guessing
+        // go through all external atoms in this rule and make one guessing
         // rule each
         //
         for (std::vector<ExternalAtom*>::const_iterator ei = (*ri)->getExternalAtoms().begin();
@@ -158,7 +158,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     dlvprogram.buildProgram(guessingrules);
     std::string serializedProgram = dlvprogram.getString();
 
-//    std::cout << "guessing program: " << serializedProgram << std::endl;
+    //std::cout << "guessing program: " << serializedProgram << std::endl;
 
     ASPsolver Solver;
     
@@ -195,9 +195,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     {
         if (global::optionVerbose)
         {
-            std::cout << "  checking guess ";
-            guess->print(std::cout, 0);
-            std::cout << std::endl;
+    //        std::cout << "  checking guess ";
+    //        guess->print(std::cout, 0);
+    //        std::cout << std::endl;
         }
 
         //
@@ -205,6 +205,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
         //
         AtomSet externalguess;
         AtomSet checkresult;
+
 
         for (std::set<const ExternalAtom*>::const_iterator ei = extatomInComp.begin();
             ei != extatomInComp.end();
@@ -222,18 +223,22 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 throw;
             }
 
-            /*
+      /*      
             std::cout << "  first check: externalguess: ";
             externalguess.print(std::cout, 0);
             std::cout << std::endl;
             std::cout << "  first check: checkresult: ";
             checkresult.print(std::cout, 0);
             std::cout << std::endl;
-            */
+        */    
         }
 
         if (externalguess == checkresult)
         {
+           // std::cout << "  good guess: ";
+           // guess->print(std::cout, 0);
+           // std::cout << std::endl;
+
             if (global::optionVerbose)
                 std::cout << "  checking guess reduct" << std::endl;
 
@@ -406,31 +411,44 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             // 
             ProgramDLVBuilder reducedprogram(global::optionNoPredicate);
 
+            
+            AtomSet a(I);
+            a.insert(reductfacts);
+
             reducedprogram.buildFacts(I);
             reducedprogram.buildFacts(reductfacts);
             reducedprogram.buildProgram(flpreduced);
             std::string reduced = reducedprogram.getString();
 
-//                std::cout << "reduced program: " << reduced << std::endl;
+            //std::cout << "reduced program: ";
+            //flpreduced.dump(std::cout);
+            //std::cout << " with facts: ";
+            //a.print(std::cout, 0);
+            //std::cout << std::endl;
 
             //
             // 5)
             //
+            std::vector<AtomSet> strongf;
             try
             {
-                Solver.callSolver(reduced, 0);
+            //    Solver.callSolver(reduced, 0);
+                FixpointModelGenerator fp;
+                fp.compute(flpreduced, a, strongf);
             }
             catch (FatalError e)
             {
                 throw e;
             }
 
-            AtomSet* strongf = Solver.getNextAnswerSet();
-            AtomSet strongFacts = strongf->difference(reductfacts);
+//            AtomSet* strongf = Solver.getNextAnswerSet();
+            AtomSet strongFacts = strongf.back().difference(reductfacts);
 
             AtomSet weakFacts(*guess);
 
-            weakFacts.remove(externalNames);
+            weakFacts.keepPos();
+
+//            weakFacts.remove(externalNames);
 
             if (global::optionVerbose)
             {

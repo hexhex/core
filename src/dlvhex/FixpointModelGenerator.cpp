@@ -63,10 +63,7 @@ FixpointModelGenerator::compute(//const Program& program,
                                 const std::vector<const AtomNode*>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
-{ 
-    if (global::optionVerbose)
-        std::cout << "= FixpointModelGenerator =" << std::endl;
-
+{
     Program program;
 
     //
@@ -85,6 +82,18 @@ FixpointModelGenerator::compute(//const Program& program,
 
         node++;
     }
+
+    this->compute(program, I, models);
+}
+
+
+void
+FixpointModelGenerator::compute(const Program& program,
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
+{ 
+    if (global::optionVerbose)
+        std::cout << "= FixpointModelGenerator =" << std::endl;
 
     initialize(program);
 
@@ -251,9 +260,11 @@ FixpointModelGenerator::compute(//const Program& program,
         //
         dlvResult.insert(I);
 
-        /*
+       /* 
+        std::cout << std::endl;
         std::cout << "fp dlv result: " << std::endl;
         as->print(std::cout, 0);
+        std::cout << std::endl;
         std::cout << std::endl;
 
         std::cout << "currentI: " << std::endl;

@@ -105,6 +105,19 @@ public:
             const AtomSet& I,
             std::vector<AtomSet>& models);
 
+    /**
+     * @brief Computes models of a set of nodes by iteration.
+     *
+     * @todo make a mediator class between the components and the model
+     * generators, that converts a node vector to a program and a list of
+     * external atoms
+     */
+    void
+    compute(const Program&,
+            const AtomSet& I,
+            std::vector<AtomSet>& models);
+
+
 private:
 
 
