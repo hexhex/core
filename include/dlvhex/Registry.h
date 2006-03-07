@@ -16,6 +16,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomFactory.h"
+#include "dlvhex/Repository.h"
 
 
 /**
@@ -33,13 +34,29 @@ public:
     Instance();
 
     /**
-     * @brief Dispatches an atom to a factory.
+     * @brief Stores an Atom.
      *
      * Using boost::shared_ptr, the ownership over a is transferred to the
-     * shared pointer. a must not be deleted after this call.
+     * shared pointer. The pointer Atom* must not be deleted after this call.
+     * This method is supposed to be used for storing ground atoms.
+     * The Atom is stored in the singleton instance of AtomFactory, which
+     * maintains a set of Atoms, taking care of uniqueness of its members and
+     * therefore optimal memory management. 
      */
     AtomPtr
-    dispatch(Atom* a);
+    storeFact(Atom*);
+
+    /**
+     * @brief Stores a ProgramObject.
+     *
+     * Using boost::shared_ptr, the ownership over a is transferred to the
+     * shared pointer. The pointer ProgramObject* must not be deleted after this call.
+     * This method is supposed to be used for storing non-ground Objects from
+     * the input program. The Objects are stored in the singleton instance of
+     * Repository.
+     */
+    ProgramObjectPtr
+    storeObject(ProgramObject*);
 
 protected:
 

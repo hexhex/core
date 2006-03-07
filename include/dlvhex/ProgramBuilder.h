@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 
-#include "dlvhex/Rule.h"
+#include "dlvhex/Program.h"
 
 /**
 * @brief Base Builder for building logic programs.
@@ -97,34 +97,6 @@ private:
     higherOrder;
 };
 
-
-/**
-* @brief A Builder for XML output
-*/
-class ProgramXMLBuilder : public ProgramBuilder
-{
-public:
-
-    ProgramXMLBuilder() {};
-
-    /// Dtor
-    virtual
-    ~ProgramXMLBuilder() {};
-
-    /**
-     * @brief Build rule.
-     */
-    virtual void
-    buildRule(const Rule*) {};
-
-    /**
-     * @brief Build facts.
-     */
-    virtual void
-    buildFacts(const AtomSet&);
-
-private:
-};
 
 
 #endif /* _PROGRAMBUILDER_H */

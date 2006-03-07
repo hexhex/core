@@ -31,11 +31,11 @@ protected:
     /// Ctor
     OutputBuilder() {};
 
+public:
+
     /// Dtor
     virtual
     ~OutputBuilder() {};
-
-public:
 
     virtual void
     buildPre() {};

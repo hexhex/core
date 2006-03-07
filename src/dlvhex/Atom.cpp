@@ -17,41 +17,6 @@
 #include "dlvhex/helper.h"
 
 
-//
-// initialize static variable:
-//
-ProgramRepository* ProgramRepository::_instance = 0;
-
-
-ProgramRepository::~ProgramRepository()
-{
-    for (std::vector<ProgramObject*>::iterator pi = objects.begin();
-         pi != objects.end();
-         ++pi)
-    {
-        delete *pi;
-    }
-}
-
-
-ProgramRepository*
-ProgramRepository::Instance()
-{
-    if (_instance == 0)
-    {
-        _instance = new ProgramRepository;
-    }
-
-    return _instance;
-}
-
-
-void
-ProgramRepository::record(ProgramObject* po)
-{
-    objects.push_back(po);
-}
-
 
 Atom::Atom()
     : type(INTERNAL)
@@ -293,14 +258,6 @@ Atom::print(std::ostream& stream, const bool ho) const
 }
 
 
-/*
-Atom*
-Atom::clone()
-{
-    return new Atom(*this);
-}
-*/
-
 
 Atom::Type
 Atom::getType() const
@@ -380,33 +337,5 @@ Atom::operator< (const Atom& atom2) const
     return false;
 }
 
-
-
-//
-// temp solution:
-// implementing GAtomSet functions globally here instead of
-// a dedicated class like interpretation
-// we will see what turns out to be more practical
-//
-
-/*
-void
-printGAtomSet(const GAtomSet& g,
-              std::ostream& stream,
-              const bool ho)
-{
-    stream << "{";
-
-    for (GAtomSet::const_iterator a = g.begin(); a != g.end(); a++)
-    {
-        if (a != g.begin())
-            stream << ", ";
-
-        (*a).print(stream, ho);
-    }
-
-    stream << "}";
-}
-*/
 
 

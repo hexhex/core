@@ -15,6 +15,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/ExternalAtom.h"
+#include "dlvhex/Repository.h"
 
 
 /**

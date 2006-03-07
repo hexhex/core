@@ -35,8 +35,6 @@ AtomFactory::Instance()
 void
 AtomFactory::insert(AtomPtr& ap)
 {
-//    AtomPtr ap(new Atom(a));
-
     //
     // insert the atom pointer.
     // if the Atom that is referenced by ap (see definiton of atoms)

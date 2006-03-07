@@ -19,54 +19,7 @@
 
 #include "boost/shared_ptr.hpp"
 #include "dlvhex/Term.h"
-
-
-/**
- * @brief Abstract base class for all objects that are part of a program and
- * dynamically created.
- */
-class ProgramObject
-{
-protected:
-    ProgramObject() {}
-};
-
-
-/**
- * @brief Container for all elements of a program.
- */
-class ProgramRepository
-{
-public:
-
-    /**
-     * @brief Get (unique) instance of the static repository class.
-     */
-    static ProgramRepository* Instance();
-
-    /**
-     * @brief Register a program element.
-     *
-     * By registering a program object here, it is assured that the object will
-     * be destroyed at pogram termination.
-     */
-    void
-    record(ProgramObject*);
-
-protected:
-
-    ProgramRepository()
-    { }
-
-    ~ProgramRepository();
-
-private:
-
-    std::vector<ProgramObject*> objects;
-
-    static ProgramRepository* _instance;
-};
-
+#include "dlvhex/Repository.h"
 
 
 
@@ -195,14 +148,6 @@ public:
      */
     virtual std::ostream&
     print(std::ostream&, const bool) const;
-
-    /**
-     * Clone function. this function returns a pointer to a newly created Atom
-     * or derived class (hence virtual). Needed for copy constructors of classes that
-     * use dynamic Atom objects (like LITERAL).
-     */
-//    virtual Atom*
-//    clone();
     
     /**
      * @brief Returns the type (internal - external) of the atom.
@@ -243,38 +188,6 @@ typedef boost::shared_ptr<Atom> AtomPtr;
 
 
 /**
- * @brief Ordered set of ground atoms.
- */
-//typedef std::set<Atom> GAtomSet;
-
-//typedef Atom GAtom;
-
-
-/**
- * This operator should only be used for dumping the output.
- */
-//std::ostream&
-//operator<< (std::ostream& out, const GAtomSet& groundatom);
-
-
-//
-// temp solution:
-// implementing GAtomSet functions globally here instead of
-// a dedicated class like interpretation
-// we will see what turns out to be more practical
-//
-
-
-/*
-void
-printGAtomSet(const GAtomSet& g,
-              std::ostream& stream,
-              const bool ho);
-*/            
-
-
-
-/**
  * @brief Builtin Atom.
  *
  * This class represents atoms for builtin-predicates of dlv. For now, we just
@@ -294,13 +207,6 @@ public:
         builtin = bp.builtin;
     }
 
-/*
-    Atom*
-    clone()
-    {
-        return new BuiltinPredicate(*this);
-    }
-    */
 
     BuiltinPredicate(Term tl, std::string b, Term tr)
         : builtin(b),

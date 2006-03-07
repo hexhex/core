@@ -9,6 +9,7 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/Literal.h"
 #include "dlvhex/Rule.h"
+#include "dlvhex/Program.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/GeneralError.h"
@@ -205,11 +206,12 @@ rule0:
                 inputerror("fact not safe");
 
             //
+            // Storing the Atom as a fact.
             // we give the atom pointer to the registry - from now on the
             // registry takes care of it, we don't have to delete it!
             //
-            AtomPtr ap = Registry::Instance()->dispatch($1);
-
+            AtomPtr ap = Registry::Instance()->storeFact($1);
+            
             EDB.insert(ap);
         }
     | user_pred CONS
@@ -217,7 +219,12 @@ rule0:
             if (!(*$1).isGround())
                 inputerror("fact not safe");
 
-            AtomPtr ap = Registry::Instance()->dispatch($1);
+            //
+            // Storing the Atom as a fact.
+            // we give the atom pointer to the registry - from now on the
+            // registry takes care of it, we don't have to delete it!
+            //
+            AtomPtr ap = Registry::Instance()->storeFact($1);
 
             EDB.insert(ap);
         }
@@ -238,6 +245,12 @@ rule0:
             //
             $$ = new Rule(head, *$3, parser_file, parser_line);
 
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
             IDB.addRule($$);
 
             //
@@ -251,6 +264,12 @@ rule0:
             // create new rule with head and empty body
             //
             $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
 
             IDB.addRule($$);
 
@@ -267,6 +286,12 @@ rule0:
             //
             $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
 
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
             IDB.addRule($$);
 
             //
@@ -281,6 +306,12 @@ rule0:
             // create new rule
             //
             $$ = new Rule(*$1, *$3, parser_file, parser_line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
 
             IDB.addRule($$);
 
@@ -384,7 +415,11 @@ literal:
             //
             $$ = new Literal($1);
             
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | NOT user_pred
         {
@@ -393,7 +428,11 @@ literal:
             //
             $$ = new Literal($2, true);
 
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
         
     | external_atom
@@ -403,7 +442,11 @@ literal:
             //
             $$ = new Literal($1);
 
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | builtin_pred
         {
@@ -412,7 +455,11 @@ literal:
             //
             $$ = new Literal($1);
 
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
 //    | aggregate
 //    | NOT aggregate
@@ -435,7 +482,11 @@ user_pred:
             //
             $$ = new Atom(std::string($1), *$3);
 
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
             
             //
             // delete terms
@@ -454,7 +505,11 @@ user_pred:
             //
             $$ = new Atom((std::string)$2, *$4, 1);
 
-            ProgramRepository::Instance()->record($$);
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
             
             //
             // delete terms
@@ -484,9 +539,10 @@ external_atom:
             $$ = new ExternalAtom($2, *$6, *$4, parser_file, parser_line);
 
             //
-            // register external atom
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
             //
-            ProgramRepository::Instance()->record($$);
+            Registry::Instance()->storeObject($$);
 
             //
             // delete char*
@@ -525,9 +581,10 @@ propositional_atom:
             $$ = new Atom($1);
 
             //
-            // register atom
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
             //
-            ProgramRepository::Instance()->record($$);
+            Registry::Instance()->storeObject($$);
 
             //
             // delete char*
@@ -542,9 +599,10 @@ propositional_atom:
             $$ = new Atom($2, 1);
 
             //
-            // register atom
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
             //
-            ProgramRepository::Instance()->record($$);
+            Registry::Instance()->storeObject($$);
 
             //
             // delete char*

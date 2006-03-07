@@ -10,6 +10,8 @@
  */
 
 #include "dlvhex/Registry.h"
+//#include "dlvhex/Atom.h"
+//#include "dlvhex/Repository.h"
 
 
 //
@@ -31,12 +33,23 @@ Registry::Instance()
 
 
 AtomPtr
-Registry::dispatch(Atom* a)
+Registry::storeFact(Atom* a)
 {
     AtomPtr ap(a);
 
     AtomFactory::Instance()->insert(ap);
 
     return ap;
+}
+
+
+ProgramObjectPtr
+Registry::storeObject(ProgramObject* po)
+{
+    ProgramObjectPtr pop(po);
+
+    Repository::Instance()->insert(pop);
+
+    return pop;
 }
 

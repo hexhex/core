@@ -88,7 +88,7 @@ factlist:
         {
             $$ = solverResult::createNewAnswerset();
 
-            AtomPtr ap = Registry::Instance()->dispatch($1);
+            AtomPtr ap = Registry::Instance()->storeFact($1);
 
             //
             // inserting the smart pointer into the AtomSet. If no other copy of
@@ -106,7 +106,7 @@ factlist:
             //
             // cf. comment above.
             //
-            AtomPtr ap = Registry::Instance()->dispatch($3);
+            AtomPtr ap = Registry::Instance()->storeFact($3);
 
             $1->insert(ap);
 

@@ -13,6 +13,7 @@
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Registry.h"
 
 
 /*
@@ -203,7 +204,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 //
                 // add this atom to the global atom store
                 //
-                ProgramRepository::Instance()->record(auxheadatom);
+                Registry::Instance()->storeObject(auxheadatom);
 
                 //
                 // and add the atom name to the store of auxiliary names (which
@@ -275,7 +276,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                         //auxbody.push_back(Literal((*currbody)->getAtom()));
                         Literal* l = new Literal((*currbody)->getAtom());
 
-                        ProgramRepository::Instance()->record(l);
+                        Registry::Instance()->storeObject(l);
 
                         auxbody.push_back(l);
                     
@@ -300,7 +301,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 
                 Rule* auxrule = new Rule(auxhead, auxbody);
 
-                ProgramRepository::Instance()->record(auxrule);
+                Registry::Instance()->storeObject(auxrule);
 
                 auxheadnode->addRule(auxrule);
             }

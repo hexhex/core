@@ -105,7 +105,7 @@ printUsage(std::ostream &out, bool full)
         << "                   $HOME/.dlvhex/plugins)" << std::endl
         << "--filter=foo[,bar[,...]]" << std::endl
         << "                   Only display instances of the specified predicate(s)." << std::endl
-        << "--xml              output in XML (RuleML 0.9) format." << std::endl
+        << "--ruleml           output in RuleML (v0.9) format." << std::endl
         << std::endl;
 }
         
@@ -309,12 +309,17 @@ main (int argc, char *argv[])
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j], "--silent"))
                 global::optionSilent = true;
-            else if (!strcmp(argv[j], "--xml"))
+            else if (!strcmp(argv[j], "--ruleml"))
+            {
                 optionXML = true;
+
+                //
+                // XMl output makes only sense with silent:
+                //
+                global::optionSilent = true;
+            }
             else if (!strcmp(argv[j], "--verbose"))
                 global::optionVerbose = true;
-//            else if (!strcmp(argv[j], "--strongsafety"))
-//                global::optionStrongSafety = true;
             else if (!strncmp(argv[j], "--filter=", 9))
                 optionFilter = helper::stringExplode(std::string(argv[j] + 9), ",");
             else if (!strcmp(argv[j], "--"))
@@ -666,6 +671,8 @@ main (int argc, char *argv[])
     //
     // cleaning up:
     //
+    delete outputbuilder;
+    
     delete cf;
 
     delete gb;

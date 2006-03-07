@@ -16,6 +16,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/GeneralError.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Registry.h"
 
 
 
@@ -89,7 +90,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             RuleHead_t guesshead;
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
-            ProgramRepository::Instance()->record(headatom);
+            Registry::Instance()->storeObject(headatom);
             guesshead.push_back(headatom);
 
             //
@@ -99,7 +100,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             externalNames.push_back((*ei)->getReplacementName());
 
             headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
-            ProgramRepository::Instance()->record(headatom);
+            Registry::Instance()->storeObject(headatom);
             guesshead.push_back(headatom);
 
             //
@@ -123,14 +124,14 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             // the base atom specifies all possible values for the guessing
             //
 //            Atom* baseatom = new Atom((*ei)->getBasePredicate(), (*ei)->getArguments());
-//            ProgramRepository::Instance()->record(baseatom);
+//            Registry::Instance()->storeObject(baseatom);
 //            guesshead.push_back(baseatom);
 
             //
             // build the entire guessing rule
             //
             Rule* guessrule = new Rule(guesshead, guessbody);
-            ProgramRepository::Instance()->record(guessrule);
+            Registry::Instance()->storeObject(guessrule);
             guessingrules.addRule(guessrule);
 
             if (global::optionVerbose)
@@ -297,7 +298,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 std::ostringstream atomname;
                 atomname << "flp_head_" << ruleidx++;
                 Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
-                ProgramRepository::Instance()->record(flpheadatom);
+                Registry::Instance()->storeObject(flpheadatom);
 //                    flpatoms.at(ruleidx++) = flpheadatom;
                 bodyPickerAtoms.push_back(flpheadatom);
 
@@ -318,7 +319,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 // make flp rule
                 //
                 Rule* flprule = new Rule(flphead, flpbody);
-                ProgramRepository::Instance()->record(flprule);
+                Registry::Instance()->storeObject(flprule);
 
 //                    std::cout << "flprule: " << *flprule << std::endl;
 
@@ -385,7 +386,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 RuleBody_t newbody(oldbody);
 
                 Literal* flplit = new Literal(bodyPickerAtoms.at(ruleidx++));
-                ProgramRepository::Instance()->record(flplit);
+                Registry::Instance()->storeObject(flplit);
 
                 newbody.push_back(flplit);
 
@@ -393,7 +394,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 // make rule
                 //
                 Rule* reductrule = new Rule(oldhead, newbody);
-                ProgramRepository::Instance()->record(reductrule);
+                Registry::Instance()->storeObject(reductrule);
 
 //                    std::cout << "reductrule: " << *flprule << std::endl;
 

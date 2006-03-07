@@ -21,7 +21,9 @@ noinst_HEADERS = \
 		 OutputBuilder.h \
                  PluginContainer.h \
                  PluginInterface.h \
+                 Program.h \
                  ProgramBuilder.h \
+                 Repository.h \
                  ResultContainer.h \
 		 Registry.h \
                  Rule.h \
