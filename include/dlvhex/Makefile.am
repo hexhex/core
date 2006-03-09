@@ -23,7 +23,6 @@ noinst_HEADERS = \
                  PluginInterface.h \
                  Program.h \
                  ProgramBuilder.h \
-                 Repository.h \
                  ResultContainer.h \
 		 Registry.h \
                  Rule.h \
@@ -39,4 +38,5 @@ pkginclude_HEADERS = \
                  Literal.h \
                  NamesTable.h \
                  PluginInterface.h \
+                 Repository.h \
                  Term.h
