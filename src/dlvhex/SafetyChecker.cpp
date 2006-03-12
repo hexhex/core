@@ -124,8 +124,11 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
             Tuple::const_iterator extterm = extarg.begin();
 
             while (extterm != extarg.end())
+            {
                 if ((*extterm).isVariable())
-                    safevars.insert(*extterm++);
+                    safevars.insert(*extterm);
+                extterm++;
+            }
 
             extit++;
         }
