@@ -11,6 +11,7 @@
  *
  */
 
+#include <sstream>
 
 #include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
