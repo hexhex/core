@@ -66,10 +66,6 @@ ExternalAtom::ExternalAtom(const std::string name,
     if (pluginAtom == 0)
     {
         throwSourceError("function " + functionName + " unknown");
-//        errorstr << "Line " << line << ": "
-//                 << "Function " << functionName << " unknown";
-
-//        throw FatalError(errorstr.str());
     }
 
     //
@@ -78,10 +74,6 @@ ExternalAtom::ExternalAtom(const std::string name,
     if ((*pluginAtom).getInputArity() != inputList.size())
     {
         throwSourceError("arity mismatch in function " + functionName);
-//        errorstr << "Line " << line << ": "
-//                 << "Arity mismatch in function " << functionName;
-
-//        throw FatalError(errorstr.str());
     }
     
 
@@ -148,11 +140,6 @@ ExternalAtom::ExternalAtom(const std::string name,
         Term::auxnames.insert(auxPredicate);
     }
 
-    //
-    // build base predicate
-    //
-    basePredicate = replacementName + "_base";
-    //Term::auxnames.insert(basePredicate);
     
     //
     // if we got here, the syntax is fine!
@@ -166,8 +153,6 @@ ExternalAtom::ExternalAtom(const std::string name,
 void
 ExternalAtom::throwSourceError(std::string msg) const
 {
-   //std::string err(msg + " in function " + functionName);
-
    throw SyntaxError(filename, line, msg);
 }
 
@@ -279,42 +264,6 @@ ExternalAtom::groundInputList(const AtomSet& i,
 }
 
 
-/*
-void
-ExternalAtom::getBase(const AtomSet& i,
-                      AtomSet& result) const
-{
-    //
-    // now get the plugininterface that hosts this atom
-    //
-//    PluginInterface* pluginInterface = PluginContainer::Instance()->getInterface(functionName);
-
-    std::vector<Tuple> inputArguments;
-
-    groundInputList(i, inputArguments);
-
-    std::set<Tuple> universe;
-
-    //
-    // collect univere for each input tuple
-    //
-    std::vector<Tuple>::const_iterator input = inputArguments.begin();
-
-    while (input != inputArguments.end())
-    {
-        pluginAtom->getUniverse(*(input++), universe);
-
-        std::set<Tuple>::const_iterator basetuple = universe.begin();
-
-        while (basetuple != universe.end())
-        {
-            AtomPtr ap = Registry::Instance()->dispatch(new Atom(replacementName + "_base", *(basetuple++)));
-            result.insert(ap);
-        }
-    }
-}
-*/
-
 
 void
 ExternalAtom::evaluate(const AtomSet& i,
@@ -412,24 +361,25 @@ ExternalAtom::evaluate(const AtomSet& i,
         // build result with the replacement name for each answer tuple
         //
         for (std::vector<Tuple>::const_iterator s = (*answer.getTuples()).begin();
-            s != (*answer.getTuples()).end();
-            ++s)
+             s != (*answer.getTuples()).end();
+             ++s)
         {
-            AtomPtr ap(new Atom(getReplacementName(), *s));
+            //
+            // the replacement atom contains both the input and the output list!
+            // (*inputi must be ground here, since it comes from
+            // groundInputList(i, inputArguments))
+            //
+            Tuple resultTuple(*inputi);
 
             //
-            // setting the alwaysFirstOrder flag of the Atom ensures that this Atom
-            // will never be serialized in higher-order-syntax! since the
-            // replacement predicate for external atoms is always first order, the
-            // corresponding facts need to be fo, too!
+            // add output list
             //
-            //ap->setAlwaysFO();
+            resultTuple.insert(resultTuple.end(), (*s).begin(), (*s).end());
+
+            AtomPtr ap(new Atom(getReplacementName(), resultTuple));
 
             result.insert(ap);
         }
-
-//                std::cout << "result:" << std::endl;
-//                printGAtomSet(r, std::cout, 0);
     }
 }
 
@@ -438,7 +388,6 @@ ExternalAtom::evaluate(const AtomSet& i,
 bool
 ExternalAtom::unifiesWith(const Atom* atom) const
 {
-//    std::cout << " trying to unify external!" << std::endl;
     return 0;
 }
 
@@ -454,40 +403,21 @@ ExternalAtom::operator== (const Atom& atom2) const
 std::ostream&
 ExternalAtom::print(std::ostream& out, const bool ho) const
 {
-    /*
-    out << getReplacementName();
+    //
+    // the replacement atom contains both the input and the output list
+    //
 
-    if (getArity() > 0)
-    {
-        out << "(";
-        
-        for (unsigned i = 0; i < getArity(); i++)
-        {
-            out << getArgument(i);
-            
-            if (i < getArity() - 1)
-                out << ",";
-            
-        }
-        
-        out << ")";
-    }
-    return out;*/
+    Tuple replacementArgs(inputList);
 
-    Atom tmp(getReplacementName(), getArguments());
+    replacementArgs.insert(replacementArgs.end(), arguments.begin(), arguments.end());
+
+    Atom tmp(getReplacementName(), replacementArgs);
 
     tmp.print(out, ho);
 
     return out;
 }   
 
-/*
-Atom*
-ExternalAtom::clone()
-{
-    return new ExternalAtom(*this);
-}
-*/
 
 unsigned ExternalAtom::uniqueNumber = 0;
 
