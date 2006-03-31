@@ -307,6 +307,8 @@ main (int argc, char *argv[])
                 optionPlugindir = std::string(argv[j] + 12);
             else if (!strcmp(argv[j],"--firstorder"))
                 global::optionNoPredicate = false;
+            else if (!strcmp(argv[j],"--weaksafety"))
+                global::optionStrongSafety = false;
             else if (!strcmp(argv[j], "--silent"))
                 global::optionSilent = true;
             else if (!strcmp(argv[j], "--ruleml"))

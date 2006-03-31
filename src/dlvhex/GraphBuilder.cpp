@@ -109,9 +109,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             //
             // save normal and external atoms of this body - after we are through the entire
             // body, we might have to update EXTERNAL dependencies inside the
-            // rule!
+            // rule and build auxiliary rules!
             //
-            if ((*li)->getAtom()->getType() == Atom::INTERNAL)
+            if (((*li)->getAtom()->getType() == Atom::INTERNAL) &&
+                (!(*li)->isNAF()))
                 currentOrdinaryBodyNodes.push_back(bn);
 
             if ((*li)->getAtom()->getType() == Atom::EXTERNAL)
@@ -227,9 +228,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 RuleBody_t auxbody;
 
                 //
-                // the body of the auxiliary rule is the entire ordinary body of the
-                // rule that has the external atom - this might be too much, but
-                // it is easy
+                // the body of the auxiliary rule are all ordinary body literals
+                // that have variables with the aux_head in common
+                // and that are not weakly negated!
                 //
                 for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
                     currbody != currentOrdinaryBodyNodes.end();

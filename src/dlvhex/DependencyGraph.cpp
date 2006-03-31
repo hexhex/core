@@ -205,7 +205,7 @@ DependencyGraph::~DependencyGraph()
 
 //
 // TODO: this function is actually meant for sccs - otherwise we would have to
-// go thorugh succeeding as well!
+// go through succeeding as well!
 //
 bool
 DependencyGraph::hasNegEdge(const std::vector<AtomNode*>& nodes)
@@ -223,7 +223,11 @@ DependencyGraph::hasNegEdge(const std::vector<AtomNode*>& nodes)
                 ++di)
         {
             if ((*di).getType() == Dependency::NEG_PRECEDING)
-                return true;
+                //
+                // a scc has a negated edge only if the "target" of the edge is also in the cycle!
+                //
+                if (find(nodes.begin(), nodes.end(), (*di).getAtomNode()) != nodes.end())
+                    return true;
         }
     }
 
