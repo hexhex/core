@@ -44,7 +44,7 @@ AM_CPPFLAGS = \
 # -Wl,-rpath is specifying . to be the search path for shared libs
 # (dlvhex should use libs it finds in its own directory)
 #
-dlvhex_LDFLAGS = -ldl -Wl,-rpath,. -lboost_program_options-gcc
+dlvhex_LDFLAGS = -ldl -Wl,-rpath,.
 
 #
 # dlvhex itself also uses the convenience libs (see below)
