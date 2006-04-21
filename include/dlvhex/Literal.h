@@ -46,7 +46,7 @@ public:
     /**
      * @brief Construct a literal from an atom, possibly weakly negated.
      */
-    Literal(const Atom*, bool naf = false);
+    Literal(const AtomPtr, bool naf = false);
 
 
     /**
@@ -64,7 +64,7 @@ public:
     /**
      * @brief returns a pointer to the atom of the literal.
      */
-    const Atom*
+    const AtomPtr
     getAtom() const;
 
 
@@ -99,7 +99,7 @@ public:
 
 private:
 
-    const Atom* atom;
+    const AtomPtr atom;
 
     bool isWeaklyNegated;
     

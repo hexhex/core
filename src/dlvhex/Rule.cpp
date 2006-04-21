@@ -37,8 +37,8 @@ Rule::Rule(const RuleHead_t& head,
         bi != body.end();
         ++bi)
     {
-        if ((*bi)->getAtom()->getType() == Atom::EXTERNAL)
-            externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
+        if (typeid(*((*bi)->getAtom())) == typeid(ExternalAtom))
+            externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
     }
 
 //    std::cout << " rule has extatoms: " << externalAtoms.size() << std::endl;

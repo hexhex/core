@@ -1,20 +1,27 @@
+/* -*- C++ -*- */
+
+/**
+ * @file   DLVresultScanner.lpp
+ * @author Roman Schindlauer
+ * @date   Thu Apr 13 14:48:51 CEST 2006
+ * 
+ * @brief  Defines FlexLexer::yylex() method.
+ * 
+ */
+
+
 %{
-/////////////////////////////////////////////////////////////////////////////
-// DLVresultScanner.lpp
 
 #include <stdio.h>
 #include <assert.h>
 
-#include "dlvhex/Term.h"
-#include "dlvhex/Atom.h"
-#include "dlvhex/AtomSet.h"
-#include "dlvhex/DLVresultParser.h"
+//
+// generated from bison
+//
+#include "dlvhex/DLVresultParser.hpp"
+    
+#include "dlvhex/DLVresultParserDriver.h"
 
-extern "C" int dlvresulterror(const char*);
-extern "C" int dlvresultlex();
-
-//extern unsigned parser_line;
-//extern unsigned parser_errors;
 
 // Max. length of numeric constants. This should match MAX_MAXINT.
 #define NUM_LENGTH 9
@@ -22,10 +29,30 @@ extern "C" int dlvresultlex();
 
 // We don't need unput, and it can yield a "defined but not used"-warning.
 #define YY_NO_UNPUT
+
+
+#define yylval (*(YYSTYPE*)lexval)
+#define yylloc ((yy::location*)lexloc)
+#define driver (*lexdrv)
+
 %}
 
-%option noyywrap
-%option prefix="dlvresult" outfile="lex.yy.c"
+/*
+ * Because there is no #include-like feature we don't need yywrap, we don't need
+ * unput either, and we parse an actual file, this is not an interactive session
+ * with the user. Finally we enable the scanner tracing features.
+ */
+%option noyywrap nounput batch
+
+/* %option debug */
+
+/*
+ * we use a custom FlexLexer (see DLVresultFlexLexer.h)
+ */
+%option c++
+
+%option prefix="dlv"
+%option yyclass="DLVresultFlexLexer"
 
 
 NEWLINE     \15?\n
@@ -45,49 +72,48 @@ NUM         ([0-9]+)
 
 %%
 
-{NEWLINE}		{
-                            return NEWLINE;
-                            /* parser_line++;*/
-                        }
+{NEWLINE} {
+    return NEWLINE;
+    /* parser_line++;*/
+}
 
-","			{ return COMMA;		}
-"-"			{ return TRUE_NOT;	}
-"("			{ return PARAM_OPEN;	}
-")"			{ return PARAM_CLOSE;	}
-"{"			{ return CURLY_OPEN;	}
-"}"			{ return CURLY_CLOSE;	}
-{ID}			|
-{QUOTED_ID}		{
-                            dlvresultlval.string=new char[strlen(yytext)+1];
-                            strcpy(dlvresultlval.string,yytext);
-                            return ID;
-			}
+","     { return COMMA;         }
+"-"     { return TRUE_NOT;      }
+"("     { return PARAM_OPEN;    }
+")"     { return PARAM_CLOSE;   }
+"{"     { return CURLY_OPEN;    }
+"}"     { return CURLY_CLOSE;   }
+{ID} |
+{QUOTED_ID} {
+    yylval.string = new std::string(yytext);
+    //yylval.string=new char[strlen(yytext)+1];
+    //strcpy(yylval.string,yytext);
+    return ID;
+}
 
-{NUM}			{ 
-			    dlvresultlval.string=new char[strlen(yytext)+1];
-                            strcpy(dlvresultlval.string,yytext);
-                            return NUM; 
-			}
+{NUM} { 
+    yylval.string = new std::string(yytext);
+    //yylval.string=new char[strlen(yytext)+1];
+    //strcpy(yylval.string,yytext);
+    return NUM; 
+}
 
-{BLANK}			{ /* Skip blanks */	}
+{BLANK} { /* Skip blanks */ }
 
 
-^{MSG}                  {
-                            // something starting not with a '{' at the beginning of a line
-                            // this is some dlv-(error-)message
-                            dlvresultlval.string=new char[strlen(yytext)+1];
-                            strcpy(dlvresultlval.string,yytext);
-                            return MESSAGE;
-                        }
+^{MSG} {
+    // something starting not with a '{' at the beginning of a line
+    // this is some dlv-(error-)message
+    yylval.string = new std::string(yytext);
+    //yylval.string=new char[strlen(yytext)+1];
+    //strcpy(yylval.string,yytext);
+    return MESSAGE;
+}
 
-.			{ // Anything not matching one of the patterns
-			  // given above is considered an error.
-			  char s[1024];
+. { // Anything not matching one of the patterns
+    // given above is considered an error.
 
-			  assert(yytext[1]==0);
-			  sprintf(s,"syntax error (%s)",yytext); 
-			  dlvresulterror(s);
+    assert(yytext[1]==0);
+    driver.error(*yylloc, "invalid character");
+}
 
-                          //parser_errors++;
-                          return ERROR;
-			}

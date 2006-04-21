@@ -14,62 +14,22 @@
 
 
 Literal::Literal()
-//    : LogicalObject()
 { }
 
 
 Literal::~Literal()
 {
-//    delete atom;
 }
 
 
-//
-/// @todo: do not create new atoms here, rather take the pointers from the
-// parser!
-//
-
-/*
-Literal::Literal(const Literal &literal2)
-    : isWeaklyNegated(literal2.isWeaklyNegated)
+Literal::Literal(const AtomPtr at, bool naf)
+    : atom(at),
+      isWeaklyNegated(naf)
 {
-    //atom = literal2.atom->clone();
-}
-*/
-
-
-Literal::Literal(const Atom* at, bool naf)
-    : isWeaklyNegated(naf),
-      atom(at)
-{
-//    atom = new Atom(at);
-}
-
-/*
-Literal::Literal(const BuiltinPredicate& at, bool naf)
-    : isWeaklyNegated(naf)
-{
-    //
-    /// @todo: can we weakly negate a builtin?
-    //
-    assert(!naf);
-
-    atom = new BuiltinPredicate(at.builtin);
-
-//    std::cout << "created builtin with type " << atom->getType() << std::endl;
 }
 
 
-
-Literal::Literal(const ExternalAtom& at, bool naf)
-    : isWeaklyNegated(naf)
-{
-    atom = new ExternalAtom(at);
-}
-*/
-
-
-const Atom*
+const AtomPtr
 Literal::getAtom() const
 {
     return atom;

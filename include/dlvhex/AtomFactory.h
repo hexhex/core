@@ -36,8 +36,8 @@ public:
      *
      * 
      */
-    void
-    insert(AtomPtr&);
+    AtomPtr
+    insert(Atom*);
 
 protected:
 

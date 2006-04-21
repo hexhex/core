@@ -49,9 +49,9 @@ public:
     /**
      * @brief Creates weakly connected components from AtomNodes.
      */
-    void
-    getWeakComponents(const std::vector<AtomNode*>&,
-                      std::vector<std::vector<AtomNode*> >&);
+    //void
+    //getWeakComponents(const std::vector<AtomNode*>&,
+    //                  std::vector<std::vector<AtomNode*> >&);
 
     /**
      * @brief Creates strongly connected components from AtomNodes.

@@ -21,7 +21,7 @@
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
@@ -338,6 +338,14 @@ public:
     virtual void
     getAtoms(AtomFunctionMap&)
     { }
+
+    /**
+     * @brief Propagates dlvhex program options to the plugin.
+     */
+    virtual void
+    setOptions(int argc, char *argv[])
+    { }
+
 };
 
 

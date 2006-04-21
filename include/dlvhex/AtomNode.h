@@ -37,12 +37,12 @@ class AtomNode
 public:
 
     /// Ctor.
-    AtomNode();
+    //AtomNode();
 
     /**
      * @brief Constructs an AtomNode from a given Atom.
      */
-    AtomNode(const Atom*);
+    AtomNode(const AtomPtr);
     
     /**
      * @brief Sets the head-flag of the Node.
@@ -108,7 +108,7 @@ public:
     /**
      * @brief Returns the atom-object this Node is associated with.
      */
-    const Atom*
+    const AtomPtr
     getAtom() const;
 
     /**
@@ -140,7 +140,7 @@ private:
     /**
      * @brief This AtomNode's Atom object.
      */
-    const Atom* atom;
+    const AtomPtr atom;
 
     /**
      * @brief head-flag.
@@ -300,8 +300,11 @@ public:
     /**
      * @brief Return a node with a specific AtomNode Id.
      */
-    const AtomNode*
-    getNode(unsigned);
+    //const AtomNode*
+    //getNode(unsigned);
+
+    AtomNode*
+    addNode();
 
     /**
      * @brief Create a new node for this head atom and return its pointer or
@@ -313,7 +316,7 @@ public:
      * created.
      */
     AtomNode*
-    addUniqueHeadNode(const Atom*);
+    addUniqueHeadNode(const AtomPtr);
 
     /**
      * @brief Create a new node for this body atom and return its pointer or
@@ -325,13 +328,13 @@ public:
      * creates.
      */
     AtomNode*
-    addUniqueBodyNode(const Atom*);
+    addUniqueBodyNode(const AtomPtr);
 
     /**
      * @brief Finds an AtomNode that is associated with a specific Atom object.
      */
     AtomNode*
-    findNode(const Atom*) const;
+    findNode(const AtomPtr) const;
 };
 
 

@@ -111,7 +111,9 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
             {
                 if ((*inpterm).isVariable())
                     if (safevars.find(*inpterm) == safevars.end())
-                        throw SyntaxError((*ruleit)->getFile(), (*ruleit)->getLine(), "rule not safe");
+                        throw SyntaxError("rule not safe", 
+                                          (*ruleit)->getLine(),
+                                          (*ruleit)->getFile());
                 inpterm++;
             }
 
@@ -160,9 +162,9 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
                 {
                     if (find(safevars.begin(), safevars.end(), t) == safevars.end())
                     {
-                        throw SyntaxError((*ruleit)->getFile(),
-                                         (*ruleit)->getLine(),
-                                         "rule not safe");
+                        throw SyntaxError("rule not safe", 
+                                          (*ruleit)->getLine(),
+                                          (*ruleit)->getFile());
                     }
                 }
             }
@@ -275,7 +277,7 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
                             if ((typeid(*(*bodylit)->getAtom()) == typeid(Atom)) ||
                                 (typeid(*(*bodylit)->getAtom()) == typeid(ExternalAtom)))
                             {
-                                if (!(*compit)->isInComponent((*bodylit)->getAtom()))
+                                if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
                                 {
                                     //
                                     // the arguments of this atom are safe
@@ -305,8 +307,8 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
 
                         if (argIsUnsafe)
                             throw SyntaxError((*ruleit)->getFile(),
-                                             (*ruleit)->getLine(),
-                                             "rule not safe");
+                                            (*ruleit)->getLine(),
+                                            "rule not safe");
                     }
                 }
                 

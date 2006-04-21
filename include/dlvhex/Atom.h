@@ -23,6 +23,10 @@
 
 
 
+class Atom;
+
+typedef boost::shared_ptr<Atom> AtomPtr;
+
 /**
  * @brief An Atom has a predicate and (if not propositional) an optional list of arguments.
  *
@@ -118,7 +122,7 @@ public:
      * (including the predicate symbols) unify pairwise.
      */
     virtual bool
-    unifiesWith(const Atom*) const;
+    unifiesWith(const AtomPtr) const;
 
     /**
      * @brief Tests for equality.
@@ -150,12 +154,6 @@ public:
     print(std::ostream&, const bool) const;
     
     /**
-     * @brief Returns the type (internal - external) of the atom.
-     */
-    virtual Type
-    getType() const;
-
-    /**
      * @brief Tests if the atom contains only constant arguments.
      */
     bool
@@ -165,8 +163,6 @@ public:
     isStronglyNegated() const;
     
 protected:
-
-    Type type;
 
     Tuple arguments;
 
@@ -183,8 +179,48 @@ protected:
 std::ostream&
 operator<< (std::ostream&, const Atom&);
 
-typedef boost::shared_ptr<Atom> AtomPtr;
 
+/**
+ * @brief Special atom denoting the false-literal.
+ *
+ * We derive falseAtom from Atom to for the false-literal. This Atom does not
+ * unify with any other atom and can be used wherever 'false' is implicitly
+ * expected, e.g., as rule head for constraints.
+ */
+class falseAtom : public Atom
+{
+public:
+
+    virtual Term
+    getPredicate() const
+    {
+        return Term("");
+    }
+            
+    virtual bool
+    unifiesWith(const AtomPtr) const
+    {
+        return false;
+    }
+
+    virtual bool
+    operator== (const Atom& atom2) const
+    {
+        return false;
+    }
+
+    virtual std::ostream&
+    print(std::ostream& out, const bool ho) const
+    {
+        return out << "";
+    }
+
+    int
+    operator< (const Atom& atom2) const
+    {
+        return true;
+    }
+};
 
 
 /**
@@ -200,20 +236,17 @@ public:
     BuiltinPredicate(const BuiltinPredicate& bp)
         : Atom(bp),
           t1(bp.t1),
-          t2(bp.t2)
+          t2(bp.t2),
+          builtin(bp.builtin)
     {
-        type = BUILTIN;
-
-        builtin = bp.builtin;
     }
 
 
     BuiltinPredicate(Term tl, std::string b, Term tr)
-        : builtin(b),
-          t1(tl),
-          t2(tr)
+        : t1(tl),
+          t2(tr),
+          builtin(b)
     {
-        type = BUILTIN;
     }
 
     /**

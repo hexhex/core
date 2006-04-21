@@ -18,7 +18,7 @@
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/Registry.h"
 
 
@@ -27,34 +27,33 @@ ExternalAtom::ExternalAtom()
 }
 
 
+
 ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
     : Atom(extatom.arguments),
       inputList(extatom.inputList),
       functionName(extatom.functionName),
+      auxPredicate(extatom.auxPredicate),
       replacementName(extatom.replacementName),
       line(extatom.line),
-      pluginAtom(extatom.pluginAtom),
-      auxPredicate(extatom.auxPredicate)
+      pluginAtom(extatom.pluginAtom)
 {
-    type = extatom.type;
+//    type = extatom.type;
 }
+
 
 
 ExternalAtom::ExternalAtom(const std::string name,
                            const Tuple& params,
                            const Tuple& input,
-                           const std::string file,
                            const unsigned line)
-    : functionName(name),
-      Atom(params),
-      filename(file),
-      line(line),
-      inputList(input)
+    : Atom(params),
+      inputList(input),
+      functionName(name),
+      line(line)
 {
     //
     // set parent class type
     //
-    type = EXTERNAL;
 
     std::ostringstream errorstr;
 
@@ -76,13 +75,9 @@ ExternalAtom::ExternalAtom(const std::string name,
         throwSourceError("arity mismatch in function " + functionName);
     }
     
-
     if ((*pluginAtom).getOutputArity() != getArity())
     {
-        errorstr << "Line " << line << ": "
-                 << "Arity mismatch in function " << functionName;
-
-        throw FatalError(errorstr.str());
+        throwSourceError("arity mismatch in function " + functionName);
     }
     
     //
@@ -103,7 +98,7 @@ ExternalAtom::ExternalAtom(const std::string name,
     //
     bool inputIsGround(1);
 
-    for (int s = 0; s < inputList.size(); s++)
+    for (unsigned s = 0; s < inputList.size(); s++)
     {
         const Term inputTerm = inputList[s];
 
@@ -153,7 +148,7 @@ ExternalAtom::ExternalAtom(const std::string name,
 void
 ExternalAtom::throwSourceError(std::string msg) const
 {
-   throw SyntaxError(filename, line, msg);
+   throw SyntaxError(msg, line);
 }
 
 
@@ -287,7 +282,7 @@ ExternalAtom::evaluate(const AtomSet& i,
         //
         // extract input set from i according to the input parameters
         //
-        for (int s = 0; s < (*inputi).size(); s++)
+        for (unsigned s = 0; s < (*inputi).size(); s++)
         {
             const Term* inputTerm = &(*inputi)[s];
 
@@ -386,7 +381,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 
 bool
-ExternalAtom::unifiesWith(const Atom* atom) const
+ExternalAtom::unifiesWith(const AtomPtr atom) const
 {
     return 0;
 }

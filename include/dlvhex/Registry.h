@@ -44,7 +44,7 @@ public:
      * therefore optimal memory management. 
      */
     AtomPtr
-    storeFact(Atom*);
+    storeAtom(Atom*);
 
     /**
      * @brief Stores a ProgramObject.

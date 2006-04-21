@@ -95,7 +95,7 @@ Component::isInComponent(const Atom* at) const
 
     while (nodeit != atomnodes.end())
     {
-        if ((*nodeit++)->getAtom() == at)
+        if ((*nodeit++)->getAtom().get() == at)
         {
             belongsToComp = true;
 
@@ -109,8 +109,8 @@ Component::isInComponent(const Atom* at) const
 
 ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
                                    ModelGenerator* mg)
-    : modelGenerator(mg),
-      Component()
+    : Component(),
+      modelGenerator(mg)
 {
     std::vector<AtomNode*>::const_iterator node = nodes.begin();
 
@@ -160,6 +160,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         }
         catch (GeneralError&)
         {
+            std::cout << "foobar" << std::endl;
             throw;
         }
 
@@ -213,7 +214,7 @@ ProgramComponent::dump(std::ostream& out) const
 
 
 ExternalComponent::ExternalComponent(AtomNode* node)
-    : externalAtom((ExternalAtom*)node->getAtom())
+    : externalAtom(dynamic_cast<ExternalAtom*>(node->getAtom().get()))
 {
 }
 

@@ -59,7 +59,7 @@ private:
     CPPUNIT_TEST(testSerialization);
     CPPUNIT_TEST_SUITE_END();
 
-    Atom *fo, *ho;
+    AtomPtr fo, ho;
 
 public:
     

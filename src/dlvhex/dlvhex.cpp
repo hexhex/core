@@ -18,7 +18,10 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <vector>
+
+//#include "boost/program_options.hpp"
 
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
@@ -26,15 +29,11 @@
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
 #include "dlvhex/SafetyChecker.h"
-
-
-unsigned parser_line;
-const char *parser_file;
-unsigned parser_errors = 0;
+#include "dlvhex/HexParserDriver.h"
 
 
 const char*  WhoAmI;
@@ -126,10 +125,6 @@ InternalError (const char *msg)
 
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/DependencyGraph.h"
-
-extern "C" FILE* inputin;         // Where LEX reads its input from
-
-extern int inputparse();
 
 
 #include <sys/types.h>
@@ -274,6 +269,7 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 }
 
 
+
 int
 main (int argc, char *argv[])
 {
@@ -291,26 +287,39 @@ main (int argc, char *argv[])
     //
     // dlt switch should be temporary until we have a proper rewriter for flogic!
     //
-    bool optiondlt = false;
+    //bool optiondlt = false;
 
     std::vector<std::string> optionFilter;
     
     std::vector<std::string> allFiles;
     
+    //
+    // using boost's program options facilities
+    //
+    /*
+    namespace po = boost::program_options;
+
+    po::options_description desc("Allowed options");
+
+    desc.add_options()("help", "produce help message")
+                      ("compression", po::value<int>(), "set compression level");
+    */
+
+
     for (int j = 1; j < argc; j++)
     {
         if (argv[j][0] == '-')
         {
-            if (!strcmp(argv[j],"--dlt"))
-                optiondlt = true;
+            if (!strcmp(argv[j], "--silent"))
+                global::optionSilent = true;
+//            else if (!strcmp(argv[j],"--dlt"))
+//                optiondlt = true;
             else if (!strncmp(argv[j],"--plugindir=", 12))
                 optionPlugindir = std::string(argv[j] + 12);
             else if (!strcmp(argv[j],"--firstorder"))
                 global::optionNoPredicate = false;
             else if (!strcmp(argv[j],"--weaksafety"))
                 global::optionStrongSafety = false;
-            else if (!strcmp(argv[j], "--silent"))
-                global::optionSilent = true;
             else if (!strcmp(argv[j], "--ruleml"))
             {
                 optionXML = true;
@@ -348,6 +357,7 @@ main (int argc, char *argv[])
             allFiles.push_back(argv[j]);
         }
     }
+    
 
     if (!global::optionSilent)
         printLogo();
@@ -398,7 +408,14 @@ main (int argc, char *argv[])
     {
         try
         {
-            PluginContainer::Instance()->importPlugin(*si);
+            PluginInterface* plugin;
+            
+            plugin = PluginContainer::Instance()->importPlugin(*si);
+
+            if (plugin != NULL)
+            {
+                plugin->setOptions(argc, argv);
+            }
         }
         catch (GeneralError &e)
         {
@@ -420,14 +437,14 @@ main (int argc, char *argv[])
     {
         if (optionPipe)
         {
-            parser_file = "";
-            parser_line = 1;
+    //        parser_file = "";
+    //        parser_line = 1;
 
-            inputin = stdin;
+    //        inputin = stdin;
 
             try
             {
-                inputparse ();
+     //           inputparse ();
             }
             catch (GeneralError& e)
             {
@@ -447,38 +464,51 @@ main (int argc, char *argv[])
             std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
             global::lpfilename = filepath.back() + ".dot";
 
+            std::ifstream ifs;
+
             for (std::vector<std::string>::const_iterator f = allFiles.begin();
                 f != allFiles.end();
                 f++)
             {
-                parser_file = f->c_str();
+                std::string parser_file = f->c_str();
 
-                FILE *inputfile;
+
+                //FILE *inputfile;
 
                 std::string execPreParser("dlt -silent -preparsing " + *f);
                     
+                /*
                 if (optiondlt)
                     inputfile = popen(execPreParser.c_str(), "r");
                 else
                     inputfile = fopen(parser_file, "r");
+                */
 
-                if (inputfile == NULL)
-                {
-                    if (optiondlt)
-                        std::cerr << "unable to call preparser: " << execPreParser << std::endl;
-                    else
-                        std::cerr << "file " << parser_file << " not found" << std::endl;
+//                ifs.open(parser_file.c_str());
 
-                    exit(1);
-                }
+//                if (!ifs.is_open())
+//                if (inputfile == NULL)
+  //              {
+  //                  if (optiondlt)
+    //                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+      //              else
+    //                    std::cerr << "file " << parser_file << " not found" << std::endl;
 
-                parser_line = 1;
+    //                exit(1);
+    //            }
+
+                //parser_line = 1;
         
-                inputin = inputfile;
+                //inputin = inputfile;
+
+
+                //HexParserDriver driver(ifs);
+                HexParserDriver driver;
 
                 try
                 {
-                    inputparse ();
+//                    inputparse ();
+                    driver.parse(*f, IDB, EDB);
                 }
                 catch (GeneralError& e)
                 {
@@ -487,20 +517,14 @@ main (int argc, char *argv[])
                     exit(1);
                 }
 
-                fclose(inputin);
+                //fclose(inputin);
+                ifs.close();
             }
         }
     }
     catch (GeneralError &e)
     {
         std::cerr << e.getErrorMsg() << std::endl << std::endl;
-
-        exit(1);
-    }
-
-    if (parser_errors)
-    {
-        std::cerr << "Aborting due to parser errors." << std::endl << std::endl;
 
         exit(1);
     }

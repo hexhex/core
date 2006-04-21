@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   GeneralError.h
+ * @file   Error.h
  * @author Roman Schindlauer
  * @date   Thu Nov 24 23:59:33 CET 2005
  * 
@@ -10,10 +10,11 @@
  * 
  */
 
-#ifndef _GENERALERROR_H
-#define _GENERALERROR_H
+#ifndef _ERROR_H
+#define _ERROR_H
 
 #include <string>
+#include <iostream>
 
 /**
  * @brief General exception class.
@@ -27,21 +28,23 @@ public:
     /// Ctor.
     GeneralError() {}
       
+    /// Dtor.
+    virtual ~GeneralError() {}
 
     /**
-     * With this constructor, the exception instance is initialized with
-     * an error string.
+     * @brief initialize exception with error string.
      */
     GeneralError(const std::string msg)
         : errorMsg(msg)
     {
+        //std::cout << "general error: " << msg << std::endl;
     }
     
 
     /**
      * Returns error string.
      */
-    std::string
+    virtual std::string
     getErrorMsg() const
     {
         return errorMsg;
@@ -61,9 +64,20 @@ class SyntaxError : public GeneralError
 {
 public:
     
-    SyntaxError(std::string file,
-                unsigned line,
-                std::string msg);
+    /// Ctor.
+    SyntaxError(const std::string msg,
+                const unsigned line = 0,
+                const std::string file = "");
+
+    /// Dtor.
+    virtual ~SyntaxError() {}
+
+    virtual std::string
+    getErrorMsg() const;
+
+    unsigned line;
+
+    std::string file;
 };
 
 
@@ -75,6 +89,10 @@ class FatalError : public GeneralError
 public:
     
     FatalError(const std::string msg);
+
+    /// Dtor.
+    virtual ~FatalError() {}
+
 };
 
 
@@ -104,8 +122,11 @@ public:
 
     PluginError(std::string msg);
 
+    /// Dtor.
+    virtual ~PluginError() {}
+
     void
     setContext(std::string atomname);
 };
 
-#endif /* _GENERALERROR_H */
+#endif /* _ERROR_H */

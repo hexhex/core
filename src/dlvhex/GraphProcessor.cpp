@@ -37,12 +37,12 @@ GraphProcessor::run(const AtomSet& in)
 //    in.print(std::cout, 0);
 //    std::cout << "input set end." << std::endl;
 
-    Component* leafComponent;
+    //Component* leafComponent;
 
     //
     // go through all subgraphs
     //
-    while (sg = depGraph->getNextSubgraph())
+    while ((sg = depGraph->getNextSubgraph()) != NULL)
     {
         std::vector<AtomSet> current;
 
@@ -175,7 +175,14 @@ GraphProcessor::run(const AtomSet& in)
                 //weakComponent->dump(std::cout);
                 //
 
-                weakComponent->evaluate(current);
+                try
+                {
+                    weakComponent->evaluate(current);
+                }
+                catch (GeneralError&)
+                {
+                    throw;
+                }
 
                 //std::cout << "wcc evaluated." << std::endl;
 

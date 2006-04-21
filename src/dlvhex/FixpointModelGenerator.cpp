@@ -13,7 +13,7 @@
 
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 
 

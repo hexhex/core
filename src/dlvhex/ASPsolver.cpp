@@ -9,52 +9,33 @@
  * 
  */
 
+
+#include <fstream>
+#include <stdio.h>
+
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/DLVresultParserDriver.h"
 
 #include "../config.h"
-
-
-namespace solverResult
-{
-    std::vector<AtomSet> answersets;
-
-    unsigned returncode;
-
-    std::string message;
-
-    AtomSet*
-    createNewAnswerset()
-    {
-        solverResult::answersets.push_back(AtomSet());
-
-        return &(solverResult::answersets.back());
-    }
-
-    void
-    addMessage(std::string msg)
-    {
-        message += msg + '\n';
-    }
-}
 
 
 
 ASPsolver::ASPsolver()
     : lpcommand(DLVPATH)
 {
-    solverResult::answersets.clear();
+    answersets.clear();
     
-    answerSetIndex = solverResult::answersets.end();
+    answerSetIndex = answersets.end();
 }
 
 
 AtomSet*
 ASPsolver::getNextAnswerSet()
 {
-    if (answerSetIndex != solverResult::answersets.end())
+    if (answerSetIndex != answersets.end())
         return &(*(answerSetIndex++));
 
     return NULL;
@@ -64,26 +45,18 @@ ASPsolver::getNextAnswerSet()
 unsigned
 ASPsolver::numAnswerSets()
 {
-    return solverResult::answersets.size();
+    return answersets.size();
 }
 
 
 
-//
-// Where LEX reads its input from:
-//
-extern "C" FILE * dlvresultin;
-
-extern int dlvresultparse();
-
-extern bool dlvresultdebug;
-
+#include <ext/stdio_filebuf.h> 
 
 void
-ASPsolver::callSolver(std::string prg, bool noEDB)
+ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
 {
-    solverResult::answersets.clear();
-    solverResult::message = "";
+
+    answersets.clear();
     
     std::string dlvOptions("");
 
@@ -91,9 +64,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
         dlvOptions = "-nofacts";
     
     //std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
-    
 
-    //char tempfile[] = "/tmp/dlvXXXXXX";
     char tempfile[L_tmpnam];
 
     std::string execdlv;
@@ -107,7 +78,6 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
         tmpnam(tempfile);
 
         FILE* dlvinput = fopen(tempfile, "w");
-//        FILE* dlvinput = mkstemp(tempfile);
 
         if (dlvinput == NULL)
             throw FatalError("LP solver temp-file " + (std::string)tempfile + " could not be created!");
@@ -134,17 +104,35 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
 
     //std::cout << execdlv << std::endl;
 
-    dlvresultin = popen(execdlv.c_str(), "r");
+    FILE* fp = popen(execdlv.c_str(), "r");
 
-    dlvresultparse ();
+    //
+    // creating the filebuf on the heap, is deleted somewhere else and causes a
+    // segfault on the stack
+    //
+    __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
 
-    fclose(dlvresultin);
+    std::istream inpipe(fb);
+    
+    
+    DLVresultParserDriver driver;
+
+    int retcode;
+
+    try
+    {
+        driver.parse(inpipe, answersets, retcode);
+    }
+    catch (GeneralError& e)
+    {
+        throw FatalError(e.getErrorMsg());
+    }
+
+    pclose(fp);
 
     unlink(tempfile);
 
-    //std::cout << solverResult::returncode << std::endl;
-    
-    if (solverResult::returncode == 127)
+    if (retcode == 127)
     {
         throw FatalError("LP solver command not found!");
     }
@@ -152,7 +140,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
     //
     // other problem:
     //
-    if (solverResult::returncode != 0)
+    if (retcode != 0)
     {
         std::string dlverror("LP solver failure!");
 
@@ -169,15 +157,12 @@ ASPsolver::callSolver(std::string prg, bool noEDB)
         throw FatalError(dlverror);
     }
     
-    // TODO: what to do with solverResult::message?
-
     //
     // reset retrieval pointer:
     //
-
-    answerSetIndex = solverResult::answersets.begin();
-
+    answerSetIndex = answersets.begin();
     
+
     /*
     for (std::vector<AtomSet>::iterator o = solverResult::answersets.begin();
             o != solverResult::answersets.end();

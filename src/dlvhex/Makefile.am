@@ -1,5 +1,13 @@
 AUTOMAKE_OPTIONS = foreign
 
+MAINTAINERCLEANFILES = \
+                       HexParser.hpp \
+                       HexParser.output \
+                       location.hh \
+                       position.hh \
+                       stack.hh
+
+
 bin_PROGRAMS = dlvhex
 
 pkglib_LTLIBRARIES = libdlvhexbase.la
@@ -16,13 +24,15 @@ dlvhex_SOURCES = \
                 GuessCheckModelGenerator.cpp \
                 GraphBuilder.cpp \
                 GraphProcessor.cpp \
+		HexParser.ypp \
                 OrdinaryModelGenerator.cpp \
 		OutputBuilder.cpp \
-		parser.ypp \
+		ParserDriver.cpp \
+		HexParserDriver.cpp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \
                 SafetyChecker.cpp \
-                scanner.lpp
+                HexScanner.lpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src
 
@@ -39,9 +49,18 @@ dlvhex_LDFLAGS = -ldl -Wl,-rpath,.
 dlvhex_LDADD = libdlvhexbase.la libaspsolver.la # libplugin.la
 
 #
+# don't let automake rename and move the output files of flex/bison,
+# this doesn't work for pure C++ parser (yet)
+#
+.lpp.cpp:
+	$(LEXCOMPILE) -o $@ $<
+.ypp.cpp:
+	$(YACCCOMPILE) -o $@ $<
+
+#
 # bison flags
 #
-AM_YFLAGS = -y -d
+#AM_YFLAGS = -y -d
 
 #
 # make convenience lib
@@ -54,7 +73,7 @@ libdlvhexbase_la_SOURCES = \
 		      AtomFactory.cpp \
                       AtomSet.cpp \
                       ExternalAtom.cpp \
-                      GeneralError.cpp \
+                      Error.cpp \
                       globals.cpp \
                       helper.cpp \
                       Literal.cpp \
@@ -72,6 +91,8 @@ libdlvhexbase_la_SOURCES = \
 libaspsolver_la_SOURCES = \
                       ASPsolver.cpp \
                       DLVresultParser.ypp \
-                      DLVresultScanner.lpp
+                      DLVresultScanner.lpp \
+		      DLVresultParserDriver.cpp \
+		      ParserDriver.cpp
 
 libaspsolver_la_LIBADD = libdlvhexbase.la

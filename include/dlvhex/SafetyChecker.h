@@ -17,7 +17,7 @@
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/DependencyGraph.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 
 /**
  * @brief Abstract bae class

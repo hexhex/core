@@ -37,7 +37,6 @@ public:
     ExternalAtom(const std::string name,
                  const Tuple& params,
                  const Tuple& input,
-                 const std::string file,
                  const unsigned line);
 
     /**
@@ -148,7 +147,7 @@ public:
      * @brief An External Atom never unifies.
      */
     virtual bool
-    unifiesWith(const Atom*) const;
+    unifiesWith(const AtomPtr) const;
 
 
     virtual bool

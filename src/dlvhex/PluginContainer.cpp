@@ -12,7 +12,7 @@
 
 #include <dlfcn.h>
 
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/globals.h"
@@ -41,7 +41,7 @@ PluginContainer::~PluginContainer()
     }
 }
 
-void
+PluginInterface*
 PluginContainer::importPlugin(std::string filename)
 {
     void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
@@ -56,7 +56,7 @@ PluginContainer::importPlugin(std::string filename)
     if (!getplugin)
     {
 //        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
-        return;
+        return NULL;
     }
 
     if (!global::optionSilent)
@@ -85,6 +85,8 @@ PluginContainer::importPlugin(std::string filename)
 
 //        interfaces[(*it).first] = plugin;
     }
+
+    return plugin;
 }
 
 

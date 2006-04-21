@@ -53,8 +53,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         // go through entire head disjunction
         //
-        for (RuleHead_t::const_iterator hi = (*r)->getHead().begin();
-             hi != (*r)->getHead().end();
+        RuleHead_t head = (*r)->getHead();
+
+        for (RuleHead_t::const_iterator hi = head.begin();
+             hi != head.end();
              ++hi)
         {
             //
@@ -83,6 +85,19 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             currentHeadNodes.push_back(hn);
         }
 
+        //
+        // constraint: create virtual head node to keep the rule
+        //
+        if (head.size() == 0)
+        {
+            AtomPtr va = Registry::Instance()->storeAtom(new falseAtom);
+            
+            AtomNode* vn = nodegraph.addUniqueHeadNode(va);
+//            AtomNode* vn = nodegraph.addNode();
+
+            currentHeadNodes.push_back(vn);
+        }
+
 
         std::vector<AtomNode*> currentOrdinaryBodyNodes;
         std::vector<AtomNode*> currentExternalBodyNodes;
@@ -90,14 +105,18 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         // go through rule body
         //
-        for (RuleBody_t::const_iterator li = (*r)->getBody().begin();
-                li != (*r)->getBody().end();
+
+        RuleBody_t body = (*r)->getBody();
+
+        for (RuleBody_t::const_iterator li = body.begin();
+                li != body.end();
                 ++li)
         {
+
             //
             // builtins do not contribute to dependencies (yet)
             //
-            if ((*li)->getAtom()->getType() == Atom::BUILTIN)
+            if (typeid(*(*li)->getAtom()) == typeid(BuiltinPredicate))
                 continue;
 
             //
@@ -111,11 +130,11 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             // body, we might have to update EXTERNAL dependencies inside the
             // rule and build auxiliary rules!
             //
-            if (((*li)->getAtom()->getType() == Atom::INTERNAL) &&
+            if ((typeid(*((*li)->getAtom())) == typeid(Atom)) &&
                 (!(*li)->isNAF()))
                 currentOrdinaryBodyNodes.push_back(bn);
 
-            if ((*li)->getAtom()->getType() == Atom::EXTERNAL)
+            if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
                 currentExternalBodyNodes.push_back(bn);
 
             //
@@ -140,14 +159,14 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 // If we are through all rules, we will go through the complete set
                 // of AtomNodes and search for matches with this multimap.
                 //
-                if ((*li)->getAtom()->getType() == Atom::EXTERNAL)
+                if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
                 {
-                    ExternalAtom* ext = (ExternalAtom*)(*li)->getAtom();
+                    ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
 
                     //
                     // go through all input terms of this external atom
                     //
-                    for (int s = 0; s < ext->getInputTerms().size(); s++)
+                    for (unsigned s = 0; s < ext->getInputTerms().size(); s++)
                     {
                         //
                         // consider only PREDICATE input terms (naturally, for constant
@@ -183,7 +202,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
              currextbody != currentExternalBodyNodes.end();
              ++currextbody)
         {
-            ExternalAtom* ext = (ExternalAtom*)(*currextbody)->getAtom();
+            ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*currextbody)->getAtom().get());
 
             //
             // does this external atom have any variable input parameters?
@@ -200,12 +219,12 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 // make a new atom with the ext-parameters as arguments, will be
                 // the head of the auxiliary rule
                 //
-                Atom* auxheadatom = new Atom(ext->getAuxPredicate(), extinput);
+//                Atom* auxheadatom = new Atom(ext->getAuxPredicate(), extinput);
 
                 //
                 // add this atom to the global atom store
                 //
-                Registry::Instance()->storeObject(auxheadatom);
+                AtomPtr auxheadatom = Registry::Instance()->storeAtom(new Atom(ext->getAuxPredicate(), extinput));
 
                 //
                 // and add the atom name to the store of auxiliary names (which

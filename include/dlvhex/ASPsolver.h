@@ -18,26 +18,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
-
-
-//
-// Integrating Bison with C++ is not so straightforward. We use Bison here as
-// a pure C parser for the actual solver's (e.g. DLV) output - but then, we cannot
-// put Bison inside the ASPsolver class. Instead, it is just called from within the class
-// and uses the solverResult namespace for writing its result.
-//
-namespace solverResult
-{
-    /**
-     * @brief Adds a solver result to the retrieval interface.
-     */
-    AtomSet* createNewAnswerset();
-
-    /**
-     * @brief Adds a message to the retrieval interface.
-     */
-    void addMessage(std::string msg);
-}
+#include "dlvhex/Error.h"
 
 
 /**
@@ -60,7 +41,7 @@ public:
      * configure time, only DLV is supported. 
      */
     void
-    callSolver(std::string prg, bool noEDB = 0);
+    callSolver(std::string prg, bool noEDB = 0)/* throw (FatalError) */;
 
     /**
      * @brief Retrieves an Answer set, incrementing the internal result pointer.
@@ -83,6 +64,8 @@ private:
      */
     std::string lpcommand;
 
+    std::vector<AtomSet> answersets;
+    
     /**
      * @brief Internal result retrieval pointer.
      */

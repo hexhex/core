@@ -180,7 +180,7 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
     //
     std::string nms[nodes.size()];
 
-    for (int y = 0; y < nodes.size(); ++y)
+    for (unsigned y = 0; y < nodes.size(); ++y)
     {
         std::stringstream out;
         out.str("");

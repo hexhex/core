@@ -235,7 +235,7 @@ public:
     Subgraph(const Subgraph&);
 
     /// Dtor.
-    ~Subgraph();
+    virtual ~Subgraph();
 
     void
     addComponent(Component*);

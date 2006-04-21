@@ -1,0 +1,210 @@
+/* -*- C++ -*- */
+
+/**
+ * @file   HexScanner.lpp
+ * @author Roman Schindlauer
+ * @date   Tue Mar 21 22:05:23 CET 2006
+ * 
+ * @brief  Defines FlexLexer::yylex() method.
+ * 
+ */
+
+
+%{
+
+#include <iostream>
+
+//
+// generated from bison
+//
+#include "dlvhex/HexParser.hpp"
+
+#include "dlvhex/HexParserDriver.h"
+
+
+// Max. length of numeric constants. This should match MAX_MAXINT.
+#define NUM_LENGTH 9
+
+
+// We don't need unput, and it can yield a "defined but not used"-warning.
+#define YY_NO_UNPUT
+
+#define yylval (*(YYSTYPE*)lexval)
+#define yylloc ((yy::location*)lexloc)
+#define driver (*lexdrv)
+
+%}
+
+/*
+ * Because there is no #include-like feature we don't need yywrap, we don't need
+ * unput either, and we parse an actual file, this is not an interactive session
+ * with the user. Finally we enable the scanner tracing features.
+ */
+%option noyywrap nounput batch
+
+/* %option debug */
+
+
+/*
+ * we use a custom FlexLexer (see HexFlexLexer.h)
+ */
+%option c++
+
+%option prefix="hex"
+%option yyclass="HexFlexLexer"
+
+
+BLANK       ([ \t]+)
+NEWLINE     \r?\n
+ANON_VAR    _
+ID          ([A-Za-z][A-Za-z_0-9]*)
+QUOTED_ID   (\"[^\"]+\")
+NUM         ((\-)?[0-9]+)
+COMMENT     \%.*
+
+
+/*
+ * Declares start condition wantnewline.
+ *
+ * Only in state wantnewline a newline
+ * token for the parser is generated, while
+ * normally newlines are simply skipped.
+ */
+
+%s wantnewline
+
+%x comment
+
+%{
+// advance the end location after each tokenizing step
+#define YY_USER_ACTION  yylloc->columns(yyleng);
+%}
+
+%%
+
+<wantnewline>{NEWLINE} { 
+    yylloc->lines(yyleng);
+    BEGIN(INITIAL);
+    return NEWLINE;
+}
+
+<comment>{NEWLINE} {
+    yylloc->lines(yyleng);
+    BEGIN(INITIAL);
+}
+
+
+{NEWLINE} {
+    yylloc->lines(yyleng);
+}
+
+","    return COMMA;
+"."    return DOT;
+":"    return COLON;
+";"    return SEMICOLON;
+"-" |
+"~"    return TRUE_NOT;
+"!"    return EXCLAMATION;
+"+"    return PLUS;
+"*"    return ASTERISK;
+"="    return EQUALS;
+"|"    return VERTICAL_BAR;
+"&"    return AMPERSAND;
+"#"    return SHARP;
+
+"v"    return ID_OR_VEL;
+"<-" | 
+":-"   return CONS;
+
+":~"   return WEAK_CONS;
+
+"("    return PARAM_OPEN;
+")"    return PARAM_CLOSE;
+
+"["    return BRACKET_OPEN;
+"]"    return BRACKET_CLOSE;
+
+"{"    return CURLY_OPEN;
+"}"    return CURLY_CLOSE;
+
+"=="   return PRED_EQUAL;
+"<>" |
+"!="   return PRED_UNEQUAL;
+"<"    return PRED_LESS;
+">"    return PRED_GREATER;
+"<="   return PRED_LESS_OR_EQ;
+">="   return PRED_GREATER_OR_EQ;
+
+"#any"     return PRED_ANY;
+"#avg"     return PRED_AVG;
+"#count"   return PRED_COUNT;
+"#max"     return PRED_MAX;
+"#min"     return PRED_MIN;
+"#sum"     return PRED_SUM;
+"#times"   return PRED_TIMES;
+
+"#include"  return EXT_INCLUDE;
+
+"not" |
+"non"       return NOT;
+
+"?" {
+    return BOOL_QUERY;
+}
+
+#maxint {
+    return MAXINTEGER;
+}
+
+#int {
+    return PRED_INT;
+}
+
+#succ {
+    return PRED_SUCC;
+}
+
+^({BLANK}?)#import {
+    /*  BEGIN(wantnewline); return META_IMPORT; */
+}
+
+^({BLANK}?)#export {
+    /*  BEGIN(wantnewline); return META_EXPORT; */
+}
+
+^({BLANK}?)#namespace { 
+    BEGIN(wantnewline);
+    return NAMESPACE;
+}
+
+{ANON_VAR} {
+    return ANON_VAR;
+}
+
+{ID} |
+{QUOTED_ID} {
+    yylval.string = new std::string(yytext);
+    return ID;
+}
+
+{NUM} { 
+    if( strlen(yytext) > NUM_LENGTH )
+        driver.error(*yylloc, "numeric constant is too long");
+    else
+        yylval.string = new std::string(yytext);
+
+    return NUM; 
+}
+
+{COMMENT} {
+    BEGIN(comment); /* Skip comments */
+}
+
+{BLANK} { /* Skip blanks */     }
+
+
+. {
+    // Anything not matching one of the patterns
+    // given above is considered an error.
+    driver.error(*yylloc, "invalid character");
+}

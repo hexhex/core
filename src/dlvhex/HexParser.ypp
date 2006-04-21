@@ -1,57 +1,108 @@
-%{
-//////////////////////////////////////////////////////////////////////////////
-// parser.ypp
+/* -*- C++ -*- */
 
+/**
+ * @file   HexParser.ypp
+ * @author Roman Schindlauer
+ * @date   Tue Mar 21 22:05:23 CET 2006
+ * 
+ * @brief  A bison C++ parser.
+ * 
+ */
+
+
+
+//
+// select the C++ parser LALR(1) skeleton
+//
+%skeleton "lalr1.cc"
+
+//
+// overwrite bison default class name "parser":
+//
+%define "parser_class_name" "HexParser"
+
+//
+// produce header file for the scanner
+//
+%defines
+
+//
+// Specify a prefix to use for all bison output file names
+//
+%file-prefix = "HexParser"
+
+%{
 #include <iostream>
 #include <sstream>
 
+#include "dlvhex/HexParserDriver.h"
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/Literal.h"
 #include "dlvhex/Rule.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/ExternalAtom.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/Registry.h"
 
 
-extern "C" int inputerror(const char*);
-extern "C" int inputlex();
+//
+// Flex expects the signature of yylex to be defined in the macro YY_DECL, and
+// the C++ parser expects it to be declared.
+//
+// Announce to bison the prototype we want for the lexing function
+#ifndef YY_DECL
+#define YY_DECL                                                         \
+  int yylex (YYSTYPE* yylval,                                           \
+             yy::location* yylloc,                                      \
+             HexParserDriver* driver)
+// declare YY_DECL function for the parser
+YY_DECL;
+#endif
 
-extern unsigned parser_errors;
-extern const char *parser_file;
-extern unsigned parser_line;
- 
-extern Program IDB;
-//extern GAtomSet EDB;
-extern AtomSet EDB;
-//extern std::vector<ExternalAtom> externalAtoms;
 
 //////////////////////////////////////////////////////////////////////////////
 
 %}
 
-%name-prefix="input"
+// this is the parsing context, passed as parameters to the
+// yy::HexParser ctor
+%parse-param { HexParserDriver* driver }
+%parse-param { Program& program }
+%parse-param { AtomSet& EDB }
+
+
+// bison passes the driver as additional parameter to the lexer
+// function YY_DECL, so we can abuse the driver to get the real lexer
+// object and call the yylex() method
+%lex-param   { HexParserDriver* driver }
+
+// use a yy::location object to keep track of the location information
+%locations
+
+// debug parser
+//%debug
+//%error-verbose
+//%verbose /* really verbose output */
+
 
 %union {
-    char*             string;
+    std::string*      string;
+    AtomPtr*          atom;
     Term*             term;
     Tuple*            terms;
-    Atom*             atom;
     ExternalAtom*     extatom;
     Literal*          literal;
     RuleHead_t*         disjunction;
     RuleBody_t*         body;
     Rule*             rule;
     BuiltinPredicate* builtin;
-/*    BUILTIN        builtin;
+    /*
     AGGREGATE_TYPE*aggregate_type;
     AGGREGATEPRED* aggregate_pred;
     unsigned       integer;
     WEIGHTS*       weights;
     OIDindices*    oids;
-    std::vector<std::string>* stringvector;
     */
     }
 
@@ -71,13 +122,12 @@ extern AtomSet EDB;
 %type  <literal> literal
 %type  <disjunction> disj
 %type  <body> body
-%type  <rule> rule rule0
+%type  <rule> rule rule0 constraint
 %type <extatom> external_atom    
 %type <terms> external_output
 %type <builtin> builtin_pred    
 //%type  <string> aggregate_type
 //%type  <string> aggregate_pred
-//%type  <rule> rule rule0
 //%type  <string> strictrule
 //%type  <string> weights
 //%type  <string> fixedpt
@@ -108,6 +158,20 @@ extern AtomSet EDB;
 %token EXT_MAPPING_OP_PLUS EXT_MAPPING_OP_MINUS
 
 %start input
+
+// automagically delete all dynamically allocated objects after the
+// parsing process (but keep those identifier terms, they are passed
+// on to the individuals)
+//
+// doesn't work!
+//
+//%destructor { delete $$; } ident
+
+// in debugging mode output the content of the corresponding terminal
+// symbol
+//%printer    { debug_stream() << *$$; } STRING
+//%printer    { debug_stream() << $$; } NUMBER
+
 %%
 
 HEAD_SEPARATOR  : ID_OR_VEL | VERTICAL_BAR | SEMICOLON;
@@ -115,8 +179,6 @@ HEAD_SEPARATOR  : ID_OR_VEL | VERTICAL_BAR | SEMICOLON;
 TAIL_SEPARATOR  : COMMA;
 
 PARAM_SEPARATOR : COMMA;
-
-//OBJECTID_SEPARATOR : COMMA;
 
 
 input:
@@ -139,14 +201,14 @@ line:
 
 
 namespace:
-    NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE
+    NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE NEWLINE
     ;
 
 nsdef:
     ident COMMA ident 
     {
-        std::string prefix($1);
-        std::string ns($3);
+        std::string prefix(*$1);
+        std::string ns(*$3);
 
         if (prefix[0] == '\"')
             prefix = prefix.substr(1, prefix.length() - 2);
@@ -156,11 +218,8 @@ nsdef:
 
         Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
 
-        //
-        // delete char*
-        //
-        delete[] $1;
-        delete[] $3;
+        delete $1;
+        delete $3;
     }
 //    | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); }
     ;
@@ -168,7 +227,7 @@ nsdef:
 clause:
     rule
 //          | strictrule
-//          | constraint        { } 
+    | constraint
 //          | wconstraint       { } 
     ;
 
@@ -199,34 +258,53 @@ rule:
     rule0 DOT
     ;
 
+constraint:
+    CONS body DOT
+        {
+            //
+            // create empty rule head
+            //
+            RuleHead_t rh;
+            
+            //
+            // create new rule
+            //
+            $$ = new Rule(rh, *$2, "", (@1.end-1).line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            program.addRule($$);
+
+            //
+            // the rule was created with head and body copies, so we can delete
+            // these:
+            //
+            delete $2;
+        }
+    ;
+
 rule0:
     user_pred
         {
-            if (!(*$1).isGround())
-                inputerror("fact not safe");
-
-            //
-            // Storing the Atom as a fact.
-            // we give the atom pointer to the registry - from now on the
-            // registry takes care of it, we don't have to delete it!
-            //
-            AtomPtr ap = Registry::Instance()->storeFact($1);
+            if (!(**$1).isGround())
+                error(yylloc, "fact not safe");
             
-            EDB.insert(ap);
+            EDB.insert(*$1);
+
+            delete $1;
         }
     | user_pred CONS
         {
-            if (!(*$1).isGround())
-                inputerror("fact not safe");
+            if (!(**$1).isGround())
+                error(yylloc, "fact not safe");
 
-            //
-            // Storing the Atom as a fact.
-            // we give the atom pointer to the registry - from now on the
-            // registry takes care of it, we don't have to delete it!
-            //
-            AtomPtr ap = Registry::Instance()->storeFact($1);
+            EDB.insert(*$1);
 
-            EDB.insert(ap);
+            delete $1;
         }
     | user_pred CONS body
         {
@@ -238,12 +316,14 @@ rule0:
             //
             // add atom pointer to rule head
             //
-            head.push_back($1);
+            head.push_back(*$1);
+
+            delete $1;
 
             //
             // create new rule with head and body
             //
-            $$ = new Rule(head, *$3, parser_file, parser_line);
+            $$ = new Rule(head, *$3, "", (@1.end-1).line);
 
             //
             // Storing the rule as a ProgramObject. We don't have to take care
@@ -251,7 +331,7 @@ rule0:
             //
             Registry::Instance()->storeObject($$);
 
-            IDB.addRule($$);
+            program.addRule($$);
 
             //
             // the rule was created with a copy, which we can delete now:
@@ -263,7 +343,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
+            $$ = new Rule(*$1, RuleBody_t(), "", (@1.end-1).line);
 
             //
             // Storing the rule as a ProgramObject. We don't have to take care
@@ -271,7 +351,7 @@ rule0:
             //
             Registry::Instance()->storeObject($$);
 
-            IDB.addRule($$);
+            program.addRule($$);
 
             //
             // the rule was created with a copy of the disjunction, so we can delete
@@ -284,7 +364,7 @@ rule0:
             //
             // create new rule with head and empty body
             //
-            $$ = new Rule(*$1, RuleBody_t(), parser_file, parser_line);
+            $$ = new Rule(*$1, RuleBody_t(), "", (@1.end-1).line);
 
             //
             // Storing the rule as a ProgramObject. We don't have to take care
@@ -292,7 +372,7 @@ rule0:
             //
             Registry::Instance()->storeObject($$);
 
-            IDB.addRule($$);
+            program.addRule($$);
 
             //
             // the rule was created with a copy of the disjunction, so we can delete
@@ -305,7 +385,7 @@ rule0:
             //
             // create new rule
             //
-            $$ = new Rule(*$1, *$3, parser_file, parser_line);
+            $$ = new Rule(*$1, *$3, "", (@1.end-1).line);
 
             //
             // Storing the rule as a ProgramObject. We don't have to take care
@@ -313,7 +393,7 @@ rule0:
             //
             Registry::Instance()->storeObject($$);
 
-            IDB.addRule($$);
+            program.addRule($$);
 
             //
             // the rule was created with head and body copies, so we can delete
@@ -365,17 +445,23 @@ disj:
             //
             // add both atom pointers to rule head
             //
-            $$->push_back($1);
+            $$->push_back(*$1);
 
-            $$->push_back($3);
+            delete $1;
+
+            $$->push_back(*$3);
             
+            delete $3;
+
         }
     | disj HEAD_SEPARATOR user_pred
         {
             //
             // add atom pointer to rule head
             //
-            $1->push_back($3);
+            $1->push_back(*$3);
+
+            delete $3;
 
             $$ = $1;
         }
@@ -413,8 +499,10 @@ literal:
             //
             // create literal with atom
             //
-            $$ = new Literal($1);
-            
+            $$ = new Literal(*$1);
+
+            delete $1;
+
             //
             // Storing the literal as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
@@ -426,7 +514,9 @@ literal:
             //
             // create weakly negated literal with atom
             //
-            $$ = new Literal($2, true);
+            $$ = new Literal(*$2, true);
+
+            delete $2;
 
             //
             // Storing the literal as a ProgramObject. We don't have to take care
@@ -440,7 +530,8 @@ literal:
             //
             // create literal with external atom
             //
-            $$ = new Literal($1);
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
 
             //
             // Storing the literal as a ProgramObject. We don't have to take care
@@ -453,7 +544,8 @@ literal:
             //
             // create literal with builtin predicate
             //
-            $$ = new Literal($1);
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
 
             //
             // Storing the literal as a ProgramObject. We don't have to take care
@@ -475,51 +567,68 @@ user_pred:
             //
             $$ = $1;
         }
-    | ident PARAM_OPEN terms PARAM_CLOSE
+    | PARAM_OPEN terms PARAM_CLOSE
         {
             //
-            // create atom from predicate name and arguments
+            // create atom from a tuple
             //
-            $$ = new Atom(std::string($1), *$3);
+            Atom* a = new Atom(*$2);
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
             //
-            Registry::Instance()->storeObject($$);
-            
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+
+            delete $2;
+        }
+    | ident PARAM_OPEN terms PARAM_CLOSE
+        {
             //
-            // delete terms
+            // create atom from predicate name and arguments
             //
+            Atom* a = new Atom(*$1, *$3);
+
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+
+            delete $1;
             delete $3;
-            
+        }
+    | TRUE_NOT PARAM_OPEN terms PARAM_CLOSE
+        {
             //
-            // delete char*
+            // create negated atom from a tuple
             //
-            delete[] $1;
+            Atom* a = new Atom(*$3, 1);
+
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+
+            delete $3;
         }
     | TRUE_NOT ident PARAM_OPEN terms PARAM_CLOSE
         {
             //
             // create negated atom from predicate name and arguments
             //
-            $$ = new Atom((std::string)$2, *$4, 1);
+            //Atom* a = new Atom((std::string)$2, *$4, 1);
+            Atom* a = new Atom(*$2, *$4, 1);
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
             //
-            Registry::Instance()->storeObject($$);
-            
-            //
-            // delete terms
-            //
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+
+            delete $2;
             delete $4;
-            
-            //
-            // delete char*
-            //
-            delete[] $2;
         }
     ;
 
@@ -536,7 +645,7 @@ external_atom:
             // input parameters
             // arguments
             //
-            $$ = new ExternalAtom($2, *$6, *$4, parser_file, parser_line);
+            $$ = new ExternalAtom(*$2, *$6, *$4, (@1.end-1).line);
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
@@ -544,14 +653,7 @@ external_atom:
             //
             Registry::Instance()->storeObject($$);
 
-            //
-            // delete char*
-            //
-            delete[] $2;
-
-            //
-            // delete terms
-            //
+            delete $2;
             delete $4;
             delete $6;
         }
@@ -578,48 +680,35 @@ propositional_atom:
             //
             // create new atom from string
             // 
-            $$ = new Atom($1);
+            Atom* a = new Atom(*$1);
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
             //
-            Registry::Instance()->storeObject($$);
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
 
-            //
-            // delete char*
-            //
-            delete[] $1;
+            delete $1;
         }
     | TRUE_NOT ident
         {
             //
             // create new negated atom from string
             // 
-            $$ = new Atom($2, 1);
+            Atom* a = new Atom(*$2, 1);
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
             //
-            Registry::Instance()->storeObject($$);
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
 
-            //
-            // delete char*
-            //
-            delete[] $2;
+            delete $2;
         }
     ;
 
 
 terms:
-     //   {
-            //
-            // emtpy tuple
-            //
-    //        $$ = new Tuple;
-    //    }
-    //| term
     term
         {
             $$ = new Tuple;
@@ -629,9 +718,6 @@ terms:
             //
             $$->push_back(*$1);
 
-            //
-            // delete term
-            //
             delete $1;
         }
     | terms PARAM_SEPARATOR term
@@ -642,10 +728,7 @@ terms:
             $1->push_back(*$3);
                     
             $$ = $1;
-            
-            //
-            // delete term
-            //
+
             delete $3;
         }
     ;
@@ -663,9 +746,10 @@ builtin_pred : /*binop terms2
                //s << *$1 << $2 << *$3;
                s << $2;
 //               std::cout << "creating builtin: " << s.str() << std::endl;
-               $$ = new BuiltinPredicate(*$1, $2, *$3);
+               $$ = new BuiltinPredicate(*$1, *$2, *$3);
 
                delete $1;
+               delete $2;
                delete $3;
            }
           /*| PRED_INT terms1
@@ -694,12 +778,12 @@ aggregate : term PRED_LESS aggregate_pred
           ;
 */
 
-binop    : PRED_EQUAL { $$ = "=="; }
-         | PRED_UNEQUAL { $$ = "!="; }
-         | PRED_LESS { $$ = "<"; }
-         | PRED_GREATER { $$ = ">"; }
-         | PRED_LESS_OR_EQ { $$ = "<="; }
-         | PRED_GREATER_OR_EQ { $$ = ">="; }
+binop    : PRED_EQUAL { $$ = new std::string("=="); }
+         | PRED_UNEQUAL { $$ = new std::string("!="); }
+         | PRED_LESS { $$ = new std::string("<"); }
+         | PRED_GREATER { $$ = new std::string(">"); }
+         | PRED_LESS_OR_EQ { $$ = new std::string("<="); }
+         | PRED_GREATER_OR_EQ { $$ = new std::string(">="); }
          ;
 
 /*
@@ -735,24 +819,18 @@ term:
             //
             // make a string term
             //
-            $$ = new Term($1);
+            $$ = new Term(*$1);
 
-            //
-            // delete the char*
-            //
-            delete[] $1;
+            delete $1;
         }
     | number_param
         {
             //
             // make a number term
             //
-            $$ = new Term($1);
+            $$ = new Term(*$1);
 
-            //
-            // delete the char*
-            //
-            delete[] $1;
+            delete $1;
         }
     | ANON_VAR
         {
@@ -781,17 +859,20 @@ ident:
         }
     | ID_OR_VEL
         {
-            $$ = new char[2];
-            $$[0] = 'v';
-            $$[1] = 0;
+            $$ = new std::string("v");
         }
     ; 
 
-number_param: number { $$ = $1; }
-         ;
+number_param:
+    number
+        {
+            $$ = $1;
+        }
+    ;
 
-number   : NUM 
-	  ;
+number :
+    NUM 
+    ;
 
 /*
 maxinteger : MAXINTEGER
@@ -800,22 +881,24 @@ maxinteger : MAXINTEGER
 
 %%
 
-int inputerror(char const* s) // Error handler for YACC
+
+// error method of bison parser -> call error method of the
+// corresponding driver
+void
+yy::HexParser::error(const yy::HexParser::location_type& l,
+                     const std::string& m)
 {
-    parser_errors++;
-
-    throw SyntaxError(std::string(parser_file), parser_line-1, std::string(s));
-
-/*
-    if( strlen(parser_file) > 0 )
-        std::cerr << parser_file << ": ";
-
-    std::cerr << "line " << parser_line;
-    
-    std::cerr << ": ";
-    
-    std::cerr << s << "." << std::endl;
-*/        
-    return 1;
+//    throw SyntaxError(l.begin.line, m);
+    driver->error(l, m);
 }
+
+  
+// abuse YY_DECL as bison callback for a pure C++ parsing engine
+YY_DECL
+{
+    HexFlexLexer* lex = driver->getLexer();
+    lex->lexval = yylval; // set current semantic value
+    lex->lexloc = yylloc; // and the current location,
+    return lex->yylex (); // finally call the drivers lexer
+} 
 

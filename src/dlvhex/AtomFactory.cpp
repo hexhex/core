@@ -32,19 +32,31 @@ AtomFactory::Instance()
 }
 
 
-void
-AtomFactory::insert(AtomPtr& ap)
+struct NullDeleter
 {
-    //
-    // insert the atom pointer.
-    // if the Atom that is referenced by ap (see definiton of atoms)
-    // is already in the set, then the
-    // returned iterator points to this atom's AtomPtr.
-    // if not, then the ap is added to the set.
-    // 
-    std::pair<AtomSet::atomset_t::iterator, bool> p = atoms.insert(ap);
+    void operator() (Atom*) {} // don't delete managed Atom object
+};
 
-    ap = *(p.first);
+
+
+AtomPtr
+AtomFactory::insert(Atom* ap)
+{
+    AtomPtr a(ap, NullDeleter());
+
+    AtomSet::atomset_t::const_iterator it = atoms.find(a);
+
+    if (it == atoms.end())
+    {
+        AtomPtr x(ap);
+        atoms.insert(x);
+        return x;
+    }
+
+    delete ap;
+
+    return *it;
+
 }
 
 

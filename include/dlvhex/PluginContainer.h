@@ -32,7 +32,7 @@ public:
     /**
     * @brief Loads a library and accesses its plugin-interface.
     */
-    void
+    PluginInterface*
     importPlugin(std::string filename);
 
     /**

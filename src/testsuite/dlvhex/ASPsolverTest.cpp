@@ -12,8 +12,9 @@
  */
 
 #include "testsuite/dlvhex/ASPsolverTest.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/DLVresultParserDriver.h"
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(ASPsolverTest);

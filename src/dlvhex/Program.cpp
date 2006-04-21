@@ -38,7 +38,7 @@ Program::addRule(const Rule* r)
             ++bi)
         {
             if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
-                externalAtoms.push_back((ExternalAtom*)(*bi)->getAtom());
+                externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
         }
     }
 }

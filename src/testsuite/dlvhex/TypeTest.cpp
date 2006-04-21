@@ -84,7 +84,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(AtomTest);
 void
 AtomTest::setUp()
 {
-    fo = new Atom("p(X,Y,\"a small string\")");
+    fo = AtomPtr(new Atom("p(X,Y,\"a small string\")"));
     
     Tuple tl;
     
@@ -92,14 +92,14 @@ AtomTest::setUp()
     tl.push_back(Term("Var"));
     tl.push_back(Term("S"));
     
-    ho = new Atom("Bob", tl);
+    ho = AtomPtr(new Atom("Bob", tl));
 }
 
 void
 AtomTest::tearDown() 
 {
-    delete fo;
-    delete ho;
+//    delete fo;
+//    delete ho;
 }
 
 void
@@ -121,21 +121,21 @@ AtomTest::testUnification()
 {
     CPPUNIT_ASSERT((*fo).unifiesWith(ho));
 	
-    Atom a("p(c,d,E)");
+    AtomPtr a(new Atom("p(c,d,E)"));
     
     //
     // should unifiy only with *fo
     //
-    CPPUNIT_ASSERT((*fo).unifiesWith(&a));
-    CPPUNIT_ASSERT(!(*ho).unifiesWith(&a));
+    CPPUNIT_ASSERT((*fo).unifiesWith(a));
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(a));
     
-    Atom b("n(foo,t,s)");
+    AtomPtr b(new Atom("n(foo,t,s)"));
     
     //
     // should unifiy only with *ho
     //
-    CPPUNIT_ASSERT(!(*fo).unifiesWith(&b));
-    CPPUNIT_ASSERT((*ho).unifiesWith(&b));
+    CPPUNIT_ASSERT(!(*fo).unifiesWith(b));
+    CPPUNIT_ASSERT((*ho).unifiesWith(b));
     
     Tuple tl;
     
@@ -143,22 +143,22 @@ AtomTest::testUnification()
     tl.push_back(Term("const"));
     tl.push_back(Term("\"a small string\""));
     
-    Atom ho2("M", tl);
+    AtomPtr ho2(new Atom("M", tl));
     
     //
     // should unifiy with both
     //
 
-    CPPUNIT_ASSERT((*fo).unifiesWith(&ho2));
-    CPPUNIT_ASSERT((*ho).unifiesWith(&ho2));
+    CPPUNIT_ASSERT((*fo).unifiesWith(ho2));
+    CPPUNIT_ASSERT((*ho).unifiesWith(ho2));
     
-    Atom c("q(E,F,G,H)");
+    AtomPtr c(new Atom("q(E,F,G,H)"));
     
     //
     // different arity:
     //
-    CPPUNIT_ASSERT(!(*ho).unifiesWith(&c));
-    CPPUNIT_ASSERT(!c.unifiesWith(ho));
+    CPPUNIT_ASSERT(!(*ho).unifiesWith(c));
+    CPPUNIT_ASSERT(!c->unifiesWith(ho));
 }
 
 

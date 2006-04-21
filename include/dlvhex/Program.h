@@ -26,11 +26,11 @@ class Program
 public:
 
     /// @todo: we should use a set here!
-    typedef std::vector<const Rule*> program_t;
+    typedef std::vector<const Rule*> ruleset_t;
 
     class const_iterator
     {
-        program_t::const_iterator it;
+        ruleset_t::const_iterator it;
 
     public:
 
@@ -39,7 +39,7 @@ public:
             //assert(0);
         }
 
-        const_iterator(const program_t::const_iterator &it1)
+        const_iterator(const ruleset_t::const_iterator &it1)
             : it(it1)
         { }
 
@@ -100,7 +100,7 @@ public:
 
 private:
 
-    program_t rules;
+    ruleset_t rules;
 
     std::vector<ExternalAtom*> externalAtoms;
 };

@@ -4,10 +4,6 @@ AC_INIT([dlvhex],[0.1],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
-#
-# set system-wide plugin dir
-#
-#CPPFLAGS="$CPPFLAGS -DPLUGIN_DIR='\"\$(pkglibdir)\"'"
 
 #
 # the default system-wide plugin dir $(pkglibdir)\plugins can be
@@ -70,7 +66,49 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_CC
 AM_PROG_LEX
+
+#
+# TODO: is this check still necessary with the bison stuff below?
 AC_PROG_YACC
+
+dnl we use awk in the bison version check
+AC_PROG_AWK
+
+dnl we require bison for building the parser
+AC_PATH_PROG(BISON_PATH, bison, no)
+if test x$BISON_PATH = xno; then
+  AC_MSG_ERROR(Could not find bison)
+fi
+
+dnl check bison version
+AC_MSG_CHECKING([bison version])
+
+if $BISON_PATH --version | head -n 1 | $AWK '{ if ($4 < 2.1) exit 1; else exit 0;}'; 
+then 
+  AC_MSG_RESULT([ok])
+else 
+  AC_MSG_RESULT([too old.])
+  AC_MSG_ERROR([Your bison version is too old, v2.1 or later is required.])
+fi
+
+
+dnl we require flex for building the parser
+AC_PATH_PROG(FLEX_PATH, flex, no)
+if test x$FLEX_PATH = xno; then
+  AC_MSG_ERROR(Could not find flex)
+fi
+
+dnl check flex version
+AC_MSG_CHECKING([flex version])
+
+if $FLEX_PATH --version | head -n 1 | $AWK '{ if (""$2"" < "2.5.33") exit 1; else exit 0;}'; 
+then 
+  AC_MSG_RESULT([ok])
+else 
+  AC_MSG_RESULT([too old.])
+  AC_MSG_ERROR([Your flex version is too old, v2.5.33 or later is required.])
+fi
+
 
 
 # Checks for libraries.
@@ -79,12 +117,19 @@ AC_PROG_YACC
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
 
-# boost stuff
+
+
 AC_LANG_PUSH([C++])
+
+# boost stuff
 AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
 AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
+
+# C++ Lexer
+AC_CHECK_HEADER([FlexLexer.h])
+
 AC_LANG_POP([C++])
 
 

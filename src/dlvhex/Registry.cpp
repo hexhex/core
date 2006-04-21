@@ -33,13 +33,13 @@ Registry::Instance()
 
 
 AtomPtr
-Registry::storeFact(Atom* a)
+Registry::storeAtom(Atom* a)
 {
-    AtomPtr ap(a);
+//    AtomPtr ap(a);
 
-    AtomFactory::Instance()->insert(ap);
+    return AtomFactory::Instance()->insert(a);
 
-    return ap;
+//    return ap;
 }
 
 

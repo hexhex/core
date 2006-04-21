@@ -15,7 +15,7 @@
 #include "dlvhex/DependencyGraph.h"
 
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramBuilder.h"
 
@@ -146,7 +146,7 @@ DependencyGraph::DependencyGraph(Program& program,
 
         if (find(visited.begin(), visited.end(), *weaknode) == visited.end())
         {
-            if ((*weaknode)->getAtom()->getType() == Atom::EXTERNAL)
+            if (typeid(*((*weaknode)->getAtom())) == typeid(ExternalAtom))
             {
                 //std::cout << "single node external atom!" << std::endl;
                 Component* comp = new ExternalComponent(*weaknode);
@@ -242,7 +242,7 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
          ni != nodes.end();
          ++ni)
     {
-        if ((*ni)->getAtom()->getType() == Atom::EXTERNAL)
+        if (typeid(*(*ni)->getAtom()) == typeid(ExternalAtom))
             return true;
     }
 
@@ -251,12 +251,14 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
 
 
 
+/*
 void
 DependencyGraph::getWeakComponents(const std::vector<AtomNode*>& nodes,
                       std::vector<std::vector<AtomNode*> >& wccs)
 {
 //    componentFinder->findWeakComponents(nodes, wccs);
 }
+*/
 
 
 void

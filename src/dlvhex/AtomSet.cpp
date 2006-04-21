@@ -102,47 +102,15 @@ AtomSet::size() const
 }
 
 
-/*
-void
-AtomSet::insert(Atom* a)
-{
-    insert(*a);
-}
-*/
-
 
 void
 AtomSet::insert(AtomPtr& ap)
 {
     /// @todo test if *ap really exists
 
-    //
-    // inserting the AtomPtr in the factory ensures that 
-//    AtomFactory::Instance()->insert(ap);
-
     atoms.insert(ap);
 }
 
-
-
-/*
-void
-AtomSet::insert(Atom& a)
-{
-    atoms.insert(&a);
-}
-*/
-
-
-/*
-void
-AtomSet::insert(Atom a)
-{
-    AtomFactory::AtomPtr pa = AtomFactory::Instance()->insert(a);
-
-    atoms.insert(pa);
-}
-*/
 
 
 void

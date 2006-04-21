@@ -14,7 +14,7 @@
 #include <sstream>
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
-#include "dlvhex/GeneralError.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 
@@ -59,7 +59,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
         }
 
         if (typeid(*(*node)->getAtom()) == typeid(ExternalAtom))
-            extatomInComp.insert(dynamic_cast<const ExternalAtom*>((*node)->getAtom()));
+            extatomInComp.insert(dynamic_cast<const ExternalAtom*>((*node)->getAtom().get()));
         
         node++;
     }
@@ -90,8 +90,8 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             RuleHead_t guesshead;
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
-            Registry::Instance()->storeObject(headatom);
-            guesshead.push_back(headatom);
+            //Registry::Instance()->storeObject(headatom);
+            guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
             //
             // record the external atoms names - we will have to remove them
@@ -100,8 +100,8 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             externalNames.push_back((*ei)->getReplacementName());
 
             headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
-            Registry::Instance()->storeObject(headatom);
-            guesshead.push_back(headatom);
+//            Registry::Instance()->storeObject(headatom);
+            guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
             //
             // the body contains all remaining rule atoms (to make it more
@@ -116,7 +116,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 //
                 // don't add the current external atom itself
                 //
-                if ((*bi)->getAtom() != *ei)
+                if ((*bi)->getAtom().get() != *ei)
                     guessbody.push_back(*bi);
             }
 
@@ -258,7 +258,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             
             Program bodyPicker;
 
-            std::vector<Atom*> bodyPickerAtoms;
+            std::vector<AtomPtr> bodyPickerAtoms;
 
             Program::const_iterator ruleit = guessingprogram.begin();
 
@@ -297,9 +297,10 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 //
                 std::ostringstream atomname;
                 atomname << "flp_head_" << ruleidx++;
-                Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
-                Registry::Instance()->storeObject(flpheadatom);
+                //Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
+                //Registry::Instance()->storeObject(flpheadatom);
 //                    flpatoms.at(ruleidx++) = flpheadatom;
+                AtomPtr flpheadatom = Registry::Instance()->storeAtom(new Atom(atomname.str(), flpheadargs));
                 bodyPickerAtoms.push_back(flpheadatom);
 
 //                    std::cout << "flphead: " << *flpheadatom << std::endl;

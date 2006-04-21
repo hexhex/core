@@ -94,7 +94,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
         //
         Solver.callSolver(p, 1);
     }
-    catch (FatalError e)
+    catch (GeneralError& e)
     {
         throw e;
     }

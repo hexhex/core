@@ -17,7 +17,7 @@
 #include "dlvhex/Literal.h"
 
 
-typedef std::vector<Atom*> RuleHead_t;
+typedef std::vector<AtomPtr> RuleHead_t;
 
 typedef std::vector<Literal*> RuleBody_t;
 

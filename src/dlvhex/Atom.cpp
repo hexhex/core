@@ -19,7 +19,6 @@
 
 
 Atom::Atom()
-    : type(INTERNAL)
 {
 }
 
@@ -31,7 +30,6 @@ Atom::~Atom()
 
 Atom::Atom(const Atom& atom2)
     : ProgramObject(),
-      type(atom2.type),
       arguments(atom2.arguments),
       isStrongNegated(atom2.isStrongNegated),
       isAlwaysFO(atom2.isAlwaysFO)
@@ -40,8 +38,7 @@ Atom::Atom(const Atom& atom2)
 
 
 Atom::Atom(const std::string atom, bool neg)
-    : type(INTERNAL),
-      isStrongNegated(neg),
+    : isStrongNegated(neg),
       isAlwaysFO(0)
 {
     arguments.clear();
@@ -81,8 +78,7 @@ Atom::Atom(const std::string atom, bool neg)
 	
 
 Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
-    : type(INTERNAL),
-      isStrongNegated(neg),
+    : isStrongNegated(neg),
       isAlwaysFO(0)
 {
     arguments.push_back(Term(pred));
@@ -95,8 +91,7 @@ Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
 	
 
 Atom::Atom(const Tuple& arg, bool neg)
-    : type(INTERNAL),
-      isStrongNegated(neg),
+    : isStrongNegated(neg),
       isAlwaysFO(0)
 {
     for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
@@ -150,7 +145,7 @@ Atom::isStronglyNegated() const
 
 
 bool
-Atom::unifiesWith(const Atom* atom2) const
+Atom::unifiesWith(const AtomPtr atom2) const
 {
     //
     // atoms only unify with atoms
@@ -180,7 +175,7 @@ Atom::operator== (const Atom& atom2) const
     if (getArity() != atom2.getArity())
         return false;
     
-    if (getType() != atom2.getType())
+    if (typeid(*this) != typeid(atom2))
         return false;
 
     if (isStrongNegated != atom2.isStrongNegated)
@@ -257,13 +252,6 @@ Atom::print(std::ostream& stream, const bool ho) const
     return stream;
 }
 
-
-
-Atom::Type
-Atom::getType() const
-{
-    return type;
-}
 
 
 bool

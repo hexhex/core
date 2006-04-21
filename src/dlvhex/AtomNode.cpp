@@ -16,13 +16,18 @@
 
 unsigned AtomNode::nodeCount = 0;
 
-
+/*
 AtomNode::AtomNode()
+    : atom(AtomPtr()),
+      inHead(0),
+      inBody(0),
+      nodeId(nodeCount++)
 {
 }
+*/
 
 
-AtomNode::AtomNode(const Atom* atom)
+AtomNode::AtomNode(const AtomPtr atom = AtomPtr())
     : atom(atom),
       inHead(0),
       inBody(0)
@@ -85,7 +90,7 @@ AtomNode::addSucceeding(const Dependency& dep)
 }
 
 
-const Atom*
+const AtomPtr
 AtomNode::getAtom() const
 {
     return atom;
@@ -212,7 +217,9 @@ Dependency::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
 
 std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 {
-    out << *(dep.getAtomNode()->getAtom()) << "[";
+    out << *(dep.getAtomNode()->getAtom());
+
+    out << "[";
 
     switch (dep.getType())
     {
@@ -270,6 +277,7 @@ NodeGraph::getNodes() const
 }
 
 
+/*
 const AtomNode*
 NodeGraph::getNode(unsigned nodeId)
 {
@@ -281,10 +289,28 @@ NodeGraph::getNode(unsigned nodeId)
             return *an;
     }
 }
+*/
 
 
 AtomNode*
-NodeGraph::addUniqueHeadNode(const Atom* atom)
+NodeGraph::addNode()
+{
+    //
+    // create node
+    //
+    AtomNode* newnode = new AtomNode;
+
+    //
+    // add the new node to the graph
+    //
+    atomNodes.push_back(newnode);
+
+    return newnode;
+}
+
+
+AtomNode*
+NodeGraph::addUniqueHeadNode(const AtomPtr atom)
 {
     //
     // does a node with exactly this atom already exist?
@@ -369,7 +395,7 @@ NodeGraph::addUniqueHeadNode(const Atom* atom)
 
 
 AtomNode*
-NodeGraph::addUniqueBodyNode(const Atom* atom)
+NodeGraph::addUniqueBodyNode(const AtomPtr atom)
 {
     //
     // does a node with exactly this atom already exist?
@@ -435,7 +461,7 @@ NodeGraph::addUniqueBodyNode(const Atom* atom)
 
 
 AtomNode*
-NodeGraph::findNode(const Atom* atom) const
+NodeGraph::findNode(const AtomPtr atom) const
 {
     for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
          an != atomNodes.end();
