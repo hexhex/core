@@ -122,10 +122,10 @@ AC_CHECK_HEADERS([sys/param.h])
 AC_LANG_PUSH([C++])
 
 # boost stuff
-AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
-                [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
-AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
-                [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
+#AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
+#                [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
+#AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
+#                [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
 
 # C++ Lexer
 AC_CHECK_HEADER([FlexLexer.h])
@@ -154,7 +154,9 @@ DX_PS_FEATURE([ON])
 DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [documentation])
 
 
+# Checks for external libraries
 AM_PATH_CPPUNIT([1.10.2])
+AC_PATH_BOOST
 
 AC_CONFIG_FILES([
            Makefile 

@@ -18,6 +18,10 @@
 #include <string>
 #include <vector>
 
+//
+// this is included from src/, not include/ !
+// the makefile has to ensure that this file is created before, by bison
+//
 #include "dlvhex/location.hh"
 
 #include "dlvhex/Error.h"

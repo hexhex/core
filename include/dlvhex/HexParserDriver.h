@@ -69,7 +69,7 @@ public:
     void
     parse(std::string filename,
           Program& program,
-          AtomSet& EDB) throw (SyntaxError);
+          AtomSet& EDB);
 
     HexFlexLexer*
     getLexer();

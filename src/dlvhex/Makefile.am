@@ -33,14 +33,18 @@ dlvhex_SOURCES = \
                 SafetyChecker.cpp \
 		HexParserDriver.cpp
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src
+AM_CPPFLAGS = \
+    -I$(top_srcdir)/include \
+    -I$(top_builddir)/src \
+    -I$(top_srcdir)/src \
+    $(BOOST_CXXFLAGS)
 
 #
 # -ldl is for dynamic linking against the external module libs
 # -Wl,-rpath is specifying . to be the search path for shared libs
 # (dlvhex should use libs it finds in its own directory)
 #
-dlvhex_LDFLAGS = -ldl -Wl,-rpath,.
+dlvhex_LDFLAGS = -ldl -Wl,-rpath,. -lboost_program_options-gcc
 
 #
 # dlvhex itself also uses the convenience libs (see below)

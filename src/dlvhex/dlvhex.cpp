@@ -20,8 +20,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
-
-//#include "boost/program_options.hpp"
+#include <getopt.h>
 
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
@@ -76,9 +75,8 @@ void
 printUsage(std::ostream &out, bool full)
 {
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    out << "usage: " << WhoAmI 
-        << " [--option]"
-        << " [filename [filename [...]]]" << std::endl
+    out << "Usage: " << WhoAmI 
+        << " [OPTION] ... FILENAME ..." << std::endl
         << std::endl;
 
     if (!full)
@@ -93,18 +91,18 @@ printUsage(std::ostream &out, bool full)
     // As soos as we have more options, we can introduce sections here!
     //
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    out << "--                 parse from stdin." << std::endl
-        << "--silent           Do not display anything than the actual result." << std::endl
-        << "--firstorder       No higher-order reasoning." << std::endl
+    out << "    --               parse from stdin." << std::endl
+        << "-s, --silent         Do not display anything than the actual result." << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
-        << "--verbose          dump also various intermediate information." << std::endl
-        << "--plugindir=dir    Specify additional directory where to look for plugin" << std::endl
-        << "                   libraries." << std::endl
-        << "                   (Additionally to the installation plugin-dir and" << std::endl
-        << "                   $HOME/.dlvhex/plugins)" << std::endl
-        << "--filter=foo[,bar[,...]]" << std::endl
-        << "                   Only display instances of the specified predicate(s)." << std::endl
-        << "--ruleml           output in RuleML (v0.9) format." << std::endl
+        << "-v, --verbose        dump also various intermediate information." << std::endl
+        << "-p, --plugindir=dir  Specify additional directory where to look for plugin" << std::endl
+        << "                     libraries." << std::endl
+        << "                     (Additionally to the installation plugin-dir and" << std::endl
+        << "                     $HOME/.dlvhex/plugins)" << std::endl
+        << "-f, --filter=foo[,bar[,...]]" << std::endl
+        << "                     Only display instances of the specified predicate(s)." << std::endl
+        << "    --firstorder     No higher-order reasoning." << std::endl
+        << "    --ruleml         output in RuleML (v0.9) format." << std::endl
         << std::endl;
 }
         
@@ -293,34 +291,55 @@ main (int argc, char *argv[])
     
     std::vector<std::string> allFiles;
     
-    //
-    // using boost's program options facilities
-    //
-    /*
-    namespace po = boost::program_options;
+    extern char* optarg;
+    int ch;
+    int longid;
 
-    po::options_description desc("Allowed options");
+    static struct option longopts[] = {
+        { "help", no_argument, 0, 'h' },
+        { "silent", no_argument, 0, 's' },
+        { "verbose", no_argument, 0, 'v' },
+        { "firstorder", no_argument, &longid, 1 },
+        { "weaksafety", no_argument, &longid, 2 },
+        { "ruleml", no_argument, &longid, 3 },
+        { "filter", required_argument, 0, 'f' },
+        { "plugindir", required_argument, 0, 'p'},
+        { NULL, 0, NULL, 0 }
+    };
 
-    desc.add_options()("help", "produce help message")
-                      ("compression", po::value<int>(), "set compression level");
-    */
-
-
-    for (int j = 1; j < argc; j++)
+    if (argc == 1)
     {
-        if (argv[j][0] == '-')
+        printUsage(std::cerr, false);
+
+        exit(-1);
+    }
+
+    while ((ch = getopt_long(argc, argv, "f:hsvp:", longopts, NULL)) != -1)
+    {
+        switch (ch)
         {
-            if (!strcmp(argv[j], "--silent"))
-                global::optionSilent = true;
-//            else if (!strcmp(argv[j],"--dlt"))
-//                optiondlt = true;
-            else if (!strncmp(argv[j],"--plugindir=", 12))
-                optionPlugindir = std::string(argv[j] + 12);
-            else if (!strcmp(argv[j],"--firstorder"))
+        case 'h':
+            printUsage(std::cerr, true);
+            exit(0);
+            break;
+        case 's':
+            global::optionSilent = 1;
+            break;
+        case 'v':
+            global::optionVerbose = 1;
+            break;
+        case 'f':
+            optionFilter = helper::stringExplode(std::string(optarg), ",");
+            break;
+        case 'p':
+            optionPlugindir = std::string(optarg);
+            break;
+        case 0:
+            if (longid == 1)
                 global::optionNoPredicate = false;
-            else if (!strcmp(argv[j],"--weaksafety"))
+            else if (longid == 2)
                 global::optionStrongSafety = false;
-            else if (!strcmp(argv[j], "--ruleml"))
+            else if (longid == 3)
             {
                 optionXML = true;
 
@@ -329,52 +348,60 @@ main (int argc, char *argv[])
                 //
                 global::optionSilent = true;
             }
-            else if (!strcmp(argv[j], "--verbose"))
-                global::optionVerbose = true;
-            else if (!strncmp(argv[j], "--filter=", 9))
-                optionFilter = helper::stringExplode(std::string(argv[j] + 9), ",");
-            else if (!strcmp(argv[j], "--"))
-                optionPipe = true;
-//                { std::cout << "Piping not working yet, sorry!" << std::endl; exit(-1); }
-            else if (!strcmp(argv[j], "-h") || !strcmp(argv[j], "--help"))
-            {
-                printLogo();
-                printUsage(std::cout, true);
-                exit(0);
-            }
-            else 
-            {
-                // TODO:
-                // for now: don't consider unknown options!
-                printLogo();
-                printUsage(std::cout, false);
-                exit(-1);
-            }
-        }
-        else
-        {
-            // TODO: test for file existence!
-            allFiles.push_back(argv[j]);
+            break;
+        case '?':
+            printUsage(std::cerr, false);
+            exit(0);
+            break;
         }
     }
-    
+
+    //
+    // sdtin requested
+    //
+    if (!strcmp(argv[optind - 1], "--"))
+    {
+        optionPipe = true;
+    }
+
+    if (optind == argc)
+    {
+        //
+        // no files and no stdin - error
+        //
+        if (!optionPipe)
+        {
+            printUsage(std::cerr, false);
+
+            exit(-1);
+        }
+    }
+    else
+    {
+        //
+        // files and stdin - error
+        //
+        if (optionPipe)
+        {
+            printUsage(std::cerr, false);
+
+            exit(-1);
+        }
+
+        //
+        // collect filenames
+        //
+        for (int i = optind; i < argc; ++i)
+        {
+            allFiles.push_back(argv[i]);
+        }
+    }
 
     if (!global::optionSilent)
         printLogo();
 
-
     if (global::optionVerbose)
         std::cout << std::endl << "@@@ reading input @@@" << std::endl << std::endl;
-
-    //
-    // no file and no stdin?
-    //
-    if ((allFiles.size() == 0) && !optionPipe)
-    {
-        printUsage(std::cerr,false);
-        
-        exit(-1);
-    }
 
 
     std::set<std::string> libfilelist;
@@ -433,100 +460,98 @@ main (int argc, char *argv[])
     // parse input
     //
     
-    try
+    if (optionPipe)
     {
-        if (optionPipe)
+//        parser_file = "";
+//        parser_line = 1;
+
+//        inputin = stdin;
+
+        try
         {
-    //        parser_file = "";
-    //        parser_line = 1;
-
-    //        inputin = stdin;
-
-            try
-            {
-     //           inputparse ();
-            }
-            catch (GeneralError& e)
-            {
-                std::cerr << e.getErrorMsg() << std::endl;
-                
-                exit(1);
-            }
-
-            global::lpfilename = "lpgraph.dot";
+    //           inputparse ();
         }
-        else
+        catch (GeneralError& e)
         {
-            //
-            // store filename of (first) logic program, we might use this somewhere
-            // else (e.g., when writing the graphviz file in the boost-part
-            //
-            std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
-            global::lpfilename = filepath.back() + ".dot";
+            std::cerr << e.getErrorMsg() << std::endl;
+            
+            exit(1);
+        }
 
-            std::ifstream ifs;
+        global::lpfilename = "lpgraph.dot";
+    }
+    else
+    {
+        //
+        // store filename of (first) logic program, we might use this somewhere
+        // else (e.g., when writing the graphviz file in the boost-part
+        //
+        std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
+        global::lpfilename = filepath.back() + ".dot";
 
-            for (std::vector<std::string>::const_iterator f = allFiles.begin();
-                f != allFiles.end();
-                f++)
-            {
-                std::string parser_file = f->c_str();
+        std::ifstream ifs;
+
+        for (std::vector<std::string>::const_iterator f = allFiles.begin();
+            f != allFiles.end();
+            f++)
+        {
+            std::string parser_file = f->c_str();
 
 
-                //FILE *inputfile;
+            //FILE *inputfile;
 
-                std::string execPreParser("dlt -silent -preparsing " + *f);
-                    
-                /*
-                if (optiondlt)
-                    inputfile = popen(execPreParser.c_str(), "r");
-                else
-                    inputfile = fopen(parser_file, "r");
-                */
+            std::string execPreParser("dlt -silent -preparsing " + *f);
+                
+            /*
+            if (optiondlt)
+                inputfile = popen(execPreParser.c_str(), "r");
+            else
+                inputfile = fopen(parser_file, "r");
+            */
 
 //                ifs.open(parser_file.c_str());
 
 //                if (!ifs.is_open())
 //                if (inputfile == NULL)
-  //              {
-  //                  if (optiondlt)
-    //                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
-      //              else
-    //                    std::cerr << "file " << parser_file << " not found" << std::endl;
+//              {
+//                  if (optiondlt)
+//                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
+    //              else
+//                    std::cerr << "file " << parser_file << " not found" << std::endl;
 
-    //                exit(1);
-    //            }
+//                exit(1);
+//            }
 
-                //parser_line = 1;
-        
-                //inputin = inputfile;
+            //parser_line = 1;
+    
+            //inputin = inputfile;
 
 
-                //HexParserDriver driver(ifs);
-                HexParserDriver driver;
+            //HexParserDriver driver(ifs);
+            HexParserDriver driver;
 
-                try
-                {
+            try
+            {
 //                    inputparse ();
-                    driver.parse(*f, IDB, EDB);
-                }
-                catch (GeneralError& e)
-                {
-                    std::cerr << e.getErrorMsg() << std::endl;
-                    
-                    exit(1);
-                }
-
-                //fclose(inputin);
-                ifs.close();
+                driver.parse(*f, IDB, EDB);
             }
-        }
-    }
-    catch (GeneralError &e)
-    {
-        std::cerr << e.getErrorMsg() << std::endl << std::endl;
+            catch (SyntaxError& e)
+            {
+                std::cerr << e.getErrorMsg() << std::endl;
+                
+                exit(1);
+            }
+            catch (GeneralError& e)
+            {
+                //
+                // input file not found - just skip it, maybe there are more
+                //
+                std::cerr << e.getErrorMsg() << std::endl;
+            }
 
-        exit(1);
+            //fclose(inputin);
+            ifs.close();
+        }
     }
 
     

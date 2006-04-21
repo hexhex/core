@@ -59,7 +59,7 @@ HexParserDriver::parse(std::istream& is,
 void
 HexParserDriver::parse(std::string filename,
                        Program &program,
-                       AtomSet& EDB) throw (SyntaxError)
+                       AtomSet& EDB)
 {
     std::ifstream ifs;
 
@@ -67,7 +67,7 @@ HexParserDriver::parse(std::string filename,
 
     if (!ifs.is_open())
     {
-        exit(0);
+        throw GeneralError("File " + filename + " not found");
     }
 
     yy::HexParser parser(this, program, EDB);
@@ -78,7 +78,7 @@ HexParserDriver::parse(std::string filename,
     {
         parser.parse();
     }
-    catch  (SyntaxError& e)
+    catch (SyntaxError& e)
     {
         e.file = filename;
         throw e;
