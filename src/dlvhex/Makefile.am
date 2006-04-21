@@ -25,14 +25,13 @@ dlvhex_SOURCES = \
                 GraphBuilder.cpp \
                 GraphProcessor.cpp \
 		HexParser.ypp \
+                HexScanner.lpp \
                 OrdinaryModelGenerator.cpp \
 		OutputBuilder.cpp \
-		ParserDriver.cpp \
-		HexParserDriver.cpp \
                 ProgramBuilder.cpp \
                 ResultContainer.cpp \
                 SafetyChecker.cpp \
-                HexScanner.lpp
+		HexParserDriver.cpp
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/src -I$(top_srcdir)/src
 
@@ -56,6 +55,7 @@ dlvhex_LDADD = libdlvhexbase.la libaspsolver.la # libplugin.la
 	$(LEXCOMPILE) -o $@ $<
 .ypp.cpp:
 	$(YACCCOMPILE) -o $@ $<
+
 
 #
 # bison flags
@@ -89,10 +89,10 @@ libdlvhexbase_la_SOURCES = \
 #                      PluginInterface.h
 
 libaspsolver_la_SOURCES = \
-                      ASPsolver.cpp \
                       DLVresultParser.ypp \
                       DLVresultScanner.lpp \
 		      DLVresultParserDriver.cpp \
+                      ASPsolver.cpp \
 		      ParserDriver.cpp
 
 libaspsolver_la_LIBADD = libdlvhexbase.la
