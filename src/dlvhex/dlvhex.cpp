@@ -91,18 +91,17 @@ printUsage(std::ostream &out, bool full)
     // As soos as we have more options, we can introduce sections here!
     //
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    out << "    --               parse from stdin." << std::endl
-        << "-s, --silent         Do not display anything than the actual result." << std::endl
+    out << "     --               parse from stdin" << std::endl
+        << " -s, --silent         do not display anything than the actual result" << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
-        << "-v, --verbose        dump also various intermediate information." << std::endl
-        << "-p, --plugindir=dir  Specify additional directory where to look for plugin" << std::endl
-        << "                     libraries." << std::endl
-        << "                     (Additionally to the installation plugin-dir and" << std::endl
-        << "                     $HOME/.dlvhex/plugins)" << std::endl
-        << "-f, --filter=foo[,bar[,...]]" << std::endl
-        << "                     Only display instances of the specified predicate(s)." << std::endl
-        << "    --firstorder     No higher-order reasoning." << std::endl
-        << "    --ruleml         output in RuleML (v0.9) format." << std::endl
+        << " -v, --verbose        dump also various intermediate information" << std::endl
+        << " -p, --plugindir=dir  specify additional directory where to look for plugin" << std::endl
+        << "                      libraries (additionally to the installation plugin-dir and" << std::endl
+        << "                      $HOME/.dlvhex/plugins)" << std::endl
+        << " -f, --filter=foo[,bar[,...]]" << std::endl
+        << "                      only display instances of the specified predicate(s)" << std::endl
+        << "     --firstorder     no higher-order reasoning" << std::endl
+        << "     --ruleml         output in RuleML (v0.9) format" << std::endl
         << std::endl;
 }
         

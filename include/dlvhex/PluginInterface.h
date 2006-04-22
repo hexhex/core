@@ -343,7 +343,7 @@ public:
      * @brief Propagates dlvhex program options to the plugin.
      */
     virtual void
-    setOptions(int argc, char *argv[])
+    setOptions(int /* argc */, char*[] /* argv[] */)
     { }
 
 };

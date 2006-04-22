@@ -181,13 +181,12 @@ operator<< (std::ostream&, const Atom&);
 
 
 /**
- * @brief Special atom denoting the false-literal.
+ * @brief Special atom denoting either true or false.
  *
- * We derive falseAtom from Atom to for the false-literal. This Atom does not
- * unify with any other atom and can be used wherever 'false' is implicitly
- * expected, e.g., as rule head for constraints.
+ * boolAtom does not unify with any other atom and can be used wherever 'true'
+ * or 'false' are implicitly expected, e.g., as rule head for constraints.
  */
-class falseAtom : public Atom
+class boolAtom : public Atom
 {
 public:
 
@@ -204,19 +203,19 @@ public:
     }
 
     virtual bool
-    operator== (const Atom& atom2) const
+    operator== (const Atom&) const
     {
         return false;
     }
 
     virtual std::ostream&
-    print(std::ostream& out, const bool ho) const
+    print(std::ostream& out, const bool) const
     {
         return out << "";
     }
 
     int
-    operator< (const Atom& atom2) const
+    operator< (const Atom&) const
     {
         return true;
     }

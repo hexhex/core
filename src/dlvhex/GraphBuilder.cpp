@@ -14,19 +14,8 @@
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
+#include "dlvhex/Atom.h"
 
-
-/*
-void
-GraphBuilder::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
-{
-    Dependency dep1(from, type);
-    Dependency dep2(to, type);
-
-    from->addSucceeding(dep2);
-    to->addPreceding(dep1);
-}
-*/
 
 
 void
@@ -90,10 +79,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         if (head.size() == 0)
         {
-            AtomPtr va = Registry::Instance()->storeAtom(new falseAtom);
+            AtomPtr va = Registry::Instance()->storeAtom(new boolAtom);
             
             AtomNode* vn = nodegraph.addUniqueHeadNode(va);
-//            AtomNode* vn = nodegraph.addNode();
 
             currentHeadNodes.push_back(vn);
         }

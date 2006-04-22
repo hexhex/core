@@ -160,7 +160,6 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         }
         catch (GeneralError&)
         {
-            std::cout << "foobar" << std::endl;
             throw;
         }
 
