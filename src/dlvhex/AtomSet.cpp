@@ -38,11 +38,50 @@ multiplySets(std::vector<AtomSet>& s1,
                 i2 != s2.end();
                 ++i2)
         {
+            //
+            // make union of two atomsets:
+            //
             un = *i1;
             un.insert(*i2);
+
             //std::cout << "inserted: " << un << std::endl;
 
-            tmpset.push_back(un);
+            //
+            // now ensure minimality:
+            //
+            bool add = true;
+
+            std::vector<AtomSet>::iterator curras = tmpset.begin();
+
+            while (curras != tmpset.end())
+            {
+                //
+                // is the new one a superset (or equal) than an existing one
+                //
+                if (std::includes(un.begin(), un.end(), (*curras).begin(), (*curras).end()))
+                {
+                    add = false;
+                    break;
+                }
+
+                //
+                // is the new one a subset of an existing one? Must be a *real* subset,
+                // if we passed the previous "if"!
+                //
+                if (std::includes((*curras).begin(), (*curras).end(), un.begin(), un.end()))
+                {
+                    //
+                    // remove existing one
+                    //
+                    tmpset.erase(curras);
+                    break;
+                }
+
+                curras++;
+            }
+
+            if (add)
+                tmpset.push_back(un);
         }
     }
 
@@ -274,8 +313,8 @@ AtomSet::keepPos()
 bool
 AtomSet::operator== (const AtomSet& atomset2) const
 {
-    return this->size() == atomset2.size()
-      && std::equal(this->begin(), this->end(), atomset2.begin());
+    return ((this->size() == atomset2.size()) 
+      && std::equal(this->begin(), this->end(), atomset2.begin()));
 }
 
 
@@ -283,4 +322,16 @@ bool
 AtomSet::operator!= (const AtomSet& atomset2) const
 {
     return !(*this == atomset2);
+}
+
+
+int
+AtomSet::operator< (const AtomSet& atomset2) const
+{
+    std::cout << "comp atomsets: ";
+    this->print(std::cout, 0);
+    std::cout << " " << (this->atoms < atomset2.atoms) << " ";
+    atomset2.print(std::cout, 0);
+    std::cout << std::endl;
+    return (this->atoms < atomset2.atoms);
 }

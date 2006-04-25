@@ -7,7 +7,18 @@ check_PROGRAMS = $(TESTS)
 dlvhexTS_SOURCES = \
     TestSuite.cpp \
     TypeTest.cpp \
-    ASPsolverTest.cpp
+    TestGraphProcessor.cpp \
+    ASPsolverTest.cpp \
+    ../../dlvhex/BoostComponentFinder.cpp \
+    ../../dlvhex/GraphProcessor.cpp \
+    ../../dlvhex/GraphBuilder.cpp \
+    ../../dlvhex/DependencyGraph.cpp \
+    ../../dlvhex/AtomNode.cpp \
+    ../../dlvhex/Component.cpp \
+    ../../dlvhex/OrdinaryModelGenerator.cpp \
+    ../../dlvhex/FixpointModelGenerator.cpp \
+    ../../dlvhex/GuessCheckModelGenerator.cpp \
+    ../../dlvhex/ProgramBuilder.cpp
     
 AM_CPPFLAGS = -I$(top_srcdir)/include
 

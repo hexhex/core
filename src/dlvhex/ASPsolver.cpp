@@ -164,8 +164,8 @@ ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
     
 
     /*
-    for (std::vector<AtomSet>::iterator o = solverResult::answersets.begin();
-            o != solverResult::answersets.end();
+    for (std::vector<AtomSet>::iterator o = answersets.begin();
+            o != answersets.end();
             o++)
     {
         std::cout << "as: ";

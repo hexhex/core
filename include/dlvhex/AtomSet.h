@@ -205,6 +205,9 @@ public:
     bool
     operator!= (const AtomSet&) const;
 
+    int
+    operator< (const AtomSet&) const;
+    
 //private:
 
     atomset_t atoms;

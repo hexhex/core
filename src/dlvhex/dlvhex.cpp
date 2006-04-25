@@ -266,6 +266,8 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 }
 
 
+#include <ext/stdio_filebuf.h> 
+
 
 int
 main (int argc, char *argv[])
@@ -425,6 +427,8 @@ main (int argc, char *argv[])
     searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
 
+    std::vector<PluginInterface*> plugins;
+
     //
     // import found plugin-libs
     //
@@ -440,6 +444,8 @@ main (int argc, char *argv[])
 
             if (plugin != NULL)
             {
+                plugins.push_back(plugin);
+
                 plugin->setOptions(argc, argv);
             }
         }
@@ -459,16 +465,13 @@ main (int argc, char *argv[])
     // parse input
     //
     
+    HexParserDriver driver;
+
     if (optionPipe)
     {
-//        parser_file = "";
-//        parser_line = 1;
-
-//        inputin = stdin;
-
         try
         {
-    //           inputparse ();
+            driver.parse(std::cin, IDB, EDB);
         }
         catch (GeneralError& e)
         {
@@ -499,8 +502,24 @@ main (int argc, char *argv[])
 
             //FILE *inputfile;
 
+            
+            /*
             std::string execPreParser("dlt -silent -preparsing " + *f);
                 
+            FILE* fp = popen(execPreParser.c_str(), "r");
+
+            __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
+
+            std::istream inpipe(fb);
+            */
+            
+
+            std::ifstream ifs;
+
+            ifs.open((*f).c_str());
+
+            
+
             /*
             if (optiondlt)
                 inputfile = popen(execPreParser.c_str(), "r");
@@ -527,15 +546,36 @@ main (int argc, char *argv[])
 
 
             //HexParserDriver driver(ifs);
-            HexParserDriver driver;
-
             try
             {
-//                    inputparse ();
-                driver.parse(*f, IDB, EDB);
+                if (!ifs.is_open())
+                {
+                    throw GeneralError("File " + *f + " not found");
+                }
+           /*     std::stringstream input, output;
+
+                input << ifs;
+
+                for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
+                     pi != plugins.end();
+                     ++pi)
+                {
+                    PluginRewriter* pr = (*pi)->createRewriter(input, output);
+
+                    if (pr != NULL)
+                        pr->rewrite();
+                    else
+                        output << input;
+                }
+              */
+
+                driver.parse(ifs, IDB, EDB);
+
+                ifs.close();
             }
             catch (SyntaxError& e)
             {
+                e.file = *f;
                 std::cerr << e.getErrorMsg() << std::endl;
                 
                 exit(1);
@@ -548,8 +588,6 @@ main (int argc, char *argv[])
                 std::cerr << e.getErrorMsg() << std::endl;
             }
 
-            //fclose(inputin);
-            ifs.close();
         }
     }
 

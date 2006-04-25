@@ -1,0 +1,52 @@
+2006-04-25  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* Makefile.am: Added doxygen stuff to EXTRA_DIST files.
+
+	* README: Added.
+
+	* ChangeLog: Added.
+
+	* configure.ac: Removed bison/flex checks, commented back in boost-header
+	checks.
+
+	* examples/Makefile.am: Removed shop.owl (needs other plugins, not
+	useful as pure dlvhex-example).
+
+	* src/dlvhex/Makefile.am: Reformat. Added bison output files to
+	EXTRA_DIST.
+
+	* src/dlvhex/ASPsolver.cpp: (callSolver): Corrected debug-output.
+
+	* src/dlvhex/AtomFactory.cpp: (reset): Added reset() to clear factory.
+	* include/dlvhex/AtomFactory.h: Likewise.
+
+	* src/dlvhex/AtomSet.cpp: (multiplySets): Added check for minimality.
+
+	* src/dlvhex/Literal.cpp: (operator=): Added assignment operator.
+	* include/dlvhex/Literal.h: Likewise.
+
+	* src/dlvhex/dlvhex.cpp: (main): Prepared integration of
+	plugin-rewriters.
+
+	* include/dlvhex/Makefile.am: Added missing header files.
+
+	* include/dlvhex/BoostComponentFinder.h: Removed superficial
+	header-includes.
+
+	* include/dlvhex/ComponentFinder.h: Added (empty) virtual Destructor.
+
+	* include/dlvhex/DLVresultFlexLexer.h: Removed.
+
+	* include/dlvhex/AtomSet.h: Added operator< for comparison of sets of AtomSets (does
+	not work yet).
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: (tearDown): Added reset of
+	AtomFactory after each test in order to avoid conflicting atoms.
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Added.
+
+	* src/testsuite/dlvhex/Makefile.am: Added dlvhex-sources necessary for
+	the new TestGraphProcessor class.
+
+	* include/testsuite/dlvhex/Makefile.am: Added TestGraphProcessor.h
+

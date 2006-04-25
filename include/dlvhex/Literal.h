@@ -38,12 +38,6 @@ public:
 
 
     /**
-     * @brief Copy constructor.
-     */
-    //Literal(const Literal&);
-
-
-    /**
      * @brief Construct a literal from an atom, possibly weakly negated.
      */
     Literal(const AtomPtr, bool naf = false);
@@ -59,6 +53,13 @@ public:
      * @brief Construct a literal from an external atom, possibly weakly negated.
      */
     //Literal(const ExternalAtom&, bool naf = false);
+
+
+    /**
+     * @brief Assignment operator.
+     */
+    Literal&
+    operator=(const Literal&);
 
 
     /**

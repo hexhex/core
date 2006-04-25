@@ -9,6 +9,7 @@ noinst_HEADERS = \
                  BoostComponentFinder.h \
                  ComponentFinder.h \
 		 Component.h \
+		 DLVresultParserDriver.h \
                  DependencyGraph.h \
                  Error.h \
                  ExternalAtom.h \
@@ -16,9 +17,11 @@ noinst_HEADERS = \
                  GraphBuilder.h \
                  GraphProcessor.h \
                  helper.h \
+		 HexParserDriver.h \
                  Literal.h \
                  ModelGenerator.h \
 		 OutputBuilder.h \
+		 ParserDriver.h \
                  PluginContainer.h \
                  PluginInterface.h \
                  Program.h \

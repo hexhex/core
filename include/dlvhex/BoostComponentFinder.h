@@ -16,14 +16,10 @@
 #define _BOOSTCOMPONENTFINDER_H
 
 
-#include <map>
 #include <vector>
 #include <iostream>
 
 #include "dlvhex/ComponentFinder.h"
-//#include "dlvhex/ExternalAtom.h"
-//#include "dlvhex/ModelGenerator.h"
-//#include <utility>
 
 
 /**

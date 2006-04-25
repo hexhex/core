@@ -60,6 +60,13 @@ AtomFactory::insert(Atom* ap)
 }
 
 
+void
+AtomFactory::reset()
+{
+    atoms.clear();
+}
+
+
 AtomFactory::~AtomFactory()
 {
 }

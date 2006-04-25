@@ -1,0 +1,34 @@
+-*- outline -*-
+
+* Dependencies
+dlvhex depends on following libraries and programs:
+
+** boost
+http://www.boost.org/
+
+** cppunit (optional)
+http://cppunit.sourceforge.net/
+
+
+* Building and installing dlvhex
+
+** Prerequisites
+
+*** boost
+Follow the instructions of the INSTALL file found in the distributions
+tarball. Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include pre-built Boost packages. 
+
+*** cppunit
+Follow the instructions of the INSTALL file found in the distributions
+tarball. dlvhex has been tested with cppunit 1.10.2.
+
+
+** Configuration
+
+** Testing
+Run "make check" to build and execute the cppunit-based regression
+testsuite.
+
+
+** Installation
+Run "make install" to install dlvhex.

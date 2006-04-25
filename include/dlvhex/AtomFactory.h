@@ -39,6 +39,12 @@ public:
     AtomPtr
     insert(Atom*);
 
+    /*
+     * @brief Clears the Factory.
+     */
+    void
+    reset();
+
 protected:
 
     AtomFactory()

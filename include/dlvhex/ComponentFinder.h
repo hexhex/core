@@ -72,6 +72,8 @@ public:
      */
     typedef std::vector<Vertices> ComponentList;
 
+    virtual ~ComponentFinder() {}
+
 protected:
 
     /// Ctor.

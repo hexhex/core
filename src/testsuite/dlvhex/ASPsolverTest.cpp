@@ -15,6 +15,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/DLVresultParserDriver.h"
+#include "dlvhex/AtomFactory.h"
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(ASPsolverTest);
@@ -31,6 +32,8 @@ void
 ASPsolverTest::tearDown() 
 {
     delete solver;
+
+    AtomFactory::Instance()->reset();
 }
 
 void
