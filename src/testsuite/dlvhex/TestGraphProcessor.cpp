@@ -134,77 +134,45 @@ TestGraphProcessor::testSimple()
 
     AtomSet* res;
 
-return;
+    //
+    // expected atomsets
+    //
     std::set<AtomSet> expected;
     AtomSet as1;
     as1.insert(qa);
     as1.insert(ba);
     as1.insert(pa);
-    AtomSet as2;
-    as2.insert(qb);
-    as2.insert(pb);
-    as2.insert(ab);
+    expected.insert(as1);
+    as1.clear();
+    as1.insert(qb);
+    as1.insert(pb);
+    as1.insert(ab);
     expected.insert(as1);
 
-    for (std::set<AtomSet>::iterator asi = expected.begin();
-         asi != expected.end();
-         ++asi)
-    {
-        std::cout << "expected as: ";
-        (*asi).print(std::cout, 0);
-        std::cout << std::endl;
-    }
-        std::cout << std::endl;
-
-    expected.insert(as2);
-
-    for (std::set<AtomSet>::iterator asi = expected.begin();
-         asi != expected.end();
-         ++asi)
-    {
-        std::cout << "expected as: ";
-        (*asi).print(std::cout, 0);
-        std::cout << std::endl;
-    }
-        std::cout << std::endl;
-
+    //
+    // result atomsets
+    //
     std::set<AtomSet> result;
     res = gp.getNextModel();
     CPPUNIT_ASSERT(res != NULL);
     result.insert(*res);
 
-    for (std::set<AtomSet>::iterator asi = result.begin();
-         asi != result.end();
-         ++asi)
-    {
-        std::cout << "result as: ";
-        (*asi).print(std::cout, 0);
-        std::cout << std::endl;
-    }
-        std::cout << std::endl;
-
     res = gp.getNextModel();
     CPPUNIT_ASSERT(res != NULL);
     result.insert(*res);
 
-
+    //
+    // only two expected
+    //
     res = gp.getNextModel();
     CPPUNIT_ASSERT(res == NULL);
 
-    for (std::set<AtomSet>::iterator asi = result.begin();
-         asi != result.end();
-         ++asi)
-    {
-        std::cout << "result as: ";
-        (*asi).print(std::cout, 0);
-        std::cout << std::endl;
-    }
-
     CPPUNIT_ASSERT(expected == result);
 
-
+    //
+    // clean up
+    //
     delete cf;
-
     
     std::vector<Rule*>::const_iterator delrule = rules.begin();
     while (delrule != rules.end())

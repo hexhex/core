@@ -1,3 +1,26 @@
+2006-05-02  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/PluginInterface.h: (setOptions): Modified argument type.
+
+	* src/dlvhex/AtomSet.cpp: (operator<) Corrected semantics of AtomSet
+	comparison.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: (compute): Corrected bug in
+	creation of guessing rules - replacement atoms for external atoms were
+	created without input arguments.
+
+	* src/dlvhex/dlvhex.cpp: (main): Updated option handling, passing
+	unparsed options to plugins and aborting, if any options are left
+	after plugins. Commented out dlt-preparsing. Activated
+	plugin-rewriters.
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: (testSimple): Removed
+	debug output.
+
+	* src/testsuite/dlvhex/TypeTest.cpp: (testConstruction): Added test
+	for set of AtomSet comparison.
+
+
 2006-04-25  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* Makefile.am: Added doxygen stuff to EXTRA_DIST files.

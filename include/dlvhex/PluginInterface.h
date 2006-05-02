@@ -341,9 +341,13 @@ public:
 
     /**
      * @brief Propagates dlvhex program options to the plugin.
+     *
+     * Each option known to the plugin must be deleted from the vector. dlvhex
+     * will exit with an error if unknown options are left in the vector after
+     * all plugins have been processed.
      */
     virtual void
-    setOptions(int /* argc */, char*[] /* argv[] */)
+    setOptions(std::vector<std::string>&)
     { }
 
 };

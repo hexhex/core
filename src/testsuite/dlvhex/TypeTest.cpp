@@ -269,5 +269,29 @@ AtomSetTest::testConstruction()
     s1.matchPredicate("xx", s3);
 
     CPPUNIT_ASSERT(s2 == s3);
+
+
+    //
+    // test set of AtomSets:
+    //
+    AtomPtr w1(new Atom("p(x)"));
+    AtomSet as1;
+    as1.insert(w1);
+    AtomPtr w2(new Atom("q(x)"));
+    AtomPtr w3(new Atom("r(x)"));
+    AtomSet as2;
+    as2.insert(w2);
+    as2.insert(w3);
+
+    std::set<AtomSet> ss1;
+    ss1.insert(as1);
+    ss1.insert(as2);
+    
+    std::set<AtomSet> ss2;
+    ss2.insert(as2);
+    ss2.insert(as1);
+    
+    CPPUNIT_ASSERT(ss1 == ss2);
 }
+
 

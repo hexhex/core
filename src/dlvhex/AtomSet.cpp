@@ -328,10 +328,13 @@ AtomSet::operator!= (const AtomSet& atomset2) const
 int
 AtomSet::operator< (const AtomSet& atomset2) const
 {
-    std::cout << "comp atomsets: ";
-    this->print(std::cout, 0);
-    std::cout << " " << (this->atoms < atomset2.atoms) << " ";
-    atomset2.print(std::cout, 0);
-    std::cout << std::endl;
-    return (this->atoms < atomset2.atoms);
+    if (this->size() < atomset2.size())
+        return true;
+
+    if (this->size() > atomset2.size())
+        return false;
+
+    return !(std::includes(this->begin(), this->end(), atomset2.begin(), atomset2.end()));
 }
+
+

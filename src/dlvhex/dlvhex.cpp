@@ -286,13 +286,24 @@ main (int argc, char *argv[])
     //
     // dlt switch should be temporary until we have a proper rewriter for flogic!
     //
-    //bool optiondlt = false;
+    bool optiondlt = false;
 
     std::vector<std::string> optionFilter;
     
     std::vector<std::string> allFiles;
+
+    std::vector<std::string> remainingOptions;
+
     
     extern char* optarg;
+    extern int optind, opterr;
+
+    //
+    // prevent error message for unknown options - they might be known to
+    // plugins later!
+    //
+    opterr = 0;
+
     int ch;
     int longid;
 
@@ -303,6 +314,7 @@ main (int argc, char *argv[])
         { "firstorder", no_argument, &longid, 1 },
         { "weaksafety", no_argument, &longid, 2 },
         { "ruleml", no_argument, &longid, 3 },
+        { "dlt", no_argument, &longid, 4 },
         { "filter", required_argument, 0, 'f' },
         { "plugindir", required_argument, 0, 'p'},
         { NULL, 0, NULL, 0 }
@@ -349,10 +361,11 @@ main (int argc, char *argv[])
                 //
                 global::optionSilent = true;
             }
+            else if (longid == 4)
+                optiondlt = true;
             break;
         case '?':
-            printUsage(std::cerr, false);
-            exit(0);
+            remainingOptions.push_back(argv[optind - 1]);
             break;
         }
     }
@@ -401,9 +414,6 @@ main (int argc, char *argv[])
     if (!global::optionSilent)
         printLogo();
 
-    if (global::optionVerbose)
-        std::cout << std::endl << "@@@ reading input @@@" << std::endl << std::endl;
-
 
     std::set<std::string> libfilelist;
     //
@@ -446,7 +456,10 @@ main (int argc, char *argv[])
             {
                 plugins.push_back(plugin);
 
-                plugin->setOptions(argc, argv);
+                plugin->setOptions(remainingOptions);
+
+                ///todo what to do with unknown options? how to know whether the
+                //plugins did not know all remaining options?
             }
         }
         catch (GeneralError &e)
@@ -457,14 +470,27 @@ main (int argc, char *argv[])
         }
     }
 
+    //
+    // any unknown options left?
+    //
+    if (remainingOptions.size() > 0)
+    {
+        printUsage(std::cerr, false);
+
+        exit(-1);
+    }
+
+
     if (!global::optionSilent)
         std::cout << std::endl;
-
     
     //
     // parse input
     //
     
+    if (global::optionVerbose)
+        std::cout << std::endl << "@@@ reading input @@@" << std::endl << std::endl;
+
     HexParserDriver driver;
 
     if (optionPipe)
@@ -497,79 +523,83 @@ main (int argc, char *argv[])
             f != allFiles.end();
             f++)
         {
-            std::string parser_file = f->c_str();
-
-
-            //FILE *inputfile;
-
-            
-            /*
-            std::string execPreParser("dlt -silent -preparsing " + *f);
-                
-            FILE* fp = popen(execPreParser.c_str(), "r");
-
-            __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
-
-            std::istream inpipe(fb);
-            */
-            
-
-            std::ifstream ifs;
-
-            ifs.open((*f).c_str());
-
-            
-
-            /*
-            if (optiondlt)
-                inputfile = popen(execPreParser.c_str(), "r");
-            else
-                inputfile = fopen(parser_file, "r");
-            */
-
-//                ifs.open(parser_file.c_str());
-
-//                if (!ifs.is_open())
-//                if (inputfile == NULL)
-//              {
-//                  if (optiondlt)
-//                    std::cerr << "unable to call preparser: " << execPreParser << std::endl;
-    //              else
-//                    std::cerr << "file " << parser_file << " not found" << std::endl;
-
-//                exit(1);
-//            }
-
-            //parser_line = 1;
-    
-            //inputin = inputfile;
-
-
-            //HexParserDriver driver(ifs);
             try
             {
+            
+                std::istream* input = new std::stringstream;
+
+                /*
+                if (optiondlt)
+                {
+                    std::string execPreParser("dlt -silent -preparsing " + *f);
+                        
+                    FILE* fp = popen(execPreParser.c_str(), "r");
+
+                    if (fp == NULL)
+                    {
+                        throw GeneralError("Unable to call Preparser dlt");
+                    }
+
+                    __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
+
+                    std::istream inpipe(fb);
+//                    inputfile = popen(execPreParser.c_str(), "r");
+                //    ifs.rdbuf(inpipe.rdbuf());                    
+                    input->rdbuf(inpipe.rdbuf());
+                }
+                else*/
+
+                std::ifstream ifs;
+
+                ifs.open((*f).c_str());
+
                 if (!ifs.is_open())
                 {
                     throw GeneralError("File " + *f + " not found");
                 }
-           /*     std::stringstream input, output;
 
-                input << ifs;
+                input->rdbuf(ifs.rdbuf()); 
+
+                std::stringstream output;
+
+                bool noRewrite = true;
 
                 for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
                      pi != plugins.end();
                      ++pi)
                 {
-                    PluginRewriter* pr = (*pi)->createRewriter(input, output);
+                    PluginRewriter* pr = (*pi)->createRewriter(*input, output);
+
 
                     if (pr != NULL)
-                        pr->rewrite();
-                    else
-                        output << input;
-                }
-              */
+                    {
+                        ///todo next line should be at the end of that scope and
+                        //driver always parse *input, but it doesn't work
+                        output.str("");
 
-                driver.parse(ifs, IDB, EDB);
+                        noRewrite = false;
+
+                        pr->rewrite();
+
+                        std::streambuf* in = input->rdbuf();
+                        std::streambuf* out = output.rdbuf();
+
+                        if (global::optionVerbose)
+                        {
+                            std::cout << "Rewritten Program:" << std::endl;
+                            std::cout << output.str() << std::endl;
+                        }
+
+                        input->rdbuf(out);
+                    }
+                }
+              
+                if (noRewrite)
+                    driver.parse(*input, IDB, EDB);
+                else
+                    driver.parse(output, IDB, EDB);
+
+                delete input;
 
                 ifs.close();
             }

@@ -89,7 +89,13 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             //
             RuleHead_t guesshead;
 
-            Atom* headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments());
+            Tuple headargs((*ei)->getInputTerms());
+            Tuple extargs((*ei)->getArguments());
+
+            headargs.insert(headargs.end(), extargs.begin(), extargs.end());
+
+            Atom* headatom = new Atom((*ei)->getReplacementName(), headargs);
+
             //Registry::Instance()->storeObject(headatom);
             guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
@@ -99,7 +105,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             //
             externalNames.push_back((*ei)->getReplacementName());
 
-            headatom = new Atom((*ei)->getReplacementName(), (*ei)->getArguments(), 1);
+            headatom = new Atom((*ei)->getReplacementName(), headargs, 1);
 //            Registry::Instance()->storeObject(headatom);
             guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
