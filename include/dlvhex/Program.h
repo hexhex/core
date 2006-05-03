@@ -85,6 +85,12 @@ public:
     void
     addRule(const Rule*);
 
+    void
+    addWeakConstraint(const WeakConstraint*);
+
+    const std::vector<const WeakConstraint*>&
+    getWeakConstraints() const;
+
     bool
     exists(const Rule*);
 
@@ -101,6 +107,8 @@ public:
 private:
 
     ruleset_t rules;
+
+    std::vector<const WeakConstraint*> weakConstraints;
 
     std::vector<ExternalAtom*> externalAtoms;
 };

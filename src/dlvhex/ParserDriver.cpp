@@ -43,9 +43,12 @@ ParserDriver::error(const yy::location& l,
                     const std::string& m) throw (SyntaxError)
 {
     //syncStream();
-//    std::stringstream s;
-//    s << "Parsing error at " << l << ": " << m;
-    throw SyntaxError(m, l.begin.line);
+//    std::cout << "Parsing error at " << l << ": " << m << std::endl;
+
+    //
+    // the actual line of the error seems to be l.end.line!
+    //
+    throw SyntaxError(m, l.end.line);
 }
 
 

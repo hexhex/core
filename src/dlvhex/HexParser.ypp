@@ -88,14 +88,16 @@ YY_DECL;
 
 %union {
     std::string*      string;
+    int*              integ;
     AtomPtr*          atom;
     Term*             term;
     Tuple*            terms;
     ExternalAtom*     extatom;
     Literal*          literal;
-    RuleHead_t*         disjunction;
-    RuleBody_t*         body;
+    RuleHead_t*       disjunction;
+    RuleBody_t*       body;
     Rule*             rule;
+    WeakConstraint*   wconstraint;
     BuiltinPredicate* builtin;
     /*
     AGGREGATE_TYPE*aggregate_type;
@@ -109,11 +111,11 @@ YY_DECL;
 %token <string> ID NUM EXTERNAL_ATOM_ID
 %type  <string> ident
 %type  <string> binop
-%type  <string> number number_param
+%type  <integ> number
 //%type  <string> param_sans_maxint
 %type  <term> term
 //%type  <string> MAXINTEGER_EQUALS_param
-//%type  <string> ident_or_fixedpt ident_or_number
+%type  <term> ident_or_fixedpt ident_or_number
 //%type  <string> tertop
 %type  <terms> terms// terms1 terms2 terms3
 //%type  <string> user_pred builtin_pred propositional_atom aggregate external_atom
@@ -123,6 +125,7 @@ YY_DECL;
 %type  <disjunction> disj
 %type  <body> body
 %type  <rule> rule rule0 constraint
+%type <wconstraint> wconstraint
 %type <extatom> external_atom    
 %type <terms> external_output
 %type <builtin> builtin_pred    
@@ -130,7 +133,7 @@ YY_DECL;
 //%type  <string> aggregate_pred
 //%type  <string> strictrule
 //%type  <string> weights
-//%type  <string> fixedpt
+%type  <term> fixedpt
 //%type  <string> object_id
 //%type  <string> object_ids inherit
 
@@ -228,6 +231,11 @@ clause:
     rule
 //          | strictrule
     | constraint
+    | wconstraint
+        {
+            program.addWeakConstraint($1);
+        }
+
 //          | wconstraint       { } 
     ;
 
@@ -286,6 +294,69 @@ constraint:
             delete $2;
         }
     ;
+
+wconstraint:
+    WEAK_CONS body DOT
+        {
+            $$ = new WeakConstraint(*$2, Term(1), Term(1));
+        }
+    | WEAK_CONS body DOT BRACKET_OPEN COLON ident_or_number BRACKET_CLOSE
+        {
+            $$ = new WeakConstraint(*$2, Term(1), *$6);
+
+            delete $6;
+        }
+    | WEAK_CONS body DOT BRACKET_OPEN ident_or_fixedpt COLON BRACKET_CLOSE
+        {
+            $$ = new WeakConstraint(*$2, *$5, Term(1));
+
+            delete $5;
+        }
+    | WEAK_CONS body DOT BRACKET_OPEN ident_or_fixedpt COLON ident_or_number BRACKET_CLOSE
+        {
+            $$ = new WeakConstraint(*$2, *$5, *$7);
+
+            delete $5;
+            delete $7;
+        }
+    ;
+
+ident_or_fixedpt:
+    ident
+        {
+            $$ = new Term(*$1);
+            delete $1;
+        }
+    | fixedpt
+    ;
+
+ident_or_number:
+    ident
+        {
+            $$ = new Term(*$1);
+            delete $1;
+        }
+    | number
+        {
+            $$ = new Term(*$1);
+            delete $1;
+        }
+    ;
+
+fixedpt:
+    number
+        {
+            $$ = new Term(*$1);
+            delete $1;
+        }
+ /* | number DOT NUM */
+    ;
+
+/*
+
+query     : body BOOL_QUERY
+          ;
+*/
 
 rule0:
     user_pred
@@ -404,35 +475,6 @@ rule0:
         }
 //    | ident PARAM_OPEN number_param DOT DOT number_param PARAM_CLOSE
     ;
-
-/*
-constraint: CONS body DOT
-          ;
-
-wconstraint: WEAK_CONS body DOT weights
-          ;
-
-weights   : { }
-	  | BRACKET_OPEN COLON ident_or_number BRACKET_CLOSE
-	  | BRACKET_OPEN ident_or_fixedpt COLON BRACKET_CLOSE
-	  | BRACKET_OPEN ident_or_fixedpt COLON ident_or_number BRACKET_CLOSE
-	  ;
-
-ident_or_fixedpt : ident
-          | fixedpt
-          ;
-
-ident_or_number : ident
-          | number
-          ;
-
-fixedpt	  : number
-	  | number DOT NUM
-	  ;
-
-query     : body BOOL_QUERY
-          ;
-*/
 
 disj:
     user_pred HEAD_SEPARATOR user_pred
@@ -739,19 +781,29 @@ ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
 */
 
 
-builtin_pred : /*binop terms2
-          |*/ term binop term
-           {
-               std::ostringstream s;
-               //s << *$1 << $2 << *$3;
-               s << $2;
+builtin_pred :
+    term binop term
+        {
+            std::ostringstream s;
+            //s << *$1 << $2 << *$3;
+            s << $2;
 //               std::cout << "creating builtin: " << s.str() << std::endl;
-               $$ = new BuiltinPredicate(*$1, *$2, *$3);
+            $$ = new BuiltinPredicate(*$1, *$2, *$3);
 
-               delete $1;
-               delete $2;
-               delete $3;
-           }
+            delete $1;
+            delete $2;
+            delete $3;
+        } 
+    | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
+        {
+            std::ostringstream s;
+            s << $1;
+            $$ = new BuiltinPredicate(*$3, *$1, *$5);
+
+            delete $1;
+            delete $3;
+            delete $5;
+        }
           /*| PRED_INT terms1
           | PRED_SUCC terms2
           | tertop terms3
@@ -823,7 +875,7 @@ term:
 
             delete $1;
         }
-    | number_param
+    | number
         {
             //
             // make a number term
@@ -863,12 +915,14 @@ ident:
         }
     ; 
 
+    /*
 number_param:
     number
         {
             $$ = $1;
         }
     ;
+    */
 
 number :
     NUM 
@@ -882,18 +936,21 @@ maxinteger : MAXINTEGER
 %%
 
 
+//
 // error method of bison parser -> call error method of the
 // corresponding driver
+//
 void
 yy::HexParser::error(const yy::HexParser::location_type& l,
                      const std::string& m)
 {
-//    throw SyntaxError(l.begin.line, m);
     driver->error(l, m);
 }
 
-  
+
+//
 // abuse YY_DECL as bison callback for a pure C++ parsing engine
+//
 YY_DECL
 {
     HexFlexLexer* lex = driver->getLexer();

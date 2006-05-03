@@ -6,6 +6,7 @@ noinst_HEADERS = \
                  Atom.h \
                  AtomFactory.h \
 		 AtomNode.h \
+		 AnswerSet.h \
                  BoostComponentFinder.h \
                  ComponentFinder.h \
 		 Component.h \

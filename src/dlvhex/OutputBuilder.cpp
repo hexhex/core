@@ -33,11 +33,11 @@ OutputBuilder::getString()
 }
 
 void
-OutputTextBuilder::buildAnswerSet(const AtomSet& facts)
+OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
 {
     stream << "{";
 
-    for (AtomSet::const_iterator f = facts.begin();
+    for (AnswerSet::const_iterator f = facts.begin();
          f != facts.end();
          ++f)
     {
@@ -48,6 +48,18 @@ OutputTextBuilder::buildAnswerSet(const AtomSet& facts)
     }
 
     stream << "}" << std::endl;
+
+    if (facts.hasWeights())
+    {
+        stream << "Cost ([Weight:Level]): <";
+
+        for (unsigned lev = 1; lev <= facts.getWeightLevels(); ++lev)
+        {
+            stream << "[" << facts.getWeight(lev) << ":" << lev << "]";
+        }
+
+        stream << ">" << std::endl;
+    }
 
     //
     // empty line
@@ -76,11 +88,11 @@ OutputXMLBuilder::buildPost()
 
 
 void
-OutputXMLBuilder::buildAnswerSet(const AtomSet& facts)
+OutputXMLBuilder::buildAnswerSet(const AnswerSet& facts)
 {
     stream << "<Assert mapClosure=\"universal\">\n";
 
-    for (AtomSet::const_iterator f = facts.begin();
+    for (AnswerSet::const_iterator f = facts.begin();
          f != facts.end();
          ++f)
     {

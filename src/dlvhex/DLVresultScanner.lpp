@@ -86,15 +86,11 @@ NUM         ([0-9]+)
 {ID} |
 {QUOTED_ID} {
     yylval.string = new std::string(yytext);
-    //yylval.string=new char[strlen(yytext)+1];
-    //strcpy(yylval.string,yytext);
     return ID;
 }
 
 {NUM} { 
-    yylval.string = new std::string(yytext);
-    //yylval.string=new char[strlen(yytext)+1];
-    //strcpy(yylval.string,yytext);
+    yylval.integ = new int(atoi(yytext));
     return NUM; 
 }
 
@@ -105,8 +101,6 @@ NUM         ([0-9]+)
     // something starting not with a '{' at the beginning of a line
     // this is some dlv-(error-)message
     yylval.string = new std::string(yytext);
-    //yylval.string=new char[strlen(yytext)+1];
-    //strcpy(yylval.string,yytext);
     return MESSAGE;
 }
 

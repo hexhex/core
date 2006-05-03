@@ -44,6 +44,24 @@ Program::addRule(const Rule* r)
 }
 
 
+void
+Program::addWeakConstraint(const WeakConstraint* wc)
+{
+    ///todo don't add the same wc twice!
+
+    rules.push_back(wc);
+
+    weakConstraints.push_back(wc);
+}
+
+
+const std::vector<const WeakConstraint*>&
+Program::getWeakConstraints() const
+{
+    return weakConstraints;
+}
+
+
 bool
 Program::exists(const Rule* r)
 {

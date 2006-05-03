@@ -25,6 +25,7 @@ pkglib_LTLIBRARIES = libdlvhexbase.la
 
 dlvhex_SOURCES = \
     AtomNode.cpp \
+    AnswerSet.cpp \
     BoostComponentFinder.cpp \
     Component.cpp \
     ComponentFinder.cpp \

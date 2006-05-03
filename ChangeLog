@@ -1,3 +1,56 @@
+2006-05-03  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/AnswerSet.h: New File.
+
+	* include/dlvhex/Makefile.am: Added AnswerSet.h.
+
+	* include/dlvhex/OutputBuilder.h: Changed all AtomSet to AnswerSet.
+
+	* include/dlvhex/Program.h: Added addition and retrieval for weak
+	constraints.
+	* src/dlvhex/Program.cpp: Likewise.
+
+	* include/dlvhex/ResultContainer.h: Changed type of result from
+	std::vector<AtomSet> to std::set<AnswerSetPtr,
+	ResultContainer::AnswerSetPtrCompare>. Added comparison operator
+	for AnswerSetPtrCompare. Added handling of weak constraint-
+	auxiliary predicate. Added vector for optimal costs.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+
+	* include/dlvhex/Rule.h: Added class for weak constraints, derived
+	from Rule.
+	* src/dlvhex/Rule.cpp: Likewise.
+
+	* src/dlvhex/AnswerSet.cpp: New file.
+
+	* src/dlvhex/DLVresultParser.ypp: Introduced number type for
+	integer handling.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Added weak constraint handling.
+	Introduced number type for integer handling. Added predicate syntax
+	for builtins.
+
+	* src/dlvhex/HexScanner.lpp: Introduced number type for integer
+	handling.
+
+	* src/dlvhex/Makefile.am: Added AnswerSet.cpp.
+
+	* src/dlvhex/OutputBuilder.cpp: (buildAnswerSet): Added weight
+	output for answer set costs.
+
+	* src/dlvhex/ParserDriver.cpp: Corrected bug of wrong line output
+	in case of syntax errors.
+
+	* src/dlvhex/Term.cpp: (operator!=) Corrected bug in handling
+	NULLCONST.
+
+	* src/dlvhex/dlvhex.cpp: (main): Reactivated dlt preparsing. Added
+	support for weak constraints.
+
+	Fixes bug: #9, #10, #11
+	
+
 2006-05-02  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/PluginInterface.h: (setOptions): Modified argument type.

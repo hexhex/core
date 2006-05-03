@@ -13,9 +13,11 @@
 
 
 #include <iostream>
+#include <sstream>
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
+#include "dlvhex/Registry.h"
 
 
 
@@ -42,6 +44,7 @@ Rule::Rule(const RuleHead_t& head,
     }
 
 //    std::cout << " rule has extatoms: " << externalAtoms.size() << std::endl;
+//    std::cout << "rule: " << *this << std::endl;
 }
 
 
@@ -154,5 +157,63 @@ operator<< (std::ostream& out, const Rule& rule)
 }
 
 
+
+WeakConstraint::WeakConstraint(const RuleBody_t& b,
+                               Term w,
+                               Term l,
+                               std::string file,
+                               unsigned line)
+    : Rule(RuleHead_t(), b, file, line),
+      weight(w),
+      level(l)
+{
+    if (l < 1)
+        throw SyntaxError("level must be > 0");
+
+    static unsigned uniqueid(0);
+
+    std::stringstream wcheadname;
+
+    wcheadname << "wch__" << uniqueid++;
+    //wcheadname << "wc_h_";
+
+    Term::auxnames.insert(wcheadname.str());
+
+    std::set<Term> headargs;
+
+    RuleBody_t::const_iterator bodylit(b.begin()), bodyend(b.end());
+    while (bodylit != bodyend)
+    {
+        Tuple args = (*bodylit)->getAtom()->getArguments();
+
+        headargs.insert(args.begin(), args.end());
+
+        ++bodylit;
+    }
+
+    Tuple hargs;
+
+    std::set<Term>::const_iterator argit = headargs.begin();
+    while (argit != headargs.end())
+        hargs.push_back(*argit++);
+
+    hargs.push_back(w);
+    hargs.push_back(l);
+
+    Atom* at = new Atom(wcheadname.str(), hargs);
+    AtomPtr hatom(Registry::Instance()->storeAtom(at));
+
+    head.push_back(hatom);
+}
+
+
+bool
+WeakConstraint::operator== (const WeakConstraint& wc2) const
+{
+    ///todo implement this correctly!
+    //
+
+    return 0;
+}
 
 

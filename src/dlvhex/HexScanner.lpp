@@ -191,7 +191,8 @@ COMMENT     \%.*
     if( strlen(yytext) > NUM_LENGTH )
         driver.error(*yylloc, "numeric constant is too long");
     else
-        yylval.string = new std::string(yytext);
+        //yylval.string = new std::string(yytext);
+        yylval.integ = new int(atoi(yytext));
 
     return NUM; 
 }

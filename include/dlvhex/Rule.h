@@ -78,17 +78,19 @@ public:
     bool
     operator== (const Rule& rule2) const;
 
-private:
+protected:
 
     RuleHead_t head;
 
     RuleBody_t body;
 
-    std::vector<ExternalAtom*> externalAtoms;
-
     std::string programFile;
 
     unsigned programLine;
+
+private:
+
+    std::vector<ExternalAtom*> externalAtoms;
 };
 
 //
@@ -96,6 +98,42 @@ private:
 //
 std::ostream&
 operator<< (std::ostream& out, const Rule& rule);
+
+
+/**
+ * @brief A weak constraint is a rule with empty head and weight/level values.
+ */
+class WeakConstraint : public Rule
+{
+public:
+
+    /**
+     * @brief See constructor of Rule.
+     *
+     * The third parameter is the weight, the fourth is the level of the weak
+     * constraint.
+     */
+    WeakConstraint(const RuleBody_t& b,
+                   Term,
+                   Term,
+                   std::string = "",
+                   unsigned = 0);
+
+    /*
+    void
+    setHead(const RuleHead_t& h);
+    */
+
+    /**
+     * @brief Test for equality.
+     */
+    bool
+    operator== (const WeakConstraint&) const;
+
+private:
+
+    Term weight, level;
+};
 
 
 

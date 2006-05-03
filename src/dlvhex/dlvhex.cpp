@@ -473,7 +473,7 @@ main (int argc, char *argv[])
     //
     // any unknown options left?
     //
-    if (remainingOptions.size() > 0)
+    if (!remainingOptions.empty())
     {
         printUsage(std::cerr, false);
 
@@ -525,29 +525,7 @@ main (int argc, char *argv[])
         {
             try
             {
-            
                 std::istream* input = new std::stringstream;
-
-                /*
-                if (optiondlt)
-                {
-                    std::string execPreParser("dlt -silent -preparsing " + *f);
-                        
-                    FILE* fp = popen(execPreParser.c_str(), "r");
-
-                    if (fp == NULL)
-                    {
-                        throw GeneralError("Unable to call Preparser dlt");
-                    }
-
-                    __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
-
-                    std::istream inpipe(fb);
-//                    inputfile = popen(execPreParser.c_str(), "r");
-                //    ifs.rdbuf(inpipe.rdbuf());                    
-                    input->rdbuf(inpipe.rdbuf());
-                }
-                else*/
 
                 std::ifstream ifs;
 
@@ -558,6 +536,9 @@ main (int argc, char *argv[])
                     throw GeneralError("File " + *f + " not found");
                 }
 
+                //
+                // set input buffer to the file to read
+                //
                 input->rdbuf(ifs.rdbuf()); 
 
                 std::stringstream output;
@@ -570,11 +551,8 @@ main (int argc, char *argv[])
                 {
                     PluginRewriter* pr = (*pi)->createRewriter(*input, output);
 
-
                     if (pr != NULL)
                     {
-                        ///todo next line should be at the end of that scope and
-                        //driver always parse *input, but it doesn't work
                         output.str("");
 
                         noRewrite = false;
@@ -592,16 +570,58 @@ main (int argc, char *argv[])
 
                         input->rdbuf(out);
                     }
+
                 }
+                //std::cout << "input: " << input->rdbuf() << std::endl;
+
+
+                char tempfile[L_tmpnam];
+
+                //
+                // now call dlt:
+                //
+                if (optiondlt)
+                {
+                    tmpnam(tempfile);
+
+                    std::fstream dlttemp(tempfile, std::ios::out);
+
+                    dlttemp << input->rdbuf();
+
+                    dlttemp.close();
+
+                    std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
+                    std::cout << "dlttemp: " << std::string(tempfile) << std::endl;
+                        
+                    FILE* fp = popen(execPreParser.c_str(), "r");
+
+                    if (fp == NULL)
+                    {
+                        throw GeneralError("Unable to call Preparser dlt");
+                    }
+
+                    __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
+
+                    std::istream inpipe(fb);
+                    input->rdbuf(inpipe.rdbuf());
+                }
+
+                //std::cout << "dltprog: " << input->rdbuf() << std::endl;
               
                 if (noRewrite)
                     driver.parse(*input, IDB, EDB);
                 else
                     driver.parse(output, IDB, EDB);
 
+
                 delete input;
 
                 ifs.close();
+
+                if (optiondlt)
+                {
+                    unlink(tempfile);
+                }
             }
             catch (SyntaxError& e)
             {
@@ -723,11 +743,24 @@ main (int argc, char *argv[])
     removeNamespaces();
 
 
-    //
-    // pack GraphProcessor result into ResultContainer
-    //
-    ResultContainer result;
 
+    //
+    // prepare result container
+    //
+    // if we had any weak constraints, we have to tell the result container the
+    // prefix in order to be able to compute each asnwer set's costs!
+    //
+    std::string wcprefix;
+
+    if (IDB.getWeakConstraints().size() > 0)
+        wcprefix = "wch__";
+    
+    ResultContainer result(wcprefix);
+
+
+    //
+    // put GraphProcessor result into ResultContainer
+    //
     AtomSet* res;
 
     while ((res = gp.getNextModel()) != NULL)

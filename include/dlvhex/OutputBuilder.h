@@ -16,7 +16,7 @@
 #include <string>
 #include <sstream>
 
-#include "dlvhex/AtomSet.h"
+#include "dlvhex/AnswerSet.h"
 
 
 /**
@@ -47,7 +47,7 @@ public:
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AtomSet&) = 0;
+    buildAnswerSet(const AnswerSet&) = 0;
 
     virtual std::string
     getString();
@@ -72,7 +72,7 @@ public:
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AtomSet&);
+    buildAnswerSet(const AnswerSet&);
 
 };
 
@@ -100,7 +100,7 @@ public:
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AtomSet&);
+    buildAnswerSet(const AnswerSet&);
 
 };
 

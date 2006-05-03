@@ -112,6 +112,7 @@ Term::Term(const char* name, bool isString)
 Term::Term(const int& num)
     : type(INTEGER), constantInteger(num)
 {
+//    std::cout << "created number term: " << num << std::endl;
 }
 
 
@@ -270,14 +271,14 @@ Term::operator!= (const Term& term2) const
         
         case VARIABLE:
             //
-            // TODO:
-            // when are two variables unequal???
-            //
-            // for now: only if their strings are the same
+            // two variables are unequal if their strings are unequal.
             //
             return (variableString).compare(term2.getVariable());
-            //return 0;
         
+        case NULLCONST:
+
+            return 0;
+
         default:
             assert(0);
             return 0;

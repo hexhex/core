@@ -14,10 +14,55 @@
 
 #include "dlvhex/ResultContainer.h"
 
+
+
+ResultContainer::ResultContainer(std::string wcpr)
+    : wcprefix(wcpr)
+{
+}
+
 void
 ResultContainer::addSet(AtomSet& res)
 {
-    sets.push_back(res);
+    AnswerSetPtr as(new AnswerSet(wcprefix));
+
+    as->setSet(res);
+
+    sets.insert(as);
+
+    //
+    // update lowest-cost-vector
+    //
+    if (!wcprefix.empty())
+    {
+        //
+        // all levels of new answer set
+        //
+        unsigned maxlevels = as->getWeightLevels();
+
+        //
+        // look through all these levels
+        //
+        for (unsigned i = 1; i <= maxlevels; ++i)
+        {
+            //
+            // if we didn't have the current
+            // level in the lowest-cost-vector, then
+            // add it.
+            //
+            if (i > this->lowestWeights.size())
+                this->lowestWeights.push_back(as->getWeight(i));
+            else
+            {
+                //
+                // otherwise update the exisitng level if the new costs are
+                // lower
+                //
+                if (as->getWeight(i) < (this->lowestWeights[i - 1]))
+                this->lowestWeights[i - 1] = as->getWeight(i);
+            }
+        }
+    }
 }
 
 
@@ -27,7 +72,7 @@ ResultContainer::filterOut(const NamesTable<std::string>& predicates)
     //
     // go through all atom sets we have
     //
-    for (std::vector<AtomSet>::iterator ri = sets.begin();
+    for (result_t::iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
     {
@@ -38,22 +83,7 @@ ResultContainer::filterOut(const NamesTable<std::string>& predicates)
              pi != predicates.end();
              ++pi)
         {
-            (*ri).remove(*pi);
-            /*
-            AtomSet::iterator cur = (*ri).begin();
-
-            const AtomSet::iterator last = (*ri).end();
-
-            //
-            // does this predicate occur in the atom set?
-            //
-            while ((cur = std::find_if(cur, last, bind2nd(predicateMatches(), *pi))) != last)
-            {
-                AtomSet::iterator tmp = cur++;
-
-                (*ri).erase(tmp);
-            }
-            */
+            (*ri)->remove(*pi);
         }
     } 
 }
@@ -64,11 +94,11 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
     //
     // go through all atom sets we have
     //
-    for (std::vector<AtomSet>::iterator ri = sets.begin();
+    for (result_t::iterator ri = sets.begin();
          ri != sets.end();
          ++ri)
     {
-        (*ri).keep(predicates);
+        (*ri)->keep(predicates);
     } 
 }
 
@@ -77,17 +107,24 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 {
     builder->buildPre();
 
-    for (std::vector<AtomSet>::const_iterator ri = sets.begin();
-         ri != sets.end();
-         ++ri)
+    for (result_t::const_iterator ri = sets.begin();
+            ri != sets.end();
+            ++ri)
     {
+        if (!wcprefix.empty())
+        {
+            //
+            // if we are in weak constraint-mode, we stop the output after
+            // the best model(s)
+            //
+            if ((*ri)->moreExpensiveThan(this->lowestWeights))
+                break;
+        }
+
         //
         // stringify the result set
         //
-        builder->buildAnswerSet(*ri);
-
-//        builder->clearString();
-//        (*ri).print(stream, 0);
+        builder->buildAnswerSet(**ri);
     }
 
     builder->buildPost();

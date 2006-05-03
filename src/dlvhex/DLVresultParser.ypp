@@ -87,6 +87,7 @@ YY_DECL;
 
 %union {
     std::string*   string;
+    int*           integ;
     Term*          term;
     Tuple*         tuple;
     Atom*          gatom;
@@ -101,7 +102,8 @@ YY_DECL;
 %type  <answerset> factlist
 
 
-%token <string> ID NUM MESSAGE
+%token <string> ID MESSAGE
+%token <integ> NUM
 %token ERROR
 %token NEWLINE
 %token COMMA
@@ -117,7 +119,7 @@ YY_DECL;
 result:
     dlvresult NUM NEWLINE 
         {
-            returncode = ::atoi($2->c_str());
+            returncode = *$2;
 
             delete $2;
         }
@@ -274,11 +276,19 @@ groundterm:
 
             delete $1;
         }
+    | NUM
+        {
+            //
+            // create new term
+            //
+            $$ = new Term(*$1);
+
+            delete $1;
+        }
     ;
 
 ident:
     ID
-    | NUM
     ;
 
 

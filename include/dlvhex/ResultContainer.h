@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/AtomSet.h"
+#include "dlvhex/AnswerSet.h"
 #include "dlvhex/OutputBuilder.h"
 
 
@@ -30,6 +30,29 @@
 class ResultContainer
 {
 public:
+
+    /**
+     * @brief Custom compare operator for AnswerSets.
+     */
+    struct AnswerSetPtrCompare
+    {
+        bool 
+        operator() (const AnswerSetPtr& a, const AnswerSetPtr& b)
+        {
+            return *a < *b;
+        }
+    };
+
+    typedef std::set<AnswerSetPtr, ResultContainer::AnswerSetPtrCompare> result_t;
+
+    /**
+     * @brief Constructor.
+     *
+     * If a string is passed to the constructor, weak constraint-mode is
+     * switched on. The string then identifies auxiliary predicates in each
+     * answer set that determine the set's cost.
+     */
+    ResultContainer(std::string = "");
 
     void
     addSet(AtomSet&);
@@ -45,8 +68,11 @@ public:
 
 private:
 
-    std::vector<AtomSet> sets;
+    result_t sets;
 
+    std::string wcprefix;
+
+    AnswerSet::weights_t lowestWeights;
 };
 
 #endif /* _RESULTCONTAINER_H */
