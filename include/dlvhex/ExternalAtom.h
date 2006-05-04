@@ -109,11 +109,8 @@ public:
 
     /**
      * Returns the arguments of the external atom.
-     *
-     * Overriding the Atom-method here, because the argument-list of an external
-     * atom in fact includes *only* its arguments and not the predicate symbol.
      */
-    Tuple
+    virtual Tuple
     getArguments() const;
 
     /**
@@ -151,7 +148,7 @@ public:
 
 
     virtual bool
-    operator== (const Atom& atom2) const;
+    operator== (const ExternalAtom& atom2) const;
 
 
     /**

@@ -87,7 +87,8 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         }
 
 
-        std::vector<AtomNode*> currentOrdinaryBodyNodes;
+        //std::vector<AtomNode*> currentOrdinaryBodyNodes;
+        std::vector<AtomNode*> currentBodyNodes;
         std::vector<AtomNode*> currentExternalBodyNodes;
 
         //
@@ -114,16 +115,21 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             AtomNode* bn = nodegraph.addUniqueBodyNode((*li)->getAtom());
 
             //
-            // save normal and external atoms of this body - after we are through the entire
-            // body, we might have to update EXTERNAL dependencies inside the
-            // rule and build auxiliary rules!
+            // save all and - separately - external atoms of this body - after we
+            // are through the entire body, we might have to update EXTERNAL
+            // dependencies inside the rule and build auxiliary rules!
             //
-            if ((typeid(*((*li)->getAtom())) == typeid(Atom)) &&
-                (!(*li)->isNAF()))
-                currentOrdinaryBodyNodes.push_back(bn);
+            //if ((typeid(*((*li)->getAtom())) == typeid(Atom)) &&
+            if (!(*li)->isNAF())
+                currentBodyNodes.push_back(bn);
 
             if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
+            {
+                // not yet:
+                assert(!(*li)->isNAF());
+
                 currentExternalBodyNodes.push_back(bn);
+            }
 
             //
             // add dependency from this body atom to each head atom
@@ -205,21 +211,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 
                 //
                 // make a new atom with the ext-parameters as arguments, will be
-                // the head of the auxiliary rule
-                //
-//                Atom* auxheadatom = new Atom(ext->getAuxPredicate(), extinput);
-
-                //
-                // add this atom to the global atom store
+                // the head of the auxiliary rule and add this atom to the
+                // global atom store
                 //
                 AtomPtr auxheadatom = Registry::Instance()->storeAtom(new Atom(ext->getAuxPredicate(), extinput));
-
-                //
-                // and add the atom name to the store of auxiliary names (which
-                // we save separately because we don't want to have them in any
-                // output)
-                //
-                Term::auxnames.insert("aux_" + ext->getReplacementName());
 
                 //
                 // add a new head node with this atom
@@ -235,14 +230,23 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 RuleBody_t auxbody;
 
                 //
-                // the body of the auxiliary rule are all ordinary body literals
-                // that have variables with the aux_head in common
-                // and that are not weakly negated!
+                // the body of the auxiliary rule are all body literals
+                // (ordinary or external) that have variables with the aux_head
+                // in common and that are not weakly negated!
                 //
-                for (std::vector<AtomNode*>::iterator currbody = currentOrdinaryBodyNodes.begin();
-                    currbody != currentOrdinaryBodyNodes.end();
-                    ++currbody)
+                std::vector<AtomNode*> allbodynodes;
+
+                for (std::vector<AtomNode*>::iterator currbody = currentBodyNodes.begin();
+                     currbody != currentBodyNodes.end();
+                     ++currbody)
                 {
+                    //
+                    // don't consider the external atom itself, the input must
+                    // be bound by other atoms
+                    //
+                    if (*currextbody == *currbody)
+                        continue;
+
                     bool thisAtomIsRelevant = false;
 
                     Tuple currentAtomArguments = (*currbody)->getAtom()->getArguments();
@@ -275,13 +279,14 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 
                     //
                     // should this atom be in the auxiliary rule body?
+                    // (i.e., does one of its arguments occur in the input list
+                    // of the external atom?)
                     //
                     if (thisAtomIsRelevant)
                     {
                         //
                         // make new literals with the (ordinary) body atoms of the current rule
                         //
-                        //auxbody.push_back(Literal((*currbody)->getAtom()));
                         Literal* l = new Literal((*currbody)->getAtom());
 
                         Registry::Instance()->storeObject(l);
@@ -316,7 +321,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         }
 
         //
-        // finally add this rule to each head node:
+        // finally add this rule to each head node of the current rule:
         //
         for (std::vector<AtomNode*>::iterator currhead = currentHeadNodes.begin();
                 currhead != currentHeadNodes.end();

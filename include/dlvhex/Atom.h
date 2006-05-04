@@ -92,7 +92,7 @@ public:
      *
      * The predicate is not included here!
      */
-    Tuple
+    virtual Tuple
     getArguments() const;
 
     /**

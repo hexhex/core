@@ -1,5 +1,17 @@
 2006-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
+	* include/dlvhex/Atom.h: (GetArguments): Made method virtual.
+
+	* include/dlvhex/ExternalAtom.h: (GetAguments): Made method virtual.
+
+	* src/dlvhex/ExternalAtom.cpp: Implemented operator==.
+
+	* src/dlvhex/GraphBuilder.cpp: (run): Added proper dependency handling
+	of chained external atoms within one rule body.
+
+
+2006-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
 	* include/dlvhex/PluginInterface.h: Changed rewriter stream types to pointers.
 
 	* include/dlvhex/globals.h: Added string to be passed to the ASP

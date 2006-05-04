@@ -388,11 +388,33 @@ ExternalAtom::unifiesWith(const AtomPtr atom) const
 
 
 bool
-ExternalAtom::operator== (const Atom& atom2) const
+ExternalAtom::operator== (const ExternalAtom& atom2) const
 {
-    // TODO: how does this work - inheriting an operator?
-    // and what is the right behaviour here?
-    return 0;
+    if (this->functionName != atom2.functionName)
+        return false;
+
+    if (this->getArity() != atom2.getArity())
+        return false;
+    
+    if (this->isStrongNegated != atom2.isStrongNegated)
+        return false;
+
+    if (this->inputList.size() != atom2.inputList.size())
+        return false;
+
+    for (unsigned i = 0; i < this->getArity(); i++)
+    {
+        if (getArgument(i) != atom2.getArgument(i))
+            return false;
+    }
+    
+    for (unsigned i = 0; i < this->inputList.size(); i++)
+    {
+        if (this->inputList[i] != atom2.inputList[i])
+            return false;
+    }
+    
+    return true;
 }
 
 std::ostream&

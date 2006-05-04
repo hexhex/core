@@ -401,6 +401,7 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
     // does a node with exactly this atom already exist?
     // (same predicate, same arguments)
     //
+    //std::cout << "==trying to add bodynode: " << *atom << std::endl;
     AtomNode* newnode = findNode(atom);
 
     if (!newnode)
