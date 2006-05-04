@@ -45,13 +45,13 @@ class PluginRewriter
 {
 protected:
 
-    std::istream& input;
+    std::istream* input;
 
-    std::ostream& output;
+    std::ostream* output;
 
     PluginRewriter(std::istream& i, std::ostream& o)
-        : input(i),
-          output(o)
+        : input(&i),
+          output(&o)
     { }
 
 public:

@@ -525,8 +525,6 @@ main (int argc, char *argv[])
         {
             try
             {
-                std::istream* input = new std::stringstream;
-
                 std::ifstream ifs;
 
                 ifs.open((*f).c_str());
@@ -537,61 +535,90 @@ main (int argc, char *argv[])
                 }
 
                 //
-                // set input buffer to the file to read
+                // make a new stream to store the file content
                 //
-                input->rdbuf(ifs.rdbuf()); 
+                std::stringstream tmpin;
+                tmpin << ifs.rdbuf();
 
-                std::stringstream output;
+                //
+                // create a stringbuffer on the heap (will be deleted later) to
+                // hold the file-content. put it into a stream "input"
+                //
+                std::istream input(new std::stringbuf(tmpin.str()));
 
-                bool noRewrite = true;
+                //
+                // new output stream with stringbuffer on the heap
+                //
+                std::ostream rewriterResult(new std::stringbuf);
 
                 for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
                      pi != plugins.end();
                      ++pi)
                 {
-                    PluginRewriter* pr = (*pi)->createRewriter(*input, output);
+                    PluginRewriter* pr = (*pi)->createRewriter(input, rewriterResult);
 
                     if (pr != NULL)
                     {
-                        output.str("");
-
-                        noRewrite = false;
-
+                        //
+                        // rewrite input -> rewriterResult
+                        //
                         pr->rewrite();
+                   
+                        //
+                        // old input buffer can be deleted now
+                        //
+                        delete input.rdbuf();
 
-                        std::streambuf* in = input->rdbuf();
-                        std::streambuf* out = output.rdbuf();
+                        //
+                        // store the current output buffer
+                        //
+                        std::streambuf* tmp = rewriterResult.rdbuf();
 
-                        if (global::optionVerbose)
-                        {
-                            std::cout << "Rewritten Program:" << std::endl;
-                            std::cout << output.str() << std::endl;
-                        }
+                        //
+                        // make a new buffer for the output (=reset the output)
+                        //
+                        rewriterResult.rdbuf(new std::stringbuf);
 
-                        input->rdbuf(out);
+                        //
+                        // set the input buffer to be the output of the last
+                        // rewriting. now, after each loop, the rewritten
+                        // program is in input.
+                        //
+                        input.rdbuf(tmp);
+
                     }
-
                 }
-                //std::cout << "input: " << input->rdbuf() << std::endl;
-
-
                 char tempfile[L_tmpnam];
 
                 //
-                // now call dlt:
+                // at this point, the program is in the stream "input" - wither
+                // directly read from the file or as a result of some previous
+                // rewriting!
+                //
+
+                //
+                // now call dlt if needed
                 //
                 if (optiondlt)
                 {
+                    if (global::optionVerbose)
+                    {
+                        std::cout << "@@@ calling dlt @@@" << std::endl;
+                    }
+                    
                     tmpnam(tempfile);
 
-                    std::fstream dlttemp(tempfile, std::ios::out);
+                    std::ofstream dlttemp(tempfile);
 
-                    dlttemp << input->rdbuf();
+                    //
+                    // write program into tempfile
+                    //
+                    dlttemp << input.rdbuf();
 
                     dlttemp.close();
 
                     std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
-                    std::cout << "dlttemp: " << std::string(tempfile) << std::endl;
+                    //std::cout << "dlttemp: " << std::string(tempfile) << std::endl;
                         
                     FILE* fp = popen(execPreParser.c_str(), "r");
 
@@ -600,27 +627,34 @@ main (int argc, char *argv[])
                         throw GeneralError("Unable to call Preparser dlt");
                     }
 
-                    __gnu_cxx::stdio_filebuf<char>* fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
+                    __gnu_cxx::stdio_filebuf<char>* fb;
+                    fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
 
                     std::istream inpipe(fb);
-                    input->rdbuf(inpipe.rdbuf());
+
+                    //
+                    // now we have a program rewriten by dlt - since it should
+                    // be in the stream "input", we have to delete the old
+                    // input-buffer and set input to the buffer from the
+                    // dlt-call
+                    //
+                    delete input.rdbuf(); 
+                    input.rdbuf(fb);
                 }
-
-                //std::cout << "dltprog: " << input->rdbuf() << std::endl;
               
-                if (noRewrite)
-                    driver.parse(*input, IDB, EDB);
-                else
-                    driver.parse(output, IDB, EDB);
+                driver.parse(input, IDB, EDB);
 
-
-                delete input;
+                //
+                // wherever the input-buffer was created before - now we don't
+                // need it anymore
+                //
+                delete input.rdbuf();
 
                 ifs.close();
 
                 if (optiondlt)
                 {
-                    unlink(tempfile);
+                   unlink(tempfile);
                 }
             }
             catch (SyntaxError& e)

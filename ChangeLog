@@ -1,3 +1,29 @@
+2006-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/PluginInterface.h: Changed rewriter stream types to pointers.
+
+	* include/dlvhex/globals.h: Added string to be passed to the ASP
+	solver for adding a maxint-directive.
+
+	* src/dlvhex/ASPsolver.cpp: (callSolver): Added maxint-directive to
+	the program to be solved, from a global variable set in the Hex-parser.
+
+	* src/dlvhex/AnswerSet.cpp: (moreExpensiveThan): Corrected error in
+	reading weights of the specified weight-vector.
+
+	* src/dlvhex/Atom.cpp: (Constructor): Moved assertion for nonground
+	predicate names to initialization of non-propositional atoms. Added
+	SyntaxError in case of variable propositional atoms.
+
+	* src/dlvhex/HexParser.ypp: Added parsing of maxint-directive.
+	Admitted empty parentheses for external atoms with output arity zero.
+
+	* src/dlvhex/dlvhex.cpp: (main): Corrected handling of streams and
+	rewriters.
+
+	* src/dlvhex/globals.cpp: Added string for maxint-directive.
+
+
 2006-05-03  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/AnswerSet.h: New File.

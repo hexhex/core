@@ -44,6 +44,11 @@ namespace global
     extern bool optionStrongSafety;
 
     /**
+     * dirty hack: maxint directive, handled globally
+     */
+    extern std::string maxint;
+
+    /**
      * Messages returned from external computation sources, which do not necessarily
      * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
      */

@@ -22,6 +22,8 @@ namespace global
 
     bool optionStrongSafety = true;
 
+    std::string maxint = "";
+
     std::vector<std::string> Messages;    
 
     std::string lpfilename;

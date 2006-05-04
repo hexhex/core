@@ -44,6 +44,7 @@
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Registry.h"
+#include "dlvhex/globals.h"
 
 
 //
@@ -199,9 +200,20 @@ input:
 line:
     clause
     | namespace
+    | maxinteger
 //          | query
     ;
 
+maxinteger:
+    MAXINTEGER EQUALS number
+        {
+            std::stringstream minum;
+
+            minum << *$3;
+
+            global::maxint = "#maxint=" + minum.str() + ".";
+        }
+    ;
 
 namespace:
     NAMESPACE PARAM_OPEN nsdef PARAM_CLOSE NEWLINE
@@ -209,21 +221,21 @@ namespace:
 
 nsdef:
     ident COMMA ident 
-    {
-        std::string prefix(*$1);
-        std::string ns(*$3);
+        {
+            std::string prefix(*$1);
+            std::string ns(*$3);
 
-        if (prefix[0] == '\"')
-            prefix = prefix.substr(1, prefix.length() - 2);
+            if (prefix[0] == '\"')
+                prefix = prefix.substr(1, prefix.length() - 2);
 
-        if (ns[0] == '\"')
-            ns = ns.substr(1, ns.length() - 2);
+            if (ns[0] == '\"')
+                ns = ns.substr(1, ns.length() - 2);
 
-        Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
+            Term::namespaces.push_back(std::pair<std::string, std::string>(ns, prefix));
 
-        delete $1;
-        delete $3;
-    }
+            delete $1;
+            delete $3;
+        }
 //    | ident { Term::namespaces.push_back(std::pair<std::string, std::string>($1, "")); }
     ;
 
@@ -235,12 +247,7 @@ clause:
         {
             program.addWeakConstraint($1);
         }
-
-//          | wconstraint       { } 
     ;
-
-//MAXINTEGER_EQUALS_param : MAXINTEGER EQUALS term
-//                        ;
 
 //meta_rule : import
 //          | export
@@ -709,6 +716,13 @@ external_output:
             //
             $$ = new Tuple;
         }
+    | PARAM_OPEN PARAM_CLOSE
+        {
+            //
+            // emtpy tuple
+            //
+            $$ = new Tuple;
+        }
     | PARAM_OPEN terms PARAM_CLOSE
         {
             $$ = $2;
@@ -928,10 +942,7 @@ number :
     NUM 
     ;
 
-/*
-maxinteger : MAXINTEGER
-         ;
-*/
+
 
 %%
 

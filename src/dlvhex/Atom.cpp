@@ -15,6 +15,7 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/helper.h"
+#include "dlvhex/Error.h"
 
 
 
@@ -60,6 +61,12 @@ Atom::Atom(const std::string atom, bool neg)
         {
             arguments.push_back(Term(*g));
         }
+
+        //
+        // the predicate itself must be constant (also in ho-mode, then it will be a
+        // constant replacement symbol)
+        //
+        assert(!arguments.front().isVariable());
     }
     else
     {
@@ -67,13 +74,10 @@ Atom::Atom(const std::string atom, bool neg)
         // can only be propositional
         //
         arguments.push_back(Term(atom));
-    }
 
-    //
-    // the predicate itself must be constant (also in ho-mode, then it will be a
-    // constant replacement symbol)
-    //
-    assert(!arguments.front().isVariable());
+        if (arguments.front().isVariable())
+            throw SyntaxError("propositional Atom must be ground");
+    }
 }
 	
 

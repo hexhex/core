@@ -55,6 +55,10 @@ ASPsolver::numAnswerSets()
 void
 ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
 {
+    //
+    // dirty hack: add stuff for each solver call form globals:
+    //
+    prg += "\n" + global::maxint;
 
     answersets.clear();
     
@@ -129,6 +133,9 @@ ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
     }
 
     pclose(fp);
+
+    if (fb)
+        delete fb;
 
     unlink(tempfile);
 

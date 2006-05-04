@@ -157,25 +157,50 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
 
     unsigned maxlevel = this->weights.size();
     
+    //
+    // find out the maximum of both levels
+    //
     if (weights.size() > maxlevel)
         maxlevel = weights.size();
 
+    //
+    // go through all levels
+    //
     for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
     {
         unsigned w = 0;
 
-        if (currlevel < weights.size())
+        //
+        // only take weight from exisitng levels of the specified weight
+        // vector - otherwise w is still 0 (nonspecified levels have 0 weight)
+        //
+        if (currlevel <= weights.size())
             w = weights.at(currlevel - 1);
 
+        //
+        // compare with weight from *this - getWeight ensures that we don't read
+        // from unspecified levels (see getWeight)
+        // if *this weighs more than the specified vector, it is more expensive,
+        // return 1
+        //
         if (this->getWeight(currlevel) > w)
         {
             ret = 1;
             break;
         }
 
+        //
+        // if this weighs less than the specified vector, it is cheaper, return
+        // 0
+        //
         if (this->getWeight(currlevel) < w)
             break;
     }
+
+    //
+    // if weights at all levels were equal, *this is not more expensive than the
+    // specified vector; ret is still at 0
+    //
 
     return ret;
 }

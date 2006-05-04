@@ -117,6 +117,13 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
             // if we are in weak constraint-mode, we stop the output after
             // the best model(s)
             //
+            /*
+            for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
+                 wi != lowestWeights.end();
+                 ++wi)
+                std::cout << " w: " << *wi;
+            */
+
             if ((*ri)->moreExpensiveThan(this->lowestWeights))
                 break;
         }
