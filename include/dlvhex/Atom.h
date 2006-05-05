@@ -135,7 +135,7 @@ public:
     virtual bool
     operator== (const Atom& atom2) const;
 
-    virtual bool
+    bool
     operator!= (const Atom& atom2) const;
 
     int

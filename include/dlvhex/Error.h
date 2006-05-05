@@ -15,44 +15,34 @@
 
 #include <string>
 #include <iostream>
+#include <stdexcept>
+
 
 /**
  * @brief General exception class.
  *
- *todo: derive from anything?
  */
-class GeneralError
+class GeneralError : public std::runtime_error
 {
 public:
-
-    /// Ctor.
-    GeneralError() {}
-      
-    /// Dtor.
-    virtual ~GeneralError() {}
 
     /**
      * @brief initialize exception with error string.
      */
-    GeneralError(const std::string msg)
-        : errorMsg(msg)
-    {
-        //std::cout << "general error: " << msg << std::endl;
-    }
-    
+    GeneralError(const std::string msg);
 
     /**
-     * Returns error string.
+     * @brief Returns error string.
+     *
+     * In derived classes, this function returns an error message extended with
+     * context information of the error. what() just returns the message itself.
+     * In this base class, getErrorMsg() is equal to what().
      */
     virtual std::string
     getErrorMsg() const
     {
-        return errorMsg;
+        return this->what();
     }
-        
-protected:
-        
-    std::string errorMsg;
 };
 
 
@@ -69,11 +59,36 @@ public:
                 const unsigned line = 0,
                 const std::string file = "");
 
-    /// Dtor.
-    virtual ~SyntaxError() {}
+    /**
+     * @brief Destructor.
+     *
+     * A custom destructor definition is needed here, because we have additional
+     * members in the class, which make it necessary to redefine the destructor
+     * with throw ().
+     */
+    virtual ~SyntaxError() throw() {};
 
+    /**
+     * @brief Returns a formatted error message, indicating the origin of the
+     * syntax error, if available.
+     */
     virtual std::string
     getErrorMsg() const;
+
+    /**
+     * @brief Specifies the line that should be included in the error message.
+     */
+    void
+    setLine(unsigned);
+
+    /**
+     * @brief Specifies the filename that should be specified in the error
+     * message.
+     */
+    void
+    setFile(const std::string&);
+
+private:
 
     unsigned line;
 
@@ -87,46 +102,56 @@ public:
 class FatalError : public GeneralError
 {
 public:
-    
+
+    /**
+     * @brief Constructs a formatted error message, indicating that this error is
+     * fatal.
+     *
+     * A FatalError has no additional context, so we don't need a getErrorMsg()
+     * function for building a special string after construction.
+     */
     FatalError(const std::string msg);
 
-    /// Dtor.
-    virtual ~FatalError() {}
-
 };
 
 
 /**
- * A problem is an error that does not necessarily cause the program
- * to stop. Its message might be dumped as a warning.
- *
-class Problem : public GeneralError
-{
-public:
-    
-    Problem(const std::string msg)
-        : GeneralError(msg)
-    {
-    }
-
-};
-*/
-
-
-/**
- * A plugin error is thrown by plugins and catched inside dlvhex.
+ * A plugin error is thrown by plugins and caught inside dlvhex.
  */
 class PluginError : public GeneralError
 {
 public:
 
+    /// Ctor.
     PluginError(std::string msg);
 
-    /// Dtor.
-    virtual ~PluginError() {}
+    /**
+     * @brief See SyntaxError::~SyntaxError().
+     */
+    virtual ~PluginError() throw() {};
 
+    /**
+     * @brief Sets the context of the error.
+     *
+     * The context is usually the Atom, where this error occurred, and possibly
+     * the line number, if available.
+     */
     void
-    setContext(std::string atomname);
+    setContext(const std::string&);
+
+    /**
+     * @brief Returns a formatted error message.
+     *
+     * The returned. message is built from the context and the actual error
+     * message.
+     */
+    virtual std::string
+    getErrorMsg() const;
+
+private:
+
+    std::string context;
 };
+
 
 #endif /* _ERROR_H */

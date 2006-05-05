@@ -147,7 +147,22 @@ public:
     unifiesWith(const AtomPtr) const;
 
 
+    /**
+     * @brief Inherited equality operator.
+     *
+     * the comparison of an external atom with an ordinary atom must always
+     * return false.
+     */
     virtual bool
+    operator== (const Atom& atom2) const
+    {
+        return false;
+    }
+
+    /**
+     * @brief Comparions operator testing the equality of two external atoms.
+     */
+    bool
     operator== (const ExternalAtom& atom2) const;
 
 

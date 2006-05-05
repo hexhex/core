@@ -272,6 +272,20 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 int
 main (int argc, char *argv[])
 {
+    /*
+    Atom* a = new Atom("p");
+    ExternalAtom* e = new ExternalAtom();
+
+    AtomPtr apa(a);
+    AtomPtr ape(e);
+
+    bool b;
+
+    if (*(apa.get()) == *(ape.get())) b = true;
+    if (*(ape.get()) == *(apa.get())) b = false;
+    exit(0);
+    */
+
     WhoAmI = argv[0];
 
     //
@@ -659,7 +673,7 @@ main (int argc, char *argv[])
             }
             catch (SyntaxError& e)
             {
-                e.file = *f;
+                //e.setFile(*f);
                 std::cerr << e.getErrorMsg() << std::endl;
                 
                 exit(1);
@@ -756,6 +770,7 @@ main (int argc, char *argv[])
     //
     GraphProcessor gp(dg);
     
+
     try
     {
         //

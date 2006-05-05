@@ -80,7 +80,7 @@ HexParserDriver::parse(std::string filename,
     }
     catch (SyntaxError& e)
     {
-        e.file = filename;
+        e.setFile(filename);
         throw e;
     }
 

@@ -1,3 +1,22 @@
+2006-05-05  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Made operator!= nonvirtual.
+
+	* include/dlvhex/Error.h: Cleaned up error handling.
+
+	* include/dlvhex/ExternalAtom.h: Introduced second operator== for
+	comparison with Atom&. Two comparison functions, for Atom& and for
+	ExternalAtom&, are needed.
+	* src/dlvhex/Error.cpp: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Catching exceptions from propositional
+	atom creation.
+
+	* src/dlvhex/HexParserDriver.cpp: (parse): Adapted to new error
+	handling.
+	* src/dlvhex/dlvhex.cpp: (main): Likewise.
+
+
 2006-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h: (GetArguments): Made method virtual.

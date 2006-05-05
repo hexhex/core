@@ -190,12 +190,6 @@ input:
 //     | error { parser_errors++; }
      ;
 
-/* line      : meta_rule NEWLINE
- *           | clause
- *           | query
- *           | MAXINTEGER_EQUALS_param DOT
- *           ;
- */
 
 line:
     clause
@@ -735,8 +729,22 @@ propositional_atom:
         {
             //
             // create new atom from string
-            // 
-            Atom* a = new Atom(*$1);
+            //
+            Atom* a;
+
+            //
+            // construction of an atom could throw an exception - don't throw
+            // same exception again, but use bison's error handler as a general
+            // interface for all errors that happen within the parsing.
+            //
+            try
+            {
+                a = new Atom(*$1);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
 
             //
             // Storing the atom as a ProgramObject. We don't have to take care
@@ -798,10 +806,6 @@ ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
 builtin_pred :
     term binop term
         {
-            std::ostringstream s;
-            //s << *$1 << $2 << *$3;
-            s << $2;
-//               std::cout << "creating builtin: " << s.str() << std::endl;
             $$ = new BuiltinPredicate(*$1, *$2, *$3);
 
             delete $1;
@@ -810,8 +814,6 @@ builtin_pred :
         } 
     | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
         {
-            std::ostringstream s;
-            s << $1;
             $$ = new BuiltinPredicate(*$3, *$1, *$5);
 
             delete $1;

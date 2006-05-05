@@ -15,6 +15,11 @@
 #include "dlvhex/Error.h"
 
 
+GeneralError::GeneralError(const std::string msg)
+    : std::runtime_error(msg)
+{
+}
+
 SyntaxError::SyntaxError(const std::string msg,
                          const unsigned l,
                          const std::string f)
@@ -38,17 +43,30 @@ SyntaxError::getErrorMsg() const
     if (line != 0)
         err << ", line " << line;
     
-    err << ": " << errorMsg;
+    err << ": " << this->what();
 
     return err.str();
 }
 
 
+void
+SyntaxError::setLine(unsigned l)
+{
+    this->line = l;
+}
+
+
+void
+SyntaxError::setFile(const std::string& f)
+{
+    this->file = f;
+}
+
+
+
 FatalError::FatalError(const std::string msg)
     : GeneralError("Fatal: " + msg)
 {
-//    std::cout << "general error: " << msg << std::endl;
-//    std::cout << "general error: " << errorMsg << std::endl;
 }
 
 
@@ -58,9 +76,25 @@ PluginError::PluginError(std::string msg)
 }
 
 
+
 void
-PluginError::setContext(std::string atomname)
+PluginError::setContext(const std::string& c)
 {
-    errorMsg = "Plugin Error at Atom " + atomname + ": " + errorMsg;
+    context = c;
 }
 
+
+std::string
+PluginError::getErrorMsg() const
+{
+    std::ostringstream err;
+
+    err << "Plugin Error";
+
+    if (!context.empty())
+        err << " in " << context;
+    
+    err << ": " << this->what();
+
+    return err.str();
+}
