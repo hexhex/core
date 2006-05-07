@@ -94,14 +94,17 @@ printUsage(std::ostream &out, bool full)
     out << "     --               parse from stdin" << std::endl
         << " -s, --silent         do not display anything than the actual result" << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
-        << " -v, --verbose        dump also various intermediate information" << std::endl
+        << " -v, --verbose        dump also various intermediate information and writes the" << std::endl
+        << "                      program graph to FILENAME.dot" << std::endl
         << " -p, --plugindir=dir  specify additional directory where to look for plugin" << std::endl
         << "                      libraries (additionally to the installation plugin-dir and" << std::endl
         << "                      $HOME/.dlvhex/plugins)" << std::endl
         << " -f, --filter=foo[,bar[,...]]" << std::endl
         << "                      only display instances of the specified predicate(s)" << std::endl
         << "     --firstorder     no higher-order reasoning" << std::endl
-        << "     --ruleml         output in RuleML (v0.9) format" << std::endl
+        << "     --ruleml         output in RuleML-format (v0.9)" << std::endl
+        << "     --noeval         just parse the program, don't evaluate it (only useful with" << std::endl
+        << "                      --verbose)" << std::endl
         << std::endl;
 }
         
@@ -294,6 +297,7 @@ main (int argc, char *argv[])
     
     bool optionPipe = false;
     bool optionXML = false;
+    bool optionNoEval = false;
 
     std::string optionPlugindir("");
 
@@ -325,12 +329,13 @@ main (int argc, char *argv[])
         { "help", no_argument, 0, 'h' },
         { "silent", no_argument, 0, 's' },
         { "verbose", no_argument, 0, 'v' },
-        { "firstorder", no_argument, &longid, 1 },
-        { "weaksafety", no_argument, &longid, 2 },
-        { "ruleml", no_argument, &longid, 3 },
-        { "dlt", no_argument, &longid, 4 },
         { "filter", required_argument, 0, 'f' },
         { "plugindir", required_argument, 0, 'p'},
+        { "firstorder", no_argument, &longid, 1 },
+        { "weaksafety", no_argument, &longid, 2 },
+        { "ruleml",     no_argument, &longid, 3 },
+        { "dlt",        no_argument, &longid, 4 },
+        { "noeval",     no_argument, &longid, 5 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -377,6 +382,8 @@ main (int argc, char *argv[])
             }
             else if (longid == 4)
                 optiondlt = true;
+            else if (longid == 5)
+                optionNoEval = true;
             break;
         case '?':
             remainingOptions.push_back(argv[optind - 1]);
@@ -430,11 +437,17 @@ main (int argc, char *argv[])
 
 
     std::set<std::string> libfilelist;
+
     //
     // first look into specified plugin dir
     //
     if (!optionPlugindir.empty())
+    {
+        if (global::optionVerbose)
+            std::cout << "searching " << optionPlugindir << "..." << std::endl;
+
         searchPlugins(optionPlugindir, libfilelist);
+    }
 
     //
     // now look into user's home
@@ -443,11 +456,17 @@ main (int argc, char *argv[])
 
     userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
+    if (global::optionVerbose)
+        std::cout << "searching " << userhome << "..." << std::endl;
+
     searchPlugins(userhome, libfilelist);
 
     //
     // eventually look into system plugin dir
     //
+    if (global::optionVerbose)
+        std::cout << "searching " << SYS_PLUGIN_DIR << "..." << std::endl;
+
     searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
 
@@ -711,12 +730,9 @@ main (int argc, char *argv[])
     {
         std::cout << "Parsed Rules: " << std::endl;
         IDB.dump(std::cout);
-        std::cout << std::endl;
-        std::cout << "Parsed EDB: " << std::endl;
-        //printGAtomSet(EDB, std::cout, 0);
+        std::cout << std::endl << "Parsed EDB: " << std::endl;
         EDB.print(std::cout, 0);
-        std::cout << std::endl;
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
     }
 
     /// @todo: when exiting after an exception, we have to cleanup things!
@@ -762,6 +778,16 @@ main (int argc, char *argv[])
         std::cerr << e.getErrorMsg() << std::endl << std::endl;
 
         exit(1);
+    }
+
+
+    if (optionNoEval)
+    {
+        delete dg;
+        delete cf;
+        delete gb;
+
+        exit(0);
     }
 
     //
@@ -878,4 +904,6 @@ main (int argc, char *argv[])
     delete gb;
 
     delete dg;
+
+    exit(0);
 }

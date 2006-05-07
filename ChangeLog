@@ -1,3 +1,16 @@
+2006-05-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* src/dlvhex/ASPsolver.cpp (ASPsolver::callSolver): Extended verbose
+	output in case of solver failure.
+
+	* src/dlvhex/ExternalAtom.cpp (ExternalAtom::operator==): Corrected
+	equality operator.
+
+	* src/dlvhex/dlvhex.cpp (main): Improved help output. Added command
+	line switch --noeval. Added verbose output for plugin search
+	locations.
+
+
 2006-05-05  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h: Made operator!= nonvirtual.
@@ -19,13 +32,13 @@
 
 2006-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
-	* include/dlvhex/Atom.h: (GetArguments): Made method virtual.
+	* include/dlvhex/Atom.h (GetArguments): Made method virtual.
 
-	* include/dlvhex/ExternalAtom.h: (GetAguments): Made method virtual.
+	* include/dlvhex/ExternalAtom.h (GetAguments): Made method virtual.
 
 	* src/dlvhex/ExternalAtom.cpp: Implemented operator==.
 
-	* src/dlvhex/GraphBuilder.cpp: (run): Added proper dependency handling
+	* src/dlvhex/GraphBuilder.cpp (run): Added proper dependency handling
 	of chained external atoms within one rule body.
 
 
@@ -36,20 +49,20 @@
 	* include/dlvhex/globals.h: Added string to be passed to the ASP
 	solver for adding a maxint-directive.
 
-	* src/dlvhex/ASPsolver.cpp: (callSolver): Added maxint-directive to
+	* src/dlvhex/ASPsolver.cpp (callSolver): Added maxint-directive to
 	the program to be solved, from a global variable set in the Hex-parser.
 
-	* src/dlvhex/AnswerSet.cpp: (moreExpensiveThan): Corrected error in
+	* src/dlvhex/AnswerSet.cpp (moreExpensiveThan): Corrected error in
 	reading weights of the specified weight-vector.
 
-	* src/dlvhex/Atom.cpp: (Constructor): Moved assertion for nonground
+	* src/dlvhex/Atom.cpp (Constructor): Moved assertion for nonground
 	predicate names to initialization of non-propositional atoms. Added
 	SyntaxError in case of variable propositional atoms.
 
 	* src/dlvhex/HexParser.ypp: Added parsing of maxint-directive.
 	Admitted empty parentheses for external atoms with output arity zero.
 
-	* src/dlvhex/dlvhex.cpp: (main): Corrected handling of streams and
+	* src/dlvhex/dlvhex.cpp (main): Corrected handling of streams and
 	rewriters.
 
 	* src/dlvhex/globals.cpp: Added string for maxint-directive.
@@ -93,16 +106,16 @@
 
 	* src/dlvhex/Makefile.am: Added AnswerSet.cpp.
 
-	* src/dlvhex/OutputBuilder.cpp: (buildAnswerSet): Added weight
+	* src/dlvhex/OutputBuilder.cpp (buildAnswerSet): Added weight
 	output for answer set costs.
 
 	* src/dlvhex/ParserDriver.cpp: Corrected bug of wrong line output
 	in case of syntax errors.
 
-	* src/dlvhex/Term.cpp: (operator!=) Corrected bug in handling
+	* src/dlvhex/Term.cpp (operator!=) Corrected bug in handling
 	NULLCONST.
 
-	* src/dlvhex/dlvhex.cpp: (main): Reactivated dlt preparsing. Added
+	* src/dlvhex/dlvhex.cpp (main): Reactivated dlt preparsing. Added
 	support for weak constraints.
 
 	Fixes bug: #9, #10, #11
@@ -110,24 +123,24 @@
 
 2006-05-02  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
-	* include/dlvhex/PluginInterface.h: (setOptions): Modified argument type.
+	* include/dlvhex/PluginInterface.h (setOptions): Modified argument type.
 
-	* src/dlvhex/AtomSet.cpp: (operator<) Corrected semantics of AtomSet
+	* src/dlvhex/AtomSet.cpp (operator<) Corrected semantics of AtomSet
 	comparison.
 
-	* src/dlvhex/GuessCheckModelGenerator.cpp: (compute): Corrected bug in
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Corrected bug in
 	creation of guessing rules - replacement atoms for external atoms were
 	created without input arguments.
 
-	* src/dlvhex/dlvhex.cpp: (main): Updated option handling, passing
+	* src/dlvhex/dlvhex.cpp (main): Updated option handling, passing
 	unparsed options to plugins and aborting, if any options are left
 	after plugins. Commented out dlt-preparsing. Activated
 	plugin-rewriters.
 
-	* src/testsuite/dlvhex/TestGraphProcessor.cpp: (testSimple): Removed
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp (testSimple): Removed
 	debug output.
 
-	* src/testsuite/dlvhex/TypeTest.cpp: (testConstruction): Added test
+	* src/testsuite/dlvhex/TypeTest.cpp (testConstruction): Added test
 	for set of AtomSet comparison.
 
 
@@ -148,17 +161,17 @@
 	* src/dlvhex/Makefile.am: Reformat. Added bison output files to
 	EXTRA_DIST.
 
-	* src/dlvhex/ASPsolver.cpp: (callSolver): Corrected debug-output.
+	* src/dlvhex/ASPsolver.cpp (callSolver): Corrected debug-output.
 
-	* src/dlvhex/AtomFactory.cpp: (reset): Added reset() to clear factory.
+	* src/dlvhex/AtomFactory.cpp (reset): Added reset() to clear factory.
 	* include/dlvhex/AtomFactory.h: Likewise.
 
-	* src/dlvhex/AtomSet.cpp: (multiplySets): Added check for minimality.
+	* src/dlvhex/AtomSet.cpp (multiplySets): Added check for minimality.
 
-	* src/dlvhex/Literal.cpp: (operator=): Added assignment operator.
+	* src/dlvhex/Literal.cpp (operator=): Added assignment operator.
 	* include/dlvhex/Literal.h: Likewise.
 
-	* src/dlvhex/dlvhex.cpp: (main): Prepared integration of
+	* src/dlvhex/dlvhex.cpp (main): Prepared integration of
 	plugin-rewriters.
 
 	* include/dlvhex/Makefile.am: Added missing header files.
@@ -173,7 +186,7 @@
 	* include/dlvhex/AtomSet.h: Added operator< for comparison of sets of AtomSets (does
 	not work yet).
 
-	* src/testsuite/dlvhex/ASPsolverTest.cpp: (tearDown): Added reset of
+	* src/testsuite/dlvhex/ASPsolverTest.cpp (tearDown): Added reset of
 	AtomFactory after each test in order to avoid conflicting atoms.
 
 	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Added.

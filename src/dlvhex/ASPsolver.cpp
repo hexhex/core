@@ -11,6 +11,7 @@
 
 
 #include <fstream>
+#include <sstream>
 #include <stdio.h>
 
 #include "dlvhex/ASPsolver.h"
@@ -149,10 +150,15 @@ ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
     //
     if (retcode != 0)
     {
-        std::string dlverror("LP solver failure!");
+        std::stringstream errstr;
+
+        errstr << "LP solver failure: returncode: " << retcode;
+
+        std::string dlverror(errstr.str());
 
         if (global::optionVerbose)
         {
+            dlverror += "\nexecuted: " + execdlv;
             dlverror += "\nTry to call dlv manually with this program and see what happens:\n";
             dlverror += prg + "\n";
         }

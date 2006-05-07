@@ -6,7 +6,7 @@ AC_CONFIG_HEADER([src/config.h])
 
 
 #
-# the default system-wide plugin dir $(pkglibdir)\plugins can be
+# the default system-wide plugin dir $(pkglibdir)/plugins can be
 # overridden by setting PLUGIN_DIR=... at configure-time
 #
 if test "$SYS_PLUGIN_DIR" = ""; then

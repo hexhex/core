@@ -390,6 +390,9 @@ ExternalAtom::unifiesWith(const AtomPtr atom) const
 bool
 ExternalAtom::operator== (const ExternalAtom& atom2) const
 {
+    if (this->replacementName != atom2.replacementName)
+        return false;
+
     if (this->functionName != atom2.functionName)
         return false;
 
