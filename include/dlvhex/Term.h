@@ -195,15 +195,24 @@ public:
     operator>= (const Term&) const; 
 
     /**
+     * @brief Insert a name into the list of auxiliary predicates.
+     *
+     * Predicates that are generated internally and registered here will be
+     * filtered out from the final result.
+     */
+    static void
+    registerAuxiliaryName(const std::string&);
+
+    /**
+     * @brief Returns the list of auxiliary predicates.
+     */
+    static const NamesTable<std::string>&
+    getAuxiliaryNames();
+
+    /**
      * @brief Table of all constant names of a program.
      */
     static NamesTable<std::string> names;
-
-    /**
-     * @brief Additional list for auxiliary predicate names, to be removed
-     * before final result output.
-     */
-    static NamesTable<std::string> auxnames;
 
     /**
      * @brief List of namespaces.
@@ -239,6 +248,13 @@ private:
      * Variable identifier if term is of type VARIABLE.
      */
     std::string variableString;
+
+    /**
+     * @brief Additional list for auxiliary predicate names, to be removed
+     * before final result output.
+     */
+    static NamesTable<std::string> auxnames;
+
 };
 
 

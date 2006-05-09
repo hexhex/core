@@ -177,7 +177,7 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
     wcheadname << "wch__" << uniqueid++;
     //wcheadname << "wc_h_";
 
-    Term::auxnames.insert(wcheadname.str());
+    Term::registerAuxiliaryName(wcheadname.str());
 
     std::set<Term> headargs;
 

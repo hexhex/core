@@ -330,6 +330,20 @@ Term::operator>= (const Term& term2) const
 }
 
 
+void
+Term::registerAuxiliaryName(const std::string& auxname)
+{
+    auxnames.insert(auxname);
+}
+
+
+const NamesTable<std::string>&
+Term::getAuxiliaryNames()
+{
+    return auxnames;
+}
+
+
 std::ostream&
 operator<< (std::ostream& out, const Term& term)
 {

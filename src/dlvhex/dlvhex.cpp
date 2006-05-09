@@ -714,16 +714,17 @@ main (int argc, char *argv[])
     //
     insertNamespaces();
 
+    
     /*
-    NamesTable<std::string> names = Term::getNamesTable();
-
-    for (NamesTable<std::string>::const_iterator nm = names.begin();
-         nm != names.end();
+    for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+         nm != Term::names.end();
          ++nm)
     {
-        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
+        std::cerr << "nametable entry: " << nm.getIndex();
+        std::cerr << " iterator: " << nm << "  " << *nm << std::endl;
     }
-*/
+    */
+
 
 
     if (global::optionVerbose)
@@ -846,7 +847,7 @@ main (int argc, char *argv[])
     //
     // remove auxiliary atoms
     //
-    result.filterOut(Term::auxnames);
+    result.filterOut(Term::getAuxiliaryNames());
 
     
     //

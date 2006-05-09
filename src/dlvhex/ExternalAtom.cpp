@@ -91,7 +91,7 @@ ExternalAtom::ExternalAtom(const std::string name,
     // remember this artificial atom name, we need to remove those later, they
     // shouldn't be in the actual result
     //
-    Term::auxnames.insert(replacementName);
+    Term::registerAuxiliaryName(replacementName);
 
     //
     // build input list
@@ -132,7 +132,7 @@ ExternalAtom::ExternalAtom(const std::string name,
         //
         ss << "_aux";
         auxPredicate = ss.str();
-        Term::auxnames.insert(auxPredicate);
+        Term::registerAuxiliaryName(auxPredicate);
     }
 
     

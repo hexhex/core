@@ -1,3 +1,16 @@
+2006-05-09  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Term.h: Added methods Term::registerAuxiliaryName()
+	and Term::getAuxiliaryNames() as an interface for the list of
+	auxiliary names.
+	* src/dlvhex/Term.cpp: Likewise.
+
+	* src/dlvhex/ExternalAtom.cpp (constructor): Adapted to call new
+	Term::registerAuxiliaryName().
+	* src/dlvhex/Rule.cpp (WeakConstraint constructor): Likewise.
+	* src/dlvhex/dlvhex.cpp (main): Likewise.
+
+
 2006-05-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/ASPsolver.cpp (ASPsolver::callSolver): Extended verbose
