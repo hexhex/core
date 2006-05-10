@@ -305,11 +305,14 @@ Atom::operator< (const Atom& atom2) const
 
     if (getArity() < atom2.getArity())
     {
-        //return true;
         //
-        //this should never happen: equal predicates, different arity!
-        std::cout << "diff arity: " << *this << " " << atom2 << std::endl;
-        assert(0);
+        // equal predicates, different arities - can happen for variable
+        // predicates!
+        //
+        if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
+            assert(0);
+
+        return true;
     }
 
     // lexicographically compare on the arguments

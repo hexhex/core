@@ -1,3 +1,27 @@
+2006-05-10  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Modified BuiltinPredicate to consist of a
+	general string instead of of two terms an an operator.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): The maxint directive for dlv
+	has to prepend the program instead of being appended at the end.
+	Corrected.
+
+	* src/dlvhex/Atom.cpp (operator<): Removed arity assertion for
+	comparisons of atoms with variable predicates.
+
+	* src/dlvhex/AtomSet.cpp: Corrected predicateMatches() operator
+	parameters.
+
+	* src/dlvhex/HexParser.ypp: Modified parsing of builtin predicates to
+	fit class modifications. Added parsing of #int() predicate.
+
+	* src/dlvhex/SafetyChecker.cpp (testRules): Included variable
+	predicate in body in list of safe variables.
+
+	Fixes bug: #19, #20, #21
+
+
 2006-05-09  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Term.h: Added methods Term::registerAuxiliaryName()

@@ -75,6 +75,17 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
             //
             if (typeid(*((*bb)->getAtom())) == typeid(Atom))
             {
+                //
+                // look at predicate
+                //
+                Term pred = (*bb)->getAtom()->getPredicate();
+
+                if (pred.isVariable())
+                    safevars.insert(pred);
+
+                //
+                // look at arguments
+                //
                 Tuple bodyarg = (*bb)->getAtom()->getArguments();
 
                 Tuple::const_iterator ordterm = bodyarg.begin();

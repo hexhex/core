@@ -109,7 +109,8 @@ YY_DECL;
     */
     }
 
-%token <string> ID NUM EXTERNAL_ATOM_ID
+%token <string> ID EXTERNAL_ATOM_ID
+%token <integ> NUM
 %type  <string> ident
 %type  <string> binop
 %type  <integ> number
@@ -673,6 +674,19 @@ user_pred:
             delete $2;
             delete $4;
         }
+    | PRED_INT PARAM_OPEN term PARAM_CLOSE
+        {
+            //
+            // create atom from a term
+            //
+            Tuple t;
+            t.push_back(*$3);
+            Atom* a = new Atom("#int", t);
+            a->setAlwaysFO();
+            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+
+            delete $3;
+        }
     ;
 
 
@@ -806,7 +820,11 @@ ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
 builtin_pred :
     term binop term
         {
-            $$ = new BuiltinPredicate(*$1, *$2, *$3);
+            std::stringstream ss;
+
+            ss << *$1 << *$2 << *$3;
+
+            $$ = new BuiltinPredicate(ss.str());
 
             delete $1;
             delete $2;
@@ -814,14 +832,17 @@ builtin_pred :
         } 
     | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
         {
-            $$ = new BuiltinPredicate(*$3, *$1, *$5);
+            std::stringstream ss;
+
+            ss << *$3 << *$1 << *$5;
+
+            $$ = new BuiltinPredicate(ss.str());
 
             delete $1;
             delete $3;
             delete $5;
         }
-          /*| PRED_INT terms1
-          | PRED_SUCC terms2
+/*          | PRED_SUCC terms2
           | tertop terms3
           | param_sans_maxint EQUALS term tertop term
           | MAXINTEGER_EQUALS_param tertop term

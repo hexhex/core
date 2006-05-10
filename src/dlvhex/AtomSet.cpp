@@ -214,11 +214,11 @@ AtomSet::print(std::ostream& stream, const bool ho) const
 }
 
 
-struct predicateMatches : public std::binary_function<AtomPtr, Term, bool>
+struct predicateMatches : public std::binary_function<AtomPtr, std::string, bool>
 {
-    bool operator()(const AtomPtr g, const Term& pred) const
+    bool operator()(const AtomPtr g, const std::string& pred) const
     {
-        return (g->getPredicate() == pred);
+        return (g->getPredicate() == Term(pred));
     }
 };
 

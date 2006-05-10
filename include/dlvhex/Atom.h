@@ -222,6 +222,8 @@ public:
 };
 
 
+#include <sstream>
+
 /**
  * @brief Builtin Atom.
  *
@@ -234,17 +236,14 @@ public:
 
     BuiltinPredicate(const BuiltinPredicate& bp)
         : Atom(bp),
-          t1(bp.t1),
-          t2(bp.t2),
           builtin(bp.builtin)
     {
+
     }
 
 
-    BuiltinPredicate(Term tl, std::string b, Term tr)
-        : t1(tl),
-          t2(tr),
-          builtin(b)
+    BuiltinPredicate(std::string b)
+        : builtin(b)
     {
     }
 
@@ -254,10 +253,8 @@ public:
     virtual std::ostream&
     print(std::ostream& stream, const bool) const
     {
-        return stream << t1 << builtin << t2;
+        return stream << builtin;
     }
-
-    Term t1, t2;
 
     std::string builtin;
 };

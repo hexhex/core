@@ -59,7 +59,7 @@ ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
     //
     // dirty hack: add stuff for each solver call form globals:
     //
-    prg += "\n" + global::maxint;
+    prg = global::maxint + "\n" + prg;
 
     answersets.clear();
     
