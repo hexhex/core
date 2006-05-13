@@ -310,7 +310,7 @@ Atom::operator< (const Atom& atom2) const
         // predicates!
         //
         if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
-            assert(0);
+            throw SyntaxError("arity mismatch");
 
         return true;
     }

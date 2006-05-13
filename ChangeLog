@@ -1,3 +1,14 @@
+2006-05-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* src/dlvhex/Atom.cpp (operator<): Throw proper exception in case of
+	arity mismatch.
+
+	* src/dlvhex/HexParser.ypp: Catch exception coming from creating a new
+	Atom or adding it to the factory.
+
+	Fixes bug: #22, 23
+
+
 2006-05-10  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h: Modified BuiltinPredicate to consist of a
