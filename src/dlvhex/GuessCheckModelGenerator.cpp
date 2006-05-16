@@ -202,9 +202,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     {
         if (global::optionVerbose)
         {
-    //        std::cout << "  checking guess ";
-    //        guess->print(std::cout, 0);
-    //        std::cout << std::endl;
+        //    std::cout << "  checking guess ";
+        //    guess->print(std::cout, 0);
+        //    std::cout << std::endl;
         }
 
         //
@@ -354,7 +354,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             reductprogram.buildProgram(bodyPicker);
             std::string red = reductprogram.getString();
 
-//                std::cout << "reduct program: " << red << std::endl;
+            //    std::cout << "reduct program: " << red << std::endl;
 
             try
             {
@@ -371,9 +371,14 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             // remove guess from result
             //
             AtomSet reductfacts = reductf->difference(*guess);
-//                std::cout << "reduct program result: ";
-//                reductfacts.print(std::cout, false);
-//                std::cout << std::endl;
+
+            /*
+                std::cout << std::endl;
+                std::cout << "reduct program result: ";
+                reductfacts.print(std::cout, false);
+                std::cout << std::endl;
+                std::cout << std::endl;
+                */
 
             //
             // 3)
@@ -422,17 +427,24 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             
             AtomSet a(I);
             a.insert(reductfacts);
+            AtomSet posguess(*guess);
+            posguess.keepPos();
+            a.insert(posguess);
 
             reducedprogram.buildFacts(I);
             reducedprogram.buildFacts(reductfacts);
             reducedprogram.buildProgram(flpreduced);
             std::string reduced = reducedprogram.getString();
 
-            //std::cout << "reduced program: ";
-            //flpreduced.dump(std::cout);
-            //std::cout << " with facts: ";
-            //a.print(std::cout, 0);
-            //std::cout << std::endl;
+            /*
+            std::cout << std::endl;
+            std::cout << "reduced program: ";
+            flpreduced.dump(std::cout);
+            std::cout << " with facts: ";
+            a.print(std::cout, 0);
+            std::cout << std::endl;
+            std::cout << std::endl;
+            */
 
             //
             // 5)

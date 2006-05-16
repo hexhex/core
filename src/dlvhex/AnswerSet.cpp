@@ -214,8 +214,13 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     // weights
     //
     if (!WCprefix.empty())
+    {
         if (this->cheaperThan(answerset2))
             return true;
+
+        if (answerset2.cheaperThan(*this))
+            return false;
+    }
 
     //
     // if the answersets have equal costs in weak constraint-mode, we have to
@@ -236,3 +241,9 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     return !(std::includes(this->begin(), this->end(), answerset2.begin(), answerset2.end()));
 }
 
+
+std::ostream&
+operator<< (std::ostream& out, const AnswerSet& atomset)
+{
+    return atomset.print(out, false);
+}

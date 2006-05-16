@@ -1,3 +1,36 @@
+2006-05-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/AnswerSet.h: Added operator<< for debugging
+	purposes.
+	
+	* include/dlvhex/AtomSet.h: Changed return value of print() from void
+	to std::ostream to be compatible with other print() functions.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+
+	* include/dlvhex/HexParserDriver.h: Added function setOrigin() to set
+	a filename associated with the input to parse.
+
+	* src/dlvhex/AnswerSet.cpp (operator<): Corrected wrong operator
+	behaviour. Added operator<< for debugging purposes.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Corrected
+	algorithm.
+
+	* src/dlvhex/HexParser.ypp: Registered filename to Rule constructor.
+
+	* src/dlvhex/HexParserDriver.cpp (setOrigin), (parse): Added function
+	setOrigin(). Added correct error handling to function parse when
+	called with istream.
+
+	* src/dlvhex/SafetyChecker.cpp (throw): Corrected safety error message
+	handling. Modified verbose output.
+
+	* src/dlvhex/dlvhex.cpp (main): Added passing of filename to parser
+	driver.
+
+	Fixes bug: #13, #16
+
+
 2006-05-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/Atom.cpp (operator<): Throw proper exception in case of

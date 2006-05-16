@@ -195,7 +195,7 @@ AtomSet::matchPredicate(const std::string pred,
 }
 
 
-void
+std::ostream&
 AtomSet::print(std::ostream& stream, const bool ho) const
 {
     stream << "{";
@@ -211,6 +211,8 @@ AtomSet::print(std::ostream& stream, const bool ho) const
     }
 
     stream << "}";
+
+    return stream;
 }
 
 

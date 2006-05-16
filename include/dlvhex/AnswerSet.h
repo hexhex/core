@@ -133,4 +133,12 @@ private:
 
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 
+/**
+ * This operator should only be used for dumping the output; it uses
+ * the first-order notation.
+ */
+std::ostream&
+operator<< (std::ostream&, const AnswerSet&);
+
+
 #endif /* _ANSWERSET_H */

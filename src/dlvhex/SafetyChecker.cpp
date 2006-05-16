@@ -182,7 +182,12 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
         }
 
         if (global::optionVerbose)
-            std::cout << "Rule in line " << (*ruleit)->getLine() << " is safe." << std::endl;
+        {
+            std::cout << "Rule in ";
+            if (!(*ruleit)->getFile().empty())
+                std::cout << (*ruleit)->getFile() << ", ";
+            std::cout << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
+        }
         
         //
         // next rule
@@ -317,14 +322,19 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
                         }
 
                         if (argIsUnsafe)
-                            throw SyntaxError((*ruleit)->getFile(),
-                                            (*ruleit)->getLine(),
-                                            "rule not safe");
+                            throw SyntaxError("rule not expansion-safe",
+                                              (*ruleit)->getLine(),
+                                              (*ruleit)->getFile());
                     }
                 }
                 
                 if (global::optionVerbose)
-                    std::cout << "Rule in line " << (*ruleit)->getLine() << " is strongly safe." << std::endl;
+                {
+                    std::cout << "Rule in ";
+                    if (!(*ruleit)->getFile().empty())
+                        std::cout << (*ruleit)->getFile() << ", ";
+                    std::cout << "line " << (*ruleit)->getLine() << " is expansion-safe." << std::endl;
+                }
         
             } // rules-loop end
         }

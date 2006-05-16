@@ -568,6 +568,12 @@ main (int argc, char *argv[])
                 }
 
                 //
+                // tell the parser driver where the rules are actually coming
+                // from (needed for error-messages)
+                //
+                driver.setOrigin(*f);
+
+                //
                 // make a new stream to store the file content
                 //
                 std::stringstream tmpin;

@@ -77,7 +77,12 @@ public:
     std::string
     getInputFilename() const;
 
+    void
+    setOrigin(const std::string&);
+
 private:
+
+    std::string source;
 
     /// lexer object which scans the stream
     HexFlexLexer* lexer;

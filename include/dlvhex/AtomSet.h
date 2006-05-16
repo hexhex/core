@@ -174,7 +174,7 @@ public:
     /**
      * @brief Prints the atomset to the specified stream.
      */
-    void
+    std::ostream&
     print(std::ostream&, const bool) const;
 
     /**
