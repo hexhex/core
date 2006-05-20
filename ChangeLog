@@ -1,3 +1,29 @@
+2006-05-20  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* Makefile.am: Removed example directory.
+
+	* bootstrap.sh: Added glibtoolize if libtoolize is not found (MacOS).
+
+	* examples/Makefile.am: Removed.
+
+	* include/dlvhex/Atom.h: Reintroduced the usage of Terms in builtins
+	to enable namespace handling for builtin atoms.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Improved method of calling
+	dlv, avoiding temp-file and problems on MacOS.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Calling builtin-constructor with terms.
+
+	* src/dlvhex/HexScanner.lpp: Allowing empty string constants.
+
+	* src/dlvhex/Makefile.am: Enabled static linking.
+
+	* src/dlvhex/dlvhex.cpp (main): NameTable debug output correction.
+
+	Fixes bug: #26, #29
+
+
 2006-05-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/AnswerSet.h: Added operator<< for debugging

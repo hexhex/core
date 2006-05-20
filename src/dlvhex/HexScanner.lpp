@@ -58,7 +58,7 @@ BLANK       ([ \t]+)
 NEWLINE     \r?\n
 ANON_VAR    _
 ID          ([A-Za-z][A-Za-z_0-9]*)
-QUOTED_ID   (\"[^\"]+\")
+QUOTED_ID   (\"[^\"]*\")
 NUM         ((\-)?[0-9]+)
 COMMENT     \%.*
 

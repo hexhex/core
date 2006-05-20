@@ -721,13 +721,14 @@ main (int argc, char *argv[])
     insertNamespaces();
 
     
+    
     /*
     for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
          nm != Term::names.end();
          ++nm)
     {
         std::cerr << "nametable entry: " << nm.getIndex();
-        std::cerr << " iterator: " << nm << "  " << *nm << std::endl;
+        std::cerr << " " << *nm << std::endl;
     }
     */
 

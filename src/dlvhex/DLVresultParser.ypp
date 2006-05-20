@@ -110,20 +110,11 @@ YY_DECL;
 %token TRUE_NOT
 %token CURLY_OPEN CURLY_CLOSE PARAM_OPEN PARAM_CLOSE
 
-%start result
+%start dlvresult
 
 //%printer    { debug_stream() << *$$; } ID
 
 %%
-
-result:
-    dlvresult NUM NEWLINE 
-        {
-            returncode = *$2;
-
-            delete $2;
-        }
-    ;
 
 dlvresult:
     result_line
@@ -133,13 +124,19 @@ dlvresult:
 
 result_line:
     NEWLINE
-    | MESSAGE NEWLINE
-        {
-            //std::cout << "msg: " << *$1 << std::endl;
+    | list
+    | message list
+    ;
 
-            delete $1;
-        }
-    | CURLY_OPEN factlist CURLY_CLOSE NEWLINE
+message: MESSAGE NEWLINE NEWLINE
+    {
+	//std::cout << "msg: " << *$1 << std::endl;
+
+	delete $1;
+    }
+    ;
+
+list: CURLY_OPEN factlist CURLY_CLOSE NEWLINE
     ;
 
 factlist:

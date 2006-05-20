@@ -6,7 +6,6 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = dlvhex.pc
 
 SUBDIRS = \
-          examples \
           include/dlvhex \
           include/testsuite/dlvhex \
           src/dlvhex \

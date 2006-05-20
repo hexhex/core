@@ -242,8 +242,10 @@ public:
     }
 
 
-    BuiltinPredicate(std::string b)
-        : builtin(b)
+    BuiltinPredicate(Term& term1, Term& term2, std::string& b)
+        : t1(term1),
+          t2(term2),
+          builtin(b)
     {
     }
 
@@ -253,8 +255,10 @@ public:
     virtual std::ostream&
     print(std::ostream& stream, const bool) const
     {
-        return stream << builtin;
+        return stream << t1 << builtin << t2;
     }
+
+    Term t1, t2;
 
     std::string builtin;
 };

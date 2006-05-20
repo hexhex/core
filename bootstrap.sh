@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "libtoolize..."
-libtoolize \
+libtoolize || glibtoolize \
     || { echo "libtoolize failed"; exit 1; }
 echo "aclocal..."
 aclocal -I m4 \
