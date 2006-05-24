@@ -41,7 +41,7 @@ public:
      * configure time, only DLV is supported. 
      */
     void
-    callSolver(std::string prg, bool noEDB = 0)/* throw (FatalError) */;
+    callSolver(const std::string& prg, bool noEDB = 0)/* throw (FatalError) */;
 
     /**
      * @brief Retrieves an Answer set, incrementing the internal result pointer.
