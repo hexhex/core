@@ -1,3 +1,27 @@
+2006-05-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/ProcessBuf.h: New file.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+
+	* configure.ac: Don't create non-existing examples/Makefile.
+
+	* include/dlvhex/Makefile.am (noinst_HEADERS): Add ProcessBuf.h.
+
+	* src/dlvhex/Makefile.am (libaspsolver_la_SOURCES): Add ProcessBuf.cpp.
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Remove returncode
+	parameter.
+	* include/dlvhex/DLVresultParserDriver.h: Likewise.
+
+	* src/dlvhex/DLVresultParser.ypp: Remove returncode parameter.
+	Allow empty input (-silent).
+
+	* src/dlvhex/ASPsolver.cpp (ASPsolver::callSolver): Outsource fork
+	code to ProcessBuf.
+
+	* include/dlvhex/ASPsolver.h (ASPsolver::callSolver): Use a
+	reference to const std::string as program parameter.
+
 2006-05-20  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* Makefile.am: Removed example directory.

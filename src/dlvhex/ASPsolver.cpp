@@ -10,20 +10,19 @@
  */
 
 
-#include <fstream>
 #include <sstream>
-#include <stdio.h>
-// for waitpid:
-#include <sys/wait.h>
+#include <iterator>
 
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/DLVresultParserDriver.h"
+#include "dlvhex/ProcessBuf.h"
 
-#include "../config.h"
-
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
 
 
 ASPsolver::ASPsolver()
@@ -51,104 +50,56 @@ ASPsolver::numAnswerSets()
     return answersets.size();
 }
 
-
-
-#include <ext/stdio_filebuf.h> 
-#include <cerrno>
-#include <cstdio>
-#include <csignal>
-
 void
-ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
+ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
-    //
-    // dirty hack: add stuff for each solver call from globals:
-    //
-    prg = global::maxint + "\n" + prg;
-
     answersets.clear();
-    
-    std::cout << "ASP solver input:" << std::endl << prg << std::endl << std::endl;
+
+    // setup command
+    std::vector<std::string> argv;
+
+    argv.push_back(lpcommand);
+    argv.push_back("-silent");
+
+    if (noEDB)
+      argv.push_back("-nofacts");
+
+    argv.push_back("--");
 
     int retcode;
 
-    int outpipes[2];
-    int inpipes[2];
-    if (pipe(outpipes) < 0)
-        perror("pipes");
-    if (pipe(inpipes) < 0)
-        perror("pipes");
-
-
-    pid_t ret = fork();
-
-    switch(ret)
+    try
     {
-    case -1: // error
-        exit(ret);
-        return;
+        // create a new dlv process
+        ProcessBuf pb;
+        pb.open(argv);
 
-    case 0: // child
-        if (dup2(outpipes[1], STDOUT_FILENO) < 0) exit(1);
-        if (dup2(inpipes[0], STDIN_FILENO) < 0) exit(1);
+        std::iostream iopipe(&pb);
+	// let ProcessBuf throw std::ios_base::failure
+	iopipe.exceptions(std::ios_base::badbit);
 
-        close(outpipes[0]);
-        close(inpipes[1]);
-
-        if (noEDB)
-        {
-            char* argv[5] = { "dlv", "-silent", "-nofacts", "--", 0 };
-            execv(lpcommand.c_str(), argv);
-        }
-        else
-        {
-            char* argv[4] = { "dlv", "-silent", "--", 0 };
-            execv(lpcommand.c_str(), argv);
-        }
-
-        perror("exec");
-        exit(125 + errno); // never here
-        break;
-
-    default: // parent
-        close(outpipes[1]);
-        close(inpipes[0]);
-
-        __gnu_cxx::stdio_filebuf<char> in(outpipes[0], std::ios::in);
-        __gnu_cxx::stdio_filebuf<char> out(inpipes[1], std::ios::out);
-        std::istream inpipe(&in);
-        std::ostream outpipe(&out);
-
-        // 	std::streambuf* tmp = std::cout.rdbuf();
-        // 	std::cout.rdbuf(&out);
-        // 	std::cout << prg << std::endl;
-        // 	std::cout.flush();
-        // 	std::cout.rdbuf(tmp);
-
-        outpipe << prg << std::endl;
-        outpipe.flush();
-
-        close(inpipes[1]); // send EOF to dlv
+        //
+        // dirty hack: add stuff for each solver call from globals:
+        //
+        iopipe << global::maxint << std::endl << prg << std::endl;
+        pb.endoffile(); // send EOF to dlv
 
         DLVresultParserDriver driver;
+    
+        driver.parse(iopipe, answersets);
 
-        try
-        {
-            driver.parse(inpipe, answersets, retcode);
-        }
-        catch (GeneralError& e)
-        {
-            throw FatalError(e.getErrorMsg());
-        }
-
-        // get return value of dlv process
-        waitpid(ret, &retcode, 0);
-
-        // we're done reading
-        close(outpipes[1]);
-
-        break;
+        // get exit code of dlv process
+        retcode = pb.close();
     }
+    catch (GeneralError& e)
+    {
+        throw FatalError(e.getErrorMsg());
+    }
+    catch (std::exception& e)
+    {
+        throw FatalError(e.what());
+    }
+
 
     if (retcode == 127)
     {
@@ -164,21 +115,24 @@ ASPsolver::callSolver(std::string prg, bool noEDB)// throw (FatalError)
 
         errstr << "LP solver failure: returncode: " << retcode;
 
-        std::string dlverror(errstr.str());
-
         if (global::optionVerbose)
         {
-            dlverror += "\nexecuted: " + lpcommand + " -silent ";
-	    if (noEDB) dlverror += " -nofacts ";
-            dlverror += "\nTry to call dlv manually with this program and see what happens:\n";
-            dlverror += prg + "\n";
+            errstr << std::endl << "executed: ";
+
+	    std::copy(argv.begin(), argv.end(),
+		      std::ostream_iterator<std::string>(errstr, " "));
+
+	    errstr << std::endl
+		   << "Try to call dlv manually with this program and see what happens:"
+		   << prg
+		   << std::endl;
         }
         else
         {
-            dlverror += " Run with --verbose for more info.\n";
+            errstr << " Run with --verbose for more info." << std::endl;
         }
 
-        throw FatalError(dlverror);
+        throw FatalError(errstr.str());
     }
     
     //

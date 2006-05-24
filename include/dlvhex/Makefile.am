@@ -25,6 +25,7 @@ noinst_HEADERS = \
 		 ParserDriver.h \
                  PluginContainer.h \
                  PluginInterface.h \
+                 ProcessBuf.h \
                  Program.h \
                  ProgramBuilder.h \
                  ResultContainer.h \

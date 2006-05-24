@@ -68,7 +68,6 @@ YY_DECL;
 // yy::DLVresultParser ctor
 %parse-param { DLVresultParserDriver* driver }
 %parse-param { std::vector<AtomSet>& answersets }
-%parse-param { int& returncode }
 
 
 // bison passes the driver as additional parameter to the lexer
@@ -116,19 +115,17 @@ YY_DECL;
 
 %%
 
-dlvresult:
-    result_line
+dlvresult: /* empty */
     | dlvresult result_line
-//    | ERROR
     ;
 
 result_line:
     NEWLINE
     | list
-    | message list
+    | message result_line
     ;
 
-message: MESSAGE NEWLINE NEWLINE
+message: MESSAGE
     {
 	//std::cout << "msg: " << *$1 << std::endl;
 

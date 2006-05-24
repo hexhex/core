@@ -108,6 +108,7 @@ libaspsolver_la_SOURCES = \
     DLVresultScanner.lpp \
     DLVresultParserDriver.cpp \
     ASPsolver.cpp \
-    ParserDriver.cpp
+    ParserDriver.cpp \
+    ProcessBuf.cpp
 
 libaspsolver_la_LIBADD = libdlvhexbase.la
