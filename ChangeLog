@@ -1,3 +1,17 @@
+2006-05-31  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Modified the BuiltinPredicate to be closer to
+	the parent class Atom.
+	* src/dlvhex/Atom.cpp (BuiltinPredicate): Likewise.
+
+	* include/dlvhex/ResultContainer.h: Added workaround to remove DLT
+	auxiliary atoms from result.
+	* src/dlvhex/ResultContainer.cpp (filterOutDLT): Likewise.
+	* src/dlvhex/dlvhex.cpp (main): Likewise.
+
+	Fixes bug: #27
+
+
 2006-05-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/ProcessBuf.h: New file.

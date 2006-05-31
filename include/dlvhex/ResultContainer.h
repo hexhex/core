@@ -60,6 +60,12 @@ public:
     void
     filterOut(const NamesTable<std::string>&);
 
+    /**
+     * @brief Quick hack to get rid of dlt's auxiliary atoms.
+     */
+    void
+    filterOutDLT();
+
     void
     filterIn(const std::vector<std::string>&);
 

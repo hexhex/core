@@ -856,6 +856,12 @@ main (int argc, char *argv[])
     //
     result.filterOut(Term::getAuxiliaryNames());
 
+    //
+    // quick hack
+    //
+    if (optiondlt)
+        result.filterOutDLT();
+
     
     //
     // apply filter

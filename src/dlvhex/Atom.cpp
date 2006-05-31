@@ -334,3 +334,19 @@ Atom::operator< (const Atom& atom2) const
 
 
 
+BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, std::string& b)
+{
+    arguments.push_back(Term(b));
+    arguments.push_back(t1);
+    arguments.push_back(t2);
+}
+
+
+std::ostream&
+BuiltinPredicate::print(std::ostream& stream, const bool) const
+{
+    return stream << this->arguments[1] 
+                  << this->arguments[0]
+                  << this->arguments[2];
+}
+

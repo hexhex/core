@@ -234,33 +234,31 @@ class BuiltinPredicate : public Atom
 {
 public:
 
-    BuiltinPredicate(const BuiltinPredicate& bp)
+/*    BuiltinPredicate(const BuiltinPredicate& bp)
         : Atom(bp),
           builtin(bp.builtin)
     {
 
     }
+*/
 
-
-    BuiltinPredicate(Term& term1, Term& term2, std::string& b)
+    BuiltinPredicate(Term&, Term&, std::string&);
+    /*
         : t1(term1),
           t2(term2),
           builtin(b)
     {
     }
-
+*/
     /**
-     * @brief Prints the atom.
+     * @brief Prints the builtin.
      */
     virtual std::ostream&
-    print(std::ostream& stream, const bool) const
-    {
-        return stream << t1 << builtin << t2;
-    }
+    print(std::ostream&, const bool) const;
 
-    Term t1, t2;
+//    Term t1, t2;
 
-    std::string builtin;
+//    std::string builtin;
 };
 
 

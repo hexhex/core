@@ -88,6 +88,42 @@ ResultContainer::filterOut(const NamesTable<std::string>& predicates)
     } 
 }
 
+
+void
+ResultContainer::filterOutDLT()
+{
+    //
+    // go through all atom sets we have
+    //
+    for (result_t::iterator ri = sets.begin();
+         ri != sets.end();
+         ++ri)
+    {
+        std::vector<std::string> toremove;
+
+        for (AnswerSet::const_iterator ai = (*ri)->begin();
+             ai != (*ri)->end();
+             ++ai)
+        {
+            if ((*ai).getPredicate().isString())
+                continue;
+
+            std::string pred = (*ai).getPredicate().getString();
+
+            if (pred.find('_') != std::string::npos)
+            {
+                std::istringstream is(pred.erase(0, pred.find('_') + 1));
+                int r;
+                if (!(is >> r).fail())
+                    toremove.push_back((*ai).getPredicate().getString());
+            }
+        }
+
+        (*ri)->remove(toremove);
+    } 
+}
+
+
 void
 ResultContainer::filterIn(const std::vector<std::string>& predicates)
 {
@@ -101,6 +137,7 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
         (*ri)->keep(predicates);
     } 
 }
+
 
 void
 ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
