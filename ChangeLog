@@ -1,3 +1,15 @@
+2006-06-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/NamesTable.h: Added lookup table to speed up
+	name-retrieval.
+
+	* src/dlvhex/Atom.cpp: Improved speed of operator<.
+
+	* src/dlvhex/DLVresultParser.ypp: Removed debug switches.
+
+	* src/dlvhex/Term.cpp (Term): Simplified handling of quoted strings.
+
+
 2006-05-31  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h: Modified the BuiltinPredicate to be closer to

@@ -44,14 +44,15 @@ Term::Term(const std::string name, bool isString)
 {
     if (name[0] == '\"')
     {
-        constantString = names.insert(name.substr(1, name.length() - 2));
+        //constantString = names.insert(name.substr(1, name.length() - 2));
+        constantString = names.insert(name);
         type = STRING;
     }
     else
     {
         if (isString)
         {
-            constantString = names.insert(name);
+            constantString = names.insert("\"" + name + "\"");
             type = STRING;
         }
         else
@@ -78,15 +79,17 @@ Term::Term(const char* name, bool isString)
 {
     if (name[0] == '\"')
     {
-        std::string n(name);
-        constantString = names.insert(n.substr(1, n.length() - 2));
+        //std::string n(name);
+        //constantString = names.insert(n.substr(1, n.length() - 2));
+        constantString = names.insert(name);
         type = STRING;
     }
     else
     {
         if (isString)
         {
-            constantString = names.insert((std::string)name);
+            //constantString = names.insert((std::string)name);
+            constantString = names.insert("\"" + (std::string)name + "\"");
             type = STRING;
         }
         else
@@ -157,6 +160,7 @@ Term::getString() const
 
     assert(constantString != names.end());
 
+    /*
     std::string ret(*constantString);
 
     if (type == STRING)
@@ -165,6 +169,9 @@ Term::getString() const
     }
     
     return ret;
+    */
+
+    return *constantString;
 }
 
 
@@ -175,7 +182,9 @@ Term::getUnquotedString() const
     
     assert(constantString != names.end());
     
-    return *constantString;
+    std::string n(*constantString);
+
+    return n.substr(1, n.length() - 2);
 }
 
 
@@ -267,7 +276,8 @@ Term::operator!= (const Term& term2) const
         case STRING:
             assert(constantString != names.end());
 
-            return (*constantString).compare(term2.getUnquotedString());
+            return (*constantString).compare(term2.getString());
+            //return (*constantString).compare(term2.getUnquotedString());
         
         case VARIABLE:
             //

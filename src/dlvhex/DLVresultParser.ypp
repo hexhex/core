@@ -79,9 +79,9 @@ YY_DECL;
 %locations
 
 // debug parser
-%debug
-%error-verbose
-%verbose /* really verbose output */
+//%debug
+//%error-verbose
+//%verbose /* really verbose output */
 
 
 %union {

@@ -281,6 +281,11 @@ operator<< (std::ostream& out, const Atom& atom)
 int
 Atom::operator< (const Atom& atom2) const
 {
+    if (getPredicate() != atom2.getPredicate())
+    {
+        return (getPredicate() < atom2.getPredicate());
+    }
+    /*
     if (getPredicate() < atom2.getPredicate())
     {
         return true;
@@ -289,6 +294,7 @@ Atom::operator< (const Atom& atom2) const
     {
         return false;
     }
+    */
 
     if (!isStrongNegated && atom2.isStrongNegated)
     {
