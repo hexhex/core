@@ -1,3 +1,14 @@
+2006-06-05  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp (insertNamespaces), (removeNamespaces),
+	(main): Adapted namespace handling to new namestable - strings are now
+	stored with their quotes.
+
+	* src/dlvhex/helper.cpp (stringExplode): Do not create a vector
+	element if string to explode is empty. This allows for an empty filter
+	string to have no effect.
+
+
 2006-06-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/NamesTable.h: Added lookup table to speed up

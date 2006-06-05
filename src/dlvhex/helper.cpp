@@ -28,7 +28,8 @@ helper::stringExplode(const std::string& inString, const std::string& separator)
         start = end + separator.size();
     }
 
-    returnVector.push_back(inString.substr(start));
+    if (inString.size() > 0)
+        returnVector.push_back(inString.substr(start));
 
     return returnVector;
 }

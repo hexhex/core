@@ -167,11 +167,18 @@ insertNamespaces()
         {
             prefix = ns->second + ":";
 
-            if ((*nm).find(prefix, 0) == 0)
+            //
+            // prefix must occur either at beginning or right after quote
+            //
+            unsigned start = 0;
+            if ((*nm)[0] == '"')
+                start = 1;
+
+            if ((*nm).find(prefix, start) == start)
             {
                 std::string r(*nm);
 
-                r.replace(0, prefix.length(), ns->first);
+                r.replace(start, prefix.length(), ns->first);
 
                 Term::names.modify(nm, r);
 
@@ -219,11 +226,18 @@ removeNamespaces()
 
             prefix = ns->second + ":";
 
-            if ((*nm).find(fullns, 0) == 0)
+            //
+            // original ns must occur either at beginning or right after quote
+            //
+            unsigned start = 0;
+            if ((*nm)[0] == '"')
+                start = 1;
+
+            if ((*nm).find(fullns, start) == start)
             {
                 std::string r(*nm);
 
-                r.replace(0, fullns.length(), prefix);
+                r.replace(start, fullns.length(), prefix);
 
                 Term::names.modify(nm, r);
             }
@@ -866,15 +880,6 @@ main (int argc, char *argv[])
     //
     // apply filter
     //
-    std::vector<Term> filter;
-
-    for (std::vector<std::string>::const_iterator f = optionFilter.begin();
-         f != optionFilter.end();
-         f++)
-    {
-        filter.push_back(Term(*f));
-    }
-
     if (optionFilter.size() > 0)
         result.filterIn(optionFilter);
 
