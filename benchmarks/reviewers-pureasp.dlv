@@ -20,6 +20,9 @@
 % 4) additional lookup table for NamesTable:
 %    4.243
 %
+% 5) improved Term!= operator; returning string references in Term
+%    2.777
+%
 
 
 paper(subm1). 

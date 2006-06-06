@@ -285,7 +285,6 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 
 #include <ext/stdio_filebuf.h> 
 
-
 int
 main (int argc, char *argv[])
 {
@@ -912,7 +911,6 @@ main (int argc, char *argv[])
     }
     */
     
-
     //
     // cleaning up:
     //

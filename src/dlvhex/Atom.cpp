@@ -281,18 +281,20 @@ operator<< (std::ostream& out, const Atom& atom)
 int
 Atom::operator< (const Atom& atom2) const
 {
+    int n = (getPredicate() != atom2.getPredicate());
+
+    if (n < 0)
+        return true;
+    if (n > 0)
+        return false;
+    /*
+    if (getPredicate() < atom2.getPredicate())
+        return true;
+    if (getPredicate() > atom2.getPredicate())
+        return false;
     if (getPredicate() != atom2.getPredicate())
     {
         return (getPredicate() < atom2.getPredicate());
-    }
-    /*
-    if (getPredicate() < atom2.getPredicate())
-    {
-        return true;
-    }
-    else if (getPredicate() > atom2.getPredicate())
-    {
-        return false;
     }
     */
 

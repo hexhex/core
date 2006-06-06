@@ -57,7 +57,6 @@ class NamesTable
     size_t indexcount;
 
 public:
-
     
     class const_iterator
     {
@@ -102,6 +101,17 @@ public:
         operator != (const const_iterator& i2) const
         {
             return (it != i2.it);
+        }
+
+        int
+        cmp(const const_iterator& i2) const
+        {
+            if (this->it->first < i2.it->first)
+                return 1;
+            else if (this->it->first > i2.it->first)
+                return -1;
+            
+            return 0;
         }
     };
     

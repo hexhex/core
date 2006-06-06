@@ -1,3 +1,15 @@
+2006-06-06  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/NamesTable.h: Added compare method for name-iterator.
+
+	* include/dlvhex/Term.h: Return const string& instead of string.
+
+	* src/dlvhex/Atom.cpp: Accelerated Atom< ().
+
+	* src/dlvhex/Term.cpp: Accelerated Term!= () by comparing
+	term-name-iterators instead of term-strings.
+
+
 2006-06-05  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp (insertNamespaces), (removeNamespaces),

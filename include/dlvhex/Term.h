@@ -102,14 +102,14 @@ public:
      * In case of a 'STRING' constant, the quoted string is returned.
      * other term types cause an assertion to fail.
      */
-    std::string
+    const std::string&
     getString() const; 
 
     /**
      * Returns a string without quotes. The term needs to be of type 'Constant'
      * or 'STRING'.
      */
-    std::string
+    const std::string&
     getUnquotedString() const; 
 
     /**
@@ -123,7 +123,7 @@ public:
      * Returns the original variable identifier the term was constructed with.
      * If the term is not of type 'VARIABLE', an assertion fails.
      */
-    std::string
+    const std::string&
     getVariable() const;
 
     /**

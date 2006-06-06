@@ -153,7 +153,7 @@ Term::isVariable() const
 }
 
 
-std::string
+const std::string&
 Term::getString() const
 {
     assert((type == STRING) || (type == SYMBOL));
@@ -175,7 +175,7 @@ Term::getString() const
 }
 
 
-std::string
+const std::string&
 Term::getUnquotedString() const
 {
     assert((type == STRING) || (type == SYMBOL));
@@ -197,7 +197,7 @@ Term::getInt() const
 }
 
 
-std::string
+const std::string&
 Term::getVariable() const
 {
     assert(type == VARIABLE);
@@ -263,21 +263,18 @@ Term::operator!= (const Term& term2) const
     if( type != term2.type )
         return (int)type - (int)term2.type;
 
+
     switch (type)
     {
         case INTEGER:
             return constantInteger - term2.getInt();
         
         case SYMBOL:
-            assert(constantString != names.end());
-    
-            return (*constantString).compare(term2.getString());
-        
         case STRING:
             assert(constantString != names.end());
-
-            return (*constantString).compare(term2.getString());
-            //return (*constantString).compare(term2.getUnquotedString());
+    
+            //return (*constantString).compare(term2.getString());
+            return constantString.cmp(term2.constantString);
         
         case VARIABLE:
             //
