@@ -40,7 +40,7 @@ Term::Term(const Term& term2)
 }
 
 
-Term::Term(const std::string name, bool isString)
+Term::Term(const std::string& name, bool isString)
 {
     if (name[0] == '\"')
     {
@@ -175,16 +175,14 @@ Term::getString() const
 }
 
 
-const std::string&
+std::string
 Term::getUnquotedString() const
 {
     assert((type == STRING) || (type == SYMBOL));
     
     assert(constantString != names.end());
     
-    std::string n(*constantString);
-
-    return n.substr(1, n.length() - 2);
+    return (*constantString).substr(1, (*constantString).length() - 2);
 }
 
 
@@ -245,13 +243,13 @@ Term::unifiesWith(const Term& term2) const
 Term&
 Term::operator= (const Term& term2)
 {
-    if (this != &term2)
-    {
+  //  if (this != &term2)
+  //  {
         constantString = term2.constantString;
         constantInteger = term2.constantInteger;
         variableString = term2.variableString;
         type = term2.type;
-    }
+  //  }
 
     return *this;
 }

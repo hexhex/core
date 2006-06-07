@@ -55,7 +55,7 @@ public:
      * will be 'STRING'. Otherwise it is a 'SYMBOL', if the first character
      * is lowercase, or a 'VARIABLE' if uppercase.
      */
-    Term(const std::string, bool isString = false); 
+    Term(const std::string&, bool isString = false); 
 
     /**
      * @brief Same as Term(const string name, bool isString = false).
@@ -107,9 +107,9 @@ public:
 
     /**
      * Returns a string without quotes. The term needs to be of type 'Constant'
-     * or 'STRING'.
+     * or 'String'.
      */
-    const std::string&
+    std::string
     getUnquotedString() const; 
 
     /**

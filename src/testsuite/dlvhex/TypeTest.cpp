@@ -142,9 +142,9 @@ AtomTest::testUnification()
     tl.push_back(Term("foo"));
     tl.push_back(Term("const"));
     tl.push_back(Term("\"a small string\""));
-    
+
     AtomPtr ho2(new Atom("M", tl));
-    
+
     //
     // should unifiy with both
     //
