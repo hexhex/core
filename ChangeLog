@@ -1,3 +1,24 @@
+2006-06-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/AtomSet.h: New function matchAtom().
+	* src/dlvhex/AtomSet.cpp: Likewise.
+
+	* include/dlvhex/Component.h: Prepared input set filtering for
+	components.
+	* src/dlvhex/Component.cpp (modelGenerator), (evaluate): Likewise.
+
+	* include/dlvhex/NamesTable.h: Corrected error in namespace handling.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Corrected wrong
+	behaviour.
+
+	* src/dlvhex/Makefile.am: Removed static linking.
+
+	* src/dlvhex/Term.cpp: Corrected bug in getUnquotedStrings().
+
+	Fixes bug: #25
+
+
 2006-06-06  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/NamesTable.h: Added compare method for name-iterator.

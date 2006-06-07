@@ -166,6 +166,13 @@ public:
     matchPredicate(const std::string, AtomSet&) const;
 
     /**
+     * @brief Fill all atoms that unify with the given atom into the
+     * specified atomset.
+     */
+    void
+    matchAtom(const AtomPtr&, AtomSet&) const;
+
+    /**
      * @brief Returns the set difference: *this \ specified atomset.
      */
     AtomSet

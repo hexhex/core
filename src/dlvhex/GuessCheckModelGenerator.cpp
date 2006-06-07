@@ -200,12 +200,12 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
          ++guess)
 //    while ((guess = Solver.getNextAnswerSet()) != NULL)
     {
-        if (global::optionVerbose)
-        {
-        //    std::cout << "  checking guess ";
-        //    guess->print(std::cout, 0);
-        //    std::cout << std::endl;
-        }
+        //if (global::optionVerbose)
+        //{
+        //    std::cerr << "  checking guess ";
+        //    guess->print(std::cerr, 0);
+        //    std::cerr << std::endl;
+        //}
 
         //
         // extract the (positive) external atom result from the answer set
@@ -221,6 +221,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             guess->matchPredicate((*ei)->getReplacementName(), externalguess);
             externalguess.keepPos();
 
+            //std::cerr<<"evaluating " << **ei << " with guess as input" << std::endl;
             try
             {
                 (*ei)->evaluate(*guess, checkresult);
@@ -242,9 +243,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
         if (externalguess == checkresult)
         {
-           // std::cout << "  good guess: ";
-           // guess->print(std::cout, 0);
-           // std::cout << std::endl;
+           //std::cerr << "  good guess: ";
+           //guess->print(std::cerr, 0);
+           //std::cerr << std::endl;
 
             if (global::optionVerbose)
                 std::cout << "  checking guess reduct" << std::endl;
@@ -428,7 +429,21 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             AtomSet a(I);
             a.insert(reductfacts);
             AtomSet posguess(*guess);
-            posguess.keepPos();
+            //
+            // remove negated auxatoms:
+            /*
+            std::vector<std::string> auxatomnames;
+            for (std::set<const ExternalAtom*>::const_iterator exi = extatomInComp.begin();
+                exi != extatomInComp.end();
+                ++exi)
+            {
+                auxatomnames.push_back((*ei)->getReplacementName());
+            }
+            posguess.remove(auxatomnames);
+            */
+            //posguess.keepPos();
+            
+            
             a.insert(posguess);
 
             reducedprogram.buildFacts(I);
@@ -466,7 +481,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
             AtomSet weakFacts(*guess);
 
-            weakFacts.keepPos();
+            //weakFacts.keepPos();
 
 //            weakFacts.remove(externalNames);
 
@@ -483,6 +498,29 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 strongFacts.print(std::cout, false);
                 std::cout << std::endl;
             }
+            /*
+                std::cerr << "  guess: ";
+//                weakFacts.print(std::cerr, false);
+    for (AtomSet::const_iterator a = weakFacts.begin(); a != weakFacts.end(); a++) {
+        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
+    }
+
+                std::cerr << std::endl;
+                std::cerr << "  reduced program result: ";
+    //            strongFacts.print(std::cerr, false);
+    for (AtomSet::const_iterator a = strongFacts.begin(); a != strongFacts.end(); a++) {
+        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
+    }
+                std::cerr << std::endl;
+    NamesTable<std::string> names2 = Term::names;
+    for (NamesTable<std::string>::const_iterator nm = names2.begin();
+         nm != names2.end();
+         ++nm)
+    {
+        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << "-" << nm.it->second.ix << std::endl;
+    }
+                std::cerr << std::endl;
+                */
 
             //
             // 6)
@@ -491,6 +529,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             if (strongFacts == weakFacts)
             {
                 compatibleSets.push_back(&(*guess));
+                //std::cerr << "taken!" << std::endl;
             }
             else
             {

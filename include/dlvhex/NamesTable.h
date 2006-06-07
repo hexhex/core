@@ -31,12 +31,17 @@
 template <class NameType>
 class NamesTable
 {
+    struct n_t {
+        NameType n;
+        unsigned ix;
+    };
+
     //
     // the names container type maps an index to a name (e.g., std::string)
     // index is l.h.s. to ensure that names are not reordered and iterators to
     // map-entries can be used.
     //
-    typedef std::map<size_t, NameType> names_t;
+    typedef std::map<size_t, n_t> names_t;
 
     //
     // lookup table that provides fast access to names (name is l.h.s.) and
@@ -44,6 +49,7 @@ class NamesTable
     //
     typedef std::map<NameType, typename names_t::const_iterator> lookup_t;
 
+public:
     /**
      * Actual storage of names.
      */
@@ -56,13 +62,12 @@ class NamesTable
      */
     size_t indexcount;
 
-public:
     
     class const_iterator
     {
+    public:
         typename names_t::const_iterator it;
 
-    public:
 
         const_iterator()
         {
@@ -82,7 +87,7 @@ public:
         const NameType&
         operator *() const
         {
-            return (*it).second;
+            return (*it).second.n;
         }
 
         void
@@ -106,9 +111,9 @@ public:
         int
         cmp(const const_iterator& i2) const
         {
-            if (this->it->first < i2.it->first)
+            if (this->it->second.ix < i2.it->second.ix)
                 return 1;
-            else if (this->it->first > i2.it->first)
+            else if (this->it->second.ix > i2.it->second.ix)
                 return -1;
             
             return 0;
@@ -138,7 +143,11 @@ public:
         //
         // no - insert it into names table with current indexcount
         //
-        std::pair<size_t, NameType> ins(this->indexcount++, name);
+        n_t newname;
+        newname.n = name;
+        newname.ix = this->indexcount;
+
+        std::pair<size_t, n_t> ins(this->indexcount++, newname);
         std::pair<typename names_t::const_iterator, bool> res;
         res = this->names.insert(ins);
 
@@ -155,7 +164,35 @@ public:
     void
     modify(const_iterator i, NameType name)
     {
-        names[i.getIndex()] = name;
+        typename names_t::iterator ni = names.begin();
+
+        bool wasinlookup = 0;
+
+        while (ni != names.end())
+        {
+            //
+            // already exists:
+            //
+            if ((*ni).second.n == name)
+            {
+                (*ni).second.ix = names[i.getIndex()].ix;
+
+                wasinlookup = 1;
+            }
+
+            ++ni;
+        }
+
+        names[i.getIndex()].n = name;
+
+        if (!wasinlookup)
+        {
+            //
+            // update also lookup table:
+            // 
+            std::pair<NameType, typename names_t::const_iterator> inslk(name, i.it);
+            this->lookup.insert(inslk);
+        }
     }
 
     const_iterator

@@ -255,6 +255,33 @@ FixpointModelGenerator::compute(const Program& program,
 
         dlvResult = *as;
 
+    /*
+    NamesTable<std::string> names2 = Term::names;
+    for (NamesTable<std::string>::const_iterator nm = names2.begin();
+         nm != names2.end();
+         ++nm)
+    {
+        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << "-" << nm.it->second.ix << std::endl;
+    }
+    for (NamesTable<std::string>::lookup_t::const_iterator li = names2.lookup.begin();
+         li != names2.lookup.end();
+         ++li)
+    {
+        std::cout << "lookup entry: " << li.first << " " << *nm << "-" << nm.it->second.ix << std::endl;
+    }
+        
+                std::cerr << "  I: ";
+    for (AtomSet::const_iterator a = I.begin(); a != I.end(); a++) {
+        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
+    }
+                std::cerr << std::endl;
+                std::cerr << "  fp: ";
+    for (AtomSet::const_iterator a = dlvResult.begin(); a != dlvResult.end(); a++) {
+        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
+    }
+                std::cerr << std::endl;
+    */
+                
         //
         // to be able to compare them:
         //
@@ -279,6 +306,8 @@ FixpointModelGenerator::compute(const Program& program,
         //i++;if (i > 1) break;
 
         firstrun = false;
+
+
 
     } while ((dlvResult != currentI) && (iter <= maxIter));
 

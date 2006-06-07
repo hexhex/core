@@ -52,10 +52,9 @@ AM_CPPFLAGS = \
 
 #
 # -ldl is for dynamic linking against the external module libs
-# -Wl,-rpath is specifying . to be the search path for shared libs
-# (dlvhex should use libs it finds in its own directory)
 #
-dlvhex_LDFLAGS = -ldl -static
+#dlvhex_LDFLAGS = -ldl -static
+dlvhex_LDFLAGS = -ldl
 
 #
 # dlvhex itself also uses the convenience libs (see below)

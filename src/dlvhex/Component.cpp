@@ -116,6 +116,45 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
 
     while (node != nodes.end())
         addAtomNode(*node++);
+
+    //
+    // find incoming nodes: nodes that depend on a node that does not belong to
+    // the component
+    //
+    ///todo: this is not used yet, incoming are not enough, facts are not
+    //recorded and could be relevant as well!
+    //
+    
+    std::vector<const AtomNode*>::const_iterator ni = atomnodes.begin();
+
+    while (ni != atomnodes.end())
+    {
+        //
+        // go through all nodes that this node depends on
+        //
+        std::vector<Dependency> deps = (*ni)->getPreceding();
+
+        std::vector<Dependency>::const_iterator di = deps.begin();
+
+        while (di != deps.end())
+        {
+            const AtomNode* other = (*di).getAtomNode();
+
+            //
+            // if this other node is not in our component, then the current node
+            // is an 'incoming' node
+            //
+            if (find(atomnodes.begin(), atomnodes.end(), other) == atomnodes.end())
+            {
+                incomingNodes.push_back(other);
+                //std::cout << "incoming node: " << *other << std::endl;
+            }
+
+            ++di;
+        }
+
+        ++ni;
+    }
 }
 
 
@@ -141,13 +180,22 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     //
     // compute model for each input factset
     //
+
     for (std::vector<AtomSet>::const_iterator in = input.begin();
          in != input.end();
          ++in)
     {
+        AtomSet filtered;
+
+        std::list<const AtomNode*>::const_iterator ini = incomingNodes.begin();
+
+        //while (ini != incomingNodes.end())
+        //    (*in).matchAtom((*ini++)->getAtom(), filtered);
+
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
+            ///not used yet: filtered.print(std::cout, 0);
             (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
@@ -156,13 +204,22 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-            modelGenerator->compute(atomnodes, *in, res);
+            modelGenerator->compute(atomnodes, (*in), res);
+            //modelGenerator->compute(atomnodes, filtered, res);
         }
         catch (GeneralError&)
         {
             throw;
         }
 
+//        std::vector<AtomSet>::iterator resi = res.begin();
+//        while (resi != res.end())
+//            (*resi++).insert(*in);
+
+        //
+        // add all models that came from the model generator to the result set
+        // (= set of sets!)
+        //
         result.insert(result.end(), res.begin(), res.end());
     }
 

@@ -181,8 +181,17 @@ Term::getUnquotedString() const
     assert((type == STRING) || (type == SYMBOL));
     
     assert(constantString != names.end());
-    
-    return (*constantString).substr(1, (*constantString).length() - 2);
+
+    //
+    // trim quotes from strings
+    //
+    if (type == STRING)    
+        return (*constantString).substr(1, (*constantString).length() - 2);
+
+    //
+    // otherwise just return symbol string
+    //
+    return *constantString;
 }
 
 

@@ -195,6 +195,21 @@ AtomSet::matchPredicate(const std::string pred,
 }
 
 
+void
+AtomSet::matchAtom(const AtomPtr& atom,
+                   AtomSet& matched) const
+{
+    /// @todo: stdlib algorithm!
+    for (atomset_t::const_iterator a = atoms.begin();
+         a != atoms.end();
+         a++)
+    {
+        if ((*a)->unifiesWith(atom))
+            matched.atoms.insert(*a);
+    }
+}
+
+
 std::ostream&
 AtomSet::print(std::ostream& stream, const bool ho) const
 {

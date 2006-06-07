@@ -1,13 +1,15 @@
-vendor("s1").
-vendor("s5").
-vendor("s9").
-needed("cpu").
-needed("harddisk").
-needed("case").
+#namespace("shop", "http://www.kr.tuwien.ac.at/staff/roman/shop#")
+
+vendor("shop:s1").
+vendor("shop:s5").
+vendor("shop:s9").
+needed("shop:cpu").
+needed("shop:harddisk").
+needed("shop:case").
 inputurl("http://www.kr.tuwien.ac.at/staff/roman/swlp/examples/shop.owl").
 
 % for the case, we already have a contract with a specific vendor
-contract("s9","case").
+contract("shop:s9","shop:case").
 
 % choosing rules:
 % avoid vendors that don't give a rebate

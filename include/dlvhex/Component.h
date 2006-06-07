@@ -106,9 +106,10 @@ protected:
 
     std::vector<AtomSet> result;
 
+    std::list<const AtomNode*> incomingNodes;
+
 private:
 
-    std::vector<AtomNode*> incomingNodes;
 
 //    std::vector<Rule*> bottom;
 

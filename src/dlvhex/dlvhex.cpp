@@ -642,6 +642,7 @@ main (int argc, char *argv[])
                 }
                 char tempfile[L_tmpnam];
 
+
                 //
                 // at this point, the program is in the stream "input" - wither
                 // directly read from the file or as a result of some previous
