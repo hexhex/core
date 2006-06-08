@@ -192,6 +192,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         //while (ini != incomingNodes.end())
         //    (*in).matchAtom((*ini++)->getAtom(), filtered);
 
+        /*
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
@@ -199,6 +200,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
             (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
+        */
 
         res.clear();
 
@@ -223,6 +225,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         result.insert(result.end(), res.begin(), res.end());
     }
 
+    /*
     if (global::optionVerbose)
     {
         std::cout << "Result set(s):" << std::endl;
@@ -238,6 +241,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
         std::cout << std::endl;
     }
+    */
 
     evaluated = true;
 }
@@ -289,12 +293,14 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
          in != input.end();
          ++in)
     {
+        /*
         if (global::optionVerbose)
         {
             std::cout << "Input set: ";
             (*in).print(std::cout, 0);
             std::cout << std::endl;
         }
+        */
 
         AtomSet res;
 
@@ -320,6 +326,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         result.push_back(res);
     }
 
+    /*
     if (global::optionVerbose)
     {
         std::cout << "Result set(s): ";
@@ -335,6 +342,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         std::cout << std::endl;
     }
+    */
 
     evaluated = true;
 }

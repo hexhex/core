@@ -649,6 +649,8 @@ main (int argc, char *argv[])
                 // rewriting!
                 //
 
+                FILE* fp;
+
                 //
                 // now call dlt if needed
                 //
@@ -673,7 +675,7 @@ main (int argc, char *argv[])
                     std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
                     //std::cout << "dlttemp: " << std::string(tempfile) << std::endl;
                         
-                    FILE* fp = popen(execPreParser.c_str(), "r");
+                    fp = popen(execPreParser.c_str(), "r");
 
                     if (fp == NULL)
                     {
@@ -697,6 +699,13 @@ main (int argc, char *argv[])
               
                 driver.parse(input, IDB, EDB);
 
+                int dltret = pclose(fp);
+
+                if (dltret != 0)
+                {
+                    throw GeneralError("Preparser dlt returned error");
+                }
+
                 //
                 // wherever the input-buffer was created before - now we don't
                 // need it anymore
@@ -719,10 +728,9 @@ main (int argc, char *argv[])
             }
             catch (GeneralError& e)
             {
-                //
-                // input file not found - just skip it, maybe there are more
-                //
                 std::cerr << e.getErrorMsg() << std::endl;
+
+                exit(1);
             }
 
         }
