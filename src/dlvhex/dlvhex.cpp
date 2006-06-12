@@ -699,11 +699,14 @@ main (int argc, char *argv[])
               
                 driver.parse(input, IDB, EDB);
 
-                int dltret = pclose(fp);
-
-                if (dltret != 0)
+                if (optiondlt)
                 {
-                    throw GeneralError("Preparser dlt returned error");
+                    int dltret = pclose(fp);
+
+                    if (dltret != 0)
+                    {
+                        throw GeneralError("Preparser dlt returned error");
+                    }
                 }
 
                 //

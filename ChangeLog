@@ -1,3 +1,15 @@
+2006-06-12  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* src/dlvhex/AnswerSet.cpp: Corrected answer set ordering in case of
+	weak constraints (higher levels have higher priority).
+
+	* src/dlvhex/ResultContainer.cpp (filterIn): Keep only positive facts
+	if filter is used.
+
+	* src/dlvhex/dlvhex.cpp (main): do not try to close dlt-inputstream if
+	dlt is not used.
+
+
 2006-06-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/AtomSet.h: New function matchAtom().

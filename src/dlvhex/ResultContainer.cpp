@@ -135,6 +135,7 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
          ++ri)
     {
         (*ri)->keep(predicates);
+        (*ri)->keepPos();
     } 
 }
 

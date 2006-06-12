@@ -131,7 +131,11 @@ AnswerSet::cheaperThan(const AnswerSet& answerset2) const
     if (answerset2.weights.size() > maxlevel)
         maxlevel = answerset2.weights.size();
 
-    for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    //
+    // higher levels have higher priority
+    //
+    //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
     {
         if (this->getWeight(currlevel) < answerset2.getWeight(currlevel))
         {
@@ -166,7 +170,8 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
     //
     // go through all levels
     //
-    for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
     {
         unsigned w = 0;
 
