@@ -21,37 +21,8 @@
 #include "dlvhex/Program.h"
 #include "dlvhex/Error.h"
 
-// put FlexLexer.h into its own include guards or yyFlexLexer gets
-// redefined
-#ifndef __FLEX_LEXER_H
-#undef yyFlexLexer
-#define yyFlexLexer hexFlexLexer
-#include <FlexLexer.h>
-#endif
-
-
-//
-// some forward declarations
-//
-  
-union YYSTYPE;
-
-    
-/**
- * @brief Use a refined yyFlexLexer.
- *
- */
-class HexFlexLexer : public yyFlexLexer
-{
-public:
-    HexFlexLexer(ParserDriver* d) : lexdrv(d) { }
-    virtual ~HexFlexLexer() { }
-    ParserDriver* lexdrv;
-    yy::location* lexloc;
-    YYSTYPE* lexval;
-    int yylex(); // implemented in HexScanner.lpp
-};
-
+// some forward declaration 
+class HexFlexLexer;
 
 class HexParserDriver : public ParserDriver
 {
@@ -82,10 +53,10 @@ public:
 
 private:
 
-    std::string source;
-
     /// lexer object which scans the stream
     HexFlexLexer* lexer;
+
+    std::string source;
 
 };
 
