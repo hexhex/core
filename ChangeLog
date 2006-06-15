@@ -1,3 +1,29 @@
+2006-06-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Check versions of bison and flex.
+
+	* src/dlvhex/HexParserDriver.cpp: Include HexFlexLexer.h
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Include DLVresultFlexLexer.h.
+
+	* src/dlvhex/DLVresultParser.ypp: Adapt parser to bison 2.2/2.3.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/HexScanner.lpp: Likewise.
+
+	* include/dlvhex/Makefile.am (noinst_HEADERS): Add
+	HexFlexLexer.h and DLVresultFlexLexer.h.
+
+	* include/dlvhex/ExternalAtom.h: Fix warning.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* include/dlvhex/HexParserDriver.h (HexFlexLexer): Remove.
+
+	* include/dlvhex/DLVresultParserDriver.h (DLVresultFlexLexer): Remove.
+
+	* include/dlvhex/DLVresultFlexLexer.h: New file.
+	* include/dlvhex/HexFlexLexer.h: Likewise.
+
 2006-06-12  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/AnswerSet.cpp: Corrected answer set ordering in case of
