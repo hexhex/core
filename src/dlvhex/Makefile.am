@@ -61,13 +61,48 @@ dlvhex_LDFLAGS = -ldl
 #
 dlvhex_LDADD = libdlvhexbase.la libaspsolver.la # libplugin.la
 
+
+#
+# in maintainer-mode we check for a sufficient version of the bison/flex combo
+#
+
+# minimum bison version
+BISON_MAJOR=2
+BISON_MINOR=2
+
+# minimum flex version
+FLEX_MAJOR=2
+FLEX_MINOR=5
+FLEX_MICRO=33
+
 #
 # don't let automake rename and move the output files of flex/bison,
 # this doesn't work for pure C++ parser (yet)
 #
 .lpp.cpp:
+	@flex_version=`$(LEX) --version 2>&1 | sed -ne 's/^.*flex[^0-9]*//p'` ; \
+	declare -i flex_major ; \
+	declare -i flex_minor ; \
+	declare -i flex_micro ; \
+	flex_major=`echo $$flex_version | sed "s/^\([0-9]*\).\([0-9]*\).\([0-9]*\)/\1/"` ; \
+	flex_minor=`echo $$flex_version | sed "s/^\([0-9]*\).\([0-9]*\).\([0-9]*\)/\2/"` ; \
+	flex_micro=`echo $$flex_version | sed "s/^\([0-9]*\).\([0-9]*\).\([0-9]*\)/\3/"` ; \
+	if test $$flex_major -lt $(FLEX_MAJOR) || test $$flex_minor -lt $(FLEX_MINOR) || test $$flex_micro -lt $(FLEX_MICRO); then \
+		echo Wrong version of flex installed: $$flex_version, I need at least $(FLEX_MAJOR).$(FLEX_MINOR).$(FLEX_MICRO) ; \
+		exit 1 ;\
+	fi
 	$(LEXCOMPILE) -o $@ $<
+
 .ypp.cpp:
+	@bison_version=`$(YACC) --version 2>&1 | sed -ne 's/^.*GNU Bison[^0-9]*//p'` ; \
+	declare -i bison_major ; \
+	declare -i bison_minor ; \
+	bison_major=`echo $$bison_version | sed "s/^\([0-9]*\).\([0-9]*\)/\1/"` ; \
+	bison_minor=`echo $$bison_version | sed "s/^\([0-9]*\).\([0-9]*\)/\2/"` ; \
+	if test $$bison_major -lt $(BISON_MAJOR) || test $$bison_minor -lt $(BISON_MINOR); then \
+		echo Wrong version of bison installed: $$bison_version, I need at least $(BISON_MAJOR).$(BISON_MINOR) ; \
+		exit 1 ;\
+	fi
 	$(YACCCOMPILE) -o $@ $<
 
 
