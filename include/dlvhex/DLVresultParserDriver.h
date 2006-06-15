@@ -21,36 +21,8 @@
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 
-// put FlexLexer.h into its own include guards or yyFlexLexer gets
-// redefined
-#ifndef __FLEX_LEXER_H
-#undef yyFlexLexer
-#define yyFlexLexer dlvFlexLexer
-#include <FlexLexer.h>
-#endif
-
-
-//
-// some forward declarations
-//
-  
-union YYSTYPE;
-
-/**
- * @brief Use a refined yyFlexLexer.
- *
- */
-class DLVresultFlexLexer : public yyFlexLexer
-{
-public:
-    DLVresultFlexLexer(ParserDriver* d) : lexdrv(d) { }
-    virtual ~DLVresultFlexLexer() { }
-    ParserDriver* lexdrv;
-    yy::location* lexloc;
-    YYSTYPE* lexval;
-    int yylex(); // implemented in DLVresultScanner.lpp
-};
-
+// some forward declaration
+class DLVresultFlexLexer;
 
 class DLVresultParserDriver : public ParserDriver
 {
