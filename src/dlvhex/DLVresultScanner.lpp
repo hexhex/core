@@ -19,7 +19,7 @@
 // generated from bison
 //
 #include "dlvhex/DLVresultParser.hpp"
-    
+#include "dlvhex/DLVresultFlexLexer.h"
 #include "dlvhex/DLVresultParserDriver.h"
 
 
@@ -31,8 +31,8 @@
 #define YY_NO_UNPUT
 
 
-#define yylval (*(YYSTYPE*)lexval)
-#define yylloc ((yy::location*)lexloc)
+#define yylval (*(yy::DLVresultParser::semantic_type*)lexval)
+#define yylloc ((yy::DLVresultParser::location_type*)lexloc)
 #define driver (*lexdrv)
 
 %}
@@ -72,26 +72,32 @@ NUM         ([0-9]+)
 
 %%
 
+%{
+  // abbreviate it as token
+  typedef yy::DLVresultParser::token token;
+%}
+
+
 {NEWLINE} {
-    return NEWLINE;
+    return token::NEWLINE;
     /* parser_line++;*/
 }
 
-","     { return COMMA;         }
-"-"     { return TRUE_NOT;      }
-"("     { return PARAM_OPEN;    }
-")"     { return PARAM_CLOSE;   }
-"{"     { return CURLY_OPEN;    }
-"}"     { return CURLY_CLOSE;   }
+","     { return token::COMMA;         }
+"-"     { return token::TRUE_NOT;      }
+"("     { return token::PARAM_OPEN;    }
+")"     { return token::PARAM_CLOSE;   }
+"{"     { return token::CURLY_OPEN;    }
+"}"     { return token::CURLY_CLOSE;   }
 {ID} |
 {QUOTED_ID} {
     yylval.string = new std::string(yytext);
-    return ID;
+    return token::ID;
 }
 
 {NUM} { 
     yylval.integ = new int(atoi(yytext));
-    return NUM; 
+    return token::NUM; 
 }
 
 {BLANK} { /* Skip blanks */ }
@@ -101,7 +107,7 @@ NUM         ([0-9]+)
     // something starting not with a '{' at the beginning of a line
     // this is some dlv-(error-)message
     yylval.string = new std::string(yytext);
-    return MESSAGE;
+    return token::MESSAGE;
 }
 
 . { // Anything not matching one of the patterns

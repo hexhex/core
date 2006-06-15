@@ -47,21 +47,6 @@
 #include "dlvhex/globals.h"
 
 
-//
-// Flex expects the signature of yylex to be defined in the macro YY_DECL, and
-// the C++ parser expects it to be declared.
-//
-// Announce to bison the prototype we want for the lexing function
-#ifndef YY_DECL
-#define YY_DECL                                                         \
-  int yylex (YYSTYPE* yylval,                                           \
-             yy::location* yylloc,                                      \
-             HexParserDriver* driver)
-// declare YY_DECL function for the parser
-YY_DECL;
-#endif
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 %}
@@ -108,6 +93,29 @@ YY_DECL;
     OIDindices*    oids;
     */
     }
+
+
+// define FlexLexer part *after* the definitions of the various types
+%{
+
+#include "dlvhex/HexFlexLexer.h"
+
+//
+// Flex expects the signature of yylex to be defined in the macro YY_DECL, and
+// the C++ parser expects it to be declared.
+//
+// Announce to bison the prototype we want for the lexing function
+#ifndef YY_DECL
+#define YY_DECL                                                 \
+yy::HexParser::token_type                                       \
+yylex (yy::HexParser::semantic_type* yylval,                    \
+       yy::HexParser::location_type* yylloc,                    \
+       HexParserDriver* driver)
+// declare YY_DECL function for the parser
+YY_DECL;
+#endif
+
+%}
 
 %token <string> ID EXTERNAL_ATOM_ID
 %token <integ> NUM
@@ -1022,6 +1030,6 @@ YY_DECL
     HexFlexLexer* lex = driver->getLexer();
     lex->lexval = yylval; // set current semantic value
     lex->lexloc = yylloc; // and the current location,
-    return lex->yylex (); // finally call the drivers lexer
+    return (yy::HexParser::token_type) lex->yylex (); // finally call the drivers lexer
 } 
 
