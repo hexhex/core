@@ -16,7 +16,7 @@
 
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ParserDriver.h"
-
+#include "dlvhex/HexFlexLexer.h"
 
 HexParserDriver::HexParserDriver()
     : lexer(new HexFlexLexer(this)),
