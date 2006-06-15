@@ -15,6 +15,7 @@
 
 #include "dlvhex/DLVresultParser.hpp"
 #include "dlvhex/ParserDriver.h"
+#include "dlvhex/DLVresultFlexLexer.h"
 
 DLVresultParserDriver::DLVresultParserDriver()
     : lexer(new DLVresultFlexLexer(this))
