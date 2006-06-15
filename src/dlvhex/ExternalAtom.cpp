@@ -381,7 +381,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 
 bool
-ExternalAtom::unifiesWith(const AtomPtr atom) const
+ExternalAtom::unifiesWith(const AtomPtr /* atom */) const
 {
     return 0;
 }

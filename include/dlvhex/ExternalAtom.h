@@ -154,7 +154,7 @@ public:
      * return false.
      */
     virtual bool
-    operator== (const Atom& atom2) const
+    operator== (const Atom&) const
     {
         return false;
     }
