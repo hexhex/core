@@ -1,3 +1,9 @@
+2006-06-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* configure.ac: Changed version number to 1.0. This will now be the
+	official dlvhex 1.0 release.
+	
+
 2006-06-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Makefile.am: Check versions of bison and flex.
