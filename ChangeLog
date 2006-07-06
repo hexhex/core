@@ -1,3 +1,10 @@
+2006-07-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Add AC_LIBTOOL_DLOPEN.
+
+	* src/dlvhex/Makefile.am (dlvhex_LDFLAGS): Add -static and
+	-export-dynamic.
+
 2006-06-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Changed version number to 1.0. This will now be the
