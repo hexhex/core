@@ -52,9 +52,11 @@ AM_CPPFLAGS = \
 
 #
 # -ldl is for dynamic linking against the external module libs
+# -static: statically link libdlvhexbase
+# -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-#dlvhex_LDFLAGS = -ldl -static
-dlvhex_LDFLAGS = -ldl
+dlvhex_LDFLAGS = -ldl -static -export-dynamic
+
 
 #
 # dlvhex itself also uses the convenience libs (see below)
