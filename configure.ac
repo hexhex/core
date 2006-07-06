@@ -99,6 +99,7 @@ AC_HEADER_STDBOOL
 AC_C_CONST
 
 # Checks for library functions.
+AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 
 # doxygen stuff
