@@ -1,3 +1,7 @@
+2006-07-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* m4/doxygen.m4: Fix for newer autoconfs, see Debian Bug #368712.
+
 2006-07-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Add AC_LIBTOOL_DLOPEN.
