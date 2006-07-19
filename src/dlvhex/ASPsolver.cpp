@@ -55,6 +55,8 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
     answersets.clear();
 
+    //std::cerr << prg << std::endl;
+
     // setup command
     std::vector<std::string> argv;
 

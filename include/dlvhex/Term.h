@@ -98,6 +98,12 @@ public:
     isVariable() const;
 
     /**
+     * @brief Returns 1 if the term is anonymous.
+     */
+    bool
+    isAnon() const;
+
+    /**
      * Returns the symbol string, if the constant is of type 'SYMBOL'.
      * In case of a 'STRING' constant, the quoted string is returned.
      * other term types cause an assertion to fail.

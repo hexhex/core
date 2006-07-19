@@ -1,9 +1,28 @@
+2006-07-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Term.h: Added function isAnon().
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Debug output added/removed.
+
+	* src/dlvhex/HexParser.ypp: Removed comment.
+
+	* src/dlvhex/Term.cpp: Added isAnon(). Fixed wrong unification
+	handling.
+
+
 2006-07-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* m4/doxygen.m4: Fix for newer autoconfs, see Debian Bug #368712.
 
 2006-07-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* configure.ac: Add AC_LIBTOOL_DLOPEN.
+
+	* src/dlvhex/Makefile.am (dlvhex_LDFLAGS): Add -static and
+	-export-dynamic.
+
+2006-06-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+	
 	* configure.ac: Add AC_LIBTOOL_DLOPEN.
 
 	* src/dlvhex/Makefile.am (dlvhex_LDFLAGS): Add -static and

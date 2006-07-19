@@ -153,6 +153,13 @@ Term::isVariable() const
 }
 
 
+bool
+Term::isAnon() const
+{
+    return type == NULLCONST;
+}
+
+
 const std::string&
 Term::getString() const
 {
@@ -224,9 +231,15 @@ bool
 Term::unifiesWith(const Term& term2) const
 {
     //
-    // If at least one of the is variable, they unify
+    // If at least one of them is variable, they unify
     //
     if (isVariable() || term2.isVariable())
+        return 1;
+    
+    //
+    // If at least one of them is anonymous, they unify
+    //
+    if (isAnon() || term2.isAnon())
         return 1;
     
     //

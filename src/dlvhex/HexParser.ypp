@@ -964,7 +964,7 @@ term:
     | ANON_VAR
         {
             //
-            /// @todo: are we handling this correctly?
+            // Default constructor makes anonymous term
             //
             $$ = new Term();
         }
