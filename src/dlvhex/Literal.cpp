@@ -28,6 +28,8 @@ Literal::operator=(const Literal& lit2)
     this->isWeaklyNegated = lit2.isWeaklyNegated;
 
     const_cast<AtomPtr&>(this->atom) = lit2.atom;
+
+    return *this;
 }
 
 Literal::Literal(const AtomPtr at, bool naf)
