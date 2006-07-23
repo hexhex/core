@@ -62,7 +62,7 @@ public:
      * - A first order atom, like 'p(X)' or 'q(a,b,Z)'.
      * The second argument indicates if the atom is strongly negated.
      */
-    Atom(const std::string, bool = false);
+    Atom(const std::string&, bool = false);
 
     /**
      * Constructs an atom from a predicate string and a tuple.
@@ -70,7 +70,7 @@ public:
      * The tuple can also be empty, then the atom is propositional and consists
      * only of the predicate identifier.
      */
-    Atom(const std::string, const Tuple&, bool = false);
+    Atom(const std::string&, const Tuple&, bool = false);
 
     /**
      * Constructs an atom from a list of arguments. This represents a higher-order

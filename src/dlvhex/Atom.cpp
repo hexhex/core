@@ -38,7 +38,7 @@ Atom::Atom(const Atom& atom2)
 }
 
 
-Atom::Atom(const std::string atom, bool neg)
+Atom::Atom(const std::string& atom, bool neg)
     : isStrongNegated(neg),
       isAlwaysFO(0)
 {
@@ -81,7 +81,7 @@ Atom::Atom(const std::string atom, bool neg)
 }
 	
 
-Atom::Atom(const std::string pred, const Tuple& arg, bool neg)
+Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
     : isStrongNegated(neg),
       isAlwaysFO(0)
 {
