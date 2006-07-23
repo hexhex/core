@@ -73,6 +73,12 @@ public:
             return *(*it);
         }
 
+        const Atom*
+        operator ->() const
+        {
+            return &(operator*());
+        }
+
         const_iterator&
         operator ++()
         {
