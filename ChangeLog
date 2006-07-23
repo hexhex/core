@@ -1,3 +1,13 @@
+2006-07-23    <djmaecki@ull.at>
+
+	* src/dlvhex/Literal.cpp (Literal::operator=): Return *this.
+
+	* src/dlvhex/Atom.cpp: Pass ctor arguments by reference.
+	* include/dlvhex/Atom.h: Likewise.
+
+	* include/dlvhex/AtomSet.h (AtomSet::const_iterator::operator->):
+	Add operator.
+
 2006-07-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Term.h: Added function isAnon().
