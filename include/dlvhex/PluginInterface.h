@@ -345,9 +345,11 @@ public:
      * Each option known to the plugin must be deleted from the vector. dlvhex
      * will exit with an error if unknown options are left in the vector after
      * all plugins have been processed.
+     * If the first parameter is true, then help was requested. The plugin must
+     * write its help output into the given stream;
      */
     virtual void
-    setOptions(std::vector<std::string>&)
+    setOptions(bool, std::vector<std::string>&, std::ostream&)
     { }
 
 };

@@ -329,6 +329,8 @@ main (int argc, char *argv[])
     extern char* optarg;
     extern int optind, opterr;
 
+    bool helpRequested = 0;
+
     //
     // prevent error message for unknown options - they might be known to
     // plugins later!
@@ -352,20 +354,13 @@ main (int argc, char *argv[])
         { NULL, 0, NULL, 0 }
     };
 
-    if (argc == 1)
-    {
-        printUsage(std::cerr, false);
-
-        exit(-1);
-    }
-
     while ((ch = getopt_long(argc, argv, "f:hsvp:", longopts, NULL)) != -1)
     {
         switch (ch)
         {
         case 'h':
-            printUsage(std::cerr, true);
-            exit(0);
+            //printUsage(std::cerr, true);
+            helpRequested = 1;
             break;
         case 's':
             global::optionSilent = 1;
@@ -405,7 +400,32 @@ main (int argc, char *argv[])
     }
 
     //
-    // sdtin requested
+    // before anything else we dump the logo
+    //
+
+    if (!global::optionSilent)
+        printLogo();
+
+    //
+    // no arguments at all: shorthelp
+    //
+    if (argc == 1)
+    {
+        printUsage(std::cerr, false);
+
+        exit(1);
+    }
+
+    bool inputIsWrong = 0;
+
+    //
+    // check if we have any input (stdin or file)
+    // if inout is not or badly specified, remember this and show shorthelp
+    // later if everthing was ok with the options
+    //
+
+    //
+    // stdin requested
     //
     if (!strcmp(argv[optind - 1], "--"))
     {
@@ -418,11 +438,7 @@ main (int argc, char *argv[])
         // no files and no stdin - error
         //
         if (!optionPipe)
-        {
-            printUsage(std::cerr, false);
-
-            exit(-1);
-        }
+            inputIsWrong = 1;
     }
     else
     {
@@ -430,11 +446,7 @@ main (int argc, char *argv[])
         // files and stdin - error
         //
         if (optionPipe)
-        {
-            printUsage(std::cerr, false);
-
-            exit(-1);
-        }
+            inputIsWrong = 1;
 
         //
         // collect filenames
@@ -445,11 +457,13 @@ main (int argc, char *argv[])
         }
     }
 
-    if (!global::optionSilent)
-        printLogo();
 
-
+    //
+    // now search for plugins
+    //
     std::set<std::string> libfilelist;
+
+    std::stringstream allpluginhelp;
 
     //
     // first look into specified plugin dir
@@ -482,7 +496,6 @@ main (int argc, char *argv[])
 
     searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
-
     std::vector<PluginInterface*> plugins;
 
     //
@@ -500,12 +513,13 @@ main (int argc, char *argv[])
 
             if (plugin != NULL)
             {
+                std::stringstream pluginhelp;
+
                 plugins.push_back(plugin);
 
-                plugin->setOptions(remainingOptions);
+                plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
 
-                ///todo what to do with unknown options? how to know whether the
-                //plugins did not know all remaining options?
+                allpluginhelp << pluginhelp.str();
             }
         }
         catch (GeneralError &e)
@@ -516,19 +530,50 @@ main (int argc, char *argv[])
         }
     }
 
+    if (!global::optionSilent)
+        std::cout << std::endl;
+
+
+    //
+    // help was requested?
+    //
+    if (helpRequested)
+    {
+        printUsage(std::cerr, true);
+        std::cerr << allpluginhelp.str();
+        exit(0);
+    }
+
     //
     // any unknown options left?
     //
     if (!remainingOptions.empty())
     {
+        std::cerr << "Unknown option(s):";
+
+        std::vector<std::string>::const_iterator opb = remainingOptions.begin();
+
+        while (opb != remainingOptions.end())
+            std::cerr << " " << *opb++;
+
+        std::cerr << std::endl;
         printUsage(std::cerr, false);
 
-        exit(-1);
+        exit(1);
     }
 
+    //
+    // options are all ok, but input is missing
+    //
+    if (inputIsWrong)
+    {
+        printUsage(std::cerr, false);
 
-    if (!global::optionSilent)
-        std::cout << std::endl;
+        exit(1);
+    }
+
+    //if (!global::optionSilent)
+    //    std::cout << std::endl;
     
     //
     // parse input
@@ -648,6 +693,8 @@ main (int argc, char *argv[])
                 // directly read from the file or as a result of some previous
                 // rewriting!
                 //
+      //          if (global::optionVerbose)
+      //              std::cout << "rewritten program: " << input.rdbuf() << std::endl;
 
                 FILE* fp;
 

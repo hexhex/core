@@ -1,4 +1,11 @@
-2006-07-23    <djmaecki@ull.at>
+2006-07-31  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/PluginInterface.h: New prototype for setOptions().
+
+	* src/dlvhex/dlvhex.cpp (main): Improved option handling with plugins.
+
+
+2006-07-23  Thomas Krennwallner  <djmaecki@ull.at>
 
 	* src/dlvhex/Literal.cpp (Literal::operator=): Return *this.
 
