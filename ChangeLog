@@ -1,3 +1,8 @@
+2006-08-04  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/AtomSet.h (AtomSet::const_iterator): In order to
+	get the STL algorithms working we inherit from std::iterator<>.
+
 2006-07-31  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/PluginInterface.h: New prototype for setOptions().
@@ -5,7 +10,7 @@
 	* src/dlvhex/dlvhex.cpp (main): Improved option handling with plugins.
 
 
-2006-07-23  Thomas Krennwallner  <djmaecki@ull.at>
+2006-07-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Literal.cpp (Literal::operator=): Return *this.
 
