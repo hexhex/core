@@ -1,3 +1,11 @@
+2006-08-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* configure.ac: Allowing non-absolute dlv-path.
+
+	* src/dlvhex/ProcessBuf.cpp (open): Allowing dlv to be executed in
+	user-$PATH
+
+
 2006-08-04  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/AtomSet.h (AtomSet::const_iterator): In order to

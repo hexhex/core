@@ -40,8 +40,8 @@ CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 if test "$DLV" = ""; then
     # we assume "dlv"
     DLV=dlv
-    # and check if and where it exists
-    AC_PATH_PROG(DLVPATH, $DLV, notfound)
+    # and check if it exists
+    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound)
 else
     # the user supplied a 'DLV=...'
     # check if it exists (with search path=/, since the user supplied

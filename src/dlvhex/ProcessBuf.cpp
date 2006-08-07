@@ -143,7 +143,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
 	::close(inpipes[1]);
 	
 	// execute command, should not return
-	::execv(*argv, argv);
+	::execvp(*argv, argv);
 	
 	// just in case we couldn't execute the command
 	::exit(127);
