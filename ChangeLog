@@ -1,3 +1,8 @@
+2006-08-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/AtomSet.h (AtomSet::const_iterator): Add support
+	for pre- and postfix operator--().
+
 2006-08-07  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Allowing non-absolute dlv-path.
