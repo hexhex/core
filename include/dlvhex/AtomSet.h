@@ -54,7 +54,9 @@ public:
     /**
      * @brief Iterator to traverse the atomset.
      */
-    class const_iterator : public std::iterator<std::input_iterator_tag, Atom, atomset_t::difference_type>
+    class const_iterator : public std::iterator<atomset_t::const_iterator::iterator_category,
+                                                Atom,
+                                                atomset_t::difference_type>
     {
         atomset_t::const_iterator it;
 
@@ -96,6 +98,24 @@ public:
 
             return tmp;
         }
+
+        const_iterator&
+        operator --()
+        {
+            it--;
+
+            return *this;
+        }
+
+        const_iterator
+        operator --(int)
+        {
+            const_iterator tmp = *this;
+
+            --*this;
+
+            return tmp;
+	}
 
         bool
         operator== (const const_iterator& i2) const
