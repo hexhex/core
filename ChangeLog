@@ -1,3 +1,31 @@
+2006-08-08  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/globals.h: Changed global variables to singleton
+	class.
+	* src/dlvhex/globals.cpp (Globals), (Instance), (getOption), (setOption): Likewise.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Adjusted to new global class (reading values of dlvhex-switches).
+	* src/dlvhex/BoostComponentFinder.cpp (findStrongComponents): Likewise.
+	* src/dlvhex/Component.cpp (evaluate): Likewise.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/DependencyGraph.cpp (componentFinder): Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp (serializeProgram), (compute):Likewise.
+	* src/dlvhex/GraphProcessor.cpp (run): Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp (initialize), (compute): Likewise.
+	* src/dlvhex/PluginContainer.cpp (importPlugin): Likewise.
+	* src/dlvhex/SafetyChecker.cpp (SafetyCheckerBase), (throw): Likewise.
+	* src/dlvhex/dlvhex.cpp (main): Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp (setUp): Likewise.
+
+	* src/dlvhex/AtomSet.cpp: Corrected AtomSet< operator.
+
+	* src/dlvhex/Makefile.am: Added version-info for libdlvhexbase.
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp (testSimple): Added debug-output.
+
+
 2006-08-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/AtomSet.h (AtomSet::const_iterator): Add support
