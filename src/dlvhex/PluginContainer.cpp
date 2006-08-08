@@ -59,7 +59,7 @@ PluginContainer::importPlugin(std::string filename)
         return NULL;
     }
 
-    if (!global::optionSilent)
+    if (!Globals::Instance()->getOption("Silent"))
         std::cout << "opening plugin " << filename << std::endl;
 
     PluginInterface::AtomFunctionMap pa;
@@ -78,7 +78,7 @@ PluginContainer::importPlugin(std::string filename)
         // TODO: check if this function name already exists!
         //
 
-        if (global::optionVerbose)
+        if (Globals::Instance()->getOption("Verbose"))
             std::cout << "Registering external atom " << (*it).first << std::endl;
 
         pluginAtoms[(*it).first] = (*it).second;

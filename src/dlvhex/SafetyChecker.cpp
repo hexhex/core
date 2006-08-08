@@ -18,7 +18,7 @@
 
 SafetyCheckerBase::SafetyCheckerBase()
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << std::endl << "@@@ Checking Safety @@@" << std::endl << std::endl;
 }
 
@@ -34,7 +34,7 @@ SafetyChecker::SafetyChecker(const Program& program)
 void
 SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "Checking for rule safety." << std::endl;
 
     Program::const_iterator ruleit = program.begin();
@@ -181,7 +181,7 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
             }
         }
 
-        if (global::optionVerbose)
+        if (Globals::Instance()->getOption("Verbose"))
         {
             std::cout << "Rule in ";
             if (!(*ruleit)->getFile().empty())
@@ -209,7 +209,7 @@ StrongSafetyChecker::StrongSafetyChecker(const Program& program,
 void
 StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (SyntaxError)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "Checking for strong rule safety." << std::endl;
 
     //
@@ -328,7 +328,7 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
                     }
                 }
                 
-                if (global::optionVerbose)
+                if (Globals::Instance()->getOption("Verbose"))
                 {
                     std::cout << "Rule in ";
                     if (!(*ruleit)->getFile().empty())

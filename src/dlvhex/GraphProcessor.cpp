@@ -23,7 +23,7 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const AtomSet& in)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
 
     //
@@ -75,7 +75,7 @@ GraphProcessor::run(const AtomSet& in)
             {
                 current = sgresult;
 
-                if (global::optionVerbose)
+                if (Globals::Instance()->getOption("Verbose"))
                     std::cout << "No leaf components" << std::endl;
             }
             else
@@ -108,7 +108,7 @@ GraphProcessor::run(const AtomSet& in)
                         //
                         current.clear();
 
-                        if (global::optionVerbose)
+                        if (Globals::Instance()->getOption("Verbose"))
                             std::cout << "Leaf Component was inconsistent!" << std::endl;
 
                         break;
@@ -193,7 +193,7 @@ GraphProcessor::run(const AtomSet& in)
                     //
                     // inconsistent!
                     //
-                    if (global::optionVerbose)
+                    if (Globals::Instance()->getOption("Verbose"))
                         std::cout << "Program Component was inconsistent!" << std::endl;
 
                     break;

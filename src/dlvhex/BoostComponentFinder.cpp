@@ -248,15 +248,15 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
             }
         }
 
-        if (global::optionVerbose)
+        if (Globals::Instance()->getOption("Verbose"))
         {
             std::ofstream out;
 
-            out.open(global::lpfilename.c_str());
+            out.open(Globals::Instance()->lpfilename.c_str());
             write_graphviz(out, G, make_label_writer(nms));
             out.close();
 
-            std::cout << "Graph written to " << global::lpfilename << std::endl;
+            std::cout << "Graph written to " << Globals::Instance()->lpfilename << std::endl;
         }
     }
 }

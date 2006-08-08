@@ -30,7 +30,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                                   const AtomSet& I,
                                   std::vector<AtomSet>& models)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "= Guess&Check ModelGenerator =" << std::endl;
 
     models.clear();
@@ -140,7 +140,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             Registry::Instance()->storeObject(guessrule);
             guessingrules.addRule(guessrule);
 
-            if (global::optionVerbose)
+            if (Globals::Instance()->getOption("Verbose"))
                 std::cout << "adding guessing rule: " << *guessrule << std::endl;
         }
         
@@ -149,7 +149,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     //
     // serialize input facts
     //
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
 
     //
     // add I
@@ -200,7 +200,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
          ++guess)
 //    while ((guess = Solver.getNextAnswerSet()) != NULL)
     {
-        //if (global::optionVerbose)
+        //if (Globals::Instance()->getOption("Verbose"))
         //{
         //    std::cerr << "  checking guess ";
         //    guess->print(std::cerr, 0);
@@ -247,7 +247,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
            //guess->print(std::cerr, 0);
            //std::cerr << std::endl;
 
-            if (global::optionVerbose)
+            if (Globals::Instance()->getOption("Verbose"))
                 std::cout << "  checking guess reduct" << std::endl;
 
             //
@@ -349,7 +349,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             // bodies are left after the reduct.
             // 
 
-            ProgramDLVBuilder reductprogram(global::optionNoPredicate);
+            ProgramDLVBuilder reductprogram(Globals::Instance()->getOption("NoPredicate"));
 
             reductprogram.buildFacts(*guess);
             reductprogram.buildProgram(bodyPicker);
@@ -423,7 +423,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             // 4)
             // now build a program: new rules + reductfacts + original EDB
             // 
-            ProgramDLVBuilder reducedprogram(global::optionNoPredicate);
+            ProgramDLVBuilder reducedprogram(Globals::Instance()->getOption("NoPredicate"));
 
             
             AtomSet a(I);
@@ -485,14 +485,14 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
 //            weakFacts.remove(externalNames);
 
-            if (global::optionVerbose)
+            if (Globals::Instance()->getOption("Verbose"))
             {
                 std::cout << "  guess: ";
                 weakFacts.print(std::cout, false);
                 std::cout << std::endl;
             }
 
-            if (global::optionVerbose)
+            if (Globals::Instance()->getOption("Verbose"))
             {
                 std::cout << "  reduced program result: ";
                 strongFacts.print(std::cout, false);
@@ -533,7 +533,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             }
             else
             {
-                if (global::optionVerbose)
+                if (Globals::Instance()->getOption("Verbose"))
                     std::cout << "  reduced model does not match!" << std::endl;
             }
         }

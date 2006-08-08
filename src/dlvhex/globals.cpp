@@ -12,6 +12,38 @@
 #include "dlvhex/globals.h"
 
 
+Globals*
+Globals::_instance = 0;
+
+
+Globals::Globals()
+{
+}
+
+Globals*
+Globals::Instance()
+{
+    if (_instance == 0)
+        _instance = new Globals;
+
+    return _instance;
+}
+
+
+unsigned
+Globals::getOption(std::string option)
+{
+    return optionMap[option];
+}
+
+
+void
+Globals::setOption(std::string option, unsigned value)
+{
+    optionMap[option] = value;
+}
+
+/*
 namespace global
 {
     bool optionNoPredicate = true;
@@ -28,3 +60,4 @@ namespace global
 
     std::string lpfilename;
 }
+*/

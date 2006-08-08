@@ -43,7 +43,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 
-  class DLVresultParserDriver;
+class DLVresultParserDriver;
 
 %}
 
@@ -206,7 +206,7 @@ fact:
             // in higher-order mode, we throw away the
             // (meaningless) predicate symbol
             //
-            if (global::optionNoPredicate)
+            if (Globals::Instance()->getOption("NoPredicate"))
             {
                 $$ = new Atom(*$3);
             }
@@ -229,7 +229,7 @@ fact:
             // in higher-order mode, we throw away the
             // (meaningless) predicate symbol
             //
-            if (global::optionNoPredicate)
+            if (Globals::Instance()->getOption("NoPredicate"))
             {
                 $$ = new Atom(*$4, 1);
             }

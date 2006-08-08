@@ -33,7 +33,7 @@ DependencyGraph::DependencyGraph(Program& program,
                                 ComponentFinder* cf)
     : componentFinder(cf)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << std::endl << "@@@ building dependency graph @@@" << std::endl << std::endl;
 
     //
@@ -51,7 +51,7 @@ DependencyGraph::DependencyGraph(Program& program,
     }
 
     
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
     {
         gb->dumpGraph(nodegraph, std::cout);
     }
@@ -172,7 +172,7 @@ DependencyGraph::DependencyGraph(Program& program,
     }
     
 
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
     {
         subgraph->dump(std::cout);
     }

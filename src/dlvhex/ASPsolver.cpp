@@ -83,7 +83,7 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
         //
         // dirty hack: add stuff for each solver call from globals:
         //
-        iopipe << global::maxint << std::endl << prg << std::endl;
+        iopipe << Globals::Instance()->maxint << std::endl << prg << std::endl;
         pb.endoffile(); // send EOF to dlv
 
         DLVresultParserDriver driver;
@@ -117,7 +117,7 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
         errstr << "LP solver failure: returncode: " << retcode;
 
-        if (global::optionVerbose)
+        if (Globals::Instance()->getOption("Verbose"))
         {
             errstr << std::endl << "executed: ";
 

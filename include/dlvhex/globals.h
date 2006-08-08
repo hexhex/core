@@ -15,50 +15,65 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 
 /**
  * @brief Definition of global variables.
  */
-namespace global
+class Globals
 {
+protected:
+    Globals();
+
+public:
     /**
-     * If optionNoPredicate is true, higher-order reasoning is assumed, treating
-     * each predicate like an argument and introducing artificial per-arity predicates.
+     * Singleton instance.
      */
-    extern bool optionNoPredicate;
+    static Globals*
+    Instance();
 
     /**
-     * Suppressing any other output than the actual result.
+     * Return the value of the specified identifier.
      */
-    extern bool optionSilent;
+    unsigned
+    getOption(std::string);
 
     /**
-     * Dumping internal and intermediate computation information.
+     * Set an option with specified identifier to a value.
      */
-    extern bool optionVerbose;
+    void 
+    setOption(std::string, unsigned);
 
     /**
-     * Should rules be checked for strong safety?
+     * temporary hack
      */
-    extern bool optionStrongSafety;
+    std::string maxint;
+    
+    /**
+     * Filename of the (first, if more than one were specified) logic program
+     * dlvhex was called with.
+     */
+    std::string lpfilename;
+
+private:
 
     /**
-     * dirty hack: maxint directive, handled globally
+     * Singleton instance.
      */
-    extern std::string maxint;
+    static Globals* _instance;
+
+    /**
+     * @brief Associates option names with values.
+     */
+    std::map<std::string, unsigned> optionMap;
 
     /**
      * Messages returned from external computation sources, which do not necessarily
      * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
      */
-    extern std::vector<std::string> Messages;
+    //std::vector<std::string> Messages;
 
-    /**
-     * Filename of the (first, if more than one were specified) logic program
-     * dlvhex was called with.
-     */
-    extern std::string lpfilename;
-}
+};
 
 #endif // _GLOBALS_H

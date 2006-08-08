@@ -61,7 +61,7 @@ dlvhex_LDFLAGS = -ldl -static -export-dynamic
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = libdlvhexbase.la libaspsolver.la # libplugin.la
+dlvhex_LDADD = libdlvhexbase.la libaspsolver.la
 
 
 #
@@ -136,8 +136,7 @@ libdlvhexbase_la_SOURCES = \
     Rule.cpp \
     Term.cpp
 
-#libplugin_la_SOURCES = \
-#                      PluginInterface.h
+libdlvhexbase_la_LDFLAGS = -version-info 1:0:0
 
 libaspsolver_la_SOURCES = \
     DLVresultParser.ypp \

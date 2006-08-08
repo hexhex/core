@@ -25,7 +25,7 @@ ASPsolverTest::setUp()
 {
     solver = new ASPsolver();
 
-    global::optionNoPredicate = 0;
+    Globals::Instance()->setOption("NoPredicate", 0);
 }
 
 void

@@ -43,7 +43,7 @@ FixpointModelGenerator::serializeProgram(const Program& p)
     // the rules will be in higher-order-syntax, if dlvhex was called in ho-mode
     //
 
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
 
     dlvprogram.buildProgram(p);
 
@@ -92,7 +92,7 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "= FixpointModelGenerator =" << std::endl;
 
     initialize(program);
@@ -103,7 +103,7 @@ FixpointModelGenerator::compute(const Program& program,
     
     std::string EDBprogram, fixpointProgram;
 
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
 
     std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
 

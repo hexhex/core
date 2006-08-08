@@ -167,6 +167,11 @@ TestGraphProcessor::testSimple()
     res = gp.getNextModel();
     CPPUNIT_ASSERT(res == NULL);
 
+    //for (std::set<AtomSet>::iterator ai = expected.begin(); ai != expected.end(); ai++)
+    //    ai->print(std::cout, 0);
+    //std::cout << std::endl;
+    //for (std::set<AtomSet>::iterator ai = result.begin(); ai != result.end(); ai++)
+    //    ai->print(std::cout, 0);
     CPPUNIT_ASSERT(expected == result);
 
     //

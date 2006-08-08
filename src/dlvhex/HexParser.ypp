@@ -214,7 +214,7 @@ maxinteger:
 
             minum << *$3;
 
-            global::maxint = "#maxint=" + minum.str() + ".";
+            Globals::Instance()->maxint = "#maxint=" + minum.str() + ".";
         }
     ;
 

@@ -169,7 +169,7 @@ ProgramComponent::~ProgramComponent()
 void
 ProgramComponent::evaluate(std::vector<AtomSet>& input)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
     {
         std::cout << "Evaluating program component:" << std::endl;
         getBottom().dump(std::cout);
@@ -281,7 +281,7 @@ ExternalComponent::ExternalComponent(AtomNode* node)
 void
 ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
     {
         std::cout << "Evaluating external component" << std::endl;
     }

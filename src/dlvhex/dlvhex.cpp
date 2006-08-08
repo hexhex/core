@@ -363,10 +363,10 @@ main (int argc, char *argv[])
             helpRequested = 1;
             break;
         case 's':
-            global::optionSilent = 1;
+            Globals::Instance()->setOption("Silent", 1);
             break;
         case 'v':
-            global::optionVerbose = 1;
+            Globals::Instance()->setOption("Verbose", 1);
             break;
         case 'f':
             optionFilter = helper::stringExplode(std::string(optarg), ",");
@@ -376,9 +376,9 @@ main (int argc, char *argv[])
             break;
         case 0:
             if (longid == 1)
-                global::optionNoPredicate = false;
+                Globals::Instance()->setOption("NoPredicate", 0);
             else if (longid == 2)
-                global::optionStrongSafety = false;
+                Globals::Instance()->setOption("StrongSafety", 0);
             else if (longid == 3)
             {
                 optionXML = true;
@@ -386,7 +386,7 @@ main (int argc, char *argv[])
                 //
                 // XMl output makes only sense with silent:
                 //
-                global::optionSilent = true;
+                Globals::Instance()->setOption("Silent", 1);
             }
             else if (longid == 4)
                 optiondlt = true;
@@ -403,7 +403,7 @@ main (int argc, char *argv[])
     // before anything else we dump the logo
     //
 
-    if (!global::optionSilent)
+    if (!Globals::Instance()->getOption("Silent"))
         printLogo();
 
     //
@@ -470,7 +470,7 @@ main (int argc, char *argv[])
     //
     if (!optionPlugindir.empty())
     {
-        if (global::optionVerbose)
+        if (Globals::Instance()->getOption("Verbose"))
             std::cout << "searching " << optionPlugindir << "..." << std::endl;
 
         searchPlugins(optionPlugindir, libfilelist);
@@ -483,7 +483,7 @@ main (int argc, char *argv[])
 
     userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "searching " << userhome << "..." << std::endl;
 
     searchPlugins(userhome, libfilelist);
@@ -491,7 +491,7 @@ main (int argc, char *argv[])
     //
     // eventually look into system plugin dir
     //
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "searching " << SYS_PLUGIN_DIR << "..." << std::endl;
 
     searchPlugins(SYS_PLUGIN_DIR, libfilelist);
@@ -530,7 +530,7 @@ main (int argc, char *argv[])
         }
     }
 
-    if (!global::optionSilent)
+    if (!Globals::Instance()->getOption("Silent"))
         std::cout << std::endl;
 
 
@@ -579,7 +579,7 @@ main (int argc, char *argv[])
     // parse input
     //
     
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << std::endl << "@@@ reading input @@@" << std::endl << std::endl;
 
     HexParserDriver driver;
@@ -597,7 +597,7 @@ main (int argc, char *argv[])
             exit(1);
         }
 
-        global::lpfilename = "lpgraph.dot";
+        Globals::Instance()->lpfilename = "lpgraph.dot";
     }
     else
     {
@@ -606,7 +606,7 @@ main (int argc, char *argv[])
         // else (e.g., when writing the graphviz file in the boost-part
         //
         std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
-        global::lpfilename = filepath.back() + ".dot";
+        Globals::Instance()->lpfilename = filepath.back() + ".dot";
 
         std::ifstream ifs;
 
@@ -703,7 +703,7 @@ main (int argc, char *argv[])
                 //
                 if (optiondlt)
                 {
-                    if (global::optionVerbose)
+                    if (Globals::Instance()->getOption("Verbose"))
                     {
                         std::cout << "@@@ calling dlt @@@" << std::endl;
                     }
@@ -806,7 +806,7 @@ main (int argc, char *argv[])
 
 
 
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
     {
         std::cout << "Parsed Rules: " << std::endl;
         IDB.dump(std::cout);
@@ -848,7 +848,7 @@ main (int argc, char *argv[])
         //
         dg = new DependencyGraph(IDB, gb, cf);
 
-        if (global::optionStrongSafety)
+        if (Globals::Instance()->getOption("StrongSafety"))
             StrongSafetyChecker sc(IDB, dg);
         else
             SafetyChecker sc(IDB);
@@ -954,7 +954,7 @@ main (int argc, char *argv[])
     //
     // dump it!
     //
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "@@@ Final Result @@@" << std::endl << std::endl;
 
     result.print(std::cout, outputbuilder);

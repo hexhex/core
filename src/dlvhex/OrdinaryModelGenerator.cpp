@@ -26,7 +26,7 @@ OrdinaryModelGenerator::OrdinaryModelGenerator()
 void
 OrdinaryModelGenerator::initialize(const Program& p)
 {
-    ProgramDLVBuilder dlvprogram(global::optionNoPredicate);
+    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
 
     dlvprogram.buildProgram(p);
 
@@ -44,7 +44,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
 //    if (program.getExternalAtoms().size() != 0)
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
 
-    if (global::optionVerbose)
+    if (Globals::Instance()->getOption("Verbose"))
         std::cout << "= OrdinaryModelGenerator =" << std::endl;
 
     Program program;
@@ -73,7 +73,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
     //
     // serialize input facts
     //
-    ProgramDLVBuilder dlvfacts(global::optionNoPredicate);
+    ProgramDLVBuilder dlvfacts(Globals::Instance()->getOption("NoPredicate"));
 
     dlvfacts.buildFacts(I);
 

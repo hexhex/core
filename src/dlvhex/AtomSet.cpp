@@ -351,7 +351,22 @@ AtomSet::operator< (const AtomSet& atomset2) const
     if (this->size() > atomset2.size())
         return false;
 
-    return !(std::includes(this->begin(), this->end(), atomset2.begin(), atomset2.end()));
+    //return !(std::includes(this->begin(), this->end(), atomset2.begin(), atomset2.end()));
+
+    // find first mismatch
+    std::pair<AtomSet::const_iterator, AtomSet::const_iterator> result;
+    result = std::mismatch(this->begin(), this->end(), atomset2.begin());
+
+    //
+    // no mismatch? then they are equal!
+    //
+    if (result.first == this->end())
+        return false;
+
+    if (*(result.first) < *(result.second))
+        return true;
+
+    return false;
 }
 
 
