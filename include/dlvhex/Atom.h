@@ -84,7 +84,7 @@ public:
     /**
      * Returns the predicate of the atom.
      */
-    virtual Term
+    virtual const Term&
     getPredicate() const;
 
     /**
@@ -92,8 +92,11 @@ public:
      *
      * The predicate is not included here!
      */
-    virtual Tuple
-    getArguments() const;
+    virtual inline Tuple
+    getArguments() const
+    {
+      return Tuple(++arguments.begin(), arguments.end());
+    }
 
     /**
      * @brief Returns the specified argument term.
@@ -101,7 +104,7 @@ public:
      * The arguments of an atom are numbered from 1 to n. An index of 0 returns
      * the predicate symbol of the atom.
      */
-    Term
+    const Term&
     getArgument(const unsigned index) const;
 
     /**
@@ -138,7 +141,7 @@ public:
     bool
     operator!= (const Atom& atom2) const;
 
-    int
+    virtual bool
     operator< (const Atom& atom2) const;
     
     /**
@@ -189,11 +192,13 @@ operator<< (std::ostream&, const Atom&);
 class boolAtom : public Atom
 {
 public:
+    boolAtom() : Atom(Tuple(1, Term("")))
+    { }
 
-    virtual Term
+    virtual const Term&
     getPredicate() const
     {
-        return Term("");
+        return arguments.front();
     }
             
     virtual bool
@@ -208,13 +213,13 @@ public:
         return false;
     }
 
-    virtual std::ostream&
-    print(std::ostream& out, const bool) const
-    {
-        return out << "";
-    }
+//     virtual std::ostream&
+//     print(std::ostream& out, const bool) const
+//     {
+//         return out << "";
+//     }
 
-    int
+    bool
     operator< (const Atom&) const
     {
         return true;

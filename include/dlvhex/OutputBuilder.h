@@ -49,8 +49,17 @@ public:
     virtual void
     buildAnswerSet(const AnswerSet&) = 0;
 
-    virtual std::string
-    getString();
+    virtual inline std::string
+    getString()
+    {
+        const std::string& str = stream.str();
+
+        stream.str("");
+        stream.clear();
+
+        return str;
+    }
+
 };
 
 

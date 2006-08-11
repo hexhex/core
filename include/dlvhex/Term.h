@@ -115,8 +115,13 @@ public:
      * Returns a string without quotes. The term needs to be of type 'Constant'
      * or 'String'.
      */
-    std::string
-    getUnquotedString() const; 
+    inline std::string
+    getUnquotedString() const
+    {
+	return type == STRING ?
+	  std::string(getString().c_str() + 1, getString().length() - 2) :
+	  getString();
+    }
 
     /**
      * Returns the constant integer. If the term is not of type 'INTEGER', an
@@ -152,12 +157,15 @@ public:
     Term
     &operator= (const Term&);
 
+    int
+    compare(const Term&) const;
+
     /**
      * Inequality operator.
      * Two terms are not equal, if they are of different type, or if their
      * constants (numbers, strings, variables or symbols) differ.
      */
-    int
+    bool
     operator!= (const Term&) const;  
 
     /**

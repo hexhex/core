@@ -34,7 +34,7 @@ public:
     /**
      * @brief Constructor.
      */
-    ExternalAtom(const std::string name,
+    ExternalAtom(const std::string& name,
                  const Tuple& params,
                  const Tuple& input,
                  const unsigned line);
@@ -110,8 +110,11 @@ public:
     /**
      * Returns the arguments of the external atom.
      */
-    virtual Tuple
-    getArguments() const;
+    virtual inline Tuple
+    getArguments() const
+    {
+        return arguments;
+    }
 
     /**
      * @brief Returns the set of all possible output values w.r.t. to i.
