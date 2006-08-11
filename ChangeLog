@@ -1,3 +1,31 @@
+2006-08-11  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+ 
+ 	* include/dlvhex/Term.h (Term::getUnquotedString): Inline code.
+ 	(Term::compare): Move Term::operator!= to Term::compare. 
+ 	* src/dlvhex/Term.cpp: Likewise.
+ 
+ 	* include/dlvhex/OutputBuilder.h (OutputBuilder::getString):
+ 	Inline code.
+ 	* src/dlvhex/OutputBuilder.cpp: Likewise.
+ 
+ 	* include/dlvhex/ExternalAtom.h (ExternalAtom::getArguments):
+ 	Inline code.
+ 	* src/dlvhex/ExternalAtom.cpp: Likewise.
+ 
+ 	* src/dlvhex/Atom.cpp (Atom::operator<): Directly operate on
+ 	arguments instead of a temporary copy of arguments.
+ 	(Atom::getArguments): Inline code.
+ 	(Atom::getArgument,Atom::getPredicate): Use a const reference
+ 	return value.
+ 	* include/dlvhex/Atom.h: Likewise.
+ 
+2006-08-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/AtomSet.cpp (AtomSet::operator<): Use
+	std::lexicographical_compare instead of std::mismatch.
+
+	* src/dlvhex/AnswerSet.cpp (AnswerSet::operator<): Fix ordering.
+
 2006-08-08  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/globals.h: Changed global variables to singleton
