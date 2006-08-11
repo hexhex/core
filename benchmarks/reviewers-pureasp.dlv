@@ -23,6 +23,11 @@
 % 5) improved Term!= operator; returning string references in Term
 %    2.777
 %
+% ...
+%
+% 6) inlining stuff
+%    0.770
+%
 
 
 paper(subm1). 
