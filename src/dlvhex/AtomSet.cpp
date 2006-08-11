@@ -363,10 +363,7 @@ AtomSet::operator< (const AtomSet& atomset2) const
     if (result.first == this->end())
         return false;
 
-    if (*(result.first) < *(result.second))
-        return true;
-
-    return false;
+    return *(result.first) < *(result.second);
 }
 
 

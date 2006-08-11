@@ -237,13 +237,7 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     //
     // in normal mode, we use the AtomSet::< comparison
     //
-    if (this->size() < answerset2.size())
-        return true;
-
-    if (this->size() > answerset2.size())
-        return false;
-
-    return !(std::includes(this->begin(), this->end(), answerset2.begin(), answerset2.end()));
+    return AtomSet::operator< (answerset2);
 }
 
 

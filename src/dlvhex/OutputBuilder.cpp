@@ -21,16 +21,6 @@ OutputBuilder::~OutputBuilder()
 { }
 */
 
-std::string
-OutputBuilder::getString()
-{
-    std::string str(stream.str());
-
-    stream.str("");
-    stream.clear();
-
-    return str;
-}
 
 void
 OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)

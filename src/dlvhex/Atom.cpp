@@ -87,7 +87,7 @@ Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
 {
     arguments.push_back(Term(pred));
 
-    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
+    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
     {
         arguments.push_back(*t);
     }
@@ -98,34 +98,19 @@ Atom::Atom(const Tuple& arg, bool neg)
     : isStrongNegated(neg),
       isAlwaysFO(0)
 {
-    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); t++)
+    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
         arguments.push_back(*t);
 }
 	
 
-Term
+const Term&
 Atom::getPredicate() const
 {
     return getArgument(0);
 }
 
 
-Tuple
-Atom::getArguments() const
-{
-    Tuple tl;
-    
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-    {
-        if (t != arguments.begin())
-          tl.push_back(*t);
-    }
-
-    return tl;
-}
-
-
-Term
+const Term&
 Atom::getArgument(const unsigned index) const
 {
     assert(index < arguments.size());
@@ -185,13 +170,8 @@ Atom::operator== (const Atom& atom2) const
     if (isStrongNegated != atom2.isStrongNegated)
         return false;
 
-    for (unsigned i = 0; i < getArity(); i++)
-    {
-        if (getArgument(i) != atom2.getArgument(i))
-            return false;
-    }
-    
-    return true;
+    return std::equal(arguments.begin(), arguments.end(),
+                      atom2.arguments.begin());
 }
 
 
@@ -278,10 +258,10 @@ operator<< (std::ostream& out, const Atom& atom)
 }
 
 
-int
+bool
 Atom::operator< (const Atom& atom2) const
 {
-    int n = (getPredicate() != atom2.getPredicate());
+    int n = getPredicate().compare(atom2.getPredicate());
 
     if (n < 0)
         return true;
@@ -323,17 +303,14 @@ Atom::operator< (const Atom& atom2) const
         return true;
     }
 
-    // lexicographically compare on the arguments
+    // lexicographically compare on the arguments, i.e. skip the predicate of arguments
     if (getArity() == atom2.getArity())
     {
-        Tuple aa1 = getArguments();
-        Tuple aa2 = atom2.getArguments();
-	
 	// lexicographical_compare returns true if the range of
 	// elements [first1, last1) is lexicographically less than the
 	// range of elements [first2, last2), and false otherwise.
-	return std::lexicographical_compare(aa1.begin(), aa1.end(),
-					    aa2.begin(), aa2.end());
+	return std::lexicographical_compare(++arguments.begin(), arguments.end(),
+					    ++atom2.arguments.begin(), atom2.arguments.end());
     }
 
     // getArity() > atom2.getArity()

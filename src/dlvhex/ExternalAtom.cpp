@@ -42,7 +42,7 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
 
 
 
-ExternalAtom::ExternalAtom(const std::string name,
+ExternalAtom::ExternalAtom(const std::string& name,
                            const Tuple& params,
                            const Tuple& input,
                            const unsigned line)
@@ -177,16 +177,6 @@ std::string
 ExternalAtom::getReplacementName() const
 {
     return replacementName;
-}
-
-
-Tuple
-ExternalAtom::getArguments() const
-{
-    //
-    // simply return a copy of arguments
-    //
-    return Tuple(arguments);
 }
 
 

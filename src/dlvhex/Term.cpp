@@ -182,26 +182,6 @@ Term::getString() const
 }
 
 
-std::string
-Term::getUnquotedString() const
-{
-    assert((type == STRING) || (type == SYMBOL));
-    
-    assert(constantString != names.end());
-
-    //
-    // trim quotes from strings
-    //
-    if (type == STRING)    
-        return (*constantString).substr(1, (*constantString).length() - 2);
-
-    //
-    // otherwise just return symbol string
-    //
-    return *constantString;
-}
-
-
 int
 Term::getInt() const
 {
@@ -278,7 +258,7 @@ Term::operator= (const Term& term2)
 
 
 int
-Term::operator!= (const Term& term2) const
+Term::compare(const Term& term2) const
 {
     if( type != term2.type )
         return (int)type - (int)term2.type;
@@ -312,11 +292,16 @@ Term::operator!= (const Term& term2) const
     }
 }
 
+bool
+Term::operator!= (const Term& term2) const
+{
+    return compare(term2) != 0;
+}
 
 bool
 Term::operator== (const Term& term2) const
 {
-    return ( *this != term2 ) == 0;
+    return compare(term2) == 0;
 }
 
 
@@ -332,28 +317,28 @@ Term::operator== (const std::string& str) const
 bool
 Term::operator< (const Term& term2) const
 {
-    return ( *this != term2 ) < 0;
+    return compare(term2) < 0;
 }
 
 
 bool
 Term::operator<= (const Term& term2) const
 {
-    return ( *this != term2 ) <= 0;
+    return compare(term2) <= 0;
 }
 
 
 bool
 Term::operator> (const Term& term2) const
 {
-    return ( *this != term2 ) > 0;
+    return compare(term2) > 0;
 }
 
 
 bool
 Term::operator>= (const Term& term2) const
 {
-    return ( *this != term2 ) >= 0;
+    return compare(term2) >= 0;
 }
 
 
