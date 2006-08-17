@@ -299,7 +299,12 @@ protected:
 
     /// Ctor.
     PluginInterface()
+        : versionMajor(0),
+          versionMinor(0),
+          versionMicro(0)
     { }
+
+    unsigned versionMajor, versionMinor, versionMicro;
 
 public:
     /// Dtor.
@@ -352,6 +357,37 @@ public:
     setOptions(bool, std::vector<std::string>&, std::ostream&)
     { }
 
+    /**
+     * @brief Set plugin version.
+     *
+     * The version number will be displayed when dlvhex loads the plugin. It can
+     * be used to check whether the right version is loaded.
+     */
+    void
+    setVersion(unsigned major, unsigned minor, unsigned micro)
+    {
+        this->versionMajor = major;
+        this->versionMinor = minor;
+        this->versionMicro = micro;
+    }
+
+    unsigned
+    getVersionMajor() const
+    {
+        return this->versionMajor;
+    }
+
+    unsigned
+    getVersionMinor() const
+    {
+        return this->versionMinor;
+    }
+
+    unsigned
+    getVersionMicro() const
+    {
+        return this->versionMicro;
+    }
 };
 
 

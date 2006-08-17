@@ -59,12 +59,15 @@ PluginContainer::importPlugin(std::string filename)
         return NULL;
     }
 
-    if (!Globals::Instance()->getOption("Silent"))
-        std::cout << "opening plugin " << filename << std::endl;
-
     PluginInterface::AtomFunctionMap pa;
 
     PluginInterface* plugin = getplugin();
+
+    if (!Globals::Instance()->getOption("Silent"))
+        std::cout << "opening plugin " << filename << " version "
+                  << plugin->getVersionMajor() << "."
+                  << plugin->getVersionMinor() << "."
+                  << plugin->getVersionMicro() << std::endl;
 
     plugin->getAtoms(pa);
 

@@ -1,3 +1,18 @@
+2006-08-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* configure.ac: Set version number to 1.0.0.
+
+	* include/dlvhex/PluginInterface.h: Added Functions setVersion() and
+	getVersionMajor(), getVersionMinor(), getVersionMicro(). Constructor
+	sets version to 0.0.0.
+
+	* src/dlvhex/PluginContainer.cpp (importPlugin): Added output of
+	version number when loading a plugin.
+
+2006-08-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Bump version to 1.1.
+
 2006-08-11  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
  
  	* include/dlvhex/Term.h (Term::getUnquotedString): Inline code.
