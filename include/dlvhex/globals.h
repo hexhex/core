@@ -46,6 +46,12 @@ public:
     setOption(std::string, unsigned);
 
     /**
+     * Get the stream for verbose output.
+     */
+    std::ostream&
+    getVerboseStream();
+
+    /**
      * temporary hack
      */
     std::string maxint;

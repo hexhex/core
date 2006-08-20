@@ -95,6 +95,7 @@ public:
     virtual inline Tuple
     getArguments() const
     {
+      assert(!arguments.empty());
       return Tuple(++arguments.begin(), arguments.end());
     }
 

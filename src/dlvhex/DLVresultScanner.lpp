@@ -89,6 +89,14 @@ NUM         ([0-9]+)
 ")"     { return token::PARAM_CLOSE;   }
 "{"     { return token::CURLY_OPEN;    }
 "}"     { return token::CURLY_CLOSE;   }
+
+^{MSG} {
+    // something starting not with a '{' at the beginning of a line
+    // this is some dlv-(error-)message
+    yylval.string = new std::string(yytext);
+    return token::MESSAGE;
+}
+
 {ID} |
 {QUOTED_ID} {
     yylval.string = new std::string(yytext);
@@ -102,13 +110,6 @@ NUM         ([0-9]+)
 
 {BLANK} { /* Skip blanks */ }
 
-
-^{MSG} {
-    // something starting not with a '{' at the beginning of a line
-    // this is some dlv-(error-)message
-    yylval.string = new std::string(yytext);
-    return token::MESSAGE;
-}
 
 . { // Anything not matching one of the patterns
     // given above is considered an error.

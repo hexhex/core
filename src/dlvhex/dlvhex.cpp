@@ -308,6 +308,13 @@ main (int argc, char *argv[])
     // Option handling
     //
     
+    // global defaults:
+    Globals::Instance()->setOption("NoPredicate", 1);
+    Globals::Instance()->setOption("Silent", 0);
+    Globals::Instance()->setOption("Verbose", 0);
+    Globals::Instance()->setOption("NoPredicate", 1);
+    Globals::Instance()->setOption("StrongSafety", 1);
+    
     bool optionPipe = false;
     bool optionXML = false;
     bool optionNoEval = false;
@@ -343,7 +350,7 @@ main (int argc, char *argv[])
     static struct option longopts[] = {
         { "help", no_argument, 0, 'h' },
         { "silent", no_argument, 0, 's' },
-        { "verbose", no_argument, 0, 'v' },
+        { "verbose", optional_argument, 0, 'v' },
         { "filter", required_argument, 0, 'f' },
         { "plugindir", required_argument, 0, 'p'},
         { "firstorder", no_argument, &longid, 1 },
@@ -366,7 +373,10 @@ main (int argc, char *argv[])
             Globals::Instance()->setOption("Silent", 1);
             break;
         case 'v':
-            Globals::Instance()->setOption("Verbose", 1);
+            if (optarg)
+                Globals::Instance()->setOption("Verbose", atoi(optarg));
+            else
+                Globals::Instance()->setOption("Verbose", 1);
             break;
         case 'f':
             optionFilter = helper::stringExplode(std::string(optarg), ",");

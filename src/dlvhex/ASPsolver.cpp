@@ -55,7 +55,9 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
     answersets.clear();
 
-    //std::cerr << prg << std::endl;
+    if (Globals::Instance()->getOption("Verbose") >= 3)
+        Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
+            << std::endl << prg << std::endl;
 
     // setup command
     std::vector<std::string> argv;
@@ -68,7 +70,9 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
     argv.push_back("--");
 
+    // dlv result stuff:
     int retcode;
+    std::string dlvError;
 
     try
     {
@@ -83,12 +87,12 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
         //
         // dirty hack: add stuff for each solver call from globals:
         //
-        iopipe << Globals::Instance()->maxint << std::endl << prg << std::endl;
+        iopipe << prg << std::endl << Globals::Instance()->maxint << std::endl;
         pb.endoffile(); // send EOF to dlv
 
         DLVresultParserDriver driver;
     
-        driver.parse(iopipe, answersets);
+        driver.parse(iopipe, answersets, dlvError);
 
         // get exit code of dlv process
         retcode = pb.close();
@@ -115,23 +119,25 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
     {
         std::stringstream errstr;
 
-        errstr << "LP solver failure: returncode: " << retcode;
+        errstr << "LP solver failure: returncode: " << retcode << std::endl;
+
+        errstr << "error msg: " << dlvError;
 
         if (Globals::Instance()->getOption("Verbose"))
         {
-            errstr << std::endl << "executed: ";
+            errstr << "executed: ";
 
 	    std::copy(argv.begin(), argv.end(),
 		      std::ostream_iterator<std::string>(errstr, " "));
 
 	    errstr << std::endl
 		   << "Try to call dlv manually with this program and see what happens:"
-		   << prg
+		   << std::endl << prg
 		   << std::endl;
         }
         else
         {
-            errstr << " Run with --verbose for more info." << std::endl;
+            errstr << std::endl << "Run with --verbose for more info." << std::endl;
         }
 
         throw FatalError(errstr.str());

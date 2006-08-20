@@ -40,9 +40,10 @@ DLVresultParserDriver::getLexer()
 
 void
 DLVresultParserDriver::parse(std::istream& is,
-                             std::vector<AtomSet>& result) throw (SyntaxError)
+                             std::vector<AtomSet>& result,
+                             std::string& dlvError) throw (SyntaxError)
 {
-    yy::DLVresultParser parser(this, result);
+    yy::DLVresultParser parser(this, result, dlvError);
     parser.set_debug_level(false);
     lexer->switch_streams(&is, &std::cerr);
     parser.parse();

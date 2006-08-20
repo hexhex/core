@@ -53,6 +53,7 @@ class DLVresultParserDriver;
 // yy::DLVresultParser ctor
 %parse-param { DLVresultParserDriver* driver }
 %parse-param { std::vector<AtomSet>& answersets }
+%parse-param { std::string& dlvError }
 
 
 // bison passes the driver as additional parameter to the lexer
@@ -129,12 +130,12 @@ dlvresult: /* empty */
 result_line:
     NEWLINE
     | list
-    | message result_line
+    | message //result_line
     ;
 
 message: MESSAGE
     {
-	//std::cout << "msg: " << *$1 << std::endl;
+        dlvError += std::string(*$1) + "\n";
 
 	delete $1;
     }

@@ -1,3 +1,37 @@
+2006-08-20  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/DLVresultParserDriver.h
+	(DLVresultParserDriver::parse): Added parameter for dlv
+	errors.
+
+	* include/dlvhex/globals.h: Added getVerboseStream() to return verbose
+	output stream.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Improved verbose output.
+	Moved maxint-directive to the end of the input program.
+
+	* src/dlvhex/DLVresultParser.ypp: Keep track of dlv errors.
+
+	* src/dlvhex/DLVresultParserDriver.cpp (parse): Call dlv-result parser
+	with error-string parameter.
+
+	* src/dlvhex/DLVresultScanner.lpp: Changed order of tokens.
+
+	* src/dlvhex/ProcessBuf.cpp (open): Added redirection of STDERR.
+
+	* src/dlvhex/dlvhex.cpp (main): Added defaults for global variables.
+	Changed verbose-option to accept level.
+
+	* src/dlvhex/globals.cpp (getVerboseStream): Added.
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp (testExecution),
+	(testResult): Added explanatory output.
+
+2006-08-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h (Atom::getArguments): Add non-emptyness
+	assertion.
+
 2006-08-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Set version number to 1.0.0.

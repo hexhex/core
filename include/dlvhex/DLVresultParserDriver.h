@@ -34,7 +34,8 @@ public:
 
     void
     parse(std::istream& is,
-          std::vector<AtomSet>& result) throw (SyntaxError);
+          std::vector<AtomSet>&,
+          std::string&) throw (SyntaxError);
 
     DLVresultFlexLexer*
     getLexer();

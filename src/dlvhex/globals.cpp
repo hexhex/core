@@ -9,6 +9,7 @@
  * 
  */
 
+#include <iostream>
 #include "dlvhex/globals.h"
 
 
@@ -41,6 +42,13 @@ void
 Globals::setOption(std::string option, unsigned value)
 {
     optionMap[option] = value;
+}
+
+
+std::ostream&
+Globals::getVerboseStream()
+{
+    return std::cerr;
 }
 
 /*

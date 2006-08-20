@@ -122,9 +122,15 @@ ProcessBuf::open(const std::vector<std::string>& av)
 	
 	argv[i] = '\0';
 
-	// redirect stdin and stdout
+	// redirect stdin and stdout and stderr
 
 	if (::dup2(outpipes[1], STDOUT_FILENO) < 0)
+	  {
+	    ::perror("dup2");
+	    ::exit(1);
+	  }
+	
+	if (::dup2(outpipes[1], STDERR_FILENO) < 0)
 	  {
 	    ::perror("dup2");
 	    ::exit(1);
