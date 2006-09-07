@@ -46,6 +46,7 @@ PluginAtom::Query::getPatternTuple() const
 
         
 PluginAtom::Answer::Answer()
+  : output(new std::vector<Tuple>)
 {
 }
 
@@ -53,26 +54,26 @@ PluginAtom::Answer::Answer()
 void
 PluginAtom::Answer::addTuple(const Tuple& out)
 {
-    output.push_back(out);
+    output->push_back(out);
 }
 
 
 void
 PluginAtom::Answer::addTuples(const std::vector<Tuple>& out)
 {
-    output.insert(output.end(), out.begin(), out.end());
+    output->insert(output->end(), out.begin(), out.end());
 }
 
 void
 PluginAtom::Answer::setTuples(const std::vector<Tuple>& out)
 {
-    output = out;
+    *output = out;
 }
 
-const std::vector<Tuple>*
+boost::shared_ptr<std::vector<Tuple> >
 PluginAtom::Answer::getTuples() const
 {
-    return &output;
+    return output;
 }
 
 

@@ -158,12 +158,12 @@ public:
         /**
          * @brief Returns the output tuples of the answer object.
          */
-        const std::vector<Tuple>*
+        boost::shared_ptr<std::vector<Tuple> >
         getTuples() const;
 
     private:
 
-        std::vector<Tuple> output;
+        boost::shared_ptr<std::vector<Tuple> > output;
     };
 
 
