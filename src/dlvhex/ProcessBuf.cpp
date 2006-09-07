@@ -25,9 +25,17 @@ ProcessBuf::ProcessBuf()
   : std::streambuf(),
     bufsize(256)
 {
+  // ignore SIGPIPE
   struct sigaction sa;
   sa.sa_handler = SIG_IGN;
-  ::sigaction(SIGPIPE, &sa, 0);
+  sa.sa_flags = 0;
+  ::sigemptyset(&sa.sa_mask);
+
+  if (::sigaction(SIGPIPE, &sa, 0))
+    {
+      ::perror("sigaction");
+      ::exit(1);
+    }
 
   initBuffers(); // don't call virtual methods in the ctor
 }
@@ -174,8 +182,11 @@ ProcessBuf::open(const std::vector<std::string>& av)
 void
 ProcessBuf::endoffile()
 {
-  ::close(inpipes[1]); // send EOF to stdin of child process
-  inpipes[1] = -1;
+  if (inpipes[1] != -1)
+    {
+      ::close(inpipes[1]); // send EOF to stdin of child process
+      inpipes[1] = -1;
+    }
 }
 
 int
@@ -185,8 +196,11 @@ ProcessBuf::close()
   endoffile();
 
   // we're done reading
-  ::close(outpipes[0]);
-  outpipes[0] = -1;
+  if (outpipes[0] != -1)
+    {
+      ::close(outpipes[0]);
+      outpipes[0] = -1;
+    }
 
   // obviously we do not want to leave zombies around, so get status
   // code of the process
@@ -212,7 +226,7 @@ ProcessBuf::overflow(std::streambuf::int_type c)
   // write it
   if (!traits_type::eq_int_type(c, traits_type::eof()))
     {
-      *pptr() = (char_type) c;
+      *pptr() = traits_type::to_char_type(c);
       pbump(1); // increase put pointer by one
     }
   
