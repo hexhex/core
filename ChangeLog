@@ -1,3 +1,18 @@
+2006-09-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Bump libdlvhexbase version to 2:0:0.
+
+	* configure.ac: Bump dlvhex version to 1.2.
+
+	* include/dlvhex/PluginInterface.h (PluginAtom::Answer):
+	Shrinkwrap the output tuples with a boost::shared_ptr<>.
+	* src/dlvhex/PluginInterface.cpp: Likewise.
+
+	* src/dlvhex/ProcessBuf.cpp (ProcessBuf::ProcessBuf): Setup struct
+	sigaction properly.
+	(ProcessBuf::endoffile,ProcessBuf::close): Only close() valid file
+	descriptors.
+
 2006-08-20  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/DLVresultParserDriver.h
