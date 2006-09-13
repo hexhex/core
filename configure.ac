@@ -4,6 +4,18 @@ AC_INIT([dlvhex],[1.2],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
+#
+# check host system
+# this will be used in include/common.h.in
+#
+case $host in
+    *-*-msdos* | *-*-go32* | *-*-mingw32* | *-*-cygwin* | *-*-windows*)
+        HAVE_WIN32=1
+        ;;
+    *)
+        ;;
+esac
+AC_SUBST([HAVE_WIN32])
 
 #
 # the default system-wide plugin dir $(pkglibdir)/plugins can be
@@ -66,10 +78,7 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_PROG_CC
 AM_PROG_LEX
-
-#
 # include bison generated-stuff in dist
-#
 AC_PROG_YACC
 
 
@@ -79,18 +88,46 @@ AC_PROG_YACC
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
 
+#
+# search for FlexLexer.h so we can add it at "make dist" time
+#
+if test -f $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
 
-AC_LANG_PUSH([C++])
+   AC_LANG_PUSH([C++])
+   AC_CHECK_HEADER([FlexLexer.h])
+   AC_LANG_POP([C++])
+
+   AC_MSG_CHECKING([for FlexLexer.h path])
+
+   include_paths="/usr/include /usr/local/include" # TODO: get default include paths from compiler?
+   for f in "$CPPFLAGS $CXXFLAGS $CFLAGS" ; do
+   case $f in
+   -I*) include_paths="$include_paths $f" ;;
+   esac
+   done
+
+   # get rid of -I compiler flags
+   paths=`echo $include_paths | sed s,-I,,g`
+
+   # get the FIRST occurence of FlexLexer.h
+   FLEXLEXER_H=`find $paths -name FlexLexer.h 2>/dev/null | head -n1`
+
+   AC_MSG_RESULT([$FLEXLEXER_H])
+
+   if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
+
+   # link FlexLexer.h to the src directory at the end of the configuration phase
+   AC_SUBST([FLEXLEXER_H])
+
+fi
+
 
 # boost stuff
+AC_LANG_PUSH([C++])
 AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
 AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
-
-# C++ Lexer
-AC_CHECK_HEADER([FlexLexer.h])
-
 AC_LANG_POP([C++])
 
 
@@ -123,6 +160,7 @@ AC_PATH_BOOST
 AC_CONFIG_FILES([
            Makefile 
            dlvhex.pc
+           include/common.h
            include/dlvhex/Makefile
            include/testsuite/dlvhex/Makefile
            src/dlvhex/Makefile

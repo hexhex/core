@@ -15,8 +15,9 @@ http://cppunit.sourceforge.net/
 ** Prerequisites
 
 *** boost
-Follow the instructions of the INSTALL file found in the distributions
-tarball. Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include pre-built Boost packages. 
+Follow the instructions of the INSTALL file found in the distributions tarball.
+Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
+pre-built Boost packages. 
 
 *** cppunit
 Follow the instructions of the INSTALL file found in the distributions
@@ -24,11 +25,14 @@ tarball. dlvhex has been tested with cppunit 1.10.2.
 
 
 ** Configuration
+Run "configure" to create the necessary Makefiles. "configure
+--enable-userinstall" will adjust to install-path to ~/.dlvhex/plugins, if the
+plugin should not be installed system-wide. Other configure-switches are shown
+with "configure --help".
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression
 testsuite.
-
 
 ** Installation
 Run "make install" to install dlvhex.

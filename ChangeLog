@@ -1,3 +1,18 @@
+2006-09-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* README: Added configuration information.
+
+	* configure.ac: Added host system checking. Added FlexLexer.h
+	packaging.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Added comment.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Cleaned up code.
+
+	* src/dlvhex/Makefile.am: Add FlexLexer.h to distribution directory.
+
+	* src/dlvhex/dlvhex.cpp (printLogo): Added version number to logo.
+
 2006-09-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Makefile.am: Bump libdlvhexbase version to 2:0:0.
