@@ -1,5 +1,7 @@
 2006-09-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
+	* include/common.h.in: New file.
+
 	* README: Added configuration information.
 
 	* configure.ac: Added host system checking. Added FlexLexer.h
