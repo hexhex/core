@@ -34,6 +34,10 @@
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/HexParserDriver.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 
 const char*  WhoAmI;
 
@@ -58,13 +62,17 @@ void
 printLogo()
 {
     std::cout
-         << "DLVHEX [build " 
-         << __DATE__ 
-    #ifdef __GNUC__
-         << "   gcc " << __VERSION__ 
-    #endif
-         << "]" << std::endl
-         << std::endl;
+        << "DLVHEX "
+#ifdef HAVE_CONFIG_H
+        << VERSION << " "
+#endif // HAVE_CONFIG_H
+        << "[build "
+        << __DATE__ 
+#ifdef __GNUC__
+        << "   gcc " << __VERSION__ 
+#endif
+        << "]" << std::endl
+        << std::endl;
 }
 
 
@@ -128,7 +136,7 @@ InternalError (const char *msg)
 
 
 #include <sys/types.h>
-#include <sys/dir.h>
+//#include <sys/dir.h>
 #include <dirent.h>
 
 #include "pwd.h"

@@ -46,7 +46,7 @@ PluginAtom::Query::getPatternTuple() const
 
         
 PluginAtom::Answer::Answer()
-  : output(new std::vector<Tuple>)
+    : output(new std::vector<Tuple>)
 {
 }
 

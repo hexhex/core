@@ -17,6 +17,10 @@ EXTRA_DIST = \
     position.hh \
     stack.hh
 
+# before we package ourselves, we add FlexLexer.h to the distribution directory
+dist-hook:
+	$(LN_S) @FLEXLEXER_H@ $(top_distdir)/src/dlvhex
+
 
 bin_PROGRAMS = dlvhex
 

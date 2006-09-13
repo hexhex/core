@@ -96,7 +96,6 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), headargs);
 
-            //Registry::Instance()->storeObject(headatom);
             guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
             //
@@ -106,7 +105,6 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             externalNames.push_back((*ei)->getReplacementName());
 
             headatom = new Atom((*ei)->getReplacementName(), headargs, 1);
-//            Registry::Instance()->storeObject(headatom);
             guesshead.push_back(Registry::Instance()->storeAtom(headatom));
 
             //
@@ -127,20 +125,13 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             }
 
             //
-            // the base atom specifies all possible values for the guessing
-            //
-//            Atom* baseatom = new Atom((*ei)->getBasePredicate(), (*ei)->getArguments());
-//            Registry::Instance()->storeObject(baseatom);
-//            guesshead.push_back(baseatom);
-
-            //
             // build the entire guessing rule
             //
             Rule* guessrule = new Rule(guesshead, guessbody);
             Registry::Instance()->storeObject(guessrule);
             guessingrules.addRule(guessrule);
 
-            if (Globals::Instance()->getOption("Verbose"))
+            if (Globals::Instance()->getOption("Verbose") >= 3)
                 std::cout << "adding guessing rule: " << *guessrule << std::endl;
         }
         
@@ -156,16 +147,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     //
     dlvprogram.buildFacts(I);
 
-    //
-    // add the base of the external atom
-    //
-//    dlvprogram.buildFacts((*ei)->getBase(*as, universe));
-
     dlvprogram.buildProgram(guessingprogram);
     dlvprogram.buildProgram(guessingrules);
     std::string serializedProgram = dlvprogram.getString();
-
-    //std::cout << "guessing program: " << serializedProgram << std::endl;
 
     ASPsolver Solver;
     
@@ -198,14 +182,13 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     for (std::vector<AtomSet>::iterator guess = allguesses.begin();
          guess != allguesses.end();
          ++guess)
-//    while ((guess = Solver.getNextAnswerSet()) != NULL)
     {
-        //if (Globals::Instance()->getOption("Verbose"))
-        //{
-        //    std::cerr << "  checking guess ";
-        //    guess->print(std::cerr, 0);
-        //    std::cerr << std::endl;
-        //}
+        if (Globals::Instance()->getOption("Verbose") >= 3)
+        {
+            std::cerr << "=== checking guess ";
+            guess->print(std::cerr, 0);
+            std::cerr << std::endl;
+        }
 
         //
         // extract the (positive) external atom result from the answer set
@@ -231,14 +214,15 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 throw;
             }
 
-      /*      
+            /*
             std::cout << "  first check: externalguess: ";
             externalguess.print(std::cout, 0);
             std::cout << std::endl;
             std::cout << "  first check: checkresult: ";
             checkresult.print(std::cout, 0);
             std::cout << std::endl;
-        */    
+            */
+            
         }
 
         if (externalguess == checkresult)
@@ -304,13 +288,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 //
                 std::ostringstream atomname;
                 atomname << "flp_head_" << ruleidx++;
-                //Atom* flpheadatom = new Atom(atomname.str(), flpheadargs);
-                //Registry::Instance()->storeObject(flpheadatom);
-//                    flpatoms.at(ruleidx++) = flpheadatom;
                 AtomPtr flpheadatom = Registry::Instance()->storeAtom(new Atom(atomname.str(), flpheadargs));
                 bodyPickerAtoms.push_back(flpheadatom);
 
-//                    std::cout << "flphead: " << *flpheadatom << std::endl;
                 //
                 // make new head
                 //
@@ -328,8 +308,6 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 //
                 Rule* flprule = new Rule(flphead, flpbody);
                 Registry::Instance()->storeObject(flprule);
-
-//                    std::cout << "flprule: " << *flprule << std::endl;
 
                 //
                 // add flp rule to flp program
@@ -429,20 +407,6 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             AtomSet a(I);
             a.insert(reductfacts);
             AtomSet posguess(*guess);
-            //
-            // remove negated auxatoms:
-            /*
-            std::vector<std::string> auxatomnames;
-            for (std::set<const ExternalAtom*>::const_iterator exi = extatomInComp.begin();
-                exi != extatomInComp.end();
-                ++exi)
-            {
-                auxatomnames.push_back((*ei)->getReplacementName());
-            }
-            posguess.remove(auxatomnames);
-            */
-            //posguess.keepPos();
-            
             
             a.insert(posguess);
 
@@ -476,21 +440,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 throw e;
             }
 
-//            AtomSet* strongf = Solver.getNextAnswerSet();
             AtomSet strongFacts = strongf.back().difference(reductfacts);
 
             AtomSet weakFacts(*guess);
-
-            //weakFacts.keepPos();
-
-//            weakFacts.remove(externalNames);
-
-            if (Globals::Instance()->getOption("Verbose"))
-            {
-                std::cout << "  guess: ";
-                weakFacts.print(std::cout, false);
-                std::cout << std::endl;
-            }
 
             if (Globals::Instance()->getOption("Verbose"))
             {
@@ -529,7 +481,6 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             if (strongFacts == weakFacts)
             {
                 compatibleSets.push_back(&(*guess));
-                //std::cerr << "taken!" << std::endl;
             }
             else
             {

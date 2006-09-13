@@ -90,6 +90,9 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
         iopipe << prg << std::endl << Globals::Instance()->maxint << std::endl;
         pb.endoffile(); // send EOF to dlv
 
+        ///todo if dlv is not executable, we get a strange process error - make
+        //this more clear to the user!
+
         DLVresultParserDriver driver;
     
         driver.parse(iopipe, answersets, dlvError);
