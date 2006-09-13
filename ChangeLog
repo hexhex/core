@@ -1,5 +1,9 @@
 2006-09-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
+	* configure.ac: Refined packaging of FlexLexer.h.
+
+2006-09-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
 	* include/common.h.in: New file.
 
 	* README: Added configuration information.

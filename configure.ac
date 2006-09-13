@@ -91,33 +91,47 @@ AC_CHECK_HEADERS([sys/param.h])
 #
 # search for FlexLexer.h so we can add it at "make dist" time
 #
-if test -f $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
+if test -r $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
 
-   AC_LANG_PUSH([C++])
-   AC_CHECK_HEADER([FlexLexer.h])
-   AC_LANG_POP([C++])
+	AC_LANG_PUSH([C++])
+	AC_CHECK_HEADER([FlexLexer.h])
+	AC_LANG_POP([C++])
 
-   AC_MSG_CHECKING([for FlexLexer.h path])
+	# first we guess the prefix of flex
+	AC_PATH_PROG([flexexec], [flex], [notfound])
+	flexbindir=`AS_DIRNAME(["$flexexec"])`
+	flexprefix=`AS_DIRNAME(["$flexbindir"])`
 
-   include_paths="/usr/include /usr/local/include" # TODO: get default include paths from compiler?
-   for f in "$CPPFLAGS $CXXFLAGS $CFLAGS" ; do
-   case $f in
-   -I*) include_paths="$include_paths $f" ;;
-   esac
-   done
+	if test "$flexexec" = notfound; then
+	   AC_MSG_ERROR([flex not found. Download it at http://flex.sourceforge.net/])
+	fi
 
-   # get rid of -I compiler flags
-   paths=`echo $include_paths | sed s,-I,,g`
+	include_paths="$flexprefix/include"
 
-   # get the FIRST occurence of FlexLexer.h
-   FLEXLEXER_H=`find $paths -name FlexLexer.h 2>/dev/null | head -n1`
+	# then we check all compiler flags for include paths
+	for f in "$CPPFLAGS $CXXFLAGS $CFLAGS"
+	do
+		case $f in
+		-I*) include_paths="$include_paths $f" ;;
+		esac
+	done
 
-   AC_MSG_RESULT([$FLEXLEXER_H])
+	# TODO: get default include paths from compiler?
+	include_paths="$include_paths /usr/local/include /usr/include"
 
-   if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
+	# get rid of -I compiler flags
+	paths=`echo $include_paths | sed s,-I,,g`
 
-   # link FlexLexer.h to the src directory at the end of the configuration phase
-   AC_SUBST([FLEXLEXER_H])
+	AC_MSG_CHECKING([for FlexLexer.h path in $paths])
+
+	# get the FIRST occurence of FlexLexer.h
+	FLEXLEXER_H=`find $paths -name FlexLexer.h 2>/dev/null | head -n1`
+
+	AC_MSG_RESULT([$FLEXLEXER_H])
+
+	if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
+
+	AC_SUBST([FLEXLEXER_H])
 
 fi
 
