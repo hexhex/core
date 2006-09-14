@@ -125,7 +125,7 @@ if test -r $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
 	AC_MSG_CHECKING([for FlexLexer.h path in $paths])
 
 	# get the FIRST occurence of FlexLexer.h
-	FLEXLEXER_H=`find $paths -name FlexLexer.h 2>/dev/null | head -n1`
+	FLEXLEXER_H=`find $paths -maxdepth 1 -name FlexLexer.h 2>/dev/null | head -n1`
 
 	AC_MSG_RESULT([$FLEXLEXER_H])
 
