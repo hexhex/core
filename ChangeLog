@@ -1,3 +1,15 @@
+2006-09-14  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* m4/cppunit.m4: Include updated macros from cppunit 1.12.0.
+
+	* m4/boost.m4: Fix boost version checking on macosx.
+
+	* configure.ac: Don't follow subdirectories when searching for
+	FlexLexer.h.
+
+	* src/dlvhex/ProcessBuf.cpp (ProcessBuf): sigemptyset() is a macro
+	on macosx.
+
 2006-09-13  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Refined packaging of FlexLexer.h.
