@@ -55,9 +55,9 @@ dnl use it
     ])
 
   if test "$have_boost" = "yes"; then
-    WANT_BOOST_MAJOR=`expr $boost_min_version : '\([[0-9]]\+\)'`
-    WANT_BOOST_MINOR=`expr $boost_min_version : '[[0-9]]\+\.\([[0-9]]\+\)'`
-    WANT_BOOST_SUB_MINOR=`expr $boost_min_version : '[[0-9]]\+\.[[0-9]]\+\.\([[0-9]]\+\)'`
+    WANT_BOOST_MAJOR=`echo $boost_min_version | sed "s,^\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\),\1,"`
+    WANT_BOOST_MINOR=`echo $boost_min_version | sed "s,^\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\),\2,"`
+    WANT_BOOST_SUB_MINOR=`echo $boost_min_version | sed "s,^\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\),\3,"`
     WANT_BOOST_VERSION=`expr $WANT_BOOST_MAJOR \* 100000 \+ $WANT_BOOST_MINOR \* 100 \+ $WANT_BOOST_SUB_MINOR`
 
     AC_TRY_COMPILE(
