@@ -29,7 +29,7 @@ ProcessBuf::ProcessBuf()
   struct sigaction sa;
   sa.sa_handler = SIG_IGN;
   sa.sa_flags = 0;
-  ::sigemptyset(&sa.sa_mask);
+  sigemptyset(&sa.sa_mask);
 
   if (::sigaction(SIGPIPE, &sa, 0))
     {
