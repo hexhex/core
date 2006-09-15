@@ -1,3 +1,7 @@
+2006-09-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Fix bashism.
+
 2006-09-14  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* m4/cppunit.m4: Include updated macros from cppunit 1.12.0.
