@@ -9,18 +9,18 @@ dlvhexTS_SOURCES = \
     TypeTest.cpp \
     TestGraphProcessor.cpp \
     ASPsolverTest.cpp \
-    ../../dlvhex/BoostComponentFinder.cpp \
-    ../../dlvhex/GraphProcessor.cpp \
-    ../../dlvhex/GraphBuilder.cpp \
-    ../../dlvhex/DependencyGraph.cpp \
-    ../../dlvhex/AtomNode.cpp \
-    ../../dlvhex/Component.cpp \
-    ../../dlvhex/OrdinaryModelGenerator.cpp \
-    ../../dlvhex/FixpointModelGenerator.cpp \
-    ../../dlvhex/GuessCheckModelGenerator.cpp \
-    ../../dlvhex/ProgramBuilder.cpp
-    
-AM_CPPFLAGS = -I$(top_srcdir)/include
+    $(top_srcdir)/src/dlvhex/BoostComponentFinder.cpp \
+    $(top_srcdir)/src/dlvhex/GraphProcessor.cpp \
+    $(top_srcdir)/src/dlvhex/GraphBuilder.cpp \
+    $(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+    $(top_srcdir)/src/dlvhex/AtomNode.cpp \
+    $(top_srcdir)/src/dlvhex/Component.cpp \
+    $(top_srcdir)/src/dlvhex/OrdinaryModelGenerator.cpp \
+    $(top_srcdir)/src/dlvhex/FixpointModelGenerator.cpp \
+    $(top_srcdir)/src/dlvhex/GuessCheckModelGenerator.cpp \
+    $(top_srcdir)/src/dlvhex/ProgramBuilder.cpp
+
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src
 
 dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 
