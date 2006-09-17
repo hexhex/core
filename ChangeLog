@@ -28,6 +28,9 @@
 	* include/dlvhex/ResultContainer.h: Removed lowestWeights class member
 	variable.
 
+	* src/dlvhex/Makefile.am: Changed order of libaspsolver sources to
+	avoid missing bison-generated files in build process.
+
 	* src/dlvhex/AnswerSet.cpp (setSet), (addWeight),
 	(setMaxLevelWeight), (getMaxLevel): Added methods.
 
@@ -40,6 +43,9 @@
 
 	* src/dlvhex/dlvhex.cpp (printUsage), (main): Added switch --allmodels
 	to print all models in case of weak constraints.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Added script for checking
+	dlvhex output on test programs.
 
 	* src/testsuite/dlvhex/Makefile.am: Added dlvhex test script to
 	testsuite.

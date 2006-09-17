@@ -144,10 +144,10 @@ libdlvhexbase_la_SOURCES = \
 libdlvhexbase_la_LDFLAGS = -version-info 2:0:0
 
 libaspsolver_la_SOURCES = \
+    ASPsolver.cpp \
     DLVresultParser.ypp \
     DLVresultScanner.lpp \
     DLVresultParserDriver.cpp \
-    ASPsolver.cpp \
     ParserDriver.cpp \
     ProcessBuf.cpp
 
