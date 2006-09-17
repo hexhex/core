@@ -1,6 +1,6 @@
 
 AC_PREREQ([2.59])
-AC_INIT([dlvhex],[1.2],[roman@kr.tuwien.ac.at])
+AC_INIT([dlvhex],[1.3],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -89,9 +89,12 @@ AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
 
 #
-# search for FlexLexer.h so we can add it at "make dist" time
+# search for FlexLexer.h so we can add it at `make dist' time
 #
-if test -r $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
+absolute_srcdir=`pwd`
+absolute_srcdir=$absolute_srcdir/$srcdir
+FLEXLEXER_H=$absolute_srcdir/src/dlvhex/FlexLexer.h
+if test -r $FLEXLEXER_H ; then : ; else
 
 	AC_LANG_PUSH([C++])
 	AC_CHECK_HEADER([FlexLexer.h])
@@ -132,9 +135,10 @@ if test -r $srcdir/src/dlvhex/FlexLexer.h ; then : ; else
 
 	if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
 
-	AC_SUBST([FLEXLEXER_H])
-
 fi
+
+AC_SUBST([FLEXLEXER_H])
+
 
 
 # boost stuff
