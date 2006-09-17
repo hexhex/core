@@ -1,8 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
-TESTS = dlvhexTS
+EXTRA_DIST = run-dlvhex-tests.sh
 
-check_PROGRAMS = $(TESTS)
+TESTS = dlvhexTS run-dlvhex-tests.sh
+
+TESTS_ENVIRONMENT = EXAMPLES=$(top_srcdir)/examples/tests
+
+check_PROGRAMS = dlvhexTS
 
 dlvhexTS_SOURCES = \
     TestSuite.cpp \
@@ -20,12 +24,15 @@ dlvhexTS_SOURCES = \
     $(top_srcdir)/src/dlvhex/GuessCheckModelGenerator.cpp \
     $(top_srcdir)/src/dlvhex/ProgramBuilder.cpp
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/src
+AM_CPPFLAGS = \
+    -I$(top_srcdir)/include \
+    -I$(top_srcdir)/src \
+    $(DLVHEX_CFLAGS)
 
 dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 
-dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) -ldl
+dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) $(DLVHEX_LIBS)
 
 dlvhexTS_LDADD = \
-                $(top_builddir)/src/dlvhex/libdlvhexbase.la \
-                $(top_builddir)/src/dlvhex/libaspsolver.la
+    $(top_builddir)/src/dlvhex/libdlvhexbase.la \
+    $(top_builddir)/src/dlvhex/libaspsolver.la

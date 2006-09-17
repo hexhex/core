@@ -13,6 +13,12 @@
 #include "dlvhex/AnswerSet.h"
 
 
+
+
+unsigned AnswerSet::maxLevel = 1;
+unsigned AnswerSet::maxWeight = 0;
+
+
 AnswerSet::AnswerSet(std::string wcpr)
     : WCprefix(wcpr)
 {
@@ -61,7 +67,7 @@ AnswerSet::setSet(AtomSet& atomset)
             unsigned l = tlevel.getInt();
             unsigned w = tweight.getInt();
 
-            addWeight(w, l);
+            this->addWeight(w, l);
 
             ++asit;
         }
@@ -88,6 +94,8 @@ AnswerSet::addWeight(unsigned weight,
                      unsigned level)
 {
     assert(level > 0);
+
+    setMaxLevelWeight(level, weight);
 
     //
     // create new levels if necessary
@@ -238,6 +246,23 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     // in normal mode, we use the AtomSet::< comparison
     //
     return AtomSet::operator< (answerset2);
+}
+
+
+void
+AnswerSet::setMaxLevelWeight(unsigned l, unsigned w)
+{
+    if (l > maxLevel)
+        maxLevel = l;
+    if (w > maxWeight)
+        maxWeight = w;
+}
+
+
+unsigned
+AnswerSet::getMaxLevel()
+{
+    return maxLevel;
 }
 
 

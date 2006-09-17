@@ -11,6 +11,7 @@
  */
 
 #include "dlvhex/OutputBuilder.h"
+#include "dlvhex/globals.h"
 
 
 /*
@@ -25,6 +26,9 @@ OutputBuilder::~OutputBuilder()
 void
 OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
 {
+    if ((facts.hasWeights()) && !Globals::Instance()->getOption("AllModels"))
+        stream << "Best model: ";
+
     stream << "{";
 
     for (AnswerSet::const_iterator f = facts.begin();
@@ -43,8 +47,14 @@ OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
     {
         stream << "Cost ([Weight:Level]): <";
 
-        for (unsigned lev = 1; lev <= facts.getWeightLevels(); ++lev)
+        //
+        // Display all weight values up to the highest specified level
+        //
+        for (unsigned lev = 1; lev <= AnswerSet::getMaxLevel(); ++lev)
         {
+            if (lev > 1)
+                stream << ",";
+
             stream << "[" << facts.getWeight(lev) << ":" << lev << "]";
         }
 
@@ -54,7 +64,8 @@ OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
     //
     // empty line
     //
-    stream << std::endl;
+    if (!Globals::Instance()->getOption("Silent"))
+        stream << std::endl;
 }
 
 

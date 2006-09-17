@@ -179,6 +179,7 @@ AC_PATH_BOOST
 AC_CONFIG_FILES([
            Makefile 
            dlvhex.pc
+           examples/Makefile
            include/common.h
            include/dlvhex/Makefile
            include/testsuite/dlvhex/Makefile

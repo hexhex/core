@@ -1,3 +1,49 @@
+2006-09-17  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* Makefile.am: Added examples-subdir.
+
+	* configure.ac: Added examples-Makefile.
+
+	* examples/Makefile.am: Added.
+	* examples/weak1.hex: Added test program.
+	* examples/weak2.hex: Added test program.
+	* examples/tests/dlvhextests.test: Added list of test-programs to be
+	processed by testsuite.
+	* examples/tests/weak1.out: Added test output.
+	* examples/tests/weak2.out: Added test output.
+
+	* examples/complex.hex: Removed.
+	* examples/delicious.hex: Removed.
+	* examples/foaf.hex: Removed.
+	* examples/raptorerror.hex: Removed.
+	* examples/shop.hex: Removed.
+	* examples/shop.owl: Removed.
+	* examples/test.hex: Removed.
+	* examples/tweety.hex: Removed.
+	* examples/tweety_bird.owl: Removed.
+
+	* include/dlvhex/AnswerSet.h: Added static methods setMaxLevelWeight(),
+	getMaxLevel().
+
+	* include/dlvhex/ResultContainer.h: Removed lowestWeights class member
+	variable.
+
+	* src/dlvhex/AnswerSet.cpp (setSet), (addWeight),
+	(setMaxLevelWeight), (getMaxLevel): Added methods.
+
+	* src/dlvhex/OutputBuilder.cpp (buildAnswerSet): Improve silent output
+	in case of weak constraints.
+
+	* src/dlvhex/ResultContainer.cpp (addSet), (print): Remove lowest cost
+	computation at set-add-time. Stop model output in case of weak
+	constraints after best model(s), correcting previous wrong handling.
+
+	* src/dlvhex/dlvhex.cpp (printUsage), (main): Added switch --allmodels
+	to print all models in case of weak constraints.
+
+	* src/testsuite/dlvhex/Makefile.am: Added dlvhex test script to
+	testsuite.
+
 2006-09-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/Makefile.am (dlvhexTS_SOURCES): Use

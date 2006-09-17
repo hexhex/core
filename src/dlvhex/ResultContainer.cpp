@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "dlvhex/ResultContainer.h"
+#include "dlvhex/globals.h"
 
 
 
@@ -29,40 +30,6 @@ ResultContainer::addSet(AtomSet& res)
     as->setSet(res);
 
     sets.insert(as);
-
-    //
-    // update lowest-cost-vector
-    //
-    if (!wcprefix.empty())
-    {
-        //
-        // all levels of new answer set
-        //
-        unsigned maxlevels = as->getWeightLevels();
-
-        //
-        // look through all these levels
-        //
-        for (unsigned i = 1; i <= maxlevels; ++i)
-        {
-            //
-            // if we didn't have the current
-            // level in the lowest-cost-vector, then
-            // add it.
-            //
-            if (i > this->lowestWeights.size())
-                this->lowestWeights.push_back(as->getWeight(i));
-            else
-            {
-                //
-                // otherwise update the exisitng level if the new costs are
-                // lower
-                //
-                if (as->getWeight(i) < (this->lowestWeights[i - 1]))
-                this->lowestWeights[i - 1] = as->getWeight(i);
-            }
-        }
-    }
 }
 
 
@@ -145,25 +112,41 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 {
     builder->buildPre();
 
+    AnswerSet::weights_t lowestWeights;
+
     for (result_t::const_iterator ri = sets.begin();
             ri != sets.end();
             ++ri)
     {
         if (!wcprefix.empty())
         {
+
             //
             // if we are in weak constraint-mode, we stop the output after
             // the best model(s)
             //
-            /*
-            for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
+
+            //
+            // record the weight of the first model - the set is already
+            // ordered, so this must be the best one.
+            //
+            if (ri == sets.begin())
+                for (int i = 0; i < AnswerSet::getMaxLevel(); ++i)
+                    lowestWeights.push_back((*ri)->getWeight(i + 1));
+            
+        /*    for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
                  wi != lowestWeights.end();
                  ++wi)
                 std::cout << " w: " << *wi;
-            */
+          */  
 
-            if ((*ri)->moreExpensiveThan(this->lowestWeights))
-                break;
+            //
+            // any model that is more expensive than the best one(s) will not be
+            // displayed
+            //
+            if (!Globals::Instance()->getOption("AllModels"))
+                if ((*ri)->moreExpensiveThan(lowestWeights))
+                    break;
         }
 
         //

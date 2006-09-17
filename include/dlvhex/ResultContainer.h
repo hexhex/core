@@ -77,8 +77,6 @@ private:
     result_t sets;
 
     std::string wcprefix;
-
-    AnswerSet::weights_t lowestWeights;
 };
 
 #endif /* _RESULTCONTAINER_H */

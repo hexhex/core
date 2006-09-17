@@ -116,7 +116,23 @@ public:
      */
     int
     operator< (const AnswerSet&) const;
-    
+
+    /**
+     * @brief Store highest level and highest weight that occurs in the
+     * (grounded) program.
+     *
+     * Each of these two values is only stored if it is higher than the previous
+     * one.
+     */
+    static void
+    setMaxLevelWeight(unsigned, unsigned);
+
+    /**
+     * @brief Get maximum level that occurs in the program.
+     */
+    static unsigned
+    getMaxLevel();
+
 private:
 
     /**
@@ -128,8 +144,17 @@ private:
      * @brief Prefix denoting weak constraint auxiliary predicates.
      */
     std::string WCprefix;
-};
 
+    /**
+     * @brief Highest level that occurs in the program.
+     */
+    static unsigned maxLevel;
+
+    /**
+     * @brief Highest weight value that occurs in the program.
+     */
+    static unsigned maxWeight;
+};
 
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 

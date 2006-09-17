@@ -109,10 +109,11 @@ printUsage(std::ostream &out, bool full)
         << "                      $HOME/.dlvhex/plugins)" << std::endl
         << " -f, --filter=foo[,bar[,...]]" << std::endl
         << "                      only display instances of the specified predicate(s)" << std::endl
+        << " -a, --allmodels      display all models, even under weak constraints" << std::endl
         << "     --firstorder     no higher-order reasoning" << std::endl
         << "     --ruleml         output in RuleML-format (v0.9)" << std::endl
-        << "     --noeval         just parse the program, don't evaluate it (only useful with" << std::endl
-        << "                      --verbose)" << std::endl
+        << "     --noeval         just parse the program, don't evaluate it (only useful" << std::endl
+        << "                      with --verbose)" << std::endl
         << std::endl;
 }
         
@@ -322,6 +323,7 @@ main (int argc, char *argv[])
     Globals::Instance()->setOption("Verbose", 0);
     Globals::Instance()->setOption("NoPredicate", 1);
     Globals::Instance()->setOption("StrongSafety", 1);
+    Globals::Instance()->setOption("AllModels", 0);
     
     bool optionPipe = false;
     bool optionXML = false;
@@ -361,6 +363,7 @@ main (int argc, char *argv[])
         { "verbose", optional_argument, 0, 'v' },
         { "filter", required_argument, 0, 'f' },
         { "plugindir", required_argument, 0, 'p'},
+        { "allmodels", no_argument, 0, 'a'},
         { "firstorder", no_argument, &longid, 1 },
         { "weaksafety", no_argument, &longid, 2 },
         { "ruleml",     no_argument, &longid, 3 },
@@ -369,7 +372,7 @@ main (int argc, char *argv[])
         { NULL, 0, NULL, 0 }
     };
 
-    while ((ch = getopt_long(argc, argv, "f:hsvp:", longopts, NULL)) != -1)
+    while ((ch = getopt_long(argc, argv, "f:hsvp:a", longopts, NULL)) != -1)
     {
         switch (ch)
         {
@@ -391,6 +394,9 @@ main (int argc, char *argv[])
             break;
         case 'p':
             optionPlugindir = std::string(optarg);
+            break;
+        case 'a':
+            Globals::Instance()->setOption("AllModels", 1);
             break;
         case 0:
             if (longid == 1)
