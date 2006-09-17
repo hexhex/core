@@ -1,3 +1,12 @@
+2006-09-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/Makefile.am (dlvhexTS_SOURCES): Use
+	$(top_srcdir) instead of ../.. .
+	(AM_CPPFLAGS): Add -I$(top_srcdir)/src.
+
+	* configure.ac: Bump version to 1.3.
+	Always define FLEXLEXER_H, otw. make distcheck is a no-op.
+
 2006-09-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Fix bashism.
