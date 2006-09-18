@@ -27,6 +27,14 @@ protected:
     Globals();
 
 public:
+
+    /**
+     * @brief List of possible verbose actions.
+     */
+    typedef enum { DUMP_REWRITTEN_PROGRAM,
+                   COMPONENT_EVALUATION,
+                   MODEL_GENERATOR } verboseAction_t;
+
     /**
      * Singleton instance.
      */
@@ -34,10 +42,20 @@ public:
     Instance();
 
     /**
-     * Return the value of the specified identifier.
+     * Return the value of the specified option identifier.
      */
     unsigned
     getOption(std::string);
+
+    /**
+     * @brief Check if the specified verbose action can be carried out.
+     *
+     * This function checks if the predefined (see Globals::Globals()) value of
+     * the specified verbose action (see Globals::verboseLevel) is less or
+     * equal than the verbose level given as a parameter.
+     */
+    bool
+    doVerbose(verboseAction_t);
 
     /**
      * Set an option with specified identifier to a value.
@@ -49,7 +67,7 @@ public:
      * Get the stream for verbose output.
      */
     std::ostream&
-    getVerboseStream();
+    getVerboseStream() const;
 
     /**
      * temporary hack
@@ -63,6 +81,11 @@ public:
     std::string lpfilename;
 
 private:
+
+    /**
+     * @brief Associates a verbose action with a verbose level.
+     */
+    std::map<verboseAction_t, unsigned> verboseLevel;
 
     /**
      * Singleton instance.
