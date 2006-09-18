@@ -44,7 +44,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
 //    if (program.getExternalAtoms().size() != 0)
 //        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
 
-    if (Globals::Instance()->getOption("Verbose"))
+    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         std::cout << "= OrdinaryModelGenerator =" << std::endl;
 
     Program program;

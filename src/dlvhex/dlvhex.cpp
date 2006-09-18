@@ -102,8 +102,9 @@ printUsage(std::ostream &out, bool full)
     out << "     --               parse from stdin" << std::endl
         << " -s, --silent         do not display anything than the actual result" << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
-        << " -v, --verbose        dump also various intermediate information and writes the" << std::endl
-        << "                      program graph to FILENAME.dot" << std::endl
+        << " -v, --verbose[=N]    specify verbose level (default: 1). dump various" << std::endl
+        << "                      intermediate information and write the program graph to" << std::endl
+        << "                      FILENAME.dot" << std::endl
         << " -p, --plugindir=dir  specify additional directory where to look for plugin" << std::endl
         << "                      libraries (additionally to the installation plugin-dir and" << std::endl
         << "                      $HOME/.dlvhex/plugins)" << std::endl
@@ -672,6 +673,8 @@ main (int argc, char *argv[])
                 //
                 std::ostream rewriterResult(new std::stringbuf);
 
+                bool wasRewritten(0);
+
                 for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
                      pi != plugins.end();
                      ++pi)
@@ -684,6 +687,8 @@ main (int argc, char *argv[])
                         // rewrite input -> rewriterResult
                         //
                         pr->rewrite();
+
+                        wasRewritten = 1;
                    
                         //
                         // old input buffer can be deleted now
@@ -717,8 +722,22 @@ main (int argc, char *argv[])
                 // directly read from the file or as a result of some previous
                 // rewriting!
                 //
-      //          if (global::optionVerbose)
-      //              std::cout << "rewritten program: " << input.rdbuf() << std::endl;
+                
+                if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM) && wasRewritten)
+                {
+                    //
+                    // we need to read the input-istream now - use a stringstream
+                    // for output and initialize the input-istream to its
+                    // content again
+                    //
+                    std::stringstream ss;
+                    ss << input.rdbuf();
+                    Globals::Instance()->getVerboseStream() << "@@@ rewritten program: @@@" << std::endl;
+                    Globals::Instance()->getVerboseStream() << ss.str();
+                    Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+                    delete input.rdbuf(); 
+                    input.rdbuf(new std::stringbuf(ss.str()));
+                }
 
                 FILE* fp;
 

@@ -87,7 +87,15 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
         //
         // dirty hack: add stuff for each solver call from globals:
         //
-        iopipe << prg << std::endl << Globals::Instance()->maxint << std::endl;
+        try
+        {
+            iopipe << prg << std::endl << Globals::Instance()->maxint << std::endl;
+        }
+        catch (std::ios_base::failure e)
+        {
+            throw FatalError("Error executing " + lpcommand + "!");
+        }
+
         pb.endoffile(); // send EOF to dlv
 
         ///todo if dlv is not executable, we get a strange process error - make
@@ -99,6 +107,10 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
         // get exit code of dlv process
         retcode = pb.close();
+    }
+    catch (FatalError& e)
+    {
+        throw;
     }
     catch (GeneralError& e)
     {

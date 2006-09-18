@@ -19,6 +19,13 @@ Globals::_instance = 0;
 
 Globals::Globals()
 {
+//    std::cout << "sizeof: " << sizeof(verboseAction_t) << std::endl;
+//    verboseLevel.reserve(sizeof(verboseAction_t));
+
+    verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
+
+    verboseLevel[COMPONENT_EVALUATION] = 3;
+    verboseLevel[MODEL_GENERATOR] = 3;
 }
 
 Globals*
@@ -37,6 +44,12 @@ Globals::getOption(std::string option)
     return optionMap[option];
 }
 
+bool
+Globals::doVerbose(verboseAction_t va)
+{
+    return (this->getOption("Verbose") >= verboseLevel[va]);
+}
+
 
 void
 Globals::setOption(std::string option, unsigned value)
@@ -46,26 +59,8 @@ Globals::setOption(std::string option, unsigned value)
 
 
 std::ostream&
-Globals::getVerboseStream()
+Globals::getVerboseStream() const
 {
     return std::cerr;
 }
 
-/*
-namespace global
-{
-    bool optionNoPredicate = true;
-
-    bool optionSilent = false;
-
-    bool optionVerbose = false;
-
-    bool optionStrongSafety = true;
-
-    std::string maxint = "";
-
-    std::vector<std::string> Messages;    
-
-    std::string lpfilename;
-}
-*/

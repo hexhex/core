@@ -92,7 +92,7 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-    if (Globals::Instance()->getOption("Verbose"))
+    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         std::cout << "= FixpointModelGenerator =" << std::endl;
 
     initialize(program);

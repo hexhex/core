@@ -30,7 +30,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                                   const AtomSet& I,
                                   std::vector<AtomSet>& models)
 {
-    if (Globals::Instance()->getOption("Verbose"))
+    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         std::cout << "= Guess&Check ModelGenerator =" << std::endl;
 
     models.clear();
@@ -131,7 +131,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             Registry::Instance()->storeObject(guessrule);
             guessingrules.addRule(guessrule);
 
-            if (Globals::Instance()->getOption("Verbose") >= 3)
+            if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
                 std::cout << "adding guessing rule: " << *guessrule << std::endl;
         }
         
@@ -183,7 +183,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
          guess != allguesses.end();
          ++guess)
     {
-        if (Globals::Instance()->getOption("Verbose") >= 3)
+        if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         {
             std::cerr << "=== checking guess ";
             guess->print(std::cerr, 0);
@@ -231,7 +231,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
            //guess->print(std::cerr, 0);
            //std::cerr << std::endl;
 
-            if (Globals::Instance()->getOption("Verbose"))
+            if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
                 std::cout << "  checking guess reduct" << std::endl;
 
             //
@@ -444,7 +444,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
             AtomSet weakFacts(*guess);
 
-            if (Globals::Instance()->getOption("Verbose"))
+            if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
             {
                 std::cout << "  reduced program result: ";
                 strongFacts.print(std::cout, false);
@@ -484,7 +484,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             }
             else
             {
-                if (Globals::Instance()->getOption("Verbose"))
+                if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
                     std::cout << "  reduced model does not match!" << std::endl;
             }
         }
