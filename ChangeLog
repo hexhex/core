@@ -1,3 +1,22 @@
+2006-09-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/globals.h: Introduced verbose-levels and
+	verbose-actions. doVerbose() is true, if specified verbose-level is
+	higher than passed verbose-action.
+	* src/dlvhex/globals.cpp (Globals), (doVerbose): Likewise.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Catching exception if process
+	pipe cannot be written.
+
+	* src/dlvhex/Component.cpp (evaluate): Use doVerbose() method with
+	corresponding flag for verbose output.
+	* src/dlvhex/FixpointModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp (compute): Likewise.
+
+	* src/dlvhex/dlvhex.cpp (main): Dump rewritten program in
+	verbose mode.
+
 2006-09-17  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* Makefile.am: Added examples-subdir.
