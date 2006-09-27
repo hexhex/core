@@ -99,22 +99,23 @@ printUsage(std::ostream &out, bool full)
     // As soos as we have more options, we can introduce sections here!
     //
     //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    out << "     --               parse from stdin" << std::endl
-        << " -s, --silent         do not display anything than the actual result" << std::endl
+    out << "     --               Parse from stdin." << std::endl
+        << " -s, --silent         Do not display anything than the actual result." << std::endl
 //        << "--strongsafety     Check rules also for strong safety." << std::endl
-        << " -v, --verbose[=N]    specify verbose level (default: 1). dump various" << std::endl
+        << " -v, --verbose[=N]    Specify verbose level (default: 1). dump various" << std::endl
         << "                      intermediate information and write the program graph to" << std::endl
-        << "                      FILENAME.dot" << std::endl
-        << " -p, --plugindir=dir  specify additional directory where to look for plugin" << std::endl
-        << "                      libraries (additionally to the installation plugin-dir and" << std::endl
-        << "                      $HOME/.dlvhex/plugins)" << std::endl
+        << "                      FILENAME.dot." << std::endl
+        << " -p, --plugindir=dir  Specify additional directory where to look for plugin" << std::endl
+        << "                      libraries (additionally to the installation plugin-dir" << std::endl
+        << "                      and $HOME/.dlvhex/plugins)." << std::endl
         << " -f, --filter=foo[,bar[,...]]" << std::endl
-        << "                      only display instances of the specified predicate(s)" << std::endl
-        << " -a, --allmodels      display all models, even under weak constraints" << std::endl
-        << "     --firstorder     no higher-order reasoning" << std::endl
-        << "     --ruleml         output in RuleML-format (v0.9)" << std::endl
-        << "     --noeval         just parse the program, don't evaluate it (only useful" << std::endl
-        << "                      with --verbose)" << std::endl
+        << "                      Only display instances of the specified predicate(s)." << std::endl
+        << " -a, --allmodels      Display all models, even under weak constraints." << std::endl
+        << "     --firstorder     No higher-order reasoning." << std::endl
+        << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+        << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
+        << "                      with --verbose)." << std::endl
+        << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
         << std::endl;
 }
         
@@ -326,9 +327,11 @@ main (int argc, char *argv[])
     Globals::Instance()->setOption("StrongSafety", 1);
     Globals::Instance()->setOption("AllModels", 0);
     
+    // options only used here in main():
     bool optionPipe = false;
     bool optionXML = false;
     bool optionNoEval = false;
+    bool optionKeepNSPrefix = false;
 
     std::string optionPlugindir("");
 
@@ -370,6 +373,7 @@ main (int argc, char *argv[])
         { "ruleml",     no_argument, &longid, 3 },
         { "dlt",        no_argument, &longid, 4 },
         { "noeval",     no_argument, &longid, 5 },
+        { "keepnsprefix", no_argument, &longid, 6 },
         { NULL, 0, NULL, 0 }
     };
 
@@ -417,6 +421,8 @@ main (int argc, char *argv[])
                 optiondlt = true;
             else if (longid == 5)
                 optionNoEval = true;
+            else if (longid == 6)
+                optionKeepNSPrefix = true;
             break;
         case '?':
             remainingOptions.push_back(argv[optind - 1]);
@@ -565,7 +571,7 @@ main (int argc, char *argv[])
     if (helpRequested)
     {
         printUsage(std::cerr, true);
-        std::cerr << allpluginhelp.str();
+        std::cerr << allpluginhelp.str() << std::endl;
         exit(0);
     }
 
@@ -751,7 +757,7 @@ main (int argc, char *argv[])
                         std::cout << "@@@ calling dlt @@@" << std::endl;
                     }
                     
-                    tmpnam(tempfile);
+                    mkstemp(tempfile);
 
                     std::ofstream dlttemp(tempfile);
 
@@ -936,9 +942,10 @@ main (int argc, char *argv[])
     }
     
     //
-    // contract constant names again
+    // contract constant names again, if specified
     //
-    removeNamespaces();
+    if (optionKeepNSPrefix)
+        removeNamespaces();
 
 
 

@@ -42,6 +42,7 @@
  */
 %option noyywrap nounput batch
 
+%option yylineno
 /* %option debug */
 
 
@@ -55,7 +56,7 @@
 
 
 BLANK       ([ \t]+)
-NEWLINE     \r?\n
+NEWLINE     (\r?\n)
 ANON_VAR    _
 ID          ([A-Za-z][A-Za-z_0-9]*)
 QUOTED_ID   (\"[^\"]*\")
@@ -101,7 +102,7 @@ COMMENT     \%.*
 
 
 {NEWLINE} {
-    yylloc->lines(yyleng);
+    yylloc->lines(1);
 }
 
 ","    return token::COMMA;

@@ -126,7 +126,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
             {
                 // not yet:
-                assert(!(*li)->isNAF());
+                //assert(!(*li)->isNAF());
 
                 currentExternalBodyNodes.push_back(bn);
             }

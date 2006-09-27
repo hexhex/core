@@ -603,6 +603,20 @@ literal:
             //
             Registry::Instance()->storeObject($$);
         }
+    | NOT external_atom
+        {
+            //
+            // create literal with external atom
+            //
+            AtomPtr ap($2);
+            $$ = new Literal(ap, true);
+
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+        }
     | builtin_pred
         {
             //
