@@ -19,20 +19,28 @@ Follow the instructions of the INSTALL file found in the distributions tarball.
 Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
 pre-built Boost packages. 
 
-*** cppunit
+*** cppunit (optional)
 Follow the instructions of the INSTALL file found in the distributions
 tarball. dlvhex has been tested with cppunit 1.10.2.
 
 
 ** Configuration
-Run "configure" to create the necessary Makefiles. "configure
---enable-userinstall" will adjust to install-path to ~/.dlvhex/plugins, if the
-plugin should not be installed system-wide. Other configure-switches are shown
-with "configure --help".
+Run "configure" to create the necessary Makefiles. As usual, use the --prefix
+switch to specify a custom installation location. If you installed boost in a
+non-standard folder, use CXXFLAGS=-I/path/to/includes to specify the location
+of the header files.
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression
 testsuite.
 
 ** Installation
-Run "make install" to install dlvhex.
+Run "make install" to install the binary dlvhex and its header files, which are
+needed for developing plugins.
+
+* Running dlvhex
+
+Using dlvhex is very similar to working with the answer-set solver dlv. "dlvhex
+--help" displays a short help with available command-line parameters. For an
+introduction how to write hex-programs, see
+http://http://www.kr.tuwien.ac.at/staff/roman/dlvhex/

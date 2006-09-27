@@ -1,3 +1,27 @@
+2006-09-27  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* README: Corrected and improved README.
+
+	* examples/tests/dlvhextests.test: Added namespace test.
+
+	* src/dlvhex/GraphBuilder.cpp (run): Allow NAF external atoms.
+
+	* src/dlvhex/HexParser.ypp: Added NAF external atoms.
+
+	* src/dlvhex/HexScanner.lpp: Corrected bug in counting newlines.
+
+	* src/dlvhex/Makefile.am: Changed compilation order of ASPsolver.cpp.
+
+	* src/dlvhex/dlvhex.cpp (printUsage), (main): Corrected and extended
+	help-message. Added switch for keeping namespace-abbreviations in the
+	result. Use mkstemp instead of tmpnam to avoid compiler warning.
+	
+	* src/testsuite/dlvhex/Makefile.am: Added parameter handling for
+	invoking dlvhex from the test-script.
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Likewise. Escape single
+	quotes when comparing dlvhex-output. Added character encoding in
+	python script.
+
 2006-09-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/globals.h: Introduced verbose-levels and
