@@ -3,6 +3,8 @@
 	* README: Corrected and improved README.
 
 	* examples/tests/dlvhextests.test: Added namespace test.
+	* examples/namespace1.hex: Added.
+	* examples/tests/namespace1.out: Added.
 
 	* src/dlvhex/GraphBuilder.cpp (run): Allow NAF external atoms.
 
