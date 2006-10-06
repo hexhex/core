@@ -147,7 +147,7 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
             if (find(atomnodes.begin(), atomnodes.end(), other) == atomnodes.end())
             {
                 incomingNodes.push_back(other);
-                //std::cout << "incoming node: " << *other << std::endl;
+                //std::cerr << "incoming node: " << *other << std::endl;
             }
 
             ++di;
@@ -171,8 +171,8 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 {
     if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
-        std::cout << "Evaluating program component:" << std::endl;
-        getBottom().dump(std::cout);
+        std::cerr << "Evaluating program component:" << std::endl;
+        getBottom().dump(std::cerr);
     }
 
     std::vector<AtomSet> res, previous;
@@ -195,10 +195,10 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
         /*
         if (global::optionVerbose)
         {
-            std::cout << "Input set: ";
-            ///not used yet: filtered.print(std::cout, 0);
-            (*in).print(std::cout, 0);
-            std::cout << std::endl;
+            std::cerr << "Input set: ";
+            ///not used yet: filtered.print(std::cerr, 0);
+            (*in).print(std::cerr, 0);
+            std::cerr << std::endl;
         }
         */
 
@@ -228,18 +228,18 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     /*
     if (global::optionVerbose)
     {
-        std::cout << "Result set(s):" << std::endl;
+        std::cerr << "Result set(s):" << std::endl;
 
         for (std::vector<AtomSet>::const_iterator out = result.begin();
             out != result.end();
             ++out)
         {
-            std::cout << "  ";
-            (*out).print(std::cout, 0);
-            std::cout << std::endl;
+            std::cerr << "  ";
+            (*out).print(std::cerr, 0);
+            std::cerr << std::endl;
         }
 
-        std::cout << std::endl;
+        std::cerr << std::endl;
     }
     */
 
@@ -283,7 +283,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
     if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
-        std::cout << "Evaluating external component" << std::endl;
+        std::cerr << "Evaluating external component" << std::endl;
     }
 
     //
@@ -296,9 +296,9 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         /*
         if (global::optionVerbose)
         {
-            std::cout << "Input set: ";
-            (*in).print(std::cout, 0);
-            std::cout << std::endl;
+            std::cerr << "Input set: ";
+            (*in).print(std::cerr, 0);
+            std::cerr << std::endl;
         }
         */
 
@@ -329,18 +329,18 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
     /*
     if (global::optionVerbose)
     {
-        std::cout << "Result set(s): ";
+        std::cerr << "Result set(s): ";
 
         for (std::vector<AtomSet>::const_iterator out = result.begin();
             out != result.end();
             ++out)
         {
-            //printGAtomSet(*out, std::cout, 0);
-            (*out).print(std::cout, 0);
-            std::cout << std::endl;
+            //printGAtomSet(*out, std::cerr, 0);
+            (*out).print(std::cerr, 0);
+            std::cerr << std::endl;
         }
 
-        std::cout << std::endl;
+        std::cerr << std::endl;
     }
     */
 
@@ -429,7 +429,7 @@ Subgraph::collectUp(const AtomNode* n,
     //
     if (find(list.begin(), list.end(), n) == list.end())
     {
-        //std::cout << "adding node " << n->getId() << " to the collectup list" << std::endl;
+        //std::cerr << "adding node " << n->getId() << " to the collectup list" << std::endl;
 
         list.push_back(n);
 
@@ -495,7 +495,7 @@ Subgraph::pruneComponents()
     {
         removeNode(*ni);
 
-        //std::cout << "prune: removing node " << **ni << std::endl;
+        //std::cerr << "prune: removing node " << **ni << std::endl;
     }
 
     
@@ -519,8 +519,8 @@ Subgraph::getNodes() const
 std::vector<Component*>
 Subgraph::getPredecessors(Component* comp)
 {
-    std::cout << "looking for predecessors of" << std::endl;
-    comp->dump(std::cout);
+    std::cerr << "looking for predecessors of" << std::endl;
+    comp->dump(std::cerr);
 
     Component* c;
 
@@ -532,7 +532,7 @@ Subgraph::getPredecessors(Component* comp)
          ni != compnodes.end();
          ++ni)
     {
-        std::cout << "looking at " << **ni <<std::endl;
+        std::cerr << "looking at " << **ni <<std::endl;
         //
         // go through all predecessors of this node
         //
@@ -540,7 +540,7 @@ Subgraph::getPredecessors(Component* comp)
             d != (*ni)->getPreceding().end();
             ++d)
         {
-            std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
+            std::cerr << "has pred " << *((*d).getAtomNode()) << std::endl;
             //
             // for each preceding node:
             // if the node belongs to a component, get the component this node belongs to
@@ -549,7 +549,7 @@ Subgraph::getPredecessors(Component* comp)
             {
 
                 c = nodeComponentMap[(*d).getAtomNode()];
-                //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
+                //std::cerr << "belongs to comp" << std::endl; c->dump(std::cerr);
 
                 //
                 // don't add this component itself
@@ -650,7 +650,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                 ni != compnodes.end();
                 ++ni)
             {
-                //std::cout << "looking at " << **ni <<std::endl;
+                //std::cerr << "looking at " << **ni <<std::endl;
                 //
                 // go through all predecessors of this node
                 //
@@ -658,7 +658,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                     d != (*ni)->getPreceding().end();
                     ++d)
                 {
-                    //std::cout << "has pred " << *((*d).getAtomNode()) << std::endl;
+                    //std::cerr << "has pred " << *((*d).getAtomNode()) << std::endl;
                     //
                     // for each preceding node:
                     // if the node belongs to a component, get the component this node belongs to
@@ -667,7 +667,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                     {
 
                         c = nodeComponentMap[(*d).getAtomNode()];
-                        //std::cout << "belongs to comp" << std::endl; c->dump(std::cout);
+                        //std::cerr << "belongs to comp" << std::endl; c->dump(std::cerr);
 
                         //
                         // don't add this component itself
@@ -733,7 +733,7 @@ Subgraph::getLastResult()
 void
 Subgraph::dump(std::ostream& out) const
 {
-    std::cout << "Subgraph components:" << std::endl;
+    out << "Subgraph components:" << std::endl;
 
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();
@@ -742,9 +742,9 @@ Subgraph::dump(std::ostream& out) const
         (*ci)->dump(out);
     }
 
-    std::cout << std::endl;
+    out << std::endl;
 
-    std::cout << "Subgraph nodes:" << std::endl;
+    out << "Subgraph nodes:" << std::endl;
 
     for (std::vector<AtomNode*>::const_iterator ni = atomnodes.begin();
          ni != atomnodes.end();
@@ -753,7 +753,7 @@ Subgraph::dump(std::ostream& out) const
         out << **ni << std::endl;;
     }
 
-    std::cout << std::endl;
+    out << std::endl;
 }
 
 
