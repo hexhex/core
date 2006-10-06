@@ -9,6 +9,6 @@ userplugindir=@userplugindir@
 Name: @PACKAGE@
 Description: 
 Version: @VERSION@
-Libs: -L${pkglibdir} -ldlvhexbase
+Libs: -L${pkglibdir} -ldlvhexbase -laspsolver
 Cflags: -I${includedir}
 
