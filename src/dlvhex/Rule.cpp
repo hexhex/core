@@ -48,6 +48,10 @@ Rule::Rule(const RuleHead_t& head,
 }
 
 
+Rule::~Rule()
+{ }
+
+
 const RuleHead_t&
 Rule::getHead() const
 {
@@ -127,33 +131,37 @@ Rule::operator== (const Rule& rule2) const
 
 
 std::ostream&
-operator<< (std::ostream& out, const Rule& rule)
+Rule::output(std::ostream& out) const
 {
-    for (RuleHead_t::const_iterator hl = rule.getHead().begin();
-         hl != rule.getHead().end();
-         ++hl)
+  if (!getHead().empty()) // output head
     {
-        if (hl != rule.getHead().begin())
-            out << " v ";
-        
-        (*hl)->print(out, 0);
+      for (RuleHead_t::const_iterator hl = getHead().begin();
+	   hl != getHead().end() - 1;
+	   ++hl)
+	{
+	  (*hl)->print(out, 0);
+	  out << " v ";
+	}
+
+      getHead().back()->print(out, 0);
     }
 
-    out << " :- ";
-            
-    for (RuleBody_t::const_iterator l = rule.getBody().begin();
-         l != rule.getBody().end();
-         ++l)
+  if (!getBody().empty()) // output body with leading " :- "
     {
-        if (l != rule.getBody().begin())
-            out << ", ";
+      out << " :- ";
             
-        (*l)->print(out, 0);
+      for (RuleBody_t::const_iterator l = getBody().begin();
+	   l != getBody().end() - 1;
+	   ++l)
+	{
+	  (*l)->print(out, 0);
+	  out << ", ";
+	}
+
+      getBody().back()->print(out, 0);
     }
 
-    out << ".";
-
-    return out;
+  return out << '.';
 }
 
 
@@ -217,3 +225,23 @@ WeakConstraint::operator== (const WeakConstraint& wc2) const
 }
 
 
+std::ostream&
+WeakConstraint::output(std::ostream& out) const
+{
+  if (!getBody().empty()) // output body with leading ":~ "
+    {
+      out << ":~ ";
+            
+      for (RuleBody_t::const_iterator l = getBody().begin();
+	   l != getBody().end() - 1;
+	   ++l)
+	{
+	  (*l)->print(out, 0);
+	  out << ", ";
+	}
+
+      getBody().back()->print(out, 0);
+    }
+
+  return out << ". [" << weight << ':' << level << ']';
+}

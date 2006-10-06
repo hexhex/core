@@ -40,6 +40,9 @@ public:
          std::string = "",
          unsigned = 0);
 
+    virtual
+    ~Rule();
+
     /**
      * @brief Returns the rule's head.
      */
@@ -78,6 +81,9 @@ public:
     bool
     operator== (const Rule& rule2) const;
 
+    virtual std::ostream&
+    output(std::ostream& out) const;
+
 protected:
 
     RuleHead_t head;
@@ -93,11 +99,12 @@ private:
     std::vector<ExternalAtom*> externalAtoms;
 };
 
-//
-// only for verbose and debugging.
-//
-std::ostream&
-operator<< (std::ostream& out, const Rule& rule);
+
+inline std::ostream&
+operator<< (std::ostream& out, const Rule& rule)
+{
+  return rule.output(out);
+}
 
 
 /**
@@ -130,11 +137,13 @@ public:
     bool
     operator== (const WeakConstraint&) const;
 
+    std::ostream&
+    output(std::ostream& out) const;
+
 private:
 
     Term weight, level;
 };
-
 
 
 #endif /* _RULE_H */
