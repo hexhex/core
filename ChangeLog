@@ -1,3 +1,21 @@
+2006-10-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Component.cpp (SubGraph::dump): Use out instead of
+	std::cout.
+	Use std::cerr instead of std::cout for debugging output.
+	
+	* src/dlvhex/Makefile.am: Install libaspsolver and add depgraph
+	related code to libdlvhexbase.
+
+	* include/dlvhex/Rule.h: Add operator<< for Rules and
+	WeakConstraints.
+	* src/dlvhex/Rule.cpp: Likewise.
+
+	* include/dlvhex/Makefile.am: Install depgraph related header
+	files.
+
+	* dlvhex.pc.in: Add libaspsolver to the libraries.
+
 2006-09-27  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* README: Corrected and improved README.
