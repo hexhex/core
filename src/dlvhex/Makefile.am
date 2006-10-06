@@ -24,26 +24,18 @@ dist-hook:
 
 bin_PROGRAMS = dlvhex
 
-pkglib_LTLIBRARIES = libdlvhexbase.la
+pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 
 dlvhex_SOURCES = \
-    AtomNode.cpp \
     AnswerSet.cpp \
     BoostComponentFinder.cpp \
-    Component.cpp \
-    ComponentFinder.cpp \
-    DependencyGraph.cpp \
     dlvhex.cpp \
-    FixpointModelGenerator.cpp \
-    GuessCheckModelGenerator.cpp \
-    GraphBuilder.cpp \
     GraphProcessor.cpp \
     HexParser.ypp \
     HexScanner.lpp \
     OrdinaryModelGenerator.cpp \
     OutputBuilder.cpp \
-    ProgramBuilder.cpp \
     ResultContainer.cpp \
     SafetyChecker.cpp \
     HexParserDriver.cpp
@@ -120,21 +112,29 @@ FLEX_MICRO=33
 #
 # make convenience lib
 #
-noinst_LTLIBRARIES = \
-                     libaspsolver.la
+#noinst_LTLIBRARIES = \
+#                     libaspsolver.la
 
 libdlvhexbase_la_SOURCES = \
     Atom.cpp \
     AtomFactory.cpp \
+    AtomNode.cpp \
     AtomSet.cpp \
+    Component.cpp \
+    ComponentFinder.cpp \
+    DependencyGraph.cpp \
     ExternalAtom.cpp \
     Error.cpp \
+    FixpointModelGenerator.cpp \
     globals.cpp \
+    GraphBuilder.cpp \
+    GuessCheckModelGenerator.cpp \
     helper.cpp \
     Literal.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Program.cpp \
+    ProgramBuilder.cpp \
     Repository.cpp \
     Registry.cpp \
     Rule.cpp \
@@ -151,4 +151,4 @@ libaspsolver_la_SOURCES = \
     ASPsolver.cpp \
     ProcessBuf.cpp
 
-libaspsolver_la_LIBADD = libdlvhexbase.la
+#libaspsolver_la_LIBADD = libdlvhexbase.la
