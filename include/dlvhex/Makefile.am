@@ -35,6 +35,7 @@ pkginclude_HEADERS = \
                  DependencyGraph.h \
                  Error.h \
                  ExternalAtom.h \
+				 globals.h \
                  GraphBuilder.h \
                  helper.h \
                  Literal.h \

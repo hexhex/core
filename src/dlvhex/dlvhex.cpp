@@ -340,8 +340,6 @@ main (int argc, char *argv[])
     //
     bool optiondlt = false;
 
-    std::vector<std::string> optionFilter;
-    
     std::vector<std::string> allFiles;
 
     std::vector<std::string> remainingOptions;
@@ -377,6 +375,9 @@ main (int argc, char *argv[])
         { NULL, 0, NULL, 0 }
     };
 
+    std::vector<std::string> fil;
+    std::vector<std::string>::iterator i;
+    
     while ((ch = getopt_long(argc, argv, "f:hsvp:a", longopts, NULL)) != -1)
     {
         switch (ch)
@@ -395,7 +396,11 @@ main (int argc, char *argv[])
                 Globals::Instance()->setOption("Verbose", 1);
             break;
         case 'f':
-            optionFilter = helper::stringExplode(std::string(optarg), ",");
+            fil = helper::stringExplode(std::string(optarg), ",");
+            i = fil.begin();
+            while (i != fil.end())
+                Globals::Instance()->addFilter(*i++);
+
             break;
         case 'p':
             optionPlugindir = std::string(optarg);
@@ -988,8 +993,8 @@ main (int argc, char *argv[])
     //
     // apply filter
     //
-    if (optionFilter.size() > 0)
-        result.filterIn(optionFilter);
+    //if (optionFilter.size() > 0)
+        result.filterIn(Globals::Instance()->getFilters());
 
     //
     // output format

@@ -94,6 +94,9 @@ ResultContainer::filterOutDLT()
 void
 ResultContainer::filterIn(const std::vector<std::string>& predicates)
 {
+    if (predicates.size() == 0)
+        return;
+
     //
     // go through all atom sets we have
     //

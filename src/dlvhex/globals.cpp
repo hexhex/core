@@ -58,6 +58,20 @@ Globals::setOption(std::string option, unsigned value)
 }
 
 
+void
+Globals::addFilter(std::string& f)
+{
+    optionFilter.push_back(f);
+}
+
+
+const std::vector<std::string>&
+Globals::getFilters() const
+{
+    return optionFilter;
+}
+
+
 std::ostream&
 Globals::getVerboseStream() const
 {

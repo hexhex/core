@@ -59,9 +59,24 @@ public:
 
     /**
      * Set an option with specified identifier to a value.
+     * 
+     * Not using a reference here, because we use explicit strings in main to
+     * call this method!
      */
     void 
     setOption(std::string, unsigned);
+
+    /**
+     * @brief Add a predicate to be filtered.
+     */
+    void
+    addFilter(std::string&);
+
+    /**
+     * @brief Returns list of predicates to be filtered.
+     */
+    const std::vector<std::string>&
+    getFilters() const;
 
     /**
      * Get the stream for verbose output.
@@ -97,6 +112,11 @@ private:
      */
     std::map<std::string, unsigned> optionMap;
 
+    /**
+     * @brief List of filter-predicates.
+     */
+    std::vector<std::string> optionFilter;
+    
     /**
      * Messages returned from external computation sources, which do not necessarily
      * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
