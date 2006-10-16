@@ -1,3 +1,18 @@
+2006-10-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* README: Extended.
+
+	* include/dlvhex/Makefile.am: Install globals.h.
+
+	* include/dlvhex/globals.h: Added functions addFilter() and getFilters()
+	for global filter handling.
+	* src/dlvhex/globals.cpp (addFilter,getFilters): Likewise.
+
+	* src/dlvhex/ResultContainer.cpp (filterIn): Do nothing if filter list is
+	empty.
+
+	* src/dlvhex/dlvhex.cpp (main): Global filter handling.
+
 2006-10-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Component.cpp (SubGraph::dump): Use out instead of

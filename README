@@ -3,32 +3,54 @@
 * Dependencies
 dlvhex depends on following libraries and programs:
 
+** DLV
+dlvhex uses the answer-set solver DLV, which can be downloaded from
+http://www.dlvsystem.com
+
 ** boost
+Boost is a collection of portable C++ source libraries, which are intended to
+be widely useful, and usable across a broad spectrum of applications. See
 http://www.boost.org/
 
 ** cppunit (optional)
-http://cppunit.sourceforge.net/
+CppUnit is used for the unit-testing of dlvhex, but not necessary for building
+the application. See http://cppunit.sourceforge.net/
 
 
 * Building and installing dlvhex
 
 ** Prerequisites
 
+** DLV
+Put the downloaded binary in your path so that it is executable on your system
+(don't forget to "chmod a+x" it!).  dlvhex is looking for "dlv", so you might
+want to rename the downloaded binary or softlink to it.
+
 *** boost
 Follow the instructions of the INSTALL file found in the distributions tarball.
 Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
-pre-built Boost packages. 
+pre-built Boost packages. E.g., in Debian, do
+apt-get install libboost-dev libboost-graph-dev
 
 *** cppunit (optional)
-Follow the instructions of the INSTALL file found in the distributions
-tarball. dlvhex has been tested with cppunit 1.10.2.
+Follow the instructions of the INSTALL file found in the distributions tarball.
+dlvhex has been tested with cppunit 1.10.2. Like boost, cppunit packages are
+provided by the major Linux distributions. E.g., in Debian do
+apt-get install cppunit
 
 
 ** Configuration
 Run "configure" to create the necessary Makefiles. As usual, use the --prefix
-switch to specify a custom installation location. If you installed boost in a
-non-standard folder, use CXXFLAGS=-I/path/to/includes to specify the location
-of the header files.
+switch to specify a custom installation location. dlvhex uses pkgconfig to
+share build-related configuration with plugins. So if you also intend to
+compile plugins and use a custom prefix for dlvhex, make sure to adjust the
+PKG_CONFIG_PATH envvar appropriately, otherwise the configuration of the
+plugins will not work. E.g., if your prefix is $HOME/localinstall/, then
+PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.
+If you installed boost in a non-standard folder, use
+CXXFLAGS=-I/path/to/includes to specify the location of the header files.  If
+configure complains, then something vital for building dlvhex is missing in
+your system.
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression
@@ -44,3 +66,4 @@ Using dlvhex is very similar to working with the answer-set solver dlv. "dlvhex
 --help" displays a short help with available command-line parameters. For an
 introduction how to write hex-programs, see
 http://http://www.kr.tuwien.ac.at/staff/roman/dlvhex/
+
