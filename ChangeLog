@@ -1,3 +1,29 @@
+2006-10-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* examples/agg1.hex: Added aggregates example and test.
+	* examples/tests/dlvhextests.test: Likewise.
+
+	* examples/tests/agg1.out: Added aggregates test result.
+
+	* include/dlvhex/AggregateAtom.h: Added.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/Rule.h: Removed typedef of RuleBody_t.
+	* include/dlvhex/Literal.h: Moved typedef of RuleBody_t here.
+
+	* src/dlvhex/AggregateAtom.cpp: Added.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Added parsing of aggregates.
+	* src/dlvhex/HexScanner.lpp: Likewise.
+
+	* src/dlvhex/SafetyChecker.cpp (throw): Consider aggregate-atoms when
+	checking for weak safety.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Extended parsing of .test
+	files: (optional) third string in each line is apssed to dlvhex as
+	parameter.
+
 2006-10-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* README: Extended.
