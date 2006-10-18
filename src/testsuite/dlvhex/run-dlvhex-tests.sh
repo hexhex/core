@@ -14,11 +14,11 @@ echo ============ dlvhex tests start ============
 
 for t in $(find -name '*.test' -type f)
 do
-    while read HEXPROGRAM ANSWERSETS
+    while read HEXPROGRAM ANSWERSETS ADDPARM
     do
 	let ntests++
 
-	$DLVHEX -s $PARAMETERS $HEXPROGRAM | egrep -v "^$" > $TMPFILE
+	$DLVHEX -s $PARAMETERS $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
 
 	if cmp -s $TMPFILE $ANSWERSETS
 	then

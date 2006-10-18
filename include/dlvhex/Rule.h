@@ -19,8 +19,6 @@
 
 typedef std::vector<AtomPtr> RuleHead_t;
 
-typedef std::vector<Literal*> RuleBody_t;
-
 
 /**
  * @brief Class for representing a rule object.

@@ -14,6 +14,7 @@
 
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/AggregateAtom.h"
 
 
 SafetyCheckerBase::SafetyCheckerBase()
@@ -72,8 +73,10 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
         {
             //
             // only look at ordinary atoms
+            // and aggregate terms
             //
-            if (typeid(*((*bb)->getAtom())) == typeid(Atom))
+            if ((typeid(*((*bb)->getAtom())) == typeid(Atom)) ||
+                (typeid(*((*bb)->getAtom())) == typeid(AggregateAtom)))
             {
                 //
                 // look at predicate

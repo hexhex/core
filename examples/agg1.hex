@@ -1,0 +1,12 @@
+ok(C) :- #count{X,Y : a(X,Z,k),b(e,Z,Y)} = 3, p(C).
+p(W) :- #min{S : c(S)} = W.
+b(e,h,r) :- on.
+on v off.
+a(f,g,k).
+a(u,h,k).
+b(e,g,s).
+b(e,h,x).
+b(e,h,q).
+c(2).
+c(3).
+c(6).

@@ -142,13 +142,27 @@ COMMENT     \%.*
 "<="   return token::PRED_LESS_OR_EQ;
 ">="   return token::PRED_GREATER_OR_EQ;
 
-"#any"     return token::PRED_ANY;
-"#avg"     return token::PRED_AVG;
-"#count"   return token::PRED_COUNT;
-"#max"     return token::PRED_MAX;
-"#min"     return token::PRED_MIN;
-"#sum"     return token::PRED_SUM;
-"#times"   return token::PRED_TIMES;
+"#any"   { yylval.string = new std::string(yytext);
+    return token::PRED_ANY;
+}
+"#avg"   { yylval.string = new std::string(yytext);
+    return token::PRED_AVG;
+}
+"#count" { yylval.string = new std::string(yytext);
+    return token::PRED_COUNT;
+}
+"#max"   { yylval.string = new std::string(yytext);
+    return token::PRED_MAX;
+}
+"#min"   { yylval.string = new std::string(yytext);
+    return token::PRED_MIN;
+}
+"#sum"   { yylval.string = new std::string(yytext);
+    return token::PRED_SUM;
+}
+"#times" { yylval.string = new std::string(yytext);
+    return token::PRED_TIMES;
+}
 
 "#include"  return token::EXT_INCLUDE;
 

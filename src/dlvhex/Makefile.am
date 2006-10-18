@@ -117,6 +117,7 @@ FLEX_MICRO=33
 
 libdlvhexbase_la_SOURCES = \
     Atom.cpp \
+    AggregateAtom.cpp \
     AtomFactory.cpp \
     AtomNode.cpp \
     AtomSet.cpp \

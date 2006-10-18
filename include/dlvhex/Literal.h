@@ -106,6 +106,11 @@ private:
     
 };
 
+/**
+ * A rule body is a conjunction of literals.
+ */
+typedef std::vector<Literal*> RuleBody_t;
+
 
 #endif /* _LITERAL_H */
 

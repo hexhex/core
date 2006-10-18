@@ -267,6 +267,5 @@ public:
 //    std::string builtin;
 };
 
-
 #endif /* _ATOM_H */
 

@@ -38,6 +38,7 @@
 #include "dlvhex/HexParserDriver.h"
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
+#include "dlvhex/AggregateAtom.h"
 #include "dlvhex/Literal.h"
 #include "dlvhex/Rule.h"
 #include "dlvhex/Program.h"
@@ -85,9 +86,8 @@
     Rule*             rule;
     WeakConstraint*   wconstraint;
     BuiltinPredicate* builtin;
+    AggregateAtom*    aggregate;
     /*
-    AGGREGATE_TYPE*aggregate_type;
-    AGGREGATEPRED* aggregate_pred;
     unsigned       integer;
     WEIGHTS*       weights;
     OIDindices*    oids;
@@ -122,15 +122,10 @@ YY_DECL;
 %type  <string> ident
 %type  <string> binop
 %type  <integ> number
-//%type  <string> param_sans_maxint
 %type  <term> term
-//%type  <string> MAXINTEGER_EQUALS_param
 %type  <term> ident_or_fixedpt ident_or_number
-//%type  <string> tertop
-%type  <terms> terms// terms1 terms2 terms3
-//%type  <string> user_pred builtin_pred propositional_atom aggregate external_atom
+%type  <terms> terms
 %type  <atom> propositional_atom user_pred
-//%type  <string> builtin_pred aggregate
 %type  <literal> literal
 %type  <disjunction> disj
 %type  <body> body
@@ -139,11 +134,23 @@ YY_DECL;
 %type <extatom> external_atom    
 %type <terms> external_output
 %type <builtin> builtin_pred    
-//%type  <string> aggregate_type
-//%type  <string> aggregate_pred
+%type  <string> aggregate_type
+%type  <aggregate> aggregate_pred
+%type  <aggregate> aggregate
+%type  <term> fixedpt
+
+//
+// still from dlv, unused yet or forever:
+//
+
+//%type  <terms> terms1 terms2 terms3
+//%type  <string> MAXINTEGER_EQUALS_param
+//%type  <string> tertop
+//%type  <string> user_pred builtin_pred propositional_atom aggregate external_atom
+//%type  <string> builtin_pred
+//%type  <string> param_sans_maxint
 //%type  <string> strictrule
 //%type  <string> weights
-%type  <term> fixedpt
 //%type  <string> object_id
 //%type  <string> object_ids inherit
 
@@ -160,7 +167,7 @@ YY_DECL;
 %token PRED_EQUAL PRED_UNEQUAL PRED_LESS PRED_GREATER
 %token PRED_LESS_OR_EQ PRED_GREATER_OR_EQ
 %token PRED_INT PRED_SUCC
-%token PRED_ANY PRED_AVG PRED_COUNT PRED_MAX PRED_MIN PRED_SUM PRED_TIMES
+%token <string> PRED_ANY PRED_AVG PRED_COUNT PRED_MAX PRED_MIN PRED_SUM PRED_TIMES
 %token NOT TRUE_NOT
 %token MAXINTEGER
 %token NAMESPACE EXT_INCLUDE SHARP
@@ -631,8 +638,34 @@ literal:
             //
             Registry::Instance()->storeObject($$);
         }
-//    | aggregate
-//    | NOT aggregate
+    | aggregate
+        {
+            //
+            // create aggregate
+            //
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
+
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+        }
+    | NOT aggregate
+        {
+            //
+            // create negated aggregate
+            //
+            AtomPtr ap($2);
+            $$ = new Literal(ap, true);
+
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+        }
     ;
           
 
@@ -848,6 +881,199 @@ propositional_atom:
     ;
 
 
+/*
+ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
+*/
+
+
+builtin_pred:
+    term binop term
+        {
+            $$ = new BuiltinPredicate(*$1, *$3, *$2);
+
+            delete $1;
+            delete $2;
+            delete $3;
+        } 
+    | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
+        {
+            $$ = new BuiltinPredicate(*$3, *$5, *$1);
+
+            delete $1;
+            delete $3;
+            delete $5;
+        }
+/*          | PRED_SUCC terms2
+          | tertop terms3
+          | param_sans_maxint EQUALS term tertop term
+          | MAXINTEGER_EQUALS_param tertop term
+          */
+	  ;
+
+aggregate:
+    term PRED_LESS aggregate_pred
+        {
+            $3->setComp("<", "");
+            $3->setLeftTerm(*$1);
+            $$ = $3;
+            delete $1;
+        }
+    | term PRED_LESS_OR_EQ aggregate_pred
+        {
+            $3->setComp("<=", "");
+            $3->setLeftTerm(*$1);
+            $$ = $3;
+            delete $1;
+        }
+    | term EQUALS aggregate_pred
+        {
+            $3->setComp("=", "");
+            $3->setLeftTerm(*$1);
+            $$ = $3;
+            delete $1;
+        }
+    | term PRED_GREATER_OR_EQ aggregate_pred
+        {
+            $3->setComp(">=", "");
+            $3->setLeftTerm(*$1);
+            $$ = $3;
+            delete $1;
+        }
+    | term PRED_GREATER aggregate_pred
+        {
+            $3->setComp(">", "");
+            $3->setLeftTerm(*$1);
+            $$ = $3;
+            delete $1;
+        }
+    | aggregate_pred PRED_LESS term
+        {
+            $1->setComp("", "<");
+            $1->setRightTerm(*$3);
+            $$ = $1;
+            delete $3;
+        }
+    | aggregate_pred PRED_LESS_OR_EQ term
+        {
+            $1->setComp("", "<=");
+            $1->setRightTerm(*$3);
+            $$ = $1;
+            delete $3;
+        }
+    | aggregate_pred EQUALS term
+        {
+            $1->setComp("", "=");
+            $1->setRightTerm(*$3);
+            $$ = $1;
+            delete $3;
+        }
+    | aggregate_pred PRED_GREATER_OR_EQ term
+        {
+            $1->setComp("", ">=");
+            $1->setRightTerm(*$3);
+            $$ = $1;
+            delete $3;
+        }
+    | aggregate_pred PRED_GREATER term
+        {
+            $1->setComp("", ">");
+            $1->setRightTerm(*$3);
+            $$ = $1;
+            delete $3;
+        }
+    | term PRED_LESS aggregate_pred PRED_LESS term
+        {
+            $3->setComp("<", "<");
+            $3->setLeftTerm(*$1);
+            $3->setRightTerm(*$5);
+            $$ = $3;
+            delete $1;
+            delete $5;
+        }
+    | term PRED_LESS aggregate_pred PRED_LESS_OR_EQ term
+        {
+            $3->setComp("<", "<=");
+            $3->setLeftTerm(*$1);
+            $3->setRightTerm(*$5);
+            $$ = $3;
+            delete $1;
+            delete $5;
+        }
+    | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS term
+        {
+            $3->setComp("<=", "<");
+            $3->setLeftTerm(*$1);
+            $3->setRightTerm(*$5);
+            $$ = $3;
+            delete $1;
+            delete $5;
+        }
+    | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS_OR_EQ term
+        {
+            $3->setComp("<=", "<=");
+            $3->setLeftTerm(*$1);
+            $3->setRightTerm(*$5);
+            $$ = $3;
+            delete $1;
+            delete $5;
+        }
+    ;
+
+binop:
+    PRED_EQUAL { $$ = new std::string("="); }
+    | EQUALS { $$ = new std::string("="); }
+    | PRED_UNEQUAL { $$ = new std::string("!="); }
+    | PRED_LESS { $$ = new std::string("<"); }
+    | PRED_GREATER { $$ = new std::string(">"); }
+    | PRED_LESS_OR_EQ { $$ = new std::string("<="); }
+    | PRED_GREATER_OR_EQ { $$ = new std::string(">="); }
+    ;
+
+/*
+tertop   : PLUS
+         | ASTERISK
+	 ;
+*/
+
+aggregate_pred:
+    aggregate_type CURLY_OPEN terms COLON body CURLY_CLOSE
+        {
+            try
+            {
+                $$ = new AggregateAtom(*$1, *$3, *$5);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            delete $1;
+            delete $3;
+            delete $5;
+        }
+    ;
+
+aggregate_type:
+    PRED_ANY
+    | PRED_AVG
+    | PRED_COUNT
+    | PRED_MAX
+    | PRED_MIN
+    | PRED_SUM                   
+    | PRED_TIMES
+    ;
+
+/*
+terms1   : PARAM_OPEN term PARAM_CLOSE
+         ;
+
+terms2   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+
+terms3   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+*/
+
 terms:
     term
         {
@@ -873,88 +1099,6 @@ terms:
         }
     ;
 
-
-/*
-ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
-*/
-
-
-builtin_pred :
-    term binop term
-        {
-            $$ = new BuiltinPredicate(*$1, *$3, *$2);
-
-            delete $1;
-            delete $2;
-            delete $3;
-        } 
-    | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
-        {
-            $$ = new BuiltinPredicate(*$3, *$5, *$1);
-
-            delete $1;
-            delete $3;
-            delete $5;
-        }
-/*          | PRED_SUCC terms2
-          | tertop terms3
-          | param_sans_maxint EQUALS term tertop term
-          | MAXINTEGER_EQUALS_param tertop term
-          */
-	  ;
-
-/*
-aggregate : term PRED_LESS aggregate_pred
-          | term PRED_LESS_OR_EQ aggregate_pred
-          | param_sans_maxint EQUALS aggregate_pred
-          | term PRED_GREATER_OR_EQ aggregate_pred
-          | term PRED_GREATER aggregate_pred
-          | aggregate_pred PRED_LESS term
-          | aggregate_pred PRED_LESS_OR_EQ term
-          | aggregate_pred EQUALS term
-          | aggregate_pred PRED_GREATER_OR_EQ term
-          | aggregate_pred PRED_GREATER term
-          | term PRED_LESS aggregate_pred PRED_LESS term
-          | term PRED_LESS aggregate_pred PRED_LESS_OR_EQ term
-          | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS term
-          | term PRED_LESS_OR_EQ aggregate_pred PRED_LESS_OR_EQ term
-          ;
-*/
-
-binop    : PRED_EQUAL { $$ = new std::string("=="); }
-         | PRED_UNEQUAL { $$ = new std::string("!="); }
-         | PRED_LESS { $$ = new std::string("<"); }
-         | PRED_GREATER { $$ = new std::string(">"); }
-         | PRED_LESS_OR_EQ { $$ = new std::string("<="); }
-         | PRED_GREATER_OR_EQ { $$ = new std::string(">="); }
-         ;
-
-/*
-tertop   : PLUS
-         | ASTERISK
-	 ;
-
-aggregate_pred : aggregate_type CURLY_OPEN terms COLON body CURLY_CLOSE
-         ;
-
-aggregate_type: PRED_ANY
-         | PRED_AVG
-         | PRED_COUNT
-         | PRED_MAX
-         | PRED_MIN
-         | PRED_SUM                   
-         | PRED_TIMES
-         ;
-	  
-terms1   : PARAM_OPEN term PARAM_CLOSE
-         ;
-
-terms2   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
-         ;
-
-terms3   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_SEPARATOR term PARAM_CLOSE
-         ;
-*/
 
 term:
     ident
