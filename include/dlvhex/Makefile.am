@@ -4,10 +4,8 @@ AUTOMAKE_OPTIONS = foreign
 noinst_HEADERS = \
                  ASPsolver.h \
                  Atom.h \
-                 AggregateAtom.h \
                  AtomFactory.h \
 		 AnswerSet.h \
-                 BoostComponentFinder.h \
 		 DLVresultFlexLexer.h \
 		 DLVresultParserDriver.h \
                  Error.h \
@@ -27,22 +25,26 @@ noinst_HEADERS = \
                  Term.h
 
 pkginclude_HEADERS = \
+                 AggregateAtom.h \
                  Atom.h \
 		 AtomNode.h \
                  AtomSet.h \
 		 AtomFactory.h \
+                 BaseVisitor.h \
+                 BoostComponentFinder.h \
                  ComponentFinder.h \
 		 Component.h \
                  DependencyGraph.h \
                  Error.h \
                  ExternalAtom.h \
-				 globals.h \
+		 globals.h \
                  GraphBuilder.h \
                  helper.h \
                  Literal.h \
                  ModelGenerator.h \
                  NamesTable.h \
                  PluginInterface.h \
+                 PrintVisitor.h \
                  Program.h \
                  ProgramBuilder.h \
                  Repository.h \
