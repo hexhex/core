@@ -1,3 +1,40 @@
+2006-10-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Add PrintVisitor.cpp and bump library
+	version to 3:0:0.
+
+	* include/dlvhex/Makefile.am: Add BaseVisitor.h and
+	PrintVisitor.h.
+	
+	* include/dlvhex/BaseVisitor.h: Add Visistor classes.
+	* include/dlvhex/PrintVisitor.h: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+
+	* include/dlvhex/AggregateAtom.h: Implement Visitor Pattern.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/AtomSet.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+	* include/dlvhex/ProgramBuilder.h: Likewise.
+	* include/dlvhex/Repository.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/AnswerSet.cpp: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+	* src/dlvhex/OutputBuilder.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/ProgramBuilder.cpp: Likewise.
+	* src/dlvhex/Repository.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/testsuite/dlvhex/TypeTest.cpp: 
+
 2006-10-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* examples/agg1.hex: Added aggregates example and test.
