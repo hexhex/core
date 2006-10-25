@@ -29,7 +29,6 @@ pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 dlvhex_SOURCES = \
     AnswerSet.cpp \
-    BoostComponentFinder.cpp \
     dlvhex.cpp \
     GraphProcessor.cpp \
     HexParser.ypp \
@@ -121,6 +120,7 @@ libdlvhexbase_la_SOURCES = \
     AtomFactory.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
+    BoostComponentFinder.cpp \
     Component.cpp \
     ComponentFinder.cpp \
     DependencyGraph.cpp \
@@ -134,6 +134,7 @@ libdlvhexbase_la_SOURCES = \
     Literal.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
+    PrintVisitor.cpp \
     Program.cpp \
     ProgramBuilder.cpp \
     Repository.cpp \
@@ -142,7 +143,7 @@ libdlvhexbase_la_SOURCES = \
     Term.cpp
 
 # for -version-info see http://sources.redhat.com/autobook/autobook/autobook_91.html
-libdlvhexbase_la_LDFLAGS = -version-info 2:0:0
+libdlvhexbase_la_LDFLAGS = -version-info 3:0:0
 
 libaspsolver_la_SOURCES = \
     DLVresultParser.ypp \
