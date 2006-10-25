@@ -13,14 +13,14 @@
 
 #include "dlvhex/AggregateAtom.h"
 #include "dlvhex/globals.h"
-
+#include "dlvhex/BaseVisitor.h"
 
 AggregateAtom::AggregateAtom(const std::string& aggtype,
                              const Tuple& vars,
                              const RuleBody_t& conj)
-    : type(aggtype),
+    : body(conj),
       aggVars(vars),
-      body(conj),
+      type(aggtype),
       cmpLeft(""),
       cmpRight("")
 {
@@ -94,34 +94,10 @@ AggregateAtom::unifiesWith(const AtomPtr atom) const
 }
 
 
-std::ostream&
-AggregateAtom::print(std::ostream& stream, const bool ho) const
+void
+AggregateAtom::accept(BaseVisitor& v) const
 {
-    if (this->cmpLeft != "")
-        stream << this->left << " " << this->cmpLeft << " ";
-
-    stream << this->type << "{"
-           << this->aggVars << " : ";
-    
-    if (!this->body.empty())
-    {
-        for (RuleBody_t::const_iterator l = this->body.begin();
-             l != this->body.end() - 1;
-             ++l)
-        {
-            (*l)->print(stream, ho);
-            stream << ", ";
-        }
-
-        this->body.back()->print(stream, ho);
-    }
-
-    stream << "}";
-    
-    if (this->cmpRight != "")
-        stream << " " << this->cmpRight << " " << this->right;
-
-    return stream;
+  v.visitAggregateAtom(this);
 }
 
 

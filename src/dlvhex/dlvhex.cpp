@@ -33,6 +33,7 @@
 #include "dlvhex/OutputBuilder.h"
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/HexParserDriver.h"
+#include "dlvhex/PrintVisitor.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -862,11 +863,12 @@ main (int argc, char *argv[])
 
     if (Globals::Instance()->getOption("Verbose"))
     {
-        std::cout << "Parsed Rules: " << std::endl;
-        IDB.dump(std::cout);
-        std::cout << std::endl << "Parsed EDB: " << std::endl;
-        EDB.print(std::cout, 0);
-        std::cout << std::endl << std::endl;
+        RawPrintVisitor rpv(std::cerr);
+        std::cerr << "Parsed Rules: " << std::endl;
+        IDB.dump(std::cerr);
+        std::cerr << std::endl << "Parsed EDB: " << std::endl;
+        EDB.accept(rpv);
+        std::cerr << std::endl << std::endl;
     }
 
     /// @todo: when exiting after an exception, we have to cleanup things!
@@ -1010,7 +1012,7 @@ main (int argc, char *argv[])
     // dump it!
     //
     if (Globals::Instance()->getOption("Verbose"))
-        std::cout << "@@@ Final Result @@@" << std::endl << std::endl;
+        std::cerr << "@@@ Final Result @@@" << std::endl << std::endl;
 
     result.print(std::cout, outputbuilder);
 

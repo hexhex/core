@@ -151,11 +151,14 @@ public:
     void
     setAlwaysFO();
 
+    bool
+    getAlwaysFO() const;
+
     /**
-     * @brief Prints the atom.
+     * @brief accepts a visitor.
      */
-    virtual std::ostream&
-    print(std::ostream&, const bool) const;
+    virtual void
+    accept(BaseVisitor&) const;
     
     /**
      * @brief Tests if the atom contains only constant arguments.
@@ -214,12 +217,6 @@ public:
         return false;
     }
 
-//     virtual std::ostream&
-//     print(std::ostream& out, const bool) const
-//     {
-//         return out << "";
-//     }
-
     bool
     operator< (const Atom&) const
     {
@@ -227,8 +224,6 @@ public:
     }
 };
 
-
-#include <sstream>
 
 /**
  * @brief Builtin Atom.
@@ -239,32 +234,14 @@ public:
 class BuiltinPredicate : public Atom
 {
 public:
+    BuiltinPredicate(Term&, Term&, const std::string&);
 
-/*    BuiltinPredicate(const BuiltinPredicate& bp)
-        : Atom(bp),
-          builtin(bp.builtin)
-    {
-
-    }
-*/
-
-    BuiltinPredicate(Term&, Term&, std::string&);
-    /*
-        : t1(term1),
-          t2(term2),
-          builtin(b)
-    {
-    }
-*/
     /**
-     * @brief Prints the builtin.
+     * @brief accepts a visitor.
      */
-    virtual std::ostream&
-    print(std::ostream&, const bool) const;
+    virtual void
+    accept(BaseVisitor&) const;
 
-//    Term t1, t2;
-
-//    std::string builtin;
 };
 
 #endif /* _ATOM_H */

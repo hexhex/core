@@ -18,6 +18,12 @@
 
 #include "dlvhex/Program.h"
 
+//
+// forward declaration
+//
+class PrintVisitor;
+
+
 /**
 * @brief Base Builder for building logic programs.
 */
@@ -91,10 +97,9 @@ public:
 
 private:
     /**
-     * @brief Flag to indicate if program should be build in higher-order notation.
+     * @brief either a DLVPrintVisitor or a HOPrintVisitor.
      */
-    bool
-    higherOrder;
+    PrintVisitor* pv;
 };
 
 

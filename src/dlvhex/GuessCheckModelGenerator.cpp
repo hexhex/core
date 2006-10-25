@@ -17,7 +17,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 
 GuessCheckModelGenerator::GuessCheckModelGenerator()
@@ -178,7 +178,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     // now check for each guess if the guessed external atoms are satisfied by
     // the remaining atoms in the guess
     //
-    
+
+    RawPrintVisitor rpv(std::cerr);
+
     for (std::vector<AtomSet>::iterator guess = allguesses.begin();
          guess != allguesses.end();
          ++guess)
@@ -186,7 +188,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
         if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         {
             std::cerr << "=== checking guess ";
-            guess->print(std::cerr, 0);
+            guess->accept(rpv);
             std::cerr << std::endl;
         }
 
@@ -232,7 +234,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
            //std::cerr << std::endl;
 
             if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-                std::cout << "  checking guess reduct" << std::endl;
+                std::cerr << "  checking guess reduct" << std::endl;
 
             //
             // now check if the reduct against the (valid) guess yields a
@@ -446,9 +448,9 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
             if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
             {
-                std::cout << "  reduced program result: ";
-                strongFacts.print(std::cout, false);
-                std::cout << std::endl;
+                std::cerr << "  reduced program result: ";
+                strongFacts.accept(rpv);
+                std::cerr << std::endl;
             }
             /*
                 std::cerr << "  guess: ";
@@ -485,7 +487,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             else
             {
                 if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-                    std::cout << "  reduced model does not match!" << std::endl;
+                    std::cerr << "  reduced model does not match!" << std::endl;
             }
         }
     }

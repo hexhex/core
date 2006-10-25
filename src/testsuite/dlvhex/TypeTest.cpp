@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "testsuite/dlvhex/TypeTest.h"
+#include "dlvhex/PrintVisitor.h"
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(TermTest);
@@ -166,25 +167,28 @@ void
 AtomTest::testSerialization()
 {
     std::stringstream out;
+    RawPrintVisitor rpv(out);
 
     out.str("");
     
-    (*ho).print(out, 0);
+    ho->accept(rpv);
     CPPUNIT_ASSERT(out.str() == "Bob(foo,Var,S)");
 
     out.str("");
     
-    (*ho).print(out, 1);
+    HOPrintVisitor hpv(out);
+
+    ho->accept(hpv);
     CPPUNIT_ASSERT(out.str() == "a_3(Bob,foo,Var,S)");
 
     out.str("");
     
-    (*fo).print(out, 0);
+    fo->accept(rpv);
 
     CPPUNIT_ASSERT(out.str() == "p(X,Y,\"a small string\")");
     out.str("");
     
-    (*fo).print(out, 1);
+    fo->accept(hpv);
     CPPUNIT_ASSERT(out.str() == "a_3(p,X,Y,\"a small string\")");
 }
 

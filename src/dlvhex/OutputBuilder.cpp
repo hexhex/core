@@ -12,7 +12,7 @@
 
 #include "dlvhex/OutputBuilder.h"
 #include "dlvhex/globals.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 /*
 OutputBuilder::OutputBuilder()
@@ -29,19 +29,9 @@ OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
     if ((facts.hasWeights()) && !Globals::Instance()->getOption("AllModels"))
         stream << "Best model: ";
 
-    stream << "{";
-
-    for (AnswerSet::const_iterator f = facts.begin();
-         f != facts.end();
-         ++f)
-    {
-        if (f != facts.begin())
-            stream << ", ";
-
-        (*f).print(stream, 0);
-    }
-
-    stream << "}" << std::endl;
+    RawPrintVisitor rpv(stream);
+    facts.accept(rpv);
+    stream << std::endl;
 
     if (facts.hasWeights())
     {

@@ -15,7 +15,7 @@
 #include <iostream>
 
 #include "dlvhex/Program.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 
 Program::Program()
@@ -83,35 +83,13 @@ Program::dump(std::ostream& out) const
     // dump is only for debugging and verbose. We don't want to dump the
     // higher-order rewriting
     //
-    bool higherOrder = 0;
+    RawPrintVisitor rpv(out);
 
-    for (const_iterator r = begin();
+    for (Program::const_iterator r = begin();
          r != end();
          ++r)
     {
-        for (RuleHead_t::const_iterator hl = (*r)->getHead().begin();
-                hl != (*r)->getHead().end();
-                ++hl)
-        {
-            if (hl != (*r)->getHead().begin())
-                out << " v ";
-            
-            (*hl)->print(out, higherOrder);
-        }
-
-        if ((*r)->getBody().size() > 0)
-            out << " :- ";
-            
-        for (RuleBody_t::const_iterator l = (*r)->getBody().begin();
-                l != (*r)->getBody().end();
-                ++l)
-        {
-            if (l != (*r)->getBody().begin())
-                out << ", ";
-            
-            (*l)->print(out, higherOrder);
-        }
-
-        out << "." << std::endl;
+      (*r)->accept(rpv);
+      out << std::endl;
     }
 }

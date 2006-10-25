@@ -14,6 +14,9 @@
 
 #include "dlvhex/Repository.h"
 
+// virtual dtor
+ProgramObject::~ProgramObject()
+{ }
 
 //
 // initialize static variable:

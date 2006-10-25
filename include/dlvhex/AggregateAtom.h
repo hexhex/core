@@ -97,16 +97,54 @@ public:
     virtual bool
     unifiesWith(const AtomPtr) const;
 
-    /**
-     * @brief Prints the aggregate.
-     *
-     * The aggregate is printed in its normal syntax to be understood by dlv.
-     * The higher-order switch is also used, because we have atoms in the
-     * aggregate's conjunction.
-     */
-    virtual std::ostream&
-    print(std::ostream&, const bool) const;
 
+    virtual void
+    accept(BaseVisitor&) const;
+
+
+    const RuleBody_t&
+    getBody() const
+    {
+      return body;
+    }
+
+
+    const Tuple&
+    getVars() const
+    {
+      return aggVars;
+    }
+
+
+    const std::string&
+    getType() const
+    {
+      return type;
+    }
+
+    const Term&
+    getLeft() const
+    {
+      return left;
+    }
+
+    const Term&
+    getRight() const
+    {
+      return right;
+    }
+
+    const std::string&
+    getCmpLeft() const
+    {
+      return cmpLeft;
+    }
+
+    const std::string&
+    getCmpRight() const
+    {
+      return cmpRight;
+    }
 
 private:
 

@@ -170,15 +170,11 @@ public:
 
 
     /**
-     * @brief Serialize the external atom.
-     *
-     * The higher order switch inherited from class Atom has no meaning here.
-     * An external atom is serialized as &name[a,b,...](X,Y,...).
+     * @brief accepts a visitor.
      */
-    virtual std::ostream&
-    print(std::ostream&, const bool) const;
+    virtual void
+    accept(BaseVisitor&) const;
 
-    
     /**
      * @brief Clone function. see Atom::clone.
      */

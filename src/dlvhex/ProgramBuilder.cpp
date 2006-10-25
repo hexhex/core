@@ -11,6 +11,8 @@
  */
 
 #include "dlvhex/ProgramBuilder.h"
+#include "dlvhex/PrintVisitor.h"
+#include <functional>
 
 
 ProgramBuilder::ProgramBuilder()
@@ -36,93 +38,39 @@ ProgramBuilder::clearString()
 
 ProgramDLVBuilder::ProgramDLVBuilder(bool ho)
     : ProgramBuilder(),
-      higherOrder(ho)
+      pv(ho ? new HOPrintVisitor(stream) : new DLVPrintVisitor(stream))
 { }
 
 
 ProgramDLVBuilder::~ProgramDLVBuilder()
-{ }
+{
+  delete pv;
+}
 
 
 void
 ProgramDLVBuilder::buildRule(const Rule* rule) // throw (???Error)
 {
-    for (RuleHead_t::const_iterator hl = rule->getHead().begin();
-         hl != rule->getHead().end();
-         ++hl)
-    {
-        if (hl != rule->getHead().begin())
-            stream << " v ";
-        
-        (*hl)->print(stream, higherOrder);
-    }
-
-    stream << " :- ";
-        
-    for (RuleBody_t::const_iterator l = rule->getBody().begin();
-         l != rule->getBody().end();
-         ++l)
-    {
-        if (l != rule->getBody().begin())
-            stream << ", ";
-        
-        (*l)->print(stream, higherOrder);
-    }
-
-    stream << "." << std::endl;
+  rule->accept(*pv);
 }
 
 
 void
 ProgramDLVBuilder::buildFacts(const AtomSet& facts) // throw (???Error)
 {
-    for (AtomSet::const_iterator f = facts.begin();
-         f != facts.end();
-         ++f)
-    {
-        (*f).print(stream, higherOrder);
-
-        stream << "." << std::endl;
-    }
+  facts.accept(*pv);
 }
-
-
-/*
-void
-ProgramDLVBuilder::buildFacts(const Interpretation& I) // throw (???Error)
-{
-    for (GAtomSet::const_iterator f = I.begin();
-         f != I.end();
-         f++)
-    {
-        (*f).print(stream, higherOrder);
-
-        stream << "." << std::endl;
-    }
-}
-*/
 
 
 void
 ProgramDLVBuilder::buildProgram(const Program& program)
 {
-//    const Rules& rules = program.getRules();
-
-    /*
-    for (Rules::const_iterator r = rules.begin();
-         r != rules.end();
-         r++)
-    {
-        buildRule(*r);
-    }
-    */
-
     /// @todo: stdlib algorithm instead of loop!
     for (Program::const_iterator r = program.begin();
          r != program.end();
          ++r)
     {
-        buildRule(*r);
+        (*r)->accept(*pv);
     }
 }
 

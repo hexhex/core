@@ -16,8 +16,8 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/Error.h"
-
-
+#include "dlvhex/BaseVisitor.h"
+#include "dlvhex/PrintVisitor.h"
 
 Atom::Atom()
 {
@@ -189,53 +189,18 @@ Atom::setAlwaysFO()
 }
 
 
-std::ostream&
-Atom::print(std::ostream& stream, const bool ho) const
+bool
+Atom::getAlwaysFO() const
 {
-    if (ho && !isAlwaysFO)
-    {
-        if (isStrongNegated)
-            stream << "-";
-
-        stream << "a_" << getArity() - 1;
-        
-        stream << "(";
-            
-        for (unsigned i = 0; i < getArity(); i++)
-        {
-            stream << getArgument(i);
-            
-            if (i < getArity() - 1)
-                stream << ",";
-        }
-        
-        stream << ")";
-    }
-    else
-    {
-        if (isStrongNegated)
-            stream << "-";
-
-        stream << getArgument(0);
-
-        if (getArity() > 1)
-        {
-            stream << "(";
-            
-            for (unsigned i = 1; i < getArity(); i++)
-            {
-                stream << getArgument(i);
-                
-                if (i < getArity() - 1)
-                    stream << ",";
-            }
-            
-            stream << ")";
-        }
-    }
-    return stream;
+    return isAlwaysFO;
 }
 
+
+void
+Atom::accept(BaseVisitor& v) const
+{
+  v.visitAtom(this);
+}
 
 
 bool
@@ -254,7 +219,9 @@ Atom::isGround() const
 std::ostream&
 operator<< (std::ostream& out, const Atom& atom)
 {
-    return atom.print(out, false);
+  RawPrintVisitor rpv(out);
+  atom.accept(rpv);
+  return out;
 }
 
 
@@ -319,7 +286,7 @@ Atom::operator< (const Atom& atom2) const
 
 
 
-BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, std::string& b)
+BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, const std::string& b)
 {
     arguments.push_back(Term(b));
     arguments.push_back(t1);
@@ -327,12 +294,10 @@ BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, std::string& b)
 }
 
 
-std::ostream&
-BuiltinPredicate::print(std::ostream& stream, const bool) const
+void
+BuiltinPredicate::accept(BaseVisitor& v) const
 {
-    return stream << this->arguments[1] 
-                  << this->arguments[0]
-                  << this->arguments[2];
+  v.visitBuiltinPredicate(this);
 }
 
 

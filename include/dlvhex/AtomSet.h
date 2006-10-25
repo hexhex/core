@@ -14,7 +14,7 @@
 #define _ATOMSET_H
 
 #include "dlvhex/Atom.h"
-
+#include "dlvhex/BaseVisitor.h"
 
 /**
  * @brief An AtomSet is a set of Atoms.
@@ -205,10 +205,10 @@ public:
     difference(AtomSet&) const;
 
     /**
-     * @brief Prints the atomset to the specified stream.
+     * @brief accepts a visitor.
      */
-    std::ostream&
-    print(std::ostream&, const bool) const;
+    void
+    accept(BaseVisitor&) const;
 
     /**
      * @brief Removes all Atoms from the atomset whose predicate match the specified string.

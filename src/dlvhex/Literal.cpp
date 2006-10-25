@@ -11,7 +11,8 @@
  */
 
 #include "dlvhex/Literal.h"
-
+#include "dlvhex/BaseVisitor.h"
+#include "dlvhex/PrintVisitor.h"
 
 Literal::Literal()
 { }
@@ -73,14 +74,17 @@ Literal::operator!= (const Literal& lit2) const
 }
 
 
-std::ostream&
-Literal::print(std::ostream& stream, const bool ho) const
+void
+Literal::accept(BaseVisitor& v) const
 {
-    if (isNAF())
-        stream << "not ";
-        
-    getAtom()->print(stream, ho);
-    
-    return stream;
+  v.visitLiteral(this);
 }
 
+
+std::ostream&
+operator<<(std::ostream& o, const Literal& l)
+{
+  RawPrintVisitor rpv(o);
+  l.accept(rpv);
+  return o;
+}

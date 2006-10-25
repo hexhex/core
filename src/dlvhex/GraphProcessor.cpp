@@ -24,7 +24,7 @@ void
 GraphProcessor::run(const AtomSet& in)
 {
     if (Globals::Instance()->getOption("Verbose"))
-        std::cout << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
+        std::cerr << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
 
     //
     // start with empty result set
@@ -76,7 +76,7 @@ GraphProcessor::run(const AtomSet& in)
                 current = sgresult;
 
                 if (Globals::Instance()->getOption("Verbose"))
-                    std::cout << "No leaf components" << std::endl;
+                    std::cerr << "No leaf components" << std::endl;
             }
             else
             {
@@ -109,7 +109,7 @@ GraphProcessor::run(const AtomSet& in)
                         current.clear();
 
                         if (Globals::Instance()->getOption("Verbose"))
-                            std::cout << "Leaf Component was inconsistent!" << std::endl;
+                            std::cerr << "Leaf Component was inconsistent!" << std::endl;
 
                         break;
                     }
@@ -194,7 +194,7 @@ GraphProcessor::run(const AtomSet& in)
                     // inconsistent!
                     //
                     if (Globals::Instance()->getOption("Verbose"))
-                        std::cout << "Program Component was inconsistent!" << std::endl;
+                        std::cerr << "Program Component was inconsistent!" << std::endl;
 
                     break;
                 }

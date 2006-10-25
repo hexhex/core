@@ -79,8 +79,11 @@ public:
     bool
     operator== (const Rule& rule2) const;
 
-    virtual std::ostream&
-    output(std::ostream& out) const;
+    /**
+     * @brief accepts a visitor.
+     */
+    virtual void
+    accept(BaseVisitor&) const;
 
 protected:
 
@@ -98,11 +101,8 @@ private:
 };
 
 
-inline std::ostream&
-operator<< (std::ostream& out, const Rule& rule)
-{
-  return rule.output(out);
-}
+std::ostream&
+operator<< (std::ostream& out, const Rule& rule);
 
 
 /**
@@ -135,8 +135,22 @@ public:
     bool
     operator== (const WeakConstraint&) const;
 
-    std::ostream&
-    output(std::ostream& out) const;
+//     std::ostream&
+//     output(std::ostream& out) const;
+    virtual void
+    accept(BaseVisitor&) const;
+
+    const Term&
+    getWeight() const
+    {
+      return weight;
+    }
+
+    const Term&
+    getLevel() const
+    {
+      return level;
+    }
 
 private:
 

@@ -22,7 +22,7 @@
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/helper.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 
 void
@@ -180,14 +180,16 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
     //
     std::string nms[nodes.size()];
 
+    std::ostringstream oss;
+    RawPrintVisitor rpv(oss);
+
     for (unsigned y = 0; y < nodes.size(); ++y)
     {
-        std::stringstream out;
-        out.str("");
+        oss.str("");
 
-        nodes[y]->getAtom()->print(out,0);
+        nodes[y]->getAtom()->accept(rpv);
 
-        std::string at(out.str());
+        std::string at(oss.str());
 
         helper::escapeQuotes(at);
 
@@ -250,13 +252,13 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
 
         if (Globals::Instance()->getOption("Verbose"))
         {
-            std::ofstream out;
+           std::ofstream out;
 
-            out.open(Globals::Instance()->lpfilename.c_str());
-            write_graphviz(out, G, make_label_writer(nms));
-            out.close();
+           out.open(Globals::Instance()->lpfilename.c_str());
+           write_graphviz(out, G, make_label_writer(nms));
+           out.close();
 
-            std::cout << "Graph written to " << Globals::Instance()->lpfilename << std::endl;
+           std::cerr << "Graph written to " << Globals::Instance()->lpfilename << std::endl;
         }
     }
 }

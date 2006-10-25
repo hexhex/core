@@ -89,14 +89,13 @@ public:
     operator!= (const Literal& lit2) const;
 
     /**
-     * @brief Serializes the literal.
-     *
-     * If the second argument is set to true, the literal is serialized in higher
-     * order syntax, i.e., with its predicate symbol as an argument and a generic
-     * new predicate symbol according to the number of its arguments.
+     * @brief accepts a visitor.
      */
-    std::ostream&
-    print(std::ostream&, const bool) const;
+    virtual void
+    accept(BaseVisitor&) const;
+
+    friend std::ostream&
+    operator<<(std::ostream&, const Literal&);
 
 private:
 
@@ -110,6 +109,10 @@ private:
  * A rule body is a conjunction of literals.
  */
 typedef std::vector<Literal*> RuleBody_t;
+
+
+std::ostream&
+operator<<(std::ostream&, const Literal&);
 
 
 #endif /* _LITERAL_H */

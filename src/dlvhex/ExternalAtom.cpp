@@ -14,13 +14,14 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <iterator>
 
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Registry.h"
-
+#include "dlvhex/BaseVisitor.h"
 
 ExternalAtom::ExternalAtom()
 {
@@ -410,23 +411,11 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
     return true;
 }
 
-std::ostream&
-ExternalAtom::print(std::ostream& out, const bool ho) const
+void
+ExternalAtom::accept(BaseVisitor& v) const
 {
-    //
-    // the replacement atom contains both the input and the output list
-    //
-
-    Tuple replacementArgs(inputList);
-
-    replacementArgs.insert(replacementArgs.end(), arguments.begin(), arguments.end());
-
-    Atom tmp(getReplacementName(), replacementArgs);
-
-    tmp.print(out, ho);
-
-    return out;
-}   
+  v.visitExternalAtom(this);
+}
 
 
 unsigned ExternalAtom::uniqueNumber = 0;

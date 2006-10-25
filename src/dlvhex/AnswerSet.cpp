@@ -11,7 +11,7 @@
  */
 
 #include "dlvhex/AnswerSet.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 
 
@@ -269,5 +269,8 @@ AnswerSet::getMaxLevel()
 std::ostream&
 operator<< (std::ostream& out, const AnswerSet& atomset)
 {
-    return atomset.print(out, false);
+    ///@todo maybe we could add the weight handling to a visiting method
+    RawPrintVisitor rpv(out);
+    atomset.accept(rpv);
+    return out;
 }

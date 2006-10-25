@@ -20,16 +20,26 @@
 //#include "dlvhex/AtomSet.h"
 #include "boost/shared_ptr.hpp"
 
+//
+// forward declaration
+//
+class BaseVisitor;
 
 
 /**
- * @brief Abstract base class for all objects that are part of a program and
- * dynamically created.
+ * @brief Abstract base class for all objects that are part of a
+ * program and dynamically created.
  */
 class ProgramObject
 {
 protected:
     ProgramObject() {}
+public:
+    virtual
+    ~ProgramObject();
+
+    virtual void
+    accept(BaseVisitor&) const = 0;
 };
 
 

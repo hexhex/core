@@ -18,7 +18,7 @@
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Registry.h"
-
+#include "dlvhex/PrintVisitor.h"
 
 
 Rule::Rule(const RuleHead_t& head,
@@ -130,40 +130,20 @@ Rule::operator== (const Rule& rule2) const
 }
 
 
-std::ostream&
-Rule::output(std::ostream& out) const
+void
+Rule::accept(BaseVisitor& v) const
 {
-  if (!getHead().empty()) // output head
-    {
-      for (RuleHead_t::const_iterator hl = getHead().begin();
-	   hl != getHead().end() - 1;
-	   ++hl)
-	{
-	  (*hl)->print(out, 0);
-	  out << " v ";
-	}
-
-      getHead().back()->print(out, 0);
-    }
-
-  if (!getBody().empty()) // output body with leading " :- "
-    {
-      out << " :- ";
-            
-      for (RuleBody_t::const_iterator l = getBody().begin();
-	   l != getBody().end() - 1;
-	   ++l)
-	{
-	  (*l)->print(out, 0);
-	  out << ", ";
-	}
-
-      getBody().back()->print(out, 0);
-    }
-
-  return out << '.';
+  v.visitRule(this);
 }
 
+
+std::ostream&
+operator<< (std::ostream& out, const Rule& rule)
+{
+  RawPrintVisitor rpv(out);
+  rule.accept(rpv);
+  return out;
+}
 
 
 WeakConstraint::WeakConstraint(const RuleBody_t& b,
@@ -225,23 +205,8 @@ WeakConstraint::operator== (const WeakConstraint& wc2) const
 }
 
 
-std::ostream&
-WeakConstraint::output(std::ostream& out) const
+void
+WeakConstraint::accept(BaseVisitor& v) const
 {
-  if (!getBody().empty()) // output body with leading ":~ "
-    {
-      out << ":~ ";
-            
-      for (RuleBody_t::const_iterator l = getBody().begin();
-	   l != getBody().end() - 1;
-	   ++l)
-	{
-	  (*l)->print(out, 0);
-	  out << ", ";
-	}
-
-      getBody().back()->print(out, 0);
-    }
-
-  return out << ". [" << weight << ':' << level << ']';
+  v.visitWeakConstraint(this);
 }

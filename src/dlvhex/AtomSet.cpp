@@ -210,24 +210,10 @@ AtomSet::matchAtom(const AtomPtr& atom,
 }
 
 
-std::ostream&
-AtomSet::print(std::ostream& stream, const bool ho) const
+void
+AtomSet::accept(BaseVisitor& v) const
 {
-    stream << "{";
-
-    for (atomset_t::const_iterator a = atoms.begin();
-         a != atoms.end();
-         a++)
-    {
-        if (a != atoms.begin())
-            stream << ", ";
-
-        (*a)->print(stream, ho);
-    }
-
-    stream << "}";
-
-    return stream;
+  v.visitAtomSet(this);
 }
 
 
