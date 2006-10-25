@@ -38,6 +38,15 @@ public:
     virtual
     ~ProgramObject();
 
+    /// The accept method is part of the visitor pattern and used to
+    /// double dispatch the correct type of the child, i.e. if someone
+    /// calls accept on a subclass Atom with BaseVisitor v,
+    /// Atom::accept() will call v.visitAtom(this) and v can decide
+    /// what to do. This is useful in situation where we have an Atom*
+    /// pointer to a ExternalAtom object and want to pretty print the
+    /// ExternalAtom in its different representations (say in raw,
+    /// first order or higher order mode). For each representation
+    /// form we implement the corresponding concrete Visitor class.
     virtual void
     accept(BaseVisitor&) const = 0;
 };

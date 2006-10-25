@@ -5,7 +5,7 @@
  * @author Thomas Krennwallner
  * @date   Mon Oct 23 18:16:28 2006
  * 
- * @brief  The Base for Visitors.
+ * @brief  The baseclass for all Visitors.
  * 
  * 
  */
@@ -29,6 +29,10 @@ class AggregateAtom;
 
 /**
  * @brief The baseclass for all visitors.
+ *
+ * When calling the accept(BaseVisitor&) method of an object, the
+ * object knows its own type and calls the corresponding visiting
+ * method of BaseVisitor.
  */
 class BaseVisitor
 {

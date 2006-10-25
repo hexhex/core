@@ -65,8 +65,14 @@ public:
 
 
 /**
-* @brief A Builder for programs to be evaluated with DLV.
-*/
+ * @brief A Builder for programs to be evaluated with DLV.
+ *
+ * Uses a DLVPrintVisitor (in first order mode) or a HOPrintVisitor
+ * (in higher order mode) for building logic programs.
+ *
+ * @todo This whole builder could be effectively replaced by the
+ * corresponding visitors.
+ */
 class ProgramDLVBuilder : public ProgramBuilder
 {
 public:
