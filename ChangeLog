@@ -1,5 +1,14 @@
 2006-10-27  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
+	* src/dlvhex/ExternalAtom.cpp (findPluginAtom): Added function to check
+	external atom parameters. Removed checks from constructor.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Call check after construction of external
+	atom.
+
+2006-10-27  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
 	* doxygen.am: Updating and improving doxygen output.
 	* doxygen.cfg: Likewise.
 	* include/dlvhex/ASPsolver.h: Likewise.

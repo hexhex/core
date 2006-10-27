@@ -53,36 +53,7 @@ ExternalAtom::ExternalAtom(const std::string& name,
       line(line)
 {
     //
-    // set parent class type
-    //
-
-    std::ostringstream errorstr;
-
-    //
-    // first, get respective PluginAtom object
-    //
-    pluginAtom = PluginContainer::Instance()->getAtom(functionName);
-    
-    if (pluginAtom == 0)
-    {
-        throwSourceError("function " + functionName + " unknown");
-    }
-
-    //
-    // is the desired arity equal to the parsed arity?
-    //
-    if ((*pluginAtom).getInputArity() != inputList.size())
-    {
-        throwSourceError("arity mismatch in function " + functionName);
-    }
-    
-    if ((*pluginAtom).getOutputArity() != getArity())
-    {
-        throwSourceError("arity mismatch in function " + functionName);
-    }
-    
-    //
-    // make replacement name
+    // make replacement name, unique for each extatom
     //
     std::stringstream ss;
     ss << functionName << "_" << uniqueNumber;
@@ -94,31 +65,11 @@ ExternalAtom::ExternalAtom(const std::string& name,
     //
     Term::registerAuxiliaryName(replacementName);
 
-    //
-    // build input list
-    //
     bool inputIsGround(1);
 
     for (unsigned s = 0; s < inputList.size(); s++)
-    {
-        const Term inputTerm = inputList[s];
-
-        if (inputTerm.isVariable())
-        {
+        if (inputList[s].isVariable())
             inputIsGround = 0;
-
-            //
-            // at the moment, we don't allow variable predicate input arguments:
-            //
-            if (pluginAtom->getInputType(s) == PluginAtom::PREDICATE)
-            {
-                errorstr << "Line " << line << ": "
-                        << "Variable predicate input arguments not allowed (yet)";
-
-                throw FatalError(errorstr.str());
-            }
-        }
-    }
 
     //
     // build auxiliary predicate
@@ -136,13 +87,55 @@ ExternalAtom::ExternalAtom(const std::string& name,
         Term::registerAuxiliaryName(auxPredicate);
     }
 
-    
     //
-    // if we got here, the syntax is fine!
+    // increase absolute extatom counter
     //
-
     uniqueNumber++;
+}
 
+
+void
+ExternalAtom::findPluginAtom()
+{
+    std::ostringstream errorstr;
+
+    //
+    // first, get respective PluginAtom object
+    //
+    this->pluginAtom = PluginContainer::Instance()->getAtom(functionName);
+    
+    if (pluginAtom == 0)
+        throwSourceError("function " + functionName + " unknown");
+
+    //
+    // is the desired arity equal to the parsed arity?
+    //
+    if (this->pluginAtom->getInputArity() != inputList.size())
+        throwSourceError("arity mismatch in function " + functionName);
+    
+    if (this->pluginAtom->getOutputArity() != getArity())
+        throwSourceError("arity mismatch in function " + functionName);
+    
+    bool inputIsGround(1);
+
+    for (unsigned s = 0; s < inputList.size(); s++)
+    {
+        if (inputList[s].isVariable())
+        {
+            inputIsGround = 0;
+
+            //
+            // at the moment, we don't allow variable predicate input arguments:
+            //
+            if (this->pluginAtom->getInputType(s) == PluginAtom::PREDICATE)
+            {
+                errorstr << "Line " << line << ": "
+                        << "Variable predicate input arguments not allowed (yet)";
+
+                throw FatalError(errorstr.str());
+            }
+        }
+    }
 }
 
 

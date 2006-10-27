@@ -799,6 +799,8 @@ external_atom:
             //
             $$ = new ExternalAtom(*$2, *$6, *$4, (@1.end-1).line);
 
+            $$->findPluginAtom();
+
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.

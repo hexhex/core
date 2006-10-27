@@ -33,11 +33,24 @@ public:
 
     /**
      * @brief Constructor.
+     *
+     * The constructor does not check the parameters - this is done only in
+     * findPluginAtom(), where we actually associate the parsed external atom
+     * with the atom-object provided by the plugin.
      */
     ExternalAtom(const std::string& name,
                  const Tuple& params,
                  const Tuple& input,
                  const unsigned line);
+
+    /**
+     * Associates the parsed atom with a PluginAtom.
+     *
+     * Checks also if the atom has correct syntax according to its specification
+     * in the plugin (arities of input and output).
+     */
+    void
+    findPluginAtom();
 
     /**
      * @brief Throws an Inputerror Exception.
