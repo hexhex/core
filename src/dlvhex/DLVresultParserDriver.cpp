@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   ParserDriver.cpp
+ * @file   DLVresultParserDriver.cpp
  * @author Roman Schindlauer
  * @date   Wed Mar 22 14:38:53 CET 2006
  * 

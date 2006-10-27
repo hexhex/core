@@ -1,3 +1,21 @@
+2006-10-27  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* doxygen.am: Updating and improving doxygen output.
+	* doxygen.cfg: Likewise.
+	* include/dlvhex/ASPsolver.h: Likewise.
+	* include/dlvhex/AggregateAtom.h: Likewise.
+	* include/dlvhex/DLVresultParserDriver.h: Likewise.
+	* include/dlvhex/HexParserDriver.h: Likewise.
+	* include/dlvhex/Term.h: Likewise.
+	* src/dlvhex/ASPsolver.cpp: Likewise.
+	* src/dlvhex/Component.cpp (evaluate): Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/HexParserDriver.cpp: Likewise.
+	* src/dlvhex/OutputBuilder.cpp: Likewise.
+	* src/dlvhex/PluginInterface.cpp: Likewise.
+	* src/dlvhex/Term.cpp (Term): Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
 2006-10-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/BaseVisitor.h: Add doxygen doc.

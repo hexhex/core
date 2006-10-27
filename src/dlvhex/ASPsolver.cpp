@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   dlvhex.cpp
+ * @file   ASPsolver.cpp
  * @author Roman Schindlauer
  * @date   Tue Nov 15 17:29:45 CET 2005
  * 

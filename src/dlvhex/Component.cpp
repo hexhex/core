@@ -319,7 +319,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         // important: the component result must include also its input
         // (like the EDB, that is always included in the result). This
         // is due to our graphprocessor algorithm.
-        /// @TODO: think about this!
+        /// @todo think about this!
         //
         res.insert(*in);
 

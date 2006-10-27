@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   dlvhex.cpp
+ * @file   ASPsolver.h
  * @author Roman Schindlauer
  * @date   Tue Nov 15 17:29:45 CET 2005
  * 
@@ -34,7 +34,8 @@ public:
     /**
      * @brief Calls the answer set solver with a program.
      * 
-     * @param noEDB include the program's facts in the result(s).
+     * @param prg The actual program.
+     * @param noEDB If true, then the result will not contain the program's EDB.
      *
      * The result will be stored within the class and can be retrieved by
      * getNextAnswerSet().  Currently, though the solver command can be set at

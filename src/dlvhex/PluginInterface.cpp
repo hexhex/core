@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   PluginAtom.cpp
+ * @file   PluginInterface.cpp
  * @author Roman Schindlauer
  * @date   Mon Oct 17 14:37:07 CEST 2005
  * 

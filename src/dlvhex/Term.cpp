@@ -40,7 +40,7 @@ Term::Term(const Term& term2)
 }
 
 
-Term::Term(const std::string& name, bool isString)
+Term::Term(const std::string& name, bool addQuotes)
 {
     if (name[0] == '\"')
     {
@@ -50,7 +50,7 @@ Term::Term(const std::string& name, bool isString)
     }
     else
     {
-        if (isString)
+        if (addQuotes)
         {
             constantString = names.insert("\"" + name + "\"");
             type = STRING;
@@ -75,7 +75,7 @@ Term::Term(const std::string& name, bool isString)
 }
 
 
-Term::Term(const char* name, bool isString)
+Term::Term(const char* name, bool addQuotes)
 {
     if (name[0] == '\"')
     {
@@ -86,7 +86,7 @@ Term::Term(const char* name, bool isString)
     }
     else
     {
-        if (isString)
+        if (addQuotes)
         {
             //constantString = names.insert((std::string)name);
             constantString = names.insert("\"" + (std::string)name + "\"");

@@ -25,6 +25,7 @@
 
 
 /**
+ * Term is the most basic one of 
  * A Term can be a variable, constant or null constant. A constant is either
  * a number, a symbol (alphanumeric character sequence) or a string (= quoted symbol).
  */
@@ -34,6 +35,12 @@ public:
     
     /**
      * @brief Type of the term.
+     *
+     * An INTEGER is a number. A SYMBOL is a string containing only [a-zA-Z_0-9]
+     * and strarting with a lowercase letter. A STRING is a double-quoted array of
+     * characters, whithin the quotes everything is permitted. A VARIABLE is
+     * defined like a constant, except for beginning with an uppercase letter. A
+     * NULLCONST is an anonymous term.
      */
     typedef enum { INTEGER, SYMBOL, STRING, VARIABLE, NULLCONST } Type;
 
@@ -50,17 +57,19 @@ public:
     /**
      * @brief Creates a constant string term.
      *
-     * If the second Parameter is true, the
-     * string will be quoted (if not already quoted) and the type of the term
-     * will be 'STRING'. Otherwise it is a 'SYMBOL', if the first character
-     * is lowercase, or a 'VARIABLE' if uppercase.
+     * @param addQuotes If true, then the string will be quoted, but only if it
+     * is not already a quoted string.
+     *
+     * If the passed string is quoted or the flag addQuotes is true, then the
+     * type of the term will be STRING.  Otherwise it is of type SYMBOL, if the
+     * first character is lowercase, or of type VARIABLE if uppercase.
      */
-    Term(const std::string&, bool isString = false); 
+    Term(const std::string&, bool addQuotes = false); 
 
     /**
-     * @brief Same as Term(const string name, bool isString = false).
+     * @brief Same as the Term constructor with std::string.
      */
-    Term(const char*, bool isString = false); 
+    Term(const char*, bool addQuotes = false); 
 
     /**
      * @brief Creates a constant integer term. Type will be 'INTEGER'.
@@ -104,16 +113,20 @@ public:
     isAnon() const;
 
     /**
-     * Returns the symbol string, if the constant is of type 'SYMBOL'.
-     * In case of a 'STRING' constant, the quoted string is returned.
+     * Returns the string of the term.
+     *
+     * Returns the symbol string, if the constant is of type SYMBOL.
+     * In case of a STRING constant, the quoted string is returned.
      * other term types cause an assertion to fail.
      */
     const std::string&
     getString() const; 
 
     /**
-     * Returns a string without quotes. The term needs to be of type 'Constant'
-     * or 'String'.
+     * Returns a string without quotes.
+     *
+     * The term needs to be of type CONSTANT or STRING. A CONSTANT is returned
+     * as is, a STRING is returned with stripped quotes.
      */
     inline std::string
     getUnquotedString() const
@@ -124,29 +137,32 @@ public:
     }
 
     /**
-     * Returns the constant integer. If the term is not of type 'INTEGER', an
-     * assertion fails.
+     * Returns the constant integer.
+     *
+     * If the term is not of type INTEGER, an assertion fails.
      */
     int
     getInt() const;
 
     /**
      * Returns the original variable identifier the term was constructed with.
-     * If the term is not of type 'VARIABLE', an assertion fails.
+     *
+     * If the term is not of type VARIABLE, an assertion fails.
      */
     const std::string&
     getVariable() const;
 
     /**
-     * @brief TODO: do we need this?
+     * @todo do we need this?
      */
     bool
     isNull() const; 
     
     /**
      * Tests for unification with another term.
+     *
      * Two variables unify, as well as one variable and one constant.
-     * Two constants unify, if they are equal.
+     * Two constants or strings unify, if they are equal and of same type.
      */
     bool
     unifiesWith(const Term&) const;
@@ -157,35 +173,58 @@ public:
     Term
     &operator= (const Term&);
 
+    /**
+     * Comparison function for two terms.
+     *
+     * The passed term2 is compared with *this. If *this and term2 have
+     * different types, a value != 0 is returned.  In case both terms are
+     * INTEGER, *this - term2 is returned. If both are STRING or CONSTANT, 0 is
+     * returned if the strings are equal and a value != 0 otherwise
+     * (lexicographical comparison through std::string::compare() with term2 as
+     * argument). If both
+     * terms are VARIABLE, the result of the std::string::cmp() function is
+     * returned, with term2 as argument, i.e. the variable identifiers are
+     * lexicographically compared.
+     */
     int
-    compare(const Term&) const;
+    compare(const Term& term2) const;
 
     /**
      * Inequality operator.
+     *
      * Two terms are not equal, if they are of different type, or if their
      * constants (numbers, strings, variables or symbols) differ.
+     *
+     * @see Term::compare()
      */
     bool
     operator!= (const Term&) const;  
 
     /**
      * Equality operator, compares two terms. Returns the negation of !=.
+     *
+     * @see Term::compare()
      */
     bool
     operator== (const Term&) const; 
 
     /**
      * Another equality operator, which first constructs a term of a given string
-     * (see constructor) and then compares the two terms.
+     * and then compares the two terms.
+     *
+     * @see Term::Term(const std::string&, bool addQuotes = false), Term::compare()
      */
     bool
     operator== (const std::string&) const; 
 
     /**
-     * Less-than operator. If the terms are of different type, the operator retuns
-     * true. For two integer terms, it works as expected. Strings and symbols are
-     * compared lexicographically. Variables are always equal (TODO: is this the right
-     * behaviour??)
+     * Less-than operator.
+     *
+     * If the terms are of different type, the operator returns true. For two
+     * integer terms, it works as expected. Strings, symbols and variables are
+     * compared lexicographically.
+     *
+     * @see Term::compare()
      */
     bool
     operator< (const Term&) const;
@@ -273,15 +312,18 @@ private:
 
 
 /**
- * Serializes a term. For a variable term, the original variable symbol is used.
- * A symbol, string and variable term is serialized as expected.
+ * Serializes a term.
+ *
+ * For a variable term, the original variable symbol is used.
+ * A symbol, string and integer term is serialized as expected. A NULLCONST
+ * (anonymous variable) is serialized as '_'.
  */
 std::ostream&
 operator<< (std::ostream&, const Term&);
 
 
 /**
- * A Tuple is a vector of terms.
+ * A Tuple is a std::vector of terms.
  */
 typedef std::vector<Term> Tuple;
 

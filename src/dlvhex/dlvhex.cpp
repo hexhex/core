@@ -11,7 +11,15 @@
 
 /** @mainpage dlvhex Source Documentation
  *
- * TODO
+ * To the developer of a plugin, the documentation of the following classes are
+ * most relevant:
+ * - Term
+ * - Atom
+ * - AtomSet
+ * - PluginAtom
+ * - PluginAtom::Query
+ * - PluginAtom::Answer
+ * - PluginInterface
  *
  */
 

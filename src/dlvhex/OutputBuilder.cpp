@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   OoutputBuilder.cpp
+ * @file   OutputBuilder.cpp
  * @author Roman Schindlauer
  * @date   Mon Feb 20 14:33:28 CET 2006
  * 

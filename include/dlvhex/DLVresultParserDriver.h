@@ -1,7 +1,7 @@
 /* -*- C++ -*- */
 
 /**
- * @file   ParserDriver.h
+ * @file   DLVresultParserDriver.h
  * @author Roman Schindlauer
  * @date   Wed Mar 22 14:39:32 CET 2006
  * 

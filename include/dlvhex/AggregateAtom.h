@@ -40,14 +40,14 @@ public:
      * The constructor only builds the aggregate itself, the actual comparison
      * operator and the other term(s) of the comparison are parsed later.
      *
-     * @params:
-     * Type of the aggregate.
-     * Variables to aggregate on.
-     * Atom conjunction of the aggregate.
+     * @param aggtype Type of the aggregate (this is basically just the
+     * aggregate's name that will be passed on to dlv).
+     * @param vars Variables to aggregate on.
+     * @param conj Atom conjunction of the aggregate.
      */
-    AggregateAtom(const std::string&,
-                  const Tuple&,
-                  const RuleBody_t&);
+    AggregateAtom(const std::string& aggtype,
+                  const Tuple& vars,
+                  const RuleBody_t& conj);
 
     /**
      * Sets the comparison operator(s).
