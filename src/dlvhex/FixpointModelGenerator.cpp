@@ -180,14 +180,6 @@ FixpointModelGenerator::compute(const Program& program,
              a != extatoms.end();
              a++)
         {
-            //
-            // TODO: if one of the input parameters is a variable, we have
-            // to evaluate the rest of the body first, and then replace the
-            // variable by the resulting constant.
-            //
-            // now: take input list as it is.
-            //
-
             try
             {
                 (*a)->evaluate(currentI,

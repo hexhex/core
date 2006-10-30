@@ -11,6 +11,8 @@
 
 /** @mainpage dlvhex Source Documentation
  *
+ * \section intro_sec Overview
+ *
  * To the developer of a plugin, the documentation of the following classes are
  * most relevant:
  * - Term
@@ -20,7 +22,6 @@
  * - PluginAtom::Query
  * - PluginAtom::Answer
  * - PluginInterface
- *
  */
 
 

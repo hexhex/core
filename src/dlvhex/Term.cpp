@@ -119,7 +119,7 @@ Term::Term(const int& num)
 }
 
 
-Term::Type Term::getType() const
+Term::TermType Term::getType() const
 {
     return type;
 } 
