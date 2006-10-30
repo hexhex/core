@@ -18,16 +18,31 @@
 #include <iostream>
 #include <string>
 #include <vector>
-//#include <set>
-//#include <map>
 
 #include "dlvhex/NamesTable.h"
 
 
 /**
- * Term is the most basic one of 
+ * Class representing a term.
+ *
  * A Term can be a variable, constant or null constant. A constant is either
  * a number, a symbol (alphanumeric character sequence) or a string (= quoted symbol).
+ * A null constant is a "don't care" term.
+ * The type is determined by the constructor when a Term object is created (see
+ * Term::TermType).
+ *
+ * Examples of predicates with different term types:
+ *
+ * <table style="border: 0;"> 
+ * <tr><td>p(4)</td><td>4 is a number term.</td></tr>
+ * <tr><td>q("42")</td><td>	"42" is a string term.</td></tr>
+ * <tr><td>foo("$% \"a\\"")</td><td>"$% \"a\\"" is a string term.</td></tr>
+ * <tr><td>bar(name)</td><td>name is a constant term.</td></tr>
+ * <tr><td>f(Name,s)</td><td>Name is a variable term, s is a constant
+ * term.</td></tr>
+ * <tr><td>g(X,Y,_)</td><td>X and Y are variable terms, _ is a null
+ * constant.</td></tr>
+ * </table>
  */
 class Term
 {
@@ -42,15 +57,20 @@ public:
      * defined like a constant, except for beginning with an uppercase letter. A
      * NULLCONST is an anonymous term.
      */
-    typedef enum { INTEGER, SYMBOL, STRING, VARIABLE, NULLCONST } Type;
+    typedef enum { INTEGER, SYMBOL, STRING, VARIABLE, NULLCONST } TermType;
 
     /**
      * @brief Default Constructor.
+     *
+     * The default constructor creates a term of type NULLCONST.
      */
     Term();
 
     /**
      * Copy constructor.
+     *
+     * The copy constructor behaves as expected, creating an exact copy of a
+     * term.
      */
     Term(const Term&);
 
@@ -62,7 +82,8 @@ public:
      *
      * If the passed string is quoted or the flag addQuotes is true, then the
      * type of the term will be STRING.  Otherwise it is of type SYMBOL, if the
-     * first character is lowercase, or of type VARIABLE if uppercase.
+     * first character is lowercase, or of type VARIABLE if uppercase. In order
+     * to create a null constant term, use the default constructor Term().
      */
     Term(const std::string&, bool addQuotes = false); 
 
@@ -79,7 +100,7 @@ public:
     /**
      * @brief Returns the Type of the term.
      */
-    Type
+    TermType
     getType() const;
 
     /**
@@ -117,7 +138,7 @@ public:
      *
      * Returns the symbol string, if the constant is of type SYMBOL.
      * In case of a STRING constant, the quoted string is returned.
-     * other term types cause an assertion to fail.
+     * Other term types will raise a failed assertion.
      */
     const std::string&
     getString() const; 
@@ -145,7 +166,7 @@ public:
     getInt() const;
 
     /**
-     * Returns the original variable identifier the term was constructed with.
+     * Returns the variable identifier the term was constructed with.
      *
      * If the term is not of type VARIABLE, an assertion fails.
      */
@@ -153,7 +174,7 @@ public:
     getVariable() const;
 
     /**
-     * @todo do we need this?
+     * Returns 1 if the term is if type NULLCONST.
      */
     bool
     isNull() const; 
@@ -163,6 +184,7 @@ public:
      *
      * Two variables unify, as well as one variable and one constant.
      * Two constants or strings unify, if they are equal and of same type.
+     * A null constant unifies with every other term.
      */
     bool
     unifiesWith(const Term&) const;
@@ -182,7 +204,7 @@ public:
      * returned if the strings are equal and a value != 0 otherwise
      * (lexicographical comparison through std::string::compare() with term2 as
      * argument). If both
-     * terms are VARIABLE, the result of the std::string::cmp() function is
+     * terms are VARIABLE, the result of the std::string::compare() function is
      * returned, with term2 as argument, i.e. the variable identifiers are
      * lexicographically compared.
      */
@@ -201,7 +223,8 @@ public:
     operator!= (const Term&) const;  
 
     /**
-     * Equality operator, compares two terms. Returns the negation of !=.
+     * Equality operator, compares two terms. Returns the negation of
+     * Term::operator!=.
      *
      * @see Term::compare()
      */
@@ -236,7 +259,7 @@ public:
     operator<= (const Term&) const;
 
     /**
-     * @brief Greater-than operator (see Less-than operator).
+     * @brief Greater-than operator.
      */
     bool
     operator> (const Term&) const;
@@ -280,7 +303,7 @@ private:
     /**
      * Type of the Term.
      */
-    Type type;
+    TermType type;
 
     /**
      * Reference to the constant in the global names table if the Term is a
