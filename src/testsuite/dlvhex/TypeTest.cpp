@@ -129,7 +129,7 @@ AtomTest::testUnification()
     //
     CPPUNIT_ASSERT((*fo).unifiesWith(a));
     CPPUNIT_ASSERT(!(*ho).unifiesWith(a));
-    
+
     AtomPtr b(new Atom("n(foo,t,s)"));
     
     //

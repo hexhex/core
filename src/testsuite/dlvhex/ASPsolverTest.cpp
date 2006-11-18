@@ -39,7 +39,6 @@ ASPsolverTest::tearDown()
 void
 ASPsolverTest::testExecution()
 {
-    std::cout << std::endl << "Testing ASPsolver execution" << std::endl;
     //
     // fatal error:
     //
@@ -59,8 +58,6 @@ ASPsolverTest::testExecution()
 void
 ASPsolverTest::testResult()
 {
-    std::cout << std::endl << "Testing ASPsolver result" << std::endl;
-
     std::string prg;
     AtomSet *as;
 

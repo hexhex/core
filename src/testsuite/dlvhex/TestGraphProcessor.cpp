@@ -79,30 +79,30 @@ TestGraphProcessor::testSimple()
     RuleHead_t h1, h2, h3, h4, h5, h6;
     RuleBody_t b1, b2, b3, b4, b5, b6;
 
-    h1.push_back(aX);
+    h1.insert(aX);
     Literal lbX(bX, 1);
-    b1.push_back(&lbX);
+    b1.insert(&lbX);
     Literal lpX(pX);
-    b1.push_back(&lpX);
+    b1.insert(&lpX);
 
-    h2.push_back(bZ);
+    h2.insert(bZ);
     Literal laZ(aZ, 1);
-    b2.push_back(&laZ);
+    b2.insert(&laZ);
     Literal lpZ(pZ);
-    b2.push_back(&lpZ);
+    b2.insert(&lpZ);
 
-    h3.push_back(pX);
+    h3.insert(pX);
     Literal lqX(qX);
-    b3.push_back(&lqX);
+    b3.insert(&lqX);
 
-    h4.push_back(qa);
-    h4.push_back(qb);
+    h4.insert(qa);
+    h4.insert(qb);
 
     Literal laa(aa);
-    b5.push_back(&laa);
+    b5.insert(&laa);
 
     Literal lbb(bb);
-    b6.push_back(&lbb);
+    b6.insert(&lbb);
     
     std::vector<Rule*> rules;
     
@@ -124,9 +124,11 @@ TestGraphProcessor::testSimple()
 
     AtomSet facts;
 
+	NodeGraph ng;
     GraphBuilder gb;
+	gb.run(prog,ng);
     ComponentFinder* cf = new BoostComponentFinder;
-    DependencyGraph dg(prog, &gb, cf);
+    DependencyGraph dg(ng, cf);
 
     GraphProcessor gp(&dg);
     
