@@ -1,3 +1,75 @@
+2006-11-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* configure.ac: Bumped version to 1.4.
+
+	* include/dlvhex/Atom.h: Documentation.
+
+	* include/dlvhex/AtomNode.h: Introduced shared AtomNodePtr.
+	* src/dlvhex/AtomNode.cpp: Likewise
+	* include/dlvhex/BoostComponentFinder.h: Likewise.
+	* include/dlvhex/Component.h: Likewise.
+	* src/dlvhex/Component.cpp: Likewise.
+	* include/dlvhex/ComponentFinder.h: Likewise.
+	* src/dlvhex/ComponentFinder.cpp: Likewise.
+	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
+	* include/dlvhex/ModelGenerator.h: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise. 
+	* src/dlvhex/OrdinaryModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/GraphBuilder.cpp (run): Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Likewise.
+
+	* include/dlvhex/DependencyGraph.h: Moved GraphBuilder out of Constructor.
+	Introduced AtomNodePtr.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+
+	* include/dlvhex/ExternalAtom.h: Documentation.
+
+	* include/dlvhex/Literal.h: Changed RuleBody_t to std::set. Documentation.
+
+	* include/dlvhex/PluginInterface.h: Split Rewriter into Converter,
+	Rewriter and Optimizer. Documentation.
+
+	* include/dlvhex/PrintVisitor.h: added getStream().
+
+	* include/dlvhex/Program.h: Changed ruleset_t to std::set. Documentation.
+
+	* include/dlvhex/Registry.h: Added comment.
+
+	* include/dlvhex/Repository.h: Added comment.
+
+	* include/dlvhex/Rule.h: Changed RuleHead_t to std::set. Documentation.
+
+	* include/dlvhex/Term.h: Documentation.
+
+	* include/dlvhex/globals.h: Added verbose-types.
+	* src/dlvhex/globals.cpp: Likewise.
+
+	* src/dlvhex/ExternalAtom.cpp: Corrected error in atom construction.
+
+	* src/dlvhex/HexParser.ypp: Changed push_back to insert for heads and
+	bodies.
+
+	* src/dlvhex/Literal.cpp (operator): Added less-than operator.
+
+	* src/dlvhex/OutputBuilder.cpp (buildAnswerSet): Corrected tuple-output
+	arity.
+
+	* src/dlvhex/PrintVisitor.cpp: Adapted
+	output loops to std::set instead of std::vector (heads and bodies).
+
+	* src/dlvhex/Program.cpp: Adapted constructor to std::set (body).
+
+	* src/dlvhex/Rule.cpp: less-than operator for Rule and RuleHead_t.
+
+	* src/dlvhex/dlvhex.cpp: Introduced Converter-calls and Optimizer-calls.
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Removed verbose output.
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Adpated to new head and
+	body containers. 
+
+	* src/testsuite/dlvhex/TestSuite.cpp: Modified type of outputter.
+
 2006-10-30  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Turn off ps-documentation per default.
