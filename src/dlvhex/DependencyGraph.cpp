@@ -28,48 +28,23 @@ DependencyGraph::DependencyGraph()
 */
 
 
-DependencyGraph::DependencyGraph(Program& program,
-                                GraphBuilder* gb,
-                                ComponentFinder* cf)
-    : componentFinder(cf)
+DependencyGraph::DependencyGraph(const NodeGraph& ng,
+                                 ComponentFinder* cf)
+    : componentFinder(cf),
+	  nodegraph(ng)
 {
-    if (Globals::Instance()->getOption("Verbose"))
-        std::cout << std::endl << "@@@ building dependency graph @@@" << std::endl << std::endl;
+    std::vector<std::vector<AtomNodePtr> > weakComponents;
 
-    //
-    // the graphbuilder creates nodes from the program and puts it into
-    // the nodegraph
-    //
-
-    try
-    {
-        gb->run(program, nodegraph);
-    }
-    catch (GeneralError&)
-    {
-        throw;
-    }
-
-    
-    if (Globals::Instance()->getOption("Verbose"))
-    {
-        gb->dumpGraph(nodegraph, std::cout);
-    }
-    
-
-
-    std::vector<std::vector<AtomNode*> > weakComponents;
-
-    const std::vector<AtomNode*> allnodes = nodegraph.getNodes();
+    const std::vector<AtomNodePtr> allnodes = nodegraph.getNodes();
 
     Subgraph* subgraph = new Subgraph;
 
-    std::vector<std::vector<AtomNode*> > strongComponents;
+    std::vector<std::vector<AtomNodePtr> > strongComponents;
 
     //
     // keep track of the nodes that belong to a SCC
     //
-    std::vector<AtomNode*> visited;
+    std::vector<AtomNodePtr> visited;
 
     //
     // find all strong components
@@ -79,7 +54,7 @@ DependencyGraph::DependencyGraph(Program& program,
     //
     // go through strong components
     //
-    for (std::vector<std::vector<AtomNode*> >::const_iterator scc = strongComponents.begin();
+    for (std::vector<std::vector<AtomNodePtr> >::const_iterator scc = strongComponents.begin();
         scc != strongComponents.end();
         ++scc)
     {
@@ -122,7 +97,7 @@ DependencyGraph::DependencyGraph(Program& program,
             // mark these scc nodes as visited
             // TODO: this is not so nice here
             //
-            for (std::vector<AtomNode*>::const_iterator ni = (*scc).begin();
+            for (std::vector<AtomNodePtr>::const_iterator ni = (*scc).begin();
                 ni != (*scc).end();
                 ++ni)
             {
@@ -135,7 +110,7 @@ DependencyGraph::DependencyGraph(Program& program,
     // now, after processing all SCCs of this WCC, let's see if there is any
     // external atom left that was not in any SCC
     //
-    for (std::vector<AtomNode*>::const_iterator weaknode = allnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator weaknode = allnodes.begin();
             weaknode != allnodes.end();
             ++weaknode)
     {
@@ -208,9 +183,9 @@ DependencyGraph::~DependencyGraph()
 // go through succeeding as well!
 //
 bool
-DependencyGraph::hasNegEdge(const std::vector<AtomNode*>& nodes)
+DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes)
 {
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
          ni != nodes.end();
          ++ni)
     {
@@ -236,9 +211,9 @@ DependencyGraph::hasNegEdge(const std::vector<AtomNode*>& nodes)
 
 
 bool
-DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
+DependencyGraph::isExternal(const std::vector<AtomNodePtr>& nodes)
 {
-    for (std::vector<AtomNode*>::const_iterator ni = nodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
          ni != nodes.end();
          ++ni)
     {
@@ -253,8 +228,8 @@ DependencyGraph::isExternal(const std::vector<AtomNode*>& nodes)
 
 /*
 void
-DependencyGraph::getWeakComponents(const std::vector<AtomNode*>& nodes,
-                      std::vector<std::vector<AtomNode*> >& wccs)
+DependencyGraph::getWeakComponents(const std::vector<AtomNodePtr>& nodes,
+                      std::vector<std::vector<AtomNodePtr> >& wccs)
 {
 //    componentFinder->findWeakComponents(nodes, wccs);
 }
@@ -262,8 +237,8 @@ DependencyGraph::getWeakComponents(const std::vector<AtomNode*>& nodes,
 
 
 void
-DependencyGraph::getStrongComponents(const std::vector<AtomNode*>& nodes,
-                        std::vector<std::vector<AtomNode*> >& sccs)
+DependencyGraph::getStrongComponents(const std::vector<AtomNodePtr>& nodes,
+                        std::vector<std::vector<AtomNodePtr> >& sccs)
 {
     componentFinder->findStrongComponents(nodes, sccs);
 }

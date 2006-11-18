@@ -14,6 +14,7 @@
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/PrintVisitor.h"
 
 
 
@@ -36,14 +37,14 @@ Component::isSolved() const
 
 
 void
-Component::addAtomNode(const AtomNode* atomnode)
+Component::addAtomNode(const AtomNodePtr atomnode)
 {
     atomnodes.push_back(atomnode);
 }
 
 
 
-const std::vector<const AtomNode*>&
+const std::vector<AtomNodePtr>&
 Component::getNodes() const
 {
     return atomnodes;
@@ -58,7 +59,7 @@ Component::getBottom() const
     //
     // go through all nodes
     //
-    std::vector<const AtomNode*>::const_iterator node = atomnodes.begin();
+    std::vector<AtomNodePtr>::const_iterator node = atomnodes.begin();
 
     while (node != atomnodes.end())
     {
@@ -91,7 +92,7 @@ Component::isInComponent(const Atom* at) const
 {
     bool belongsToComp = false;
 
-    std::vector<const AtomNode*>::const_iterator nodeit = atomnodes.begin();
+    std::vector<AtomNodePtr>::const_iterator nodeit = atomnodes.begin();
 
     while (nodeit != atomnodes.end())
     {
@@ -107,12 +108,12 @@ Component::isInComponent(const Atom* at) const
 }
 
 
-ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
+ProgramComponent::ProgramComponent(const std::vector<AtomNodePtr>& nodes,
                                    ModelGenerator* mg)
     : Component(),
       modelGenerator(mg)
 {
-    std::vector<AtomNode*>::const_iterator node = nodes.begin();
+    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
 
     while (node != nodes.end())
         addAtomNode(*node++);
@@ -125,7 +126,7 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
     //recorded and could be relevant as well!
     //
     
-    std::vector<const AtomNode*>::const_iterator ni = atomnodes.begin();
+    std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
 
     while (ni != atomnodes.end())
     {
@@ -138,7 +139,7 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNode*>& nodes,
 
         while (di != deps.end())
         {
-            const AtomNode* other = (*di).getAtomNode();
+            const AtomNodePtr other = (*di).getAtomNode();
 
             //
             // if this other node is not in our component, then the current node
@@ -172,7 +173,8 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
         std::cerr << "Evaluating program component:" << std::endl;
-        getBottom().dump(std::cerr);
+        RawPrintVisitor rpv(std::cerr);
+        getBottom().dump(rpv);
     }
 
     std::vector<AtomSet> res, previous;
@@ -187,7 +189,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     {
         AtomSet filtered;
 
-        std::list<const AtomNode*>::const_iterator ini = incomingNodes.begin();
+        std::list<AtomNodePtr>::const_iterator ini = incomingNodes.begin();
 
         //while (ini != incomingNodes.end())
         //    (*in).matchAtom((*ini++)->getAtom(), filtered);
@@ -253,7 +255,7 @@ ProgramComponent::dump(std::ostream& out) const
     out << "ProgramComponent-object --------------------------------" << std::endl;
     out << "Nodes:";
 
-    for (std::vector<const AtomNode*>::const_iterator ni = atomnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
          ni != atomnodes.end();
          ++ni)
     {
@@ -264,7 +266,8 @@ ProgramComponent::dump(std::ostream& out) const
 
     out << "Bottom:" << std::endl;
 
-    getBottom().dump(out);
+    RawPrintVisitor rpv(std::cerr);
+    getBottom().dump(rpv);
 
     out << "ProgramComponent-object end ----------------------------" << std::endl;
 
@@ -273,7 +276,7 @@ ProgramComponent::dump(std::ostream& out) const
 
 
 
-ExternalComponent::ExternalComponent(AtomNode* node)
+ExternalComponent::ExternalComponent(AtomNodePtr node)
     : externalAtom(dynamic_cast<ExternalAtom*>(node->getAtom().get()))
 {
 }
@@ -402,9 +405,9 @@ Subgraph::addComponent(Component* c)
     // store also which node belongs to which component, we need that later
     //
 
-    std::vector<const AtomNode*> compnodes = c->getNodes();
+    std::vector<AtomNodePtr> compnodes = c->getNodes();
 
-    for (std::vector<const AtomNode*>::const_iterator ni = compnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = compnodes.begin();
          ni != compnodes.end();
          ++ni)
     {
@@ -414,15 +417,15 @@ Subgraph::addComponent(Component* c)
 
 
 void
-Subgraph::addNode(AtomNode* an)
+Subgraph::addNode(AtomNodePtr an)
 {
     atomnodes.push_back(an);
 }
 
 
 void
-Subgraph::collectUp(const AtomNode* n,
-                   std::vector<const AtomNode*>& list)
+Subgraph::collectUp(const AtomNodePtr n,
+                   std::vector<AtomNodePtr>& list)
 {
     //
     // did we add this node to our list already?
@@ -449,7 +452,7 @@ Subgraph::collectUp(const AtomNode* n,
 void
 Subgraph::pruneComponents()
 {
-    std::vector<const AtomNode*> toBeRemoved;
+    std::vector<AtomNodePtr> toBeRemoved;
 
     //
     // go through all components of the subgraph
@@ -463,7 +466,7 @@ Subgraph::pruneComponents()
             //
             // remove all nodes of this component and all nodes that depend on them
             //
-            for (std::vector<const AtomNode*>::const_iterator ni = (*ci)->getNodes().begin();
+            for (std::vector<AtomNodePtr>::const_iterator ni = (*ci)->getNodes().begin();
                 ni != (*ci)->getNodes().end();
                 ++ni)
             {
@@ -475,7 +478,7 @@ Subgraph::pruneComponents()
             //
             // if the component was solved, remove it, too
             //
-            for (std::vector<const AtomNode*>::const_iterator ni = (*ci)->getNodes().begin();
+            for (std::vector<AtomNodePtr>::const_iterator ni = (*ci)->getNodes().begin();
                 ni != (*ci)->getNodes().end();
                 ++ni)
             {
@@ -489,7 +492,7 @@ Subgraph::pruneComponents()
     //
     components.clear();
 
-    for (std::vector<const AtomNode*>::const_iterator ni = toBeRemoved.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = toBeRemoved.begin();
         ni != toBeRemoved.end();
         ++ni)
     {
@@ -503,13 +506,13 @@ Subgraph::pruneComponents()
 
 
 void
-Subgraph::removeNode(const AtomNode* an)
+Subgraph::removeNode(const AtomNodePtr an)
 {
     atomnodes.erase(find(atomnodes.begin(), atomnodes.end(), an));
 }
 
 
-const std::vector<AtomNode*>&
+const std::vector<AtomNodePtr>&
 Subgraph::getNodes() const
 {
     return atomnodes;
@@ -526,9 +529,9 @@ Subgraph::getPredecessors(Component* comp)
 
     std::vector<Component*> pred;
 
-    std::vector<const AtomNode*> compnodes = comp->getNodes();
+    std::vector<AtomNodePtr> compnodes = comp->getNodes();
 
-    for (std::vector<const AtomNode*>::const_iterator ni = compnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = compnodes.begin();
          ni != compnodes.end();
          ++ni)
     {
@@ -578,9 +581,9 @@ Subgraph::getSuccessors(Component* comp)
 
     std::vector<Component*> succ;
 
-    std::vector<const AtomNode*> compnodes = comp->getNodes();
+    std::vector<AtomNodePtr> compnodes = comp->getNodes();
 
-    for (std::vector<const AtomNode*>::const_iterator ni = compnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = compnodes.begin();
          ni != compnodes.end();
          ++ni)
     {
@@ -644,9 +647,9 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 
             std::vector<Component*> pred;
 
-            std::vector<const AtomNode*> compnodes = (*ci)->getNodes();
+            std::vector<AtomNodePtr> compnodes = (*ci)->getNodes();
 
-            for (std::vector<const AtomNode*>::const_iterator ni = compnodes.begin();
+            for (std::vector<AtomNodePtr>::const_iterator ni = compnodes.begin();
                 ni != compnodes.end();
                 ++ni)
             {
@@ -746,7 +749,7 @@ Subgraph::dump(std::ostream& out) const
 
     out << "Subgraph nodes:" << std::endl;
 
-    for (std::vector<AtomNode*>::const_iterator ni = atomnodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
          ni != atomnodes.end();
          ni++)
     {

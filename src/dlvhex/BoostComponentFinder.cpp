@@ -26,10 +26,10 @@
 
 
 void
-BoostComponentFinder::makeEdges(const std::vector<AtomNode*>& nodes,
+BoostComponentFinder::makeEdges(const std::vector<AtomNodePtr>& nodes,
                                 Edges& edges) const
 {
-    for (std::vector<AtomNode*>::const_iterator node = nodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
          node != nodes.end();
          ++node)
     {
@@ -59,8 +59,8 @@ BoostComponentFinder::makeEdges(const std::vector<AtomNode*>& nodes,
 
 void
 BoostComponentFinder::selectNodes(const Vertices& vertices,
-                                  const std::vector<AtomNode*>& nodes,
-                                  std::vector<AtomNode*>& newnodes) const
+                                  const std::vector<AtomNodePtr>& nodes,
+                                  std::vector<AtomNodePtr>& newnodes) const
 {
     newnodes.clear();
     
@@ -73,7 +73,7 @@ BoostComponentFinder::selectNodes(const Vertices& vertices,
         // in boost, it could handle all these properties internally.
         // there shouldn't be any mapping and searching here!
         //
-        std::vector<AtomNode*>::const_iterator an;
+        std::vector<AtomNodePtr>::const_iterator an;
 
         for (an = nodes.begin(); an != nodes.end(); ++an)
         {
@@ -90,8 +90,8 @@ BoostComponentFinder::selectNodes(const Vertices& vertices,
 
 
 void
-BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
-                                         std::vector<std::vector<AtomNode*> >& wccs)
+BoostComponentFinder::findWeakComponents(const std::vector<AtomNodePtr>& nodes,
+                                         std::vector<std::vector<AtomNodePtr> >& wccs)
 {
     /*
     std::map<int, Vertex> vmap;
@@ -129,7 +129,7 @@ BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
 
 //        std::cout << "Total number of components: " << num << std::endl;
 
-        std::vector<AtomNode*> wcc;
+        std::vector<AtomNodePtr> wcc;
 
         for (int cn = 0; cn < num; ++cn)
         {
@@ -168,8 +168,8 @@ BoostComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
 
 
 void
-BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
-                                           std::vector<std::vector<AtomNode*> >& sccs)
+BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes,
+                                           std::vector<std::vector<AtomNodePtr> >& sccs)
 {
     ComponentFinder::Edges edges;
 
@@ -214,7 +214,7 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
         int num = strong_components(G, &component[0]);
         //std::cout << "Total number of components: " << num << std::endl;
 
-        std::vector<AtomNode*> scc;
+        std::vector<AtomNodePtr> scc;
 
         for (int cn = 0; cn < num; ++cn)
         {

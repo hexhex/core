@@ -47,7 +47,7 @@ ExternalAtom::ExternalAtom(const std::string& name,
                            const Tuple& params,
                            const Tuple& input,
                            const unsigned line)
-    : Atom(params),
+    : Atom(name,params),
       inputList(input),
       functionName(name),
       line(line)
@@ -110,11 +110,11 @@ ExternalAtom::findPluginAtom()
     //
     // is the desired arity equal to the parsed arity?
     //
-    if (this->pluginAtom->getInputArity() != inputList.size())
-        throwSourceError("arity mismatch in function " + functionName);
+//    if (this->pluginAtom->getInputArity() != inputList.size())
+//        throwSourceError("input arity mismatch in function " + functionName);
     
-    if (this->pluginAtom->getOutputArity() != getArity())
-        throwSourceError("arity mismatch in function " + functionName);
+//    if (this->pluginAtom->getOutputArity() != getArity())
+//        throwSourceError("output arity mismatch in function " + functionName);
     
     bool inputIsGround(1);
 
@@ -193,6 +193,13 @@ const Tuple&
 ExternalAtom::getInputTerms() const
 {
     return inputList;
+}
+
+
+unsigned
+ExternalAtom::getArity() const
+{
+	return arguments.size();
 }
 
 
@@ -389,7 +396,7 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
     if (this->inputList.size() != atom2.inputList.size())
         return false;
 
-    for (unsigned i = 0; i < this->getArity(); i++)
+    for (unsigned i = 0; i <= this->getArity(); i++)
     {
         if (getArgument(i) != atom2.getArgument(i))
             return false;

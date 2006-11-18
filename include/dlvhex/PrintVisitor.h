@@ -34,6 +34,12 @@ protected:
 public:
   PrintVisitor(std::ostream&);
 
+  /**
+   * returns the stream of the visitor.
+   */
+  std::ostream&
+  getStream();
+
   /// outputs the Rule in
   /// 'a_1 v ... v a_k :- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
   /// form, i.e. it calls accept(*this) on each a_i and b_j.

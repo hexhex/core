@@ -13,11 +13,20 @@
 #ifndef _RULE_H
 #define _RULE_H
 
+#include <boost/ptr_container/indirect_fun.hpp>
+
 #include "dlvhex/Atom.h"
 #include "dlvhex/Literal.h"
 
 
-typedef std::vector<AtomPtr> RuleHead_t;
+/**
+ * A rule head is a disjunction of Atoms.
+ *
+ * Since the Atoms in a rule's head are unordered, we use a std::set for them.
+ *
+ * \sa http://www.sgi.com/tech/stl/set.html
+ */
+typedef std::set<AtomPtr, boost::indirect_fun<std::less<Atom> > > RuleHead_t;
 
 
 /**
@@ -26,83 +35,142 @@ typedef std::vector<AtomPtr> RuleHead_t;
 class Rule : public ProgramObject
 {
 public:
-    
-    /**
-     * @brief Constructs a rule from a head and a body.
-     *
-     * Third argument is the file name and fourth the line number this rule
-     * appeared in.
-     */
-    Rule(const RuleHead_t& h,
-         const RuleBody_t& b,
-         std::string = "",
-         unsigned = 0);
 
-    virtual
-    ~Rule();
+	/**
+	 * @brief Constructs a rule from a head and a body.
+	 *
+	 * Third argument is the file name and fourth the line number this rule
+	 * appeared in. Both can be ommitted.
+	 */
+	Rule(const RuleHead_t& h,
+	     const RuleBody_t& b,
+	     std::string = "",
+	     unsigned = 0);
 
-    /**
-     * @brief Returns the rule's head.
-     */
-    const RuleHead_t&
-    getHead() const;
+	/**
+	 * Destructor.
+	 */
+	virtual
+	~Rule();
 
-    /**
-     * @brief Returns the rule's body.
-     */
-    const RuleBody_t&
-    getBody() const;
+	/**
+	 * @brief Returns the rule's head.
+	 */
+	const RuleHead_t&
+	getHead() const;
 
-    /**
-     * @brief Returns the program file of this rule.
-     */
-    std::string
-    getFile() const;
+	/**
+	 * @brief Returns the rule's body.
+	 */
+	const RuleBody_t&
+	getBody() const;
 
-    /**
-     * @brief Returns the program line number of this rule.
-     */
-    unsigned
-    getLine() const;
+	/**
+	 * @brief Returns the filename where this rule appeared.
+	 */
+	std::string
+	getFile() const;
 
-    /**
-     * @brief returns the rule's external atoms.
-     */
-    const std::vector<ExternalAtom*>&
-    getExternalAtoms() const;
+	/**
+	 * @brief Returns the program line number of this rule.
+	 */
+	unsigned
+	getLine() const;
 
-    /**
-     * @brief Test for equality.
-     *
-     * Two rules are equal, if they contain the same atoms in the body and the head.
-     */
-    bool
-    operator== (const Rule& rule2) const;
+	/**
+	 * @brief returns the rule's external atoms.
+	 *
+	 * In addition to head and body, a Rule also maintains a list of the
+	 * external atoms in its body, which is easier to access than having to
+	 * iterate through the entire body.
+	 */
+	const std::vector<ExternalAtom*>&
+	getExternalAtoms() const;
 
-    /**
-     * @brief accepts a visitor.
-     */
-    virtual void
-    accept(BaseVisitor&) const;
+	/**
+	 * @brief Test for equality.
+	 *
+	 * Two rules are equal, if they contain the same atoms in the body and the head.
+	 */
+	bool
+	operator== (const Rule& rule2) const;
+
+	/**
+	 * Less-than comparison.
+	 *
+	 * A rule is smaller than another, if the head of the first is smaller than
+	 * the other rule's head. If both heads are equal, the same applies to their
+	 * bodies. This operator doesn't make much sense on its own, but is needed
+	 * for having a set-container of rules. (std::set requires less-than for its
+	 * objects).
+	 *
+	 * \sa RuleHead_t::operator<, RuleBody_t::operator<
+	 */
+	virtual bool
+	operator< (const Rule& rule2) const;
+
+	/**
+	 * @brief accepts a visitor.
+	 *
+	 * According to the visitor pattern, accept simply calls the respective
+	 * visitor with the Rule itself as parameter.
+	 *
+	 * \sa http://en.wikipedia.org/wiki/Visitor_pattern
+	 */
+	virtual void
+	accept(BaseVisitor&) const;
 
 protected:
 
-    RuleHead_t head;
+	/**
+	 * Rule head.
+	 */
+	RuleHead_t head;
 
-    RuleBody_t body;
+	/**
+	 * Rule body.
+	 */
+	RuleBody_t body;
 
-    std::string programFile;
+	/**
+	 * Filename where the rule was parsed from.
+	 *
+	 * Needed for error messages.
+	 */
+	std::string programFile;
 
-    unsigned programLine;
+	/**
+	 * Line in which the rule appeared.
+	 *
+	 * Needed for error messages.
+	 */
+	unsigned programLine;
 
 private:
 
-    std::vector<ExternalAtom*> externalAtoms;
+	/**
+	 * List of external atoms occuring in the rule's body.
+	 */
+	std::vector<ExternalAtom*> externalAtoms;
 };
 
 
+/**
+ * Direct serialization of a Rule using a RawPrintVisitor.
+ *
+ * Should be used for debugging or verbose only.
+ */
 std::ostream&
 operator<< (std::ostream& out, const Rule& rule);
+
+/**
+ * Comparison operator for rule heads.
+ *
+ * Used for comparing rules.
+ */
+bool
+operator< (const RuleHead_t& head1, const RuleHead_t& head2);
+
 
 
 /**
@@ -112,50 +180,59 @@ class WeakConstraint : public Rule
 {
 public:
 
-    /**
-     * @brief See constructor of Rule.
-     *
-     * The third parameter is the weight, the fourth is the level of the weak
-     * constraint.
-     */
-    WeakConstraint(const RuleBody_t& b,
-                   Term,
-                   Term,
-                   std::string = "",
-                   unsigned = 0);
+	/**
+	 * @brief See constructor of Rule.
+	 *
+	 * The third parameter is the weight, the fourth is the level of the weak
+	 * constraint.
+	 */
+	WeakConstraint(const RuleBody_t& b,
+	               Term,
+	               Term,
+	               std::string = "",
+	               unsigned = 0);
 
-    /*
-    void
-    setHead(const RuleHead_t& h);
-    */
+	/**
+	 * @brief Test for equality.
+	 */
+	bool
+	operator== (const WeakConstraint&) const;
 
-    /**
-     * @brief Test for equality.
-     */
-    bool
-    operator== (const WeakConstraint&) const;
+	/**
+	 * @brief accepts a visitor.
+	 *
+	 * According to the visitor pattern, accept simply calls the respective
+	 * visitor with the weak constraint itself as parameter.
+	 *
+	 * \sa http://en.wikipedia.org/wiki/Visitor_pattern
+	 */
+	virtual void
+	accept(BaseVisitor&) const;
 
-//     std::ostream&
-//     output(std::ostream& out) const;
-    virtual void
-    accept(BaseVisitor&) const;
+	/**
+	 * Returns the weight of the WC.
+	 */
+	const Term&
+	getWeight() const
+	{
+		return weight;
+	}
 
-    const Term&
-    getWeight() const
-    {
-      return weight;
-    }
-
-    const Term&
-    getLevel() const
-    {
-      return level;
-    }
+	/**
+	 * Returns the level of the WC.
+	 */
+	const Term&
+	getLevel() const
+	{
+		return level;
+	}
 
 private:
 
-    Term weight, level;
+	Term weight, level;
 };
 
 
 #endif /* _RULE_H */
+
+/* vim: set noet sw=4 ts=4 tw=80: */

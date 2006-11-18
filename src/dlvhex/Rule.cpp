@@ -130,6 +130,21 @@ Rule::operator== (const Rule& rule2) const
 }
 
 
+bool
+Rule::operator< (const Rule& rule2) const
+{
+	if (this->head < rule2.head)
+		return 1;
+	if (this->head > rule2.head)
+		return 0;
+
+	if (this->body < rule2.body)
+		return 1;
+
+	return 0;
+}
+
+
 void
 Rule::accept(BaseVisitor& v) const
 {
@@ -144,6 +159,16 @@ operator<< (std::ostream& out, const Rule& rule)
   rule.accept(rpv);
   return out;
 }
+
+
+bool
+operator< (const RuleHead_t& head1, const RuleHead_t& head2)
+{
+	return std::lexicographical_compare(head1.begin(), head1.end(),
+	  									head2.begin(), head2.end());
+}
+
+
 
 
 WeakConstraint::WeakConstraint(const RuleBody_t& b,
@@ -191,7 +216,7 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
     Atom* at = new Atom(wcheadname.str(), hargs);
     AtomPtr hatom(Registry::Instance()->storeAtom(at));
 
-    head.push_back(hatom);
+    head.insert(hatom);
 }
 
 

@@ -39,8 +39,8 @@ ComponentFinder::dumpAssignment(const ComponentList& cl, std::ostream& out) cons
 /*
 void
 //SimpleComponentFinder::findWeakComponents(const Edges edges, ComponentList& components)
-SimpleComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
-                                           std::vector<std::vector<AtomNode*> >& wccs)
+SimpleComponentFinder::findWeakComponents(const std::vector<AtomNodePtr>& nodes,
+                                           std::vector<std::vector<AtomNodePtr> >& wccs)
 {
     //
     // Really simple component finder: every node is in component 0
@@ -72,8 +72,8 @@ SimpleComponentFinder::findWeakComponents(const std::vector<AtomNode*>& nodes,
 /*
 void
 //SimpleComponentFinder::findStrongComponents(const Edges edges, ComponentList& components)
-SimpleComponentFinder::findStrongComponents(const std::vector<AtomNode*>& nodes,
-                                           std::vector<std::vector<AtomNode*> >& sccs)
+SimpleComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes,
+                                           std::vector<std::vector<AtomNodePtr> >& sccs)
 {
     //
     // no SCCs in our simple finder here!

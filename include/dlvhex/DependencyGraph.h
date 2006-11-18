@@ -41,8 +41,7 @@ public:
      * @brief Constructor that builds the dependency graph.
      *
      */
-    DependencyGraph(Program&,
-                    GraphBuilder*,
+    DependencyGraph(const NodeGraph&,
                     ComponentFinder*);
 
 
@@ -50,27 +49,27 @@ public:
      * @brief Creates weakly connected components from AtomNodes.
      */
     //void
-    //getWeakComponents(const std::vector<AtomNode*>&,
-    //                  std::vector<std::vector<AtomNode*> >&);
+    //getWeakComponents(const std::vector<AtomNodePtr>&,
+    //                  std::vector<std::vector<AtomNodePtr> >&);
 
     /**
      * @brief Creates strongly connected components from AtomNodes.
      */
     void
-    getStrongComponents(const std::vector<AtomNode*>&,
-                        std::vector<std::vector<AtomNode*> >&);
+    getStrongComponents(const std::vector<AtomNodePtr>&,
+                        std::vector<std::vector<AtomNodePtr> >&);
 
     /**
      * @brief Creates a component-object from a WCC.
      */
 //    Component*
-//    createWeakComponent(const std::vector<AtomNode*>&);
+//    createWeakComponent(const std::vector<AtomNodePtr>&);
 
     /**
      * @brief Creates a component-object from a SCC.
      */
 //    Component*
-//    createStrongComponent(const std::vector<AtomNode*>&);
+//    createStrongComponent(const std::vector<AtomNodePtr>&);
 
     /*
     void
@@ -94,10 +93,10 @@ public:
 private:
 
     bool
-    hasNegEdge(const std::vector<AtomNode*>&);
+    hasNegEdge(const std::vector<AtomNodePtr>&);
 
     bool
-    isExternal(const std::vector<AtomNode*>&);
+    isExternal(const std::vector<AtomNodePtr>&);
     
     /**
      * @brief All nodes.

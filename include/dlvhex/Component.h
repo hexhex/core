@@ -54,12 +54,12 @@ public:
      * @brief Adds an AtomNode to the comonent.
      */
     void
-    addAtomNode(const AtomNode*);
+    addAtomNode(const AtomNodePtr);
 
     /**
      * @brief Returns all AtomNodes of this component.
      */
-    const std::vector<const AtomNode*>&
+    const std::vector<AtomNodePtr>&
     getNodes() const;
     
     /**
@@ -92,7 +92,7 @@ public:
 protected:
     
     /// Ctor.
-//    Component(const std::vector<AtomNode*>&);
+//    Component(const std::vector<AtomNodePtr>&);
 
     /// Ctor.
     Component();
@@ -100,13 +100,13 @@ protected:
     /**
      * @brief AtomNodes that belong to this component.
      */
-    std::vector<const AtomNode*> atomnodes;
+    std::vector<AtomNodePtr> atomnodes;
 
     bool evaluated;
 
     std::vector<AtomSet> result;
 
-    std::list<const AtomNode*> incomingNodes;
+    std::list<AtomNodePtr> incomingNodes;
 
 private:
 
@@ -136,7 +136,7 @@ public:
     /// Ctor.
     //ProgramComponent();
 
-    ProgramComponent(const std::vector<AtomNode*>&,
+    ProgramComponent(const std::vector<AtomNodePtr>&,
                      ModelGenerator*);
 
  //   ProgramComponent(Program&, ModelGenerator*);
@@ -193,7 +193,7 @@ class ExternalComponent : public Component
 public:
 
     /// Ctor.
-    ExternalComponent(AtomNode*);
+    ExternalComponent(AtomNodePtr);
 
     /**
      * @brief Computes the result of the external computation.
@@ -242,7 +242,7 @@ public:
     addComponent(Component*);
 
     void
-    addNode(AtomNode*);
+    addNode(AtomNodePtr);
 
     /**
      * @brief Removes components from the subgraph.
@@ -257,7 +257,7 @@ public:
     /**
      * @brief Returns all AtomNodes that belong to this subgraph.
      */
-    const std::vector<AtomNode*>&
+    const std::vector<AtomNodePtr>&
     getNodes() const;
 
 
@@ -312,7 +312,7 @@ public:
      * @brief Remove a node pointer from the subgraph.
      */
     void
-    removeNode(const AtomNode*);
+    removeNode(const AtomNodePtr);
 
 
     std::vector<AtomSet*>&
@@ -332,13 +332,13 @@ private:
      * Recursive function.
      */
     void
-    collectUp(const AtomNode*,
-              std::vector<const AtomNode*>&);
+    collectUp(const AtomNodePtr,
+              std::vector<AtomNodePtr>&);
 
     /**
      * @brief Nodes in this subgraph.
      */
-    std::vector<AtomNode*> atomnodes;
+    std::vector<AtomNodePtr> atomnodes;
 
     /**
      * @brief Components in this subgraph.
@@ -350,7 +350,7 @@ private:
      *
      * For faster acces of components a node belongs to.
      */
-    std::map<const AtomNode*, Component*> nodeComponentMap;
+    std::map<AtomNodePtr, Component*> nodeComponentMap;
 
 
     /**

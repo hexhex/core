@@ -74,6 +74,18 @@ Literal::operator!= (const Literal& lit2) const
 }
 
 
+bool
+Literal::operator< (const Literal& lit2) const
+{
+	if (!this->isNAF() && lit2.isNAF())
+		return 1;
+	if (this->isNAF() && !lit2.isNAF())
+		return 0;
+
+	return (this->getAtom() < lit2.getAtom());
+}
+
+
 void
 Literal::accept(BaseVisitor& v) const
 {
@@ -87,4 +99,12 @@ operator<<(std::ostream& o, const Literal& l)
   RawPrintVisitor rpv(o);
   l.accept(rpv);
   return o;
+}
+
+
+bool
+operator< (const RuleBody_t& body1, const RuleBody_t& body2)
+{
+	return std::lexicographical_compare(body1.begin(), body1.end(),
+	  									body2.begin(), body2.end());
 }

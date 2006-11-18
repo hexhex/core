@@ -41,15 +41,15 @@ public:
      * contained in a vector.
      */
     virtual void
-    findWeakComponents(const std::vector<AtomNode*>&,
-                       std::vector<std::vector<AtomNode*> >&);
+    findWeakComponents(const std::vector<AtomNodePtr>&,
+                       std::vector<std::vector<AtomNodePtr> >&);
 
     /**
      * @brief Finds Strongly Connected Components from a list of AtomNodes.
      */
     virtual void
-    findStrongComponents(const std::vector<AtomNode*>&,
-                         std::vector<std::vector<AtomNode*> >&);
+    findStrongComponents(const std::vector<AtomNodePtr>&,
+                         std::vector<std::vector<AtomNodePtr> >&);
     
 private:
 
@@ -61,7 +61,7 @@ private:
      * information of the given AtomNodes and convets it into the Edges type.
      */
     void
-    makeEdges(const std::vector<AtomNode*>&, Edges&) const;
+    makeEdges(const std::vector<AtomNodePtr>&, Edges&) const;
 
     /**
      * @brief Filters a set of AtomNodes based on given Vertices.
@@ -73,8 +73,8 @@ private:
      */
     void
     selectNodes(const Vertices&,
-                const std::vector<AtomNode*>&,
-                std::vector<AtomNode*>&) const;
+                const std::vector<AtomNodePtr>&,
+                std::vector<AtomNodePtr>&) const;
 };
 
 

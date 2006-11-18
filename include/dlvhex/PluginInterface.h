@@ -27,9 +27,16 @@
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 
 
+class Program;
+class NodeGraph;
+
+
+
 /**
  * @brief Base class for custom rewriters, which preparses the HEX-program.
  *
+ * \todo: update this doc!
+ * 
  * A plugin can provide a number of plugin atoms as well as a rewriter object.
  * The purpose of a plugin rewriter is to give the plugin author the
  * possibility of creating a custom syntax for her external atoms, which will
@@ -45,13 +52,7 @@ class PluginRewriter
 {
 protected:
 
-    std::istream* input;
-
-    std::ostream* output;
-
-    PluginRewriter(std::istream& i, std::ostream& o)
-        : input(&i),
-          output(&o)
+    PluginRewriter()
     { }
 
 public:
@@ -61,7 +62,45 @@ public:
     { }
 
     virtual void
-    rewrite() = 0;
+    rewrite(Program&, AtomSet&) = 0;
+
+};
+
+
+class PluginConverter
+{
+protected:
+
+    PluginConverter()
+    { }
+
+public:
+
+    virtual
+    ~PluginConverter()
+    { }
+
+    virtual void
+    convert(std::istream& i, std::ostream& o) = 0;
+
+};
+
+
+class PluginOptimizer
+{
+protected:
+
+    PluginOptimizer()
+    { }
+
+public:
+
+    virtual
+    ~PluginOptimizer()
+    { }
+
+    virtual void
+    optimize(NodeGraph&, AtomSet&) = 0;
 
 };
 
@@ -246,22 +285,6 @@ public:
 
 
     /**
-     * @brief Retrieve the atom's universe.
-     *
-     * The universe of an atom is the set of all possible output tuples w.r.t. a
-     * specific input tuple.
-     */
-//    virtual void
-//    getUniverse(const Tuple&, std::set<Tuple>&) throw (PluginError) = 0;
-
-    /**
-     * @brief Boolean query for a specific tuple wrt. the given input.
-     */
-//    virtual bool
-//    query(const Interpretation&, const Tuple&, Tuple&) throw(PluginError) = 0;
-
-
-    /**
      * @brief Returns the type of the input argument specified by position
      * (starting with 0).
      */
@@ -318,13 +341,41 @@ public:
     typedef std::map<std::string, PluginAtom*> AtomFunctionMap;
 
     /**
-     * @brief Rewriting function for custom syntax.
+     * @brief Converter.
      *
-     * By overloading this function, a plugin can implement a custom
-     * preparser to rewrite the input logic program.
+	 * By overloading this function, a plugin can implement a custom preparser,
+	 * which will be called first in the entire dlvhex-processing chain. A
+	 * converter can expect any kind of input data, and must return either the
+	 * original input data or a well-formed hex-program. With this facility, a
+	 * preparser can for instance convert a different rule- or query-language to
+	 * a hex-program.
+     */
+    virtual PluginConverter* 
+    createConverter()
+    {
+        return 0;
+    }
+
+    /**
+     * @brief Rewriter for hex-programs.
+     *
+	 * The rewriters are called second after the preparsers. Hence, a rewriter
+	 * can expect a well-formed hex-program as input and must of course also
+	 * take care of returning a correct program. A rewriter can realize
+	 * syntactic sugar, e.g. providing a simplified syntax for the user which is
+	 * then transformed, depending probably on the entire rule body.
      */
     virtual PluginRewriter* 
-    createRewriter(std::istream&, std::ostream&)
+    createRewriter()
+    {
+        return 0;
+    }
+
+	/**
+	 * \todo doc.
+	 */
+    virtual PluginOptimizer* 
+    createOptimizer()
     {
         return 0;
     }

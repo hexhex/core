@@ -48,6 +48,8 @@ public:
 
     /**
      * @brief Stores a ProgramObject.
+	 *
+	 * \todo do we need this at all?
      *
      * Using boost::shared_ptr, the ownership over a is transferred to the
      * shared pointer. The pointer ProgramObject* must not be deleted after this call.

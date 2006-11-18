@@ -404,7 +404,7 @@ rule0:
             //
             // add atom pointer to rule head
             //
-            head.push_back(*$1);
+            head.insert(*$1);
 
             delete $1;
 
@@ -516,11 +516,11 @@ disj:
             //
             // add both atom pointers to rule head
             //
-            $$->push_back(*$1);
+            $$->insert(*$1);
 
             delete $1;
 
-            $$->push_back(*$3);
+            $$->insert(*$3);
             
             delete $3;
 
@@ -530,7 +530,7 @@ disj:
             //
             // add atom pointer to rule head
             //
-            $1->push_back(*$3);
+            $1->insert(*$3);
 
             delete $3;
 
@@ -549,7 +549,7 @@ body:
             //
             // add literal pointer
             //
-            $$->push_back($1);
+            $$->insert($1);
         }
         
         | body TAIL_SEPARATOR literal
@@ -557,7 +557,7 @@ body:
             //
             // add literal pointer to existing rule body
             //
-            $1->push_back($3);
+            $1->insert($3);
             
             $$ = $1;
         }
@@ -797,7 +797,14 @@ external_atom:
             // input parameters
             // arguments
             //
+            try
+            {
             $$ = new ExternalAtom(*$2, *$6, *$4, (@1.end-1).line);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
 
             $$->findPluginAtom();
 

@@ -36,14 +36,10 @@ OrdinaryModelGenerator::initialize(const Program& p)
 
 
 void
-OrdinaryModelGenerator::compute(//const Program& program,
-                                const std::vector<const AtomNode*>& nodes,
+OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
-//    if (program.getExternalAtoms().size() != 0)
-//        throw FatalError("Cannot apply OrdinaryModelGenerator to component with external atoms!");
-
     if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
         std::cout << "= OrdinaryModelGenerator =" << std::endl;
 
@@ -52,7 +48,7 @@ OrdinaryModelGenerator::compute(//const Program& program,
     //
     // go through all nodes
     //
-    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
     while (node != nodes.end())
     {
         //

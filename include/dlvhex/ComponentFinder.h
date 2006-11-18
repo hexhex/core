@@ -87,8 +87,8 @@ public:
      */
     virtual void
     //findWeakComponents(const Edges, ComponentList&)
-    findWeakComponents(const std::vector<AtomNode*>&,
-                         std::vector<std::vector<AtomNode*> >&)
+    findWeakComponents(const std::vector<AtomNodePtr>&,
+                         std::vector<std::vector<AtomNodePtr> >&)
     { }
 
     /**
@@ -96,8 +96,8 @@ public:
      */
     virtual void
 //    findStrongComponents(const Edges, ComponentList&)
-    findStrongComponents(const std::vector<AtomNode*>&,
-                         std::vector<std::vector<AtomNode*> >&)
+    findStrongComponents(const std::vector<AtomNodePtr>&,
+                         std::vector<std::vector<AtomNodePtr> >&)
     { }
 
     /**

@@ -16,8 +16,6 @@
 
 #include <vector>
 
-//#include "dlvhex/Atom.h"
-//#include "dlvhex/AtomSet.h"
 #include "boost/shared_ptr.hpp"
 
 //
@@ -29,6 +27,9 @@ class BaseVisitor;
 /**
  * @brief Abstract base class for all objects that are part of a
  * program and dynamically created.
+ *
+ * This class does not implement an methods. It is just used as a common base
+ * class for internal storage structures.
  */
 class ProgramObject
 {

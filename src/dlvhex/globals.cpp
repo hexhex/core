@@ -19,10 +19,12 @@ Globals::_instance = 0;
 
 Globals::Globals()
 {
-//    std::cout << "sizeof: " << sizeof(verboseAction_t) << std::endl;
-//    verboseLevel.reserve(sizeof(verboseAction_t));
-
+    verboseLevel[DUMP_CONVERTED_PROGRAM] = 2;
+    verboseLevel[DUMP_PARSED_PROGRAM] = 1;
     verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
+
+    verboseLevel[DUMP_DEPENDENCY_GRAPH] = 1;
+    verboseLevel[DUMP_OPTIMIZED_PROGRAM] = 2;
 
     verboseLevel[COMPONENT_EVALUATION] = 3;
     verboseLevel[MODEL_GENERATOR] = 3;

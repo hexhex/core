@@ -26,7 +26,7 @@ GuessCheckModelGenerator::GuessCheckModelGenerator()
 
 
 void
-GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
+GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
                                   const AtomSet& I,
                                   std::vector<AtomSet>& models)
 {
@@ -45,7 +45,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
     //
     std::set<const ExternalAtom*> extatomInComp;
 
-    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
     while (node != nodes.end())
     {
         //
@@ -96,7 +96,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
 
             Atom* headatom = new Atom((*ei)->getReplacementName(), headargs);
 
-            guesshead.push_back(Registry::Instance()->storeAtom(headatom));
+            guesshead.insert(Registry::Instance()->storeAtom(headatom));
 
             //
             // record the external atoms names - we will have to remove them
@@ -105,7 +105,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
             externalNames.push_back((*ei)->getReplacementName());
 
             headatom = new Atom((*ei)->getReplacementName(), headargs, 1);
-            guesshead.push_back(Registry::Instance()->storeAtom(headatom));
+            guesshead.insert(Registry::Instance()->storeAtom(headatom));
 
             //
             // the body contains all remaining rule atoms (to make it more
@@ -121,7 +121,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 // don't add the current external atom itself
                 //
                 if ((*bi)->getAtom().get() != *ei)
-                    guessbody.push_back(*bi);
+                    guessbody.insert(*bi);
             }
 
             //
@@ -298,7 +298,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 //
                 RuleHead_t flphead;
 
-                flphead.push_back(flpheadatom);
+                flphead.insert(flpheadatom);
 
                 //
                 // make new body (equal to old one)
@@ -381,7 +381,7 @@ GuessCheckModelGenerator::compute(const std::vector<const AtomNode*>& nodes,
                 Literal* flplit = new Literal(bodyPickerAtoms.at(ruleidx++));
                 Registry::Instance()->storeObject(flplit);
 
-                newbody.push_back(flplit);
+                newbody.insert(flplit);
 
                 //
                 // make rule

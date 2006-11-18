@@ -48,7 +48,7 @@ public:
      */
     virtual void
     compute(//const Program&,
-            const std::vector<const AtomNode*>&,
+            const std::vector<AtomNodePtr>&,
             const AtomSet& I,
             std::vector<AtomSet>& models) = 0;
 
@@ -101,7 +101,7 @@ public:
      */
     virtual void
     compute(//const Program&,
-            const std::vector<const AtomNode*>&,
+            const std::vector<AtomNodePtr>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
 
@@ -143,37 +143,16 @@ public:
     /// Ctor
     OrdinaryModelGenerator();
 
-
-    //virtual 
-        void
+    void
     initialize(const Program&);
-
-
-    /**
-     * Build the textual representation of the program.
-     */
-//    void
-//    serializeProgram(const Program&);
-
-
-    /**
-     * Return the text program.
-     */
-//    const std::string&
-//    getSerializedProgram() const;
 
     /**
      * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    compute(//const Program&,
-            const std::vector<const AtomNode*>&,
+    compute(const std::vector<AtomNodePtr>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
-
-private:
-
-
 };
 
 
@@ -192,37 +171,13 @@ public:
     /// Ctor
     GuessCheckModelGenerator();
 
-
-    //virtual void
-    //initialize(const Program&)
-    //{ }
-
-
-    /**
-     * Build the textual representation of the program.
-     */
-//    void
-//    serializeProgram(const Program&);
-
-
-    /**
-     * Return the text program.
-     */
-//    const std::string&
-//    getSerializedProgram() const;
-
     /**
      * @brief Computes models of a set of nodes by iteration.
      */
     virtual void
-    compute(//const Program&,
-            const std::vector<const AtomNode*>&,
+    compute(const std::vector<AtomNodePtr>&,
             const AtomSet& I,
             std::vector<AtomSet>& models);
-
-private:
-
-
 };
 
 

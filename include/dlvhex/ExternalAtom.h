@@ -74,6 +74,13 @@ public:
     std::string
     getBasePredicate() const;
 
+	/**
+	 * Get output arity of external atom.
+	 *
+	 * This overrides Atom::getArity().
+	 */
+	unsigned
+	getArity() const;
 
     /**
      * @brief Returns the function name of the external atom.

@@ -19,6 +19,7 @@
 
 #include "dlvhex/Rule.h"
 
+#include "boost/shared_ptr.hpp"
 
 //
 // forward declaration
@@ -180,6 +181,7 @@ private:
     static unsigned nodeCount;
 };
 
+typedef boost::shared_ptr<AtomNode> AtomNodePtr;
 
 //
 // verbose and debug serialization.
@@ -231,7 +233,7 @@ public:
      * @brief Construct a dependency of a specific type to a given AtomNode
      * target.
      */
-    Dependency(const AtomNode*, Type);
+    Dependency(const AtomNodePtr, Type);
 
     /**
      * @brief Return the dependency type.
@@ -242,7 +244,7 @@ public:
     /**
      * @brief Return the target AtomNode of the dependency.
      */
-    const AtomNode*
+    const AtomNodePtr
     getAtomNode() const;
 
     /**
@@ -250,14 +252,14 @@ public:
      *
      */
     static void
-    addDep(AtomNode*, AtomNode*, Type);
+    addDep(AtomNodePtr, AtomNodePtr, Type);
 
 private:
 
     /**
      * @brief AtomNode that is the target of this dependency.
      */
-    const AtomNode* atomNode;
+    AtomNodePtr atomNode;
 
     /**
      * Type od the dependency.
@@ -284,7 +286,7 @@ class NodeGraph
 {
 private:
 
-    std::vector<AtomNode*> atomNodes;
+    std::vector<AtomNodePtr> atomNodes;
 
 public:
 
@@ -294,16 +296,16 @@ public:
     /**
      * @brief Returns entire set of AtomNodes.
      */
-    const std::vector<AtomNode*>&
+    const std::vector<AtomNodePtr>&
     getNodes() const;
 
     /**
      * @brief Return a node with a specific AtomNode Id.
      */
-    //const AtomNode*
+    //const AtomNodePtr
     //getNode(unsigned);
 
-    AtomNode*
+    AtomNodePtr
     addNode();
 
     /**
@@ -315,7 +317,7 @@ public:
      * rule's body, a unifying dependency from the new node to the found one is
      * created.
      */
-    AtomNode*
+    AtomNodePtr
     addUniqueHeadNode(const AtomPtr);
 
     /**
@@ -327,14 +329,14 @@ public:
      * head, a unifying dependency from the existing one to the new one is
      * creates.
      */
-    AtomNode*
+    AtomNodePtr
     addUniqueBodyNode(const AtomPtr);
 
     /**
      * @brief Finds an AtomNode that is associated with a specific Atom object.
      */
-    AtomNode*
-    findNode(const AtomPtr) const;
+    void
+    findNode(const AtomPtr, AtomNodePtr&) const;
 };
 
 

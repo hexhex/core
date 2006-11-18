@@ -93,7 +93,7 @@ OutputXMLBuilder::buildAnswerSet(const AnswerSet& facts)
         stream << "<![CDATA[" << (*f).getArgument(0) << "]]>";
         stream << "</Rel>\n";
 
-        for (unsigned i = 1; i < (*f).getArity(); i++)
+        for (unsigned i = 1; i <= (*f).getArity(); i++)
         {
             stream << "<Ind>";
             stream << "<![CDATA[" << (*f).getArgument(i) << "]]>";

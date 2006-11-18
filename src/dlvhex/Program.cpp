@@ -15,7 +15,6 @@
 #include <iostream>
 
 #include "dlvhex/Program.h"
-#include "dlvhex/PrintVisitor.h"
 
 
 Program::Program()
@@ -26,70 +25,54 @@ Program::Program()
 void
 Program::addRule(const Rule* r)
 {
-    if (!exists(r))
-    {
-        rules.push_back(r);
+	rules.insert(r);
 
-        //
-        // store the rule's external atoms also separately
-        //
-        for (RuleBody_t::const_iterator bi = r->getBody().begin();
-            bi != r->getBody().end();
-            ++bi)
-        {
-            if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
-                externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
-        }
-    }
+	//
+	// store the rule's external atoms also separately
+	//
+	for (RuleBody_t::const_iterator bi = r->getBody().begin();
+			bi != r->getBody().end();
+			++bi)
+	{
+		if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
+			externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	}
 }
 
 
 void
 Program::addWeakConstraint(const WeakConstraint* wc)
 {
-    ///todo don't add the same wc twice!
+	///todo don't add the same wc twice!
 
-    rules.push_back(wc);
+	rules.insert(wc);
 
-    weakConstraints.push_back(wc);
+	weakConstraints.push_back(wc);
 }
 
 
 const std::vector<const WeakConstraint*>&
 Program::getWeakConstraints() const
 {
-    return weakConstraints;
-}
-
-
-bool
-Program::exists(const Rule* r)
-{
-    return (find(rules.begin(), rules.end(), r) != rules.end());
+	return weakConstraints;
 }
 
 
 const std::vector<ExternalAtom*>&
 Program::getExternalAtoms() const
 {
-    return externalAtoms;
+	return externalAtoms;
 }
 
 
 void
-Program::dump(std::ostream& out) const
+Program::dump(PrintVisitor& v) const
 {
-    //
-    // dump is only for debugging and verbose. We don't want to dump the
-    // higher-order rewriting
-    //
-    RawPrintVisitor rpv(out);
-
-    for (Program::const_iterator r = begin();
-         r != end();
-         ++r)
-    {
-      (*r)->accept(rpv);
-      out << std::endl;
-    }
+	for (Program::const_iterator r = begin();
+			r != end();
+			++r)
+	{
+		(*r)->accept(v);
+		v.getStream() << std::endl;
+	}
 }

@@ -60,7 +60,7 @@ FixpointModelGenerator::getSerializedProgram() const
 
 void
 FixpointModelGenerator::compute(//const Program& program,
-                                const std::vector<const AtomNode*>& nodes,
+                                const std::vector<AtomNodePtr>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
@@ -69,7 +69,7 @@ FixpointModelGenerator::compute(//const Program& program,
     //
     // go through all nodes
     //
-    std::vector<const AtomNode*>::const_iterator node = nodes.begin();
+    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
     while (node != nodes.end())
     {
         //

@@ -19,6 +19,7 @@
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/PrintVisitor.h"
 
+
 Atom::Atom()
 {
 }
@@ -30,130 +31,145 @@ Atom::~Atom()
 
 
 Atom::Atom(const Atom& atom2)
-    : ProgramObject(),
-      arguments(atom2.arguments),
-      isStrongNegated(atom2.isStrongNegated),
-      isAlwaysFO(atom2.isAlwaysFO)
+	: ProgramObject(),
+	  arguments(atom2.arguments),
+	  isStrongNegated(atom2.isStrongNegated),
+	  isAlwaysFO(atom2.isAlwaysFO)
 {
 }
 
 
 Atom::Atom(const std::string& atom, bool neg)
-    : isStrongNegated(neg),
-      isAlwaysFO(0)
+	: isStrongNegated(neg),
+	  isAlwaysFO(0)
 {
-    arguments.clear();
-    
-    std::string::size_type par;
-    
-    //
-    // not propositional?
-    //
-    if ((par = atom.find("(", 0)) != std::string::npos)
-    {
-        std::vector<std::string> termlist = helper::stringExplode(atom.substr(par + 1, atom.length() - par - 2), ",");
+	arguments.clear();
+	
+	std::string::size_type par;
+	
+	//
+	// not propositional?
+	//
+	if ((par = atom.find("(", 0)) != std::string::npos)
+	{
+		std::vector<std::string> termlist = helper::stringExplode(atom.substr(par + 1, atom.length() - par - 2), ",");
 
-        arguments.push_back(Term(atom.substr(0, par)));
-        
-        for (std::vector<std::string>::const_iterator g = termlist.begin();
-             g != termlist.end();
-             g++)
-        {
-            arguments.push_back(Term(*g));
-        }
+		arguments.push_back(Term(atom.substr(0, par)));
+		
+		for (std::vector<std::string>::const_iterator g = termlist.begin();
+			 g != termlist.end();
+			 g++)
+		{
+			arguments.push_back(Term(*g));
+		}
 
-        //
-        // the predicate itself must be constant (also in ho-mode, then it will be a
-        // constant replacement symbol)
-        //
-        assert(!arguments.front().isVariable());
-    }
-    else
-    {
-        //
-        // can only be propositional
-        //
-        arguments.push_back(Term(atom));
+		//
+		// the predicate itself must be constant (also in ho-mode, then it will be a
+		// constant replacement symbol)
+		//
+		assert(!arguments.front().isVariable());
+	}
+	else
+	{
+		//
+		// can only be propositional
+		//
+		arguments.push_back(Term(atom));
 
-        if (arguments.front().isVariable())
-            throw SyntaxError("propositional Atom must be ground");
-    }
+		if (arguments.front().isVariable())
+			throw SyntaxError("propositional Atom must be ground");
+	}
 }
 	
 
 Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
-    : isStrongNegated(neg),
-      isAlwaysFO(0)
+	: isStrongNegated(neg),
+	  isAlwaysFO(0)
 {
-    arguments.push_back(Term(pred));
+	arguments.push_back(Term(pred));
 
-    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
-    {
-        arguments.push_back(*t);
-    }
+	//
+	// propositonal atom must be ground:
+	//
+	if ((arg.size() == 0) && arguments.front().isVariable())
+		throw SyntaxError("propositional Atom must be ground");
+	
+	for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
+	{
+		arguments.push_back(*t);
+	}
 }
 	
 
 Atom::Atom(const Tuple& arg, bool neg)
-    : isStrongNegated(neg),
-      isAlwaysFO(0)
+	: isStrongNegated(neg),
+	  isAlwaysFO(0)
 {
-    for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
-        arguments.push_back(*t);
+	if (arg.size() == 0)
+		throw SyntaxError("Atom must contain at least one term");
+
+	for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
+		arguments.push_back(*t);
+
+	//
+	// propositonal atom must be ground:
+	//
+	if ((arg.size() == 1) && arguments.front().isVariable())
+		throw SyntaxError("propositional Atom must be ground");
 }
 	
 
 const Term&
 Atom::getPredicate() const
 {
-    return getArgument(0);
+	return getArgument(0);
 }
 
 
 const Term&
 Atom::getArgument(const unsigned index) const
 {
-    assert(index < arguments.size());
+	assert(index < arguments.size());
 
-    return arguments[index];
+	return arguments[index];
 }
 
 
 unsigned
 Atom::getArity() const
 {
-    return arguments.size();
+	return arguments.size() - 1;
 }
 
 
 bool
 Atom::isStronglyNegated() const
 {
-    return isStrongNegated;
+	return isStrongNegated;
 }
 
 
 bool
 Atom::unifiesWith(const AtomPtr atom2) const
 {
-    //
-    // atoms only unify with atoms
-    //
-    if (typeid(*atom2) != typeid(Atom))
-        return false;
+	//
+	// atoms only unify with atoms
+	//
+	if (typeid(*atom2) != typeid(Atom))
+		return false;
 
-    if (getArity() != atom2->getArity())
-        return false;
-    
-    bool ret = true;
-    
-    for (unsigned i = 0; i < getArity(); i++)
-    {
-        if (!getArgument(i).unifiesWith(atom2->getArgument(i)))
-            ret = false;
-    }
-    
-    return ret;
+	if (getArity() != atom2->getArity())
+		return false;
+	
+	bool ret = true;
+	
+	for (unsigned i = 0; i <= getArity(); i++)
+	{
+		if (!getArgument(i).unifiesWith(atom2->getArgument(i)))
+			ret = false;
+	}
+	
+	return ret;
 }
 
 
@@ -161,38 +177,38 @@ Atom::unifiesWith(const AtomPtr atom2) const
 bool
 Atom::operator== (const Atom& atom2) const
 {
-    if (getArity() != atom2.getArity())
-        return false;
-    
-    if (typeid(*this) != typeid(atom2))
-        return false;
+	if (getArity() != atom2.getArity())
+		return false;
+	
+	if (typeid(*this) != typeid(atom2))
+		return false;
 
-    if (isStrongNegated != atom2.isStrongNegated)
-        return false;
+	if (isStrongNegated != atom2.isStrongNegated)
+		return false;
 
-    return std::equal(arguments.begin(), arguments.end(),
-                      atom2.arguments.begin());
+	return std::equal(arguments.begin(), arguments.end(),
+					  atom2.arguments.begin());
 }
 
 
 bool
 Atom::operator!= (const Atom& atom2) const
 {
-    return !(*this == atom2);
+	return !(*this == atom2);
 }
 
 
 void
 Atom::setAlwaysFO()
 {
-    isAlwaysFO = 1;
+	isAlwaysFO = 1;
 }
 
 
 bool
 Atom::getAlwaysFO() const
 {
-    return isAlwaysFO;
+	return isAlwaysFO;
 }
 
 
@@ -206,13 +222,13 @@ Atom::accept(BaseVisitor& v) const
 bool
 Atom::isGround() const
 {
-    for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-    {
-        if (t->isVariable())
-                return false;
-    }
+	for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
+	{
+		if (t->isVariable())
+				return false;
+	}
 
-    return true;
+	return true;
 }
 
 
@@ -228,69 +244,54 @@ operator<< (std::ostream& out, const Atom& atom)
 bool
 Atom::operator< (const Atom& atom2) const
 {
-    int n = getPredicate().compare(atom2.getPredicate());
+	int n = getPredicate().compare(atom2.getPredicate());
 
-    if (n < 0)
-        return true;
-    if (n > 0)
-        return false;
-    /*
-    if (getPredicate() < atom2.getPredicate())
-        return true;
-    if (getPredicate() > atom2.getPredicate())
-        return false;
-    if (getPredicate() != atom2.getPredicate())
-    {
-        return (getPredicate() < atom2.getPredicate());
-    }
-    */
+	if (n < 0)
+		return true;
+	if (n > 0)
+		return false;
 
-    if (!isStrongNegated && atom2.isStrongNegated)
-    {
-        return true;
-    }
-    else if (isStrongNegated && !atom2.isStrongNegated)
-    {
-        return false;
-    }
+	if (!isStrongNegated && atom2.isStrongNegated)
+		return true;
+	else if (isStrongNegated && !atom2.isStrongNegated)
+		return false;
 
-    //
-    // predicate symbols are equal, now distinguish between arguments
-    //
+	//
+	// predicate symbols are equal, now distinguish between arguments
+	//
+	if (getArity() < atom2.getArity())
+	{
+		//
+		// equal predicates, different arities - may only happen for variable
+		// predicates!
+		//
+		if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
+			throw SyntaxError("arity mismatch");
 
-    if (getArity() < atom2.getArity())
-    {
-        //
-        // equal predicates, different arities - can happen for variable
-        // predicates!
-        //
-        if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
-            throw SyntaxError("arity mismatch");
+		return true;
+	}
 
-        return true;
-    }
-
-    // lexicographically compare on the arguments, i.e. skip the predicate of arguments
-    if (getArity() == atom2.getArity())
-    {
+	// lexicographically compare on the arguments, i.e. skip the predicate of arguments
+	if (getArity() == atom2.getArity())
+	{
 	// lexicographical_compare returns true if the range of
 	// elements [first1, last1) is lexicographically less than the
 	// range of elements [first2, last2), and false otherwise.
 	return std::lexicographical_compare(++arguments.begin(), arguments.end(),
-					    ++atom2.arguments.begin(), atom2.arguments.end());
-    }
+						++atom2.arguments.begin(), atom2.arguments.end());
+	}
 
-    // getArity() > atom2.getArity()
-    return false;
+	// getArity() > atom2.getArity()
+	return false;
 }
 
 
 
 BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, const std::string& b)
 {
-    arguments.push_back(Term(b));
-    arguments.push_back(t1);
-    arguments.push_back(t2);
+	arguments.push_back(Term(b));
+	arguments.push_back(t1);
+	arguments.push_back(t2);
 }
 
 
@@ -300,5 +301,4 @@ BuiltinPredicate::accept(BaseVisitor& v) const
   v.visitBuiltinPredicate(this);
 }
 
-
-
+/* vim: set noet sw=4 ts=4 tw=80: */

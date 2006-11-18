@@ -14,105 +14,163 @@
 #define _PROGRAM_H
 
 #include "dlvhex/Rule.h"
+#include "dlvhex/PrintVisitor.h"
+#include "boost/ptr_container/indirect_fun.hpp"
 
 
 /**
  * @brief Program class.
  *
- * The Program class encapsulates rules and external atoms to represent a subprogram
+ * A program is a set of rules. It does not include facts, they are stored
+ * elsewhere as AtomSet.
  */
 class Program
 {
-public:
+	public:
 
-    /// @todo: we should use a set here!
-    typedef std::vector<const Rule*> ruleset_t;
+	/**
+	 * As a container for the rules of a program, a std::set is used. This set
+	 * stores only pointers to rules.
+	 */
+	typedef std::set<const Rule*, boost::indirect_fun<std::less<Rule> > > ruleset_t;
 
-    class const_iterator
-    {
-        ruleset_t::const_iterator it;
+	/**
+	 * Custom iterator class, such that we can treat the class program similar
+	 * to a container.
+	 */
+	class const_iterator
+	{
+		ruleset_t::const_iterator it;
 
-    public:
+		public:
 
-        const_iterator()
-        {
-            //assert(0);
-        }
+		const_iterator()
+		{
+			//assert(0);
+		}
 
-        const_iterator(const ruleset_t::const_iterator &it1)
-            : it(it1)
-        { }
+		const_iterator(const ruleset_t::const_iterator &it1)
+		: it(it1)
+		{ }
 
-        const Rule*
-        operator *() const
-        {
-            return (*it);
-        }
+		const Rule*
+		operator *() const
+		{
+			return (*it);
+		}
 
-        void
-        operator ++()
-        {
-            it++;
-        }
+		void
+		operator ++()
+		{
+			it++;
+		}
 
-        bool
-        operator== (const const_iterator& i2) const
-        {
-            return it == i2.it;
-        }
+		bool
+		operator== (const const_iterator& i2) const
+		{
+			return it == i2.it;
+		}
 
-        bool
-        operator != (const const_iterator& i2) const
-        {
-            return (it != i2.it);
-        }
-    };
+		bool
+		operator != (const const_iterator& i2) const
+		{
+			return (it != i2.it);
+			}
+	};
 
-    const_iterator
-    begin() const
-    {
-        return const_iterator(rules.begin());
-    }
+	/**
+	 * Returns the first rule of the Program.
+	 *
+	 * Note that the actual order of the rules has nothing to do with the parsed
+	 * input. The first one can be any rule of the program.
+	 */
+	const_iterator
+	begin() const
+	{
+		return const_iterator(rules.begin());
+	}
 
-    const_iterator
-    end() const
-    {
-        return const_iterator(rules.end());
-    }
+	/**
+	 * Last rule of the program.
+	 *
+	 * \sa Program::begin()
+	 */
+	const_iterator
+	end() const
+	{
+		return const_iterator(rules.end());
+	}
 
-    Program();
+	/**
+	 * Constructor.
+	 */
+	Program();
 
-    void
-    addRule(const Rule*);
+	/**
+	 * Adds a rule to the program.
+	 *
+	 * The rule is added as a pointer. If the rule-object should live longer
+	 * than only in the local scope, best practice is here to use the central
+	 * registry for storing such objects:
+	 *
+	 * \code
+	 * Rule *rp = new Rule(...)
+	 * Registry::Instance()->storeObject(rp);
+	 * program.addRule(rp);
+	 * \endcode
+	 *
+	 * By using the Registry, it is secured that the object will be deleted at
+	 * program termination.
+	 */
+	void
+	addRule(const Rule*);
 
-    void
-    addWeakConstraint(const WeakConstraint*);
+	/**
+	 * Adds a weak constraint to the program.
+	 *
+	 * The weak constraint is added as a pointer. See also Program::addRule()
+	 * how to use this.
+	 */
+	void
+	addWeakConstraint(const WeakConstraint*);
 
-    const std::vector<const WeakConstraint*>&
-    getWeakConstraints() const;
+	/**
+	 * Returns a list of all weak constraints in the program.
+	 */
+	const std::vector<const WeakConstraint*>&
+	getWeakConstraints() const;
 
-    bool
-    exists(const Rule*);
+	/**
+	 * Returns a list of all external atoms in the program.
+	 */
+	const std::vector<ExternalAtom*>&
+	getExternalAtoms() const;
 
-    const std::vector<ExternalAtom*>&
-    getExternalAtoms() const;
+	/**
+	 * Only for debugging purposes. The real output functions are implemented
+	 * by the ProgramBuilder class!
+	 */
+	void
+	dump(PrintVisitor&) const;
 
-    /**
-     * Only for debugging purposes. The real output functions are implemented
-     * by the ProgramBuilder class!
-     */
-    void
-    dump(std::ostream&) const;
+	private:
 
-private:
+	/**
+	 * Set of rules.
+	 */
+	ruleset_t rules;
 
-    ruleset_t rules;
+	/**
+	 * All weak constraints.
+	 */
+	std::vector<const WeakConstraint*> weakConstraints;
 
-    std::vector<const WeakConstraint*> weakConstraints;
-
-    std::vector<ExternalAtom*> externalAtoms;
+	/**
+	 * All external atoms.
+	 */
+	std::vector<ExternalAtom*> externalAtoms;
 };
 
-
-
 #endif /* _PROGRAM_H */
+
+/* vim: set noet sw=4 ts=4 tw=80: */

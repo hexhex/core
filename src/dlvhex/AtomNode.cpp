@@ -127,36 +127,32 @@ AtomNode::getId() const
 
 std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 {
-    out << *(atomnode.getAtom());
+    out << atomnode.getId() << ": ";
 
-    out << " #" << atomnode.getId();
+    out << *(atomnode.getAtom());
 
     if (atomnode.getPreceding().size() > 0)
     {
-        out << " pre:";
-
         for (std::vector<Dependency>::const_iterator d = atomnode.getPreceding().begin();
             d != atomnode.getPreceding().end();
             ++d)
         {
-            out << " " << *d;
+        	out << std::endl << "    depends on: " << *d;
         }
     }
 
     if (atomnode.getSucceeding().size() > 0)
     {
-        out << " succ:";
-
         for (std::vector<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
             d != atomnode.getSucceeding().end();
             ++d)
         {
-            out << " " << *d;
+	        out << std::endl << "    dependents: " << *d;
         }
     }
 
     if (atomnode.getRules().size() > 0)
-        out << " rules:";
+        out << std::endl << "    rules:";
 
     for (std::vector<const Rule*>::const_iterator ri = atomnode.getRules().begin();
          ri != atomnode.getRules().end();
@@ -182,7 +178,7 @@ Dependency::Dependency(const Dependency& dep2)
 }
 
 
-Dependency::Dependency(const AtomNode* an, Type t)
+Dependency::Dependency(const AtomNodePtr an, Type t)
     : atomNode(an), type(t)
 {
 }
@@ -195,7 +191,7 @@ Dependency::getType() const
 }
 
 
-const AtomNode*
+const AtomNodePtr
 Dependency::getAtomNode() const
 {
     assert(atomNode);
@@ -205,7 +201,7 @@ Dependency::getAtomNode() const
 
 
 void
-Dependency::addDep(AtomNode* from, AtomNode* to, Dependency::Type type)
+Dependency::addDep(AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
 {
     Dependency dep1(from, type);
     Dependency dep2(to, type);
@@ -219,32 +215,32 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 {
     out << *(dep.getAtomNode()->getAtom());
 
-    out << "[";
+    out << " [";
 
     switch (dep.getType())
     {
     case Dependency::UNIFYING:
-        out << "u";
+        out << "unifying";
         break;
 
     case Dependency::PRECEDING:
-        out << "p";
+        out << "head-body";
         break;
 
     case Dependency::NEG_PRECEDING:
-        out << "n";
+        out << "head-body NAF";
         break;
 
     case Dependency::DISJUNCTIVE:
-        out << "d";
+        out << "disjunctive";
         break;
 
     case Dependency::EXTERNAL:
-        out << "e";
+        out << "external";
         break;
 
     case Dependency::EXTERNAL_AUX:
-        out << "x";
+        out << "external aux";
         break;
 
     default:
@@ -261,16 +257,18 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 
 NodeGraph::~NodeGraph()
 {
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
+	/*
+    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
          an != atomNodes.end();
          ++an)
     {
         delete *an;
     }
+	*/
 }
 
 
-const std::vector<AtomNode*>&
+const std::vector<AtomNodePtr>&
 NodeGraph::getNodes() const
 {
     return atomNodes;
@@ -278,10 +276,10 @@ NodeGraph::getNodes() const
 
 
 /*
-const AtomNode*
+const AtomNodePtr
 NodeGraph::getNode(unsigned nodeId)
 {
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
          an != atomNodes.end();
          ++an)
     {
@@ -292,13 +290,13 @@ NodeGraph::getNode(unsigned nodeId)
 */
 
 
-AtomNode*
+AtomNodePtr
 NodeGraph::addNode()
 {
     //
     // create node
     //
-    AtomNode* newnode = new AtomNode;
+    AtomNodePtr newnode(new AtomNode);
 
     //
     // add the new node to the graph
@@ -309,21 +307,24 @@ NodeGraph::addNode()
 }
 
 
-AtomNode*
+AtomNodePtr
 NodeGraph::addUniqueHeadNode(const AtomPtr atom)
 {
     //
     // does a node with exactly this atom already exist?
     // (same predicate, same arguments)
     //
-    AtomNode* newnode = findNode(atom);
+    //AtomNodePtr newnode = findNode(atom);
+	AtomNodePtr newnode;
+    findNode(atom, newnode);
 
-    if (!newnode)
+
+    if (newnode.use_count() == 0)
     {
         //
         // no - create node
         //
-        newnode = new AtomNode(atom);
+        newnode = AtomNodePtr(new AtomNode(atom));
 
         //std::cout << "new headnode: " << *(newnode->getAtom()) << std::endl;
 
@@ -346,7 +347,7 @@ NodeGraph::addUniqueHeadNode(const AtomPtr atom)
         // search all existing nodes for an atom that unifies
         // with this new one - then we can add the unifying-dependency to both
         //
-        for (std::vector<AtomNode*>::const_iterator oldnode = atomNodes.begin();
+        for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
              oldnode != atomNodes.end();
              ++oldnode)
         {
@@ -394,7 +395,7 @@ NodeGraph::addUniqueHeadNode(const AtomPtr atom)
 }
 
 
-AtomNode*
+AtomNodePtr
 NodeGraph::addUniqueBodyNode(const AtomPtr atom)
 {
     //
@@ -402,14 +403,15 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
     // (same predicate, same arguments)
     //
     //std::cout << "==trying to add bodynode: " << *atom << std::endl;
-    AtomNode* newnode = findNode(atom);
+	AtomNodePtr newnode;
+    findNode(atom, newnode);
 
-    if (!newnode)
+    if (newnode.use_count() == 0)
     {
         //
         // no - create node
         //
-        newnode = new AtomNode(atom);
+        newnode = AtomNodePtr(new AtomNode(atom));
         
         //std::cout << "new bodynode: " << *(newnode->getAtom()) << std::endl;
 
@@ -422,7 +424,7 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
         // search for all existing nodes if an atom exists that unifies
         // with this new one - then we can add the unifying-dependency to both
         //
-        for (std::vector<AtomNode*>::const_iterator oldnode = atomNodes.begin();
+        for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
              oldnode != atomNodes.end();
              ++oldnode)
         {
@@ -461,20 +463,19 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
 }
 
 
-AtomNode*
-NodeGraph::findNode(const AtomPtr atom) const
+void
+NodeGraph::findNode(const AtomPtr atom, AtomNodePtr& ptr) const
 {
-    for (std::vector<AtomNode*>::const_iterator an = atomNodes.begin();
+    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
          an != atomNodes.end();
          ++an)
     {
         if (*atom == *(*an)->getAtom())
         {
-            return *an;
+            ptr = *an;
+			return;
         }
     }
-
-    return NULL;
 }
 
 
