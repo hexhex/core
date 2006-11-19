@@ -1,3 +1,33 @@
+2006-11-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/AtomNode.h: Changed "const Rule*" to "Rule*" in addRule() and
+	getRules() and vector of rules.
+	* src/dlvhex/AtomNode.cpp (addRule), (operator): Likewise.
+
+	* include/dlvhex/PluginInterface.h: Documentation.
+
+	* include/dlvhex/Program.h: Added iterator in addition to const_iterator.
+	Removed const from Rule* in ruleset_t and addRule(), addWeakConstraint().
+	Added deleteRule().
+	* src/dlvhex/Program.cpp (addRule), (deleteRule),
+	(addWeakConstraint): Likewise.
+
+	* include/dlvhex/Rule.h: Removed some of the const from Rule*, because we
+	want rules to be modifiable now. Added setHead(), setBody().
+	* src/dlvhex/Rule.cpp (setHead), (setBody): Likewise.
+
+	* src/dlvhex/Component.cpp: AtomNode::getRules() doesn't return const
+	Rule*'s any more.
+	* src/dlvhex/FixpointModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp (compute): Likewise.
+
+	* src/dlvhex/GraphBuilder.cpp (run): Changed const_iterator to iterator in
+	rule-loop, since rule pointers are added to AtomNodes and could be
+	modified there later.
+
+	* src/dlvhex/dlvhex.cpp: Documentation.
+
 2006-11-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* configure.ac: Bumped version to 1.4.
