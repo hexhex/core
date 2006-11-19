@@ -1,12 +1,400 @@
 /* -*- C++ -*- */
 
 /**
- * @file   PluginInterface.h
- * @author Roman Schindlauer
- * @date   Thu Sep 1 15:36:10 2005
+ * \file   PluginInterface.h
+ * \author Roman Schindlauer
+ * \date   Thu Sep 1 15:36:10 2005
  *
- * @brief Declaration of Classes PluginAtom, PluginRewriter,
+ * \brief Declaration of Classes PluginAtom, PluginRewriter,
  * and PluginInterface.
+ */
+
+/**
+ * \defgroup pluginframework The Plugin Framework
+ *
+ * \section introduction Introduction
+ *
+ * dlvhex evaluates Answer Set Programs with external atoms. One important
+ * design principle was to provide a mechanism to easily add further external
+ * atoms without having to recompile the main application. A \em plugin is a
+ * shared library that provides functions to realise custom external atoms.
+ * Furthermore, a plugin can supply rewriting facilities, which may alter the
+ * input logic program prior to evaluation.
+ *
+ * This Section introduces the principle of plugins and external atoms and gives
+ * a short hands-on example. You can also skip this and jump directly to the
+ * respective data structures, starting with PluginInterface.
+ *
+ * \section extatom The External Atom Function
+ *
+ * Formally, an external atom is defined to evaluate to \e true or \e
+ * false, depending on a number of parameters:
+ * - An interpretation (a set of facts)
+ * - A list of input constants
+ * - A list of output constants
+ * .
+ * However, it is more intuitive and convenient to think of an external atom not
+ * as being boolean, but rather functional: Depending on a given interpretation
+ * and a list of input constants, it returns output tuples. For instance, the
+ * external atom to import triples from RDF files has this form:
+ *
+ * \code
+ * &rdf[uri](X,Y,Z)
+ * \endcode
+ *
+ * where \c uri stands for a string denoting the RDF-source and \c X, \c Y, and
+ * \c Z are variables that represent an RDF-triple. The function associated with
+ * this atom simply returns all RDF-triples from the specified source.
+ * Obviously, in this case the interpretation is ignored.
+ *
+ * \subsection informationflow Information Flow
+ *
+ * The interface that is used by dlvhex to access a plugin follows very closely
+ * these semantics. For each atom, a retrieval function has to be implemented,
+ * which receives a query-object and has to return an an answer-object. The
+ * query-object carries the input interpretation as well as the ground input
+ * parameters of the external atom call, while the answer object is a container
+ * for the output tuples of the external atom's function.
+ *
+ * \subsection inputtypes Types of Input Parameters
+ *
+ * Theoretically, it is completely up to the atom function how to process the
+ * interpretation together with the input constants, which are basically only
+ * names. In practice however, only parts of the interpretation might be needed
+ * (if at all). Considering this as well as for efficiency reasons, we created two
+ * categories of input parameters:
+ * - the Constant parameter and
+ * - the Predicate parameter.
+ * .
+ * A parameter of type "Constant" is not related to the interpretation at all,
+ * like in the previous example of the RDF-atom. A parameter is of type
+ * ``Predicate'' means that all facts in the interpretation with this predicate
+ * are necessary for the atom. Let's assume, we have an external atom that
+ * calculates the overall price of a number of books given by their ISBN number:
+ *
+ * \code
+ * &overallbookprice[isbn](X)
+ * \endcode
+ *
+ * The single input parameter of this atom would be of type "Predicate", meaning
+ * that not the constant itself is necessary for the atom's function, but the part
+ * of the interpretation with this predicate.  So if we have, e.g.,
+ * \f[
+ * I=\{{\rm isbn}({\rm 0{-}19{-}824183{-}6}), {\rm isbn}({\rm 0{-}201{-}99954{-}4}), p(a), q(b),\ldots\}
+ * \f]
+ * the atom's function will be called with a "reduced" interpretation:
+ * \f[
+ * I=\{{\rm isbn}({\rm 0{-}19{-}824183{-}6}), {\rm isbn}({\rm 0{-}201{-}99954{-}4})\}
+ * \f]
+ * Specifying the type of input parameters not only helps to single out the
+ * relevant part of the interpretation, but also supports dlvhex in calculating
+ * the dependencies within a HEX-program.
+ *
+ * \section writingplugin Writing a Plugin
+ * We wanted to keep the interface between dlvhex and the plugins as lean as
+ * possible. The necessary interactions are:
+ * - Registering the plugin and its atoms
+ * - Evaluating an atom
+ * .
+ * For both tasks, we provide a base class which the plugin author has to
+ * subclass.  As a running example, we will use the aforementioned RDF-atom. To
+ * begin with, the following header files from dlvhex need to be included:
+ *
+ * \code
+ *     #include "dlvhex/PluginInterface.h"
+ *     #include "dlvhex/Error.h"
+ * \endcode
+ *
+ * If dlvhex was installed correctly, these headers should be available.
+ * 
+ * \subsection extatom The External Atom
+ * First, we have to subclass PluginAtom to create our own \b RDFatom class:
+ * 
+ * \code
+ *     class RDFatom : public PluginAtom
+ *     {
+ * \endcode
+ * 
+ * The constructor of \b RDFatom will be used to define some properties of the atom:
+ *
+ * \code
+ *     public:
+ *         RDFatom()
+ *         {
+ *             addInputPredicate();
+ *             setOutputArity(3);
+ *         }
+ * \endcode
+ * 
+ * Here, we need to specify the number and types of input parameters. The RDF-atom
+ * as we used it above, has a single input parameter, which is the name of the
+ * predicate to hold the uris. In this case, we just need a single call to
+ * PluginAtom::addInputPredicate(). Another possibility would have been to define the
+ * single input term as a constant, which represents the uri directly (which
+ * means, that then there can only be one uri). In this case, the input
+ * interpretation would be irrelevant, since we don't need the extension of any
+ * predicate. To define a constant input parameter, we use PluginAtom::addInputConstant().
+ * If we wanted to have, say, two input parameters which will represent predicate
+ * names and a third one which will be a constant, we would put this sequence of
+ * calls in the constructor:
+ *
+ * \code
+ *             addInputPredicate();
+ *             addInputPredicate();
+ *             addInputConstant();
+ * \endcode
+ * 
+ * The call \c setOutputArity(3) ensures that occurences of this atom with other than
+ * three output terms will cause an error at parsing time.
+ * 
+ * The only member function of the atom class that needs to be defined is retrieve:
+ *
+ * \code
+ *         virtual void
+ *         retrieve(const Query& query,
+ *                  Answer& answer) throw(PluginError)
+ *         {
+ * \endcode
+ * 
+ * retrieve() always takes a query object as input and returns the result tuples in an
+ * answer object.
+ * The input parameters at call time are accessed by Query::getInputTuple():
+ * 
+ * \code
+ *             Tuple parms = query.getInputTuple();
+ * \endcode
+ *
+ * The interpretation is retrieved by Query::getInterpretation():
+ *
+ * \code
+ *             Interpretation i = query.getInterpretation();
+ * \endcode
+ *
+ * For more information about the datatypes of dlvhex, please refer to the
+ * documentation of the classes Term, Atom, AtomSet, etc.
+ * 
+ * At this point, the plugin author will implement the actual function of the
+ * external atom, either within this class or by calling other functions.
+ * Furthermore, the author is able to throw an exception of type \b PluginError
+ * which will be catched inside dlvhex, e.g.:
+ * \code
+ *             if (something_went_wrong != 0)
+ *                 throw PluginError("rdf plugin error");
+ * \endcode
+ * 
+ * Before returning from the retrieve-function, the answer-object needs to be prepared:
+ * 
+ * \code
+ *             std::vector<Tuple> out;
+ * 
+ *             // fill the answer object...
+ *                 
+ *             answer.addTuples(out);
+ *         }
+ * \endcode
+ *
+ * \subsection registeratoms Registering the Atoms
+ *
+ * So far, we described the implementation of a specific external atom. In order
+ * to integrate one or more atoms in the interface framework, the plugin author
+ * needs to subclass PluginInterface:
+ *
+ * \code
+ *     class RDFplugin : public PluginInterface
+ *     {
+ *     public:
+ * \endcode
+ *
+ * At the current stage of dlvhex, only the function PluginInterface::getAtoms() needs to be
+ * defined inside this class:
+ * 
+ * \code
+ *         virtual void
+ *         getAtoms(AtomFunctionMap& a)
+ *         {
+ *             a["rdf"] = new RDFatom;
+ *         }
+ * \endcode
+ * 
+ * Here, a Plugin-Atom object is related to a string in a map - as soon as
+ * dlvhex encounters an external atom (in this case: \c &rdf) during the
+ * evaluation of the program, it finds the corresponding atom object (and hence
+ * its PluginAtom::retrieve() function) in this map. Naturally, a plugin can
+ * comprise several different Plugin-Atoms, which are all registered here:
+ *
+ * \code
+ *             a["str_cat"] = new strcat_atom;
+ *             a["str_find"] = new strfind_atom;
+ *             a["str_erase"] = new strerase_atom;
+ * \endcode
+ * 
+ * \subsection importing Importing the Plugin
+ *
+ * To make the plugin available, we need to instantiate it. The simplest way to do
+ * this is to define a global variable:
+ *
+ * \code
+ *     RDFPlugin theRDFPlugin;
+ * \endcode
+ * 
+ * Eventually, we need to import the plugin to dlvhex. this is achieved by the dynamic
+ * linking mechanism of shared libraries. The author needs to define this
+ * function,
+ * 
+ * \code
+ *     extern "C"
+ *     RDFPlugin*
+ *     PLUGINIMPORTFUNCTION()
+ *     {
+ *         theRDFPlugin.setVersion(RDFPLUGIN_MAJOR,
+ *                                 RDFPLUGIN_MINOR,
+ *                                 RDFPLUGIN_MICRO);
+ *         return new RDFPlugin();
+ *     }
+ * \endcode
+ * 
+ * replacing the type RDFPlugin by her own plugin class. For each found library,
+ * dlvhex will call this function and receive a pointer to the plugin object, thus
+ * being able to call its PluginInterface::getAtoms() function.
+ * 
+ * The macros used here for setting the version number have their origin in \c
+ * configure.ac, which is needed to produce the configure-script (see
+ * Section \ref compiling).
+ * 
+ * \section modifying Modifying the input program
+ * 
+ * dlvhex provides three interfaces for plugins to modify the program before it
+ * will be evaluated. We will present each of them in the following.
+ *
+ * \subsection converter The Converter
+ *
+ * The converter can be used to, you guessed it, convert the input program
+ * before it is processed by dlvhex itself. Thus, a plugin can provide special
+ * syntax that deviates from the syntax of HEX-programs and ensure by the
+ * rewriter to pass a well-formed HEX-program on to dlvhex. For instance, the
+ * plugin for interfacing description logic knowledge bases allows for
+ * dl-programs as input, which permit a more intuitive syntax for this type of
+ * external atoms. The converter of this plugin transforms the dl-atoms to
+ * external atoms and might add some auxiliary rules to the program. Another
+ * example of using this facility is the SPARQL-plugin, which converts a SPARQL
+ * query into a HEX-program.
+ * 
+ * There is no specific order for calling the converters, if more than one is
+ * provided by existing plugins. So either the converter of a plugin is tolerant
+ * enough to leave things untouched if the input is not recognized, or the
+ * plugin uses the option-handling facility to be activated manually when
+ * invoking dlvhex, thus leaving the plugin unused if not explicitly desired by
+ * the user.
+ * 
+ * A converter must be subclassed from PluginConverter:
+ *
+ * \code
+ *     class MyConverter : public PluginConverter
+ *     {
+ *     public:
+ * \endcode
+ *
+ * The constructor of the converter is called with the input and output streams. It
+ * has to initialize its own stream variables with them, for example by calling the
+ * base constructor. If you do not have anything fancy in your converter, like
+ * handling of bison and flex, it might be sufficient to keep the constructor
+ * empty:
+ *
+ * \code
+ *         MyConverter(std::istream& i, std::ostream& o)
+ *             : PluginConverter(i, o)
+ *         {
+ *             \\ initialize something with the streams
+ *         }
+ * \endcode
+ * 
+ * This is the actual rewriting function, that will be called by dlvhex:
+ *
+ * \code
+ *         void
+ *         MyConverter::rewrite()
+ *         { 
+ *             \\ do the rewriting, maybe throw a PluginError
+ *         }
+ *     }
+ * \endcode
+ * 
+ * For supplying a converter to dlvhex, the following function needs to be defined
+ * in the class derived from PluginInterface (like \b RDFPlugin above):
+ * 
+ * \code
+ *         virtual PluginConverter*
+ *         createConverter()
+ *         {
+ *             converter = new MyConverter();
+ *             return converter;
+ *         }
+ * \endcode
+ * 
+ * Of course, this also requires a pointer \b converter to be defined in your
+ * plugin class derived from PluginInterface:
+ *
+ * \code
+ *         MyConverter* converter;
+ * \endcode
+ * 
+ * It might be more elegant to define the converter already in the constructor of
+ * the plugin:
+ *
+ * \code
+ *         SomePlugin()
+ *             : converter(new MyConverter())
+ *         { }
+ * \endcode
+ * 
+ * Then, PluginInterface::createConverter only needs to return the object:
+ * 
+ * \code
+ *         virtual PluginConverter*
+ *         createConverter()
+ *         {
+ *             return converter;
+ *         }
+ * \endcode
+ * 
+ * The object would be deleted by the
+ * plugin's destructor:
+ * 
+ * \code
+ *         ~SomePlugin()
+ *         {
+ *             delete converter;
+ *         }  
+ * \endcode
+ * 
+ * To learn more about how to write the actual conversion routine, refer to the
+ * sources of the DL-plugin, which uses a bison/flex parser.
+ *
+ * \section compiling Building the Plugin
+ * 
+ * We provide a toolkit for building plugins based on the GNU
+ * Autotools (http://sourceware.org/autobook/)
+ * environment. This means that you will need the respective tools installed on
+ * your system - which is usually no problem, since they are provided as packages
+ * by all major linux distributions. For instance in Debian, you need the packages
+ * libtool, automake1.9, and autoconf.
+ * 
+ * After downloading and extracting the toolkit skeleton, the user can
+ * customize the top-level \c configure.ac to her own needs regarding
+ * dependencies on other packages. This file contains invocations of
+ * the Autoconf macros that test the system features your package needs or can use.
+ * The only source-directory in this template is
+ * \c src, where \c Makefile.am sets the name of the library and its
+ * sourcefiles. When adding further source-subdirectories (like \c include), the
+ * user has to take care of referencing them in the top-level \c Makefile.am.
+ * Calling \c ./bootstrap in the top-level directory creates the configure file.
+ * Subsequently calling \c ./configure and \c make install installs the
+ * shared library. If no further arguments are given to \c configure, the plugin
+ * will be installed into the system-wide plugin-directory (specified by the
+ * package configuration file \c lib/pkgconfig/dlvhex.pc of the devel-package).
+ * To install the plugin into \c ~/.dlvhex/plugins, run <tt>./configure
+ * --enable-userinstall</tt>. However, dlvhex itself provides a command line switch to
+ * provide a further directory at runtime where to search for plugin libraries.
  */
 
 
@@ -33,72 +421,111 @@ class NodeGraph;
 
 
 /**
- * @brief Base class for custom rewriters, which preparses the HEX-program.
+ * \brief Converter class.
  *
- * \todo: update this doc!
- * 
- * A plugin can provide a number of plugin atoms as well as a rewriter object.
- * The purpose of a plugin rewriter is to give the plugin author the
- * possibility of creating a custom syntax for her external atoms, which will
- * be converted to the hex-program syntax by the rewriter. When dlvhex is
- * executed, the rewriter of each found plugin is applied to the original input
- * program. The specification of a rewriter is very general: it receives the
- * entire program through a stream and sends back the modified program. Thus, a
- * rewriter is a very powerful tool to add any syntactical sugar to
- * hex-programs - not necessarily related only to the syntax of external atoms.
- * A plugin could even provide only a rewriter, but no external atoms.
+ * A converter can be seen as a preprocessor, which receives the raw input
+ * program. A converter can either decide to parse the program and return a
+ * well-formed HEX-program or simply leave the input untouched.
  */
-class PluginRewriter
-{
-protected:
-
-    PluginRewriter()
-    { }
-
-public:
-
-    virtual
-    ~PluginRewriter()
-    { }
-
-    virtual void
-    rewrite(Program&, AtomSet&) = 0;
-
-};
-
-
 class PluginConverter
 {
 protected:
 
+	/**
+	 * Constructor.
+	 */
     PluginConverter()
     { }
 
 public:
 
+	/**
+	 * Destructor.
+	 */
     virtual
     ~PluginConverter()
     { }
 
+	/**
+	 * Conversion function.
+	 *
+	 * The input program is read from i. The output must be passed on to the
+	 * stream o, either the original input stream or the result of a conversion.
+	 */
     virtual void
     convert(std::istream& i, std::ostream& o) = 0;
-
 };
 
 
+/**
+ * \brief Rewriter class.
+ *
+ * A plugin can provide a rewriter object.
+ * The purpose of a plugin rewriter is to give the plugin author the
+ * possibility of creating a custom syntax for her external atoms, which will
+ * be rewritten to the hex-program syntax by the rewriter. When dlvhex is
+ * executed, the rewriter of each found plugin is applied to the input
+ * program. The rewriters are called after the converters and receive an already
+ * parsed program, represented by a Program object and an AtomSet (which
+ * contains the facts of the program).
+ */
+class PluginRewriter
+{
+protected:
+
+ 	/**
+	 * Constructor.
+	 */
+   PluginRewriter()
+    { }
+
+public:
+
+	/**
+	 * Destructor.
+	 */
+    virtual
+    ~PluginRewriter()
+    { }
+
+	/**
+	 * Rewriting funcition.
+	 *
+	 * The rewriting is applied to a Program object. Also the set of initial
+	 * facts, the EDB, is passed to the rewriter and can be considered/altered.
+	 */
+    virtual void
+    rewrite(Program&, AtomSet&) = 0;
+};
+
+
+/**
+ * Optimizer class.
+ *
+ * \todo doc
+ */
 class PluginOptimizer
 {
 protected:
 
+	/**
+	 * Constructor.
+	 */
     PluginOptimizer()
     { }
 
 public:
 
+	/**
+	 * Destructor.
+	 */
     virtual
     ~PluginOptimizer()
     { }
 
+	/**
+	 * Optimizing function.
+	 */
     virtual void
     optimize(NodeGraph&, AtomSet&) = 0;
 
@@ -106,26 +533,35 @@ public:
 
 
 
+
 /**
- * @brief Interface class for external Atoms.
+ * \brief Interface class for external Atoms.
+ *
+ * \ingroup pluginframework
+ *
+ * An external atom is represented by a subclassed PluginAtom. The actual
+ * evaluation function of the atom is realized in the PluginAtom::retrieve()
+ * method. In the constructor, the user must specify the types of input terms
+ * and the output arity of the atom.
  */
 class PluginAtom
 {
 public:
 
     /**
-     * @brief Query class for wrapping the input of an external atom call.
+     * \brief Query class for wrapping the input of an external atom call.
      */
     class Query
     {
     public:
         /**
-         * @brief Query Constructor.
+         * \brief Query Constructor.
          *
          * A query has three components:
-         * * The input interpretation,
-         * * the input arguments, and
-         * * the output tuple.
+         * - The input interpretation,
+         * - the input arguments, and
+         * - the output tuple.
+		 * .
          * The input arguments are the ground terms of the input list. The
          * output tuple corresponds to the atom's output list: If it contains
          * variables, the query will be a functional one for those missing
@@ -139,19 +575,23 @@ public:
               const Tuple&);
 
         /**
-         * @brief Returns the input interpretation.
+         * \brief Returns the input interpretation.
+		 *
+		 * An external atom is evaluated w.r.t. the 
+		 * The interpretation is one part of the input to an external atom,
+		 * which is evaluated
          */
         const AtomSet&
         getInterpretation() const;
 
         /**
-         * @brief Returns the input parameter tuple.
+         * \brief Returns the input parameter tuple.
          */
         const Tuple&
         getInputTuple() const;
 
         /**
-         * @brief Return the input pattern.
+         * \brief Return the input pattern.
          */
         const Tuple&
         getPatternTuple() const;
@@ -168,7 +608,7 @@ public:
 
 
     /**
-     * @brief Answer class for wrapping the output of an external atom call.
+     * \brief Answer class for wrapping the output of an external atom call.
      */
     class Answer
     {
@@ -177,25 +617,25 @@ public:
         Answer();
 
         /**
-         * @brief Adds an output tuple to the answer object.
+         * \brief Adds an output tuple to the answer object.
          */
         void
         addTuple(const Tuple&);
 
         /**
-         * @brief Adds a set of tuples to the output of the answer object.
+         * \brief Adds a set of tuples to the output of the answer object.
          */
         void
         addTuples(const std::vector<Tuple>&);
 
         /**
-         * @brief Replace the output of the answer object.
+         * \brief Replace the output of the answer object.
          */
         void
         setTuples(const std::vector<Tuple>&);
 
         /**
-         * @brief Returns the output tuples of the answer object.
+         * \brief Returns the output tuples of the answer object.
          */
         boost::shared_ptr<std::vector<Tuple> >
         getTuples() const;
@@ -207,7 +647,7 @@ public:
 
 
     /**
-     * @brief Type of input parameter.
+     * \brief Type of input parameter.
      *
      * Currently, two types of input parameters can be specified: PREDICATE and
      * CONSTANT.
@@ -240,7 +680,7 @@ public:
 
 
     /**
-     * @brief Adds an input parameter of type PREDICATE.
+     * \brief Adds an input parameter of type PREDICATE.
      *
      * See InputType.
      */
@@ -248,7 +688,7 @@ public:
     addInputPredicate();
 
     /**
-     * @brief Adds an input parameter of type CONSTANT.
+     * \brief Adds an input parameter of type CONSTANT.
      *
      * See InputType.
      */
@@ -256,7 +696,7 @@ public:
     addInputConstant();
 
     /**
-     * @brief Returns the input arity of the external atom.
+     * \brief Returns the input arity of the external atom.
      *
      * The input arity follows from the number of specified predicate types (see
      * addInputPredicate and addInputConstant).
@@ -265,27 +705,27 @@ public:
     getInputArity() const;
 
     /**
-     * @brief Specifies the output arity of the external Atom.
+     * \brief Specifies the output arity of the external Atom.
      */
     void
     setOutputArity(const unsigned arity);
 
     /**
-     * @brief Returns the output arity of the external atom, which was specified by the
+     * \brief Returns the output arity of the external atom, which was specified by the
      * plugin author.
      */
     unsigned
     getOutputArity() const;
 
     /**
-     * @brief Retrieve answer object according to a query.
+     * \brief Retrieve answer object according to a query.
      */
     virtual void
     retrieve(const Query&, Answer&) throw (PluginError) = 0;
 
 
     /**
-     * @brief Returns the type of the input argument specified by position
+     * \brief Returns the type of the input argument specified by position
      * (starting with 0).
      */
     InputType
@@ -295,17 +735,17 @@ public:
 private:
 
     /**
-     * @brief Number of input arguments.
+     * \brief Number of input arguments.
      */
     unsigned inputSize;
 
     /**
-     * @brief Number of output Terms.
+     * \brief Number of output Terms.
      */
     unsigned outputSize;
 
     /**
-     * @brief Type of each input argument.
+     * \brief Type of each input argument.
      */
     std::vector<InputType> inputType;
 
@@ -314,7 +754,60 @@ private:
 
 
 /**
- * @brief Factory base class for representing plugins and creating necessary objects.
+ * \brief Factory base class for representing plugins and creating necessary objects.
+ *
+ * \ingroup pluginframework
+ *
+ * \section intro Overview
+ *
+ * The PluginInterface class can be seen as a wrapper for all user-defined
+ * features of a plugin, which are:
+ * - announce external atoms
+ * - supply rewriting facilities
+ * - provide an optimizer
+ * - offer additional command line options
+ * .
+ *
+ * The user has to subclass from PluginInterface in order to implement a plugin:
+ *
+ * \code
+ * class MyShinyPlugin : public PluginInterface
+ * {
+ *     ...
+ * }
+ * \endcode
+ * 
+ * Within this definition, the user might want to override some of the follwing
+ * methods:
+ * - getAtoms() \n
+ *   At least, the plugin will contain some external atoms, which
+ *   are implemented by deriving custom classes from PluginAtom and then are
+ *   incorporated by registering them in the getAtoms function.
+ * - createConverter(), createRewriter() \n
+ *   A plugin can provide a \e Converter
+ *   (see PluginConverter), which will receive the input program before dlvhex
+ *   will start looking at it. With this facility, a plugin can for example
+ *   provide a conversion from a different language to a hex-program. After
+ *   dlvhex has parsed the input program, it will pass it to those found plugins
+ *   that have provided a \e Rewriter (see PluginRewriter), which can alter the
+ *   program to their liking, e.g., implement some syntactic sugar regarding
+ *   their external atoms. In fact, a plugin could also supply only a converter
+ *   or rewriter and no external atoms and thus act as a pure preprocessing
+ *   stage for dlvhex.
+ * - createOptimizer() \n
+ *   Before a hex-program is evaluated, dlvhex builds its dependency graph and
+ *   passes this graph to those plugins that have implemented an \e Optimizer
+ *   (see PluginOptimizer). Such an optimizer can then modify the graph
+ *   directly, which is more intuitive in case of optimization tasks than to
+ *   work on the textual program repesentation.
+ * - setOptions() \n
+ *   A plugin can receive switches from the command line invocation
+ *   of dlvhex. All command line parameters that are unknown to dlvhex will be
+ *   passed to the plugins, which can then check this list for their own
+ *   switches.
+ * .
+ *
+ *
  */
 class PluginInterface
 {
@@ -336,12 +829,12 @@ public:
     { }
 
     /**
-     * @brief Associates atom names with function pointers.
+     * \brief Associates atom names with function pointers.
      */
     typedef std::map<std::string, PluginAtom*> AtomFunctionMap;
 
     /**
-     * @brief Converter.
+     * \brief Converter.
      *
 	 * By overloading this function, a plugin can implement a custom preparser,
 	 * which will be called first in the entire dlvhex-processing chain. A
@@ -357,7 +850,7 @@ public:
     }
 
     /**
-     * @brief Rewriter for hex-programs.
+     * \brief Rewriter for hex-programs.
      *
 	 * The rewriters are called second after the preparsers. Hence, a rewriter
 	 * can expect a well-formed hex-program as input and must of course also
@@ -381,22 +874,42 @@ public:
     }
 
     /**
-     * @brief Fills a termlist with the constant universe of the KB
-     * specified by a URI.
-     */
-    virtual void
-    getUniverse(std::string&, std::list<Term>&)
-    { }
-
-    /**
-     * @brief Fills a mapping from atom names to the plugin's atom objects.
+     * \brief Fills a mapping from atom names to the plugin's atom objects.
+	 *
+	 * This is the central location where the user's atoms are made public.
+	 * dlvhex will call this function for all found plugins, which write their
+	 * atoms in the provided map. This map associates strings with pointers to
+	 * PluginAtom objects. The strings denote the name of the atom as it should
+	 * be used in the program.
+	 *
+	 * Example:
+	 *
+	 * \code
+	 * void
+	 * getAtoms(AtomFunctionMap& a)
+	 * {
+	 *     a["newatom"] = new MyAtom;
+	 * }
+	 * \endcode
+	 *
+	 * Here, we assume to have defined an atom MyAtom derived from PluginAtom.
+	 * This atom can now be used in a hex-program with the predicate \b
+	 * &newatom.
+	 *
+	 * Naturally, more than one atoms can be registered here:
+	 *
+	 * \code
+	 * a["split"] = new SplitAtom;
+	 * a["concat"] = new ConcatAtom;
+	 * a["substr"] = new SubstringAtom;
+	 * \endcode
      */
     virtual void
     getAtoms(AtomFunctionMap&)
     { }
 
     /**
-     * @brief Propagates dlvhex program options to the plugin.
+     * \brief Propagates dlvhex program options to the plugin.
      *
      * Each option known to the plugin must be deleted from the vector. dlvhex
      * will exit with an error if unknown options are left in the vector after
@@ -409,7 +922,7 @@ public:
     { }
 
     /**
-     * @brief Set plugin version.
+     * \brief Set plugin version.
      *
      * The version number will be displayed when dlvhex loads the plugin. It can
      * be used to check whether the right version is loaded.

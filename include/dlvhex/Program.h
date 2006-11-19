@@ -26,33 +26,91 @@
  */
 class Program
 {
-	public:
-
 	/**
 	 * As a container for the rules of a program, a std::set is used. This set
 	 * stores only pointers to rules.
 	 */
-	typedef std::set<const Rule*, boost::indirect_fun<std::less<Rule> > > ruleset_t;
+	typedef std::set<Rule*, boost::indirect_fun<std::less<Rule> > > ruleset_t;
+
+public:
+
+	class const_iterator;
 
 	/**
 	 * Custom iterator class, such that we can treat the class program similar
+	 * to a container.
+	 */
+	class iterator
+	{
+		/// needed for conversion.
+		friend class const_iterator;
+
+		/// needed for access to iterator::it in Program
+		friend class Program;
+
+		ruleset_t::iterator it;
+
+	public:
+
+		iterator()
+		{ }
+
+		iterator(const ruleset_t::iterator &it1)
+			: it(it1)
+		{ }
+
+		/**
+		 * Dereference operator.
+		 */
+		Rule*
+		operator *() const
+		{
+			return (*it);
+		}
+
+		void
+		operator ++()
+		{
+			it++;
+		}
+
+		bool
+		operator== (const iterator& i2) const
+		{
+			return it == i2.it;
+		}
+
+		bool
+		operator != (const iterator& i2) const
+		{
+			return (it != i2.it);
+		}
+	};
+
+
+	/**
+	 * Custom const_iterator class, such that we can treat the class program similar
 	 * to a container.
 	 */
 	class const_iterator
 	{
 		ruleset_t::const_iterator it;
 
-		public:
+	public:
 
 		const_iterator()
-		{
-			//assert(0);
-		}
-
-		const_iterator(const ruleset_t::const_iterator &it1)
-		: it(it1)
 		{ }
 
+		/**
+		 * Conversion from iterator to const_iterator.
+		 */
+		const_iterator(const iterator &it1)
+			: it(it1.it)
+		{ }
+
+		/**
+		 * Dereference operator.
+		 */
 		const Rule*
 		operator *() const
 		{
@@ -75,7 +133,7 @@ class Program
 		operator != (const const_iterator& i2) const
 		{
 			return (it != i2.it);
-			}
+		}
 	};
 
 	/**
@@ -84,10 +142,10 @@ class Program
 	 * Note that the actual order of the rules has nothing to do with the parsed
 	 * input. The first one can be any rule of the program.
 	 */
-	const_iterator
+	iterator
 	begin() const
 	{
-		return const_iterator(rules.begin());
+		return iterator(rules.begin());
 	}
 
 	/**
@@ -95,10 +153,10 @@ class Program
 	 *
 	 * \sa Program::begin()
 	 */
-	const_iterator
+	iterator
 	end() const
 	{
-		return const_iterator(rules.end());
+		return iterator(rules.end());
 	}
 
 	/**
@@ -123,7 +181,13 @@ class Program
 	 * program termination.
 	 */
 	void
-	addRule(const Rule*);
+	addRule(Rule*);
+
+	/**
+	 * Deletes a rule from the program.
+	 */
+	void
+	deleteRule(iterator);
 
 	/**
 	 * Adds a weak constraint to the program.
@@ -132,12 +196,12 @@ class Program
 	 * how to use this.
 	 */
 	void
-	addWeakConstraint(const WeakConstraint*);
+	addWeakConstraint(WeakConstraint*);
 
 	/**
 	 * Returns a list of all weak constraints in the program.
 	 */
-	const std::vector<const WeakConstraint*>&
+	const std::vector<WeakConstraint*>&
 	getWeakConstraints() const;
 
 	/**
@@ -163,7 +227,7 @@ class Program
 	/**
 	 * All weak constraints.
 	 */
-	std::vector<const WeakConstraint*> weakConstraints;
+	std::vector<WeakConstraint*> weakConstraints;
 
 	/**
 	 * All external atoms.

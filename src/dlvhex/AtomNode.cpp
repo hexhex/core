@@ -70,7 +70,7 @@ AtomNode::isBody()
 
 
 void
-AtomNode::addRule(const Rule* rule)
+AtomNode::addRule(Rule* rule)
 {
     rules.push_back(rule);
 }
@@ -111,7 +111,7 @@ AtomNode::getSucceeding() const
 }
 
 
-const std::vector<const Rule*>&
+const std::vector<Rule*>&
 AtomNode::getRules() const
 {
     return rules;
@@ -154,7 +154,7 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
     if (atomnode.getRules().size() > 0)
         out << std::endl << "    rules:";
 
-    for (std::vector<const Rule*>::const_iterator ri = atomnode.getRules().begin();
+    for (std::vector<Rule*>::const_iterator ri = atomnode.getRules().begin();
          ri != atomnode.getRules().end();
          ++ri)
     {

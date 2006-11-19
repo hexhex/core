@@ -42,9 +42,6 @@ Rule::Rule(const RuleHead_t& head,
         if (typeid(*((*bi)->getAtom())) == typeid(ExternalAtom))
             externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
     }
-
-//    std::cout << " rule has extatoms: " << externalAtoms.size() << std::endl;
-//    std::cout << "rule: " << *this << std::endl;
 }
 
 
@@ -63,6 +60,20 @@ const RuleBody_t&
 Rule::getBody() const
 {
     return body;
+}
+
+
+void
+Rule::setHead(const RuleHead_t& h)
+{
+	head = h;
+}
+
+
+void
+Rule::setBody(const RuleBody_t& b)
+{
+	body = b;
 }
 
 

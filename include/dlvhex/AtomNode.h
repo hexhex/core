@@ -104,7 +104,7 @@ public:
      * a set of AtomNodes.
      */
     void
-    addRule(const Rule*);
+    addRule(Rule*);
 
     /**
      * @brief Returns the atom-object this Node is associated with.
@@ -127,7 +127,7 @@ public:
     /**
      * @brief Returns all rules associated with this AtomNode.
      */
-    const std::vector<const Rule*>&
+    const std::vector<Rule*>&
     getRules() const;
 
     /**
@@ -157,7 +157,7 @@ private:
      * @brief Rules that belong to this AtomNode (in case it occured in a rule's
      * head).
      */
-    std::vector<const Rule*> rules;
+    std::vector<Rule*> rules;
 
     /**
      * @brief Preceding dependencies.

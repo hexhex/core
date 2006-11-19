@@ -23,7 +23,7 @@ Program::Program()
 
 
 void
-Program::addRule(const Rule* r)
+Program::addRule(Rule* r)
 {
 	rules.insert(r);
 
@@ -41,7 +41,14 @@ Program::addRule(const Rule* r)
 
 
 void
-Program::addWeakConstraint(const WeakConstraint* wc)
+Program::deleteRule(iterator i)
+{
+	rules.erase(i.it);
+}
+
+
+void
+Program::addWeakConstraint(WeakConstraint* wc)
 {
 	///todo don't add the same wc twice!
 
@@ -51,7 +58,7 @@ Program::addWeakConstraint(const WeakConstraint* wc)
 }
 
 
-const std::vector<const WeakConstraint*>&
+const std::vector<WeakConstraint*>&
 Program::getWeakConstraints() const
 {
 	return weakConstraints;

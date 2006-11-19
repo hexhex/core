@@ -66,6 +66,18 @@ public:
 	getBody() const;
 
 	/**
+	 * @brief Replaces the rule's head by the specified one.
+	 */
+	void
+	setHead(const RuleHead_t&);
+
+	/**
+	 * @brief Replaces the rule's body by the specified one.
+	 */
+	void
+	setBody(const RuleBody_t&);
+
+	/**
 	 * @brief Returns the filename where this rule appeared.
 	 */
 	std::string

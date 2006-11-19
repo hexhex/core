@@ -51,7 +51,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
         //
         // add all rules from this node to the component
         //
-        for (std::vector<const Rule*>::const_iterator ruleit = (*node)->getRules().begin();
+        for (std::vector<Rule*>::const_iterator ruleit = (*node)->getRules().begin();
                 ruleit != (*node)->getRules().end();
                 ++ruleit)
         {

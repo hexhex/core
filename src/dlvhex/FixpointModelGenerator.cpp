@@ -59,8 +59,7 @@ FixpointModelGenerator::getSerializedProgram() const
 
 
 void
-FixpointModelGenerator::compute(//const Program& program,
-                                const std::vector<AtomNodePtr>& nodes,
+FixpointModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
@@ -75,7 +74,7 @@ FixpointModelGenerator::compute(//const Program& program,
         //
         // add all rules from this node to the component
         //
-        for (std::vector<const Rule*>::const_iterator ri = (*node)->getRules().begin();
+        for (std::vector<Rule*>::const_iterator ri = (*node)->getRules().begin();
                 ri != (*node)->getRules().end();
                 ++ri)
             program.addRule(*ri);
@@ -155,23 +154,9 @@ FixpointModelGenerator::compute(const Program& program,
         currentI.insert(dlvResult);
 
         //
-        // find part of the current I that is input to the extatom(s)
-        //
-//        oldinputPart = inputPart;
-
-//        inputPart = currentI.getAtomSet();
-
-//        if (!firstrun && (oldinputPart == inputPart))
-//        {
-//            break;
-//        }
-
-        //    extresult.clear();
-        //
         // result of the external atoms
         //
         AtomSet extresult;
-
 
         //
         // evaluating all external atoms wrt. the current interpretation
@@ -222,13 +207,13 @@ FixpointModelGenerator::compute(const Program& program,
             // call the ASP solver with noEDB turned on - we don't want the
             // initial set of facts in the result here!
             //
-            /// @TODO: revise this entire model generator.
+            /// \todo revise this entire model generator.
             //
             Solver.callSolver(fixpointProgram, 1);
         }
-        catch (GeneralError e)
+        catch (GeneralError&)
         {
-            throw e;
+            throw;
         }
 
         AtomSet* as = Solver.getNextAnswerSet();
@@ -247,60 +232,13 @@ FixpointModelGenerator::compute(const Program& program,
 
         dlvResult = *as;
 
-    /*
-    NamesTable<std::string> names2 = Term::names;
-    for (NamesTable<std::string>::const_iterator nm = names2.begin();
-         nm != names2.end();
-         ++nm)
-    {
-        std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << "-" << nm.it->second.ix << std::endl;
-    }
-    for (NamesTable<std::string>::lookup_t::const_iterator li = names2.lookup.begin();
-         li != names2.lookup.end();
-         ++li)
-    {
-        std::cout << "lookup entry: " << li.first << " " << *nm << "-" << nm.it->second.ix << std::endl;
-    }
-        
-                std::cerr << "  I: ";
-    for (AtomSet::const_iterator a = I.begin(); a != I.end(); a++) {
-        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
-    }
-                std::cerr << std::endl;
-                std::cerr << "  fp: ";
-    for (AtomSet::const_iterator a = dlvResult.begin(); a != dlvResult.end(); a++) {
-        (*a).print(std::cerr, 0); std::cerr<<":"<<&(*a)<<" ";
-    }
-                std::cerr << std::endl;
-    */
-                
         //
         // to be able to compare them:
         //
         dlvResult.insert(I);
 
-       /* 
-        std::cout << std::endl;
-        std::cout << "fp dlv result: " << std::endl;
-        as->print(std::cout, 0);
-        std::cout << std::endl;
-        std::cout << std::endl;
-
-        std::cout << "currentI: " << std::endl;
-        currentI.print(std::cout, 0);
-        std::cout << std::endl;
-
-        std::cout << "equal? " << std::equal(dlvResult.begin(), dlvResult.end(), currentI.begin()) << std::endl;
-        std::cout << "dlv: " << dlvResult.size() << std::endl;
-        std::cout << "curi: " << currentI.size() << std::endl;
-        */
-
-        //i++;if (i > 1) break;
-
         firstrun = false;
-
-
-
+		
     } while ((dlvResult != currentI) && (iter <= maxIter));
 
     models.push_back(currentI);

@@ -13,19 +13,9 @@
  *
  * \section intro_sec Overview
  *
- * To the developer of a plugin, the documentation of the following classes are
- * most relevant:
- * - Term
- * - Atom
- * - AtomSet
- * - PluginAtom
- * - PluginAtom::Query
- * - PluginAtom::Answer
- * - PluginInterface
- *
- * If you also include a custom rewriter, you should have a look at these types:
- * - Literal
- * - Rule
+ * You will look into the documentation of dlvhex most likely to implement a
+ * plugin. In this case, please continue with the \ref pluginframework "Plugin Interface Module", which
+ * contains all necessary information.
  */
 
 

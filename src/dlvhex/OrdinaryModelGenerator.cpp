@@ -54,7 +54,7 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
         //
         // add all rules from this node to the component
         //
-        for (std::vector<const Rule*>::const_iterator ri = (*node)->getRules().begin();
+        for (std::vector<Rule*>::const_iterator ri = (*node)->getRules().begin();
                 ri != (*node)->getRules().end();
                 ++ri)
             program.addRule(*ri);

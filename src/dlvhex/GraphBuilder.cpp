@@ -30,7 +30,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
     //
     // go through all rules of the given program
     //
-    for (Program::const_iterator r = program.begin();
+    for (Program::iterator r = program.begin();
          r != program.end();
          ++r)
     {
