@@ -27,12 +27,16 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
     //
     std::multimap<Term, AtomNodePtr> extinputs;
 
+
+    // we start with rule-id 1, 0 is reserved for EXTERNAL and UNIFYING
+    unsigned ruleID = 1;
+
     //
     // go through all rules of the given program
     //
     for (Program::iterator r = program.begin();
          r != program.end();
-         ++r)
+         ++r, ++ruleID)
     {
         //
         // all nodes of the current rule's head
@@ -42,7 +46,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         //
         // go through entire head disjunction
         //
-        RuleHead_t head = (*r)->getHead();
+        const RuleHead_t& head = (*r)->getHead();
 
         for (RuleHead_t::const_iterator hi = head.begin();
              hi != head.end();
@@ -64,8 +68,8 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 //
                 // and add disjunctive dependency
                 //
-                Dependency::addDep(hn, *currhead, Dependency::DISJUNCTIVE);
-                Dependency::addDep(*currhead, hn, Dependency::DISJUNCTIVE);
+                Dependency::addDep(ruleID, hn, *currhead, Dependency::DISJUNCTIVE);
+                Dependency::addDep(ruleID, *currhead, hn, Dependency::DISJUNCTIVE);
             }
 
             //
@@ -95,19 +99,12 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
         // go through rule body
         //
 
-        RuleBody_t body = (*r)->getBody();
+        const RuleBody_t& body = (*r)->getBody();
 
         for (RuleBody_t::const_iterator li = body.begin();
                 li != body.end();
                 ++li)
         {
-
-            //
-            // builtins do not contribute to dependencies (yet)
-            //
-            if (typeid(*(*li)->getAtom()) == typeid(BuiltinPredicate))
-                continue;
-
             //
             // add a body atom node. This function will take care of also adding the appropriate
             // unifying dependency for all existing nodes.
@@ -139,9 +136,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                  ++currhead)
             {
                 if ((*li)->isNAF())
-                    Dependency::addDep(bn, *currhead, Dependency::NEG_PRECEDING);
+                    Dependency::addDep(ruleID, bn, *currhead, Dependency::NEG_PRECEDING);
                 else
-                    Dependency::addDep(bn, *currhead, Dependency::PRECEDING);
+                    Dependency::addDep(ruleID, bn, *currhead, Dependency::PRECEDING);
 
                 //
                 // if an external atom is in the body, we have to take care of the
@@ -225,7 +222,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 // add aux dependency from this new head to the external atom
                 // node
                 //
-                Dependency::addDep(auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
+                Dependency::addDep(ruleID, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
                 RuleBody_t auxbody;
 
@@ -301,35 +298,11 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                         //
                         // add the usual body->head dependency
                         //
-                        Dependency::addDep(auxbodynode, auxheadnode, Dependency::PRECEDING);
+                        Dependency::addDep(ruleID, auxbodynode, auxheadnode, Dependency::PRECEDING);
                     }
                 }
-
-                //
-                // finally, make an auxiliary rule object to add to the head node
-                //
-                RuleHead_t auxhead;
-
-                auxhead.insert(auxheadatom);
-
-                Rule* auxrule = new Rule(auxhead, auxbody);
-
-                Registry::Instance()->storeObject(auxrule);
-
-                auxheadnode->addRule(auxrule);
             }
         }
-
-        //
-        // finally add this rule to each head node of the current rule:
-        //
-        for (std::vector<AtomNodePtr>::iterator currhead = currentHeadNodes.begin();
-                currhead != currentHeadNodes.end();
-                ++currhead)
-        {
-            (*currhead)->addRule(*r);
-        }
-
     }
     
     //
@@ -363,7 +336,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             //
             for (mi i = range.first; i != range.second; ++i)
             {
-                Dependency::addDep(*node, i->second, Dependency::EXTERNAL);
+                ///@todo this should work right now, but maybe we
+                ///should add the correct rule-id to this dependency
+                Dependency::addDep(0, *node, i->second, Dependency::EXTERNAL);
             }
         }
     }
