@@ -23,7 +23,7 @@
 
 Rule::Rule(const RuleHead_t& head,
            const RuleBody_t& body,
-           std::string file,
+           const std::string& file,
            unsigned line)
     : head(head),
       body(body),
@@ -67,6 +67,20 @@ void
 Rule::setHead(const RuleHead_t& h)
 {
 	head = h;
+}
+
+
+void
+Rule::addHead(AtomPtr ap)
+{
+  head.insert(ap);
+}
+
+
+void
+Rule::addBody(Literal* l)
+{
+  body.insert(l);
 }
 
 
@@ -183,14 +197,16 @@ operator< (const RuleHead_t& head1, const RuleHead_t& head2)
 
 
 WeakConstraint::WeakConstraint(const RuleBody_t& b,
-                               Term w,
-                               Term l,
-                               std::string file,
+                               const Term& w,
+                               const Term& l,
+                               const std::string& file,
                                unsigned line)
     : Rule(RuleHead_t(), b, file, line),
       weight(w),
       level(l)
 {
+    ///@todo move this stuff to another method in WeakConstraint
+
     if (l < 1)
         throw SyntaxError("level must be > 0");
 
@@ -205,21 +221,16 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
 
     std::set<Term> headargs;
 
-    RuleBody_t::const_iterator bodylit(b.begin()), bodyend(b.end());
-    while (bodylit != bodyend)
+    for (RuleBody_t::const_iterator bodylit = b.begin(); bodylit != b.end(); ++bodylit)
     {
         Tuple args = (*bodylit)->getAtom()->getArguments();
 
         headargs.insert(args.begin(), args.end());
-
-        ++bodylit;
     }
 
     Tuple hargs;
 
-    std::set<Term>::const_iterator argit = headargs.begin();
-    while (argit != headargs.end())
-        hargs.push_back(*argit++);
+    hargs.insert(hargs.end(), headargs.begin(), headargs.end());
 
     hargs.push_back(w);
     hargs.push_back(l);
@@ -229,6 +240,22 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
 
     head.insert(hatom);
 }
+
+void
+WeakConstraint::addHead(AtomPtr)
+{
+  ///@todo not allowed?
+  assert(false);
+}
+
+
+void
+WeakConstraint::addBody(Literal*)
+{
+  ///@todo not allowed?
+  assert(false);
+}
+
 
 
 bool

@@ -44,7 +44,7 @@ public:
 	 */
 	Rule(const RuleHead_t& h,
 	     const RuleBody_t& b,
-	     std::string = "",
+	     const std::string& = "",
 	     unsigned = 0);
 
 	/**
@@ -76,6 +76,18 @@ public:
 	 */
 	void
 	setBody(const RuleBody_t&);
+
+	/**
+	 * @brief add to rule's head.
+	 */
+	virtual void
+	addHead(AtomPtr);
+
+	/**
+	 * @brief add to rule's body.
+	 */
+	virtual void
+	addBody(Literal*);
 
 	/**
 	 * @brief Returns the filename where this rule appeared.
@@ -199,9 +211,9 @@ public:
 	 * constraint.
 	 */
 	WeakConstraint(const RuleBody_t& b,
-	               Term,
-	               Term,
-	               std::string = "",
+	               const Term&,
+	               const Term&,
+	               const std::string& = "",
 	               unsigned = 0);
 
 	/**
@@ -238,6 +250,19 @@ public:
 	{
 		return level;
 	}
+
+
+	/**
+	 * @brief add to rule's head.
+	 */
+	void
+	addHead(AtomPtr);
+
+	/**
+	 * @brief add to rule's body.
+	 */
+	void
+	addBody(Literal*);
 
 private:
 
