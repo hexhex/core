@@ -48,20 +48,22 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
     std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
     while (node != nodes.end())
     {
+        const std::vector<Rule*>& rules = (*node)->getRules();
+
         //
         // add all rules from this node to the component
         //
-        for (std::vector<Rule*>::const_iterator ruleit = (*node)->getRules().begin();
-                ruleit != (*node)->getRules().end();
-                ++ruleit)
+        for (std::vector<Rule*>::const_iterator ri = rules.begin();
+                ri != rules.end();
+                ++ri)
         {
-            guessingprogram.addRule(*ruleit);
+            guessingprogram.addRule(*ri);
         }
 
         if (typeid(*(*node)->getAtom()) == typeid(ExternalAtom))
             extatomInComp.insert(dynamic_cast<const ExternalAtom*>((*node)->getAtom().get()));
         
-        node++;
+        ++node;
     }
 
     for (Program::const_iterator ri = guessingprogram.begin();

@@ -63,17 +63,19 @@ Component::getBottom() const
 
     while (node != atomnodes.end())
     {
+        const std::vector<Rule*>& rules = (*node)->getRules();
+
         //
         // add all rules from this node to the component
         //
-        for (std::vector<Rule*>::const_iterator ri = (*node)->getRules().begin();
-                ri != (*node)->getRules().end();
+        for (std::vector<Rule*>::const_iterator ri = rules.begin();
+                ri != rules.end();
                 ++ri)
         {
             program.addRule(*ri);
         }
 
-        node++;
+        ++node;
     }
 
     return program;
