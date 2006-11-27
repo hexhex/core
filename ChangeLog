@@ -1,5 +1,8 @@
 2006-11-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/Rule.h: Fix WeakConstraint head atoms handling.
+	* src/dlvhex/Rule.cpp: Likewise.
+
 	* include/dlvhex/ExternalAtom.h
 	(ExternalAtom::getArity,ExternalAtom::getArguments): Remove.
 	* src/dlvhex/ExternalAtom.cpp: Likewise.
