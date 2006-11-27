@@ -30,8 +30,7 @@ DependencyGraph::DependencyGraph()
 
 DependencyGraph::DependencyGraph(const NodeGraph& ng,
                                  ComponentFinder* cf)
-    : componentFinder(cf),
-	  nodegraph(ng)
+    : nodegraph(ng), componentFinder(cf)
 {
     std::vector<std::vector<AtomNodePtr> > weakComponents;
 
