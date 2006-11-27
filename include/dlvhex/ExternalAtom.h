@@ -74,13 +74,6 @@ public:
     std::string
     getBasePredicate() const;
 
-	/**
-	 * Get output arity of external atom.
-	 *
-	 * This overrides Atom::getArity().
-	 */
-	unsigned
-	getArity() const;
 
     /**
      * @brief Returns the function name of the external atom.
@@ -125,16 +118,6 @@ public:
      */
     PluginAtom::InputType
     getInputType(unsigned idx) const;
-
-
-    /**
-     * Returns the arguments of the external atom.
-     */
-    virtual inline Tuple
-    getArguments() const
-    {
-        return arguments;
-    }
 
     /**
      * @brief Returns the set of all possible output values w.r.t. to i.

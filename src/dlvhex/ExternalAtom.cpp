@@ -196,13 +196,6 @@ ExternalAtom::getInputTerms() const
 }
 
 
-unsigned
-ExternalAtom::getArity() const
-{
-	return arguments.size();
-}
-
-
 PluginAtom::InputType
 ExternalAtom::getInputType(unsigned idx) const
 {
@@ -321,7 +314,7 @@ ExternalAtom::evaluate(const AtomSet& i,
         // - actual arguments of the external atom (maybe it is partly ground,
         // then the plugin can be more efficient)
         //
-        PluginAtom::Query query(inputSet, *inputi, arguments);
+        PluginAtom::Query query(inputSet, *inputi, getArguments());
 
         PluginAtom::Answer answer;
         
@@ -334,7 +327,7 @@ ExternalAtom::evaluate(const AtomSet& i,
             std::ostringstream atomstr;
 
             atomstr << functionName << "[" << 
-                    inputList << "](" << arguments << ")" <<
+                    inputList << "](" << getArguments() << ")" <<
                     " in line " << line;
 
             e.setContext(atomstr.str());
