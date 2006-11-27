@@ -56,25 +56,25 @@ public:
 	/**
 	 * @brief Returns the rule's head.
 	 */
-	const RuleHead_t&
+	virtual const RuleHead_t&
 	getHead() const;
 
 	/**
 	 * @brief Returns the rule's body.
 	 */
-	const RuleBody_t&
+	virtual const RuleBody_t&
 	getBody() const;
 
 	/**
 	 * @brief Replaces the rule's head by the specified one.
 	 */
-	void
+	virtual void
 	setHead(const RuleHead_t&);
 
 	/**
 	 * @brief Replaces the rule's body by the specified one.
 	 */
-	void
+	virtual void
 	setBody(const RuleBody_t&);
 
 	/**
@@ -149,7 +149,7 @@ protected:
 	/**
 	 * Rule head.
 	 */
-	RuleHead_t head;
+	mutable RuleHead_t head;
 
 	/**
 	 * Rule body.
@@ -176,6 +176,10 @@ private:
 	 * List of external atoms occuring in the rule's body.
 	 */
 	std::vector<ExternalAtom*> externalAtoms;
+
+        /// non-virtual function for the ctor
+        void
+	setExternalAtoms(const RuleBody_t&);
 };
 
 
@@ -253,20 +257,43 @@ public:
 
 
 	/**
-	 * @brief add to rule's head.
+	 * @brief build wc head.
+	 */
+	const RuleHead_t&
+	getHead() const;
+
+	/**
+	 * @brief set new wc body and clear head.
+	 */
+	void
+	setBody(const RuleBody_t&);
+
+	/**
+	 * @brief add to wc's body and clear head.
+	 */
+	virtual void
+	addBody(Literal*);
+
+
+private:
+	/**
+	 * @brief disallow setHead.
+	 */
+	void
+	setHead(const RuleHead_t&);
+
+	/**
+	 * @brief disallow addHead.
 	 */
 	void
 	addHead(AtomPtr);
 
-	/**
-	 * @brief add to rule's body.
-	 */
-	void
-	addBody(Literal*);
-
-private:
-
-	Term weight, level;
+        /// wc weight
+        Term weight;
+        /// wc level
+        Term level;
+        /// every wc has an unique identifier
+        unsigned uniqueID;
 };
 
 

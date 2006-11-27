@@ -21,27 +21,16 @@
 #include "dlvhex/PrintVisitor.h"
 
 
-Rule::Rule(const RuleHead_t& head,
-           const RuleBody_t& body,
+Rule::Rule(const RuleHead_t& h,
+           const RuleBody_t& b,
            const std::string& file,
            unsigned line)
-    : head(head),
-      body(body),
+    : head(h),
+      body(b),
       programFile(file),
       programLine(line)
 {
-    externalAtoms.clear();
-
-    //
-    // store the rule's external atoms separately
-    //
-    for (RuleBody_t::const_iterator bi = body.begin();
-        bi != body.end();
-        ++bi)
-    {
-        if (typeid(*((*bi)->getAtom())) == typeid(ExternalAtom))
-            externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
-    }
+  setExternalAtoms(b);
 }
 
 
@@ -81,13 +70,33 @@ void
 Rule::addBody(Literal* l)
 {
   body.insert(l);
+
+  AtomPtr ap = l->getAtom();
+
+  if (typeid(*ap) == typeid(ExternalAtom))
+    externalAtoms.push_back(dynamic_cast<ExternalAtom*>(ap.get()));
+}
+
+
+void
+Rule::setExternalAtoms(const RuleBody_t& b)
+{
+  //
+  // store the rule's external atoms separately
+  //
+  for (RuleBody_t::const_iterator bi = b.begin(); bi != b.end(); ++bi)
+    {
+      if (typeid(*((*bi)->getAtom())) == typeid(ExternalAtom))
+	externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
+    }
 }
 
 
 void
 Rule::setBody(const RuleBody_t& b)
 {
-	body = b;
+  this->body = b;
+  setExternalAtoms(b);
 }
 
 
@@ -203,67 +212,90 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
                                unsigned line)
     : Rule(RuleHead_t(), b, file, line),
       weight(w),
-      level(l)
+      level(l),
+      uniqueID(0)
 {
-    ///@todo move this stuff to another method in WeakConstraint
-
     if (l < 1)
         throw SyntaxError("level must be > 0");
 
     static unsigned uniqueid(0);
 
-    std::stringstream wcheadname;
+    this->uniqueID = uniqueid++;
+}
 
-    wcheadname << "wch__" << uniqueid++;
-    //wcheadname << "wc_h_";
 
-    Term::registerAuxiliaryName(wcheadname.str());
 
-    std::set<Term> headargs;
 
-    for (RuleBody_t::const_iterator bodylit = b.begin(); bodylit != b.end(); ++bodylit)
+const RuleHead_t&
+WeakConstraint::getHead() const
+{
+  if (Rule::getHead().empty())
     {
-        Tuple args = (*bodylit)->getAtom()->getArguments();
+      std::set<Term> headargs;
 
-        headargs.insert(args.begin(), args.end());
+      for (RuleBody_t::const_iterator bodylit = getBody().begin();
+	   bodylit != getBody().end();
+	   ++bodylit)
+	{
+	  Tuple args = (*bodylit)->getAtom()->getArguments();
+	  
+	  headargs.insert(args.begin(), args.end());
+	}
+
+      Tuple hargs;
+
+      hargs.insert(hargs.end(), headargs.begin(), headargs.end());
+
+      hargs.push_back(getWeight());
+      hargs.push_back(getLevel());
+    
+      std::stringstream wcheadname;
+      wcheadname << "wch__" << this->uniqueID;
+      Term::registerAuxiliaryName(wcheadname.str());
+
+      Atom* at = new Atom(wcheadname.str(), hargs);
+      AtomPtr hatom(Registry::Instance()->storeAtom(at));
+
+      head.insert(hatom);
     }
 
-    Tuple hargs;
-
-    hargs.insert(hargs.end(), headargs.begin(), headargs.end());
-
-    hargs.push_back(w);
-    hargs.push_back(l);
-
-    Atom* at = new Atom(wcheadname.str(), hargs);
-    AtomPtr hatom(Registry::Instance()->storeAtom(at));
-
-    head.insert(hatom);
-}
-
-void
-WeakConstraint::addHead(AtomPtr)
-{
-  ///@todo not allowed?
-  assert(false);
+  return Rule::getHead();
 }
 
 
 void
-WeakConstraint::addBody(Literal*)
+WeakConstraint::addBody(Literal* l)
 {
-  ///@todo not allowed?
-  assert(false);
+  head.clear();
+  Rule::addBody(l);
 }
 
+
+void
+WeakConstraint::setBody(const RuleBody_t& b)
+{
+  head.clear();
+  Rule::setBody(b);
+}
+
+void
+WeakConstraint::setHead(const RuleHead_t&)
+{
+  // there is nothing for you in here
+}
+
+
+void
+WeakConstraint::addHead(const AtomPtr)
+{
+  // there is nothing for you in here
+}
 
 
 bool
 WeakConstraint::operator== (const WeakConstraint& wc2) const
 {
-    ///todo implement this correctly!
-    //
-
+    ///@todo implement this correctly!
     return 0;
 }
 
