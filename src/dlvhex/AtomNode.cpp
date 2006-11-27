@@ -12,7 +12,7 @@
 
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/globals.h"
-
+#include "dlvhex/Registry.h"
 
 unsigned AtomNode::nodeCount = 0;
 
@@ -56,29 +56,23 @@ AtomNode::setBody()
 
 
 bool
-AtomNode::isHead()
+AtomNode::isHead() const
 {
     return inHead;
 }
 
 
 bool
-AtomNode::isBody()
+AtomNode::isBody() const
 {
     return inBody;
 }
 
 
 void
-AtomNode::addRule(Rule* rule)
-{
-    rules.push_back(rule);
-}
-
-
-void
 AtomNode::addPreceding(const Dependency& dep)
 {
+    rules.clear(); // start creating rules in AtomNode::getRules
     preceding.push_back(dep);
 }
 
@@ -114,7 +108,80 @@ AtomNode::getSucceeding() const
 const std::vector<Rule*>&
 AtomNode::getRules() const
 {
-    return rules;
+  //
+  // only start the rule-creation machinery if this AtomNode is a
+  // head-node
+  //
+
+  if (rules.empty() && isHead()) // we call getRules for the very first time
+    {
+      typedef std::map<unsigned, Rule*> rulemap; // maps rule-ids to rules
+      rulemap rules;
+
+      for (std::vector<Dependency>::const_iterator d = getPreceding().begin();
+	   d != getPreceding().end(); ++d)
+	{
+	  Dependency::Type deptype = d->getType();
+
+	  if (deptype != Dependency::DISJUNCTIVE &&
+	      deptype != Dependency::PRECEDING &&
+	      deptype != Dependency::NEG_PRECEDING)
+	    {
+	      continue; // we only take care of head or body dependencies
+	    }
+
+	  rulemap::const_iterator it = rules.find(d->getRuleID());
+
+	  if (it == rules.end()) // create a new rule in the rules-map
+	    {
+	      // use this AtomNode as first head atom
+	      RuleHead_t head;
+	      head.insert(getAtom());
+	      Rule* newrule = new Rule(head, RuleBody_t());
+
+	      Registry::Instance()->storeObject(newrule);
+	      
+	      std::pair<rulemap::iterator, bool> p =
+		rules.insert(std::make_pair(d->getRuleID(), newrule));
+		  
+	      it = p.first;
+	    }
+	  
+	  Rule* r = it->second;
+	  Literal* l = 0;
+	  
+	  switch (deptype)
+	    {
+	    case Dependency::DISJUNCTIVE:
+	      r->addHead(d->getAtomNode()->getAtom());
+	      break;
+	      
+	    case Dependency::PRECEDING:
+	      l = new Literal(d->getAtomNode()->getAtom());
+	      Registry::Instance()->storeObject(l);
+	      r->addBody(l);
+	      break;
+	      
+	    case Dependency::NEG_PRECEDING:
+	      l = new Literal(d->getAtomNode()->getAtom(), true);
+	      Registry::Instance()->storeObject(l);
+	      r->addBody(l);
+	      break;
+	      
+	    default:
+	      // there is nothing for you in here
+	      break;
+	    }
+	}
+
+      // and now add the fresh rules to our own "rule cache"
+      for (rulemap::const_iterator it = rules.begin(); it != rules.end(); ++it)
+	{
+	  this->rules.push_back(it->second);
+	}
+    }
+
+  return this->rules;
 }
 
 
@@ -151,12 +218,12 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
         }
     }
 
-    if (atomnode.getRules().size() > 0)
+    std::vector<Rule*> rules = atomnode.getRules();
+
+    if (rules.size() > 0)
         out << std::endl << "    rules:";
 
-    for (std::vector<Rule*>::const_iterator ri = atomnode.getRules().begin();
-         ri != atomnode.getRules().end();
-         ++ri)
+    for (std::vector<Rule*>::const_iterator ri = rules.begin(); ri != rules.end(); ++ri)
     {
         out << " " << *(*ri);
     }
@@ -173,18 +240,19 @@ Dependency::Dependency()
 
 Dependency::Dependency(const Dependency& dep2)
     : atomNode(dep2.atomNode),
-      type(dep2.type)
+      type(dep2.type),
+      ruleID(dep2.ruleID)
 {
 }
 
 
-Dependency::Dependency(const AtomNodePtr an, Type t)
-    : atomNode(an), type(t)
+Dependency::Dependency(unsigned r, const AtomNodePtr an, Type t)
+  : atomNode(an), type(t), ruleID(r)
 {
 }
 
 
-const Dependency::Type
+Dependency::Type
 Dependency::getType() const
 {
     return type;
@@ -200,11 +268,17 @@ Dependency::getAtomNode() const
 }
 
 
-void
-Dependency::addDep(AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
+unsigned
+Dependency::getRuleID() const
 {
-    Dependency dep1(from, type);
-    Dependency dep2(to, type);
+    return ruleID;
+}
+
+void
+Dependency::addDep(unsigned ruleID, AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
+{
+    Dependency dep1(ruleID, from, type);
+    Dependency dep2(ruleID, to, type);
 
     from->addSucceeding(dep2);
     to->addPreceding(dep1);
@@ -248,9 +322,7 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
         break;
     }
 
-    out << "]";
-
-    return out;
+    return out << "] (" << dep.getRuleID() << ')';
 }
 
 
@@ -373,8 +445,9 @@ NodeGraph::addUniqueHeadNode(const AtomPtr atom)
                     // be in that function), so the dependency goes from the
                     // head into the body.
                     //
-                    Dependency dep1(*oldnode, Dependency::UNIFYING);
-                    Dependency dep2(newnode, Dependency::UNIFYING);
+                    ///@todo is this rule-id correct?
+                    Dependency dep1(0, *oldnode, Dependency::UNIFYING);
+                    Dependency dep2(0, newnode, Dependency::UNIFYING);
 
                     (*oldnode)->addPreceding(dep2);
                     newnode->addSucceeding(dep1);
@@ -442,8 +515,9 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
                     // in that function), so the dependency goes from the head
                     // into the body.
                     //
-                    Dependency dep1(*oldnode, Dependency::UNIFYING);
-                    Dependency dep2(newnode, Dependency::UNIFYING);
+                    ///@todo is this rule-id correct?
+                    Dependency dep1(0, *oldnode, Dependency::UNIFYING);
+                    Dependency dep2(0, newnode, Dependency::UNIFYING);
 
                     (*oldnode)->addSucceeding(dep2);
                     newnode->addPreceding(dep1);

@@ -70,7 +70,7 @@ public:
      * See setHead().
      */
     bool
-    isHead();
+    isHead() const;
 
     /**
      * @brief Returns the body-flag of the AtomNode.
@@ -78,7 +78,7 @@ public:
      * See setHead().
      */
     bool
-    isBody();
+    isBody() const;
 
     /**
      * @brief Adds a preceding dependency for this AtomNode.
@@ -95,16 +95,6 @@ public:
      */
     void
     addSucceeding(const Dependency&);
-
-    /**
-     * @brief Adds a rule pointer to this AtomNode.
-     *
-     * If an AtomNode stems from a rule head, it also keeps track of the
-     * rule-object itself. This helps if we need to build a subprogram based on
-     * a set of AtomNodes.
-     */
-    void
-    addRule(Rule*);
 
     /**
      * @brief Returns the atom-object this Node is associated with.
@@ -154,10 +144,14 @@ private:
     bool inBody;
 
     /**
-     * @brief Rules that belong to this AtomNode (in case it occured in a rule's
-     * head).
+     * @brief Rules that belong to this AtomNode (in case it occured
+     * in a rule's head).
+     *
+     * This is a cache for the rules created in
+     * AtomNode::getRules. Must be mutable because of constness of
+     * getRules.
      */
-    std::vector<Rule*> rules;
+    mutable std::vector<Rule*> rules;
 
     /**
      * @brief Preceding dependencies.
@@ -233,13 +227,21 @@ public:
      * @brief Construct a dependency of a specific type to a given AtomNode
      * target.
      */
-    Dependency(const AtomNodePtr, Type);
+    Dependency(unsigned, const AtomNodePtr, Type);
 
     /**
      * @brief Return the dependency type.
      */
-    const Type
+    Type
     getType() const;
+
+    /** 
+     * AtomNode uses #ruleID to create rules on-the-fly.
+     *
+     * @return #ruleID
+     */
+    unsigned
+    getRuleID() const;
 
     /**
      * @brief Return the target AtomNode of the dependency.
@@ -252,7 +254,7 @@ public:
      *
      */
     static void
-    addDep(AtomNodePtr, AtomNodePtr, Type);
+    addDep(unsigned, AtomNodePtr, AtomNodePtr, Type);
 
 private:
 
@@ -262,9 +264,14 @@ private:
     AtomNodePtr atomNode;
 
     /**
-     * Type od the dependency.
+     * Type of the dependency.
      */
     Type type;
+
+    /**
+     * a dependency belongs to a rule.
+     */
+    unsigned ruleID;
 
 };
 
