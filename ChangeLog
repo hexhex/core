@@ -1,3 +1,30 @@
+2006-11-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/ExternalAtom.h
+	(ExternalAtom::getArity,ExternalAtom::getArguments): Remove.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* src/dlvhex/DependencyGraph.cpp: Fix compiler warning.
+
+	* src/dlvhex/Component.cpp: Call AtomNode::getRules only once.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+
+	* src/dlvhex/Makefile.am: Bump library version to 4:0:0.
+
+	* src/dlvhex/GraphBuilder.cpp (GraphBuilder::run): Create
+	Dependency with a rule identifier.
+
+	* include/dlvhex/AtomNode.h: (Dependency::getRuleID): Get rule
+	identifier of a dependency.
+	(AtomNode::getRules): Create rules of a head atom in an on-the-fly
+	fashion.
+	* src/dlvhex/AtomNode.cpp: Likewise.
+
+	* include/dlvhex/Rule.h (Rule::addHead,Rule::addBody): New methods.
+	* src/dlvhex/Rule.cpp: Likewise.
+
 2006-11-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/AtomNode.h: Changed "const Rule*" to "Rule*" in addRule() and
