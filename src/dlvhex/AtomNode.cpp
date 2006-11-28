@@ -144,40 +144,35 @@ AtomNode::getRules() const
 	      std::pair<rulemap::iterator, bool> p =
 		rules.insert(std::make_pair(d->getRuleID(), newrule));
 		  
-	      it = p.first;
+	      it = p.first; // set iterator to the new rule
 	    }
 	  
-	  Rule* r = it->second;
-	  Literal* l = 0;
+	  Rule* r = it->second; // get the rule
 	  
 	  switch (deptype)
 	    {
-	    case Dependency::DISJUNCTIVE:
+	    case Dependency::DISJUNCTIVE: // head dependency
 	      r->addHead(d->getAtomNode()->getAtom());
 	      break;
 	      
-	    case Dependency::PRECEDING:
-	      l = new Literal(d->getAtomNode()->getAtom());
+	    case Dependency::PRECEDING:     // positive head-body dependency
+	    case Dependency::NEG_PRECEDING: // negative head-body dependency
+	      Literal* l = new Literal(d->getAtomNode()->getAtom(),
+				       (deptype == Dependency::NEG_PRECEDING)
+				       );
 	      Registry::Instance()->storeObject(l);
 	      r->addBody(l);
 	      break;
-	      
-	    case Dependency::NEG_PRECEDING:
-	      l = new Literal(d->getAtomNode()->getAtom(), true);
-	      Registry::Instance()->storeObject(l);
-	      r->addBody(l);
-	      break;
-	      
-	    default:
-	      // there is nothing for you in here
+
+	    default: // there is nothing for you in here
 	      break;
 	    }
 	}
 
       // and now add the fresh rules to our own "rule cache"
-      for (rulemap::const_iterator it = rules.begin(); it != rules.end(); ++it)
+      for (rulemap::const_iterator rit = rules.begin(); rit != rules.end(); ++rit)
 	{
-	  this->rules.push_back(it->second);
+	  this->rules.push_back(rit->second);
 	}
     }
 
