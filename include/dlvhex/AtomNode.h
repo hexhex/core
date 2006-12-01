@@ -236,9 +236,9 @@ public:
     getType() const;
 
     /** 
-     * AtomNode uses #ruleID to create rules on-the-fly.
+     * AtomNode uses rule IDs to create rules on-the-fly.
      *
-     * @return #ruleID
+     * @return ID of the rule that created this dependency.
      */
     unsigned
     getRuleID() const;

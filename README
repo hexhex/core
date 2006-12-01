@@ -9,8 +9,8 @@ http://www.dlvsystem.com
 
 ** boost
 Boost is a collection of portable C++ source libraries, which are intended to
-be widely useful, and usable across a broad spectrum of applications. See
-http://www.boost.org/
+be widely useful, and usable across a broad spectrum of applications. You will
+need a version equal or higher than 1.33.1. See http://www.boost.org/
 
 ** cppunit (optional)
 CppUnit is used for the unit-testing of dlvhex, but not necessary for building
@@ -31,6 +31,8 @@ Follow the instructions of the INSTALL file found in the distributions tarball.
 Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
 pre-built Boost packages. E.g., in Debian, do
 apt-get install libboost-dev libboost-graph-dev
+(At the time of writing this, you will need to get these packages from the
+testing repository)
 
 *** cppunit (optional)
 Follow the instructions of the INSTALL file found in the distributions tarball.
@@ -50,7 +52,9 @@ PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.
 If you installed boost in a non-standard folder, use
 CXXFLAGS=-I/path/to/includes to specify the location of the header files.  If
 configure complains, then something vital for building dlvhex is missing in
-your system.
+your system. If you get complaints about missing boost-headers, make sure that
+you have the necesary parts of boost installed and that their version is
+sufficiently recent (see above).
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression

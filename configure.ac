@@ -147,6 +147,8 @@ AC_CHECK_HEADER([boost/shared_ptr.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/shared_ptr header); exit])
 AC_CHECK_HEADER([boost/graph/adjacency_list.hpp], [],
                 [AC_MSG_ERROR(Cannot find boost/graph headers); exit])
+AC_CHECK_HEADER([boost/ptr_container/indirect_fun.hpp], [],
+                [AC_MSG_ERROR(Cannot find boost/ptr_container headers); exit])
 AC_LANG_POP([C++])
 
 

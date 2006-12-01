@@ -259,7 +259,8 @@
  * 
  * The macros used here for setting the version number have their origin in \c
  * configure.ac, which is needed to produce the configure-script (see
- * Section \ref compiling).
+ * Section \ref compiling). Of course they can also be hardcoded here, but the
+ * method with the macros from configure.ac is certainly more practical!
  * 
  * \section modifying Modifying the input program
  * 
@@ -925,7 +926,9 @@ public:
      * \brief Set plugin version.
      *
      * The version number will be displayed when dlvhex loads the plugin. It can
-     * be used to check whether the right version is loaded.
+     * be used to check whether the right version is loaded. This method is not
+	 * supposed to be overridden, but only called in the PLUGINIMPORTFUNCTION()
+	 * (see Section \ref importing).
      */
     void
     setVersion(unsigned major, unsigned minor, unsigned micro)

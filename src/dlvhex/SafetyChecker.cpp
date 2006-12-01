@@ -19,8 +19,6 @@
 
 SafetyCheckerBase::SafetyCheckerBase()
 {
-    if (Globals::Instance()->getOption("Verbose"))
-        std::cout << std::endl << "@@@ Checking Safety @@@" << std::endl << std::endl;
 }
 
 
@@ -36,7 +34,7 @@ void
 SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
 {
     if (Globals::Instance()->getOption("Verbose"))
-        std::cout << "Checking for rule safety." << std::endl;
+        Globals::Instance()->getVerboseStream() << std::endl << "Checking for rule safety." << std::endl;
 
     Program::const_iterator ruleit = program.begin();
 
@@ -186,10 +184,10 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
 
         if (Globals::Instance()->getOption("Verbose"))
         {
-            std::cout << "Rule in ";
+			Globals::Instance()->getVerboseStream() << "Rule in ";
             if (!(*ruleit)->getFile().empty())
-                std::cout << (*ruleit)->getFile() << ", ";
-            std::cout << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
+                Globals::Instance()->getVerboseStream() << (*ruleit)->getFile() << ", ";
+			Globals::Instance()->getVerboseStream() << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
         }
         
         //
@@ -213,7 +211,7 @@ void
 StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (SyntaxError)
 {
     if (Globals::Instance()->getOption("Verbose"))
-        std::cout << "Checking for strong rule safety." << std::endl;
+        Globals::Instance()->getVerboseStream() << std::endl << "Checking for strong rule safety." << std::endl;
 
     //
     // testing for strong safety:
@@ -325,18 +323,18 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
                         }
 
                         if (argIsUnsafe)
-                            throw SyntaxError("rule not expansion-safe",
-                                              (*ruleit)->getLine(),
-                                              (*ruleit)->getFile());
+						{
+							std::stringstream s;
+							s << "rule not expansion-safe: " << **ruleit;
+                            throw SyntaxError(s.str());
+						}
                     }
                 }
                 
                 if (Globals::Instance()->getOption("Verbose"))
                 {
-                    std::cout << "Rule in ";
-                    if (!(*ruleit)->getFile().empty())
-                        std::cout << (*ruleit)->getFile() << ", ";
-                    std::cout << "line " << (*ruleit)->getLine() << " is expansion-safe." << std::endl;
+					Globals::Instance()->getVerboseStream() << "Rule " << **ruleit
+					                                        << " is expansion-safe." << std::endl;
                 }
         
             } // rules-loop end
