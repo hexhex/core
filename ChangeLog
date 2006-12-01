@@ -1,5 +1,9 @@
 2006-12-01  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
+	* src/dlvhex/AtomNode.cpp: Corrected bug in rule-building for constraints
+
+2006-12-01  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
 	* README: Added dependency information.
 
 	* configure.ac: Added check for boost/ptr_container headers.

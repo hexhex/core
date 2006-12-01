@@ -136,7 +136,12 @@ AtomNode::getRules() const
 	    {
 	      // use this AtomNode as first head atom
 	      RuleHead_t head;
-	      head.insert(getAtom());
+		  //
+		  // check if we have a boolAtom in the head - this is a constraint
+		  // and a constraint doesn't have any head
+		  //
+		  if (typeid(*getAtom()) != typeid(boolAtom))
+		      head.insert(getAtom());
 	      Rule* newrule = new Rule(head, RuleBody_t());
 
 	      Registry::Instance()->storeObject(newrule);
