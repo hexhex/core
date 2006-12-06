@@ -153,7 +153,8 @@ AtomNode::getRules() const
 	    }
 	  
 	  Rule* r = it->second; // get the rule
-	  
+	  Literal *l = 0;
+
 	  switch (deptype)
 	    {
 	    case Dependency::DISJUNCTIVE: // head dependency
@@ -162,9 +163,9 @@ AtomNode::getRules() const
 	      
 	    case Dependency::PRECEDING:     // positive head-body dependency
 	    case Dependency::NEG_PRECEDING: // negative head-body dependency
-	      Literal* l = new Literal(d->getAtomNode()->getAtom(),
-				       (deptype == Dependency::NEG_PRECEDING)
-				       );
+	      l = new Literal(d->getAtomNode()->getAtom(),
+			      (deptype == Dependency::NEG_PRECEDING)
+			      );
 	      Registry::Instance()->storeObject(l);
 	      r->addBody(l);
 	      break;

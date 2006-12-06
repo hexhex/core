@@ -30,21 +30,24 @@ multiplySets(std::vector<AtomSet>& s1,
 
     AtomSet un;
 
+//	unsigned outer = 1;
     for (std::vector<AtomSet>::iterator i1 = s1.begin();
             i1 != s1.end();
             ++i1)
     {
+//		unsigned inner = 1;
+//		std::cerr << "outer loop: " << outer++ << std::endl;
+//		std::cerr << "outer set has: " << (*i1).size() << std::endl;
         for (std::vector<AtomSet>::iterator i2 = s2.begin();
                 i2 != s2.end();
                 ++i2)
         {
+//			std::cerr << "inner loop: " << inner++ << std::endl;
             //
             // make union of two atomsets:
             //
             un = *i1;
             un.insert(*i2);
-
-            //std::cout << "inserted: " << un << std::endl;
 
             //
             // now ensure minimality:
@@ -53,13 +56,20 @@ multiplySets(std::vector<AtomSet>& s1,
 
             std::vector<AtomSet>::iterator curras = tmpset.begin();
 
+//			unsigned i = 1;
+
+			if (((*i1).size() > 0) && ((*i2).size() > 0))
             while (curras != tmpset.end())
             {
+//				std::cerr << "looking at existing set " << i++
+//					<< "   new union: " << un.size() << " current: " << (*curras).size() << std::endl;
                 //
                 // is the new one a superset (or equal) than an existing one
                 //
                 if (std::includes(un.begin(), un.end(), (*curras).begin(), (*curras).end()))
                 {
+//					std::cerr << "   new union is superset!" << std::endl;
+//					std::cerr << "   new union: " << un.size() << " current: " << (*curras).size() << std::endl;
                     add = false;
                     break;
                 }
@@ -70,6 +80,7 @@ multiplySets(std::vector<AtomSet>& s1,
                 //
                 if (std::includes((*curras).begin(), (*curras).end(), un.begin(), un.end()))
                 {
+//					std::cerr << "   new union is subset!" << std::endl;
                     //
                     // remove existing one
                     //

@@ -250,16 +250,17 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
             }
         }
 
-        if (Globals::Instance()->getOption("Verbose"))
-        {
-           std::ofstream out;
+		if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
+		{
+			std::ofstream out;
 
-           out.open(Globals::Instance()->lpfilename.c_str());
-           write_graphviz(out, G, make_label_writer(nms));
-           out.close();
+			out.open(Globals::Instance()->lpfilename.c_str());
+			write_graphviz(out, G, make_label_writer(nms));
+			out.close();
 
-           std::cerr << "Graph written to " << Globals::Instance()->lpfilename << std::endl;
-        }
+			Globals::Instance()->getVerboseStream() << "Graph written to "
+			    << Globals::Instance()->lpfilename << std::endl;
+		}
     }
 }
 

@@ -19,15 +19,30 @@ Globals::_instance = 0;
 
 Globals::Globals()
 {
-    verboseLevel[DUMP_CONVERTED_PROGRAM] = 2;
+	//
+	// program analysis
+	//
     verboseLevel[DUMP_PARSED_PROGRAM] = 1;
-    verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
-
     verboseLevel[DUMP_DEPENDENCY_GRAPH] = 1;
+    verboseLevel[SAFETY_ANALYSIS] = 1;
+
+	//
+	// plugin processing
+	//
+    verboseLevel[DUMP_CONVERTED_PROGRAM] = 2;
+    verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
     verboseLevel[DUMP_OPTIMIZED_PROGRAM] = 2;
 
-    verboseLevel[COMPONENT_EVALUATION] = 3;
-    verboseLevel[MODEL_GENERATOR] = 3;
+	//
+	// intermediate model generation
+	//
+    verboseLevel[COMPONENT_EVALUATION] = 4;
+    verboseLevel[MODEL_GENERATOR] = 4;
+
+	//
+	// time benchmarking
+	//
+    verboseLevel[PROFILING] = 8;
 }
 
 Globals*
@@ -49,7 +64,10 @@ Globals::getOption(std::string option)
 bool
 Globals::doVerbose(verboseAction_t va)
 {
-    return (this->getOption("Verbose") >= verboseLevel[va]);
+	//
+	// bitwise and
+	//
+    return (this->getOption("Verbose") & verboseLevel[va]);
 }
 
 

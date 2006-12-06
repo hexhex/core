@@ -10,6 +10,14 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
 #include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
@@ -23,21 +31,14 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const AtomSet& in)
 {
-    if (Globals::Instance()->getOption("Verbose"))
-        std::cerr << std::endl << "@@@ running graph processor @@@" << std::endl << std::endl;
-
     //
     // start with empty result set
     //
     resultModels.push_back(AtomSet());
 
+    bool firstsubgraph = 1;
+
     Subgraph* sg;
-
-//    std::cout << "input set:" << std::endl;
-//    in.print(std::cout, 0);
-//    std::cout << "input set end." << std::endl;
-
-    //Component* leafComponent;
 
     //
     // go through all subgraphs
@@ -75,8 +76,8 @@ GraphProcessor::run(const AtomSet& in)
             {
                 current = sgresult;
 
-                if (Globals::Instance()->getOption("Verbose"))
-                    std::cerr << "No leaf components" << std::endl;
+        //        if (Globals::Instance()->getOption("Verbose"))
+        //            std::cerr << "No leaf components" << std::endl;
             }
             else
             {
@@ -108,22 +109,29 @@ GraphProcessor::run(const AtomSet& in)
                         //
                         current.clear();
 
-                        if (Globals::Instance()->getOption("Verbose"))
-                            std::cerr << "Leaf Component was inconsistent!" << std::endl;
+                    //    if (Globals::Instance()->getOption("Verbose"))
+                    //        std::cerr << "Leaf Component was inconsistent!" << std::endl;
 
                         break;
                     }
+
+#ifdef DLVHEX_DEBUG
+                    DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
 
                     //
                     // build the product of the other leaves' result and this
                     // one
                     //
                     multiplySets(current, compresult, current);
+
+#ifdef DLVHEX_DEBUG
+	                //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+                    DEBUG_STOP_TIMER("Combining intra-subgraph results       ")
+#endif // DLVHEX_DEBUG
+
                 }
 
-//                std::cout << "Leaf Result: ";
-//                printGAtomSet(current[0], std::cout, 0);
-//                std::cout << std::endl;
             }
 
             if (current.size() == 0)
@@ -148,10 +156,6 @@ GraphProcessor::run(const AtomSet& in)
             //
             tmpsg.pruneComponents();
 
-            //std::cout << "Subgraph after pruning: " << std::endl;
-            //tmpsg.dump(std::cout);
-            //std::cout << std::endl;
-
             //
             // anything left?
             //
@@ -164,16 +168,10 @@ GraphProcessor::run(const AtomSet& in)
 
                 Component* weakComponent = new ProgramComponent(tmpsg.getNodes(), mg);
 
-                //std::cout << "wcc created." << std::endl;
-
                 //
                 // add the weak component to the subgraph
                 //
                 sg->addComponent(weakComponent);
-
-                //std::cout << "wcc added to sg:" << std::endl;
-                //weakComponent->dump(std::cout);
-                //
 
                 try
                 {
@@ -184,8 +182,6 @@ GraphProcessor::run(const AtomSet& in)
                     throw;
                 }
 
-                //std::cout << "wcc evaluated." << std::endl;
-
                 weakComponent->getResult(sgresult);
 
                 if (sgresult.size() == 0)
@@ -193,8 +189,8 @@ GraphProcessor::run(const AtomSet& in)
                     //
                     // inconsistent!
                     //
-                    if (Globals::Instance()->getOption("Verbose"))
-                        std::cerr << "Program Component was inconsistent!" << std::endl;
+              //      if (Globals::Instance()->getOption("Verbose"))
+              //          std::cerr << "Program Component was inconsistent!" << std::endl;
 
                     break;
                 }
@@ -216,7 +212,24 @@ GraphProcessor::run(const AtomSet& in)
             break;
         }
 
-        multiplySets(resultModels, sgresult, resultModels);
+#ifdef DLVHEX_DEBUG
+        DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
+
+        //
+        // speed up things for first subgraph:
+        //
+        if (firstsubgraph)
+            resultModels = sgresult;
+        else
+            multiplySets(resultModels, sgresult, resultModels);
+
+        firstsubgraph = 0;
+
+#ifdef DLVHEX_DEBUG
+	    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+        DEBUG_STOP_TIMER("Combining inter-subgraph results       ")
+#endif // DLVHEX_DEBUG
     }
 
     resultSetIndex = resultModels.begin();

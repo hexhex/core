@@ -11,6 +11,15 @@
  *
  */
 
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
@@ -95,8 +104,12 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-        std::cout << "= FixpointModelGenerator =" << std::endl;
+//    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+//        std::cerr << "= FixpointModelGenerator =" << std::endl;
+
+#ifdef DLVHEX_DEBUG
+	DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
 
     initialize(program);
 
@@ -244,6 +257,11 @@ FixpointModelGenerator::compute(const Program& program,
         firstrun = false;
 		
     } while ((dlvResult != currentI) && (iter <= maxIter));
+
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Fixpoint (incl. ASP-solver calls)      ")
+#endif // DLVHEX_DEBUG
 
     models.push_back(currentI);
 }

@@ -19,6 +19,14 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -37,10 +45,6 @@
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/HexParserDriver.h"
 #include "dlvhex/PrintVisitor.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif // HAVE_CONFIG_H
 
 
 const char*  WhoAmI;
@@ -106,9 +110,6 @@ printUsage(std::ostream &out, bool full)
 	out << "     --               Parse from stdin." << std::endl
 		<< " -s, --silent         Do not display anything than the actual result." << std::endl
 		//        << "--strongsafety     Check rules also for strong safety." << std::endl
-		<< " -v, --verbose[=N]    Specify verbose level (default: 1). dump various" << std::endl
-		<< "                      intermediate information and write the program graph to" << std::endl
-		<< "                      FILENAME.dot." << std::endl
 		<< " -p, --plugindir=dir  Specify additional directory where to look for plugin" << std::endl
 		<< "                      libraries (additionally to the installation plugin-dir" << std::endl
 		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
@@ -120,6 +121,13 @@ printUsage(std::ostream &out, bool full)
 		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
 		<< "                      with --verbose)." << std::endl
 		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
+		<< "                      1  - program analysis information (including dot-file)" << std::endl
+		<< "                      2  - program modifications by plugins" << std::endl
+		<< "                      4  - intermediate model generation info" << std::endl
+		<< "                      8  - timing information (only if configured with" << std::endl
+		<< "                                               --enable-debug)" << std::endl
+		<< "                      add values for multiple categories." << std::endl
 		<< std::endl;
 }
 
@@ -498,6 +506,10 @@ main (int argc, char *argv[])
 	}
 
 
+#ifdef DLVHEX_DEBUG
+	DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
+			
 	//
 	// now search for plugins
 	//
@@ -510,8 +522,8 @@ main (int argc, char *argv[])
 	//
 	if (!optionPlugindir.empty())
 	{
-		if (Globals::Instance()->getOption("Verbose"))
-			std::cout << "searching " << optionPlugindir << "..." << std::endl;
+//		if (Globals::Instance()->getOption("Verbose"))
+//			std::cout << "searching " << optionPlugindir << "..." << std::endl;
 
 		searchPlugins(optionPlugindir, libfilelist);
 	}
@@ -523,16 +535,16 @@ main (int argc, char *argv[])
 
 	userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
-	if (Globals::Instance()->getOption("Verbose"))
-		std::cout << "searching " << userhome << "..." << std::endl;
+//	if (Globals::Instance()->getOption("Verbose"))
+//		std::cout << "searching " << userhome << "..." << std::endl;
 
 	searchPlugins(userhome, libfilelist);
 
 	//
 	// eventually look into system plugin dir
 	//
-	if (Globals::Instance()->getOption("Verbose"))
-		std::cout << "searching " << SYS_PLUGIN_DIR << "..." << std::endl;
+//	if (Globals::Instance()->getOption("Verbose"))
+//		std::cout << "searching " << SYS_PLUGIN_DIR << "..." << std::endl;
 
 	searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
@@ -569,6 +581,11 @@ main (int argc, char *argv[])
 			exit(1);
 		}
 	}
+
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Importing plugins                      ")
+#endif // DLVHEX_DEBUG
 
 	if (!Globals::Instance()->getOption("Silent"))
 		std::cout << std::endl;
@@ -614,6 +631,10 @@ main (int argc, char *argv[])
 
 	//if (!global::optionSilent)
 	//    std::cout << std::endl;
+
+#ifdef DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER
+#endif // DLVHEX_DEBUG
 
 	//
 	// parse input
@@ -834,6 +855,10 @@ main (int argc, char *argv[])
 		}
 	}
 
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Parsing and converting input           ")
+#endif // DLVHEX_DEBUG
 
 	//
 	// expand constant names
@@ -851,6 +876,10 @@ main (int argc, char *argv[])
 	}
 
 
+#ifdef DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER
+#endif // DLVHEX_DEBUG
+			
 	//
 	// now call rewriters
 	//
@@ -870,6 +899,11 @@ main (int argc, char *argv[])
 		}
 	}
 
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Calling plugin rewriters               ")
+#endif // DLVHEX_DEBUG
+
 	if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM) && wasRewritten)
 	{
 		Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
@@ -883,6 +917,10 @@ main (int argc, char *argv[])
 
 	/// @todo: when exiting after an exception, we have to cleanup things!
 	// maybe using boost-pointers!
+
+#ifdef DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER
+#endif // DLVHEX_DEBUG
 
 	//
 	// The GraphBuilder creates nodes and dependency edges from the raw program.
@@ -902,16 +940,25 @@ main (int argc, char *argv[])
 		exit(1);
     }
 
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Building dependency graph              ")
+#endif // DLVHEX_DEBUG
+
     if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
     {
         gb.dumpGraph(nodegraph, Globals::Instance()->getVerboseStream());
     }
     
 
+#ifdef DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER
+#endif // DLVHEX_DEBUG
+
 	//
 	// now call optimizers
 	//
-	bool wasOptimized(1);
+	bool wasOptimized(10);
 
 	for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
 			pi != plugins.end();
@@ -926,6 +973,11 @@ main (int argc, char *argv[])
 			wasOptimized = 1;
 		}
 	}
+
+#ifdef DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Calling plugins optimizers             ")
+#endif // DLVHEX_DEBUG
 
 	if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM) && wasOptimized)
 	{
@@ -956,8 +1008,8 @@ main (int argc, char *argv[])
 		cf = new BoostComponentFinder;
 
 		//
-		// Initializing the DependencyGraph. Its constructor uses the GraphBuilder
-		// to construct the graph and the ComponentFinder to find relevant graph
+		// Initializing the DependencyGraph. Its constructor uses the
+		// ComponentFinder to find relevant graph
 		// properties for the subsequent processing stage.
 		//
 		dg = new DependencyGraph(nodegraph, cf);
@@ -1027,6 +1079,10 @@ main (int argc, char *argv[])
 	ResultContainer result(wcprefix);
 
 
+#ifdef DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER
+#endif // DLVHEX_DEBUG
+
 	//
 	// put GraphProcessor result into ResultContainer
 	//
@@ -1054,6 +1110,12 @@ main (int argc, char *argv[])
 	//
 	//if (optionFilter.size() > 0)
 	result.filterIn(Globals::Instance()->getFilters());
+
+
+#ifdef DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ")
+#endif // DEBUG
 
 	//
 	// output format

@@ -10,6 +10,14 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
 #include "dlvhex/Component.h"
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/ASPsolver.h"
@@ -184,7 +192,6 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     //
     // compute model for each input factset
     //
-
     for (std::vector<AtomSet>::const_iterator in = input.begin();
          in != input.end();
          ++in)
@@ -193,59 +200,32 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
         std::list<AtomNodePtr>::const_iterator ini = incomingNodes.begin();
 
-        //while (ini != incomingNodes.end())
-        //    (*in).matchAtom((*ini++)->getAtom(), filtered);
-
-        /*
-        if (global::optionVerbose)
-        {
-            std::cerr << "Input set: ";
-            ///not used yet: filtered.print(std::cerr, 0);
-            (*in).print(std::cerr, 0);
-            std::cerr << std::endl;
-        }
-        */
-
         res.clear();
 
         try
         {
             modelGenerator->compute(atomnodes, (*in), res);
-            //modelGenerator->compute(atomnodes, filtered, res);
         }
         catch (GeneralError&)
         {
             throw;
         }
 
-//        std::vector<AtomSet>::iterator resi = res.begin();
-//        while (resi != res.end())
-//            (*resi++).insert(*in);
+#ifdef DLVHEX_DEBUG
+        DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
 
         //
         // add all models that came from the model generator to the result set
         // (= set of sets!)
         //
         result.insert(result.end(), res.begin(), res.end());
+
+#ifdef DLVHEX_DEBUG
+		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+        DEBUG_STOP_TIMER("Program-component result insert time   ")
+#endif // DLVHEX_DEBUG
     }
-
-    /*
-    if (global::optionVerbose)
-    {
-        std::cerr << "Result set(s):" << std::endl;
-
-        for (std::vector<AtomSet>::const_iterator out = result.begin();
-            out != result.end();
-            ++out)
-        {
-            std::cerr << "  ";
-            (*out).print(std::cerr, 0);
-            std::cerr << std::endl;
-        }
-
-        std::cerr << std::endl;
-    }
-    */
 
     evaluated = true;
 }
@@ -286,10 +266,8 @@ ExternalComponent::ExternalComponent(AtomNodePtr node)
 void
 ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
-    if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
-    {
-        std::cerr << "Evaluating external component" << std::endl;
-    }
+    //if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
+    //    std::cerr << "Evaluating external component" << std::endl;
 
     //
     // compute model for each input factset
@@ -298,27 +276,31 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
          in != input.end();
          ++in)
     {
-        /*
-        if (global::optionVerbose)
-        {
-            std::cerr << "Input set: ";
-            (*in).print(std::cerr, 0);
-            std::cerr << std::endl;
-        }
-        */
-
         AtomSet res;
 
         AtomSet i(*in);
 
         try
         {
+#ifdef DLVHEX_DEBUG
+            DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
+
             externalAtom->evaluate(i, res);
+
+#ifdef DLVHEX_DEBUG
+			//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+		    DEBUG_STOP_TIMER("External evaluation time               ")
+#endif // DLVHEX_DEBUG
         }
         catch (GeneralError&)
         {
             throw;
         }
+
+#ifdef DLVHEX_DEBUG
+            DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
 
         //
         // important: the component result must include also its input
@@ -329,25 +311,12 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         res.insert(*in);
 
         result.push_back(res);
+
+#ifdef DLVHEX_DEBUG
+		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+		DEBUG_STOP_TIMER("External result insert time            ")
+#endif // DLVHEX_DEBUG
     }
-
-    /*
-    if (global::optionVerbose)
-    {
-        std::cerr << "Result set(s): ";
-
-        for (std::vector<AtomSet>::const_iterator out = result.begin();
-            out != result.end();
-            ++out)
-        {
-            //printGAtomSet(*out, std::cerr, 0);
-            (*out).print(std::cerr, 0);
-            std::cerr << std::endl;
-        }
-
-        std::cerr << std::endl;
-    }
-    */
 
     evaluated = true;
 }

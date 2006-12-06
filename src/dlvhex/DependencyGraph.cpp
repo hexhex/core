@@ -146,9 +146,9 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
     }
     
 
-    if (Globals::Instance()->getOption("Verbose"))
+    if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
     {
-        subgraph->dump(std::cout);
+        subgraph->dump(Globals::Instance()->getVerboseStream());
     }
 
     //

@@ -64,7 +64,8 @@ PluginContainer::importPlugin(std::string filename)
     PluginInterface* plugin = getplugin();
 
     if (!Globals::Instance()->getOption("Silent"))
-        std::cout << "opening plugin " << filename << " version "
+        Globals::Instance()->getVerboseStream() << "opening plugin "
+			      << filename << " version "
                   << plugin->getVersionMajor() << "."
                   << plugin->getVersionMinor() << "."
                   << plugin->getVersionMicro() << std::endl;
@@ -81,12 +82,10 @@ PluginContainer::importPlugin(std::string filename)
         // TODO: check if this function name already exists!
         //
 
-        if (Globals::Instance()->getOption("Verbose"))
-            std::cout << "Registering external atom " << (*it).first << std::endl;
+//        if (Globals::Instance()->doVerbose(Globals::???))
+//            std::cout << "Registering external atom " << (*it).first << std::endl;
 
         pluginAtoms[(*it).first] = (*it).second;
-
-//        interfaces[(*it).first] = plugin;
     }
 
     return plugin;
@@ -104,15 +103,3 @@ PluginContainer::getAtom(std::string name)
     return pa->second;
 }
 
-/*
-PluginInterface*
-PluginContainer::getInterface(std::string name)
-{
-    FunctionInterfaceMap::const_iterator in(interfaces.find(name));
-
-    if (in == interfaces.end())
-        return 0;
-    
-    return in->second;
-}
-*/

@@ -13,6 +13,10 @@
 #include <sstream>
 #include <iterator>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/helper.h"
@@ -20,9 +24,9 @@
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/ProcessBuf.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif // HAVE_CONFIG_H
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
 
 
 ASPsolver::ASPsolver()
@@ -55,9 +59,9 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
     answersets.clear();
 
-    if (Globals::Instance()->getOption("Verbose") >= 3)
-        Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
-            << std::endl << prg << std::endl;
+    //if (Globals::Instance()->getOption("Verbose") >= 3)
+    //    Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
+    //        << std::endl << prg << std::endl;
 
     // setup command
     std::vector<std::string> argv;
@@ -76,13 +80,17 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
     try
     {
+#ifdef DLVHEX_DEBUG
+		DEBUG_START_TIMER
+#endif // DLVHEX_DEBUG
+
         // create a new dlv process
         ProcessBuf pb;
         pb.open(argv);
 
         std::iostream iopipe(&pb);
-	// let ProcessBuf throw std::ios_base::failure
-	iopipe.exceptions(std::ios_base::badbit);
+		// let ProcessBuf throw std::ios_base::failure
+		iopipe.exceptions(std::ios_base::badbit);
 
         //
         // dirty hack: add stuff for each solver call from globals:
@@ -107,6 +115,11 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
         // get exit code of dlv process
         retcode = pb.close();
+
+#ifdef DLVHEX_DEBUG
+		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+		DEBUG_STOP_TIMER("Calling dlv and parsing its result     ")
+#endif // DLVHEX_DEBUG
     }
     catch (FatalError& e)
     {
