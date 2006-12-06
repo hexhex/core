@@ -34,10 +34,12 @@ public:
 	typedef enum { DUMP_CONVERTED_PROGRAM,
 	               DUMP_PARSED_PROGRAM,
 	               DUMP_REWRITTEN_PROGRAM,
+				   SAFETY_ANALYSIS,
 	               DUMP_DEPENDENCY_GRAPH,
 	               DUMP_OPTIMIZED_PROGRAM,
 	               COMPONENT_EVALUATION,
-	               MODEL_GENERATOR } verboseAction_t;
+	               MODEL_GENERATOR,
+	               PROFILING } verboseAction_t;
 
 	/**
 	 * Singleton instance.
@@ -128,5 +130,17 @@ private:
 	//std::vector<std::string> Messages;
 
 };
+
+#define DEBUG_START_TIMER boost::posix_time::ptime boosttimerstart = boost::posix_time::microsec_clock::local_time(); \
+	boost::posix_time::ptime boosttimerend; // std::cerr << "timer started..." << std::endl;
+
+#define DEBUG_RESTART_TIMER boosttimerstart = boost::posix_time::microsec_clock::local_time(); // std::cerr << "timer started..." << std::endl;
+
+#define DEBUG_STOP_TIMER(msg) boosttimerend = boost::posix_time::microsec_clock::local_time(); \
+		if (Globals::Instance()->doVerbose(Globals::PROFILING)) { \
+			boost::posix_time::time_duration diff = boosttimerend - boosttimerstart; \
+			Globals::Instance()->getVerboseStream() \
+				<< msg  << diff << "s" << std::endl; \
+        boosttimerstart = boosttimerend; }
 
 #endif // _GLOBALS_H
