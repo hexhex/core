@@ -35,8 +35,9 @@ dnl use it
 
   boost_min_version=ifelse([$1], ,1.20.0,$1)
 
-  AC_LANG_SAVE
-  AC_LANG_CPLUSPLUS
+dnl  AC_LANG_SAVE
+dnl  AC_LANG_CPLUSPLUS
+  AC_LANG_PUSH([C++])
   OLD_CXXFLAGS=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $BOOST_CXXFLAGS"
   AC_MSG_CHECKING([for the Boost C++ libraries, version $boost_min_version or newer])
@@ -82,6 +83,7 @@ dnl use it
       ])
   fi
   CXXFLAGS=$OLD_CXXFLAGS
-  AC_LANG_RESTORE
+dnl  AC_LANG_RESTORE
+  AC_LANG_POP
 ])
 
