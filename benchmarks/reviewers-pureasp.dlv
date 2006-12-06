@@ -1,7 +1,11 @@
 %
 % benchmarking
 %
-% 5 reviewers:
+% call: ./run.sh dlvhex -s reviewers-pureasp.dlv
+%
+% ../configure --prefix=/home/staff/roman/localinstall/ CPPFLAGS="-I/home/staff/roman/localinstall/include -L/home/staff/roman/localinstall/lib" CXXFLAGS="-O2 -g -W -Wall" --enable-debug
+%
+% 5 reviewers (see EDB below):
 %
 %   strauss:
 %
@@ -23,11 +27,17 @@
 % 5) improved Term!= operator; returning string references in Term
 %    2.777
 %
-% ...
+% 6) inlining stuff, some shortcuts for special cases:
+%    1.37
 %
-% 6) inlining stuff
-%    0.770
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
+% 6 reviewers:
+%
+%   strauss:
+%
+%     dlv: 0.354
+%     dlvhex: 4.138
 
 
 paper(subm1). 
@@ -52,9 +62,13 @@ paper(subm5).
 kw(subm5,"#SWSF").  kw(subm5,"#RIF"). 
 author(subm5,"#bgro").
 
-%paper(subm6).
-%kw(subm6,"#WSMO").  kw(subm5,"#eCommerce"). 
-%author(subm6,"#msto").
+paper(subm6).
+kw(subm6,"#WSMO").  kw(subm6,"#eCommerce"). 
+author(subm6,"#msto").
+
+%paper(subm7).
+%kw(subm7,"#Semantic_Web_Services").  kw(subm7,"#eCommerce"). 
+%author(subm7,"#ihor").
 
 
 % We have the programm committee for our conference now in the program:
