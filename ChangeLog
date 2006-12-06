@@ -1,3 +1,42 @@
+2006-12-06  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* benchmarks/reviewers-pureasp.dlv: Added benchmark.
+
+	* benchmarks/run.sh: Modified "time"-call.
+
+	* configure.ac: Bumped version to 1.5. Added check for boost-time-date in
+	case of --enable-debug.
+
+	* examples/tests/dlvhextests.test: Added msp and 3col tests.
+
+	* include/dlvhex/globals.h: Added timer-start and stop macros.
+
+	* m4/boost.m4: AC_LANG_PUSH instead of deprecated AC_LANG_SAVE.
+
+	* src/dlvhex/ASPsolver.cpp (callSolver): Added profiling.
+	* src/dlvhex/Component.cpp (evaluate): Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp (compute): Likewise.
+	* src/dlvhex/dlvhex.cpp (printUsage), (main): Likewise.
+
+	* src/dlvhex/AtomNode.cpp: Avoid compiler warning (scope of variable
+	declaration).
+
+	* src/dlvhex/AtomSet.cpp (multiplySets): Subset-tests for speedup.
+
+	* src/dlvhex/BoostComponentFinder.cpp (findStrongComponents): Proper
+	usage of verbose-categories and -output-stream.
+	* src/dlvhex/DependencyGraph.cpp (componentFinder): Likewise.
+	* src/dlvhex/PluginContainer.cpp (importPlugin): Likewise.
+	* src/dlvhex/SafetyChecker.cpp (throw): Likewise.
+
+	* src/dlvhex/GraphProcessor.cpp (run): Added profiling. Added test before
+	combination of subgraph-models for speedup.
+
+	* src/dlvhex/globals.cpp (Globals), (doVerbose): Changed
+	verbose-categories to bit-setting instead of numerical value.
+
 2006-12-01  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/AtomNode.cpp: Corrected bug in rule-building for constraints

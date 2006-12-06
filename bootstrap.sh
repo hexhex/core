@@ -10,7 +10,7 @@ echo "autoheader..."
 autoheader --warnings=all \
     || { echo "autoheader failed"; exit 1; }
 echo "automake..."
-automake --warnings=all --warnings=no-syntax --foreign --add-missing \
+automake --warnings=all --foreign --add-missing \
     || { echo "automake failed"; exit 1; }
 echo "autoconf..."
 autoconf --warnings=all \

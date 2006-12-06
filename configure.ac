@@ -1,6 +1,6 @@
 
-AC_PREREQ([2.59])
-AC_INIT([dlvhex],[1.4.0],[roman@kr.tuwien.ac.at])
+AC_PREREQ(2.59)
+AC_INIT([dlvhex],[1.5.0],[roman@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -45,6 +45,7 @@ fi
 AC_SUBST(userplugindir)
 
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
+
 
 #
 # the user didn't supply a path for dlv
@@ -139,7 +140,33 @@ fi
 
 AC_SUBST([FLEXLEXER_H])
 
+# debug
+AC_ARG_ENABLE(debug,
+              [  --enable-debug          switch on debug routines (timers, ...)],
+              [AC_DEFINE(DLVHEX_DEBUG, [], [Turns on timer routines for profiling])
+               debug_support=yes]
+              )
 
+
+# for debug, we need the boost_date_time library
+if test "$debug_support" = "yes"; then
+    # we could have set the boost-compiler-name somewhere before..
+    boost_cname=unknown
+    AC_CHECK_LIB([boost_date_time], [main],
+                 [boost_cname=""], [])
+    for cname in bcb bck como cw dmc edg gcc il iw kcc mgw mp osx sw tru vc xlc
+    do
+        if test "$boost_cname" = "unknown"; then
+            AC_CHECK_LIB([boost_date_time-$cname], [main],
+                         [boost_cname=$cname], [])
+        fi
+    done
+    # still unknown? then we didn't find this lib!
+    if test "$boost_cname" = "unknown"; then
+        AC_MSG_ERROR(boost_date_time library not found); exit
+    fi
+    # now, boost_cname is set, maybe for using somewhere below
+fi
 
 # boost stuff
 AC_LANG_PUSH([C++])
