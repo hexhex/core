@@ -112,6 +112,12 @@ public:
 
 
     /**
+     * @brief Set the tuple of input arguments.
+     */
+    void
+    setInputTerms(const Tuple& ninput);
+
+    /**
      * @brief Returns the input Type of the input parameter with index idx.
      *
      * (see also PluginAtom::InputType)

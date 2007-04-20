@@ -195,6 +195,20 @@ ExternalAtom::getInputTerms() const
     return inputList;
 }
 
+void
+ExternalAtom::setInputTerms(const Tuple& ninput)
+{
+    inputList.clear();
+    
+    // copy nargs to the 2nd position in inputList
+    inputList.insert(inputList.end(), 
+		     ninput.begin(),
+		     ninput.end()
+		     );
+
+    ///@todo new replacementname for nonground input?
+}
+
 
 PluginAtom::InputType
 ExternalAtom::getInputType(unsigned idx) const
