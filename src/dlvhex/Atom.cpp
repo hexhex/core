@@ -126,6 +126,21 @@ Atom::getPredicate() const
 }
 
 
+void
+Atom::setArguments(const Tuple& nargs)
+{
+        assert(!arguments.empty());
+
+        arguments.resize(1); // just keep the predicate
+
+	// copy nargs to the 2nd position in arguments
+	arguments.insert(arguments.end(), 
+			 nargs.begin(),
+			 nargs.end()
+			 );
+}
+
+
 const Term&
 Atom::getArgument(const unsigned index) const
 {

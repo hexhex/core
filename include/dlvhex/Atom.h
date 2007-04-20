@@ -139,6 +139,12 @@ public:
 		return Tuple(++arguments.begin(), arguments.end());
 	}
 
+        /**
+	 * @brief sets arguments of an atom.
+	 */
+        virtual void
+	setArguments(const Tuple& nargs);
+
 	/**
 	 * @brief Returns the specified argument term.
 	 *
