@@ -28,15 +28,21 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
     std::multimap<Term, AtomNodePtr> extinputs;
 
 
+    //
+    // empty the NodeGraph
+    //
+    nodegraph.reset();
+
+
     // we start with rule-id 1, 0 is reserved for EXTERNAL and UNIFYING
-    unsigned ruleID = 1;
+//     unsigned ruleID = 1;
 
     //
     // go through all rules of the given program
     //
     for (Program::iterator r = program.begin();
          r != program.end();
-         ++r, ++ruleID)
+         ++r)
     {
         //
         // all nodes of the current rule's head
@@ -68,8 +74,8 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 //
                 // and add disjunctive dependency
                 //
-                Dependency::addDep(ruleID, hn, *currhead, Dependency::DISJUNCTIVE);
-                Dependency::addDep(ruleID, *currhead, hn, Dependency::DISJUNCTIVE);
+                Dependency::addDep(*r, hn, *currhead, Dependency::DISJUNCTIVE);
+                Dependency::addDep(*r, *currhead, hn, Dependency::DISJUNCTIVE);
             }
 
             //
@@ -136,9 +142,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                  ++currhead)
             {
                 if ((*li)->isNAF())
-                    Dependency::addDep(ruleID, bn, *currhead, Dependency::NEG_PRECEDING);
+                    Dependency::addDep(*r, bn, *currhead, Dependency::NEG_PRECEDING);
                 else
-                    Dependency::addDep(ruleID, bn, *currhead, Dependency::PRECEDING);
+                    Dependency::addDep(*r, bn, *currhead, Dependency::PRECEDING);
 
                 //
                 // if an external atom is in the body, we have to take care of the
@@ -222,7 +228,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                 // add aux dependency from this new head to the external atom
                 // node
                 //
-                Dependency::addDep(ruleID, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
+                Dependency::addDep(*r, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
                 RuleBody_t auxbody;
 
@@ -298,7 +304,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
                         //
                         // add the usual body->head dependency
                         //
-                        Dependency::addDep(ruleID, auxbodynode, auxheadnode, Dependency::PRECEDING);
+                        Dependency::addDep(*r, auxbodynode, auxheadnode, Dependency::PRECEDING);
                     }
                 }
             }
@@ -336,8 +342,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             //
             for (mi i = range.first; i != range.second; ++i)
             {
-                ///@todo this should work right now, but maybe we
-                ///should add the correct rule-id to this dependency
                 Dependency::addDep(0, *node, i->second, Dependency::EXTERNAL);
             }
         }
