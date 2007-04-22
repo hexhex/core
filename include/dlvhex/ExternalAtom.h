@@ -24,10 +24,6 @@ class ExternalAtom : public Atom
 {
 public:
 
-    /// Ctor.
-    ExternalAtom();
-
-
     ExternalAtom(const ExternalAtom&);
 
 
@@ -50,7 +46,7 @@ public:
      * in the plugin (arities of input and output).
      */
     void
-    findPluginAtom();
+    findPluginAtom() const;
 
     /**
      * @brief Throws an Inputerror Exception.
@@ -69,13 +65,6 @@ public:
     getAuxPredicate() const;
 
     /**
-     * @brief Returns the base predicate name.
-     */
-    std::string
-    getBasePredicate() const;
-
-
-    /**
      * @brief Returns the function name of the external atom.
      *
      * The external atom's function name is equal to its identifier string
@@ -83,6 +72,16 @@ public:
      */
     std::string
     getFunctionName() const;
+
+    /**
+     * @brief Setup a new function name (and the corresponding
+     * replacement and auxiliary names) for this external atom.
+     *
+     * The external atom's function name is equal to its identifier string
+     * used in the logic program - without the ampersand-character.
+     */
+    void
+    setFunctionName(const std::string& name);
 
 
     /**
@@ -205,6 +204,13 @@ public:
 
 private:
 
+    /// private default Ctor.
+    ExternalAtom();
+
+    /// @brief initializes replacementName and auxPredicate from functionName
+    void
+    initReplAux();
+
     /**
      * @brief Grounds the input arguments w.r.t. a specified interpretation.
      *
@@ -233,10 +239,10 @@ private:
     std::string auxPredicate;
     
     /**
-     * @brief Auxiliary predicate for adding the base to the guessing program.
+     * @brief keep the external atom number
      */
-    std::string basePredicate;
-    
+    unsigned extAtomNo;
+
     /**
      * @brief Consecutive number to build a unique replacement name.
      */
@@ -262,8 +268,10 @@ private:
     /**
      * @brief Pointer to the PluginAtom object that matches the atom's
      * function name
+     *
+     * must be mutable s.t. const methods may call findPluginAtom.
      */
-    PluginAtom* pluginAtom;
+    mutable PluginAtom* pluginAtom;
 
 };
 

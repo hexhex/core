@@ -50,13 +50,28 @@ ExternalAtom::ExternalAtom(const std::string& name,
     : Atom(name,params),
       inputList(input),
       functionName(name),
+      extAtomNo(uniqueNumber),
       line(line)
+{
+    //
+    // increase absolute extatom counter
+    //
+    uniqueNumber++;
+
+    //
+    // and now setup replacement name and so on
+    //
+    initReplAux();
+}
+
+void
+ExternalAtom::initReplAux()
 {
     //
     // make replacement name, unique for each extatom
     //
     std::stringstream ss;
-    ss << functionName << "_" << uniqueNumber;
+    ss << functionName << "_" << extAtomNo;
     replacementName = ss.str();
 
     //
@@ -86,17 +101,13 @@ ExternalAtom::ExternalAtom(const std::string& name,
         auxPredicate = ss.str();
         Term::registerAuxiliaryName(auxPredicate);
     }
-
-    //
-    // increase absolute extatom counter
-    //
-    uniqueNumber++;
 }
 
-
 void
-ExternalAtom::findPluginAtom()
+ExternalAtom::findPluginAtom() const
 {
+    if (this->pluginAtom) return;
+
     std::ostringstream errorstr;
 
     //
@@ -153,10 +164,14 @@ ExternalAtom::getAuxPredicate() const
 }
 
 
-std::string
-ExternalAtom::getBasePredicate() const
+void
+ExternalAtom::setFunctionName(const std::string& name)
 {
-    return basePredicate;
+  this->functionName = name;
+  this->pluginAtom = 0;
+
+  // and now setup the new replacement and aux names
+  initReplAux();
 }
 
 
@@ -213,6 +228,9 @@ ExternalAtom::setInputTerms(const Tuple& ninput)
 PluginAtom::InputType
 ExternalAtom::getInputType(unsigned idx) const
 {
+    // and now check if we have a new pluginatom to setup
+    findPluginAtom();
+
     return pluginAtom->getInputType(idx);
 }
 
@@ -262,6 +280,9 @@ void
 ExternalAtom::evaluate(const AtomSet& i,
                        AtomSet& result) const
 {
+    // setup the pluginatom, may throw a syntax error
+    findPluginAtom();
+
     std::vector<Tuple> inputArguments;
 
     groundInputList(i, inputArguments);
