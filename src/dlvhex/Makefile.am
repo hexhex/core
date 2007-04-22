@@ -143,7 +143,8 @@ libdlvhexbase_la_SOURCES = \
     Term.cpp
 
 # for -version-info see http://sources.redhat.com/autobook/autobook/autobook_91.html
-libdlvhexbase_la_LDFLAGS = -version-info 4:0:0
+libdlvhexbase_la_LDFLAGS = -version-info 5:0:0
+libaspsolver_la_LDFLAGS = -version-info 0:0:0
 
 libaspsolver_la_SOURCES = \
     DLVresultParser.ypp \
