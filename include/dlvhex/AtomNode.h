@@ -18,13 +18,116 @@
 #include <utility>
 
 #include "dlvhex/Rule.h"
+#include "dlvhex/Program.h"
 
 #include "boost/shared_ptr.hpp"
 
 //
 // forward declaration
 //
-class Dependency;
+class AtomNode;
+typedef boost::shared_ptr<AtomNode> AtomNodePtr;
+
+
+/**
+ * @brief Dependency between two AtomNodes.
+ *
+ * A dependency contains an AtomNode, which is the "target" of the dependency,
+ * and a type. A dependency object is supposed to belong to an AtomNode object,
+ * which is then the "source" of the dependency.
+ */
+class Dependency
+{
+public:
+
+    /**
+     * @brief Type of Dependency.
+     *
+     * UNIFYING: The atoms of two nodes can be unified.
+     * PRECEDING: A preceding dependency points from a body atom node to its head
+     * atom node.
+     * NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
+     * DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
+     * head.
+     * EXTERNAL: If an input argument of an external atom is of type
+     * PluginAtom::PREDICATE, it depends on all atoms with a matching predicate.
+     * EXTERNAL_AUX: If an input argument is nonground, an auxiliary atom will
+     * be created, being the target of a dependency of this type.
+     */
+    typedef enum { UNIFYING = 0x1,
+                   PRECEDING = 0x2,
+                   NEG_PRECEDING = 0x4,
+                   DISJUNCTIVE = 0x8,
+                   EXTERNAL = 0x10,
+                   EXTERNAL_AUX = 0x20
+    } Type;
+
+    /// Ctor.
+    Dependency();
+
+    /**
+     * Copy constructor.
+     */
+    Dependency(const Dependency&);
+
+    /**
+     * @brief Construct a dependency of a specific type to a given AtomNode
+     * target.
+     */
+    Dependency(Rule*, const AtomNodePtr, Type);
+
+    /**
+     * @brief Return the dependency type.
+     */
+    Type
+    getType() const;
+
+    /** 
+     * AtomNode uses those rules to create a list of rules on-the-fly.
+     *
+     * @return the rule that created this dependency.
+     */
+    Rule*
+    getRule() const;
+
+    /**
+     * @brief Return the target AtomNode of the dependency.
+     */
+    const AtomNodePtr
+    getAtomNode() const;
+
+    /**
+     * @brief Add a dependency information to two AtomNodes.
+     *
+     */
+    static void
+    addDep(Rule*, AtomNodePtr, AtomNodePtr, Type);
+
+private:
+
+    /**
+     * @brief AtomNode that is the target of this dependency.
+     */
+    AtomNodePtr atomNode;
+
+    /**
+     * Type of the dependency.
+     */
+    Type type;
+
+    /**
+     * a dependency belongs to a certain rule.
+     */
+    Rule* rule;
+
+};
+
+
+//
+// verbose and debug serialization
+//
+std::ostream& operator<< (std::ostream& out, const Dependency& dep);
+
 
 
 /**
@@ -87,7 +190,7 @@ public:
      */
     void
     addPreceding(const Dependency&);
-
+  
     /**
      * @brief Add succeeding dependency for this AtomNode.
      *
@@ -175,111 +278,12 @@ private:
     static unsigned nodeCount;
 };
 
-typedef boost::shared_ptr<AtomNode> AtomNodePtr;
+
 
 //
 // verbose and debug serialization.
 //
 std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode);
-
-
-/**
- * @brief Dependency between two AtomNodes.
- *
- * A dependency contains an AtomNode, which is the "target" of the dependency,
- * and a type. A dependency object is supposed to belong to an AtomNode object,
- * which is then the "source" of the dependency.
- */
-class Dependency
-{
-public:
-
-    /**
-     * @brief Type of Dependency.
-     *
-     * UNIFYING: The atoms of two nodes can be unified.
-     * PRECEDING: A preceding dependency points from a body atom node to its head
-     * atom node.
-     * NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
-     * DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
-     * head.
-     * EXTERNAL: If an input argument of an external atom is of type
-     * PluginAtom::PREDICATE, it depends on all atoms with a matching predicate.
-     * EXTERNAL_AUX: If an input argument is nonground, an auxiliary atom will
-     * be created, being the target of a dependency of this type.
-     */
-    typedef enum { UNIFYING = 0,
-                   PRECEDING,
-                   NEG_PRECEDING,
-                   DISJUNCTIVE,
-                   EXTERNAL,
-                   EXTERNAL_AUX} Type;
-
-    /// Ctor.
-    Dependency();
-
-    /**
-     * Copy constructor.
-     */
-    Dependency(const Dependency&);
-
-    /**
-     * @brief Construct a dependency of a specific type to a given AtomNode
-     * target.
-     */
-    Dependency(unsigned, const AtomNodePtr, Type);
-
-    /**
-     * @brief Return the dependency type.
-     */
-    Type
-    getType() const;
-
-    /** 
-     * AtomNode uses rule IDs to create rules on-the-fly.
-     *
-     * @return ID of the rule that created this dependency.
-     */
-    unsigned
-    getRuleID() const;
-
-    /**
-     * @brief Return the target AtomNode of the dependency.
-     */
-    const AtomNodePtr
-    getAtomNode() const;
-
-    /**
-     * @brief Add a dependency information to two AtomNodes.
-     *
-     */
-    static void
-    addDep(unsigned, AtomNodePtr, AtomNodePtr, Type);
-
-private:
-
-    /**
-     * @brief AtomNode that is the target of this dependency.
-     */
-    AtomNodePtr atomNode;
-
-    /**
-     * Type of the dependency.
-     */
-    Type type;
-
-    /**
-     * a dependency belongs to a rule.
-     */
-    unsigned ruleID;
-
-};
-
-
-//
-// verbose and debug serialization
-//
-std::ostream& operator<< (std::ostream& out, const Dependency& dep);
 
 
 /**
@@ -295,10 +299,20 @@ private:
 
     std::vector<AtomNodePtr> atomNodes;
 
+    mutable std::vector<Rule*> prog;
+  
+
 public:
 
     /// Dtor.
     ~NodeGraph();
+
+    /**
+     * @brief returns the associated Program.
+     * @return prog
+     */
+    const std::vector<Rule*>&
+    getProgram() const;
 
     /**
      * @brief Returns entire set of AtomNodes.
@@ -306,6 +320,12 @@ public:
     const std::vector<AtomNodePtr>&
     getNodes() const;
 
+    /**
+     * @brief Clears internal AtomNodes and Program.
+     */
+    void
+    reset();
+  
     /**
      * @brief Return a node with a specific AtomNode Id.
      */

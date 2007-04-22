@@ -113,73 +113,29 @@ AtomNode::getRules() const
   // head-node
   //
 
-  if (rules.empty() && isHead()) // we call getRules for the very first time
+  if (this->rules.empty() && isHead()) // we call getRules for the very first time
     {
-      typedef std::map<unsigned, Rule*> rulemap; // maps rule-ids to rules
-      rulemap rules;
+      typedef std::set<Rule*> SetOfRules;
+      SetOfRules ruleset;
 
       for (std::vector<Dependency>::const_iterator d = getPreceding().begin();
 	   d != getPreceding().end(); ++d)
 	{
 	  Dependency::Type deptype = d->getType();
 
-	  if (deptype != Dependency::DISJUNCTIVE &&
-	      deptype != Dependency::PRECEDING &&
-	      deptype != Dependency::NEG_PRECEDING)
+	  // if deptype is none of DISJ, PREC, or NEG_PREC, we
+	  // continue our search for rule candidates
+	  if (deptype & ~(Dependency::DISJUNCTIVE | Dependency::PRECEDING | Dependency::NEG_PRECEDING))
 	    {
 	      continue; // we only take care of head or body dependencies
 	    }
 
-	  rulemap::const_iterator it = rules.find(d->getRuleID());
-
-	  if (it == rules.end()) // create a new rule in the rules-map
-	    {
-	      // use this AtomNode as first head atom
-	      RuleHead_t head;
-		  //
-		  // check if we have a boolAtom in the head - this is a constraint
-		  // and a constraint doesn't have any head
-		  //
-		  if (typeid(*getAtom()) != typeid(boolAtom))
-		      head.insert(getAtom());
-	      Rule* newrule = new Rule(head, RuleBody_t());
-
-	      Registry::Instance()->storeObject(newrule);
-	      
-	      std::pair<rulemap::iterator, bool> p =
-		rules.insert(std::make_pair(d->getRuleID(), newrule));
-		  
-	      it = p.first; // set iterator to the new rule
-	    }
-	  
-	  Rule* r = it->second; // get the rule
-	  Literal *l = 0;
-
-	  switch (deptype)
-	    {
-	    case Dependency::DISJUNCTIVE: // head dependency
-	      r->addHead(d->getAtomNode()->getAtom());
-	      break;
-	      
-	    case Dependency::PRECEDING:     // positive head-body dependency
-	    case Dependency::NEG_PRECEDING: // negative head-body dependency
-	      l = new Literal(d->getAtomNode()->getAtom(),
-			      (deptype == Dependency::NEG_PRECEDING)
-			      );
-	      Registry::Instance()->storeObject(l);
-	      r->addBody(l);
-	      break;
-
-	    default: // there is nothing for you in here
-	      break;
-	    }
+	  // try to create a new rule in the ruleset
+	  ruleset.insert(d->getRule());
 	}
 
       // and now add the fresh rules to our own "rule cache"
-      for (rulemap::const_iterator rit = rules.begin(); rit != rules.end(); ++rit)
-	{
-	  this->rules.push_back(rit->second);
-	}
+      std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->rules, this->rules.begin()));
     }
 
   return this->rules;
@@ -242,13 +198,13 @@ Dependency::Dependency()
 Dependency::Dependency(const Dependency& dep2)
     : atomNode(dep2.atomNode),
       type(dep2.type),
-      ruleID(dep2.ruleID)
+      rule(dep2.rule)
 {
 }
 
 
-Dependency::Dependency(unsigned r, const AtomNodePtr an, Type t)
-  : atomNode(an), type(t), ruleID(r)
+Dependency::Dependency(Rule* r, const AtomNodePtr an, Type t)
+  : atomNode(an), type(t), rule(r)
 {
 }
 
@@ -269,17 +225,17 @@ Dependency::getAtomNode() const
 }
 
 
-unsigned
-Dependency::getRuleID() const
+Rule*
+Dependency::getRule() const
 {
-    return ruleID;
+    return rule;
 }
 
 void
-Dependency::addDep(unsigned ruleID, AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
+Dependency::addDep(Rule* rule, AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
 {
-    Dependency dep1(ruleID, from, type);
-    Dependency dep2(ruleID, to, type);
+    Dependency dep1(rule, from, type);
+    Dependency dep2(rule, to, type);
 
     from->addSucceeding(dep2);
     to->addPreceding(dep1);
@@ -323,7 +279,7 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
         break;
     }
 
-    return out << "] (" << dep.getRuleID() << ')';
+    return out << "] (" << dep.getRule() << ')';
 }
 
 
@@ -341,10 +297,39 @@ NodeGraph::~NodeGraph()
 }
 
 
+const std::vector<Rule*>&
+NodeGraph::getProgram() const
+{
+  if (this->prog.empty())
+    {
+      std::set<Rule*> ruleset;
+      
+      for (std::vector<AtomNodePtr>::const_iterator it = atomNodes.begin();
+	   it != atomNodes.end(); ++it)
+	{
+	  std::vector<Rule*> rules = (*it)->getRules();
+	  std::copy(rules.begin(), rules.end(), std::inserter(ruleset, ruleset.begin()));
+	}
+
+      std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->prog, this->prog.begin()));
+    }
+
+  return this->prog;
+}
+
+
 const std::vector<AtomNodePtr>&
 NodeGraph::getNodes() const
 {
     return atomNodes;
+}
+
+
+void
+NodeGraph::reset()
+{
+  atomNodes.clear();
+  prog.clear();
 }
 
 
