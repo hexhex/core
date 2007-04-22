@@ -1,3 +1,20 @@
+2007-04-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am (libdlvhexbase_la_LDFLAGS): Bump version-info to 5:0:0.
+	(libaspsolver_la_LDFLAGS): Start version-info with 0:0:0.
+
+	* src/dlvhex/GraphBuilder.cpp: Use Rule* instead of rule-id in Dependency.
+
+	* include/dlvhex/ExternalAtom.h (ExternalAtom::setFunctionName): New method.
+	(ExternalAtom::initReplAux, ExternalAtom::extAtomNo): Set replication and aux Name according to extAtomNo.
+	(ExternalAtom::findPluginAtom): Add const modifier s.t. we can lazy-setup ExternalAtom::pluginAtom.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	
+	* include/dlvhex/AtomNode.h (NodeGraph::reset, NodeGraph::getProgram): New methods.
+	(Dependency::Type): Use powers of 2 as type numbers, so we can encode bitstrings.
+	Use Rule* instead of a rule-id.
+	* src/dlvhex/AtomNode.cpp: Likewise.
+
 2007-04-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h (Atom::setArguments): New method.
