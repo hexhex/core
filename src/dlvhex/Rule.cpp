@@ -126,41 +126,18 @@ Rule::getExternalAtoms() const
 bool
 Rule::operator== (const Rule& rule2) const
 {
-    /// @todo: stdlib algorithms here?
+    const RuleHead_t& head2 = rule2.getHead();
 
-    if (head.size() != rule2.getHead().size())
+    if (head.size() != head2.size())
         return 0;
 
-    if (body.size() != rule2.getBody().size())
+    const RuleBody_t& body2 = rule2.getBody();
+
+    if (body.size() != body2.size())
         return 0;
 
-    for (RuleHead_t::const_iterator hi = head.begin();
-         hi != head.end();
-         ++hi)
-    {
-        for (RuleHead_t::const_iterator hi2 = rule2.getHead().begin();
-            hi2 != rule2.getHead().end();
-            ++hi2)
-        {
-            if (**hi != **hi2)
-                return 0;
-        }
-    }
-
-    for (RuleBody_t::const_iterator bi = body.begin();
-         bi != body.end();
-         ++bi)
-    {
-        for (RuleBody_t::const_iterator bi2 = rule2.getBody().begin();
-            bi2 != rule2.getBody().end();
-            ++bi2)
-        {
-            if (**bi != **bi2)
-                return 0;
-        }
-    }
-
-    return 1;
+    return std::equal(head.begin(), head.end(), head2.begin()) &&
+      std::equal(body.begin(), body.end(), body2.begin());
 }
 
 
