@@ -51,7 +51,8 @@ ExternalAtom::ExternalAtom(const std::string& name,
       inputList(input),
       functionName(name),
       extAtomNo(uniqueNumber),
-      line(line)
+      line(line),
+      pluginAtom(0)
 {
     //
     // increase absolute extatom counter
@@ -409,6 +410,8 @@ ExternalAtom::unifiesWith(const AtomPtr /* atom */) const
 bool
 ExternalAtom::operator== (const ExternalAtom& atom2) const
 {
+    // hm, should we really check the replacement names? they are
+    // always different for two different instances of ExternalAtom
     if (this->replacementName != atom2.replacementName)
         return false;
 
