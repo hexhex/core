@@ -1,3 +1,15 @@
+2007-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Rule.cpp (Rule::operator==): Use STL algorithms.
+
+	* include/dlvhex/Makefile.am (pkginclude_HEADERS): Add
+	PluginContainer.h.
+	(noinst_HEADERS): noinst_HEADERS are now disjunct to
+	pkginclude_HEADERS.
+
+	* src/dlvhex/ExternalAtom.cpp: Initialize ExternalAtom::pluginAtom
+	to 0.
+
 2007-04-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Makefile.am (libdlvhexbase_la_LDFLAGS): Bump version-info to 5:0:0.
