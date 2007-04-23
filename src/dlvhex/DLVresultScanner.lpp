@@ -105,7 +105,7 @@ NUM         ([0-9]+)
 }
 
 {NUM} { 
-    yylval.integ = new int(atoi(yytext));
+    yylval.integ = atoi(yytext);
     return token::NUM; 
 }
 
