@@ -27,7 +27,7 @@ AtomNode::AtomNode()
 */
 
 
-AtomNode::AtomNode(const AtomPtr atom = AtomPtr())
+AtomNode::AtomNode(const AtomPtr& atom = AtomPtr())
     : atom(atom),
       inHead(0),
       inBody(0)
@@ -84,7 +84,7 @@ AtomNode::addSucceeding(const Dependency& dep)
 }
 
 
-const AtomPtr
+const AtomPtr&
 AtomNode::getAtom() const
 {
     return atom;
@@ -209,7 +209,7 @@ Dependency::Dependency(const Dependency& dep2)
 }
 
 
-Dependency::Dependency(Rule* r, const AtomNodePtr an, Type t)
+Dependency::Dependency(Rule* r, const AtomNodePtr& an, Type t)
   : atomNode(an), type(t), rule(r)
 {
 }
@@ -222,7 +222,7 @@ Dependency::getType() const
 }
 
 
-const AtomNodePtr
+const AtomNodePtr&
 Dependency::getAtomNode() const
 {
     assert(atomNode);
@@ -238,7 +238,7 @@ Dependency::getRule() const
 }
 
 void
-Dependency::addDep(Rule* rule, AtomNodePtr from, AtomNodePtr to, Dependency::Type type)
+Dependency::addDep(Rule* rule, const AtomNodePtr& from, const AtomNodePtr& to, Dependency::Type type)
 {
     Dependency dep1(rule, from, type);
     Dependency dep2(rule, to, type);
@@ -395,7 +395,7 @@ NodeGraph::addNode()
 
 
 AtomNodePtr
-NodeGraph::addUniqueHeadNode(const AtomPtr atom)
+NodeGraph::addUniqueHeadNode(const AtomPtr& atom)
 {
     //
     // does a node with exactly this atom already exist?
@@ -484,7 +484,7 @@ NodeGraph::addUniqueHeadNode(const AtomPtr atom)
 
 
 AtomNodePtr
-NodeGraph::addUniqueBodyNode(const AtomPtr atom)
+NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 {
     //
     // does a node with exactly this atom already exist?
@@ -553,7 +553,7 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
 
 
 void
-NodeGraph::findNode(const AtomPtr atom, AtomNodePtr& ptr) const
+NodeGraph::findNode(const AtomPtr& atom, AtomNodePtr& ptr) const
 {
 	//
 	// test if atom does already exist as an AtomNode and return its pointer, if

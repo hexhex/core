@@ -142,7 +142,7 @@ Atom::setArguments(const Tuple& nargs)
 
 
 const Term&
-Atom::getArgument(const unsigned index) const
+Atom::getArgument(unsigned index) const
 {
 	assert(index < arguments.size());
 
@@ -165,7 +165,7 @@ Atom::isStronglyNegated() const
 
 
 bool
-Atom::unifiesWith(const AtomPtr atom2) const
+Atom::unifiesWith(const AtomPtr& atom2) const
 {
 	//
 	// atoms only unify with atoms
@@ -207,7 +207,7 @@ Atom::operator== (const Atom& atom2) const
 
 
 bool
-Atom::equals(const AtomPtr atom2) const
+Atom::equals(const AtomPtr& atom2) const
 {
 	if (typeid(*this) != typeid(*atom2))
 		return 0;

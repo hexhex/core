@@ -56,12 +56,12 @@ public:
      * throwing the InputError with proper parameters.
      */
     void
-    throwSourceError(std::string) const;
+    throwSourceError(const std::string&) const;
 
     /**
      * @brief Returns the auxiliary predicate name.
      */
-    std::string
+    const std::string&
     getAuxPredicate() const;
 
     /**
@@ -70,7 +70,7 @@ public:
      * The external atom's function name is equal to its identifier string
      * used in the logic program - without the ampersand-character.
      */
-    std::string
+    const std::string&
     getFunctionName() const;
 
     /**
@@ -91,7 +91,7 @@ public:
      * used to replace the external-atoms by ordinary atoms for being processed
      * by an external answer set solver.
      */
-    std::string
+    const std::string&
     getReplacementName() const;
 
 
@@ -146,7 +146,7 @@ public:
      * @brief An External Atom never unifies.
      */
     virtual bool
-    unifiesWith(const AtomPtr) const;
+    unifiesWith(const AtomPtr&) const;
 
 	/**
 	 * @brief Tests for equality.
@@ -160,7 +160,7 @@ public:
 	 * @brief Polymorphic equality operator.
 	 */
 	virtual bool
-	equals(const AtomPtr atom2) const;
+	equals(const AtomPtr& atom2) const;
 
     /**
      * @brief accepts a visitor.

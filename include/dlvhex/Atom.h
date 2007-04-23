@@ -154,7 +154,7 @@ public:
 	 * returns the predicate symbol of the atom.
 	 */
 	const Term&
-	getArgument(const unsigned index) const;
+	getArgument(unsigned index) const;
 
 	/**
 	 * Returns the arity of an atom (number of arguments).
@@ -181,7 +181,7 @@ public:
 	 * @see Term::unifiesWith()
 	 */
 	virtual bool
-	unifiesWith(const AtomPtr) const;
+	unifiesWith(const AtomPtr&) const;
 
 	/**
 	 * @brief Tests for equality.
@@ -198,7 +198,7 @@ public:
 	 * @brief Polymorphic equality operator.
 	 */
 	virtual bool
-	equals(const AtomPtr atom2) const;
+	equals(const AtomPtr& atom2) const;
 
 	/**
 	 * Tests for inequality.
@@ -320,7 +320,7 @@ public:
 	}
 			
 	virtual bool
-	unifiesWith(const AtomPtr) const
+	unifiesWith(const AtomPtr&) const
 	{
 		return false;
 	}

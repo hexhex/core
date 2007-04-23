@@ -152,13 +152,13 @@ ExternalAtom::findPluginAtom() const
 
 
 void
-ExternalAtom::throwSourceError(std::string msg) const
+ExternalAtom::throwSourceError(const std::string& msg) const
 {
    throw SyntaxError(msg, line);
 }
 
 
-std::string
+const std::string&
 ExternalAtom::getAuxPredicate() const
 {
 	return auxPredicate;
@@ -176,14 +176,14 @@ ExternalAtom::setFunctionName(const std::string& name)
 }
 
 
-std::string
+const std::string&
 ExternalAtom::getFunctionName() const
 {
 	return functionName;
 }
 
 
-std::string
+const std::string&
 ExternalAtom::getReplacementName() const
 {
 	return replacementName;
@@ -403,7 +403,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 
 bool
-ExternalAtom::unifiesWith(const AtomPtr /* atom */) const
+ExternalAtom::unifiesWith(const AtomPtr& /* atom */) const
 {
 	return 0;
 }
@@ -450,7 +450,7 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
 
 
 bool
-ExternalAtom::equals(const AtomPtr atom2) const
+ExternalAtom::equals(const AtomPtr& atom2) const
 {
 	//std::cout << "extatom equals: " << *this << " equals " << *atom2 << "?" << std::endl;
 

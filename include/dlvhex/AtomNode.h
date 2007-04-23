@@ -74,7 +74,7 @@ public:
 	 * @brief Construct a dependency of a specific type to a given AtomNode
 	 * target.
 	 */
-	Dependency(Rule*, const AtomNodePtr, Type);
+	Dependency(Rule*, const AtomNodePtr&, Type);
 
 	/**
 	 * @brief Return the dependency type.
@@ -93,7 +93,7 @@ public:
 	/**
 	 * @brief Return the target AtomNode of the dependency.
 	 */
-	const AtomNodePtr
+	const AtomNodePtr&
 	getAtomNode() const;
 
 	/**
@@ -101,12 +101,12 @@ public:
 	 *
 	 */
 	static void
-	addDep(Rule*, AtomNodePtr, AtomNodePtr, Type);
+	addDep(Rule*, const AtomNodePtr&, const AtomNodePtr&, Type);
 
 	/**
 	 * @brief Comparison operator needed for std::set<Dependency>.
 	 */
-	virtual bool
+	bool
 	operator< (const Dependency& dep2) const;
 
 private:
@@ -152,7 +152,7 @@ public:
 	/**
 	 * @brief Constructs an AtomNode from a given Atom.
 	 */
-	AtomNode(const AtomPtr);
+	AtomNode(const AtomPtr&);
 	
 	/**
 	 * @brief Sets the head-flag of the Node.
@@ -208,7 +208,7 @@ public:
 	/**
 	 * @brief Returns the atom-object this Node is associated with.
 	 */
-	const AtomPtr
+	const AtomPtr&
 	getAtom() const;
 
 	/**
@@ -351,7 +351,7 @@ public:
 	 * created.
 	 */
 	AtomNodePtr
-	addUniqueHeadNode(const AtomPtr);
+	addUniqueHeadNode(const AtomPtr&);
 
 	/**
 	 * @brief Create a new node for this body atom and return its pointer or
@@ -363,13 +363,13 @@ public:
 	 * creates.
 	 */
 	AtomNodePtr
-	addUniqueBodyNode(const AtomPtr);
+	addUniqueBodyNode(const AtomPtr&);
 
 	/**
 	 * @brief Finds an AtomNode that is associated with a specific Atom object.
 	 */
 	void
-	findNode(const AtomPtr, AtomNodePtr&) const;
+	findNode(const AtomPtr&, AtomNodePtr&) const;
 };
 
 

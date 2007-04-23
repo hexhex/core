@@ -134,7 +134,7 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
             // ordered, so this must be the best one.
             //
             if (ri == sets.begin())
-                for (int i = 0; i < AnswerSet::getMaxLevel(); ++i)
+                for (unsigned i = 0; i < AnswerSet::getMaxLevel(); ++i)
                     lowestWeights.push_back((*ri)->getWeight(i + 1));
             
         /*    for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
