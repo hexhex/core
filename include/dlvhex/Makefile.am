@@ -3,26 +3,18 @@ AUTOMAKE_OPTIONS = foreign
 # including headers for make dist
 noinst_HEADERS = \
                  ASPsolver.h \
-                 Atom.h \
-                 AtomFactory.h \
 		 AnswerSet.h \
 		 DLVresultFlexLexer.h \
 		 DLVresultParserDriver.h \
-                 Error.h \
-                 globals.h \
                  GraphProcessor.h \
-                 helper.h \
 		 HexFlexLexer.h \
 		 HexParserDriver.h \
-                 Literal.h \
 		 OutputBuilder.h \
 		 ParserDriver.h \
-                 PluginContainer.h \
                  ProcessBuf.h \
                  ResultContainer.h \
 		 Registry.h \
-                 SafetyChecker.h \
-                 Term.h
+                 SafetyChecker.h
 
 pkginclude_HEADERS = \
                  AggregateAtom.h \
@@ -43,6 +35,7 @@ pkginclude_HEADERS = \
                  Literal.h \
                  ModelGenerator.h \
                  NamesTable.h \
+                 PluginContainer.h \
                  PluginInterface.h \
                  PrintVisitor.h \
                  Program.h \
