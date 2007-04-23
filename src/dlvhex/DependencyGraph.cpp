@@ -192,11 +192,12 @@ DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes)
         // since an SCC is always cyclic, we only have to consider preceding,
         // not preceding AND succeeding!
         //
-        for (std::vector<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
+        for (std::set<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
                 di != (*ni)->getPreceding().end();
                 ++di)
         {
-            if ((*di).getType() == Dependency::NEG_PRECEDING)
+            if (((*di).getType() == Dependency::NEG_PRECEDING) ||
+               ((*di).getType() == Dependency::DISJUNCTIVE))
                 //
                 // a scc has a negated edge only if the "target" of the edge is also in the cycle!
                 //

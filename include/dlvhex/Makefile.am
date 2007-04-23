@@ -2,44 +2,44 @@ AUTOMAKE_OPTIONS = foreign
 
 # including headers for make dist
 noinst_HEADERS = \
-                 ASPsolver.h \
-		 AnswerSet.h \
-		 DLVresultFlexLexer.h \
-		 DLVresultParserDriver.h \
-                 GraphProcessor.h \
-		 HexFlexLexer.h \
-		 HexParserDriver.h \
-		 OutputBuilder.h \
-		 ParserDriver.h \
-                 ProcessBuf.h \
-                 ResultContainer.h \
-		 Registry.h \
-                 SafetyChecker.h
+	ASPsolver.h \
+	AnswerSet.h \
+	DLVresultFlexLexer.h \
+	DLVresultParserDriver.h \
+	GraphProcessor.h \
+	HexFlexLexer.h \
+	HexParserDriver.h \
+	OutputBuilder.h \
+	ParserDriver.h \
+	ProcessBuf.h \
+	ResultContainer.h \
+	Registry.h \
+	SafetyChecker.h
 
 pkginclude_HEADERS = \
-                 AggregateAtom.h \
-                 Atom.h \
-		 AtomNode.h \
-                 AtomSet.h \
-		 AtomFactory.h \
-                 BaseVisitor.h \
-                 BoostComponentFinder.h \
-                 ComponentFinder.h \
-		 Component.h \
-                 DependencyGraph.h \
-                 Error.h \
-                 ExternalAtom.h \
-		 globals.h \
-                 GraphBuilder.h \
-                 helper.h \
-                 Literal.h \
-                 ModelGenerator.h \
-                 NamesTable.h \
-                 PluginContainer.h \
-                 PluginInterface.h \
-                 PrintVisitor.h \
-                 Program.h \
-                 ProgramBuilder.h \
-                 Repository.h \
-                 Rule.h \
-                 Term.h
+	AggregateAtom.h \
+	Atom.h \
+	AtomNode.h \
+	AtomSet.h \
+	AtomFactory.h \
+	BaseVisitor.h \
+	BoostComponentFinder.h \
+	ComponentFinder.h \
+	Component.h \
+	DependencyGraph.h \
+	Error.h \
+	ExternalAtom.h \
+	globals.h \
+	GraphBuilder.h \
+	helper.h \
+	Literal.h \
+	ModelGenerator.h \
+	NamesTable.h \
+	PluginContainer.h \
+	PluginInterface.h \
+	PrintVisitor.h \
+	Program.h \
+	ProgramBuilder.h \
+	Repository.h \
+	Rule.h \
+	Term.h

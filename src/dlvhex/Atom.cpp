@@ -192,17 +192,34 @@ Atom::unifiesWith(const AtomPtr atom2) const
 bool
 Atom::operator== (const Atom& atom2) const
 {
-	if (getArity() != atom2.getArity())
-		return false;
-	
 	if (typeid(*this) != typeid(atom2))
-		return false;
+		return 0;
 
-	if (isStrongNegated != atom2.isStrongNegated)
-		return false;
+	if (this->getArity() != atom2.getArity())
+		return 0;
 
-	return std::equal(arguments.begin(), arguments.end(),
-					  atom2.arguments.begin());
+	if (this->isStronglyNegated() != atom2.isStronglyNegated())
+		return 0;
+
+	return std::equal(this->arguments.begin(), this->arguments.end(),
+	                  atom2.arguments.begin());
+}
+
+
+bool
+Atom::equals(const AtomPtr atom2) const
+{
+	if (typeid(*this) != typeid(*atom2))
+		return 0;
+
+	if (this->getArity() != atom2->getArity())
+		return 0;
+
+	if (this->isStronglyNegated() != atom2->isStronglyNegated())
+		return 0;
+
+	return std::equal(this->arguments.begin(), this->arguments.end(),
+	                  atom2->arguments.begin());
 }
 
 
@@ -230,7 +247,7 @@ Atom::getAlwaysFO() const
 void
 Atom::accept(BaseVisitor& v) const
 {
-  v.visitAtom(this);
+	v.visitAtom(this);
 }
 
 
@@ -250,9 +267,9 @@ Atom::isGround() const
 std::ostream&
 operator<< (std::ostream& out, const Atom& atom)
 {
-  RawPrintVisitor rpv(out);
-  atom.accept(rpv);
-  return out;
+	RawPrintVisitor rpv(out);
+	atom.accept(rpv);
+	return out;
 }
 
 

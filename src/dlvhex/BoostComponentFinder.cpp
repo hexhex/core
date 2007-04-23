@@ -38,7 +38,7 @@ BoostComponentFinder::makeEdges(const std::vector<AtomNodePtr>& nodes,
         //
         // considering all types of dependencies
         //
-        for (std::vector<Dependency>::const_iterator d = (*node)->getSucceeding().begin();
+        for (std::set<Dependency>::const_iterator d = (*node)->getSucceeding().begin();
             d != (*node)->getSucceeding().end();
             ++d)
         {

@@ -23,7 +23,7 @@
 #include "dlvhex/ModelGenerator.h"
 
 GraphProcessor::GraphProcessor(DependencyGraph *dg)
-    : depGraph(dg)
+: depGraph(dg)
 {
 }
 
@@ -31,216 +31,233 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const AtomSet& in)
 {
-    //
-    // start with empty result set
-    //
-    resultModels.push_back(AtomSet());
+	Subgraph* graph(depGraph->getNextSubgraph());
 
-    bool firstsubgraph = 1;
+	if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		Globals::Instance()->getVerboseStream() << "Graph Processor starts." << std::endl;
 
-    Subgraph* sg;
+	//
+	// start with program's EDB
+	//
+	resultModels.clear();
+	resultModels.push_back(in);
 
-    //
-    // go through all subgraphs
-    //
-    while ((sg = depGraph->getNextSubgraph()) != NULL)
-    {
-        std::vector<AtomSet> current;
+	//
+	// The Big Loop:
+	// do this as long as there is something left to be solved.
+	//
+	// more precisely:
+	// 1) solve all components (scc with extatoms) at the bottom of the graph
+	// 2) remove them from the graph
+	// 3) solve ordinary ASP-subprogram now at the bottom of the graph
+	// 
+	// if any further components left 'above' this, then continue with 1)
+	//
+	// In case of an ordinary ASP program (without any external atoms), 1) and
+	// 2) do nothing and 3) solves the program.
+	//
+	do
+	{
+		//
+		// accumulated result of all leaf-components with all current models as
+		// input
+		//
+		std::vector<AtomSet> allLeavesResult;
 
-        //
-        // sgresult is the result of the entire subgraph
-        //
-        std::vector<AtomSet> sgresult;
+		//
+		// all leaf components
+		//
+		std::vector<Component*> leaves;
+		graph->getUnsolvedLeaves(leaves);
 
-        //
-        // each subgraph starts with input set
-        //
-        sgresult.push_back(in);
+		if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+			Globals::Instance()->getVerboseStream() << "current iteration has "
+			    << leaves.size() << " leaf components" << std::endl;
 
-        do // while unsolved components left
-        {
-            //
-            // result of a single leaf component
-            //
-            std::vector<AtomSet> compresult;
+		//
+		// go through current result, i.e., answer sets previously computed from
+		// lower parts of the graph.
+		// (if this is the first iteration, then resultModels = EDB, see above)
+		//
+		// with each of these models (*mi), we loop through all leaf components.
+		// result sets of one component are input to the next.
+		//
+		for (std::vector<AtomSet>::iterator mi = resultModels.begin();
+			 mi != resultModels.end();
+			 ++mi)
+		{
+			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+			{
+    			RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+				Globals::Instance()->getVerboseStream() << "current input for leaf layer: ";
+				mi->accept(rpv);
+				Globals::Instance()->getVerboseStream() << std::endl;
+			}
 
-            std::vector<Component*> leaves;
-            
-            sg->getUnsolvedLeaves(leaves);
+			//
+			// componentLayerResult is the accumulated result of all current
+			// leaf components. input to start with is the current model *mi.
+			//
+			std::vector<AtomSet> componentLayerResult;
+			componentLayerResult.push_back(*mi);
 
-            //
-            // solve the leaves first
-            // if we didn't have any leaves, then current = lastresult
-            //
-            if (leaves.size() == 0)
-            {
-                current = sgresult;
+			//
+			// result of a single leaf component
+			// initialize it with empty set, just in case we don't have any
+			// components in the following for-loop (??? commented out!)
+			//
+//			std::vector<AtomSet> leafResult;
+			//leafResult.push_back(AtomSet());
 
-        //        if (Globals::Instance()->getOption("Verbose"))
-        //            std::cerr << "No leaf components" << std::endl;
-            }
-            else
-            {
-                //
-                // before going through all leaves - start with a single empty
-                // answer set as a base for the set multiplying
-                //
-                current.clear();
-                current.push_back(AtomSet());
+			//
+			// now loop through these leaf components
+			//
+			for (std::vector<Component*>::iterator ci = leaves.begin();
+			     ci != leaves.end();
+			     ++ci)
+			{
+				if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+				{
+					Globals::Instance()->getVerboseStream() << "computing leaf component: "
+						<< std::endl;
+//					(*ci)->dump(Globals::Instance()->getVerboseStream());
+//					Globals::Instance()->getVerboseStream() << std::endl;
+				}
 
-                //
-                // we have leaves - so evaluate each:
-                //
-                for (std::vector<Component*>::iterator ci = leaves.begin();
-                    ci != leaves.end();
-                    ++ci)
-                {
-                    //
-                    // evaluate each component based on the last result
-                    //
-                    (*ci)->evaluate(sgresult);
+				//
+				// evaluate leaf component with previous result as input
+				// (in case of multiple models, this will multiply the sets of
+				// sets correctly)
+				//
+				(*ci)->evaluate(componentLayerResult);
 
-                    (*ci)->getResult(compresult);
+				//(*ci)->getResult(leafResult);
+				//componentLayerResult = leafResult;
 
-                    if (compresult.size() == 0)
-                    {
-                        //
-                        // inconsistent!
-                        //
-                        current.clear();
+				(*ci)->getResult(componentLayerResult);
 
-                    //    if (Globals::Instance()->getOption("Verbose"))
-                    //        std::cerr << "Leaf Component was inconsistent!" << std::endl;
+				if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+				{
+    				RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+					Globals::Instance()->getVerboseStream() << "result of leaf: " << std::endl;
 
-                        break;
-                    }
+					for (std::vector<AtomSet>::iterator tmpi = componentLayerResult.begin();
+					     tmpi != componentLayerResult.end();
+					     ++tmpi)
+					{
+						tmpi->accept(rpv);
+						Globals::Instance()->getVerboseStream() << std::endl;
+					}
+				}
 
-#ifdef DLVHEX_DEBUG
-                    DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+				//if (compresult.size() == 0)
+				//{
+				//}
+			}
 
-                    //
-                    // build the product of the other leaves' result and this
-                    // one
-                    //
-                    multiplySets(current, compresult, current);
+			//
+			// we are done now with evaluating all leaf components w.r.t. the
+			// intermediate result *mi. add the resulting model to
+			// allLeavesResult.
+			//
+			for (std::vector<AtomSet>::iterator allmi = componentLayerResult.begin();
+					allmi != componentLayerResult.end();
+					++allmi)
+			{
+				allLeavesResult.push_back(*allmi);
+			}
+		}
+		//
+		// done with feeding all current result models into the leaf components.
+		// now take care of what's above these components.
+		//
 
-#ifdef DLVHEX_DEBUG
-	                //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-                    DEBUG_STOP_TIMER("Combining intra-subgraph results       ")
-#endif // DLVHEX_DEBUG
+		//
+		// first of all, we can update the "set of current result models" now
+		//
+		resultModels = allLeavesResult;
 
-                }
+		//
+		// make copy of subgraph
+		//
+		Subgraph tmpGraph(*graph);
 
-            }
+		//
+		// remove components from temp subgraph
+		// the result is a subgraph without any SCCs
+		//
+		tmpGraph.pruneComponents();
 
-            if (current.size() == 0)
-            {
-                //
-                // inconsistent!
-                //
-                sgresult.clear();
+		//
+		// anything left?
+		//
+		if (tmpGraph.getNodes().size() > 0)
+		{
+			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+				Globals::Instance()->getVerboseStream() << "evaluating wcc on "
+					<< resultModels.size() << " models" << std::endl;
 
-                break;
-            }
+			//
+			// make a component from the node-set
+			//
+			ModelGenerator* mg = new OrdinaryModelGenerator();
 
+			Component* weakComponent = new ProgramComponent(tmpGraph.getNodes(), mg);
 
-            //
-            // make copy of subgraph
-            //
-            Subgraph tmpsg(*sg);
+			//
+			// add the weak component to the subgraph
+			//
+			graph->addComponent(weakComponent);
 
-            //
-            // remove components from temp subgraph
-            // the result is a subgraph without any SCCs
-            //
-            tmpsg.pruneComponents();
+			try
+			{
+				weakComponent->evaluate(resultModels);
+			}
+			catch (GeneralError&)
+			{
+				throw;
+			}
 
-            //
-            // anything left?
-            //
-            if (tmpsg.getNodes().size() > 0)
-            {
-                //
-                // make a component from the node-set
-                //
-                ModelGenerator* mg = new OrdinaryModelGenerator();
+			weakComponent->getResult(resultModels);
 
-                Component* weakComponent = new ProgramComponent(tmpsg.getNodes(), mg);
+			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+				Globals::Instance()->getVerboseStream() << "wcc result: " << resultModels.size() << " models" << std::endl;
 
-                //
-                // add the weak component to the subgraph
-                //
-                sg->addComponent(weakComponent);
+			if (resultModels.size() == 0)
+			{
+				//
+				// inconsistent!
+				//
 
-                try
-                {
-                    weakComponent->evaluate(current);
-                }
-                catch (GeneralError&)
-                {
-                    throw;
-                }
+				break;
+			}
+		}
 
-                weakComponent->getResult(sgresult);
+	}  while (graph->unsolvedComponentsLeft());
 
-                if (sgresult.size() == 0)
-                {
-                    //
-                    // inconsistent!
-                    //
-              //      if (Globals::Instance()->getOption("Verbose"))
-              //          std::cerr << "Program Component was inconsistent!" << std::endl;
+	if (resultModels.size() == 0)
+	{
+		//
+		// inconsistent!
+		//
+		resultModels.clear();
+	}
 
-                    break;
-                }
-            }
-            else
-            {
-                sgresult = current;
-            }
+	resultSetIndex = resultModels.begin();
 
-        } while (sg->unsolvedComponentsLeft());
-
-        if (sgresult.size() == 0)
-        {
-            //
-            // inconsistent!
-            //
-            resultModels.clear();
-
-            break;
-        }
-
-#ifdef DLVHEX_DEBUG
-        DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
-
-        //
-        // speed up things for first subgraph:
-        //
-        if (firstsubgraph)
-            resultModels = sgresult;
-        else
-            multiplySets(resultModels, sgresult, resultModels);
-
-        firstsubgraph = 0;
-
-#ifdef DLVHEX_DEBUG
-	    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-        DEBUG_STOP_TIMER("Combining inter-subgraph results       ")
-#endif // DLVHEX_DEBUG
-    }
-
-    resultSetIndex = resultModels.begin();
+	if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		Globals::Instance()->getVerboseStream() << std::endl;
 }
 
 
 AtomSet*
 GraphProcessor::getNextModel()
 {
-    if (resultSetIndex != resultModels.end())
-        return &(*(resultSetIndex++));
+	if (resultSetIndex != resultModels.end())
+		return &(*(resultSetIndex++));
 
-    return NULL;
+	return NULL;
 }
+
+
+/* vim: set noet sw=4 ts=4 tw=80: */

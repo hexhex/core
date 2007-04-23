@@ -50,18 +50,6 @@
 const char*  WhoAmI;
 
 
-/**
- * @brief Stores the rules of the program.
- */
-Program IDB;
-
-
-/**
- * @brief Stores the facts of the program.
- */
-AtomSet EDB;
-
-
 
 /**
  * @brief Print logo.
@@ -281,9 +269,11 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 
 	count = scandir(dir.c_str(), &files, 0, alphasort);
 
+//		std::cerr << "  d: " << dir << std::endl;
 	for (i = 0; i < count; ++i)
 	{
 		filename = files[i]->d_name;
+//		std::cerr << "  f: " << filename << std::endl;
 
 		//        if (filename.substr(0,9) == "libdlvhex")
 		if  (filename.size() > 3)
@@ -311,6 +301,18 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 int
 main (int argc, char *argv[])
 {
+	/**
+	* @brief Stores the rules of the program.
+	*/
+	Program IDB;
+
+
+	/**
+	* @brief Stores the facts of the program.
+	*/
+	AtomSet EDB;
+
+
 	/*
 	   Atom* a = new Atom("p");
 	   ExternalAtom* e = new ExternalAtom();
@@ -509,7 +511,7 @@ main (int argc, char *argv[])
 #ifdef DLVHEX_DEBUG
 	DEBUG_START_TIMER
 #endif // DLVHEX_DEBUG
-			
+
 	//
 	// now search for plugins
 	//
@@ -520,10 +522,11 @@ main (int argc, char *argv[])
 	//
 	// first look into specified plugin dir
 	//
+		//Globals::Instance()->getVerboseStream() << "searching " << optionPlugindir << "..." << std::endl;
 	if (!optionPlugindir.empty())
 	{
 //		if (Globals::Instance()->getOption("Verbose"))
-//			std::cout << "searching " << optionPlugindir << "..." << std::endl;
+//		Globals::Instance()->getVerboseStream() << "searching " << optionPlugindir << "..." << std::endl;
 
 		searchPlugins(optionPlugindir, libfilelist);
 	}
@@ -1047,8 +1050,11 @@ main (int argc, char *argv[])
 		//
 		// The GraphProcessor starts its computation with the program's ground
 		// facts as input.
+		// But only if the original EDB is consistent, otherwise, we can skip it
+		// anyway.
 		//
-		gp.run(EDB);
+		if (EDB.isConsistent())
+			gp.run(EDB);
 	}
 	catch (GeneralError &e)
 	{

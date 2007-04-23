@@ -74,6 +74,7 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
             // and aggregate terms
             //
             if ((typeid(*((*bb)->getAtom())) == typeid(Atom)) ||
+                (typeid(*((*bb)->getAtom())) == typeid(BuiltinPredicate)) ||
                 (typeid(*((*bb)->getAtom())) == typeid(AggregateAtom)))
             {
                 //
@@ -81,23 +82,41 @@ SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
                 //
                 Term pred = (*bb)->getAtom()->getPredicate();
 
-                if (pred.isVariable())
-                    safevars.insert(pred);
-
                 //
                 // look at arguments
                 //
                 Tuple bodyarg = (*bb)->getAtom()->getArguments();
 
-                Tuple::const_iterator ordterm = bodyarg.begin();
+				//
+				// in case of BuiltinPredicate: only equality with only one
+				// variable is safe, just like in dlv
+				//
+				if (typeid(*((*bb)->getAtom())) == typeid(BuiltinPredicate))
+				{
+					if (pred == Term("="))
+					{
+						if (bodyarg[0].isVariable() && !bodyarg[1].isVariable())
+							safevars.insert(bodyarg[0]);
+						if (!bodyarg[0].isVariable() && bodyarg[1].isVariable())
+							safevars.insert(bodyarg[1]);
+					}
+				}
+				else
+				{
 
-                while (ordterm != bodyarg.end())
-                {
-                    if ((*ordterm).isVariable())
-                        safevars.insert(*ordterm);
+					if (pred.isVariable())
+						safevars.insert(pred);
 
-                    ordterm++;
-                }
+					Tuple::const_iterator ordterm = bodyarg.begin();
+
+					while (ordterm != bodyarg.end())
+					{
+						if ((*ordterm).isVariable())
+							safevars.insert(*ordterm);
+
+						ordterm++;
+					}
+				}
             }
 
             bb++;

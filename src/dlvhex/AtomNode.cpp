@@ -73,14 +73,14 @@ void
 AtomNode::addPreceding(const Dependency& dep)
 {
     rules.clear(); // start creating rules in AtomNode::getRules
-    preceding.push_back(dep);
+    preceding.insert(dep);
 }
 
 
 void
 AtomNode::addSucceeding(const Dependency& dep)
 {
-    succeeding.push_back(dep);
+    succeeding.insert(dep);
 }
 
 
@@ -91,14 +91,14 @@ AtomNode::getAtom() const
 }
 
 
-const std::vector<Dependency>&
+const std::set<Dependency>&
 AtomNode::getPreceding() const
 {
     return preceding;
 }
 
 
-const std::vector<Dependency>&
+const std::set<Dependency>&
 AtomNode::getSucceeding() const
 {
     return succeeding;
@@ -118,7 +118,7 @@ AtomNode::getRules() const
       typedef std::set<Rule*> SetOfRules;
       SetOfRules ruleset;
 
-      for (std::vector<Dependency>::const_iterator d = getPreceding().begin();
+      for (std::set<Dependency>::const_iterator d = getPreceding().begin();
 	   d != getPreceding().end(); ++d)
 	{
 	  Dependency::Type deptype = d->getType();
@@ -155,9 +155,15 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 
     out << *(atomnode.getAtom());
 
+	if (typeid(*(atomnode.getAtom())) == typeid(ExternalAtom))
+	{
+		const ExternalAtom* ea =  dynamic_cast<ExternalAtom*>(atomnode.getAtom().get());
+		out << " " <<  ea->getReplacementName() << " ";
+	}
+
     if (atomnode.getPreceding().size() > 0)
     {
-        for (std::vector<Dependency>::const_iterator d = atomnode.getPreceding().begin();
+        for (std::set<Dependency>::const_iterator d = atomnode.getPreceding().begin();
             d != atomnode.getPreceding().end();
             ++d)
         {
@@ -167,7 +173,7 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 
     if (atomnode.getSucceeding().size() > 0)
     {
-        for (std::vector<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
+        for (std::set<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
             d != atomnode.getSucceeding().end();
             ++d)
         {
@@ -242,9 +248,32 @@ Dependency::addDep(Rule* rule, AtomNodePtr from, AtomNodePtr to, Dependency::Typ
 }
 
 
+bool
+Dependency::operator< (const Dependency& dep2) const
+{
+	if (this->atomNode->getId() < dep2.atomNode->getId())
+		return true;
+	if (this->atomNode->getId() > dep2.atomNode->getId())
+		return false;
+
+	if (this->type < dep2.type)
+		return true;
+	if (this->type > dep2.type)
+		return false;
+
+	return false;
+}
+
+
 std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 {
     out << *(dep.getAtomNode()->getAtom());
+	if (typeid(*(dep.getAtomNode()->getAtom())) == typeid(ExternalAtom))
+	{
+		const ExternalAtom* ea =  dynamic_cast<ExternalAtom*>(dep.getAtomNode()->getAtom().get());
+		out << " " <<  ea->getReplacementName() << " ";
+	}
+
 
     out << " [";
 
@@ -526,15 +555,20 @@ NodeGraph::addUniqueBodyNode(const AtomPtr atom)
 void
 NodeGraph::findNode(const AtomPtr atom, AtomNodePtr& ptr) const
 {
+	//
+	// test if atom does already exist as an AtomNode and return its pointer, if
+	// this is the case
+	//
     for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
          an != atomNodes.end();
          ++an)
     {
-        if (*atom == *(*an)->getAtom())
-        {
-            ptr = *an;
+		if (atom->equals((*an)->getAtom()))
+		//if (*atom == *(*an)->getAtom())
+		{
+			ptr = *an;
 			return;
-        }
+		}
     }
 }
 

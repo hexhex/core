@@ -40,85 +40,91 @@ class Dependency
 {
 public:
 
-    /**
-     * @brief Type of Dependency.
-     *
-     * UNIFYING: The atoms of two nodes can be unified.
-     * PRECEDING: A preceding dependency points from a body atom node to its head
-     * atom node.
-     * NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
-     * DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
-     * head.
-     * EXTERNAL: If an input argument of an external atom is of type
-     * PluginAtom::PREDICATE, it depends on all atoms with a matching predicate.
-     * EXTERNAL_AUX: If an input argument is nonground, an auxiliary atom will
-     * be created, being the target of a dependency of this type.
-     */
-    typedef enum { UNIFYING = 0x1,
-                   PRECEDING = 0x2,
-                   NEG_PRECEDING = 0x4,
-                   DISJUNCTIVE = 0x8,
-                   EXTERNAL = 0x10,
-                   EXTERNAL_AUX = 0x20
-    } Type;
+	/**
+	 * @brief Type of Dependency.
+	 *
+	 * UNIFYING: The atoms of two nodes can be unified.
+	 * PRECEDING: A preceding dependency points from a body atom node to its head
+	 * atom node.
+	 * NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
+	 * DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
+	 * head.
+	 * EXTERNAL: If an input argument of an external atom is of type
+	 * PluginAtom::PREDICATE, it depends on all atoms with a matching predicate.
+	 * EXTERNAL_AUX: If an input argument is nonground, an auxiliary atom will
+	 * be created, being the target of a dependency of this type.
+	 */
+	typedef enum { UNIFYING = 0x1,
+	               PRECEDING = 0x2,
+	               NEG_PRECEDING = 0x4,
+	               DISJUNCTIVE = 0x8,
+	               EXTERNAL = 0x10,
+	               EXTERNAL_AUX = 0x20
+	} Type;
 
-    /// Ctor.
-    Dependency();
+	/// Ctor.
+	Dependency();
 
-    /**
-     * Copy constructor.
-     */
-    Dependency(const Dependency&);
+	/**
+	 * Copy constructor.
+	 */
+	Dependency(const Dependency&);
 
-    /**
-     * @brief Construct a dependency of a specific type to a given AtomNode
-     * target.
-     */
-    Dependency(Rule*, const AtomNodePtr, Type);
+	/**
+	 * @brief Construct a dependency of a specific type to a given AtomNode
+	 * target.
+	 */
+	Dependency(Rule*, const AtomNodePtr, Type);
 
-    /**
-     * @brief Return the dependency type.
-     */
-    Type
-    getType() const;
+	/**
+	 * @brief Return the dependency type.
+	 */
+	Type
+	getType() const;
 
-    /** 
-     * AtomNode uses those rules to create a list of rules on-the-fly.
-     *
-     * @return the rule that created this dependency.
-     */
-    Rule*
-    getRule() const;
+	/** 
+	 * AtomNode uses those rules to create a list of rules on-the-fly.
+	 *
+	 * @return the rule that created this dependency.
+	 */
+	Rule*
+	getRule() const;
 
-    /**
-     * @brief Return the target AtomNode of the dependency.
-     */
-    const AtomNodePtr
-    getAtomNode() const;
+	/**
+	 * @brief Return the target AtomNode of the dependency.
+	 */
+	const AtomNodePtr
+	getAtomNode() const;
 
-    /**
-     * @brief Add a dependency information to two AtomNodes.
-     *
-     */
-    static void
-    addDep(Rule*, AtomNodePtr, AtomNodePtr, Type);
+	/**
+	 * @brief Add a dependency information to two AtomNodes.
+	 *
+	 */
+	static void
+	addDep(Rule*, AtomNodePtr, AtomNodePtr, Type);
+
+	/**
+	 * @brief Comparison operator needed for std::set<Dependency>.
+	 */
+	virtual bool
+	operator< (const Dependency& dep2) const;
 
 private:
 
-    /**
-     * @brief AtomNode that is the target of this dependency.
-     */
-    AtomNodePtr atomNode;
+	/**
+	 * @brief AtomNode that is the target of this dependency.
+	 */
+	AtomNodePtr atomNode;
 
-    /**
-     * Type of the dependency.
-     */
-    Type type;
+	/**
+	 * Type of the dependency.
+	 */
+	Type type;
 
-    /**
-     * a dependency belongs to a certain rule.
-     */
-    Rule* rule;
+	/**
+	 * a dependency belongs to a certain rule.
+	 */
+	Rule* rule;
 
 };
 
@@ -140,142 +146,142 @@ class AtomNode
 {
 public:
 
-    /// Ctor.
-    //AtomNode();
+	/// Ctor.
+	//AtomNode();
 
-    /**
-     * @brief Constructs an AtomNode from a given Atom.
-     */
-    AtomNode(const AtomPtr);
-    
-    /**
-     * @brief Sets the head-flag of the Node.
-     *
-     * For calculating the correct dependencies when a new AtomNode is added to
-     * a collection of existing Nodes (see NodeGraph), it is vital to know for
-     * each AtomNode whether it is associated with a head-atom or a body-atom.
-     * This function sets the head-flag of the AtomNode.
-     */
-    void
-    setHead();
+	/**
+	 * @brief Constructs an AtomNode from a given Atom.
+	 */
+	AtomNode(const AtomPtr);
+	
+	/**
+	 * @brief Sets the head-flag of the Node.
+	 *
+	 * For calculating the correct dependencies when a new AtomNode is added to
+	 * a collection of existing Nodes (see NodeGraph), it is vital to know for
+	 * each AtomNode whether it is associated with a head-atom or a body-atom.
+	 * This function sets the head-flag of the AtomNode.
+	 */
+	void
+	setHead();
 
-    /**
-     * @brief Sets the body-flag of the Node.
-     *
-     * See setHead().
-     */
-    void
-    setBody();
+	/**
+	 * @brief Sets the body-flag of the Node.
+	 *
+	 * See setHead().
+	 */
+	void
+	setBody();
 
-    /**
-     * @brief Returns the head-flag of the AtomNode.
-     *
-     * See setHead().
-     */
-    bool
-    isHead() const;
+	/**
+	 * @brief Returns the head-flag of the AtomNode.
+	 *
+	 * See setHead().
+	 */
+	bool
+	isHead() const;
 
-    /**
-     * @brief Returns the body-flag of the AtomNode.
-     *
-     * See setHead().
-     */
-    bool
-    isBody() const;
+	/**
+	 * @brief Returns the body-flag of the AtomNode.
+	 *
+	 * See setHead().
+	 */
+	bool
+	isBody() const;
 
-    /**
-     * @brief Adds a preceding dependency for this AtomNode.
-     *
-     * A preceding dependency means that this AtomNode depends on another one.
-     */
-    void
-    addPreceding(const Dependency&);
+	/**
+	 * @brief Adds a preceding dependency for this AtomNode.
+	 *
+	 * A preceding dependency means that this AtomNode depends on another one.
+	 */
+	void
+	addPreceding(const Dependency&);
   
-    /**
-     * @brief Add succeeding dependency for this AtomNode.
-     *
-     * A succeeding dependency means that another AtomNode depends on this one.
-     */
-    void
-    addSucceeding(const Dependency&);
+	/**
+	 * @brief Add succeeding dependency for this AtomNode.
+	 *
+	 * A succeeding dependency means that another AtomNode depends on this one.
+	 */
+	void
+	addSucceeding(const Dependency&);
 
-    /**
-     * @brief Returns the atom-object this Node is associated with.
-     */
-    const AtomPtr
-    getAtom() const;
+	/**
+	 * @brief Returns the atom-object this Node is associated with.
+	 */
+	const AtomPtr
+	getAtom() const;
 
-    /**
-     * @brief Returns all preceding dependencies of this AtomNode.
-     */
-    const std::vector<Dependency>&
-    getPreceding() const;
+	/**
+	 * @brief Returns all preceding dependencies of this AtomNode.
+	 */
+	const std::set<Dependency>&
+	getPreceding() const;
 
-    /**
-     * @brief Returns all succeeding dependencies of this AtomNode.
-     */
-    const std::vector<Dependency>&
-    getSucceeding() const;
+	/**
+	 * @brief Returns all succeeding dependencies of this AtomNode.
+	 */
+	const std::set<Dependency>&
+	getSucceeding() const;
 
-    /**
-     * @brief Returns all rules associated with this AtomNode.
-     */
-    const std::vector<Rule*>&
-    getRules() const;
+	/**
+	 * @brief Returns all rules associated with this AtomNode.
+	 */
+	const std::vector<Rule*>&
+	getRules() const;
 
-    /**
-     * @brief Returns the unique Id of this AtomNode.
-     */
-    unsigned
-    getId() const;
+	/**
+	 * @brief Returns the unique Id of this AtomNode.
+	 */
+	unsigned
+	getId() const;
 
 private:
 
-    /**
-     * @brief This AtomNode's Atom object.
-     */
-    const AtomPtr atom;
+	/**
+	 * @brief This AtomNode's Atom object.
+	 */
+	const AtomPtr atom;
 
-    /**
-     * @brief head-flag.
-     */
-    bool inHead;
+	/**
+	 * @brief head-flag.
+	 */
+	bool inHead;
 
-    /**
-     * @brief body-flag.
-     */
-    bool inBody;
+	/**
+	 * @brief body-flag.
+	 */
+	bool inBody;
 
-    /**
-     * @brief Rules that belong to this AtomNode (in case it occured
-     * in a rule's head).
-     *
-     * This is a cache for the rules created in
-     * AtomNode::getRules. Must be mutable because of constness of
-     * getRules.
-     */
-    mutable std::vector<Rule*> rules;
+	/**
+	 * @brief Rules that belong to this AtomNode (in case it occured
+	 * in a rule's head).
+	 *
+	 * This is a cache for the rules created in
+	 * AtomNode::getRules. Must be mutable because of constness of
+	 * getRules.
+	 */
+	mutable std::vector<Rule*> rules;
 
-    /**
-     * @brief Preceding dependencies.
-     */
-    std::vector<Dependency> preceding;
+	/**
+	 * @brief Preceding dependencies.
+	 */
+	std::set<Dependency> preceding;
 
-    /**
-     * @brief succeeding dependencies.
-     */
-    std::vector<Dependency> succeeding;
+	/**
+	 * @brief succeeding dependencies.
+	 */
+	std::set<Dependency> succeeding;
 
-    /**
-     * @brief Unique numerical index to facilitate interfacing of Component
-     * finder algorithms.
-     */
-    unsigned nodeId;
+	/**
+	 * @brief Unique numerical index to facilitate interfacing of Component
+	 * finder algorithms.
+	 */
+	unsigned nodeId;
 
-    /**
-     * @brief Node counter for assigning node Ids.
-     */
-    static unsigned nodeCount;
+	/**
+	 * @brief Node counter for assigning node Ids.
+	 */
+	static unsigned nodeCount;
 };
 
 
@@ -297,74 +303,77 @@ class NodeGraph
 {
 private:
 
-    std::vector<AtomNodePtr> atomNodes;
+	std::vector<AtomNodePtr> atomNodes;
 
-    mutable std::vector<Rule*> prog;
-  
+	mutable std::vector<Rule*> prog;
+
 
 public:
 
-    /// Dtor.
-    ~NodeGraph();
+	/// Dtor.
+	~NodeGraph();
 
-    /**
-     * @brief returns the associated Program.
-     * @return prog
-     */
-    const std::vector<Rule*>&
-    getProgram() const;
+	/**
+	 * @brief returns the associated Program.
+	 * @return prog
+	 */
+	const std::vector<Rule*>&
+	getProgram() const;
 
-    /**
-     * @brief Returns entire set of AtomNodes.
-     */
-    const std::vector<AtomNodePtr>&
-    getNodes() const;
+	/**
+	 * @brief Returns entire set of AtomNodes.
+	 */
+	const std::vector<AtomNodePtr>&
+	getNodes() const;
 
-    /**
-     * @brief Clears internal AtomNodes and Program.
-     */
-    void
-    reset();
+	/**
+	 * @brief Clears internal AtomNodes and Program.
+	 */
+	void
+	reset();
   
-    /**
-     * @brief Return a node with a specific AtomNode Id.
-     */
-    //const AtomNodePtr
-    //getNode(unsigned);
+	/**
+	 * @brief Return a node with a specific AtomNode Id.
+	 */
+	//const AtomNodePtr
+	//getNode(unsigned);
 
-    AtomNodePtr
-    addNode();
+	AtomNodePtr
+	addNode();
 
-    /**
-     * @brief Create a new node for this head atom and return its pointer or
-     * return pointer to already existing node that matches this atom.
-     *
-     * If a new node is created, all existing nodes are searched for atoms that
-     * unify with the new one. If a node is found, whose atom occured in a
-     * rule's body, a unifying dependency from the new node to the found one is
-     * created.
-     */
-    AtomNodePtr
-    addUniqueHeadNode(const AtomPtr);
+	/**
+	 * @brief Create a new node for this head atom and return its pointer or
+	 * return pointer to already existing node that matches this atom.
+	 *
+	 * If a new node is created, all existing nodes are searched for atoms that
+	 * unify with the new one. If a node is found, whose atom occured in a
+	 * rule's body, a unifying dependency from the new node to the found one is
+	 * created.
+	 */
+	AtomNodePtr
+	addUniqueHeadNode(const AtomPtr);
 
-    /**
-     * @brief Create a new node for this body atom and return its pointer or
-     * return pointer to already existing node that matches this atom.
-     *
-     * See also addUniqueHeadNode. All existing nods are searched for a node
-     * that unfies with the new one. If one is found that occured in a rule's
-     * head, a unifying dependency from the existing one to the new one is
-     * creates.
-     */
-    AtomNodePtr
-    addUniqueBodyNode(const AtomPtr);
+	/**
+	 * @brief Create a new node for this body atom and return its pointer or
+	 * return pointer to already existing node that matches this atom.
+	 *
+	 * See also addUniqueHeadNode. All existing nods are searched for a node
+	 * that unfies with the new one. If one is found that occured in a rule's
+	 * head, a unifying dependency from the existing one to the new one is
+	 * creates.
+	 */
+	AtomNodePtr
+	addUniqueBodyNode(const AtomPtr);
 
-    /**
-     * @brief Finds an AtomNode that is associated with a specific Atom object.
-     */
-    void
-    findNode(const AtomPtr, AtomNodePtr&) const;
+	/**
+	 * @brief Finds an AtomNode that is associated with a specific Atom object.
+	 */
+	void
+	findNode(const AtomPtr, AtomNodePtr&) const;
 };
 
 
 #endif /* _ATOMNODE_H_ */
+
+
+/* vim: set noet sw=4 ts=4 tw=80: */

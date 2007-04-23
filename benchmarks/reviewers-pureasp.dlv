@@ -38,6 +38,9 @@
 %
 %     dlv: 0.354
 %     dlvhex: 4.138
+%
+% 1) using strdup instead of std::string in lexer
+%    3.950
 
 
 paper(subm1). 

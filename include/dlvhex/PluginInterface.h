@@ -293,27 +293,19 @@
  *     class MyConverter : public PluginConverter
  *     {
  *     public:
- * \endcode
  *
- * The constructor of the converter is called with the input and output streams. It
- * has to initialize its own stream variables with them, for example by calling the
- * base constructor. If you do not have anything fancy in your converter, like
- * handling of bison and flex, it might be sufficient to keep the constructor
- * empty:
- *
- * \code
- *         MyConverter(std::istream& i, std::ostream& o)
- *             : PluginConverter(i, o)
+ *         MyConverter()
  *         {
- *             \\ initialize something with the streams
  *         }
  * \endcode
  * 
- * This is the actual rewriting function, that will be called by dlvhex:
+ * The following function does the actual rewriting and will be called by dlvhex.
+ * The input program is read from i. The output must be passed on to the
+ * stream o, either the original input stream or the result of a conversion.
  *
  * \code
- *         void
- *         MyConverter::rewrite()
+ *         virtual void
+ *         MyConverter::convert(std::istream& i, std::ostream& o)
  *         { 
  *             \\ do the rewriting, maybe throw a PluginError
  *         }
@@ -370,6 +362,52 @@
  * 
  * To learn more about how to write the actual conversion routine, refer to the
  * sources of the DL-plugin, which uses a bison/flex parser.
+ *
+ * \subsection rewriter The Rewriter
+ *
+ * The purpose of a rewriter is to give the plugin author the
+ * possibility of creating a custom syntax for her external atoms, which will
+ * be rewritten to the hex-program syntax by the rewriter. When dlvhex is
+ * executed, the rewriter of each found plugin is applied to the input
+ * program. The rewriters are called after the converters and receive an already
+ * parsed program, represented by a Program object and an AtomSet (which
+ * contains the facts of the program).
+ *
+ * Subclassing from PluginRewriter works just as with PluginConverter. The
+ * rewriter is passed to the plugin interface by defining the following function
+ * in the subclassed PluginInterface (as above for the converter):
+ *
+ * \code
+ *         virtual PluginRewriter*
+ *         createRewriter()
+ *         {
+ *             rewriter = new MyRewriter();
+ *             return rewriter;
+ *         }
+ * \endcode
+ *
+ * Again, this presumes that you have a member PluginRewriter* rewriter in your
+ * interface class.
+ *
+ * The rewriting is not carried out on streams, but on a Program object, since
+ * at that stage, the program is already parsed into proper datastructures.
+ * Also the set of initial
+ * facts, the EDB, is passed to the rewriter and can be considered/altered.
+ *
+ * \code
+ *         virtual void
+ *         rewrite(Program& idb, AtomSet& edb)
+ *         {
+ *             // examine and alter the rules (idb) / facts (edb)
+ *         }
+ * \endcode
+ *
+ * For more information, see the documentation of the classes Program and
+ * AtomSet.
+ * 
+ * \subsection optimizer The Optimizer
+ *
+ * TBD.
  *
  * \section compiling Building the Plugin
  * 
@@ -477,8 +515,8 @@ protected:
  	/**
 	 * Constructor.
 	 */
-   PluginRewriter()
-    { }
+	PluginRewriter()
+	{ }
 
 public:
 

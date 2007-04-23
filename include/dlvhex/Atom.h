@@ -56,6 +56,8 @@ class Atom;
  */
 typedef boost::shared_ptr<Atom> AtomPtr;
 
+
+
 /**
  * @brief An Atom has a predicate and (if not propositional) an optional list of arguments.
  *
@@ -193,6 +195,12 @@ public:
 	operator== (const Atom& atom2) const;
 
 	/**
+	 * @brief Polymorphic equality operator.
+	 */
+	virtual bool
+	equals(const AtomPtr atom2) const;
+
+	/**
 	 * Tests for inequality.
 	 *
 	 * Negation of Atom::operator==.
@@ -251,6 +259,15 @@ public:
 	 */
 	bool
 	isStronglyNegated() const;
+
+	/**
+	 * @brief Switches (classical) truth value.
+	 */
+	void
+	negate()
+	{
+		isStrongNegated = !isStrongNegated;
+	}
 	
 protected:
 

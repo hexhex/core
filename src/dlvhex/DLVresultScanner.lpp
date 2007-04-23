@@ -99,7 +99,8 @@ NUM         ([0-9]+)
 
 {ID} |
 {QUOTED_ID} {
-    yylval.string = new std::string(yytext);
+//    yylval.string = new std::string(yytext);
+    yylval.charp = strdup(yytext);
     return token::ID;
 }
 

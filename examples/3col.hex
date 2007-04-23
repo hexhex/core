@@ -1,0 +1,10 @@
+node(X) :- edge(X,Y).
+node(Y) :- edge(X,Y).
+
+colored(X,r) v colored(X,g) v colored(X,b) :- node(X).
+
+:- edge(X,Y), colored(X,C), colored(Y,C).
+
+edge( 2, 4). edge( 2, 3). edge( 3, 5).
+edge( 4, 6). edge( 4, 5). edge( 5, 7).
+             edge( 6, 7).

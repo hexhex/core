@@ -4,3 +4,4 @@
 ../agg1.hex agg1.out --firstorder
 ../msp.hex msp.out -a
 ../3col.hex 3col.out
+../extatom1.hex extatom1.out

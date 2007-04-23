@@ -1,10 +1,6 @@
 #!/bin/bash
 
-DLVHEX=dlvhex
-
-TMPFILE=$(mktemp)
-
-cd $TESTDIR
+TMPFILE=$(mktemp) # global temp. file for answer sets
 
 failed=0
 warned=0
@@ -12,13 +8,23 @@ ntests=0
 
 echo ============ dlvhex tests start ============
 
-for t in $(find -name '*.test' -type f)
+for t in $(find $TESTDIR -name '*.test' -type f)
 do
     while read HEXPROGRAM ANSWERSETS ADDPARM
     do
 	let ntests++
 
-	$DLVHEX -s $PARAMETERS $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
+	HEXPROGRAM=$TESTDIR/$HEXPROGRAM
+    ANSWERSETS=$TESTDIR/$ANSWERSETS
+
+	if [ ! -f $HEXPROGRAM ] || [ ! -f $ANSWERSETS ]; then
+	    test ! -f $HEXPROGRAM && echo WARN: Could not find program file $HEXPROGRAM
+	    test ! -f $ANSWERSETS && echo WARN: Could not find answer sets file $ANSWERSETS
+	    continue
+	fi
+
+	# run dlvhex with specified parameters and program
+	$DLVHEX  $PARAMETERS $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
 
 	if cmp -s $TMPFILE $ANSWERSETS
 	then
@@ -32,7 +38,7 @@ do
 	    OLDIFS=$IFS
 	    IFS=" " # we need the tabs for cut
 
-	    nas=1
+	    nas=1 # counter for answer sets
 
             # todo: handle different costs in case of weak constraints!
 

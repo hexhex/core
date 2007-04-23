@@ -39,6 +39,7 @@ public:
 	               DUMP_OPTIMIZED_PROGRAM,
 	               COMPONENT_EVALUATION,
 	               MODEL_GENERATOR,
+	               GRAPH_PROCESSOR,
 	               PROFILING } verboseAction_t;
 
 	/**

@@ -48,13 +48,21 @@ share build-related configuration with plugins. So if you also intend to
 compile plugins and use a custom prefix for dlvhex, make sure to adjust the
 PKG_CONFIG_PATH envvar appropriately, otherwise the configuration of the
 plugins will not work. E.g., if your prefix is $HOME/localinstall/, then
-PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.
-If you installed boost in a non-standard folder, use
-CXXFLAGS=-I/path/to/includes to specify the location of the header files.  If
-configure complains, then something vital for building dlvhex is missing in
+PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.  If you
+installed boost in a non-standard folder, use CPPFLAGS=-I/path/to/includes to
+specify the location of the header files (you can also try to use the
+"--with-boost" switch for configure, see "configure --help").
+If configure complains, then something vital for building dlvhex is missing in
 your system. If you get complaints about missing boost-headers, make sure that
 you have the necesary parts of boost installed and that their version is
-sufficiently recent (see above).
+sufficiently recent (see above). And feel free to ask the author by mail
+(roman@kr.tuwien.ac.at)!
+
+** Documentation
+Run "make doxygen-run" to create the docs (a subdirectory "documentation" will
+be created). By default, only the html-docs will be built. To enable other
+formats, you have to specify the according configure-switch, e.g.,
+"--enable-doxygen-ps".
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression

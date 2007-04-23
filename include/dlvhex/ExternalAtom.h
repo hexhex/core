@@ -124,15 +124,6 @@ public:
     PluginAtom::InputType
     getInputType(unsigned idx) const;
 
-    /**
-     * @brief Returns the set of all possible output values w.r.t. to i.
-     *
-     * The interpretation is needed here because it might be necessary for
-     * creating the ground input list from auxiliary predicates in i.
-     */
-//    void
-//    getBase(const AtomSet& i,
-//            AtomSet&) const;
 
     /**
      * @brief Evaluates the external atom w.r.t. to an interpretation.
@@ -157,25 +148,19 @@ public:
     virtual bool
     unifiesWith(const AtomPtr) const;
 
+	/**
+	 * @brief Tests for equality.
+	 *
+	 * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
+	 */
+	virtual bool
+	operator== (const ExternalAtom& atom2) const;
 
-    /**
-     * @brief Inherited equality operator.
-     *
-     * the comparison of an external atom with an ordinary atom must always
-     * return false.
-     */
-    virtual bool
-    operator== (const Atom&) const
-    {
-        return false;
-    }
-
-    /**
-     * @brief Comparions operator testing the equality of two external atoms.
-     */
-    bool
-    operator== (const ExternalAtom& atom2) const;
-
+	/**
+	 * @brief Polymorphic equality operator.
+	 */
+	virtual bool
+	equals(const AtomPtr atom2) const;
 
     /**
      * @brief accepts a visitor.
@@ -183,24 +168,10 @@ public:
     virtual void
     accept(BaseVisitor&) const;
 
-    /**
-     * @brief Clone function. see Atom::clone.
-     */
-    //Atom*
-    //clone();
 
     unsigned
     getLine() const;
 
-    /*
-    typedef struct
-    {
-        std::string predicate;
-        unsigned argument;
-    } binding;
-
-    std::vector<binding> inputBinding;
-    */
 
 private:
 

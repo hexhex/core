@@ -143,9 +143,9 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNodePtr>& nodes,
         //
         // go through all nodes that this node depends on
         //
-        std::vector<Dependency> deps = (*ni)->getPreceding();
+        std::set<Dependency> deps = (*ni)->getPreceding();
 
-        std::vector<Dependency>::const_iterator di = deps.begin();
+        std::set<Dependency>::const_iterator di = deps.begin();
 
         while (di != deps.end())
         {
@@ -312,6 +312,11 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         result.push_back(res);
 
+//	    std::cerr << "got: ";
+//		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+//		res.accept(rpv);
+//	    std::cerr << std::endl;
+
 #ifdef DLVHEX_DEBUG
 		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 		DEBUG_STOP_TIMER("External result insert time            ")
@@ -410,7 +415,7 @@ Subgraph::collectUp(const AtomNodePtr n,
         //
         // go through all succecessors of this node
         //
-        for (std::vector<Dependency>::const_iterator d = n->getSucceeding().begin();
+        for (std::set<Dependency>::const_iterator d = n->getSucceeding().begin();
             d != n->getSucceeding().end();
             ++d)
         {
@@ -510,7 +515,7 @@ Subgraph::getPredecessors(Component* comp)
         //
         // go through all predecessors of this node
         //
-        for (std::vector<Dependency>::const_iterator d = (*ni)->getPreceding().begin();
+        for (std::set<Dependency>::const_iterator d = (*ni)->getPreceding().begin();
             d != (*ni)->getPreceding().end();
             ++d)
         {
@@ -561,7 +566,7 @@ Subgraph::getSuccessors(Component* comp)
         //
         // go through all succecessors of this node
         //
-        for (std::vector<Dependency>::const_iterator d = (*ni)->getSucceeding().begin();
+        for (std::set<Dependency>::const_iterator d = (*ni)->getSucceeding().begin();
             d != (*ni)->getSucceeding().end();
             ++d)
         {
@@ -628,7 +633,7 @@ Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
                 //
                 // go through all predecessors of this node
                 //
-                for (std::vector<Dependency>::const_iterator d = (*ni)->getPreceding().begin();
+                for (std::set<Dependency>::const_iterator d = (*ni)->getPreceding().begin();
                     d != (*ni)->getPreceding().end();
                     ++d)
                 {

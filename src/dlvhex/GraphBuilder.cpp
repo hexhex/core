@@ -118,9 +118,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             AtomNodePtr bn = nodegraph.addUniqueBodyNode((*li)->getAtom());
 
             //
-            // save all and - separately - external atoms of this body - after we
-            // are through the entire body, we might have to update EXTERNAL
-            // dependencies inside the rule and build auxiliary rules!
+			// save all atoms and - separately - external atoms of this body -
+			// after we are through the entire body, we might have to update
+			// EXTERNAL dependencies inside the rule and build auxiliary rules!
             //
             //if ((typeid(*((*li)->getAtom())) == typeid(Atom)) &&
             if (!(*li)->isNAF())
@@ -140,52 +140,52 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             for (std::vector<AtomNodePtr>::iterator currhead = currentHeadNodes.begin();
                  currhead != currentHeadNodes.end();
                  ++currhead)
-            {
-                if ((*li)->isNAF())
-                    Dependency::addDep(*r, bn, *currhead, Dependency::NEG_PRECEDING);
-                else
-                    Dependency::addDep(*r, bn, *currhead, Dependency::PRECEDING);
+			{
+				if ((*li)->isNAF())
+					Dependency::addDep(*r, bn, *currhead, Dependency::NEG_PRECEDING);
+				else
+					Dependency::addDep(*r, bn, *currhead, Dependency::PRECEDING);
+			}
 
-                //
-                // if an external atom is in the body, we have to take care of the
-                // external dependencies - between its arguments (but only those of type
-                // PREDICATE) and any other atom in the program that matches this argument.
-                //
-                // What we will do here is to build a multimap, which stores each input
-                // predicate symbol together with the AtomNode of this external atom.
-                // If we are through all rules, we will go through the complete set
-                // of AtomNodes and search for matches with this multimap.
-                //
-                if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
-                {
-                    ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
+			//
+			// if this body-atom is an external atom, we have to take care of the
+			// external dependencies - between its arguments (but only those of type
+			// PREDICATE) and any other atom in the program that matches this argument.
+			//
+			// What we will do here is to build a multimap, which stores each input
+			// predicate symbol together with the AtomNode of this external atom.
+			// If we are through all rules, we will go through the complete set
+			// of AtomNodes and search for matches with this multimap.
+			//
+			if (typeid(*((*li)->getAtom())) == typeid(ExternalAtom))
+			{
+				ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
 
-                    //
-                    // go through all input terms of this external atom
-                    //
-                    for (unsigned s = 0; s < ext->getInputTerms().size(); s++)
-                    {
-                        //
-                        // consider only PREDICATE input terms (naturally, for constant
-                        // input terms we won't have any dependencies!)
-                        //
-                        if (ext->getInputType(s) == PluginAtom::PREDICATE)
-                        {
-                            //
-                            // store the AtomNode of this external atom together will
-                            // all the predicate input terms
-                            //
-                            // e.g., if we had an external atom '&ext[a,b](X)', where
-                            // 'a' is of type PREDICATE, and the atom was store in Node n1,
-                            // then the map will get an entry <'a', n1>. Below, we will
-                            // then search for those AtomNodes with a Predicate 'a' - those
-                            // will be assigned a dependency relation with n1!
-                            //
-                            extinputs.insert(std::pair<Term, AtomNodePtr>(ext->getInputTerms()[s], bn));
-                        }
-                    }
-                }
-            }
+				//
+				// go through all input terms of this external atom
+				//
+				for (unsigned s = 0; s < ext->getInputTerms().size(); s++)
+				{
+					//
+					// consider only PREDICATE input terms (naturally, for constant
+					// input terms we won't have any dependencies!)
+					//
+					if (ext->getInputType(s) == PluginAtom::PREDICATE)
+					{
+						//
+						// store the AtomNode of this external atom together will
+						// all the predicate input terms
+						//
+						// e.g., if we had an external atom '&ext[a,b](X)', where
+						// 'a' is of type PREDICATE, and the atom was stored in Node n1,
+						// then the map will get an entry <'a', n1>. Below, we will
+						// then search for those AtomNodes with a Predicate 'a' - those
+						// will be assigned a dependency relation with n1!
+						//
+						extinputs.insert(std::pair<Term, AtomNodePtr>(ext->getInputTerms()[s], bn));
+					}
+				}
+			}
         } // body finished
 
         //
@@ -296,6 +296,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 
                         auxbody.insert(l);
                     
+						//std::cout << std::endl << "adding: " << *(l->getAtom()) << std::endl;
                         //
                         // make a node for each of these new atoms
                         //
@@ -310,7 +311,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
             }
         }
     }
-    
+
     //
     // Now we will build the EXTERNAL dependencies:
     //

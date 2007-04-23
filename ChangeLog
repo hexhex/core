@@ -1,3 +1,82 @@
+2007-04-23  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* README: Reformatted.
+
+	* benchmarks/reviewers-pureasp.dlv: Added benchmark.
+
+	* examples/3col.hex: New test.
+	* examples/extatom1.hex: Likewise.
+	* examples/msp.hex: Likewise.
+
+	* examples/tests/3col.out: New test result.
+	* examples/tests/msp.out: Likewise
+	* examples/tests/extatom1.out: Likewise
+
+	* examples/tests/dlvhextests.test: Added new tests.
+	* examples/Makefile.am: Likewise.
+
+	* include/dlvhex/Atom.h: Added equality testing method. Added strong
+	negation setter.
+	* src/dlvhex/Atom.cpp (operator): Likewise.
+
+	* include/dlvhex/AtomNode.h: Added Dependency::operator< for std::sets of
+	Dependencies. Changed AtomNode's dependencies to std::set.
+	* src/dlvhex/AtomNode.cpp (addPreceding), (addSucceeding),
+	(operator): Likewise.
+
+	* include/dlvhex/AtomSet.h: Added consistency test for atom sets.
+	* src/dlvhex/AtomSet.cpp (multiplySets), (clear), (insert),
+	(remove), (keep), (keepPos): Likewise. Reformatted whitespace.
+
+	* include/dlvhex/ExternalAtom.h: Added equality testing method.
+
+	* include/dlvhex/Makefile.am: Reformatted whitespace.
+
+	* include/dlvhex/PluginInterface.h: Reformatted whitespace.
+
+	* include/dlvhex/globals.h: Added verbose level for graph processor.
+	* src/dlvhex/globals.cpp (Globals): Likewise.
+
+	* src/dlvhex/BoostComponentFinder.cpp: Treat AtomNode's dependencies as
+	std::set now.
+
+	* src/dlvhex/Component.cpp (modelGenerator), (evaluate),
+	(collectUp), (getPredecessors), (getSuccessors),
+	(getUnsolvedLeaves): Likewise.
+	* src/dlvhex/DependencyGraph.cpp (hasNegEdge): Likewise.
+
+	* src/dlvhex/DLVresultParser.ypp: Use char* instead of std:string for dlv
+	result parsing.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+
+	* src/dlvhex/ExternalAtom.cpp (pluginAtom), (initReplAux),
+	(setInputTerms): Reestablishes arity checks for ExternalAtom construction.
+	Reformatted whitespace.
+
+	* src/dlvhex/GraphBuilder.cpp (run): Debugged.
+
+	* src/dlvhex/GraphProcessor.cpp (depGraph), (run), (getNextModel):
+	Debugged.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp (compute): Added missing
+	minimality check. Reformatted whitespace.
+
+	* src/dlvhex/OutputBuilder.cpp (buildAnswerSet), (buildPre),
+	(buildPost): Corrected RuleML output. Reformatted whitespace.
+
+	* src/dlvhex/SafetyChecker.cpp (throw): Corrected handling of
+	BuiltinPredicates.
+
+	* src/dlvhex/dlvhex.cpp (searchPlugins), (main): Moved EDB and IDB vars
+	into main(). Added consistency check for EDB.
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: Added plugin for testsuite.
+
+	* src/testsuite/dlvhex/Makefile.am: Modified testscript execution to
+	accommodate test-plugin. Creation of test-plugin.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Include test-plugin.
+
 2007-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Rule.cpp (Rule::operator==): Use STL algorithms.

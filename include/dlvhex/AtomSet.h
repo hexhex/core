@@ -232,6 +232,12 @@ public:
     void
     keepPos();
 
+	/**
+	 * @brief Test if AtomSet is consistent.
+	 */
+	bool
+	isConsistent() const;
+
     bool
     operator== (const AtomSet&) const;
 
