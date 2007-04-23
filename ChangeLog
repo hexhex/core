@@ -1,3 +1,18 @@
+2007-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/DLVresultParser.ypp: Use plain int instead of int* in yylval.
+	free() instead of delete() all idents.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+
+	* include/dlvhex/Atom.h: User references were adequate and remove
+	some minor warnings.
+	* include/dlvhex/AtomNode.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/AtomNode.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+
 2007-04-23  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* README: Reformatted.
