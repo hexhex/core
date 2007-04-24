@@ -1,6 +1,7 @@
 #!/bin/bash
 
-TMPFILE=$(mktemp) # global temp. file for answer sets
+MKTEMP="mktemp -t tmp.XXXXXXXXXX"
+TMPFILE=$($MKTEMP) # global temp. file for answer sets
 
 failed=0
 warned=0
@@ -32,7 +33,7 @@ do
 	else
 	    # and now check which answersets differ
 
-	    pasted=$(mktemp)
+	    pasted=$($MKTEMP)
 	    paste $ANSWERSETS $TMPFILE > $pasted
 
 	    OLDIFS=$IFS
