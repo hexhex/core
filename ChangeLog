@@ -1,3 +1,8 @@
+2007-04-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Mac OS X has a
+	non-standard mktemp, use "mktemp -t tmp.XXXXXXXXXX" instead.
+
 2007-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/DLVresultParser.ypp: Use plain int instead of int* in yylval.
