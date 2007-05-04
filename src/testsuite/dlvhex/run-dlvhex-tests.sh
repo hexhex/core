@@ -31,6 +31,7 @@ do
 	then
 	    echo PASS: $HEXPROGRAM
 	else
+
 	    # and now check which answersets differ
 
 	    pasted=$($MKTEMP)
@@ -45,12 +46,12 @@ do
 
 	    while read
 	    do
-		# translate both answersets to python lists
-		a1=$(echo $REPLY | cut -f1 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
-		a2=$(echo $REPLY | cut -f2 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
+			# translate both answersets to python lists
+			a1=$(echo $REPLY | cut -f1 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
+			a2=$(echo $REPLY | cut -f2 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
 
-		# now check if set difference yields incomparability
-		if cat <<EOF | python
+			# now check if set difference yields incomparability
+			if cat <<EOF | python
 # -*- coding: utf-8 -*-
 import sys, sets
 a1 = $a1
@@ -63,15 +64,16 @@ s1 = sets.Set(a1)
 s2 = sets.Set(a2)
 sys.exit(len(s1 - s2))
 EOF
-		then
-		    echo "WARN: $HEXPROGRAM (answerset $nas has different ordering)"
-		    let warned++
-		else
-		    echo "FAIL: $HEXPROGRAM (answerset $nas differs)"
-		    let failed++
-		fi
+			then
+				echo "WARN: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas has different ordering)"
+				let warned++
+			else
+				echo "FAIL: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas differs)"
 
-		let nas++
+        		let failed++
+			fi
+
+			let nas++
 	    done < $pasted # redirected pasted file to the while loop
 
 	    IFS=$OLDIFS

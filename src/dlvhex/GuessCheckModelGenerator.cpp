@@ -341,7 +341,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			reductprogram.buildProgram(bodyPicker);
 			std::string red = reductprogram.getString();
 
-			//	  std::cout << "reduct program: " << red << std::endl;
+			//std::cerr << "reduct program: " << red << std::endl;
 
 			try
 			{

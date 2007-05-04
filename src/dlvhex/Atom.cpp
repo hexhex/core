@@ -298,7 +298,17 @@ Atom::operator< (const Atom& atom2) const
 		// predicates!
 		//
 		if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
-			throw SyntaxError("arity mismatch");
+		{
+			//
+			// remove this check for now: causes problems for temporary
+			// auxiliary atoms, like the flp_heads, that are created with a
+			// suffixed index, based on the rule-index. Thus, in a different
+			// FLP-check, the same Atom-name could be used for a different
+			// arity.
+			//
+			//std::cerr << *this << " - " << atom2 << std::endl;
+			//throw SyntaxError("arity mismatch");
+		}
 
 		return true;
 	}

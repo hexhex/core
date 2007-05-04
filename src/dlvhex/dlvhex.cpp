@@ -80,7 +80,11 @@ printUsage(std::ostream &out, bool full)
 {
 	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	out << "Usage: " << WhoAmI 
-		<< " [OPTION] ... FILENAME ..." << std::endl
+		<< " [OPTION] FILENAME [FILENAME ...]" << std::endl
+		<< std::endl;
+
+	out << "   or: " << WhoAmI 
+		<< " [OPTION] --" << std::endl
 		<< std::endl;
 
 	if (!full)
@@ -115,8 +119,8 @@ printUsage(std::ostream &out, bool full)
 		<< "                      4  - intermediate model generation info" << std::endl
 		<< "                      8  - timing information (only if configured with" << std::endl
 		<< "                                               --enable-debug)" << std::endl
-		<< "                      add values for multiple categories." << std::endl
-		<< std::endl;
+		<< "                      add values for multiple categories." << std::endl;
+//		<< std::endl;
 }
 
 
@@ -301,37 +305,24 @@ searchPlugins(std::string dir, std::set<std::string>& pluginlist)
 int
 main (int argc, char *argv[])
 {
-	/**
-	* @brief Stores the rules of the program.
-	*/
+	//
+	// Stores the rules of the program.
+	//
 	Program IDB;
 
-
-	/**
-	* @brief Stores the facts of the program.
-	*/
+	//
+	// Stores the facts of the program.
+	//
 	AtomSet EDB;
 
 
-	/*
-	   Atom* a = new Atom("p");
-	   ExternalAtom* e = new ExternalAtom();
-
-	   AtomPtr apa(a);
-	   AtomPtr ape(e);
-
-	   bool b;
-
-	   if (*(apa.get()) == *(ape.get())) b = true;
-	   if (*(ape.get()) == *(apa.get())) b = false;
-	   exit(0);
-	   */
-
 	WhoAmI = argv[0];
 
+	/////////////////////////////////////////////////////////////////
 	//
 	// Option handling
 	//
+	/////////////////////////////////////////////////////////////////
 
 	// global defaults:
 	Globals::Instance()->setOption("NoPredicate", 1);
@@ -508,13 +499,17 @@ main (int argc, char *argv[])
 	}
 
 
+
+	/////////////////////////////////////////////////////////////////
+	//
+	// now search for plugins
+	//
+	/////////////////////////////////////////////////////////////////
+	
 #ifdef DLVHEX_DEBUG
 	DEBUG_START_TIMER
 #endif // DLVHEX_DEBUG
 
-	//
-	// now search for plugins
-	//
 	std::set<std::string> libfilelist;
 
 	std::stringstream allpluginhelp;
@@ -522,14 +517,8 @@ main (int argc, char *argv[])
 	//
 	// first look into specified plugin dir
 	//
-		//Globals::Instance()->getVerboseStream() << "searching " << optionPlugindir << "..." << std::endl;
 	if (!optionPlugindir.empty())
-	{
-//		if (Globals::Instance()->getOption("Verbose"))
-//		Globals::Instance()->getVerboseStream() << "searching " << optionPlugindir << "..." << std::endl;
-
 		searchPlugins(optionPlugindir, libfilelist);
-	}
 
 	//
 	// now look into user's home
@@ -538,17 +527,11 @@ main (int argc, char *argv[])
 
 	userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
 
-//	if (Globals::Instance()->getOption("Verbose"))
-//		std::cout << "searching " << userhome << "..." << std::endl;
-
 	searchPlugins(userhome, libfilelist);
 
 	//
 	// eventually look into system plugin dir
 	//
-//	if (Globals::Instance()->getOption("Verbose"))
-//		std::cout << "searching " << SYS_PLUGIN_DIR << "..." << std::endl;
-
 	searchPlugins(SYS_PLUGIN_DIR, libfilelist);
 
 	std::vector<PluginInterface*> plugins;
@@ -574,7 +557,8 @@ main (int argc, char *argv[])
 
 				plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
 
-				allpluginhelp << pluginhelp.str();
+				if (!pluginhelp.str().empty())
+					allpluginhelp << std::endl << pluginhelp.str();
 			}
 		}
 		catch (GeneralError &e)
@@ -632,36 +616,30 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
-	//if (!global::optionSilent)
-	//    std::cout << std::endl;
+
+	/////////////////////////////////////////////////////////////////
+	//
+	// parse input
+	//
+	/////////////////////////////////////////////////////////////////
 
 #ifdef DLVHEX_DEBUG
 	DEBUG_RESTART_TIMER
 #endif // DLVHEX_DEBUG
 
-	//
-	// parse input
-	//
-
 	HexParserDriver driver;
 
 	if (optionPipe)
 	{
-		try
-		{
-			driver.parse(std::cin, IDB, EDB);
-		}
-		catch (GeneralError& e)
-		{
-			std::cerr << e.getErrorMsg() << std::endl;
-
-			exit(1);
-		}
+		//
+		// if we are piping, use a dummy file-name in order to enter the
+		// file-loop below
+		//
+		allFiles.push_back(std::string("dummy"));
 
 		Globals::Instance()->lpfilename = "lpgraph.dot";
 	}
-	else
-	{
+
 		//
 		// store filename of (first) logic program, we might use this somewhere
 		// else (e.g., when writing the graphviz file in the boost-part
@@ -669,39 +647,51 @@ main (int argc, char *argv[])
 		std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
 		Globals::Instance()->lpfilename = filepath.back() + ".dot";
 
-		std::ifstream ifs;
-
 		for (std::vector<std::string>::const_iterator f = allFiles.begin();
-				f != allFiles.end();
-				f++)
+			 f != allFiles.end();
+			 f++)
 		{
 			try
 			{
-				std::ifstream ifs;
-
-				ifs.open((*f).c_str());
-
-				if (!ifs.is_open())
-				{
-					throw GeneralError("File " + *f + " not found");
-				}
-
 				//
-				// tell the parser driver where the rules are actually coming
-				// from (needed for error-messages)
-				//
-				driver.setOrigin(*f);
-
-				//
-				// make a new stream to store the file content
+				// stream to store the file/stdin content
 				//
 				std::stringstream tmpin;
-				tmpin << ifs.rdbuf();
+
+				std::ifstream ifs;
+
+				if (!optionPipe)
+				{
+					//
+					// file
+					//
+					ifs.open((*f).c_str());
+
+					if (!ifs.is_open())
+					{
+						throw GeneralError("File " + *f + " not found");
+					}
+
+					//
+					// tell the parser driver where the rules are actually coming
+					// from (needed for error-messages)
+					//
+					driver.setOrigin(*f);
+
+					tmpin << ifs.rdbuf();
+				}
+				else
+				{
+					//
+					// stdin
+					//
+					tmpin << std::cin.rdbuf();
+				}
 
 				//
 				// create a stringbuffer on the heap (will be deleted later) to
 				// hold the file-content. put it into a stream "input"
-				//
+				//	
 				std::istream input(new std::stringbuf(tmpin.str()));
 
 				//
@@ -728,8 +718,14 @@ main (int argc, char *argv[])
 
 						//
 						// old input buffer can be deleted now
+						// (but not if we are piping from stdin and this is the
+						// first conversion, because in this case input is set to
+						// std::cin.rdbuf() (see above) and cin takes care of
+						// its buffer deletion itself, so better don't
+						// interfere!)
 						//
-						delete input.rdbuf();
+						if (optionPipe && !wasConverted)
+							delete input.rdbuf();
 
 						//
 						// store the current output buffer
@@ -856,7 +852,7 @@ main (int argc, char *argv[])
 			}
 
 		}
-	}
+//	}
 
 #ifdef DLVHEX_DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-

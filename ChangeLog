@@ -1,3 +1,29 @@
+2007-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* examples/extatom2.hex: Added test.
+	* examples/tests/extatom2.out: Added test result.
+	* examples/tests/dlvhextests.test: Likewise.
+
+	* include/dlvhex/AtomNode.h: Added documentation.
+	
+	* src/dlvhex/Atom.cpp: Commented out arity check in Atom-creation,
+	conflicts with auxiliary temporary atoms in guess-and-check procedure.
+
+	* src/dlvhex/AtomNode.cpp (inBody), (setHead), (setBody),
+	(addPreceding), (addSucceeding), (operator), (rule), (addDep),
+	(NodeGraph), (addNode), (addUniqueHeadNode), (addUniqueBodyNode): Added
+	documentation. Reformatted. Modified verbose-output of AtomNodes.
+
+	* src/dlvhex/GraphBuilder.cpp (run): Fixed bug regarding storage of
+	auxiliary rules for external atom dependencies within rule bodies.
+
+	* src/dlvhex/dlvhex.cpp (printUsage), (main): Fixed bug regarding input
+	from stdin (was not passed to rewriters and converters). Modified help output.
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: Added testConcat atom.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Modified test-output.
+
 2007-04-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Mac OS X has a

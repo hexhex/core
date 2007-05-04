@@ -18,10 +18,10 @@ unsigned AtomNode::nodeCount = 0;
 
 /*
 AtomNode::AtomNode()
-    : atom(AtomPtr()),
-      inHead(0),
-      inBody(0),
-      nodeId(nodeCount++)
+	: atom(AtomPtr()),
+	  inHead(0),
+	  inBody(0),
+	  nodeId(nodeCount++)
 {
 }
 */
@@ -44,116 +44,118 @@ AtomNode::AtomNode(const AtomPtr& atom = AtomPtr())
 void
 AtomNode::setHead()
 {
-    inHead = 1;
+	inHead = 1;
 }
 
 
 void
 AtomNode::setBody()
 {
-    inBody = 1;
+	inBody = 1;
 }
 
 
 bool
 AtomNode::isHead() const
 {
-    return inHead;
+	return inHead;
 }
 
 
 bool
 AtomNode::isBody() const
 {
-    return inBody;
+	return inBody;
 }
 
 
 void
 AtomNode::addPreceding(const Dependency& dep)
 {
-    rules.clear(); // start creating rules in AtomNode::getRules
-    preceding.insert(dep);
+	rules.clear(); // start creating rules in AtomNode::getRules
+	preceding.insert(dep);
 }
 
 
 void
 AtomNode::addSucceeding(const Dependency& dep)
 {
-    succeeding.insert(dep);
+	succeeding.insert(dep);
 }
 
 
 const AtomPtr&
 AtomNode::getAtom() const
 {
-    return atom;
+	return atom;
 }
 
 
 const std::set<Dependency>&
 AtomNode::getPreceding() const
 {
-    return preceding;
+	return preceding;
 }
 
 
 const std::set<Dependency>&
 AtomNode::getSucceeding() const
 {
-    return succeeding;
+	return succeeding;
 }
 
 
 const std::vector<Rule*>&
 AtomNode::getRules() const
 {
-  //
-  // only start the rule-creation machinery if this AtomNode is a
-  // head-node
-  //
-
-  if (this->rules.empty() && isHead()) // we call getRules for the very first time
-    {
-      typedef std::set<Rule*> SetOfRules;
-      SetOfRules ruleset;
-
-      for (std::set<Dependency>::const_iterator d = getPreceding().begin();
-	   d != getPreceding().end(); ++d)
+	//
+	// only start the rule-creation machinery if this AtomNode is a
+	// head-node and the cache is still empty
+	//
+	if (this->rules.empty() && isHead()) // we call getRules for the very first time
 	{
-	  Dependency::Type deptype = d->getType();
+		typedef std::set<Rule*> SetOfRules;
+		SetOfRules ruleset;
 
-	  // if deptype is none of DISJ, PREC, or NEG_PREC, we
-	  // continue our search for rule candidates
-	  if (deptype & ~(Dependency::DISJUNCTIVE | Dependency::PRECEDING | Dependency::NEG_PRECEDING))
-	    {
-	      continue; // we only take care of head or body dependencies
-	    }
+		for (std::set<Dependency>::const_iterator d = getPreceding().begin();
+				d != getPreceding().end(); ++d)
+		{
+			Dependency::Type deptype = d->getType();
 
-	  // try to create a new rule in the ruleset
-	  ruleset.insert(d->getRule());
+			//
+			// if deptype is none of DISJ, PREC, or NEG_PREC, we
+			// skip it and continue our search for rule candidates
+			// only these types of dependency stem from actual rules
+			//
+			if (deptype & ~(Dependency::DISJUNCTIVE | Dependency::PRECEDING | Dependency::NEG_PRECEDING))
+			{
+				continue; // we only take care of head or body dependencies
+			}
+
+			// try to create a new rule in the ruleset
+			ruleset.insert(d->getRule());
+		}
+
+		// and now add the fresh rules to our own "rule cache"
+		std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->rules, this->rules.begin()));
 	}
 
-      // and now add the fresh rules to our own "rule cache"
-      std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->rules, this->rules.begin()));
-    }
-
-  return this->rules;
+	return this->rules;
 }
 
 
 unsigned
 AtomNode::getId() const
 {
-    return nodeId;
+	return nodeId;
 }
 
 
 std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 {
-    out << atomnode.getId() << ": ";
+	out << atomnode.getId() << ": ";
 
-    out << *(atomnode.getAtom());
+	out << *(atomnode.getAtom());
 
 	if (typeid(*(atomnode.getAtom())) == typeid(ExternalAtom))
 	{
@@ -161,37 +163,41 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 		out << " " <<  ea->getReplacementName() << " ";
 	}
 
-    if (atomnode.getPreceding().size() > 0)
-    {
-        for (std::set<Dependency>::const_iterator d = atomnode.getPreceding().begin();
-            d != atomnode.getPreceding().end();
-            ++d)
-        {
-        	out << std::endl << "    depends on: " << *d;
-        }
-    }
+	if (atomnode.getPreceding().size() > 0)
+	{
+		for (std::set<Dependency>::const_iterator d = atomnode.getPreceding().begin();
+			d != atomnode.getPreceding().end();
+			++d)
+		{
+			out << std::endl << "  depends on: " << *d;
+		}
+	}
 
-    if (atomnode.getSucceeding().size() > 0)
-    {
-        for (std::set<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
-            d != atomnode.getSucceeding().end();
-            ++d)
-        {
-	        out << std::endl << "    dependents: " << *d;
-        }
-    }
+	if (atomnode.getSucceeding().size() > 0)
+	{
+		for (std::set<Dependency>::const_iterator d = atomnode.getSucceeding().begin();
+			d != atomnode.getSucceeding().end();
+			++d)
+		{
+			out << std::endl << "  dependents: " << *d;
+		}
+	}
 
-    std::vector<Rule*> rules = atomnode.getRules();
+	/*
+	 * let each dependency dump its rule separately
+	 *
+	std::vector<Rule*> rules = atomnode.getRules();
 
-    if (rules.size() > 0)
-        out << std::endl << "    rules:";
+	if (rules.size() > 0)
+		out << std::endl << "  rules:";
 
-    for (std::vector<Rule*>::const_iterator ri = rules.begin(); ri != rules.end(); ++ri)
-    {
-        out << " " << *(*ri);
-    }
-    
-    return out;
+	for (std::vector<Rule*>::const_iterator ri = rules.begin(); ri != rules.end(); ++ri)
+	{
+		out << " " << *(*ri);
+	}
+	*/
+	
+	return out;
 }
 
 
@@ -202,9 +208,9 @@ Dependency::Dependency()
 
 
 Dependency::Dependency(const Dependency& dep2)
-    : atomNode(dep2.atomNode),
-      type(dep2.type),
-      rule(dep2.rule)
+	: atomNode(dep2.atomNode),
+	  type(dep2.type),
+	  rule(dep2.rule)
 {
 }
 
@@ -218,33 +224,33 @@ Dependency::Dependency(Rule* r, const AtomNodePtr& an, Type t)
 Dependency::Type
 Dependency::getType() const
 {
-    return type;
+	return type;
 }
 
 
 const AtomNodePtr&
 Dependency::getAtomNode() const
 {
-    assert(atomNode);
+	assert(atomNode);
 
-    return atomNode;
+	return atomNode;
 }
 
 
 Rule*
 Dependency::getRule() const
 {
-    return rule;
+	return rule;
 }
 
 void
 Dependency::addDep(Rule* rule, const AtomNodePtr& from, const AtomNodePtr& to, Dependency::Type type)
 {
-    Dependency dep1(rule, from, type);
-    Dependency dep2(rule, to, type);
+	Dependency dep1(rule, from, type);
+	Dependency dep2(rule, to, type);
 
-    from->addSucceeding(dep2);
-    to->addPreceding(dep1);
+	from->addSucceeding(dep2);
+	to->addPreceding(dep1);
 }
 
 
@@ -267,7 +273,7 @@ Dependency::operator< (const Dependency& dep2) const
 
 std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 {
-    out << *(dep.getAtomNode()->getAtom());
+	out << *(dep.getAtomNode()->getAtom());
 	if (typeid(*(dep.getAtomNode()->getAtom())) == typeid(ExternalAtom))
 	{
 		const ExternalAtom* ea =  dynamic_cast<ExternalAtom*>(dep.getAtomNode()->getAtom().get());
@@ -275,40 +281,45 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 	}
 
 
-    out << " [";
+	out << " [";
 
-    switch (dep.getType())
-    {
-    case Dependency::UNIFYING:
-        out << "unifying";
-        break;
+	switch (dep.getType())
+	{
+	case Dependency::UNIFYING:
+		out << "unifying";
+		break;
 
-    case Dependency::PRECEDING:
-        out << "head-body";
-        break;
+	case Dependency::PRECEDING:
+		out << "head-body";
+		break;
 
-    case Dependency::NEG_PRECEDING:
-        out << "head-body NAF";
-        break;
+	case Dependency::NEG_PRECEDING:
+		out << "head-body NAF";
+		break;
 
-    case Dependency::DISJUNCTIVE:
-        out << "disjunctive";
-        break;
+	case Dependency::DISJUNCTIVE:
+		out << "disjunctive";
+		break;
 
-    case Dependency::EXTERNAL:
-        out << "external";
-        break;
+	case Dependency::EXTERNAL:
+		out << "external";
+		break;
 
-    case Dependency::EXTERNAL_AUX:
-        out << "external aux";
-        break;
+	case Dependency::EXTERNAL_AUX:
+		out << "external aux";
+		break;
 
-    default:
-        assert(0);
-        break;
-    }
+	default:
+		assert(0);
+		break;
+	}
 
-    return out << "] (" << dep.getRule() << ')';
+	out << "]";
+	
+	if (dep.getRule() != 0)
+		out << " rule: " << *(dep.getRule());
+
+	return out;
 }
 
 
@@ -316,12 +327,12 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 NodeGraph::~NodeGraph()
 {
 	/*
-    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
-        delete *an;
-    }
+	for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
+		 an != atomNodes.end();
+		 ++an)
+	{
+		delete *an;
+	}
 	*/
 }
 
@@ -330,18 +341,18 @@ const std::vector<Rule*>&
 NodeGraph::getProgram() const
 {
   if (this->prog.empty())
-    {
-      std::set<Rule*> ruleset;
-      
-      for (std::vector<AtomNodePtr>::const_iterator it = atomNodes.begin();
+	{
+	  std::set<Rule*> ruleset;
+	  
+	  for (std::vector<AtomNodePtr>::const_iterator it = atomNodes.begin();
 	   it != atomNodes.end(); ++it)
 	{
 	  std::vector<Rule*> rules = (*it)->getRules();
 	  std::copy(rules.begin(), rules.end(), std::inserter(ruleset, ruleset.begin()));
 	}
 
-      std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->prog, this->prog.begin()));
-    }
+	  std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->prog, this->prog.begin()));
+	}
 
   return this->prog;
 }
@@ -350,7 +361,7 @@ NodeGraph::getProgram() const
 const std::vector<AtomNodePtr>&
 NodeGraph::getNodes() const
 {
-    return atomNodes;
+	return atomNodes;
 }
 
 
@@ -366,13 +377,13 @@ NodeGraph::reset()
 const AtomNodePtr
 NodeGraph::getNode(unsigned nodeId)
 {
-    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
-        if ((*an)->getId() == nodeId)
-            return *an;
-    }
+	for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
+		 an != atomNodes.end();
+		 ++an)
+	{
+		if ((*an)->getId() == nodeId)
+			return *an;
+	}
 }
 */
 
@@ -380,175 +391,175 @@ NodeGraph::getNode(unsigned nodeId)
 AtomNodePtr
 NodeGraph::addNode()
 {
-    //
-    // create node
-    //
-    AtomNodePtr newnode(new AtomNode);
+	//
+	// create node
+	//
+	AtomNodePtr newnode(new AtomNode);
 
-    //
-    // add the new node to the graph
-    //
-    atomNodes.push_back(newnode);
+	//
+	// add the new node to the graph
+	//
+	atomNodes.push_back(newnode);
 
-    return newnode;
+	return newnode;
 }
 
 
 AtomNodePtr
 NodeGraph::addUniqueHeadNode(const AtomPtr& atom)
 {
-    //
-    // does a node with exactly this atom already exist?
-    // (same predicate, same arguments)
-    //
-    //AtomNodePtr newnode = findNode(atom);
+	//
+	// does a node with exactly this atom already exist?
+	// (same predicate, same arguments)
+	//
+	//AtomNodePtr newnode = findNode(atom);
 	AtomNodePtr newnode;
-    findNode(atom, newnode);
+	findNode(atom, newnode);
 
 
-    if (newnode.use_count() == 0)
-    {
-        //
-        // no - create node
-        //
-        newnode = AtomNodePtr(new AtomNode(atom));
+	if (newnode.use_count() == 0)
+	{
+		//
+		// no - create node
+		//
+		newnode = AtomNodePtr(new AtomNode(atom));
 
-        //std::cout << "new headnode: " << *(newnode->getAtom()) << std::endl;
+		//std::cout << "new headnode: " << *(newnode->getAtom()) << std::endl;
 
-        //
-        // add the new node to the graph
-        //
-        atomNodes.push_back(newnode);
-    }
+		//
+		// add the new node to the graph
+		//
+		atomNodes.push_back(newnode);
+	}
 
-    //
-    // if the node occurred in a head the first time (or was just created - in
-    // this case it is neither a head nor a body node yet), we have to update
-    // dependencies by looking through the existing nodes
-    //
-    if (!(newnode->isHead()))
-    {
-        //std::cout << "headnode: " << *(newnode->getAtom()) << std::endl;
-        
-        //
-        // search all existing nodes for an atom that unifies
-        // with this new one - then we can add the unifying-dependency to both
-        //
-        for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
-             oldnode != atomNodes.end();
-             ++oldnode)
-        {
-            //
-            // if the node already existed (as a body atom), we might encounter
-            // it here again - test for equality
-            // if equal, take next one
-            //
-            if (*oldnode == newnode)
-                continue;
+	//
+	// if the node occurred in a head the first time (or was just created - in
+	// this case it is neither a head nor a body node yet), we have to update
+	// dependencies by looking through the existing nodes
+	//
+	if (!(newnode->isHead()))
+	{
+		//std::cout << "headnode: " << *(newnode->getAtom()) << std::endl;
+		
+		//
+		// search all existing nodes for an atom that unifies
+		// with this new one - then we can add the unifying-dependency to both
+		//
+		for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
+			 oldnode != atomNodes.end();
+			 ++oldnode)
+		{
+			//
+			// if the node already existed (as a body atom), we might encounter
+			// it here again - test for equality
+			// if equal, take next one
+			//
+			if (*oldnode == newnode)
+				continue;
 
-            if ((*oldnode)->getAtom()->unifiesWith(atom))
-            {
-                //
-                // in this function, we only search for existing BODY atoms!
-                //
-                if ((*oldnode)->isBody())
-                {
-                    //
-                    // add only one dependency: from the new node to the
-                    // existing node. The existing node is a body atom and the
-                    // new one is obviously a head atom (otherwise we would not
-                    // be in that function), so the dependency goes from the
-                    // head into the body.
-                    //
-                    ///@todo is this rule-id correct?
-                    Dependency dep1(0, *oldnode, Dependency::UNIFYING);
-                    Dependency dep2(0, newnode, Dependency::UNIFYING);
+			if ((*oldnode)->getAtom()->unifiesWith(atom))
+			{
+				//
+				// in this function, we only search for existing BODY atoms!
+				//
+				if ((*oldnode)->isBody())
+				{
+					//
+					// add only one dependency: from the new node to the
+					// existing node. The existing node is a body atom and the
+					// new one is obviously a head atom (otherwise we would not
+					// be in that function), so the dependency goes from the
+					// head into the body.
+					//
+					///@todo is this rule-id correct?
+					Dependency dep1(0, *oldnode, Dependency::UNIFYING);
+					Dependency dep2(0, newnode, Dependency::UNIFYING);
 
-                    (*oldnode)->addPreceding(dep2);
-                    newnode->addSucceeding(dep1);
+					(*oldnode)->addPreceding(dep2);
+					newnode->addSucceeding(dep1);
 
-                    //std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
-                }
-            }
-        }
+					//std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
+				}
+			}
+		}
 
-    }
+	}
 
-    //
-    // wherever this node occured before - now it is a head node!
-    // 
-    newnode->setHead();
+	//
+	// wherever this node occured before - now it is a head node!
+	// 
+	newnode->setHead();
 
-    return newnode;
+	return newnode;
 }
 
 
 AtomNodePtr
 NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 {
-    //
-    // does a node with exactly this atom already exist?
-    // (same predicate, same arguments)
-    //
-    //std::cout << "==trying to add bodynode: " << *atom << std::endl;
+	//
+	// does a node with exactly this atom already exist?
+	// (same predicate, same arguments)
+	//
+	//std::cout << "==trying to add bodynode: " << *atom << std::endl;
 	AtomNodePtr newnode;
-    findNode(atom, newnode);
+	findNode(atom, newnode);
 
-    if (newnode.use_count() == 0)
-    {
-        //
-        // no - create node
-        //
-        newnode = AtomNodePtr(new AtomNode(atom));
-        
-        //std::cout << "new bodynode: " << *(newnode->getAtom()) << std::endl;
+	if (newnode.use_count() == 0)
+	{
+		//
+		// no - create node
+		//
+		newnode = AtomNodePtr(new AtomNode(atom));
+		
+		//std::cout << "new bodynode: " << *(newnode->getAtom()) << std::endl;
 
-        //
-        // set this node to be a body node - but only if we just created it!
-        //
-        newnode->setBody();
-        
-        //
-        // search for all existing nodes if an atom exists that unifies
-        // with this new one - then we can add the unifying-dependency to both
-        //
-        for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
-             oldnode != atomNodes.end();
-             ++oldnode)
-        {
-            if ((*oldnode)->getAtom()->unifiesWith(atom))
-            {
-                //
-                // in this function, we only search for existing HEAD atoms!
-                //
-                if ((*oldnode)->isHead())
-                {
-                    //
-                    // add only one dependency: from the existing node to the
-                    // new node. The existing node is a head atom and the new
-                    // one is obviously a body atom (otherwise we would not be
-                    // in that function), so the dependency goes from the head
-                    // into the body.
-                    //
-                    ///@todo is this rule-id correct?
-                    Dependency dep1(0, *oldnode, Dependency::UNIFYING);
-                    Dependency dep2(0, newnode, Dependency::UNIFYING);
+		//
+		// set this node to be a body node - but only if we just created it!
+		//
+		newnode->setBody();
+		
+		//
+		// search for all existing nodes if an atom exists that unifies
+		// with this new one - then we can add the unifying-dependency to both
+		//
+		for (std::vector<AtomNodePtr>::const_iterator oldnode = atomNodes.begin();
+			 oldnode != atomNodes.end();
+			 ++oldnode)
+		{
+			if ((*oldnode)->getAtom()->unifiesWith(atom))
+			{
+				//
+				// in this function, we only search for existing HEAD atoms!
+				//
+				if ((*oldnode)->isHead())
+				{
+					//
+					// add only one dependency: from the existing node to the
+					// new node. The existing node is a head atom and the new
+					// one is obviously a body atom (otherwise we would not be
+					// in that function), so the dependency goes from the head
+					// into the body.
+					//
+					///@todo is this rule-id correct?
+					Dependency dep1(0, *oldnode, Dependency::UNIFYING);
+					Dependency dep2(0, newnode, Dependency::UNIFYING);
 
-                    (*oldnode)->addSucceeding(dep2);
-                    newnode->addPreceding(dep1);
+					(*oldnode)->addSucceeding(dep2);
+					newnode->addPreceding(dep1);
 
-                    //std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
-                }
-            }
-        }
+					//std::cout << " unifies with " << *((*oldnode)->getAtom()) << std::endl;
+				}
+			}
+		}
 
-        //
-        // add the new node to the graph
-        //
-        atomNodes.push_back(newnode);
-    }
+		//
+		// add the new node to the graph
+		//
+		atomNodes.push_back(newnode);
+	}
 
-    return newnode;
+	return newnode;
 }
 
 
@@ -559,17 +570,18 @@ NodeGraph::findNode(const AtomPtr& atom, AtomNodePtr& ptr) const
 	// test if atom does already exist as an AtomNode and return its pointer, if
 	// this is the case
 	//
-    for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
-         an != atomNodes.end();
-         ++an)
-    {
+	for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
+		 an != atomNodes.end();
+		 ++an)
+	{
 		if (atom->equals((*an)->getAtom()))
 		//if (*atom == *(*an)->getAtom())
 		{
 			ptr = *an;
 			return;
 		}
-    }
+	}
 }
 
 
+/* vim: set noet sw=4 ts=4 tw=80: */

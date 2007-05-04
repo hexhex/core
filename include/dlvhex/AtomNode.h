@@ -34,7 +34,9 @@ typedef boost::shared_ptr<AtomNode> AtomNodePtr;
  *
  * A dependency contains an AtomNode, which is the "target" of the dependency,
  * and a type. A dependency object is supposed to belong to an AtomNode object,
- * which is then the "source" of the dependency.
+ * which is then the "source" of the dependency. If the dependency was caused by
+ * a rule, the dependency will be associated with this rule (by storing its
+ * pointer).
  */
 class Dependency
 {
@@ -140,14 +142,12 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep);
  * @brief Single Node of a dependency Graph.
  *
  * An AtomNode is the representation of an Atom in a program's dependency
- * structure.
+ * structure. It can have several dependencies, each possibly associated with
+ * rules of the program.
  */
 class AtomNode
 {
 public:
-
-	/// Ctor.
-	//AtomNode();
 
 	/**
 	 * @brief Constructs an AtomNode from a given Atom.

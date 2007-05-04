@@ -1,0 +1,9 @@
+prefix("test:").
+more("a","b","c").
+complete(F) :- more(X,Y,Z),prefix(S),
+                  &testConcat[S," "](A),
+                  &testConcat[A,X](B),
+                  &testConcat[B," "](C),
+                  &testConcat[C,Y](D),
+                  &testConcat[D," "](E),
+                  &testConcat[E,Z](F).
