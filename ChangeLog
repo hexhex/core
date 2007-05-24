@@ -1,3 +1,37 @@
+2007-05-24  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* AUTHORS: new file.
+	* INSTALL: new file.
+	* NEWS: new file.
+	* README: Improved docs.
+
+	* Makefile.am: Added --foreign option.
+
+	* bootstrap.sh: Using reconfigure now instead of single autotools.
+
+	* configure.ac: Bumped version to 1.6.0.
+
+	* examples/tests/dlvhextests.test: Added test for reverse ordering. Added
+	-a switch, which was removed from the testscript defaults.
+
+	* include/dlvhex/AnswerSet.h: Modified docs according to generalization of
+	AnswerSet ordering.
+
+	* src/dlvhex/AnswerSet.cpp: Parametrized set ordering according
+	to usage of command-line switch --reverse. Throw exception for non-integer
+	weights and levels when building an answer set in presence of weak
+	constraints.
+
+	* src/dlvhex/Atom.cpp (isAlwaysFO): Improved error message for nonground
+	propositional atoms (which is the common message for accidental non-HEX input).
+
+	* src/dlvhex/dlvhex.cpp (printUsage), (main): Added command line switch
+	--reverse for reverse answer-set ordering in case of weak constraints.
+	Added exception catching for result-building.
+
+	* src/testsuite/dlvhex/Makefile.am: Removed -a switch from general
+	parameters of testsuite-script.
+
 2007-05-04  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* examples/extatom2.hex: Added test.

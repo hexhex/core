@@ -90,6 +90,11 @@ public:
      *
      * This function returns true, if this answer set has less costs than the
      * specified one.
+	 * The exact semantics of "less" is determined by the used ordering. Default
+	 * notion of "less" is "lower numerical values", so an answer set is
+	 * cheaper, if its weights on the respective level are lower.  This can be
+	 * reversed by the command line switch "--reverse", then higher numerical
+	 * values are considered as "cheaper".
      */
     bool
     cheaperThan(const AnswerSet&) const;
@@ -97,8 +102,13 @@ public:
     /**
      * @brief compare with weight vector.
      *
-     * this function returns true, if this answer set has more costs than are
+     * This function returns true, if this answer set has higher costs than are
      * specified in the weight-vector.
+	 * The exact semantics of "higher" is determined by the used ordering.
+	 * Default notion of "higher" is "higher numerical values", so an answer set
+	 * is more expensive, if its weights on the respective level are higher.
+	 * This can be reversed by the command line switch "--reverse", then lower
+	 * numerical values are considered as "more expensive".
      */
     bool
     moreExpensiveThan(const weights_t) const;

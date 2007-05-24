@@ -12,6 +12,8 @@
 
 #include "dlvhex/AnswerSet.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/globals.h"
+#include "dlvhex/Error.h"
 
 
 
@@ -64,7 +66,14 @@ AnswerSet::setSet(AtomSet& atomset)
             Term tlevel(*(args.end() - 1));
             Term tweight(*(args.end() - 2));
 
+			if (!tlevel.isInt())
+				throw GeneralError("Weak constraint level instantiated with non-integer!");
+
             unsigned l = tlevel.getInt();
+
+			if (!tweight.isInt())
+				throw GeneralError("Weak constraint weight instantiated with non-integer!");
+
             unsigned w = tweight.getInt();
 
             this->addWeight(w, l);
@@ -147,12 +156,15 @@ AnswerSet::cheaperThan(const AnswerSet& answerset2) const
     {
         if (this->getWeight(currlevel) < answerset2.getWeight(currlevel))
         {
-            ret = 1;
+            ret = !Globals::Instance()->getOption("ReverseOrder");
             break;
         }
 
         if (this->getWeight(currlevel) > answerset2.getWeight(currlevel))
+		{
+            ret = Globals::Instance()->getOption("ReverseOrder");
             break;
+		}
     }
 
     return ret;
@@ -166,6 +178,7 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
         return 0;
 
     int ret = 0;
+    //int ret = Globals::Instance()->getOption("ReverseOrder");
 
     unsigned maxlevel = this->weights.size();
     
@@ -184,7 +197,7 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
         unsigned w = 0;
 
         //
-        // only take weight from exisitng levels of the specified weight
+        // only take weight from existing levels of the specified weight
         // vector - otherwise w is still 0 (nonspecified levels have 0 weight)
         //
         if (currlevel <= weights.size())
@@ -198,7 +211,7 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
         //
         if (this->getWeight(currlevel) > w)
         {
-            ret = 1;
+            ret = !Globals::Instance()->getOption("ReverseOrder");
             break;
         }
 
@@ -207,7 +220,10 @@ AnswerSet::moreExpensiveThan(const weights_t weights) const
         // 0
         //
         if (this->getWeight(currlevel) < w)
+		{
+            ret = Globals::Instance()->getOption("ReverseOrder");
             break;
+		}
     }
 
     //
@@ -228,11 +244,19 @@ AnswerSet::operator< (const AnswerSet& answerset2) const
     //
     if (!WCprefix.empty())
     {
+		bool isCheaper(1);
+
+		//
+		// if we use reverse order, we simply toggle the return value:
+		//
+		//if (Globals::Instance()->getOption("ReverseOrder"))
+		//	isCheaper = 0;
+
         if (this->cheaperThan(answerset2))
-            return true;
+            return isCheaper;
 
         if (answerset2.cheaperThan(*this))
-            return false;
+            return !isCheaper;
     }
 
     //

@@ -137,11 +137,13 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
                 for (unsigned i = 0; i < AnswerSet::getMaxLevel(); ++i)
                     lowestWeights.push_back((*ri)->getWeight(i + 1));
             
-        /*    for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
+			/*
+            for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
                  wi != lowestWeights.end();
                  ++wi)
                 std::cout << " w: " << *wi;
-          */  
+			*/
+            
 
             //
             // any model that is more expensive than the best one(s) will not be

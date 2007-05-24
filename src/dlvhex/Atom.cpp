@@ -77,7 +77,7 @@ Atom::Atom(const std::string& atom, bool neg)
 		arguments.push_back(Term(atom));
 
 		if (arguments.front().isVariable())
-			throw SyntaxError("propositional Atom must be ground");
+			throw SyntaxError("propositional Atom must be ground. Probably not a HEX-program?");
 	}
 }
 	

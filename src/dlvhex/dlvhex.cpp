@@ -107,7 +107,8 @@ printUsage(std::ostream &out, bool full)
 		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
 		<< " -f, --filter=foo[,bar[,...]]" << std::endl
 		<< "                      Only display instances of the specified predicate(s)." << std::endl
-		<< " -a, --allmodels      Display all models, even under weak constraints." << std::endl
+		<< " -a, --allmodels      Display all models also under weak constraints." << std::endl
+		<< " -r, --reverse        Reverse weak constraint ordering." << std::endl
 		<< "     --firstorder     No higher-order reasoning." << std::endl
 		<< "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
 		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
@@ -331,6 +332,7 @@ main (int argc, char *argv[])
 	Globals::Instance()->setOption("NoPredicate", 1);
 	Globals::Instance()->setOption("StrongSafety", 1);
 	Globals::Instance()->setOption("AllModels", 0);
+	Globals::Instance()->setOption("ReverseAllModels", 0);
 
 	// options only used here in main():
 	bool optionPipe = false;
@@ -371,6 +373,7 @@ main (int argc, char *argv[])
 		{ "filter", required_argument, 0, 'f' },
 		{ "plugindir", required_argument, 0, 'p'},
 		{ "allmodels", no_argument, 0, 'a'},
+		{ "reverse", no_argument, 0, 'r'},
 		{ "firstorder", no_argument, &longid, 1 },
 		{ "weaksafety", no_argument, &longid, 2 },
 		{ "ruleml",     no_argument, &longid, 3 },
@@ -383,7 +386,7 @@ main (int argc, char *argv[])
 	std::vector<std::string> fil;
 	std::vector<std::string>::iterator i;
 
-	while ((ch = getopt_long(argc, argv, "f:hsvp:a", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, "f:hsvp:ar", longopts, NULL)) != -1)
 	{
 		switch (ch)
 		{
@@ -412,6 +415,9 @@ main (int argc, char *argv[])
 				break;
 			case 'a':
 				Globals::Instance()->setOption("AllModels", 1);
+				break;
+			case 'r':
+				Globals::Instance()->setOption("ReverseOrder", 1);
 				break;
 			case 0:
 				if (longid == 1)
@@ -1066,7 +1072,6 @@ main (int argc, char *argv[])
 		removeNamespaces();
 
 
-
 	//
 	// prepare result container
 	//
@@ -1080,7 +1085,6 @@ main (int argc, char *argv[])
 
 	ResultContainer result(wcprefix);
 
-
 #ifdef DLVHEX_DEBUG
 	DEBUG_RESTART_TIMER
 #endif // DLVHEX_DEBUG
@@ -1092,7 +1096,16 @@ main (int argc, char *argv[])
 
 	while ((res = gp.getNextModel()) != NULL)
 	{
-		result.addSet(*res);
+		try
+		{
+			result.addSet(*res);
+		}
+		catch (GeneralError &e)
+		{
+			std::cerr << e.getErrorMsg() << std::endl << std::endl;
+
+			exit(1);
+		}
 	}
 
 	//
@@ -1135,6 +1148,7 @@ main (int argc, char *argv[])
 
 	result.print(std::cout, outputbuilder);
 
+
 	//
 	// was there anything non-error the user should know? dump it directly
 	/*
@@ -1157,3 +1171,6 @@ main (int argc, char *argv[])
 
 	exit(0);
 }
+
+
+/* vim: set noet sw=4 ts=4 tw=80: */

@@ -1,5 +1,6 @@
-../weak1.hex weak1.out
-../weak2.hex weak2.out
+../weak1.hex weak1.out -a
+../weak1.hex weak1r.out -ra
+../weak2.hex weak2.out -a
 ../namespace1.hex namespace1.out
 ../agg1.hex agg1.out --firstorder
 ../msp.hex msp.out -a
