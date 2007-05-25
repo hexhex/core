@@ -1,3 +1,8 @@
+2007-05-25  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* COPYING: Added GPL license.
+	* all source files: Likewise.
+
 2007-05-24  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* AUTHORS: new file.
@@ -22,7 +27,7 @@
 	weights and levels when building an answer set in presence of weak
 	constraints.
 
-	* src/dlvhex/Atom.cpp (isAlwaysFO): Improved error message for nonground
+	* src/dlvhex/Atom.cpp: Improved error message for nonground
 	propositional atoms (which is the common message for accidental non-HEX input).
 
 	* src/dlvhex/dlvhex.cpp (printUsage), (main): Added command line switch
