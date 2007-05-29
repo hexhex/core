@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   ParserDriver.h
@@ -73,3 +72,8 @@ public:
 
 #endif // _PARSERDRIVER_H
 
+
+
+// Local Variables:
+// mode: C++
+// End:

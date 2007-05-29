@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   AtomSet.h
@@ -288,3 +287,8 @@ multiplySets(std::vector<AtomSet>& s1,
 
 
 #endif /* _ATOMSET_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

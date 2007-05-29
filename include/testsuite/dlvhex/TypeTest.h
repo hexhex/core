@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file TypeTest.h
@@ -121,3 +120,8 @@ public:
 
 
 #endif /* _TYPETEST_H_ */
+
+
+// Local Variables:
+// mode: C++
+// End:

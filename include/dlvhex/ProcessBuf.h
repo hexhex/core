@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   ProcessBuf.h
@@ -86,3 +85,8 @@ protected:
 };
 
 #endif // _PROCESSBUF_H
+
+
+// Local Variables:
+// mode: C++
+// End:

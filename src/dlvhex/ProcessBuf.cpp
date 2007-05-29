@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   ProcessBuf.cpp
@@ -328,3 +327,8 @@ ProcessBuf::sync()
   
   return 0;
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

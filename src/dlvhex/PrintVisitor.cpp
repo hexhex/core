@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   PrintVisitor.cpp
@@ -322,3 +321,8 @@ HOPrintVisitor::visitAtom(const Atom* a)
 		v.visitAtom(a);
 	}
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

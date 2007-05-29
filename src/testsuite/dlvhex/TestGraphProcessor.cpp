@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file TestGraphProcessor.cpp
@@ -206,3 +205,8 @@ TestGraphProcessor::testSimple()
         delete *delrule++;
 }
 
+
+
+// Local Variables:
+// mode: C++
+// End:

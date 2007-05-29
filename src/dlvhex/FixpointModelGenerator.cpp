@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file FixpointModelGenerator.cpp
@@ -285,3 +284,8 @@ FixpointModelGenerator::compute(const Program& program,
 
     models.push_back(currentI);
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

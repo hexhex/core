@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file SafetyChecker.cpp
@@ -382,3 +381,8 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
         compit++;
     }
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

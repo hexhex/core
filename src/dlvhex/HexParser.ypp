@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   HexParser.ypp
@@ -1220,3 +1219,8 @@ YY_DECL
     return (yy::HexParser::token_type) lex->yylex (); // finally call the drivers lexer
 } 
 
+
+
+// Local Variables:
+// mode: C++
+// End:

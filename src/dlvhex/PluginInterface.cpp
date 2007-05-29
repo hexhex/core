@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   PluginInterface.cpp
@@ -139,3 +138,8 @@ PluginAtom::getInputType(const unsigned index) const
 
     return inputType[index];
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

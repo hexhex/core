@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   DLVresultParser.ypp
@@ -345,4 +344,9 @@ YY_DECL
 // Local Variables:
 // mode: c++
 // c-file-style: "dl"
+// End:
+
+
+// Local Variables:
+// mode: C++
 // End:

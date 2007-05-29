@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file ResultContainer.cpp
@@ -185,3 +184,8 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
     stream << builder->getString();
 }
 
+
+
+// Local Variables:
+// mode: C++
+// End:

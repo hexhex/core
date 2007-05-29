@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   globals.h
@@ -165,3 +164,8 @@ private:
         boosttimerstart = boosttimerend; }
 
 #endif // _GLOBALS_H
+
+
+// Local Variables:
+// mode: C++
+// End:

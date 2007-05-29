@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file GuessCheckModelGenerator.cpp
@@ -607,3 +606,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 
 /* vim: set noet sw=4 ts=4 tw=80: */
+
+
+// Local Variables:
+// mode: C++
+// End:

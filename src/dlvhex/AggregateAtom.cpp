@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file AggregateAtom.cpp
@@ -122,3 +121,8 @@ AggregateAtom::accept(BaseVisitor& v) const
 
 
 
+
+
+// Local Variables:
+// mode: C++
+// End:

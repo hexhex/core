@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file GraphProcessor.cpp
@@ -281,3 +280,8 @@ GraphProcessor::getNextModel()
 
 
 /* vim: set noet sw=4 ts=4 tw=80: */
+
+
+// Local Variables:
+// mode: C++
+// End:

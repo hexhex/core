@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file ComponentFinder.h
@@ -151,3 +150,8 @@ public:
 
 
 #endif /* _COMPONENTFINDER_H_ */
+
+
+// Local Variables:
+// mode: C++
+// End:

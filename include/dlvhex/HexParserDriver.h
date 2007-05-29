@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   HexParserDriver.h
@@ -84,3 +83,8 @@ private:
 
 #endif // _HEXPARSERDRIVER_H
 
+
+
+// Local Variables:
+// mode: C++
+// End:

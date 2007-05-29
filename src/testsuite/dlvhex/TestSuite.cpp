@@ -55,3 +55,8 @@ int main(int argc, char* argv[])
 	// Return error code 1 if the one of test failed.
 	return result.wasSuccessful() ? 0 : 1;
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

@@ -1,3 +1,7 @@
+2007-05-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	Add emacs local variables at the end of each source file.
+
 2007-05-29  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* Makefile.am: AUTOMAKE_OPTIONS = gnu.

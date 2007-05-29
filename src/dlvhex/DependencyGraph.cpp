@@ -18,17 +18,16 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-    /* -*- C++ -*- */
 
-    /**
-    * @file DependencyGraph.cpp
-    * @author Roman Schindlauer
-    * @date Mon Sep 19 12:19:38 CEST 2005
-    *
-    * @brief Classes for the dependency graph class and its subparts.
-    *
-    *
-    */
+/**
+ * @file DependencyGraph.cpp
+ * @author Roman Schindlauer
+ * @date Mon Sep 19 12:19:38 CEST 2005
+ *
+ * @brief Classes for the dependency graph class and its subparts.
+ *
+ *
+ */
 
 #include <sstream>
 
@@ -281,3 +280,8 @@ DependencyGraph::getNextSubgraph()
 }
 
 
+
+
+// Local Variables:
+// mode: C++
+// End:

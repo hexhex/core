@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   DLVresultParserDriver.h
@@ -68,3 +67,8 @@ private:
 
 #endif // _DLVRESULTPARSERDRIVER_H
 
+
+
+// Local Variables:
+// mode: C++
+// End:

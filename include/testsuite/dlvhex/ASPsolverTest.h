@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file ASPsolverTest.h
@@ -67,3 +66,8 @@ public:
 };
 
 #endif /* _ASPSOLVERTEST_H_ */
+
+
+// Local Variables:
+// mode: C++
+// End:

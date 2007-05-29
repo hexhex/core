@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file Registry.cpp
@@ -73,3 +72,8 @@ Registry::storeObject(ProgramObject* po)
     return pop;
 }
 
+
+
+// Local Variables:
+// mode: C++
+// End:

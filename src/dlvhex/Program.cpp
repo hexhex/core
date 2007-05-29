@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file Program.cpp
@@ -103,3 +102,8 @@ Program::dump(PrintVisitor& v) const
 		v.getStream() << std::endl;
 	}
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

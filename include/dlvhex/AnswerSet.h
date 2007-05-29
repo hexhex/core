@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   AnswerSet.h
@@ -197,3 +196,8 @@ operator<< (std::ostream&, const AnswerSet&);
 
 
 #endif /* _ANSWERSET_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

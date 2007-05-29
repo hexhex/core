@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file AnswerSet.cpp
@@ -318,3 +317,8 @@ operator<< (std::ostream& out, const AnswerSet& atomset)
     atomset.accept(rpv);
     return out;
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

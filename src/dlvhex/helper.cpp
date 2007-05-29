@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   helper.cpp
@@ -81,3 +80,8 @@ helper::multiplySets(const std::vector<GAtomSet>& sets,
     }
 }
 */
+
+
+// Local Variables:
+// mode: C++
+// End:

@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file TypeTest.cpp
@@ -319,3 +318,8 @@ AtomSetTest::testConstruction()
 }
 
 
+
+
+// Local Variables:
+// mode: C++
+// End:

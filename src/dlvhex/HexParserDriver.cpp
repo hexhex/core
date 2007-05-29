@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   HexParserDriver.cpp
@@ -137,3 +136,8 @@ HexParserDriver::parse(std::string file,
 
     ifs.close();
 } 
+
+
+// Local Variables:
+// mode: C++
+// End:

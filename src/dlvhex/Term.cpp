@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file Term.cpp
@@ -413,3 +412,8 @@ NamesTable<std::string> Term::names;
 
 NamesTable<std::string> Term::auxnames;
 
+
+
+// Local Variables:
+// mode: C++
+// End:

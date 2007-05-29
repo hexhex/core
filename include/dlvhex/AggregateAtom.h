@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file AggregateAtom.h
@@ -198,3 +197,8 @@ private:
 
 #endif /* _AGGREGATEATOM_H */
 
+
+
+// Local Variables:
+// mode: C++
+// End:

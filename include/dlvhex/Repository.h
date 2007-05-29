@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   Repository.h
@@ -116,3 +115,8 @@ private:
 
 
 #endif /* _REPOSITORY_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

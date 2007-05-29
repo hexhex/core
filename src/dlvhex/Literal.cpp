@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   Literal.cpp
@@ -128,3 +127,8 @@ operator< (const RuleBody_t& body1, const RuleBody_t& body2)
 	return std::lexicographical_compare(body1.begin(), body1.end(),
 	  									body2.begin(), body2.end());
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

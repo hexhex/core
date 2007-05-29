@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file OrdinaryModelGenerator.cpp
@@ -147,3 +146,8 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	DEBUG_STOP_TIMER("Time storing the ASP result            ")
 #endif // DLVHEX_DEBUG
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

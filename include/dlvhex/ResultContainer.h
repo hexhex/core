@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file ResultContainer.h
@@ -100,3 +99,8 @@ private:
 };
 
 #endif /* _RESULTCONTAINER_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

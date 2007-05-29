@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   DLVresultParserDriver.cpp
@@ -68,3 +67,8 @@ DLVresultParserDriver::parse(std::istream& is,
     lexer->switch_streams(&is, &std::cerr);
     parser.parse();
 }
+
+
+// Local Variables:
+// mode: C++
+// End:

@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   ASPsolver.cpp
@@ -212,3 +211,8 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
     */
 }
 
+
+
+// Local Variables:
+// mode: C++
+// End:

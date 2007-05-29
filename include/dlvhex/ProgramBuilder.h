@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   ProgramBuilder.h
@@ -131,3 +130,8 @@ private:
 
 
 #endif /* _PROGRAMBUILDER_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

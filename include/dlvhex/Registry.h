@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file Registry.h
@@ -91,3 +90,8 @@ private:
 };
 
 #endif /* _REGISTRY_H */
+
+
+// Local Variables:
+// mode: C++
+// End:

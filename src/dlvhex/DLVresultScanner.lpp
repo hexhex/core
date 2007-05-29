@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file   DLVresultScanner.lpp
@@ -139,3 +138,9 @@ NUM         ([0-9]+)
     driver.error(*yylloc, "invalid character");
 }
 
+
+%%
+
+// Local Variables:
+// mode: C++
+// End:

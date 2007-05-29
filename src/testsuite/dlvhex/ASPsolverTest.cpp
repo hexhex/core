@@ -18,7 +18,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-/* -*- C++ -*- */
 
 /**
  * @file ASPsolverTest.cpp
@@ -137,3 +136,8 @@ ASPsolverTest::testResult()
     //
     CPPUNIT_ASSERT(solver->getNextAnswerSet() == NULL);
 }
+
+
+// Local Variables:
+// mode: C++
+// End:
