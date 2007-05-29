@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = gnu
 
 MAINTAINERCLEANFILES = \
     DLVresultParser.hpp \

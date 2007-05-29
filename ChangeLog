@@ -1,3 +1,11 @@
+2007-05-29  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* Makefile.am: AUTOMAKE_OPTIONS = gnu.
+	* include/dlvhex/Makefile.am: Likewise.
+	* include/testsuite/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/dlvhex/Makefile.am: Likewise.
+
 2007-05-25  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* COPYING: Added GPL license.
