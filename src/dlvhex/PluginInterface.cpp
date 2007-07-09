@@ -99,6 +99,10 @@ PluginAtom::Answer::getTuples() const
 void
 PluginAtom::addInputPredicate()
 {
+	// throw error if last input term was tuple
+	if (inputType.back() == TUPLE)
+		throw GeneralError("Tuple inputs must be specified last in input list");
+
     inputType.push_back(PREDICATE);
 }
 
@@ -106,14 +110,28 @@ PluginAtom::addInputPredicate()
 void
 PluginAtom::addInputConstant()
 {
+	// throw error if last input term was tuple
+	if (inputType.back() == TUPLE)
+		throw GeneralError("Tuple inputs must be specified last in input list");
+
     inputType.push_back(CONSTANT);
 }
 
 
-unsigned
-PluginAtom::getInputArity() const
+void
+PluginAtom::addInputTuple()
 {
-    return inputType.size();
+    inputType.push_back(TUPLE);
+}
+
+
+bool
+PluginAtom::checkInputArity(const unsigned arity) const
+{
+	if (inputType.back() == TUPLE)
+		return true;
+
+    return (inputType.size() == arity);
 }
 
 
@@ -124,10 +142,10 @@ PluginAtom::setOutputArity(const unsigned arity)
 }
 
 
-unsigned
-PluginAtom::getOutputArity() const
+bool
+PluginAtom::checkOutputArity(const unsigned arity) const
 {
-    return outputSize;
+    return (arity == outputSize);
 }
 
 

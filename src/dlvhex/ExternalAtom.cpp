@@ -141,10 +141,10 @@ ExternalAtom::findPluginAtom() const
 	//
 	// is the desired arity equal to the parsed arity?
 	//
-	if (this->pluginAtom->getInputArity() != inputList.size())
+	if (!this->pluginAtom->checkInputArity(inputList.size()))
 		throwSourceError("input arity mismatch in function " + functionName);
 	
-	if (this->pluginAtom->getOutputArity() != getArity())
+	if (!this->pluginAtom->checkOutputArity(getArity()))
 		throwSourceError("output arity mismatch in function " + functionName);
 	
 	bool inputIsGround(1);

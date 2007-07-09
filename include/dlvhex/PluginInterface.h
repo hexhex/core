@@ -718,7 +718,7 @@ public:
      * improving the dependency information used by the internal
      * evaluation strategies of dlvhex.
      */
-    typedef enum { PREDICATE, CONSTANT } InputType;
+    typedef enum { PREDICATE, CONSTANT, TUPLE } InputType;
 
 
 protected:
@@ -754,13 +754,22 @@ public:
     addInputConstant();
 
     /**
-     * \brief Returns the input arity of the external atom.
+     * \brief Adds an input parameter of type TUPLE.
+     *
+     * See InputType.
+     */
+    void
+    addInputTuple();
+
+    /**
+     * \brief Checks the input arity of the external atom against the specified
+	 * one.
      *
      * The input arity follows from the number of specified predicate types (see
      * addInputPredicate and addInputConstant).
      */
-    unsigned
-    getInputArity() const;
+    bool
+    checkInputArity(const unsigned arity) const;
 
     /**
      * \brief Specifies the output arity of the external Atom.
@@ -769,11 +778,11 @@ public:
     setOutputArity(const unsigned arity);
 
     /**
-     * \brief Returns the output arity of the external atom, which was specified by the
-     * plugin author.
+	 * \brief Checks whether the output arity of the external atom is compatible
+	 * with the specified one.
      */
-    unsigned
-    getOutputArity() const;
+    bool
+    checkOutputArity(const unsigned arity) const;
 
     /**
      * \brief Retrieve answer object according to a query.
