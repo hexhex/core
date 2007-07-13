@@ -100,8 +100,9 @@ void
 PluginAtom::addInputPredicate()
 {
 	// throw error if last input term was tuple
-	if (inputType.back() == TUPLE)
-		throw GeneralError("Tuple inputs must be specified last in input list");
+	if (inputType.size() > 0)
+		if (inputType.back() == TUPLE)
+			throw GeneralError("Tuple inputs must be specified last in input list");
 
     inputType.push_back(PREDICATE);
 }
@@ -111,8 +112,9 @@ void
 PluginAtom::addInputConstant()
 {
 	// throw error if last input term was tuple
-	if (inputType.back() == TUPLE)
-		throw GeneralError("Tuple inputs must be specified last in input list");
+	if (inputType.size() > 0)
+		if (inputType.back() == TUPLE)
+			throw GeneralError("Tuple inputs must be specified last in input list");
 
     inputType.push_back(CONSTANT);
 }
