@@ -356,7 +356,14 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 			default:
 
-				assert(0);
+				//
+				// not a specified type - worst case, now we have to pass the
+				// entire interpretation. we simply overwrite a previously
+				// created inputSet, because there can't be specified input
+				// types after this one anyway - TUPLE must always be after
+				// CONSTANT and PREDICATE, see PluginAtom!
+				//
+				//inputSet = i;
 
 				break;
 			}

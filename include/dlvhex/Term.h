@@ -31,6 +31,7 @@
  */
 
 
+
 #ifndef _TERM_H
 #define _TERM_H
 
@@ -374,6 +375,7 @@ operator<< (std::ostream&, const Term&);
 
 /**
  * A Tuple is a std::vector of terms.
+ * \ingroup dlvhextypes
  * 
  * Tuple is not a separate class, instead we use a vector of Term, since a tuple
  * is just an ordered list of terms. Hence, all features of a vector can be used

@@ -35,8 +35,41 @@
 #include "dlvhex/Atom.h"
 #include "dlvhex/BaseVisitor.h"
 
+
+
 /**
  * @brief An AtomSet is a set of Atoms.
+ *
+ * \ingroup dlvhextypes
+ *
+ * \section Serializing
+ *
+ * Serializing of AtomSets is carried out using the Visitor design pattern
+ * (http://en.wikipedia.org/wiki/Visitor_pattern). This pattern encourages the
+ * separation of the actual serialization method from the AtomSet. A visitor
+ * class exists for a specific task (here: for serializing a datatype) and knows
+ * how to execute this task for several datatypes. The datatype itself, e.g.,
+ * AtomSet, simply calls the corresponding visitor member function, passing
+ * itself as argument.
+ *
+ * To print a "raw" representation of an AtomSet, for instance, one instantiate
+ * a RawPrintVisitor.
+ * The RawPrintVisitor (like all descendants of PrintVisitor) is constructed
+ * with an std::ostream, which the serialization will be directed to:
+ *
+ * \code
+ *   RawPrintVisitor rpv(std:cout);
+ * \endcode
+ *
+ * Then, the visitor is simply sent to the respective class:
+ *
+ * \code
+ *   atomset.accept(rpv);
+ * \endcode
+ *
+ * The method AtomSet::accept contains only a call to the member function
+ * visitAtomSet of the passed visitor. Only this function actually implements the
+ * proper serialization.
  */
 class AtomSet
 {

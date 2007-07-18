@@ -262,7 +262,6 @@ Term::compare(const Term& term2) const
 	if( type != term2.type )
 		return (int)type - (int)term2.type;
 
-
 	switch (type)
 	{
 		case INTEGER:

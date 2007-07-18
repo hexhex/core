@@ -1,3 +1,15 @@
+2007-07-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Improved documentation.
+	* include/dlvhex/AtomSet.h: Likewise.
+	* include/dlvhex/Term.h: Likewise.
+	* include/dlvhex/PluginInterface.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* src/dlvhex/ExternalAtom.cpp: Relaxed extatom input checking for
+	tuple-inputs.
+	* src/dlvhex/PluginInterface.cpp: Likewise.
+
 2007-05-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	Add emacs local variables at the end of each source file.

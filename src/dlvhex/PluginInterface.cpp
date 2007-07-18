@@ -154,7 +154,11 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 PluginAtom::InputType
 PluginAtom::getInputType(const unsigned index) const
 {
-    assert(index < inputType.size());
+	if (index >= inputType.size())
+	{
+		assert(inputType.back() == TUPLE);
+		return inputType.back();
+	}
 
     return inputType[index];
 }

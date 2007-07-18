@@ -186,7 +186,7 @@
  * The interpretation is retrieved by Query::getInterpretation():
  *
  * \code
- *             Interpretation i = query.getInterpretation();
+ *             AtomSet i = query.getInterpretation();
  * \endcode
  *
  * For more information about the datatypes of dlvhex, please refer to the

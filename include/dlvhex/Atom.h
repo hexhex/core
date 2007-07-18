@@ -47,6 +47,8 @@ class Atom;
 /**
  * Atom Pointer.
  *
+ * \ingroup dlvhextypes
+ *
  * We use the shared pointer type from the boost-library instead of Atom* to
  * handle pointers to atoms. These shared pointers maintain a reference count
  * and automatically delete the object when the last reference disappears. This
@@ -79,6 +81,8 @@ typedef boost::shared_ptr<Atom> AtomPtr;
 
 /**
  * @brief An Atom has a predicate and (if not propositional) an optional list of arguments.
+ *
+ * \ingroup dlvhextypes
  *
  * An Atom corresponds to a logical atom.
  *
