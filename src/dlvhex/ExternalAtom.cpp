@@ -91,7 +91,7 @@ ExternalAtom::initReplAux()
 	// make replacement name, unique for each extatom
 	//
 	std::stringstream ss;
-	ss << functionName << "_" << extAtomNo;
+	ss << "ex" << functionName << "_" << extAtomNo;
 	replacementName = ss.str();
 
 	//

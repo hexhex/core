@@ -1,3 +1,10 @@
+2007-07-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* src/dlvhex/ExternalAtom.cpp (initReplAux): Replacement bug for uppercase
+	extatom names fixed.
+	* src/dlvhex/dlvhex.cpp (insertNamespaces): namespace handling for new URI
+	formats fixed. Backtranslation now broken.
+
 2007-07-18  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* include/dlvhex/Atom.h: Improved documentation.

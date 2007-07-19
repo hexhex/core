@@ -223,6 +223,8 @@ insertNamespaces()
 				std::string r(*nm);
 
 				r.replace(start, prefix.length(), ns->first);
+				r.replace(0, 1, "\"<");
+				r.replace(r.length()-1, 1, ">\"");
 
 				Term::names.modify(nm, r);
 
