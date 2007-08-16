@@ -1,3 +1,8 @@
+2007-08-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
+
+	* NEWS: updated.
+	* configure.ac: bumbed to version 1.7.0
+
 2007-07-19  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* src/dlvhex/ExternalAtom.cpp (initReplAux): Replacement bug for uppercase

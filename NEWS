@@ -1,1 +1,6 @@
-tbd
+Release 1.6 (August 2007):
+    Variable arities of external atom input lists
+    Debugged model-generation algorithm
+    Added switch --reverse for reverse ordering of weak constrained models
+    Added GPL license
+    Improved documentation
