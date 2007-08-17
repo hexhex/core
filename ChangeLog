@@ -1,3 +1,14 @@
+2007-08-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Fix compile-time warnings.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* examples/Makefile.am: Likewise.
+
+	* examples/tests/namespace1.out: Fix answer sets.
+
+	* examples/tests/weak1r.out: New file.
+
 2007-08-16  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* NEWS: updated.
