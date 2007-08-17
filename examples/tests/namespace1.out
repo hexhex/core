@@ -1,1 +1,1 @@
-{c("http://example.org#foo"), d("http://example.org#bar"), b("http://example.org#foo"), a("http://example.org#foo")}
+{c("<http://example.org#foo>"), d("http://example.org#bar"), b("<http://example.org#foo>"), a("<http://example.org#foo>")}
