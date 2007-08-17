@@ -11,6 +11,6 @@ EXTRA_DIST = \
     tests/weak2.out \
 	tests/3col.out \
 	tests/agg1.out \
-	tests/msp.out \ 
+	tests/msp.out \
 	tests/namespace1.out \
 	tests/extatom1.out

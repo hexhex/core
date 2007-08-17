@@ -807,7 +807,7 @@ main (int argc, char *argv[])
 					input.rdbuf(new std::stringbuf(ss.str()));
 				}
 
-				FILE* fp;
+				FILE* fp = 0;
 
 				//
 				// now call dlt if needed

@@ -867,7 +867,7 @@ propositional_atom:
             //
             // create new atom from string
             //
-            Atom* a;
+            Atom* a = 0;
 
             //
             // construction of an atom could throw an exception - don't throw

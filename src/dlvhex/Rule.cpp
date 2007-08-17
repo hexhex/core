@@ -289,7 +289,7 @@ WeakConstraint::addHead(const AtomPtr)
 
 
 bool
-WeakConstraint::operator== (const WeakConstraint& wc2) const
+WeakConstraint::operator== (const WeakConstraint& /* wc2 */) const
 {
     ///@todo implement this correctly!
     return 0;
