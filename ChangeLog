@@ -1,3 +1,8 @@
+2007-08-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am (libdlvhexbase_la_LDFLAGS): Bump
+	version-info to 5:1:0.
+
 2007-08-25  Roman Schindlauer  <roman@kr.tuwien.ac.at>
 
 	* examples/simple1.hex: Added.
