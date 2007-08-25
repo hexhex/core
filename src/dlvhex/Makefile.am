@@ -142,8 +142,11 @@ libdlvhexbase_la_SOURCES = \
     Rule.cpp \
     Term.cpp
 
-# for -version-info see http://sources.redhat.com/autobook/autobook/autobook_91.html
-libdlvhexbase_la_LDFLAGS = -version-info 5:0:0
+# for more information on `-version-info' see
+# <http://www.gnu.org/software/libtool/manual.html#Versioning>, and
+# the USENIX paper `Library Interface Versioning in Solaris and Linux'
+# <http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid.pdf>
+libdlvhexbase_la_LDFLAGS = -version-info 5:1:0
 libaspsolver_la_LDFLAGS = -version-info 0:0:0
 
 libaspsolver_la_SOURCES = \
