@@ -1,3 +1,4 @@
+../simple1.hex simple1.out
 ../weak1.hex weak1.out -a
 ../weak1.hex weak1r.out -ra
 ../weak2.hex weak2.out -a

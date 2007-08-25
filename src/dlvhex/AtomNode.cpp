@@ -276,6 +276,11 @@ Dependency::addDep(Rule* rule, const AtomNodePtr& from, const AtomNodePtr& to, D
 bool
 Dependency::operator< (const Dependency& dep2) const
 {
+	if (this->rule < dep2.rule)
+		return true;
+	if (this->rule > dep2.rule)
+		return false;
+
 	if (this->atomNode->getId() < dep2.atomNode->getId())
 		return true;
 	if (this->atomNode->getId() > dep2.atomNode->getId())

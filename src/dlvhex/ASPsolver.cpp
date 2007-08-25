@@ -78,6 +78,8 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
     answersets.clear();
 
+    // std::cout << "prg" << std::endl;
+    // std::cout        << std::endl << prg << std::endl;
     //if (Globals::Instance()->getOption("Verbose") >= 3)
     //    Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
     //        << std::endl << prg << std::endl;
@@ -195,20 +197,19 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
     //
     answerSetIndex = answersets.begin();
     
-
-    /*
+/*
     for (std::vector<AtomSet>::iterator o = answersets.begin();
             o != answersets.end();
             o++)
     {
-        std::cout << "as: ";
-        (*o).print(std::cout, 0);
+    	RawPrintVisitor rpv(std::cout);
+	    (*o).accept(rpv);
         std::cout << std::endl;
         
         //for (AtomSet::const_iterator foo = (*o).begin();foo != (*o).end();++foo)
         //    std::cout << "have predicate: " << foo->getPredicate() << std::endl;
     }
-    */
+*/
 }
 
 
