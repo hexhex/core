@@ -1,3 +1,7 @@
+2007-10-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: Fix some warnings.
+
 2007-08-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Makefile.am (libdlvhexbase_la_LDFLAGS): Bump
