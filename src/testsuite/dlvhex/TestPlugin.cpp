@@ -129,8 +129,6 @@ public:
         Term s1 = query.getInputTuple()[0];
         Term s2 = query.getInputTuple()[1];
 
-        bool smaller = false;
-
         if (s1.isInt())
             in1 << s1.getInt();
         else if (s1.isString())
@@ -176,7 +174,7 @@ public:
 	}
 
 	virtual void
-	setOptions(bool doHelp, std::vector<std::string>& argv, std::ostream& out)
+	setOptions(bool /* doHelp */, std::vector<std::string>& /* argv */, std::ostream& /* out */)
 	{
 		//
 		// no options yet
