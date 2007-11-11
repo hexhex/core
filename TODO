@@ -1,0 +1,24 @@
+-*- org -*-
+
+* TODO Complete the dlvhex API (output, intput, ...)
+Plugins should behave as passively as possible, i.e., no registration
+of data like namespaces or similar information *initiated* from the
+plugins.
+
+* TODO Semantics API
+Design proper interfaces for different semantics, e.g., HEX, WFS,
+etc. Should we allow plugins to add new semantic computations?
+
+* TODO Use boost spirit instead of flex/bison
+
+* TODO Use parse tree presentation in optimizer
+
+* TODO Query support
+
+* TODO Magic Set rewriting
+
+* TODO Add support for RIF BLD presentation syntax
+
+* TODO [Mac OS X] Install user plugins in ~/Library/Application Support/dlvhex/plugins
+
+* TODO [Mac OS X] CPPFLAGS="-I/opt/local/include -I/sw/include" for macports/fink
