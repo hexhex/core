@@ -11,7 +11,7 @@ etc. Should we allow plugins to add new semantic computations?
 
 * TODO Use boost spirit instead of flex/bison
 
-* TODO Use parse tree presentation in optimizer
+* TODO Use parse tree representation in Optimizer
 
 * TODO Query support
 
@@ -22,3 +22,21 @@ etc. Should we allow plugins to add new semantic computations?
 * TODO [Mac OS X] Install user plugins in ~/Library/Application Support/dlvhex/plugins
 
 * TODO [Mac OS X] CPPFLAGS="-I/opt/local/include -I/sw/include" for macports/fink
+
+* TODO [Mac OS X] Add pkg/dmg package support?
+
+* TODO [Linux] Add deb/rpm package support?
+
+* TODO [Windows] Add dll loading support
+We may build dlvhex with cygwin; unfortunately, the plugin loading
+part is nonfunctional. configure --enable-shared is not working, and
+we need to tweak the symbol exporting pragmas.
+
+* TODO How to deal with plugin dependencies?
+What's more, how to deal with plugins that are unable to "cooperate,"
+e.g., the sparql-plugin is not able to process combined sparql
+statements and rules.
+
+* TODO Fix Term's namespace handling
+
+* TODO Is our rewriting architecture with streams adequate? Can we do better?
