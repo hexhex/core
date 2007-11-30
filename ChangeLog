@@ -1,3 +1,10 @@
+2007-11-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* TODO: Update.
+
+	* configure.ac: Add dirname of FlexLexer.h as include path to
+	CPPFLAGS.
+
 2007-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
