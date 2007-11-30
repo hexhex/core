@@ -1,5 +1,9 @@
 -*- org -*-
 
+* TODO Guess boost's include path
+Right now, we have to set CPPFLAGS="-I/usr/include/boost" on debian as
+parameter to the configure script.
+
 * TODO Complete the dlvhex API (output, intput, ...)
 Plugins should behave as passively as possible, i.e., no registration
 of data like namespaces or similar information *initiated* from the
@@ -40,3 +44,31 @@ statements and rules.
 * TODO Fix Term's namespace handling
 
 * TODO Is our rewriting architecture with streams adequate? Can we do better?
+
+* TODO We need to parse things like "10"^^xsd:integer or "foo is not \"bar\""
+Symboltable should do back-and-forth translation of dlvhex symbols to generix dlv symbols.
+
+* TODO dlvhex server mode
+inetd (Linux) and launchd (Mac OS X) should be enough:
+
+Add the next line to /etc/services in order to enable the dlvhex
+service (we chose port 51966 because it is 0xCAFE in HEX):
+
+dlvhex 51966/tcp
+
+Add this line to /etc/inetd.conf:
+
+dlvhex stream tcp6 nowait  root /usr/local/bin/dlvhex dlvhex --silent --inetd --
+
+(you can use update-inetd on debian/ubuntu)
+
+
+Launchd setup: http://developer.apple.com/macosx/launchd.html
+
+
+* TODO retrieve programs via http
+
+http://curl.haxx.se/
+
+
+
