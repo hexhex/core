@@ -136,6 +136,9 @@ if test -r $FLEXLEXER_H ; then : ; else
 
 	if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
 
+	# and now, add the dirname of FlexLexer.h to the include paths
+	flexlexerpath=`AS_DIRNAME(["$FLEXLEXER_H"])`
+	CPPFLAGS="-I$flexlexerpath $CPPFLAGS"
 fi
 
 AC_SUBST([FLEXLEXER_H])
