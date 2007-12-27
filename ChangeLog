@@ -1,3 +1,123 @@
+2007-12-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Makefile.am: Export OutputBuilder interface to the plugins.
+
+	* src/dlvhex/Makefile.am: Export OutputBuilder interface to the plugins.
+	Remove OutputBuilder.cpp.
+
+	* include/dlvhex/ASPsolver.h: Add namespace dlvhex.
+	Refactoring const and reference arguments.
+	* include/dlvhex/AggregateAtom.h: Likewise.
+	* include/dlvhex/AnswerSet.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/AtomFactory.h: Likewise.
+	* include/dlvhex/BaseVisitor.h: Likewise.
+	* include/dlvhex/BoostComponentFinder.h: Likewise.
+	* include/dlvhex/Component.h: Likewise.
+	* include/dlvhex/ComponentFinder.h: Likewise.
+	* include/dlvhex/DLVresultFlexLexer.h: Likewise.
+	* include/dlvhex/DLVresultParserDriver.h: Likewise.
+	* include/dlvhex/DependencyGraph.h: Likewise.
+	* include/dlvhex/Error.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/GraphBuilder.h: Likewise.
+	* include/dlvhex/GraphProcessor.h: Likewise.
+	* include/dlvhex/HexFlexLexer.h: Likewise.
+	* include/dlvhex/HexParserDriver.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+	* include/dlvhex/ModelGenerator.h: Likewise.
+	* include/dlvhex/NamesTable.h: Likewise.
+	* include/dlvhex/ParserDriver.h: Likewise.
+	* include/dlvhex/PrintVisitor.h: Likewise.
+	* include/dlvhex/ProcessBuf.h: Likewise.
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/ProgramBuilder.h: Likewise.
+	* include/dlvhex/Registry.h: Likewise.
+	* include/dlvhex/Repository.h: Likewise.
+	* include/dlvhex/ResultContainer.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* include/dlvhex/SafetyChecker.h: Likewise.
+	* include/dlvhex/globals.h: Likewise.
+	* include/dlvhex/helper.h: Likewise.
+	* src/dlvhex/ASPsolver.cpp: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/AnswerSet.cpp: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/AtomFactory.cpp: Likewise.
+	* src/dlvhex/AtomNode.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/ComponentFinder.cpp: Likewise.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/Error.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/HexParserDriver.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/ParserDriver.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/ProgramBuilder.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/Repository.cpp: Likewise.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+	* src/dlvhex/Term.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/globals.cpp: Likewise.
+	* src/dlvhex/helper.cpp: Likewise.
+
+	* include/dlvhex/PluginContainer.h: Smart-pointerize PluginAtom.
+	Add namespace dlvhex.
+	Refactoring const and reference arguments.
+	* include/dlvhex/PluginInterface.h: Likewise.
+	* src/dlvhex/PluginContainer.cpp: Likewise.
+	* src/dlvhex/PluginInterface.cpp: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Fix a small memory leak.
+	Add namespace dlvhex.
+	* src/dlvhex/HexScanner.lpp: Likewise.
+
+	* include/testsuite/dlvhex/ASPsolverTest.h: Add namespace dlvhex.
+	Add __declspec(dllexport) macros.
+	* include/testsuite/dlvhex/TestGraphProcessor.h: Likewise.
+	* include/testsuite/dlvhex/TypeTest.h: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
+	* src/testsuite/dlvhex/TestPlugin.cpp: Likewise.
+	* src/testsuite/dlvhex/TypeTest.cpp: Likewise.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Add answer sets costs support.
+
+	* src/dlvhex/OutputBuilder.cpp: Split OutputBuilder files.
+	* include/dlvhex/OutputBuilder.h: Likewise.
+	* include/dlvhex/TextOutputBuilder.h: Likewise.
+	* src/dlvhex/TextOutputBuilder.cpp: Likewise.
+
+	* include/dlvhex/RuleMLOutputBuilder.h: Update RuleML output to 0.91.
+	* src/dlvhex/RuleMLOutputBuilder.cpp: Likewise.
+
+	* include/dlvhex/PlatformDefinitions.h: New file.
+
+	* TODO: Update.
+
+	* configure.ac [macosx]: Add macports and fink include directories
+	to CPPFLAGS by default.
+	Update maintainer.
+
+	* include/dlvhex/Term.h: Fix documentation.
+	(Module): 
+
 2007-11-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
