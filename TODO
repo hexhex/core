@@ -1,9 +1,5 @@
 -*- org -*-
 
-* TODO Guess boost's include path
-Right now, we have to set CPPFLAGS="-I/usr/include/boost" on debian as
-parameter to the configure script.
-
 * TODO Complete the dlvhex API (output, intput, ...)
 Plugins should behave as passively as possible, i.e., no registration
 of data like namespaces or similar information *initiated* from the
@@ -12,6 +8,14 @@ plugins.
 * TODO Semantics API
 Design proper interfaces for different semantics, e.g., HEX, WFS,
 etc. Should we allow plugins to add new semantic computations?
+
+* TODO Let plugins maintain global state in the program itself
+
+Like
+
+#document(foobar.xml)
+a(X) :- &xpath['//person'](X).
+
 
 * TODO Use boost spirit instead of flex/bison
 
@@ -24,8 +28,6 @@ etc. Should we allow plugins to add new semantic computations?
 * TODO Add support for RIF BLD presentation syntax
 
 * TODO [Mac OS X] Install user plugins in ~/Library/Application Support/dlvhex/plugins
-
-* TODO [Mac OS X] CPPFLAGS="-I/opt/local/include -I/sw/include" for macports/fink
 
 * TODO [Mac OS X] Add pkg/dmg package support?
 
