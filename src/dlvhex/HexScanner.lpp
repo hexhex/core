@@ -31,14 +31,15 @@
 
 %{
 
-#include <iostream>
-
 //
 // generated from bison
 //
 #include "dlvhex/HexParser.hpp"
+
 #include "dlvhex/HexFlexLexer.h"
 #include "dlvhex/HexParserDriver.h"
+
+#include <iostream>
 
 
 // Max. length of numeric constants. This should match MAX_MAXINT.
@@ -228,13 +229,16 @@ COMMENT     \%.*
 }
 
 {NUM} { 
-    if( strlen(yytext) > NUM_LENGTH )
-        driver.error(*yylloc, "numeric constant is too long");
-    else
-        //yylval.string = new std::string(yytext);
-        yylval.integ = new int(atoi(yytext));
+  if (strlen(yytext) > NUM_LENGTH)
+    {
+      driver.error(*yylloc, "numeric constant is too long");
+    }
+  else
+    {
+      yylval.integer = atoi(yytext);
+    }
 
-    return token::NUM; 
+  return token::NUM; 
 }
 
 {COMMENT} {
