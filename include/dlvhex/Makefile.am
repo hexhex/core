@@ -9,12 +9,13 @@ noinst_HEADERS = \
 	GraphProcessor.h \
 	HexFlexLexer.h \
 	HexParserDriver.h \
-	OutputBuilder.h \
 	ParserDriver.h \
 	ProcessBuf.h \
 	ResultContainer.h \
 	Registry.h \
-	SafetyChecker.h
+        RuleMLOutputBuilder.h \
+	SafetyChecker.h \
+        TextOutputBuilder.h
 
 pkginclude_HEADERS = \
 	AggregateAtom.h \
@@ -35,6 +36,8 @@ pkginclude_HEADERS = \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
+	OutputBuilder.h \
+        PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \
