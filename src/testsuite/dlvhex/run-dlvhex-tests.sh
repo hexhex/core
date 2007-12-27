@@ -63,17 +63,22 @@ do
 
 	    nas=1 # counter for answer sets
 
-            # todo: handle different costs in case of weak constraints!
-
-	    while read
+ 	    while read
 	    do
 			# translate both answersets to python lists
 			a1=$(echo $REPLY | cut -f1 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
 			a2=$(echo $REPLY | cut -f2 | sed s/"'"/"\\\'"/g | sed s/"{"/"['"/ | sed s/", "/"', '"/g | sed s/"}"/"']"/)
 
-			# now check if set difference yields incomparability
-			if cat <<EOF | python
+			# check if this is a weak answerset info
+			if [ $(echo "$a1" | awk '{ print match($0, "Cost ") }') = 1 ] && [ $(echo "$a2"  | awk '{ print match($0, "Cost ") }') = 1 ] ; then
+			    let nas--
+			    if [ "$a1" != "$a2" ] ; then
+				echo "FAIL: Answer set costs differ: $a1 vs. $a2"
+				let failed++
+			    fi
+			elif cat <<EOF | python
 # -*- coding: utf-8 -*-
+# now check if set difference yields incomparability
 import sys, sets
 a1 = $a1
 a2 = $a2
@@ -90,8 +95,7 @@ EOF
 				let warned++
 			else
 				echo "FAIL: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas differs)"
-
-        		let failed++
+        			let failed++
 			fi
 
 			let nas++
