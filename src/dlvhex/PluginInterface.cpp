@@ -32,6 +32,7 @@
 
 #include "dlvhex/PluginInterface.h"
 
+DLVHEX_NAMESPACE_BEGIN
 
 PluginAtom::Query::Query(const AtomSet& i,
                          const Tuple& in,
@@ -163,6 +164,7 @@ PluginAtom::getInputType(const unsigned index) const
     return inputType[index];
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

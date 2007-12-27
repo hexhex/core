@@ -29,18 +29,24 @@
  * 
  */
 
-#ifndef _PLUGINCONTAINER_H
-#define _PLUGINCONTAINER_H
+#if !defined(_DLVHEX_PLUGINCONTAINER_H)
+#define _DLVHEX_PLUGINCONTAINER_H
 
-#include <string>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/PluginInterface.h"
 
+#include <string>
+
+#include <boost/shared_ptr.hpp>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Collects and administrates all available plugins.
  */
-class PluginContainer
+class DLVHEX_EXPORT PluginContainer
 {
 public:
     /**
@@ -52,19 +58,14 @@ public:
     * @brief Loads a library and accesses its plugin-interface.
     */
     PluginInterface*
-    importPlugin(std::string filename);
+    importPlugin(const std::string& filename);
 
-    /**
-    * @brief returns a plugin-atom object corresponding to a name.
-    */
-    PluginAtom*
-    getAtom(std::string name);
+  /**
+   * @brief returns a plugin-atom object corresponding to a name.
+   */
+  boost::shared_ptr<PluginAtom>
+  getAtom(const std::string& name);
 
-    /**
-    * @brief returns the plugin interface that hosts the specified atom.
-    */
-//    PluginInterface*
-//    getInterface(std::string name);
 
 protected:
 
@@ -85,17 +86,12 @@ private:
     */
     PluginInterface::AtomFunctionMap pluginAtoms;
 
-//    typedef std::map<std::string, PluginInterface*> FunctionInterfaceMap;
-
-//    FunctionInterfaceMap interfaces;
-    /**
-     * @brief Singleton instance.
-     */
-    //static PluginContainer* _instance;
 };
 
 
-#endif /* _PLUGINCONTAINER_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_PLUGINCONTAINER_H */
 
 
 // Local Variables:

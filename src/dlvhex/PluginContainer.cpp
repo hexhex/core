@@ -29,13 +29,13 @@
  * 
  */
 
-#include <dlfcn.h>
-
 #include "dlvhex/Error.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
-#include "dlvhex/globals.h"
 
+#include <dlfcn.h>
+
+DLVHEX_NAMESPACE_BEGIN
 
 typedef PluginInterface* (*t_import)();
 
@@ -43,25 +43,17 @@ typedef PluginInterface* (*t_import)();
 PluginContainer*
 PluginContainer::Instance ()
 {
+  ///@todo singleton?
     static PluginContainer _instance;
 
     return &_instance;
 }
 
 PluginContainer::~PluginContainer()
-{
-    // TODO: make this more elegant:
-
-    for(PluginInterface::AtomFunctionMap::const_iterator it = pluginAtoms.begin();
-        it != pluginAtoms.end();
-        it++)
-    {
-        delete pluginAtoms[(*it).first];
-    }
-}
+{ }
 
 PluginInterface*
-PluginContainer::importPlugin(std::string filename)
+PluginContainer::importPlugin(const std::string& filename)
 {
     void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
 
@@ -75,25 +67,18 @@ PluginContainer::importPlugin(std::string filename)
     if (!getplugin)
     {
 //        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
-        return NULL;
+        return 0;
     }
 
     PluginInterface::AtomFunctionMap pa;
 
     PluginInterface* plugin = getplugin();
 
-    if (!Globals::Instance()->getOption("Silent"))
-        Globals::Instance()->getVerboseStream() << "opening plugin "
-			      << filename << " version "
-                  << plugin->getVersionMajor() << "."
-                  << plugin->getVersionMinor() << "."
-                  << plugin->getVersionMicro() << std::endl;
-
     plugin->getAtoms(pa);
 
     for(PluginInterface::AtomFunctionMap::const_iterator it = pa.begin();
         it != pa.end();
-        it++)
+        ++it)
     {
         // std::cout << (*it).first << " -> " << (*it).second << std::endl;
         
@@ -104,25 +89,27 @@ PluginContainer::importPlugin(std::string filename)
 //        if (Globals::Instance()->doVerbose(Globals::???))
 //            std::cout << "Registering external atom " << (*it).first << std::endl;
 
-        pluginAtoms[(*it).first] = (*it).second;
+        pluginAtoms[it->first] = it->second;
     }
 
     return plugin;
 }
 
 
-PluginAtom*
-PluginContainer::getAtom(std::string name)
+boost::shared_ptr<PluginAtom>
+PluginContainer::getAtom(const std::string& name)
 {
-    PluginInterface::AtomFunctionMap::const_iterator pa(pluginAtoms.find(name));
+  PluginInterface::AtomFunctionMap::const_iterator pa = pluginAtoms.find(name);
 
-    if (pa == pluginAtoms.end())
-        return 0;
+  if (pa == pluginAtoms.end())
+    {
+      return boost::shared_ptr<PluginAtom>();
+    }
     
-    return pa->second;
+  return pa->second;
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

@@ -456,23 +456,30 @@
  */
 
 
-#ifndef _PLUGININTERFACE_H
-#define _PLUGININTERFACE_H
+#if !defined(_DLVHEX_PLUGININTERFACE_H)
+#define _DLVHEX_PLUGININTERFACE_H
 
-#include <map>
-#include <string>
-#include <iostream>
-#include <assert.h>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 
+#include <map>
+#include <string>
+#include <iosfwd>
+
+#include <boost/shared_ptr.hpp>
+
+
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
+// forward declarations
 class Program;
 class NodeGraph;
 
@@ -485,7 +492,7 @@ class NodeGraph;
  * program. A converter can either decide to parse the program and return a
  * well-formed HEX-program or simply leave the input untouched.
  */
-class PluginConverter
+class DLVHEX_EXPORT PluginConverter
 {
 protected:
 
@@ -527,7 +534,7 @@ public:
  * parsed program, represented by a Program object and an AtomSet (which
  * contains the facts of the program).
  */
-class PluginRewriter
+class DLVHEX_EXPORT PluginRewriter
 {
 protected:
 
@@ -562,7 +569,7 @@ public:
  *
  * \todo doc
  */
-class PluginOptimizer
+class DLVHEX_EXPORT PluginOptimizer
 {
 protected:
 
@@ -602,14 +609,14 @@ public:
  * method. In the constructor, the user must specify the types of input terms
  * and the output arity of the atom.
  */
-class PluginAtom
+class DLVHEX_EXPORT PluginAtom
 {
 public:
 
     /**
      * \brief Query class for wrapping the input of an external atom call.
      */
-    class Query
+    class DLVHEX_EXPORT Query
     {
     public:
         /**
@@ -668,7 +675,7 @@ public:
     /**
      * \brief Answer class for wrapping the output of an external atom call.
      */
-    class Answer
+    class DLVHEX_EXPORT Answer
     {
     public:
         /// Ctor.
@@ -769,20 +776,20 @@ public:
      * addInputPredicate and addInputConstant).
      */
     bool
-    checkInputArity(const unsigned arity) const;
+    checkInputArity(unsigned arity) const;
 
     /**
      * \brief Specifies the output arity of the external Atom.
      */
     void
-    setOutputArity(const unsigned arity);
+    setOutputArity(unsigned arity);
 
     /**
 	 * \brief Checks whether the output arity of the external atom is compatible
 	 * with the specified one.
      */
     bool
-    checkOutputArity(const unsigned arity) const;
+    checkOutputArity(unsigned arity) const;
 
     /**
      * \brief Retrieve answer object according to a query.
@@ -796,7 +803,7 @@ public:
      * (starting with 0).
      */
     InputType
-    getInputType(const unsigned index) const;
+    getInputType(unsigned index) const;
 
 
 private:
@@ -876,7 +883,7 @@ private:
  *
  *
  */
-class PluginInterface
+class DLVHEX_EXPORT PluginInterface
 {
 protected:
 
@@ -887,7 +894,9 @@ protected:
           versionMicro(0)
     { }
 
-    unsigned versionMajor, versionMinor, versionMicro;
+    unsigned versionMajor;
+    unsigned versionMinor;
+    unsigned versionMicro;
 
 public:
     /// Dtor.
@@ -898,17 +907,17 @@ public:
     /**
      * \brief Associates atom names with function pointers.
      */
-    typedef std::map<std::string, PluginAtom*> AtomFunctionMap;
+    typedef std::map<std::string, boost::shared_ptr<PluginAtom> > AtomFunctionMap;
 
     /**
      * \brief Converter.
      *
-	 * By overloading this function, a plugin can implement a custom preparser,
-	 * which will be called first in the entire dlvhex-processing chain. A
-	 * converter can expect any kind of input data, and must return either the
-	 * original input data or a well-formed hex-program. With this facility, a
-	 * preparser can for instance convert a different rule- or query-language to
-	 * a hex-program.
+     * By overloading this function, a plugin can implement a custom preparser,
+     * which will be called first in the entire dlvhex-processing chain. A
+     * converter can expect any kind of input data, and must return either the
+     * original input data or a well-formed hex-program. With this facility, a
+     * preparser can for instance convert a different rule- or query-language to
+     * a hex-program.
      */
     virtual PluginConverter* 
     createConverter()
@@ -919,11 +928,11 @@ public:
     /**
      * \brief Rewriter for hex-programs.
      *
-	 * The rewriters are called second after the preparsers. Hence, a rewriter
-	 * can expect a well-formed hex-program as input and must of course also
-	 * take care of returning a correct program. A rewriter can realize
-	 * syntactic sugar, e.g. providing a simplified syntax for the user which is
-	 * then transformed, depending probably on the entire rule body.
+     * The rewriters are called second after the preparsers. Hence, a rewriter
+     * can expect a well-formed hex-program as input and must of course also
+     * take care of returning a correct program. A rewriter can realize
+     * syntactic sugar, e.g., providing a simplified syntax for the user which is
+     * then transformed, depending probably on the entire rule body.
      */
     virtual PluginRewriter* 
     createRewriter()
@@ -1023,8 +1032,9 @@ public:
     }
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif // _PLUGININTERFACE_H
+#endif // _DLVHEX_PLUGININTERFACE_H
 
 
 // Local Variables:
