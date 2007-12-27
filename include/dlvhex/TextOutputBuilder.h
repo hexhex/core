@@ -1,5 +1,5 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2007 Thomas Krennwallner
  * 
  * This file is part of dlvhex.
  *
@@ -20,74 +20,50 @@
 
 
 /**
- * @file   OutputBuilder.h
- * @author Roman Schindlauer
- * @date   Mon Feb 20 14:32:29 CET 2006
+ * @file   TextOutputBuilder.h
+ * @author Thomas Krennwallner
+ * @date   Mon Dec 22 20:52:26 CET 2007
  * 
- * @brief  Builders for solver result.
+ * @brief  Builder for standard text output.
  * 
  * 
  */
 
-#if !defined(_DLVHEX_OUTPUTBUILDER_H)
-#define _DLVHEX_OUTPUTBUILDER_H
+#if !defined(_DLVHEX_TEXTOUTPUTBUILDER_H)
+#define _DLVHEX_TEXTOUTPUTBUILDER_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/AnswerSet.h"
-
-#include <string>
-#include <sstream>
+#include "dlvhex/OutputBuilder.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief Base Builder for building solver output.
+ * @brief Simple textual output.
  */
-class DLVHEX_EXPORT OutputBuilder
+class DLVHEX_EXPORT TextOutputBuilder : public OutputBuilder
 {
-protected:
-    
-    std::ostringstream stream;
-
-    /// Ctor
-    OutputBuilder() {};
-
 public:
 
     /// Dtor
     virtual
-    ~OutputBuilder() {};
+    ~TextOutputBuilder();
 
-    virtual void
-    buildPre() {};
-
-    virtual void
-    buildPost() {};
+    /// Ctor
+    TextOutputBuilder();
 
     /**
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AnswerSet&) = 0;
-
-    virtual inline std::string
-    getString()
-    {
-        const std::string& str = stream.str();
-
-        stream.str("");
-        stream.clear();
-
-        return str;
-    }
+    buildAnswerSet(const AnswerSet&);
 
 };
 
-
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_OUTPUTBUILDER_H */
+#endif /* _DLVHEX_TEXTOUTPUTBUILDER_H */
 
 
 // Local Variables:

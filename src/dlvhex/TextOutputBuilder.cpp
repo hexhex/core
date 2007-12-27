@@ -20,30 +20,31 @@
 
 
 /**
- * @file   OutputBuilder.cpp
- * @author Roman Schindlauer
- * @date   Mon Feb 20 14:33:28 CET 2006
+ * @file   TextOutputBuilder.cpp
+ * @author Thomas Krennwallner
+ * @date   Sun Dec 23 11:07:01 CET 2006
  * 
- * @brief  Builders for solver result.
+ * @brief  Builders for text output.
  * 
  * 
  */
 
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/globals.h"
+#include "dlvhex/TextOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/globals.h"
 
-/*
-OutputBuilder::OutputBuilder()
+DLVHEX_NAMESPACE_BEGIN
+
+TextOutputBuilder::TextOutputBuilder()
 { }
 
-OutputBuilder::~OutputBuilder()
+
+TextOutputBuilder::~TextOutputBuilder()
 { }
-*/
 
 
 void
-OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
+TextOutputBuilder::buildAnswerSet(const AnswerSet& facts)
 {
 	if ((facts.hasWeights()) && !Globals::Instance()->getOption("AllModels"))
 		stream << "Best model: ";
@@ -77,66 +78,7 @@ OutputTextBuilder::buildAnswerSet(const AnswerSet& facts)
 		stream << std::endl;
 }
 
-
-void
-OutputXMLBuilder::buildPre()
-{
-	stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-
-	stream << "<RuleML xmlns=\"http://www.ruleml.org/0.9/xsd\"\n"
-		   << "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
-		   << "xsi:schemaLocation=\"http://www.ruleml.org/0.9/xsd http://www.ruleml.org/0.9/xsd/datalog.xsd\">\n";
-
-	stream << "<Assert mapClosure=\"universal\">\n";
-
-	stream << "<Or>" << std::endl;
-}
-
-
-void
-OutputXMLBuilder::buildPost()
-{
-	stream << "</Or>" << std::endl;
-	stream << "</Assert>" << std::endl;
-	stream << "</RuleML>" << std::endl;
-}
-
-
-void
-OutputXMLBuilder::buildAnswerSet(const AnswerSet& facts)
-{
-	stream << "<And>" << std::endl;
-
-	for (AnswerSet::const_iterator f = facts.begin();
-		 f != facts.end();
-		 ++f)
-	{
-		if ((*f).isStronglyNegated())
-			stream << "<Neg>";
-
-		stream << "<Atom>";
-
-		stream << "<Rel>";
-		stream << "<![CDATA[" << (*f).getArgument(0) << "]]>";
-		stream << "</Rel>";
-
-		for (unsigned i = 1; i <= (*f).getArity(); i++)
-		{
-			stream << "<Ind>";
-			stream << "<![CDATA[" << (*f).getArgument(i) << "]]>";
-			stream << "</Ind>";
-		}
-
-		stream << "</Atom>";
-
-		if ((*f).isStronglyNegated())
-			stream << "</Neg>";
-
-		stream << std::endl;
-	}
-
-	stream << "</And>" << std::endl;
-}
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 
