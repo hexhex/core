@@ -30,14 +30,16 @@
  */
 
 
-#include <assert.h>
-
 #include "dlvhex/Atom.h"
 #include "dlvhex/helper.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/PrintVisitor.h"
 
+#include <cassert>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 Atom::Atom()
 {
@@ -159,12 +161,10 @@ Atom::setArguments(const Tuple& nargs)
 			 );
 }
 
-
 const Term&
 Atom::getArgument(unsigned index) const
 {
 	assert(index < arguments.size());
-
 	return arguments[index];
 }
 
@@ -348,7 +348,7 @@ Atom::operator< (const Atom& atom2) const
 
 
 
-BuiltinPredicate::BuiltinPredicate(Term& t1, Term& t2, const std::string& b)
+BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const std::string& b)
 {
 	arguments.push_back(Term(b));
 	arguments.push_back(t1);
@@ -361,6 +361,9 @@ BuiltinPredicate::accept(BaseVisitor& v) const
 {
   v.visitBuiltinPredicate(this);
 }
+
+
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

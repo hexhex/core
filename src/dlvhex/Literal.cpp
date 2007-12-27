@@ -33,6 +33,8 @@
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/PrintVisitor.h"
 
+DLVHEX_NAMESPACE_BEGIN
+
 Literal::Literal()
 { }
 
@@ -128,6 +130,7 @@ operator< (const RuleBody_t& body1, const RuleBody_t& body2)
 	  									body2.begin(), body2.end());
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

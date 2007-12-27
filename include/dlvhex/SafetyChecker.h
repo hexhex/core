@@ -30,18 +30,21 @@
  */
 
 
-#ifndef _SAFETYCHECKER_H
-#define _SAFETYCHECKER_H
+#ifndef _DLVHEX_SAFETYCHECKER_H
+#define _DLVHEX_SAFETYCHECKER_H
 
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/Error.h"
 
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief Abstract bae class
  */
-class SafetyCheckerBase
+class DLVHEX_EXPORT SafetyCheckerBase
 {
 public:
 
@@ -58,7 +61,7 @@ public:
 /**
  * @brief Safety checker class.
  */
-class SafetyChecker : public SafetyCheckerBase
+class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 {
 public:
 
@@ -72,7 +75,7 @@ public:
 /**
  * @brief Strong safety checker class.
  */
-class StrongSafetyChecker : public SafetyChecker
+class DLVHEX_EXPORT StrongSafetyChecker : public SafetyChecker
 {
 public:
 
@@ -82,8 +85,9 @@ public:
     testStrongSafety(const DependencyGraph*) const throw (SyntaxError);
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _SAFETYCHECKER_H_ */
+#endif /* _DLVHEX_SAFETYCHECKER_H_ */
 
 
 // Local Variables:

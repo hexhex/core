@@ -29,14 +29,12 @@
  * 
  */
 
+#include "dlvhex/ParserDriver.h"
+
 #include <iostream>
 #include <sstream>
 
-#include "dlvhex/ParserDriver.h"
-
-//#include "dlvhex/location.hh"
-
-
+DLVHEX_NAMESPACE_BEGIN
 
 ParserDriver::ParserDriver()
 {
@@ -79,7 +77,7 @@ ParserDriver::error(const std::string& m) throw (SyntaxError)
     throw SyntaxError(m);
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

@@ -33,6 +33,9 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 
+
+DLVHEX_NAMESPACE_BEGIN
+
 unsigned AtomNode::nodeCount = 0;
 
 /*
@@ -607,6 +610,8 @@ NodeGraph::findNode(const AtomPtr& atom, AtomNodePtr& ptr) const
 	}
 }
 
+
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

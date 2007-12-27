@@ -29,17 +29,21 @@
  *
  */
 
-#ifndef _ATOM_H
-#define _ATOM_H
+#if !defined(_DLVHEX_ATOM_H)
+#define _DLVHEX_ATOM_H
 
+#include "dlvhex/PlatformDefinitions.h"
+
+#include "dlvhex/Term.h"
+#include "dlvhex/Repository.h"
 
 #include <list>
 #include <set>
 
-#include "boost/shared_ptr.hpp"
-#include "dlvhex/Term.h"
-#include "dlvhex/Repository.h"
+#include <boost/shared_ptr.hpp>
 
+
+DLVHEX_NAMESPACE_BEGIN
 
 
 class Atom;
@@ -87,15 +91,15 @@ typedef boost::shared_ptr<Atom> AtomPtr;
  * An Atom corresponds to a logical atom.
  *
  */
-class Atom : public ProgramObject
+class DLVHEX_EXPORT Atom : public ProgramObject
 {
+protected:
+  /**
+   * Default constructor is protected, we do not want to create void atoms.
+   */
+  Atom();
+
 public:
-	/**
-	 * Default constructor.
-	 *
-	 * Fails an assertion, since this would result in a meaningless atom.
-	 */
-	Atom();
 
 	/**
 	 * Destructor.
@@ -119,6 +123,7 @@ public:
 	 * not denote a single variable.
 	 * The second argument indicates whether the atom is strongly negated.
 	 */
+	explicit
 	Atom(const std::string&, bool = false);
 
 	/**
@@ -141,6 +146,7 @@ public:
 	 * Atom::getArguments().  The second argument indicates if the atom is strongly
 	 * negated. The tuple must not be empty or contain a single variable term.
 	 */
+	explicit
 	Atom(const Tuple&, bool = false);
 
 	/**
@@ -286,7 +292,7 @@ public:
 	/**
 	 * @brief Switches (classical) truth value.
 	 */
-	void
+	inline void
 	negate()
 	{
 		isStrongNegated = !isStrongNegated;
@@ -330,7 +336,7 @@ operator<< (std::ostream&, const Atom&);
  * boolAtom does not unify with any other atom and can be used wherever 'true'
  * or 'false' are implicitly expected, e.g., as rule head for constraints.
  */
-class boolAtom : public Atom
+class DLVHEX_EXPORT boolAtom : public Atom
 {
 public:
 	boolAtom() : Atom(Tuple(1, Term("")))
@@ -371,10 +377,10 @@ public:
  * The terms of a builtin are stored as atom arguments, the operator as
  * predicate.
  */
-class BuiltinPredicate : public Atom
+class DLVHEX_EXPORT BuiltinPredicate : public Atom
 {
 public:
-	BuiltinPredicate(Term&, Term&, const std::string&);
+	BuiltinPredicate(const Term&, const Term&, const std::string&);
 
 	/**
 	 * @brief accepts a visitor.
@@ -384,7 +390,10 @@ public:
 
 };
 
-#endif /* _ATOM_H */
+
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_ATOM_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

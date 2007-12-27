@@ -30,20 +30,26 @@
  */
 
 
-#ifndef _DLVRESULTPARSERDRIVER_H
-#define _DLVRESULTPARSERDRIVER_H
+#if !defined(_DLVHEX_DLVRESULTPARSERDRIVER_H)
+#define _DLVHEX_DLVRESULTPARSERDRIVER_H
 
-#include <iostream>
-#include <string>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ParserDriver.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 
+#include <iostream>
+#include <string>
+
+
 // some forward declaration
 class DLVresultFlexLexer;
 
-class DLVresultParserDriver : public ParserDriver
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT DLVresultParserDriver : public ParserDriver
 {
 public:
     DLVresultParserDriver();
@@ -65,7 +71,10 @@ private:
     DLVresultFlexLexer* lexer;
 };
 
-#endif // _DLVRESULTPARSERDRIVER_H
+
+DLVHEX_NAMESPACE_END
+
+#endif // _DLVHEX_DLVRESULTPARSERDRIVER_H
 
 
 

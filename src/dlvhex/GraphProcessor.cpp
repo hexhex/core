@@ -33,17 +33,22 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
-
 #include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
 
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
+
+DLVHEX_NAMESPACE_BEGIN
+
 GraphProcessor::GraphProcessor(DependencyGraph *dg)
-: depGraph(dg)
+  : depGraph(dg), resultModels()
 {
+  resultSetIndex = resultModels.begin();
 }
 
 
@@ -278,6 +283,8 @@ GraphProcessor::getNextModel()
 	return NULL;
 }
 
+
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

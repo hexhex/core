@@ -29,19 +29,24 @@
  *
  */
 
-#ifndef _GRAPHBUILDER_H
-#define _GRAPHBUILDER_H
+#if !defined(_DLVHEX_GRAPHBUILDER_H)
+#define _DLVHEX_GRAPHBUILDER_H
 
-#include <iostream>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Component.h"
 #include "dlvhex/Rule.h"
+
+#include <iosfwd>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Class for building a dependency graph from a given program.
  *
  */
-class GraphBuilder
+class DLVHEX_EXPORT GraphBuilder
 {
 public:
 
@@ -62,15 +67,9 @@ public:
     void
     dumpGraph(const NodeGraph&, std::ostream&) const;
 
-
-
-private:
-
-//    void
-//    addDep(AtomNode*, AtomNode*, Dependency::Type);
-
 };
 
+DLVHEX_NAMESPACE_END
 
 #endif /* _GRAPHBUILDER_H */
 

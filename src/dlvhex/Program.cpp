@@ -31,10 +31,12 @@
  */
 
 
-#include <iostream>
-
 #include "dlvhex/Program.h"
 
+#include <iostream>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 Program::Program()
 {
@@ -103,6 +105,7 @@ Program::dump(PrintVisitor& v) const
 	}
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

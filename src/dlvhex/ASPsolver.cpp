@@ -29,9 +29,6 @@
  */
 
 
-#include <sstream>
-#include <iterator>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -43,10 +40,14 @@
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/ProcessBuf.h"
 
+#include <sstream>
+#include <iterator>
+
 #ifdef DLVHEX_DEBUG
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif // DLVHEX_DEBUG
 
+DLVHEX_NAMESPACE_BEGIN
 
 ASPsolver::ASPsolver()
     : lpcommand(DLVPATH)
@@ -212,7 +213,7 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 */
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

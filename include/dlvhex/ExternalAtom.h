@@ -29,17 +29,21 @@
  *
  */
 
-#ifndef _EXTERNALATOM_H
-#define _EXTERNALATOM_H
+#if !defined(_DLVHEX_EXTERNALATOM_H)
+#define _DLVHEX_EXTERNALATOM_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/PluginInterface.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief External atom class.
  */
-class ExternalAtom : public Atom
+class DLVHEX_EXPORT ExternalAtom : public Atom
 {
 public:
 
@@ -66,16 +70,6 @@ public:
      */
     void
     findPluginAtom() const;
-
-    /**
-     * @brief Throws an Inputerror Exception.
-     *
-     * If something was wrong with the external atom in the input hex-program,
-     * this function can be used to throw an InputError. It takes care of
-     * throwing the InputError with proper parameters.
-     */
-    void
-    throwSourceError(const std::string&) const;
 
     /**
      * @brief Returns the auxiliary predicate name.
@@ -261,12 +255,13 @@ private:
      *
      * must be mutable s.t. const methods may call findPluginAtom.
      */
-    mutable PluginAtom* pluginAtom;
+  mutable boost::shared_ptr<PluginAtom> pluginAtom;
 
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* EXTERNALATOM_H */
+#endif /* _DLVHEX_EXTERNALATOM_H */
 
 
 // Local Variables:

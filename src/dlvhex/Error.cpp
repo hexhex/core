@@ -29,19 +29,22 @@
  * 
  */
 
-#include <sstream>
 
 #include "dlvhex/Error.h"
 
+#include <sstream>
 
-GeneralError::GeneralError(const std::string msg)
+
+DLVHEX_NAMESPACE_BEGIN
+
+GeneralError::GeneralError(const std::string& msg)
     : std::runtime_error(msg)
 {
 }
 
-SyntaxError::SyntaxError(const std::string msg,
+SyntaxError::SyntaxError(const std::string& msg,
                          const unsigned l,
-                         const std::string f)
+                         const std::string& f)
     : GeneralError(msg),
       line(l),
       file(f)
@@ -83,13 +86,13 @@ SyntaxError::setFile(const std::string& f)
 
 
 
-FatalError::FatalError(const std::string msg)
+FatalError::FatalError(const std::string& msg)
     : GeneralError("Fatal: " + msg)
 {
 }
 
 
-PluginError::PluginError(std::string msg)
+PluginError::PluginError(const std::string& msg)
     : GeneralError(msg)
 {
 }
@@ -118,6 +121,7 @@ PluginError::getErrorMsg() const
     return err.str();
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

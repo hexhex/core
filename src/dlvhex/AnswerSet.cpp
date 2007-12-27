@@ -35,70 +35,69 @@
 #include "dlvhex/Error.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
 
 unsigned AnswerSet::maxLevel = 1;
 unsigned AnswerSet::maxWeight = 0;
 
 
-AnswerSet::AnswerSet(std::string wcpr)
+AnswerSet::AnswerSet(const std::string& wcpr)
     : WCprefix(wcpr)
 {
 }
 
 
 void
-AnswerSet::setSet(AtomSet& atomset)
+AnswerSet::setSet(const AtomSet& atomset)
 {
-    this->atoms = atomset.atoms;
+  // set atoms
+  this->atoms = atomset.atoms;
 
-    if (this->WCprefix.empty())
-        return;
-
-    AtomSet wcatoms;
+  // check if we have a prefix for weak constraints
+  if (!this->WCprefix.empty())
+    {
+      AtomSet wcatoms;
     
-    AtomSet::const_iterator asit = this->atoms.begin(), asend = this->atoms.end();
-    while (asit != asend)
-    {
-        if ((*asit).getPredicate().getString().substr(0, WCprefix.length()) == WCprefix)
-        {
-            AtomPtr wca(new Atom(*asit));
-            wcatoms.insert(wca);
-        }
+      for (AtomSet::const_iterator asit = this->atoms.begin();
+	   asit != this->atoms.end();
+	   ++asit)
+	{
+	  if (asit->getPredicate().getString().substr(0, WCprefix.length()) == WCprefix)
+	    {
+	      AtomPtr wca(new Atom(*asit));
+	      wcatoms.insert(wca);
+	    }
+	}
 
-        ++asit;
-    }
+      //
+      // this answer set has no weight atoms
+      //
+      if (wcatoms.size() == 0)
+	{
+	  this->weights.push_back(0);
+	}
+      else
+	{
+	  for (AtomSet::const_iterator asit = wcatoms.begin(); asit != wcatoms.end(); ++asit)
+	    {
+	      Tuple args = asit->getArguments();
+	      
+	      Term tlevel(*(args.end() - 1));
+	      Term tweight(*(args.end() - 2));
+	      
+	      if (!tlevel.isInt())
+		throw GeneralError("Weak constraint level instantiated with non-integer!");
 
-    //
-    // this answer set has no weight atoms
-    //
-    if (wcatoms.size() == 0)
-    {
-        this->weights.push_back(0);
-    }
-    else
-    {
-        AtomSet::const_iterator asit = wcatoms.begin(), asend = wcatoms.end();
-        while (asit != asend)
-        {
-            Tuple args = (*asit).getArguments();
-
-            Term tlevel(*(args.end() - 1));
-            Term tweight(*(args.end() - 2));
-
-			if (!tlevel.isInt())
-				throw GeneralError("Weak constraint level instantiated with non-integer!");
-
-            unsigned l = tlevel.getInt();
-
-			if (!tweight.isInt())
-				throw GeneralError("Weak constraint weight instantiated with non-integer!");
-
-            unsigned w = tweight.getInt();
-
-            this->addWeight(w, l);
-
-            ++asit;
-        }
+	      unsigned l = tlevel.getInt();
+	      
+	      if (!tweight.isInt())
+		throw GeneralError("Weak constraint weight instantiated with non-integer!");
+	      
+	      unsigned w = tweight.getInt();
+	      
+	      this->addWeight(w, l);
+	    }
+	}
     }
 }
 
@@ -106,14 +105,14 @@ AnswerSet::setSet(AtomSet& atomset)
 bool
 AnswerSet::hasWeights() const
 {
-    return (!this->WCprefix.empty());
+  return !this->WCprefix.empty();
 }
 
 
 unsigned
 AnswerSet::getWeightLevels() const
 {
-    return this->weights.size();
+  return this->weights.size();
 }
 
 
@@ -191,7 +190,7 @@ AnswerSet::cheaperThan(const AnswerSet& answerset2) const
 
 
 bool
-AnswerSet::moreExpensiveThan(const weights_t weights) const
+AnswerSet::moreExpensiveThan(const weights_t& weights) const
 {
     if (WCprefix.empty())
         return 0;
@@ -318,6 +317,8 @@ operator<< (std::ostream& out, const AnswerSet& atomset)
     return out;
 }
 
+
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

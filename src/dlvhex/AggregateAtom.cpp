@@ -34,6 +34,8 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/BaseVisitor.h"
 
+DLVHEX_NAMESPACE_BEGIN
+
 AggregateAtom::AggregateAtom(const std::string& aggtype,
                              const Tuple& vars,
                              const RuleBody_t& conj)
@@ -58,8 +60,8 @@ AggregateAtom::AggregateAtom(const std::string& aggtype,
 
 
 void
-AggregateAtom::setComp(const std::string compLeft,
-                       const std::string compRight)
+AggregateAtom::setComp(const std::string& compLeft,
+                       const std::string& compRight)
 {
     this->cmpLeft = compLeft;
     this->cmpRight = compRight;
@@ -120,7 +122,7 @@ AggregateAtom::accept(BaseVisitor& v) const
 }
 
 
-
+DLVHEX_NAMESPACE_END
 
 
 // Local Variables:

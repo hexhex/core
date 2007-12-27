@@ -29,18 +29,22 @@
  */
 
 
-#ifndef _GLOBALS_H
-#define _GLOBALS_H
+#if !defined(_DLVHEX_GLOBALS_H)
+#define _DLVHEX_GLOBALS_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include <string>
 #include <vector>
 #include <map>
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief Definition of global variables.
  */
-class Globals
+class DLVHEX_EXPORT Globals
 {
 protected:
 	Globals();
@@ -71,7 +75,7 @@ public:
 	 * Return the value of the specified option identifier.
 	 */
 	unsigned
-	getOption(std::string);
+	getOption(const std::string&);
 
 	/**
 	 * @brief Check if the specified verbose action can be carried out.
@@ -90,13 +94,13 @@ public:
 	 * call this method!
 	 */
 	void 
-	setOption(std::string, unsigned);
+	setOption(const std::string&, unsigned);
 
 	/**
 	 * @brief Add a predicate to be filtered.
 	 */
 	void
-	addFilter(std::string&);
+	addFilter(const std::string&);
 
 	/**
 	 * @brief Returns list of predicates to be filtered.
@@ -163,7 +167,9 @@ private:
 				<< msg  << diff << "s" << std::endl; \
         boosttimerstart = boosttimerend; }
 
-#endif // _GLOBALS_H
+DLVHEX_NAMESPACE_END
+
+#endif // _DLVHEX_GLOBALS_H
 
 
 // Local Variables:

@@ -32,7 +32,7 @@
 
 #include "dlvhex/ComponentFinder.h"
 
-
+DLVHEX_NAMESPACE_BEGIN
 
 void
 ComponentFinder::dumpAssignment(const ComponentList& cl, std::ostream& out) const
@@ -100,7 +100,7 @@ SimpleComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& node
 }
 */
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

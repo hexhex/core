@@ -29,19 +29,23 @@
  * 
  */
 
-#ifndef _ATOMFACTORY_H
-#define _ATOMFACTORY_H
+#if !defined(_DLVHEX_ATOMFACTORY_H)
+#define _DLVHEX_ATOMFACTORY_H
 
-#include <vector>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
+
+
+DLVHEX_NAMESPACE_BEGIN
+
 
 /**
  * @brief The Factory stores all (ground) atoms that emerge in the course of
  * solving the program.
  */
-class AtomFactory
+class DLVHEX_EXPORT AtomFactory
 {
 public:
 
@@ -79,7 +83,7 @@ private:
 };
 
 
-
+DLVHEX_NAMESPACE_END
 
 #endif /* _ATOMFACTORY_H */
 

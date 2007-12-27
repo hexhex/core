@@ -30,20 +30,26 @@
  */
 
 
-#ifndef _HEXPARSERDRIVER_H
-#define _HEXPARSERDRIVER_H
+#if !defined(_DLVHEX_HEXPARSERDRIVER_H)
+#define _DLVHEX_HEXPARSERDRIVER_H
 
-#include <iostream>
-#include <string>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ParserDriver.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/Error.h"
 
+#include <iosfwd>
+#include <string>
+
+
 // some forward declaration 
 class HexFlexLexer;
 
-class HexParserDriver : public ParserDriver
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT HexParserDriver : public ParserDriver
 {
 public:
     HexParserDriver();
@@ -57,7 +63,7 @@ public:
           AtomSet& EDB) throw (SyntaxError);
 
     void
-    parse(std::string filename,
+    parse(const std::string& filename,
           Program& program,
           AtomSet& EDB);
 
@@ -79,9 +85,9 @@ private:
 
 };
 
+DLVHEX_NAMESPACE_END
 
-
-#endif // _HEXPARSERDRIVER_H
+#endif // _DLVHEX_HEXPARSERDRIVER_H
 
 
 

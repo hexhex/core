@@ -32,6 +32,7 @@
 
 #include "dlvhex/AtomFactory.h"
 
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // initialize static variable:
@@ -90,7 +91,7 @@ AtomFactory::~AtomFactory()
 {
 }
 
-
+DLVHEX_NAMESPACE_END
 
 
 // Local Variables:

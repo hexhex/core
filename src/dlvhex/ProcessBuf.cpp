@@ -39,6 +39,7 @@
 #include <sys/wait.h>
 
 
+DLVHEX_NAMESPACE_BEGIN
 
 ProcessBuf::ProcessBuf()
   : std::streambuf(),
@@ -328,6 +329,8 @@ ProcessBuf::sync()
   return 0;
 }
 
+
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

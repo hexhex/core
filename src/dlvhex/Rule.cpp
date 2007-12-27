@@ -31,14 +31,15 @@
  */
 
 
-#include <iostream>
-#include <sstream>
-
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 
+#include <iostream>
+#include <sstream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 Rule::Rule(const RuleHead_t& h,
            const RuleBody_t& b,
@@ -211,12 +212,14 @@ WeakConstraint::WeakConstraint(const RuleBody_t& b,
       level(l),
       uniqueID(0)
 {
-    if (l < 1)
-        throw SyntaxError("level must be > 0");
+  if (l.getInt() < 1)
+    {
+      throw SyntaxError("level must be > 0");
+    }
 
-    static unsigned uniqueid(0);
+  static unsigned uniqueid(0);
 
-    this->uniqueID = uniqueid++;
+  this->uniqueID = uniqueid++;
 }
 
 
@@ -302,6 +305,7 @@ WeakConstraint::accept(BaseVisitor& v) const
   v.visitWeakConstraint(this);
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

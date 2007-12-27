@@ -30,15 +30,20 @@
  */
 
 
-#ifndef _PROCESSBUF_H
-#define _PROCESSBUF_H
+#if !defined(_DLVHEX_PROCESSBUF_H)
+#define _DLVHEX_PROCESSBUF_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include <iostream>
 #include <streambuf>
 #include <vector>
 #include <string>
 
-class ProcessBuf : public std::streambuf
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT ProcessBuf : public std::streambuf
 {
 public:
   ProcessBuf();
@@ -84,7 +89,9 @@ protected:
   sync();
 };
 
-#endif // _PROCESSBUF_H
+DLVHEX_NAMESPACE_END
+
+#endif // _DLVHEX_PROCESSBUF_H
 
 
 // Local Variables:

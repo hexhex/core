@@ -33,6 +33,8 @@
 
 #include "dlvhex/Repository.h"
 
+DLVHEX_NAMESPACE_BEGIN
+
 // virtual dtor
 ProgramObject::~ProgramObject()
 { }
@@ -67,7 +69,7 @@ Repository::insert(ProgramObjectPtr po)
 }
 
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

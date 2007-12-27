@@ -30,8 +30,12 @@
  */
 
 
-#ifndef _BASEVISITOR_H
-#define _BASEVISITOR_H
+#if !defined(_DLVHEX_BASEVISITOR_H)
+#define _DLVHEX_BASEVISITOR_H
+
+#include "dlvhex/PlatformDefinitions.h"
+
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // forward declarations
@@ -53,7 +57,7 @@ class AggregateAtom;
  * object knows its own type and calls the corresponding visiting
  * method of BaseVisitor.
  */
-class BaseVisitor
+class DLVHEX_EXPORT BaseVisitor
 {
 public:
   virtual
@@ -94,8 +98,9 @@ public:
 
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _BASEVISITOR_H */
+#endif /* _DLVHEX_BASEVISITOR_H */
 
 
 // Local Variables:

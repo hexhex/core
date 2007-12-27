@@ -28,8 +28,9 @@
  * 
  */
 
-#ifndef _ASPSOLVER_H
-#define _ASPSOLVER_H
+#if !defined(_DLVHEX_ASPSOLVER_H)
+#define _DLVHEX_ASPSOLVER_H
+
 
 #include <iostream>
 #include <string>
@@ -39,11 +40,14 @@
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 
+#include "dlvhex/PlatformDefinitions.h"
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief ASP solver class.
  */
-class ASPsolver
+class DLVHEX_EXPORT ASPsolver
 {
 public:
 
@@ -92,7 +96,10 @@ private:
     std::vector<AtomSet>::iterator answerSetIndex;
 };
 
-#endif // _ASPSOLVER_H
+
+DLVHEX_NAMESPACE_END
+
+#endif // _DLVHEX_ASPSOLVER_H
 
 
 // Local Variables:

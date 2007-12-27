@@ -30,13 +30,16 @@
  */
 
 
-#ifndef _PRINTVISITOR_H
-#define _PRINTVISITOR_H
+#if !defined(_DLVHEX_PRINTVISITOR_H)
+#define _DLVHEX_PRINTVISITOR_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/BaseVisitor.h"
 
 #include <iosfwd>
 
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Base print visitor.
@@ -45,12 +48,14 @@
  * object calls visitRule(this), visitRule will iterate through the
  * components of the Rule and outputs it to #stream.
  */
-class PrintVisitor : public BaseVisitor
+class DLVHEX_EXPORT PrintVisitor : public BaseVisitor
 {
 protected:
   std::ostream& stream;
 
 public:
+
+  explicit
   PrintVisitor(std::ostream&);
 
   /**
@@ -61,7 +66,7 @@ public:
 
   /// outputs the Rule in
   /// 'a_1 v ... v a_k :- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
-  /// form, i.e. it calls accept(*this) on each a_i and b_j.
+  /// form, i.e., it calls accept(*this) on each a_i and b_j.
   virtual void
   visitRule(const Rule*);
 
@@ -92,11 +97,13 @@ public:
 
 /**
  * @brief Prints all elements of a Program in its "raw"
- * representation, i.e. as HEX program
+ * representation, i.e., as HEX program
  */
-class RawPrintVisitor : public PrintVisitor
+class DLVHEX_EXPORT RawPrintVisitor : public PrintVisitor
 {
 public:
+
+  explicit
   RawPrintVisitor(std::ostream&);
 
   /// outputs a WeakConstraint in
@@ -118,9 +125,11 @@ public:
  * @brief Prints all elements of a Program suitable for sending to
  * DLV.
  */
-class DLVPrintVisitor : public PrintVisitor
+class DLVHEX_EXPORT DLVPrintVisitor : public PrintVisitor
 {
 public:
+
+  explicit
   DLVPrintVisitor(std::ostream&);
 
   /// outputs an AtomSet in
@@ -149,9 +158,11 @@ public:
 /**
  * @brief Prints all atoms in HO-mode.
  */
-class HOPrintVisitor : public DLVPrintVisitor
+class DLVHEX_EXPORT HOPrintVisitor : public DLVPrintVisitor
 {
 public:
+
+  explicit
   HOPrintVisitor(std::ostream&);
 
   /// outputs an Atom in higher order mode, i.e. in
@@ -161,8 +172,9 @@ public:
 
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _PRINTVISITOR_H */
+#endif /* _DLVHEX_PRINTVISITOR_H */
 
 
 // Local Variables:

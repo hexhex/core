@@ -28,15 +28,18 @@
  *
  */
 
-#ifndef _AGGREGATEATOM_H
-#define _AGGREGATEATOM_H
+#if !defined(_DLVHEX_AGGREGATEATOM_H)
+#define _DLVHEX_AGGREGATEATOM_H
 
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 
 // we need also literal, because the rule body type is declared there:
 #include "dlvhex/Literal.h"
 
+
+DLVHEX_NAMESPACE_BEGIN
 
 
 /**
@@ -49,7 +52,7 @@
  * other parts of the program, hence we have to consider this when building the
  * dependency graph
  */
-class AggregateAtom : public Atom
+class DLVHEX_EXPORT AggregateAtom : public Atom
 {
 public:
 
@@ -81,7 +84,7 @@ public:
      * them exists, the other one stays empty.
      */
     void
-    setComp(const std::string, const std::string);
+    setComp(const std::string&, const std::string&);
 
     /**
      * Sets the left term.
@@ -195,9 +198,10 @@ private:
     std::string cmpLeft, cmpRight;
 };
 
-#endif /* _AGGREGATEATOM_H */
 
+DLVHEX_NAMESPACE_END
 
+#endif /* _DLVHEX_AGGREGATEATOM_H */
 
 // Local Variables:
 // mode: C++

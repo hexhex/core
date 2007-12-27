@@ -41,6 +41,8 @@
 #include <iostream>
 #include <iterator>
 
+DLVHEX_NAMESPACE_BEGIN
+
 PrintVisitor::PrintVisitor(std::ostream& s)
 : stream(s)
 { }
@@ -322,6 +324,7 @@ HOPrintVisitor::visitAtom(const Atom* a)
 	}
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

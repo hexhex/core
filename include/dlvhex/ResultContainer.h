@@ -30,30 +30,34 @@
  */
 
 
-#ifndef _RESULTCONTAINER_H
-#define _RESULTCONTAINER_H
+#if !defined(_DLVHEX_RESULTCONTAINER_H)
+#define _DLVHEX_RESULTCONTAINER_H
 
-
-#include <iostream>
-#include <vector>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AnswerSet.h"
 #include "dlvhex/OutputBuilder.h"
+
+#include <iostream>
+#include <vector>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 
 /**
  * @brief
  * 
  */
-class ResultContainer
+class DLVHEX_EXPORT ResultContainer
 {
 public:
 
     /**
      * @brief Custom compare operator for AnswerSets.
      */
-    struct AnswerSetPtrCompare
+    struct DLVHEX_EXPORT AnswerSetPtrCompare
     {
         bool 
         operator() (const AnswerSetPtr& a, const AnswerSetPtr& b)
@@ -71,7 +75,8 @@ public:
      * switched on. The string then identifies auxiliary predicates in each
      * answer set that determine the set's cost.
      */
-    ResultContainer(std::string = "");
+    explicit
+    ResultContainer(const std::string& = "");
 
     void
     addSet(AtomSet&);
@@ -98,7 +103,10 @@ private:
     std::string wcprefix;
 };
 
-#endif /* _RESULTCONTAINER_H */
+
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_RESULTCONTAINER_H */
 
 
 // Local Variables:

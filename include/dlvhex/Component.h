@@ -30,17 +30,18 @@
  */
 
 
-#ifndef _COMPONENT_H
-#define _COMPONENT_H
+#if !defined(_DLVHEX_COMPONENT_H)
+#define _DLVHEX_COMPONENT_H
 
-
-#include <utility>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/ModelGenerator.h"
 
+#include <utility>
 
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Component class.
@@ -49,7 +50,7 @@
  * program and thus corresponds to a subprogram. 
  * The base class is pure vurtual.
  */
-class Component
+class DLVHEX_EXPORT Component
 {
 public:
 
@@ -148,24 +149,16 @@ private:
  * also be used for (i) without loss of efficiency).
  * Type (iii) needs to use a guess & check algorithm
  */
-class ProgramComponent : public Component
+class DLVHEX_EXPORT ProgramComponent : public Component
 {
 public:
 
     /// Ctor.
-    //ProgramComponent();
-
     ProgramComponent(const std::vector<AtomNodePtr>&,
                      ModelGenerator*);
 
- //   ProgramComponent(Program&, ModelGenerator*);
-    //ProgramComponent(ModelGenerator*);
-
     /// Dtor.
     ~ProgramComponent();
-
-//    void
-//    setProgram(Program&);
 
     /**
      * @brief Computes the model(s) of the subprogram of this component.
@@ -173,12 +166,6 @@ public:
     virtual void
     evaluate(std::vector<AtomSet>&);
 
-
-    /**
-     * @brief Adds a node pointer to the component.
-     */
-//    void
-//    addRuleNode(RuleNode *rn);
 
     /**
      * Serialize component to stream out for verbose and debugging.
@@ -193,12 +180,6 @@ protected:
      * @brief Model Generator that suits this particular component type
      */
     ModelGenerator* modelGenerator;
-    
-    /**
-     * @brief Nodes of this component.
-     */
-  //  std::vector<RuleNode*> ruleNodes;
-//    Program program;
 };
 
 
@@ -207,11 +188,12 @@ protected:
 /**
  * @brief An external component is a single external atom.
  */
-class ExternalComponent : public Component
+class DLVHEX_EXPORT ExternalComponent : public Component
 {
 public:
 
     /// Ctor.
+    explicit
     ExternalComponent(AtomNodePtr);
 
     /**
@@ -242,7 +224,7 @@ private:
  * It contains zero or more component-objects, which represent strongly connected
  * components withing this WCC as well as single external atoms.
  */
-class Subgraph
+class DLVHEX_EXPORT Subgraph
 {
 public:
 
@@ -255,7 +237,8 @@ public:
     Subgraph(const Subgraph&);
 
     /// Dtor.
-    virtual ~Subgraph();
+    virtual
+    ~Subgraph();
 
     void
     addComponent(Component*);
@@ -380,7 +363,9 @@ private:
 };
 
 
-#endif /* _COMPONENT_H_ */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_COMPONENT_H_ */
 
 
 // Local Variables:

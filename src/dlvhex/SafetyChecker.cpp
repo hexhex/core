@@ -29,12 +29,11 @@
  *
  */
 
-#include <sstream>
-
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/AggregateAtom.h"
 
+DLVHEX_NAMESPACE_BEGIN
 
 SafetyCheckerBase::SafetyCheckerBase()
 {
@@ -382,6 +381,8 @@ StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (Sy
     }
 }
 
+
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

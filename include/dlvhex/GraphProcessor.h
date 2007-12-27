@@ -29,77 +29,59 @@
  *
  */
 
-#ifndef _GRAPHPROCESSOR_H
-#define _GRAPHPROCESSOR_H
+#if !defined(_DLVHEX_GRAPHPROCESSOR_H)
+#define _DLVHEX_GRAPHPROCESSOR_H
 
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/Component.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief Control center for traversing and evaluating the program graph.
  */
-class GraphProcessor
+class DLVHEX_EXPORT GraphProcessor
 {
 public:
 
     /// Ctor.
+    explicit
     GraphProcessor(DependencyGraph*);
 
+    /// evaluate graph with supplied EDB
     void
     run(const AtomSet&);
 
+    /// @return the models one by one
     AtomSet*
     getNextModel();
 
 private:
 
     /**
+     * evaluate this dependency graph
+     */
+    DependencyGraph *depGraph;
+
+    /**
      * @brief Internal result retrieval pointer.
      */
     std::vector<AtomSet>::iterator resultSetIndex;
-
-//    void
-//    combine(std::vector<GAtomSet>&, std::vector<GAtomSet>&);
 
     /**
      * @brief Result of all connected components (= the entire program).
      */
     std::vector<AtomSet> resultModels;
-
-    /**
-     * @brief input EDB.
-     */
-//    GAtomSet
-//    startFacts;
-
-    /**
-     * @brief Result of all CompactCs in a single connected component.
-     */
-//    std::vector<GAtomSet>
-//    singleSubgraphAnswer;
-
-
-    /**
-     * @brief 
-     */
-//    void
-//    evaluateSubgraph(const std::vector<Component*> &components,
-//                     GAtomSet &result) const;
-
-    DependencyGraph *depGraph;
 };
 
 
-//
-// include implementation of templates
-//
-//#include "dlvhex/GraphProcessor.tcc"
+DLVHEX_NAMESPACE_END
 
-
-#endif /* _GRAPHPROCESSOR_H */
+#endif /* _DLVHEX_GRAPHPROCESSOR_H */
 
 
 // Local Variables:

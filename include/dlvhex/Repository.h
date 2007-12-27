@@ -30,12 +30,17 @@
  * 
  */
 
-#ifndef _REPOSITORY_H
-#define _REPOSITORY_H
+#if !defined(_DLVHEX_REPOSITORY_H)
+#define _DLVHEX_REPOSITORY_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include <vector>
 
-#include "boost/shared_ptr.hpp"
+#include <boost/shared_ptr.hpp>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // forward declaration
@@ -50,7 +55,7 @@ class BaseVisitor;
  * This class does not implement an methods. It is just used as a common base
  * class for internal storage structures.
  */
-class ProgramObject
+class DLVHEX_EXPORT ProgramObject
 {
 protected:
     ProgramObject() {}
@@ -79,7 +84,7 @@ typedef boost::shared_ptr<ProgramObject> ProgramObjectPtr;
 /**
  * @brief Container for all elements of a program.
  */
-class Repository
+class DLVHEX_EXPORT Repository
 {
 public:
 
@@ -112,9 +117,9 @@ private:
 };
 
 
+DLVHEX_NAMESPACE_END
 
-
-#endif /* _REPOSITORY_H */
+#endif /* _DLVHEX_REPOSITORY_H */
 
 
 // Local Variables:

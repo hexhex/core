@@ -29,13 +29,18 @@
  */
 
 
-#ifndef _PROGRAM_H
-#define _PROGRAM_H
+#if !defined(_DLVHEX_PROGRAM_H)
+#define _DLVHEX_PROGRAM_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/PrintVisitor.h"
-#include "boost/ptr_container/indirect_fun.hpp"
 
+#include <boost/ptr_container/indirect_fun.hpp>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Program class.
@@ -43,7 +48,7 @@
  * A program is a set of rules. It does not include facts, they are stored
  * elsewhere as AtomSet.
  */
-class Program
+class DLVHEX_EXPORT Program
 {
 	/**
 	 * As a container for the rules of a program, a std::set is used. This set
@@ -59,7 +64,7 @@ public:
 	 * Custom iterator class, such that we can treat the class program similar
 	 * to a container.
 	 */
-	class iterator
+	class DLVHEX_EXPORT iterator
 	{
 		/// needed for conversion.
 		friend class const_iterator;
@@ -111,7 +116,7 @@ public:
 	 * Custom const_iterator class, such that we can treat the class program similar
 	 * to a container.
 	 */
-	class const_iterator
+	class DLVHEX_EXPORT const_iterator
 	{
 		ruleset_t::const_iterator it;
 
@@ -254,7 +259,9 @@ public:
 	std::vector<ExternalAtom*> externalAtoms;
 };
 
-#endif /* _PROGRAM_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_PROGRAM_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

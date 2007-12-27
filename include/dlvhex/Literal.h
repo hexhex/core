@@ -29,16 +29,20 @@
  * 
  */
 
-#ifndef _LITERAL_H
-#define _LITERAL_H
+#if !defined(_DLVHEX_LITERAL_H)
+#define _DLVHEX_LITERAL_H
 
-#include <set>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Repository.h"
 
+#include <set>
+
 #include <boost/ptr_container/indirect_fun.hpp>
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Literal class.
@@ -47,17 +51,9 @@
  * weakly negated Atom. The atom of a literal can both be an ordinary as well as
  * an external atom.
  */
-class Literal : public ProgramObject
+class DLVHEX_EXPORT Literal : public ProgramObject
 {
 public:
-
-	/**
-	 * Default constructor.
-	 *
-	 * Not used.
-	 */
-	Literal();
-
 
 	/**
 	 * Destructor.
@@ -69,8 +65,9 @@ public:
 	 * @brief Construct a literal containing the specified atom, possibly weakly
 	 * negated.
 	 *
-	 * \sa ::AtomPtr
+	 * \sa AtomPtr
 	 */
+        explicit
 	Literal(const AtomPtr, bool naf = false);
 
 	/**
@@ -83,7 +80,7 @@ public:
 	/**
 	 * @brief Returns a pointer to the atom of the literal.
 	 *
-	 * \sa ::AtomPtr
+	 * \sa AtomPtr
 	 */
 	const AtomPtr
 	getAtom() const;
@@ -142,6 +139,11 @@ public:
 private:
 
 	/**
+	 * No default constructed void Literals.
+	 */
+	Literal();
+
+	/**
 	 * Atom of the Literal.
 	 */
 	const AtomPtr atom;
@@ -180,8 +182,9 @@ operator< (const RuleBody_t& body1, const RuleBody_t& body2);
 std::ostream&
 operator<<(std::ostream&, const Literal&);
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _LITERAL_H */
+#endif /* _DLVHEX_LITERAL_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

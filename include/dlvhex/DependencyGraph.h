@@ -30,10 +30,10 @@
  */
 
 
-#ifndef _DEPENDENCYGRAPH_H
-#define _DEPENDENCYGRAPH_H
+#if !defined(_DLVHEX_DEPENDENCYGRAPH_H)
+#define _DLVHEX_DEPENDENCYGRAPH_H
 
-#include <vector>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/AtomNode.h"
@@ -41,18 +41,19 @@
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/ComponentFinder.h"
 
+#include <vector>
+
+
+DLVHEX_NAMESPACE_BEGIN
+
 
 /**
  * @brief
  */
-class DependencyGraph
+class DLVHEX_EXPORT DependencyGraph
 {
 public:
     
-    /// Ctor.
-//    DependencyGraph();
-
-
     /// Dtor.
     ~DependencyGraph();
 
@@ -65,39 +66,11 @@ public:
 
 
     /**
-     * @brief Creates weakly connected components from AtomNodes.
-     */
-    //void
-    //getWeakComponents(const std::vector<AtomNodePtr>&,
-    //                  std::vector<std::vector<AtomNodePtr> >&);
-
-    /**
      * @brief Creates strongly connected components from AtomNodes.
      */
     void
     getStrongComponents(const std::vector<AtomNodePtr>&,
                         std::vector<std::vector<AtomNodePtr> >&);
-
-    /**
-     * @brief Creates a component-object from a WCC.
-     */
-//    Component*
-//    createWeakComponent(const std::vector<AtomNodePtr>&);
-
-    /**
-     * @brief Creates a component-object from a SCC.
-     */
-//    Component*
-//    createStrongComponent(const std::vector<AtomNodePtr>&);
-
-    /*
-    void
-    prune(Edges&, const Component&);
-    */
-    /*
-    std::vector<Component*>
-    getPredecessors(Component* c) const;
-*/
 
     /**
      * @brief Returns all Components.
@@ -112,10 +85,10 @@ public:
 private:
 
     bool
-    hasNegEdge(const std::vector<AtomNodePtr>&);
+    hasNegEdge(const std::vector<AtomNodePtr>&) const;
 
     bool
-    isExternal(const std::vector<AtomNodePtr>&);
+    isExternal(const std::vector<AtomNodePtr>&) const;
     
     /**
      * @brief All nodes.
@@ -141,15 +114,12 @@ private:
 
 
     ComponentFinder* componentFinder;
-    /**
-     * @brief
-     */
-//    void
-//    FindComponentsFromNodes();
 
 };
 
-#endif /* _DEPENDENCYGRAPH_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_DEPENDENCYGRAPH_H */
 
 
 // Local Variables:

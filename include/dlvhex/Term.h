@@ -32,22 +32,24 @@
 
 
 
-#ifndef _TERM_H
-#define _TERM_H
+#if !defined(_DLVHEX_TERM_H)
+#define _DLVHEX_TERM_H
 
-
-#include <iostream>
-#include <string>
-#include <vector>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/NamesTable.h"
 
+#include <iosfwd>
+#include <string>
+#include <vector>
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * Class representing a term.
  *
  * A Term can be a variable, constant or null constant. A constant is either
- * a number, a symbol (alphanumeric character sequence) or a string (= quoted symbol).
+ * a number, a symbol (alphanumeric character sequence), or a string (= quoted symbol).
  * A null constant is a "don't care" term.
  * The type is determined by the constructor when a Term object is created (see
  * Term::TermType).
@@ -65,7 +67,7 @@
  * constant.</td></tr>
  * </table>
  */
-class Term
+class DLVHEX_EXPORT Term
 {
 public:
 	
@@ -73,9 +75,9 @@ public:
 	 * @brief Type of the term.
 	 *
 	 * An INTEGER is a number. A SYMBOL is a string containing only [a-zA-Z_0-9]
-	 * and strarting with a lowercase letter. A STRING is a double-quoted array of
-	 * characters, whithin the quotes everything is permitted. A VARIABLE is
-	 * defined like a constant, except for beginning with an uppercase letter. A
+	 * and starting with a lowercase letter. A STRING is a double-quoted array of
+	 * characters, within the quotes everything is permitted. A VARIABLE is
+	 * defined like a SYMBOL, except for beginning with an uppercase letter. A
 	 * NULLCONST is an anonymous term.
 	 */
 	typedef enum { INTEGER, SYMBOL, STRING, VARIABLE, NULLCONST } TermType;
@@ -88,14 +90,6 @@ public:
 	Term();
 
 	/**
-	 * Copy constructor.
-	 *
-	 * The copy constructor behaves as expected, creating an exact copy of a
-	 * term.
-	 */
-	Term(const Term&);
-
-	/**
 	 * @brief Creates a constant string term.
 	 *
 	 * @param addQuotes If true, then the string will be quoted, but only if it
@@ -106,17 +100,36 @@ public:
 	 * first character is lowercase, or of type VARIABLE if uppercase. In order
 	 * to create a null constant term, use the default constructor Term().
 	 */
+        explicit
 	Term(const std::string&, bool addQuotes = false); 
 
 	/**
 	 * @brief Same as the Term constructor with std::string.
 	 */
+        explicit
 	Term(const char*, bool addQuotes = false); 
 
 	/**
 	 * @brief Creates a constant integer term. Type will be 'INTEGER'.
 	 */
-	Term(const int&);
+	explicit
+	Term(int);
+
+	/**
+	 * Copy constructor.
+	 *
+	 * The copy constructor behaves as expected, creating an exact copy of a
+	 * term.
+	 */
+	Term(const Term&);
+
+
+	/**
+	 * @brief Assignment operator.
+	 */
+	Term&
+	operator= (const Term&);
+
 
 	/**
 	 * @brief Returns the Type of the term.
@@ -209,12 +222,6 @@ public:
 	 */
 	bool
 	unifiesWith(const Term&) const;
-
-	/**
-	 * @brief Assignment operator.
-	 */
-	Term
-	&operator= (const Term&);
 
 	/**
 	 * Comparison function for two terms.
@@ -363,17 +370,6 @@ private:
 
 
 /**
- * Serializes a term.
- *
- * For a variable term, the original variable symbol is used.
- * A symbol, string and integer term is serialized as expected. A NULLCONST
- * (anonymous variable) is serialized as '_'.
- */
-std::ostream&
-operator<< (std::ostream&, const Term&);
-
-
-/**
  * A Tuple is a std::vector of terms.
  * \ingroup dlvhextypes
  * 
@@ -382,6 +378,17 @@ operator<< (std::ostream&, const Term&);
  * with tuples, like push_back, access by the [] operator, iterators, etc.
  */
 typedef std::vector<Term> Tuple;
+
+
+/**
+ * Serializes a term.
+ *
+ * For a variable term, the original variable symbol is used.
+ * A symbol, string and integer term is serialized as expected. A NULLCONST
+ * (anonymous variable) is serialized as '_'.
+ */
+std::ostream&
+operator<< (std::ostream&, const Term&);
 
 
 /**
@@ -394,8 +401,10 @@ typedef std::vector<Term> Tuple;
 std::ostream&
 operator<< (std::ostream&, const Tuple&);
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _TERM_H */
+
+#endif /* _DLVHEX_TERM_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

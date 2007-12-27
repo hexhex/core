@@ -29,9 +29,8 @@
  */
 
 #include "dlvhex/Registry.h"
-//#include "dlvhex/Atom.h"
-//#include "dlvhex/Repository.h"
 
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // initialize static variable:
@@ -72,7 +71,7 @@ Registry::storeObject(ProgramObject* po)
     return pop;
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

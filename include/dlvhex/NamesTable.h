@@ -30,16 +30,14 @@
  */
 
 
-#ifndef _NAMESTABLE_H
-#define _NAMESTABLE_H
+#if !defined(_DLVHEX_NAMESTABLE_H)
+#define _DLVHEX_NAMESTABLE_H
 
+#include "dlvhex/PlatformDefinitions.h"
 
-//#include <iostream>
-//#include <string>
-//#include <vector>
-//#include <set>
 #include <map>
 
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Container class for names.
@@ -48,7 +46,7 @@
  * provides functions for storing names in a table, retrieve and modify them.
  */
 template <class NameType>
-class NamesTable
+class DLVHEX_EXPORT NamesTable
 {
     struct n_t {
         NameType n;
@@ -93,7 +91,7 @@ public:
             //assert(0);
         }
 
-        const_iterator(const typename names_t::const_iterator &it1)
+        const_iterator(const typename names_t::const_iterator& it1)
             : it(it1)
         { }
 
@@ -146,7 +144,7 @@ public:
 
 
     const_iterator
-    insert(NameType name)
+    insert(const NameType& name)
     {
         //
         // see if we already have this name
@@ -157,7 +155,7 @@ public:
         // yes - then return its iterator in the names-map
         //
         if (it != this->lookup.end())
-            return const_iterator((*it).second);
+            return const_iterator(it->second);
 
         //
         // no - insert it into names table with current indexcount
@@ -192,9 +190,9 @@ public:
             //
             // already exists:
             //
-            if ((*ni).second.n == name)
+            if (ni->second.n == name)
             {
-                (*ni).second.ix = names[i.getIndex()].ix;
+                ni->second.ix = names[i.getIndex()].ix;
 
                 wasinlookup = 1;
             }
@@ -227,7 +225,9 @@ public:
     }
 };
 
-#endif /* _NAMESTABLE_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_NAMESTABLE_H */
 
 
 // Local Variables:

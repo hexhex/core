@@ -29,26 +29,30 @@
  * 
  */
 
-#ifndef _ERROR_H
-#define _ERROR_H
+#if !defined(_DLVHEX_ERROR_H)
+#define _DLVHEX_ERROR_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include <string>
-#include <iostream>
+#include <iosfwd>
 #include <stdexcept>
 
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief General exception class.
  *
  */
-class GeneralError : public std::runtime_error
+class DLVHEX_EXPORT GeneralError : public std::runtime_error
 {
 public:
 
     /**
      * @brief initialize exception with error string.
      */
-    GeneralError(const std::string msg);
+    explicit
+    GeneralError(const std::string& msg);
 
     /**
      * @brief Returns error string.
@@ -69,14 +73,15 @@ public:
 /**
  * Error caused by malformed input program.
  */
-class SyntaxError : public GeneralError
+class DLVHEX_EXPORT SyntaxError : public GeneralError
 {
 public:
     
     /// Ctor.
-    SyntaxError(const std::string msg,
+    explicit
+    SyntaxError(const std::string& msg,
                 const unsigned line = 0,
-                const std::string file = "");
+                const std::string& file = "");
 
     /**
      * @brief Destructor.
@@ -118,7 +123,7 @@ private:
 /**
  * Severe Error, supposed to be followed by program termination.
  */
-class FatalError : public GeneralError
+class DLVHEX_EXPORT FatalError : public GeneralError
 {
 public:
 
@@ -129,7 +134,8 @@ public:
      * A FatalError has no additional context, so we don't need a getErrorMsg()
      * function for building a special string after construction.
      */
-    FatalError(const std::string msg);
+    explicit
+    FatalError(const std::string& msg);
 
 };
 
@@ -137,12 +143,13 @@ public:
 /**
  * A plugin error is thrown by plugins and caught inside dlvhex.
  */
-class PluginError : public GeneralError
+class DLVHEX_EXPORT PluginError : public GeneralError
 {
 public:
 
     /// Ctor.
-    PluginError(std::string msg);
+    explicit
+    PluginError(const std::string& msg);
 
     /**
      * @brief See SyntaxError::~SyntaxError().
@@ -172,8 +179,9 @@ private:
     std::string context;
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _ERROR_H */
+#endif /* _DLVHEX_ERROR_H */
 
 
 // Local Variables:

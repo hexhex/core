@@ -36,6 +36,8 @@
 #include "dlvhex/AtomFactory.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 void
 multiplySets(std::vector<AtomSet>& s1,
 			 std::vector<AtomSet>& s2,
@@ -418,6 +420,7 @@ AtomSet::operator< (const AtomSet& atomset2) const
 	return *(result.first) < *(result.second);
 }
 
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

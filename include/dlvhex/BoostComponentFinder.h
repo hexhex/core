@@ -31,21 +31,23 @@
  */
 
 
-#ifndef _BOOSTCOMPONENTFINDER_H
-#define _BOOSTCOMPONENTFINDER_H
+#if !defined(_DLVHEX_BOOSTCOMPONENTFINDER_H)
+#define _DLVHEX_BOOSTCOMPONENTFINDER_H
 
-
-#include <vector>
-#include <iostream>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ComponentFinder.h"
 
+#include <vector>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Component Finder using the Boost Graph Library.
  *
  */
-class BoostComponentFinder : public ComponentFinder
+class DLVHEX_EXPORT BoostComponentFinder : public ComponentFinder
 {
 public:
 
@@ -97,7 +99,9 @@ private:
 };
 
 
-#endif /* _BOOSTCOMPONENTFINDER_H_ */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_BOOSTCOMPONENTFINDER_H_ */
 
 
 // Local Variables:

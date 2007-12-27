@@ -29,12 +29,14 @@
  * 
  */
 
-#include <sstream>
-#include <iostream>
-
 #include "dlvhex/DLVresultParser.hpp"
 #include "dlvhex/ParserDriver.h"
 #include "dlvhex/DLVresultFlexLexer.h"
+
+#include <sstream>
+#include <iostream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 DLVresultParserDriver::DLVresultParserDriver()
     : lexer(new DLVresultFlexLexer(this))
@@ -68,6 +70,7 @@ DLVresultParserDriver::parse(std::istream& is,
     parser.parse();
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

@@ -44,6 +44,7 @@
 #include "dlvhex/PrintVisitor.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
 
 Component::Component()
     : evaluated(false)
@@ -755,7 +756,7 @@ Subgraph::dump(std::ostream& out) const
 }
 
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

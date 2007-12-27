@@ -31,8 +31,10 @@
 
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/PrintVisitor.h"
+
 #include <functional>
 
+DLVHEX_NAMESPACE_BEGIN
 
 ProgramBuilder::ProgramBuilder()
 { }
@@ -94,7 +96,7 @@ ProgramDLVBuilder::buildProgram(const Program& program)
 }
 
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

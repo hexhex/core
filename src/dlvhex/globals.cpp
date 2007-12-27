@@ -28,9 +28,11 @@
  * 
  */
 
-#include <iostream>
 #include "dlvhex/globals.h"
 
+#include <iostream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 Globals*
 Globals::_instance = 0;
@@ -76,7 +78,7 @@ Globals::Instance()
 
 
 unsigned
-Globals::getOption(std::string option)
+Globals::getOption(const std::string& option)
 {
     return optionMap[option];
 }
@@ -92,14 +94,14 @@ Globals::doVerbose(verboseAction_t va)
 
 
 void
-Globals::setOption(std::string option, unsigned value)
+Globals::setOption(const std::string& option, unsigned value)
 {
     optionMap[option] = value;
 }
 
 
 void
-Globals::addFilter(std::string& f)
+Globals::addFilter(const std::string& f)
 {
     optionFilter.push_back(f);
 }
@@ -118,7 +120,7 @@ Globals::getVerboseStream() const
     return std::cerr;
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

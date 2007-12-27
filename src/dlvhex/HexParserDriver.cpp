@@ -29,13 +29,15 @@
  * 
  */
 
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/ParserDriver.h"
+#include "dlvhex/HexFlexLexer.h"
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
 
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/ParserDriver.h"
-#include "dlvhex/HexFlexLexer.h"
+DLVHEX_NAMESPACE_BEGIN
 
 HexParserDriver::HexParserDriver()
     : lexer(new HexFlexLexer(this)),
@@ -99,7 +101,7 @@ HexParserDriver::parse(std::istream& is,
 
 
 void
-HexParserDriver::parse(std::string file,
+HexParserDriver::parse(const std::string& file,
                        Program &program,
                        AtomSet& EDB)
 {
@@ -137,6 +139,7 @@ HexParserDriver::parse(std::string file,
     ifs.close();
 } 
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

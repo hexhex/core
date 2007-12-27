@@ -51,15 +51,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
 
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <getopt.h>
 
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
@@ -70,10 +62,43 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
+#include "dlvhex/TextOutputBuilder.h"
+#include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/HexParserDriver.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/DependencyGraph.h"
+#include "dlvhex/ProgramBuilder.h"
+#include "dlvhex/GraphProcessor.h"
+#include "dlvhex/Component.h"
 
+
+
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <vector>
+
+#include <getopt.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <pwd.h>
+
+//
+// definition for getwd ie MAXPATHLEN etc
+//
+#include <sys/param.h>
+#include <stdio.h>
+//#include <dlfcn.h>
+
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
+
+DLVHEX_NAMESPACE_USE
 
 const char*  WhoAmI;
 
@@ -159,34 +184,13 @@ printUsage(std::ostream &out, bool full)
 void
 InternalError (const char *msg)
 {
-	std::cerr << std::endl
-		<< "An internal error occurred (" << msg << ")."
-		<< std::endl << "Please contact <roman@kr.tuwien.ac.at>!" << std::endl;
-	exit (99);
+  std::cerr << std::endl
+	    << "An internal error occurred (" << msg << ")."
+	    << std::endl
+	    << "Please contact <" PACKAGE_BUGREPORT ">." << std::endl;
+  exit (99);
 }
 
-
-
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/DependencyGraph.h"
-
-
-#include <sys/types.h>
-//#include <sys/dir.h>
-#include <dirent.h>
-
-#include "pwd.h"
-
-//
-// definition for getwd ie MAXPATHLEN etc
-//
-#include <sys/param.h>
-#include <stdio.h>
-#include <dlfcn.h>
-
-#include "dlvhex/ProgramBuilder.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/Component.h"
 
 
 void
@@ -585,16 +589,28 @@ main (int argc, char *argv[])
 
 			plugin = PluginContainer::Instance()->importPlugin(*si);
 
-			if (plugin != NULL)
+			if (plugin != 0)
 			{
-				std::stringstream pluginhelp;
+			  // print plugin's version information
+			  if (!Globals::Instance()->getOption("Silent"))
+			    {
+			      Globals::Instance()->getVerboseStream() << "opening plugin "
+								      << *si << " version "
+								      << plugin->getVersionMajor() << "."
+								      << plugin->getVersionMinor() << "."
+								      << plugin->getVersionMicro() << std::endl;
+			    }
 
-				plugins.push_back(plugin);
+			  std::stringstream pluginhelp;
+			  
+			  plugins.push_back(plugin);
 
-				plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
+			  plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
 
-				if (!pluginhelp.str().empty())
-					allpluginhelp << std::endl << pluginhelp.str();
+			  if (!pluginhelp.str().empty())
+			    {
+			      allpluginhelp << std::endl << pluginhelp.str();
+			    }
 			}
 		}
 		catch (GeneralError &e)
@@ -1168,9 +1184,9 @@ main (int argc, char *argv[])
 	OutputBuilder* outputbuilder;
 
 	if (optionXML)
-		outputbuilder = new OutputXMLBuilder;
+		outputbuilder = new RuleMLOutputBuilder;
 	else
-		outputbuilder = new OutputTextBuilder;
+		outputbuilder = new TextOutputBuilder;
 
 	//
 	// dump it!

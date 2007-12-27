@@ -44,7 +44,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 
-
+DLVHEX_NAMESPACE_BEGIN
 
 FixpointModelGenerator::FixpointModelGenerator()
 {
@@ -285,6 +285,7 @@ FixpointModelGenerator::compute(const Program& program,
     models.push_back(currentI);
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

@@ -29,10 +29,13 @@
  * 
  */
 
-#ifndef _DLVRESULTFLEXLEXER
-#define _DLVRESULTFLEXLEXER
+#if !defined(_DLVHEX_DLVRESULTFLEXLEXER)
+#define _DLVHEX_DLVRESULTFLEXLEXER
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "DLVresultParser.hpp"
+
 
 // put FlexLexer.h into its own include guards or yyFlexLexer gets
 // redefined
@@ -42,25 +45,27 @@
 #include <FlexLexer.h>
 #endif
 
+DLVHEX_NAMESPACE_BEGIN
 class ParserDriver;
+DLVHEX_NAMESPACE_END
+
 
 /**
  * @brief Use a refined yyFlexLexer.
  *
  */
-class DLVresultFlexLexer : public yyFlexLexer
+class DLVHEX_EXPORT DLVresultFlexLexer : public yyFlexLexer
 {
 public:
-    DLVresultFlexLexer(ParserDriver* d) : lexdrv(d) { }
+    explicit DLVresultFlexLexer(DLVHEX_NAMESPACE ParserDriver* d) : lexdrv(d) { }
     virtual ~DLVresultFlexLexer() { }
-    ParserDriver* lexdrv;
+    DLVHEX_NAMESPACE ParserDriver* lexdrv;
     yy::DLVresultParser::location_type* lexloc;
     yy::DLVresultParser::semantic_type* lexval;
     int yylex(); // implemented in DLVresultScanner.lpp
 };
 
-
-#endif
+#endif /* _DLVHEX_DLVRESULTFLEXLEXER */
 
 
 // Local Variables:

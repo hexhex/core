@@ -32,55 +32,51 @@
 
 #include "dlvhex/helper.h"
 
+#include <boost/tokenizer.hpp>
+
+DLVHEX_NAMESPACE_BEGIN
 
 std::vector<std::string>
 helper::stringExplode(const std::string& inString, const std::string& separator)
 {
-    std::vector<std::string> returnVector;
-    
-    std::string::size_type start = 0;
-    std::string::size_type end = 0;
+  typedef boost::tokenizer<boost::char_separator<char> > septok;
+  boost::char_separator<char> sep(separator.c_str());
+  septok tok(inString, sep);
+  return std::vector<std::string>(tok.begin(), tok.end());
 
-    while ((end = inString.find(separator, start)) != std::string::npos)
-    {
-        returnVector.push_back(inString.substr(start, end - start));
-        start = end + separator.size();
-    }
+//   std::vector<std::string> returnVector;
+   
+//   std::string::size_type start = 0;
+//   std::string::size_type end = 0;
 
-    if (inString.size() > 0)
-        returnVector.push_back(inString.substr(start));
+//   while ((end = inString.find(separator, start)) != std::string::npos)
+//     {
+//       returnVector.push_back(inString.substr(start, end - start));
+//       start = end + separator.size();
+//     }
 
-    return returnVector;
+//   if (inString.size() > 0)
+//     returnVector.push_back(inString.substr(start));
+  
+//   return returnVector;
 }
 
 
 void
 helper::escapeQuotes(std::string& str)
 {
-    std::string single_quote = "\"";
-    std::string escape_quote = "\\\"";
-    std::string::size_type i = 0;
+  const char single_quote = '\"';
+  const char* escape_quote = "\\\"";
+  std::string::size_type i = 0;
     
-    while (std::string::npos != (i = str.find(single_quote, i)))
+  while (std::string::npos != (i = str.find(single_quote, i)))
     {
-        str.replace(i, 1, escape_quote);
-        i += 2;
+      str.replace(i, 1, escape_quote);
+      i += 2;
     }
 }
 
-/*
-void
-helper::multiplySets(const std::vector<GAtomSet>& sets,
-                     GAtomSet& result)
-{
-    for (std::vector<GAtomSet>::const_iterator in = sets.begin();
-         in != sets.end();
-         ++in)
-    {
-    }
-}
-*/
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

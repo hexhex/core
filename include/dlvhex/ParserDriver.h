@@ -30,12 +30,10 @@
  */
 
 
-#ifndef _PARSERDRIVER_H
-#define _PARSERDRIVER_H
+#if !defined(_DLVHEX_PARSERDRIVER_H)
+#define _DLVHEX_PARSERDRIVER_H
 
-#include <iostream>
-#include <string>
-#include <vector>
+#include "dlvhex/PlatformDefinitions.h"
 
 //
 // this is included from src/, not include/ !
@@ -45,19 +43,18 @@
 
 #include "dlvhex/Error.h"
 
+#include <string>
+
+
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief Conducting the whole scanning and parsing of Hex programs.
  */
-class ParserDriver
+class DLVHEX_EXPORT ParserDriver
 {
 protected:
     ParserDriver();
-
-    /// parse this stream
-//    std::istream is;
-
-    //void
-    //syncStream();
 
 public:
 
@@ -69,9 +66,9 @@ public:
     error(const std::string& m) throw (SyntaxError);
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif // _PARSERDRIVER_H
-
+#endif // _DLVHEX_PARSERDRIVER_H
 
 
 // Local Variables:

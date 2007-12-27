@@ -43,6 +43,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 
+DLVHEX_NAMESPACE_BEGIN
 
 OrdinaryModelGenerator::OrdinaryModelGenerator()
 {
@@ -147,6 +148,7 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 #endif // DLVHEX_DEBUG
 }
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

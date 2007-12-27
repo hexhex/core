@@ -29,14 +29,18 @@
  */
 
 
-#ifndef _RULE_H
-#define _RULE_H
+#if !defined(_DLVHEX_RULE_H)
+#define _DLVHEX_RULE_H
 
-#include <boost/ptr_container/indirect_fun.hpp>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/Literal.h"
 
+#include <boost/ptr_container/indirect_fun.hpp>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * A rule head is a disjunction of Atoms.
@@ -51,7 +55,7 @@ typedef std::set<AtomPtr, boost::indirect_fun<std::less<Atom> > > RuleHead_t;
 /**
  * @brief Class for representing a rule object.
  */
-class Rule : public ProgramObject
+class DLVHEX_EXPORT Rule : public ProgramObject
 {
 public:
 
@@ -223,7 +227,7 @@ operator< (const RuleHead_t& head1, const RuleHead_t& head2);
 /**
  * @brief A weak constraint is a rule with empty head and weight/level values.
  */
-class WeakConstraint : public Rule
+class DLVHEX_EXPORT WeakConstraint : public Rule
 {
 public:
 
@@ -315,8 +319,9 @@ private:
         unsigned uniqueID;
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _RULE_H */
+#endif /* _DLVHEX_RULE_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

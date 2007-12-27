@@ -31,18 +31,23 @@
  */
 
 
-#ifndef _MODELGENERATOR_H
-#define _MODELGENERATOR_H
+#if !defined(_DLVHEX_MODELGENERATOR_H)
+#define _DLVHEX_MODELGENERATOR_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/AtomNode.h"
 
+
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * @brief Abstract strategy class for computing the model of a program from
  * it's graph.
  */
-class ModelGenerator
+class DLVHEX_EXPORT ModelGenerator
 {
 public:
     virtual
@@ -77,11 +82,6 @@ protected:
     ModelGenerator()
     { }
 
-    /**
-     * @brief Subprogram to be evaluated.
-     */
-//    Program program;
-
     std::string serializedProgram;
 };
 
@@ -89,16 +89,14 @@ protected:
 /**
  * @brief Concrete Strategy for computing the model by iteration.
  */
-class FixpointModelGenerator : public ModelGenerator
+class DLVHEX_EXPORT FixpointModelGenerator : public ModelGenerator
 {
 public:
 
     /// Ctor
     FixpointModelGenerator();
 
-
-    //virtual 
-        void
+    void
     initialize(const Program&);
 
 
@@ -136,15 +134,6 @@ public:
             const AtomSet& I,
             std::vector<AtomSet>& models);
 
-
-private:
-
-
-//    const std::vector<ExternalAtom*>&
-//    getExternalAtoms() const;
-
-//    std::vector<ExternalAtom*> externalAtoms;
-
 };
 
 
@@ -155,7 +144,7 @@ private:
  * This strategy can be used for any type of component without external atoms
  * (stratified or unstratified).
  */
-class OrdinaryModelGenerator : public ModelGenerator
+class DLVHEX_EXPORT OrdinaryModelGenerator : public ModelGenerator
 {
 public:
 
@@ -183,7 +172,7 @@ public:
  * we can only use a guess and check algorithm, which guesses all possible values
  * for the external atoms first and filters out those models which are consistent.
  */
-class GuessCheckModelGenerator : public ModelGenerator
+class DLVHEX_EXPORT GuessCheckModelGenerator : public ModelGenerator
 {
 public:
 
@@ -200,8 +189,9 @@ public:
 };
 
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _MODELGENERATOR_H */
+#endif /* _DLVHEX_MODELGENERATOR_H */
 
 
 // Local Variables:

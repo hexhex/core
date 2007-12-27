@@ -29,18 +29,20 @@
  * 
  */
 
-#include <assert.h>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <iterator>
-
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/BaseVisitor.h"
+
+#include <cassert>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <iterator>
+
+DLVHEX_NAMESPACE_BEGIN
 
 ExternalAtom::ExternalAtom()
 {
@@ -71,7 +73,7 @@ ExternalAtom::ExternalAtom(const std::string& name,
 	  functionName(name),
 	  extAtomNo(uniqueNumber),
 	  line(line),
-	  pluginAtom(0)
+	  pluginAtom(boost::shared_ptr<PluginAtom>())
 {
 	//
 	// increase absolute extatom counter
@@ -136,16 +138,22 @@ ExternalAtom::findPluginAtom() const
 	this->pluginAtom = PluginContainer::Instance()->getAtom(functionName);
 	
 	if (pluginAtom == 0)
-		throwSourceError("function " + functionName + " unknown");
+	  {
+	    throw SyntaxError("function " + functionName + " unknown", getLine());
+	  }
 
 	//
 	// is the desired arity equal to the parsed arity?
 	//
 	if (!this->pluginAtom->checkInputArity(inputList.size()))
-		throwSourceError("input arity mismatch in function " + functionName);
+	  {
+	    throw SyntaxError("input arity mismatch in function " + functionName, getLine());
+	  }
 	
 	if (!this->pluginAtom->checkOutputArity(getArity()))
-		throwSourceError("output arity mismatch in function " + functionName);
+	  {
+	    throw SyntaxError("output arity mismatch in function " + functionName, getLine());
+	  }
 	
 	bool inputIsGround(1);
 
@@ -170,13 +178,6 @@ ExternalAtom::findPluginAtom() const
 }
 
 
-void
-ExternalAtom::throwSourceError(const std::string& msg) const
-{
-   throw SyntaxError(msg, line);
-}
-
-
 const std::string&
 ExternalAtom::getAuxPredicate() const
 {
@@ -188,7 +189,7 @@ void
 ExternalAtom::setFunctionName(const std::string& name)
 {
   this->functionName = name;
-  this->pluginAtom = 0;
+  this->pluginAtom = boost::shared_ptr<PluginAtom>();
 
   // and now setup the new replacement and aux names
   initReplAux();
@@ -349,7 +350,7 @@ ExternalAtom::evaluate(const AtomSet& i,
 
 
 				/// @todo: since matchpredicate doesn't neet the output list, do we
-				// need that factlist here?
+				/// need that factlist here?
 				i.matchPredicate(inputTerm->getString(), inputSet);
 
 				break;
@@ -532,6 +533,7 @@ ExternalAtom::getLine() const
 	return line;
 }
 
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

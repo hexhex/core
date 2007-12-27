@@ -31,15 +31,16 @@
 
 %{
 
-#include <stdio.h>
-#include <assert.h>
-
 //
 // generated from bison
 //
 #include "dlvhex/DLVresultParser.hpp"
+
 #include "dlvhex/DLVresultFlexLexer.h"
 #include "dlvhex/DLVresultParserDriver.h"
+
+#include <cstdio>
+#include <cassert>
 
 
 // Max. length of numeric constants. This should match MAX_MAXINT.
@@ -118,13 +119,12 @@ NUM         ([0-9]+)
 
 {ID} |
 {QUOTED_ID} {
-//    yylval.string = new std::string(yytext);
     yylval.charp = strdup(yytext);
     return token::ID;
 }
 
 {NUM} { 
-    yylval.integ = atoi(yytext);
+    yylval.integer = atoi(yytext);
     return token::NUM; 
 }
 

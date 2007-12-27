@@ -29,20 +29,23 @@
  */
 
 
-#ifndef _REGISTRY_H
-#define _REGISTRY_H
+#if !defined(_DLVHEX_REGISTRY_H)
+#define _DLVHEX_REGISTRY_H
 
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomFactory.h"
 #include "dlvhex/Repository.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 /**
  * The Registry class is a sort of mediator that inserts objects into factory
  * classes.
  */
-class Registry
+class DLVHEX_EXPORT Registry
 {
 public:
 
@@ -89,7 +92,9 @@ private:
     static Registry* _instance;
 };
 
-#endif /* _REGISTRY_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_REGISTRY_H */
 
 
 // Local Variables:

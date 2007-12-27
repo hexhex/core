@@ -62,7 +62,9 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 
+DLVHEX_NAMESPACE_BEGIN
 class DLVresultParserDriver;
+DLVHEX_NAMESPACE_END
 
 %}
 
@@ -70,15 +72,15 @@ class DLVresultParserDriver;
 
 // this is the parsing context, passed as parameters to the
 // yy::DLVresultParser ctor
-%parse-param { DLVresultParserDriver* driver }
-%parse-param { std::vector<AtomSet>& answersets }
+%parse-param { DLVHEX_NAMESPACE DLVresultParserDriver* driver }
+%parse-param { std::vector<DLVHEX_NAMESPACE AtomSet>& answersets }
 %parse-param { std::string& dlvError }
 
 
 // bison passes the driver as additional parameter to the lexer
 // function YY_DECL, so we can abuse the driver to get the real lexer
 // object and call the yylex() method
-%lex-param   { DLVresultParserDriver* driver }
+%lex-param   { DLVHEX_NAMESPACE DLVresultParserDriver* driver }
 
 // use a yy::location object to keep track of the location information
 %locations
@@ -91,12 +93,12 @@ class DLVresultParserDriver;
 
 %union {
     std::string*   string;
-	char*		   charp;
-    int            integ;
-    Term*          term;
-    Tuple*         tuple;
-    Atom*          gatom;
-    AtomSet*       answerset;
+    char*          charp;
+    int            integer;
+    DLVHEX_NAMESPACE Term*          term;
+    DLVHEX_NAMESPACE Tuple*         tuple;
+    DLVHEX_NAMESPACE Atom*          gatom;
+    DLVHEX_NAMESPACE AtomSet*       answerset;
 }
 
 
@@ -115,10 +117,12 @@ class DLVresultParserDriver;
 yy::DLVresultParser::token_type                            \
 yylex (yy::DLVresultParser::semantic_type* yylval,         \
        yy::DLVresultParser::location_type* yylloc,         \
-       DLVresultParserDriver* driver)
+       DLVHEX_NAMESPACE DLVresultParserDriver* driver)
 // declare YY_DECL function for the parser
 YY_DECL;
 #endif
+
+DLVHEX_NAMESPACE_USE
 
 %}
 
@@ -131,7 +135,7 @@ YY_DECL;
 
 %token <charp> ID
 %token <string> MESSAGE
-%token <integ> NUM
+%token <integer> NUM
 %token ERROR
 %token NEWLINE
 %token COMMA
@@ -338,13 +342,6 @@ YY_DECL
     lex->lexloc = yylloc; // and the current location,
     return (yy::DLVresultParser::token_type) lex->yylex (); // finally call the drivers lexer
 } 
-
-
-
-// Local Variables:
-// mode: c++
-// c-file-style: "dl"
-// End:
 
 
 // Local Variables:

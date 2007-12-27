@@ -29,13 +29,17 @@
  * 
  */
 
-#ifndef _PROGRAMBUILDER_H
-#define _PROGRAMBUILDER_H
+#if !defined(_DLVHEX_PROGRAMBUILDER_H)
+#define _DLVHEX_PROGRAMBUILDER_H
+
+#include "dlvhex/PlatformDefinitions.h"
+
+#include "dlvhex/Program.h"
 
 #include <string>
 #include <sstream>
 
-#include "dlvhex/Program.h"
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // forward declaration
@@ -46,7 +50,7 @@ class PrintVisitor;
 /**
 * @brief Base Builder for building logic programs.
 */
-class ProgramBuilder
+class DLVHEX_EXPORT ProgramBuilder
 {
 protected:
     std::ostringstream stream;
@@ -92,10 +96,11 @@ public:
  * @todo This whole builder could be effectively replaced by the
  * corresponding visitors.
  */
-class ProgramDLVBuilder : public ProgramBuilder
+class DLVHEX_EXPORT ProgramDLVBuilder : public ProgramBuilder
 {
 public:
     /// Ctor
+    explicit
     ProgramDLVBuilder(bool ho);
 
     /// Dtor
@@ -128,8 +133,9 @@ private:
 };
 
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _PROGRAMBUILDER_H */
+#endif /* _DLVHEX_PROGRAMBUILDER_H */
 
 
 // Local Variables:

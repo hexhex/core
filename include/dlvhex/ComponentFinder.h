@@ -30,28 +30,26 @@
  */
 
 
-#ifndef _COMPONENTFINDER_H
-#define _COMPONENTFINDER_H
+#if !defined(_DLVHEX_COMPONENTFINDER_H)
+#define _DLVHEX_COMPONENTFINDER_H
 
-
-//#include "dlvhex/Rule.h"
-//#include "dlvhex/ExternalAtom.h"
-//#include "dlvhex/ModelGenerator.h"
-//#include <utility>
-
-#include <map>
-#include <vector>
-#include <iostream>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/AtomNode.h"
 
+#include <map>
+#include <vector>
+#include <iosfwd>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief
  *
  *
  */
-class ComponentFinder
+class DLVHEX_EXPORT ComponentFinder
 {
 public:
 
@@ -76,16 +74,6 @@ public:
     typedef std::vector<Edge> Edges;
 
     /**
-     * A ComponentIdx uniquely identifies a Component.
-     */
-//    typedef unsigned ComponentIdx;
-
-    /**
-     * A ComponentAssignment associates a Vertex with a Component.
-     */
-//    typedef std::map<Vertex, ComponentIdx> ComponentAssignment;
-
-    /**
      * A ComponentList is a set of Vertices that belong to a single
      * Component.
      */
@@ -95,7 +83,7 @@ public:
 
 protected:
 
-    /// Ctor.
+    /// protected ctor.
     ComponentFinder()
     { }
 
@@ -105,7 +93,6 @@ public:
      * @brief Method for finding Weakly Connected Components.
      */
     virtual void
-    //findWeakComponents(const Edges, ComponentList&)
     findWeakComponents(const std::vector<AtomNodePtr>&,
                          std::vector<std::vector<AtomNodePtr> >&)
     { }
@@ -114,9 +101,8 @@ public:
      * @brief Method for finding Strongly Connected Components.
      */
     virtual void
-//    findStrongComponents(const Edges, ComponentList&)
     findStrongComponents(const std::vector<AtomNodePtr>&,
-                         std::vector<std::vector<AtomNodePtr> >&)
+			 std::vector<std::vector<AtomNodePtr> >&)
     { }
 
     /**
@@ -133,23 +119,18 @@ public:
  * This Component Finder puts every Vertex in a single WCC and finds no SCC.
  *
  */
-class SimpleComponentFinder : public ComponentFinder
+class DLVHEX_EXPORT SimpleComponentFinder : public ComponentFinder
 {
 public:
 
     /// Ctor.
     SimpleComponentFinder()
     { }
-
-//    virtual void
-//    findWeakComponents(const Edges, ComponentList&);
-
-//    virtual void
-//    findStrongComponents(const Edges, ComponentList&);
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _COMPONENTFINDER_H_ */
+#endif /* _DLVHEX_COMPONENTFINDER_H_ */
 
 
 // Local Variables:

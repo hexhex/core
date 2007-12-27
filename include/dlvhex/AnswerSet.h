@@ -29,14 +29,14 @@
  * 
  */
 
-#ifndef _ANSWERSET_H
-#define _ANSWERSET_H
+#if !defined(_DLVHEX_ANSWERSET_H)
+#define _DLVHEX_ANSWERSET_H
 
-
-#include "boost/shared_ptr.hpp"
-
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/AtomSet.h"
 
+
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief An AnswerSet is an AtomSet with additional information.
@@ -45,7 +45,7 @@
  * program contains weak constraints, the weights determine the order of the
  * answer sets.
  */
-class AnswerSet : public AtomSet
+class DLVHEX_EXPORT AnswerSet : public AtomSet
 {
 public:
 
@@ -64,13 +64,14 @@ public:
      * within the answer set that determines the costs of the set. If the string
      * is left empty, costs are not considered at all.
      */
-    AnswerSet(std::string = "");
+    explicit
+    AnswerSet(const std::string& = "");
 
     /**
      * @brief Sets the AtomSet of the answer set.
      */
     void
-    setSet(AtomSet&);
+    setSet(const AtomSet&);
 
     /**
      * @brief Returns true if the answer set contains weight information, i.e.,
@@ -130,7 +131,7 @@ public:
 	 * numerical values are considered as "more expensive".
      */
     bool
-    moreExpensiveThan(const weights_t) const;
+    moreExpensiveThan(const weights_t&) const;
 
 
     /**
@@ -195,7 +196,9 @@ std::ostream&
 operator<< (std::ostream&, const AnswerSet&);
 
 
-#endif /* _ANSWERSET_H */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_ANSWERSET_H */
 
 
 // Local Variables:

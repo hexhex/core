@@ -29,14 +29,15 @@
  *
  */
 
-#include <vector>
-
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/globals.h"
 
+#include <vector>
 
 
-ResultContainer::ResultContainer(std::string wcpr)
+DLVHEX_NAMESPACE_BEGIN
+
+ResultContainer::ResultContainer(const std::string& wcpr)
     : wcprefix(wcpr)
 {
 }
@@ -185,6 +186,7 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 }
 
 
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

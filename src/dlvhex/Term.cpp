@@ -30,9 +30,82 @@
  */
 
 
-#include <assert.h>
-
 #include "dlvhex/Term.h"
+
+#include <cassert>
+
+// include iostream, otherwise we do not have the declarations for all
+// the standard operator<<'s, and we will fail to compile our own
+// operator<<s disgracefully.
+#include <iostream>
+
+
+DLVHEX_NAMESPACE_BEGIN
+
+//
+// operator<<
+//
+
+std::ostream&
+operator<< (std::ostream& out, const DLVHEX_NAMESPACE Term& term)
+{
+	switch (term.getType())
+	{
+		case DLVHEX_NAMESPACE Term::INTEGER:
+			out << term.getInt();
+			break;
+		
+		case DLVHEX_NAMESPACE Term::SYMBOL:
+			out << term.getString();
+			break;
+		
+		case DLVHEX_NAMESPACE Term::STRING:
+			out << term.getString();
+			break;
+		
+		case DLVHEX_NAMESPACE Term::VARIABLE:
+			out << term.getVariable();
+			break;
+		
+		case DLVHEX_NAMESPACE Term::NULLCONST:
+			out << '_';
+			break;
+		
+		default:
+			assert(0);
+			break;
+	}
+	
+	return out;
+}
+
+
+std::ostream&
+operator<< (std::ostream& out, const DLVHEX_NAMESPACE Tuple& tuple)
+{
+  if (!tuple.empty())
+    {
+      for (unsigned i = 0; i < tuple.size() - 1; i++)
+	{
+	  out << tuple[i] << ',';
+	}
+      out << tuple.back();
+    }
+
+  return out;
+}
+
+
+
+
+//
+// initializing static members
+//
+std::vector<std::pair<std::string, std::string> > Term::namespaces;
+
+NamesTable<std::string> Term::names;
+
+NamesTable<std::string> Term::auxnames;
 
 
 Term::Term()
@@ -127,7 +200,7 @@ Term::Term(const char* name, bool addQuotes)
 }
 
 
-Term::Term(const int& num)
+Term::Term(int num)
 	: type(INTEGER), constantInteger(num)
 {
 }
@@ -247,12 +320,15 @@ Term::unifiesWith(const Term& term2) const
 Term&
 Term::operator= (const Term& term2)
 {
-	constantString = term2.constantString;
-	constantInteger = term2.constantInteger;
-	variableString = term2.variableString;
-	type = term2.type;
+  if (this != &term2)
+    {
+      this->constantString = term2.constantString;
+      this->constantInteger = term2.constantInteger;
+      this->variableString = term2.variableString;
+      this->type = term2.type;
+    }
 
-	return *this;
+  return *this;
 }
 
 
@@ -353,64 +429,7 @@ Term::getAuxiliaryNames()
 }
 
 
-std::ostream&
-operator<< (std::ostream& out, const Term& term)
-{
-	switch (term.getType())
-	{
-		case Term::INTEGER:
-			out << term.getInt();
-			break;
-		
-		case Term::SYMBOL:
-			out << term.getString();
-			break;
-		
-		case Term::STRING:
-			out << term.getString();
-			break;
-		
-		case Term::VARIABLE:
-			out << term.getVariable();
-			break;
-		
-		case Term::NULLCONST:
-			out << "_";
-			break;
-		
-		default:
-			assert(0);
-			break;
-	}
-	
-	return out;
-}
-
-
-std::ostream&
-operator<< (std::ostream& out, const Tuple& tuple)
-{
-	for (unsigned i = 0; i < tuple.size(); i++)
-	{
-		out << tuple[i];
-		
-		if (i < tuple.size() - 1)
-			out << ",";
-	}
-
-	return out;
-}
-
-
-//
-// initializing static members
-//
-std::vector<std::pair<std::string, std::string> > Term::namespaces;
-
-NamesTable<std::string> Term::names;
-
-NamesTable<std::string> Term::auxnames;
-
+DLVHEX_NAMESPACE_END
 
 
 // Local Variables:

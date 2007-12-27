@@ -29,8 +29,6 @@
  *
  */
 
-#include <sstream>
-
 #include "dlvhex/DependencyGraph.h"
 
 #include "dlvhex/ASPsolver.h"
@@ -38,7 +36,9 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramBuilder.h"
 
+#include <sstream>
 
+DLVHEX_NAMESPACE_BEGIN
 
 /*
 DependencyGraph::DependencyGraph()
@@ -201,7 +201,7 @@ DependencyGraph::~DependencyGraph()
 // go through succeeding as well!
 //
 bool
-DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes)
+DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes) const
 {
     for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
          ni != nodes.end();
@@ -230,7 +230,7 @@ DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes)
 
 
 bool
-DependencyGraph::isExternal(const std::vector<AtomNodePtr>& nodes)
+DependencyGraph::isExternal(const std::vector<AtomNodePtr>& nodes) const
 {
     for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
          ni != nodes.end();
@@ -279,7 +279,7 @@ DependencyGraph::getNextSubgraph()
     return NULL;
 }
 
-
+DLVHEX_NAMESPACE_END
 
 
 // Local Variables:

@@ -36,6 +36,7 @@
 #include "dlvhex/Atom.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
 
 void
 GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
@@ -401,6 +402,8 @@ GraphBuilder::dumpGraph(const NodeGraph& nodegraph, std::ostream& out) const
 	out << std::endl;
 }
 
+
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

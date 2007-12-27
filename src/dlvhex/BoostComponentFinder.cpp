@@ -44,6 +44,8 @@
 #include "dlvhex/PrintVisitor.h"
 
 
+DLVHEX_NAMESPACE_BEGIN
+
 void
 BoostComponentFinder::makeEdges(const std::vector<AtomNodePtr>& nodes,
                                 Edges& edges) const
@@ -283,7 +285,7 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
     }
 }
 
-
+DLVHEX_NAMESPACE_END
 
 
 // Local Variables:

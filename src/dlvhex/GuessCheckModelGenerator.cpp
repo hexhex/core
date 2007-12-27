@@ -30,7 +30,6 @@
  *
  */
 
-#include <sstream>
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
@@ -38,6 +37,9 @@
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 
+#include <sstream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 GuessCheckModelGenerator::GuessCheckModelGenerator()
 {
@@ -604,6 +606,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 #endif // DLVHEX_DEBUG
 }
 
+
+DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

@@ -29,8 +29,10 @@
  * 
  */
 
-#ifndef _HEXFLEXLEXER
-#define _HEXFLEXLEXER
+#if !defined(_DLVHEX_HEXFLEXLEXER)
+#define _DLVHEX_HEXFLEXLEXER
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/HexParser.hpp"
 
@@ -42,23 +44,26 @@
 #include <FlexLexer.h>
 #endif
 
+
+DLVHEX_NAMESPACE_BEGIN
 class ParserDriver;
+DLVHEX_NAMESPACE_END
+
     
 /**
  * @brief Use a refined yyFlexLexer.
  *
  */
-class HexFlexLexer : public yyFlexLexer
+class DLVHEX_EXPORT HexFlexLexer : public yyFlexLexer
 {
 public:
-    HexFlexLexer(ParserDriver* d) : lexdrv(d) { }
+    explicit HexFlexLexer(DLVHEX_NAMESPACE ParserDriver* d) : lexdrv(d) { }
     virtual ~HexFlexLexer() { }
-    ParserDriver* lexdrv;
+    DLVHEX_NAMESPACE ParserDriver* lexdrv;
     yy::HexParser::location_type* lexloc;
     yy::HexParser::semantic_type* lexval;
     int yylex(); // implemented in HexScanner.lpp
 };
-
 
 #endif
 
