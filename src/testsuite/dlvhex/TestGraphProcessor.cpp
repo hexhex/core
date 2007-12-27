@@ -30,8 +30,6 @@
  */
 
 
-#include <sstream>
-
 #include "testsuite/dlvhex/TestGraphProcessor.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/GraphBuilder.h"
@@ -39,6 +37,10 @@
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/AtomFactory.h"
+
+#include <sstream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(TestGraphProcessor);
@@ -205,7 +207,7 @@ TestGraphProcessor::testSimple()
         delete *delrule++;
 }
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

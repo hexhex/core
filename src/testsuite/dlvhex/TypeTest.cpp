@@ -31,10 +31,12 @@
  */
 
 
-#include <sstream>
-
 #include "testsuite/dlvhex/TypeTest.h"
 #include "dlvhex/PrintVisitor.h"
+
+#include <sstream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(TermTest);
@@ -318,7 +320,7 @@ AtomSetTest::testConstruction()
 }
 
 
-
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

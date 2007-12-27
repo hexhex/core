@@ -30,15 +30,19 @@
  *
  */
 
-#ifndef _ASPSOLVERTEST_H_
-#define _ASPSOLVERTEST_H_
+#if !defined(_DLVHEX_ASPSOLVERTEST_H_)
+#define _DLVHEX_ASPSOLVERTEST_H_
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ASPsolver.h"
 
+#include <cppunit/extensions/HelperMacros.h>
 
-class ASPsolverTest : public CppUnit::TestFixture
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT ASPsolverTest : public CppUnit::TestFixture
 {
 private:
     
@@ -65,7 +69,9 @@ public:
 
 };
 
-#endif /* _ASPSOLVERTEST_H_ */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_ASPSOLVERTEST_H_ */
 
 
 // Local Variables:

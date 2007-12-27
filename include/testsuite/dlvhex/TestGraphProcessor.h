@@ -30,14 +30,18 @@
  */
 
 
-#ifndef _TESTGRAPHPROCESSOR_H_
-#define _TESTGRAPHPROCESSOR_H_
+#if !defined(_DLVHEX_TESTGRAPHPROCESSOR_H_)
+#define _DLVHEX_TESTGRAPHPROCESSOR_H_
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
 
-class TestGraphProcessor : public CppUnit::TestFixture
+#include <cppunit/extensions/HelperMacros.h>
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT TestGraphProcessor : public CppUnit::TestFixture
 {
 private:
     
@@ -63,10 +67,9 @@ public:
 
 };
 
+DLVHEX_NAMESPACE_END
 
-
-
-#endif /* _TESTGRAPHPROCESSOR_H_ */
+#endif /* _DLVHEX_TESTGRAPHPROCESSOR_H_ */
 
 
 // Local Variables:

@@ -28,19 +28,21 @@
  *
  */
 
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-#include <sstream>
-#include <iostream>
-
-
-#include "dlvhex/PluginInterface.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex/PluginInterface.h"
+
+#include <string>
+#include <sstream>
+#include <iostream>
+
+#include <cstdio>
+#include <cassert>
+
+DLVHEX_NAMESPACE_BEGIN
 
 class TestAAtom : public PluginAtom
 {
@@ -167,10 +169,10 @@ public:
 	virtual void
 	getAtoms(AtomFunctionMap& a)
 	{
-		a["testA"] = new TestAAtom;
-		a["testB"] = new TestBAtom;
+	  a["testA"] = boost::shared_ptr<PluginAtom>(new TestAAtom);
+	  a["testB"] = boost::shared_ptr<PluginAtom>(new TestBAtom);
 
-		a["testConcat"] = new TestConcatAtom;
+	  a["testConcat"] = boost::shared_ptr<PluginAtom>(new TestConcatAtom);
 	}
 
 	virtual void
@@ -185,12 +187,14 @@ public:
 
 TestPlugin theTestPlugin;
 
+DLVHEX_NAMESPACE_END
+
 extern "C"
-TestPlugin*
+DLVHEX_NAMESPACE TestPlugin*
 PLUGINIMPORTFUNCTION()
 {
-	theTestPlugin.setVersion(0,0,1);
-	return &theTestPlugin;
+	DLVHEX_NAMESPACE theTestPlugin.setVersion(0,0,1);
+	return & DLVHEX_NAMESPACE theTestPlugin;
 }
 
 /* vim: set noet sw=4 ts=4 tw=80: */

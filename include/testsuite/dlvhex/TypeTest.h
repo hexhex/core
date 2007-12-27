@@ -31,16 +31,20 @@
  */
 
 
-#ifndef _TYPETEST_H_
-#define _TYPETEST_H_
+#if !defined(_DLVHEX_TYPETEST_H)
+#define _DLVHEX_TYPETEST_H
 
-#include <cppunit/extensions/HelperMacros.h>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
 
-class TermTest : public CppUnit::TestFixture
+#include <cppunit/extensions/HelperMacros.h>
+
+DLVHEX_NAMESPACE_BEGIN
+
+class DLVHEX_EXPORT TermTest : public CppUnit::TestFixture
 {
 private:
     
@@ -68,7 +72,7 @@ public:
 };
 
 
-class AtomTest : public CppUnit::TestFixture
+class DLVHEX_EXPORT AtomTest : public CppUnit::TestFixture
 {
 private:
     
@@ -103,7 +107,7 @@ public:
 
 
 
-class AtomSetTest : public CppUnit::TestFixture
+class DLVHEX_EXPORT AtomSetTest : public CppUnit::TestFixture
 {
 private:
     
@@ -112,14 +116,15 @@ private:
     CPPUNIT_TEST_SUITE_END();
 
 public:
-  
+
     void
     testConstruction();
 
 };
 
+DLVHEX_NAMESPACE_END
 
-#endif /* _TYPETEST_H_ */
+#endif /* _TYPETEST_H */
 
 
 // Local Variables:
