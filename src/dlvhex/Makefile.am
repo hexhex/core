@@ -34,9 +34,10 @@ dlvhex_SOURCES = \
     HexParser.ypp \
     HexScanner.lpp \
     OrdinaryModelGenerator.cpp \
-    OutputBuilder.cpp \
+    RuleMLOutputBuilder.cpp \
     ResultContainer.cpp \
     SafetyChecker.cpp \
+    TextOutputBuilder.cpp \
     HexParserDriver.cpp
 
 AM_CPPFLAGS = \
