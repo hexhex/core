@@ -1,6 +1,6 @@
 
 AC_PREREQ(2.59)
-AC_INIT([dlvhex],[1.7.0],[roman@kr.tuwien.ac.at])
+AC_INIT([dlvhex],[1.7.0],[tkren@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -63,7 +63,7 @@ else
 fi
 
 if test "$DLVPATH" = notfound; then
-    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com])
+    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com/])
 fi
 
 #
@@ -88,6 +88,17 @@ AC_PROG_YACC
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
+
+
+
+
+# by default we look into /opt/local and /sw for include files (macports vs. fink)
+case $host_os in
+     darwin*|macosx*)
+	CPPFLAGS="$CPPFLAGS -I/opt/local/include -I/sw/include"
+     ;;
+esac 
+
 
 #
 # search for FlexLexer.h so we can add it at `make dist' time
