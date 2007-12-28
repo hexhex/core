@@ -29,13 +29,15 @@
  * 
  */
 
-#ifndef _ATOMSET_H
-#define _ATOMSET_H
+#if !defined(_DLVHEX_ATOMSET_H)
+#define _DLVHEX_ATOMSET_H
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/BaseVisitor.h"
 
-
+DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief An AtomSet is a set of Atoms.
@@ -71,7 +73,7 @@
  * visitAtomSet of the passed visitor. Only this function actually implements the
  * proper serialization.
  */
-class AtomSet
+class DLVHEX_EXPORT AtomSet
 {
 public:
     /**
@@ -81,7 +83,7 @@ public:
      * a set of AtomPtr, we define a custom compare operator that dereferences
      * the AtomPtrs.
      */
-    struct AtomCompare
+    struct DLVHEX_EXPORT AtomCompare
     {
         bool 
         operator() (const AtomPtr& a, const AtomPtr& b)
@@ -106,7 +108,7 @@ public:
     /**
      * @brief Iterator to traverse the atomset.
      */
-    class const_iterator : public std::iterator<atomset_t::const_iterator::iterator_category,
+    class DLVHEX_EXPORT const_iterator : public std::iterator<atomset_t::const_iterator::iterator_category,
                                                 Atom,
                                                 atomset_t::difference_type>
     {
@@ -318,6 +320,7 @@ multiplySets(std::vector<AtomSet>& s1,
              std::vector<AtomSet>& s2,
              std::vector<AtomSet>& result);
 
+DLVHEX_NAMESPACE_END
 
 #endif /* _ATOMSET_H */
 

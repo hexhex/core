@@ -30,16 +30,18 @@
  */
 
 
-#ifndef _ATOMNODE_H
-#define _ATOMNODE_H
+#if !defined(_DLVHEX_ATOMNODE_H)
+#define _DLVHEX_ATOMNODE_H
 
-
-#include <utility>
+#include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/Program.h"
 
-#include "boost/shared_ptr.hpp"
+#include <boost/shared_ptr.hpp>
+
+
+DLVHEX_NAMESPACE_BEGIN
 
 //
 // forward declaration
@@ -57,7 +59,7 @@ typedef boost::shared_ptr<AtomNode> AtomNodePtr;
  * a rule, the dependency will be associated with this rule (by storing its
  * pointer).
  */
-class Dependency
+class DLVHEX_EXPORT Dependency
 {
 public:
 
@@ -164,7 +166,7 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep);
  * structure. It can have several dependencies, each possibly associated with
  * rules of the program.
  */
-class AtomNode
+class DLVHEX_EXPORT AtomNode
 {
 public:
 
@@ -318,7 +320,7 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode);
  * deleting AtomNode objects. It provides specific functions for handling a set
  * of AtomNodes, like unique creation and finding a specific node.
  */
-class NodeGraph
+class DLVHEX_EXPORT NodeGraph
 {
 private:
 
@@ -392,7 +394,9 @@ public:
 };
 
 
-#endif /* _ATOMNODE_H_ */
+DLVHEX_NAMESPACE_END
+
+#endif /* _DLVHEX_ATOMNODE_H */
 
 
 /* vim: set noet sw=4 ts=4 tw=80: */
