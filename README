@@ -31,10 +31,10 @@ be widely useful, and usable across a broad spectrum of applications. You will
 need a version equal or higher than 1.33.1. See http://www.boost.org/
 Follow the instructions of the INSTALL file found in the distributions tarball.
 Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
-pre-built Boost packages. E.g., in Debian, do
-apt-get install libboost-dev libboost-graph-dev
-(At the time of writing this, you will need to get these packages from the
-testing repository)
+pre-built Boost packages. E.g., in Debian (and Ubuntu), do
+
+ $ apt-get install libboost-dev libboost-graph-dev
+
 
 *** cppunit (optional)
 CppUnit is used for the unit-testing of dlvhex, but not necessary for building
@@ -58,8 +58,7 @@ specify the location of the header files (you can also try to use the
 If configure complains, then something vital for building dlvhex is missing in
 your system. If you get complaints about missing boost-headers, make sure that
 you have the necesary parts of boost installed and that their version is
-sufficiently recent (see above). And feel free to ask the author by mail
-(roman@kr.tuwien.ac.at)!
+sufficiently recent (see above).
 
 ** Documentation
 Run "make doxygen-run" to create the docs (a subdirectory "documentation" will
@@ -80,5 +79,5 @@ needed for developing plugins.
 Using dlvhex is very similar to working with the answer-set solver dlv. "dlvhex
 --help" displays a short help with available command-line parameters. For an
 introduction how to write hex-programs, see
-http://http://www.kr.tuwien.ac.at/staff/roman/dlvhex/
+http://http://www.kr.tuwien.ac.at/research/dlvhex/
 
