@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = gnu
 
+# `make maintainer-clean' removes those files too
 MAINTAINERCLEANFILES = \
     DLVresultParser.hpp \
     DLVresultParser.output \
@@ -22,29 +23,31 @@ dist-hook:
 	$(LN_S) @FLEXLEXER_H@ $(top_distdir)/src/dlvhex
 
 
-bin_PROGRAMS = dlvhex
-
-pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
-
-
-dlvhex_SOURCES = \
-    AnswerSet.cpp \
-    dlvhex.cpp \
-    GraphProcessor.cpp \
-    HexParser.ypp \
-    HexScanner.lpp \
-    OrdinaryModelGenerator.cpp \
-    RuleMLOutputBuilder.cpp \
-    ResultContainer.cpp \
-    SafetyChecker.cpp \
-    TextOutputBuilder.cpp \
-    HexParserDriver.cpp
-
+# global preprocessor flags
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
     $(BOOST_CXXFLAGS)
+
+
+# install dlvhex into $prefix/bin
+bin_PROGRAMS = dlvhex
+
+# install those libraries into $pkglibdir/lib
+pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
+
+# the dlvhex binary
+dlvhex_SOURCES = \
+    HexParser.ypp \
+    HexScanner.lpp \
+    AnswerSet.cpp \
+    dlvhex.cpp \
+    RuleMLOutputBuilder.cpp \
+    ResultContainer.cpp \
+    SafetyChecker.cpp \
+    TextOutputBuilder.cpp \
+    HexParserDriver.cpp
 
 #
 # -ldl is for dynamic linking against the external module libs
@@ -53,11 +56,59 @@ AM_CPPFLAGS = \
 #
 dlvhex_LDFLAGS = -ldl -static -export-dynamic
 
-
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
 dlvhex_LDADD = libdlvhexbase.la libaspsolver.la
+
+# dlvhex API
+libdlvhexbase_la_SOURCES = \
+    Atom.cpp \
+    AggregateAtom.cpp \
+    AtomFactory.cpp \
+    AtomNode.cpp \
+    AtomSet.cpp \
+    BoostComponentFinder.cpp \
+    Component.cpp \
+    ComponentFinder.cpp \
+    DependencyGraph.cpp \
+    ExternalAtom.cpp \
+    Error.cpp \
+    FixpointModelGenerator.cpp \
+    globals.cpp \
+    GraphBuilder.cpp \
+    GraphProcessor.cpp \
+    GuessCheckModelGenerator.cpp \
+    helper.cpp \
+    Literal.cpp \
+    OrdinaryModelGenerator.cpp \
+    PluginContainer.cpp \
+    PluginInterface.cpp \
+    PrintVisitor.cpp \
+    Program.cpp \
+    ProgramBuilder.cpp \
+    Repository.cpp \
+    Registry.cpp \
+    Rule.cpp \
+    Term.cpp
+
+# dlvhex ASP component
+libaspsolver_la_SOURCES = \
+    DLVresultParser.ypp \
+    DLVresultScanner.lpp \
+    DLVresultParserDriver.cpp \
+    ParserDriver.cpp \
+    ASPsolver.cpp \
+    ProcessBuf.cpp
+
+
+# for more information on `-version-info' see
+# <http://www.gnu.org/software/libtool/manual.html#Versioning>, and
+# the USENIX paper `Library Interface Versioning in Solaris and Linux'
+# <http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid.pdf>
+libdlvhexbase_la_LDFLAGS = -version-info 5:1:0
+libaspsolver_la_LDFLAGS = -version-info 0:0:0
+
 
 
 #
@@ -108,54 +159,3 @@ FLEX_MICRO=33
 # bison flags
 #
 #AM_YFLAGS = -d
-
-#
-# make convenience lib
-#
-#noinst_LTLIBRARIES = \
-#                     libaspsolver.la
-
-libdlvhexbase_la_SOURCES = \
-    Atom.cpp \
-    AggregateAtom.cpp \
-    AtomFactory.cpp \
-    AtomNode.cpp \
-    AtomSet.cpp \
-    BoostComponentFinder.cpp \
-    Component.cpp \
-    ComponentFinder.cpp \
-    DependencyGraph.cpp \
-    ExternalAtom.cpp \
-    Error.cpp \
-    FixpointModelGenerator.cpp \
-    globals.cpp \
-    GraphBuilder.cpp \
-    GuessCheckModelGenerator.cpp \
-    helper.cpp \
-    Literal.cpp \
-    PluginContainer.cpp \
-    PluginInterface.cpp \
-    PrintVisitor.cpp \
-    Program.cpp \
-    ProgramBuilder.cpp \
-    Repository.cpp \
-    Registry.cpp \
-    Rule.cpp \
-    Term.cpp
-
-# for more information on `-version-info' see
-# <http://www.gnu.org/software/libtool/manual.html#Versioning>, and
-# the USENIX paper `Library Interface Versioning in Solaris and Linux'
-# <http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid.pdf>
-libdlvhexbase_la_LDFLAGS = -version-info 5:1:0
-libaspsolver_la_LDFLAGS = -version-info 0:0:0
-
-libaspsolver_la_SOURCES = \
-    DLVresultParser.ypp \
-    DLVresultScanner.lpp \
-    DLVresultParserDriver.cpp \
-    ParserDriver.cpp \
-    ASPsolver.cpp \
-    ProcessBuf.cpp
-
-#libaspsolver_la_LIBADD = libdlvhexbase.la

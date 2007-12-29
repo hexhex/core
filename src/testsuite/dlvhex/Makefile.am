@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS = gnu
 
+CLEANFILES = libdlvhextest.so
+
 EXTRA_DIST = run-dlvhex-tests.sh
 
 TESTS = dlvhexTS run-dlvhex-tests.sh
@@ -28,17 +30,7 @@ dlvhexTS_SOURCES = \
     TestSuite.cpp \
     TypeTest.cpp \
     TestGraphProcessor.cpp \
-    ASPsolverTest.cpp \
-    $(top_srcdir)/src/dlvhex/BoostComponentFinder.cpp \
-    $(top_srcdir)/src/dlvhex/GraphProcessor.cpp \
-    $(top_srcdir)/src/dlvhex/GraphBuilder.cpp \
-    $(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
-    $(top_srcdir)/src/dlvhex/AtomNode.cpp \
-    $(top_srcdir)/src/dlvhex/Component.cpp \
-    $(top_srcdir)/src/dlvhex/OrdinaryModelGenerator.cpp \
-    $(top_srcdir)/src/dlvhex/FixpointModelGenerator.cpp \
-    $(top_srcdir)/src/dlvhex/GuessCheckModelGenerator.cpp \
-    $(top_srcdir)/src/dlvhex/ProgramBuilder.cpp
+    ASPsolverTest.cpp 
 
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \

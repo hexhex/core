@@ -6,12 +6,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 
 pkgconfig_DATA = dlvhex.pc
 
-SUBDIRS = \
-	  examples \
-          include/dlvhex \
-          include/testsuite/dlvhex \
-          src/dlvhex \
-          src/testsuite/dlvhex
+SUBDIRS = examples include src
 
 EXTRA_DIST = \
     dlvhex.pc.in \
