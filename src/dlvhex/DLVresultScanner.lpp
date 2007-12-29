@@ -75,11 +75,11 @@
 %option yyclass="DLVresultFlexLexer"
 
 
+/* some OSs use \r\n as end-of-line instead of \n */
 NEWLINE     \15?\n
-                        // some OSs use \r\n as end-of-line instead of \n
 
+/*  need the slash for path-strings at the beginning! */
 MSG         ([a-zA-Z/].+)
-                        // need the slash for path-strings at the beginning!
 
 ID          ([A-Za-z][A-Za-z_0-9]*)
 
@@ -93,7 +93,7 @@ NUM         ([0-9]+)
 %%
 
 %{
-  // abbreviate it as token
+   /* abbreviate it as token */
   typedef yy::DLVresultParser::token token;
 %}
 
@@ -111,8 +111,8 @@ NUM         ([0-9]+)
 "}"     { return token::CURLY_CLOSE;   }
 
 ^{MSG} {
-    // something starting not with a '{' at the beginning of a line
-    // this is some dlv-(error-)message
+  /* something starting not with a '{' at the beginning of a line
+     this is some dlv-(error-)message */
     yylval.string = new std::string(yytext);
     return token::MESSAGE;
 }
@@ -131,8 +131,8 @@ NUM         ([0-9]+)
 {BLANK} { /* Skip blanks */ }
 
 
-. { // Anything not matching one of the patterns
-    // given above is considered an error.
+. { /* Anything not matching one of the patterns
+       given above is considered an error. */
 
     assert(yytext[1]==0);
     driver.error(*yylloc, "invalid character");
