@@ -1,3 +1,30 @@
+2007-12-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Small update.
+	* NEWS: Likewise.
+
+	* bootstrap.sh: Beautify.
+
+	* m4/boost.m4: Use AC_COMPILE_IFELSE instead of deprecated AC_TRY_COMPILE.
+
+	* src/testsuite/dlvhex/TestSuite.cpp: Fix compile-time warning.
+
+	* configure.ac: Use pkgconfig for cppunit.
+	Depend on Boost >= 1.33.0 and cppunit >= 1.12.0.
+	
+	* m4/cppunit.m4: Remove.
+
+	* src/dlvhex/DLVresultScanner.lpp: flex 2.5.34 does not like C++-style comments.
+
+	* src/testsuite/dlvhex/Makefile.am: Enable recursive builds in every directory.
+	Link testsuite with libraries instead of compiling stuff redundantly.
+	* src/Makefile.am: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/Makefile.am: Likewise.
+	* include/Makefile.am: Likewise.
+	* include/testsuite/Makefile.am: Likewise.
+	* Makefile.am: Likewise.
+
 2007-12-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am: Export OutputBuilder interface to the plugins.
@@ -11,6 +38,8 @@
 	* include/dlvhex/AnswerSet.h: Likewise.
 	* include/dlvhex/Atom.h: Likewise.
 	* include/dlvhex/AtomFactory.h: Likewise.
+	* include/dlvhex/AtomNode.h: Likewise.
+	* include/dlvhex/AtomSet.h: Likewise.
 	* include/dlvhex/BaseVisitor.h: Likewise.
 	* include/dlvhex/BoostComponentFinder.h: Likewise.
 	* include/dlvhex/Component.h: Likewise.
@@ -116,7 +145,6 @@
 	Update maintainer.
 
 	* include/dlvhex/Term.h: Fix documentation.
-	(Module): 
 
 2007-11-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
