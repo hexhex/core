@@ -35,20 +35,14 @@ dnl use it
 
   boost_min_version=ifelse([$1], ,1.20.0,$1)
 
-dnl  AC_LANG_SAVE
-dnl  AC_LANG_CPLUSPLUS
   AC_LANG_PUSH([C++])
   OLD_CXXFLAGS=$CXXFLAGS
   CXXFLAGS="$CXXFLAGS $BOOST_CXXFLAGS"
   AC_MSG_CHECKING([for the Boost C++ libraries, version $boost_min_version or newer])
-  AC_TRY_COMPILE(
-    [
-#include <boost/version.hpp>
-],
-    [],
-    [
-      have_boost="yes"
-    ],
+
+  AC_COMPILE_IFELSE(
+    AC_LANG_PROGRAM([[#include <boost/version.hpp>]], []),
+    [have_boost="yes"],
     [
       AC_MSG_RESULT(no)
       have_boost="no"
@@ -61,18 +55,15 @@ dnl  AC_LANG_CPLUSPLUS
     WANT_BOOST_SUB_MINOR=`echo $boost_min_version | sed "s,^\([[0-9]]*\).\([[0-9]]*\).\([[0-9]]*\),\3,"`
     WANT_BOOST_VERSION=`expr $WANT_BOOST_MAJOR \* 100000 \+ $WANT_BOOST_MINOR \* 100 \+ $WANT_BOOST_SUB_MINOR`
 
-    AC_TRY_COMPILE(
-      [
-#include <boost/version.hpp>
-],
-      [
-#if BOOST_VERSION >= $WANT_BOOST_VERSION
-// Everything is okay
-#else
-#  error Boost version is too old
-#endif
-
-],
+    AC_COMPILE_IFELSE(
+      AC_LANG_PROGRAM([[#include <boost/version.hpp>]],
+      		      [[
+			#if BOOST_VERSION >= $WANT_BOOST_VERSION
+			// Everything is okay
+			#else
+			#error Boost version is too old
+			#endif
+                      ]]),
       [
         AC_MSG_RESULT(yes)
         ifelse([$2], , :, [$2])
@@ -82,8 +73,8 @@ dnl  AC_LANG_CPLUSPLUS
         ifelse([$3], , :, [$3])
       ])
   fi
+
   CXXFLAGS=$OLD_CXXFLAGS
-dnl  AC_LANG_RESTORE
   AC_LANG_POP
 ])
 
