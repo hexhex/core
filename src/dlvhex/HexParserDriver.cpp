@@ -75,35 +75,33 @@ HexParserDriver::setOrigin(const std::string& org)
 
 void
 HexParserDriver::parse(std::istream& is,
-                       Program &program,
+                       Program& program,
                        AtomSet& EDB) throw (SyntaxError)
 {
-    yy::HexParser parser(this, program, EDB);
-    parser.set_debug_level(false);
-    lexer->switch_streams(&is, &std::cerr);
+  yy::HexParser parser(this, program, EDB);
+  parser.set_debug_level(false);
+  lexer->switch_streams(&is, &std::cerr);
 
-    try
+  try
     {
-        parser.parse();
+      parser.parse();
     }
-    catch (SyntaxError& e)
+  catch (SyntaxError& e)
     {
-        //
-        // is there was an error on the bison part, add the filename and throw
-        // again
-        //
-        e.setFile(this->source);
-        throw e;
+      //
+      // is there was an error on the bison part, add the filename and throw
+      // again
+      //
+      e.setFile(this->source);
+      throw e;
     }
-
-    //syncStream();
 } 
 
 
 void
 HexParserDriver::parse(const std::string& file,
                        Program &program,
-                       AtomSet& EDB)
+                       AtomSet& EDB) throw (SyntaxError)
 {
     this->source = file;
 
@@ -112,29 +110,11 @@ HexParserDriver::parse(const std::string& file,
     ifs.open(this->source.c_str());
 
     if (!ifs.is_open())
-    {
-        throw GeneralError("File " + this->source + " not found");
-    }
+      {
+        throw SyntaxError("File " + this->source + " not found");
+      }
 
-    yy::HexParser parser(this, program, EDB);
-    parser.set_debug_level(false);
-    lexer->switch_streams(&ifs, &std::cerr);
-
-    try
-    {
-        parser.parse();
-    }
-    catch (SyntaxError& e)
-    {
-        //
-        // is there was an error on the bison part, add the filename and throw
-        // again
-        //
-        e.setFile(this->source);
-        throw e;
-    }
-
-    //syncStream();
+    parse(ifs, program, EDB);
 
     ifs.close();
 } 
