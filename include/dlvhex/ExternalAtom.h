@@ -35,8 +35,6 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/PluginInterface.h"
-
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -47,6 +45,7 @@ class DLVHEX_EXPORT ExternalAtom : public Atom
 {
 public:
 
+    /// @brief copy ctor
     ExternalAtom(const ExternalAtom&);
 
 
@@ -54,7 +53,7 @@ public:
      * @brief Constructor.
      *
      * The constructor does not check the parameters - this is done only in
-     * findPluginAtom(), where we actually associate the parsed external atom
+     * setPluginAtom(), where we actually associate the parsed external atom
      * with the atom-object provided by the plugin.
      */
     ExternalAtom(const std::string& name,
@@ -67,9 +66,13 @@ public:
      *
      * Checks also if the atom has correct syntax according to its specification
      * in the plugin (arities of input and output).
+     *
+     * Before you can call ExternalAtom::evaluate or
+     * ExternalAtom::getInputType, you MUST call this method in order
+     * to setup pluginAtom.
      */
-    void
-    findPluginAtom() const;
+//     void
+//     setPluginAtom(const PluginContainer&);
 
     /**
      * @brief Returns the auxiliary predicate name.
@@ -134,8 +137,8 @@ public:
      *
      * (see also PluginAtom::InputType)
      */
-    PluginAtom::InputType
-    getInputType(unsigned idx) const;
+ //    PluginAtom::InputType
+//     getInputType(unsigned idx) const;
 
 
     /**
@@ -150,9 +153,9 @@ public:
      * non-ground. The passed part of the interpretation is determined by those
      * input parameters that are of type PREDICATE.
      */
-    void
-    evaluate(const AtomSet &i,
-             AtomSet& result) const;
+//     void
+//     evaluate(const AtomSet &i,
+//              AtomSet& result) const;
 
 
     /**
@@ -204,8 +207,8 @@ private:
      * auciliary atoms in the interpretation or simply returns the original
      * input list, if it was fully ground.
      */
-    void
-    groundInputList(const AtomSet&, std::vector<Tuple>&) const;
+ //    void
+//     groundInputList(const AtomSet&, std::vector<Tuple>&) const;
 
     Tuple inputList;
 
@@ -253,9 +256,9 @@ private:
      * @brief Pointer to the PluginAtom object that matches the atom's
      * function name
      *
-     * must be mutable s.t. const methods may call findPluginAtom.
+     * call ExternalAtom::setPluginAtom to setup this member.
      */
-  mutable boost::shared_ptr<PluginAtom> pluginAtom;
+ //    boost::shared_ptr<PluginAtom> pluginAtom;
 
 };
 
