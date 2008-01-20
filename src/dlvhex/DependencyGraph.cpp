@@ -48,8 +48,9 @@ DependencyGraph::DependencyGraph()
 
 
 DependencyGraph::DependencyGraph(const NodeGraph& ng,
-                                 ComponentFinder* cf)
-    : nodegraph(ng), componentFinder(cf)
+                                 ComponentFinder* cf,
+				 PluginContainer& container)
+  : nodegraph(ng), componentFinder(cf)
 {
     std::vector<std::vector<AtomNodePtr> > weakComponents;
 
@@ -92,11 +93,11 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
             //
             if (hasNegEdge(*scc))
             {
-                mg = new GuessCheckModelGenerator();
+                mg = new GuessCheckModelGenerator(container);
             }
             else
             {
-                mg = new FixpointModelGenerator();
+                mg = new FixpointModelGenerator(container);
             }
 
             Component* comp = new ProgramComponent(*scc, mg);
@@ -142,7 +143,7 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
             if (typeid(*((*weaknode)->getAtom())) == typeid(ExternalAtom))
             {
                 //std::cout << "single node external atom!" << std::endl;
-                Component* comp = new ExternalComponent(*weaknode);
+	      Component* comp = new ExternalComponent(*weaknode, container);
 
                 //
                 // the ExternalComponent-object only consists of a single

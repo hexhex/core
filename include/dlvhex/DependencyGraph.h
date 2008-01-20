@@ -46,6 +46,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declarations
+class PluginContainer;
 
 /**
  * @brief
@@ -62,7 +64,8 @@ public:
      *
      */
     DependencyGraph(const NodeGraph&,
-                    ComponentFinder*);
+                    ComponentFinder*,
+		    PluginContainer&);
 
 
     /**
@@ -114,7 +117,6 @@ private:
 
 
     ComponentFinder* componentFinder;
-
 };
 
 DLVHEX_NAMESPACE_END

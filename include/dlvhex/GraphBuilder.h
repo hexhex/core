@@ -42,6 +42,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declarations
+class PluginContainer;
+
 /**
  * @brief Class for building a dependency graph from a given program.
  *
@@ -58,7 +61,7 @@ public:
      * rules, e.g., for external atoms with variable input parameters.
      */
     void
-    run(const Program&, NodeGraph&);
+    run(const Program&, NodeGraph&, PluginContainer&);
 
 
     /**

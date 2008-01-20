@@ -194,7 +194,7 @@ public:
 
     /// Ctor.
     explicit
-    ExternalComponent(AtomNodePtr);
+      ExternalComponent(AtomNodePtr, PluginContainer&);
 
     /**
      * @brief Computes the result of the external computation.
@@ -214,6 +214,8 @@ private:
      * @brief External atom of this component.
      */
     ExternalAtom* externalAtom;
+
+    PluginContainer& pluginContainer;
 };
 
 

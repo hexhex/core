@@ -43,6 +43,10 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declarations
+class PluginContainer;
+
+
 /**
  * @brief Abstract strategy class for computing the model of a program from
  * it's graph.
@@ -91,10 +95,13 @@ protected:
  */
 class DLVHEX_EXPORT FixpointModelGenerator : public ModelGenerator
 {
-public:
+ private:
+  PluginContainer& container;
+  
+ public:
 
     /// Ctor
-    FixpointModelGenerator();
+    FixpointModelGenerator(PluginContainer&);
 
     void
     initialize(const Program&);
@@ -174,10 +181,13 @@ public:
  */
 class DLVHEX_EXPORT GuessCheckModelGenerator : public ModelGenerator
 {
+ private:
+  PluginContainer& container;
+
 public:
 
     /// Ctor
-    GuessCheckModelGenerator();
+    GuessCheckModelGenerator(PluginContainer&);
 
     /**
      * @brief Computes models of a set of nodes by iteration.
