@@ -1,3 +1,63 @@
+2008-01-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Add PluginContainer.
+
+	* src/dlvhex/Makefile.am: Link with libltdl.
+	* src/testsuite/dlvhex/Makefile.am: Likewise.
+
+	* src/dlvhex/GraphBuilder.cpp: Use PluginContainer for Input Types.
+
+	* src/dlvhex/AggregateAtom.cpp: Add missing includes.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/ProgramBuilder.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+
+	* include/dlvhex/Makefile.am: Add EvaluateExtatom.h.
+
+	* include/dlvhex/EvaluateExtatom.h: New file.
+	* src/dlvhex/EvaluateExtatom.cpp: Likewise.
+
+	* include/dlvhex/Component.h (ExternalComponent): Add PluginContainer.
+	* include/dlvhex/DependencyGraph.h: Likewise.
+	* include/dlvhex/GraphBuilder.h: Likewise.
+	* include/dlvhex/ModelGenerator.h: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+
+	* src/dlvhex/Component.cpp: Use EvaluateExtatom.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+
+	* src/dlvhex/dlvhex.cpp (PluginContainer::getAtom): Move plugin
+	search to PluginContainer.
+
+	* src/dlvhex/HexParserDriver.cpp: Unify both parse functions.
+	* include/dlvhex/HexParserDriver.h: Likewise.
+
+	* src/dlvhex/HexParser.ypp: Treat ExternalAtoms purely
+	syntactically, no assigning of PluginAtoms.
+
+	* include/dlvhex/PluginInterface.h: Add OutputBuilder to the
+	Plugin API.
+	(PluginAtom::getInputTypes): New method.
+	* src/dlvhex/PluginInterface.cpp: Likewise.
+
+	* include/dlvhex/PluginContainer.h: Use libltdl.
+	* src/dlvhex/PluginContainer.cpp: Likewise.
+
+	* include/dlvhex/ExternalAtom.h (evaluate): Move to
+	EvaluateExtatom.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* examples/Makefile.am: Add missing test files.
+
+	* configure.ac: Configure libltdl.
+
+	* bootstrap.sh: Copy libltdl.
+
+	* NEWS: Update.
+
+	* Makefile.am (SUBDIRS): Add libltdl.
+
 2007-12-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Small update.
