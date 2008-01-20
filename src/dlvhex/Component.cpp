@@ -42,6 +42,7 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/EvaluateExtatom.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -278,10 +279,11 @@ ProgramComponent::dump(std::ostream& out) const
 
 
 
-ExternalComponent::ExternalComponent(AtomNodePtr node)
-    : externalAtom(dynamic_cast<ExternalAtom*>(node->getAtom().get()))
-{
-}
+ExternalComponent::ExternalComponent(AtomNodePtr node, PluginContainer& pc)
+  : externalAtom(dynamic_cast<ExternalAtom*>(node->getAtom().get())),
+    pluginContainer(pc)
+{ }
+
 
 void
 ExternalComponent::evaluate(std::vector<AtomSet>& input)
@@ -303,10 +305,11 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         try
         {
 #ifdef DLVHEX_DEBUG
-            DEBUG_START_TIMER
+	  DEBUG_START_TIMER
 #endif // DLVHEX_DEBUG
 
-            externalAtom->evaluate(i, res);
+	    EvaluateExtatom eea(externalAtom, pluginContainer);
+	    eea.evaluate(i, res);
 
 #ifdef DLVHEX_DEBUG
 			//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-

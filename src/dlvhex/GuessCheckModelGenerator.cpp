@@ -36,20 +36,21 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/EvaluateExtatom.h"
 
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-GuessCheckModelGenerator::GuessCheckModelGenerator()
-{
-}
+GuessCheckModelGenerator::GuessCheckModelGenerator(PluginContainer& c)
+  : container(c)
+{ }
 
 
 void
 GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
-								  const AtomSet& I,
-								  std::vector<AtomSet>& models)
+				  const AtomSet& I,
+				  std::vector<AtomSet>& models)
 {
 //	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 //		  std::cout << "= Guess&Check ModelGenerator =" << std::endl;
@@ -236,7 +237,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			//std::cerr<<"evaluating " << **ei << " with guess as input" << std::endl;
 			try
 			{
-				(*ei)->evaluate(*guess, checkresult);
+			  EvaluateExtatom eea(*ei, container);
+			  eea.evaluate(*guess, checkresult);
 			}
 			catch (GeneralError&)
 			{
@@ -461,7 +463,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			try
 			{
 			//	  Solver.callSolver(reduced, 0);
-				FixpointModelGenerator fp;
+			  FixpointModelGenerator fp(container);
 				fp.compute(flpreduced, a, strongf);
 			}
 			catch (FatalError e)

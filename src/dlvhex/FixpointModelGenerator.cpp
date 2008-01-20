@@ -43,10 +43,12 @@
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/EvaluateExtatom.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-FixpointModelGenerator::FixpointModelGenerator()
+FixpointModelGenerator::FixpointModelGenerator(PluginContainer& c)
+  : container(c)
 {
     serializedProgram.clear();
 }
@@ -203,8 +205,8 @@ FixpointModelGenerator::compute(const Program& program,
         {
             try
             {
-                (*a)->evaluate(currentI,
-                               extresult);
+	      EvaluateExtatom eea(*a, container);
+	      eea.evaluate(currentI, extresult);
             }
             catch (GeneralError&)
             {
