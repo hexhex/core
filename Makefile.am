@@ -6,7 +6,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 
 pkgconfig_DATA = dlvhex.pc
 
-SUBDIRS = examples include src
+SUBDIRS = libltdl examples include src
 
 EXTRA_DIST = \
     dlvhex.pc.in \
