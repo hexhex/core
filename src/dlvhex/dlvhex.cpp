@@ -81,15 +81,12 @@
 #include <vector>
 
 #include <getopt.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <pwd.h>
 
 //
 // definition for getwd ie MAXPATHLEN etc
 //
-#include <sys/param.h>
-#include <stdio.h>
+//#include <sys/param.h>
+//#include <stdio.h>
 //#include <dlfcn.h>
 
 
@@ -100,6 +97,8 @@
 
 DLVHEX_NAMESPACE_USE
 
+
+/// argv[0]
 const char*  WhoAmI;
 
 
@@ -107,7 +106,7 @@ const char*  WhoAmI;
 /**
  * @brief Print logo.
  */
-	void
+void
 printLogo()
 {
 	std::cout
@@ -295,44 +294,6 @@ removeNamespaces()
 	}
 }
 
-
-/**
- * Search a specific directory for dlvhex-plugins and store their names.
- */
-void
-searchPlugins(std::string dir, std::set<std::string>& pluginlist)
-{
-	int count, i;
-	struct dirent **files;
-	std::string filename;
-
-	count = scandir(dir.c_str(), &files, 0, alphasort);
-
-//		std::cerr << "  d: " << dir << std::endl;
-	for (i = 0; i < count; ++i)
-	{
-		filename = files[i]->d_name;
-//		std::cerr << "  f: " << filename << std::endl;
-
-		//        if (filename.substr(0,9) == "libdlvhex")
-		if  (filename.size() > 3)
-			if (filename.substr(filename.size() - 3, 3) == ".so")
-				pluginlist.insert(dir + '/' + filename);
-
-	}
-
-	//
-	// clean up scandir mess
-	//
-	if (count != -1)
-	{
-		while (count--)
-			free(files[count]);
-
-		free(files); 
-	}
-
-}
 
 
 #include <ext/stdio_filebuf.h> 
@@ -550,76 +511,52 @@ main (int argc, char *argv[])
 	DEBUG_START_TIMER
 #endif // DLVHEX_DEBUG
 
-	std::set<std::string> libfilelist;
+	PluginContainer container(optionPlugindir);
+
+	std::vector<PluginInterface*> plugins = container.importPlugins();
 
 	std::stringstream allpluginhelp;
 
-	//
-	// first look into specified plugin dir
-	//
-	if (!optionPlugindir.empty())
-		searchPlugins(optionPlugindir, libfilelist);
-
-	//
-	// now look into user's home
-	//
-	std::string userhome(::getpwuid(::geteuid())->pw_dir);
-
-	userhome = userhome + "/" + (std::string)USER_PLUGIN_DIR;
-
-	searchPlugins(userhome, libfilelist);
-
-	//
-	// eventually look into system plugin dir
-	//
-	searchPlugins(SYS_PLUGIN_DIR, libfilelist);
-
-	std::vector<PluginInterface*> plugins;
 
 	//
 	// import found plugin-libs
 	//
-	for (std::set<std::string>::const_iterator si = libfilelist.begin();
-			si != libfilelist.end();
-			si++)
-	{
-		try
-		{
-			PluginInterface* plugin;
+	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
+	     pi != plugins.end(); ++pi)
+	  {
+	    try
+	      {
+		PluginInterface* plugin = *pi;
 
-			plugin = PluginContainer::Instance()->importPlugin(*si);
+		if (plugin != 0)
+		  {
+		    // print plugin's version information
+		    if (!Globals::Instance()->getOption("Silent"))
+		      {
+			Globals::Instance()->getVerboseStream() << "opening "
+								<< " version "
+								<< plugin->getVersionMajor() << "."
+								<< plugin->getVersionMinor() << "."
+								<< plugin->getVersionMicro() << std::endl;
+		      }
 
-			if (plugin != 0)
-			{
-			  // print plugin's version information
-			  if (!Globals::Instance()->getOption("Silent"))
-			    {
-			      Globals::Instance()->getVerboseStream() << "opening plugin "
-								      << *si << " version "
-								      << plugin->getVersionMajor() << "."
-								      << plugin->getVersionMinor() << "."
-								      << plugin->getVersionMicro() << std::endl;
-			    }
-
-			  std::stringstream pluginhelp;
+		    std::stringstream pluginhelp;
 			  
-			  plugins.push_back(plugin);
+		    plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
 
-			  plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
-
-			  if (!pluginhelp.str().empty())
-			    {
-			      allpluginhelp << std::endl << pluginhelp.str();
-			    }
-			}
-		}
-		catch (GeneralError &e)
-		{
-			std::cerr << e.getErrorMsg() << std::endl;
-
-			exit(1);
-		}
-	}
+		    if (!pluginhelp.str().empty())
+		      {
+			allpluginhelp << std::endl << pluginhelp.str();
+		      }
+		  }
+	      }
+	    catch (GeneralError &e)
+	      {
+		std::cerr << e.getErrorMsg() << std::endl;
+		
+		exit(1);
+	      }
+	  }
 
 #ifdef DLVHEX_DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
@@ -865,6 +802,7 @@ main (int argc, char *argv[])
 					input.rdbuf(fb);
 				}
 
+				// run the parser
 				driver.parse(input, IDB, EDB);
 
 				if (optiondlt)
@@ -982,7 +920,7 @@ main (int argc, char *argv[])
 
     try
     {
-        gb.run(IDB, nodegraph);
+      gb.run(IDB, nodegraph, container);
     }
     catch (GeneralError& e)
     {
@@ -1063,7 +1001,7 @@ main (int argc, char *argv[])
 		// ComponentFinder to find relevant graph
 		// properties for the subsequent processing stage.
 		//
-		dg = new DependencyGraph(nodegraph, cf);
+		dg = new DependencyGraph(nodegraph, cf, container);
 
 		if (Globals::Instance()->getOption("StrongSafety"))
 			StrongSafetyChecker sc(IDB, dg);
