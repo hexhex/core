@@ -34,12 +34,12 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/Atom.h"
-
+#include "dlvhex/PluginContainer.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 void
-GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
+GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer& container)
 {
 	//
 	// in this multimap, we will store the input arguments of type PREDICATE
@@ -181,16 +181,25 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 			{
 				ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
 
+				boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getFunctionName());
+
+				const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
+				const Tuple& input = ext->getInputTerms();
+				Tuple::const_iterator iit = input.begin();
+
+
 				//
 				// go through all input terms of this external atom
 				//
-				for (unsigned s = 0; s < ext->getInputTerms().size(); s++)
+				for (std::vector<PluginAtom::InputType>::const_iterator it = inputTypes.begin();
+				     it != inputTypes.end();
+				     ++it, ++iit)
 				{
 					//
 					// consider only PREDICATE input terms (naturally, for constant
 					// input terms we won't have any dependencies!)
 					//
-					if (ext->getInputType(s) == PluginAtom::PREDICATE)
+					if (*it == PluginAtom::PREDICATE)
 					{
 						//
 						// store the AtomNode of this external atom together will
@@ -202,7 +211,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph)
 						// then search for those AtomNodes with a Predicate 'a' - those
 						// will be assigned a dependency relation with n1!
 						//
-						extinputs.insert(std::pair<Term, AtomNodePtr>(ext->getInputTerms()[s], bn));
+						extinputs.insert(std::pair<Term, AtomNodePtr>(*iit, bn));
 					}
 				}
 			}
