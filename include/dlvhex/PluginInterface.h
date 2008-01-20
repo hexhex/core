@@ -482,7 +482,7 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class Program;
 class NodeGraph;
-
+class OutputBuilder;
 
 
 /**
@@ -805,6 +805,11 @@ public:
     InputType
     getInputType(unsigned index) const;
 
+    /**
+     * @return inputType
+     */
+    const std::vector<InputType>&
+    getInputTypes() const;
 
 private:
 
@@ -940,13 +945,22 @@ public:
         return 0;
     }
 
-	/**
-	 * \todo doc.
-	 */
+    /**
+     * \todo doc.
+     */
     virtual PluginOptimizer* 
     createOptimizer()
     {
         return 0;
+    }
+
+    /**
+     * creates an OutputBuilder
+     */
+    virtual OutputBuilder*
+    createOutputBuilder()
+    {
+      return 0;
     }
 
     /**
@@ -975,9 +989,12 @@ public:
 	 * Naturally, more than one atoms can be registered here:
 	 *
 	 * \code
-	 * a["split"] = new SplitAtom;
-	 * a["concat"] = new ConcatAtom;
-	 * a["substr"] = new SubstringAtom;
+	 * boost::shared_ptr<PluginAtom> split(new SplitAtom);
+	 * boost::shared_ptr<PluginAtom> concat(new ConcatAtom);
+	 * boost::shared_ptr<PluginAtom> substr(new SubstringAtom);
+	 * a["split"] = split;
+	 * a["concat"] = concat;
+	 * a["substr"] = substr;
 	 * \endcode
      */
     virtual void
@@ -1002,8 +1019,8 @@ public:
      *
      * The version number will be displayed when dlvhex loads the plugin. It can
      * be used to check whether the right version is loaded. This method is not
-	 * supposed to be overridden, but only called in the PLUGINIMPORTFUNCTION()
-	 * (see Section \ref importing).
+     * supposed to be overridden, but only called in the PLUGINIMPORTFUNCTION()
+     * (see Section \ref importing).
      */
     void
     setVersion(unsigned major, unsigned minor, unsigned micro)

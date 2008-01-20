@@ -152,6 +152,13 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 }
 
 
+const std::vector<PluginAtom::InputType>&
+PluginAtom::getInputTypes() const
+{
+  return inputType;
+}
+
+
 PluginAtom::InputType
 PluginAtom::getInputType(const unsigned index) const
 {
