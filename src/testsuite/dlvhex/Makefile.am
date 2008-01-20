@@ -42,6 +42,7 @@ dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) $(DLVHEX_LIBS)
 
 dlvhexTS_LDADD = \
+    @LIBLTDL@ @LIBADD_DL@ \
     $(top_builddir)/src/dlvhex/libdlvhexbase.la \
     $(top_builddir)/src/dlvhex/libaspsolver.la
 

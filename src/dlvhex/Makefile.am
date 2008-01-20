@@ -24,7 +24,7 @@ dist-hook:
 
 
 # global preprocessor flags
-AM_CPPFLAGS = \
+INCLUDES = \
     -I$(top_srcdir)/include \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
@@ -49,17 +49,20 @@ dlvhex_SOURCES = \
     TextOutputBuilder.cpp \
     HexParserDriver.cpp
 
+
+# we want libltdl includes
+INCLUDES += @INCLTDL@
+
 #
-# -ldl is for dynamic linking against the external module libs
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-dlvhex_LDFLAGS = -ldl -static -export-dynamic
+dlvhex_LDFLAGS = -static -export-dynamic
 
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = libdlvhexbase.la libaspsolver.la
+dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
@@ -72,6 +75,7 @@ libdlvhexbase_la_SOURCES = \
     Component.cpp \
     ComponentFinder.cpp \
     DependencyGraph.cpp \
+    EvaluateExtatom.cpp \
     ExternalAtom.cpp \
     Error.cpp \
     FixpointModelGenerator.cpp \
@@ -109,7 +113,7 @@ libaspsolver_la_SOURCES = \
 libdlvhexbase_la_LDFLAGS = -version-info 5:1:0
 libaspsolver_la_LDFLAGS = -version-info 0:0:0
 
-
+libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 
 #
 # in maintainer-mode we check for a sufficient version of the bison/flex combo
