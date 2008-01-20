@@ -2,6 +2,7 @@ Release 1.7 (XXX 2008):
     Introduce dlvhex namespace.
     Introduce OutputBuilder interface.
     Sanitize Plugin interface.
+    Use libltdl.
 
 Release 1.6 (August 2007):
     Variable arities of external atom input lists
