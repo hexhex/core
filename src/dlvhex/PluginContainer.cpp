@@ -33,71 +33,118 @@
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
 
-#include <dlfcn.h>
+#include <ltdl.h>
+
+#include <sys/types.h>
+#include <dirent.h>
+#include <pwd.h>
+
+#include <iostream>
+#include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
 typedef PluginInterface* (*t_import)();
 
 
-PluginContainer*
-PluginContainer::Instance ()
+int
+findplugins(const char* filename, lt_ptr data)
 {
-  ///@todo singleton?
-    static PluginContainer _instance;
+  std::vector<std::string>* pluginlist = reinterpret_cast<std::vector<std::string>*>(data);
 
-    return &_instance;
+  std::string fn(filename);
+  std::string::size_type base = fn.find_last_of("/");
+
+  // if basename starts with lib, then we should have a library here
+  /// @todo we could lt_dlopen the file here, to check if it is really a plugin
+  if (fn.substr(base).find("/lib") == 0)
+    {
+      pluginlist->push_back(fn);
+    }
+  return 0;
 }
 
-PluginContainer::~PluginContainer()
-{ }
 
-PluginInterface*
-PluginContainer::importPlugin(const std::string& filename)
+PluginContainer::PluginContainer(const std::string& optionPath)
 {
-    void* dlHandle = dlopen(filename.c_str(), RTLD_LAZY);
-
-    if (!dlHandle)
+  if (lt_dlinit())
     {
-        throw FatalError("Cannot open library " + filename + ": " + dlerror());
+      throw GeneralError("Could not initialize libltdl");
     }
 
-    t_import getplugin = (t_import) dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING);
+  //
+  // now look into the user's home, and into the global plugin directory
+  //
+  std::stringstream searchpath;
 
-    if (!getplugin)
+  const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+
+  searchpath << optionPath << ':'
+	     << homedir << "/" USER_PLUGIN_DIR << ':'
+	     << SYS_PLUGIN_DIR;
+
+  if (lt_dlsetsearchpath(searchpath.str().c_str()))
     {
-//        throw FatalError("Cannot load symbol " PLUGINIMPORTFUNCTIONSTRING);
-        return 0;
+      throw GeneralError("Could not set libltdl search path: " + searchpath.str());
     }
 
-    PluginInterface::AtomFunctionMap pa;
+  // search the directory search paths for plugins and setup pluginList
+  lt_dlforeachfile(NULL, findplugins, &this->pluginList);
+}
 
-    PluginInterface* plugin = getplugin();
 
-    plugin->getAtoms(pa);
-
-    for(PluginInterface::AtomFunctionMap::const_iterator it = pa.begin();
-        it != pa.end();
-        ++it)
+PluginContainer::~PluginContainer()
+{
+  ///@todo this does not work, we have to include specific unloading functions in the plugins
+  /* if (lt_dlexit())
     {
-        // std::cout << (*it).first << " -> " << (*it).second << std::endl;
-        
-        //
-        // TODO: check if this function name already exists!
-        //
+      std::cerr << "lt_dlexit() failed" << std::endl;
+      } */
+}
 
-//        if (Globals::Instance()->doVerbose(Globals::???))
-//            std::cout << "Registering external atom " << (*it).first << std::endl;
 
-        pluginAtoms[it->first] = it->second;
+std::vector<PluginInterface*>
+PluginContainer::importPlugins()
+{
+  std::vector<PluginInterface*> plugins;
+
+  for (std::vector<std::string>::const_iterator it = pluginList.begin();
+       it != pluginList.end(); ++it)
+    {
+      lt_dlhandle dlHandle = lt_dlopenext(it->c_str());
+
+      if (dlHandle == NULL)
+	{
+	  throw FatalError("Cannot open library " + *it + ": " + lt_dlerror());
+	}
+
+      t_import getplugin = (t_import) lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING);
+      
+      if (getplugin != NULL)
+	{
+	  PluginInterface::AtomFunctionMap pa;
+
+	  PluginInterface* plugin = getplugin();
+
+	  plugins.push_back(plugin);
+
+	  plugin->getAtoms(pa);
+
+	  for(PluginInterface::AtomFunctionMap::const_iterator it = pa.begin();
+	      it != pa.end();
+	      ++it)
+	    {
+	      pluginAtoms[it->first] = it->second;
+	    }
+	}
     }
 
-    return plugin;
+  return plugins;
 }
 
 
 boost::shared_ptr<PluginAtom>
-PluginContainer::getAtom(const std::string& name)
+PluginContainer::getAtom(const std::string& name) const
 {
   PluginInterface::AtomFunctionMap::const_iterator pa = pluginAtoms.find(name);
 

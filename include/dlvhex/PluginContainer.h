@@ -37,11 +37,13 @@
 #include "dlvhex/PluginInterface.h"
 
 #include <string>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
 
 DLVHEX_NAMESPACE_BEGIN
+
 
 /**
  * @brief Collects and administrates all available plugins.
@@ -49,42 +51,39 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT PluginContainer
 {
 public:
-    /**
-     * @brief Singleton instance handle.
-     */
-    static PluginContainer* Instance();
 
-    /**
-    * @brief Loads a library and accesses its plugin-interface.
-    */
-    PluginInterface*
-    importPlugin(const std::string& filename);
+  /**
+   * @brief Ctor
+   */
+  PluginContainer(const std::string& path);
+  
+  /**
+   * @brief Dtor.
+   */
+  ~PluginContainer();
+
+  /**
+   * @brief Loads a library and accesses its plugin-interface.
+   */
+  std::vector<PluginInterface*>
+  importPlugins();
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.
    */
   boost::shared_ptr<PluginAtom>
-  getAtom(const std::string& name);
+  getAtom(const std::string& name) const;
 
-
-protected:
-
-    /**
-     * @brief Ctor (protected to ensure singleton)
-     */
-    PluginContainer() { }
-
-    /**
-     * @brief Dtor.
-     */
-    ~PluginContainer();
 
 private:
 
-    /**
-    * @brief Associative map of external atoms provided by plugins.
-    */
-    PluginInterface::AtomFunctionMap pluginAtoms;
+  /// list of plugins
+  std::vector<std::string> pluginList;
+
+  /**
+   * @brief Associative map of external atoms provided by plugins.
+   */
+  PluginInterface::AtomFunctionMap pluginAtoms;
 
 };
 
