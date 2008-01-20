@@ -29,6 +29,7 @@ pkginclude_HEADERS = \
 	Component.h \
 	DependencyGraph.h \
 	Error.h \
+	EvaluateExtatom.h \
 	ExternalAtom.h \
 	globals.h \
 	GraphBuilder.h \
