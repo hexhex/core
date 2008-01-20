@@ -825,8 +825,6 @@ external_atom:
                 error(yylloc, e.what());
             }
 
-            $$->findPluginAtom();
-
             //
             // Storing the atom as a ProgramObject. We don't have to take care
             // of deleting this pointer any more now.
