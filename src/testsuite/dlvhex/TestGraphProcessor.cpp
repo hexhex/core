@@ -37,6 +37,7 @@
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/AtomFactory.h"
+#include "dlvhex/PluginContainer.h"
 
 #include <sstream>
 
@@ -145,11 +146,14 @@ TestGraphProcessor::testSimple()
 
     AtomSet facts;
 
-	NodeGraph ng;
+    NodeGraph ng;
     GraphBuilder gb;
-	gb.run(prog,ng);
+    PluginContainer container("");
+
+    gb.run(prog, ng, container);
+
     ComponentFinder* cf = new BoostComponentFinder;
-    DependencyGraph dg(ng, cf);
+    DependencyGraph dg(ng, cf, container);
 
     GraphProcessor gp(&dg);
     
