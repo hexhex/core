@@ -36,7 +36,8 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
-
+#include "dlvhex/AtomSet.h"
+#include "dlvhex/Error.h"
 
 #ifdef DLVHEX_DEBUG
 #include <boost/date_time/posix_time/posix_time.hpp>

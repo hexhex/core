@@ -35,6 +35,7 @@
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/Error.h"
 
 #include <iostream>
 #include <sstream>

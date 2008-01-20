@@ -33,6 +33,7 @@
 #include "dlvhex/AggregateAtom.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/BaseVisitor.h"
+#include "dlvhex/Error.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

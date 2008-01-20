@@ -31,6 +31,7 @@
 
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/AtomSet.h"
 
 #include <functional>
 
