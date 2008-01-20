@@ -65,7 +65,7 @@ public:
     void
     parse(const std::string& filename,
           Program& program,
-          AtomSet& EDB);
+          AtomSet& EDB) throw (SyntaxError);
 
     HexFlexLexer*
     getLexer();
