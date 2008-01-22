@@ -34,12 +34,14 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/AnswerSet.h"
+#include "dlvhex/ResultContainer.h"
 
-#include <string>
-#include <sstream>
+#include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
+
+// forward declaration
+class ResultContainer;
 
 /**
  * @brief Base Builder for building solver output.
@@ -48,8 +50,6 @@ class DLVHEX_EXPORT OutputBuilder
 {
 protected:
     
-    std::ostringstream stream;
-
     /// Ctor
     OutputBuilder() {};
 
@@ -59,28 +59,11 @@ public:
     virtual
     ~OutputBuilder() {};
 
-    virtual void
-    buildPre() {};
-
-    virtual void
-    buildPost() {};
-
     /**
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AnswerSet&) = 0;
-
-    virtual inline std::string
-    getString()
-    {
-        const std::string& str = stream.str();
-
-        stream.str("");
-        stream.clear();
-
-        return str;
-    }
+    buildResult(std::ostream&, const ResultContainer&) = 0;
 
 };
 

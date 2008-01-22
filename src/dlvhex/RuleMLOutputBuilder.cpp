@@ -30,6 +30,9 @@
  */
 
 #include "dlvhex/RuleMLOutputBuilder.h"
+#include "dlvhex/ResultContainer.h"
+
+#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -40,7 +43,7 @@ RuleMLOutputBuilder::~RuleMLOutputBuilder()
 { }
 
 void
-RuleMLOutputBuilder::buildPre()
+RuleMLOutputBuilder::buildPre(std::ostream& stream)
 {
   ///@todo how can we enforce UTF-8 here?
   stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -56,7 +59,7 @@ RuleMLOutputBuilder::buildPre()
 
 
 void
-RuleMLOutputBuilder::buildPost()
+RuleMLOutputBuilder::buildPost(std::ostream& stream)
 {
   stream << "</Or>" << std::endl;
   stream << "</Assert>" << std::endl;
@@ -65,43 +68,52 @@ RuleMLOutputBuilder::buildPost()
 
 
 void
-RuleMLOutputBuilder::buildAnswerSet(const AnswerSet& facts)
+RuleMLOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& facts)
 {
+  buildPre(stream);
+
+  for (ResultContainer::result_t::const_iterator as = facts.getAnswerSets().begin();
+       as != facts.getAnswerSets().end();
+       ++as)
+    {
 	stream << "<And>" << std::endl;
 
-	for (AnswerSet::const_iterator f = facts.begin();
-		 f != facts.end();
-		 ++f)
-	{
-		if (f->isStronglyNegated())
-		  {
-		    stream << "<Neg>";
-		  }
+	for (AnswerSet::const_iterator f = (*as)->begin();
+	     f != (*as)->end();
+	     ++f)
+	  {
+	    if (f->isStronglyNegated())
+	      {
+		stream << "<Neg>";
+	      }
 
-		stream << "<Atom>";
+	    stream << "<Atom>";
+	    
+	    stream << "<Rel>";
+	    stream << "<![CDATA[" << f->getArgument(0) << "]]>";
+	    stream << "</Rel>";
 
-		stream << "<Rel>";
-		stream << "<![CDATA[" << f->getArgument(0) << "]]>";
-		stream << "</Rel>";
+	    for (unsigned i = 1; i <= f->getArity(); i++)
+	      {
+		stream << "<Ind>";
+		stream << "<![CDATA[" << f->getArgument(i) << "]]>";
+		stream << "</Ind>";
+	      }
 
-		for (unsigned i = 1; i <= f->getArity(); i++)
-		{
-			stream << "<Ind>";
-			stream << "<![CDATA[" << f->getArgument(i) << "]]>";
-			stream << "</Ind>";
-		}
+	    stream << "</Atom>";
+	    
+	    if (f->isStronglyNegated())
+	      {
+		stream << "</Neg>";
+	      }
 
-		stream << "</Atom>";
-
-		if (f->isStronglyNegated())
-		  {
-		    stream << "</Neg>";
-		  }
-
-		stream << std::endl;
-	}
+	    stream << std::endl;
+	  }
 
 	stream << "</And>" << std::endl;
+    }
+
+  buildPost(stream);
 }
 
 DLVHEX_NAMESPACE_END

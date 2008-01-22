@@ -37,7 +37,11 @@
 #include "dlvhex/AnswerSet.h"
 #include "dlvhex/OutputBuilder.h"
 
+#include <iosfwd>
+
 DLVHEX_NAMESPACE_BEGIN
+
+class ResultContainer;
 
 /**
  * @brief XML output.
@@ -54,16 +58,16 @@ public:
     RuleMLOutputBuilder();
 
     virtual void
-    buildPre();
+    buildPre(std::ostream&);
 
     virtual void
-    buildPost();
+    buildPost(std::ostream&);
 
     /**
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AnswerSet&);
+    buildResult(std::ostream&, const ResultContainer&);
 
 };
 

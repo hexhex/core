@@ -32,6 +32,9 @@
 #include "dlvhex/TextOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/ResultContainer.h"
+
+#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -44,38 +47,43 @@ TextOutputBuilder::~TextOutputBuilder()
 
 
 void
-TextOutputBuilder::buildAnswerSet(const AnswerSet& facts)
+TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& facts)
 {
-	if ((facts.hasWeights()) && !Globals::Instance()->getOption("AllModels"))
-		stream << "Best model: ";
-
-	RawPrintVisitor rpv(stream);
-	facts.accept(rpv);
-	stream << std::endl;
-
-	if (facts.hasWeights())
+  if (((*facts.getAnswerSets().begin())->hasWeights()) && !Globals::Instance()->getOption("AllModels"))
+    stream << "Best model: ";
+  
+  for (ResultContainer::result_t::const_iterator rit = facts.getAnswerSets().begin();
+       rit != facts.getAnswerSets().end();
+       ++rit)
+    {
+      RawPrintVisitor rpv(stream);
+      (*rit)->accept(rpv);
+      stream << std::endl;
+      
+      if ((*rit)->hasWeights())
 	{
-		stream << "Cost ([Weight:Level]): <";
-
-		//
-		// Display all weight values up to the highest specified level
-		//
-		for (unsigned lev = 1; lev <= AnswerSet::getMaxLevel(); ++lev)
-		{
-			if (lev > 1)
-				stream << ",";
-
-			stream << "[" << facts.getWeight(lev) << ":" << lev << "]";
-		}
-
-		stream << ">" << std::endl;
+	  stream << "Cost ([Weight:Level]): <";
+	  
+	  //
+	  // Display all weight values up to the highest specified level
+	  //
+	  for (unsigned lev = 1; lev <= AnswerSet::getMaxLevel(); ++lev)
+	    {
+	      if (lev > 1)
+		stream << ",";
+	      
+	      stream << "[" << (*rit)->getWeight(lev) << ":" << lev << "]";
+	    }
+	  
+	  stream << ">" << std::endl;
 	}
-
-	//
-	// empty line
-	//
-	if (!Globals::Instance()->getOption("Silent"))
-		stream << std::endl;
+      
+      //
+      // empty line
+      //
+      if (!Globals::Instance()->getOption("Silent"))
+	stream << std::endl;
+    }
 }
 
 DLVHEX_NAMESPACE_END

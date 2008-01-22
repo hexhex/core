@@ -37,7 +37,11 @@
 #include "dlvhex/AnswerSet.h"
 #include "dlvhex/OutputBuilder.h"
 
+#include <iosfwd>
+
 DLVHEX_NAMESPACE_BEGIN
+
+class ResultContainer;
 
 /**
  * @brief Simple textual output.
@@ -57,7 +61,7 @@ public:
      * @brief Build answer set.
      */
     virtual void
-    buildAnswerSet(const AnswerSet&);
+    buildResult(std::ostream&, const ResultContainer&);
 
 };
 
