@@ -82,14 +82,6 @@
 
 #include <getopt.h>
 
-//
-// definition for getwd ie MAXPATHLEN etc
-//
-//#include <sys/param.h>
-//#include <stdio.h>
-//#include <dlfcn.h>
-
-
 #ifdef DLVHEX_DEBUG
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif // DLVHEX_DEBUG
@@ -519,7 +511,7 @@ main (int argc, char *argv[])
 
 
 	//
-	// import found plugin-libs
+	// set options in the found plugins
 	//
 	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
 	     pi != plugins.end(); ++pi)
@@ -534,6 +526,7 @@ main (int argc, char *argv[])
 		    if (!Globals::Instance()->getOption("Silent"))
 		      {
 			Globals::Instance()->getVerboseStream() << "opening "
+								<< plugin->getPluginName()
 								<< " version "
 								<< plugin->getVersionMajor() << "."
 								<< plugin->getVersionMinor() << "."
@@ -1116,22 +1109,35 @@ main (int argc, char *argv[])
 	DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ")
 #endif // DEBUG
 
+
+
 	//
 	// output format
 	//
-	OutputBuilder* outputbuilder;
+	OutputBuilder* outputbuilder = 0;
 
-	if (optionXML)
+	// first look if some plugin has an OutputBuilder
+	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
+	     pi != plugins.end(); ++pi)
+	  {
+	    outputbuilder = (*pi)->createOutputBuilder();
+	  }
+
+	// if no plugin provides an OutputBuilder, we use our own to output the models
+	if (outputbuilder == 0)
+	  {
+	    if (optionXML)
+	      {
 		outputbuilder = new RuleMLOutputBuilder;
-	else
+	      }
+	    else
+	      {
 		outputbuilder = new TextOutputBuilder;
-
-	//
-	// dump it!
-	//
+	      }
+	  }
 
 	result.print(std::cout, outputbuilder);
-
+	    
 
 	//
 	// was there anything non-error the user should know? dump it directly
