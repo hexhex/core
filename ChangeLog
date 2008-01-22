@@ -1,5 +1,7 @@
 2008-01-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/Makefile.am: Add ResultContainer.h and AnswerSet.h to the Plugin API.
+
 	* src/dlvhex/dlvhex.cpp: Import OutputBuilders from the plugins.
 
 	* include/dlvhex/OutputBuilder.h: Add OutputBuilder to the Plugin API.
