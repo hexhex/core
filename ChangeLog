@@ -1,3 +1,20 @@
+2008-01-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Import OutputBuilders from the plugins.
+
+	* include/dlvhex/OutputBuilder.h: Add OutputBuilder to the Plugin API.
+	Use ResultContainer.
+	* include/dlvhex/RuleMLOutputBuilder.h: Likewise.
+	* include/dlvhex/TextOutputBuilder.h: Likewise.
+	* src/dlvhex/RuleMLOutputBuilder.cpp: Likewise.
+	* src/dlvhex/TextOutputBuilder.cpp: Likewise.
+
+	* include/dlvhex/ResultContainer.h: Add ResultContainer to the Plugin API.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+
+	* include/dlvhex/PluginInterface.h: Fix documentation.
+	Plugins can now register a PluginName to the Plugin API.
+
 2008-01-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Add PluginContainer.
