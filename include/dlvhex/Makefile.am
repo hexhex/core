@@ -3,7 +3,6 @@ AUTOMAKE_OPTIONS = gnu
 # including headers for make dist
 noinst_HEADERS = \
 	ASPsolver.h \
-	AnswerSet.h \
 	DLVresultFlexLexer.h \
 	DLVresultParserDriver.h \
 	GraphProcessor.h \
@@ -11,7 +10,6 @@ noinst_HEADERS = \
 	HexParserDriver.h \
 	ParserDriver.h \
 	ProcessBuf.h \
-	ResultContainer.h \
 	Registry.h \
         RuleMLOutputBuilder.h \
 	SafetyChecker.h \
@@ -19,6 +17,7 @@ noinst_HEADERS = \
 
 pkginclude_HEADERS = \
 	AggregateAtom.h \
+	AnswerSet.h \
 	Atom.h \
 	AtomNode.h \
 	AtomSet.h \
@@ -45,5 +44,6 @@ pkginclude_HEADERS = \
 	Program.h \
 	ProgramBuilder.h \
 	Repository.h \
+	ResultContainer.h \
 	Rule.h \
 	Term.h
