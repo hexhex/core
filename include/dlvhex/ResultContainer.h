@@ -37,14 +37,16 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AnswerSet.h"
-#include "dlvhex/OutputBuilder.h"
+//#include "dlvhex/OutputBuilder.h"
 
-#include <iostream>
+#include <iosfwd>
 #include <vector>
 
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declaration
+class OutputBuilder;
 
 /**
  * @brief
@@ -77,6 +79,9 @@ public:
      */
     explicit
     ResultContainer(const std::string& = "");
+
+    const result_t&
+    getAnswerSets() const;
 
     void
     addSet(AtomSet&);

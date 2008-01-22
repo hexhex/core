@@ -31,9 +31,11 @@
 
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/OutputBuilder.h"
 
 #include <vector>
-
+#include <iostream>
+#include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -50,6 +52,13 @@ ResultContainer::addSet(AtomSet& res)
     as->setSet(res);
 
     sets.insert(as);
+}
+
+
+const ResultContainer::result_t&
+ResultContainer::getAnswerSets() const
+{
+  return sets;
 }
 
 
@@ -133,8 +142,6 @@ ResultContainer::filterIn(const std::vector<std::string>& predicates)
 void
 ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 {
-    builder->buildPre();
-
     AnswerSet::weights_t lowestWeights;
 
     for (result_t::const_iterator ri = sets.begin();
@@ -173,16 +180,13 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
                 if ((*ri)->moreExpensiveThan(lowestWeights))
                     break;
         }
-
-        //
-        // stringify the result set
-        //
-        builder->buildAnswerSet(**ri);
     }
 
-    builder->buildPost();
-        
-    stream << builder->getString();
+
+    //
+    // stringify the result set
+    //
+    builder->buildResult(stream, *this);
 }
 
 
