@@ -231,7 +231,8 @@
  *         virtual void
  *         getAtoms(AtomFunctionMap& a)
  *         {
- *             a["rdf"] = new RDFatom;
+ *             boost::shared_ptr<PluginAtom> rdf(new RDFatom);
+ *             a["rdf"] = rdf;
  *         }
  * \endcode
  * 
@@ -242,9 +243,12 @@
  * comprise several different Plugin-Atoms, which are all registered here:
  *
  * \code
- *             a["str_cat"] = new strcat_atom;
- *             a["str_find"] = new strfind_atom;
- *             a["str_erase"] = new strerase_atom;
+ *             boost::shared_ptr<PluginAtom> str_cat(new strcat_atom);
+ *             boost::shared_ptr<PluginAtom> str_find(new strfind_atom);
+ *             boost::shared_ptr<PluginAtom> str_erase(new strerase_atom);
+ *             a["str_cat"] = str_cat;
+ *             a["str_find"] = str_find;
+ *             a["str_erase"] = str_erase;
  * \endcode
  * 
  * \subsection importing Importing the Plugin
@@ -494,31 +498,31 @@ class OutputBuilder;
  */
 class DLVHEX_EXPORT PluginConverter
 {
-protected:
+ protected:
 
-	/**
-	 * Constructor.
-	 */
-    PluginConverter()
-    { }
+  /**
+   * Constructor.
+   */
+  PluginConverter()
+  { }
 
-public:
+ public:
 
-	/**
-	 * Destructor.
-	 */
-    virtual
-    ~PluginConverter()
-    { }
+  /**
+   * Destructor.
+   */
+  virtual
+  ~PluginConverter()
+  { }
 
-	/**
-	 * Conversion function.
-	 *
-	 * The input program is read from i. The output must be passed on to the
-	 * stream o, either the original input stream or the result of a conversion.
-	 */
-    virtual void
-    convert(std::istream& i, std::ostream& o) = 0;
+  /**
+   * Conversion function.
+   *
+   * The input program is read from i. The output must be passed on to the
+   * stream o, either the original input stream or the result of a conversion.
+   */
+  virtual void
+  convert(std::istream& i, std::ostream& o) = 0;
 };
 
 
@@ -536,31 +540,31 @@ public:
  */
 class DLVHEX_EXPORT PluginRewriter
 {
-protected:
+ protected:
+  
+  /**
+   * Constructor.
+   */
+  PluginRewriter()
+  { }
 
- 	/**
-	 * Constructor.
-	 */
-	PluginRewriter()
-	{ }
+ public:
 
-public:
+  /**
+   * Destructor.
+   */
+  virtual
+  ~PluginRewriter()
+  { }
 
-	/**
-	 * Destructor.
-	 */
-    virtual
-    ~PluginRewriter()
-    { }
-
-	/**
-	 * Rewriting funcition.
-	 *
-	 * The rewriting is applied to a Program object. Also the set of initial
-	 * facts, the EDB, is passed to the rewriter and can be considered/altered.
-	 */
-    virtual void
-    rewrite(Program&, AtomSet&) = 0;
+  /**
+   * Rewriting funcition.
+   *
+   * The rewriting is applied to a Program object. Also the set of initial
+   * facts, the EDB, is passed to the rewriter and can be considered/altered.
+   */
+  virtual void
+  rewrite(Program&, AtomSet&) = 0;
 };
 
 
@@ -571,28 +575,28 @@ public:
  */
 class DLVHEX_EXPORT PluginOptimizer
 {
-protected:
+ protected:
 
-	/**
-	 * Constructor.
-	 */
-    PluginOptimizer()
-    { }
+  /**
+   * Constructor.
+   */
+  PluginOptimizer()
+  { }
 
-public:
+ public:
 
-	/**
-	 * Destructor.
-	 */
-    virtual
-    ~PluginOptimizer()
-    { }
+  /**
+   * Destructor.
+   */
+  virtual
+  ~PluginOptimizer()
+  { }
 
-	/**
-	 * Optimizing function.
-	 */
-    virtual void
-    optimize(NodeGraph&, AtomSet&) = 0;
+  /**
+   * Optimizing function.
+   */
+  virtual void
+  optimize(NodeGraph&, AtomSet&) = 0;
 
 };
 
@@ -732,8 +736,7 @@ protected:
 
     /// Ctor.
     PluginAtom()
-    {
-    }
+    { }
 
 
 public:
@@ -890,18 +893,21 @@ private:
  */
 class DLVHEX_EXPORT PluginInterface
 {
-protected:
+ protected:
+  
+  /// Ctor.
+  PluginInterface()
+    : pluginName(""),
+    versionMajor(0),
+    versionMinor(0),
+    versionMicro(0)
+  { }
 
-    /// Ctor.
-    PluginInterface()
-        : versionMajor(0),
-          versionMinor(0),
-          versionMicro(0)
-    { }
+  std::string pluginName;
 
-    unsigned versionMajor;
-    unsigned versionMinor;
-    unsigned versionMicro;
+  unsigned versionMajor;
+  unsigned versionMinor;
+  unsigned versionMicro;
 
 public:
     /// Dtor.
@@ -927,7 +933,7 @@ public:
     virtual PluginConverter* 
     createConverter()
     {
-        return 0;
+      return 0;
     }
 
     /**
@@ -942,7 +948,7 @@ public:
     virtual PluginRewriter* 
     createRewriter()
     {
-        return 0;
+      return 0;
     }
 
     /**
@@ -951,7 +957,7 @@ public:
     virtual PluginOptimizer* 
     createOptimizer()
     {
-        return 0;
+      return 0;
     }
 
     /**
@@ -965,37 +971,38 @@ public:
 
     /**
      * \brief Fills a mapping from atom names to the plugin's atom objects.
-	 *
-	 * This is the central location where the user's atoms are made public.
-	 * dlvhex will call this function for all found plugins, which write their
-	 * atoms in the provided map. This map associates strings with pointers to
-	 * PluginAtom objects. The strings denote the name of the atom as it should
-	 * be used in the program.
-	 *
-	 * Example:
-	 *
-	 * \code
-	 * void
-	 * getAtoms(AtomFunctionMap& a)
-	 * {
-	 *     a["newatom"] = new MyAtom;
-	 * }
-	 * \endcode
-	 *
-	 * Here, we assume to have defined an atom MyAtom derived from PluginAtom.
-	 * This atom can now be used in a hex-program with the predicate \b
-	 * &newatom.
-	 *
-	 * Naturally, more than one atoms can be registered here:
-	 *
-	 * \code
-	 * boost::shared_ptr<PluginAtom> split(new SplitAtom);
-	 * boost::shared_ptr<PluginAtom> concat(new ConcatAtom);
-	 * boost::shared_ptr<PluginAtom> substr(new SubstringAtom);
-	 * a["split"] = split;
-	 * a["concat"] = concat;
-	 * a["substr"] = substr;
-	 * \endcode
+     *
+     * This is the central location where the user's atoms are made public.
+     * dlvhex will call this function for all found plugins, which write their
+     * atoms in the provided map. This map associates strings with pointers to
+     * PluginAtom objects. The strings denote the name of the atom as it should
+     * be used in the program.
+     *
+     * Example:
+     *
+     * \code
+     * void
+     * getAtoms(AtomFunctionMap& a)
+     * {
+     *     boost::shared_ptr<PluginAtom> newatom(new MyAtom);
+     *     a["newatom"] = newatom;
+     * }
+     * \endcode
+     *
+     * Here, we assume to have defined an atom MyAtom derived from PluginAtom.
+     * This atom can now be used in a hex-program with the predicate \b
+     * &newatom.
+     *
+     * Naturally, more than one atoms can be registered here:
+     *
+     * \code
+     * boost::shared_ptr<PluginAtom> split(new SplitAtom);
+     * boost::shared_ptr<PluginAtom> concat(new ConcatAtom);
+     * boost::shared_ptr<PluginAtom> substr(new SubstringAtom);
+     * a["split"] = split;
+     * a["concat"] = concat;
+     * a["substr"] = substr;
+     * \endcode
      */
     virtual void
     getAtoms(AtomFunctionMap&)
@@ -1015,6 +1022,20 @@ public:
     { }
 
     /**
+     * \brief Set plugin name.
+     *
+     * The plugin name will be displayed when dlvhex loads the
+     * plugin. This method is not supposed to be overridden, but only
+     * called in the PLUGINIMPORTFUNCTION() (see Section \ref
+     * importing).
+     */
+    void
+    setPluginName(const std::string& name)
+    {
+      this->pluginName = name;
+    }
+
+    /**
      * \brief Set plugin version.
      *
      * The version number will be displayed when dlvhex loads the plugin. It can
@@ -1025,27 +1046,33 @@ public:
     void
     setVersion(unsigned major, unsigned minor, unsigned micro)
     {
-        this->versionMajor = major;
-        this->versionMinor = minor;
-        this->versionMicro = micro;
+      this->versionMajor = major;
+      this->versionMinor = minor;
+      this->versionMicro = micro;
+    }
+
+    const std::string&
+    getPluginName() const
+    {
+      return this->pluginName;
     }
 
     unsigned
     getVersionMajor() const
     {
-        return this->versionMajor;
+      return this->versionMajor;
     }
 
     unsigned
     getVersionMinor() const
     {
-        return this->versionMinor;
+      return this->versionMinor;
     }
 
     unsigned
     getVersionMicro() const
     {
-        return this->versionMicro;
+      return this->versionMicro;
     }
 };
 
