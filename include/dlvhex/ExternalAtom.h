@@ -132,31 +132,6 @@ public:
     void
     setInputTerms(const Tuple& ninput);
 
-    /**
-     * @brief Returns the input Type of the input parameter with index idx.
-     *
-     * (see also PluginAtom::InputType)
-     */
- //    PluginAtom::InputType
-//     getInputType(unsigned idx) const;
-
-
-    /**
-     * @brief Evaluates the external atom w.r.t. to an interpretation.
-     *
-     * The prediate name of the returned ground atoms will be the replacement
-     * name of this atom.  What the evaluation function basically does, is to
-     * pass the list of ground input parameters and part of the interpretation
-     * to the plugin and let it evaluate its external atom function there. The
-     * ground input parameters are either the ones originally specified in the
-     * hex-program or produced from auxiliary predicates if they were
-     * non-ground. The passed part of the interpretation is determined by those
-     * input parameters that are of type PREDICATE.
-     */
-//     void
-//     evaluate(const AtomSet &i,
-//              AtomSet& result) const;
-
 
     /**
      * @brief An External Atom never unifies.

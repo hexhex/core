@@ -44,8 +44,18 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+
 /**
- * @brief 
+ * @brief Evaluates the external atom w.r.t. to an interpretation.
+ *
+ * The prediate name of the returned ground atoms will be the replacement
+ * name of this atom.  What the evaluation object basically does, is to
+ * pass the list of ground input parameters and part of the interpretation
+ * to the plugin and let it evaluate its external atom function there. The
+ * ground input parameters are either the ones originally specified in the
+ * hex-program or produced from auxiliary predicates if they were
+ * non-ground. The passed part of the interpretation is determined by those
+ * input parameters that are of type PREDICATE.
  */
 class DLVHEX_EXPORT EvaluateExtatom
 {

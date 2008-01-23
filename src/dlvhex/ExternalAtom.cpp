@@ -45,9 +45,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ExternalAtom::ExternalAtom()
-{
-}
-
+{ }
 
 
 ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
@@ -57,10 +55,7 @@ ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
 	  auxPredicate(extatom.auxPredicate),
 	  replacementName(extatom.replacementName),
 	  line(extatom.line)
-// 	  pluginAtom(extatom.pluginAtom)
-{
-//	  type = extatom.type;
-}
+{ }
 
 
 
@@ -73,7 +68,6 @@ ExternalAtom::ExternalAtom(const std::string& name,
     functionName(name),
     extAtomNo(uniqueNumber),
     line(line)
-//     pluginAtom(boost::shared_ptr<PluginAtom>()) // setup empty pluginAtom
 {
 	//
 	// increase absolute extatom counter
