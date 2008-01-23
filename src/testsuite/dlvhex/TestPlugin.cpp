@@ -169,10 +169,13 @@ public:
 	virtual void
 	getAtoms(AtomFunctionMap& a)
 	{
-	  a["testA"] = boost::shared_ptr<PluginAtom>(new TestAAtom);
-	  a["testB"] = boost::shared_ptr<PluginAtom>(new TestBAtom);
+	  boost::shared_ptr<PluginAtom> testA(new TestAAtom);
+	  boost::shared_ptr<PluginAtom> testB(new TestBAtom);
+	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
 
-	  a["testConcat"] = boost::shared_ptr<PluginAtom>(new TestConcatAtom);
+	  a["testA"] = testA;
+	  a["testB"] = testB;
+	  a["testConcat"] = testConcat;
 	}
 
 	virtual void
@@ -193,6 +196,7 @@ extern "C"
 DLVHEX_NAMESPACE TestPlugin*
 PLUGINIMPORTFUNCTION()
 {
+	DLVHEX_NAMESPACE theTestPlugin.setPluginName("dlvhex-testplugin");
 	DLVHEX_NAMESPACE theTestPlugin.setVersion(0,0,1);
 	return & DLVHEX_NAMESPACE theTestPlugin;
 }
