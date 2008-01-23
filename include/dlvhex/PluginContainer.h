@@ -50,17 +50,22 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT PluginContainer
 {
+ protected:
+  /// ctor
+  explicit
+  PluginContainer(const std::string& path);
+
+  /// copy ctor
+  PluginContainer(const PluginContainer&);
+
+  /// dtor
+  ~PluginContainer();
+
 public:
 
-  /**
-   * @brief Ctor
-   */
-  PluginContainer(const std::string& path);
-  
-  /**
-   * @brief Dtor.
-   */
-  ~PluginContainer();
+  /// get the PluginContainer singleton instance
+  static PluginContainer*
+  instance(const std::string&);
 
   /**
    * @brief Loads a library and accesses its plugin-interface.
@@ -76,6 +81,9 @@ public:
 
 
 private:
+
+  /// singleton instance
+  static PluginContainer* theContainer;
 
   /// list of plugins
   std::vector<std::string> pluginList;

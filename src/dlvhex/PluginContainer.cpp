@@ -46,6 +46,19 @@ DLVHEX_NAMESPACE_BEGIN
 
 typedef PluginInterface* (*t_import)();
 
+PluginContainer* PluginContainer::theContainer = 0;
+
+PluginContainer*
+PluginContainer::instance(const std::string& optionPath)
+{
+  if (PluginContainer::theContainer == 0)
+    {
+      PluginContainer::theContainer = new PluginContainer(optionPath);
+    }
+
+  return PluginContainer::theContainer;
+}
+
 
 int
 findplugins(const char* filename, lt_ptr data)
@@ -64,6 +77,10 @@ findplugins(const char* filename, lt_ptr data)
   return 0;
 }
 
+PluginContainer::PluginContainer(const PluginContainer& pc)
+  : pluginList(pc.pluginList),
+    pluginAtoms(pc.pluginAtoms)
+{ }
 
 PluginContainer::PluginContainer(const std::string& optionPath)
 {
