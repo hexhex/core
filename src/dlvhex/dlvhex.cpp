@@ -503,9 +503,9 @@ main (int argc, char *argv[])
 	DEBUG_START_TIMER
 #endif // DLVHEX_DEBUG
 
-	PluginContainer container(optionPlugindir);
+	PluginContainer* container = PluginContainer::instance(optionPlugindir);
 
-	std::vector<PluginInterface*> plugins = container.importPlugins();
+	std::vector<PluginInterface*> plugins = container->importPlugins();
 
 	std::stringstream allpluginhelp;
 
@@ -913,7 +913,7 @@ main (int argc, char *argv[])
 
     try
     {
-      gb.run(IDB, nodegraph, container);
+      gb.run(IDB, nodegraph, *container);
     }
     catch (GeneralError& e)
     {
@@ -994,7 +994,7 @@ main (int argc, char *argv[])
 		// ComponentFinder to find relevant graph
 		// properties for the subsequent processing stage.
 		//
-		dg = new DependencyGraph(nodegraph, cf, container);
+		dg = new DependencyGraph(nodegraph, cf, *container);
 
 		if (Globals::Instance()->getOption("StrongSafety"))
 			StrongSafetyChecker sc(IDB, dg);

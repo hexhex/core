@@ -148,12 +148,12 @@ TestGraphProcessor::testSimple()
 
     NodeGraph ng;
     GraphBuilder gb;
-    PluginContainer container("");
+    PluginContainer* container = PluginContainer::instance("");
 
-    gb.run(prog, ng, container);
+    gb.run(prog, ng, *container);
 
     ComponentFinder* cf = new BoostComponentFinder;
-    DependencyGraph dg(ng, cf, container);
+    DependencyGraph dg(ng, cf, *container);
 
     GraphProcessor gp(&dg);
     
