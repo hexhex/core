@@ -1,3 +1,17 @@
+2008-01-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: Set plugin name.
+
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Use PluginContainer singleton
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* include/dlvhex/PluginContainer.h: Singletonize PluginContainer.
+	* src/dlvhex/PluginContainer.cpp: Likewise.
+
+	* include/dlvhex/EvaluateExtatom.h: Improve documentation.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
 2008-01-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am: Add ResultContainer.h and AnswerSet.h to the Plugin API.
