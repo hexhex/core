@@ -184,106 +184,136 @@ InternalError (const char *msg)
 
 
 
+///@brief predicate returns true iff argument is not alpha-numeric and
+///is not one of {_,-,.} characters, i.e., it returns true if
+///characater does not belong to XML's NCNameChar character class.
+struct NotNCNameChar : public std::unary_function<char, bool>
+{
+  bool
+  operator() (char c)
+  {
+    c = std::toupper(c);
+    return
+      (c < 'A' || c > 'Z') &&
+      (c < '0' || c > '9') &&
+      c != '-' &&
+      c != '_' &&
+      c != '.';
+  }
+};
+
+
 void
 insertNamespaces()
 {
-	if (Term::namespaces.size() == 0)
-		return;
+  ///@todo move this stuff to Term, this has nothing to do here!
 
-	std::string prefix, fullns;
+  if (Term::namespaces.size() == 0)
+    return;
 
-	//NamesTable<std::string>* names = Term::getNamesTable();
+  std::string prefix;
 
-	for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-			nm != Term::names.end();
-			++nm)
+  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+       nm != Term::names.end();
+       ++nm)
+    {
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
+	   ns != Term::namespaces.end();
+	   ++ns)
 	{
-		//std::cout << "orig: nametable entry: " << *nm << std::endl;
+	  prefix = ns->second;
 
-		for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-				ns != Term::namespaces.end();
-				ns++)
+	  //
+	  // prefix must occur either at beginning or right after quote
+	  //
+	  unsigned start = 0;
+	  unsigned end = (*nm).length();
+
+	  if ((*nm)[0] == '"')
+	    {
+	      ++start;
+	      --end;
+	    }
+
+	    
+	  //
+	  // accourding to http://www.w3.org/TR/REC-xml-names/ QNames
+	  // consist of a prefix followed by ':' and a LocalPart, or
+	  // just a LocalPart. In case of a single LocalPart, we would
+	  // not find prefix and leave that Term alone. If we find a
+	  // prefix in the Term, we must disallow non-NCNames in
+	  // LocalPart, otw. we get in serious troubles when replacing
+	  // proper Terms:
+	  // NameChar ::= Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender  
+	  //
+
+	  std::string::size_type colon = (*nm).find(":", start);
+					  
+	  if (colon != std::string::npos) // Prefix:LocalPart
+	    {
+	      std::string::const_iterator it = std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
+
+	      // prefix starts with ns->second, LocalPart does not
+	      // contain non-NCNameChars, hence we can replace that
+	      // Term
+	      if ((*nm).find(prefix, start) == start &&
+		  (it == (*nm).begin() + end - 1)
+		  )
 		{
-			prefix = ns->second + ":";
-
-			//
-			// prefix must occur either at beginning or right after quote
-			//
-			unsigned start = 0;
-			if ((*nm)[0] == '"')
-				start = 1;
-
-			if ((*nm).find(prefix, start) == start)
-			{
-				std::string r(*nm);
-
-				r.replace(start, prefix.length(), ns->first);
-				r.replace(0, 1, "\"<");
-				r.replace(r.length()-1, 1, ">\"");
-
-				Term::names.modify(nm, r);
-
-				//std::cout << "modified: " << r << std::endl;
-			}
+		  std::string r(*nm);
+	      
+		  r.replace(start, prefix.length() + 1, ns->first); // replace ns->first from start to prefix + 1
+		  r.replace(0, 1, "\"<");
+		  r.replace(r.length()-1, 1, ">\"");
+	      
+		  Term::names.modify(nm, r);
 		}
-
-		//std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
+	    }
 	}
-
-	/*
-	   NamesTable<std::string> names2 = Term::getNamesTable();
-
-	   std::cout << "addr1: " << &names << std::endl;
-	   std::cout << "addr2: " << &names2 << std::endl;
-
-	   for (NamesTable<std::string>::const_iterator nm = names2.begin();
-	   nm != names2.end();
-	   ++nm)
-	   {
-	   std::cout << "nametable entry: " << nm.getIndex() << " " << *nm << std::endl;
-	   }
-	   */
+    }
 }
+
+
 
 void
 removeNamespaces()
 {
-	if (Term::namespaces.size() == 0)
-		return;
+  ///@todo move this stuff to Term, this has nothing to do here!
 
-	std::string prefix, fullns;
+  if (Term::namespaces.size() == 0)
+    return;
 
-	//    NamesTable<std::string> names = Term::getNamesTable();
+  std::string prefix, fullns;
 
-	for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-			nm != Term::names.end();
-			++nm)
+  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
+       nm != Term::names.end();
+       ++nm)
+    {
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
+	   ns != Term::namespaces.end();
+	   ++ns)
 	{
-		for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-				ns != Term::namespaces.end();
-				ns++)
-		{
-			fullns = ns->first;
+	  fullns = ns->first;
 
-			prefix = ns->second + ":";
+	  prefix = ns->second + ":";
 
-			//
-			// original ns must occur either at beginning or right after quote
-			//
-			unsigned start = 0;
-			if ((*nm)[0] == '"')
-				start = 1;
+	  //
+	  // original ns must occur either at beginning or right after quote
+	  //
+	  unsigned start = 0;
+	  if ((*nm)[0] == '"')
+	    start = 1;
 
-			if ((*nm).find(fullns, start) == start)
-			{
-				std::string r(*nm);
+	  if ((*nm).find(fullns, start) == start)
+	    {
+	      std::string r(*nm);
 
-				r.replace(start, fullns.length(), prefix);
+	      r.replace(start, fullns.length(), prefix);
 
-				Term::names.modify(nm, r);
-			}
-		}
+	      Term::names.modify(nm, r);
+	    }
 	}
+    }
 }
 
 
