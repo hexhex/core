@@ -72,7 +72,7 @@
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/Component.h"
-
+#include "dlvhex/URLBuf.h"
 
 
 #include <iostream>
@@ -660,211 +660,223 @@ main (int argc, char *argv[])
 		Globals::Instance()->lpfilename = filepath.back() + ".dot";
 
 		for (std::vector<std::string>::const_iterator f = allFiles.begin();
-			 f != allFiles.end();
-			 f++)
-		{
-			try
-			{
-				//
-				// stream to store the file/stdin content
-				//
-				std::stringstream tmpin;
+		     f != allFiles.end();
+		     ++f)
+		  {
+		    try
+		      {
+			//
+			// stream to store the url/file/stdin content
+			//
+			std::stringstream tmpin;
 
+			if (!optionPipe)
+			  {
+			    // URL
+			    if (f->find("http://") == 0)
+			      {
+				URLBuf ubuf;
+				ubuf.open(*f);
+				std::istream is(&ubuf);
+
+				driver.setOrigin(*f);
+
+				tmpin << is.rdbuf();
+
+				if (ubuf.responsecode() == 404)
+				  {
+				    throw GeneralError("Requested URL " + *f + " was not found");
+				  }
+			      }
+			    else // file
+			      {
 				std::ifstream ifs;
 
-				if (!optionPipe)
-				{
-					//
-					// file
-					//
-					ifs.open((*f).c_str());
+				ifs.open(f->c_str());
 
-					if (!ifs.is_open())
-					{
-						throw GeneralError("File " + *f + " not found");
-					}
-
-					//
-					// tell the parser driver where the rules are actually coming
-					// from (needed for error-messages)
-					//
-					driver.setOrigin(*f);
-
-					tmpin << ifs.rdbuf();
-				}
-				else
-				{
-					//
-					// stdin
-					//
-					tmpin << std::cin.rdbuf();
-				}
+				if (!ifs.is_open())
+				  {
+				    throw GeneralError("File " + *f + " not found");
+				  }
 
 				//
-				// create a stringbuffer on the heap (will be deleted later) to
-				// hold the file-content. put it into a stream "input"
-				//	
-				std::istream input(new std::stringbuf(tmpin.str()));
-
+				// tell the parser driver where the rules are actually coming
+				// from (needed for error-messages)
 				//
-				// new output stream with stringbuffer on the heap
-				//
-				std::ostream converterResult(new std::stringbuf);
+				driver.setOrigin(*f);
 
-				bool wasConverted(0);
-
-				for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
-						pi != plugins.end();
-						++pi)
-				{
-					PluginConverter* pc = (*pi)->createConverter();
-
-					if (pc != NULL)
-					{
-						//
-						// rewrite input -> converterResult
-						//
-						pc->convert(input, converterResult);
-
-						wasConverted = 1;
-
-						//
-						// old input buffer can be deleted now
-						// (but not if we are piping from stdin and this is the
-						// first conversion, because in this case input is set to
-						// std::cin.rdbuf() (see above) and cin takes care of
-						// its buffer deletion itself, so better don't
-						// interfere!)
-						//
-						if (optionPipe && !wasConverted)
-							delete input.rdbuf();
-
-						//
-						// store the current output buffer
-						//
-						std::streambuf* tmp = converterResult.rdbuf();
-
-						//
-						// make a new buffer for the output (=reset the output)
-						//
-						converterResult.rdbuf(new std::stringbuf);
-
-						//
-						// set the input buffer to be the output of the last
-						// rewriting. now, after each loop, the converted
-						// program is in input.
-						//
-						input.rdbuf(tmp);
-
-					}
-				}
-				char tempfile[L_tmpnam];
-
-
-				//
-				// at this point, the program is in the stream "input" - wither
-				// directly read from the file or as a result of some previous
-				// rewriting!
-				//
-
-				if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM) && wasConverted)
-				{
-					//
-					// we need to read the input-istream now - use a stringstream
-					// for output and initialize the input-istream to its
-					// content again
-					//
-					std::stringstream ss;
-					ss << input.rdbuf();
-					Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
-					Globals::Instance()->getVerboseStream() << ss.str();
-					Globals::Instance()->getVerboseStream() << std::endl;
-					delete input.rdbuf(); 
-					input.rdbuf(new std::stringbuf(ss.str()));
-				}
-
-				FILE* fp = 0;
-
-				//
-				// now call dlt if needed
-				//
-				if (optiondlt)
-				{
-					mkstemp(tempfile);
-
-					std::ofstream dlttemp(tempfile);
-
-					//
-					// write program into tempfile
-					//
-					dlttemp << input.rdbuf();
-
-					dlttemp.close();
-
-					std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
-
-					fp = popen(execPreParser.c_str(), "r");
-
-					if (fp == NULL)
-					{
-						throw GeneralError("Unable to call Preparser dlt");
-					}
-
-					__gnu_cxx::stdio_filebuf<char>* fb;
-					fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
-
-					std::istream inpipe(fb);
-
-					//
-					// now we have a program rewriten by dlt - since it should
-					// be in the stream "input", we have to delete the old
-					// input-buffer and set input to the buffer from the
-					// dlt-call
-					//
-					delete input.rdbuf(); 
-					input.rdbuf(fb);
-				}
-
-				// run the parser
-				driver.parse(input, IDB, EDB);
-
-				if (optiondlt)
-				{
-					int dltret = pclose(fp);
-
-					if (dltret != 0)
-					{
-						throw GeneralError("Preparser dlt returned error");
-					}
-				}
-
-				//
-				// wherever the input-buffer was created before - now we don't
-				// need it anymore
-				//
-				delete input.rdbuf();
-
+				tmpin << ifs.rdbuf();
 				ifs.close();
+			      }
+			  }
+			else
+			  {
+			    //
+			    // stdin
+			    //
+			    tmpin << std::cin.rdbuf();
+			  }
 
-				if (optiondlt)
-				{
-					unlink(tempfile);
-				}
-			}
-			catch (SyntaxError& e)
-			{
-				std::cerr << e.getErrorMsg() << std::endl;
+			//
+			// create a stringbuffer on the heap (will be deleted later) to
+			// hold the file-content. put it into a stream "input"
+			//	
+			std::istream input(new std::stringbuf(tmpin.str()));
 
-				exit(1);
-			}
-			catch (GeneralError& e)
-			{
-				std::cerr << e.getErrorMsg() << std::endl;
+			//
+			// new output stream with stringbuffer on the heap
+			//
+			std::ostream converterResult(new std::stringbuf);
 
-				exit(1);
-			}
+			bool wasConverted(0);
 
-		}
+			for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
+			     pi != plugins.end();
+			     ++pi)
+			  {
+			    PluginConverter* pc = (*pi)->createConverter();
+
+			    if (pc != NULL)
+			      {
+				//
+				// rewrite input -> converterResult
+				//
+				pc->convert(input, converterResult);
+
+				wasConverted = 1;
+
+				//
+				// old input buffer can be deleted now
+				// (but not if we are piping from stdin and this is the
+				// first conversion, because in this case input is set to
+				// std::cin.rdbuf() (see above) and cin takes care of
+				// its buffer deletion itself, so better don't
+				// interfere!)
+				//
+				if (optionPipe && !wasConverted)
+				  delete input.rdbuf();
+
+				//
+				// store the current output buffer
+				//
+				std::streambuf* tmp = converterResult.rdbuf();
+
+				//
+				// make a new buffer for the output (=reset the output)
+				//
+				converterResult.rdbuf(new std::stringbuf);
+
+				//
+				// set the input buffer to be the output of the last
+				// rewriting. now, after each loop, the converted
+				// program is in input.
+				//
+				input.rdbuf(tmp);
+
+			      }
+			  }
+			char tempfile[L_tmpnam];
+
+
+			//
+			// at this point, the program is in the stream "input" - wither
+			// directly read from the file or as a result of some previous
+			// rewriting!
+			//
+
+			if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM) && wasConverted)
+			  {
+			    //
+			    // we need to read the input-istream now - use a stringstream
+			    // for output and initialize the input-istream to its
+			    // content again
+			    //
+			    std::stringstream ss;
+			    ss << input.rdbuf();
+			    Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
+			    Globals::Instance()->getVerboseStream() << ss.str();
+			    Globals::Instance()->getVerboseStream() << std::endl;
+			    delete input.rdbuf(); 
+			    input.rdbuf(new std::stringbuf(ss.str()));
+			  }
+
+			FILE* fp = 0;
+
+			//
+			// now call dlt if needed
+			//
+			if (optiondlt)
+			  {
+			    mkstemp(tempfile);
+			    
+			    std::ofstream dlttemp(tempfile);
+			    
+			    //
+			    // write program into tempfile
+			    //
+			    dlttemp << input.rdbuf();
+			    
+			    dlttemp.close();
+
+			    std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
+			    
+			    fp = popen(execPreParser.c_str(), "r");
+			    
+			    if (fp == NULL)
+			      {
+				throw GeneralError("Unable to call Preparser dlt");
+			      }
+
+			    __gnu_cxx::stdio_filebuf<char>* fb;
+			    fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
+			    
+			    std::istream inpipe(fb);
+
+			    //
+			    // now we have a program rewriten by dlt - since it should
+			    // be in the stream "input", we have to delete the old
+			    // input-buffer and set input to the buffer from the
+			    // dlt-call
+			    //
+			    delete input.rdbuf(); 
+			    input.rdbuf(fb);
+			  }
+
+			// run the parser
+			driver.parse(input, IDB, EDB);
+
+			if (optiondlt)
+			  {
+			    int dltret = pclose(fp);
+			    
+			    if (dltret != 0)
+			      {
+				throw GeneralError("Preparser dlt returned error");
+			      }
+			  }
+
+			//
+			// wherever the input-buffer was created before - now we don't
+			// need it anymore
+			//
+			delete input.rdbuf();
+
+			if (optiondlt)
+			  {
+			    unlink(tempfile);
+			  }
+		      }
+		    catch (SyntaxError& e)
+		      {
+			std::cerr << e.getErrorMsg() << std::endl;
+			exit(1);
+		      }
+		    catch (GeneralError& e)
+		      {
+			std::cerr << e.getErrorMsg() << std::endl;
+			exit(1);
+		      }
+		  }
 //	}
 
 #ifdef DLVHEX_DEBUG
