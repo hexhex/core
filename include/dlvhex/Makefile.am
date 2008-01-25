@@ -13,7 +13,8 @@ noinst_HEADERS = \
 	Registry.h \
         RuleMLOutputBuilder.h \
 	SafetyChecker.h \
-        TextOutputBuilder.h
+        TextOutputBuilder.h \
+	URLBuf.h
 
 pkginclude_HEADERS = \
 	AggregateAtom.h \
