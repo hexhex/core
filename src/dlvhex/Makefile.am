@@ -47,11 +47,12 @@ dlvhex_SOURCES = \
     ResultContainer.cpp \
     SafetyChecker.cpp \
     TextOutputBuilder.cpp \
-    HexParserDriver.cpp
+    HexParserDriver.cpp \
+    URLBuf.cpp
 
 
 # we want libltdl includes
-INCLUDES += @INCLTDL@
+INCLUDES += @INCLTDL@ @LIBCURL_CPPFLAGS@
 
 #
 # -static: statically link libdlvhexbase
@@ -62,7 +63,7 @@ dlvhex_LDFLAGS = -static -export-dynamic
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ libdlvhexbase.la libaspsolver.la
+dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
