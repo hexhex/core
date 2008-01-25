@@ -198,6 +198,13 @@ if test "$debug_support" = "yes"; then
     # now, boost_cname is set, maybe for using somewhere below
 fi
 
+
+#
+# check for libcurl
+#
+LIBCURL_CHECK_CONFIG([], [], [], [AC_MSG_ERROR([could not find CURL library. Download it at http://curl.haxx.se/.])])
+
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_CONST
