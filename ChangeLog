@@ -1,3 +1,20 @@
+2008-01-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Use URLBuf for retrieving HTTP programs.
+
+	* src/dlvhex/URLBuf.cpp: New file.
+	* m4/libcurl.m4: Likewise.
+	* include/dlvhex/URLBuf.h: Likewise.
+
+	* include/dlvhex/Makefile.am: Add URLBuf.h.
+
+	* src/dlvhex/Makefile.am: Add URLBuf.cpp.
+	Link with libcurl.
+
+	* configure.ac: Check for libcurl.
+
+	* NEWS: Update.
+
 2008-01-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp (insertNamespaces): Only replace namespace
