@@ -3,6 +3,7 @@ Release 1.7 (XXX 2008):
     Introduce OutputBuilder interface.
     Sanitize Plugin interface.
     Use libltdl.
+    Add support for retrieving HEX-programs via HTTP (or whatever protocol libcurl supports).
 
 Release 1.6 (August 2007):
     Variable arities of external atom input lists
