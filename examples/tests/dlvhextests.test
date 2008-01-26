@@ -3,6 +3,7 @@
 ../weak1.hex weak1r.out -ra
 ../weak2.hex weak2.out -a
 ../namespace1.hex namespace1.out
+../namespace2.hex namespace2.out
 ../agg1.hex agg1.out --firstorder
 ../msp.hex msp.out -a
 ../3col.hex 3col.out

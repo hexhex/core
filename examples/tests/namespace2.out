@@ -1,0 +1,1 @@
+{c("<http://example.org#foo>"), d("foo:bar"), d("<http://www.kr.tuwien.ac.at/default/bar>"), d("bar"), d("http://www.kr.tuwien.ac.at/default/bar"), d("http://example.org#bar"), b("<http://example.org#foo>"), a("<http://example.org#foo>")}
