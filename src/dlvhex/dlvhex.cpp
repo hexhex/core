@@ -3,19 +3,20 @@
  * 
  * This file is part of dlvhex.
  *
- * dlvhex is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * dlvhex is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
  *
  * dlvhex is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with dlvhex; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with dlvhex; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
  */
 
 
@@ -221,7 +222,7 @@ insertNamespaces()
 	   ns != Term::namespaces.end();
 	   ++ns)
 	{
-	  prefix = ns->second;
+	  prefix = ns->second + ':';
 
 	  //
 	  // prefix must occur either at beginning or right after quote
@@ -251,7 +252,8 @@ insertNamespaces()
 					  
 	  if (colon != std::string::npos) // Prefix:LocalPart
 	    {
-	      std::string::const_iterator it = std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
+	      std::string::const_iterator it =
+		std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
 
 	      // prefix starts with ns->second, LocalPart does not
 	      // contain non-NCNameChars, hence we can replace that
@@ -262,9 +264,9 @@ insertNamespaces()
 		{
 		  std::string r(*nm);
 	      
-		  r.replace(start, prefix.length() + 1, ns->first); // replace ns->first from start to prefix + 1
+		  r.replace(start, prefix.length(), ns->first); // replace ns->first from start to prefix + 1
 		  r.replace(0, 1, "\"<");
-		  r.replace(r.length()-1, 1, ">\"");
+		  r.replace(r.length() - 1, 1, ">\"");
 	      
 		  Term::names.modify(nm, r);
 		}
