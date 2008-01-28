@@ -4,11 +4,13 @@ CLEANFILES = libdlvhextest.so
 
 EXTRA_DIST = run-dlvhex-tests.sh
 
+if HAVE_CPPUNIT
 TESTS = dlvhexTS run-dlvhex-tests.sh
-
 TESTS_ENVIRONMENT = TESTDIR=$(top_srcdir)/examples/tests DLVHEX=$(top_builddir)/src/dlvhex/dlvhex PARAMETERS="-s --plugindir=."
-
 check_PROGRAMS = dlvhexTS
+else
+check_PROGRAMS = 
+endif
 
 ##
 ## this is a bit of a hack
