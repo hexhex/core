@@ -158,7 +158,7 @@ AC_SUBST([FLEXLEXER_H])
 
 # cppunit is optional -> give warning in ACTION-IF-NOT-FOUND
 PKG_CHECK_MODULES([CPPUNIT], [cppunit >= 1.12.0], [have_cppunit=true], [AC_MSG_WARN([could not find cppunit >= 1.12.0, `make check' will fail. Please download it from http://cppunit.sourceforge.net/ and setup PKG_CONFIG_PATH appropriately.]); have_cppunit=false])
-AM_CONDITIONAL([HAVE_CPPUNIT], [test x$cppunit = xtrue])
+AM_CONDITIONAL([HAVE_CPPUNIT], [test x$have_cppunit = xtrue])
 
 
 AC_PATH_BOOST([1.33.0], [], [AC_MSG_ERROR([could not find boost library. Download it at http://www.boost.org/.])])
