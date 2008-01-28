@@ -1,3 +1,11 @@
+2008-01-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/Makefile.am: Only compile testsuite if
+	cppunit is installed.
+
+	* configure.ac: Give better debug output when cppunit is not
+	installed.
+
 2008-01-26  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/EvaluateExtatom.cpp: Add sanity checks for answer
