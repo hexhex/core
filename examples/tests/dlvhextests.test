@@ -5,6 +5,7 @@
 ../namespace1.hex namespace1.out
 ../namespace2.hex namespace2.out
 ../agg1.hex agg1.out --firstorder
+../agg2.hex agg2.out --firstorder
 ../msp.hex msp.out -a
 ../3col.hex 3col.out
 ../extatom1.hex extatom1.out
