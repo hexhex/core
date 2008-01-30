@@ -32,112 +32,108 @@
 
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/helper.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/PrintVisitor.h"
 
 #include <cassert>
+#include <boost/tokenizer.hpp>
 
 
 DLVHEX_NAMESPACE_BEGIN
 
 Atom::Atom()
-{
-}
+{ }
 
 
 Atom::~Atom()
-{
-}
+{ }
 
 
 Atom::Atom(const Atom& atom2)
-	: ProgramObject(),
-	  arguments(atom2.arguments),
-	  isStrongNegated(atom2.isStrongNegated),
-	  isAlwaysFO(atom2.isAlwaysFO)
-{
-}
+  : ProgramObject(),
+    arguments(atom2.arguments),
+    isStrongNegated(atom2.isStrongNegated),
+    isAlwaysFO(atom2.isAlwaysFO)
+{ }
 
 
 Atom::Atom(const std::string& atom, bool neg)
-	: isStrongNegated(neg),
-	  isAlwaysFO(0)
+  : isStrongNegated(neg), isAlwaysFO(0)
 {
-	arguments.clear();
+  std::string::size_type par;
 	
-	std::string::size_type par;
-	
-	//
-	// not propositional?
-	//
-	if ((par = atom.find("(", 0)) != std::string::npos)
-	{
-		std::vector<std::string> termlist = helper::stringExplode(atom.substr(par + 1, atom.length() - par - 2), ",");
+  //
+  // not propositional?
+  //
+  if ((par = atom.find("(", 0)) != std::string::npos)
+    {
+      // predicate
+      arguments.push_back(Term(atom.substr(0, par)));
 
-		arguments.push_back(Term(atom.substr(0, par)));
+      // split arguments
+      typedef boost::tokenizer<boost::char_separator<char> > septok;
+      boost::char_separator<char> sep(",");
+      const std::string& pars = atom.substr(par + 1, atom.length() - par - 2);
+      septok tok(pars, sep);
 		
-		for (std::vector<std::string>::const_iterator g = termlist.begin();
-			 g != termlist.end();
-			 g++)
-		{
-			arguments.push_back(Term(*g));
-		}
-
-		//
-		// the predicate itself must be constant (also in ho-mode, then it will be a
-		// constant replacement symbol)
-		//
-		assert(!arguments.front().isVariable());
-	}
-	else
+      for (septok::const_iterator p = tok.begin(); p != tok.end(); ++p)
 	{
-		//
-		// can only be propositional
-		//
-		arguments.push_back(Term(atom));
-
-		if (arguments.front().isVariable())
-			throw SyntaxError("propositional Atom must be ground. Probably not a HEX-program?");
+	  arguments.push_back(Term(*p));
 	}
+
+      //
+      // the predicate itself must be constant (also in ho-mode, then it will be a
+      // constant replacement symbol)
+      //
+      assert(!arguments.front().isVariable());
+    }
+  else
+    {
+      //
+      // can only be propositional
+      //
+      arguments.push_back(Term(atom));
+
+      if (arguments.front().isVariable())
+	{
+	  throw SyntaxError("propositional Atom must be ground. Probably not a HEX-program?");
+	}
+    }
 }
 	
 
 Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
-	: isStrongNegated(neg),
-	  isAlwaysFO(0)
+  : isStrongNegated(neg), isAlwaysFO(0)
 {
-	arguments.push_back(Term(pred));
+  // predicate
+  arguments.push_back(Term(pred));
 
-	//
-	// propositonal atom must be ground:
-	//
-	if ((arg.size() == 0) && arguments.front().isVariable())
-		throw SyntaxError("propositional Atom must be ground");
-	
-	for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
-	{
-		arguments.push_back(*t);
-	}
+  //
+  // propositonal atom must be ground:
+  //
+  if ((arg.size() == 0) && arguments.front().isVariable())
+    {
+      throw SyntaxError("propositional Atom must be ground");
+    }
+
+  // arguments
+  arguments.insert(arguments.end(), arg.begin(), arg.end());
 }
 	
 
 Atom::Atom(const Tuple& arg, bool neg)
-	: isStrongNegated(neg),
-	  isAlwaysFO(0)
+  : arguments(arg), isStrongNegated(neg), isAlwaysFO(0)
 {
-	if (arg.size() == 0)
-		throw SyntaxError("Atom must contain at least one term");
-
-	for (Tuple::const_iterator t = arg.begin(); t != arg.end(); ++t)
-		arguments.push_back(*t);
-
-	//
-	// propositonal atom must be ground:
-	//
-	if ((arg.size() == 1) && arguments.front().isVariable())
-		throw SyntaxError("propositional Atom must be ground");
+  if (arguments.size() == 0)
+    {
+      throw SyntaxError("Atom must contain at least one term");
+    }
+  else if ((arguments.size() == 1) && arguments.front().isVariable())
+    {
+      // propositonal atom must be ground:
+      throw SyntaxError("propositional Atom must be ground");
+    }
 }
 	
 

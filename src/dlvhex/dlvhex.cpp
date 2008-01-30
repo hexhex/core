@@ -59,7 +59,6 @@
 #include "dlvhex/ComponentFinder.h"
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/helper.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
@@ -82,6 +81,8 @@
 #include <vector>
 
 #include <getopt.h>
+
+#include <boost/tokenizer.hpp>
 
 #ifdef DLVHEX_DEBUG
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -402,9 +403,6 @@ main (int argc, char *argv[])
 		{ NULL, 0, NULL, 0 }
 	};
 
-	std::vector<std::string> fil;
-	std::vector<std::string>::iterator i;
-
 	while ((ch = getopt_long(argc, argv, "f:hsvp:ar", longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -423,12 +421,18 @@ main (int argc, char *argv[])
 					Globals::Instance()->setOption("Verbose", 1);
 				break;
 			case 'f':
-				fil = helper::stringExplode(std::string(optarg), ",");
-				i = fil.begin();
-				while (i != fil.end())
-					Globals::Instance()->addFilter(*i++);
+			  {
+			    typedef boost::tokenizer<boost::char_separator<char> > septok;
+			    boost::char_separator<char> sep(",");
+			    septok tok(std::string(optarg), sep);
+			    
+			    for (septok::const_iterator f = tok.begin(); f != tok.end(); ++f)
+			      {
+				Globals::Instance()->addFilter(*f);
+			      }
+			  }
+			  break;
 
-				break;
 			case 'p':
 				optionPlugindir = std::string(optarg);
 				break;
@@ -658,8 +662,8 @@ main (int argc, char *argv[])
 		// store filename of (first) logic program, we might use this somewhere
 		// else (e.g., when writing the graphviz file in the boost-part
 		//
-		std::vector<std::string> filepath = helper::stringExplode(allFiles[0], "/");
-		Globals::Instance()->lpfilename = filepath.back() + ".dot";
+		std::string lpfile = allFiles[0];
+		Globals::Instance()->lpfilename = lpfile.substr(lpfile.find_last_of("/") + 1) + ".dot";
 
 		for (std::vector<std::string>::const_iterator f = allFiles.begin();
 		     f != allFiles.end();
