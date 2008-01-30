@@ -1,3 +1,20 @@
+2008-01-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Atom.cpp: Use boost::tokenizer instead of helper::stringExplode.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* include/dlvhex/Makefile.am: Remove helper.cpp and helper.h.
+	* include/dlvhex/helper.h: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/ASPsolver.cpp: Likewise.
+	* src/dlvhex/helper.cpp: Likewise.
+
+2008-01-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/agg2.hex: New testcase for aggregates and external atoms.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/agg2.out: Likewise.
+
 2008-01-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/Makefile.am: Only compile testsuite if
