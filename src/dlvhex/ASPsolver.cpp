@@ -36,7 +36,6 @@
 
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/helper.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/ProcessBuf.h"

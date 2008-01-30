@@ -33,7 +33,6 @@ pkginclude_HEADERS = \
 	ExternalAtom.h \
 	globals.h \
 	GraphBuilder.h \
-	helper.h \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
