@@ -75,6 +75,7 @@ libdlvhexbase_la_SOURCES = \
     BoostComponentFinder.cpp \
     Component.cpp \
     ComponentFinder.cpp \
+    Dependency.cpp \
     DependencyGraph.cpp \
     EvaluateExtatom.cpp \
     ExternalAtom.cpp \
@@ -85,6 +86,7 @@ libdlvhexbase_la_SOURCES = \
     GraphProcessor.cpp \
     GuessCheckModelGenerator.cpp \
     Literal.cpp \
+    NodeGraph.cpp \
     OrdinaryModelGenerator.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \

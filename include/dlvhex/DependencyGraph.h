@@ -41,6 +41,7 @@
 #include "dlvhex/Component.h"
 #include "dlvhex/GraphBuilder.h"
 #include "dlvhex/ComponentFinder.h"
+#include "dlvhex/NodeGraph.h"
 
 #include <vector>
 

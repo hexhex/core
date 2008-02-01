@@ -45,6 +45,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
 class PluginContainer;
+class NodeGraph;
 
 /**
  * @brief Class for building a dependency graph from a given program.

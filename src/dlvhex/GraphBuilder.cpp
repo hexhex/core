@@ -31,11 +31,14 @@
  */
 
 #include "dlvhex/GraphBuilder.h"
+#include "dlvhex/NodeGraph.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/PluginContainer.h"
+
+#include <cassert>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -183,6 +186,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 				ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
 
 				boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getFunctionName());
+
+				///@todo this should be a syntax error...
+				assert(pluginAtom);
 
 				const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
 				const Tuple& input = ext->getInputTerms();

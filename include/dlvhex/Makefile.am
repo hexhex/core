@@ -27,6 +27,7 @@ pkginclude_HEADERS = \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
 	Component.h \
+	Dependency.h \
 	DependencyGraph.h \
 	Error.h \
 	EvaluateExtatom.h \
@@ -36,6 +37,7 @@ pkginclude_HEADERS = \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
+	NodeGraph.h \
 	OutputBuilder.h \
         PlatformDefinitions.h \
 	PluginContainer.h \
