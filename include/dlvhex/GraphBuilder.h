@@ -35,6 +35,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Error.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/Rule.h"
 
@@ -63,7 +64,7 @@ public:
      * rules, e.g., for external atoms with variable input parameters.
      */
     void
-    run(const Program&, NodeGraph&, PluginContainer&);
+    run(const Program&, NodeGraph&, PluginContainer&) throw (PluginError);
 
 
     /**

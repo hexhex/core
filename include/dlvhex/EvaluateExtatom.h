@@ -37,6 +37,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ExternalAtom.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Term.h"
 #include "dlvhex/PluginContainer.h"
@@ -65,7 +66,7 @@ class DLVHEX_EXPORT EvaluateExtatom
   
   /**
    */
-  void evaluate(const AtomSet&, AtomSet&) const;
+  void evaluate(const AtomSet&, AtomSet&) const throw(PluginError);
   
 
 protected:

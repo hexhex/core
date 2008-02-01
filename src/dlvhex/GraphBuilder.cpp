@@ -44,6 +44,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 void
 GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer& container)
+  throw (PluginError)
 {
 	//
 	// in this multimap, we will store the input arguments of type PREDICATE
@@ -187,8 +188,11 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 				boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getFunctionName());
 
-				///@todo this should be a syntax error...
-				assert(pluginAtom);
+				if (!pluginAtom)
+				  {
+				    throw PluginError("Could not find plugin for external atom " + ext->getFunctionName());
+				  }
+
 
 				const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
 				const Tuple& input = ext->getInputTerms();

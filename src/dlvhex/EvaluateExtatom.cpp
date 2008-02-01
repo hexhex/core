@@ -115,11 +115,14 @@ struct CheckOutput
 
 void
 EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
+  throw (PluginError)
 {
   boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(externalAtom->getFunctionName());
 
-  ///@todo we should throw an error here instead of asserting that thing
-  assert(pluginAtom);
+  if (!pluginAtom)
+    {
+      throw PluginError("Could not find plugin for external atom " + externalAtom->getFunctionName());
+    }
 
   std::vector<Tuple> inputArguments;
 
