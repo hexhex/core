@@ -1,5 +1,11 @@
 2008-02-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/EvaluateExtatom.h: Throw PluginError if we cannot
+	find the PluginAtom in the PluginContainer.
+	* include/dlvhex/GraphBuilder.h: Likewise.
+	* src/dlvhex/EvaluateExtatom.cpp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+
 	* README: Update.
 
 	* MAINTAINER-README: New file.
@@ -9,12 +15,14 @@
 	* src/dlvhex/AtomNode.cpp: Split AtomNode.{cpp,h} into {AtomNode,Dependency,NodeGraph}.{cpp,h}.
 	* src/dlvhex/Dependency.cpp: Likewise.
 	* src/dlvhex/GraphBuilder.cpp: Likewise.
+
 	* src/dlvhex/NodeGraph.cpp: Likewise.
 	* src/dlvhex/Makefile.am: Likewise.
 	* include/dlvhex/AtomNode.h: Likewise.
 	* include/dlvhex/Dependency.h: Likewise.
 	* include/dlvhex/DependencyGraph.h: Likewise.
-	* include/dlvhex/GraphBuilder.h: Likewise.
+	* include/dlvhex/GraphBuilder.h: Likewise.	
+
 	* include/dlvhex/NodeGraph.h: Likewise.
 	* include/dlvhex/Makefile.am: Likewise.
 
