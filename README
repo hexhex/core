@@ -37,12 +37,12 @@ pre-built Boost packages. E.g., in Debian (and Ubuntu), do
 
 
 *** cppunit (optional)
-CppUnit is used for the unit-testing of dlvhex, but not necessary for building
-the application. See http://cppunit.sourceforge.net/
-Follow the instructions of the INSTALL file found in the distributions tarball.
-dlvhex has been tested with cppunit 1.10.2. Like boost, cppunit packages are
-provided by the major Linux distributions. E.g., in Debian do
-apt-get install cppunit
+CppUnit is used for the unit-testing of dlvhex, but not necessary for
+building the application. See http://cppunit.sourceforge.net/. Follow
+the instructions of the INSTALL file found in the distributions
+tarball.  dlvhex has been tested with cppunit 1.12.0. Like boost,
+cppunit packages are provided by the major Linux distributions. E.g.,
+in Debian do `apt-get install libcppunit-dev'.
 
 ** Configuration
 Run "configure" to create the necessary Makefiles. As usual, use the --prefix
@@ -68,11 +68,12 @@ formats, you have to specify the according configure-switch, e.g.,
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression
-testsuite.
+testsuite. Note that the testsuite is only being built if cppunit is
+installed.
 
 ** Installation
-Run "make install" to install the binary dlvhex and its header files, which are
-needed for developing plugins.
+Run "make install" to install the binary dlvhex, its libraries and the
+corresponding header files, which are needed for developing plugins.
 
 * Running dlvhex
 
