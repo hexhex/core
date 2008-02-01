@@ -31,18 +31,18 @@
  *
  */
 
+#include "dlvhex/BoostComponentFinder.h"
+#include "dlvhex/globals.h"
+#include "dlvhex/PrintVisitor.h"
+#include "dlvhex/Component.h"
+
 #include <sstream>
 
-#include <boost/config.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/graphviz.hpp>
-
-#include "dlvhex/BoostComponentFinder.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/helper.h"
-#include "dlvhex/PrintVisitor.h"
+#include <boost/algorithm/string/replace.hpp>
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -90,11 +90,10 @@ BoostComponentFinder::selectNodes(const Vertices& vertices,
             vi != vertices.end();
             ++vi)
     {
-        //
-        // TODO: this is too expensive - all the vertices-stuff should actually be done
-        // in boost, it could handle all these properties internally.
-        // there shouldn't be any mapping and searching here!
-        //
+        ///@todo this is too expensive - all the vertices-stuff should
+        /// actually be done in boost, it could handle all these
+        /// properties internally.  there shouldn't be any mapping and
+        /// searching here!
         std::vector<AtomNodePtr>::const_iterator an;
 
         for (an = nodes.begin(); an != nodes.end(); ++an)
@@ -142,7 +141,7 @@ BoostComponentFinder::findWeakComponents(const std::vector<AtomNodePtr>& nodes,
              ei != edges.end();
              ++ei)
         {
-            add_edge((*ei).first, (*ei).second, G);
+            add_edge(ei->first, ei->second, G);
         }
 
         std::vector<int> component(num_vertices(G));
@@ -197,39 +196,18 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
 
     makeEdges(nodes, edges);
 
-    //
-    // create a label table for the graphviz output
-    //
-    std::string nms[nodes.size()];
-
-    std::ostringstream oss;
-    RawPrintVisitor rpv(oss);
-
-    for (unsigned y = 0; y < nodes.size(); ++y)
-    {
-        oss.str("");
-
-        nodes[y]->getAtom()->accept(rpv);
-
-        std::string at(oss.str());
-
-        helper::escapeQuotes(at);
-
-        nms[y] = at.c_str();
-    }
-
     using namespace boost;
     {
-        typedef adjacency_list <vecS, vecS, directedS> Graph;
+        typedef adjacency_list<vecS, vecS, directedS> Graph;
 
         Graph G(0);
 
         for (Edges::const_iterator ei = edges.begin();
              ei != edges.end();
              ++ei)
-        {
-            add_edge((*ei).first, (*ei).second, G);
-        }
+	  {
+            add_edge(ei->first, ei->second, G);
+	  }
 
         std::vector<int> component(num_vertices(G));
 
@@ -272,17 +250,38 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
             }
         }
 
-		if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
-		{
-			std::ofstream out;
+	if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
+	  {  
+	    //
+	    // create a label table for the graphviz output
+	    //
+	    std::string nms[3 * nodes.size()];
 
-			out.open(Globals::Instance()->lpfilename.c_str());
-			write_graphviz(out, G, make_label_writer(nms));
-			out.close();
+	    std::ostringstream oss;
+	    RawPrintVisitor rpv(oss);
 
-			Globals::Instance()->getVerboseStream() << "Graph written to "
-			    << Globals::Instance()->lpfilename << std::endl;
-		}
+	    for (unsigned y = 0; y < nodes.size(); ++y)
+	      {
+		oss.str("");
+		
+		nodes[y]->getAtom()->accept(rpv);
+
+		std::string at(oss.str());
+
+		boost::algorithm::replace_all(at, "\"", "\\\"");
+
+		nms[y] = at;
+	      }
+
+	    std::ofstream out;
+			
+	    out.open(Globals::Instance()->lpfilename.c_str());
+	    write_graphviz(out, G, make_label_writer(nms));
+	    out.close();
+	    
+	    Globals::Instance()->getVerboseStream() << "Graph written to "
+						    << Globals::Instance()->lpfilename << std::endl;
+	  }
     }
 }
 
