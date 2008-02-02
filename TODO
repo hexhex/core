@@ -1,5 +1,7 @@
 -*- org -*-
 
+* TODO Fix agg2.hex and extatom3.hex testcases
+
 * TODO Complete the dlvhex API (output, intput, ...)
 Plugins should behave as passively as possible, i.e., no registration
 of data like namespaces or similar information *initiated* from the
@@ -28,8 +30,11 @@ a(X) :- &xpath['//person'](X).
 * TODO Add support for RIF BLD presentation syntax
 
 * TODO [Mac OS X] Install user plugins in ~/Library/Application Support/dlvhex/plugins
+http://developer.apple.com/documentation/MacOSX/Conceptual/BPFileSystem/Articles/LibraryDirectory.html
 
 * TODO [Mac OS X] Add pkg/dmg package support?
+http://developer.apple.com/documentation/CoreFoundation/Conceptual/CFBundles/CFBundles.html
+http://developer.apple.com/documentation/Porting/Conceptual/PortingUnix/distributing/chapter_9_section_1.html
 
 * TODO [Linux] Add deb/rpm package support?
 
@@ -68,9 +73,8 @@ dlvhex stream tcp6 nowait  root /usr/local/bin/dlvhex dlvhex --silent --inetd --
 Launchd setup: http://developer.apple.com/macosx/launchd.html
 
 
-* TODO retrieve programs via http
+Or maybe as CGI application: (argv[0] == "dlvhex.cgi") => CGI mode
 
-http://curl.haxx.se/
 
 
 
