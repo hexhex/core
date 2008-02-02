@@ -66,7 +66,7 @@ public:
 		if (query.getInterpretation().size() == 0)
 			tu1.push_back(t1);
 
-		if (query.getInterpretation().size() == 1)
+		if (query.getInterpretation().size() > 0)
 			tu1.push_back(t2);
 
 		out.push_back(tu1);
@@ -101,7 +101,7 @@ public:
 			out.push_back(tu1);
 		}
 
-		if (query.getInterpretation().size() == 2)
+		if (query.getInterpretation().size() > 1)
 		{
 			tu1.push_back(t2);
 			out.push_back(tu1);
