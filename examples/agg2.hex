@@ -1,3 +1,5 @@
+% -*- prolog -*-
+
 % testA returns "foo" if the extension of its input predicate is empty
 % testA returns "bar" if the extension of its input predicate has one member
 
@@ -6,7 +8,7 @@ pred(c).
 pred(d).
 
 % there is a bug in the dependency graph:
-% the num_in/1 rule will be evaluated in wrong component
+% the num_in/1 rule will be evaluated in the wrong component
 %in(X) :- &testA[P](X), pred(P).
 
 in(X) :- &testA[c](X).
