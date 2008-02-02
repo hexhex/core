@@ -1,3 +1,11 @@
+2008-02-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* TODO: Update.
+
+	* examples/agg2.hex: Typo.
+
+	* examples/extatom3.hex: New file.
+
 2008-02-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/EvaluateExtatom.h: Throw PluginError if we cannot
