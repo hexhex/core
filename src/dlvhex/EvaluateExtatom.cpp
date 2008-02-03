@@ -224,6 +224,11 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 
       for (std::vector<Tuple>::const_iterator s = answers->begin(); s != answers->end(); ++s)
 	{
+	  if (s->size() != externalAtom->getArguments().size())
+	    {
+	      throw PluginError("External atom " + externalAtom->getFunctionName() + " returned tuple of incompatible size.");
+	    }
+
 	  // check if this answer from pluginatom conforms to the external atom's arguments
 	  std::pair<Tuple::const_iterator,Tuple::const_iterator> mismatched =
 	    std::mismatch(s->begin(),
