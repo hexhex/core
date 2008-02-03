@@ -1,24 +1,16 @@
-% -*- prolog -*- testcase for nontermination bug
+% -*- prolog -*-
 
-% domain predicate, keeps the NAF-rules in_ww and out_ww safe.  if we
-% comment out dom(d2), the program terminates!
+% domain predicate, keeps the NAF-rules in_ww, out_ww, and p_ww safe
 dom(d1).
 dom(d2).
-
 
 in_ww(X)      :- dom(X), not out_ww(X).
 out_ww(X)     :- dom(X), not  in_ww(X).
 
+% safetychecker is buggy, this rule is safe even if we remove dom(X).
+p_ww(X)       :- &testA[dl_pc_2](X), not &testA[dl_pc_1](X), dom(X).
 
-% the next rule p_ww creates a cycle through an extatom in the
-% depgraph, here only a positive cycle (does not terminate, dlvhex
-% uses FP modelgen).  if we comment out the next line and comment in
-% the line after that, the program terminates! (negative cycle in
-% depgraph -> dlvhex uses Guess&Check modelgenerator.)
-p_ww(X)       :- &testA[dl_pc_2](X), not &testA[dl_pc_1](X).
-%p_ww(X)       :- &testA[dl_pc_1](X), not &testA[dl_pc_2](X).
-
-% some constraints, look harmless
+% some constraints
 fail          :- out_ww(X),     &testA[dl_pc_1](X), not fail.
 fail          :- out_ww(X),     &testA[dl_pc_2](X), not fail.
 fail          :- in_ww(X),  not &testA[dl_pc_2](X), not fail.
