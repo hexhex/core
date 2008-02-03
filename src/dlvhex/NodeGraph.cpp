@@ -35,7 +35,6 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 
@@ -127,12 +126,9 @@ NodeGraph::addUniqueHeadNode(const AtomPtr& atom)
 	// does a node with exactly this atom already exist?
 	// (same predicate, same arguments)
 	//
-	//AtomNodePtr newnode = findNode(atom);
-	AtomNodePtr newnode;
-	findNode(atom, newnode);
+	AtomNodePtr newnode = findNode(atom);
 
-
-	if (newnode.use_count() == 0)
+	if (!newnode)
 	{
 		//
 		// no - create node
@@ -216,11 +212,9 @@ NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 	// does a node with exactly this atom already exist?
 	// (same predicate, same arguments)
 	//
-	//std::cout << "==trying to add bodynode: " << *atom << std::endl;
-	AtomNodePtr newnode;
-	findNode(atom, newnode);
+	AtomNodePtr newnode = findNode(atom);
 
-	if (newnode.use_count() == 0)
+	if (!newnode)
 	{
 		//
 		// no - create node
@@ -278,24 +272,24 @@ NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 }
 
 
-void
-NodeGraph::findNode(const AtomPtr& atom, AtomNodePtr& ptr) const
+AtomNodePtr
+NodeGraph::findNode(const AtomPtr& atom) const
 {
-	//
-	// test if atom does already exist as an AtomNode and return its pointer, if
-	// this is the case
-	//
-	for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
-		 an != atomNodes.end();
-		 ++an)
+  //
+  // test if atom does already exist as an AtomNode and return its pointer, if
+  // this is the case
+  //
+  for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
+       an != atomNodes.end();
+       ++an)
+    {
+      if (atom->equals((*an)->getAtom()))
 	{
-		if (atom->equals((*an)->getAtom()))
-		//if (*atom == *(*an)->getAtom())
-		{
-			ptr = *an;
-			return;
-		}
+	  return *an;
 	}
+    }
+
+  return AtomNodePtr();
 }
 
 

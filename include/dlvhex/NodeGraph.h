@@ -120,8 +120,8 @@ public:
 	/**
 	 * @brief Finds an AtomNode that is associated with a specific Atom object.
 	 */
-	void
-	findNode(const AtomPtr&, AtomNodePtr&) const;
+	AtomNodePtr
+	findNode(const AtomPtr&) const;
 };
 
 
