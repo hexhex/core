@@ -57,10 +57,13 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const AtomSet& in)
 {
-	Subgraph* graph(depGraph->getNextSubgraph());
-
-	if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-		Globals::Instance()->getVerboseStream() << "Graph Processor starts." << std::endl;
+  Subgraph* graph(depGraph->getNextSubgraph());
+  
+  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+    {
+      Globals::Instance()->getVerboseStream() << "Graph Processor starts." << std::endl;
+      graph->dump(Globals::Instance()->getVerboseStream());
+    }
 
 	//
 	// start with program's EDB
@@ -88,7 +91,7 @@ GraphProcessor::run(const AtomSet& in)
 		// accumulated result of all leaf-components with all current models as
 		// input
 		//
-		std::vector<AtomSet> allLeavesResult;
+     	        std::vector<AtomSet> allLeavesResult;
 
 		//
 		// all leaf components
@@ -97,8 +100,12 @@ GraphProcessor::run(const AtomSet& in)
 		graph->getUnsolvedLeaves(leaves);
 
 		if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-			Globals::Instance()->getVerboseStream() << "current iteration has "
-			    << leaves.size() << " leaf components" << std::endl;
+		  {
+		    Globals::Instance()->getVerboseStream() << "=======================" << std::endl
+							    << "current iteration has "
+							    << leaves.size() << " leaf components" << std::endl
+							    << "=======================" << std::endl;
+		  }
 
 		//
 		// go through current result, i.e., answer sets previously computed from
@@ -109,15 +116,17 @@ GraphProcessor::run(const AtomSet& in)
 		// result sets of one component are input to the next.
 		//
 		for (std::vector<AtomSet>::iterator mi = resultModels.begin();
-			 mi != resultModels.end();
-			 ++mi)
+		     mi != resultModels.end();
+		     ++mi)
 		{
 			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 			{
-    			RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-				Globals::Instance()->getVerboseStream() << "current input for leaf layer: ";
-				mi->accept(rpv);
-				Globals::Instance()->getVerboseStream() << std::endl;
+			  Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+			  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+			  Globals::Instance()->getVerboseStream() << "current input for leaf layer: ";
+			  mi->accept(rpv);
+			  Globals::Instance()->getVerboseStream() << std::endl;
+			  Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
 			}
 
 			//
@@ -141,14 +150,15 @@ GraphProcessor::run(const AtomSet& in)
 			for (std::vector<Component*>::iterator ci = leaves.begin();
 			     ci != leaves.end();
 			     ++ci)
-			{
-				if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-				{
-					Globals::Instance()->getVerboseStream() << "computing leaf component: "
-						<< std::endl;
-//					(*ci)->dump(Globals::Instance()->getVerboseStream());
-//					Globals::Instance()->getVerboseStream() << std::endl;
-				}
+			  {
+			    if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+			      {
+				Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+				Globals::Instance()->getVerboseStream() << "computing leaf component: " << std::endl;
+				(*ci)->dump(Globals::Instance()->getVerboseStream());
+				Globals::Instance()->getVerboseStream() << std::endl;
+				Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+			      }
 
 				//
 				// evaluate leaf component with previous result as input
@@ -163,23 +173,43 @@ GraphProcessor::run(const AtomSet& in)
 				(*ci)->getResult(componentLayerResult);
 
 				if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-				{
-    				RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-					Globals::Instance()->getVerboseStream() << "result of leaf: " << std::endl;
+				  {
+				    Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+				    RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+				    Globals::Instance()->getVerboseStream() << "result of leaf: " << std::endl;
 
-					for (std::vector<AtomSet>::iterator tmpi = componentLayerResult.begin();
-					     tmpi != componentLayerResult.end();
-					     ++tmpi)
-					{
-						tmpi->accept(rpv);
-						Globals::Instance()->getVerboseStream() << std::endl;
-					}
-				}
+				    for (std::vector<AtomSet>::iterator tmpi = componentLayerResult.begin();
+					 tmpi != componentLayerResult.end();
+					 ++tmpi)
+				      {
+					tmpi->accept(rpv);
+					Globals::Instance()->getVerboseStream() << std::endl;
+				      }
+				    Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+				  }
 
 				//if (compresult.size() == 0)
 				//{
 				//}
 			}
+
+
+			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+			  {
+			    Globals::Instance()->getVerboseStream() << "current allLeavesResult:" << std::endl;
+
+			    for (std::vector<AtomSet>::const_iterator it = allLeavesResult.begin();
+				 it != allLeavesResult.end();
+				 ++it)
+			      {
+				RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+				it->accept(rpv);
+				Globals::Instance()->getVerboseStream() << std::endl;
+			      }
+
+			    Globals::Instance()->getVerboseStream() << "copying from componentLayerResult to allLeavesResult:" << std::endl;
+			  }
+
 
 			//
 			// we are done now with evaluating all leaf components w.r.t. the
@@ -187,10 +217,17 @@ GraphProcessor::run(const AtomSet& in)
 			// allLeavesResult.
 			//
 			for (std::vector<AtomSet>::iterator allmi = componentLayerResult.begin();
-					allmi != componentLayerResult.end();
-					++allmi)
+			     allmi != componentLayerResult.end();
+			     ++allmi)
 			{
 				allLeavesResult.push_back(*allmi);
+
+				if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+				  {
+				    RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+				    allmi->accept(rpv);
+				    Globals::Instance()->getVerboseStream() << std::endl;
+				  }
 			}
 		}
 		//
@@ -218,10 +255,12 @@ GraphProcessor::run(const AtomSet& in)
 		// anything left?
 		//
 		if (tmpGraph.getNodes().size() > 0)
-		{
-			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-				Globals::Instance()->getVerboseStream() << "evaluating wcc on "
-					<< resultModels.size() << " models" << std::endl;
+		  {
+		    if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		      {
+			Globals::Instance()->getVerboseStream() << "evaluating wcc on "
+								<< resultModels.size() << " models" << std::endl;
+		      }
 
 			//
 			// make a component from the node-set
@@ -247,7 +286,9 @@ GraphProcessor::run(const AtomSet& in)
 			weakComponent->getResult(resultModels);
 
 			if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-				Globals::Instance()->getVerboseStream() << "wcc result: " << resultModels.size() << " models" << std::endl;
+			  {
+			    Globals::Instance()->getVerboseStream() << "wcc result: " << resultModels.size() << " models" << std::endl;
+			  }
 
 			if (resultModels.size() == 0)
 			{
@@ -272,7 +313,9 @@ GraphProcessor::run(const AtomSet& in)
 	resultSetIndex = resultModels.begin();
 
 	if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-		Globals::Instance()->getVerboseStream() << std::endl;
+	  {
+	    Globals::Instance()->getVerboseStream() << std::endl;
+	  }
 }
 
 
@@ -282,7 +325,7 @@ GraphProcessor::getNextModel()
 	if (resultSetIndex != resultModels.end())
 		return &(*(resultSetIndex++));
 
-	return NULL;
+	return 0;
 }
 
 
