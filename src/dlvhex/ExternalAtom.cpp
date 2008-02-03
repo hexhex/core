@@ -470,41 +470,30 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
 bool
 ExternalAtom::equals(const AtomPtr& atom2) const
 {
-	//std::cout << "extatom equals: " << *this << " equals " << *atom2 << "?" << std::endl;
+  bool ret = true;
 
-	if (typeid(*atom2) != typeid(ExternalAtom))
-		return 0;
+  // don't forget, typeid gives the most derived type only if it is
+  // applied to a non-pointer
+  if (typeid(*atom2.get()) != typeid(ExternalAtom))
+    {
+      ret = false;
+    }
+  else
+    {
+      const ExternalAtom* ea = dynamic_cast<ExternalAtom*>(atom2.get());
 
-	ExternalAtom* ea = dynamic_cast<ExternalAtom*>(atom2.get());
-
-	if (this->replacementName != ea->replacementName)
-		return 0;
-
-	if (this->functionName != ea->functionName)
-		return 0;
-
-	if (this->getArity() != ea->getArity())
-		return 0;
-	
-	if (this->isStrongNegated != ea->isStrongNegated)
-		return 0;
-
-	if (this->inputList.size() != ea->inputList.size())
-		return 0;
-
-	for (unsigned i = 0; i <= this->getArity(); i++)
+      if (this->functionName != ea->functionName ||
+	  this->getArity() != ea->getArity() ||
+	  this->isStrongNegated != ea->isStrongNegated ||
+	  this->inputList != ea->inputList ||
+	  this->getArguments() != ea->getArguments()
+	  )
 	{
-		if (this->getArgument(i) != ea->getArgument(i))
-			return 0;
+	  ret = false;
 	}
-	
-	for (unsigned i = 0; i < this->inputList.size(); i++)
-	{
-		if (this->inputList[i] != ea->inputList[i])
-			return 0;
-	}
+    }
 
-	return 1;
+  return ret;
 }
 
 
