@@ -1,4 +1,19 @@
+2008-02-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/EvaluateExtatom.cpp (EvaluateExtatom::evaluate):
+	Throw a PluginError if plugin returns tuples of different size
+	than size of output list.
+
+	* src/dlvhex/ExternalAtom.cpp (ExternalAtom::equals): Fix nonworking method.
+
+	* src/dlvhex/GraphProcessor.cpp: Beautify debugging output.
+
+	* include/dlvhex/NodeGraph.h: Clean up interface.
+	* src/dlvhex/NodeGraph.cpp: Likewise.
+
 2008-02-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: &testA and &testB is now well-defined.
 
 	* TODO: Update.
 
