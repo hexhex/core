@@ -1,5 +1,7 @@
 2008-02-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* examples/extatom3.hex: Fix testcase.
+
 	* src/dlvhex/EvaluateExtatom.cpp (EvaluateExtatom::evaluate):
 	Throw a PluginError if plugin returns tuples of different size
 	than size of output list.
