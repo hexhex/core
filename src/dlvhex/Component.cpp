@@ -122,21 +122,17 @@ Component::getResult(std::vector<AtomSet>& r)
 bool
 Component::isInComponent(const Atom* at) const
 {
-    bool belongsToComp = false;
-
-    std::vector<AtomNodePtr>::const_iterator nodeit = atomnodes.begin();
-
-    while (nodeit != atomnodes.end())
+  for (std::vector<AtomNodePtr>::const_iterator nodeit = atomnodes.begin();
+       nodeit != atomnodes.end();
+       ++nodeit)
     {
-        if ((*nodeit++)->getAtom().get() == at)
+      if ((*nodeit)->getAtom().get() == at)
         {
-            belongsToComp = true;
-
-            break;
+	  return true;
         }
     }
-
-    return belongsToComp;
+  
+  return false;
 }
 
 
