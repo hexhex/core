@@ -34,351 +34,338 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/AggregateAtom.h"
 
+
 DLVHEX_NAMESPACE_BEGIN
 
-SafetyCheckerBase::SafetyCheckerBase()
-{
-}
+
+SafetyCheckerBase::~SafetyCheckerBase()
+{ }
 
 
 
-SafetyChecker::SafetyChecker(const Program& program)
-    : SafetyCheckerBase()
-{
-    testRules(program);
-}
+SafetyChecker::SafetyChecker(const Program& p)
+  : SafetyCheckerBase(),
+    program(p)
+{ }
 
 
 void
-SafetyChecker::testRules(const Program& program) const throw (SyntaxError)
+SafetyChecker::operator() () const throw (SyntaxError)
 {
-    if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
-        Globals::Instance()->getVerboseStream() << std::endl << "Checking for rule safety." << std::endl;
-
-    Program::const_iterator ruleit = program.begin();
-
-    while (ruleit != program.end())
+  if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
     {
-        //
-        // testing for simple rule safety:
-        // * Each variable occurs in a positive ordinary atom.
-        // * A variable occurs in the output list of an external atom and all
-        //   input variables occur in a positive ordinary atom.
-        //
-        // -> 1) get all ordinary body atoms -> safeset
-        //    2) look at extatoms: each input var must be in safeset
-        //    3) if all is ok: add ext-atom arguments to safeset
-        //    4) test if all head vars are in safeset
-        //
+      Globals::Instance()->getVerboseStream() << std::endl << "Checking for rule safety." << std::endl;
+    }
+  
 
-        const RuleHead_t head = (*ruleit)->getHead();
-        const RuleBody_t body = (*ruleit)->getBody();
+  //
+  // testing for simple rule safety:
+  // * Each variable occurs in a positive ordinary atom.
+  // * A variable occurs in the output list of an external atom and all
+  //   input variables occur in a positive ordinary atom.
+  //
+  // -> 1) get all ordinary body atoms -> safeset
+  //    2) look at extatoms: each input var must be in safeset
+  //    3) if all is ok: add ext-atom arguments to safeset
+  //    4) test if all head vars are in safeset
+  //
+    
+  for (Program::const_iterator ruleit = program.begin();
+       ruleit != program.end();
+       ++ruleit)
+    {
+      const RuleHead_t head = (*ruleit)->getHead();
+      const RuleBody_t body = (*ruleit)->getBody();
 
-        //
-        // set of all variables in non-ext body atoms
-        //
-        std::set<Term> safevars;
+      //
+      // set of all variables in non-ext body atoms
+      //
+      std::set<Term> safevars;
 
-        //
-        // 1)
-        // going through the rule body
-        //
+      //
+      // 1)
+      // going through the rule body
+      //
 
-        RuleBody_t::const_iterator bb = body.begin(), be = body.end();
-
-        while (bb != be)
+      for (RuleBody_t::const_iterator bit = body.begin();
+	   bit != body.end();
+	   ++bit)
         {
-            //
-            // only look at ordinary atoms
-            // and aggregate terms
-            //
-            if ((typeid(*((*bb)->getAtom())) == typeid(Atom)) ||
-                (typeid(*((*bb)->getAtom())) == typeid(BuiltinPredicate)) ||
-                (typeid(*((*bb)->getAtom())) == typeid(AggregateAtom)))
+	  //
+	  // only look at ordinary atoms
+	  // and aggregate terms
+	  //
+	  const Atom& at = *(*bit)->getAtom();
+
+	  if (typeid(at) == typeid(Atom) ||
+	      typeid(at) == typeid(BuiltinPredicate) ||
+	      typeid(at) == typeid(AggregateAtom)
+	      )
             {
-                //
-                // look at predicate
-                //
-                Term pred = (*bb)->getAtom()->getPredicate();
+	      //
+	      // look at predicate
+	      //
+	      const Term& pred = at.getPredicate();
 
-                //
-                // look at arguments
-                //
-                Tuple bodyarg = (*bb)->getAtom()->getArguments();
+	      //
+	      // look at arguments
+	      //
+	      const Tuple& bodyarg = at.getArguments();
 
-				//
-				// in case of BuiltinPredicate: only equality with only one
-				// variable is safe, just like in dlv
-				//
-				if (typeid(*((*bb)->getAtom())) == typeid(BuiltinPredicate))
-				{
-					if (pred == Term("="))
-					{
-						if (bodyarg[0].isVariable() && !bodyarg[1].isVariable())
-							safevars.insert(bodyarg[0]);
-						if (!bodyarg[0].isVariable() && bodyarg[1].isVariable())
-							safevars.insert(bodyarg[1]);
-					}
-				}
-				else
-				{
-
-					if (pred.isVariable())
-						safevars.insert(pred);
-
-					Tuple::const_iterator ordterm = bodyarg.begin();
-
-					while (ordterm != bodyarg.end())
-					{
-						if ((*ordterm).isVariable())
-							safevars.insert(*ordterm);
-
-						ordterm++;
-					}
-				}
+	      //
+	      // in case of BuiltinPredicate: only equality with only one
+	      // variable is safe, just like in dlv
+	      //
+	      if (typeid(at) == typeid(BuiltinPredicate))
+		{
+		  if (pred == Term("="))
+		    {
+		      if (bodyarg[0].isVariable() && !bodyarg[1].isVariable())
+			{
+			  safevars.insert(bodyarg[0]);
+			}
+		      else if (!bodyarg[0].isVariable() && bodyarg[1].isVariable())
+			{
+			  safevars.insert(bodyarg[1]);
+			}
+		    }
+		}
+	      else // Atom or AggregateAtom?????
+		{
+		  if (pred.isVariable())
+		    {
+		      safevars.insert(pred);
+		    }
+		  
+		  for (Tuple::const_iterator ordit = bodyarg.begin(); ordit != bodyarg.end(); ++ordit)
+		    {
+		      if (ordit->isVariable())
+			{
+			  safevars.insert(*ordit);
+			}
+		    }
+		}
             }
+	}
+	  
 
-            bb++;
-        }
+      //
+      // 2)
+      // going through the external atoms
+      //
         
+      const std::vector<ExternalAtom*> extatoms = (*ruleit)->getExternalAtoms();
 
-        //
-        // 2)
-        // going through the external atoms
-        //
-        
-        const std::vector<ExternalAtom*> extatoms = (*ruleit)->getExternalAtoms();
-        
-        std::vector<ExternalAtom*>::const_iterator extit = extatoms.begin();
+      for (std::vector<ExternalAtom*>::const_iterator extit = extatoms.begin();
+	   extit != extatoms.end();
+	   ++extit)
+	{
+	  const Tuple& inp = (*extit)->getInputTerms();
+	  
+	  for (Tuple::const_iterator inpterm = inp.begin(); inpterm != inp.end(); ++inpterm)
+	    {
+	      // a variable from the input list, which is not in the safe variables, is unsafe
+	      if (inpterm->isVariable() && safevars.find(*inpterm) == safevars.end())
+		{
+		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
+		}
+	    }
 
-        while (extit != extatoms.end())
-        {
-            Tuple inp = (*extit)->getInputTerms();
+	  //
+	  // 3)
+	  // this ext-atom is safe - we can add its arguments to the safe set
+	  //
+	  const Tuple& extarg = (*extit)->getArguments();
+	  
+	  for (Tuple::const_iterator extterm = extarg.begin();
+	       extterm != extarg.end();
+	       ++extterm)
+	    {
+	      if (extterm->isVariable())
+		{
+		  safevars.insert(*extterm);
+		}
+	    }
+	}
+	
+      //
+      // 4)
+      // going through the rule head
+      //
+      for (RuleHead_t::const_iterator hb = head.begin(); hb != head.end(); ++hb)
+	{
+	  const Tuple& headarg = (*hb)->getArguments();
+	  
+	  //
+	  // for each head atom: going through its arguments
+	  //
+	  for (Tuple::const_iterator headterm = headarg.begin(); headterm != headarg.end(); ++headterm)
+	    {
+	      // does this variable occur in any positive body atom?
+	      if (headterm->isVariable() && safevars.find(*headterm) == safevars.end())
+		{
+		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
+		}
+	    }
+	}
 
-            Tuple::const_iterator inpterm = inp.begin();
-
-            while (inpterm != inp.end())
-            {
-                if ((*inpterm).isVariable())
-                    if (safevars.find(*inpterm) == safevars.end())
-                        throw SyntaxError("rule not safe", 
-                                          (*ruleit)->getLine(),
-                                          (*ruleit)->getFile());
-                inpterm++;
-            }
-
-            //
-            // 3)
-            // this ext-atom is safe - we can add its arguments to the safe set
-            //
-            Tuple extarg = (*extit)->getArguments();
-
-            Tuple::const_iterator extterm = extarg.begin();
-
-            while (extterm != extarg.end())
-            {
-                if ((*extterm).isVariable())
-                    safevars.insert(*extterm);
-                extterm++;
-            }
-
-            extit++;
-        }
-
-
-        RuleHead_t::const_iterator hb = head.begin();
-
-        //
-        // 4)
-        // going through the rule head
-        //
-        while (hb != head.end())
-        {
-            Tuple headarg = (*(hb++))->getArguments();
-
-            Tuple::const_iterator headterm = headarg.begin();
-
-            //
-            // for each head atom: going through its arguments
-            //
-            while (headterm != headarg.end())
-            {
-                Term t(*(headterm++));
-
-                //
-                // does this variable occur in any positive body atom?
-                //
-                if (t.isVariable())
-                {
-                    if (find(safevars.begin(), safevars.end(), t) == safevars.end())
-                    {
-                        throw SyntaxError("rule not safe", 
-                                          (*ruleit)->getLine(),
-                                          (*ruleit)->getFile());
-                    }
-                }
-            }
-        }
-
-        if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
-        {
-			Globals::Instance()->getVerboseStream() << "Rule in ";
-            if (!(*ruleit)->getFile().empty())
-                Globals::Instance()->getVerboseStream() << (*ruleit)->getFile() << ", ";
-			Globals::Instance()->getVerboseStream() << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
-        }
-        
-        //
-        // next rule
-        //
-        ++ruleit;
+      if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
+	{
+	  Globals::Instance()->getVerboseStream() << "Rule in ";
+	  
+	  if (!(*ruleit)->getFile().empty())
+	    {
+	      Globals::Instance()->getVerboseStream() << (*ruleit)->getFile() << ", ";
+	    }
+	  
+	  Globals::Instance()->getVerboseStream() << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
+	}
     }
 }
 
 
 
-StrongSafetyChecker::StrongSafetyChecker(const Program& program,
-                                         const DependencyGraph* dg)
-    : SafetyChecker(program)
-{
-    testStrongSafety(dg);
-}
+StrongSafetyChecker::StrongSafetyChecker(const DependencyGraph& depgraph)
+  : SafetyCheckerBase(),
+    dg(depgraph)
+{ }
 
 
 void
-StrongSafetyChecker::testStrongSafety(const DependencyGraph* dg) const throw (SyntaxError)
+StrongSafetyChecker::operator() () const throw (SyntaxError)
 {
-    if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
-        Globals::Instance()->getVerboseStream() << std::endl << "Checking for strong rule safety." << std::endl;
-
-    //
-    // testing for strong safety:
-    //
-    // A rule is strongly safe, if
-    // * it is safe and
-    // * if an external atom in the rule is part of a cycle, each variable in
-    //   its output list occurs in a positive atom in the body, which does not
-    //   belong to the cycle.
-    //
-
-    //
-    // go through all program components
-    // (a ProgramComponent is a SCC with external atom!)
-    //
-    const std::vector<Component*> components = dg->getComponents();
-
-    std::vector<Component*>::const_iterator compit = components.begin();
-
-    while (compit != components.end())
+  if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
     {
-        if (typeid(**compit) == typeid(ProgramComponent))
+      Globals::Instance()->getVerboseStream() << std::endl << "Checking for strong rule safety." << std::endl;
+    }
+
+  //
+  // testing for strong safety:
+  //
+  // A rule is strongly safe, if
+  // * it is safe and
+  // * if an external atom in the rule is part of a cycle, each variable in
+  //   its output list occurs in a positive atom in the body, which does not
+  //   belong to the cycle.
+  //
+
+  //
+  // go through all program components
+  // (a ProgramComponent is a SCC with external atom!)
+  //
+  const std::vector<Component*>& components = dg.getComponents();
+
+  for (std::vector<Component*>::const_iterator compit = components.begin();
+       compit != components.end();
+       ++compit)
+    {
+      if (typeid(**compit) == typeid(ProgramComponent))
         {
-            //
-            // go through all rules of this component
-            //
-            ProgramComponent* progcomp = dynamic_cast<ProgramComponent*>(*compit);
+	  //
+	  // go through all rules of this component
+	  //
+	  ProgramComponent* progcomp = dynamic_cast<ProgramComponent*>(*compit);
 
-            const Program rules = progcomp->getBottom();
+	  const Program& rules = progcomp->getBottom();
 
-            for (Program::const_iterator ruleit = rules.begin();
-                 ruleit != rules.end();
-                 ++ruleit)
+	  for (Program::const_iterator ruleit = rules.begin();
+	       ruleit != rules.end();
+	       ++ruleit)
             {
-                const RuleHead_t head = (*ruleit)->getHead();
-                const RuleBody_t body = (*ruleit)->getBody();
-
-                //
-                // for this rule: go through all ext-atoms
-                //
-                for (std::vector<ExternalAtom*>::const_iterator extit = (*ruleit)->getExternalAtoms().begin();
-                     extit != (*ruleit)->getExternalAtoms().end();
-                     ++extit)
+	      const RuleBody_t& body = (*ruleit)->getBody();
+	      
+	      //
+	      // for this rule: go through all ext-atoms
+	      //
+	      for (std::vector<ExternalAtom*>::const_iterator extit = (*ruleit)->getExternalAtoms().begin();
+		   extit != (*ruleit)->getExternalAtoms().end();
+		   ++extit)
                 {
-                    //
-                    // is this atom also in the component?
-                    // (not all the atoms in the bottom of a component are also
-                    // in the component themselves!)
-                    //
-                    if (!progcomp->isInComponent(*extit))
-                        continue;
+		  //
+		  // is this atom also in the component?
+		  // (not all the atoms in the bottom of a component are also
+		  // in the component themselves!)
+		  //
+		  if (!progcomp->isInComponent(*extit))
+		    {
+		      continue;
+		    }
 
-                    //
-                    // ok, this external atom is in the cycle of the component:
-                    // now we have to check if each of its output arguments is
-                    // strongly safe, i.e., if it occurs in another atom in the
-                    // body, which is NOT part of the cycle
-                    //
-                    Tuple output = (*extit)->getArguments();
+		  //
+		  // ok, this external atom is in the cycle of the component:
+		  // now we have to check if each of its output arguments is
+		  // strongly safe, i.e., if it occurs in another atom in the
+		  // body, which is NOT part of the cycle
+		  //
+		  const Tuple& output = (*extit)->getArguments();
 
-                    //
-                    // look at all terms in its output list
-                    //
-                    for (Tuple::const_iterator outterm = output.begin();
-                         outterm != output.end();
-                         ++outterm)
+		  //
+		  // look at all terms in its output list
+		  //
+		  for (Tuple::const_iterator outterm = output.begin();
+		       outterm != output.end();
+		       ++outterm)
                     {
-                        bool argIsUnsafe = true;
+		      bool outIsSafe = false;
 
-                        RuleBody_t::const_iterator bodylit = body.begin();
-
-                        while (bodylit != body.end())
+		      for (RuleBody_t::const_iterator bodylit = body.begin(); bodylit != body.end(); ++bodylit)
                         {
-                            //
-                            // only look at atoms that are not part of the
-                            // component!
-                            // and only look at ordinary or external atoms
-                            // builtins do not make a variable safe!
-                            //
-                            if ((typeid(*(*bodylit)->getAtom()) == typeid(Atom)) ||
-                                (typeid(*(*bodylit)->getAtom()) == typeid(ExternalAtom)))
-                            {
-                                if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
-                                {
-                                    //
-                                    // the arguments of this atom are safe
-                                    //
-                                    Tuple safeargs = (*bodylit)->getAtom()->getArguments();
+			  //
+			  // only look at atoms that are not part of the
+			  // component!
+			  // and only look at ordinary ones;
+			  // external atoms and builtins do not make a variable safe!
+			  //
+			  const Atom& at = *(*bodylit)->getAtom();
 
-                                    //
-                                    // now see if the current
-                                    // extatom-output-argument is one of those
-                                    // safe vars
-                                    //
-                                    for (Tuple::const_iterator safeterm = safeargs.begin();
-                                        safeterm != safeargs.end();
-                                        ++safeterm)
+			  if (typeid(at) == typeid(Atom))
+                            {
+			      if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
+                                {
+				  //
+				  // the arguments of this atom are safe
+				  //
+				  const Tuple& safeargs = at.getArguments();
+
+				  //
+				  // now see if the current
+				  // extatom-output-argument is one of those
+				  // safe vars
+				  //
+				  for (Tuple::const_iterator safeterm = safeargs.begin();
+				       safeterm != safeargs.end();
+				       ++safeterm)
                                     {
-                                        if ((*safeterm).isVariable())
-                                        {
-                                            if (*safeterm == *outterm)
-                                                argIsUnsafe = false;
+				      if (safeterm->isVariable() && *safeterm == *outterm)
+					{
+					  outIsSafe = true;
+					  break;
                                         }
                                     }
                                 }
                             }
-
-                            bodylit++;
                         }
 
-                        if (argIsUnsafe)
-						{
-							std::stringstream s;
-							s << "rule not expansion-safe: " << **ruleit;
-                            throw SyntaxError(s.str());
-						}
+		      // we have looked at all the body-atoms, but
+		      // couldn't find an atom, which make this output
+		      // variable safe
+		      if (!outIsSafe)
+			{
+			  std::stringstream s;
+			  s << "rule not expansion-safe: " << **ruleit;
+			  throw SyntaxError(s.str());
+			}
                     }
                 }
-                
-                if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
+	      
+	      if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
                 {
-					Globals::Instance()->getVerboseStream() << "Rule " << **ruleit
-					                                        << " is expansion-safe." << std::endl;
+		  Globals::Instance()->getVerboseStream() << "Rule " << **ruleit
+							  << " is expansion-safe." << std::endl;
                 }
-        
+	      
             } // rules-loop end
         }
-
-        compit++;
     }
 }
 

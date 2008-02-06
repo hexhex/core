@@ -43,19 +43,22 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief Abstract bae class
+ * @brief Abstract base class for the SaftyCheckers
  */
 class DLVHEX_EXPORT SafetyCheckerBase
 {
-public:
+ protected:
 
-protected:
+  /// dtor
+  virtual
+  ~SafetyCheckerBase();
 
-    /// Ctor.
-    SafetyCheckerBase();
-
-public:
-
+ public:
+  
+  /// operator() does the safety check
+  virtual void
+  operator() () const throw (SyntaxError) = 0;
+  
 };
 
 
@@ -64,27 +67,32 @@ public:
  */
 class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 {
-public:
-
-    SafetyChecker(const Program&);
-
-    void
-    testRules(const Program&) const throw (SyntaxError);
+ protected:
+  const Program& program;
+  
+ public:
+  SafetyChecker(const Program&);
+  
+  virtual void
+  operator() () const throw (SyntaxError);
 };
 
 
 /**
  * @brief Strong safety checker class.
  */
-class DLVHEX_EXPORT StrongSafetyChecker : public SafetyChecker
+class DLVHEX_EXPORT StrongSafetyChecker : public SafetyCheckerBase
 {
-public:
+ protected:
+  const DependencyGraph& dg;
 
-    StrongSafetyChecker(const Program&, const DependencyGraph*);
-
-    void
-    testStrongSafety(const DependencyGraph*) const throw (SyntaxError);
+ public:
+  StrongSafetyChecker(const DependencyGraph&);
+  
+  virtual void
+  operator() () const throw (SyntaxError);
 };
+
 
 DLVHEX_NAMESPACE_END
 
