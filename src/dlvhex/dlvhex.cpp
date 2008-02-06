@@ -1034,28 +1034,37 @@ main (int argc, char *argv[])
 	DependencyGraph* dg;
 
 	try
-	{
-		cf = new BoostComponentFinder;
+	  {
+	    cf = new BoostComponentFinder;
 
-		//
-		// Initializing the DependencyGraph. Its constructor uses the
-		// ComponentFinder to find relevant graph
-		// properties for the subsequent processing stage.
-		//
-		dg = new DependencyGraph(nodegraph, cf, *container);
+	    //
+	    // Initializing the DependencyGraph. Its constructor uses the
+	    // ComponentFinder to find relevant graph
+	    // properties for the subsequent processing stage.
+	    //
+	    dg = new DependencyGraph(nodegraph, cf, *container);
 
-		if (Globals::Instance()->getOption("StrongSafety"))
-			StrongSafetyChecker sc(IDB, dg);
-		else
-			SafetyChecker sc(IDB);
-	}
+
+	    //
+	    // Performing the safety check
+	    //
+	    SafetyChecker schecker(IDB);
+	    schecker();
+	    
+	    ///@todo why should we turn off strong safety check?
+	    if (Globals::Instance()->getOption("StrongSafety"))
+	      {
+		StrongSafetyChecker sschecker(*dg);
+		sschecker();
+	      }
+	  }
 	catch (GeneralError &e)
-	{
-		std::cerr << e.getErrorMsg() << std::endl << std::endl;
+	  {
+	    std::cerr << e.getErrorMsg() << std::endl << std::endl;
 
-		exit(1);
-	}
-
+	    exit(1);
+	  }
+	
 
 	if (optionNoEval)
 	{
