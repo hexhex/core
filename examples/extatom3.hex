@@ -7,7 +7,6 @@ dom(d2).
 in_ww(X)      :- dom(X), not out_ww(X).
 out_ww(X)     :- dom(X), not  in_ww(X).
 
-% safetychecker is buggy, this rule is safe even if we remove dom(X).
 p_ww(X)       :- &testA[dl_pc_2](X), not &testA[dl_pc_1](X), dom(X).
 
 % some constraints
