@@ -1,3 +1,31 @@
+2008-02-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/ComponentFinder.h: Fix doxygen doc.
+	* include/dlvhex/DLVresultParserDriver.h: Likewise.
+	* include/dlvhex/DependencyGraph.h: Likewise.
+	* include/dlvhex/HexParserDriver.h: Likewise.
+	* include/dlvhex/NamesTable.h: Likewise.
+	* include/dlvhex/PluginInterface.h: Likewise.
+	* include/dlvhex/ProcessBuf.h: Likewise.
+	* include/dlvhex/ResultContainer.h: Likewise.
+	* include/dlvhex/URLBuf.h: Likewise.
+	* src/dlvhex/AtomFactory.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+	* src/dlvhex/EvaluateExtatom.cpp: Likewise.
+	* src/dlvhex/NodeGraph.cpp: Likewise.
+	
+	* doxygen.cfg: Update doxygen configuration via doxygen -u.
+
+	* dlvhex.pc.in: Add Description field.
+
+	* configure.ac: Integrate new boost searching macros.
+	Create doxygen documentation in the doc directory.
+	Output configuration after configure invocation.
+
+	* m4/boost.m4: Use boost.m4 from http://repo.or.cz/w/boost.m4.git.
+
+	* src/dlvhex/Makefile.am: Integrate new boost searching macros.
+
 2008-02-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Component.cpp (Component::isInComponent): Beautify.
@@ -8,6 +36,7 @@
 
 	* src/dlvhex/SafetyChecker.cpp: Fix strong safety checker.
 	Beautify API.
+	Fixes #1885479.
 	* include/dlvhex/SafetyChecker.h: Likewise.
 
 2008-02-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
