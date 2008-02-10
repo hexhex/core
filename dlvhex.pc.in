@@ -7,7 +7,7 @@ sysplugindir=@sysplugindir@
 userplugindir=@userplugindir@
 
 Name: @PACKAGE@
-Description: 
+Description: HEX-Program Reasoner
 Version: @VERSION@
 Libs: -L${pkglibdir} -ldlvhexbase -laspsolver
 Cflags: -I${includedir}
