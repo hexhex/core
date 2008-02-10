@@ -24,11 +24,13 @@ dist-hook:
 
 
 # global preprocessor flags
-INCLUDES = \
+AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
-    $(BOOST_CXXFLAGS)
+    $(BOOST_CPPFLAGS) \
+    @INCLTDL@ \
+    @LIBCURL_CPPFLAGS@
 
 
 # install dlvhex into $prefix/bin
@@ -49,10 +51,6 @@ dlvhex_SOURCES = \
     TextOutputBuilder.cpp \
     HexParserDriver.cpp \
     URLBuf.cpp
-
-
-# we want libltdl includes
-INCLUDES += @INCLTDL@ @LIBCURL_CPPFLAGS@
 
 #
 # -static: statically link libdlvhexbase
@@ -159,9 +157,3 @@ FLEX_MICRO=33
 		exit 1 ;\
 	fi
 	$(YACCCOMPILE) -o $@ $<
-
-
-#
-# bison flags
-#
-#AM_YFLAGS = -d
