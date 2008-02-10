@@ -50,6 +50,9 @@ class DLVresultFlexLexer;
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+ * @brief Parses DLV answer sets.
+ */
 class DLVHEX_EXPORT DLVresultParserDriver : public ParserDriver
 {
 public:

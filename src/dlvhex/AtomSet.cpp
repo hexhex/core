@@ -34,7 +34,6 @@
 #include <algorithm>
 
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/AtomFactory.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -250,12 +249,17 @@ AtomSet::accept(BaseVisitor& v) const
 }
 
 
-struct predicateMatches : public std::binary_function<AtomPtr, std::string, bool>
+/**
+ * @brief General purpose predicate functor, which returns true iff
+ * predicate of g matches pred.
+ */
+struct PredicateMatches : public std::binary_function<AtomPtr, std::string, bool>
 {
-	bool operator()(const AtomPtr g, const std::string& pred) const
-	{
-		return (g->getPredicate() == Term(pred));
-	}
+  bool
+  operator() (const AtomPtr& g, const std::string& pred) const
+  {
+    return (g->getPredicate() == Term(pred));
+  }
 };
 
 
@@ -266,7 +270,7 @@ AtomSet::remove(const std::string& pred)
 
 	atomset_t::const_iterator last = atoms.end();
 
-	while ((cur = std::find_if(cur, last, bind2nd(predicateMatches(), pred))) != last)
+	while ((cur = std::find_if(cur, last, std::bind2nd(PredicateMatches(), pred))) != last)
 	{
 		atomset_t::iterator tmp = cur++;
 
@@ -303,7 +307,7 @@ AtomSet::keep(const std::vector<std::string>& preds)
 		//
 		if ((std::find_if(preds.begin(),
 						  preds.end(),
-						  bind1st(predicateMatches(), *cur))) == preds.end())
+				  std::bind1st(PredicateMatches(), *cur))) == preds.end())
 		{
 			//
 			// if not, delete this atom
@@ -346,12 +350,17 @@ AtomSet::keepPos()
 }
 
 
-struct atomMatches : public std::binary_function<AtomPtr, Atom, bool>
+/**
+ * @brief General purpose predicate functor, which returns true iff
+ * (*g == a).
+ */
+struct AtomMatches : public std::binary_function<AtomPtr, Atom, bool>
 {
-	bool operator()(const AtomPtr g, const Atom& a) const
-	{
-		return (*g == a);
-	}
+  bool
+  operator() (const AtomPtr& g, const Atom& a) const
+  {
+    return (*g == a);
+  }
 };
 
 
@@ -374,7 +383,7 @@ AtomSet::isConsistent() const
 		// see if 'cur' occurs negated (i.e., 'a') in the range of 'cur+1' to
 		// 'last'
 		//
-		if (std::find_if(++cur, last, bind2nd(atomMatches(), a)) != last)
+		if (std::find_if(++cur, last, std::bind2nd(AtomMatches(), a)) != last)
 			return false;
 	}
 

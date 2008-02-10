@@ -53,6 +53,9 @@ AtomFactory::Instance()
 }
 
 
+/**
+ * @brief A deleter for boost::shared_ptr<>, which does nothing.
+ */
 struct NullDeleter
 {
     void operator() (Atom*) {} // don't delete managed Atom object

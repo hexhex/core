@@ -52,7 +52,7 @@ DLVHEX_NAMESPACE_BEGIN
 class PluginContainer;
 
 /**
- * @brief
+ * @brief Holds information for the components in a dependency graph.
  */
 class DLVHEX_EXPORT DependencyGraph
 {

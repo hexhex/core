@@ -46,9 +46,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief
- *
- *
+ * @brief Base class for the ComponentFinders.
  */
 class DLVHEX_EXPORT ComponentFinder
 {

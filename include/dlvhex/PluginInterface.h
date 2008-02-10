@@ -171,8 +171,7 @@
  *
  * \code
  *         virtual void
- *         retrieve(const Query& query,
- *                  Answer& answer) throw(PluginError)
+ *         retrieve(const Query& query, Answer& answer) throw(PluginError)
  *         {
  * \endcode
  * 
@@ -266,10 +265,10 @@
  * function,
  * 
  * \code
- *     extern "C"
- *     RDFPlugin*
+ *     extern "C" RDFPlugin*
  *     PLUGINIMPORTFUNCTION()
  *     {
+ *         theRDFPlugin.setPluginName(PACKAGE_TARNAME);
  *         theRDFPlugin.setVersion(RDFPLUGIN_MAJOR,
  *                                 RDFPLUGIN_MINOR,
  *                                 RDFPLUGIN_MICRO);
@@ -331,7 +330,7 @@
  *         virtual void
  *         MyConverter::convert(std::istream& i, std::ostream& o)
  *         { 
- *             \\ do the rewriting, maybe throw a PluginError
+ *             // do the rewriting, maybe throw a PluginError
  *         }
  *     }
  * \endcode

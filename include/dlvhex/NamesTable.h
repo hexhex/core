@@ -81,6 +81,10 @@ public:
     size_t indexcount;
 
     
+    /**
+     * @brief Custom const_iterator class, such that we can treat the
+     * class NamesTable<T> similar to a container.
+     */
     class const_iterator
     {
     public:

@@ -21,11 +21,11 @@
 
 
 /**
- * @file AtomNode.cpp
+ * @file NodeGraph.cpp
  * @author Roman Schindlauer
  * @date Mon Jan 30 14:51:15 CET 2006
  *
- * @brief AtomNode, Dependency and NodeGraph classes.
+ * @brief NodeGraph classes.
  *
  *
  */

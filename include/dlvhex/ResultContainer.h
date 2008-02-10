@@ -38,7 +38,6 @@
 
 #include "dlvhex/Atom.h"
 #include "dlvhex/AnswerSet.h"
-//#include "dlvhex/OutputBuilder.h"
 
 #include <iosfwd>
 #include <vector>
@@ -50,8 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
 class OutputBuilder;
 
 /**
- * @brief
- * 
+ * @brief Represents the result of a program invocation.
  */
 class DLVHEX_EXPORT ResultContainer
 {
@@ -90,9 +88,7 @@ public:
     void
     filterOut(const NamesTable<std::string>&);
 
-    /**
-     * @brief Quick hack to get rid of dlt's auxiliary atoms.
-     */
+    /// @todo Quick hack to get rid of dlt's auxiliary atoms.
     void
     filterOutDLT();
 

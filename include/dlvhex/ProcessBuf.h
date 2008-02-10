@@ -26,7 +26,7 @@
  * @author Thomas Krennwallner
  * @date   Sun May 21 13:22:36 2006
  * 
- * @brief  
+ * @brief  iostreams interface to external programs.
  * 
  * 
  */
@@ -45,6 +45,10 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+ * @brief A std::streambuf interface for creating child processes and
+ * writing/reading data via stdin/stdout.
+ */
 class DLVHEX_EXPORT ProcessBuf : public std::streambuf
 {
 public:

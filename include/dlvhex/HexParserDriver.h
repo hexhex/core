@@ -50,6 +50,9 @@ class HexFlexLexer;
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+ * @brief Parses HEX-programs.
+ */
 class DLVHEX_EXPORT HexParserDriver : public ParserDriver
 {
 public:

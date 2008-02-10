@@ -44,6 +44,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/**
+ * @brief A std::streambuf for reading data from URLs.
+ */
 class DLVHEX_EXPORT URLBuf : public std::streambuf
 {
 public:
@@ -54,19 +57,25 @@ public:
   virtual
   ~URLBuf();
 
+  /// open #url
   virtual void
   open(const std::string& url);
 
+  /// @return #response
   virtual long
   responsecode() const;
 
 private:
-  unsigned bufsize;
-
+  /// input buffer
   std::streambuf::char_type* ibuf;
 
+  /// size of ibuf
+  unsigned bufsize;
+
+  /// a CURL handle for accessing URLs
   CURL* easy_handle;
 
+  /// response code from HTTP/FTP/...
   long response;
 
   static size_t

@@ -85,12 +85,17 @@ EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArgu
 }
 
 
-// check whether the answers in the output list are
-// (a) ground
-// (b) conform to the output pattern, i.e., &rdf[uri](S,rdf:subClassOf,O) shall only
-//     return tuples of form <s, rdf:subClassOf, o>, and not for instance
-//     <s, rdf:subPropertyOf, o>, we have to filter them out (do we?)
-
+/**
+ * @brief Check the answers returned from the external atom, and
+ * remove ill-formed tuples.
+ *
+ * Check whether the answers in the output list are
+ * (1) ground
+ * (2) conform to the output pattern, i.e.,
+ *     &rdf[uri](S,rdf:subClassOf,O) shall only return tuples of form
+ *     <s, rdf:subClassOf, o>, and not for instance <s,
+ *     rdf:subPropertyOf, o>, we have to filter them out (do we?)
+ */
 struct CheckOutput
   : public std::binary_function<const Term, const Term, bool>
 {
