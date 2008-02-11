@@ -1,3 +1,17 @@
+2008-02-11  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: g++ 3.3 is unable to infer template types
+	in boost::tokenizer.
+
+	* include/dlvhex/Term.h: Fix doxygen docs.
+	* include/dlvhex/URLBuf.h: Likewise.
+
+	* doxygen.cfg: Extract static and private members.
+
+	* README: Describe --with-boost and libcurl.
+
+	* src/testsuite/dlvhex/Makefile.am (AM_CPPFLAGS): Add BOOST_CPPFLAGS.
+
 2008-02-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/ComponentFinder.h: Fix doxygen doc.
