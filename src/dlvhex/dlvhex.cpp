@@ -386,14 +386,15 @@ main (int argc, char *argv[])
 	int ch;
 	int longid;
 
+	static const char* shortopts = "f:hsvp:ar";
 	static struct option longopts[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "silent", no_argument, 0, 's' },
 		{ "verbose", optional_argument, 0, 'v' },
 		{ "filter", required_argument, 0, 'f' },
-		{ "plugindir", required_argument, 0, 'p'},
-		{ "allmodels", no_argument, 0, 'a'},
-		{ "reverse", no_argument, 0, 'r'},
+		{ "plugindir", required_argument, 0, 'p' },
+		{ "allmodels", no_argument, 0, 'a' },
+		{ "reverse", no_argument, 0, 'r' },
 		{ "firstorder", no_argument, &longid, 1 },
 		{ "weaksafety", no_argument, &longid, 2 },
 		{ "ruleml",     no_argument, &longid, 3 },
@@ -403,7 +404,7 @@ main (int argc, char *argv[])
 		{ NULL, 0, NULL, 0 }
 	};
 
-	while ((ch = getopt_long(argc, argv, "f:hsvp:ar", longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
 		{
@@ -422,11 +423,12 @@ main (int argc, char *argv[])
 				break;
 			case 'f':
 			  {
-			    typedef boost::tokenizer<boost::char_separator<char> > septok;
 			    boost::char_separator<char> sep(",");
-			    septok tok(std::string(optarg), sep);
+			    std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+			    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
 			    
-			    for (septok::const_iterator f = tok.begin(); f != tok.end(); ++f)
+			    for (boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+				 f != tok.end(); ++f)
 			      {
 				Globals::Instance()->addFilter(*f);
 			      }
@@ -443,26 +445,30 @@ main (int argc, char *argv[])
 				Globals::Instance()->setOption("ReverseOrder", 1);
 				break;
 			case 0:
-				if (longid == 1)
-					Globals::Instance()->setOption("NoPredicate", 0);
-				else if (longid == 2)
-					Globals::Instance()->setOption("StrongSafety", 0);
-				else if (longid == 3)
-				{
-					optionXML = true;
-
-					//
-					// XMl output makes only sense with silent:
-					//
-					Globals::Instance()->setOption("Silent", 1);
-				}
-				else if (longid == 4)
-					optiondlt = true;
-				else if (longid == 5)
-					optionNoEval = true;
-				else if (longid == 6)
-					optionKeepNSPrefix = true;
-				break;
+			  switch (longid)
+			    {
+			    case 1:
+			      Globals::Instance()->setOption("NoPredicate", 0);
+			      break;
+			    case 2:
+			      Globals::Instance()->setOption("StrongSafety", 0);
+			      break;
+			    case 3:
+			      optionXML = true;
+			      // XML output makes only sense with silent:
+			      Globals::Instance()->setOption("Silent", 1);
+			      break;
+			    case 4:
+			      optiondlt = true;
+			      break;
+			    case 5:
+			      optionNoEval = true;
+			      break;
+			    case 6:
+			      optionKeepNSPrefix = true;
+			      break;
+			    }
+			  break;
 			case '?':
 				remainingOptions.push_back(argv[optind - 1]);
 				break;
