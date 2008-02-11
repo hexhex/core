@@ -57,11 +57,15 @@ public:
   virtual
   ~URLBuf();
 
-  /// open #url
+  /**
+   * @param url open this URL string
+   */
   virtual void
   open(const std::string& url);
 
-  /// @return #response
+  /**
+   * @return #response
+   */
   virtual long
   responsecode() const;
 
@@ -69,7 +73,7 @@ private:
   /// input buffer
   std::streambuf::char_type* ibuf;
 
-  /// size of ibuf
+  /// size of #ibuf
   unsigned bufsize;
 
   /// a CURL handle for accessing URLs

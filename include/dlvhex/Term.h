@@ -93,6 +93,7 @@ public:
 	/**
 	 * @brief Creates a constant string term.
 	 *
+	 * @param symbolname create a Term using passed parameter
 	 * @param addQuotes If true, then the string will be quoted, but only if it
 	 * is not already a quoted string.
 	 *
@@ -102,7 +103,7 @@ public:
 	 * to create a null constant term, use the default constructor Term().
 	 */
         explicit
-	Term(const std::string&, bool addQuotes = false); 
+	Term(const std::string& symbolname, bool addQuotes = false); 
 
 	/**
 	 * @brief Same as the Term constructor with std::string.
