@@ -26,15 +26,28 @@ In this case, you probably need to install additional packages.
 ** Dependencies
 
 *** boost
-Boost is a collection of portable C++ source libraries, which are intended to
-be widely useful, and usable across a broad spectrum of applications. You will
-need a version equal or higher than 1.33.1. See http://www.boost.org/
-Follow the instructions of the INSTALL file found in the distributions tarball.
-Popular Linux and Unix distributions such as Fedora, Debian, and NetBSD include
-pre-built Boost packages. E.g., in Debian (and Ubuntu), do
+Boost is a collection of portable C++ source libraries, which are
+intended to be widely useful, and usable across a broad spectrum of
+applications. You will need a version equal or higher than 1.33.1. See
+http://www.boost.org/. Follow the instructions of the INSTALL file
+found in the distributions tarball.  Popular Linux and Unix
+distributions such as Fedora, Debian, and NetBSD include pre-built
+Boost packages. E.g., in Debian (and Ubuntu), do
 
  $ apt-get install libboost-dev libboost-graph-dev
 
+If you have compiled boost by yourself, you have to tell dlvhex'
+configure script where you have installed it:
+
+ $ ./configure --with-boost=/path/to/boost/prefix
+
+*** libcurl
+libcurl is a multi-protocol file transfer library. dlvhex uses it to
+retrieve programs specified by http-scheme URLs. This library is
+standard for most operating systems (see http://curl.haxx.se/libcurl/
+for source packages). Debian provides packages called
+libcurl3-openssl-dev and libcurl3-gnutls-dev; install one of these and
+you will be able to compile dlvhex.
 
 *** cppunit (optional)
 CppUnit is used for the unit-testing of dlvhex, but not necessary for
@@ -45,26 +58,27 @@ cppunit packages are provided by the major Linux distributions. E.g.,
 in Debian do `apt-get install libcppunit-dev'.
 
 ** Configuration
-Run "configure" to create the necessary Makefiles. As usual, use the --prefix
-switch to specify a custom installation location. dlvhex uses pkgconfig to
-share build-related configuration with plugins. So if you also intend to
-compile plugins and use a custom prefix for dlvhex, make sure to adjust the
-PKG_CONFIG_PATH envvar appropriately, otherwise the configuration of the
-plugins will not work. E.g., if your prefix is $HOME/localinstall/, then
-PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.  If you
-installed boost in a non-standard folder, use CPPFLAGS=-I/path/to/includes to
-specify the location of the header files (you can also try to use the
-"--with-boost" switch for configure, see "configure --help").
-If configure complains, then something vital for building dlvhex is missing in
-your system. If you get complaints about missing boost-headers, make sure that
-you have the necesary parts of boost installed and that their version is
+Run "configure" to create the necessary Makefiles. As usual, use the
+--prefix switch to specify a custom installation location. dlvhex uses
+pkgconfig to share build-related configuration with plugins. So if you
+also intend to compile plugins and use a custom prefix for dlvhex,
+make sure to adjust the PKG_CONFIG_PATH environment variable
+appropriately, otherwise the configuration of the plugins will not
+work. E.g., if your prefix is $HOME/localinstall/, then
+PKG_CONFIG_PATH needs to be set to $HOME/localinstall/lib/pkgconfig.
+If you installed boost in a non-standard folder, add
+`--with-boost=/path/to/boost/prefix' to the configure switches to
+specify the location of the header files.  If configure complains,
+then something vital for building dlvhex is missing in your system. If
+you get complaints about missing boost-headers, make sure that you
+have the necesary parts of boost installed and that their version is
 sufficiently recent (see above).
 
 ** Documentation
-Run "make doxygen-run" to create the docs (a subdirectory "documentation" will
-be created). By default, only the html-docs will be built. To enable other
-formats, you have to specify the according configure-switch, e.g.,
-"--enable-doxygen-ps".
+Run "make doxygen-run" to create the docs (a subdirectory "doc" will
+be created). By default, only the html-docs will be built. To enable
+other formats, you have to specify the according configure-switch,
+e.g., "--enable-doxygen-ps".
 
 ** Testing
 Run "make check" to build and execute the cppunit-based regression
