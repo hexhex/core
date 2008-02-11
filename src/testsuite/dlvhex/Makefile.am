@@ -37,6 +37,7 @@ dlvhexTS_SOURCES = \
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
     -I$(top_srcdir)/src \
+    $(BOOST_CPPFLAGS) \
     $(DLVHEX_CFLAGS)
 
 dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
