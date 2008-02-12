@@ -1,3 +1,11 @@
+2008-02-12  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GraphBuilder.cpp: Add dependencies from aggregate
+	atoms to atoms occurring in the body of them (fixes agg2.hex).
+	* examples/agg2.hex: Likewise.
+
+	* TODO: Update.
+
 2008-02-11  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp: g++ 3.3 is unable to infer template types
