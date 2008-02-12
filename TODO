@@ -1,6 +1,6 @@
 -*- org -*-
 
-* TODO Fix agg2.hex and extatom3.hex testcases
+* TODO Fix extatom3.hex testcase
 
 * TODO Complete the dlvhex API (output, intput, ...)
 Plugins should behave as passively as possible, i.e., no registration
@@ -47,6 +47,9 @@ we need to tweak the symbol exporting pragmas.
 What's more, how to deal with plugins that are unable to "cooperate,"
 e.g., the sparql-plugin is not able to process combined sparql
 statements and rules.
+
+See also
+http://sourceforge.net/mailarchive/message.php?msg_name=c48f89e40802030429h1a8eff67y86403da4b51ee122%40mail.gmail.com
 
 * TODO Fix Term's namespace handling
 
