@@ -1,4 +1,4 @@
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 AC_INIT([dlvhex],[1.7.0],[tkren@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
@@ -184,7 +184,8 @@ BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
-BOOST_GRAPH
+BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
+#BOOST_GRAPH #right now, we don't care about libboost-graph
 
 # debug
 AC_ARG_ENABLE(debug,
