@@ -55,11 +55,10 @@ AtomNode::AtomNode(const AtomPtr& atom)
       inHead(0),
       inBody(0)
 {
-    //
-    // TODO: here, we increase the nodecounter and assign it to the node id.
-    // can we be sure that every time a new node is created - and only then! -
-    // this constructor is called?
-    //
+    ///@todo here, we increase the nodecounter and assign it to the
+    ///node id. can we be sure that every time a new node is created -
+    ///and only then! - this constructor is called? anyway, having a
+    ///static counter for the id's is maybe too restrictive.
     nodeId = nodeCount++;
 }
 

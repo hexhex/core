@@ -226,14 +226,15 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
                     thiscomponent.push_back(Vertex(i));
             }
 
-            //
-            // boost adds also single components as strong components. we avoid that
-            // for now (25-01-06), because having so many sccs will mean to call dlv
-            // a lot, which might cost a lot. better to put an effort into the
-            // graphprocessor strategy of finding big wccs on the fly.
-            // TODO: try the other way by using a different boostcomponentfinder with
-            // a different graphprocessor!
-            //
+            /// @todo boost adds also single components as strong
+            /// components. we avoid that for now (25-01-06), because
+            /// having so many sccs will mean to call dlv a lot, which
+            /// might cost a lot. better to put an effort into the
+            /// graphprocessor strategy of finding big wccs on the
+            /// fly.
+
+            /// @todo try the other way by using a different
+            /// boostcomponentfinder with a different graphprocessor!
 
             //
             // only add components with more than one vertex:

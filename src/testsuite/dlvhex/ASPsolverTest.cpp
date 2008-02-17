@@ -71,10 +71,8 @@ ASPsolverTest::testExecution()
     prg = "p(a,b).p(c).";
     CPPUNIT_ASSERT_THROW(solver->callSolver(prg), FatalError);
 
-    //
-    // TODO: if we parametrize the solver-executable later, test
-    // also the solver existence!
-    //
+    ///@todo if we parametrize the solver-executable later, test
+    /// also the solver existence!
 }
 
 void

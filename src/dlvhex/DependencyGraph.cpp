@@ -115,12 +115,12 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
 
             //
             // mark these scc nodes as visited
-            // TODO: this is not so nice here
             //
             for (std::vector<AtomNodePtr>::const_iterator ni = (*scc).begin();
                 ni != (*scc).end();
                 ++ni)
             {
+	      ///@todo marking scc nodes as visited this is not so nice here
                 visited.push_back(*ni);
             }
         }
@@ -198,10 +198,8 @@ DependencyGraph::~DependencyGraph()
 
 
 
-//
-// TODO: this function is actually meant for sccs - otherwise we would have to
-// go through succeeding as well!
-//
+///@todo this function is actually meant for sccs - otherwise we would
+/// have to go through succeeding as well!
 bool
 DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes) const
 {

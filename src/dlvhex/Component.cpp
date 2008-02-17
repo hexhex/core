@@ -150,9 +150,9 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNodePtr>& nodes,
     // find incoming nodes: nodes that depend on a node that does not belong to
     // the component
     //
-    ///todo: this is not used yet, incoming are not enough, facts are not
-    //recorded and could be relevant as well!
-    //
+
+    ///@todo: this is not used yet, incoming nodes are not enough,
+    ///facts are not recorded and could be relevant as well!
     
     std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
 
@@ -614,11 +614,8 @@ Subgraph::getSuccessors(Component* comp)
 void
 Subgraph::getUnsolvedLeaves(std::vector<Component*>& leaves)
 {
-    //
-    // TODO: this is not very efficient! maybe we can store these leaves on the fly
-    // somewhere else!
-    //
-
+    ///@todo this is not very efficient! maybe we can store these
+    ///leaves on the fly somewhere else!
 
     for (std::vector<Component*>::const_iterator ci = components.begin();
          ci != components.end();

@@ -1112,6 +1112,8 @@ main (int argc, char *argv[])
 		removeNamespaces();
 
 
+	///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
+
 	//
 	// prepare result container
 	//
@@ -1148,14 +1150,18 @@ main (int argc, char *argv[])
 		}
 	}
 
+
+	///@todo filtering the atoms here is maybe to costly, how
+	///about ignoring the aux names when building the output,
+	///since the custom output builders of the plugins may need
+	///the aux names? Likewise for --filter predicates...
+
 	//
 	// remove auxiliary atoms
 	//
 	result.filterOut(Term::getAuxiliaryNames());
 
-	//
-	// quick hack
-	//
+	///@todo quick hack for dlt
 	if (optiondlt)
 		result.filterOutDLT();
 
@@ -1183,6 +1189,9 @@ main (int argc, char *argv[])
 	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
 	     pi != plugins.end(); ++pi)
 	  {
+	    ///@todo this is very clumsy, what should we do if there
+	    ///are more than one output builders available from the
+	    ///atoms?
 	    outputbuilder = (*pi)->createOutputBuilder();
 	  }
 

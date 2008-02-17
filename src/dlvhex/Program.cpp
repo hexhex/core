@@ -72,7 +72,7 @@ Program::deleteRule(iterator i)
 void
 Program::addWeakConstraint(WeakConstraint* wc)
 {
-	///todo don't add the same wc twice!
+	///@todo don't add the same wc twice!
 
 	rules.insert(wc);
 

@@ -808,8 +808,8 @@ user_pred:
 external_atom:
     AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE external_output
         {
-            // TODO: two external atoms with same name and input?
-            // how "equal" are they?
+            /// @todo two external atoms with same name and input?
+            /// how "equal" are they?
 
             //
             // create new external atom from:
