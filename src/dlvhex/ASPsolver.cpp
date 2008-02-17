@@ -39,6 +39,7 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/ProcessBuf.h"
+#include "dlvhex/PrintVisitor.h"
 
 #include <sstream>
 #include <iterator>
@@ -79,11 +80,13 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 {
     answersets.clear();
 
-    // std::cout << "prg" << std::endl;
-    // std::cout        << std::endl << prg << std::endl;
-    //if (Globals::Instance()->getOption("Verbose") >= 3)
-    //    Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
-    //        << std::endl << prg << std::endl;
+    if (Globals::Instance()->getOption("Verbose") >= 3)
+      {
+	Globals::Instance()->getVerboseStream() << "Sending program to dlv:"
+						<< std::endl
+						<< prg 
+						<< std::endl;
+      }
 
     // setup command
     std::vector<std::string> argv;
@@ -128,8 +131,8 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
         pb.endoffile(); // send EOF to dlv
 
-        ///todo if dlv is not executable, we get a strange process error - make
-        //this more clear to the user!
+        ///@todo if dlv is not executable, we get a strange process
+        ///error - make this more clear to the user!
 
         DLVresultParserDriver driver;
     
@@ -197,20 +200,20 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
     // reset retrieval pointer:
     //
     answerSetIndex = answersets.begin();
-    
-/*
-    for (std::vector<AtomSet>::iterator o = answersets.begin();
-            o != answersets.end();
-            o++)
-    {
-    	RawPrintVisitor rpv(std::cout);
-	    (*o).accept(rpv);
-        std::cout << std::endl;
-        
-        //for (AtomSet::const_iterator foo = (*o).begin();foo != (*o).end();++foo)
-        //    std::cout << "have predicate: " << foo->getPredicate() << std::endl;
-    }
-*/
+  
+    if (Globals::Instance()->getOption("Verbose") >= 3)
+      {
+	Globals::Instance()->getVerboseStream() << "Received answersets from dlv:" << std::endl;
+
+	for (std::vector<AtomSet>::iterator o = answersets.begin();
+	     o != answersets.end();
+	     ++o)
+	  {
+	    RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	    o->accept(rpv);
+	    Globals::Instance()->getVerboseStream() << std::endl;
+	  }
+      }
 }
 
 DLVHEX_NAMESPACE_END
