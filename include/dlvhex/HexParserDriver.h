@@ -74,7 +74,7 @@ public:
     HexFlexLexer*
     getLexer();
 
-    std::string
+    const std::string&
     getInputFilename() const;
 
     void

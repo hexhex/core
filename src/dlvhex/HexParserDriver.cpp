@@ -60,7 +60,7 @@ HexParserDriver::getLexer()
 }
 
 
-std::string
+const std::string&
 HexParserDriver::getInputFilename() const
 {
     return  this->source;
