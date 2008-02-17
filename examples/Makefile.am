@@ -5,6 +5,8 @@ EXTRA_DIST = \
     msp.hex \
     extatom1.hex \
     extatom2.hex \
+    extatom3.hex \
+    extatom4.hex \
     namespace1.hex \
     simple1.hex \
     weak1.hex \
