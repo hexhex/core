@@ -1,3 +1,23 @@
+2008-02-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/AtomNode.cpp: Replace todo hints by doxygen's @todo
+	documentation.
+	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
+
+	* src/dlvhex/ASPsolver.cpp: Add debugging output for verbose
+	levels above 2.
+
+	* include/dlvhex/HexParserDriver.h (HexParserDriver::getInputFilename):
+	Return a reference instead of a copy.
+	* src/dlvhex/HexParserDriver.cpp: Likewise.
+
 2008-02-16  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Do not check for libboost-graph.
