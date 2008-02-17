@@ -70,10 +70,22 @@ class DLVHEX_EXPORT EvaluateExtatom
   
 
 protected:
-  void groundInputList(const AtomSet&, std::vector<Tuple>&) const;
+  /**
+   * @brief Grounds the input arguments w.r.t. a specified interpretation.
+   *
+   * If the input list of an external atom in a hex-program is not
+   * completely ground, auxiliary predicates are generated, grounding
+   * the list from the remaining body atoms. This function creates
+   * ground tuples from the auxiliary atoms in the interpretation or
+   * simply returns the original input list, if it was fully ground.
+   */
+  void
+  groundInputList(const AtomSet&, std::vector<Tuple>&) const;
 
+  /// evaluate this ExternalAtom
   const ExternalAtom* externalAtom;
 
+  /// container holds all known external atoms
   PluginContainer& container;
 };
 
