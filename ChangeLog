@@ -1,5 +1,16 @@
 2008-02-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/ExternalAtom.h: Remove static external atom counter.
+	External atoms now have simple replacement names (this breaks non-ground input).
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* include/dlvhex/EvaluateExtatom.h: Add documentation.
+
+	* examples/Makefile.am: Add new testcase for replacementname bug.
+	* examples/extatom4.hex: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/extatom4.out: Likewise.
+
 	* src/dlvhex/AtomNode.cpp: Replace todo hints by doxygen's @todo
 	documentation.
 	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
