@@ -63,19 +63,6 @@ public:
                  const unsigned line);
 
     /**
-     * Associates the parsed atom with a PluginAtom.
-     *
-     * Checks also if the atom has correct syntax according to its specification
-     * in the plugin (arities of input and output).
-     *
-     * Before you can call ExternalAtom::evaluate or
-     * ExternalAtom::getInputType, you MUST call this method in order
-     * to setup pluginAtom.
-     */
-//     void
-//     setPluginAtom(const PluginContainer&);
-
-    /**
      * @brief Returns the auxiliary predicate name.
      */
     const std::string&
@@ -140,19 +127,19 @@ public:
     virtual bool
     unifiesWith(const AtomPtr&) const;
 
-	/**
-	 * @brief Tests for equality.
-	 *
-	 * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
-	 */
-	virtual bool
-	operator== (const ExternalAtom& atom2) const;
+    /**
+     * @brief Tests for equality.
+     *
+     * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
+     */
+    virtual bool
+    operator== (const ExternalAtom& atom2) const;
 
-	/**
-	 * @brief Polymorphic equality operator.
-	 */
-	virtual bool
-	equals(const AtomPtr& atom2) const;
+    /**
+     * @brief Polymorphic equality operator.
+     */
+    virtual bool
+    equals(const AtomPtr& atom2) const;
 
     /**
      * @brief accepts a visitor.
@@ -160,32 +147,27 @@ public:
     virtual void
     accept(BaseVisitor&) const;
 
-
+    /**
+     * @return #line
+     */
     unsigned
     getLine() const;
 
 
 private:
 
-    /// private default Ctor.
+    /// private default ctor.
     ExternalAtom();
 
-    /// @brief initializes replacementName and auxPredicate from functionName
+    /**
+     * @brief initializes replacementName and auxPredicate from functionName
+     */
     void
     initReplAux();
 
     /**
-     * @brief Grounds the input arguments w.r.t. a specified interpretation.
-     *
-     * If the input list of an external ato in a hex-program is not completely
-     * ground, auxiliary predicates are generated, grounding the list from the
-     * remaining body atoms. This function creates ground tuples from the
-     * auciliary atoms in the interpretation or simply returns the original
-     * input list, if it was fully ground.
+     * @brief the input list of an external atom
      */
- //    void
-//     groundInputList(const AtomSet&, std::vector<Tuple>&) const;
-
     Tuple inputList;
 
     /**
@@ -200,16 +182,6 @@ private:
      * @brief Auxiliary predicate for grounding the input list.
      */
     std::string auxPredicate;
-    
-    /**
-     * @brief keep the external atom number
-     */
-    unsigned extAtomNo;
-
-    /**
-     * @brief Consecutive number to build a unique replacement name.
-     */
-    static unsigned uniqueNumber;
 
     /**
      * @brief Replacement name to be used for creating an ordinary logic
@@ -218,24 +190,16 @@ private:
     std::string replacementName;
 
     /**
-     * @brief Filename of the source file where this atom occured.
+     * @brief Filename of the source file where this atom occured
+     * (used in error output).
      */
     std::string filename;
 
     /**
-     * @brief Line of the source file where this atom occured (for error
-     * output).
+     * @brief Line of the source file where this atom occured (used in
+     * error output).
      */
     unsigned line;
-
-    /**
-     * @brief Pointer to the PluginAtom object that matches the atom's
-     * function name
-     *
-     * call ExternalAtom::setPluginAtom to setup this member.
-     */
- //    boost::shared_ptr<PluginAtom> pluginAtom;
-
 };
 
 DLVHEX_NAMESPACE_END

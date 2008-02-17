@@ -39,9 +39,7 @@
 
 #include <cassert>
 #include <string>
-#include <iostream>
-#include <sstream>
-#include <iterator>
+#include <functional>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -50,77 +48,66 @@ ExternalAtom::ExternalAtom()
 
 
 ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
-	: Atom(extatom.arguments),
-	  inputList(extatom.inputList),
-	  functionName(extatom.functionName),
-	  auxPredicate(extatom.auxPredicate),
-	  replacementName(extatom.replacementName),
-	  line(extatom.line)
+  : Atom(extatom.arguments),
+    inputList(extatom.inputList),
+    functionName(extatom.functionName),
+    auxPredicate(extatom.auxPredicate),
+    replacementName(extatom.replacementName),
+    filename(extatom.filename),
+    line(extatom.line)
 { }
-
 
 
 ExternalAtom::ExternalAtom(const std::string& name,
 			   const Tuple& params,
 			   const Tuple& input,
 			   const unsigned line)
-  : Atom(name,params),
+  : Atom(name, params),
     inputList(input),
     functionName(name),
-    extAtomNo(uniqueNumber),
     line(line)
 {
-  ///@todo global counters are always crap, this breaks replacement
-  ///names, where the external atom is syntactically equal!!
-
-	//
-	// increase absolute extatom counter
-	//
-	uniqueNumber++;
-
-	//
-	// and now setup replacement name and so on
-	//
-	initReplAux();
+  // setup replacement name and so forth
+  initReplAux();
 }
+
 
 void
 ExternalAtom::initReplAux()
 {
-	//
-	// make replacement name, unique for each extatom
-	//
-	std::stringstream ss;
-	ss << "ex" << functionName << "_" << extAtomNo;
-	replacementName = ss.str();
+  ///@todo if the user names a predicate exEXTATOM, we clash with
+  ///these auxiliary names here
 
-	//
-	// remember this artificial atom name, we need to remove those later, they
-	// shouldn't be in the actual result
-	//
-	Term::registerAuxiliaryName(replacementName);
+  //
+  // make replacement name
+  //
+  replacementName = "ex" + functionName;
 
-	bool inputIsGround(1);
+  //
+  // remember this artificial atom name, we need to remove those
+  // later, they shouldn't be in the actual result
+  //
+  Term::registerAuxiliaryName(replacementName);
 
-	for (unsigned s = 0; s < inputList.size(); s++)
-		if (inputList[s].isVariable())
-			inputIsGround = 0;
+  //
+  // build auxiliary predicate
+  //
+  auxPredicate.clear();
 
-	//
-	// build auxiliary predicate
-	//
-	auxPredicate.clear();
+  if (!this->pureGroundInput())
+    {
+      ///@todo this simple aux name does not work for nonground input!
+      ///Maybe we can build a  map similar to the dl-atom rewriting in
+      ///GraphBuilder?
 
-	if (!inputIsGround)
-	{
-		//
-		// also produce auxiliary predicate name, we need this for the
-		// nonground input list
-		//
-		ss << "_aux";
-		auxPredicate = ss.str();
-		Term::registerAuxiliaryName(auxPredicate);
-	}
+      //
+      // also produce auxiliary predicate name, we need this for the
+      // nonground input list
+      //
+      auxPredicate = replacementName + "_aux";
+
+      Term::registerAuxiliaryName(auxPredicate);
+    }
 }
 
 
@@ -128,15 +115,15 @@ ExternalAtom::initReplAux()
 const std::string&
 ExternalAtom::getAuxPredicate() const
 {
-	return auxPredicate;
+  return auxPredicate;
 }
 
 
 void
 ExternalAtom::setFunctionName(const std::string& name)
 {
+  ///@todo also set predicate name of Atom parentclass?
   this->functionName = name;
-//   this->pluginAtom = boost::shared_ptr<PluginAtom>(); // reset pluginAtom
 
   // and now setup the new replacement and aux names
   initReplAux();
@@ -146,97 +133,78 @@ ExternalAtom::setFunctionName(const std::string& name)
 const std::string&
 ExternalAtom::getFunctionName() const
 {
-	return functionName;
+  return functionName;
 }
 
 
 const std::string&
 ExternalAtom::getReplacementName() const
 {
-	return replacementName;
+  return replacementName;
 }
 
 
 bool
 ExternalAtom::pureGroundInput() const
 {
-	for (Tuple::const_iterator ti = inputList.begin();
-		 ti != inputList.end();
-		 ++ti)
-	{
-		if ((*ti).isVariable())
-			return 0;
-	}
-
-	return 1;
+  // if we cannot find a variable input argument, we are ground
+  return inputList.end() == std::find_if(inputList.begin(), inputList.end(), std::mem_fun_ref(&Term::isVariable));
 }
 
 
 const Tuple&
 ExternalAtom::getInputTerms() const
 {
-	return inputList;
+  return inputList;
 }
+
 
 void
 ExternalAtom::setInputTerms(const Tuple& ninput)
 {
-	inputList.clear();
+  inputList.clear();
 	
-	// copy nargs to the 2nd position in inputList
-	inputList.insert(inputList.end(), 
-			 ninput.begin(),
-			 ninput.end()
-			 );
+  // copy nargs to the 2nd position in inputList
+  inputList.insert(inputList.end(), 
+		   ninput.begin(),
+		   ninput.end()
+		   );
 
-	///@todo new replacementname for nonground input?
+  ///@todo new replacementname for nonground input?
+  ///@todo check parameter length?
 }
 
 
 bool
 ExternalAtom::unifiesWith(const AtomPtr& /* atom */) const
 {
-	return 0;
+  ///@todo do external atoms really never unify?
+  return false;
 }
 
 
 bool
 ExternalAtom::operator== (const ExternalAtom& atom2) const
 {
-	if (typeid(*this) != typeid(atom2))
-		return 0;
+  bool ret = true;
 
-	// hm, should we really check the replacement names? they are
-	// always different for two different instances of ExternalAtom
-	if (this->replacementName != atom2.replacementName)
-		return 0;
-
-	if (this->functionName != atom2.functionName)
-		return 0;
-
-	if (this->getArity() != atom2.getArity())
-		return 0;
-	
-	if (this->isStrongNegated != atom2.isStrongNegated)
-		return 0;
-
-	if (this->inputList.size() != atom2.inputList.size())
-		return 0;
-
-	for (unsigned i = 0; i <= this->getArity(); i++)
+  if (typeid(*this) != typeid(atom2))
+    {
+      ret = false;
+    }
+  else 
+    {
+      if (this->functionName != atom2.functionName ||
+	  this->getArity() != atom2.getArity() ||
+	  this->isStrongNegated != atom2.isStrongNegated ||
+	  this->inputList != atom2.inputList ||
+	  this->getArguments() != atom2.getArguments())
 	{
-		if (this->getArgument(i) != atom2.getArgument(i))
-			return 0;
+	  ret = false;
 	}
-	
-	for (unsigned i = 0; i < this->inputList.size(); i++)
-	{
-		if (this->inputList[i] != atom2.inputList[i])
-			return 0;
-	}
+    }
 
-//	std::cout << "extcomp: " << *this << " equals " << atom2 << "!" << std::endl;
-	return 1;
+  return ret;
 }
 
 
@@ -273,17 +241,14 @@ ExternalAtom::equals(const AtomPtr& atom2) const
 void
 ExternalAtom::accept(BaseVisitor& v) const
 {
-	v.visitExternalAtom(this);
+  v.visitExternalAtom(this);
 }
-
-
-unsigned ExternalAtom::uniqueNumber = 0;
 
 
 unsigned
 ExternalAtom::getLine() const
 {
-	return line;
+  return line;
 }
 
 DLVHEX_NAMESPACE_END
