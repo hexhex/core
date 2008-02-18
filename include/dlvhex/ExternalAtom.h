@@ -69,6 +69,12 @@ public:
     getAuxPredicate() const;
 
     /**
+     * @brief set new auxiliary predicate name.
+     */
+    void
+    setAuxPredicate(const std::string&);
+
+    /**
      * @brief Returns the function name of the external atom.
      *
      * The external atom's function name is equal to its identifier string
@@ -134,6 +140,14 @@ public:
      */
     virtual bool
     operator== (const ExternalAtom& atom2) const;
+
+
+    /**
+     * @brief extatom ordering.
+     */
+    virtual bool
+    operator< (const ExternalAtom& atom2) const;
+
 
     /**
      * @brief Polymorphic equality operator.

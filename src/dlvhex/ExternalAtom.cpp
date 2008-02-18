@@ -105,8 +105,6 @@ ExternalAtom::initReplAux()
       // nonground input list
       //
       auxPredicate = replacementName + "_aux";
-
-      Term::registerAuxiliaryName(auxPredicate);
     }
 }
 
@@ -116,6 +114,13 @@ const std::string&
 ExternalAtom::getAuxPredicate() const
 {
   return auxPredicate;
+}
+
+
+void
+ExternalAtom::setAuxPredicate(const std::string& auxname)
+{
+  auxPredicate = auxname;
 }
 
 
@@ -176,9 +181,15 @@ ExternalAtom::setInputTerms(const Tuple& ninput)
 
 
 bool
-ExternalAtom::unifiesWith(const AtomPtr& /* atom */) const
+ExternalAtom::unifiesWith(const AtomPtr& atom) const
 {
-  ///@todo do external atoms really never unify?
+  ///@todo external atoms may unify with other external atoms, otherwise, our dynamic auxrule generation won't work!!
+
+  if (typeid(*atom.get()) == typeid(ExternalAtom))
+    {
+      return false;
+    }
+
   return false;
 }
 
@@ -209,8 +220,45 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
 
 
 bool
+ExternalAtom::operator< (const ExternalAtom& atom2) const
+{
+  bool ret = false;
+
+  if (this->functionName < atom2.functionName)
+    {
+      ret = true;
+    }
+  else if (this->getArity() < atom2.getArity())
+    {
+      ret = true;
+    }
+  else if (this->isStrongNegated < atom2.isStrongNegated)
+    {
+      ret = true;
+    }
+  else if (this->inputList < atom2.inputList)
+    {
+      ret = true;
+    }
+  else if (this->getArguments() < atom2.getArguments())
+    {
+      ret = true;
+    }
+
+  return ret;
+}
+
+
+bool
 ExternalAtom::equals(const AtomPtr& atom2) const
 {
+  ///@todo preliminary workaround, so that the depgraph contains >= 1
+  ///equal extatom nodes, and we evaluate them more than once for
+  ///different rules...
+  return false;
+
+
+
   bool ret = true;
 
   // don't forget, typeid gives the most derived type only if it is
