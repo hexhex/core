@@ -1,3 +1,20 @@
+2008-02-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GraphBuilder.cpp: Check input/output arities of ExternalAtoms.
+	Dynamically create auxiliary extatom-input rules.
+
+	* src/dlvhex/EvaluateExtatom.cpp: Code cleanups and documentation.
+
+	* include/dlvhex/Rule.h (Rule::getFile): Interface fix.
+	* src/dlvhex/Rule.cpp: Likewise.
+
+	* include/dlvhex/ExternalAtom.h (ExternalAtom::setAuxPredicate): New method.
+	(ExternalAtom::operator<): New method.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* examples/Makefile.am: Add new testcase.
+	* examples/extatom5.hex: Likewise.
+
 2008-02-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/ExternalAtom.h: Remove static external atom counter.
