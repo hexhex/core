@@ -116,7 +116,7 @@ public:
 	/**
 	 * @brief Returns the filename where this rule appeared.
 	 */
-	std::string
+	const std::string&
 	getFile() const;
 
 	/**

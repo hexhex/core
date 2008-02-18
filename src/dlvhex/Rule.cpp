@@ -122,7 +122,7 @@ Rule::setBody(const RuleBody_t& b)
 }
 
 
-std::string
+const std::string&
 Rule::getFile() const
 {
     return programFile;
@@ -139,8 +139,6 @@ Rule::getLine() const
 const std::vector<ExternalAtom*>&
 Rule::getExternalAtoms() const
 {
-//    std::cout << "getting extatoms of rule " << this <<  std::endl;
-//    std::cout << " size: " << externalAtoms.size() << std::endl;
     return externalAtoms;
 }
 
