@@ -49,23 +49,19 @@ EvaluateExtatom::EvaluateExtatom(const ExternalAtom* ea, PluginContainer& c)
 void
 EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArguments) const
 {
-  //
-  // first, we assume that we only take the original input list
-  //
-  inputArguments.push_back(externalAtom->getInputTerms());
-
-  //
-  // did we create an auxiliary predicate before?
-  //
-  if (!externalAtom->getAuxPredicate().empty())
+  if (externalAtom->pureGroundInput())
+    {
+      // take the original input list
+      inputArguments.push_back(externalAtom->getInputTerms());
+    }
+  else // nonground input list
     {
       //
       // now that we know there are variable input arguments
       // (otherwise there wouldn't be such a dependency), we can start
-      // over with the input list again and construct it from the
-      // result of the auxiliary rules
+      // constructing the input list from the result of the auxiliary
+      // rules
       //
-      inputArguments.clear();
 
       AtomSet arglist;
 
@@ -75,6 +71,11 @@ EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArgu
       //
       i.matchPredicate(externalAtom->getAuxPredicate(), arglist);
 
+      //
+      // for each auxiliary fact we create a new input list for the
+      // external atom, i.e., we evaluate our external atom n =
+      // |arglist| times.
+      //
       for (AtomSet::const_iterator argi = arglist.begin();
 	   argi != arglist.end();
 	   ++argi)
@@ -122,21 +123,22 @@ void
 EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
   throw (PluginError)
 {
-  boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(externalAtom->getFunctionName());
+  const std::string& fnc = externalAtom->getFunctionName();
+
+  boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(fnc);
 
   if (!pluginAtom)
     {
-      throw PluginError("Could not find plugin for external atom " + externalAtom->getFunctionName());
+      throw PluginError("Could not find plugin for external atom " + fnc);
     }
 
   std::vector<Tuple> inputArguments;
 
   groundInputList(i, inputArguments);
 
-  std::string fnc = externalAtom->getFunctionName();
-
   //
-  // evaluate external atom for externalAtomch input tuple we have now
+  // evaluate external atom for each input tuple we have extracted in
+  // groundInputList()
   //
   for (std::vector<Tuple>::const_iterator inputi = inputArguments.begin();
        inputi != inputArguments.end();
@@ -144,19 +146,21 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
     {
       AtomSet inputSet;
 
+      const std::vector<PluginAtom::InputType>& inputtypes = pluginAtom->getInputTypes();
+      Tuple::const_iterator termit = inputi->begin();
+
       //
       // extract input set from i according to the input parameters
       //
-      for (unsigned s = 0; s < inputi->size(); s++)
+      for (std::vector<PluginAtom::InputType>::const_iterator typeit = inputtypes.begin();
+	   termit != inputi->end() && typeit != inputtypes.end(); ++termit, ++typeit)
 	{
-	  const Term* inputTerm = &(*inputi)[s];
-
 	  //
 	  // at this point, the entire input list must be ground!
 	  //
-	  assert(!inputTerm->isVariable());
+	  assert(!termit->isVariable());
 
-	  switch(pluginAtom->getInputType(s))
+	  switch(*typeit)
 	    {
 	    case PluginAtom::CONSTANT:
 	      //
@@ -172,7 +176,7 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 
 	      /// @todo: since matchpredicate doesn't neet the output list, do we
 	      /// need that factlist here?
-	      i.matchPredicate(inputTerm->getString(), inputSet);
+	      i.matchPredicate(termit->getString(), inputSet);
 	      
 	      break;
 
