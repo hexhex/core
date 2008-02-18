@@ -7,6 +7,7 @@ EXTRA_DIST = \
     extatom2.hex \
     extatom3.hex \
     extatom4.hex \
+    extatom5.hex \
     namespace1.hex \
     simple1.hex \
     weak1.hex \
