@@ -39,8 +39,23 @@
 #include "dlvhex/AggregateAtom.h"
 #include "dlvhex/PluginContainer.h"
 
+#include <algorithm>
+#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+
+
+struct LiteralUnifies
+{
+  bool
+  operator() (Literal* const& l1, Literal* const& l2)
+  {
+    return l1->getAtom()->unifiesWith(l2->getAtom());
+  }
+};
+
+
 
 void
 GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer& container)
@@ -54,7 +69,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
   std::multimap<Term, AtomNodePtr> extinputs;
   std::multimap<Term, AtomNodePtr> agginputs;
 	
-  
+  typedef std::multimap<ExternalAtom, std::pair<std::string,RuleBody_t> > ExtAuxMap;
+  ExtAuxMap auxmap;
+  unsigned auxcounter = 0;
+
   //
   // empty the NodeGraph
   //
@@ -200,6 +218,43 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
 	      const Tuple& input = ext->getInputTerms();
 	      Tuple::const_iterator iit = input.begin();
+
+	      //
+	      // check input and output arity of external atoms
+	      //
+	      ///@todo check if it is sufficient to test this only here
+	      if (!pluginAtom->checkInputArity(input.size()))
+		{
+		  std::ostringstream atomstr;
+	  
+		  PluginError e("Arity mismatch for input list");
+
+		  atomstr << ext->getFunctionName() << "["
+			  << ext->getInputTerms() << "](" 
+			  << ext->getArguments() << ")"
+			  << " in line "
+			  << ext->getLine();
+
+		  e.setContext(atomstr.str());
+
+		  throw e;
+		}
+	      else if (!pluginAtom->checkOutputArity(ext->getArguments().size()))
+		{
+		  std::ostringstream atomstr;
+	  
+		  PluginError e("Arity mismatch for output list");
+
+		  atomstr << ext->getFunctionName() << "["
+			  << ext->getInputTerms() << "](" 
+			  << ext->getArguments() << ")"
+			  << " in line "
+			  << ext->getLine();
+
+		  e.setContext(atomstr.str());
+
+		  throw e;
+		}
 	      
 	      //
 	      // go through all input terms of this external atom
@@ -227,7 +282,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		      // AtomNodes with a Predicate 'a' - those will
 		      // be assigned a dependency relation with n1!
 		      //
-		      extinputs.insert(std::pair<Term, AtomNodePtr>(*iit, bn));
+		      extinputs.insert(std::make_pair(*iit, bn));
 		    }
 		}
 	    }
@@ -285,39 +340,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      //
 	      const Tuple& extinput = ext->getInputTerms();
 			
-	      //
-	      // make a new atom with the ext-parameters as arguments,
-	      // this will be the head of the auxiliary rule; add this
-	      // atom to the global atom store
-	      //
-	      AtomPtr auxheadatom = Registry::Instance()->storeAtom(new Atom(ext->getAuxPredicate(), extinput));
-
-	      //
-	      // add a new head node for the graph with this atom
-	      //
-	      AtomNodePtr auxheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
-
-	      //
-	      // now we create the auxiliary rule
-	      //
-	      RuleHead_t auxhead;
-	      RuleBody_t auxbody;
-
-	      auxhead.insert(auxheadatom);
-
-	      //
-	      // the body is still empty here, but we can use the
-	      // ausrule pointer to populate it later, see below
-	      //
-	      Rule* auxrule = new Rule(auxhead, auxbody);
-
-	      Registry::Instance()->storeObject(auxrule);
-
-	      //
-	      // add aux dependency from this new head to the external
-	      // atom node
-	      //
-	      Dependency::addDep(0, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
 	      //
 	      // the body of the auxiliary rule are all body literals
@@ -325,6 +347,12 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      // aux_head in common and that are not weakly negated!
 	      //
 	      std::vector<AtomNodePtr> allbodynodes;
+
+	      //
+	      // this body has variables in common with nonground extinputs
+	      //
+	      RuleBody_t auxbody;
+
 
 	      for (std::vector<AtomNodePtr>::iterator currbody = currentBodyNodes.begin();
 		   currbody != currentBodyNodes.end();
@@ -339,7 +367,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		      continue;
 		    }
 
-		  bool thisAtomIsRelevant = false;
+		  //bool thisAtomIsRelevant = false;
 
 		  const Tuple& currentAtomArguments = (*currbody)->getAtom()->getArguments();
 
@@ -362,45 +390,115 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		      //
 		      Tuple::const_iterator eqit =
 			std::find(currentAtomArguments.begin(), currentAtomArguments.end(), *extinpit);
-		      
+		     	  
+		      //
+		      // should this atom be in the auxiliary rule
+		      // body?  (i.e., does one of its arguments occur
+		      // in the input list of the external atom?)
+		      //
 		      if (eqit != currentAtomArguments.end())
 			{
-			  thisAtomIsRelevant = true;
+			  //
+			  // make new literals with the (ordinary) body atoms of the new aux rule
+			  //
+			  Literal* l = new Literal((*currbody)->getAtom());
+			  Registry::Instance()->storeObject(l);
+			  // add the literal to the auxiliary rule body
+			  auxbody.insert(l);
 			  break;
 			}
 		    }
+		}
+
+	      //
+	      // and now check if we can reuse a previously generated
+	      // auxiliary rule
+	      // 
+
+	      std::string auxname;
+
+	      std::pair<ExtAuxMap::const_iterator, ExtAuxMap::const_iterator> range = auxmap.equal_range(*ext);
+
+	      for (ExtAuxMap::const_iterator it = range.first; it != range.second; ++it)
+		{
+		  const std::pair<std::string, RuleBody_t>& tup = it->second;
+		  const RuleBody_t& mauxbody = tup.second;
+
+		  if (auxbody.size() == mauxbody.size() &&
+		      std::equal(auxbody.begin(), auxbody.end(), mauxbody.begin(), LiteralUnifies()))
+		    {
+		      // everything unifies, reuse auxname from the ExtMap
+		      auxname = tup.first;
+		      break;
+		    }
+		}
+
+	      if (auxname.empty()) // no body in the auxmap unifies with our current body
+		{
+		  std::ostringstream oss;
+		  oss << ext->getReplacementName() << "_aux" << auxcounter;
+		  auxcounter++;
+		  
+		  auxname = oss.str();
+
+		  Term::registerAuxiliaryName(auxname);
+
+		  auxmap.insert(std::make_pair(*ext, std::make_pair(auxname, auxbody)));
+		}
+
+	      // set the new auxiliary name for this extatom
+	      ext->setAuxPredicate(auxname);
+
+	      //
+	      // make a new atom with the ext-parameters as arguments,
+	      // this will be the head of the auxiliary rule; add this
+	      // atom to the global atom store
+	      //
+	      AtomPtr auxheadatom = Registry::Instance()->storeAtom(new Atom(auxname, extinput));
+
+	      //
+	      // add a new head node for the graph with this atom
+	      //
+	      AtomNodePtr auxheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
+
+	      //
+	      // now we create the auxiliary rule
+	      //
+	      RuleHead_t auxhead;
+
+	      auxhead.insert(auxheadatom);
+
+	      Rule* auxrule = new Rule(auxhead, auxbody);
+
+	      Registry::Instance()->storeObject(auxrule);
+
+	      //
+	      // add EXTERNAL_AUX dependency from this new head to the
+	      // external atom node
+	      //
+	      Dependency::addDep(0, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
+
+	      //
+	      // and finally go through auxbody and add dependencies
+	      // to the new auxhead
+	      //
+	      for (RuleBody_t::const_iterator it = auxbody.begin(); it != auxbody.end(); ++it)
+		{
+		  //
+		  // make a node for each of these new atoms
+		  //
+		  AtomNodePtr auxbodynode = nodegraph.addUniqueBodyNode((*it)->getAtom());
 		  
 		  //
-		  // should this atom be in the auxiliary rule body?
-		  // (i.e., does one of its arguments occur in the
-		  // input list of the external atom?)
-		  if (thisAtomIsRelevant)
-		    {
-		      //
-		      // make new literals with the (ordinary) body atoms of the current rule
-		      //
-		      Literal* l = new Literal((*currbody)->getAtom());
-				
-		      Registry::Instance()->storeObject(l);
-				
-		      // add the literal to the auxiliary rule body
-		      auxrule->addBody(l);
-				
-		      //
-		      // make a node for each of these new atoms
-		      //
-		      AtomNodePtr auxbodynode = nodegraph.addUniqueBodyNode(l->getAtom());
-						
-		      //
-		      // add the usual body->head dependency
-		      //
-		      Dependency::addDep(auxrule, auxbodynode, auxheadnode, Dependency::PRECEDING);
-		    }
-		} // ordinary body-lit loop
-	    } // if (!ext->pureGroundInput())
-	}
-    }
+		  // add the usual body->head dependency
+		  //
+		  Dependency::addDep(auxrule, auxbodynode, auxheadnode, Dependency::PRECEDING);
+		}
 
+	    } // ordinary body-lit loop
+
+	} // if (!ext->pureGroundInput())
+    }
 
 
   //
