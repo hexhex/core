@@ -18,6 +18,8 @@ EXTRA_DIST = \
     tests/namespace1.out \
     tests/extatom1.out \
     tests/extatom2.out \
+    tests/extatom4.out \
+    tests/extatom5.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out
