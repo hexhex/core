@@ -34,10 +34,6 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
-
 #include "dlvhex/Component.h"
 #include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/ASPsolver.h"
@@ -190,88 +186,77 @@ ProgramComponent::ProgramComponent(const std::vector<AtomNodePtr>& nodes,
 
 ProgramComponent::~ProgramComponent()
 {
-    if (modelGenerator != NULL)
-        delete modelGenerator;
+  delete modelGenerator;
 }
 
 
 void
 ProgramComponent::evaluate(std::vector<AtomSet>& input)
 {
-    if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
+  if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
-        std::cerr << "Evaluating program component:" << std::endl;
-        RawPrintVisitor rpv(std::cerr);
-        getBottom().dump(rpv);
+      std::cerr << "Evaluating program component:" << std::endl;
+      RawPrintVisitor rpv(std::cerr);
+      getBottom().dump(rpv);
     }
 
-    std::vector<AtomSet> res, previous;
+  std::vector<AtomSet> res;
 
-    //
-    // compute model for each input factset
-    //
-    for (std::vector<AtomSet>::const_iterator in = input.begin();
-         in != input.end();
-         ++in)
+  //
+  // compute model for each input factset
+  //
+  for (std::vector<AtomSet>::const_iterator in = input.begin();
+       in != input.end();
+       ++in)
     {
-        AtomSet filtered;
+      res.clear();
 
-        std::list<AtomNodePtr>::const_iterator ini = incomingNodes.begin();
-
-        res.clear();
-
-        try
+      try
         {
-            modelGenerator->compute(atomnodes, (*in), res);
+	  modelGenerator->compute(atomnodes, *in, res);
         }
-        catch (GeneralError&)
+      catch (GeneralError&)
         {
-            throw;
+	  throw;
         }
 
-#ifdef DLVHEX_DEBUG
-        DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+      DEBUG_START_TIMER;
 
-        //
-        // add all models that came from the model generator to the result set
-        // (= set of sets!)
-        //
-        result.insert(result.end(), res.begin(), res.end());
+      //
+      // add all models that came from the model generator to the
+      // result set (= set of sets!)
+      //
+      result.insert(result.end(), res.begin(), res.end());
 
-#ifdef DLVHEX_DEBUG
-		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-        DEBUG_STOP_TIMER("Program-component result insert time   ")
-#endif // DLVHEX_DEBUG
+      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+      DEBUG_STOP_TIMER("Program-component result insert time   ");
     }
 
-    evaluated = true;
+  evaluated = true;
 }
 
 
 void
 ProgramComponent::dump(std::ostream& out) const
 {
-    out << "ProgramComponent-object --------------------------------" << std::endl;
-    out << "Nodes:";
-
-    for (std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
-         ni != atomnodes.end();
-         ++ni)
+  out << "ProgramComponent-object --------------------------------" << std::endl;
+  out << "Nodes:";
+    
+  for (std::vector<AtomNodePtr>::const_iterator ni = atomnodes.begin();
+       ni != atomnodes.end();
+       ++ni)
     {
-        out << " " << (*ni)->getId();
+      out << " " << (*ni)->getId();
     }
-
+  
     out << std::endl;
-
+    
     out << "Bottom:" << std::endl;
 
-    RawPrintVisitor rpv(std::cerr);
+    RawPrintVisitor rpv(out);
     getBottom().dump(rpv);
 
     out << "ProgramComponent-object end ----------------------------" << std::endl;
-
-//    out << std::endl;
 }
 
 
@@ -301,26 +286,43 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-#ifdef DLVHEX_DEBUG
-	  DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+	  DEBUG_START_TIMER;
 
-	    EvaluateExtatom eea(externalAtom, pluginContainer);
-	    eea.evaluate(i, res);
+	  if (externalAtom->pureGroundInput())
+	    {
+	      EvaluateExtatom eea(externalAtom, pluginContainer);
+	      eea.evaluate(i, res);
+	    }
+	  else
+	    {
+	      // nonground input means we have a couple of
+	      // EXTERNAL_AUX deps, which we need to call to get all
+	      // results for this extatom
+	      const std::set<Dependency>& deps = atomnodes.front()->getPreceding();
 
-#ifdef DLVHEX_DEBUG
-			//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-		    DEBUG_STOP_TIMER("External evaluation time               ")
-#endif // DLVHEX_DEBUG
+	      for (std::set<Dependency>::const_iterator it = deps.begin();
+		   it != deps.end(); ++it)
+		{
+		  if (it->getType() == Dependency::EXTERNAL_AUX)
+		    {
+		      ///@todo we should fix the interface and move
+		      ///auxpredicate as parameter to EvaluateExtatom::evaluate
+		      externalAtom->setAuxPredicate(it->getAtomNode()->getAtom()->getPredicate().getString());
+		      EvaluateExtatom eea(externalAtom, pluginContainer);
+		      eea.evaluate(i, res);
+		    }
+		}
+	    }
+
+	  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	  DEBUG_STOP_TIMER("External evaluation time               ");
         }
         catch (GeneralError&)
         {
             throw;
         }
 
-#ifdef DLVHEX_DEBUG
-            DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+	DEBUG_START_TIMER;
 
         //
         // important: the component result must include also its input
@@ -337,10 +339,8 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 //		res.accept(rpv);
 //	    std::cerr << std::endl;
 
-#ifdef DLVHEX_DEBUG
-		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-		DEBUG_STOP_TIMER("External result insert time            ")
-#endif // DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("External result insert time            ");
     }
 
     evaluated = true;
@@ -350,14 +350,16 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 void
 ExternalComponent::dump(std::ostream& out) const
 {
-    out << "ExternalComponent-object with node ";
+  out << "ExternalComponent-object with node(s):" << std::endl;
 
-    //
-    // an external component can have only one node
-    //
-    out << (*atomnodes.begin())->getId() << std::endl;
+  // an external component can have only one node
 
-    out << std::endl;
+  for (std::vector<AtomNodePtr>::const_iterator it = atomnodes.begin();
+       it != atomnodes.end();
+       ++it)
+    {
+      out << (*it)->getId() << ' ' << *(*it)->getAtom() << std::endl;
+    }
 }
 
 
@@ -381,15 +383,11 @@ Subgraph::~Subgraph()
 
 
 Subgraph::Subgraph(const Subgraph& sg2)
-{
-    atomnodes = sg2.atomnodes;
-
-    components = sg2.components;
-
-    nodeComponentMap = sg2.nodeComponentMap;
-
-    lastResult = sg2.lastResult;
-}
+  : atomnodes(sg2.atomnodes),
+    components(sg2.components),
+    nodeComponentMap(sg2.nodeComponentMap),
+    lastResult(sg2.lastResult)
+{ }
 
 
 void
