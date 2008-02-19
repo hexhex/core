@@ -1,3 +1,31 @@
+2008-02-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* NEWS: Update.
+
+	* src/dlvhex/ExternalAtom.cpp (ExternalAtom::unifiesWith):
+	Extatoms unifies with extatoms now.
+
+	* src/dlvhex/Component.cpp (ExternalComponent::evaluate): Fix
+	evaluation of EXTERNAL_AUX dependencies in nonground extatom inputs.
+
+	* src/dlvhex/AtomNode.cpp: Small beautifiers.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+
+	* src/dlvhex/Atom.cpp (Atom::isGround,Atom::unifiesWith): Simplify.
+
+	* include/dlvhex/globals.h: Beautify DLVHEX_DEBUG and dlvhex timer.
+	* src/dlvhex/ASPsolver.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* examples/Makefile.am: Add missing testcase extatom5.hex.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/extatom5.out: Likewise.
+
 2008-02-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/GraphBuilder.cpp: Check input/output arities of ExternalAtoms.
