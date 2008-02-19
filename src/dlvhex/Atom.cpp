@@ -25,7 +25,7 @@
  * @author Roman Schindlauer
  * @date Mon Sep  5 17:09:33 CEST 2005
  *
- * @brief Atom and GroundAtom class.
+ * @brief Atom and BuiltinPredicate class.
  *
  *
  */
@@ -76,7 +76,8 @@ Atom::Atom(const std::string& atom, bool neg)
       boost::char_separator<char> sep(",");
       const std::string& pars = atom.substr(par + 1, atom.length() - par - 2);
       septok tok(pars, sep);
-		
+
+      // arguments
       for (septok::const_iterator p = tok.begin(); p != tok.end(); ++p)
 	{
 	  arguments.push_back(Term(*p));
@@ -183,24 +184,18 @@ Atom::isStronglyNegated() const
 bool
 Atom::unifiesWith(const AtomPtr& atom2) const
 {
-	//
-	// atoms only unify with atoms
-	//
-	if (typeid(*atom2) != typeid(Atom))
-		return false;
+  //
+  // atoms only unify with atoms with the same arity
+  //
+  if (typeid(*atom2) == typeid(Atom) && getArity() == atom2->getArity())
+    {	
+      // this atom unifies with atom2 iff all arguments unify pairwise
+      return std::equal(arguments.begin(), arguments.end(),
+			atom2->arguments.begin(),
+			std::mem_fun_ref(&Term::unifiesWith));
+    }
 
-	if (getArity() != atom2->getArity())
-		return false;
-	
-	bool ret = true;
-	
-	for (unsigned i = 0; i <= getArity(); i++)
-	{
-		if (!getArgument(i).unifiesWith(atom2->getArgument(i)))
-			ret = false;
-	}
-	
-	return ret;
+  return false;
 }
 
 
@@ -270,13 +265,8 @@ Atom::accept(BaseVisitor& v) const
 bool
 Atom::isGround() const
 {
-	for (Tuple::const_iterator t = arguments.begin(); t != arguments.end(); t++)
-	{
-		if (t->isVariable())
-				return false;
-	}
-
-	return true;
+  // an atom is ground if no argument is a variable
+  return arguments.end() == std::find_if(arguments.begin(), arguments.end(), std::mem_fun_ref(&Term::isVariable));
 }
 
 
