@@ -44,10 +44,6 @@
 #include <sstream>
 #include <iterator>
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
-
 DLVHEX_NAMESPACE_BEGIN
 
 ASPsolver::ASPsolver()
@@ -105,9 +101,7 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
 
     try
     {
-#ifdef DLVHEX_DEBUG
-		DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+        DEBUG_START_TIMER;
 
         // create a new dlv process
         ProcessBuf pb;
@@ -141,10 +135,8 @@ ASPsolver::callSolver(const std::string& prg, bool noEDB)// throw (FatalError)
         // get exit code of dlv process
         retcode = pb.close();
 
-#ifdef DLVHEX_DEBUG
-		//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-		DEBUG_STOP_TIMER("Calling dlv and parsing its result     ")
-#endif // DLVHEX_DEBUG
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Calling dlv and parsing its result     ");
     }
     catch (FatalError& e)
     {

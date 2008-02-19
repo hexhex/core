@@ -36,10 +36,6 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
-
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
@@ -130,9 +126,7 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
     AtomSet* as;
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+    DEBUG_START_TIMER;
 
     while ((as = Solver.getNextAnswerSet()) != NULL)
     {
@@ -143,10 +137,8 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
         models.push_back(res);
     }
 
-#ifdef DLVHEX_DEBUG
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Time storing the ASP result            ")
-#endif // DLVHEX_DEBUG
+    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+    DEBUG_STOP_TIMER("Time storing the ASP result            ");
 }
 
 DLVHEX_NAMESPACE_END

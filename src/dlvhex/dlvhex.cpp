@@ -84,10 +84,6 @@
 
 #include <boost/tokenizer.hpp>
 
-#ifdef DLVHEX_DEBUG
-#include <boost/date_time/posix_time/posix_time.hpp>
-#endif // DLVHEX_DEBUG
-
 
 DLVHEX_NAMESPACE_USE
 
@@ -541,9 +537,7 @@ main (int argc, char *argv[])
 	//
 	/////////////////////////////////////////////////////////////////
 	
-#ifdef DLVHEX_DEBUG
-	DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+	DEBUG_START_TIMER;
 
 	PluginContainer* container = PluginContainer::instance(optionPlugindir);
 
@@ -593,10 +587,8 @@ main (int argc, char *argv[])
 	      }
 	  }
 
-#ifdef DLVHEX_DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Importing plugins                      ")
-#endif // DLVHEX_DEBUG
+	DEBUG_STOP_TIMER("Importing plugins                      ");
 
 	if (!Globals::Instance()->getOption("Silent"))
 		std::cout << std::endl;
@@ -647,9 +639,7 @@ main (int argc, char *argv[])
 	//
 	/////////////////////////////////////////////////////////////////
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_RESTART_TIMER
-#endif // DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER;
 
 	HexParserDriver driver;
 
@@ -889,12 +879,10 @@ main (int argc, char *argv[])
 			exit(1);
 		      }
 		  }
-//	}
-
-#ifdef DLVHEX_DEBUG
+		//	}
+		
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Parsing and converting input           ")
-#endif // DLVHEX_DEBUG
+	DEBUG_STOP_TIMER("Parsing and converting input           ");
 
 	//
 	// expand constant names
@@ -912,9 +900,7 @@ main (int argc, char *argv[])
 	}
 
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_RESTART_TIMER
-#endif // DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER;
 			
 	//
 	// now call rewriters
@@ -935,10 +921,8 @@ main (int argc, char *argv[])
 		}
 	}
 
-#ifdef DLVHEX_DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Calling plugin rewriters               ")
-#endif // DLVHEX_DEBUG
+	DEBUG_STOP_TIMER("Calling plugin rewriters               ");
 
 	if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM) && wasRewritten)
 	{
@@ -954,9 +938,7 @@ main (int argc, char *argv[])
 	/// @todo: when exiting after an exception, we have to cleanup things!
 	// maybe using boost-pointers!
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_RESTART_TIMER
-#endif // DLVHEX_DEBUG
+	DEBUG_RESTART_TIMER;
 
 	//
 	// The GraphBuilder creates nodes and dependency edges from the raw program.
@@ -976,10 +958,8 @@ main (int argc, char *argv[])
 		exit(1);
     }
 
-#ifdef DLVHEX_DEBUG
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Building dependency graph              ")
-#endif // DLVHEX_DEBUG
+    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+    DEBUG_STOP_TIMER("Building dependency graph              ");
 
     if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
     {
@@ -987,9 +967,7 @@ main (int argc, char *argv[])
     }
     
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_RESTART_TIMER
-#endif // DLVHEX_DEBUG
+    DEBUG_RESTART_TIMER;
 
 	//
 	// now call optimizers
@@ -1010,22 +988,20 @@ main (int argc, char *argv[])
 		}
 	}
 
-#ifdef DLVHEX_DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Calling plugins optimizers             ")
-#endif // DLVHEX_DEBUG
+	DEBUG_STOP_TIMER("Calling plugins optimizers             ");
 
 	if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM) && wasOptimized)
 	{
 		Globals::Instance()->getVerboseStream() << "Optimized graph:" << std::endl;
-        gb.dumpGraph(nodegraph, Globals::Instance()->getVerboseStream());
+		gb.dumpGraph(nodegraph, Globals::Instance()->getVerboseStream());
 		Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
 		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
 		EDB.accept(rpv);
 		Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
 
-
+	DEBUG_RESTART_TIMER;
 
 	//
 	// The ComponentFinder provides functions for finding SCCs and WCCs from a
@@ -1071,6 +1047,8 @@ main (int argc, char *argv[])
 	    exit(1);
 	  }
 	
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Dependency graph building and safety checker     ");
 
 	if (optionNoEval)
 	{
@@ -1079,6 +1057,8 @@ main (int argc, char *argv[])
 
 		exit(0);
 	}
+
+	DEBUG_RESTART_TIMER;
 
 	//
 	// The GraphProcessor provides the actual strategy of how to compute the
@@ -1105,6 +1085,11 @@ main (int argc, char *argv[])
 		exit(1);
 	}
 
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Graph processing                       ");
+
+	DEBUG_RESTART_TIMER;
+
 	//
 	// contract constant names again, if specified
 	//
@@ -1126,10 +1111,6 @@ main (int argc, char *argv[])
 		wcprefix = "wch__";
 
 	ResultContainer result(wcprefix);
-
-#ifdef DLVHEX_DEBUG
-	DEBUG_RESTART_TIMER
-#endif // DLVHEX_DEBUG
 
 	//
 	// put GraphProcessor result into ResultContainer
@@ -1173,12 +1154,10 @@ main (int argc, char *argv[])
 	result.filterIn(Globals::Instance()->getFilters());
 
 
-#ifdef DEBUG
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ")
-#endif // DEBUG
+	DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ");
 
-
+	DEBUG_RESTART_TIMER;
 
 	//
 	// output format
@@ -1210,6 +1189,8 @@ main (int argc, char *argv[])
 
 	result.print(std::cout, outputbuilder);
 	    
+	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	DEBUG_STOP_TIMER("Build output                           ");
 
 	//
 	// was there anything non-error the user should know? dump it directly

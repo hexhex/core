@@ -33,11 +33,45 @@
 #if !defined(_DLVHEX_GLOBALS_H)
 #define _DLVHEX_GLOBALS_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #include "dlvhex/PlatformDefinitions.h"
 
 #include <string>
 #include <vector>
 #include <map>
+
+#ifdef DLVHEX_DEBUG
+#include <boost/date_time/posix_time/posix_time.hpp>
+#endif // DLVHEX_DEBUG
+
+
+#if DLVHEX_DEBUG
+#define DEBUG_START_TIMER						\
+  boost::posix_time::ptime boosttimerstart;				\
+  boost::posix_time::ptime boosttimerend;				\
+  do {									\
+    boosttimerstart = boost::posix_time::microsec_clock::local_time();	\
+  } while(0)
+#define DEBUG_RESTART_TIMER						\
+  do {									\
+    boosttimerstart = boost::posix_time::microsec_clock::local_time();	\
+  } while(0)
+#define DEBUG_STOP_TIMER(msg)						\
+  do {									\
+    boosttimerend = boost::posix_time::microsec_clock::local_time();	\
+    if (Globals::Instance()->doVerbose(Globals::PROFILING)) {		\
+      boost::posix_time::time_duration diff = boosttimerend - boosttimerstart; \
+      Globals::Instance()->getVerboseStream() << msg  << diff << "s" << std::endl; \
+      boosttimerstart = boosttimerend; }				\
+  } while(0)
+#else
+#define DEBUG_START_TIMER do { } while(0)
+#define DEBUG_RESTART_TIMER do { } while(0)
+#define DEBUG_STOP_TIMER(msg) do { } while(0)
+#endif // DLVHEX_DEBUG
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -155,18 +189,6 @@ private:
 	//std::vector<std::string> Messages;
 
 };
-
-#define DEBUG_START_TIMER boost::posix_time::ptime boosttimerstart = boost::posix_time::microsec_clock::local_time(); \
-	boost::posix_time::ptime boosttimerend; // std::cerr << "timer started..." << std::endl;
-
-#define DEBUG_RESTART_TIMER boosttimerstart = boost::posix_time::microsec_clock::local_time(); // std::cerr << "timer started..." << std::endl;
-
-#define DEBUG_STOP_TIMER(msg) boosttimerend = boost::posix_time::microsec_clock::local_time(); \
-		if (Globals::Instance()->doVerbose(Globals::PROFILING)) { \
-			boost::posix_time::time_duration diff = boosttimerend - boosttimerstart; \
-			Globals::Instance()->getVerboseStream() \
-				<< msg  << diff << "s" << std::endl; \
-        boosttimerstart = boosttimerend; }
 
 DLVHEX_NAMESPACE_END
 

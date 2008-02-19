@@ -56,9 +56,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 //	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 //		  std::cout << "= Guess&Check ModelGenerator =" << std::endl;
 
-#ifdef DLVHEX_DEBUG
-	DEBUG_START_TIMER
-#endif // DLVHEX_DEBUG
+  DEBUG_START_TIMER;
 
 	models.clear();
 
@@ -603,10 +601,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 		ans++;
 	}
 
-#ifdef DLVHEX_DEBUG
 	//				  123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Guess-and-check generator (incl. dlv)  ")
-#endif // DLVHEX_DEBUG
+	DEBUG_STOP_TIMER("Guess-and-check generator (incl. dlv)  ");
 }
 
 
