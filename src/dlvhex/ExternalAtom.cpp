@@ -181,13 +181,30 @@ ExternalAtom::setInputTerms(const Tuple& ninput)
 
 
 bool
-ExternalAtom::unifiesWith(const AtomPtr& atom) const
+ExternalAtom::unifiesWith(const AtomPtr& atom2) const
 {
-  ///@todo external atoms may unify with other external atoms, otherwise, our dynamic auxrule generation won't work!!
-
-  if (typeid(*atom.get()) == typeid(ExternalAtom))
+  //
+  // external atoms only unify with external atoms of the the same
+  // name, and the same arity of input and output lists
+  //
+  if (typeid(*(atom2.get())) == typeid(ExternalAtom))
     {
-      return false;
+      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(atom2.get());
+
+      if (getFunctionName() == ea2->getFunctionName() &&
+	  getArity() == ea2->getArity() &&
+	  inputList.size() == ea2->inputList.size())
+	{
+	  // both input and output lists must unify
+	  return
+	    std::equal(arguments.begin(), arguments.end(),
+		       ea2->arguments.begin(),
+		       std::mem_fun_ref(&Term::unifiesWith))
+	    &&
+	    std::equal(inputList.begin(), inputList.end(),
+		       ea2->inputList.begin(),
+		       std::mem_fun_ref(&Term::unifiesWith));
+	}
     }
 
   return false;
@@ -252,13 +269,6 @@ ExternalAtom::operator< (const ExternalAtom& atom2) const
 bool
 ExternalAtom::equals(const AtomPtr& atom2) const
 {
-  ///@todo preliminary workaround, so that the depgraph contains >= 1
-  ///equal extatom nodes, and we evaluate them more than once for
-  ///different rules...
-  return false;
-
-
-
   bool ret = true;
 
   // don't forget, typeid gives the most derived type only if it is
