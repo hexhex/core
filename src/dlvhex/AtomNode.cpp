@@ -177,11 +177,13 @@ std::ostream& operator<< (std::ostream& out, const AtomNode& atomnode)
 {
 	out << atomnode.getId() << ": ";
 
-	out << *(atomnode.getAtom());
+	const AtomPtr& ap = atomnode.getAtom();
 
-	if (typeid(*(atomnode.getAtom())) == typeid(ExternalAtom))
+	out << *ap;
+
+	if (typeid(*ap) == typeid(ExternalAtom))
 	{
-		const ExternalAtom* ea =  dynamic_cast<ExternalAtom*>(atomnode.getAtom().get());
+		const ExternalAtom* ea =  static_cast<ExternalAtom*>(ap.get());
 		out << " " <<  ea->getReplacementName() << " ";
 	}
 

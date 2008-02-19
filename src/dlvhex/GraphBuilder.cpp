@@ -326,7 +326,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	   currextbody != currentExternalBodyNodes.end();
 	   ++currextbody)
 	{
-	  ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*currextbody)->getAtom().get());
+	  ExternalAtom* ext = static_cast<ExternalAtom*>((*currextbody)->getAtom().get());
 	  
 	  //
 	  // does this external atom have any variable input
@@ -346,11 +346,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      // (ordinary or external) that have variables with the
 	      // aux_head in common and that are not weakly negated!
 	      //
-	      std::vector<AtomNodePtr> allbodynodes;
-
-	      //
-	      // this body has variables in common with nonground extinputs
-	      //
 	      RuleBody_t auxbody;
 
 
@@ -366,8 +361,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		    {
 		      continue;
 		    }
-
-		  //bool thisAtomIsRelevant = false;
 
 		  const Tuple& currentAtomArguments = (*currbody)->getAtom()->getArguments();
 
@@ -519,7 +512,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
       // do this only for ordinary atoms, external and aggregate atoms
       // can't be in the input list or in the body of an aggregate!
       //
-      if (typeid(*at) != typeid(ExternalAtom) && typeid(*at) != typeid(AggregateAtom))
+      if (typeid(*(at.get())) != typeid(ExternalAtom) && typeid(*(at.get())) != typeid(AggregateAtom))
 	{
 	  //
 	  // For this AtomNode: take the predicate term of its atom

@@ -53,8 +53,6 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
 				 PluginContainer& container)
   : nodegraph(ng), componentFinder(cf)
 {
-    std::vector<std::vector<AtomNodePtr> > weakComponents;
-
     const std::vector<AtomNodePtr> allnodes = nodegraph.getNodes();
 
     Subgraph* subgraph = new Subgraph;
