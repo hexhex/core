@@ -1,3 +1,20 @@
+2008-02-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Dependency.cpp: Use static_cast<> where appropriate.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+
+	* include/dlvhex/ExternalAtom.h (ExternalAtom::equals): Remove.
+	(ExternalAtom::operator<,ExternalAtom::operator==): Fix parameters.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+
+	* include/dlvhex/Atom.h (Atom::equals): Remove.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/NodeGraph.cpp: Likewise.
+
 2008-02-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* NEWS: Update.
