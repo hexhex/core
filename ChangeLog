@@ -1,5 +1,7 @@
 2008-02-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* Makefile.am: Require automake >= 1.10.
+
 	* src/dlvhex/Dependency.cpp: Use static_cast<> where appropriate.
 	* src/dlvhex/GraphBuilder.cpp: Likewise.
 	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
