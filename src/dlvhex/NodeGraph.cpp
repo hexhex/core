@@ -283,7 +283,7 @@ NodeGraph::findNode(const AtomPtr& atom) const
        an != atomNodes.end();
        ++an)
     {
-      if (atom->equals((*an)->getAtom()))
+      if (*atom.get() == *(*an)->getAtom())
 	{
 	  return *an;
 	}

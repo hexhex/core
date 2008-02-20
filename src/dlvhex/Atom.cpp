@@ -39,7 +39,6 @@
 #include <cassert>
 #include <boost/tokenizer.hpp>
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 Atom::Atom()
@@ -203,34 +202,17 @@ Atom::unifiesWith(const AtomPtr& atom2) const
 bool
 Atom::operator== (const Atom& atom2) const
 {
-	if (typeid(*this) != typeid(atom2))
-		return 0;
+  bool ret = false;
 
-	if (this->getArity() != atom2.getArity())
-		return 0;
+  if (typeid(*this) == typeid(atom2) &&
+      this->getArity() == atom2.getArity() &&
+      this->isStronglyNegated() == atom2.isStronglyNegated())
+    {
+      ret = std::equal(this->arguments.begin(), this->arguments.end(),
+		       atom2.arguments.begin());
+    }
 
-	if (this->isStronglyNegated() != atom2.isStronglyNegated())
-		return 0;
-
-	return std::equal(this->arguments.begin(), this->arguments.end(),
-	                  atom2.arguments.begin());
-}
-
-
-bool
-Atom::equals(const AtomPtr& atom2) const
-{
-	if (typeid(*this) != typeid(*atom2))
-		return 0;
-
-	if (this->getArity() != atom2->getArity())
-		return 0;
-
-	if (this->isStronglyNegated() != atom2->isStronglyNegated())
-		return 0;
-
-	return std::equal(this->arguments.begin(), this->arguments.end(),
-	                  atom2->arguments.begin());
+  return ret;
 }
 
 
@@ -305,13 +287,12 @@ Atom::operator< (const Atom& atom2) const
 		//
 		if (!this->getPredicate().isVariable() && !atom2.getPredicate().isVariable())
 		{
-			//
-			// remove this check for now: causes problems for temporary
-			// auxiliary atoms, like the flp_heads, that are created with a
-			// suffixed index, based on the rule-index. Thus, in a different
-			// FLP-check, the same Atom-name could be used for a different
-			// arity.
-			//
+			///@todo remove this check for now: causes problems for temporary
+			/// auxiliary atoms, like the flp_heads, that are created with a
+			/// suffixed index, based on the rule-index. Thus, in a different
+			/// FLP-check, the same Atom-name could be used for a different
+			/// arity.
+
 			//std::cerr << *this << " - " << atom2 << std::endl;
 			//throw SyntaxError("arity mismatch");
 		}

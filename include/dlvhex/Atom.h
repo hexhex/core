@@ -225,12 +225,6 @@ public:
 	operator== (const Atom& atom2) const;
 
 	/**
-	 * @brief Polymorphic equality operator.
-	 */
-	virtual bool
-	equals(const AtomPtr& atom2) const;
-
-	/**
 	 * Tests for inequality.
 	 *
 	 * Negation of Atom::operator==.
