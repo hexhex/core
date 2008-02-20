@@ -56,8 +56,10 @@ Program::addRule(Rule* r)
 			bi != r->getBody().end();
 			++bi)
 	{
-		if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
-			externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	  if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
+	    {
+	      externalAtoms.push_back(static_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	    }
 	}
 }
 

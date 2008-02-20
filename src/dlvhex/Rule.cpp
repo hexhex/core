@@ -96,7 +96,9 @@ Rule::addBody(Literal* l)
   AtomPtr ap = l->getAtom();
 
   if (typeid(*ap) == typeid(ExternalAtom))
-    externalAtoms.push_back(dynamic_cast<ExternalAtom*>(ap.get()));
+    {
+      externalAtoms.push_back(static_cast<ExternalAtom*>(ap.get()));
+    }
 }
 
 
@@ -109,7 +111,9 @@ Rule::setExternalAtoms(const RuleBody_t& b)
   for (RuleBody_t::const_iterator bi = b.begin(); bi != b.end(); ++bi)
     {
       if (typeid(*((*bi)->getAtom())) == typeid(ExternalAtom))
-	externalAtoms.push_back(dynamic_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	{
+	  externalAtoms.push_back(static_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	}
     }
 }
 

@@ -206,7 +206,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  //
 	  if (typeid(*at) == typeid(ExternalAtom))
 	    {
-	      ExternalAtom* ext = dynamic_cast<ExternalAtom*>((*li)->getAtom().get());
+	      ExternalAtom* ext = static_cast<ExternalAtom*>((*li)->getAtom().get());
 	      
 	      boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getFunctionName());
 	      
@@ -290,7 +290,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	    {
 	      // go through body of aggregate and add missing deps
 	      
-	      AggregateAtom* agg = dynamic_cast<AggregateAtom*>((*li)->getAtom().get());
+	      AggregateAtom* agg = static_cast<AggregateAtom*>((*li)->getAtom().get());
 	      
 	      const RuleBody_t& aggb = agg->getBody();
 	      

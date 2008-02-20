@@ -264,7 +264,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 	  //
 	  // go through all rules of this component
 	  //
-	  ProgramComponent* progcomp = dynamic_cast<ProgramComponent*>(*compit);
+	  ProgramComponent* progcomp = static_cast<ProgramComponent*>(*compit);
 
 	  const Program& rules = progcomp->getBottom();
 

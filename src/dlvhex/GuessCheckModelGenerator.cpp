@@ -86,7 +86,9 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 		}
 
 		if (typeid(*(*node)->getAtom()) == typeid(ExternalAtom))
-			extatomInComp.insert(dynamic_cast<const ExternalAtom*>((*node)->getAtom().get()));
+		  {
+		    extatomInComp.insert(static_cast<const ExternalAtom*>((*node)->getAtom().get()));
+		  }
 		
 		++node;
 	}

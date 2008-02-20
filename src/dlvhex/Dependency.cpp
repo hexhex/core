@@ -118,7 +118,7 @@ std::ostream& operator<< (std::ostream& out, const Dependency& dep)
 	out << *(dep.getAtomNode()->getAtom());
 	if (typeid(*(dep.getAtomNode()->getAtom())) == typeid(ExternalAtom))
 	{
-		const ExternalAtom* ea =  dynamic_cast<ExternalAtom*>(dep.getAtomNode()->getAtom().get());
+		const ExternalAtom* ea =  static_cast<ExternalAtom*>(dep.getAtomNode()->getAtom().get());
 		out << " " <<  ea->getReplacementName() << " ";
 	}
 
