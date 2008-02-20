@@ -127,8 +127,12 @@ ExternalAtom::setAuxPredicate(const std::string& auxname)
 void
 ExternalAtom::setFunctionName(const std::string& name)
 {
-  ///@todo also set predicate name of Atom parentclass?
+  // set new functionName
   this->functionName = name;
+
+  // and set predicate name? at least we need them in operator== and
+  // unifiesWith
+  this->arguments[0] = Term(name);
 
   // and now setup the new replacement and aux names
   initReplAux();
@@ -212,23 +216,23 @@ ExternalAtom::unifiesWith(const AtomPtr& atom2) const
 
 
 bool
-ExternalAtom::operator== (const ExternalAtom& atom2) const
+ExternalAtom::operator== (const Atom& atom2) const
 {
-  bool ret = true;
+  bool ret = false;
 
-  if (typeid(*this) != typeid(atom2))
+  // don't forget, typeid gives the most derived type only if it is
+  // applied to a non-pointer
+  if (typeid(atom2) == typeid(ExternalAtom))
     {
-      ret = false;
-    }
-  else 
-    {
-      if (this->functionName != atom2.functionName ||
-	  this->getArity() != atom2.getArity() ||
-	  this->isStrongNegated != atom2.isStrongNegated ||
-	  this->inputList != atom2.inputList ||
-	  this->getArguments() != atom2.getArguments())
+      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
+
+      if (this->functionName == ea2->functionName &&
+	  this->getArity() == ea2->getArity() &&
+	  this->isStrongNegated == ea2->isStrongNegated &&
+	  this->inputList == ea2->inputList)
 	{
-	  ret = false;
+	  ret = std::equal(this->arguments.begin(), this->arguments.end(),
+			   ea2->arguments.begin());
 	}
     }
 
@@ -237,58 +241,33 @@ ExternalAtom::operator== (const ExternalAtom& atom2) const
 
 
 bool
-ExternalAtom::operator< (const ExternalAtom& atom2) const
+ExternalAtom::operator< (const Atom& atom2) const
 {
   bool ret = false;
 
-  if (this->functionName < atom2.functionName)
+  if (typeid(atom2) == typeid(ExternalAtom))
     {
-      ret = true;
-    }
-  else if (this->getArity() < atom2.getArity())
-    {
-      ret = true;
-    }
-  else if (this->isStrongNegated < atom2.isStrongNegated)
-    {
-      ret = true;
-    }
-  else if (this->inputList < atom2.inputList)
-    {
-      ret = true;
-    }
-  else if (this->getArguments() < atom2.getArguments())
-    {
-      ret = true;
-    }
+      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
 
-  return ret;
-}
-
-
-bool
-ExternalAtom::equals(const AtomPtr& atom2) const
-{
-  bool ret = true;
-
-  // don't forget, typeid gives the most derived type only if it is
-  // applied to a non-pointer
-  if (typeid(*atom2.get()) != typeid(ExternalAtom))
-    {
-      ret = false;
-    }
-  else
-    {
-      const ExternalAtom* ea = dynamic_cast<ExternalAtom*>(atom2.get());
-
-      if (this->functionName != ea->functionName ||
-	  this->getArity() != ea->getArity() ||
-	  this->isStrongNegated != ea->isStrongNegated ||
-	  this->inputList != ea->inputList ||
-	  this->getArguments() != ea->getArguments()
-	  )
+      if (this->functionName < ea2->functionName)
 	{
-	  ret = false;
+	  ret = true;
+	}
+      else if (this->getArity() < ea2->getArity())
+	{
+	  ret = true;
+	}
+      else if (this->isStrongNegated < ea2->isStrongNegated)
+	{
+	  ret = true;
+	}
+      else if (this->inputList < ea2->inputList)
+	{
+	  ret = true;
+	}
+      else if (this->getArguments() < ea2->getArguments())
+	{
+	  ret = true;
 	}
     }
 

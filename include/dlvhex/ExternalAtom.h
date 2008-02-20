@@ -139,21 +139,14 @@ public:
      * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
      */
     virtual bool
-    operator== (const ExternalAtom& atom2) const;
+    operator== (const Atom& atom2) const;
 
 
     /**
      * @brief extatom ordering.
      */
     virtual bool
-    operator< (const ExternalAtom& atom2) const;
-
-
-    /**
-     * @brief Polymorphic equality operator.
-     */
-    virtual bool
-    equals(const AtomPtr& atom2) const;
+    operator< (const Atom& atom2) const;
 
     /**
      * @brief accepts a visitor.
