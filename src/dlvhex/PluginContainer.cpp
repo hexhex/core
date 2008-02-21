@@ -124,6 +124,7 @@ PluginContainer::~PluginContainer()
 std::vector<PluginInterface*>
 PluginContainer::importPlugins()
 {
+  ///@todo this is not that good
   std::vector<PluginInterface*> plugins;
 
   for (std::vector<std::string>::const_iterator it = pluginList.begin();
@@ -152,7 +153,17 @@ PluginContainer::importPlugins()
 	      it != pa.end();
 	      ++it)
 	    {
-	      pluginAtoms[it->first] = it->second;
+	      // first come, first serve
+	      if (pluginAtoms.find(it->first) == pluginAtoms.end())
+		{
+		  pluginAtoms[it->first] = it->second;
+		}
+	      else
+		{
+		  ///@todo is this a warning, or a proper (installation) error?
+		  std::cerr << "Warning: the external atom " << it->first
+			    << " is already loaded." << std::endl;
+		}
 	    }
 	}
     }
