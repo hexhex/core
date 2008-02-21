@@ -50,12 +50,19 @@ TextOutputBuilder::~TextOutputBuilder()
 void
 TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& facts)
 {
-  if (((*facts.getAnswerSets().begin())->hasWeights()) && !Globals::Instance()->getOption("AllModels"))
-    stream << "Best model: ";
+  const ResultContainer::result_t& results = facts.getAnswerSets();
+
+  if (results.empty())
+    {
+      return;
+    }
+
+  if (((*results.begin())->hasWeights()) && !Globals::Instance()->getOption("AllModels"))
+    {
+      stream << "Best model: ";
+    }
   
-  for (ResultContainer::result_t::const_iterator rit = facts.getAnswerSets().begin();
-       rit != facts.getAnswerSets().end();
-       ++rit)
+  for (ResultContainer::result_t::const_iterator rit = results.begin(); rit != results.end(); ++rit)
     {
       RawPrintVisitor rpv(stream);
       (*rit)->accept(rpv);
@@ -83,7 +90,9 @@ TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fact
       // empty line
       //
       if (!Globals::Instance()->getOption("Silent"))
-	stream << std::endl;
+	{
+	  stream << std::endl;
+	}
     }
 }
 
