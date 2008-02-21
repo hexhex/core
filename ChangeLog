@@ -1,5 +1,13 @@
 2008-02-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Sanitize debug output.
+
+	* src/dlvhex/TextOutputBuilder.cpp (TextOutputBuilder::buildResult):
+	Fix bug when we have to output empty ResultContainers.
+
+	* src/dlvhex/PluginContainer.cpp (PluginContainer::importPlugins):
+	Print warnings for duplicate external atoms.
+
 	* examples/Makefile.am: Add missing testcases.
 
 2008-02-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
