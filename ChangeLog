@@ -1,3 +1,7 @@
+2008-02-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am: Add missing testcases.
+
 2008-02-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* Makefile.am: Require automake >= 1.10.
