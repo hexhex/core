@@ -161,7 +161,9 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			guessingrules.addRule(guessrule);
 
 			if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-				std::cout << "adding guessing rule: " << *guessrule << std::endl;
+			  {
+			    std::cerr << "adding guessing rule: " << *guessrule << std::endl;
+			  }
 		}
 		
 	}
@@ -235,7 +237,19 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			guess->matchPredicate((*ei)->getReplacementName(), externalguess);
 			externalguess.keepPos();
 
-			//std::cerr<<"evaluating " << **ei << " with guess as input" << std::endl;
+			if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+			  {
+			    std::cerr<<"evaluating " << **ei << " with guess ";
+			    guess->accept(rpv);
+			    std::cerr << " as input" << std::endl;
+			    std::cerr <<"external guess: ";
+			    externalguess.accept(rpv);
+			    
+			    std::cerr << std::endl <<"check result  : ";
+			    checkresult.accept(rpv);
+			    std::cerr << std::endl;
+			  }
+
 			try
 			{
 			  EvaluateExtatom eea(*ei, container);
