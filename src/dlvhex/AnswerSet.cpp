@@ -314,7 +314,7 @@ operator<< (std::ostream& out, const AnswerSet& atomset)
 {
     ///@todo maybe we could add the weight handling to a visiting method
     RawPrintVisitor rpv(out);
-    atomset.accept(rpv);
+    const_cast<AnswerSet*>(&atomset)->accept(rpv);
     return out;
 }
 

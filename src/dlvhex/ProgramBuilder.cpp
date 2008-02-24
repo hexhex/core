@@ -74,29 +74,22 @@ ProgramDLVBuilder::~ProgramDLVBuilder()
 void
 ProgramDLVBuilder::buildRule(const Rule* rule) // throw (???Error)
 {
-  rule->accept(*pv);
+  const_cast<Rule*>(rule)->accept(*pv);
 }
 
 
 void
 ProgramDLVBuilder::buildFacts(const AtomSet& facts) // throw (???Error)
 {
-  facts.accept(*pv);
+  const_cast<AtomSet*>(&facts)->accept(*pv);
 }
 
 
 void
 ProgramDLVBuilder::buildProgram(const Program& program)
 {
-    /// @todo: stdlib algorithm instead of loop!
-    for (Program::const_iterator r = program.begin();
-         r != program.end();
-         ++r)
-    {
-        (*r)->accept(*pv);
-    }
+  const_cast<Program*>(&program)->accept(*pv);
 }
-
 
 DLVHEX_NAMESPACE_END
 

@@ -181,9 +181,9 @@ Rule::operator< (const Rule& rule2) const
 
 
 void
-Rule::accept(BaseVisitor& v) const
+Rule::accept(BaseVisitor& v)
 {
-  v.visitRule(this);
+  v.visit(this);
 }
 
 
@@ -191,7 +191,7 @@ std::ostream&
 operator<< (std::ostream& out, const Rule& rule)
 {
   RawPrintVisitor rpv(out);
-  rule.accept(rpv);
+  const_cast<Rule*>(&rule)->accept(rpv);
   return out;
 }
 
@@ -199,8 +199,8 @@ operator<< (std::ostream& out, const Rule& rule)
 bool
 operator< (const RuleHead_t& head1, const RuleHead_t& head2)
 {
-	return std::lexicographical_compare(head1.begin(), head1.end(),
-	  									head2.begin(), head2.end());
+  return std::lexicographical_compare(head1.begin(), head1.end(),
+				      head2.begin(), head2.end());
 }
 
 
@@ -304,9 +304,9 @@ WeakConstraint::operator== (const WeakConstraint& /* wc2 */) const
 
 
 void
-WeakConstraint::accept(BaseVisitor& v) const
+WeakConstraint::accept(BaseVisitor& v)
 {
-  v.visitWeakConstraint(this);
+  v.visit(this);
 }
 
 DLVHEX_NAMESPACE_END

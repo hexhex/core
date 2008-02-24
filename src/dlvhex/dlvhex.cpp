@@ -893,7 +893,7 @@ main (int argc, char *argv[])
 	{
 		Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
 		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		IDB.dump(rpv);
+		IDB.accept(rpv);
 		Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
 		EDB.accept(rpv);
 		Globals::Instance()->getVerboseStream() << std::endl << std::endl;
@@ -928,7 +928,7 @@ main (int argc, char *argv[])
 	{
 		Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
 		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		IDB.dump(rpv);
+		IDB.accept(rpv);
 		Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
 		EDB.accept(rpv);
 		Globals::Instance()->getVerboseStream() << std::endl << std::endl;

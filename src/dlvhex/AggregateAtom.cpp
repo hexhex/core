@@ -118,9 +118,9 @@ AggregateAtom::unifiesWith(const AtomPtr atom) const
 
 
 void
-AggregateAtom::accept(BaseVisitor& v) const
+AggregateAtom::accept(BaseVisitor& v)
 {
-  v.visitAggregateAtom(this);
+  v.visit(this);
 }
 
 

@@ -46,7 +46,9 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declaration
 //
 class PrintVisitor;
-
+class Rule;
+class AtomSet;
+class Program;
 
 /**
 * @brief Base Builder for building logic programs.

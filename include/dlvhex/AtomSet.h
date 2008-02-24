@@ -71,7 +71,7 @@ DLVHEX_NAMESPACE_BEGIN
  * \endcode
  *
  * The method AtomSet::accept contains only a call to the member function
- * visitAtomSet of the passed visitor. Only this function actually implements the
+ * visit of the passed visitor. Only this function actually implements the
  * proper serialization.
  */
 class DLVHEX_EXPORT AtomSet
@@ -263,7 +263,7 @@ public:
      * @brief accepts a visitor.
      */
     void
-    accept(BaseVisitor&) const;
+    accept(BaseVisitor&);
 
     /**
      * @brief Removes all Atoms from the atomset whose predicate match the specified string.

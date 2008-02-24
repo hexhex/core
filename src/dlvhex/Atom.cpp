@@ -238,9 +238,9 @@ Atom::getAlwaysFO() const
 
 
 void
-Atom::accept(BaseVisitor& v) const
+Atom::accept(BaseVisitor& v)
 {
-	v.visitAtom(this);
+  v.visit(this);
 }
 
 
@@ -255,9 +255,9 @@ Atom::isGround() const
 std::ostream&
 operator<< (std::ostream& out, const Atom& atom)
 {
-	RawPrintVisitor rpv(out);
-	atom.accept(rpv);
-	return out;
+  RawPrintVisitor rpv(out);
+  const_cast<Atom*>(&atom)->accept(rpv);
+  return out;
 }
 
 
@@ -325,9 +325,9 @@ BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const std::st
 
 
 void
-BuiltinPredicate::accept(BaseVisitor& v) const
+BuiltinPredicate::accept(BaseVisitor& v)
 {
-  v.visitBuiltinPredicate(this);
+  v.visit(this);
 }
 
 

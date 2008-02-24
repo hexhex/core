@@ -40,6 +40,7 @@
 #include "dlvhex/EvaluateExtatom.h"
 
 #include <sstream>
+#include <boost/functional.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -63,7 +64,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	Program guessingprogram;
 	Program guessingrules;
 
-	std::vector<std::string> externalNames;
+	std::set<std::string> externalNames;
 
 	//
 	// go through all nodes
@@ -131,7 +132,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			// record the external atoms names - we will have to remove them
 			// from the guess later!
 			//
-			externalNames.push_back((*ei)->getReplacementName());
+			externalNames.insert((*ei)->getReplacementName());
 
 			headatom = new Atom((*ei)->getReplacementName(), headargs, 1);
 			guesshead.insert(Registry::Instance()->storeAtom(headatom));
@@ -218,6 +219,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	{
 		if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 		{
+			Globals::Instance()->getVerboseStream() << std::endl;
+			Globals::Instance()->getVerboseStream() << std::endl;
 			Globals::Instance()->getVerboseStream() << "=== checking guess ";
 			guess->accept(rpv);
 			Globals::Instance()->getVerboseStream() << std::endl;
@@ -237,6 +240,17 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			guess->matchPredicate((*ei)->getReplacementName(), externalguess);
 			externalguess.keepPos();
 
+
+			try
+			{
+			  EvaluateExtatom eea(*ei, container);
+			  eea.evaluate(*guess, checkresult);
+			}
+			catch (GeneralError&)
+			{
+				throw;
+			}
+
 			if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 			  {
 			    std::cerr<<"evaluating " << **ei << " with guess ";
@@ -250,16 +264,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			    std::cerr << std::endl;
 			  }
 
-			try
-			{
-			  EvaluateExtatom eea(*ei, container);
-			  eea.evaluate(*guess, checkresult);
-			}
-			catch (GeneralError&)
-			{
-				throw;
-			}
-
 			/*
 			std::cout << "	first check: externalguess: ";
 			externalguess.print(std::cout, 0);
@@ -270,6 +274,13 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			*/
 			
 		}
+
+
+		if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+		  {
+		    std::cerr << "=============" << std::endl << std::endl;
+		  }
+
 
 		if (externalguess == checkresult)
 		{
@@ -450,14 +461,15 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			ProgramDLVBuilder reducedprogram(Globals::Instance()->getOption("NoPredicate"));
 
 			
-			AtomSet a(I);
-			a.insert(reductfacts);
-			AtomSet posguess(*guess);
+// 			AtomSet a(I);
+// 			a.insert(reductfacts);
+// 			AtomSet posguess(*guess);
 			
-			a.insert(posguess);
+// 			a.insert(posguess);
 
 			reducedprogram.buildFacts(I);
 			reducedprogram.buildFacts(reductfacts);
+			reducedprogram.buildFacts(*guess);
 			reducedprogram.buildProgram(flpreduced);
 			std::string reduced = reducedprogram.getString();
 
@@ -474,19 +486,22 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 			//
 			// 5)
 			//
-			std::vector<AtomSet> strongf;
 			try
 			{
-			//	  Solver.callSolver(reduced, 0);
-			  FixpointModelGenerator fp(container);
-				fp.compute(flpreduced, a, strongf);
+			  Solver.callSolver(reduced, 0);
+// 			  FixpointModelGenerator fp(container);
+// 			  fp.compute(flpreduced, a, strongf);
 			}
-			catch (FatalError e)
+			catch (FatalError&)
 			{
-				throw e;
+				throw;
 			}
 
-			AtomSet strongFacts = strongf.back().difference(reductfacts);
+			assert(Solver.numAnswerSets() == 1);
+			
+			AtomSet* strongf = Solver.getNextAnswerSet();
+
+			AtomSet strongFacts = strongf->difference(reductfacts);
 
 			AtomSet weakFacts(*guess);
 
@@ -530,12 +545,13 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 				// remove extatom replacement atoms, because they would
 				// invalidate the minimality check below!
 				//
-				for (std::vector<std::string>::const_iterator si = externalNames.begin();
+				for (std::set<std::string>::const_iterator si = externalNames.begin();
 					si != externalNames.end();
 					++si)
 				{
 					guess->remove(*si);
 				}
+
 
 				compatibleSets.push_back(&(*guess));
 

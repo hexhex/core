@@ -276,9 +276,9 @@ ExternalAtom::operator< (const Atom& atom2) const
 
 
 void
-ExternalAtom::accept(BaseVisitor& v) const
+ExternalAtom::accept(BaseVisitor& v)
 {
-  v.visitExternalAtom(this);
+  v.visit(this);
 }
 
 

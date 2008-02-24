@@ -122,7 +122,7 @@ public:
 
 
     virtual void
-    accept(BaseVisitor&) const;
+    accept(BaseVisitor&);
 
 
     const RuleBody_t&

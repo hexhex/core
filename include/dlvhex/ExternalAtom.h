@@ -152,7 +152,7 @@ public:
      * @brief accepts a visitor.
      */
     virtual void
-    accept(BaseVisitor&) const;
+    accept(BaseVisitor&);
 
     /**
      * @return #line

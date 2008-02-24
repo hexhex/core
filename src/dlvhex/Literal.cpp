@@ -109,9 +109,9 @@ Literal::operator< (const Literal& lit2) const
 
 
 void
-Literal::accept(BaseVisitor& v) const
+Literal::accept(BaseVisitor& v)
 {
-  v.visitLiteral(this);
+  v.visit(this);
 }
 
 
@@ -119,7 +119,7 @@ std::ostream&
 operator<<(std::ostream& o, const Literal& l)
 {
   RawPrintVisitor rpv(o);
-  l.accept(rpv);
+  const_cast<Literal*>(&l)->accept(rpv);
   return o;
 }
 
@@ -127,8 +127,8 @@ operator<<(std::ostream& o, const Literal& l)
 bool
 operator< (const RuleBody_t& body1, const RuleBody_t& body2)
 {
-	return std::lexicographical_compare(body1.begin(), body1.end(),
-	  									body2.begin(), body2.end());
+  return std::lexicographical_compare(body1.begin(), body1.end(),
+				      body2.begin(), body2.end());
 }
 
 DLVHEX_NAMESPACE_END
