@@ -197,7 +197,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     {
       std::cerr << "Evaluating program component:" << std::endl;
       RawPrintVisitor rpv(std::cerr);
-      getBottom().dump(rpv);
+      getBottom().accept(rpv);
     }
 
   std::vector<AtomSet> res;
@@ -254,7 +254,7 @@ ProgramComponent::dump(std::ostream& out) const
     out << "Bottom:" << std::endl;
 
     RawPrintVisitor rpv(out);
-    getBottom().dump(rpv);
+    getBottom().accept(rpv);
 
     out << "ProgramComponent-object end ----------------------------" << std::endl;
 }

@@ -41,6 +41,7 @@ DLVHEX_NAMESPACE_BEGIN
 //
 // forward declarations
 //
+class Program;
 class AtomSet;
 class Rule;
 class WeakConstraint;
@@ -65,37 +66,40 @@ public:
   ~BaseVisitor()
   { }
 
+  virtual void
+  visit(Program* const) = 0;
+
   // a set of atoms
 
   virtual void
-  visitAtomSet(const AtomSet*) = 0;
+  visit(AtomSet* const) = 0;
 
   // different types of rules
 
   virtual void
-  visitRule(const Rule*) = 0;
+  visit(Rule* const) = 0;
 
   virtual void
-  visitWeakConstraint(const WeakConstraint*) = 0;
+  visit(WeakConstraint* const) = 0;
 
   // a literal
 
   virtual void
-  visitLiteral(const Literal*) = 0;
+  visit(Literal* const) = 0;
 
   // different types of atoms
 
   virtual void
-  visitAtom(const Atom*) = 0;
+  visit(Atom* const) = 0;
 
   virtual void
-  visitExternalAtom(const ExternalAtom*) = 0;
+  visit(ExternalAtom* const) = 0;
 
   virtual void
-  visitBuiltinPredicate(const BuiltinPredicate*) = 0;
+  visit(BuiltinPredicate* const) = 0;
 
   virtual void
-  visitAggregateAtom(const AggregateAtom*) = 0;
+  visit(AggregateAtom* const) = 0;
 
 };
 

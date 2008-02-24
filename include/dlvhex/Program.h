@@ -36,7 +36,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Rule.h"
-#include "dlvhex/PrintVisitor.h"
+#include "dlvhex/Repository.h"
 
 #include <boost/ptr_container/indirect_fun.hpp>
 
@@ -49,7 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
  * A program is a set of rules. It does not include facts, they are stored
  * elsewhere as AtomSet.
  */
-class DLVHEX_EXPORT Program
+class DLVHEX_EXPORT Program : public ProgramObject
 {
 	/**
 	 * As a container for the rules of a program, a std::set is used. This set
@@ -236,13 +236,20 @@ public:
 	getExternalAtoms() const;
 
 	/**
-	 * Only for debugging purposes. The real output functions are implemented
-	 * by the ProgramBuilder class!
+	 * @brief Accepts a visitor.
+	 *
+	 * A visitor is a common design pattern to implement
+	 * context-specific operations outside the class. We use
+	 * visitors for serialization of objects, rewriting and
+	 * optimization of programs, etc. This function calls the
+	 * visitProgram() method of the specified visitor, passing
+	 * itself as parameter. The visitor usually just iterates over
+	 * the rules in a program and calls Rule::accept() on them.
 	 */
-	void
-	dump(PrintVisitor&) const;
+	virtual void
+	accept(BaseVisitor&);
 
-	private:
+ private:
 
 	/**
 	 * Set of rules.

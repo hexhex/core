@@ -65,33 +65,37 @@ public:
   std::ostream&
   getStream();
 
+  /// iterate over all rules and calls Rule::accept with this visitor
+  virtual void
+  visit(Program* const);
+
   /// outputs the Rule in
   /// 'a_1 v ... v a_k :- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
   /// form, i.e., it calls accept(*this) on each a_i and b_j.
   virtual void
-  visitRule(const Rule*);
+  visit(Rule* const);
 
   /// outputs the AtomSet in '{ a_1, ..., a_n }' form
   virtual void
-  visitAtomSet(const AtomSet*);
+  visit(AtomSet* const);
 
   /// outputs the Literal either as Atom 'a' or as 'not a'
   virtual void
-  visitLiteral(const Literal*);
+  visit(Literal* const);
 
   /// outputs the Atom in 'p(t_1,...,t_n)' form
   virtual void
-  visitAtom(const Atom*);
+  visit(Atom* const);
 
   /// outputs the BuiltinPredicate in 't_1 COMP t_2' form
   virtual void
-  visitBuiltinPredicate(const BuiltinPredicate*);
+  visit(BuiltinPredicate* const);
 
   /// outputs the AggregateAtom in
   /// 't_l COMP { t_1,...,t_n : b_1,...,b_m } COMP t_r'
   /// form
   virtual void
-  visitAggregateAtom(const AggregateAtom*);
+  visit(AggregateAtom* const);
 
 };
 
@@ -111,13 +115,13 @@ public:
   /// ':~ b_1, ..., b_m, not b_{m+1}, not b_n. [w:l]'
   /// form
   virtual void
-  visitWeakConstraint(const WeakConstraint*);
+  visit(WeakConstraint* const);
 
   /// outputs an ExternalAtom in
   /// '&f[i_1,...,i_n](o_1,...,o_m)'
   /// form
   virtual void
-  visitExternalAtom(const ExternalAtom*);
+  visit(ExternalAtom* const);
 
 };
 
@@ -137,21 +141,21 @@ public:
   /// 'a_1. \n a_2. \n ... \n a_n.\n'
   /// form, i.e. this method is suitable for printing an EDB.
   virtual void
-  visitAtomSet(const AtomSet*);
+  visit(AtomSet* const);
 
   /// calls PrintVisitor::visitRule and appends a newline
   virtual void
-  visitRule(const Rule*);
+  visit(Rule* const);
 
   /// calls DLVPrintVisitor::visitRule, i.e. it will output a
   /// constraint of form ':- b_1, ..., b_m, not b_{m+1}, not b_n.\n'
   virtual void
-  visitWeakConstraint(const WeakConstraint*);
+  visit(WeakConstraint* const);
 
   /// outputs an ExternalAtom in its replacement form, i.e. as Atom
   /// 'repl(i_1,...,i_n,o_1,...,o_m)'
   virtual void
-  visitExternalAtom(const ExternalAtom*);
+  visit(ExternalAtom* const);
 
 };
 
@@ -167,9 +171,9 @@ public:
   HOPrintVisitor(std::ostream&);
 
   /// outputs an Atom in higher order mode, i.e. in
-  /// 'a_i(p,t_1,...t_n)' form except for pure first order atoms.
+  /// 'a_{n+1}(p,t_1,...t_n)' form except for pure first order atoms.
   virtual void
-  visitAtom(const Atom*);
+  visit(Atom* const);
 
 };
 

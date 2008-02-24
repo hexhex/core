@@ -39,6 +39,7 @@
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
+#include "dlvhex/PrintVisitor.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -194,7 +195,7 @@ GraphProcessor::run(const AtomSet& in)
 			  {
 			    Globals::Instance()->getVerboseStream() << "current allLeavesResult:" << std::endl;
 
-			    for (std::vector<AtomSet>::const_iterator it = allLeavesResult.begin();
+			    for (std::vector<AtomSet>::iterator it = allLeavesResult.begin();
 				 it != allLeavesResult.end();
 				 ++it)
 			      {

@@ -33,9 +33,7 @@
 
 
 #include "dlvhex/Program.h"
-
-#include <iostream>
-
+#include "dlvhex/BaseVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -97,15 +95,9 @@ Program::getExternalAtoms() const
 
 
 void
-Program::dump(PrintVisitor& v) const
+Program::accept(BaseVisitor& v)
 {
-	for (Program::const_iterator r = begin();
-			r != end();
-			++r)
-	{
-		(*r)->accept(v);
-		v.getStream() << std::endl;
-	}
+  v.visit(this);
 }
 
 DLVHEX_NAMESPACE_END
