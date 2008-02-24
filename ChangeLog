@@ -1,3 +1,36 @@
+2008-02-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Use ASPsolver instead of FixpointModelGenerator.
+
+	* include/dlvhex/HexParserDriver.h: Add missing AtomSet.h include.
+
+	* include/dlvhex/BaseVisitor.h: Program is now visitable.
+	Allow Visitors to alter the visited objects.
+	* include/dlvhex/PrintVisitor.h: Likewise.
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/Repository.h: Likewise.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+
+	* include/dlvhex/AggregateAtom.h: Remove const qualifier from the accept method.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/AtomSet.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+	* include/dlvhex/ProgramBuilder.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/AnswerSet.cpp: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/ProgramBuilder.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
 2008-02-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/GuessCheckModelGenerator.cpp: Sanitize debug output.
