@@ -38,6 +38,7 @@
 
 #include "dlvhex/ParserDriver.h"
 #include "dlvhex/Program.h"
+#include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 
 #include <iosfwd>
