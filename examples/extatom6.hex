@@ -1,0 +1,5 @@
+% -*- prolog -*-
+
+% both rules must be safe
+q1(X) :- r(X), &testA[Y](Z), &testB[foobar,X](Y).
+q2(X) :- r(X), &testB[foobar,X](Y), &testA[Y](Z).

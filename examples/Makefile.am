@@ -8,6 +8,7 @@ EXTRA_DIST = \
     extatom3.hex \
     extatom4.hex \
     extatom5.hex \
+    extatom6.hex \
     msp.hex \
     namespace1.hex \
     namespace2.hex \
@@ -21,6 +22,7 @@ EXTRA_DIST = \
     tests/extatom2.out \
     tests/extatom4.out \
     tests/extatom5.out \
+    tests/extatom6.out \
     tests/msp.out \
     tests/namespace1.out \
     tests/namespace2.out \
