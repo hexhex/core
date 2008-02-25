@@ -34,7 +34,6 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/AggregateAtom.h"
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 
@@ -47,6 +46,53 @@ SafetyChecker::SafetyChecker(const Program& p)
   : SafetyCheckerBase(),
     program(p)
 { }
+
+
+/**
+ * @brief Unary functor, which checks if a given extatom has a safe
+ * input list, and adds in this case the ouput list to the safe
+ * variables.
+ */
+struct InputListSafe
+{
+  std::set<Term>& safevars;
+
+  InputListSafe(std::set<Term>& sv) : safevars(sv) { }
+
+  bool
+  operator() (ExternalAtom*& extatom)
+  {
+    //
+    // first check if the input list is still unsafe
+    //
+
+    const Tuple& inp = extatom->getInputTerms();
+
+    for (Tuple::const_iterator it = inp.begin(); it != inp.end(); ++it)
+      {
+	if (it->isVariable() && safevars.find(*it) == safevars.end())
+	  {
+	    return false;
+	  }
+      }
+
+    //
+    // this ext-atom is safe: we can add its arguments to the safe set
+    //
+
+    const Tuple& extarg = extatom->getArguments();
+	
+    for (Tuple::const_iterator it = extarg.begin(); it != extarg.end(); ++it)
+      {
+	if (it->isVariable())
+	  {
+	    safevars.insert(*it);
+	  }
+      }
+
+    return true;
+  }
+};
 
 
 void
@@ -151,43 +197,33 @@ SafetyChecker::operator() () const throw (SyntaxError)
 
       //
       // 2)
-      // going through the external atoms
+      // loop through the (by default unsafe) list of external atoms
       //
         
-      const std::vector<ExternalAtom*> extatoms = (*ruleit)->getExternalAtoms();
+      std::vector<ExternalAtom*> unsafeextatoms = (*ruleit)->getExternalAtoms();
 
-      for (std::vector<ExternalAtom*>::const_iterator extit = extatoms.begin();
-	   extit != extatoms.end();
-	   ++extit)
+      while(!unsafeextatoms.empty())
 	{
-	  const Tuple& inp = (*extit)->getInputTerms();
-	  
-	  for (Tuple::const_iterator inpterm = inp.begin(); inpterm != inp.end(); ++inpterm)
-	    {
-	      // a variable from the input list, which is not in the safe variables, is unsafe
-	      if (inpterm->isVariable() && safevars.find(*inpterm) == safevars.end())
-		{
-		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
-		}
-	    }
+	  // 3) find safe extatoms, i.e., extatoms with safe input
+	  // list, and store their output vars in safevars
+	  std::vector<ExternalAtom*>::iterator newend =
+	    std::remove_if(unsafeextatoms.begin(), unsafeextatoms.end(),
+			   InputListSafe(safevars));
 
-	  //
-	  // 3)
-	  // this ext-atom is safe - we can add its arguments to the safe set
-	  //
-	  const Tuple& extarg = (*extit)->getArguments();
-	  
-	  for (Tuple::const_iterator extterm = extarg.begin();
-	       extterm != extarg.end();
-	       ++extterm)
+	  // if we didn't remove any external atoms from the unsafety
+	  // list, we are unsafe
+	  if (unsafeextatoms.end() == newend)
 	    {
-	      if (extterm->isVariable())
-		{
-		  safevars.insert(*extterm);
-		}
+	      throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
+	    }
+	  else
+	    {
+	      // remove all the safe extatoms
+	      unsafeextatoms.erase(newend, unsafeextatoms.end());
 	    }
 	}
-	
+
+
       //
       // 4)
       // going through the rule head
