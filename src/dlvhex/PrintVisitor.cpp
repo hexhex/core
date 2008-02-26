@@ -62,10 +62,6 @@ void
 PrintVisitor::visit(Program* const p)
 {
   std::for_each(p->begin(), p->end(), boost::bind2nd(std::mem_fun(&Rule::accept), *this));
-//   for (Program::iterator it = p.begin(); it != p.end(); ++it)
-//     {
-//       (*it)->accept(*this);
-//     }
 }
 
 
@@ -208,6 +204,13 @@ RawPrintVisitor::RawPrintVisitor(std::ostream& s)
 
 
 void
+RawPrintVisitor::visit(Rule* const r)
+{
+  PrintVisitor::visit(r);
+  stream << std::endl;
+}
+
+void
 RawPrintVisitor::visit(WeakConstraint* const wc)
 {
   const RuleBody_t& body = wc->getBody();
@@ -226,6 +229,8 @@ RawPrintVisitor::visit(WeakConstraint* const wc)
       
       stream << ". [" << wc->getWeight() << ':' << wc->getLevel() << ']';
     }
+
+  stream << std::endl;
 }
 
 

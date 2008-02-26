@@ -111,9 +111,13 @@ public:
   explicit
   RawPrintVisitor(std::ostream&);
 
+  /// calls PrintVisitor::visitRule and appends a newline
+  virtual void
+  visit(Rule* const);
+
   /// outputs a WeakConstraint in
   /// ':~ b_1, ..., b_m, not b_{m+1}, not b_n. [w:l]'
-  /// form
+  /// form and appends a newline
   virtual void
   visit(WeakConstraint* const);
 
