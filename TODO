@@ -1,5 +1,7 @@
 -*- org -*-
 
+* TODO dlvhex cannot deal with LD_LIBRARY_PATH/DYNLD_LIBRARY_PATH
+
 * TODO Fix extatom3.hex and dawg.hex testcases
 
 * TODO Fix Term's namespace handling
