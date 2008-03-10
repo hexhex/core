@@ -10,7 +10,6 @@ noinst_HEADERS = \
 	HexParserDriver.h \
 	ParserDriver.h \
 	ProcessBuf.h \
-	Registry.h \
         RuleMLOutputBuilder.h \
 	SafetyChecker.h \
         TextOutputBuilder.h \
@@ -45,6 +44,7 @@ pkginclude_HEADERS = \
 	PrintVisitor.h \
 	Program.h \
 	ProgramBuilder.h \
+	Registry.h \
 	Repository.h \
 	ResultContainer.h \
 	Rule.h \
