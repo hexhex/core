@@ -730,51 +730,56 @@ main (int argc, char *argv[])
 			//
 			std::ostream converterResult(new std::stringbuf);
 
-			bool wasConverted(0);
+			bool wasConverted = false;
 
 			for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
 			     pi != plugins.end();
 			     ++pi)
 			  {
-			    PluginConverter* pc = (*pi)->createConverter();
+			    std::vector<PluginConverter*> pcs = (*pi)->createConverters();
 
-			    if (pc != NULL)
+			    if (pcs.size() > 0)
 			      {
 				//
-				// rewrite input -> converterResult
+				// go through all converters and rewrite input to converterResult
 				//
-				pc->convert(input, converterResult);
+				for (std::vector<PluginConverter*>::iterator it = pcs.begin();
+				     it != pcs.end(); ++it)
+				  {
+				    (*it)->convert(input, converterResult);
 
-				wasConverted = 1;
+				    wasConverted = true;
 
-				//
-				// old input buffer can be deleted now
-				// (but not if we are piping from stdin and this is the
-				// first conversion, because in this case input is set to
-				// std::cin.rdbuf() (see above) and cin takes care of
-				// its buffer deletion itself, so better don't
-				// interfere!)
-				//
-				if (optionPipe && !wasConverted)
-				  delete input.rdbuf();
+				    //
+				    // old input buffer can be deleted now
+				    // (but not if we are piping from stdin and this is the
+				    // first conversion, because in this case input is set to
+				    // std::cin.rdbuf() (see above) and cin takes care of
+				    // its buffer deletion itself, so better don't
+				    // interfere!)
+				    //
+				    if (optionPipe && !wasConverted)
+				      {
+					delete input.rdbuf();
+				      }
 
-				//
-				// store the current output buffer
-				//
-				std::streambuf* tmp = converterResult.rdbuf();
+				    //
+				    // store the current output buffer
+				    //
+				    std::streambuf* tmp = converterResult.rdbuf();
+				    
+				    //
+				    // make a new buffer for the output (=reset the output)
+				    //
+				    converterResult.rdbuf(new std::stringbuf);
 
-				//
-				// make a new buffer for the output (=reset the output)
-				//
-				converterResult.rdbuf(new std::stringbuf);
-
-				//
-				// set the input buffer to be the output of the last
-				// rewriting. now, after each loop, the converted
-				// program is in input.
-				//
-				input.rdbuf(tmp);
-
+				    //
+				    // set the input buffer to be the output of the last
+				    // rewriting. now, after each loop, the converted
+				    // program is in input.
+				    //
+				    input.rdbuf(tmp);
+				  }
 			      }
 			  }
 			char tempfile[L_tmpnam];
