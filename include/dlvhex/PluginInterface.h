@@ -937,6 +937,29 @@ public:
     }
 
     /**
+     * \brief Converter.
+     *
+     * By overloading this function, a plugin can implement a list of
+     * custom preparser, which will be called first in the entire
+     * dlvhex-processing chain. A converter can expect any kind of
+     * input data, and must return either the original input data or a
+     * well-formed hex-program. With this facility, a preparser can
+     * for instance convert a different rule- or query-language to a
+     * hex-program.
+     *
+     * This method is called by dlvhex to get a list of
+     * converters. Overload it if you need more than one converter.
+     */
+    virtual std::vector<PluginConverter*>
+    createConverters()
+    {
+      PluginConverter* pc = this->createConverter();
+      return pc 
+	? std::vector<PluginConverter*>(1, pc) 
+	: std::vector<PluginConverter*>();
+    }
+
+    /**
      * \brief Rewriter for hex-programs.
      *
      * The rewriters are called second after the preparsers. Hence, a rewriter
