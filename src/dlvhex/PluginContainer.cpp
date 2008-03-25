@@ -69,9 +69,9 @@ findplugins(const char* filename, lt_ptr data)
   std::string fn(filename);
   std::string::size_type base = fn.find_last_of("/");
 
-  // if basename starts with lib, then we should have a library here
+  // if basename starts with 'libdlvhex', then we should have a plugin here
   /// @todo we could lt_dlopen the file here, to check if it is really a plugin
-  if (fn.substr(base).find("/lib") == 0)
+  if (fn.substr(base).find("/libdlvhex") == 0)
     {
       pluginlist->push_back(fn);
     }
@@ -132,6 +132,8 @@ PluginContainer::importPlugins()
     {
       lt_dlhandle dlHandle = lt_dlopenext(it->c_str());
 
+      ///@todo if we cannot open the plugin, we bail out. maybe we
+      ///should gracefully resuscicate ourselves
       if (dlHandle == NULL)
 	{
 	  throw FatalError("Cannot open library " + *it + ": " + lt_dlerror());
