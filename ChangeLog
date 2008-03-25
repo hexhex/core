@@ -1,3 +1,16 @@
+2008-03-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/PluginContainer.cpp: Look for "libdlvhex" instead of
+	"lib", otherwise we end up loading unrelated shared libraries.
+
+2008-03-20  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Use PluginConverter::createConverters
+	instead of createConverter.
+
+	* include/dlvhex/PluginInterface.h (PluginConverter::createConverters):
+	New method.
+	
 2008-03-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am: Install Registry.h.
