@@ -171,10 +171,10 @@ public:
 		return Tuple(++arguments.begin(), arguments.end());
 	}
 
-        /**
+   /**
 	 * @brief sets arguments of an atom.
 	 */
-        virtual void
+    virtual void
 	setArguments(const Tuple& nargs);
 
 	/**
@@ -186,6 +186,16 @@ public:
 	const Term&
 	getArgument(unsigned index) const;
 
+	/**
+	 * @brief Sets argument at index position of an atom.
+	 */
+	void setArgument(unsigned index, const Term& term2);
+		
+	/**
+	 * @brief Sets first argument (corresponding to the predicate) of an atom.
+	 */
+	void setPredicate(const Term& term2);
+	
 	/**
 	 * Returns the arity of an atom (number of arguments).
 	 *

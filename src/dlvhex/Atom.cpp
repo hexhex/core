@@ -165,6 +165,14 @@ Atom::getArgument(unsigned index) const
 	return arguments[index];
 }
 
+void Atom::setArgument(unsigned index, const Term& term2)
+{
+	this->arguments[index] = term2;
+}
+void Atom::setPredicate(const Term& term2)
+{
+	setArgument(0, term2);
+}
 
 unsigned
 Atom::getArity() const
