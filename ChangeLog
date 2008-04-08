@@ -1,3 +1,8 @@
+2008-04-08  Alessandra Martello  <a.martello@mat.unical.it>
+
+	* include/dlvhex/Atom.h (Atom::setPredicate,Atom::setArgument): Add new setter methods.
+	* src/dlvhex/Atom.cpp: Likewise.
+
 2008-03-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/PluginContainer.cpp: Look for "libdlvhex" instead of
