@@ -37,7 +37,8 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/ModelGenerator.h"
-#include "dlvhex/ASPsolver.h"
+#include "dlvhex/DLVProcess.h"
+#include "dlvhex/ASPSolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
@@ -46,43 +47,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 FixpointModelGenerator::FixpointModelGenerator(PluginContainer& c)
   : container(c)
-{
-    serializedProgram.clear();
-}
-
-
-void
-FixpointModelGenerator::initialize(const Program& p)
-{
-    serializeProgram(p);
-}
-
-
-void
-FixpointModelGenerator::serializeProgram(const Program& p)
-{
-    //
-    // make a textual representation of the components' rules
-    // (with external atoms replaced)
-    //
-
-    //
-    // the rules will be in higher-order-syntax, if dlvhex was called in ho-mode
-    //
-
-    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
-
-    dlvprogram.buildProgram(p);
-
-    serializedProgram = dlvprogram.getString();
-}
-
-
-const std::string&
-FixpointModelGenerator::getSerializedProgram() const
-{
-    return serializedProgram;
-}
+{ }
 
 
 void
@@ -90,30 +55,30 @@ FixpointModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
-    Program program;
+  Program program;
 
-    //
-    // go through all nodes
-    //
-    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
-    while (node != nodes.end())
+  //
+  // go through all nodes
+  //
+  std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
+  while (node != nodes.end())
     {
-        const std::vector<Rule*>& rules = (*node)->getRules();
-
-        //
-        // add all rules from this node to the component
-        //
-        for (std::vector<Rule*>::const_iterator ri = rules.begin();
-	     ri != rules.end();
-	     ++ri)
+      const std::vector<Rule*>& rules = (*node)->getRules();
+      
+      //
+      // add all rules from this node to the component
+      //
+      for (std::vector<Rule*>::const_iterator ri = rules.begin();
+	   ri != rules.end();
+	   ++ri)
 	  {
             program.addRule(*ri);
 	  }
-
-        ++node;
+      
+      ++node;
     }
-
-    this->compute(program, I, models);
+  
+  this->compute(program, I, models);
 }
 
 
@@ -122,163 +87,130 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-//    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-//        std::cerr << "= FixpointModelGenerator =" << std::endl;
-
   DEBUG_START_TIMER;
 
-    initialize(program);
+  models.clear();
+  
+  //
+  // call the ASP solver with noEDB turned on - we don't want the
+  // initial set of facts in the result here!
+  //
+  DLVProcess asp(true);
+  std::auto_ptr<BaseASPSolver> solver(asp.createSolver());
 
-    models.clear();
-
-    ASPsolver Solver;
+  std::vector<AtomSet> answersets;
     
-    std::string EDBprogram;
-    std::string fixpointProgram;
 
-    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
-
-    std::vector<ExternalAtom*> extatoms(program.getExternalAtoms());
+  // the list of external atoms in a given program
+  const std::vector<ExternalAtom*>& extatoms = program.getExternalAtoms();
 
 
-    //
-    // security limit
-    //
-    const unsigned maxIter(10);
+  //
+  // security limit
+  //
+  const unsigned maxIter(10);
+    
+  unsigned iter(0);
 
-    unsigned iter(0);
+  // the result of each iteration, defaults to answersets.end() in the first round
+  std::vector<AtomSet>::iterator result = answersets.end();
 
-    //
-    // the result of each iteration
-    // (this is equal to I at the beginning, to avoid looping if we
-    // don't need any iteration)
-    //
-    AtomSet dlvResult;
+  // the current interpretation
+  AtomSet currentI;
 
-    Tuple it;
+  // result of the external atoms
+  AtomSet extresult;
 
+  // the EDB for the call
+  AtomSet edb;
 
-
-    //
-    // input parameters of an external atom
-    //
-    Tuple extInputParms;
-
-    //
-    // the result facts of the external atoms
-    //
-    ProgramDLVBuilder externalfacts(true);
-
-    bool firstrun = true;
-
-    AtomSet currentI;
-
-//    int i(0);
-    do
+  do
     {
-        iter++;
+      iter++;
         
-        currentI.clear();
+      //
+      // set currentI to I and the last result
+      //
 
-        currentI.insert(I);
+      currentI.clear();
 
-        //
-        // add the last result to I
-        //
-        currentI.insert(dlvResult);
+      if (result == answersets.end())
+	{
+	  // first round: just I
+	  currentI.insert(I);
+	}
+      else
+	{
+	  // i-th round for i > 1
+	  currentI.insert(*result); // result already contains I from the previous round
+	}
+      
+      //
+      // evaluating all external atoms wrt. the current interpretation
+      //
 
-        //
-        // result of the external atoms
-        //
-        AtomSet extresult;
+      extresult.clear();
 
-        //
-        // evaluating all external atoms wrt. the current interpretation
-        //
-        for (std::vector<ExternalAtom*>::const_iterator a = extatoms.begin();
-             a != extatoms.end();
-             a++)
-        {
-            try
+      for (std::vector<ExternalAtom*>::const_iterator a = extatoms.begin();
+	   a != extatoms.end(); ++a)
+	{
+	  try
             {
 	      EvaluateExtatom eea(*a, container);
 	      eea.evaluate(currentI, extresult);
             }
-            catch (GeneralError&)
+	  catch (GeneralError&)
             {
-                throw;
+	      throw;
             }
         }
 
-        //
-        // text representation of external result
-        // (overwritten every iteration)
-        //
-        externalfacts.clearString();
+      //
+      // the extensional database for this round
+      // (overwritten every iteration)
+      //
+      edb.clear();
+      edb.insert(extresult);
+      edb.insert(currentI);
 
-        externalfacts.buildFacts(extresult);
-
-        //
-        // text representation of current facts
-        // (overwritten every iteration)
-        //    
-        dlvprogram.clearString();
-
-        dlvprogram.buildFacts(currentI);
-
-        //
-        // put everything together: rules, current facts, external facts
-        //
-        fixpointProgram = getSerializedProgram() + 
-                          dlvprogram.getString() + 
-                          externalfacts.getString();
-
-        //std::cout << "solver input: " << program << std::endl;
-
-        try
+      try
         {
-            //
-            // call the ASP solver with noEDB turned on - we don't want the
-            // initial set of facts in the result here!
-            //
-            /// \todo revise this entire model generator.
-            //
-            Solver.callSolver(fixpointProgram, 1);
+	  answersets.clear();
+	  solver->solve(program, edb, answersets);
         }
-        catch (GeneralError&)
+      catch (GeneralError&)
         {
-            throw;
+	  throw;
         }
+      
+      if (answersets.size() == 0)
+	{
+	  // no answerset: no model!
+	  return;
+	}
+      else if (answersets.size() > 1)
+	{
+	  // more than one answerset: this is not a stratified component!
+	  throw FatalError("Fixpoint model generator called with unstratified program!");
+	}
 
-        AtomSet* as = Solver.getNextAnswerSet();
+      // first item is the result anwer set
+      result = answersets.begin();
 
-        //
-        // no answerset: no model!
-        //
-        if (as == NULL)
-            return;
+      // to be able to compare them:
+      result->insert(I);
 
-        //
-        // more than one answerset: this is not a stratified component!
-        //
-        if (Solver.numAnswerSets() > 1)
-            throw FatalError("Fixpoint model generator called with unstratified program!");
+    } while ((*result != currentI) && (iter <= maxIter));
 
-        dlvResult = *as;
+  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  DEBUG_STOP_TIMER("Fixpoint (incl. ASP-solver calls)      ");
 
-        //
-        // to be able to compare them:
-        //
-        dlvResult.insert(I);
-
-        firstrun = false;
-		
-    } while ((dlvResult != currentI) && (iter <= maxIter));
-
-    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    DEBUG_STOP_TIMER("Fixpoint (incl. ASP-solver calls)      ");
-
-    models.push_back(currentI);
+  if (iter > maxIter)
+    {
+      throw FatalError("Maximum count for iteration reached!");
+    }
+  
+  models.push_back(currentI);
 }
 
 DLVHEX_NAMESPACE_END

@@ -37,27 +37,15 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/ModelGenerator.h"
-#include "dlvhex/ASPsolver.h"
+#include "dlvhex/ASPSolver.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/DLVProcess.h"
+
 
 DLVHEX_NAMESPACE_BEGIN
 
 OrdinaryModelGenerator::OrdinaryModelGenerator()
-{
-}
-
-
-
-void
-OrdinaryModelGenerator::initialize(const Program& p)
-{
-    ProgramDLVBuilder dlvprogram(Globals::Instance()->getOption("NoPredicate"));
-
-    dlvprogram.buildProgram(p);
-
-    serializedProgram = dlvprogram.getString();
-}
-
+{ }
 
 
 void
@@ -65,80 +53,73 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
-//    if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
-//        std::cout << "= OrdinaryModelGenerator =" << std::endl;
+  Program program;
 
-    Program program;
-
-    //
-    // go through all nodes
-    //
-    std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
-    while (node != nodes.end())
+  //
+  // go through all nodes
+  //
+  std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
+  while (node != nodes.end())
     {
-        const std::vector<Rule*>& rules = (*node)->getRules();
-
-        //
-        // add all rules from this node to the component
-        //
-        for (std::vector<Rule*>::const_iterator ri = rules.begin();
-                ri != rules.end();
-                ++ri)
+      const std::vector<Rule*>& rules = (*node)->getRules();
+      
+      //
+      // add all rules from this node to the component
+      //
+      for (std::vector<Rule*>::const_iterator ri = rules.begin();
+	   ri != rules.end();
+	   ++ri)
 	  {
             program.addRule(*ri);
 	  }
-
-        ++node;
+      
+      ++node;
     }
+  
+  this->compute(program, I, models);
+}
 
-    initialize(program);
 
-    models.clear();
+void
+OrdinaryModelGenerator::compute(const Program& program,
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
+{
+  DEBUG_START_TIMER;
 
-    //
-    // serialize input facts
-    //
-    ProgramDLVBuilder dlvfacts(Globals::Instance()->getOption("NoPredicate"));
+  models.clear();
 
-    dlvfacts.buildFacts(I);
 
-    //
-    // add facts to already existing program
-    //
-    std::string p(serializedProgram + dlvfacts.getString());
+  ///
+  /// @todo: we use the noEDB switch here as well, because we don't want
+  /// any extatom-replacement predicates to be in the result - the asp
+  /// solver result parser would throw them away (ho) and so we couldn't get
+  /// rid of them any more. this is why we have to add the input edb below again!
+  ///
+  DLVProcess asp(true);
+  std::auto_ptr<BaseASPSolver> solver(asp.createSolver());
 
-    ASPsolver Solver;
-    
-    try
+  std::vector<AtomSet> answersets;
+
+  try
     {
-        //
-        /// @todo: we use the noEDB switch here as well, because we don't want
-        // any extatom-replacement predicates to be in the result - the asp
-        // solver result parser would throw the away (ho) and so we couldn't get
-        // rid of them any more. this is why we have to add the input edb below again!
-        //
-        Solver.callSolver(p, 1);
+      solver->solve(program, I, answersets);
     }
-    catch (GeneralError& e)
+  catch (GeneralError&)
     {
-        throw e;
+      throw;
     }
 
-    AtomSet* as;
-
-    DEBUG_START_TIMER;
-
-    while ((as = Solver.getNextAnswerSet()) != NULL)
+  for (std::vector<AtomSet>::iterator as = answersets.begin();
+       as != answersets.end();
+       ++as)
     {
-        AtomSet res(*as);
-
-        res.insert(I);
-
-        models.push_back(res);
+      as->insert(I);
+      models.push_back(*as);
     }
 
-    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    DEBUG_STOP_TIMER("Time storing the ASP result            ");
+  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  DEBUG_STOP_TIMER("Time storing the ASP result            ");
 }
 
 DLVHEX_NAMESPACE_END
