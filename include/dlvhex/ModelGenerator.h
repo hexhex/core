@@ -54,40 +54,27 @@ class PluginContainer;
  */
 class DLVHEX_EXPORT ModelGenerator
 {
-public:
-    virtual
-    ~ModelGenerator()
-    { }
+ public:
+  virtual
+  ~ModelGenerator()
+  { }
+  
+  /**
+   * @brief Computes all answer sets of a given set of nodes.
+   */
+  virtual void
+  compute(const std::vector<AtomNodePtr>&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models) = 0;
 
-    /**
-     * @brief Initialization of a model generator.
-     *
-     * An instance of a model generator might be used several times to
-     * compute the result of a subprogram. This function initializes everything
-     * that will not change on subsequent calls of the compute function.
-     */
-//    virtual void
-//    initialize(const Program&) = 0;
+  /**
+   * @brief Computes all answer sets of a given Program.
+   */
+  virtual void
+  compute(const Program&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models) = 0;
 
-
-    /**
-     * @brief Computes all answer sets of a given set of nodes.
-     *
-     *todo: do we need the program here, too? it's already in the initialize method! 
-     */
-    virtual void
-    compute(//const Program&,
-            const std::vector<AtomNodePtr>&,
-            const AtomSet& I,
-            std::vector<AtomSet>& models) = 0;
-
-protected:
-
-    /// Ctor.
-    ModelGenerator()
-    { }
-
-    std::string serializedProgram;
 };
 
 
@@ -100,47 +87,24 @@ class DLVHEX_EXPORT FixpointModelGenerator : public ModelGenerator
   PluginContainer& container;
   
  public:
+  /// Ctor
+  FixpointModelGenerator(PluginContainer&);
 
-    /// Ctor
-    FixpointModelGenerator(PluginContainer&);
+  /**
+   * @brief Computes models of a set of nodes by fixpoint calculation.
+   */
+  virtual void
+  compute(const std::vector<AtomNodePtr>&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 
-    void
-    initialize(const Program&);
-
-
-    /**
-     * Build the textual representation of the program.
-     */
-    void
-    serializeProgram(const Program&);
-
-
-    /**
-     * Return the text program.
-     */
-    const std::string&
-    getSerializedProgram() const;
-
-    /**
-     * @brief Computes models of a set of nodes by iteration.
-     */
-    virtual void
-    compute(//const Program&,
-            const std::vector<AtomNodePtr>&,
-            const AtomSet& I,
-            std::vector<AtomSet>& models);
-
-    /**
-     * @brief Computes models of a set of nodes by iteration.
-     *
-     * @todo make a mediator class between the components and the model
-     * generators, that converts a node vector to a program and a list of
-     * external atoms
-     */
-    void
-    compute(const Program&,
-            const AtomSet& I,
-            std::vector<AtomSet>& models);
+  /**
+   * @brief Computes models of a Program by fixpoint calculation.
+   */
+  virtual void
+  compute(const Program&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 
 };
 
@@ -155,26 +119,30 @@ class DLVHEX_EXPORT FixpointModelGenerator : public ModelGenerator
 class DLVHEX_EXPORT OrdinaryModelGenerator : public ModelGenerator
 {
 public:
+  /// Ctor
+  OrdinaryModelGenerator();
+  
+  /**
+   * @brief Computes models of a set of nodes by one-shot evaluation.
+   */
+  virtual void
+  compute(const std::vector<AtomNodePtr>&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 
-    /// Ctor
-    OrdinaryModelGenerator();
-
-    void
-    initialize(const Program&);
-
-    /**
-     * @brief Computes models of a set of nodes by iteration.
-     */
-    virtual void
-    compute(const std::vector<AtomNodePtr>&,
-            const AtomSet& I,
-            std::vector<AtomSet>& models);
+  /**
+   * @brief Computes models of a Program by one-shot evaluation.
+   */
+  virtual void
+  compute(const Program&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 };
 
 
 
 /**
- * @brief Concrete Strategy for computing the model by a guess & checl algorithm.
+ * @brief Concrete Strategy for computing the model by a guess & check algorithm.
  *
  * If a component is completely unstratified (neither stratified nor e-stratified,
  * we can only use a guess and check algorithm, which guesses all possible values
@@ -184,19 +152,26 @@ class DLVHEX_EXPORT GuessCheckModelGenerator : public ModelGenerator
 {
  private:
   PluginContainer& container;
+  
+ public:
+  /// Ctor
+  GuessCheckModelGenerator(PluginContainer&);
+    
+  /**
+   * @brief Computes models of a set of nodes by guess-n-check evaluation.
+   */
+  virtual void
+  compute(const std::vector<AtomNodePtr>&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 
-public:
-
-    /// Ctor
-    GuessCheckModelGenerator(PluginContainer&);
-
-    /**
-     * @brief Computes models of a set of nodes by iteration.
-     */
-    virtual void
-    compute(const std::vector<AtomNodePtr>&,
-            const AtomSet& I,
-            std::vector<AtomSet>& models);
+  /**
+   * @brief Computes models of a Program by guess-n-check evaluation.
+   */
+  virtual void
+  compute(const Program&,
+	  const AtomSet& I,
+	  std::vector<AtomSet>& models);
 };
 
 
