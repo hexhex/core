@@ -1,3 +1,52 @@
+2008-04-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/testsuite/dlvhex/ASPsolverTest.h: Use new ASPSolver infrastructure.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
+
+	* src/dlvhex/FixpointModelGenerator.cpp: Use new ASPSolver
+	infrastructure.
+	Add more sanity checks.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	
+	* include/dlvhex/ModelGenerator.h: Cleaned up ModelGenerator
+	interface.
+
+	* include/dlvhex/AtomSet.h: Add some const qualifiers to the
+	interface.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+
+	* include/dlvhex/ASPSolver.h: Rename ASPsolver.h.
+	Generalize ASPSolver interface.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+
+	* include/dlvhex/ASPsolver.h: Remove.
+	* include/dlvhex/ProgramBuilder.h: Likewise.
+	* src/dlvhex/ASPsolver.cpp: Likewise.
+	* src/dlvhex/ProgramBuilder.cpp: Likewise.
+
+	* include/dlvhex/Process.h: New file.
+	* include/dlvhex/DLVProcess.h: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+	* include/dlvhex/ProcessBuf.h: Add some sanity checks.
+	(ProcessBuf::open): Return pid or -1 in case of error.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+
+	* src/dlvhex/Makefile.am (libaspsolver_la_SOURCES): Add DLVProcess.cpp.
+	(libaspsolver_la_LDFLAGS): Bump version-info to 1:0:0.
+	(libdlvhexbase_la_SOURCES): Remove ProgramBuilder.cpp.
+
+	* include/dlvhex/Makefile.am (noinst_HEADERS): Add ASPSolver.tcc,
+	DLVProcess.h, and Process.h.
+	(pkginclude_HEADERS): Remove ProgramBuilder.h
+
+	* src/dlvhex/Component.cpp: Remove ASPsolver.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+
+	* TODO: Update.
+
 2008-04-08  Alessandra Martello  <a.martello@mat.unical.it>
 
 	* include/dlvhex/Atom.h (Atom::setPredicate,Atom::setArgument): Add new setter methods.
