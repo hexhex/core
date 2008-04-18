@@ -73,6 +73,31 @@ fi
 AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 
+#
+# the user didn't supply a path for dlvdb
+#
+if test "$DLVDB" = ""; then
+    # we assume "dlvdb"
+    DLVDB=dlvdb
+    # and check if it exists
+    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound)
+else
+    # the user supplied a 'DLVDB=...'
+    # check if it exists (with search path=/, since the user supplied
+    # an entire path!) and set DLVPATH to it!
+    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound, [/])
+fi
+
+if test "$DLVDBPATH" = notfound; then
+    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
+else
+    # put the dlvdb path into config.h
+    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
+    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
+fi
+
+
+
 AM_INIT_AUTOMAKE
 
 # Checks for programs.
