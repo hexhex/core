@@ -1,8 +1,21 @@
 -*- org -*-
 
-* TODO dlvhex cannot deal with LD_LIBRARY_PATH/DYNLD_LIBRARY_PATH
+* TODO unsetenv("LD_LIBRARY_PATH")?
+
+* TODO Guess & Check model generator is broken
 
 * TODO Fix extatom3.hex and dawg.hex testcases
+
+* TODO Return a list of rewriters/optimizers
+And adapt to shared_ptrs. This gives greater flexibility to the plugin
+programmers.
+
+* TODO rebuild depgraph after invoking an optimizer?
+check the interface for optimizers...
+
+* TODO use boost iostreams for retrieving urls/ASPsolver/dlt?
+<http://www.boost.org/libs/iostreams/doc/index.html>
+mmap'd file(s)?
 
 * TODO Fix Term's namespace handling
 We need to add qname support to the Terms, i.e., store prefix and
@@ -43,15 +56,6 @@ hierarchy. We need to rewrite in
 Handy for passing, e.g., optimization flags to dlv.
 
 * TODO Add a dlvhex facade to couple all intermediate products
-
-* TODO Generalise ASPsolver
-We need something like ASPSolver<Builder,Parser> (similar to the
-QueryDirector in the dlplugin), so we do not need to copy so many
-strings around.
-
-* TODO Get rid of ProgramBuilder
-The PrintVisitors are good enough. At least we have to check whether
-the ProgramBuilders can do a better job.
 
 * TODO HEX-parser should create metainformation of the program
 Like no. of external and HO atoms, aggregates, ...; given this
