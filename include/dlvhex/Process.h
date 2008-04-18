@@ -36,18 +36,29 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include <iosfwd>
+#include <string>
 
 DLVHEX_NAMESPACE_BEGIN
 
+
+// forward declaration
+class BaseASPSolver;
+
+
 /**
- * @brief Base class for processes
+ * @brief Base class for solver processes
  */
 class DLVHEX_EXPORT Process
 {
 public:
   virtual
   ~Process() { }
+
+  virtual BaseASPSolver*
+  createSolver() = 0;
+
+  virtual void
+  addOption(const std::string&) = 0;
 
   virtual void
   spawn() = 0;

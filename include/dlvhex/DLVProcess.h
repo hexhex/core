@@ -76,6 +76,9 @@ public:
   createSolver();
 
   virtual void
+  addOption(const std::string&);
+
+  virtual void
   spawn();
 
   virtual void

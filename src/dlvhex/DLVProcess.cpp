@@ -50,13 +50,28 @@ DLVProcess::DLVProcess(bool noEDB)
   // let ProcessBuf throw std::ios_base::failure
   iopipe.exceptions(std::ios_base::badbit);
 
-  argv.push_back(DLVPATH);
+  unsigned solver = Globals::Instance()->getOption("Solver");
+
+  switch(solver)
+    {
+    case 0:
+      argv.push_back(DLVPATH);
+      break;
+#if defined(HAVE_DLVDB)
+    case 1:
+      argv.push_back(DLVDBPATH);
+      argv.push_back("-DBSupport"); // turn on database support
+      argv.push_back("-ORdr"); // turn on rewriting of false body rules
+      break;
+#endif /* HAVE_DLVDB */
+    default:
+      throw FatalError("Wrong solver specified!");
+    }
+
   argv.push_back("-silent");
     
   if (noEDB)
     argv.push_back("-nofacts");
-
-  argv.push_back("--");
 }
 
 
@@ -81,9 +96,19 @@ DLVProcess::createSolver()
 
 
 void
+DLVProcess::addOption(const std::string& option)
+{
+  argv.push_back(option);
+}
+
+
+void
 DLVProcess::spawn()
 {
-  proc.open(argv);
+  std::vector<std::string> tmp = argv;
+  tmp.push_back("--");
+
+  proc.open(tmp);
 }
 
 
