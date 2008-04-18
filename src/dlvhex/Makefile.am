@@ -90,7 +90,6 @@ libdlvhexbase_la_SOURCES = \
     PluginInterface.cpp \
     PrintVisitor.cpp \
     Program.cpp \
-    ProgramBuilder.cpp \
     Repository.cpp \
     Registry.cpp \
     Rule.cpp \
@@ -102,7 +101,7 @@ libaspsolver_la_SOURCES = \
     DLVresultScanner.lpp \
     DLVresultParserDriver.cpp \
     ParserDriver.cpp \
-    ASPsolver.cpp \
+    DLVProcess.cpp \
     ProcessBuf.cpp
 
 
@@ -111,7 +110,7 @@ libaspsolver_la_SOURCES = \
 # the USENIX paper `Library Interface Versioning in Solaris and Linux'
 # <http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid.pdf>
 libdlvhexbase_la_LDFLAGS = -version-info 5:1:0
-libaspsolver_la_LDFLAGS = -version-info 0:0:0
+libaspsolver_la_LDFLAGS = -version-info 1:0:0
 
 libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 
