@@ -115,8 +115,8 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
     {
       std::stringstream errstr;
 
-      errstr << "LP solver failure: returncode: " << retcode << std::endl;
-      errstr << "error msg: " << error;
+      errstr << "LP solver failure (" << retcode << "):" << std::endl;
+      errstr << error;
 
       throw FatalError(errstr.str());
     }
