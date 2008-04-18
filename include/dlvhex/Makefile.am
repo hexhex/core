@@ -2,17 +2,20 @@ AUTOMAKE_OPTIONS = gnu
 
 # including headers for make dist
 noinst_HEADERS = \
-	ASPsolver.h \
+	ASPSolver.h \
+	ASPSolver.tcc \
 	DLVresultFlexLexer.h \
 	DLVresultParserDriver.h \
+	DLVProcess.h \
 	GraphProcessor.h \
 	HexFlexLexer.h \
 	HexParserDriver.h \
 	ParserDriver.h \
+	Process.h \
 	ProcessBuf.h \
-        RuleMLOutputBuilder.h \
+	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
-        TextOutputBuilder.h \
+	TextOutputBuilder.h \
 	URLBuf.h
 
 pkginclude_HEADERS = \
@@ -43,7 +46,6 @@ pkginclude_HEADERS = \
 	PluginInterface.h \
 	PrintVisitor.h \
 	Program.h \
-	ProgramBuilder.h \
 	Registry.h \
 	Repository.h \
 	ResultContainer.h \
