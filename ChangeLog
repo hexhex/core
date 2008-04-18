@@ -1,5 +1,15 @@
 2008-04-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/dlvhex.cpp: Add --solver option.
+
+	* configure.ac: Search for dlvdb.
+
+	* include/dlvhex/DLVProcess.h: Add support for dlvdb.
+	* include/dlvhex/Process.h: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+	* include/dlvhex/ASPSolver.tcc: Fix error message.
+
 	* include/testsuite/dlvhex/ASPsolverTest.h: Use new ASPSolver infrastructure.
 	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
 
