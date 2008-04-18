@@ -36,8 +36,6 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/ASPsolver.h"
-
 #include <cppunit/extensions/HelperMacros.h>
 
 
@@ -48,11 +46,8 @@ class DLVHEX_EXPORT ASPsolverTest : public CppUnit::TestFixture
 private:
     
     CPPUNIT_TEST_SUITE(ASPsolverTest);
-    CPPUNIT_TEST(testExecution);
     CPPUNIT_TEST(testResult);
     CPPUNIT_TEST_SUITE_END();
-
-    ASPsolver* solver;
 
 public:
     
@@ -61,9 +56,6 @@ public:
     
     void
     tearDown();
-
-    void
-    testExecution();
 
     void
     testResult();
