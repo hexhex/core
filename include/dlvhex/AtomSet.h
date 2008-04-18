@@ -191,11 +191,6 @@ public:
     const_iterator
     end() const;
 
-    /**
-     * @brief Load the atomset with a given set of atoms.
-     */
-//    void
-//    initialize(const GAtomSet&);
 
     /**
      * @brief Empties the atomset.
@@ -215,23 +210,13 @@ public:
     size_t
     size() const;
 
+
     /**
      * @brief Insert an atom pointer.
      */
     void
-    insert(AtomPtr&);
+    insert(const AtomPtr&);
 
-    /**
-     * @brief Insert an atom from the specified address.
-     */
-//    void
-//    insert(Atom*);
-
-    /**
-     * @brief Insert an Atom.
-     */
-//    void
-//    insert(Atom);
 
     /**
      * @brief Insert all Atoms from the specifed atomset.
@@ -244,7 +229,7 @@ public:
      * specified atomset.
      */
     void
-    matchPredicate(const std::string, AtomSet&) const;
+    matchPredicate(const std::string&, AtomSet&) const;
 
     /**
      * @brief Fill all atoms that unify with the given atom into the
@@ -257,7 +242,7 @@ public:
      * @brief Returns the set difference: *this \ specified atomset.
      */
     AtomSet
-    difference(AtomSet&) const;
+    difference(const AtomSet&) const;
 
     /**
      * @brief accepts a visitor.
@@ -287,11 +272,11 @@ public:
     void
     keepPos();
 
-	/**
-	 * @brief Test if AtomSet is consistent.
-	 */
-	bool
-	isConsistent() const;
+    /**
+     * @brief Test if AtomSet is consistent.
+     */
+    bool
+    isConsistent() const;
 
     bool
     operator== (const AtomSet&) const;

@@ -138,20 +138,6 @@ AtomSet::end() const
 }
 
 
-/*
-void
-AtomSet::initialize(const GAtomSet& in)
-{
-	for (GAtomSet::const_iterator i = in.begin();
-		 i != in.end();
-		 ++i)
-	{
-		insert(*i);
-	}
-}
-*/
-
-
 void
 AtomSet::clear()
 {
@@ -175,7 +161,7 @@ AtomSet::size() const
 
 
 void
-AtomSet::insert(AtomPtr& ap)
+AtomSet::insert(const AtomPtr& ap)
 {
 	/// @todo test if *ap really exists
 
@@ -192,29 +178,22 @@ AtomSet::insert(const AtomSet& add)
 
 
 AtomSet
-AtomSet::difference(AtomSet& as) const
+AtomSet::difference(const AtomSet& as) const
 {
-	AtomSet res;
+  AtomSet res;
 
-//	  std::set_difference(atoms.begin(), atoms.end(),
-//						  as.atoms.begin(), as.atoms.end(),
-//						  res.atoms);
-	
-	/// @todo: stdlib algorithm!
-	for (atomset_t::const_iterator a = atoms.begin();
-		 a != atoms.end();
-		 a++)
-	{
-		if (as.atoms.find(*a) == as.atoms.end())
-			res.atoms.insert(*a);
-	}
-	return res;
+  std::set_difference(this->atoms.begin(), this->atoms.end(),
+		      as.atoms.begin(), as.atoms.end(),
+		      std::inserter(res.atoms, res.atoms.begin())
+		      );
+
+  return res;
 }
 
 
 void
-AtomSet::matchPredicate(const std::string pred,
-						AtomSet& matched) const
+AtomSet::matchPredicate(const std::string& pred,
+			AtomSet& matched) const
 {
 	/// @todo: stdlib algorithm!
 	for (atomset_t::const_iterator a = atoms.begin();
@@ -229,7 +208,7 @@ AtomSet::matchPredicate(const std::string pred,
 
 void
 AtomSet::matchAtom(const AtomPtr& atom,
-				   AtomSet& matched) const
+		   AtomSet& matched) const
 {
 	/// @todo: stdlib algorithm!
 	for (atomset_t::const_iterator a = atoms.begin();
