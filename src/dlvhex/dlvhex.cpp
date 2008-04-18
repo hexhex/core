@@ -144,7 +144,7 @@ printUsage(std::ostream &out, bool full)
 	out << "     --               Parse from stdin." << std::endl
 		<< " -s, --silent         Do not display anything than the actual result." << std::endl
 		//        << "--strongsafety     Check rules also for strong safety." << std::endl
-		<< " -p, --plugindir=dir  Specify additional directory where to look for plugin" << std::endl
+		<< " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
 		<< "                      libraries (additionally to the installation plugin-dir" << std::endl
 		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
 		<< " -f, --filter=foo[,bar[,...]]" << std::endl
@@ -156,6 +156,7 @@ printUsage(std::ostream &out, bool full)
 		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
 		<< "                      with --verbose)." << std::endl
 		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+                << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
 		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
 		<< "                      1  - program analysis information (including dot-file)" << std::endl
 		<< "                      2  - program modifications by plugins" << std::endl
@@ -349,6 +350,7 @@ main (int argc, char *argv[])
 	Globals::Instance()->setOption("StrongSafety", 1);
 	Globals::Instance()->setOption("AllModels", 0);
 	Globals::Instance()->setOption("ReverseAllModels", 0);
+	Globals::Instance()->setOption("Solver", 0); // default is dlv
 
 	// options only used here in main():
 	bool optionPipe = false;
@@ -397,6 +399,7 @@ main (int argc, char *argv[])
 		{ "dlt",        no_argument, &longid, 4 },
 		{ "noeval",     no_argument, &longid, 5 },
 		{ "keepnsprefix", no_argument, &longid, 6 },
+		{ "solver", required_argument, &longid, 7 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -462,6 +465,17 @@ main (int argc, char *argv[])
 			      break;
 			    case 6:
 			      optionKeepNSPrefix = true;
+			      break;
+			    case 7:
+			      std::string solver(optarg);
+			      if (solver == "dlvdb")
+				{
+				  Globals::Instance()->setOption("Solver",1);
+				}
+			      else
+				{
+				  Globals::Instance()->setOption("Solver",0);
+				}
 			      break;
 			    }
 			  break;
