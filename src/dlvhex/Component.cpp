@@ -36,11 +36,11 @@
 
 #include "dlvhex/Component.h"
 #include "dlvhex/ProgramBuilder.h"
-#include "dlvhex/ASPsolver.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
 
+#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 

@@ -32,7 +32,6 @@
 
 #include "dlvhex/DependencyGraph.h"
 
-#include "dlvhex/ASPsolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramBuilder.h"
@@ -99,6 +98,7 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
                 mg = new FixpointModelGenerator(container);
             }
 
+	    ///@todo another memory leak *sigh*
             Component* comp = new ProgramComponent(*scc, mg);
 
             //
