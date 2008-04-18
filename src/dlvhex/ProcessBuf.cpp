@@ -44,6 +44,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 ProcessBuf::ProcessBuf()
   : std::streambuf(),
+    process(-1),
     bufsize(256)
 {
   // ignore SIGPIPE
@@ -105,21 +106,36 @@ ProcessBuf::initBuffers()
 
 
 
-void
+pid_t
 ProcessBuf::open(const std::vector<std::string>& av)
 {
+  // close before re-open it
+  if (process != -1)
+    {
+      int ret = close();
+      if (ret != 0)
+	{
+	  return ret < 0 ? ret : -ret;
+	}
+    }
+
+  outpipes[0] = 0;
+  outpipes[1] = 0;
+  inpipes[0] = 0;
+  inpipes[1] = 0;
+
   // we want a full-duplex stream -> create two pairs of pipes
 
   if (::pipe(outpipes) < 0)
     {
       ::perror("pipes");
-      return;
+      return -1;
     }
 
   if (::pipe(inpipes) < 0)
     {
       ::perror("pipes");
-      return;
+      return -1;
     }
 
   // create a new process 
@@ -197,12 +213,17 @@ ProcessBuf::open(const std::vector<std::string>& av)
       
       break;
     }
+
+  return process;
 }
 
 
 void
 ProcessBuf::endoffile()
 {
+  // reset output buffer
+  setp(obuf, obuf + bufsize);
+
   if (inpipes[1] != -1)
     {
       ::close(inpipes[1]); // send EOF to stdin of child process
@@ -216,6 +237,9 @@ ProcessBuf::close()
   // we're done writing
   endoffile();
 
+  // reset input buffer
+  setg(ibuf, ibuf, ibuf);
+
   // we're done reading
   if (outpipes[0] != -1)
     {
@@ -226,6 +250,7 @@ ProcessBuf::close()
   // obviously we do not want to leave zombies around, so get status
   // code of the process
   ::waitpid(process, &status, 0);
+  process = -1;
 
   // exit code of process
   return WEXITSTATUS(status);
@@ -267,9 +292,7 @@ ProcessBuf::underflow()
 	{
 	  return traits_type::eof();
 	}
-
-      // a failure occured while receiving from the stream
-      if (n < 0)
+      else if (n < 0) // a failure occured while receiving from the stream
 	{
 	  throw std::ios_base::failure("Process prematurely closed pipe.");
 	}
@@ -288,7 +311,9 @@ ProcessBuf::sync()
   // reset input buffer
   setg(ibuf, ibuf, ibuf);
 
-  if (pptr() != pbase()) // non-empty obuf -> send data
+  const ssize_t len = pptr() - pbase();
+
+  if (len) // non-empty obuf -> send data
     {
       errno = 0;
 
@@ -300,12 +325,9 @@ ProcessBuf::sync()
       // obuf followed by an error return value. See chapter 5.13 of
       // W.R. Stevens: Unix Network Programming Vol.1.
 
-      ssize_t len = pptr() - pbase();
       ssize_t ret = 0;
 
-      for (ssize_t written = 0;
-	   written < len;
-	   written += ret)
+      for (ssize_t written = 0; written < len; written += ret)
 	{
 	  ret = ::write (inpipes[1], pbase() + written, len - written);
 	  if (ret == -1 || ret == 0) break;
@@ -318,8 +340,7 @@ ProcessBuf::sync()
 	{
 	  return -1;
 	}
-
-      if (ret < 0 || errno == EPIPE) // failure
+      else if (ret < 0 || errno == EPIPE) // failure
 	{
 	  std::ostringstream oss;
 	  oss << "Couldn't write to process pipe (errno = " << errno << ").";

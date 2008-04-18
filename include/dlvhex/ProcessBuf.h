@@ -62,7 +62,7 @@ public:
   virtual void
   endoffile();
 
-  virtual void
+  virtual pid_t
   open(const std::vector<std::string>&);
 
   virtual int
