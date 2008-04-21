@@ -56,30 +56,31 @@ AtomFactory::Instance()
 /**
  * @brief A deleter for boost::shared_ptr<>, which does nothing.
  */
-struct NullDeleter
-{
-    void operator() (Atom*) {} // don't delete managed Atom object
-};
+// struct NullDeleter
+// {
+//     void operator() (Atom*) {} // don't delete managed Atom object
+// };
 
 
 
 AtomPtr
 AtomFactory::insert(Atom* ap)
 {
-    AtomPtr a(ap, NullDeleter());
+  ///@todo remove AtomFactory, it's completely useless
+//     AtomPtr a(ap, NullDeleter());
 
-    AtomSet::atomset_t::const_iterator it = atoms.find(a);
+//     AtomSet::atomset_t::const_iterator it = atoms.find(a);
 
-    if (it == atoms.end())
-    {
+//     if (it == atoms.end())
+//     {
         AtomPtr x(ap);
         atoms.insert(x);
         return x;
-    }
+//     }
 
-    delete ap;
+//     delete ap;
 
-    return *it;
+//     return *it;
 
 }
 
