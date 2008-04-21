@@ -45,9 +45,11 @@ dlvhex_SOURCES = \
     HexScanner.lpp \
     AnswerSet.cpp \
     dlvhex.cpp \
+    ProgramCtx.cpp \
     RuleMLOutputBuilder.cpp \
     ResultContainer.cpp \
     SafetyChecker.cpp \
+    State.cpp \
     TextOutputBuilder.cpp \
     HexParserDriver.cpp \
     URLBuf.cpp
