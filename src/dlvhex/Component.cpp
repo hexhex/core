@@ -35,7 +35,6 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/Component.h"
-#include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"

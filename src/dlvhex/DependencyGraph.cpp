@@ -34,7 +34,6 @@
 
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/ProgramBuilder.h"
 
 #include <sstream>
 

@@ -50,7 +50,6 @@
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/DependencyGraph.h"
-#include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/URLBuf.h"

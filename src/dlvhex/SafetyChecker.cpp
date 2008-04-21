@@ -34,6 +34,8 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/AggregateAtom.h"
 
+#include <sstream>
+
 DLVHEX_NAMESPACE_BEGIN
 
 
