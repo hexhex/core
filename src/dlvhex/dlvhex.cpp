@@ -53,35 +53,19 @@
 #endif // HAVE_CONFIG_H
 
 
-
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/GraphBuilder.h"
-#include "dlvhex/ComponentFinder.h"
-#include "dlvhex/BoostComponentFinder.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/Program.h"
+#include "dlvhex/AtomNode.h"
+#include "dlvhex/NodeGraph.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/TextOutputBuilder.h"
 #include "dlvhex/RuleMLOutputBuilder.h"
-#include "dlvhex/SafetyChecker.h"
-#include "dlvhex/HexParserDriver.h"
 #include "dlvhex/PrintVisitor.h"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/ProgramBuilder.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/Component.h"
-#include "dlvhex/URLBuf.h"
-
-
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <vector>
 
 #include <getopt.h>
-
+#include <iostream>
+#include <sstream>
 #include <boost/tokenizer.hpp>
 
 
@@ -164,7 +148,6 @@ printUsage(std::ostream &out, bool full)
 		<< "                      8  - timing information (only if configured with" << std::endl
 		<< "                                               --enable-debug)" << std::endl
 		<< "                      add values for multiple categories." << std::endl;
-//		<< std::endl;
 }
 
 
@@ -283,7 +266,8 @@ removeNamespaces()
   if (Term::namespaces.size() == 0)
     return;
 
-  std::string prefix, fullns;
+  std::string prefix;
+  std::string fullns;
 
   for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
        nm != Term::names.end();
@@ -318,920 +302,495 @@ removeNamespaces()
 
 
 
-#include <ext/stdio_filebuf.h> 
-
 int
 main (int argc, char *argv[])
 {
-	//
-	// Stores the rules of the program.
-	//
-	Program IDB;
+  WhoAmI = argv[0];
 
-	//
-	// Stores the facts of the program.
-	//
-	AtomSet EDB;
+  // The Program Context
+  ProgramCtx pctx;
 
 
-	WhoAmI = argv[0];
+  /////////////////////////////////////////////////////////////////
+  //
+  // Option handling
+  //
+  /////////////////////////////////////////////////////////////////
 
-	/////////////////////////////////////////////////////////////////
-	//
-	// Option handling
-	//
-	/////////////////////////////////////////////////////////////////
+  // global defaults:
+  ///@todo clean up!!
+  Globals::Instance()->setOption("NoPredicate", 1);
+  Globals::Instance()->setOption("Silent", 0);
+  Globals::Instance()->setOption("Verbose", 0);
+  Globals::Instance()->setOption("NoPredicate", 1);
+  Globals::Instance()->setOption("StrongSafety", 1);
+  Globals::Instance()->setOption("AllModels", 0);
+  Globals::Instance()->setOption("ReverseAllModels", 0);
+  Globals::Instance()->setOption("Solver", 0); // default is dlv
 
-	// global defaults:
-	Globals::Instance()->setOption("NoPredicate", 1);
-	Globals::Instance()->setOption("Silent", 0);
-	Globals::Instance()->setOption("Verbose", 0);
-	Globals::Instance()->setOption("NoPredicate", 1);
-	Globals::Instance()->setOption("StrongSafety", 1);
-	Globals::Instance()->setOption("AllModels", 0);
-	Globals::Instance()->setOption("ReverseAllModels", 0);
-	Globals::Instance()->setOption("Solver", 0); // default is dlv
+  // options only used here in main():
+  bool optionPipe = false;
+  bool optionNoEval = false;
+  bool optionKeepNSPrefix = false;
 
-	// options only used here in main():
-	bool optionPipe = false;
-	bool optionXML = false;
-	bool optionNoEval = false;
-	bool optionKeepNSPrefix = false;
+  // path to an optional plugin directory
+  std::string optionPlugindir;
 
-	std::string optionPlugindir("");
+  //
+  // dlt switch should be temporary until we have a proper rewriter for flogic!
+  //
+  bool optiondlt = false;
 
-	//
-	// dlt switch should be temporary until we have a proper rewriter for flogic!
-	//
-	bool optiondlt = false;
+  bool helpRequested = false;
 
-	std::vector<std::string> allFiles;
+  extern char* optarg;
+  extern int optind;
+  extern int opterr;
 
-	std::vector<std::string> remainingOptions;
+  //
+  // prevent error message for unknown options - they might be known to
+  // plugins later!
+  //
+  opterr = 0;
 
+  int ch;
+  int longid;
+  
+  static const char* shortopts = "f:hsvp:ar";
+  static struct option longopts[] =
+    {
+      { "help", no_argument, 0, 'h' },
+      { "silent", no_argument, 0, 's' },
+      { "verbose", optional_argument, 0, 'v' },
+      { "filter", required_argument, 0, 'f' },
+      { "plugindir", required_argument, 0, 'p' },
+      { "allmodels", no_argument, 0, 'a' },
+      { "reverse", no_argument, 0, 'r' },
+      { "firstorder", no_argument, &longid, 1 },
+      { "weaksafety", no_argument, &longid, 2 },
+      { "ruleml",     no_argument, &longid, 3 },
+      { "dlt",        no_argument, &longid, 4 },
+      { "noeval",     no_argument, &longid, 5 },
+      { "keepnsprefix", no_argument, &longid, 6 },
+      { "solver", required_argument, &longid, 7 },
+      { NULL, 0, NULL, 0 }
+    };
 
-	extern char* optarg;
-	extern int optind, opterr;
-
-	bool helpRequested = 0;
-
-	//
-	// prevent error message for unknown options - they might be known to
-	// plugins later!
-	//
-	opterr = 0;
-
-	int ch;
-	int longid;
-
-	static const char* shortopts = "f:hsvp:ar";
-	static struct option longopts[] = {
-		{ "help", no_argument, 0, 'h' },
-		{ "silent", no_argument, 0, 's' },
-		{ "verbose", optional_argument, 0, 'v' },
-		{ "filter", required_argument, 0, 'f' },
-		{ "plugindir", required_argument, 0, 'p' },
-		{ "allmodels", no_argument, 0, 'a' },
-		{ "reverse", no_argument, 0, 'r' },
-		{ "firstorder", no_argument, &longid, 1 },
-		{ "weaksafety", no_argument, &longid, 2 },
-		{ "ruleml",     no_argument, &longid, 3 },
-		{ "dlt",        no_argument, &longid, 4 },
-		{ "noeval",     no_argument, &longid, 5 },
-		{ "keepnsprefix", no_argument, &longid, 6 },
-		{ "solver", required_argument, &longid, 7 },
-		{ NULL, 0, NULL, 0 }
-	};
-
-	while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
+  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
+    {
+      switch (ch)
 	{
-		switch (ch)
-		{
-			case 'h':
-				//printUsage(std::cerr, true);
-				helpRequested = 1;
-				break;
-			case 's':
-				Globals::Instance()->setOption("Silent", 1);
-				break;
-			case 'v':
-				if (optarg)
-					Globals::Instance()->setOption("Verbose", atoi(optarg));
-				else
-					Globals::Instance()->setOption("Verbose", 1);
-				break;
-			case 'f':
-			  {
-			    boost::char_separator<char> sep(",");
-			    std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
-			    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
-			    
-			    for (boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
-				 f != tok.end(); ++f)
-			      {
-				Globals::Instance()->addFilter(*f);
-			      }
-			  }
-			  break;
+	case 'h':
+	  helpRequested = 1;
+	  break;
 
-			case 'p':
-				optionPlugindir = std::string(optarg);
-				break;
-			case 'a':
-				Globals::Instance()->setOption("AllModels", 1);
-				break;
-			case 'r':
-				Globals::Instance()->setOption("ReverseOrder", 1);
-				break;
-			case 0:
-			  switch (longid)
-			    {
-			    case 1:
-			      Globals::Instance()->setOption("NoPredicate", 0);
-			      break;
-			    case 2:
-			      Globals::Instance()->setOption("StrongSafety", 0);
-			      break;
-			    case 3:
-			      optionXML = true;
-			      // XML output makes only sense with silent:
-			      Globals::Instance()->setOption("Silent", 1);
-			      break;
-			    case 4:
-			      optiondlt = true;
-			      break;
-			    case 5:
-			      optionNoEval = true;
-			      break;
-			    case 6:
-			      optionKeepNSPrefix = true;
-			      break;
-			    case 7:
-			      std::string solver(optarg);
-			      if (solver == "dlvdb")
-				{
-				  Globals::Instance()->setOption("Solver",1);
-				}
-			      else
-				{
-				  Globals::Instance()->setOption("Solver",0);
-				}
-			      break;
-			    }
-			  break;
-			case '?':
-				remainingOptions.push_back(argv[optind - 1]);
-				break;
-		}
-	}
+	case 's':
+	  Globals::Instance()->setOption("Silent", 1);
+	  break;
 
-	//
-	// before anything else we dump the logo
-	//
+	case 'v':
+	  if (optarg)
+	    Globals::Instance()->setOption("Verbose", atoi(optarg));
+	  else
+	    Globals::Instance()->setOption("Verbose", 1);
+	  break;
 
-	if (!Globals::Instance()->getOption("Silent"))
-		printLogo();
-
-	//
-	// no arguments at all: shorthelp
-	//
-	if (argc == 1)
-	{
-		printUsage(std::cerr, false);
-
-		exit(1);
-	}
-
-	bool inputIsWrong = 0;
-
-	//
-	// check if we have any input (stdin or file)
-	// if inout is not or badly specified, remember this and show shorthelp
-	// later if everthing was ok with the options
-	//
-
-	//
-	// stdin requested
-	//
-	if (!strcmp(argv[optind - 1], "--"))
-	{
-		optionPipe = true;
-	}
-
-	if (optind == argc)
-	{
-		//
-		// no files and no stdin - error
-		//
-		if (!optionPipe)
-			inputIsWrong = 1;
-	}
-	else
-	{
-		//
-		// files and stdin - error
-		//
-		if (optionPipe)
-			inputIsWrong = 1;
-
-		//
-		// collect filenames
-		//
-		for (int i = optind; i < argc; ++i)
-		{
-			allFiles.push_back(argv[i]);
-		}
-	}
-
-
-
-	/////////////////////////////////////////////////////////////////
-	//
-	// now search for plugins
-	//
-	/////////////////////////////////////////////////////////////////
-	
-	DEBUG_START_TIMER;
-
-	PluginContainer* container = PluginContainer::instance(optionPlugindir);
-
-	std::vector<PluginInterface*> plugins = container->importPlugins();
-
-	std::stringstream allpluginhelp;
-
-
-	//
-	// set options in the found plugins
-	//
-	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
-	     pi != plugins.end(); ++pi)
+	case 'f':
 	  {
-	    try
-	      {
-		PluginInterface* plugin = *pi;
-
-		if (plugin != 0)
-		  {
-		    // print plugin's version information
-		    if (!Globals::Instance()->getOption("Silent"))
-		      {
-			Globals::Instance()->getVerboseStream() << "opening "
-								<< plugin->getPluginName()
-								<< " version "
-								<< plugin->getVersionMajor() << "."
-								<< plugin->getVersionMinor() << "."
-								<< plugin->getVersionMicro() << std::endl;
-		      }
-
-		    std::stringstream pluginhelp;
-			  
-		    plugin->setOptions(helpRequested, remainingOptions, pluginhelp);
-
-		    if (!pluginhelp.str().empty())
-		      {
-			allpluginhelp << std::endl << pluginhelp.str();
-		      }
-		  }
-	      }
-	    catch (GeneralError &e)
-	      {
-		std::cerr << e.getErrorMsg() << std::endl;
-		
-		exit(1);
-	      }
-	  }
-
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Importing plugins                      ");
-
-	if (!Globals::Instance()->getOption("Silent"))
-		std::cout << std::endl;
-
-
-	//
-	// help was requested?
-	//
-	if (helpRequested)
-	{
-		printUsage(std::cerr, true);
-		std::cerr << allpluginhelp.str() << std::endl;
-		exit(0);
-	}
-
-	//
-	// any unknown options left?
-	//
-	if (!remainingOptions.empty())
-	{
-		std::cerr << "Unknown option(s):";
-
-		std::vector<std::string>::const_iterator opb = remainingOptions.begin();
-
-		while (opb != remainingOptions.end())
-			std::cerr << " " << *opb++;
-
-		std::cerr << std::endl;
-		printUsage(std::cerr, false);
-
-		exit(1);
-	}
-
-	//
-	// options are all ok, but input is missing
-	//
-	if (inputIsWrong)
-	{
-		printUsage(std::cerr, false);
-
-		exit(1);
-	}
-
-
-	/////////////////////////////////////////////////////////////////
-	//
-	// parse input
-	//
-	/////////////////////////////////////////////////////////////////
-
-	DEBUG_RESTART_TIMER;
-
-	HexParserDriver driver;
-
-	if (optionPipe)
-	{
-		//
-		// if we are piping, use a dummy file-name in order to enter the
-		// file-loop below
-		//
-		allFiles.push_back(std::string("dummy"));
-
-		Globals::Instance()->lpfilename = "lpgraph.dot";
-	}
-
-		//
-		// store filename of (first) logic program, we might use this somewhere
-		// else (e.g., when writing the graphviz file in the boost-part
-		//
-		std::string lpfile = allFiles[0];
-		Globals::Instance()->lpfilename = lpfile.substr(lpfile.find_last_of("/") + 1) + ".dot";
-
-		for (std::vector<std::string>::const_iterator f = allFiles.begin();
-		     f != allFiles.end();
-		     ++f)
-		  {
-		    try
-		      {
-			//
-			// stream to store the url/file/stdin content
-			//
-			std::stringstream tmpin;
-
-			if (!optionPipe)
-			  {
-			    // URL
-			    if (f->find("http://") == 0)
-			      {
-				URLBuf ubuf;
-				ubuf.open(*f);
-				std::istream is(&ubuf);
-
-				driver.setOrigin(*f);
-
-				tmpin << is.rdbuf();
-
-				if (ubuf.responsecode() == 404)
-				  {
-				    throw GeneralError("Requested URL " + *f + " was not found");
-				  }
-			      }
-			    else // file
-			      {
-				std::ifstream ifs;
-
-				ifs.open(f->c_str());
-
-				if (!ifs.is_open())
-				  {
-				    throw GeneralError("File " + *f + " not found");
-				  }
-
-				//
-				// tell the parser driver where the rules are actually coming
-				// from (needed for error-messages)
-				//
-				driver.setOrigin(*f);
-
-				tmpin << ifs.rdbuf();
-				ifs.close();
-			      }
-			  }
-			else
-			  {
-			    //
-			    // stdin
-			    //
-			    tmpin << std::cin.rdbuf();
-			  }
-
-			//
-			// create a stringbuffer on the heap (will be deleted later) to
-			// hold the file-content. put it into a stream "input"
-			//	
-			std::istream input(new std::stringbuf(tmpin.str()));
-
-			//
-			// new output stream with stringbuffer on the heap
-			//
-			std::ostream converterResult(new std::stringbuf);
-
-			bool wasConverted = false;
-
-			for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
-			     pi != plugins.end();
-			     ++pi)
-			  {
-			    std::vector<PluginConverter*> pcs = (*pi)->createConverters();
-
-			    if (pcs.size() > 0)
-			      {
-				//
-				// go through all converters and rewrite input to converterResult
-				//
-				for (std::vector<PluginConverter*>::iterator it = pcs.begin();
-				     it != pcs.end(); ++it)
-				  {
-				    (*it)->convert(input, converterResult);
-
-				    wasConverted = true;
-
-				    //
-				    // old input buffer can be deleted now
-				    // (but not if we are piping from stdin and this is the
-				    // first conversion, because in this case input is set to
-				    // std::cin.rdbuf() (see above) and cin takes care of
-				    // its buffer deletion itself, so better don't
-				    // interfere!)
-				    //
-				    if (optionPipe && !wasConverted)
-				      {
-					delete input.rdbuf();
-				      }
-
-				    //
-				    // store the current output buffer
-				    //
-				    std::streambuf* tmp = converterResult.rdbuf();
-				    
-				    //
-				    // make a new buffer for the output (=reset the output)
-				    //
-				    converterResult.rdbuf(new std::stringbuf);
-
-				    //
-				    // set the input buffer to be the output of the last
-				    // rewriting. now, after each loop, the converted
-				    // program is in input.
-				    //
-				    input.rdbuf(tmp);
-				  }
-			      }
-			  }
-			char tempfile[L_tmpnam];
-
-
-			//
-			// at this point, the program is in the stream "input" - wither
-			// directly read from the file or as a result of some previous
-			// rewriting!
-			//
-
-			if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM) && wasConverted)
-			  {
-			    //
-			    // we need to read the input-istream now - use a stringstream
-			    // for output and initialize the input-istream to its
-			    // content again
-			    //
-			    std::stringstream ss;
-			    ss << input.rdbuf();
-			    Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
-			    Globals::Instance()->getVerboseStream() << ss.str();
-			    Globals::Instance()->getVerboseStream() << std::endl;
-			    delete input.rdbuf(); 
-			    input.rdbuf(new std::stringbuf(ss.str()));
-			  }
-
-			FILE* fp = 0;
-
-			//
-			// now call dlt if needed
-			//
-			if (optiondlt)
-			  {
-			    mkstemp(tempfile);
-			    
-			    std::ofstream dlttemp(tempfile);
-			    
-			    //
-			    // write program into tempfile
-			    //
-			    dlttemp << input.rdbuf();
-			    
-			    dlttemp.close();
-
-			    std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
-			    
-			    fp = popen(execPreParser.c_str(), "r");
-			    
-			    if (fp == NULL)
-			      {
-				throw GeneralError("Unable to call Preparser dlt");
-			      }
-
-			    __gnu_cxx::stdio_filebuf<char>* fb;
-			    fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
-			    
-			    std::istream inpipe(fb);
-
-			    //
-			    // now we have a program rewriten by dlt - since it should
-			    // be in the stream "input", we have to delete the old
-			    // input-buffer and set input to the buffer from the
-			    // dlt-call
-			    //
-			    delete input.rdbuf(); 
-			    input.rdbuf(fb);
-			  }
-
-			// run the parser
-			driver.parse(input, IDB, EDB);
-
-			if (optiondlt)
-			  {
-			    int dltret = pclose(fp);
-			    
-			    if (dltret != 0)
-			      {
-				throw GeneralError("Preparser dlt returned error");
-			      }
-			  }
-
-			//
-			// wherever the input-buffer was created before - now we don't
-			// need it anymore
-			//
-			delete input.rdbuf();
-
-			if (optiondlt)
-			  {
-			    unlink(tempfile);
-			  }
-		      }
-		    catch (SyntaxError& e)
-		      {
-			std::cerr << e.getErrorMsg() << std::endl;
-			exit(1);
-		      }
-		    catch (GeneralError& e)
-		      {
-			std::cerr << e.getErrorMsg() << std::endl;
-			exit(1);
-		      }
-		  }
-		//	}
-		
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Parsing and converting input           ");
-
-	//
-	// expand constant names
-	//
-	insertNamespaces();
-
-	if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
-	{
-		Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
-		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		IDB.accept(rpv);
-		Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
-		EDB.accept(rpv);
-		Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-
-
-	DEBUG_RESTART_TIMER;
-			
-	//
-	// now call rewriters
-	//
-	bool wasRewritten(0);
-
-	for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
-			pi != plugins.end();
-			++pi)
-	{
-		PluginRewriter* pr = (*pi)->createRewriter();
-
-		if (pr != NULL)
-		{
-			pr->rewrite(IDB, EDB);
-
-			wasRewritten = 1;
-		}
-	}
-
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Calling plugin rewriters               ");
-
-	if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM) && wasRewritten)
-	{
-		Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
-		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		IDB.accept(rpv);
-		Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
-		EDB.accept(rpv);
-		Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-
-
-	/// @todo: when exiting after an exception, we have to cleanup things!
-	// maybe using boost-pointers!
-
-	DEBUG_RESTART_TIMER;
-
-	//
-	// The GraphBuilder creates nodes and dependency edges from the raw program.
-	//
-	GraphBuilder gb;
-
-	NodeGraph nodegraph;
-
-    try
-    {
-      gb.run(IDB, nodegraph, *container);
-    }
-    catch (GeneralError& e)
-    {
-		std::cerr << e.getErrorMsg() << std::endl << std::endl;
-
-		exit(1);
-    }
-
-    //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-    DEBUG_STOP_TIMER("Building dependency graph              ");
-
-    if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
-    {
-        gb.dumpGraph(nodegraph, Globals::Instance()->getVerboseStream());
-    }
-    
-
-    DEBUG_RESTART_TIMER;
-
-	//
-	// now call optimizers
-	//
-	bool wasOptimized(10);
-
-	for (std::vector<PluginInterface*>::iterator pi = plugins.begin();
-			pi != plugins.end();
-			++pi)
-	{
-		PluginOptimizer* po = (*pi)->createOptimizer();
-
-		if (po != NULL)
-		{
-			po->optimize(nodegraph, EDB);
-
-			wasOptimized = 1;
-		}
-	}
-
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Calling plugins optimizers             ");
-
-	if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM) && wasOptimized)
-	{
-		Globals::Instance()->getVerboseStream() << "Optimized graph:" << std::endl;
-		gb.dumpGraph(nodegraph, Globals::Instance()->getVerboseStream());
-		Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
-		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		EDB.accept(rpv);
-		Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-
-	DEBUG_RESTART_TIMER;
-
-	//
-	// The ComponentFinder provides functions for finding SCCs and WCCs from a
-	// set of nodes.
-	//
-	ComponentFinder* cf;
-
-	//
-	// The DependencyGraph identifies and creates the graph components that will
-	// be processed by the GraphProcessor.
-	//
-	DependencyGraph* dg;
-
-	try
-	  {
-	    cf = new BoostComponentFinder;
-
-	    //
-	    // Initializing the DependencyGraph. Its constructor uses the
-	    // ComponentFinder to find relevant graph
-	    // properties for the subsequent processing stage.
-	    //
-	    dg = new DependencyGraph(nodegraph, cf, *container);
-
-
-	    //
-	    // Performing the safety check
-	    //
-	    SafetyChecker schecker(IDB);
-	    schecker();
+	    boost::char_separator<char> sep(",");
+	    std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+	    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
 	    
-	    ///@todo why should we turn off strong safety check?
-	    if (Globals::Instance()->getOption("StrongSafety"))
+	    for (boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+		 f != tok.end(); ++f)
 	      {
-		StrongSafetyChecker sschecker(*dg);
-		sschecker();
+		Globals::Instance()->addFilter(*f);
 	      }
 	  }
-	catch (GeneralError &e)
-	  {
-	    std::cerr << e.getErrorMsg() << std::endl << std::endl;
+	  break;
+	  
+	case 'p':
+	  optionPlugindir = std::string(optarg);
+	  break;
 
-	    exit(1);
-	  }
-	
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Dependency graph building and safety checker     ");
+	case 'a':
+	  Globals::Instance()->setOption("AllModels", 1);
+	  break;
 
-	if (optionNoEval)
-	{
-		delete dg;
-		delete cf;
+	case 'r':
+	  Globals::Instance()->setOption("ReverseOrder", 1);
+	  break;
 
-		exit(0);
-	}
+	case 0:
+	  switch (longid)
+	    {
+	    case 1:
+	      Globals::Instance()->setOption("NoPredicate", 0);
+	      break;
 
-	DEBUG_RESTART_TIMER;
+	    case 2:
+	      Globals::Instance()->setOption("StrongSafety", 0);
+	      break;
 
-	//
-	// The GraphProcessor provides the actual strategy of how to compute the
-	// hex-models of a given dependency graph.
-	//
-	GraphProcessor gp(dg);
+	    case 3:
+	      pctx.setOutputBuilder(new RuleMLOutputBuilder);
+	      // XML output makes only sense with silent:
+	      Globals::Instance()->setOption("Silent", 1);
+	      break;
 
+	    case 4:
+	      optiondlt = true;
+	      break;
 
-	try
-	{
-		//
-		// The GraphProcessor starts its computation with the program's ground
-		// facts as input.
-		// But only if the original EDB is consistent, otherwise, we can skip it
-		// anyway.
-		//
-		if (EDB.isConsistent())
-			gp.run(EDB);
-	}
-	catch (GeneralError &e)
-	{
-		std::cerr << e.getErrorMsg() << std::endl << std::endl;
+	    case 5:
+	      optionNoEval = true;
+	      break;
 
-		exit(1);
-	}
+	    case 6:
+	      optionKeepNSPrefix = true;
+	      break;
 
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Graph processing                       ");
-
-	DEBUG_RESTART_TIMER;
-
-	//
-	// contract constant names again, if specified
-	//
-	if (optionKeepNSPrefix)
-		removeNamespaces();
-
-
-	///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
-
-	//
-	// prepare result container
-	//
-	// if we had any weak constraints, we have to tell the result container the
-	// prefix in order to be able to compute each asnwer set's costs!
-	//
-	std::string wcprefix;
-
-	if (IDB.getWeakConstraints().size() > 0)
-		wcprefix = "wch__";
-
-	ResultContainer result(wcprefix);
-
-	//
-	// put GraphProcessor result into ResultContainer
-	//
-	AtomSet* res;
-
-	while ((res = gp.getNextModel()) != NULL)
-	{
-		try
+	    case 7:
+	      std::string solver(optarg);
+	      if (solver == "dlvdb")
 		{
-			result.addSet(*res);
+		  Globals::Instance()->setOption("Solver",1);
 		}
-		catch (GeneralError &e)
+	      else // default is DLV (set in ProgramCtx)
 		{
-			std::cerr << e.getErrorMsg() << std::endl << std::endl;
-
-			exit(1);
+		  Globals::Instance()->setOption("Solver",0);
 		}
+	      break;
+	    }
+	  break;
+
+	case '?':
+	  pctx.addOption(argv[optind - 1]);
+	  break;
+	}
+    }
+
+  //
+  // before anything else we dump the logo
+  //
+
+  if (!Globals::Instance()->getOption("Silent"))
+    {
+      printLogo();
+    }
+
+  //
+  // no arguments at all: shorthelp
+  //
+  if (argc == 1)
+    {
+      printUsage(std::cerr, false);
+      exit(1);
+    }
+
+  bool inputIsWrong = false;
+
+  //
+  // check if we have any input (stdin, file, or URI)
+  // if inout is not or badly specified, remember this and show shorthelp
+  // later if everthing was ok with the options
+  //
+
+  //
+  // stdin requested, append it first
+  //
+  if (!strcmp(argv[optind - 1], "--"))
+    {
+      optionPipe = true;
+      pctx.addInputSource(argv[optind - 1]);
+    }
+
+  if (optind == argc && !optionPipe)
+    {
+      // no files and no stdin - error
+      inputIsWrong = true;
+    }
+  else if (optind == argc && optionPipe)
+    {
+      // no files and stdin: set the lpfilename to a dummy value
+      Globals::Instance()->lpfilename = "lpgraph.dot";
+    }
+  else
+    {
+      //
+      // collect filenames/URIs
+      //
+      for (int i = optind; i < argc; ++i)
+	{
+	  pctx.addInputSource(argv[i]);
+	}
+    }
+
+  // setup the plugin container
+  pctx.setPluginContainer(PluginContainer::instance(optionPlugindir));
+
+
+  /////////////////////////////////////////////////////////////////
+  //
+  // DLVHEX main execution
+  //
+  /////////////////////////////////////////////////////////////////
+  try
+    {
+
+      /////////////////////////////////////////////////////////////////
+      //
+      // search for plugins
+      //
+      /////////////////////////////////////////////////////////////////
+  
+      ///@todo this could be better
+      Globals::Instance()->setOption("HelpRequested", helpRequested);
+
+      if (helpRequested)
+	{
+	  printUsage(std::cerr, true);
 	}
 
+      pctx.openPlugins();
 
-	///@todo filtering the atoms here is maybe to costly, how
-	///about ignoring the aux names when building the output,
-	///since the custom output builders of the plugins may need
-	///the aux names? Likewise for --filter predicates...
+      //
+      // help was requested -> we are done now
+      //
+      if (helpRequested)
+	{
+	  exit(0);
+	}
+      
+      ///@todo a lonely newline?
+      if (!Globals::Instance()->getOption("Silent"))
+	{
+	  std::cout << std::endl;
+	}
 
-	//
-	// remove auxiliary atoms
-	//
-	result.filterOut(Term::getAuxiliaryNames());
+      //
+      // any unknown options left?
+      //
+      if (!pctx.getOptions()->empty())
+	{
+	  std::cerr << "Unknown option(s):";
+	  
+	  std::vector<std::string>::const_iterator opb = pctx.getOptions()->begin();
+	  
+	  while (opb != pctx.getOptions()->end())
+	    std::cerr << " " << *opb++;
+	  
+	  std::cerr << std::endl;
+	  printUsage(std::cerr, false);
+	  
+	  exit(1);
+	}
+      
+      //
+      // options are all ok, but input is badly specified
+      //
+      if (inputIsWrong)
+	{
+	  printUsage(std::cerr, false);
+	  exit(1);
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // convert input
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.convert();
+      
+      if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM))
+	{
+	  //
+	  // we need to read the input-istream now - use a stringstream
+	  // for output and initialize the input-istream to its
+	  // content again
+	  //
+	  std::stringstream ss;
+	  ss << pctx.getInput().rdbuf();
+	  Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
+	  Globals::Instance()->getVerboseStream() << ss.str();
+	  Globals::Instance()->getVerboseStream() << std::endl;
+	  delete pctx.getInput().rdbuf(); 
+	  pctx.getInput().rdbuf(new std::stringbuf(ss.str()));
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // parse input
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.parse();
+      
+      //
+      // expand constant names
+      ///@todo move to Term
+      //
+      insertNamespaces();
+      
+      if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
+	{
+	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
+	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  pctx.getIDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
+	  pctx.getEDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	}
+      
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // rewrite program
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.rewrite();
+      
+      if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
+	{
+	  Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
+	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  pctx.getIDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
+	  pctx.getEDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // generate node graph
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.createNodeGraph();
+      
+      if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
+	{
+	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
-	///@todo quick hack for dlt
-	if (optiondlt)
-		result.filterOutDLT();
+	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
 
+	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
+	       node != nodegraph->getNodes().end();
+	       ++node)
+	    {
+	      Globals::Instance()->getVerboseStream() << **node << std::endl;
+	    }
+	  
+	  Globals::Instance()->getVerboseStream() << std::endl;
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // optimize program
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.optimize();
+      
+      if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM))
+	{
+	  Globals::Instance()->getVerboseStream() << "Optimized graph:" << std::endl;
 
-	//
-	// apply filter
-	//
-	//if (optionFilter.size() > 0)
-	result.filterIn(Globals::Instance()->getFilters());
+	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
+	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
 
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ");
+	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
+	       node != nodegraph->getNodes().end();
+	       ++node)
+	    {
+	      Globals::Instance()->getVerboseStream() << **node << std::endl;
+	    }
+	  
+	  Globals::Instance()->getVerboseStream() << std::endl;
 
-	DEBUG_RESTART_TIMER;
+	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
+	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  pctx.getEDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // generate dependency graph
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.createDependencyGraph();
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // perform safety check
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.safetyCheck();
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // perform strong safety check
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.strongSafetyCheck();
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // evaluate program
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      if (optionNoEval)
+	{
+	  exit(0);
+	}
+      
+      pctx.evaluate();
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // postprocess results
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.postProcess();
+      
+      //
+      // contract constant names again, if specified
+      //
+      if (optionKeepNSPrefix)
+	{
+	  removeNamespaces();
+	}
+      
+      /////////////////////////////////////////////////////////////////
+      //
+      // output results
+      //
+      /////////////////////////////////////////////////////////////////
+      
+      pctx.output();
+    }
+  catch (GeneralError &e)
+    {
+      std::cerr << e.getErrorMsg() << std::endl << std::endl;
+      exit(1);
+    }
 
-	//
-	// output format
-	//
-	OutputBuilder* outputbuilder = 0;
-
-	// first look if some plugin has an OutputBuilder
-	for (std::vector<PluginInterface*>::const_iterator pi = plugins.begin();
-	     pi != plugins.end(); ++pi)
-	  {
-	    ///@todo this is very clumsy, what should we do if there
-	    ///are more than one output builders available from the
-	    ///atoms?
-	    outputbuilder = (*pi)->createOutputBuilder();
-	  }
-
-	// if no plugin provides an OutputBuilder, we use our own to output the models
-	if (outputbuilder == 0)
-	  {
-	    if (optionXML)
-	      {
-		outputbuilder = new RuleMLOutputBuilder;
-	      }
-	    else
-	      {
-		outputbuilder = new TextOutputBuilder;
-	      }
-	  }
-
-	result.print(std::cout, outputbuilder);
-	    
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("Build output                           ");
-
-	//
-	// was there anything non-error the user should know? dump it directly
-	/*
-	   for (std::vector<std::string>::const_iterator l = global::Messages.begin();
-	   l != global::Messages.end();
-	   l++)
-	   {
-	   std::cout << *l << std::endl;
-	   }
-	   */
-
-	//
-	// cleaning up:
-	//
-	delete outputbuilder;
-
-	delete cf;
-
-	delete dg;
-
-	exit(0);
+  /////////////////////////////////////////////////////////////////
+  //
+  // execution completed
+  //
+  /////////////////////////////////////////////////////////////////
+ 
+ return 0;
 }
 
 
