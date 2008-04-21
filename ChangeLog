@@ -1,3 +1,30 @@
+2008-04-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/AtomFactory.cpp (AtomFactory::insert): Do not create
+	unique AtomPtr.
+
+	* src/dlvhex/dlvhex.cpp: Use ProgramCtx and its state machinery.
+
+	* src/dlvhex/SafetyChecker.cpp: Code cleanups.
+
+	* src/dlvhex/Makefile.am (dlvhex_SOURCES): Add ProgramCtx.cpp and
+	State.cpp.
+
+	* include/dlvhex/Makefile.am (noinst_HEADERS): Add ProgramCtx.h
+	and State.h.
+
+	* include/dlvhex/ProgramCtx.h: New file.
+	* include/dlvhex/State.h: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* include/dlvhex/ModelGenerator.h: Remove ProgramBuilder.h.
+
+	* include/dlvhex/GraphBuilder.h: Clean up interface.
+	* include/dlvhex/ResultContainer.h: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+
 2008-04-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp: Add --solver option.
