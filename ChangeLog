@@ -5,7 +5,10 @@
 
 	* src/dlvhex/dlvhex.cpp: Use ProgramCtx and its state machinery.
 
-	* src/dlvhex/SafetyChecker.cpp: Code cleanups.
+	* src/dlvhex/Component.cpp: Code cleanups.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
 
 	* src/dlvhex/Makefile.am (dlvhex_SOURCES): Add ProgramCtx.cpp and
 	State.cpp.
@@ -16,7 +19,7 @@
 	* include/dlvhex/ProgramCtx.h: New file.
 	* include/dlvhex/State.h: Likewise.
 	* src/dlvhex/ProgramCtx.cpp: Likewise.
-	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.	
 
 	* include/dlvhex/ModelGenerator.h: Remove ProgramBuilder.h.
 
