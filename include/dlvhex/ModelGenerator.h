@@ -38,9 +38,9 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/ProgramBuilder.h"
 #include "dlvhex/AtomNode.h"
-
+#include "dlvhex/AtomSet.h"
+#include "dlvhex/Program.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
