@@ -13,8 +13,10 @@ noinst_HEADERS = \
 	ParserDriver.h \
 	Process.h \
 	ProcessBuf.h \
+	ProgramCtx.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
+	State.h \
 	TextOutputBuilder.h \
 	URLBuf.h
 
