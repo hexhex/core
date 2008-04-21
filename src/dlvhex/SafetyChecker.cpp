@@ -304,18 +304,15 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
 	  const Program& rules = progcomp->getBottom();
 
-	  for (Program::const_iterator ruleit = rules.begin();
-	       ruleit != rules.end();
-	       ++ruleit)
+	  for (Program::const_iterator ruleit = rules.begin(); ruleit != rules.end(); ++ruleit)
             {
 	      const RuleBody_t& body = (*ruleit)->getBody();
+	      const std::vector<ExternalAtom*>& exts = (*ruleit)->getExternalAtoms();
 	      
 	      //
 	      // for this rule: go through all ext-atoms
 	      //
-	      for (std::vector<ExternalAtom*>::const_iterator extit = (*ruleit)->getExternalAtoms().begin();
-		   extit != (*ruleit)->getExternalAtoms().end();
-		   ++extit)
+	      for (std::vector<ExternalAtom*>::const_iterator extit = exts.begin(); extit != exts.end(); ++extit)
                 {
 		  //
 		  // is this atom also in the component?
