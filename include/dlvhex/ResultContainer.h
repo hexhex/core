@@ -83,7 +83,7 @@ public:
     getAnswerSets() const;
 
     void
-    addSet(AtomSet&);
+    addSet(const AtomSet&);
 
     void
     filterOut(const NamesTable<std::string>&);

@@ -46,8 +46,9 @@ ResultContainer::ResultContainer(const std::string& wcpr)
 }
 
 void
-ResultContainer::addSet(AtomSet& res)
+ResultContainer::addSet(const AtomSet& res)
 {
+  ///@todo we can do better!
     AnswerSetPtr as(new AnswerSet(wcprefix));
 
     as->setSet(res);

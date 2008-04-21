@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -215,9 +216,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		  throw PluginError("Could not find plugin for external atom " + ext->getFunctionName());
 		}
 
-	      const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
 	      const Tuple& input = ext->getInputTerms();
-	      Tuple::const_iterator iit = input.begin();
 
 	      //
 	      // check input and output arity of external atoms
@@ -259,6 +258,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      //
 	      // go through all input terms of this external atom
 	      //
+
+	      const std::vector<PluginAtom::InputType>& inputTypes = pluginAtom->getInputTypes();
+	      Tuple::const_iterator iit = input.begin();
+
 	      for (std::vector<PluginAtom::InputType>::const_iterator it = inputTypes.begin();
 		   it != inputTypes.end();
 		   ++it, ++iit)
@@ -403,6 +406,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		    }
 		}
 
+
 	      //
 	      // and now check if we can reuse a previously generated
 	      // auxiliary rule
@@ -412,9 +416,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 	      std::pair<ExtAuxMap::const_iterator, ExtAuxMap::const_iterator> range = auxmap.equal_range(*ext);
 
-	      for (ExtAuxMap::const_iterator it = range.first; it != range.second; ++it)
+	      for (ExtAuxMap::const_iterator rgit = range.first; rgit != range.second; ++rgit)
 		{
-		  const std::pair<std::string, RuleBody_t>& tup = it->second;
+		  const std::pair<std::string, RuleBody_t>& tup = rgit->second;
 		  const RuleBody_t& mauxbody = tup.second;
 
 		  if (auxbody.size() == mauxbody.size() &&
@@ -493,7 +497,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	} // if (!ext->pureGroundInput())
     }
 
-
   //
   // Now we will build the EXTERNAL dependencies, and the missing aggregate deps
   //
@@ -546,22 +549,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	    }
 	}
     }
-}
-
-
-void
-GraphBuilder::dumpGraph(const NodeGraph& nodegraph, std::ostream& out) const
-{
-  out << "Dependency graph - Program Nodes:" << std::endl;
-
-  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph.getNodes().begin();
-       node != nodegraph.getNodes().end();
-       ++node)
-    {
-      out << **node << std::endl;
-    }
-
-  out << std::endl;
 }
 
 

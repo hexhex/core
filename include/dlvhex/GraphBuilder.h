@@ -36,17 +36,13 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Error.h"
-#include "dlvhex/Component.h"
-#include "dlvhex/Rule.h"
-
-#include <iosfwd>
-
 
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
 class PluginContainer;
 class NodeGraph;
+class Program;
 
 /**
  * @brief Class for building a dependency graph from a given program.
@@ -66,18 +62,11 @@ public:
     void
     run(const Program&, NodeGraph&, PluginContainer&) throw (PluginError);
 
-
-    /**
-     * @brief Debug dump.
-     */
-    void
-    dumpGraph(const NodeGraph&, std::ostream&) const;
-
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _GRAPHBUILDER_H */
+#endif /* _DLVHEX_GRAPHBUILDER_H */
 
 
 // Local Variables:
