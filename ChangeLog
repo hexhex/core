@@ -1,3 +1,48 @@
+2008-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: ASPSolver now never
+	includes the EDB in the result.
+
+	* src/dlvhex/dlvhex.cpp: Add support for DLVDBProcess.
+
+	* src/dlvhex/ProgramCtx.cpp: Use DLVProcess by default.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Fix a bug in checking
+	the compatible sets.
+
+	* src/dlvhex/AtomSet.cpp (AtomSet::difference): Fix set difference.
+
+	* include/dlvhex/Registry.h (Registry::storeAtom): Remove method.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
+
+	* include/dlvhex/Makefile.am: Remove AtomFactory.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/DependencyGraph.h: Use ProgramCtx.
+	* include/dlvhex/GraphProcessor.h: Likewise.
+	* include/dlvhex/ModelGenerator.h: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* include/dlvhex/DLVProcess.h (DLVDBProcess): New class for dlvdb.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+	* include/dlvhex/Component.h: Declare PluginContainer.
+	* src/dlvhex/Component.cpp: Likewise.
+
+	* include/dlvhex/AtomFactory.h: Remove.
+	* src/dlvhex/AtomFactory.cpp: Likewise.
+
+	* include/dlvhex/AtomSet.h (AtomSet::AtomCompare::operator()): Add const qualifier.
+
 2008-04-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/AtomFactory.cpp (AtomFactory::insert): Do not create
