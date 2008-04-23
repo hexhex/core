@@ -135,6 +135,7 @@ DLVDBProcess::DLVDBProcess()
 void
 DLVDBProcess::spawn()
 {
+#if defined(HAVE_DLVDB)
   std::vector<std::string> tmp;
 
   tmp.push_back(DLVDBPATH);
@@ -147,6 +148,9 @@ DLVDBProcess::spawn()
   tmp.push_back("--"); // request stdin as last parameter!
 
   proc.open(tmp);
+#else
+  DLVProcess::spawn();
+#endif /* HAVE_DLVDB */
 }
 
 DLVHEX_NAMESPACE_END
