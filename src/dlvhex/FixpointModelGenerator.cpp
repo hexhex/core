@@ -37,16 +37,16 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/ModelGenerator.h"
-#include "dlvhex/DLVProcess.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-FixpointModelGenerator::FixpointModelGenerator(PluginContainer& c)
-  : container(c)
+FixpointModelGenerator::FixpointModelGenerator(const ProgramCtx& c)
+  : ModelGenerator(c)
 { }
 
 
@@ -91,12 +91,8 @@ FixpointModelGenerator::compute(const Program& program,
 
   models.clear();
   
-  //
-  // call the ASP solver with noEDB turned on - we don't want the
-  // initial set of facts in the result here!
-  //
-  DLVProcess asp(true);
-  std::auto_ptr<BaseASPSolver> solver(asp.createSolver());
+  // get a new ASP Solver
+  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
 
   std::vector<AtomSet> answersets;
     
@@ -156,7 +152,7 @@ FixpointModelGenerator::compute(const Program& program,
 	{
 	  try
             {
-	      EvaluateExtatom eea(*a, container);
+	      EvaluateExtatom eea(*a, *ctx.getPluginContainer());
 	      eea.evaluate(currentI, extresult);
             }
 	  catch (GeneralError&)

@@ -45,7 +45,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class PluginContainer;
+class ProgramCtx;
 
 
 /**
@@ -54,7 +54,14 @@ class PluginContainer;
  */
 class DLVHEX_EXPORT ModelGenerator
 {
+ protected:
+  const ProgramCtx& ctx;
+  
  public:
+  ModelGenerator(const ProgramCtx& c)
+    : ctx(c)
+  { }
+
   virtual
   ~ModelGenerator()
   { }
@@ -83,12 +90,9 @@ class DLVHEX_EXPORT ModelGenerator
  */
 class DLVHEX_EXPORT FixpointModelGenerator : public ModelGenerator
 {
- private:
-  PluginContainer& container;
-  
  public:
   /// Ctor
-  FixpointModelGenerator(PluginContainer&);
+  FixpointModelGenerator(const ProgramCtx&);
 
   /**
    * @brief Computes models of a set of nodes by fixpoint calculation.
@@ -120,7 +124,7 @@ class DLVHEX_EXPORT OrdinaryModelGenerator : public ModelGenerator
 {
 public:
   /// Ctor
-  OrdinaryModelGenerator();
+  OrdinaryModelGenerator(const ProgramCtx&);
   
   /**
    * @brief Computes models of a set of nodes by one-shot evaluation.
@@ -150,12 +154,9 @@ public:
  */
 class DLVHEX_EXPORT GuessCheckModelGenerator : public ModelGenerator
 {
- private:
-  PluginContainer& container;
-  
  public:
   /// Ctor
-  GuessCheckModelGenerator(PluginContainer&);
+  GuessCheckModelGenerator(const ProgramCtx&);
     
   /**
    * @brief Computes models of a set of nodes by guess-n-check evaluation.

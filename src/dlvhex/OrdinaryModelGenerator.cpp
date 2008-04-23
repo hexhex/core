@@ -39,12 +39,12 @@
 #include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/DLVProcess.h"
-
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-OrdinaryModelGenerator::OrdinaryModelGenerator()
+OrdinaryModelGenerator::OrdinaryModelGenerator(const ProgramCtx& c)
+  : ModelGenerator(c)
 { }
 
 
@@ -89,15 +89,13 @@ OrdinaryModelGenerator::compute(const Program& program,
 
   models.clear();
 
-
   ///
-  /// @todo: we use the noEDB switch here as well, because we don't want
-  /// any extatom-replacement predicates to be in the result - the asp
-  /// solver result parser would throw them away (ho) and so we couldn't get
-  /// rid of them any more. this is why we have to add the input edb below again!
+  /// @todo: we don't get any extatom-replacement predicates in the
+  /// result - the asp solver result parser would throw them away (ho)
+  /// and so we couldn't get rid of them any more. this is why we have
+  /// to add the input edb below again!
   ///
-  DLVProcess asp(true);
-  std::auto_ptr<BaseASPSolver> solver(asp.createSolver());
+  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
 
   std::vector<AtomSet> answersets;
 

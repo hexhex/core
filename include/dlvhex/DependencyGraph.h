@@ -49,7 +49,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class PluginContainer;
+class ProgramCtx;
 
 /**
  * @brief Holds information for the components in a dependency graph.
@@ -65,9 +65,7 @@ public:
      * @brief Constructor that builds the dependency graph.
      *
      */
-    DependencyGraph(const NodeGraph&,
-                    ComponentFinder*,
-		    PluginContainer&);
+    DependencyGraph(ComponentFinder*, const ProgramCtx&);
 
 
     /**

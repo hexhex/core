@@ -40,12 +40,13 @@
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/PrintVisitor.h"
-
+#include "dlvhex/DependencyGraph.h"
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-GraphProcessor::GraphProcessor(DependencyGraph *dg)
-  : depGraph(dg), resultModels()
+GraphProcessor::GraphProcessor(const ProgramCtx& c)
+  : ctx(c), resultModels()
 {
   resultSetIndex = resultModels.begin();
 }
@@ -54,6 +55,9 @@ GraphProcessor::GraphProcessor(DependencyGraph *dg)
 void
 GraphProcessor::run(const AtomSet& in)
 {
+  DependencyGraph* const depGraph = ctx.getDependencyGraph();
+  assert(depGraph != 0);
+
   Subgraph* graph(depGraph->getNextSubgraph());
   
   if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
@@ -262,7 +266,7 @@ GraphProcessor::run(const AtomSet& in)
 			//
 			// make a component from the node-set
 			//
-			ModelGenerator* mg = new OrdinaryModelGenerator();
+			ModelGenerator* mg = new OrdinaryModelGenerator(ctx);
 
 			Component* weakComponent = new ProgramComponent(tmpGraph.getNodes(), mg);
 

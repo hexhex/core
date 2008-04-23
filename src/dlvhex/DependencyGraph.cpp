@@ -34,6 +34,7 @@
 
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/ProgramCtx.h"
 
 #include <sstream>
 
@@ -46,10 +47,9 @@ DependencyGraph::DependencyGraph()
 */
 
 
-DependencyGraph::DependencyGraph(const NodeGraph& ng,
-                                 ComponentFinder* cf,
-				 PluginContainer& container)
-  : nodegraph(ng), componentFinder(cf)
+DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
+
+  : nodegraph(*ctx.getNodeGraph()), componentFinder(cf)
 {
     const std::vector<AtomNodePtr> allnodes = nodegraph.getNodes();
 
@@ -90,11 +90,11 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
             //
             if (hasNegEdge(*scc))
             {
-                mg = new GuessCheckModelGenerator(container);
+                mg = new GuessCheckModelGenerator(ctx);
             }
             else
             {
-                mg = new FixpointModelGenerator(container);
+                mg = new FixpointModelGenerator(ctx);
             }
 
 	    ///@todo another memory leak *sigh*
@@ -141,7 +141,7 @@ DependencyGraph::DependencyGraph(const NodeGraph& ng,
             if (typeid(*((*weaknode)->getAtom())) == typeid(ExternalAtom))
             {
                 //std::cout << "single node external atom!" << std::endl;
-	      Component* comp = new ExternalComponent(*weaknode, container);
+	      Component* comp = new ExternalComponent(*weaknode, *ctx.getPluginContainer());
 
                 //
                 // the ExternalComponent-object only consists of a single

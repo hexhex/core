@@ -496,7 +496,7 @@ CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   // ComponentFinder to find relevant graph
   // properties for the subsequent processing stage.
   //
-  DependencyGraph* dg = new DependencyGraph(*ctx->getNodeGraph(), cf, *ctx->getPluginContainer());
+  DependencyGraph* dg = new DependencyGraph(cf, *ctx);
   ctx->setDependencyGraph(dg);
 
   boost::shared_ptr<State> next(new SafetyCheckState);
@@ -566,7 +566,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
 
   std::vector<AtomSet> models;
 
-  OrdinaryModelGenerator omg;
+  OrdinaryModelGenerator omg(*ctx);
 
   //
   // The GraphProcessor starts its computation with the program's ground
@@ -624,7 +624,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   // The GraphProcessor provides the actual strategy of how to compute the
   // hex-models of a given dependency graph.
   //
-  GraphProcessor gp(ctx->getDependencyGraph());
+  GraphProcessor gp(*ctx);
 
   //
   // The GraphProcessor starts its computation with the program's ground

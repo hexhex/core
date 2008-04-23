@@ -35,12 +35,14 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/DependencyGraph.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/Component.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
+
+// forward declarations
+class ProgramCtx;
 
 /**
  * @brief Control center for traversing and evaluating the program graph.
@@ -51,7 +53,7 @@ public:
 
     /// Ctor.
     explicit
-    GraphProcessor(DependencyGraph*);
+    GraphProcessor(const ProgramCtx&);
 
     /// evaluate graph with supplied EDB
     void
@@ -64,9 +66,9 @@ public:
 private:
 
     /**
-     * evaluate this dependency graph
+     * evaluate this Program context
      */
-    DependencyGraph *depGraph;
+    const ProgramCtx& ctx;
 
     /**
      * @brief Internal result retrieval pointer.
