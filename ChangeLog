@@ -1,9 +1,24 @@
 2008-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/State.h (State::setupProgramCtx): New method.
+	(SetupProgramCtxState): New state class.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* include/dlvhex/ProgramCtx.h (ProgramCtx::setupProgramCtx): New state action.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* include/dlvhex/PluginInterface.h (PluginInterface::setupProgramCtx):
+	New method for the plugins as a last change to setup the
+	ProgramCtx right before we start evaluating it.
+
+	* src/dlvhex/DLVProcess.cpp (DLVDBProcess::spawn): Check if
+	configure found dlvdb.
+
 	* src/testsuite/dlvhex/ASPsolverTest.cpp: ASPSolver now never
 	includes the EDB in the result.
 
 	* src/dlvhex/dlvhex.cpp: Add support for DLVDBProcess.
+	Add support for setting up the ProgramCtx in the plugins.
 
 	* src/dlvhex/ProgramCtx.cpp: Use DLVProcess by default.
 
