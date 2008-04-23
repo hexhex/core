@@ -87,7 +87,7 @@ public:
     struct DLVHEX_EXPORT AtomCompare
     {
         bool 
-        operator() (const AtomPtr& a, const AtomPtr& b)
+        operator() (const AtomPtr& a, const AtomPtr& b) const
         {
             return *a < *b;
         }
