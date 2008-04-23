@@ -42,11 +42,12 @@
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/OutputBuilder.h"
-#include "dlvhex/Process.h"
+#include "dlvhex/DLVProcess.h"
 #include "dlvhex/State.h"
 
 #include <boost/shared_ptr.hpp>
 
+#include <sstream>
 #include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -60,7 +61,7 @@ ProgramCtx::ProgramCtx()
     EDB(new AtomSet),
     nodegraph(new NodeGraph),
     depgraph(0),
-    solver(0),
+    solver(new DLVProcess),
     result(0),
     outputbuilder(0),
     state(boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
