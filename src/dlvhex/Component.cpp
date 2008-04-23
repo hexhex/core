@@ -38,6 +38,7 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
+#include "dlvhex/PluginContainer.h"
 
 #include <iostream>
 

@@ -44,6 +44,10 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declarations
+class PluginContainer;
+
+
 /**
  * @brief Component class.
  *
@@ -194,8 +198,7 @@ class DLVHEX_EXPORT ExternalComponent : public Component
 public:
 
     /// Ctor.
-    explicit
-      ExternalComponent(AtomNodePtr, PluginContainer&);
+    ExternalComponent(AtomNodePtr, PluginContainer&);
 
     /**
      * @brief Computes the result of the external computation.
