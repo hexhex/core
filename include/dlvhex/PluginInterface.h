@@ -487,6 +487,7 @@ DLVHEX_NAMESPACE_BEGIN
 class Program;
 class NodeGraph;
 class OutputBuilder;
+class ProgramCtx;
 
 
 /**
@@ -991,6 +992,14 @@ public:
     {
       return 0;
     }
+
+    /**
+     * Altering the ProgramCtx is done just before we start our
+     * engines and evaluate the Program.
+     */
+    virtual void
+    setupProgramCtx(ProgramCtx&)
+    {  }
 
     /**
      * \brief Fills a mapping from atom names to the plugin's atom objects.
