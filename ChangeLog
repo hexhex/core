@@ -1,3 +1,10 @@
+2008-04-23  Alessandra Martello  <a.martello@mat.unical.it>
+
+	* include/dlvhex/Makefile.am: Install Process.h, ProcessBuf.h,
+	ProgramCtx.h, and DLVProcess.h.
+
+	* src/dlvhex/DLVProcess.cpp: Use -ORdr- in dlvdb invocation.
+
 2008-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/State.h (State::setupProgramCtx): New method.
