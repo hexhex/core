@@ -93,6 +93,11 @@ void
 State::optimize(ProgramCtx*)
 { }
 
+
+void
+State::createDependencyGraph(ProgramCtx*)
+{ }
+
 void
 State::safetyCheck(ProgramCtx*)
 { }
@@ -102,7 +107,7 @@ State::strongSafetyCheck(ProgramCtx*)
 { }
 
 void
-State::createDependencyGraph(ProgramCtx*)
+State::setupProgramCtx(ProgramCtx*)
 { }
 
 void
@@ -523,7 +528,7 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
   if (ctx->getDependencyGraph() == 0)
     {
       // no dependency graph: continue with the evaluation of the IDB/EDB
-      next = boost::shared_ptr<State>(new EvaluateProgramState);
+      next = boost::shared_ptr<State>(new SetupProgramCtxState);
     }
   else
     {
@@ -546,11 +551,46 @@ StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
   StrongSafetyChecker sschecker(*ctx->getDependencyGraph());
   sschecker();
 
-  boost::shared_ptr<State> next(new EvaluateDepGraphState);
+  boost::shared_ptr<State> next(new SetupProgramCtxState);
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   DEBUG_STOP_TIMER("Strong safety checker     ");
+}
+
+
+void
+SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
+{
+  DEBUG_START_TIMER;
+
+  //
+  // now let the plugins setup the ProgramCtx
+  //
+  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
+       pi != ctx->getPlugins()->end();
+       ++pi)
+    {
+      (*pi)->setupProgramCtx(*ctx);
+    }
+
+
+  boost::shared_ptr<State> next;
+
+  if (ctx->getDependencyGraph() == 0)
+    {
+      // no dependency graph: continue with the evaluation of the IDB/EDB
+      next = boost::shared_ptr<State>(new EvaluateProgramState);
+    }
+  else
+    {
+      next = boost::shared_ptr<State>(new EvaluateDepGraphState);
+    }
+
+  changeState(ctx, next);
+
+  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  DEBUG_STOP_TIMER("Setup ProgramCtx             ");
 }
 
 

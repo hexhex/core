@@ -84,6 +84,9 @@ class DLVHEX_EXPORT State
   createDependencyGraph(ProgramCtx*);
 
   virtual void
+  setupProgramCtx(ProgramCtx*);
+
+  virtual void
   evaluate(ProgramCtx*);
 
   virtual void
@@ -142,6 +145,14 @@ class DLVHEX_EXPORT OptimizeState : public State
 };
 
 
+class DLVHEX_EXPORT CreateDependencyGraphState : public State
+{
+ public:
+  virtual void
+  createDependencyGraph(ProgramCtx*);
+};
+
+
 class DLVHEX_EXPORT SafetyCheckState : public State
 {
  public:
@@ -158,11 +169,11 @@ class DLVHEX_EXPORT StrongSafetyCheckState : public State
 };
 
 
-class DLVHEX_EXPORT CreateDependencyGraphState : public State
+class DLVHEX_EXPORT SetupProgramCtxState : public State
 {
  public:
   virtual void
-  createDependencyGraph(ProgramCtx*);
+  setupProgramCtx(ProgramCtx*);
 };
 
 
