@@ -36,7 +36,6 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/Atom.h"
-#include "dlvhex/AtomFactory.h"
 #include "dlvhex/Repository.h"
 
 
@@ -55,19 +54,6 @@ public:
      */
     static Registry*
     Instance();
-
-    /**
-     * @brief Stores an Atom.
-     *
-     * Using boost::shared_ptr, the ownership over a is transferred to the
-     * shared pointer. The pointer Atom* must not be deleted after this call.
-     * This method is supposed to be used for storing ground atoms.
-     * The Atom is stored in the singleton instance of AtomFactory, which
-     * maintains a set of Atoms, taking care of uniqueness of its members and
-     * therefore optimal memory management. 
-     */
-    AtomPtr
-    storeAtom(Atom*);
 
     /**
      * @brief Stores a ProgramObject.

@@ -96,7 +96,7 @@
 %union {
     std::string*      string;
     int               integer;
-    DLVHEX_NAMESPACE AtomPtr*          atom;
+    DLVHEX_NAMESPACE Atom*             atom;
     DLVHEX_NAMESPACE Term*             term;
     DLVHEX_NAMESPACE Tuple*            terms;
     DLVHEX_NAMESPACE ExternalAtom*     extatom;
@@ -398,21 +398,21 @@ query     : body BOOL_QUERY
 rule0:
     user_pred
         {
-            if (!(**$1).isGround())
+            if (!$1->isGround())
+	      {
                 error(yylloc, "fact not safe");
+	      }
             
-            EDB.insert(*$1);
-
-            delete $1;
+            EDB.insert(AtomPtr($1));
         }
     | user_pred CONS
         {
-            if (!(**$1).isGround())
+            if (!$1->isGround())
+	      {
                 error(yylloc, "fact not safe");
+	      }
 
-            EDB.insert(*$1);
-
-            delete $1;
+            EDB.insert(AtomPtr($1));
         }
     | user_pred CONS body
         {
@@ -424,9 +424,7 @@ rule0:
             //
             // add atom pointer to rule head
             //
-            head.insert(*$1);
-
-            delete $1;
+            head.insert(AtomPtr($1));
 
             //
             // create new rule with head and body
@@ -536,23 +534,15 @@ disj:
             //
             // add both atom pointers to rule head
             //
-            $$->insert(*$1);
-
-            delete $1;
-
-            $$->insert(*$3);
-            
-            delete $3;
-
+            $$->insert(AtomPtr($1));
+            $$->insert(AtomPtr($3));
         }
     | disj HEAD_SEPARATOR user_pred
         {
             //
             // add atom pointer to rule head
             //
-            $1->insert(*$3);
-
-            delete $3;
+	    $1->insert(AtomPtr($3));
 
             $$ = $1;
         }
@@ -590,9 +580,7 @@ literal:
             //
             // create literal with atom
             //
-            $$ = new Literal(*$1);
-
-            delete $1;
+            $$ = new Literal(AtomPtr($1));
 
             //
             // Storing the literal as a ProgramObject. We don't have to take care
@@ -605,9 +593,7 @@ literal:
             //
             // create weakly negated literal with atom
             //
-            $$ = new Literal(*$2, true);
-
-            delete $2;
+            $$ = new Literal(AtomPtr($2), true);
 
             //
             // Storing the literal as a ProgramObject. We don't have to take care
@@ -705,13 +691,7 @@ user_pred:
             //
             try
             {
-                Atom* a = new Atom(*$2);
-
-                //
-                // Storing the atom as a ProgramObject. We don't have to take care
-                // of deleting this pointer any more now.
-                //
-                $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+                $$ = new Atom(*$2);
             }
             catch (SyntaxError& e)
             {
@@ -727,13 +707,7 @@ user_pred:
             //
             try
             {
-                Atom* a = new Atom(*$1, *$3);
-
-                //
-                // Storing the atom as a ProgramObject. We don't have to take care
-                // of deleting this pointer any more now.
-                //
-                $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+                $$ = new Atom(*$1, *$3);
             }
             catch (SyntaxError& e)
             {
@@ -750,13 +724,7 @@ user_pred:
             //
             try
             {
-                Atom* a = new Atom(*$3, 1);
-
-                //
-                // Storing the atom as a ProgramObject. We don't have to take care
-                // of deleting this pointer any more now.
-                //
-                $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+                $$ = new Atom(*$3, true);
             }
             catch (SyntaxError& e)
             {
@@ -770,16 +738,9 @@ user_pred:
             //
             // create negated atom from predicate name and arguments
             //
-            //Atom* a = new Atom((std::string)$2, *$4, 1);
             try
             {
-                Atom* a = new Atom(*$2, *$4, 1);
-
-                //
-                // Storing the atom as a ProgramObject. We don't have to take care
-                // of deleting this pointer any more now.
-                //
-                $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+                $$ = new Atom(*$2, *$4, true);
             }
             catch (SyntaxError& e)
             {
@@ -796,9 +757,8 @@ user_pred:
             //
             Tuple t;
             t.push_back(*$3);
-            Atom* a = new Atom("#int", t);
-            a->setAlwaysFO();
-            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+            $$ = new Atom("#int", t);
+            $$->setAlwaysFO();
 
             delete $3;
         }
@@ -864,29 +824,21 @@ propositional_atom:
     ident
         {
             //
-            // create new atom from string
-            //
-            Atom* a = 0;
-
-            //
             // construction of an atom could throw an exception - don't throw
             // same exception again, but use bison's error handler as a general
             // interface for all errors that happen within the parsing.
             //
             try
-            {
-                a = new Atom(*$1);
-            }
+	      {
+		//
+		// create new atom from string
+		//
+                $$ = new Atom(*$1);
+	      }
             catch (SyntaxError& e)
-            {
+	      {
                 error(yylloc, e.what());
-            }
-
-            //
-            // Storing the atom as a ProgramObject. We don't have to take care
-            // of deleting this pointer any more now.
-            //
-            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+	      }
 
             delete $1;
         }
@@ -895,13 +847,7 @@ propositional_atom:
             //
             // create new negated atom from string
             // 
-            Atom* a = new Atom(*$2, 1);
-
-            //
-            // Storing the atom as a ProgramObject. We don't have to take care
-            // of deleting this pointer any more now.
-            //
-            $$ = new AtomPtr(Registry::Instance()->storeAtom(a));
+            $$ = new Atom(*$2, true);
 
             delete $2;
         }

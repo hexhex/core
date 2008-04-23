@@ -37,7 +37,7 @@
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/DependencyGraph.h"
 #include "dlvhex/GraphProcessor.h"
-#include "dlvhex/AtomFactory.h"
+#include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginContainer.h"
 
 #include <sstream>
@@ -75,7 +75,6 @@ TestGraphProcessor::setUp()
 void
 TestGraphProcessor::tearDown() 
 {
-    AtomFactory::Instance()->reset();
 }
 
 void
@@ -130,33 +129,33 @@ TestGraphProcessor::testSimple()
     std::vector<Rule*> rules;
     
 
-    Program prog;
+    ProgramCtx ctx;
+    ctx.setPluginContainer(PluginContainer::instance(""));
+    ctx.setNodeGraph(new NodeGraph);
 
     rules.push_back(new Rule(h1, b1, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
     rules.push_back(new Rule(h2, b2, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
     rules.push_back(new Rule(h3, b3, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
     rules.push_back(new Rule(h4, b4, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
     rules.push_back(new Rule(h5, b5, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
     rules.push_back(new Rule(h6, b6, "", 0));
-    prog.addRule(rules.back());
+    ctx.getIDB()->addRule(rules.back());
 
     AtomSet facts;
 
-    NodeGraph ng;
     GraphBuilder gb;
-    PluginContainer* container = PluginContainer::instance("");
 
-    gb.run(prog, ng, *container);
+    gb.run(*ctx.getIDB(), *ctx.getNodeGraph(), *ctx.getPluginContainer());
 
     ComponentFinder* cf = new BoostComponentFinder;
-    DependencyGraph dg(ng, cf, *container);
+    ctx.setDependencyGraph(new DependencyGraph(cf, ctx));
 
-    GraphProcessor gp(&dg);
+    GraphProcessor gp(ctx);
     
     gp.run(facts);
 

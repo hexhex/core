@@ -131,7 +131,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
       //
       if (head.size() == 0)
 	{
-	  AtomPtr va = Registry::Instance()->storeAtom(new boolAtom);
+	  AtomPtr va(new boolAtom);
 	  
 	  AtomNodePtr vn = nodegraph.addUniqueHeadNode(va);
 	  
@@ -448,10 +448,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 	      //
 	      // make a new atom with the ext-parameters as arguments,
-	      // this will be the head of the auxiliary rule; add this
-	      // atom to the global atom store
+	      // this will be the head of the auxiliary rule
 	      //
-	      AtomPtr auxheadatom = Registry::Instance()->storeAtom(new Atom(auxname, extinput));
+	      AtomPtr auxheadatom(new Atom(auxname, extinput));
 
 	      //
 	      // add a new head node for the graph with this atom

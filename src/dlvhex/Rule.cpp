@@ -255,9 +255,8 @@ WeakConstraint::getHead() const
       std::stringstream wcheadname;
       wcheadname << "wch__" << this->uniqueID;
       Term::registerAuxiliaryName(wcheadname.str());
-
-      Atom* at = new Atom(wcheadname.str(), hargs);
-      AtomPtr hatom(Registry::Instance()->storeAtom(at));
+      
+      AtomPtr hatom(new Atom(wcheadname.str(), hargs));
 
       head.insert(hatom);
     }

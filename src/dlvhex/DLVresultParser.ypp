@@ -181,7 +181,7 @@ factlist:
 
             $$ = &(answersets.back());
 
-            AtomPtr ap = Registry::Instance()->storeAtom($1);
+            AtomPtr ap($1);
 
             //
             // inserting the smart pointer into the AtomSet. If no other copy of
@@ -199,7 +199,7 @@ factlist:
             //
             // cf. comment above.
             //
-            AtomPtr ap = Registry::Instance()->storeAtom($3);
+            AtomPtr ap($3);
 
             $1->insert(ap);
 

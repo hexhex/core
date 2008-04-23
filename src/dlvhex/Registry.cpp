@@ -51,17 +51,6 @@ Registry::Instance()
 }
 
 
-AtomPtr
-Registry::storeAtom(Atom* a)
-{
-//    AtomPtr ap(a);
-
-    return AtomFactory::Instance()->insert(a);
-
-//    return ap;
-}
-
-
 ProgramObjectPtr
 Registry::storeObject(ProgramObject* po)
 {
