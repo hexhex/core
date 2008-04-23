@@ -34,7 +34,6 @@
 #include "testsuite/dlvhex/ASPsolverTest.h"
 
 #include "dlvhex/Error.h"
-#include "dlvhex/AtomFactory.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/DLVProcess.h"
 #include "dlvhex/Program.h"
@@ -54,20 +53,17 @@ ASPsolverTest::setUp()
 void
 ASPsolverTest::tearDown() 
 {
-    AtomFactory::Instance()->reset();
 }
 
 void
 ASPsolverTest::testResult()
 {
-    DLVProcess aspedb(false);
-    DLVProcess aspnoedb(true);
+    DLVProcess dlv;
 
     std::vector<AtomSet> answersets;
     std::vector<AtomSet>::const_iterator as;
 
-    std::auto_ptr<BaseASPSolver> solver(aspedb.createSolver());
-    std::auto_ptr<BaseASPSolver> noedbsolver(aspnoedb.createSolver());
+    std::auto_ptr<BaseASPSolver> solver(dlv.createSolver());
     
     //
     // empty model: { a :- b }
@@ -105,7 +101,7 @@ ASPsolverTest::testResult()
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     answersets.clear();
     
     //
@@ -143,27 +139,23 @@ ASPsolverTest::testResult()
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb3, edb3, answersets));
     CPPUNIT_ASSERT(answersets.size() == 2);
     as = answersets.begin();
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     ++as;
-    CPPUNIT_ASSERT(as->size() == 2);
+    CPPUNIT_ASSERT(as->size() == 1);
     answersets.clear();
 
 
+    //
+    // single fact program
+    //
     Program idb4;
     AtomSet edb4;
     Tuple t4;
     t4.push_back(Term("b"));
     edb4.insert(AtomPtr(new Atom(t4)));
 
-    // now calling with noEDB=0, b should not be in the result then!
+    // b should not be in the result then!
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb4, edb4, answersets));
-    CPPUNIT_ASSERT(answersets.size() == 1);
-    as = answersets.begin();
-    CPPUNIT_ASSERT(as->size() == 1);
-    answersets.clear();
-
-    // now calling with noEDB=1, b should not be in the result then!
-    CPPUNIT_ASSERT_NO_THROW(noedbsolver->solve(idb4, edb4, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
