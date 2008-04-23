@@ -6,14 +6,10 @@ noinst_HEADERS = \
 	ASPSolver.tcc \
 	DLVresultFlexLexer.h \
 	DLVresultParserDriver.h \
-	DLVProcess.h \
 	GraphProcessor.h \
 	HexFlexLexer.h \
 	HexParserDriver.h \
 	ParserDriver.h \
-	Process.h \
-	ProcessBuf.h \
-	ProgramCtx.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
 	State.h \
@@ -32,6 +28,7 @@ pkginclude_HEADERS = \
 	Component.h \
 	Dependency.h \
 	DependencyGraph.h \
+	DLVProcess.h \
 	Error.h \
 	EvaluateExtatom.h \
 	ExternalAtom.h \
@@ -42,11 +39,14 @@ pkginclude_HEADERS = \
 	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
-        PlatformDefinitions.h \
+    PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \
+	Process.h \
+	ProcessBuf.h \
 	Program.h \
+	ProgramCtx.h \
 	Registry.h \
 	Repository.h \
 	ResultContainer.h \

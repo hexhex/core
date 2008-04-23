@@ -140,7 +140,7 @@ DLVDBProcess::spawn()
 
   tmp.push_back(DLVDBPATH);
   tmp.push_back("-DBSupport"); // turn on database support
-  tmp.push_back("-ORdr"); // turn on rewriting of false body rules
+  tmp.push_back("-ORdr-"); // turn on rewriting of false body rules
   // never include the set of initial facts in the answer sets
   tmp.push_back("-nofacts");
   tmp.push_back("-silent");
