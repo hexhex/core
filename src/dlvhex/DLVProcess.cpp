@@ -44,34 +44,11 @@
 DLVHEX_NAMESPACE_BEGIN
 
 
-DLVProcess::DLVProcess(bool noEDB)
+DLVProcess::DLVProcess()
   : proc(), iopipe(&proc)
 {
   // let ProcessBuf throw std::ios_base::failure
   iopipe.exceptions(std::ios_base::badbit);
-
-  unsigned solver = Globals::Instance()->getOption("Solver");
-
-  switch(solver)
-    {
-    case 0:
-      argv.push_back(DLVPATH);
-      break;
-#if defined(HAVE_DLVDB)
-    case 1:
-      argv.push_back(DLVDBPATH);
-      argv.push_back("-DBSupport"); // turn on database support
-      argv.push_back("-ORdr"); // turn on rewriting of false body rules
-      break;
-#endif /* HAVE_DLVDB */
-    default:
-      throw FatalError("Wrong solver specified!");
-    }
-
-  argv.push_back("-silent");
-    
-  if (noEDB)
-    argv.push_back("-nofacts");
 }
 
 
@@ -105,8 +82,14 @@ DLVProcess::addOption(const std::string& option)
 void
 DLVProcess::spawn()
 {
-  std::vector<std::string> tmp = argv;
-  tmp.push_back("--");
+  std::vector<std::string> tmp;
+
+  tmp.push_back(DLVPATH);
+  // never include the set of initial facts in the answer sets
+  tmp.push_back("-nofacts");
+  tmp.push_back("-silent");
+  tmp.insert(tmp.end(), argv.begin(), argv.end());
+  tmp.push_back("--"); // request stdin as last parameter!
 
   proc.open(tmp);
 }
@@ -142,6 +125,29 @@ DLVProcess::getInput()
   return iopipe;
 }
 
+
+
+DLVDBProcess::DLVDBProcess()
+  : DLVProcess()
+{ }
+
+
+void
+DLVDBProcess::spawn()
+{
+  std::vector<std::string> tmp;
+
+  tmp.push_back(DLVDBPATH);
+  tmp.push_back("-DBSupport"); // turn on database support
+  tmp.push_back("-ORdr"); // turn on rewriting of false body rules
+  // never include the set of initial facts in the answer sets
+  tmp.push_back("-nofacts");
+  tmp.push_back("-silent");
+  tmp.insert(tmp.end(), argv.begin(), argv.end());
+  tmp.push_back("--"); // request stdin as last parameter!
+
+  proc.open(tmp);
+}
 
 DLVHEX_NAMESPACE_END
 

@@ -55,23 +55,25 @@ class BaseASPSolver;
  */
 class DLVHEX_EXPORT DLVProcess : public Process
 {
-private:
+ protected:
   // communication buffer
   ProcessBuf proc;
-
+  
   // iostream to the dlv process
   std::iostream iopipe;
-
+  
   // argument vector
   std::vector<std::string> argv;
-      
-public:
-  /// @param noEDB If true, then the result will not contain the program's EDB.
-  DLVProcess(bool noEDB = true);
+  
+ public:
+  DLVProcess();
 
   virtual
   ~DLVProcess();
 
+  /**
+   * @return a new BaseASPSolver
+   */
   virtual BaseASPSolver*
   createSolver();
 
@@ -93,6 +95,20 @@ public:
   virtual std::istream&
   getInput();
 };
+
+
+/**
+ * @brief A wrapper process for the DLVDB ASP engine.
+ */
+class DLVHEX_EXPORT DLVDBProcess : public DLVProcess
+{
+ public:
+  DLVDBProcess();
+
+  virtual void
+  spawn();
+};
+
 
 DLVHEX_NAMESPACE_END
 
