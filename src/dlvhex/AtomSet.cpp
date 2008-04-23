@@ -182,10 +182,18 @@ AtomSet::difference(const AtomSet& as) const
 {
   AtomSet res;
 
-  std::set_difference(this->atoms.begin(), this->atoms.end(),
-		      as.atoms.begin(), as.atoms.end(),
-		      std::inserter(res.atoms, res.atoms.begin())
-		      );
+//   std::set_difference(this->atoms.begin(), this->atoms.end(),
+// 		      as.atoms.begin(), as.atoms.end(),
+// 		      std::inserter(res.atoms, res.atoms.begin())
+// 		      );
+
+  for (atomset_t::const_iterator a = atoms.begin();
+       a != atoms.end();
+       ++a)
+    {
+      if (as.atoms.find(*a) == as.atoms.end())
+	res.atoms.insert(*a);
+    }
 
   return res;
 }
