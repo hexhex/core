@@ -200,13 +200,16 @@ class DLVHEX_EXPORT ProgramCtx
   optimize();
 
   void
+  createDependencyGraph();
+
+  void
   safetyCheck();
 
   void
   strongSafetyCheck();
 
   void
-  createDependencyGraph();
+  setupProgramCtx();
 
   void
   evaluate();

@@ -301,6 +301,13 @@ ProgramCtx::optimize()
 
 
 void
+ProgramCtx::createDependencyGraph()
+{
+  state->createDependencyGraph(this);
+}
+
+
+void
 ProgramCtx::safetyCheck()
 {
   state->safetyCheck(this);
@@ -315,9 +322,9 @@ ProgramCtx::strongSafetyCheck()
 
 
 void
-ProgramCtx::createDependencyGraph()
+ProgramCtx::setupProgramCtx()
 {
-  state->createDependencyGraph(this);
+  state->setupProgramCtx(this);
 }
 
 
