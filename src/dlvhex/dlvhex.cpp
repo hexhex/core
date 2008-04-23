@@ -62,6 +62,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
+#include "dlvhex/DLVProcess.h"
 
 #include <getopt.h>
 #include <iostream>
@@ -326,7 +327,6 @@ main (int argc, char *argv[])
   Globals::Instance()->setOption("StrongSafety", 1);
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
-  Globals::Instance()->setOption("Solver", 0); // default is dlv
 
   // options only used here in main():
   bool optionPipe = false;
@@ -454,11 +454,11 @@ main (int argc, char *argv[])
 	      std::string solver(optarg);
 	      if (solver == "dlvdb")
 		{
-		  Globals::Instance()->setOption("Solver",1);
+		  pctx.setProcess(new DLVDBProcess);
 		}
-	      else // default is DLV (set in ProgramCtx)
+	      else // default is DLV
 		{
-		  Globals::Instance()->setOption("Solver",0);
+		  pctx.setProcess(new DLVProcess);
 		}
 	      break;
 	    }
