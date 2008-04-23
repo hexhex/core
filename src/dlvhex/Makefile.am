@@ -41,15 +41,10 @@ pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
-    HexParser.ypp \
-    HexScanner.lpp \
     AnswerSet.cpp \
     dlvhex.cpp \
-    ProgramCtx.cpp \
     RuleMLOutputBuilder.cpp \
     ResultContainer.cpp \
-    SafetyChecker.cpp \
-    State.cpp \
     TextOutputBuilder.cpp \
     HexParserDriver.cpp \
     URLBuf.cpp
@@ -67,9 +62,10 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
+    HexParser.ypp \
+    HexScanner.lpp \
     Atom.cpp \
     AggregateAtom.cpp \
-    AtomFactory.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
     BoostComponentFinder.cpp \
@@ -92,9 +88,12 @@ libdlvhexbase_la_SOURCES = \
     PluginInterface.cpp \
     PrintVisitor.cpp \
     Program.cpp \
+    ProgramCtx.cpp \
     Repository.cpp \
     Registry.cpp \
     Rule.cpp \
+    SafetyChecker.cpp \
+    State.cpp \
     Term.cpp
 
 # dlvhex ASP component

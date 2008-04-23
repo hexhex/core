@@ -26,7 +26,6 @@ pkginclude_HEADERS = \
 	Atom.h \
 	AtomNode.h \
 	AtomSet.h \
-	AtomFactory.h \
 	BaseVisitor.h \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
