@@ -155,14 +155,13 @@ dlvresult: /* empty */
 result_line:
     NEWLINE
     | list
-    | message //result_line
+    | message result_line
     ;
 
 message: MESSAGE
     {
-        dlvError += std::string(*$1) + "\n";
-
-	delete $1;
+      dlvError += *$1 + "\n";
+      delete $1;
     }
     ;
 
