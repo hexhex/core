@@ -39,7 +39,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include <iostream>
+#include <iosfwd>
 #include <vector>
 #include <string>
 
@@ -56,13 +56,14 @@ class BaseASPSolver;
 class DLVHEX_EXPORT DLVProcess : public Process
 {
  protected:
-  // communication buffer
+  /// communication buffer
   ProcessBuf proc;
   
-  // iostream to the dlv process
-  std::iostream iopipe;
+  // iostreams to the dlv process
+  std::istream* ipipe;
+  std::ostream* opipe;
   
-  // argument vector
+  /// dlv command line options
   std::vector<std::string> argv;
   
  public:

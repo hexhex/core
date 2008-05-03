@@ -40,27 +40,53 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
 
+#include <iostream>
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+
 
 DLVHEX_NAMESPACE_BEGIN
 
-
 DLVProcess::DLVProcess()
-  : proc(), iopipe(&proc)
-{
-  // let ProcessBuf throw std::ios_base::failure
-  iopipe.exceptions(std::ios_base::badbit);
-}
+  : proc(), ipipe(0), opipe(0)
+{ }
 
 
 DLVProcess::~DLVProcess()
 {
   proc.close();
+  delete opipe;
+  delete ipipe;
 }
 
 
 BaseASPSolver*
 DLVProcess::createSolver()
 {
+  if (ipipe == 0 && opipe == 0)
+    {
+      // first, setup the iostreams
+      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+	{
+	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
+	  
+	  tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
+	  tmpopipe->push(std::cerr);
+	  
+	  opipe = tmpopipe;
+	}
+      else
+	{
+	  opipe = new std::iostream(&proc);
+	}
+      
+      ipipe = new std::iostream(&proc);
+      
+      // let ProcessBuf throw std::ios_base::failure
+      opipe->exceptions(std::ios_base::badbit);
+      ipipe->exceptions(std::ios_base::badbit);
+    }
+    
   if (Globals::Instance()->getOption("NoPredicate"))
     {
       return new ASPSolver<HOPrintVisitor, DLVresultParserDriver>(*this);
@@ -105,8 +131,11 @@ DLVProcess::endoffile()
 int
 DLVProcess::close()
 {
-  // first reset the state of the iostream in order to re-use it
-  iopipe.clear();
+  assert(ipipe != 0 && opipe != 0);
+
+  // first reset the state of the iostreams in order to re-use them
+  opipe->clear();
+  ipipe->clear();
   // exit code of process
   return proc.close();
 }
@@ -115,14 +144,16 @@ DLVProcess::close()
 std::ostream&
 DLVProcess::getOutput()
 {
-  return iopipe;
+  assert(opipe != 0);
+  return *opipe;
 }
 
 
 std::istream&
 DLVProcess::getInput()
 {
-  return iopipe;
+  assert(ipipe != 0);
+  return *ipipe;
 }
 
 
