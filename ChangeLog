@@ -1,3 +1,22 @@
+2008-05-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Check for boost's iostreams library.
+
+	* src/dlvhex/GraphProcessor.cpp (GraphProcessor::run): Bugfix --
+	use std::set instead of std::vector for allLeavesResult.
+	Sanitize code.
+	
+	* src/dlvhex/AtomSet.cpp (AtomSet::operator<): Sanitize code.
+
+	* include/dlvhex/DLVProcess.h: Add support for dumping the
+	intermediate programs sent to the ASP solver.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+2008-04-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/DLVresultParser.ypp: Allow multiline error messages
+	from dlv(db).
+
 2008-04-23  Alessandra Martello  <a.martello@mat.unical.it>
 
 	* include/dlvhex/Makefile.am: Install Process.h, ProcessBuf.h,
