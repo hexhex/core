@@ -396,25 +396,23 @@ AtomSet::operator!= (const AtomSet& atomset2) const
 int
 AtomSet::operator< (const AtomSet& atomset2) const
 {
-	if (this->size() < atomset2.size())
-		return true;
+  if (this->size() < atomset2.size()) // <
+    {
+      return true;
+    }
+  else if (this->size() > atomset2.size()) // >
+    {
+      return false;
+    }
+  else // same size, they can still be < or >=
+    {
+      // find first mismatch
+      std::pair<AtomSet::const_iterator, AtomSet::const_iterator> result;
+      result = std::mismatch(this->begin(), this->end(), atomset2.begin());
 
-	if (this->size() > atomset2.size())
-		return false;
-
-	//return !(std::includes(this->begin(), this->end(), atomset2.begin(), atomset2.end()));
-
-	// find first mismatch
-	std::pair<AtomSet::const_iterator, AtomSet::const_iterator> result;
-	result = std::mismatch(this->begin(), this->end(), atomset2.begin());
-
-	//
-	// no mismatch? then they are equal!
-	//
-	if (result.first == this->end())
-		return false;
-
-	return *(result.first) < *(result.second);
+      // no mismatch: ==, otw. check if the found mismatch is < or >=
+      return result.first == this->end() ? false : *result.first < *result.second;
+    }
 }
 
 DLVHEX_NAMESPACE_END
