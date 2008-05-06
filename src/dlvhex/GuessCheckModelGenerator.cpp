@@ -104,21 +104,39 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
        ri != guessingprogram.end();
        ++ri)
     {
+      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+	{
+	  Globals::Instance()->getVerboseStream() << "Computing guessings for rule ";
+	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  (*ri)->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	}
+
+
+      const std::vector<ExternalAtom*>& eatoms = (*ri)->getExternalAtoms();
+
       //
       // go through all external atoms in this rule and make one guessing
       // rule each
       //
-      for (std::vector<ExternalAtom*>::const_iterator ei = (*ri)->getExternalAtoms().begin();
-	   ei != (*ri)->getExternalAtoms().end();
+      for (std::vector<ExternalAtom*>::const_iterator ei = eatoms.begin();
+	   ei != eatoms.end();
 	   ++ei)
 	{
+	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+	    {
+	      Globals::Instance()->getVerboseStream() << "=======checking external atom " << **ei << std::endl;
+	    }
+
 	  //
 	  // for the guessing only consider external atoms that are actually
 	  // in the cycle!
 	  //
 	  if (extatomInComp.find(*ei) == extatomInComp.end())
 	    {
-	      continue;
+	      ///@todo this might not work in case of non-unique
+	      ///external atom pointers...
+	      // continue;
 	    }
 
 	  //
@@ -155,9 +173,12 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	       ++bi)
 	    {
 	      //
-	      // don't add the current external atom itself
+	      // don't add the current external atom itself, and no
+	      // negative literals!
 	      //
-	      if ((*bi)->getAtom().get() != *ei)
+	      const Literal* l = *bi;
+
+	      if (l->getAtom().get() != *ei && !l->isNAF())
 		{
 		  guessbody.insert(*bi);
 		}
@@ -172,7 +193,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << "adding guessing rule: " << *guessrule << std::endl;
+	      Globals::Instance()->getVerboseStream() << "adding guessing rule: " << *guessrule;
 	    }
 	}
 
@@ -252,6 +273,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	   ei != extatomInComp.end();
 	   ++ei)
 	{
+	  // get the positive external result from the guess and
+	  // insert it into externalguess
 	  guess->matchPredicate((*ei)->getReplacementName(), externalguess);
 	  externalguess.keepPos();
 
@@ -344,7 +367,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	      // make flp head atom
 	      //
 	      std::ostringstream atomname;
-	      atomname << "flp_head_" << ruleidx;
+	      atomname << "flp_head_" << ruleidx; ///@todo make this a macro, and it possibly clashes with the input program
 	      AtomPtr flpheadatom(new Atom(atomname.str(), flpheadargs));
 	      bodyPickerAtoms.push_back(flpheadatom); // flpheadatom is at position ruleidx
 
