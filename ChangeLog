@@ -1,3 +1,9 @@
+2008-05-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Do not add negative
+	literals in the translated guess-n-check rules for external atoms
+	extensions.
+
 2008-05-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Check for boost's iostreams library.
