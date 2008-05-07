@@ -1,3 +1,17 @@
+2008-05-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/TextOutputBuilder.cpp: Move lonely std::endl to the output builder.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* include/dlvhex/globals.h: Fix DLVHEX_DEBUG preprocessor macros.
+
+	* include/dlvhex/ASPSolver.tcc: Unify DLVHEX_DEBUG output.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
 2008-05-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/GuessCheckModelGenerator.cpp: Do not add negative
