@@ -52,6 +52,11 @@ TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fact
 {
   const ResultContainer::result_t& results = facts.getAnswerSets();
 
+  if (!Globals::Instance()->getOption("Silent"))
+    {
+      stream << std::endl;
+    }
+
   if (results.empty())
     {
       return;

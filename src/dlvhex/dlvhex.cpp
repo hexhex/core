@@ -562,12 +562,6 @@ main (int argc, char *argv[])
 	  exit(0);
 	}
       
-      ///@todo a lonely newline?
-      if (!Globals::Instance()->getOption("Silent"))
-	{
-	  std::cout << std::endl;
-	}
-
       //
       // any unknown options left?
       //
