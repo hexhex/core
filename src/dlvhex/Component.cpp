@@ -315,7 +315,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 	    }
 
 	  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	  DEBUG_STOP_TIMER("External evaluation time               ");
+	  DEBUG_STOP_TIMER("External evaluation time:               ");
         }
         catch (GeneralError&)
         {
@@ -340,7 +340,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 //	    std::cerr << std::endl;
 
 	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("External result insert time            ");
+	DEBUG_STOP_TIMER("External result insert time:            ");
     }
 
     evaluated = true;
