@@ -628,8 +628,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	}
     }
 
-      //				  123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Guess-and-check generator            ");
+  //	        123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  DEBUG_STOP_TIMER("Guess-and-check model generator:        ");
 }
 
 

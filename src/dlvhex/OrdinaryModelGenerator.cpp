@@ -108,6 +108,7 @@ OrdinaryModelGenerator::compute(const Program& program,
       throw;
     }
 
+  //@todo can we do better?
   for (std::vector<AtomSet>::iterator as = answersets.begin();
        as != answersets.end();
        ++as)
@@ -117,7 +118,7 @@ OrdinaryModelGenerator::compute(const Program& program,
     }
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Time storing the ASP result            ");
+  DEBUG_STOP_TIMER("Ordinary Model Generator:               ");
 }
 
 DLVHEX_NAMESPACE_END

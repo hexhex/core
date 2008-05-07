@@ -198,15 +198,15 @@ FixpointModelGenerator::compute(const Program& program,
 
     } while ((*result != currentI) && (iter <= maxIter));
 
-  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Fixpoint (incl. ASP-solver calls)      ");
-
   if (iter > maxIter)
     {
       throw FatalError("Maximum count for iteration reached!");
     }
   
   models.push_back(currentI);
+
+  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  DEBUG_STOP_TIMER("Fixpoint Model Generator:               ");
 }
 
 DLVHEX_NAMESPACE_END

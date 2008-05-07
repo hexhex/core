@@ -169,7 +169,7 @@ OpenPluginsState::openPlugins(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Importing plugins                      ");
+  DEBUG_STOP_TIMER("Importing plugins:                      ");
 }
 
 
@@ -344,7 +344,7 @@ ConvertState::convert(ProgramCtx* ctx)
   changeState(ctx, next);
   
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Converting input           ");
+  DEBUG_STOP_TIMER("Calling plugin converters:              ");
 }
 
 
@@ -390,7 +390,7 @@ ParseState::parse(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Parsing input           ");
+  DEBUG_STOP_TIMER("Parsing input:                          ");
 }
 
 
@@ -429,7 +429,7 @@ RewriteState::rewrite(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Calling plugin rewriters               ");
+  DEBUG_STOP_TIMER("Calling plugin rewriters:               ");
 }
 
 
@@ -449,7 +449,7 @@ CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Building node graph              ");
+  DEBUG_STOP_TIMER("Building node graph:                    ");
 }
 
 
@@ -477,7 +477,7 @@ OptimizeState::optimize(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Calling plugins optimizers             ");
+  DEBUG_STOP_TIMER("Calling plugin optimizers:              ");
 }
 
 
@@ -508,7 +508,7 @@ CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Dependency graph building      ");
+  DEBUG_STOP_TIMER("Building dependency graph:              ");
 }
 
 
@@ -538,7 +538,7 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
   changeState(ctx, next);
       
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Safety checker     ");
+  DEBUG_STOP_TIMER("Safety checking:                        ");
 }
 
 
@@ -555,7 +555,7 @@ StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Strong safety checker     ");
+  DEBUG_STOP_TIMER("Strong safety checking:                 ");
 }
 
 
@@ -590,7 +590,7 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Setup ProgramCtx             ");
+  DEBUG_STOP_TIMER("Setting up ProgramCtx:                  ");
 }
 
 
@@ -651,7 +651,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Program processing                       ");
+  DEBUG_STOP_TIMER("Evaluating Program:                     ");
 }
 
 
@@ -710,7 +710,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Graph processing                       ");
+  DEBUG_STOP_TIMER("Evaluating dependency graph:            ");
 }
 
 
@@ -746,7 +746,7 @@ PostProcessState::postProcess(ProgramCtx* ctx)
   changeState(ctx, next);
 
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Postprocessing GraphProcessor result             ");
+  DEBUG_STOP_TIMER("Postprocessing GraphProcessor result:   ");
 }
 
 
@@ -787,7 +787,7 @@ OutputState::output(ProgramCtx* ctx)
   changeState(ctx, next);
 	    
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Build output                           ");
+  DEBUG_STOP_TIMER("Building output:                        ");
 }
 
 

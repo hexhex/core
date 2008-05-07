@@ -91,7 +91,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       retcode = proc.close();
 
       //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Calling LP solver and parsing its result     ");
+      DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
     }
   catch (FatalError&)
     {

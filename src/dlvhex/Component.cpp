@@ -229,7 +229,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
       result.insert(result.end(), res.begin(), res.end());
 
       //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Program-component result insert time   ");
+      DEBUG_STOP_TIMER("Program-component result insert time:   ");
     }
 
   evaluated = true;
