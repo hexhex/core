@@ -43,12 +43,12 @@
 #include <vector>
 #include <map>
 
-#ifdef DLVHEX_DEBUG
+#if defined(DLVHEX_DEBUG)
 #include <boost/date_time/posix_time/posix_time.hpp>
 #endif // DLVHEX_DEBUG
 
 
-#if DLVHEX_DEBUG
+#if defined(DLVHEX_DEBUG)
 #define DEBUG_START_TIMER						\
   boost::posix_time::ptime boosttimerstart;				\
   boost::posix_time::ptime boosttimerend;				\
