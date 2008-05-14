@@ -4,7 +4,17 @@
 
 * TODO Guess & Check model generator is broken
 
+* TODO Check if the undecorated external atom replacement and aux names are working
+
+* DONE Fixpoint model generators is broken
+
 * TODO Fix extatom3.hex and dawg.hex testcases
+This goes in line with GuessCheckModelGenerator
+
+* TODO RuleBody_t and RuleHead_t must be std::vector<>s
+... and not std::set<>s, otw. we cannot simply change the Atoms
+without invalidating the ordering in the set. Maybe we should put Body
+and Head into the Rule class, i.e., we have Rule::Body and Rule::Head.
 
 * TODO Return a list of rewriters/optimizers
 And adapt to shared_ptrs. This gives greater flexibility to the plugin
@@ -13,7 +23,7 @@ programmers.
 * TODO rebuild depgraph after invoking an optimizer?
 check the interface for optimizers...
 
-* TODO use boost iostreams for retrieving urls/ASPsolver/dlt?
+* TODO use boost iostreams for retrieving URLs/ASPsolver/dlt?
 <http://www.boost.org/libs/iostreams/doc/index.html>
 mmap'd file(s)?
 
@@ -24,6 +34,9 @@ localname separately.
 Also check boost spirit's symbol table implementation:
 <http://spirit.sourceforge.net/distrib/spirit_1_8_5/libs/spirit/doc/symbols.html>
 
+URIs are effectively identifiers, so namespace prefixes should be
+integers, or map to a namespace table.
+
 * TODO Move strong negation handling to Term
 Whenever we create a symbol with '-' as first character, or a ctor is
 called with the proper parameter, we set a negation flag in Term.
@@ -32,9 +45,9 @@ called with the proper parameter, we set a negation flag in Term.
 Whenever we create an auxiliary symbol, we tag it in the symbol table
 with the "aux tag."
 
-In general, Terms are immutable wrappers for the symbol table, hence,
-creating symbols can only be achieved via Term's ctors (and no setter
-methods).
+In general, Terms are immutable wrappers (Flyweights) for the symbol
+table, hence, creating symbols can only be achieved via Term's ctors
+(and no setter methods).
 
 * TODO Global URI API
 Most plugins need URI handling (as well as dlvhex).
@@ -55,7 +68,7 @@ hierarchy. We need to rewrite in
 * TODO Send unknown command line options to dlv?
 Handy for passing, e.g., optimization flags to dlv.
 
-* TODO Add a dlvhex facade to couple all intermediate products
+* DONE Add a dlvhex facade to couple all intermediate products
 
 * TODO HEX-parser should create metainformation of the program
 Like no. of external and HO atoms, aggregates, ...; given this
@@ -96,7 +109,8 @@ This goes probably hand in hand with the switch to boost spirit; see
 also
 <http://spirit.sourceforge.net/distrib/spirit_1_8_5/libs/spirit/doc/trees.html>. This
 AST must be a very well-tailored data structure, and easily
-traverseable/updateable/...
+traverseable/updateable/... The Program/Rule/... hierarchy is a very
+good starting point; the Visitors allow to traverse easily.
 
 Maybe something like this:
 
@@ -122,6 +136,7 @@ And what kind of queries can we push to dlv? (Query answer parser must
 be created!)
 
 * TODO Magic Set rewriting
+and what kind of MS rewriting can be delegated to dlv?
 
 * TODO Add support for RIF BLD presentation syntax
 
@@ -155,6 +170,9 @@ Symboltable should do back-and-forth translation of dlvhex symbols to
 generix dlv symbols. See
 <http://spirit.sourceforge.net/distrib/spirit_1_8_5/libs/spirit/doc/symbols.html>.
 
+This is not always possible, for instance, in dlvdb, the program's EDB
+is stored in a DBMS, hence the symbol table is delegated to the DBMS.
+
 
 * TODO dlvhex server mode
 inetd (Linux) and launchd (Mac OS X) should be enough:
@@ -177,6 +195,8 @@ Launchd setup: <http://developer.apple.com/macosx/launchd.html>
 Or maybe as CGI application: (argv[0] == "dlvhex.cgi") => CGI mode.
 
 Or even as an apache module?
+
+Or even a Web Service?
 
 * TODO Add support for "internal" plugins
 To simplify all the different _internal_ output builder (and maybe

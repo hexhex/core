@@ -1,4 +1,4 @@
--*- outline -*-
+-*- org -*-
 
 
 * You want to use just the binary
@@ -6,7 +6,7 @@ Read the following subsections and then jump directly to "Running dlvhex" below.
 
 ** DLV
 dlvhex uses the answer-set solver DLV, which can be downloaded from
-http://www.dlvsystem.com
+<http://www.dlvsystem.com/>
 Put the downloaded binary in your path so that it is executable on your system
 (don't forget to "chmod +x" it!).  dlvhex is looking for "dlv", so you might
 want to rename the downloaded binary or softlink to it.
@@ -29,12 +29,21 @@ In this case, you probably need to install additional packages.
 Boost is a collection of portable C++ source libraries, which are
 intended to be widely useful, and usable across a broad spectrum of
 applications. You will need a version equal or higher than 1.33.1. See
-http://www.boost.org/. Follow the instructions of the INSTALL file
-found in the distributions tarball.  Popular Linux and Unix
-distributions such as Fedora, Debian, and NetBSD include pre-built
-Boost packages. E.g., in Debian (and Ubuntu), do
+<http://www.boost.org/>. Follow the instructions of the INSTALL file
+found in the distributions tarball.
 
- $ apt-get install libboost-dev libboost-graph-dev
+dlvhex needs the following Boost libraries:
+Boost.Graph
+Boost.Iostreams
+Boost.Smart_Ptr
+Boost.String_Algo
+Boost.Tokenizer
+
+Popular Linux and Unix distributions such as Fedora, Debian, and
+NetBSD include pre-built Boost packages. E.g., in Debian (and Ubuntu),
+just do
+
+ $ apt-get install libboost-dev libboost-graph-dev libboost-iostreams-dev
 
 If you have compiled boost by yourself, you have to tell dlvhex'
 configure script where you have installed it:
@@ -44,14 +53,14 @@ configure script where you have installed it:
 *** libcurl
 libcurl is a multi-protocol file transfer library. dlvhex uses it to
 retrieve programs specified by http-scheme URLs. This library is
-standard for most operating systems (see http://curl.haxx.se/libcurl/
+standard for most operating systems (see <http://curl.haxx.se/libcurl/>
 for source packages). Debian provides packages called
 libcurl3-openssl-dev and libcurl3-gnutls-dev; install one of these and
 you will be able to compile dlvhex.
 
 *** cppunit (optional)
 CppUnit is used for the unit-testing of dlvhex, but not necessary for
-building the application. See http://cppunit.sourceforge.net/. Follow
+building the application. See <http://cppunit.sourceforge.net/>. Follow
 the instructions of the INSTALL file found in the distributions
 tarball.  dlvhex has been tested with cppunit 1.12.0. Like boost,
 cppunit packages are provided by the major Linux distributions. E.g.,
@@ -93,6 +102,6 @@ corresponding header files, which are needed for developing plugins.
 
 Using dlvhex is very similar to working with the answer-set solver dlv. "dlvhex
 --help" displays a short help with available command-line parameters. For an
-introduction how to write hex-programs, see
-http://http://www.kr.tuwien.ac.at/research/dlvhex/
+introduction how to write HEX-programs, see
+<http://http://www.kr.tuwien.ac.at/research/dlvhex/>
 
