@@ -1,3 +1,9 @@
+2008-05-14  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* NEWS: Update.
+	* README: Likewise.
+	* TODO: Likewise.
+
 2008-05-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/TextOutputBuilder.cpp: Move lonely std::endl to the output builder.
