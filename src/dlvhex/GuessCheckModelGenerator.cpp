@@ -230,7 +230,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
   if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
     {
-      Globals::Instance()->getVerboseStream() << "=== guesses " << std::endl;
+      Globals::Instance()->getVerboseStream() << "=== guesses (" << allguesses.size() << ")" << std::endl;
       for (std::vector<AtomSet>::iterator guess = allguesses.begin();
 	   guess != allguesses.end();
 	   ++guess)
@@ -502,7 +502,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    {
 	      Globals::Instance()->getVerboseStream() << "    Reduced program result: " << std::endl;
 	      flpreduced.accept(rpv);
-	      Globals::Instance()->getVerboseStream() <<              "reduced edb: ";
+	      Globals::Instance()->getVerboseStream() << std::endl << "reduced edb: ";
 	      reducedEDB.accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "strongf:     ";
 	      const_cast<AtomSet&>(*strongf).accept(rpv);
@@ -562,6 +562,12 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
   //
   // now check all compatible answer sets for minimality
   //
+  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+    {
+      Globals::Instance()->getVerboseStream() << std::endl
+					      << "Checking compatible models for minimality:"
+					      << std::endl;
+    }
 
   for (std::vector<std::vector<AtomSet>::iterator>::const_iterator ans = compatibleSets.begin();
        ans != compatibleSets.end();
@@ -614,16 +620,18 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << "    Model passed minimality test" << std::endl;
+	      Globals::Instance()->getVerboseStream() << " Model passed minimality test: ";
 	      (*ans)->accept(rpv);
+	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
 	}
       else
 	{
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << "    Model did not pass minimality test" << std::endl;
+	      Globals::Instance()->getVerboseStream() << " Model did not pass minimality test:";
 	      (*ans)->accept(rpv);
+	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
 	}
     }
