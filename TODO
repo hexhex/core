@@ -1,8 +1,16 @@
 -*- org -*-
 
+* TODO Add support for GraphML
+The GraphML could be handy for debugging the dependency graph and
+other stuff: <http://graphml.graphdrawing.org/>
+
+Obviously, Boost.Graph has support for it.
+
 * TODO unsetenv("LD_LIBRARY_PATH")?
 
 * TODO Guess & Check model generator is broken
+and sometimes, in firstorder mode, we can see a copy of the input
+program as higher-order program in the debug output.
 
 * TODO Check if the undecorated external atom replacement and aux names are working
 
@@ -15,6 +23,13 @@ This goes in line with GuessCheckModelGenerator
 ... and not std::set<>s, otw. we cannot simply change the Atoms
 without invalidating the ordering in the set. Maybe we should put Body
 and Head into the Rule class, i.e., we have Rule::Body and Rule::Head.
+
+* TODO Add Component Optimizer API
+We should allow to optimize the components: generalize component API
+and dependency graph API.
+
+For instance, we can move constraints to the closest possible
+component in order to kill impossible models early.
 
 * TODO Return a list of rewriters/optimizers
 And adapt to shared_ptrs. This gives greater flexibility to the plugin
