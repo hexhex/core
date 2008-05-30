@@ -100,16 +100,21 @@ fi
 
 AM_INIT_AUTOMAKE
 
-# Checks for programs.
+# Check for C/C++ compiler
+AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
-AC_PROG_CC
+
+# set default warning parameters for g++ compatible compilers
+if test "$GXX" = "yes"; then
+   CXXFLAGS="$CXXFLAGS -W -Wall"
+fi
+
+# check for lex/yacc
 AM_PROG_LEX
 # include bison generated-stuff in dist
 AC_PROG_YACC
 
-
-# Checks for libraries.
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -209,9 +214,9 @@ BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
+#BOOST_GRAPH #right now, we don't care about the libboost-graph shared library
 BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
 BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
-#BOOST_GRAPH #right now, we don't care about libboost-graph
 
 # debug
 AC_ARG_ENABLE(debug,
@@ -276,7 +281,7 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  
  bindir: $bindir
  libdir: $libdir
- pkglibdir: $pkglibdir
+ pkglibdir: $libdir/$PACKAGE_TARNAME
  datadir: $datadir
 
  userplugindir: $HOME/$userplugindir
