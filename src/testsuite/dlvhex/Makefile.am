@@ -29,6 +29,7 @@ all-local:
 	$(RM) libdlvhextest.so; $(LN_S) .libs/libdlvhextest.so .
 
 dlvhexTS_SOURCES = \
+    DepGraphTest.cpp \
     TestSuite.cpp \
     TypeTest.cpp \
     TestGraphProcessor.cpp \
