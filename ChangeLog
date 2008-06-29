@@ -1,3 +1,13 @@
+2008-06-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/Makefile.am (dlvhexTS_SOURCES): Add DepGraphTest.cpp.
+
+	* include/dlvhex/DepGraphBuilder.h: New file.
+	* include/dlvhex/HexDepGraph.h: Likewise.
+	* include/dlvhex/HexDepGraphBuilder.h: Likewise.
+	* include/testsuite/dlvhex/DepGraphTest.h: Likewise.
+	* src/testsuite/dlvhex/DepGraphTest.cpp: Likewise.
+
 2008-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
