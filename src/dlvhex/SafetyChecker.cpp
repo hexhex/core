@@ -341,54 +341,61 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 		       outterm != output.end();
 		       ++outterm)
                     {
-		      bool outIsSafe = false;
-
-		      for (RuleBody_t::const_iterator bodylit = body.begin(); bodylit != body.end(); ++bodylit)
-                        {
-			  //
-			  // only look at atoms that are not part of the
-			  // component!
-			  // and only look at ordinary ones;
-			  // external atoms and builtins do not make a variable safe!
-			  //
-			  const Atom& at = *(*bodylit)->getAtom();
-
-			  if (typeid(at) == typeid(Atom))
-                            {
-			      if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
-                                {
-				  //
-				  // the arguments of this atom are safe
-				  //
-				  const Tuple& safeargs = at.getArguments();
-
-				  //
-				  // now see if the current
-				  // extatom-output-argument is one of those
-				  // safe vars
-				  //
-				  for (Tuple::const_iterator safeterm = safeargs.begin();
-				       safeterm != safeargs.end();
-				       ++safeterm)
-                                    {
-				      if (safeterm->isVariable() && *safeterm == *outterm)
-					{
-					  outIsSafe = true;
-					  break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-		      // we have looked at all the body-atoms, but
-		      // couldn't find an atom, which make this output
-		      // variable safe
-		      if (!outIsSafe)
+		      // only check variable output arguments
+		      ///@todo anon vars can't be expansion safe
+		      if (outterm->isVariable() || outterm->isAnon()) 
 			{
-			  std::stringstream s;
-			  s << "rule not expansion-safe: " << **ruleit;
-			  throw SyntaxError(s.str());
+			  bool outIsSafe = false;
+
+			  for (RuleBody_t::const_iterator bodylit = body.begin();
+			       bodylit != body.end(); ++bodylit)
+			    {
+			      //
+			      // only look at atoms that are not part of the
+			      // component!
+			      // and only look at ordinary ones;
+			      // external atoms and builtins do not make a variable safe!
+			      //
+			      const Atom& at = *(*bodylit)->getAtom();
+			      
+			      if (typeid(at) == typeid(Atom))
+				{
+				  if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
+				    {
+				      //
+				      // the arguments of this atom are safe
+				      //
+				      const Tuple& safeargs = at.getArguments();
+				      
+				      //
+				      // now see if the current
+				      // extatom-output-argument is one of those
+				      // safe vars
+				      //
+				      for (Tuple::const_iterator safeterm = safeargs.begin();
+					   safeterm != safeargs.end();
+					   ++safeterm)
+					{
+					  if (safeterm->isVariable() && 
+					      *safeterm == *outterm)
+					    {
+					      outIsSafe = true;
+					      break;
+					    }
+					}
+				    }
+				}
+			    }
+			  
+			  // we have looked at all the body-atoms, but
+			  // couldn't find an atom, which make this output
+			  // variable safe
+			  if (!outIsSafe)
+			    {
+			      std::stringstream s;
+			      s << "rule not expansion-safe: " << **ruleit;
+			      throw SyntaxError(s.str());
+			    }
 			}
                     }
                 }
