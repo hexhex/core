@@ -1,3 +1,8 @@
+2008-07-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/SafetyChecker.cpp (StrongSafetyChecker): Fix checking
+	of ground expansion-safe external atoms.
+
 2008-06-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/Makefile.am (dlvhexTS_SOURCES): Add DepGraphTest.cpp.
