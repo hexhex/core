@@ -72,6 +72,7 @@ GraphProcessor::run(const AtomSet& in)
   resultModels.clear();
   resultModels.push_back(in);
 
+  ///@todo clean this mess up
   //
   // The Big Loop:
   // do this as long as there is something left to be solved.
@@ -108,122 +109,175 @@ GraphProcessor::run(const AtomSet& in)
 						  << " leaf components" << std::endl
 						  << "=======================" << std::endl;
 	}
-      
-      //
-      // go through current result, i.e., answer sets previously computed from
-      // lower parts of the graph.
-      // (if this is the first iteration, then resultModels = EDB, see above)
-      //
-      // with each of these models (*mi), we loop through all leaf components.
-      // result sets of one component are input to the next.
-      //
-      for (std::vector<AtomSet>::iterator mi = resultModels.begin(); mi != resultModels.end(); ++mi)
+
+      if (leaves.empty())
 	{
-	  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-	    {
-	      Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-						      << "current input for leaf layer with "
-						      << leaves.size()
-						      << " leaves: " << std::endl;
-	      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	      mi->accept(rpv);
-	      Globals::Instance()->getVerboseStream() << std::endl << "==============================" << std::endl;
-	    }
-
+	  // this is the first iteration: resultModels = EDB.
+	  // no leaves: just insert current resultModels to allLeavesResult.
+	  allLeavesResult.insert(resultModels.begin(), resultModels.end());
+	}
+      else
+	{
 	  //
-	  // componentLayerResult is the accumulated result of all current
-	  // leaf components. input to start with is the current model *mi.
+	  // go through current result, i.e., answer sets previously computed from
+	  // lower parts of the graph.
 	  //
-	  std::vector<AtomSet> componentLayerResult;
-	  componentLayerResult.push_back(*mi);
-	  
+	  // with each of these models (*mi), we loop through all leaf components.
+	  // result sets of one component are input to the next.
 	  //
-	  // result of a single leaf component
-	  // initialize it with empty set, just in case we don't have any
-	  // components in the following for-loop (??? commented out!)
-	  //
-	  //std::vector<AtomSet> leafResult;
-	  //leafResult.push_back(AtomSet());
-
-	  //
-	  // now loop through these leaf components
-	  //
-	  for (std::vector<Component*>::iterator ci = leaves.begin(); ci != leaves.end(); ++ci)
+	  for (std::vector<AtomSet>::iterator mi = resultModels.begin(); mi != resultModels.end(); ++mi)
 	    {
 	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		{
 		  Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-							  << "computing leaf component: " << std::endl;
-		  (*ci)->dump(Globals::Instance()->getVerboseStream());
+							  << "current input for leaf layer with "
+							  << leaves.size()
+							  << " leaves: " << std::endl;
+		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		  mi->accept(rpv);
 		  Globals::Instance()->getVerboseStream() << std::endl << "==============================" << std::endl;
 		}
 	      
-	      //
-	      // evaluate leaf component with previous result as input
-	      // (in case of multiple models, this will multiply the sets of
-	      // sets correctly)
-	      //
-	      (*ci)->evaluate(componentLayerResult);
 	      
-	      //(*ci)->getResult(leafResult);
-	      //componentLayerResult = leafResult;
+	      // componentInput is input to a component
+	      ///@todo rework interface, this is always a single model?
+	      std::vector<AtomSet> componentInput;
+	      componentInput.push_back(*mi);
 	      
-	      (*ci)->getResult(componentLayerResult);
+	      
+	      //
+	      // now loop through these leaf components with componentInput as input
+	      //
+	      for (std::vector<Component*>::iterator ci = leaves.begin(); ci != leaves.end(); ++ci)
+		{
+		  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		    {
+		      Globals::Instance()->getVerboseStream() << "==============================" << std::endl
+							      << "computing leaf component: " << std::endl;
+		      (*ci)->dump(Globals::Instance()->getVerboseStream());
+		      Globals::Instance()->getVerboseStream() << std::endl << "==============================" << std::endl;
+		    }
+		  
+		  //
+		  // evaluate leaf component with previous result as input
+		  // (in case of multiple models, this will multiply the sets of
+		  // sets correctly)
+		  //
+		  (*ci)->evaluate(componentInput);
+		}
+
+
+	      //
+	      // componentLayerResult is the accumulated result of all current
+	      // leaf components. input to start with is the current model *mi.
+	      //
+	      std::vector<AtomSet> componentLayerResult;
+
+	      std::vector<AtomSet> f1;
+	      std::vector<AtomSet> f2;
+	      bool firstround = true;
+
+	      //
+	      // collect the results of each component and multiply them
+	      //
+	      for (std::vector<Component*>::iterator ci = leaves.begin();
+		   ci != leaves.end(); ++ci)
+		{
+		  // get the result of this component
+		  (*ci)->getResult(f1);
+		  
+		  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		    {
+		      Globals::Instance()->getVerboseStream() << "==============================" << std::endl
+							      << "result of leaf ("
+							      << f1.size()
+							      << "):" << std::endl;
+		      
+		      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		      for (std::vector<AtomSet>::iterator tmpi = f1.begin();
+			   tmpi != f1.end();
+			   ++tmpi)
+			{
+			  tmpi->accept(rpv);
+			  Globals::Instance()->getVerboseStream() << std::endl;
+			}
+		      
+		      Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
+		    }
+		  
+		  if (firstround)
+		    {
+		      componentLayerResult = f1;
+		      firstround = false;
+		    }
+		  else
+		    {
+		      if (f1.empty()) // this component is inconsistent, clear result and get out
+			{
+			  componentLayerResult.clear();
+			  break;
+			}
+		      else // multiply models of this component with the results of previous round
+			{
+			  // save the old results
+			  f2 = componentLayerResult;
+			  
+			  // clear the results
+			  componentLayerResult.clear();
+			  
+			  for (std::vector<AtomSet>::const_iterator i1 = f1.begin();
+			       i1 != f1.end();
+			       ++i1)
+			    {
+			      for (std::vector<AtomSet>::const_iterator i2 = f2.begin();
+				   i2 != f2.end();
+				   ++i2)
+				{
+				  AtomSet un;
+
+				  un.insert(*i1);
+				  un.insert(*i2);
+
+				  // add back the multiplied results
+				  componentLayerResult.push_back(un);
+				}
+			    }
+			}
+		    }
+		} // multiply every component
+	      
 	      
 	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		{
-		  Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-							  << "result of leaf ("
-							  << componentLayerResult.size()
+		  Globals::Instance()->getVerboseStream() << "current allLeavesResult (" 
+							  << allLeavesResult.size() 
 							  << "):" << std::endl;
-
-		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		  for (std::vector<AtomSet>::iterator tmpi = componentLayerResult.begin();
-		       tmpi != componentLayerResult.end();
-		       ++tmpi)
+		  
+		  for (std::set<AtomSet>::iterator it = allLeavesResult.begin();
+		       it != allLeavesResult.end();
+		       ++it)
 		    {
-		      tmpi->accept(rpv);
+		      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		      const_cast<AtomSet&>(*it).accept(rpv);
 		      Globals::Instance()->getVerboseStream() << std::endl;
 		    }
+		  
+		  Globals::Instance()->getVerboseStream() << "Now start copying from above componentLayerResult to allLeavesResult." << std::endl;
+		}
+	      
+	  
+	      //
+	      // we are done now with evaluating all leaf components w.r.t. the
+	      // intermediate result *mi. add the resulting model to
+	      // allLeavesResult.
+	      //
+	      allLeavesResult.insert(componentLayerResult.begin(), componentLayerResult.end());
 
-		  Globals::Instance()->getVerboseStream() << "==============================" << std::endl;
-		}
-	      
-	      //if (compresult.size() == 0)
-	      //{
-	      //}
-	    }
-	  
-	  
-	  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-	    {
-	      Globals::Instance()->getVerboseStream() << "current allLeavesResult (" << allLeavesResult.size() << "):" << std::endl;
-	      
-	      for (std::set<AtomSet>::iterator it = allLeavesResult.begin();
-		   it != allLeavesResult.end();
-		   ++it)
-		{
-		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		  const_cast<AtomSet&>(*it).accept(rpv);
-		  Globals::Instance()->getVerboseStream() << std::endl;
-		}
-	      
-	      Globals::Instance()->getVerboseStream() << "Now start copying from above componentLayerResult to allLeavesResult." << std::endl;
-	    }
-	  
-	  
-	  //
-	  // we are done now with evaluating all leaf components w.r.t. the
-	  // intermediate result *mi. add the resulting model to
-	  // allLeavesResult.
-	  //
-	  for (std::vector<AtomSet>::iterator allmi = componentLayerResult.begin();
-	       allmi != componentLayerResult.end();
-	       ++allmi)
-	    {
-	      allLeavesResult.insert(*allmi);
-	    }
-	}
+	    } // foreach resultModels
+
+	} //!leaves.empty()
+
+
 
       //
       // done with feeding all current result models into the leaf components.
@@ -234,6 +288,8 @@ GraphProcessor::run(const AtomSet& in)
       // first of all, we can update the "set of current result models" now
       //
 //       resultModels = allLeavesResult;
+
+      ///@todo looks a bit weird
       resultModels.clear();
       resultModels.insert(resultModels.end(), allLeavesResult.begin(), allLeavesResult.end());
       
