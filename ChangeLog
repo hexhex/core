@@ -1,3 +1,12 @@
+2008-07-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GraphProcessor.cpp (GraphProcessor::run): Optimize
+	the dependency graph evaluation algorithm to speed up the
+	processing of independent components.
+
+	* include/dlvhex/AtomSet.h (multiplySets): Remove.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+
 2008-07-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/DepGraphBuilder.h: Remove new dependency graph.
