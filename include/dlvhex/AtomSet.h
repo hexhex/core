@@ -108,6 +108,8 @@ public:
 
     /**
      * @brief Iterator to traverse the atomset.
+     * @todo maybe we can do better, this is just a wrapper object
+     * @todo writable iterator is missing
      */
     class DLVHEX_EXPORT const_iterator : public std::iterator<atomset_t::const_iterator::iterator_category,
                                                 Atom,
@@ -286,9 +288,9 @@ public:
 
     int
     operator< (const AtomSet&) const;
-    
-//private:
 
+//private:
+    ///@todo we want this private!
     atomset_t atoms;
 };
 
@@ -298,13 +300,6 @@ public:
 //
 typedef AtomSet Interpretation;
 
-//
-// could this become a member function?
-//
-void
-multiplySets(std::vector<AtomSet>& s1,
-             std::vector<AtomSet>& s2,
-             std::vector<AtomSet>& result);
 
 DLVHEX_NAMESPACE_END
 
