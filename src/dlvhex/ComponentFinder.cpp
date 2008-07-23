@@ -33,6 +33,8 @@
 
 #include "dlvhex/ComponentFinder.h"
 
+#include <iostream>
+
 DLVHEX_NAMESPACE_BEGIN
 
 void

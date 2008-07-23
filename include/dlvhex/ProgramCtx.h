@@ -36,6 +36,9 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Program.h"
+#include "dlvhex/AtomSet.h"
+
 #include <vector>
 #include <string>
 #include <iosfwd>
@@ -47,8 +50,8 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class PluginContainer;
 class PluginInterface;
-class Program;
-class AtomSet;
+//class Program;
+//class AtomSet;
 class NodeGraph;
 class DependencyGraph;
 class Process;

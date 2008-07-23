@@ -35,6 +35,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Program.h"
 #include "dlvhex/Error.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -42,7 +43,6 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class PluginContainer;
 class NodeGraph;
-class Program;
 
 /**
  * @brief Class for building a dependency graph from a given program.

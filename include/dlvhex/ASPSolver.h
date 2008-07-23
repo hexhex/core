@@ -32,7 +32,7 @@
 #if !defined(_DLVHEX_ASPSOLVER_H)
 #define _DLVHEX_ASPSOLVER_H
 
-
+#include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Process.h"
