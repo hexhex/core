@@ -39,34 +39,22 @@ DLVHEX_NAMESPACE_BEGIN
 
 
 NodeGraph::~NodeGraph()
-{
-	/*
-	for (std::vector<AtomNodePtr>::const_iterator an = atomNodes.begin();
-		 an != atomNodes.end();
-		 ++an)
-	{
-		delete *an;
-	}
-	*/
-}
+{ }
 
 
-const std::vector<Rule*>&
+const Program&
 NodeGraph::getProgram() const
 {
+  ///@todo this looks a bit weird
   if (this->prog.empty())
-	{
-	  std::set<Rule*> ruleset;
-	  
-	  for (std::vector<AtomNodePtr>::const_iterator it = atomNodes.begin();
+    {
+      for (std::vector<AtomNodePtr>::const_iterator it = atomNodes.begin();
 	   it != atomNodes.end(); ++it)
 	{
-	  std::vector<Rule*> rules = (*it)->getRules();
-	  std::copy(rules.begin(), rules.end(), std::inserter(ruleset, ruleset.begin()));
+	  const Program& p = (*it)->getRules();
+	  prog.insert(prog.end(), p.begin(), p.end());
 	}
-
-	  std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->prog, this->prog.begin()));
-	}
+    }
 
   return this->prog;
 }
@@ -168,7 +156,7 @@ NodeGraph::addUniqueHeadNode(const AtomPtr& atom)
 			if (*oldnode == newnode)
 				continue;
 
-			if ((*oldnode)->getAtom()->unifiesWith(atom))
+			if ((*oldnode)->getAtom()->unifiesWith(*atom))
 			{
 				//
 				// in this function, we only search for existing BODY atoms!
@@ -183,8 +171,8 @@ NodeGraph::addUniqueHeadNode(const AtomPtr& atom)
 					// head into the body.
 					//
 					///@todo is this rule-id correct?
-					Dependency dep1(0, *oldnode, Dependency::UNIFYING);
-					Dependency dep2(0, newnode, Dependency::UNIFYING);
+				  Dependency dep1(RulePtr(), *oldnode, Dependency::UNIFYING);
+				  Dependency dep2(RulePtr(), newnode, Dependency::UNIFYING);
 
 					(*oldnode)->addPreceding(dep2);
 					newnode->addSucceeding(dep1);
@@ -236,7 +224,7 @@ NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 			 oldnode != atomNodes.end();
 			 ++oldnode)
 		{
-			if ((*oldnode)->getAtom()->unifiesWith(atom))
+			if ((*oldnode)->getAtom()->unifiesWith(*atom))
 			{
 				//
 				// in this function, we only search for existing HEAD atoms!
@@ -251,8 +239,8 @@ NodeGraph::addUniqueBodyNode(const AtomPtr& atom)
 					// into the body.
 					//
 					///@todo is this rule-id correct?
-					Dependency dep1(0, *oldnode, Dependency::UNIFYING);
-					Dependency dep2(0, newnode, Dependency::UNIFYING);
+				  Dependency dep1(RulePtr(), *oldnode, Dependency::UNIFYING);
+				  Dependency dep2(RulePtr(), newnode, Dependency::UNIFYING);
 
 					(*oldnode)->addSucceeding(dep2);
 					newnode->addPreceding(dep1);
