@@ -10,6 +10,7 @@ noinst_HEADERS = \
 	HexFlexLexer.h \
 	HexParserDriver.h \
 	ParserDriver.h \
+	PredefinedNames.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
 	State.h \
@@ -20,12 +21,22 @@ pkginclude_HEADERS = \
 	AggregateAtom.h \
 	AnswerSet.h \
 	Atom.h \
+	Atom.tcc \
 	AtomNode.h \
 	AtomSet.h \
+	AtomSetFunctions.h \
+	BaseAtom.h \
+	BaseLiteral.h \
+	BaseRule.h \
+	BaseQuery.h \
 	BaseVisitor.h \
+	Body.h \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
 	Component.h \
+	Constraint.h \
+	DepGraphDirector.h \
+	DepGraphDirector.tcc \
 	Dependency.h \
 	DependencyGraph.h \
 	DLVProcess.h \
@@ -34,21 +45,28 @@ pkginclude_HEADERS = \
 	ExternalAtom.h \
 	globals.h \
 	GraphBuilder.h \
+	Head.h \
+	HexDepGraph.h \
 	Literal.h \
+	Literal.tcc \
 	ModelGenerator.h \
 	NamesTable.h \
+	NegationTraits.h \
 	NodeGraph.h \
+	NullVisitor.h \
 	OutputBuilder.h \
-    PlatformDefinitions.h \
+	PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \
+	ProgramNode.h \
 	Process.h \
 	ProcessBuf.h \
 	Program.h \
 	ProgramCtx.h \
+	QueryTraits.h \
 	Registry.h \
-	Repository.h \
 	ResultContainer.h \
 	Rule.h \
-	Term.h
+	Term.h \
+	WeakConstraint.h

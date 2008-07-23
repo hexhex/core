@@ -64,13 +64,14 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 libdlvhexbase_la_SOURCES = \
     HexParser.ypp \
     HexScanner.lpp \
-    Atom.cpp \
     AggregateAtom.cpp \
     AtomNode.cpp \
-    AtomSet.cpp \
+    BaseAtom.cpp \
     BoostComponentFinder.cpp \
+    BuiltinPredicate.cpp \
     Component.cpp \
     ComponentFinder.cpp \
+    Constraint.cpp \
     Dependency.cpp \
     DependencyGraph.cpp \
     EvaluateExtatom.cpp \
@@ -81,20 +82,19 @@ libdlvhexbase_la_SOURCES = \
     GraphBuilder.cpp \
     GraphProcessor.cpp \
     GuessCheckModelGenerator.cpp \
-    Literal.cpp \
     NodeGraph.cpp \
     OrdinaryModelGenerator.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
+    PredefinedNames.cpp \
     PrintVisitor.cpp \
-    Program.cpp \
     ProgramCtx.cpp \
-    Repository.cpp \
     Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    Term.cpp
+    Term.cpp \
+    WeakConstraint.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
