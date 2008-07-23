@@ -34,6 +34,7 @@
 #define _DLVHEX_ANSWERSET_H
 
 #include "dlvhex/PlatformDefinitions.h"
+
 #include "dlvhex/AtomSet.h"
 
 
@@ -46,9 +47,9 @@ DLVHEX_NAMESPACE_BEGIN
  * program contains weak constraints, the weights determine the order of the
  * answer sets.
  */
-class DLVHEX_EXPORT AnswerSet : public AtomSet
+class DLVHEX_EXPORT AnswerSet
 {
-public:
+ public:
 
     /**
      * @brief Weight vector.
@@ -56,23 +57,49 @@ public:
      * Each element of the vector corresponds to a weight-level and its value
      * is the weight of the level.
      */
-    typedef std::vector<unsigned> weights_t;
+    typedef std::vector<unsigned> LevelWeight;
+
+ private:
+
+    // the atoms of this answer set
+    AtomSet atoms;
+
+    /**
+     * @brief Weight per level.
+     */
+    LevelWeight weights;
+
+    /**
+     * @brief Prefix denoting weak constraint auxiliary predicates.
+     */
+    bool weakProcessing;
+
+    /**
+     * @brief Highest level that occurs in the program.
+     */
+    unsigned maxLevel;
+
+    /**
+     * @brief Highest weight value that occurs in the program.
+     */
+    unsigned maxWeight;
+
+public:
 
     /**
      * @brief Constructor.
-     *
-     * the optional string specifies the prefix of the auxiliary predicate
-     * within the answer set that determines the costs of the set. If the string
-     * is left empty, costs are not considered at all.
      */
     explicit
-    AnswerSet(const std::string& = "");
+    AnswerSet(bool weakProcessing = false);
 
     /**
      * @brief Sets the AtomSet of the answer set.
      */
     void
-    setSet(const AtomSet&);
+    setAtomSet(const AtomSet&);
+
+    const AtomSet&
+    getAtomSet() const;
 
     /**
      * @brief Returns true if the answer set contains weight information, i.e.,
@@ -96,7 +123,7 @@ public:
      * Note that the numbering of levels starts with 1!
      */
     void
-    addWeight(unsigned weight, unsigned level);
+    addWeight(unsigned level, unsigned weight);
 
     /**
      * @brief Get weight of specified level.
@@ -111,11 +138,11 @@ public:
      *
      * This function returns true, if this answer set has less costs than the
      * specified one.
-	 * The exact semantics of "less" is determined by the used ordering. Default
-	 * notion of "less" is "lower numerical values", so an answer set is
-	 * cheaper, if its weights on the respective level are lower.  This can be
-	 * reversed by the command line switch "--reverse", then higher numerical
-	 * values are considered as "cheaper".
+     * The exact semantics of "less" is determined by the used ordering. Default
+     * notion of "less" is "lower numerical values", so an answer set is
+     * cheaper, if its weights on the respective level are lower.  This can be
+     * reversed by the command line switch "--reverse", then higher numerical
+     * values are considered as "cheaper".
      */
     bool
     cheaperThan(const AnswerSet&) const;
@@ -125,14 +152,14 @@ public:
      *
      * This function returns true, if this answer set has higher costs than are
      * specified in the weight-vector.
-	 * The exact semantics of "higher" is determined by the used ordering.
-	 * Default notion of "higher" is "higher numerical values", so an answer set
-	 * is more expensive, if its weights on the respective level are higher.
-	 * This can be reversed by the command line switch "--reverse", then lower
-	 * numerical values are considered as "more expensive".
+     * The exact semantics of "higher" is determined by the used ordering.
+     * Default notion of "higher" is "higher numerical values", so an answer set
+     * is more expensive, if its weights on the respective level are higher.
+     * This can be reversed by the command line switch "--reverse", then lower
+     * numerical values are considered as "more expensive".
      */
     bool
-    moreExpensiveThan(const weights_t&) const;
+    moreExpensiveThan(const LevelWeight&) const;
 
 
     /**
@@ -155,36 +182,15 @@ public:
      * Each of these two values is only stored if it is higher than the previous
      * one.
      */
-    static void
-    setMaxLevelWeight(unsigned, unsigned);
+    void
+    setMaxLevelWeight(unsigned l, unsigned w);
 
     /**
      * @brief Get maximum level that occurs in the program.
      */
-    static unsigned
+    unsigned
     getMaxLevel();
 
-private:
-
-    /**
-     * @brief Weight per level.
-     */
-    weights_t weights;
-
-    /**
-     * @brief Prefix denoting weak constraint auxiliary predicates.
-     */
-    std::string WCprefix;
-
-    /**
-     * @brief Highest level that occurs in the program.
-     */
-    static unsigned maxLevel;
-
-    /**
-     * @brief Highest weight value that occurs in the program.
-     */
-    static unsigned maxWeight;
 };
 
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
