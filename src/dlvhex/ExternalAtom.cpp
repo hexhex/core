@@ -23,6 +23,7 @@
 /**
  * @file   ExternalAtom.cpp
  * @author Roman Schindlauer
+ * @author Thomas Krennwallner
  * @date   Wed Sep 21 19:45:11 CEST 2005
  * 
  * @brief  External class atom.
@@ -30,15 +31,11 @@
  * 
  */
 
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/PluginInterface.h"
 #include "dlvhex/ExternalAtom.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/Registry.h"
 #include "dlvhex/BaseVisitor.h"
 
 #include <cassert>
-#include <string>
+#include <sstream>
 #include <functional>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -48,24 +45,36 @@ ExternalAtom::ExternalAtom()
 
 
 ExternalAtom::ExternalAtom(const ExternalAtom& extatom)
-  : Atom(extatom.arguments),
+  : BaseAtom(),
     inputList(extatom.inputList),
+    outputList(extatom.outputList),
     functionName(extatom.functionName),
     auxPredicate(extatom.auxPredicate),
-    replacementName(extatom.replacementName),
-    filename(extatom.filename),
-    line(extatom.line)
+    replacementName(extatom.replacementName)
 { }
 
 
-ExternalAtom::ExternalAtom(const std::string& name,
+ExternalAtom&
+ExternalAtom::operator= (const ExternalAtom& extatom)
+{
+  if (this != &extatom)
+    {
+      inputList = extatom.inputList;
+      outputList = extatom.outputList;
+      functionName = extatom.functionName;
+      auxPredicate = extatom.auxPredicate;
+      replacementName = extatom.replacementName;
+    }
+  return *this;
+}
+
+
+ExternalAtom::ExternalAtom(const Term& name,
 			   const Tuple& params,
-			   const Tuple& input,
-			   const unsigned line)
-  : Atom(name, params),
-    inputList(input),
-    functionName(name),
-    line(line)
+			   const Tuple& input)
+  : inputList(input),
+    outputList(params),
+    functionName(name)
 {
   // setup replacement name and so forth
   initReplAux();
@@ -81,18 +90,21 @@ ExternalAtom::initReplAux()
   //
   // make replacement name
   //
-  replacementName = "ex" + functionName;
+  std::ostringstream oss;
+  oss << "ex" << functionName;
+
+  replacementName = Term(oss.str());
 
   //
   // remember this artificial atom name, we need to remove those
   // later, they shouldn't be in the actual result
   //
-  Term::registerAuxiliaryName(replacementName);
+  Term::registerAuxiliaryName(oss.str());
 
   //
   // build auxiliary predicate
   //
-  auxPredicate.clear();
+  auxPredicate = Term("");
 
   if (!this->pureGroundInput())
     {
@@ -104,13 +116,14 @@ ExternalAtom::initReplAux()
       // also produce auxiliary predicate name, we need this for the
       // nonground input list
       //
-      auxPredicate = replacementName + "_aux";
+      oss << "_aux";
+      auxPredicate = Term(oss.str());
     }
 }
 
 
 
-const std::string&
+const Term&
 ExternalAtom::getAuxPredicate() const
 {
   return auxPredicate;
@@ -118,35 +131,39 @@ ExternalAtom::getAuxPredicate() const
 
 
 void
-ExternalAtom::setAuxPredicate(const std::string& auxname)
+ExternalAtom::setAuxPredicate(const Term& auxname)
 {
   auxPredicate = auxname;
 }
 
 
 void
-ExternalAtom::setFunctionName(const std::string& name)
+ExternalAtom::setPredicate(const Term& fname)
 {
   // set new functionName
-  this->functionName = name;
-
-  // and set predicate name? at least we need them in operator== and
-  // unifiesWith
-  this->arguments[0] = Term(name);
+  this->functionName = fname;
 
   // and now setup the new replacement and aux names
   initReplAux();
 }
+	
 
-
-const std::string&
-ExternalAtom::getFunctionName() const
+const Term&
+ExternalAtom::getPredicate() const
 {
   return functionName;
 }
 
 
-const std::string&
+
+const Tuple&
+ExternalAtom::getArguments() const
+{
+  return outputList;
+}
+
+
+const Term&
 ExternalAtom::getReplacementName() const
 {
   return replacementName;
@@ -156,57 +173,103 @@ ExternalAtom::getReplacementName() const
 bool
 ExternalAtom::pureGroundInput() const
 {
+  ///@todo move outside
   // if we cannot find a variable input argument, we are ground
-  return inputList.end() == std::find_if(inputList.begin(), inputList.end(), std::mem_fun_ref(&Term::isVariable));
+  return inputList.end() == std::find_if(inputList.begin(),
+					 inputList.end(),
+					 std::mem_fun_ref(&Term::isVariable));
+}
+
+
+bool
+ExternalAtom::isGround() const
+{
+  // this atom unifies with atom2 iff all arguments unify pairwise
+  return pureGroundInput() &&
+    outputList.end() == std::find_if(outputList.begin(),
+				     outputList.end(),
+				     std::mem_fun_ref(&Term::isVariable));
+}
+
+
+void
+ExternalAtom::setArguments(const Tuple& nargs)
+{
+  outputList = nargs;
+}
+
+
+const Term&
+ExternalAtom::operator[] (unsigned i) const
+{
+  if (i)
+    {
+      assert(i < outputList.size());
+      return outputList[i];
+    }
+  return functionName;
+}
+
+
+Term&
+ExternalAtom::operator[] (unsigned i)
+{
+  if (i)
+    {
+      assert(i < outputList.size());
+      return outputList[i];
+    }
+  return functionName;
+}
+
+
+unsigned
+ExternalAtom::getArity() const
+{
+  return outputList.size();
 }
 
 
 const Tuple&
-ExternalAtom::getInputTerms() const
+ExternalAtom::getInputList() const
 {
   return inputList;
 }
 
 
 void
-ExternalAtom::setInputTerms(const Tuple& ninput)
+ExternalAtom::setInputList(const Tuple& ninput)
 {
-  inputList.clear();
+  inputList = ninput;
 	
-  // copy nargs to the 2nd position in inputList
-  inputList.insert(inputList.end(), 
-		   ninput.begin(),
-		   ninput.end()
-		   );
-
   ///@todo new replacementname for nonground input?
   ///@todo check parameter length?
 }
 
 
 bool
-ExternalAtom::unifiesWith(const AtomPtr& atom2) const
+ExternalAtom::unifiesWith(const BaseAtom& atom2) const
 {
   //
   // external atoms only unify with external atoms of the the same
   // name, and the same arity of input and output lists
   //
-  if (typeid(*(atom2.get())) == typeid(ExternalAtom))
+  if (typeid(atom2) == typeid(ExternalAtom))
     {
-      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(atom2.get());
+      const ExternalAtom& ea2 = static_cast<const ExternalAtom&>(atom2);
 
-      if (getFunctionName() == ea2->getFunctionName() &&
-	  getArity() == ea2->getArity() &&
-	  inputList.size() == ea2->inputList.size())
+      if (functionName == ea2.functionName &&
+	  inputList.size() == ea2.inputList.size() &&
+	  outputList.size() == ea2.outputList.size())
 	{
 	  // both input and output lists must unify
 	  return
-	    std::equal(arguments.begin(), arguments.end(),
-		       ea2->arguments.begin(),
+	    std::equal(outputList.begin(), outputList.end(),
+		       ea2.outputList.begin(),
 		       std::mem_fun_ref(&Term::unifiesWith))
 	    &&
 	    std::equal(inputList.begin(), inputList.end(),
-		       ea2->inputList.begin(),
+		       ea2.inputList.begin(),
 		       std::mem_fun_ref(&Term::unifiesWith));
 	}
     }
@@ -215,77 +278,64 @@ ExternalAtom::unifiesWith(const AtomPtr& atom2) const
 }
 
 
-bool
-ExternalAtom::operator== (const Atom& atom2) const
+int
+ExternalAtom::compare (const BaseAtom& atom2) const
 {
-  bool ret = false;
-
   // don't forget, typeid gives the most derived type only if it is
   // applied to a non-pointer
-  if (typeid(atom2) == typeid(ExternalAtom))
-    {
-      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
+  const std::type_info& type1 = typeid(ExternalAtom);
+  const std::type_info& type2 = typeid(atom2);
 
-      if (this->functionName == ea2->functionName &&
-	  this->getArity() == ea2->getArity() &&
-	  this->isStrongNegated == ea2->isStrongNegated &&
-	  this->inputList == ea2->inputList)
+  if (type1 == type2)
+    {
+      const ExternalAtom& ea2 = static_cast<const ExternalAtom&>(atom2);
+
+      int fcmp = functionName.compare(ea2.functionName);
+
+      if (fcmp == 0)
 	{
-	  ret = std::equal(this->arguments.begin(), this->arguments.end(),
-			   ea2->arguments.begin());
+	  unsigned is1 = inputList.size();
+	  unsigned is2 = ea2.inputList.size();
+
+	  if (is1 == is2)
+	    {
+	      std::pair<Tuple::const_iterator, Tuple::const_iterator> ires =
+		std::mismatch(inputList.begin(), inputList.end(),
+			      ea2.inputList.begin());
+
+	      if (ires.first == inputList.end())
+		{
+		  unsigned os1 = inputList.size();
+		  unsigned os2 = ea2.inputList.size();
+
+		  if (os1 == os2)
+		    {
+		      std::pair<Tuple::const_iterator, Tuple::const_iterator> ores =
+			std::mismatch(outputList.begin(), outputList.end(),
+				      ea2.outputList.begin());
+
+		      return ores.first == outputList.end() ? 0 :
+			ores.first->compare(*ores.second);
+		    }
+
+		  return os1 - os2;
+		}
+	    }
+
+	  return is1 - is2;
 	}
+
+      return fcmp;
     }
 
-  return ret;
-}
-
-
-bool
-ExternalAtom::operator< (const Atom& atom2) const
-{
-  bool ret = false;
-
-  if (typeid(atom2) == typeid(ExternalAtom))
-    {
-      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
-
-      if (this->functionName < ea2->functionName)
-	{
-	  ret = true;
-	}
-      else if (this->getArity() < ea2->getArity())
-	{
-	  ret = true;
-	}
-      else if (this->isStrongNegated < ea2->isStrongNegated)
-	{
-	  ret = true;
-	}
-      else if (this->inputList < ea2->inputList)
-	{
-	  ret = true;
-	}
-      else if (this->getArguments() < ea2->getArguments())
-	{
-	  ret = true;
-	}
-    }
-
-  return ret;
+  return type1.before(type2) ? -1 : 1;
 }
 
 
 void
-ExternalAtom::accept(BaseVisitor& v)
+ExternalAtom::accept(BaseVisitor* const v)
 {
-  v.visit(this);
-}
-
-
-unsigned
-ExternalAtom::getLine() const
-{
-  return line;
+  v->visit(this);
 }
 
 DLVHEX_NAMESPACE_END

@@ -21,37 +21,32 @@
 
 
 /**
- * @file Program.h
- * @author Roman Schindlauer
+ * @file BaseAtom.cpp
  * @author Thomas Krennwallner
- * @date Tue Mar  7 16:48:47 CET 2006
+ * @date Fri Jul 18 14:03:39 CEST 2008
  *
- * @brief Program class.
+ * @brief Non-member functions of BaseAtom.
+ *
  *
  */
 
 
-#if !defined(_DLVHEX_PROGRAM_H)
-#define _DLVHEX_PROGRAM_H
+#include "dlvhex/BaseAtom.h"
 
-#include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/BaseRule.h"
-
-#include <list>
+#include "dlvhex/PrintVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-/**
- * @brief Program is a list of Rules.
- */
-typedef std::list<RulePtr> Program;
+std::ostream&
+operator<< (std::ostream& out, const BaseAtom& atom)
+{
+  RawPrintVisitor rpv(out);
+  const_cast<BaseAtom*>(&atom)->accept(&rpv);
+  return out;
+}
+
 
 DLVHEX_NAMESPACE_END
-
-#endif /* _DLVHEX_PROGRAM_H */
-
-/* vim: set noet sw=4 ts=4 tw=80: */
 
 
 // Local Variables:

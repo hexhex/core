@@ -629,11 +629,14 @@ main (int argc, char *argv[])
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Parsed Rules: "
+						  << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
-	  pctx.getEDB()->accept(rpv);
+	  rpv << *pctx.getIDB();
+	  Globals::Instance()->getVerboseStream() << std::endl
+						  << "Parsed EDB: "
+						  << std::endl;
+	  rpv << *pctx.getEDB();
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       
@@ -648,11 +651,14 @@ main (int argc, char *argv[])
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Rewritten rules:"
+						  << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
-	  pctx.getEDB()->accept(rpv);
+	  rpv << *pctx.getIDB();
+	  Globals::Instance()->getVerboseStream() << std::endl
+						  << "Rewritten EDB:"
+						  << std::endl;
+	  rpv << *pctx.getEDB();
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       
@@ -668,7 +674,8 @@ main (int argc, char *argv[])
 	{
 	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:"
+						  << std::endl;
 
 	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
 	       node != nodegraph->getNodes().end();
@@ -705,9 +712,11 @@ main (int argc, char *argv[])
 	  
 	  Globals::Instance()->getVerboseStream() << std::endl;
 
-	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
+	  Globals::Instance()->getVerboseStream() << std::endl
+						  << "Optimized EDB:"
+						  << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getEDB()->accept(rpv);
+	  rpv << *pctx.getEDB();
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       

@@ -21,102 +21,93 @@
 
 
 /**
- * @file   BaseVisitor.h
+ * @file   NullVisitor.h
  * @author Thomas Krennwallner
- * @date   Mon Oct 23 18:16:28 2006
+ * @date   Mon Jul 21 12:48:44 2008
  * 
- * @brief  The base class for all Visitors.
+ * @brief  A no-op visitors.
  * 
  * 
  */
 
 
-#if !defined(_DLVHEX_BASEVISITOR_H)
-#define _DLVHEX_BASEVISITOR_H
+#if !defined(_DLVHEX_NULLVISITOR_H)
+#define _DLVHEX_NULLVISITOR_H
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/NegationTraits.h"
-#include "dlvhex/QueryTraits.h"
+
+#include "dlvhex/BaseVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-//
-// forward declarations
-//
-template<typename T> class Query;
-class Rule;
-class Constraint;
-class WeakConstraint;
-template<typename T> class Atom;
-template<typename T> class Literal;
-class ExternalAtom;
-class BuiltinPredicate;
-class AggregateAtom;
-
 
 /**
- * @brief The baseclass for all visitors.
- *
- * When calling the accept(BaseVisitor*) method of an object, the
- * object knows its own type and calls the corresponding visiting
- * method of BaseVisitor.
+ * @brief does nothing.
  */
-class DLVHEX_EXPORT BaseVisitor
+class DLVHEX_EXPORT NullVisitor : public BaseVisitor
 {
 public:
-  virtual
-  ~BaseVisitor()
-  { }
-
   // visit different types of queries
 
   virtual void
-  visit(Query<Brave>* const) = 0;
+  visit(Query<Brave>* const)
+  { }
 
   virtual void
-  visit(Query<Cautious>* const) = 0;
+  visit(Query<Cautious>* const)
+  { }
 
   // visit different types of rules
 
   virtual void
-  visit(Rule* const) = 0;
+  visit(Rule* const)
+  { }
 
   virtual void
-  visit(WeakConstraint* const) = 0;
+  visit(WeakConstraint* const)
+  { }
 
   virtual void
-  visit(Constraint* const) = 0;
+  visit(Constraint* const)
+  { }
 
   // visit positive and negative literals
 
   virtual void
-  visit(Literal<Positive>* const) = 0;
+  visit(Literal<Positive>* const)
+  { }
 
   virtual void
-  visit(Literal<Negative>* const) = 0;
+  visit(Literal<Negative>* const)
+  { }
 
   // visit different types of atoms
 
   virtual void
-  visit(Atom<Positive>* const) = 0;
+  visit(Atom<Positive>* const)
+  { }
 
   virtual void
-  visit(Atom<Negative>* const) = 0;
+  visit(Atom<Negative>* const)
+  { }
 
   virtual void
-  visit(ExternalAtom* const) = 0;
+  visit(ExternalAtom* const)
+  { }
 
   virtual void
-  visit(BuiltinPredicate* const) = 0;
+  visit(BuiltinPredicate* const)
+  { }
 
   virtual void
-  visit(AggregateAtom* const) = 0;
+  visit(AggregateAtom* const)
+  { }
 
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_BASEVISITOR_H */
+#endif /* _DLVHEX_NULLVISITOR_H */
 
 
 // Local Variables:

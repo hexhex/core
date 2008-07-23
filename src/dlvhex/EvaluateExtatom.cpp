@@ -35,6 +35,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/EvaluateExtatom.h"
+#include "dlvhex/AtomSetFunctions.h"
 
 #include <iostream>
 #include <sstream>
@@ -52,7 +53,7 @@ EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArgu
   if (externalAtom->pureGroundInput())
     {
       // take the original input list
-      inputArguments.push_back(externalAtom->getInputTerms());
+      inputArguments.push_back(externalAtom->getInputList());
     }
   else // nonground input list
     {
@@ -63,13 +64,11 @@ EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArgu
       // rules
       //
 
-      AtomSet arglist;
-
       //
       // get all the facts from i that match the auxiliary head atom
       // the arguments of those facts will be our input lists!
       //
-      i.matchPredicate(externalAtom->getAuxPredicate(), arglist);
+      AtomSet arglist = matchPredicate(i, externalAtom->getAuxPredicate());
 
       //
       // for each auxiliary fact we create a new input list for the
@@ -80,7 +79,7 @@ EvaluateExtatom::groundInputList(const AtomSet& i, std::vector<Tuple>& inputArgu
 	   argi != arglist.end();
 	   ++argi)
 	{
-	  inputArguments.push_back(argi->getArguments());
+	  inputArguments.push_back((*argi)->getArguments());
 	}
     }
 }
@@ -123,13 +122,16 @@ void
 EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
   throw (PluginError)
 {
-  const std::string& fnc = externalAtom->getFunctionName();
+  const Term& fnc = externalAtom->getPredicate();
 
-  boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(fnc);
+  ///@todo hm, could be nicer
+  boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(fnc.getUnquotedString());
 
   if (!pluginAtom)
     {
-      throw PluginError("Could not find plugin for external atom " + fnc);
+      std::ostringstream oss;
+      oss << "Could not find plugin for external atom " << fnc;
+      throw PluginError(oss.str());
     }
 
   std::vector<Tuple> inputArguments;
@@ -164,19 +166,20 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	    {
 	    case PluginAtom::CONSTANT:
 	      //
-	      // nothing to do, the constant will be passed directly to the plugin
+	      // nothing to do, the constant will be passed directly
+	      // to the plugin
 	      //
 	      break;
 
 	    case PluginAtom::PREDICATE:
 	      //
-	      // collect all facts from interpretation that we need for the input
-	      // of the external atom
+	      // collect all facts from interpretation that we need
+	      // for the input of the external atom
 	      //
 
-	      /// @todo: since matchpredicate doesn't neet the output list, do we
-	      /// need that factlist here?
-	      i.matchPredicate(termit->getString(), inputSet);
+	      /// @todo: since matchpredicate doesn't need the output
+	      /// list, do we need that factlist here?
+	      inputSet = matchPredicate(i, *termit);
 	      
 	      break;
 
@@ -189,6 +192,8 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	      // CONSTANT and PREDICATE, see PluginAtom!
 	      //
 	      //inputSet = i;
+
+	      ///@todo hm, this looks like we should assert here...
 
 	      break;
 	    }
@@ -213,12 +218,17 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	{
 	  std::ostringstream atomstr;
 	  
-	  atomstr << externalAtom->getFunctionName() << "["
-		  << externalAtom->getInputTerms() << "](" 
+	  atomstr << externalAtom->getPredicate() << "["
+		  << externalAtom->getInputList() << "](" 
 		  << externalAtom->getArguments() << ")"
-		  << " in line "
-		  << externalAtom->getLine();
+		  << " in "
+		  << externalAtom->getSource()
+		  << ":"
+		  << externalAtom->getLine()
+		  << ":"
+		  << externalAtom->getColumn();
 
+	  ///@todo hm, maybe a location object??
 	  e.setContext(atomstr.str());
 
 	  throw e;
@@ -235,7 +245,13 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	{
 	  if (s->size() != externalAtom->getArguments().size())
 	    {
-	      throw PluginError("External atom " + externalAtom->getFunctionName() + " returned tuple of incompatible size.");
+	      std::ostringstream oss;
+
+	      oss << "External atom "
+		  << externalAtom->getPredicate()
+		  << " returned tuple of incompatible size.";
+
+	      throw PluginError(oss.str());
 	    }
 
 	  // check if this answer from pluginatom conforms to the external atom's arguments
@@ -246,18 +262,27 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 			  CheckOutput()
 			  );
 
-	  if (mismatched.first == s->end()) // no mismatch found -> add this tuple to the result
+	  // no mismatch found -> add this tuple to the result
+	  if (mismatched.first == s->end())
 	    {
-	      // the replacement atom contains both the input and the output list!
-	      // (*inputi must be ground here, since it comes from
-	      // groundInputList(i, inputArguments))
-	      Tuple resultTuple(*inputi);
+	      ///@todo this could be more efficient!
+
+	      // add predicate
+	      Tuple resultTuple(1, externalAtom->getReplacementName());
+
+	      // the replacement atom contains both the input and the
+	      // output list!  (*inputi must be ground here, since it
+	      // comes from groundInputList(i, inputArguments))
+
+	      resultTuple.insert(resultTuple.end(),
+				 inputi->begin(),
+				 inputi->end());
 
 	      // add output list
 	      resultTuple.insert(resultTuple.end(), s->begin(), s->end());
 
 	      // setup new atom with appropriate replacement name
-	      AtomPtr ap(new Atom(externalAtom->getReplacementName(), resultTuple));
+	      AtomPtr ap(new Atom<Positive>(resultTuple));
 
 	      result.insert(ap);
 	    }

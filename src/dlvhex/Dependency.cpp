@@ -34,7 +34,7 @@
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
-
+#include "dlvhex/ExternalAtom.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -52,7 +52,7 @@ Dependency::Dependency(const Dependency& dep2)
 }
 
 
-Dependency::Dependency(Rule* r, const AtomNodePtr& an, Type t)
+Dependency::Dependency(const RulePtr& r, const AtomNodePtr& an, Type t)
   : atomNode(an), type(t), rule(r)
 {
 }
@@ -74,94 +74,102 @@ Dependency::getAtomNode() const
 }
 
 
-Rule*
+RulePtr
 Dependency::getRule() const
 {
 	return rule;
 }
 
 void
-Dependency::addDep(Rule* rule, const AtomNodePtr& from, const AtomNodePtr& to, Dependency::Type type)
+Dependency::addDep(const RulePtr& rule,
+		   const AtomNodePtr& from,
+		   const AtomNodePtr& to,
+		   Dependency::Type type)
 {
-	Dependency dep1(rule, from, type);
-	Dependency dep2(rule, to, type);
+  Dependency dep1(rule, from, type);
+  Dependency dep2(rule, to, type);
 
-	from->addSucceeding(dep2);
-	to->addPreceding(dep1);
+  from->addSucceeding(dep2);
+  to->addPreceding(dep1);
 }
 
 
 bool
 Dependency::operator< (const Dependency& dep2) const
 {
-	if (this->rule < dep2.rule)
-		return true;
-	if (this->rule > dep2.rule)
-		return false;
+  if (this->type < dep2.type)
+    {
+      return true;
+    }
+  else if (this->type > dep2.type)
+    { 
+      return false;
+    }
+  else if (this->atomNode->getId() < dep2.atomNode->getId())
+    {
+      return true;
+    }
+  else if (this->atomNode->getId() > dep2.atomNode->getId())
+    {
+      return false;
+    }
 
-	if (this->atomNode->getId() < dep2.atomNode->getId())
-		return true;
-	if (this->atomNode->getId() > dep2.atomNode->getId())
-		return false;
-
-	if (this->type < dep2.type)
-		return true;
-	if (this->type > dep2.type)
-		return false;
-
-	return false;
+  return this->rule->compare(*dep2.rule) < 0 ? true : false;
 }
 
 
-std::ostream& operator<< (std::ostream& out, const Dependency& dep)
+std::ostream&
+operator<< (std::ostream& out, const Dependency& dep)
 {
-	out << *(dep.getAtomNode()->getAtom());
-	if (typeid(*(dep.getAtomNode()->getAtom())) == typeid(ExternalAtom))
-	{
-		const ExternalAtom* ea =  static_cast<ExternalAtom*>(dep.getAtomNode()->getAtom().get());
-		out << " " <<  ea->getReplacementName() << " ";
-	}
+  const AtomPtr& ap = dep.getAtomNode()->getAtom();
+
+  out << *ap;
+
+  if (typeid(*ap) == typeid(ExternalAtom))
+    {
+      const ExternalAtom& ea =  static_cast<const ExternalAtom&>(*ap);
+      out << " " <<  ea.getReplacementName() << " ";
+    }
 
 
-	out << " [";
+  out << " [";
 
-	switch (dep.getType())
-	{
-	case Dependency::UNIFYING:
-		out << "unifying";
-		break;
-
-	case Dependency::PRECEDING:
-		out << "head-body";
-		break;
-
-	case Dependency::NEG_PRECEDING:
-		out << "head-body NAF";
-		break;
-
-	case Dependency::DISJUNCTIVE:
-		out << "disjunctive";
-		break;
-
-	case Dependency::EXTERNAL:
-		out << "external";
-		break;
-
-	case Dependency::EXTERNAL_AUX:
-		out << "external aux";
-		break;
-
-	default:
-		assert(0);
-		break;
-	}
-
-	out << "]";
-	
-	if (dep.getRule() != 0)
-		out << " rule: " << *(dep.getRule());
-
-	return out;
+  switch (dep.getType())
+    {
+    case Dependency::UNIFYING:
+      out << "unifying";
+      break;
+      
+    case Dependency::PRECEDING:
+      out << "head-body";
+      break;
+      
+    case Dependency::NEG_PRECEDING:
+      out << "head-body NAF";
+      break;
+      
+    case Dependency::DISJUNCTIVE:
+      out << "disjunctive";
+      break;
+      
+    case Dependency::EXTERNAL:
+      out << "external";
+      break;
+      
+    case Dependency::EXTERNAL_AUX:
+      out << "external aux";
+      break;
+      
+    default:
+      assert(0);
+      break;
+    }
+  
+  out << "]";
+  
+  RulePtr r = dep.getRule();
+  
+  return r == 0 ? out : out << " rule: " << *r;
 }
 
 

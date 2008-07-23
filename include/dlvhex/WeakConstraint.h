@@ -21,117 +21,116 @@
 
 
 /**
- * @file Rule.h
+ * @file WeakConstraint.h
  * @author Roman Schindlauer
  * @author Thomas Krennwallner
  * @date Thu Jun 30 12:39:40 2005
  *
- * @brief Rule class.
+ * @brief WeakConstraint class.
  *
  */
 
 
-#if !defined(_DLVHEX_RULE_H)
-#define _DLVHEX_RULE_H
+#if !defined(_DLVHEX_WEAKCONSTRAINT_H)
+#define _DLVHEX_WEAKCONSTRAINT_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/BaseRule.h"
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 
 /**
- * @brief Class for representing a rule object.
+ * @brief A weak constraint is a rule with empty head and weight/level values.
  */
-class DLVHEX_EXPORT Rule : public BaseRule
+class DLVHEX_EXPORT WeakConstraint : public BaseRule
 {
- protected:
+ private:
 
-  /**
-   * Rule head.
-   */
-  HeadPtr rulehead;
+  // weak constraint body
+  BodyPtr weakbody;
 
-  /**
-   * Rule body.
-   */
-  BodyPtr rulebody;
-  
+  // weak constraint head
+  HeadPtr weakhead;
+
+  /// wc weight
+  Term weight;
+  /// wc level
+  Term level;
+
+
   int
   compare(const BaseRule&) const;
 
- public:
+public:
 
   /**
-   * @brief Constructs a rule from a head and a body.
+   * @brief See constructor of Rule.
    *
-   * Third argument is the file name and fourth the line number this rule
-   * appeared in. Both can be ommitted.
+   * The third parameter is the weight, the fourth is the level of the weak
+   * constraint.
    */
-  Rule(const HeadPtr&, const BodyPtr&);
-
-  /**
-   * Destructor.
-   */
-  virtual
-  ~Rule();
-
-  /**
-   * @return the rule head.
-   */
-  const HeadPtr&
-  head() const;
-
-  /**
-   * @return the rule head.
-   */
-  HeadPtr&
-  head();
-
-
-  /**
-   * @return the rule body.
-   */
-  const BodyPtr&
-  body() const;
-
-  /**
-   * @return the rule body.
-   */
-  BodyPtr&
-  body();
-
-  /**
-   * @brief Replaces the rule's head by the specified one.
-   */
-  void
-  setHead(const HeadPtr&);
-
-  /**
-   * @brief Replaces the rule's body by the specified one.
-   */
-  void
-  setBody(const BodyPtr&);
+  WeakConstraint(const BodyPtr&, const Term&, const Term&);
 
   /**
    * @brief accepts a visitor.
    *
    * According to the visitor pattern, accept simply calls the respective
-   * visitor with the Rule itself as parameter.
+   * visitor with the weak constraint itself as parameter.
    *
    * \sa http://en.wikipedia.org/wiki/Visitor_pattern
    */
-  void
+  virtual void
   accept(BaseVisitor* const);
+
+
+  /**
+   * Returns the weight of the WC.
+   */
+  const Term&
+  getWeight() const
+  {
+    return weight;
+  }
+
+
+  /**
+   * Returns the level of the WC.
+   */
+  const Term&
+  getLevel() const
+  {
+    return level;
+  }
+
+
+  void
+  setHead(const HeadPtr&);
+
+
+  void
+  setBody(const BodyPtr&);
+
+
+  const HeadPtr&
+  head() const;
+
+
+  HeadPtr&
+  head();
+
+  const BodyPtr&
+  body() const;
+
+  BodyPtr&
+  body();
 
 };
 
-
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_RULE_H */
+#endif /* _DLVHEX_WEAKCONSTRAINT_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

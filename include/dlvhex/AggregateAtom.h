@@ -23,6 +23,7 @@
 /**
  * @file AggregateAtom.h
  * @author Roman Schindlauer
+ * @author Thomas Krennwallner
  * @date Wed Oct 18 16:03:31 CEST 2006
  *
  * @brief Aggregate Atom class.
@@ -34,11 +35,8 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/Atom.h"
-
-// we need also literal, because the rule body type is declared there:
-#include "dlvhex/Literal.h"
-
+#include "dlvhex/BaseAtom.h"
+#include "dlvhex/Body.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -53,24 +51,59 @@ DLVHEX_NAMESPACE_BEGIN
  * other parts of the program, hence we have to consider this when building the
  * dependency graph
  */
-class DLVHEX_EXPORT AggregateAtom : public Atom
+class DLVHEX_EXPORT AggregateAtom : public BaseAtom
 {
-public:
+private:
 
     /**
-     * Constructing an aggregate predicate.
-     *
-     * The constructor only builds the aggregate itself, the actual comparison
-     * operator and the other term(s) of the comparison are parsed later.
-     *
-     * @param aggtype Type of the aggregate (this is basically just the
-     * aggregate's name that will be passed on to dlv).
-     * @param vars Variables to aggregate on.
-     * @param conj Atom conjunction of the aggregate.
+     * The atom conjunction.
      */
-    AggregateAtom(const std::string& aggtype,
-                  const Tuple& vars,
-                  const RuleBody_t& conj);
+    BodyPtr body;
+
+    /**
+     * The actual variables to aggregate on.
+     */
+    Tuple aggVars;
+
+    /**
+     * The type of aggregate.
+     *
+     * We just take the string as it was parsed and pass it on to dlv.
+     */
+    Term type;
+
+    /**
+     * Term(s) to be compared with.
+     */
+    Term left;
+    Term right;
+
+    /**
+     * Comparison operator.
+     */
+    std::string cmpLeft;
+    std::string cmpRight;
+
+
+    int compare(const BaseAtom&) const;
+
+
+ public:
+
+  /**
+   * Constructing an aggregate predicate.
+   *
+   * The constructor only builds the aggregate itself, the actual comparison
+   * operator and the other term(s) of the comparison are parsed later.
+   *
+   * @param aggtype Type of the aggregate (this is basically just the
+   * aggregate's name that will be passed on to dlv).
+   * @param vars Variables to aggregate on.
+   * @param conj Atom conjunction of the aggregate.
+   */
+  AggregateAtom(const Term& aggtype,
+		const Tuple& vars,
+		const BodyPtr& conj);
 
     /**
      * Sets the comparison operator(s).
@@ -107,6 +140,24 @@ public:
     void
     setRightTerm(const Term&);
 
+
+    const Term& getPredicate() const;
+
+    void setPredicate(const Term&);
+
+    const Tuple& getArguments() const;
+
+    void setArguments(const Tuple&);
+
+    const Term& operator[](unsigned int) const;
+
+    Term& operator[](unsigned int);
+
+    unsigned int getArity() const;
+
+    bool isGround() const;
+
+
     /**
      * @brief Tests for unification with another atom.
      *
@@ -117,15 +168,15 @@ public:
      * determine whether an aggregate expression depends on an atom - though, of
      * course, an aggregate itself cannot unify with anything.
      */
-    virtual bool
-    unifiesWith(const AtomPtr) const;
+    bool
+    unifiesWith(const BaseAtom&) const;
 
 
-    virtual void
-    accept(BaseVisitor&);
+    void
+    accept(BaseVisitor* const);
 
 
-    const RuleBody_t&
+    const BodyPtr&
     getBody() const
     {
       return body;
@@ -139,7 +190,7 @@ public:
     }
 
 
-    const std::string&
+    const Term&
     getType() const
     {
       return type;
@@ -169,34 +220,6 @@ public:
       return cmpRight;
     }
 
-private:
-
-    /**
-     * The atom conjunction.
-     */
-    RuleBody_t body;
-
-    /**
-     * The actual variables to aggregate on.
-     */
-    Tuple aggVars;
-
-    /**
-     * The type of aggregate.
-     *
-     * We just take the string as it was parsed and pass it on to dlv.
-     */
-    std::string type;
-
-    /**
-     * Term(s) to be compared with.
-     */
-    Term left, right;
-
-    /**
-     * Comparison operator.
-     */
-    std::string cmpLeft, cmpRight;
 };
 
 

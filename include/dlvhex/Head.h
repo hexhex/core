@@ -21,35 +21,43 @@
 
 
 /**
- * @file Program.h
- * @author Roman Schindlauer
+ * @file   Head.h
  * @author Thomas Krennwallner
- * @date Tue Mar  7 16:48:47 CET 2006
- *
- * @brief Program class.
- *
+ * @date   Tue Jul 15 12:03:33 2008
+ * 
+ * @brief  A rule head.
+ * 
+ * 
  */
 
-
-#if !defined(_DLVHEX_PROGRAM_H)
-#define _DLVHEX_PROGRAM_H
+#if !defined(_DLVHEX_HEAD_H)
+#define _DLVHEX_HEAD_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/BaseRule.h"
+#include "dlvhex/BaseAtom.h"
 
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
+
 /**
- * @brief Program is a list of Rules.
+ * A rule head is a disjunction of Atoms.
+ *
+ * Since we might have to rewrite rules, we use a std::vector for
+ * them. Otw., we would need to recalculate the ordering in a set.
+ *
+ * \sa http://www.sgi.com/tech/stl/List.html
  */
-typedef std::list<RulePtr> Program;
+typedef std::list<AtomPtr> Head;
+
+typedef boost::shared_ptr<Head> HeadPtr;
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_PROGRAM_H */
+#endif /* _DLVHEX_HEAD_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

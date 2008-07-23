@@ -37,10 +37,13 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/BaseVisitor.h"
+#include "dlvhex/Program.h"
+#include "dlvhex/AtomSet.h"
 
 #include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
+
 
 /**
  * @brief Base print visitor.
@@ -51,10 +54,10 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT PrintVisitor : public BaseVisitor
 {
-protected:
+ protected:
   std::ostream& stream;
-
-public:
+  
+ public:
 
   explicit
   PrintVisitor(std::ostream&);
@@ -65,27 +68,34 @@ public:
   std::ostream&
   getStream();
 
-  /// iterate over all rules and calls Rule::accept with this visitor
-  virtual void
-  visit(Program* const);
 
   /// outputs the Rule in
   /// 'a_1 v ... v a_k :- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
-  /// form, i.e., it calls accept(*this) on each a_i and b_j.
+  /// form, i.e., it calls accept(this) on each a_i and b_j.
   virtual void
   visit(Rule* const);
 
-  /// outputs the AtomSet in '{ a_1, ..., a_n }' form
+  /// outputs the Constraint in
+  /// ':- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
+  /// form
   virtual void
-  visit(AtomSet* const);
+  visit(Constraint* const);
 
-  /// outputs the Literal either as Atom 'a' or as 'not a'
+  /// outputs the Literal as 'a'
   virtual void
-  visit(Literal* const);
+  visit(Literal<Positive>* const);
+
+  /// outputs the Literal as 'not a'
+  virtual void
+  visit(Literal<Negative>* const);
 
   /// outputs the Atom in 'p(t_1,...,t_n)' form
   virtual void
-  visit(Atom* const);
+  visit(Atom<Positive>* const);
+
+  /// outputs the Atom in '-p(t_1,...,t_n)' form
+  virtual void
+  visit(Atom<Negative>* const);
 
   /// outputs the BuiltinPredicate in 't_1 COMP t_2' form
   virtual void
@@ -97,7 +107,23 @@ public:
   virtual void
   visit(AggregateAtom* const);
 
+
+  virtual void
+  visit(Query<Brave>* const);
+
+  virtual void
+  visit(Query<Cautious>* const);
+
+
 };
+
+
+PrintVisitor&
+operator<< (PrintVisitor&, const Program&);
+
+
+PrintVisitor&
+operator<< (PrintVisitor&, const AtomSet&);
 
 
 /**
@@ -133,11 +159,18 @@ public:
 /**
  * @brief Prints all elements of a Program suitable for sending to
  * DLV.
+ *
+ * WeakContstraints will be rewritten to rules with a special head
+ * atom, and ExternalAtoms will be rewritten to replacement atoms.
+ *
+ * @todo keep track of already rewritten WeakConstraints and reuse rewritten rules?
  */
 class DLVHEX_EXPORT DLVPrintVisitor : public PrintVisitor
 {
-public:
+ protected:
+  int wcCounter;
 
+ public:
   explicit
   DLVPrintVisitor(std::ostream&);
 
@@ -151,8 +184,8 @@ public:
   virtual void
   visit(Rule* const);
 
-  /// calls DLVPrintVisitor::visitRule, i.e. it will output a
-  /// constraint of form ':- b_1, ..., b_m, not b_{m+1}, not b_n.\n'
+  /// rewrites the incoming WeakConstraint to a Rule of form
+  /// 'wch__i :- b_1, ..., b_m, not b_{m+1}, not b_n.'
   virtual void
   visit(WeakConstraint* const);
 
@@ -174,10 +207,15 @@ public:
   explicit
   HOPrintVisitor(std::ostream&);
 
-  /// outputs an Atom in higher order mode, i.e. in
+  /// outputs an Atom in higher order mode, i.e., in
   /// 'a_{n+1}(p,t_1,...t_n)' form except for pure first order atoms.
   virtual void
-  visit(Atom* const);
+  visit(Atom<Positive>* const);
+
+  /// outputs a negative Atom in higher order mode, i.e., in
+  /// '-a_{n+1}(p,t_1,...t_n)' form except for pure first order atoms.
+  virtual void
+  visit(Atom<Negative>* const);
 
 };
 

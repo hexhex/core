@@ -32,33 +32,22 @@
 
 
 #include "dlvhex/AggregateAtom.h"
-#include "dlvhex/globals.h"
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/Error.h"
 
+#include <boost/mem_fn.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
-AggregateAtom::AggregateAtom(const std::string& aggtype,
+AggregateAtom::AggregateAtom(const Term& aggtype,
                              const Tuple& vars,
-                             const RuleBody_t& conj)
+                             const BodyPtr& conj)
     : body(conj),
       aggVars(vars),
       type(aggtype),
       cmpLeft(""),
       cmpRight("")
-{
-    //
-    // in higher-rder mode we cannot have aggregates, because then they would
-    // almost certainly be recursive, because of our atom-rewriting!
-    //
-    if (Globals::Instance()->getOption("NoPredicate"))
-        throw SyntaxError("Aggregates only allowed in FO-mode (use --firstorder)");
-
-    this->arguments.push_back(Term(""));
-
-//    for (Tuple::const_iterator t = vars.begin(); t != vars.end(); ++t)
-//        aggVars.push_back(*t);
-}
+{ }
 
 
 void
@@ -75,6 +64,7 @@ AggregateAtom::setLeftTerm(const Term& left)
 {
     this->left = left;
 
+    ///@todo fix safety
     //
     // we add the comparees as arguments - this is without effect except when we
     // check for safety - then we treat them like normal arguments, such that a
@@ -83,7 +73,6 @@ AggregateAtom::setLeftTerm(const Term& left)
     // is safe. If the W in the body aggregate wouldn't be treated like an
     // atom's argument, this rule would of course be unsafe.
     //
-    this->arguments.push_back(left);
 }
 
 
@@ -91,36 +80,24 @@ void
 AggregateAtom::setRightTerm(const Term& right)
 {
     this->right = right;
-
-    //
-    // see comment above
-    //
-    this->arguments.push_back(right);
 }
 
 
 bool
-AggregateAtom::unifiesWith(const AtomPtr atom) const
+AggregateAtom::unifiesWith(const BaseAtom&) const
 {
-    //
-    // an aggregate depends on the atoms in its conjunction
-    //
-    for (RuleBody_t::const_iterator l = this->body.begin();
-            l != this->body.end();
-            ++l)
-    {
-        if (atom->unifiesWith((*l)->getAtom()))
-            return true;
-    }
-
-    return false;
+  ///@todo not implemented properly
+  return false;
+  //
+  // an aggregate depends on the atoms in its conjunction
+  //
 }
 
 
 void
-AggregateAtom::accept(BaseVisitor& v)
+AggregateAtom::accept(BaseVisitor* const v)
 {
-  v.visit(this);
+  v->visit(this);
 }
 
 

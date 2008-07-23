@@ -97,7 +97,7 @@ DLVHEX_NAMESPACE_END
     int            integer;
     DLVHEX_NAMESPACE Term*          term;
     DLVHEX_NAMESPACE Tuple*         tuple;
-    DLVHEX_NAMESPACE Atom*          gatom;
+    DLVHEX_NAMESPACE BaseAtom*      gatom;
     DLVHEX_NAMESPACE AtomSet*       answerset;
 }
 
@@ -209,67 +209,64 @@ factlist:
 fact:
     ident
         {
-            //
-            // create new atom from string
-            //
-            // we cannot use AtomPtr already here because bison doesn't allow
-            // semantical types with constructors.
-            // 
-            $$ = new Atom($1);
+	  //
+	  // create new atom from string
+	  // 
+	  $$ = new Atom<Positive>(std::string($1));
 
-            free($1);
+	  free($1);
         }
     | TRUE_NOT ident
         {
-            $$ = new Atom($2, 1);
+	  $$ = new Atom<Negative>(std::string($2));
 
-            free($2);
+	  free($2);
         }
     | ident PARAM_OPEN groundterms PARAM_CLOSE
         {
-            //
-            // in higher-order mode, we throw away the
-            // (meaningless) predicate symbol
-            //
-            if (Globals::Instance()->getOption("NoPredicate"))
+	  //
+	  // in higher-order mode, we throw away the
+	  // (meaningless) predicate symbol
+	  //
+	  if (Globals::Instance()->getOption("NoPredicate"))
             {
-                $$ = new Atom(*$3);
+	      $$ = new Atom<Positive>(*$3);
             }
-            else
-            {
-                $$ = new Atom($1, *$3);
+	  else
+	    {
+	      $$ = new Atom<Positive>(Term($1), *$3);
             }
-            
-            //
-            // atom constructors took a copy from terms, so we can delete them
-            // now
-            //
-            delete $3;
-            
-            free($1);
+	  
+	  //
+	  // atom constructors took a copy from terms, so we can delete them
+	  // now
+	  //
+	  delete $3;
+          
+	  free($1);
         }
     | TRUE_NOT ident PARAM_OPEN groundterms PARAM_CLOSE
         {
-            //
-            // in higher-order mode, we throw away the
-            // (meaningless) predicate symbol
-            //
-            if (Globals::Instance()->getOption("NoPredicate"))
+	  //
+	  // in higher-order mode, we throw away the
+	  // (meaningless) predicate symbol
+	  //
+	  if (Globals::Instance()->getOption("NoPredicate"))
             {
-                $$ = new Atom(*$4, 1);
+	      $$ = new Atom<Negative>(*$4);
             }
-            else
+	  else
             {
-                $$ = new Atom($2, *$4, 1);
+	      $$ = new Atom<Negative>(Term($2), *$4);
             }
-            
-            //
-            // atom constructors took a copy from terms, so we can delete them
-            // now
-            //
-            delete $4;
-            
-            free($2);
+	  
+	  //
+	  // atom constructors took a copy from terms, so we can delete them
+	  // now
+	  //
+	  delete $4;
+          
+	  free($2);
         }
     ;
 

@@ -23,6 +23,7 @@
 /**
  * @file ExternalAtom.h
  * @author Roman Schindlauer
+ * @author Thomas Krennwallner
  * @date Wed Sep 21 19:40:57 CEST 2005
  *
  * @brief External Atom class.
@@ -35,178 +36,195 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/Atom.h"
+#include "dlvhex/BaseAtom.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief External atom class.
  */
-class DLVHEX_EXPORT ExternalAtom : public Atom
+class DLVHEX_EXPORT ExternalAtom : public BaseAtom
 {
-public:
+ protected:
 
-    /// @brief copy ctor
-    ExternalAtom(const ExternalAtom&);
+  /// private default ctor.
+  ExternalAtom();
 
+  /**
+   * @brief initializes replacementName and auxPredicate from functionName
+   */
+  void
+  initReplAux();
 
-    /**
-     * @brief Constructor.
-     *
-     * The constructor does not check the parameters - this is done only in
-     * setPluginAtom(), where we actually associate the parsed external atom
-     * with the atom-object provided by the plugin.
-     */
-    ExternalAtom(const std::string& name,
-                 const Tuple& params,
-                 const Tuple& input,
-                 const unsigned line);
+  int
+  compare(const BaseAtom&) const;
 
-    /**
-     * @brief Returns the auxiliary predicate name.
-     */
-    const std::string&
-    getAuxPredicate() const;
+  /**
+   * @brief the input list of an external atom
+   */
+  Tuple inputList;
 
-    /**
-     * @brief set new auxiliary predicate name.
-     */
-    void
-    setAuxPredicate(const std::string&);
+  /**
+   * @brief the output list of an external atom
+   */
+  Tuple outputList;
 
-    /**
-     * @brief Returns the function name of the external atom.
-     *
-     * The external atom's function name is equal to its identifier string
-     * used in the logic program - without the ampersand-character.
-     */
-    const std::string&
-    getFunctionName() const;
+  /**
+   * the function name of the external atom
+   */
+  Term functionName;
 
-    /**
-     * @brief Setup a new function name (and the corresponding
-     * replacement and auxiliary names) for this external atom.
-     *
-     * The external atom's function name is equal to its identifier string
-     * used in the logic program - without the ampersand-character.
-     */
-    void
-    setFunctionName(const std::string& name);
+  /**
+   * @brief Auxiliary predicate for grounding the input list.
+   */
+  Term auxPredicate;
+
+  /**
+   * @brief Replacement name to be used for creating an ordinary logic
+   * program.
+   */
+  Term replacementName;
 
 
-    /**
-     * @brief Returns the atom's replacement name.
-     *
-     * The replacement name is a unique (w.r.t. the entire logic program) string,
-     * used to replace the external-atoms by ordinary atoms for being processed
-     * by an external answer set solver.
-     */
-    const std::string&
-    getReplacementName() const;
+ public:
 
 
-    /**
-     * @brief Returns 1 if all input arguments are ground, 0 otherwise.
-     */
-    bool
-    pureGroundInput() const;
+  /**
+   * @brief Constructor.
+   *
+   * The constructor does not check the parameters - this is done only in
+   * setPluginAtom(), where we actually associate the parsed external atom
+   * with the atom-object provided by the plugin.
+   */
+  ExternalAtom(const Term& name,
+	       const Tuple& params,
+	       const Tuple& input);
+
+  /// @brief copy ctor
+  ExternalAtom(const ExternalAtom&);
 
 
-    /**
-     * @brief Returns the tuple of input arguments as they were specified
-     * in the logic program.
-     */
-    const Tuple&
-    getInputTerms() const;
+  /// assignment operator
+  ExternalAtom&
+  operator= (const ExternalAtom&);
 
 
-    /**
-     * @brief Set the tuple of input arguments.
-     */
-    void
-    setInputTerms(const Tuple& ninput);
+  /**
+   * @brief Returns the auxiliary predicate name.
+   */
+  const Term&
+  getAuxPredicate() const;
+
+  /**
+   * @brief set new auxiliary predicate name.
+   * @todo this is ugly
+   */
+  void
+  setAuxPredicate(const Term&);
+
+  /**
+   * @return the function name of the external atom.
+   *
+   * The external atom's function name is equal to its identifier string
+   * used in the logic program - without the ampersand-character.
+   */
+  const Term& getPredicate() const;
+
+  /**
+   * @brief Setup a new function name (and the corresponding
+   * replacement and auxiliary names) for this external atom.
+   *
+   * The external atom's function name is equal to its identifier string
+   * used in the logic program - without the ampersand-character.
+   */
+  void
+  setPredicate(const Term&);
 
 
-    /**
-     * @brief An External Atom never unifies.
-     */
-    virtual bool
-    unifiesWith(const AtomPtr&) const;
+  /**
+   * @return the output list
+   */
+  const Tuple&
+  getArguments() const;
 
-    /**
-     * @brief Tests for equality.
-     *
-     * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
-     */
-    virtual bool
-    operator== (const Atom& atom2) const;
+  /**
+   * @brief sets output list
+   */
+  void
+  setArguments(const Tuple& nargs);
 
 
-    /**
-     * @brief extatom ordering.
-     */
-    virtual bool
-    operator< (const Atom& atom2) const;
-
-    /**
-     * @brief accepts a visitor.
-     */
-    virtual void
-    accept(BaseVisitor&);
-
-    /**
-     * @return #line
-     */
-    unsigned
-    getLine() const;
+  /**
+   * @brief Returns the atom's replacement name.
+   *
+   * The replacement name is a unique (w.r.t. the entire logic program) string,
+   * used to replace the external-atoms by ordinary atoms for being processed
+   * by an external answer set solver.
+   */
+  const Term&
+  getReplacementName() const;
 
 
-private:
+  /**
+   * @return true if all input arguments are ground, false otherwise.
+   */
+  bool
+  pureGroundInput() const;
 
-    /// private default ctor.
-    ExternalAtom();
+  /**
+   * @return true if input and output list is ground
+   */
+  bool
+  isGround() const;
 
-    /**
-     * @brief initializes replacementName and auxPredicate from functionName
-     */
-    void
-    initReplAux();
 
-    /**
-     * @brief the input list of an external atom
-     */
-    Tuple inputList;
+  /**
+   * @return the specified argument term.
+   *
+   * The arguments of an n-ary atom are numbered from 1 to n.
+   */
+  const Term&
+  operator[] (unsigned i) const;
 
-    /**
-     * Storing the function name here in functionName. Without higher order,
-     * it will be accessible through getPredicate from the base class ATOM,
-     * but with higher order, the constructor of ATOM throws away the predicate,
-     * so we better keep it here, too.
-     */
-    std::string functionName;
+  Term&
+  operator[] (unsigned i);
 
-    /**
-     * @brief Auxiliary predicate for grounding the input list.
-     */
-    std::string auxPredicate;
 
-    /**
-     * @brief Replacement name to be used for creating an ordinary logic
-     * program.
-     */
-    std::string replacementName;
+  /**
+   * @return the arity of the output list
+   */
+  unsigned
+  getArity() const;
 
-    /**
-     * @brief Filename of the source file where this atom occured
-     * (used in error output).
-     */
-    std::string filename;
 
-    /**
-     * @brief Line of the source file where this atom occured (used in
-     * error output).
-     */
-    unsigned line;
+  /**
+   * @return the tuple of input arguments as they were specified in
+   * the logic program.
+   */
+  const Tuple&
+  getInputList() const;
+
+
+  /**
+   * @brief Set the tuple of input arguments.
+   */
+  void
+  setInputList(const Tuple& ninput);
+
+
+  /**
+   * @brief An External Atom never unifies.
+   */
+  bool
+  unifiesWith(const BaseAtom&) const;
+
+
+  /**
+   * @brief accepts a visitor.
+   */
+  virtual void
+  accept(BaseVisitor* const);
+
 };
 
 DLVHEX_NAMESPACE_END

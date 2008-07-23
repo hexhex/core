@@ -73,8 +73,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       try
         {
 	  Builder builder(proc.getOutput());
-	  const_cast<Program&>(prg).accept(builder);
-	  const_cast<AtomSet&>(facts).accept(builder);
+	  builder << prg << facts;
 	}
       catch (std::ios_base::failure&)
         {

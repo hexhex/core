@@ -631,6 +631,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
   
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
+      ///@todo add macro for prefix
       wcprefix = "wch__";
     }
   
@@ -689,6 +690,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
+      ///@todo add macro for prefix
       wcprefix = "wch__";
     }
   

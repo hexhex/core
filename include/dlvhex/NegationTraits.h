@@ -21,37 +21,41 @@
 
 
 /**
- * @file Program.h
- * @author Roman Schindlauer
+ * @file   NegationTraits.h
  * @author Thomas Krennwallner
- * @date Tue Mar  7 16:48:47 CET 2006
- *
- * @brief Program class.
- *
+ * @date   Mon July 14 09:38:18 2008
+ * 
+ * @brief  Traits for Atom and Literal.
+ * 
+ * 
  */
 
 
-#if !defined(_DLVHEX_PROGRAM_H)
-#define _DLVHEX_PROGRAM_H
+#if !defined(_DLVHEX_NEGATIONTRAITS_H)
+#define _DLVHEX_NEGATIONTRAITS_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/BaseRule.h"
-
-#include <list>
 
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief Program is a list of Rules.
+ * The base class for the negation traits.
  */
-typedef std::list<RulePtr> Program;
+struct NegationTraits {};
+
+/**
+ * The negative trait.
+ */
+struct Negative : public NegationTraits {};
+
+/**
+ * The positive trait.
+ */
+struct Positive : public NegationTraits {};
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_PROGRAM_H */
-
-/* vim: set noet sw=4 ts=4 tw=80: */
+#endif /* _DLVHEX_NEGATIONTRAITS_H */
 
 
 // Local Variables:

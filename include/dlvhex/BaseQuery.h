@@ -21,37 +21,49 @@
 
 
 /**
- * @file Program.h
- * @author Roman Schindlauer
+ * @file   BaseQuery.h
  * @author Thomas Krennwallner
- * @date Tue Mar  7 16:48:47 CET 2006
- *
- * @brief Program class.
- *
+ * @date   Tue Jul 15 12:09:08 2008
+ * 
+ * @brief  The base class for all query types.
+ * 
+ * 
  */
 
 
-#if !defined(_DLVHEX_PROGRAM_H)
-#define _DLVHEX_PROGRAM_H
+#if !defined(_DLVHEX_BASEQUERY_H)
+#define _DLVHEX_BASEQUERY_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/BaseRule.h"
-
-#include <list>
+#include "dlvhex/ProgramNode.h"
+#include "dlvhex/QueryTraits.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
+class BaseVisitor;
+
 /**
- * @brief Program is a list of Rules.
+ * @brief The baseclass for all query types.
  */
-typedef std::list<RulePtr> Program;
+class DLVHEX_EXPORT BaseQuery : public ProgramNode
+{
+public:
+  virtual
+  ~BaseQuery()
+  { }
+
+  virtual void
+  evaluate() = 0;
+
+  virtual void
+  accept(BaseVisitor* const) = 0;
+
+};
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_PROGRAM_H */
-
-/* vim: set noet sw=4 ts=4 tw=80: */
+#endif /* _DLVHEX_BASEQUERY_H */
 
 
 // Local Variables:

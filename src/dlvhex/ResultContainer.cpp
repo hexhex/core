@@ -33,6 +33,7 @@
 #include "dlvhex/ResultContainer.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/OutputBuilder.h"
+#include "dlvhex/AtomSetFunctions.h"
 
 #include <vector>
 #include <iostream>
@@ -49,11 +50,9 @@ void
 ResultContainer::addSet(const AtomSet& res)
 {
   ///@todo we can do better!
-    AnswerSetPtr as(new AnswerSet(wcprefix));
-
-    as->setSet(res);
-
-    sets.insert(as);
+  AnswerSetPtr as(new AnswerSet(true));
+  as->setAtomSet(res);
+  sets.insert(as);
 }
 
 
@@ -67,57 +66,69 @@ ResultContainer::getAnswerSets() const
 void
 ResultContainer::filterOut(const NamesTable<std::string>& predicates)
 {
-    //
-    // go through all atom sets we have
-    //
-    for (result_t::iterator ri = sets.begin();
-         ri != sets.end();
-         ++ri)
+  ///@todo ugly, fix this
+  
+  //
+  // go through all atom sets we have
+  //
+  for (result_t::iterator ri = sets.begin(); ri != sets.end(); ++ri)
     {
-        //
-        // for this atom set: go through all predicates we want to remove
-        //
-        for (NamesTable<std::string>::const_iterator pi = predicates.begin();
-             pi != predicates.end();
-             ++pi)
+      //
+      // for this atom set: go through all predicates we want to remove
+      //
+      for (NamesTable<std::string>::const_iterator pi = predicates.begin();
+	   pi != predicates.end();
+	   ++pi)
         {
-            (*ri)->remove(*pi);
+	  AtomSet as = removePredicate((*ri)->getAtomSet(), Term(*pi));
+	  (*ri)->setAtomSet(as);
         }
-    } 
+    }
 }
 
 
 void
 ResultContainer::filterOutDLT()
 {
-    //
-    // go through all atom sets we have
-    //
-    for (result_t::iterator ri = sets.begin();
-         ri != sets.end();
-         ++ri)
+  //
+  // go through all atom sets we have
+  //
+  for (result_t::iterator ri = sets.begin();
+       ri != sets.end();
+       ++ri)
     {
-        std::vector<std::string> toremove;
-
-        for (AnswerSet::const_iterator ai = (*ri)->begin();
-             ai != (*ri)->end();
-             ++ai)
+      std::vector<std::string> toremove;
+      
+      const AtomSet& as = (*ri)->getAtomSet();
+      
+      for (AtomSet::const_iterator ai = as.begin(); ai != as.end(); ++ai)
         {
-            if ((*ai).getPredicate().isString())
-                continue;
+	  if ((*ai)->getPredicate().isString())
+	    continue;
 
-            std::string pred = (*ai).getPredicate().getString();
+	  std::string pred = (*ai)->getPredicate().getString();
 
-            if (pred.find('_') != std::string::npos)
+	  if (pred.find('_') != std::string::npos)
             {
-                std::istringstream is(pred.erase(0, pred.find('_') + 1));
-                int r;
-                if (!(is >> r).fail())
-                    toremove.push_back((*ai).getPredicate().getString());
+	      std::istringstream is(pred.erase(0, pred.find('_') + 1));
+	      int r;
+	      if (!(is >> r).fail())
+		{
+		  toremove.push_back((*ai)->getPredicate().getString());
+		}
             }
         }
 
-        (*ri)->remove(toremove);
+      AtomSet newas = as;
+
+      for (std::vector<std::string>::const_iterator r = toremove.begin();
+	   r != toremove.end();
+	   ++r)
+	{
+	  newas = removePredicate(newas, Term(*r));
+	}
+
+      (*ri)->setAtomSet(newas);
     } 
 }
 
@@ -125,26 +136,30 @@ ResultContainer::filterOutDLT()
 void
 ResultContainer::filterIn(const std::vector<std::string>& predicates)
 {
-    if (predicates.size() == 0)
-        return;
+  ///@todo ugly, fixme
+
+  if (predicates.empty())
+    {
+      return;
+    }
 
     //
     // go through all atom sets we have
     //
-    for (result_t::iterator ri = sets.begin();
-         ri != sets.end();
-         ++ri)
-    {
-        (*ri)->keep(predicates);
-        (*ri)->keepPos();
-    } 
+    for (result_t::iterator ri = sets.begin(); ri != sets.end(); ++ri)
+      {
+	(*ri)->setAtomSet(keepPositive(filterPredicates((*ri)->getAtomSet(),
+							predicates)
+				       )
+			  );
+      } 
 }
 
 
 void
 ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
 {
-    AnswerSet::weights_t lowestWeights;
+    AnswerSet::LevelWeight lowestWeights;
 
     for (result_t::const_iterator ri = sets.begin();
             ri != sets.end();

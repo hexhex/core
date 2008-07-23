@@ -21,84 +21,71 @@
 
 
 /**
- * @file Rule.h
+ * @file Constraint.h
  * @author Roman Schindlauer
  * @author Thomas Krennwallner
  * @date Thu Jun 30 12:39:40 2005
  *
- * @brief Rule class.
+ * @brief Constraint class.
  *
  */
 
 
-#if !defined(_DLVHEX_RULE_H)
-#define _DLVHEX_RULE_H
+#if !defined(_DLVHEX_CONSTRAINT_H)
+#define _DLVHEX_CONSTRAINT_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/BaseRule.h"
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 
 /**
- * @brief Class for representing a rule object.
+ * @brief A weak constraint is a rule with empty head and weight/level values.
  */
-class DLVHEX_EXPORT Rule : public BaseRule
+class DLVHEX_EXPORT Constraint : public BaseRule
 {
  protected:
 
-  /**
-   * Rule head.
-   */
-  HeadPtr rulehead;
+  // constraint body
+  BodyPtr constraintbody;
 
-  /**
-   * Rule body.
-   */
-  BodyPtr rulebody;
-  
   int
   compare(const BaseRule&) const;
 
+  
  public:
 
   /**
-   * @brief Constructs a rule from a head and a body.
-   *
-   * Third argument is the file name and fourth the line number this rule
-   * appeared in. Both can be ommitted.
+   * @brief See constructor of Rule.
    */
-  Rule(const HeadPtr&, const BodyPtr&);
+  Constraint(const BodyPtr&);
 
-  /**
-   * Destructor.
-   */
   virtual
-  ~Rule();
+  ~Constraint();
 
   /**
-   * @return the rule head.
+   * @brief Returns the rule's head.
    */
   const HeadPtr&
   head() const;
 
   /**
-   * @return the rule head.
+   * @brief Returns the rule's head.
    */
   HeadPtr&
   head();
 
 
   /**
-   * @return the rule body.
+   * @brief Returns the rule's body.
    */
   const BodyPtr&
   body() const;
 
   /**
-   * @return the rule body.
+   * @brief Returns the rule's body.
    */
   BodyPtr&
   body();
@@ -115,11 +102,12 @@ class DLVHEX_EXPORT Rule : public BaseRule
   void
   setBody(const BodyPtr&);
 
+
   /**
    * @brief accepts a visitor.
    *
    * According to the visitor pattern, accept simply calls the respective
-   * visitor with the Rule itself as parameter.
+   * visitor with the weak constraint itself as parameter.
    *
    * \sa http://en.wikipedia.org/wiki/Visitor_pattern
    */
@@ -128,10 +116,9 @@ class DLVHEX_EXPORT Rule : public BaseRule
 
 };
 
-
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_RULE_H */
+#endif /* _DLVHEX_WEAKCONSTRAINT_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
 

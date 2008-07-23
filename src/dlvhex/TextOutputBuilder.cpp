@@ -70,7 +70,7 @@ TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fact
   for (ResultContainer::result_t::const_iterator rit = results.begin(); rit != results.end(); ++rit)
     {
       RawPrintVisitor rpv(stream);
-      (*rit)->accept(rpv);
+      rpv << (*rit)->getAtomSet();
       stream << std::endl;
       
       if ((*rit)->hasWeights())
