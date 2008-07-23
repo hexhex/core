@@ -1,3 +1,85 @@
+2008-07-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/AggregateAtom.h: Started refactoring syntax tree.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/Atom.tcc: Likewise.
+	* include/dlvhex/AtomSet.h: Likewise.
+	* include/dlvhex/AtomSetFunctions.h: Likewise.
+	* include/dlvhex/BaseAtom.h: Likewise.
+	* include/dlvhex/BaseLiteral.h: Likewise.
+	* include/dlvhex/BaseQuery.h: Likewise.
+	* include/dlvhex/BaseRule.h: Likewise.
+	* include/dlvhex/BaseVisitor.h: Likewise.
+	* include/dlvhex/Body.h: Likewise.
+	* include/dlvhex/BuiltinPredicate.h: Likewise.
+	* include/dlvhex/Component.h: Likewise.
+	* include/dlvhex/Constraint.h: Likewise.
+	* include/dlvhex/Dependency.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/Head.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+	* include/dlvhex/Literal.tcc: Likewise.
+	* include/dlvhex/NegationTraits.h: Likewise.
+	* include/dlvhex/NullVisitor.h: Likewise.
+	* include/dlvhex/PrintVisitor.h: Likewise.
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/ProgramNode.h: Likewise.
+	* include/dlvhex/QueryTraits.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* include/dlvhex/WeakConstraint.h: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/BaseAtom.cpp: Likewise.
+	* src/dlvhex/BuiltinPredicate.cpp: Likewise.
+	* src/dlvhex/Constraint.cpp: Likewise.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/Dependency.cpp: Likewise.
+	* src/dlvhex/EvaluateExtatom.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/GraphProcessor.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/RuleMLOutputBuilder.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/TextOutputBuilder.cpp: Likewise.
+	* src/dlvhex/WeakConstraint.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* include/dlvhex/Term.h: Started refactoring Terms.
+	* src/dlvhex/Term.cpp: Likewise.
+
+	* include/dlvhex/Makefile.am: Update.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/Repository.h: Remove.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/Repository.cpp: Likewise.
+
+	* include/dlvhex/AtomNode.h: Use Program instead of std::vector<Rule*>.
+	* include/dlvhex/NodeGraph.h: Likewise.
+	* src/dlvhex/AtomNode.cpp: Likewise.
+	* src/dlvhex/NodeGraph.cpp: Likewise.
+
+	* include/dlvhex/AnswerSet.h: New interface.
+	* src/dlvhex/AnswerSet.cpp: Likewise.
+
+	* include/dlvhex/ASPSolver.h: Include missing headers.
+	* include/dlvhex/GraphBuilder.h: Likewise.
+	* include/dlvhex/PluginInterface.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/BoostComponentFinder.cpp: Likewise.
+	* src/dlvhex/ComponentFinder.cpp: Likewise.
+
 2008-07-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/SafetyChecker.cpp (StrongSafetyChecker): Fix checking
