@@ -67,7 +67,8 @@ TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fact
       stream << "Best model: ";
     }
   
-  for (ResultContainer::result_t::const_iterator rit = results.begin(); rit != results.end(); ++rit)
+  for (ResultContainer::result_t::const_iterator rit = results.begin();
+       rit != results.end(); ++rit)
     {
       RawPrintVisitor rpv(stream);
       rpv << (*rit)->getAtomSet();
@@ -80,10 +81,12 @@ TextOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fact
 	  //
 	  // Display all weight values up to the highest specified level
 	  //
-	  for (unsigned lev = 1; lev <= AnswerSet::getMaxLevel(); ++lev)
+	  for (unsigned lev = 1; lev <= facts.getMaxLevel(); ++lev)
 	    {
 	      if (lev > 1)
-		stream << ",";
+		{
+		  stream << ",";
+		}
 	      
 	      stream << "[" << (*rit)->getWeight(lev) << ":" << lev << "]";
 	    }

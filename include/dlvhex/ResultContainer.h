@@ -98,11 +98,16 @@ public:
     void
     print(std::ostream&, OutputBuilder*) const;
 
-private:
+    unsigned
+    getMaxLevel() const;
+
+ private:
 
     result_t sets;
 
     std::string wcprefix;
+
+    unsigned maxLevel;
 };
 
 

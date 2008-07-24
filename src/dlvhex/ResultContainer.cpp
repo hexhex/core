@@ -42,9 +42,10 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ResultContainer::ResultContainer(const std::string& wcpr)
-    : wcprefix(wcpr)
-{
-}
+  : wcprefix(wcpr),
+    maxLevel(1)
+{ }
+
 
 void
 ResultContainer::addSet(const AtomSet& res)
@@ -53,6 +54,14 @@ ResultContainer::addSet(const AtomSet& res)
   AnswerSetPtr as(new AnswerSet(true));
   as->setAtomSet(res);
   sets.insert(as);
+  maxLevel = std::max(maxLevel, as->getMaxLevel());
+}
+
+
+unsigned
+ResultContainer::getMaxLevel() const
+{
+  return maxLevel;
 }
 
 
@@ -162,11 +171,11 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
     AnswerSet::LevelWeight lowestWeights;
 
     for (result_t::const_iterator ri = sets.begin();
-            ri != sets.end();
-            ++ri)
-    {
+	 ri != sets.end();
+	 ++ri)
+      {
         if (!wcprefix.empty())
-        {
+	  {
 
             //
             // if we are in weak constraint-mode, we stop the output after
@@ -178,15 +187,12 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
             // ordered, so this must be the best one.
             //
             if (ri == sets.begin())
-                for (unsigned i = 0; i < AnswerSet::getMaxLevel(); ++i)
+	      {
+                for (unsigned i = 0; i < maxLevel; ++i)
+		  {
                     lowestWeights.push_back((*ri)->getWeight(i + 1));
-            
-			/*
-            for (AnswerSet::weights_t::const_iterator wi = lowestWeights.begin();
-                 wi != lowestWeights.end();
-                 ++wi)
-                std::cout << " w: " << *wi;
-			*/
+		  }
+	      }
             
 
             //
@@ -194,10 +200,14 @@ ResultContainer::print(std::ostream& stream, OutputBuilder* builder) const
             // displayed
             //
             if (!Globals::Instance()->getOption("AllModels"))
+	      {
                 if ((*ri)->moreExpensiveThan(lowestWeights))
+		  {
                     break;
-        }
-    }
+		  }
+	      }
+	  }
+      }
 
 
     //
