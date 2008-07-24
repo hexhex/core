@@ -37,13 +37,14 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/AtomSet.h"
+#include "dlvhex/Atom.h"
 
 #include <algorithm>
 #include <iterator>
 
 DLVHEX_NAMESPACE_BEGIN
 
-AtomSet
+inline AtomSet
 matchPredicate(const AtomSet& as, const Term& p)
 {
   AtomSet tmp;
@@ -60,7 +61,7 @@ matchPredicate(const AtomSet& as, const Term& p)
 }
 
 
-AtomSet
+inline AtomSet
 removePredicate(const AtomSet& as, const Term& p)
 {
   AtomSet tmp;
@@ -77,7 +78,7 @@ removePredicate(const AtomSet& as, const Term& p)
 }
 
 
-AtomSet
+inline AtomSet
 difference(const AtomSet& as1, const AtomSet& as2)
 {
   AtomSet tmp;
@@ -90,7 +91,7 @@ difference(const AtomSet& as1, const AtomSet& as2)
 }
 
 
-AtomSet
+inline AtomSet
 keepPositive(const AtomSet& as)
 {
   AtomSet tmp;
@@ -107,7 +108,7 @@ keepPositive(const AtomSet& as)
 }
 
 
-AtomSet
+inline AtomSet
 filterPredicates(const AtomSet& as, const std::vector<std::string>& predicates)
 {
   AtomSet tmp;
@@ -124,6 +125,52 @@ filterPredicates(const AtomSet& as, const std::vector<std::string>& predicates)
 
   return tmp;
 }
+
+
+// hide away AtomMatches
+namespace {
+  struct AtomMatches : public std::binary_function<AtomPtr, AtomPtr, bool>
+  {
+    bool
+    operator() (const AtomPtr& ap1, const AtomPtr& ap2) const
+    {
+      return *ap1 == *ap2;
+    }
+  };
+}
+
+
+inline bool
+isConsistent(const AtomSet& as)
+{
+  //
+  // go through all atoms of this set
+  //
+
+  AtomSet::const_iterator end = as.end();
+  AtomPtr ap;
+
+  for (AtomSet::const_iterator it = as.begin(); it != end; )
+    {
+      if (typeid(**it) == typeid(Atom<Positive>))
+	{
+	  ap = AtomPtr(new Atom<Negative>(**it));
+	}
+      else
+	{
+	  ap = AtomPtr(new Atom<Positive>(**it));
+	}
+
+      // see if 'it' occurs negated in the range of 'it + 1' to 'end'
+      if (end != std::find_if(++it, end, std::bind2nd(AtomMatches(), ap)))
+	{
+	  return false;
+	}
+    }
+
+  return true;
+}
+
 
 DLVHEX_NAMESPACE_END
 
