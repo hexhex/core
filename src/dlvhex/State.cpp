@@ -28,7 +28,7 @@
  *
  * @brief State class.
  *
- *
+ * @todo WeakConstraint handling is currently turned off!
  *
  */
 
@@ -53,6 +53,7 @@
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/URLBuf.h"
+#include "dlvhex/AtomSetFunctions.h"
 
 #include <iostream>
 #include <sstream>
@@ -614,7 +615,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
   // But only if the original EDB is consistent, otherwise, we can skip it
   // anyway.
   //
-  if (ctx->getEDB()->isConsistent())
+  if (isConsistent(*ctx->getEDB()))
     {
       omg.compute(*ctx->getIDB(), *ctx->getEDB(), models);
     }
@@ -628,12 +629,13 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
   // prefix in order to be able to compute each asnwer set's costs!
   //
   std::string wcprefix;
-  
+
+#if 0  
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
-      ///@todo add macro for prefix
-      wcprefix = "wch__";
+      wcprefix = PredefinedNames::WEAKHEAD;
     }
+#endif
   
   ResultContainer* result = new ResultContainer(wcprefix);
   ctx->setResultContainer(result);
@@ -673,7 +675,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   // But only if the original EDB is consistent, otherwise, we can skip it
   // anyway.
   //
-  if (ctx->getEDB()->isConsistent())
+  if (isConsistent(*ctx->getEDB()))
     {
       gp.run(*ctx->getEDB());
     }
@@ -688,11 +690,13 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   //
   std::string wcprefix;
   
+#if 0
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
       ///@todo add macro for prefix
-      wcprefix = "wch__";
+      wcprefix = PredefinedNames::WEAKHEAD;
     }
+#endif
   
   ResultContainer* result = new ResultContainer(wcprefix);
   ctx->setResultContainer(result);
