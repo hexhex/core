@@ -84,10 +84,6 @@ private:
     std::string cmpLeft;
     std::string cmpRight;
 
-
-    int compare(const BaseAtom&) const;
-
-
  public:
 
   /**
@@ -149,13 +145,15 @@ private:
 
     void setArguments(const Tuple&);
 
-    const Term& operator[](unsigned int) const;
+    const Term& operator[](unsigned) const;
 
-    Term& operator[](unsigned int);
+    Term& operator[](unsigned);
 
-    unsigned int getArity() const;
+    unsigned getArity() const;
 
     bool isGround() const;
+
+    int compare(const BaseAtom&) const;
 
 
     /**
@@ -177,48 +175,25 @@ private:
 
 
     const BodyPtr&
-    getBody() const
-    {
-      return body;
-    }
-
+    getBody() const;
 
     const Tuple&
-    getVars() const
-    {
-      return aggVars;
-    }
-
+    getVars() const;
 
     const Term&
-    getType() const
-    {
-      return type;
-    }
+    getType() const;
 
     const Term&
-    getLeft() const
-    {
-      return left;
-    }
+    getLeft() const;
 
     const Term&
-    getRight() const
-    {
-      return right;
-    }
+    getRight() const;
 
     const std::string&
-    getCmpLeft() const
-    {
-      return cmpLeft;
-    }
+    getCmpLeft() const;
 
     const std::string&
-    getCmpRight() const
-    {
-      return cmpRight;
-    }
+    getCmpRight() const;
 
 };
 

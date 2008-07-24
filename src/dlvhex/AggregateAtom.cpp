@@ -35,8 +35,6 @@
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/Error.h"
 
-#include <boost/mem_fn.hpp>
-
 DLVHEX_NAMESPACE_BEGIN
 
 AggregateAtom::AggregateAtom(const Term& aggtype,
@@ -49,6 +47,127 @@ AggregateAtom::AggregateAtom(const Term& aggtype,
       cmpRight("")
 { }
 
+const Term&
+AggregateAtom::getPredicate() const
+{
+  return type;
+}
+
+void
+AggregateAtom::setPredicate(const Term& p)
+{
+  type = p;
+}
+
+const Tuple&
+AggregateAtom::getArguments() const
+{
+  return aggVars;
+}
+
+void
+AggregateAtom::setArguments(const Tuple& a)
+{
+  aggVars = a;
+}
+
+const Term&
+AggregateAtom::operator[](unsigned i) const
+{
+  assert(i == 0 || i < aggVars.size());
+
+  if (i == 0)
+    {
+      return type;
+    }
+
+  return aggVars[i];
+}
+
+Term&
+AggregateAtom::operator[](unsigned i)
+{
+  assert(i == 0 || i < aggVars.size());
+
+  if (i == 0)
+    {
+      return type;
+    }
+
+  return aggVars[i];
+}
+
+unsigned
+AggregateAtom::getArity() const
+{
+  return aggVars.size();
+}
+
+bool
+AggregateAtom::isGround() const
+{
+  return aggVars.empty();
+}
+
+int
+AggregateAtom::compare(const BaseAtom& atom2) const
+{
+  const std::type_info& type1 = typeid(*this);
+  const std::type_info& type2 = typeid(atom2);
+
+  if (type1 == type2)
+    {
+      ///@todo implement me!
+      return -1;
+    }
+
+  return type1.before(type2) ? -1 : 1;
+}
+
+
+const BodyPtr&
+AggregateAtom::getBody() const
+{
+  return body;
+}
+
+
+const Tuple&
+AggregateAtom::getVars() const
+{
+  return aggVars;
+}
+
+
+const Term&
+AggregateAtom::getType() const
+{
+  return type;
+}
+
+const Term&
+AggregateAtom::getLeft() const
+{
+  return left;
+}
+
+const Term&
+AggregateAtom::getRight() const
+{
+  return right;
+}
+
+const std::string&
+AggregateAtom::getCmpLeft() const
+{
+  return cmpLeft;
+}
+
+const std::string&
+AggregateAtom::getCmpRight() const
+{
+  return cmpRight;
+}
 
 void
 AggregateAtom::setComp(const std::string& compLeft,
