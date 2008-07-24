@@ -60,9 +60,6 @@ class DLVHEX_EXPORT WeakConstraint : public BaseRule
   Term level;
 
 
-  int
-  compare(const BaseRule&) const;
-
 public:
 
   /**
@@ -81,9 +78,12 @@ public:
    *
    * \sa http://en.wikipedia.org/wiki/Visitor_pattern
    */
-  virtual void
+  void
   accept(BaseVisitor* const);
 
+
+  int
+  compare(const BaseRule&) const;
 
   /**
    * Returns the weight of the WC.

@@ -59,9 +59,6 @@ class DLVHEX_EXPORT Rule : public BaseRule
    */
   BodyPtr rulebody;
   
-  int
-  compare(const BaseRule&) const;
-
  public:
 
   /**
@@ -125,6 +122,11 @@ class DLVHEX_EXPORT Rule : public BaseRule
    */
   void
   accept(BaseVisitor* const);
+
+  int
+  compare(const BaseRule&) const;
+
+
 
 };
 
