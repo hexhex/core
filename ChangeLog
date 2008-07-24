@@ -1,3 +1,35 @@
+2008-07-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/State.cpp: Turn off weak constraint handling.
+	Include AtomSetFunctions.h.
+
+	* include/dlvhex/Rule.h (compare): Move to public section.
+	* include/dlvhex/WeakConstraint.h: Likewise.
+
+	* include/dlvhex/ResultContainer.h (ResultContainer::getMaxLevel): New method.
+	* src/dlvhex/ResultContainer.cpp: Likewise.
+	* src/dlvhex/TextOutputBuilder.cpp: Likewise.
+
+	* include/dlvhex/BaseAtom.h: Remove unnecessary default ctors and virtual dtors.
+	* include/dlvhex/Constraint.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+
+	* include/dlvhex/BaseRule.h (BaseRule::accept): Set pure virtual.
+
+	* include/dlvhex/AtomSetFunctions.h: Make non-member functions inline.
+	(isConsistent): New non-member function.
+
+	* include/dlvhex/Atom.h: Remove virtual dtor.
+	Add BaseAtom copy ctor.
+	Add missing virtual methods.
+	* include/dlvhex/Atom.tcc: Likewise.
+
+	* include/dlvhex/AnswerSet.h (AnswerSet::getMaxLevel): Add const qualifier.
+	* src/dlvhex/AnswerSet.cpp: Likewise.
+
+	* include/dlvhex/AggregateAtom.h: Add missing virtual methods.
+	* src/dlvhex/AggregateAtom.cpp: Likewise
+
 2008-07-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/AggregateAtom.h: Started refactoring syntax tree.
