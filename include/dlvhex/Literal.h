@@ -74,12 +74,6 @@ class DLVHEX_EXPORT Literal : public BaseLiteral
   explicit
   Literal(const AtomPtr& at);
 
-  /**
-   * Destructor.
-   */
-  virtual
-  ~Literal();
-
   explicit
   Literal(const Literal<T>&);
 

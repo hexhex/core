@@ -88,13 +88,6 @@ typedef boost::shared_ptr<BaseAtom> AtomPtr;
  */
 class DLVHEX_EXPORT BaseAtom : public ProgramNode
 {
- protected:
-  /**
-   * Default constructor is protected, we do not want to create void atoms.
-   */
-  BaseAtom();
-
-
  public:
 
   /**
@@ -196,7 +189,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    * their strings are equal.
    * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
    */
-  virtual bool
+  bool
   operator== (const BaseAtom& atom2) const
   {
     return compare(atom2) == 0;
@@ -224,7 +217,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    * atoms with variable predicates!). If arities are equal as well, the
    * atoms' arguments are compared, from left to right, via Term::compare().
    */
-  virtual bool
+  bool
   operator< (const BaseAtom& atom2) const
   {
     return compare(atom2) < 0;

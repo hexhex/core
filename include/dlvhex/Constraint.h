@@ -51,19 +51,12 @@ class DLVHEX_EXPORT Constraint : public BaseRule
   // constraint body
   BodyPtr constraintbody;
 
-  int
-  compare(const BaseRule&) const;
-
-  
  public:
 
   /**
    * @brief See constructor of Rule.
    */
   Constraint(const BodyPtr&);
-
-  virtual
-  ~Constraint();
 
   /**
    * @brief Returns the rule's head.
@@ -113,6 +106,9 @@ class DLVHEX_EXPORT Constraint : public BaseRule
    */
   void
   accept(BaseVisitor* const);
+
+  int
+  compare(const BaseRule&) const;
 
 };
 
