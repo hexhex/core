@@ -51,6 +51,18 @@ Atom<T>::Atom(const Atom<U>& atom2)
 { }
 
 
+template<typename T>
+Atom<T>::Atom(const BaseAtom& atom2)
+{
+  // predicate
+  arguments.push_back(atom2.getPredicate());
+
+  // arguments
+  const Tuple& t = atom2.getArguments();
+  arguments.insert(arguments.end(), t.begin(), t.end());
+}
+
+
 template<typename T> template<typename U>
 Atom<T>&
 Atom<T>::operator=(const Atom<U>& atom2)
@@ -122,6 +134,14 @@ const Term&
 Atom<T>::getPredicate() const
 {
   return arguments[0];
+}
+
+
+template<typename T>
+const Tuple&
+Atom<T>::getArguments() const
+{
+  return arguments;
 }
 
 

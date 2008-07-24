@@ -78,17 +78,15 @@ class DLVHEX_EXPORT Atom : public BaseAtom
  public:
 
   /**
-   * Destructor.
-   */
-  virtual
-  ~Atom();
-
-  /**
    * Copy constructor from positive/negative atoms.
    */
   template<typename U>
   Atom(const Atom<U>&);
 
+  /**
+   * Copy constructor from base atoms.
+   */
+  Atom(const BaseAtom&);
 
   /// assigment operator for converting positive/negative to negative/positive atoms
   template<typename U>
