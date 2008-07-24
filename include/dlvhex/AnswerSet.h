@@ -189,7 +189,7 @@ public:
      * @brief Get maximum level that occurs in the program.
      */
     unsigned
-    getMaxLevel();
+    getMaxLevel() const;
 
 };
 

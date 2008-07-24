@@ -298,7 +298,7 @@ AnswerSet::setMaxLevelWeight(unsigned l, unsigned w)
 
 
 unsigned
-AnswerSet::getMaxLevel()
+AnswerSet::getMaxLevel() const
 {
   return maxLevel;
 }
