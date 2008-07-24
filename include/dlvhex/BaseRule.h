@@ -136,7 +136,7 @@ class DLVHEX_EXPORT BaseRule : public ProgramNode
    * \sa http://en.wikipedia.org/wiki/Visitor_pattern
    */
   virtual void
-  accept(BaseVisitor* const);
+  accept(BaseVisitor* const) = 0;
 
 };
 
