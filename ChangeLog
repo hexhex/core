@@ -1,3 +1,9 @@
+2008-07-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Adapt testcases for refactored AST.
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
+	* src/testsuite/dlvhex/TypeTest.cpp: Likewise.
+
 2008-07-24  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/State.cpp: Turn off weak constraint handling.
