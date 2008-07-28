@@ -233,7 +233,6 @@ Atom<T>::accept(BaseVisitor* const v)
 }
 
 
-
 template<typename T>
 int
 Atom<T>::compare(const BaseAtom& atom2) const
@@ -259,7 +258,7 @@ Atom<T>::compare(const BaseAtom& atom2) const
 
 	      if (mit.first != this->getArguments().end()) //otw. n is already 0
 		{
-		  n = mit.first < mit.second ? -1 : 1;
+		  n = mit.first->compare(*mit.second);
 		}
 	    }
 	  else
