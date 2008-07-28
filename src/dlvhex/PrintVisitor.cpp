@@ -191,7 +191,7 @@ PrintVisitor::visit(Atom<Positive>* const a)
 
       const Tuple& arguments = a->getArguments();
 
-      std::copy(arguments.begin(), --arguments.end(),
+      std::copy(++arguments.begin(), --arguments.end(),
 		std::ostream_iterator<Term>(stream, ","));
 
       stream << arguments.back()
@@ -211,7 +211,7 @@ PrintVisitor::visit(Atom<Negative>* const a)
 
       const Tuple& arguments = a->getArguments();
 
-      std::copy(arguments.begin(), --arguments.end(),
+      std::copy(++arguments.begin(), --arguments.end(),
 		std::ostream_iterator<Term>(stream, ","));
 
       stream << arguments.back()
@@ -440,17 +440,17 @@ HOPrintVisitor::visit(Atom<Positive>* const a)
   unsigned n = a->getArity();
 
   // output a_n
-  stream << "a_" << n
+  stream << PredefinedNames::HOATOM << n
 	 << '(';
 
   // output predicate and arguments - 1
   for (unsigned i = 0; i < n; i++)
     {
-      stream << a[i] << ',';
+      stream << (*a)[i] << ',';
     }
 
   // output last argument
-  stream << a[n]
+  stream << (*a)[n]
 	 << ')';
 }
 
@@ -462,17 +462,17 @@ HOPrintVisitor::visit(Atom<Negative>* const a)
   unsigned n = a->getArity();
 
   // output -a_n
-  stream << "-a_" << n
+  stream << '-' << PredefinedNames::HOATOM << n
 	 << '(';
 
   // output predicate and arguments - 1
   for (unsigned i = 0; i < n; i++)
     {
-      stream << a[i] << ',';
+      stream << (*a)[i] << ',';
     }
 
   // output last argument
-  stream << a[n]
+  stream << (*a)[n]
 	 << ')';
 }
 
