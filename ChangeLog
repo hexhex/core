@@ -1,3 +1,29 @@
+2008-07-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Rule.cpp: Remove operator<< for BaseRule.
+
+	* src/dlvhex/PrintVisitor.cpp: Fix serialization of higher-order atoms.
+	Use PredefinedNames::HOATOM.
+	Dereference pointer.
+
+	* include/dlvhex/PredefinedNames.h: Add.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/PredefinedNames.cpp: Likewise.
+
+	* include/dlvhex/BaseQuery.h: Update interface.
+	* src/dlvhex/BaseQuery.cpp: Likewise.
+
+	* include/dlvhex/BaseAtom.h: Move implementation of dtor to cpp file.
+	Inline comparison operators.
+	* include/dlvhex/BaseLiteral.h: Likewise.
+	* include/dlvhex/BaseRule.h: Likewise.
+	* src/dlvhex/BaseAtom.cpp: Likewise.
+	* src/dlvhex/BaseLiteral.cpp: Likewise.
+	* src/dlvhex/BaseRule.cpp: Likewise.
+	* src/dlvhex/Makefile.am:Likewise.
+
+	* include/dlvhex/Atom.tcc (compare): Dereference iterator.
+
 2008-07-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/ASPsolverTest.cpp: Adapt testcases for refactored AST.
