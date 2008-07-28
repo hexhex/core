@@ -19,7 +19,6 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   BaseQuery.h
  * @author Thomas Krennwallner
@@ -31,84 +30,27 @@
  */
 
 
-#if !defined(_DLVHEX_BASEQUERY_H)
-#define _DLVHEX_BASEQUERY_H
+#include "dlvhex/BaseQuery.h"
 
-#include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/ProgramNode.h"
-#include "dlvhex/QueryTraits.h"
-#include "dlvhex/Body.h"
+#include "dlvhex/PrintVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class BaseVisitor;
 
-/**
- * @brief The baseclass for all query types.
- */
-class DLVHEX_EXPORT BaseQuery : public ProgramNode
-{
-public:
-  virtual
-  ~BaseQuery();
-
-  virtual void
-  evaluate() = 0;
-
-  virtual BodyPtr&
-  body() = 0;
-
-  virtual const BodyPtr&
-  body() const = 0;
-
-
-  /// the comparison template method
-  virtual int
-  compare(const BaseQuery&) const = 0;
-
-
-  /**
-   * @brief Test for equality.
-   */
-  inline bool
-  operator== (const BaseQuery& query2) const
-  {
-    return compare(query2) == 0;
-  }
-
-
-  /**
-   * @brief Test for inequality.
-   */
-  inline bool
-  operator!= (const BaseQuery& query2) const
-  {
-    return compare(query2) != 0;
-  }
-
-
-  /**
-   * @brief Less-than comparison.
-   */
-  inline bool
-  operator< (const BaseQuery& query2) const
-  {
-    return compare(query2) < 0;
-  }
-
-  virtual void
-  accept(BaseVisitor* const) = 0;
-};
+BaseQuery::~BaseQuery()
+{ }
 
 
 std::ostream&
-operator<<(std::ostream&, BaseQuery&);
+operator<< (std::ostream& out, const BaseQuery& query)
+{
+  RawPrintVisitor rpv(out);
+  const_cast<BaseQuery*>(&query)->accept(&rpv);
+  return out;
+}
 
 
 DLVHEX_NAMESPACE_END
-
-#endif /* _DLVHEX_BASEQUERY_H */
 
 
 // Local Variables:
