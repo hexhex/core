@@ -19,34 +19,33 @@
  * 02110-1301 USA.
  */
 
-
 /**
- * @file BaseAtom.cpp
+ * @file BaseRule.h
+ * @author Roman Schindlauer
  * @author Thomas Krennwallner
- * @date Fri Jul 18 14:03:39 CEST 2008
+ * @date Mon Jul 14 11:20:24 2008
  *
- * @brief Non-member functions of BaseAtom.
- *
+ * @brief Base Rule class.
  *
  */
 
 
-#include "dlvhex/BaseAtom.h"
+#include "dlvhex/BaseRule.h"
 
 #include "dlvhex/PrintVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 
-BaseAtom::~BaseAtom()
+BaseRule::~BaseRule()
 { }
 
 
 std::ostream&
-operator<< (std::ostream& out, const BaseAtom& atom)
+operator<< (std::ostream& out, const BaseRule& rule)
 {
   RawPrintVisitor rpv(out);
-  const_cast<BaseAtom*>(&atom)->accept(&rpv);
+  const_cast<BaseRule*>(&rule)->accept(&rpv);
   return out;
 }
 

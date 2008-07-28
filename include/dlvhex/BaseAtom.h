@@ -94,8 +94,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    * Destructor.
    */
   virtual
-  ~BaseAtom()
-  { }
+  ~BaseAtom();
 
   /**
    * @return the predicate of the atom.
@@ -189,7 +188,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    * their strings are equal.
    * Two atoms of different class (e.g., ExternalAtom and Atom) are always inequal.
    */
-  bool
+  inline bool
   operator== (const BaseAtom& atom2) const
   {
     return compare(atom2) == 0;
@@ -200,7 +199,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    *
    * Negation of Atom::operator==.
    */
-  bool
+  inline bool
   operator!= (const BaseAtom& atom2) const
   {
     return compare(atom2) != 0;
@@ -217,7 +216,7 @@ class DLVHEX_EXPORT BaseAtom : public ProgramNode
    * atoms with variable predicates!). If arities are equal as well, the
    * atoms' arguments are compared, from left to right, via Term::compare().
    */
-  bool
+  inline bool
   operator< (const BaseAtom& atom2) const
   {
     return compare(atom2) < 0;

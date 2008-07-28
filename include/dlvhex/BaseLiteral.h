@@ -37,6 +37,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/ProgramNode.h"
+#include "dlvhex/BaseAtom.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -54,8 +55,8 @@ class DLVHEX_EXPORT BaseLiteral : public ProgramNode
    * Destructor.
    */
   virtual
-  ~BaseLiteral()
-  { }
+  ~BaseLiteral();
+
 
   /**
    * @return a pointer to the atom of the literal.
@@ -87,7 +88,7 @@ class DLVHEX_EXPORT BaseLiteral : public ProgramNode
    * Two Literals are equal, if they contain the same atom and neither
    * or both are weakly negated.
    */
-  bool
+  inline bool
   operator== (const BaseLiteral& lit2) const
   {
     return compare(lit2) == 0;
@@ -99,7 +100,7 @@ class DLVHEX_EXPORT BaseLiteral : public ProgramNode
    *
    * \sa Literal::operator==
    */
-  bool
+  inline bool
   operator!= (const BaseLiteral& lit2) const
   {
     return compare(lit2) != 0;
@@ -115,7 +116,7 @@ class DLVHEX_EXPORT BaseLiteral : public ProgramNode
    *
    * \sa Atom::operator<
    */
-  bool
+  inline bool
   operator< (const BaseLiteral& lit2) const
   {
     return compare(lit2) < 0;
@@ -133,9 +134,6 @@ class DLVHEX_EXPORT BaseLiteral : public ProgramNode
   virtual void
   accept(BaseVisitor* const) = 0;
 
-
-  friend std::ostream&
-  operator<<(std::ostream&, const BaseLiteral&);
 
 };
 

@@ -54,8 +54,7 @@ class DLVHEX_EXPORT BaseRule : public ProgramNode
    * Destructor.
    */
   virtual
-  ~BaseRule()
-  { }
+  ~BaseRule();
 
   /**
    * @brief Returns the rule's head.
@@ -101,7 +100,7 @@ class DLVHEX_EXPORT BaseRule : public ProgramNode
   /**
    * @brief Test for equality.
    */
-  bool
+  inline bool
   operator== (const BaseRule& rule2) const
   {
     return compare(rule2) == 0;
@@ -111,7 +110,7 @@ class DLVHEX_EXPORT BaseRule : public ProgramNode
   /**
    * @brief Test for inequality.
    */
-  bool
+  inline bool
   operator!= (const BaseRule& rule2) const
   {
     return compare(rule2) != 0;
@@ -121,7 +120,7 @@ class DLVHEX_EXPORT BaseRule : public ProgramNode
   /**
    * @brief Less-than comparison.
    */
-  bool
+  inline bool
   operator< (const BaseRule& rule2) const
   {
     return compare(rule2) < 0;

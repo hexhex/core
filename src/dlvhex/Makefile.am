@@ -67,6 +67,9 @@ libdlvhexbase_la_SOURCES = \
     AggregateAtom.cpp \
     AtomNode.cpp \
     BaseAtom.cpp \
+    BaseLiteral.cpp \
+    BaseQuery.cpp \
+    BaseRule.cpp \
     BoostComponentFinder.cpp \
     BuiltinPredicate.cpp \
     Component.cpp \

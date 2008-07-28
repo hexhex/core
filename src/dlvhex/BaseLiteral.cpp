@@ -21,32 +21,33 @@
 
 
 /**
- * @file BaseAtom.cpp
+ * @file   BaseLiteral.h
+ * @author Roman Schindlauer
  * @author Thomas Krennwallner
- * @date Fri Jul 18 14:03:39 CEST 2008
- *
- * @brief Non-member functions of BaseAtom.
- *
- *
+ * @date   Sun Sep 4 12:39:40 2005
+ * 
+ * @brief  Base Literal class.
+ * 
+ * 
  */
 
 
-#include "dlvhex/BaseAtom.h"
+#include "dlvhex/BaseLiteral.h"
 
 #include "dlvhex/PrintVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 
-BaseAtom::~BaseAtom()
+BaseLiteral::~BaseLiteral()
 { }
 
 
 std::ostream&
-operator<< (std::ostream& out, const BaseAtom& atom)
+operator<< (std::ostream& out, const BaseLiteral& literal)
 {
   RawPrintVisitor rpv(out);
-  const_cast<BaseAtom*>(&atom)->accept(&rpv);
+  const_cast<BaseLiteral*>(&literal)->accept(&rpv);
   return out;
 }
 
