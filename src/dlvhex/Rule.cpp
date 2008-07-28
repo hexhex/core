@@ -129,15 +129,6 @@ Rule::accept(BaseVisitor* const v)
   v->visit(this);
 }
 
-
-std::ostream&
-operator<< (std::ostream& out, const BaseRule& rule)
-{
-  RawPrintVisitor rpv(out);
-  const_cast<BaseRule*>(&rule)->accept(&rpv);
-  return out;
-}
-
 DLVHEX_NAMESPACE_END
 
 // Local Variables:
