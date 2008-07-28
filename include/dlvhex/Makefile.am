@@ -59,6 +59,7 @@ pkginclude_HEADERS = \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \
+	PredefinedNames.h \
 	ProgramNode.h \
 	Process.h \
 	ProcessBuf.h \
