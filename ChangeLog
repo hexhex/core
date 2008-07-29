@@ -1,3 +1,18 @@
+2008-07-29  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Add --version command line option.
+
+	* include/dlvhex/Makefile.am: Remove Registry.
+	* include/dlvhex/Registry.h: Likewise.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/Dependency.cpp: Likewise.
+	* src/dlvhex/GraphBuilder.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/HexParser.ypp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/NodeGraph.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	
 2008-07-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Rule.cpp: Remove operator<< for BaseRule.
