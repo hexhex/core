@@ -82,20 +82,37 @@ const char*  WhoAmI;
  * @brief Print logo.
  */
 void
-printLogo()
+printLogo(std::ostream &out)
 {
-	std::cout
-		<< "DLVHEX "
+  out << "DLVHEX "
 #ifdef HAVE_CONFIG_H
-		<< VERSION << " "
+      << VERSION << " "
 #endif // HAVE_CONFIG_H
-		<< "[build "
-		<< __DATE__ 
+      << "[build "
+      << __DATE__ 
 #ifdef __GNUC__
-		<< "   gcc " << __VERSION__ 
-#endif
-		<< "]" << std::endl
-		<< std::endl;
+      << "   gcc " << __VERSION__ 
+#endif // __GNUC__
+      << "]"
+      << std::endl << std::endl;
+}
+
+
+/**
+ * @brief Print logo and copyright.
+ */
+void
+printVersion(std::ostream &out)
+{
+  printLogo(out);
+
+  out << "Copyright (C) 2005-2008 Roman Schindlauer and Thomas Krennwallner." << std::endl
+      << "This is free software; see the source for copying conditions.  There is NO" << std::endl
+      << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." << std::endl;
+
+  out << "See the file named AUTHORS for a list of contributors." << std::endl << std::endl;
+
+  out << "Homepage: http://www.kr.tuwien.ac.at/research/systems/dlvhex/" << std::endl;
 }
 
 
@@ -105,50 +122,54 @@ printLogo()
 void
 printUsage(std::ostream &out, bool full)
 {
-	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	out << "Usage: " << WhoAmI 
-		<< " [OPTION] FILENAME [FILENAME ...]" << std::endl
-		<< std::endl;
+  printLogo(out);
 
-	out << "   or: " << WhoAmI 
-		<< " [OPTION] --" << std::endl
-		<< std::endl;
+  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 
-	if (!full)
-	{
-		out << "Specify -h or --help for more detailed usage information." << std::endl
-			<< std::endl;
+  out << "dlvhex is the name of a prototype application for computing the" << std::endl
+      << "models of so-called HEX-programs, which are an extension of" << std::endl
+      << "Answer-Set Programs towards integration of higher-order reasoning" << std::endl
+      << "and external computation sources." << std::endl << std::endl;
 
-		return;
-	}
+  out << "Usage: " << WhoAmI << " [OPTION] FILENAME [FILENAME ...]" << std::endl
+      << std::endl;
 
-	//
-	// As soos as we have more options, we can introduce sections here!
-	//
-	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	out << "     --               Parse from stdin." << std::endl
-		<< " -s, --silent         Do not display anything than the actual result." << std::endl
-		//        << "--strongsafety     Check rules also for strong safety." << std::endl
-		<< " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
-		<< "                      libraries (additionally to the installation plugin-dir" << std::endl
-		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
-		<< " -f, --filter=foo[,bar[,...]]" << std::endl
-		<< "                      Only display instances of the specified predicate(s)." << std::endl
-		<< " -a, --allmodels      Display all models also under weak constraints." << std::endl
-		<< " -r, --reverse        Reverse weak constraint ordering." << std::endl
-		<< "     --firstorder     No higher-order reasoning." << std::endl
-		<< "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
-		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
-		<< "                      with --verbose)." << std::endl
-		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-                << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
-		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
-		<< "                      1  - program analysis information (including dot-file)" << std::endl
-		<< "                      2  - program modifications by plugins" << std::endl
-		<< "                      4  - intermediate model generation info" << std::endl
-		<< "                      8  - timing information (only if configured with" << std::endl
-		<< "                                               --enable-debug)" << std::endl
-		<< "                      add values for multiple categories." << std::endl;
+  if (!full)
+    {
+      out << "Specify -h or --help for more detailed usage information." << std::endl
+	  << std::endl;
+      
+      return;
+    }
+
+  //
+  // As soos as we have more options, we can introduce sections here!
+  //
+  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  out << "Options:" << std::endl
+      << "     --               Parse from stdin." << std::endl
+      << " -s, --silent         Do not display anything than the actual result." << std::endl
+    //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
+      << "                      libraries (additionally to the installation plugin-dir" << std::endl
+      << "                      and $HOME/.dlvhex/plugins)." << std::endl
+      << " -f, --filter=foo[,bar[,...]]" << std::endl
+      << "                      Only display instances of the specified predicate(s)." << std::endl
+      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
+      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
+      << "     --firstorder     No higher-order reasoning." << std::endl
+      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+      << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
+      << "                      with --verbose)." << std::endl
+      << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+      << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
+      << "                      1  - program analysis information (including dot-file)" << std::endl
+      << "                      2  - program modifications by plugins" << std::endl
+      << "                      4  - intermediate model generation info" << std::endl
+      << "                      8  - timing information (only if configured with" << std::endl
+      << "                                               --enable-debug)" << std::endl
+      << "                      add values for multiple categories." << std::endl;
 }
 
 
@@ -336,12 +357,11 @@ main (int argc, char *argv[])
   // path to an optional plugin directory
   std::string optionPlugindir;
 
-  //
-  // dlt switch should be temporary until we have a proper rewriter for flogic!
-  //
+  ///@todo dlt switch should be temporary until we have a proper rewriter for flogic!
   bool optiondlt = false;
 
   bool helpRequested = false;
+  bool versionRequested = false;
 
   extern char* optarg;
   extern int optind;
@@ -356,7 +376,7 @@ main (int argc, char *argv[])
   int ch;
   int longid;
   
-  static const char* shortopts = "f:hsvp:ar";
+  static const char* shortopts = "hsvf:p:arV";
   static struct option longopts[] =
     {
       { "help", no_argument, 0, 'h' },
@@ -366,6 +386,7 @@ main (int argc, char *argv[])
       { "plugindir", required_argument, 0, 'p' },
       { "allmodels", no_argument, 0, 'a' },
       { "reverse", no_argument, 0, 'r' },
+      { "version", no_argument, 0, 'V' },
       { "firstorder", no_argument, &longid, 1 },
       { "weaksafety", no_argument, &longid, 2 },
       { "ruleml",     no_argument, &longid, 3 },
@@ -381,7 +402,7 @@ main (int argc, char *argv[])
       switch (ch)
 	{
 	case 'h':
-	  helpRequested = 1;
+	  helpRequested = true;
 	  break;
 
 	case 's':
@@ -419,6 +440,10 @@ main (int argc, char *argv[])
 
 	case 'r':
 	  Globals::Instance()->setOption("ReverseOrder", 1);
+	  break;
+
+	case 'V':
+	  versionRequested = true;
 	  break;
 
 	case 0:
@@ -470,13 +495,10 @@ main (int argc, char *argv[])
 	}
     }
 
-  //
-  // before anything else we dump the logo
-  //
-
-  if (!Globals::Instance()->getOption("Silent"))
+  if (versionRequested)
     {
-      printLogo();
+      printVersion(std::cerr);
+      exit(0);
     }
 
   //
@@ -535,6 +557,16 @@ main (int argc, char *argv[])
   // DLVHEX main execution
   //
   /////////////////////////////////////////////////////////////////
+
+  //
+  // before anything else we dump the logo
+  //
+
+  if (!Globals::Instance()->getOption("Silent"))
+    {
+      printLogo(std::cerr);
+    }
+
   try
     {
 
