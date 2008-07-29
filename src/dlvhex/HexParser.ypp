@@ -67,7 +67,6 @@
 #include "dlvhex/WeakConstraint.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/Registry.h"
 #include "dlvhex/globals.h"
 
 

@@ -34,7 +34,6 @@
 #include "dlvhex/NodeGraph.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Registry.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AggregateAtom.h"
 #include "dlvhex/PluginContainer.h"

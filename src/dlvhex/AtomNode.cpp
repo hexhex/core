@@ -32,9 +32,9 @@
 
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Registry.h"
 #include "dlvhex/ExternalAtom.h"
 
+#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 

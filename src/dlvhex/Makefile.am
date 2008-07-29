@@ -92,7 +92,6 @@ libdlvhexbase_la_SOURCES = \
     PredefinedNames.cpp \
     PrintVisitor.cpp \
     ProgramCtx.cpp \
-    Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \

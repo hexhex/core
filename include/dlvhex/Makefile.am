@@ -66,7 +66,6 @@ pkginclude_HEADERS = \
 	Program.h \
 	ProgramCtx.h \
 	QueryTraits.h \
-	Registry.h \
 	ResultContainer.h \
 	Rule.h \
 	Term.h \

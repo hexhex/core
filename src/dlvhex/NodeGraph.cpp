@@ -33,7 +33,6 @@
 #include "dlvhex/NodeGraph.h"
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/Registry.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

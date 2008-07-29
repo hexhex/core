@@ -59,7 +59,6 @@
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/Registry.h"
 #include "dlvhex/globals.h"
 
 DLVHEX_NAMESPACE_BEGIN
