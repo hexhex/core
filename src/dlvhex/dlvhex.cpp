@@ -479,7 +479,16 @@ main (int argc, char *argv[])
 	      std::string solver(optarg);
 	      if (solver == "dlvdb")
 		{
+#if defined(HAVE_DLVDB)
 		  pctx.setProcess(new DLVDBProcess);
+#else
+		  printLogo(std::cerr);
+		  std::cerr << "The command line option ``--solver=dlvdb´´ "
+			    << "requires that dlvhex has compiled-in dlvdb support. "
+			    << "Please reconfigure the dlvhex source." 
+			    << std::endl;
+		  exit(1);
+#endif // HAVE_DLVDB
 		}
 	      else // default is DLV
 		{
@@ -558,15 +567,6 @@ main (int argc, char *argv[])
   //
   /////////////////////////////////////////////////////////////////
 
-  //
-  // before anything else we dump the logo
-  //
-
-  if (!Globals::Instance()->getOption("Silent"))
-    {
-      printLogo(std::cerr);
-    }
-
   try
     {
 
@@ -599,15 +599,16 @@ main (int argc, char *argv[])
       //
       if (!pctx.getOptions()->empty())
 	{
-	  std::cerr << "Unknown option(s):";
-	  
-	  std::vector<std::string>::const_iterator opb = pctx.getOptions()->begin();
-	  
-	  while (opb != pctx.getOptions()->end())
-	    std::cerr << " " << *opb++;
-	  
-	  std::cerr << std::endl;
 	  printUsage(std::cerr, false);
+
+	  std::cerr << WhoAmI << ": Unrecognized option(s) are ";
+
+	  const std::vector<std::string>* opts = pctx.getOptions();
+	  std::copy(opts->begin(), opts->end(),
+		    std::ostream_iterator<std::string>(std::cerr, " ")
+		    );
+
+	  std::cerr << std::endl;
 	  
 	  exit(1);
 	}
@@ -620,6 +621,17 @@ main (int argc, char *argv[])
 	  printUsage(std::cerr, false);
 	  exit(1);
 	}
+
+
+      //
+      // before anything else we dump the logo
+      //
+      
+      if (!Globals::Instance()->getOption("Silent"))
+	{
+	  printLogo(std::cerr);
+	}
+  
       
       /////////////////////////////////////////////////////////////////
       //
