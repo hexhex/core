@@ -454,7 +454,16 @@ main (int argc, char *argv[])
 	      std::string solver(optarg);
 	      if (solver == "dlvdb")
 		{
+#if defined(HAVE_DLVDB)
 		  pctx.setProcess(new DLVDBProcess);
+#else
+		  printLogo();
+		  std::cerr << "The command line option ``--solver=dlvdb´´ "
+			    << "requires that dlvhex has compiled-in dlvdb support. "
+			    << "Please reconfigure the dlvhex source." 
+			    << std::endl;
+		  exit(1);
+#endif // HAVE_DLVDB
 		}
 	      else // default is DLV
 		{
