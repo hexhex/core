@@ -1,3 +1,14 @@
+2008-08-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Process.h (Process::path,Process::commandline): New methods.
+	* include/dlvhex/DLVProcess.h: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+	* include/dlvhex/ASPSolver.tcc: Add the solver path to the error messages.
+
+	* src/dlvhex/dlvhex.cpp: Issue an error if user specified
+	--solver=dlvdb without compiled dlvdb support.
+
 2008-07-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/GraphProcessor.cpp (GraphProcessor::run): Optimize
