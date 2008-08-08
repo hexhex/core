@@ -37,6 +37,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include <string>
+#include <vector>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -59,6 +60,12 @@ public:
 
   virtual void
   addOption(const std::string&) = 0;
+
+  virtual std::string
+  path() const = 0;
+
+  virtual std::vector<std::string>
+  commandline() const = 0;
 
   virtual void
   spawn() = 0;
