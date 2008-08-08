@@ -105,19 +105,33 @@ DLVProcess::addOption(const std::string& option)
 }
 
 
-void
-DLVProcess::spawn()
+std::string
+DLVProcess::path() const
+{
+  return DLVPATH;
+}
+
+
+std::vector<std::string>
+DLVProcess::commandline() const
 {
   std::vector<std::string> tmp;
 
-  tmp.push_back(DLVPATH);
+  tmp.push_back(path());
   // never include the set of initial facts in the answer sets
   tmp.push_back("-nofacts");
   tmp.push_back("-silent");
   tmp.insert(tmp.end(), argv.begin(), argv.end());
   tmp.push_back("--"); // request stdin as last parameter!
 
-  proc.open(tmp);
+  return tmp;
+}
+
+
+void
+DLVProcess::spawn()
+{
+  proc.open(commandline());
 }
 
 
@@ -163,13 +177,24 @@ DLVDBProcess::DLVDBProcess()
 { }
 
 
-void
-DLVDBProcess::spawn()
+std::string
+DLVDBProcess::path() const
+{
+#if defined(HAVE_DLVDB)
+  return DLVDBPATH;
+#else
+  return DLVProcess::path();
+#endif
+}
+
+
+std::vector<std::string>
+DLVDBProcess::commandline() const
 {
 #if defined(HAVE_DLVDB)
   std::vector<std::string> tmp;
 
-  tmp.push_back(DLVDBPATH);
+  tmp.push_back(path());
   tmp.push_back("-DBSupport"); // turn on database support
   tmp.push_back("-ORdr-"); // turn on rewriting of false body rules
   // never include the set of initial facts in the answer sets
@@ -178,11 +203,12 @@ DLVDBProcess::spawn()
   tmp.insert(tmp.end(), argv.begin(), argv.end());
   tmp.push_back("--"); // request stdin as last parameter!
 
-  proc.open(tmp);
+  return tmp;
 #else
-  DLVProcess::spawn();
+  return DLVProcess::commandline();
 #endif /* HAVE_DLVDB */
 }
+
 
 DLVHEX_NAMESPACE_END
 

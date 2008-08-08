@@ -81,6 +81,12 @@ class DLVHEX_EXPORT DLVProcess : public Process
   virtual void
   addOption(const std::string&);
 
+  virtual std::string
+  path() const;
+
+  virtual std::vector<std::string>
+  commandline() const;
+
   virtual void
   spawn();
 
@@ -106,8 +112,12 @@ class DLVHEX_EXPORT DLVDBProcess : public DLVProcess
  public:
   DLVDBProcess();
 
-  virtual void
-  spawn();
+  virtual std::string
+  path() const;
+
+  virtual std::vector<std::string>
+  commandline() const;
+
 };
 
 
