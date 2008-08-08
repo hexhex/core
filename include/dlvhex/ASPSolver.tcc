@@ -93,30 +93,32 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
       DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
     }
-  catch (FatalError&)
+  catch (FatalError& e)
     {
-      throw;
+      throw FatalError(proc.path() + ": " + e.getErrorMsg());
     }
   catch (GeneralError& e)
     {
-      throw FatalError(e.getErrorMsg());
+      throw FatalError(proc.path() + ": " + e.getErrorMsg());
     }
   catch (std::exception& e)
     {
-      throw FatalError(e.what());
+      throw FatalError(proc.path() + ": " + e.what());
     }
 
   // check for errors
   if (retcode == 127)
     {
-      throw FatalError("LP solver command not found!");
+      throw FatalError("LP solver command `" + proc.path() + "´ not found!");
     }
   else if (retcode != 0) // other problem
     {
       std::stringstream errstr;
 
-      errstr << "LP solver failure (" << retcode << "):" << std::endl;
-      errstr << error;
+      errstr << "LP solver `" << proc.path()
+	     << "´ failure (" << retcode << "):"
+	     << std::endl
+	     << error;
 
       throw FatalError(errstr.str());
     }
