@@ -1,5 +1,19 @@
 -*- org -*-
 
+* TODO allow --solver=/path/to/solver?
+* TODO support streaming of answer sets
+If the GraphProcessor found an answer set, it should immediately call
+the output builder / query processor. This helps (a) if we only want a
+single answer set, and dlv will possibly support streaming in the
+future as well, and (b) for brave reasoning we don't have to collect
+all of them, but just stop at the first occurrence of the query.
+
+* TODO maintain a bimap between replacement atom predicates and PluginAtom objects
+Replacement atoms show up in answer sets, and we have to find the
+right PluginAtom. There could be more than one replacement atom for a
+single PluginAtom, even for a single rule if we decompose recursive
+rules.
+
 * TODO Add support for GraphML
 The GraphML could be handy for debugging the dependency graph and
 other stuff: <http://graphml.graphdrawing.org/>
@@ -19,7 +33,7 @@ program as higher-order program in the debug output.
 * TODO Fix extatom3.hex and dawg.hex testcases
 This goes in line with GuessCheckModelGenerator
 
-* TODO RuleBody_t and RuleHead_t must be std::vector<>s
+* TODO Body and Head must be std::list<>s
 ... and not std::set<>s, otw. we cannot simply change the Atoms
 without invalidating the ordering in the set. Maybe we should put Body
 and Head into the Rule class, i.e., we have Rule::Body and Rule::Head.
@@ -188,7 +202,6 @@ generix dlv symbols. See
 This is not always possible, for instance, in dlvdb, the program's EDB
 is stored in a DBMS, hence the symbol table is delegated to the DBMS.
 
-
 * TODO dlvhex server mode
 inetd (Linux) and launchd (Mac OS X) should be enough:
 
@@ -215,10 +228,16 @@ Or even a Web Service?
 
 * TODO Add support for "internal" plugins
 To simplify all the different _internal_ output builder (and maybe
-parsers/rewriter/optimizers), PluginContainer should support non-DLL
-"plugins." So the main code does not have to care about all the
-different input/output modes and just redirect the enquiries to the
-plugin system.
+parsers/rewriter/optimizers), PluginContainer should support
+non-sharedlib "plugins." So the main code does not have to care about
+all the different input/output modes and just redirect the enquiries
+to the plugin system.
+
+Or maybe split the systems into two subsystems:
+
+                    +-- InternalSystem
+      BaseSystem <--+
+                    +-- PluginSystem
 
 * TODO Describe the testsuite in RDF
 See <http://www.w3.org/2001/sw/DataAccess/tests/r2.html>.
