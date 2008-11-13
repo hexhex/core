@@ -129,6 +129,14 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    }
 
 	  //
+	  //@todo dependency graph is _not_ in sync with the
+	  //associated rules of of the component, hence we have to
+	  //check whether the external atom belongs _really_ to the
+	  //cycle and thus we have to create some guessing
+	  //rules. Non-cyclic external atoms had already been solved
+	  //in the weakly connected component evaluator and must not
+	  //be generated here.
+	  //
 	  // for the guessing only consider external atoms that are actually
 	  // in the cycle!
 	  //
@@ -136,7 +144,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    {
 	      ///@todo this might not work in case of non-unique
 	      ///external atom pointers...
-	      // continue;
+	      continue;
 	    }
 
 	  //
