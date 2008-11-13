@@ -1,3 +1,9 @@
+2008-11-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Do not create guessing
+	rules for already evaluated weakly connected external atoms inside
+	of strongly connected components.
+
 2008-08-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Process.h (Process::path,Process::commandline): New methods.
