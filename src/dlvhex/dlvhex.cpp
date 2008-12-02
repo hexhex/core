@@ -67,6 +67,8 @@
 #include <getopt.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
+
 #include <boost/tokenizer.hpp>
 
 

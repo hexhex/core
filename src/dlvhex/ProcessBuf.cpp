@@ -36,6 +36,8 @@
 #include <cerrno>
 #include <cstdio>
 #include <csignal>
+#include <cstring>
+#include <cstdlib>
 #include <sys/types.h>
 #include <sys/wait.h>
 
