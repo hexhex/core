@@ -1,3 +1,10 @@
+2008-12-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/ProcessBuf.cpp: g++ 4.3 introduced some backwards
+	incompatibility <http://gcc.gnu.org/gcc-4.3/porting_to.html> for
+	C-functions: #include cstring and cstdlib.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
 2008-11-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/GuessCheckModelGenerator.cpp: Do not create guessing
