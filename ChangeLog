@@ -1,7 +1,14 @@
 2008-12-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/DLVresultParserDriver.h: Move error message
+	handling from the parser to the scanner.
+	* src/dlvhex/DLVresultParser.ypp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/DLVresultScanner.lpp: Likewise.
+
 	* include/dlvhex/ASPSolver.tcc: Provide better debug output in
 	case of solver errors.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
 
 2008-12-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
