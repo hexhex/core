@@ -60,8 +60,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
 				 std::vector<AtomSet>& as)
   throw (FatalError)
 {
-  int retcode;
-  std::string error;
+  int retcode = -1;
   
   try
     {
@@ -78,22 +77,34 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
 	}
       catch (std::ios_base::failure& e)
         {
-	  std::stringstream errstr;
-	     
-	  errstr << "Received an error while sending the program to the external LP solver."
-		 << std::endl
-		 << "LP solver `" << proc.path()
-		 << "´ failure: " << e.what()
-		 << std::endl;
+	  std::stringstream errstr1;
+	  std::stringstream errstr2;
 
-	  throw FatalError(errstr.str());
+	  errstr2 << proc.path() << " error message:" << std::endl;
+
+	  std::istream& inp = proc.getInput();
+	  std::string s;
+
+	  while (inp.good() && std::getline(inp, s))
+	    {
+	      errstr2 << s << std::endl;
+	    }
+
+	  // now get the exit code of the process
+	  retcode = proc.close();
+	     
+	  errstr1 << "Received an error while sending a program to " << proc.path() 
+		 << " (exitcode = " << retcode << "): "
+		 << e.what();
+
+	  throw FatalError(errstr1.str() + errstr2.str());
         }
       
       proc.endoffile(); // send EOF to process
 
       // parse result
       Parser parser;
-      parser.parse(proc.getInput(), as, error);
+      parser.parse(proc.getInput(), as);
       
       // get exit code of process
       retcode = proc.close();
@@ -101,13 +112,19 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
       DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
     }
-  catch (FatalError& e)
-    {
-      throw FatalError(proc.path() + ": " + e.getErrorMsg());
-    }
   catch (GeneralError& e)
     {
-      throw FatalError(proc.path() + ": " + e.getErrorMsg());
+      std::stringstream errstr;
+
+      // get exit code of process
+      if (retcode == -1)
+	{
+	  retcode = proc.close();
+	}
+
+      errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg();
+
+      throw FatalError(errstr.str());
     }
   catch (std::exception& e)
     {
@@ -123,10 +140,8 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
     {
       std::stringstream errstr;
 
-      errstr << "LP solver `" << proc.path()
-	     << "´ failure (" << retcode << "):"
-	     << std::endl
-	     << error;
+      errstr << "LP solver `" << proc.path() << "´ bailed out with exitcode " << retcode << ": "
+	     << "re-run dlvhex with `strace -f´.";
 
       throw FatalError(errstr.str());
     }
