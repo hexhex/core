@@ -1,5 +1,7 @@
 -*- org -*-
 
+* TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
+
 * TODO Add support for GraphML
 The GraphML could be handy for debugging the dependency graph and
 other stuff: <http://graphml.graphdrawing.org/>
