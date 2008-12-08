@@ -1,5 +1,9 @@
 2008-12-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* TODO: Update.
+
+	* MAINTAINER-README: Add pkg-config to the list of dependencies.
+
 	* include/dlvhex/DLVresultParserDriver.h: Move error message
 	handling from the parser to the scanner.
 	* src/dlvhex/DLVresultParser.ypp: Likewise.
