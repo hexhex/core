@@ -76,9 +76,17 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
 	  const_cast<Program&>(prg).accept(builder);
 	  const_cast<AtomSet&>(facts).accept(builder);
 	}
-      catch (std::ios_base::failure&)
+      catch (std::ios_base::failure& e)
         {
-	  throw FatalError("Received an error while sending the program to the external LP solver.");
+	  std::stringstream errstr;
+	     
+	  errstr << "Received an error while sending the program to the external LP solver."
+		 << std::endl
+		 << "LP solver `" << proc.path()
+		 << "´ failure: " << e.what()
+		 << std::endl;
+
+	  throw FatalError(errstr.str());
         }
       
       proc.endoffile(); // send EOF to process
