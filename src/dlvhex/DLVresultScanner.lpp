@@ -79,9 +79,6 @@
 /* some OSs use \r\n as end-of-line instead of \n */
 NEWLINE     \15?\n
 
-/*  need the slash for path-strings at the beginning! */
-MSG         ([a-zA-Z/].+)
-
 ID          ([A-Za-z][A-Za-z_0-9]*)
 
 QUOTED_ID   (\"[^\"]*\")
@@ -91,6 +88,10 @@ BLANK       ([ \t]+)
 NUM         ([0-9]+)
 
 
+/* error state */
+%x errstate
+
+
 %%
 
 %{
@@ -98,10 +99,29 @@ NUM         ([0-9]+)
   typedef yy::DLVresultParser::token token;
 %}
 
+<errstate>(.|{NEWLINE})* {
+  std::string s(yytext);
+  driver.error(*yylloc, s);
+ }
 
 {NEWLINE} {
     return token::NEWLINE;
     /* parser_line++;*/
+}
+
+^[^\{].* {
+  /* something starting not with a '{' at the beginning of a line
+     this is some dlv-(error-)message */
+
+  /* Copy yytext because unput() trashes yytext */
+  char *yycopy = strdup( yytext );
+  for (int i = yyleng - 1; i >= 0; --i)
+    {
+      unput(yycopy[i]);
+    }
+  free(yycopy);
+
+  BEGIN(errstate);
 }
 
 ","     { return token::COMMA;         }
@@ -111,12 +131,6 @@ NUM         ([0-9]+)
 "{"     { return token::CURLY_OPEN;    }
 "}"     { return token::CURLY_CLOSE;   }
 
-^{MSG} {
-  /* something starting not with a '{' at the beginning of a line
-     this is some dlv-(error-)message */
-    yylval.string = new std::string(yytext);
-    return token::MESSAGE;
-}
 
 {ID} |
 {QUOTED_ID} {

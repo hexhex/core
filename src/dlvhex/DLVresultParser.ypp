@@ -74,8 +74,6 @@ DLVHEX_NAMESPACE_END
 // yy::DLVresultParser ctor
 %parse-param { DLVHEX_NAMESPACE DLVresultParserDriver* driver }
 %parse-param { std::vector<DLVHEX_NAMESPACE AtomSet>& answersets }
-%parse-param { std::string& dlvError }
-
 
 // bison passes the driver as additional parameter to the lexer
 // function YY_DECL, so we can abuse the driver to get the real lexer
@@ -86,13 +84,12 @@ DLVHEX_NAMESPACE_END
 %locations
 
 // debug parser
-//%debug
+%debug
 //%error-verbose
 //%verbose /* really verbose output */
 
 
 %union {
-    std::string*   string;
     char*          charp;
     int            integer;
     DLVHEX_NAMESPACE Term*          term;
@@ -134,7 +131,6 @@ DLVHEX_NAMESPACE_USE
 
 
 %token <charp> ID
-%token <string> MESSAGE
 %token <integer> NUM
 %token ERROR
 %token NEWLINE
@@ -155,14 +151,6 @@ dlvresult: /* empty */
 result_line:
     NEWLINE
     | list
-    | message result_line
-    ;
-
-message: MESSAGE
-    {
-      dlvError += *$1 + "\n";
-      delete $1;
-    }
     ;
 
 list: CURLY_OPEN factlist CURLY_CLOSE NEWLINE
