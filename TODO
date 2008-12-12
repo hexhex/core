@@ -16,7 +16,13 @@ program as higher-order program in the debug output.
 * TODO Check if the undecorated external atom replacement and aux names are working
 * DONE Fixpoint model generators is broken
 * TODO Fix extatom3.hex and dawg.hex testcases
-This goes in line with GuessCheckModelGenerator
+This goes in line with GuessCheckModelGenerator: if there are already
+solved stratified replacement atoms in the result and there are
+unstratified external atoms in the GnC-component, the guessed model
+also contains the replacement atoms from the input result, hence
+making the check always incompatible with the guess. This need to be
+fixed by introducing a better numbering scheme for the replacement
+atoms.
 * TODO RuleBody_t and RuleHead_t must be std::vector<>s
 ... and not std::set<>s, otw. we cannot simply change the Atoms
 without invalidating the ordering in the set. Maybe we should put Body
