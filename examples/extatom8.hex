@@ -1,0 +1,12 @@
+d(c1).
+d(c2).
+d(c3).
+d(c4).
+
+p(c1) :- r(X), not q(c1).
+q(c1) :- r(X), not p(c1).
+
+s(X)  :- d(X), not p(c1).
+s(X)  :- d(X), not q(c1).
+
+r(X)  :- d(X), s(X), not &testC[s](X).
