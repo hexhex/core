@@ -1,3 +1,14 @@
+2009-01-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TestPlugin.cpp (TestCAtom): Add &testC
+	external atom.
+
+	* examples/extatom8.hex: New unstratified testcase.
+
+2008-12-12  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* TODO: Update.
+
 2008-12-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
