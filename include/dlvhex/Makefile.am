@@ -1,5 +1,10 @@
 AUTOMAKE_OPTIONS = gnu
 
+# remove $prefix/include/dlvhex directory after uninstall
+uninstall-hook:
+	-test -d $(DESTDIR)$(pkgincludedir) && rmdir $(DESTDIR)$(pkgincludedir); exit 0
+
+
 # including headers for make dist
 noinst_HEADERS = \
 	ASPSolver.h \

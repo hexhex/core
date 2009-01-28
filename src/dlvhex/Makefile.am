@@ -22,6 +22,9 @@ EXTRA_DIST = \
 dist-hook:
 	$(LN_S) @FLEXLEXER_H@ $(top_distdir)/src/dlvhex
 
+# remove $prefix/lib/dlvhex directory after uninstall
+uninstall-hook:
+	-test -d $(DESTDIR)$(pkglibdir) && rmdir $(DESTDIR)$(pkglibdir); exit 0
 
 # global preprocessor flags
 AM_CPPFLAGS = \
