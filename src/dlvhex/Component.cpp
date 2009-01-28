@@ -80,24 +80,31 @@ Component::getNodes() const
 Program
 Component::getBottom() const
 {
-  ///@todo cache it???
+    Program program;
 
-  Program componentprog;
-  
-  //
-  // go through all nodes
-  //
-  for (std::vector<AtomNodePtr>::const_iterator node = atomnodes.begin();
-       node != atomnodes.end();
-       ++node)
+    //
+    // go through all nodes
+    //
+    std::vector<AtomNodePtr>::const_iterator node = atomnodes.begin();
+
+    while (node != atomnodes.end())
     {
-      const Program& noderules = (*node)->getRules();
-      componentprog.insert(componentprog.end(),
-			   noderules.begin(),
-			   noderules.end());
+        const std::vector<Rule*>& rules = (*node)->getRules();
+
+        //
+        // add all rules from this node to the component
+        //
+        for (std::vector<Rule*>::const_iterator ri = rules.begin();
+                ri != rules.end();
+                ++ri)
+        {
+            program.addRule(*ri);
+        }
+
+        ++node;
     }
 
-  return componentprog;
+    return program;
 }
 
 
@@ -109,10 +116,8 @@ Component::getResult(std::vector<AtomSet>& r)
 
 
 bool
-Component::isInComponent(const BaseAtom* at) const
+Component::isInComponent(const Atom* at) const
 {
-  ///@todo is comparing by pointer sufficient?
-
   for (std::vector<AtomNodePtr>::const_iterator nodeit = atomnodes.begin();
        nodeit != atomnodes.end();
        ++nodeit)
@@ -192,7 +197,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
     {
       std::cerr << "Evaluating program component:" << std::endl;
       RawPrintVisitor rpv(std::cerr);
-      rpv << getBottom();
+      getBottom().accept(rpv);
     }
 
   std::vector<AtomSet> res;
@@ -204,14 +209,6 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
        in != input.end();
        ++in)
     {
-      if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
-	{
-	  std::cerr << "using " << std::endl;
-	  RawPrintVisitor rpv(std::cerr);
-	  rpv << *in;
-	  std::cerr << " as input." << std::endl;
-	}
-
       res.clear();
 
       try
@@ -257,7 +254,7 @@ ProgramComponent::dump(std::ostream& out) const
     out << "Bottom:" << std::endl;
 
     RawPrintVisitor rpv(out);
-    rpv << getBottom();
+    getBottom().accept(rpv);
 
     out << "ProgramComponent-object end ----------------------------" << std::endl;
 }
@@ -310,7 +307,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 		    {
 		      ///@todo we should fix the interface and move
 		      ///auxpredicate as parameter to EvaluateExtatom::evaluate
-		      externalAtom->setAuxPredicate(it->getAtomNode()->getAtom()->getPredicate());
+		      externalAtom->setAuxPredicate(it->getAtomNode()->getAtom()->getPredicate().getString());
 		      EvaluateExtatom eea(externalAtom, pluginContainer);
 		      eea.evaluate(i, res);
 		    }
@@ -333,7 +330,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         // is due to our graphprocessor algorithm.
         /// @todo think about this!
         //
-        res.insert(in->begin(), in->end());
+        res.insert(*in);
 
         result.push_back(res);
 

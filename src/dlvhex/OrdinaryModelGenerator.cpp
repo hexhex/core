@@ -58,14 +58,22 @@ OrdinaryModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
   //
   // go through all nodes
   //
-  for (std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
-       node != nodes.end(); ++node)
+  std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
+  while (node != nodes.end())
     {
+      const std::vector<Rule*>& rules = (*node)->getRules();
+      
       //
       // add all rules from this node to the component
       //
-      const Program& rules = (*node)->getRules();
-      program.insert(program.end(), rules.begin(), rules.end());
+      for (std::vector<Rule*>::const_iterator ri = rules.begin();
+	   ri != rules.end();
+	   ++ri)
+	  {
+            program.addRule(*ri);
+	  }
+      
+      ++node;
     }
   
   this->compute(program, I, models);
@@ -105,7 +113,7 @@ OrdinaryModelGenerator::compute(const Program& program,
        as != answersets.end();
        ++as)
     {
-      as->insert(I.begin(), I.end());
+      as->insert(I);
       models.push_back(*as);
     }
 

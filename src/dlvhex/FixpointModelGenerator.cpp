@@ -42,9 +42,6 @@
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/ProgramCtx.h"
-#include "dlvhex/NullVisitor.h"
-
-#include <boost/iterator/indirect_iterator.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -55,47 +52,40 @@ FixpointModelGenerator::FixpointModelGenerator(const ProgramCtx& c)
 
 void
 FixpointModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
-                                const AtomSet& I,
-                                std::vector<AtomSet>& models)
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
 {
-  // the program of the component
   Program program;
 
   //
   // go through all nodes
   //
-  for (std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
-       node != nodes.end();
-       ++node)
+  std::vector<AtomNodePtr>::const_iterator node = nodes.begin();
+  while (node != nodes.end())
     {
-      const Program& rules = (*node)->getRules();
-
+      const std::vector<Rule*>& rules = (*node)->getRules();
+      
       //
       // add all rules from this node to the component
       //
-      program.insert(program.end(), rules.begin(), rules.end());
+      for (std::vector<Rule*>::const_iterator ri = rules.begin();
+	   ri != rules.end();
+	   ++ri)
+	  {
+            program.addRule(*ri);
+	  }
+      
+      ++node;
     }
   
   this->compute(program, I, models);
 }
 
 
-///@todo this is preliminary, we should get the external atoms from
-///the component
-class GetExtAtomsVisitor : public NullVisitor
-{
-private:
-  std::vector<ExternalAtom*>& extatoms;
-public:
-  GetExtAtomsVisitor(std::vector<ExternalAtom*>& e) : extatoms(e) { }
-  void visit(ExternalAtom* const e) { extatoms.push_back(e); }
-};
-
-
 void
 FixpointModelGenerator::compute(const Program& program,
-                                const AtomSet& I,
-                                std::vector<AtomSet>& models)
+                                const AtomSet &I,
+                                std::vector<AtomSet> &models)
 { 
   DEBUG_START_TIMER;
 
@@ -108,11 +98,8 @@ FixpointModelGenerator::compute(const Program& program,
     
 
   // the list of external atoms in a given program
-  std::vector<ExternalAtom*> extatoms;
-  GetExtAtomsVisitor gev(extatoms);
-  std::for_each(boost::make_indirect_iterator(program.begin()),
-		boost::make_indirect_iterator(program.end()),
-		std::bind2nd(std::mem_fun_ref(&BaseRule::accept), &gev));
+  const std::vector<ExternalAtom*>& extatoms = program.getExternalAtoms();
+
 
   //
   // security limit
@@ -146,13 +133,12 @@ FixpointModelGenerator::compute(const Program& program,
       if (result == answersets.end())
 	{
 	  // first round: just I
-	  currentI.insert(I.begin(), I.end());
+	  currentI.insert(I);
 	}
       else
 	{
 	  // i-th round for i > 1
-	  // result already contains I from the previous round
-	  currentI.insert(result->begin(), result->end());
+	  currentI.insert(*result); // result already contains I from the previous round
 	}
       
       //
@@ -180,8 +166,8 @@ FixpointModelGenerator::compute(const Program& program,
       // (overwritten every iteration)
       //
       edb.clear();
-      edb.insert(extresult.begin(), extresult.end());
-      edb.insert(currentI.begin(), currentI.end());
+      edb.insert(extresult);
+      edb.insert(currentI);
 
       try
         {
@@ -208,7 +194,7 @@ FixpointModelGenerator::compute(const Program& program,
       result = answersets.begin();
 
       // to be able to compare them:
-      result->insert(I.begin(), I.end());
+      result->insert(I);
 
     } while ((*result != currentI) && (iter <= maxIter));
 

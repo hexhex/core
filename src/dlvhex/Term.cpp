@@ -26,7 +26,7 @@
  * @date Mon Sep  5 17:09:33 CEST 2005
  *
  * @brief Term class.
- * @todo add handling for namespaces and uris, and better aux name support
+ *
  *
  */
 
@@ -39,7 +39,7 @@
 // the standard operator<<'s, and we will fail to compile our own
 // operator<<s disgracefully.
 #include <iostream>
-#include <iterator>
+
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -86,9 +86,10 @@ operator<< (std::ostream& out, const DLVHEX_NAMESPACE Tuple& tuple)
 {
   if (!tuple.empty())
     {
-      std::copy(tuple.begin(), --tuple.end(),
-		std::ostream_iterator<Term>(out, ","));
-
+      for (unsigned i = 0; i < tuple.size() - 1; i++)
+	{
+	  out << tuple[i] << ',';
+	}
       out << tuple.back();
     }
 
@@ -109,180 +110,211 @@ NamesTable<std::string> Term::auxnames;
 
 
 Term::Term()
-  : type(NULLCONST),
-    constantString(names.end()),
-    constantInteger(-1),
-    variableString()
-{ }
+	: type(NULLCONST), constantString(names.end()), variableString("")
+{
+}
 
 
 Term::Term(const Term& term2)
-  : type(term2.type),
-    constantString(term2.constantString),
-    constantInteger(term2.constantInteger),
-    variableString(term2.variableString)
-{ }
+	: type(term2.type)
+{
+	if (this != &term2)
+	{
+		if (!term2.isVariable())
+		{
+			if( term2.isString() || term2.isSymbol() )
+				constantString = term2.constantString;
+			else
+				constantInteger = term2.constantInteger;
+		}
+		else
+			variableString = term2.variableString;
+	}
+}
 
 
 Term::Term(const std::string& name, bool addQuotes)
-  : constantString(names.end()),
-    constantInteger(-1),
-    variableString()
 {
-  setup(name, addQuotes);
+	if (name[0] == '\"')
+	{
+		constantString = names.insert(name);
+		type = STRING;
+	}
+	else
+	{
+		if (addQuotes)
+		{
+			constantString = names.insert("\"" + name + "\"");
+			type = STRING;
+		}
+		else
+		{
+			//
+			// Var or Const?
+			//
+			if (isupper(name[0]))
+			{
+				variableString = name;
+				type = VARIABLE;
+			}
+			else
+			{
+				constantString = names.insert(name);
+				type = SYMBOL;
+			}
+		}
+	}
 }
 
 
 Term::Term(const char* name, bool addQuotes)
-  : constantString(names.end()),
-    constantInteger(-1),
-    variableString()
 {
-  setup(std::string(name), addQuotes);
-}
-
-
-void
-Term::setup(const std::string& name, bool addQuotes)
-{
-  if (!name.empty())
-    {
-      std::string::value_type c = name[0];
-
-      if (isupper(c)) // variable
+	if (name[0] == '\"')
 	{
-	  variableString = name;
-	  type = VARIABLE;
+		constantString = names.insert(name);
+		type = STRING;
 	}
-      else if (c == '\"') // quoted string
+	else
 	{
-	  constantString = names.insert(name);
-	  type = STRING;
+		if (addQuotes)
+		{
+			constantString = names.insert("\"" + (std::string)name + "\"");
+			type = STRING;
+		}
+		else
+		{
+			//
+			// Var or Const?
+			//
+			if (isupper(name[0]))
+			{
+				variableString = name;
+				type = VARIABLE;
+			}
+			else
+			{
+				constantString = names.insert((std::string)name);
+				type = SYMBOL;
+			}
+		}
 	}
-      else if (addQuotes) // generate quoted string
-	{
-	  constantString = names.insert("\"" + name + "\"");
-	  type = STRING;
-	}
-      else // standard symbol
-	{
-	  constantString = names.insert(name);
-	  type = SYMBOL;
-	}
-    }
-  else // name.empty()
-    {
-      if (addQuotes) // generate quoted string
-	{
-	  constantString = names.insert("\"\"");
-	  type = STRING;
-	}
-      else // standard symbol
-	{
-	  constantString = names.insert(name);
-	  type = SYMBOL;
-	}
-    }
 }
 
 
 Term::Term(int num)
-  : type(INTEGER),
-    constantString(names.end()),
-    constantInteger(num),
-    variableString()
-{ }
-
-
-Term::TermType
-Term::getType() const
+	: type(INTEGER), constantInteger(num)
 {
-  return type;
+}
+
+
+Term::TermType Term::getType() const
+{
+	return type;
 } 
 
 
 bool
 Term::isInt() const
 {
-  return type == INTEGER;
+	return type == INTEGER;
 }
 
 
 bool
 Term::isString() const
 {
-  return type == STRING;
+	return type == STRING;
 }
 
 
 bool
 Term::isSymbol() const
 {
-  return type == SYMBOL;
+	return type == SYMBOL;
 }
 
 
 bool
 Term::isVariable() const
 {
-  return type == VARIABLE;
+	return type == VARIABLE;
 }
 
 
 bool
 Term::isAnon() const
 {
-  return type == NULLCONST;
+	return type == NULLCONST;
 }
 
 
 const std::string&
 Term::getString() const
 {
-  assert((type == STRING) || (type == SYMBOL));
-  assert(constantString != names.end());
+	assert((type == STRING) || (type == SYMBOL));
+	assert(constantString != names.end());
 
-  return *constantString;
+	return *constantString;
 }
 
 
 int
 Term::getInt() const
 {
-  assert(type == INTEGER);
+	assert(type == INTEGER);
 
-  return constantInteger;
+	return constantInteger;
 }
 
 
 const std::string&
 Term::getVariable() const
 {
-  assert(type == VARIABLE);
+	assert(type == VARIABLE);
 	
-  return variableString;
+	return variableString;
 }
 
 
 bool
 Term::isNull() const
 {
-  return type == NULLCONST;
+	return type == NULLCONST;
 }
 
 
 bool
 Term::unifiesWith(const Term& term2) const
 {
-  //
-  // If at least one of them is variable, they unify
-  // or If at least one of them is anonymous, they unify
-  // or if they have both the same type and are equal, they unify
-  //
-  return
-    isVariable() || term2.isVariable() ||
-    isAnon() || term2.isAnon() ||
-    (type == term2.type && *this == term2);
+	//
+	// If at least one of them is variable, they unify
+	//
+	if (isVariable() || term2.isVariable())
+		return 1;
+	
+	//
+	// If at least one of them is anonymous, they unify
+	//
+	if (isAnon() || term2.isAnon())
+		return 1;
+	
+	//
+	// if the constants are of different types, they don't unify
+	//
+	if (type != term2.type)
+		return 0;
+ 
+	//
+	// now, only equal constant types are left. they unify if they
+	// are equal
+	//
+	if (*this == term2)
+		return 1;
+	
+	//
+	// everything else:
+	//
+	return 0;
 }
 
 
@@ -291,11 +323,12 @@ Term::operator= (const Term& term2)
 {
   if (this != &term2)
     {
-      this->type = term2.type;
       this->constantString = term2.constantString;
       this->constantInteger = term2.constantInteger;
       this->variableString = term2.variableString;
+      this->type = term2.type;
     }
+
   return *this;
 }
 
@@ -321,7 +354,7 @@ Term::compare(const Term& term2) const
 			//
 			// two variables are unequal if their strings are unequal.
 			//
-			return variableString.compare(term2.getVariable());
+			return (variableString).compare(term2.getVariable());
 		
 		case NULLCONST:
 
@@ -343,6 +376,15 @@ bool
 Term::operator== (const Term& term2) const
 {
 	return compare(term2) == 0;
+}
+
+
+bool
+Term::operator== (const std::string& str) const
+{
+	Term t2(str);
+	
+	return *this == t2;
 }
 
 

@@ -36,6 +36,8 @@
 #include <cerrno>
 #include <cstdio>
 #include <csignal>
+#include <cstring>
+#include <cstdlib>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -285,6 +287,8 @@ ProcessBuf::underflow()
 {
   if (gptr() >= egptr()) // empty ibuf -> get data
     {
+      errno = 0;
+
       // try to receive at most bufsize bytes
       ssize_t n = ::read(outpipes[0], ibuf, bufsize);
 
@@ -294,7 +298,9 @@ ProcessBuf::underflow()
 	}
       else if (n < 0) // a failure occured while receiving from the stream
 	{
-	  throw std::ios_base::failure("Process prematurely closed pipe.");
+	  std::ostringstream oss;
+	  oss << "Process prematurely closed pipe before I could read (errno = " << errno << ").";
+	  throw std::ios_base::failure(oss.str());
 	}
 
       setg(ibuf, ibuf, ibuf + n); // set new input buffer boundaries
@@ -343,7 +349,7 @@ ProcessBuf::sync()
       else if (ret < 0 || errno == EPIPE) // failure
 	{
 	  std::ostringstream oss;
-	  oss << "Couldn't write to process pipe (errno = " << errno << ").";
+	  oss << "Process prematurely closed pipe before I could write (errno = " << errno << ").";
 	  throw std::ios_base::failure(oss.str());
 	}
     }

@@ -32,142 +32,34 @@
 
 
 #include "dlvhex/AggregateAtom.h"
+#include "dlvhex/globals.h"
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/Error.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-AggregateAtom::AggregateAtom(const Term& aggtype,
+AggregateAtom::AggregateAtom(const std::string& aggtype,
                              const Tuple& vars,
-                             const BodyPtr& conj)
+                             const RuleBody_t& conj)
     : body(conj),
       aggVars(vars),
       type(aggtype),
       cmpLeft(""),
       cmpRight("")
-{ }
-
-const Term&
-AggregateAtom::getPredicate() const
 {
-  return type;
+    //
+    // in higher-rder mode we cannot have aggregates, because then they would
+    // almost certainly be recursive, because of our atom-rewriting!
+    //
+    if (Globals::Instance()->getOption("NoPredicate"))
+        throw SyntaxError("Aggregates only allowed in FO-mode (use --firstorder)");
+
+    this->arguments.push_back(Term(""));
+
+//    for (Tuple::const_iterator t = vars.begin(); t != vars.end(); ++t)
+//        aggVars.push_back(*t);
 }
 
-void
-AggregateAtom::setPredicate(const Term& p)
-{
-  type = p;
-}
-
-const Tuple&
-AggregateAtom::getArguments() const
-{
-  return aggVars;
-}
-
-void
-AggregateAtom::setArguments(const Tuple& a)
-{
-  aggVars = a;
-}
-
-const Term&
-AggregateAtom::operator[](unsigned i) const
-{
-  assert(i == 0 || i < aggVars.size());
-
-  if (i == 0)
-    {
-      return type;
-    }
-
-  return aggVars[i];
-}
-
-Term&
-AggregateAtom::operator[](unsigned i)
-{
-  assert(i == 0 || i < aggVars.size());
-
-  if (i == 0)
-    {
-      return type;
-    }
-
-  return aggVars[i];
-}
-
-unsigned
-AggregateAtom::getArity() const
-{
-  return aggVars.size();
-}
-
-bool
-AggregateAtom::isGround() const
-{
-  return aggVars.empty();
-}
-
-int
-AggregateAtom::compare(const BaseAtom& atom2) const
-{
-  const std::type_info& type1 = typeid(*this);
-  const std::type_info& type2 = typeid(atom2);
-
-  if (type1 == type2)
-    {
-      ///@todo implement me!
-      return -1;
-    }
-
-  return type1.before(type2) ? -1 : 1;
-}
-
-
-const BodyPtr&
-AggregateAtom::getBody() const
-{
-  return body;
-}
-
-
-const Tuple&
-AggregateAtom::getVars() const
-{
-  return aggVars;
-}
-
-
-const Term&
-AggregateAtom::getType() const
-{
-  return type;
-}
-
-const Term&
-AggregateAtom::getLeft() const
-{
-  return left;
-}
-
-const Term&
-AggregateAtom::getRight() const
-{
-  return right;
-}
-
-const std::string&
-AggregateAtom::getCmpLeft() const
-{
-  return cmpLeft;
-}
-
-const std::string&
-AggregateAtom::getCmpRight() const
-{
-  return cmpRight;
-}
 
 void
 AggregateAtom::setComp(const std::string& compLeft,
@@ -183,7 +75,6 @@ AggregateAtom::setLeftTerm(const Term& left)
 {
     this->left = left;
 
-    ///@todo fix safety
     //
     // we add the comparees as arguments - this is without effect except when we
     // check for safety - then we treat them like normal arguments, such that a
@@ -192,6 +83,7 @@ AggregateAtom::setLeftTerm(const Term& left)
     // is safe. If the W in the body aggregate wouldn't be treated like an
     // atom's argument, this rule would of course be unsafe.
     //
+    this->arguments.push_back(left);
 }
 
 
@@ -199,24 +91,36 @@ void
 AggregateAtom::setRightTerm(const Term& right)
 {
     this->right = right;
+
+    //
+    // see comment above
+    //
+    this->arguments.push_back(right);
 }
 
 
 bool
-AggregateAtom::unifiesWith(const BaseAtom&) const
+AggregateAtom::unifiesWith(const AtomPtr atom) const
 {
-  ///@todo not implemented properly
-  return false;
-  //
-  // an aggregate depends on the atoms in its conjunction
-  //
+    //
+    // an aggregate depends on the atoms in its conjunction
+    //
+    for (RuleBody_t::const_iterator l = this->body.begin();
+            l != this->body.end();
+            ++l)
+    {
+        if (atom->unifiesWith((*l)->getAtom()))
+            return true;
+    }
+
+    return false;
 }
 
 
 void
-AggregateAtom::accept(BaseVisitor* const v)
+AggregateAtom::accept(BaseVisitor& v)
 {
-  v->visit(this);
+  v.visit(this);
 }
 
 

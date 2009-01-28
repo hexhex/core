@@ -109,10 +109,10 @@ public:
     getResult(std::vector<AtomSet>&);
 
     /**
-     * @brief Checks if the specified Atom occurs in the component.
+     * @brief Checks if the spcified Atom occurs in the component.
      */
     bool
-    isInComponent(const BaseAtom*) const;
+    isInComponent(const Atom*) const;
 
 protected:
     

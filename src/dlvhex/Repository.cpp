@@ -21,23 +21,54 @@
 
 
 /**
- * @file PredefinedNames.cpp
- * @author Thomas Krennwallner
- * @date Wed Jul 23 10:06:13 CEST 2008
+ * @file Repository.cpp
+ * @author Roman Schindlauer
+ * @date Tue Mar  7 17:06:12 CET 2006
  *
- * @brief Predefined names.
+ * @brief Singleton class for storing all kinds of objects created from the
+ * input program.
  *
  *
  */
 
-#include "dlvhex/PredefinedNames.h"
 
+#include "dlvhex/Repository.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-const std::string PredefinedNames::WEAKHEAD("h__wch_");
-const std::string PredefinedNames::FLPHEAD("h__flp_");
-const std::string PredefinedNames::HOATOM("a__");
+// virtual dtor
+ProgramObject::~ProgramObject()
+{ }
+
+//
+// initialize static variable:
+//
+Repository* Repository::_instance = 0;
+
+
+Repository::~Repository()
+{
+}
+
+
+Repository*
+Repository::Instance()
+{
+    if (_instance == 0)
+    {
+        _instance = new Repository;
+    }
+
+    return _instance;
+}
+
+
+void
+Repository::insert(ProgramObjectPtr po)
+{
+    objects.push_back(po);
+}
+
 
 DLVHEX_NAMESPACE_END
 

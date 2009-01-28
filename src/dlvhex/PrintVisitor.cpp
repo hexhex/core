@@ -35,62 +35,19 @@
 #include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/Rule.h"
-#include "dlvhex/Constraint.h"
-#include "dlvhex/WeakConstraint.h"
 #include "dlvhex/Literal.h"
 #include "dlvhex/Atom.h"
-#include "dlvhex/BuiltinPredicate.h"
 #include "dlvhex/ExternalAtom.h"
 #include "dlvhex/AggregateAtom.h"
-#include "dlvhex/PredefinedNames.h"
 
 #include <iostream>
-#include <sstream>
-#include <boost/iterator/indirect_iterator.hpp>
+#include <iterator>
+#include <boost/functional.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-
-PrintVisitor&
-operator<< (PrintVisitor& v, const Program& p)
-{
-  std::for_each(boost::make_indirect_iterator(p.begin()),
-		boost::make_indirect_iterator(p.end()),
-		std::bind2nd(std::mem_fun_ref(&BaseRule::accept), &v));
-  return v;
-}
-
-
-PrintVisitor&
-operator<< (PrintVisitor& v, const AtomSet& as)
-{
-  AtomSet& atoms = const_cast<AtomSet&>(as);
-  std::ostream& stream = v.getStream();
-
-  stream << '{';
-
-  if (!atoms.empty())
-    {
-      AtomSet::const_iterator lastelem = --atoms.end();
-
-      for (AtomSet::const_iterator a = atoms.begin();
-	   a != lastelem; ++a)
-	{
-	  (*a)->accept(&v);
-	  stream << ", ";
-	}
-
-      (*lastelem)->accept(&v);
-    }
-
-  stream << '}';
-
-  return v;
-}
-
-
 PrintVisitor::PrintVisitor(std::ostream& s)
-  : stream(s)
+: stream(s)
 { }
 
 
@@ -102,88 +59,88 @@ PrintVisitor::getStream()
 
 
 void
+PrintVisitor::visit(Program* const p)
+{
+  std::for_each(p->begin(), p->end(), boost::bind2nd(std::mem_fun(&Rule::accept), *this));
+}
+
+
+void
+PrintVisitor::visit(AtomSet* const as)
+{
+  stream << '{';
+
+  if (!as->empty())
+    {
+      for (AtomSet::atomset_t::const_iterator a = as->atoms.begin(); a != --as->atoms.end(); ++a)
+	{
+	  (*a)->accept(*this);
+	  stream << ", ";
+	}
+
+      (*(--as->atoms.end()))->accept(*this);
+    }
+
+  stream << '}';
+}
+
+
+void
 PrintVisitor::visit(Rule* const r)
 {
-  const HeadPtr& head = r->head();
-  const Head::size_type hs = head->size();
+  const RuleHead_t& head = r->getHead();
 
-  if (hs > 0) // output disjunctive head
+  if (!head.empty()) // output head
     {
-      Head::size_type n = 0;
-      for (Head::const_iterator hl = head->begin(); hl != head->end(); ++hl)
+      unsigned n(0);
+      for (RuleHead_t::const_iterator hl = head.begin(); hl != head.end(); ++hl)
 	{
-	  (*hl)->accept(this);
-	  if (++n < hs) stream << " v ";
+	  (*hl)->accept(*this);
+	  if (++n < head.size())
+	    stream << " v ";
 	}
     }
 
-  const BodyPtr& body = r->body();
-  const Body::size_type bs = body->size();
+  const RuleBody_t& body = r->getBody();
 
-  // only append a space if both head and body is non-empty
-  if (hs > 0 && bs > 0)
+  if (!body.empty()) // output body with leading " :- "
     {
-      stream << ' ';
-    }
-
-  if (bs > 0) // output body with leading ":- "
-    {
-      stream << ":- ";
+      stream << " :- ";
       
-      Body::size_type n = 0;
-      for (Body::const_iterator l = body->begin(); l != body->end(); ++l)
+      unsigned n(0);
+      for (RuleBody_t::const_iterator l = body.begin(); l != body.end(); ++l)
 	{
-	  (*l)->accept(this);
-	  if (++n < bs) stream << ", ";
+	  (*l)->accept(*this);
+	  if (++n < body.size())
+	    stream << ", ";
 	}
     }
 
-  if (hs + bs) stream << '.';
+  stream << '.';
 }
 
 
-
 void
-PrintVisitor::visit(Constraint* const r)
+PrintVisitor::visit(Literal* const l)
 {
-  const BodyPtr& body = r->body();
-  const Body::size_type bs = body->size();
-
-  if (bs > 0) // output body with leading ":- "
+  if (l->isNAF())
     {
-      stream << ":- ";
-      
-      Body::size_type n = 0;
-      for (Body::const_iterator l = body->begin(); l != body->end(); ++l)
-	{
-	  (*l)->accept(this);
-	  if (++n < bs) stream << ", ";
-	}
-
-      stream << '.';
+      stream << "not ";
     }
+
+  l->getAtom()->accept(*this);
 }
 
 
 void
-PrintVisitor::visit(Literal<Positive>* const l)
+PrintVisitor::visit(Atom* const a)
 {
-  l->getAtom()->accept(this);
-}
+  if (a->isStronglyNegated())
+    {
+      stream << '-';
+    }
 
-
-void
-PrintVisitor::visit(Literal<Negative>* const l)
-{
-  stream << "not ";
-  l->getAtom()->accept(this);
-}
-
-
-void
-PrintVisitor::visit(Atom<Positive>* const a)
-{
-  stream << a->getPredicate();
+  stream << a->getArgument(0);
 
   if (a->getArity() > 0)
     {
@@ -191,31 +148,9 @@ PrintVisitor::visit(Atom<Positive>* const a)
 
       const Tuple& arguments = a->getArguments();
 
-      std::copy(++arguments.begin(), --arguments.end(),
+      std::copy(arguments.begin(), --arguments.end(),
 		std::ostream_iterator<Term>(stream, ","));
-
-      stream << arguments.back()
-	     << ')';
-    }
-}
-
-
-void
-PrintVisitor::visit(Atom<Negative>* const a)
-{
-  stream << '-' << a->getPredicate();
-
-  if (a->getArity() > 0)
-    {
-      stream << '(';
-
-      const Tuple& arguments = a->getArguments();
-
-      std::copy(++arguments.begin(), --arguments.end(),
-		std::ostream_iterator<Term>(stream, ","));
-
-      stream << arguments.back()
-	     << ')';
+      stream << arguments.back() << ')';
     }
 }
 
@@ -223,7 +158,9 @@ PrintVisitor::visit(Atom<Negative>* const a)
 void
 PrintVisitor::visit(BuiltinPredicate* const bp)
 {
-  stream << bp[1] << bp->getPredicate() << bp[2];
+  stream << bp->getArgument(1)
+	 << bp->getArgument(0)
+	 << bp->getArgument(2);
 }
 
 
@@ -238,16 +175,16 @@ PrintVisitor::visit(AggregateAtom* const aa)
   stream << aa->getType() << '{'
 	 << aa->getVars() << " : ";
 
-  const BodyPtr& body = aa->getBody();
-  const Body::size_type bs = body->size();
+  const RuleBody_t& body = aa->getBody();
 
-  if (bs > 0)
+  if (!body.empty())
     {
-      Body::size_type n = 0;
-      for (Body::const_iterator l = body->begin(); l != body->end(); ++l)
+      unsigned n(0);
+      for (RuleBody_t::const_iterator l = body.begin(); l != body.end(); ++l)
 	{
-	  (*l)->accept(this);
-	  if (++n < bs) stream << ", ";
+	  (*l)->accept(*this);
+	  if (++n < body.size())
+	    stream << ", ";
 	}
     }
 
@@ -258,22 +195,6 @@ PrintVisitor::visit(AggregateAtom* const aa)
       stream << ' ' << aa->getCmpRight() << ' ' << aa->getRight();
     }
 }
-
-
-void
-PrintVisitor::visit(Query<Brave>* const)
-{ 
-  ///@todo nothing in here yet
-}
-
-
-void
-PrintVisitor::visit(Query<Cautious>* const)
-{
-  ///@todo nothing in here yet
-
-}
-
 
 
 
@@ -292,18 +213,18 @@ RawPrintVisitor::visit(Rule* const r)
 void
 RawPrintVisitor::visit(WeakConstraint* const wc)
 {
-  const BodyPtr& body = wc->body();
-  const Body::size_type bs = body->size();
+  const RuleBody_t& body = wc->getBody();
 
-  if (bs > 0) // output body with leading ":~ "
+  if (!body.empty()) // output body with leading ":~ "
     {
       stream << ":~ ";
 
-      Body::size_type n = 0;
-      for (Body::const_iterator l = body->begin(); l != body->end(); ++l)
+      unsigned n(0);
+      for (RuleBody_t::const_iterator l = body.begin(); l != body.end(); ++l)
 	{
-	  (*l)->accept(this);
-	  if (++n < bs) stream << ", ";
+	  (*l)->accept(*this);
+	  if (++n < body.size())
+	    stream << ", ";
 	}
       
       stream << ". [" << wc->getWeight() << ':' << wc->getLevel() << ']';
@@ -316,9 +237,9 @@ RawPrintVisitor::visit(WeakConstraint* const wc)
 void
 RawPrintVisitor::visit(ExternalAtom* const ea)
 {
-  stream << '&' << ea->getPredicate() << '[';
+  stream << '&' << ea->getFunctionName() << '[';
 
-  const Tuple& inputList = ea->getInputList();
+  const Tuple& inputList = ea->getInputTerms();
 
   if (!inputList.empty())
     {
@@ -343,18 +264,16 @@ RawPrintVisitor::visit(ExternalAtom* const ea)
 
 
 DLVPrintVisitor::DLVPrintVisitor(std::ostream& s)
-  : PrintVisitor(s),
-    wcCounter(0)
+: PrintVisitor(s)
 { }
 
 
 void
 DLVPrintVisitor::visit(AtomSet* const as)
 {
-  for (AtomSet::const_iterator a = as->begin();
-       a != as->end(); ++a)
+  for (AtomSet::atomset_t::const_iterator a = as->atoms.begin(); a != as->atoms.end(); ++a)
     {
-      (*a)->accept(this);
+      (*a)->accept(*this);
       stream << '.' << std::endl;
     }
 }
@@ -371,38 +290,7 @@ DLVPrintVisitor::visit(Rule* const r)
 void
 DLVPrintVisitor::visit(WeakConstraint* const wc)
 {
-  std::set<Term> headargs;
-
-  const BodyPtr& weakbody = wc->body();
-
-  for (Body::const_iterator bodylit = weakbody->begin();
-       bodylit != weakbody->end();
-       ++bodylit)
-    {
-      const Tuple& args = (*bodylit)->getAtom()->getArguments();
-      headargs.insert(args.begin(), args.end());
-    }
-
-  Tuple hargs;
-  hargs.insert(hargs.end(), headargs.begin(), headargs.end());
-  hargs.push_back(wc->getWeight());
-  hargs.push_back(wc->getLevel());
-  
-  std::stringstream wcheadname;
-
-  wcheadname << PredefinedNames::WEAKHEAD << this->wcCounter++;
-
-  ///@todo use __ as aux symbol
-  Term::registerAuxiliaryName(wcheadname.str());
-      
-  Term pred(wcheadname.str());
-
-  AtomPtr hatom(new Atom<Positive>(pred, hargs));
-
-  HeadPtr weakhead(new Head(1, hatom));
-
-  Rule tmp(weakhead, wc->body());
-  tmp.accept(this);
+  visit(static_cast<Rule* const>(wc));
 }
 
 
@@ -413,7 +301,7 @@ DLVPrintVisitor::visit(ExternalAtom* const ea)
   // the replacement atom contains both the input and the output list
   //
   
-  const Tuple& inputList = ea->getInputList();
+  const Tuple& inputList = ea->getInputTerms();
 
   Tuple replacementArgs(inputList);
 
@@ -421,9 +309,9 @@ DLVPrintVisitor::visit(ExternalAtom* const ea)
 
   replacementArgs.insert(replacementArgs.end(), arguments.begin(), arguments.end());
 
-  Atom<Positive> tmp(ea->getReplacementName(), replacementArgs);
+  Atom tmp(ea->getReplacementName(), replacementArgs);
 
-  tmp.accept(this);
+  tmp.accept(*this);
 }
 
 
@@ -433,47 +321,31 @@ HOPrintVisitor::HOPrintVisitor(std::ostream& s)
 
 
 void
-HOPrintVisitor::visit(Atom<Positive>* const a)
+HOPrintVisitor::visit(Atom* const a)
 {
-  ///@todo add "a_" as macro
-
-  unsigned n = a->getArity();
-
-  // output a_n
-  stream << PredefinedNames::HOATOM << n
-	 << '(';
-
-  // output predicate and arguments - 1
-  for (unsigned i = 0; i < n; i++)
+  if (a->getAlwaysFO()) // FO mode is always raw
     {
-      stream << (*a)[i] << ',';
+      RawPrintVisitor v(stream);
+      a->accept(v);
     }
-
-  // output last argument
-  stream << (*a)[n]
-	 << ')';
-}
-
-void
-HOPrintVisitor::visit(Atom<Negative>* const a)
-{
-  ///@todo add "a_" as macro
-
-  unsigned n = a->getArity();
-
-  // output -a_n
-  stream << '-' << PredefinedNames::HOATOM << n
-	 << '(';
-
-  // output predicate and arguments - 1
-  for (unsigned i = 0; i < n; i++)
+  else // print HO representation
     {
-      stream << (*a)[i] << ',';
-    }
+      if (a->isStronglyNegated())
+	{
+	  stream << '-';
+	}
 
-  // output last argument
-  stream << (*a)[n]
-	 << ')';
+      // output a_n
+      stream << "a_" << a->getArity() << '(';
+
+      // output predicate and arguments
+      for (unsigned i = 0; i < a->getArity(); i++)
+	{
+	  stream << a->getArgument(i) << ',';
+	}
+
+      stream << a->getArgument(a->getArity()) << ')';
+    }
 }
 
 DLVHEX_NAMESPACE_END

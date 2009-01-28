@@ -112,6 +112,41 @@ public:
 };
 
 
+
+
+class TestCAtom : public PluginAtom
+{
+public:
+  TestCAtom()
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+  
+  virtual void
+  retrieve(const Query& query, Answer& answer) throw(PluginError)
+  {
+    std::vector<Tuple> out;
+    
+    const Tuple& in = query.getInputTuple();
+    
+    std::string t = "-" + in[0].getUnquotedString();
+    
+    AtomSet negm;
+    query.getInterpretation().matchPredicate(t, negm);
+
+    for (AtomSet::const_iterator it = negm.begin();
+	 it != negm.end(); ++it)
+      {
+	out.push_back(it->getArguments());
+      }
+    
+    answer.addTuples(out);
+  }
+};
+
+
+
 class TestConcatAtom : public PluginAtom
 {
 public:
@@ -172,10 +207,12 @@ public:
 	{
 	  boost::shared_ptr<PluginAtom> testA(new TestAAtom);
 	  boost::shared_ptr<PluginAtom> testB(new TestBAtom);
+	  boost::shared_ptr<PluginAtom> testC(new TestCAtom);
 	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
 
 	  a["testA"] = testA;
 	  a["testB"] = testB;
+	  a["testC"] = testC;
 	  a["testConcat"] = testConcat;
 	}
 

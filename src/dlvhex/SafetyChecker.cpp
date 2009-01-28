@@ -26,15 +26,13 @@
  * @date Mon Feb 27 15:08:46 CET 2006
  *
  * @brief Class for checking rule and program safety.
- * @todo add column to safety exceptions
+ *
  *
  */
 
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/AggregateAtom.h"
-#include "dlvhex/BuiltinPredicate.h"
-#include "dlvhex/NullVisitor.h"
 
 #include <sstream>
 
@@ -70,7 +68,7 @@ struct InputListSafe
     // first check if the input list is still unsafe
     //
 
-    const Tuple& inp = extatom->getInputList();
+    const Tuple& inp = extatom->getInputTerms();
 
     for (Tuple::const_iterator it = inp.begin(); it != inp.end(); ++it)
       {
@@ -99,21 +97,6 @@ struct InputListSafe
 };
 
 
-
-
-///@todo this is preliminary, we should get the external atoms from
-///the component
-class GetExtAtomsVisitor : public NullVisitor
-{
-private:
-  std::vector<ExternalAtom*>& extatoms;
-public:
-  GetExtAtomsVisitor(std::vector<ExternalAtom*>& e) : extatoms(e) { }
-  void visit(ExternalAtom* const e) { extatoms.push_back(e); }
-};
-
-
-
 void
 SafetyChecker::operator() () const throw (SyntaxError)
 {
@@ -139,8 +122,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
        ruleit != program.end();
        ++ruleit)
     {
-      const HeadPtr& head = (*ruleit)->head();
-      const BodyPtr& body = (*ruleit)->body();
+      const RuleHead_t head = (*ruleit)->getHead();
+      const RuleBody_t body = (*ruleit)->getBody();
 
       //
       // set of all variables in non-ext body atoms
@@ -152,18 +135,17 @@ SafetyChecker::operator() () const throw (SyntaxError)
       // going through the rule body
       //
 
-      for (Body::const_iterator bit = body->begin();
-	   bit != body->end();
+      for (RuleBody_t::const_iterator bit = body.begin();
+	   bit != body.end();
 	   ++bit)
         {
 	  //
 	  // only look at ordinary atoms
 	  // and aggregate terms
 	  //
-	  const BaseAtom& at = *(*bit)->getAtom();
+	  const Atom& at = *(*bit)->getAtom();
 
-	  if (typeid(at) == typeid(Atom<Positive>) ||
-	      typeid(at) == typeid(Atom<Negative>) ||
+	  if (typeid(at) == typeid(Atom) ||
 	      typeid(at) == typeid(BuiltinPredicate) ||
 	      typeid(at) == typeid(AggregateAtom)
 	      )
@@ -186,14 +168,13 @@ SafetyChecker::operator() () const throw (SyntaxError)
 		{
 		  if (pred == Term("="))
 		    {
-		      switch (bodyarg[0].isVariable() - bodyarg[1].isVariable())
+		      if (bodyarg[0].isVariable() && !bodyarg[1].isVariable())
 			{
-			case 1:
 			  safevars.insert(bodyarg[0]);
-			  break;
-			case -1:
+			}
+		      else if (!bodyarg[0].isVariable() && bodyarg[1].isVariable())
+			{
 			  safevars.insert(bodyarg[1]);
-			  break;
 			}
 		    }
 		}
@@ -221,9 +202,7 @@ SafetyChecker::operator() () const throw (SyntaxError)
       // loop through the (by default unsafe) list of external atoms
       //
         
-      std::vector<ExternalAtom*> unsafeextatoms;
-      GetExtAtomsVisitor gev(unsafeextatoms);
-      (*ruleit)->accept(&gev);
+      std::vector<ExternalAtom*> unsafeextatoms = (*ruleit)->getExternalAtoms();
 
       while(!unsafeextatoms.empty())
 	{
@@ -237,7 +216,7 @@ SafetyChecker::operator() () const throw (SyntaxError)
 	  // list, we are unsafe
 	  if (unsafeextatoms.end() == newend)
 	    {
-	      throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getSource());
+	      throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
 	    }
 	  else
 	    {
@@ -251,7 +230,7 @@ SafetyChecker::operator() () const throw (SyntaxError)
       // 4)
       // going through the rule head
       //
-      for (Head::const_iterator hb = head->begin(); hb != head->end(); ++hb)
+      for (RuleHead_t::const_iterator hb = head.begin(); hb != head.end(); ++hb)
 	{
 	  const Tuple& headarg = (*hb)->getArguments();
 	  
@@ -263,18 +242,21 @@ SafetyChecker::operator() () const throw (SyntaxError)
 	      // does this variable occur in any positive body atom?
 	      if (headterm->isVariable() && safevars.find(*headterm) == safevars.end())
 		{
-		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getSource());
+		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
 		}
 	    }
 	}
 
       if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
 	{
-	  Globals::Instance()->getVerboseStream() << "Rule in "
-						  << (*ruleit)->getSource() << ", line "
-						  << (*ruleit)->getLine() << ":"
-						  << (*ruleit)->getColumn() << " is safe."
-						  << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Rule in ";
+	  
+	  if (!(*ruleit)->getFile().empty())
+	    {
+	      Globals::Instance()->getVerboseStream() << (*ruleit)->getFile() << ", ";
+	    }
+	  
+	  Globals::Instance()->getVerboseStream() << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
 	}
     }
 }
@@ -324,15 +306,10 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
 	  const Program& rules = progcomp->getBottom();
 
-	  for (Program::const_iterator ruleit = rules.begin();
-	       ruleit != rules.end(); ++ruleit)
+	  for (Program::const_iterator ruleit = rules.begin(); ruleit != rules.end(); ++ruleit)
             {
-	      const BodyPtr& body = (*ruleit)->body();
-
-	      std::vector<ExternalAtom*> exts;
-	      GetExtAtomsVisitor gev(exts);
-	      (*ruleit)->accept(&gev);
-
+	      const RuleBody_t& body = (*ruleit)->getBody();
+	      const std::vector<ExternalAtom*>& exts = (*ruleit)->getExternalAtoms();
 	      
 	      //
 	      // for this rule: go through all ext-atoms
@@ -370,8 +347,8 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 			{
 			  bool outIsSafe = false;
 
-			  for (Body::const_iterator bodylit = body->begin();
-			       bodylit != body->end(); ++bodylit)
+			  for (RuleBody_t::const_iterator bodylit = body.begin();
+			       bodylit != body.end(); ++bodylit)
 			    {
 			      //
 			      // only look at atoms that are not part of the
@@ -379,10 +356,9 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 			      // and only look at ordinary ones;
 			      // external atoms and builtins do not make a variable safe!
 			      //
-			      const BaseAtom& at = *(*bodylit)->getAtom();
+			      const Atom& at = *(*bodylit)->getAtom();
 			      
-			      if (typeid(at) == typeid(Atom<Positive>) ||
-				  typeid(at) == typeid(Atom<Negative>))
+			      if (typeid(at) == typeid(Atom))
 				{
 				  if (!(*compit)->isInComponent((*bodylit)->getAtom().get()))
 				    {

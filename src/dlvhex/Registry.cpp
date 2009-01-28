@@ -19,39 +19,49 @@
  * 02110-1301 USA.
  */
 
+
 /**
- * @file   BaseQuery.h
- * @author Thomas Krennwallner
- * @date   Tue Jul 15 12:09:08 2008
- * 
- * @brief  The base class for all query types.
- * 
- * 
+ * @file Registry.cpp
+ * @author Roman Schindlauer
+ * @date Tue Feb 14 15:47:48 CET 2006
+ *
+ * @brief Registry class.
+ *
  */
 
-
-#include "dlvhex/BaseQuery.h"
-
-#include "dlvhex/PrintVisitor.h"
+#include "dlvhex/Registry.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
+//
+// initialize static variable:
+//
+Registry* Registry::_instance = 0;
 
-BaseQuery::~BaseQuery()
-{ }
 
-
-std::ostream&
-operator<< (std::ostream& out, const BaseQuery& query)
+Registry*
+Registry::Instance()
 {
-  RawPrintVisitor rpv(out);
-  const_cast<BaseQuery*>(&query)->accept(&rpv);
-  return out;
+   if (_instance == 0)
+    {
+        _instance = new Registry;
+    }
+
+    return _instance;
 }
 
 
-DLVHEX_NAMESPACE_END
+ProgramObjectPtr
+Registry::storeObject(ProgramObject* po)
+{
+    ProgramObjectPtr pop(po);
 
+    Repository::Instance()->insert(pop);
+
+    return pop;
+}
+
+DLVHEX_NAMESPACE_END
 
 // Local Variables:
 // mode: C++

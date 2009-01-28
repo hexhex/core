@@ -21,52 +21,67 @@
 
 
 /**
- * @file GraphBuilder.h
+ * @file Registry.h
  * @author Roman Schindlauer
- * @date Wed Jan 18 17:43:21 CET 2006
+ * @date Tue Feb 14 15:47:48 CET 2006
  *
- * @brief Abstract strategy class for finding the dependency edges of a program.
- *
+ * @brief Registry class.
  *
  */
 
-#if !defined(_DLVHEX_GRAPHBUILDER_H)
-#define _DLVHEX_GRAPHBUILDER_H
+
+#if !defined(_DLVHEX_REGISTRY_H)
+#define _DLVHEX_REGISTRY_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/Error.h"
+#include "dlvhex/Atom.h"
+#include "dlvhex/Repository.h"
+
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
-class PluginContainer;
-class NodeGraph;
-class Program;
-
 /**
- * @brief Class for building a dependency graph from a given program.
- *
+ * The Registry class is a sort of mediator that inserts objects into factory
+ * classes.
  */
-class DLVHEX_EXPORT GraphBuilder
+class DLVHEX_EXPORT Registry
 {
 public:
 
     /**
-     * @brief Takes a set of rules and builds the according node graph.
-     *
-     * This nodegraph will contain the entire dependency graph of the program,
-     * including any artificial nodes that had to be created for auxiliary
-     * rules, e.g., for external atoms with variable input parameters.
+     * @brief Get (unique) instance of the static registry class.
      */
-    void
-    run(const Program&, NodeGraph&, PluginContainer&) throw (PluginError);
+    static Registry*
+    Instance();
 
+    /**
+     * @brief Stores a ProgramObject.
+	 *
+	 * \todo do we need this at all?
+     *
+     * Using boost::shared_ptr, the ownership over a is transferred to the
+     * shared pointer. The pointer ProgramObject* must not be deleted after this call.
+     * This method is supposed to be used for storing non-ground Objects from
+     * the input program. The Objects are stored in the singleton instance of
+     * Repository.
+     */
+    ProgramObjectPtr
+    storeObject(ProgramObject*);
+
+protected:
+
+    Registry()
+    { };
+
+private:
+
+    static Registry* _instance;
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_GRAPHBUILDER_H */
+#endif /* _DLVHEX_REGISTRY_H */
 
 
 // Local Variables:

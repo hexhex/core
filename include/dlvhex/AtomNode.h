@@ -36,11 +36,12 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Rule.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/Dependency.h"
 
 #include <boost/shared_ptr.hpp>
-#include <set>
+
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -133,7 +134,7 @@ public:
 	/**
 	 * @brief Returns all rules associated with this AtomNode.
 	 */
-	const Program&
+	const std::vector<Rule*>&
 	getRules() const;
 
 	/**
@@ -167,7 +168,7 @@ private:
 	 * AtomNode::getRules. Must be mutable because of constness of
 	 * getRules.
 	 */
-	mutable Program rules;
+	mutable std::vector<Rule*> rules;
 
 	/**
 	 * @brief Preceding dependencies.

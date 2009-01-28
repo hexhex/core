@@ -465,10 +465,9 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Term.h"
+#include "dlvhex/Atom.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Error.h"
 
 #include <map>
@@ -484,6 +483,11 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declarations
+class Program;
+class NodeGraph;
+class OutputBuilder;
+class ProgramCtx;
 
 
 /**

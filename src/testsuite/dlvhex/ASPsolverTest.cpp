@@ -38,8 +38,6 @@
 #include "dlvhex/DLVProcess.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/ASPSolver.h"
-#include "dlvhex/Atom.h"
-#include "dlvhex/Rule.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -72,12 +70,12 @@ ASPsolverTest::testResult()
     //
     Program idb2;
     AtomSet edb2;    
-    HeadPtr h2(new Head);
-    BodyPtr b2(new Body);
-    h2->push_back(AtomPtr(new Atom<Positive>(Tuple(1, Term("a")))));
-    b2->push_back(LiteralPtr(new Literal<Positive>(AtomPtr(new Atom<Positive>(Tuple(1, Term("b")))))));
-    RulePtr r2(new Rule(h2, b2));
-    idb2.push_back(r2);
+    RuleHead_t h2;
+    RuleBody_t b2;
+    h2.insert(AtomPtr(new Atom(Tuple(1, Term("a")))));
+    b2.insert(new Literal(AtomPtr(new Atom(Tuple(1, Term("b"))))));
+    Rule* r2 = new Rule(h2, b2);
+    idb2.addRule(r2);
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
@@ -90,8 +88,8 @@ ASPsolverTest::testResult()
     Program idb1;
     AtomSet edb1;
     Tuple t1;
-    edb1.insert(AtomPtr(new Atom<Positive>(Tuple(1, Term("a")))));
-    edb1.insert(AtomPtr(new Atom<Negative>(Tuple(1, Term("a")))));
+    edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")))));
+    edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")), true)));
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb1, edb1, answersets));
     CPPUNIT_ASSERT(answersets.size() == 0);
     answersets.clear();
@@ -99,7 +97,7 @@ ASPsolverTest::testResult()
     //
     // single model: { b, a :- b }
     //
-    edb2.insert(AtomPtr(new Atom<Positive>(Tuple(1, Term("b")))));
+    edb2.insert(AtomPtr(new Atom(Tuple(1, Term("b")))));
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
@@ -111,33 +109,33 @@ ASPsolverTest::testResult()
     //
     Program idb3;
     AtomSet edb3;    
-    HeadPtr h31(new Head);
-    HeadPtr h32(new Head);
-    BodyPtr b31(new Body);
-    BodyPtr b32(new Body);
+    RuleHead_t h31;
+    RuleHead_t h32;
+    RuleBody_t b31;
+    RuleBody_t b32;
     Tuple t31;
     t31.push_back(Term("p"));
     t31.push_back(Term("X"));
     Tuple t32;
     t32.push_back(Term("q"));
     t32.push_back(Term("X"));
-    h31->push_back(AtomPtr(new Atom<Positive>(t31)));
-    h32->push_back(AtomPtr(new Atom<Positive>(t32)));
+    h31.insert(AtomPtr(new Atom(t31)));
+    h32.insert(AtomPtr(new Atom(t32)));
     Tuple t33;
     t33.push_back(Term("s"));
     t33.push_back(Term("X"));
-    b31->push_back(LiteralPtr(new Literal<Negative>(AtomPtr(new Atom<Positive>(t32)))));
-    b31->push_back(LiteralPtr(new Literal<Positive>(AtomPtr(new Atom<Positive>(t33)))));
-    b32->push_back(LiteralPtr(new Literal<Negative>(AtomPtr(new Atom<Positive>(t31)))));
-    b32->push_back(LiteralPtr(new Literal<Positive>(AtomPtr(new Atom<Positive>(t33)))));
-    RulePtr r31(new Rule(h31, b31));
-    RulePtr r32(new Rule(h32, b32));
-    idb3.push_back(r31);
-    idb3.push_back(r32);
+    b31.insert(new Literal(AtomPtr(new Atom(t32)), true));
+    b31.insert(new Literal(AtomPtr(new Atom(t33))));
+    b32.insert(new Literal(AtomPtr(new Atom(t31)), true));
+    b32.insert(new Literal(AtomPtr(new Atom(t33))));
+    Rule* r31 = new Rule(h31, b31);
+    Rule* r32 = new Rule(h32, b32);
+    idb3.addRule(r31);
+    idb3.addRule(r32);
     Tuple t34;
     t34.push_back(Term("s"));
     t34.push_back(Term("a"));
-    edb3.insert(AtomPtr(new Atom<Positive>(t34)));
+    edb3.insert(AtomPtr(new Atom(t34)));
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb3, edb3, answersets));
     CPPUNIT_ASSERT(answersets.size() == 2);
     as = answersets.begin();
@@ -154,7 +152,7 @@ ASPsolverTest::testResult()
     AtomSet edb4;
     Tuple t4;
     t4.push_back(Term("b"));
-    edb4.insert(AtomPtr(new Atom<Positive>(t4)));
+    edb4.insert(AtomPtr(new Atom(t4)));
 
     // b should not be in the result then!
     CPPUNIT_ASSERT_NO_THROW(solver->solve(idb4, edb4, answersets));

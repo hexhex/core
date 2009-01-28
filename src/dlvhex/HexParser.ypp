@@ -58,15 +58,13 @@
 #include "dlvhex/HexParserDriver.h"
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
-#include "dlvhex/ExternalAtom.h"
 #include "dlvhex/AggregateAtom.h"
-#include "dlvhex/BuiltinPredicate.h"
 #include "dlvhex/Literal.h"
 #include "dlvhex/Rule.h"
-#include "dlvhex/Constraint.h"
-#include "dlvhex/WeakConstraint.h"
 #include "dlvhex/Program.h"
+#include "dlvhex/ExternalAtom.h"
 #include "dlvhex/Error.h"
+#include "dlvhex/Registry.h"
 #include "dlvhex/globals.h"
 
 
@@ -98,14 +96,14 @@
 %union {
     std::string*      string;
     int               integer;
-    DLVHEX_NAMESPACE BaseAtom*         atom;
+    DLVHEX_NAMESPACE Atom*             atom;
     DLVHEX_NAMESPACE Term*             term;
     DLVHEX_NAMESPACE Tuple*            terms;
     DLVHEX_NAMESPACE ExternalAtom*     extatom;
-    DLVHEX_NAMESPACE BaseLiteral*      literal;
-    DLVHEX_NAMESPACE Head*             disjunction;
-    DLVHEX_NAMESPACE Body*             body;
-    DLVHEX_NAMESPACE BaseRule*         rule;
+    DLVHEX_NAMESPACE Literal*          literal;
+    DLVHEX_NAMESPACE RuleHead_t*       disjunction;
+    DLVHEX_NAMESPACE RuleBody_t*       body;
+    DLVHEX_NAMESPACE Rule*             rule;
     DLVHEX_NAMESPACE WeakConstraint*   wconstraint;
     DLVHEX_NAMESPACE BuiltinPredicate* builtin;
     DLVHEX_NAMESPACE AggregateAtom*    aggregate;
@@ -144,7 +142,7 @@ DLVHEX_NAMESPACE_USE
 %token <string> ID EXTERNAL_ATOM_ID
 %token <integer> NUM
 %type  <string> ident
-%type  <term> binop
+%type  <string> binop
 %type  <integer> number
 %type  <term> term
 %type  <term> ident_or_fixedpt ident_or_number
@@ -241,7 +239,6 @@ line:
 maxinteger:
     MAXINTEGER EQUALS number
         {
-	  ///@todo pure hack
             std::stringstream minum;
 
             minum << $3;
@@ -276,20 +273,12 @@ nsdef:
 
 clause:
     rule
-    {
-      RulePtr rp($1);
-      program.push_back(rp);
-    }
+//          | strictrule
     | constraint
-    {
-      RulePtr rp($1);
-      program.push_back(rp);
-    }
     | wconstraint
-    {
-      RulePtr rp($1);
-      program.push_back(rp);
-    }
+        {
+            program.addWeakConstraint($1);
+        }
     ;
 
 //meta_rule : import
@@ -319,36 +308,55 @@ rule:
 constraint:
     CONS body DOT
         {
-	  BodyPtr bp($2);
-	  // create new constraint
-	  $$ = new Constraint(bp);
+            //
+            // create empty rule head
+            //
+            RuleHead_t rh;
+            
+            //
+            // create new rule
+            //
+            $$ = new Rule(rh, *$2, driver->getInputFilename(), (@1.end-1).line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            program.addRule($$);
+
+            //
+            // the rule was created with head and body copies, so we can delete
+            // these:
+            //
+            delete $2;
         }
     ;
 
 wconstraint:
     WEAK_CONS body DOT
         {
-	  BodyPtr bp($2);
-	  $$ = new WeakConstraint(bp, Term(1), Term(1));
+            $$ = new WeakConstraint(*$2, Term(1), Term(1));
         }
     | WEAK_CONS body DOT BRACKET_OPEN COLON ident_or_number BRACKET_CLOSE
         {
-	  BodyPtr bp($2);
-	  $$ = new WeakConstraint(bp, Term(1), *$6);
-	  delete $6;
+            $$ = new WeakConstraint(*$2, Term(1), *$6);
+
+            delete $6;
         }
     | WEAK_CONS body DOT BRACKET_OPEN ident_or_fixedpt COLON BRACKET_CLOSE
         {
-	  BodyPtr bp($2);
-	  $$ = new WeakConstraint(bp, *$5, Term(1));
-	  delete $5;
+            $$ = new WeakConstraint(*$2, *$5, Term(1));
+
+            delete $5;
         }
     | WEAK_CONS body DOT BRACKET_OPEN ident_or_fixedpt COLON ident_or_number BRACKET_CLOSE
         {
-	  BodyPtr bp($2);
-	  $$ = new WeakConstraint(bp, *$5, *$7);
-	  delete $5;
-	  delete $7;
+            $$ = new WeakConstraint(*$2, *$5, *$7);
+
+            delete $5;
+            delete $7;
         }
     ;
 
@@ -394,9 +402,8 @@ rule0:
 	      {
                 error(yylloc, "fact not safe");
 	      }
-
-            AtomPtr ap($1);
-            EDB.insert(ap);
+            
+            EDB.insert(AtomPtr($1));
         }
     | user_pred CONS
         {
@@ -405,180 +412,265 @@ rule0:
                 error(yylloc, "fact not safe");
 	      }
 
-	    AtomPtr ap($1);
-            EDB.insert(ap);
+            EDB.insert(AtomPtr($1));
         }
     | user_pred CONS body
         {
-	  //
-	  // create rule head and add atom pointer to rule head
-          //
-	  AtomPtr ap($1);
-	  HeadPtr hp(new Head(1, ap));
-	  BodyPtr bp($3);
-	  //
-	  // create new rule with head and body
-	  //
-	  $$ = new Rule(hp, bp);
+            //
+            // create rule head
+            //
+            RuleHead_t head;
+            
+            //
+            // add atom pointer to rule head
+            //
+            head.insert(AtomPtr($1));
+
+            //
+            // create new rule with head and body
+            //
+            $$ = new Rule(head,
+                          *$3,
+                          driver->getInputFilename(),
+                          (@1.end-1).line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            program.addRule($$);
+
+            //
+            // the rule was created with a copy, which we can delete now:
+            //
+            delete $3;
         }
     | disj
         {
-	  // empty body
-	  BodyPtr bp(new Body);
+            //
+            // create new rule with head and empty body
+            //
+            $$ = new Rule(*$1,
+                          RuleBody_t(),
+                          driver->getInputFilename(),
+                          (@1.end-1).line);
 
-	  HeadPtr hp($1);
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
 
-	  //
-	  // create new rule with head and empty body
-	  //
-	  $$ = new Rule(hp, bp);
+            program.addRule($$);
+
+            //
+            // the rule was created with a copy of the disjunction, so we can delete
+            // this:
+            //
+            delete $1;
         }
     | disj CONS
         {
-	  // empty body
-	  BodyPtr bp(new Body);
+            //
+            // create new rule with head and empty body
+            //
+            $$ = new Rule(*$1,
+                          RuleBody_t(),
+                          driver->getInputFilename(),
+                          (@1.end-1).line);
 
-	  HeadPtr hp($1);
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
 
-	  //
-	  // create new rule with head and empty body
-	  //
-	  $$ = new Rule(hp, bp);
+            program.addRule($$);
+
+            //
+            // the rule was created with a copy of the disjunction, so we can delete
+            // this:
+            //
+            delete $1;
         }
     | disj CONS body
         {
-	  HeadPtr hp($1);
-	  BodyPtr bp($3);
-	  
-	  //
-	  // create new rule
-	  //
-	  $$ = new Rule(hp, bp);
+            //
+            // create new rule
+            //
+            $$ = new Rule(*$1,
+                          *$3,
+                          driver->getInputFilename(),
+                          (@1.end-1).line);
+
+            //
+            // Storing the rule as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            program.addRule($$);
+
+            //
+            // the rule was created with head and body copies, so we can delete
+            // these:
+            //
+            delete $1;
+            delete $3;
         }
 //    | ident PARAM_OPEN number_param DOT DOT number_param PARAM_CLOSE
     ;
 
 disj:
     user_pred HEAD_SEPARATOR user_pred
-    {
-      //
-      // create rule head
-      //
-      $$ = new Head;
-      
-      //
-      // add both atom pointers to rule head
-      //
-      AtomPtr ap1($1);
-      AtomPtr ap2($3);
-      $$->push_back(ap1);
-      $$->push_back(ap2);
-    }
+        {
+            //
+            // create rule head
+            //
+            $$ = new RuleHead_t;
+            
+            //
+            // add both atom pointers to rule head
+            //
+            $$->insert(AtomPtr($1));
+            $$->insert(AtomPtr($3));
+        }
     | disj HEAD_SEPARATOR user_pred
-    {
-      $$ = $1;
+        {
+            //
+            // add atom pointer to rule head
+            //
+	    $1->insert(AtomPtr($3));
 
-      //
-      // add atom pointer to rule head
-      //
-      AtomPtr ap($3);
-      $$->push_back(ap);
-    }
+            $$ = $1;
+        }
     ;
-
 
 body:
     literal
-    {
-      LiteralPtr lp($1);
-
-      //
-      // create rule body
-      //
-      $$ = new Body;
-      
-      //
-      // add literal pointer
-      //
-      $$->push_back(lp);
-    }
-    | body TAIL_SEPARATOR literal
-    {
-      LiteralPtr lp($3);
-
-      $$ = $1;
-      
-      //
-      // add literal pointer to existing rule body
-      //
-      $$->push_back(lp);
-    }
+        {
+            //
+            // create rule body
+            //
+            $$ = new RuleBody_t;
+            
+            //
+            // add literal pointer
+            //
+            $$->insert($1);
+        }
+        
+        | body TAIL_SEPARATOR literal
+        {
+            //
+            // add literal pointer to existing rule body
+            //
+            $1->insert($3);
+            
+            $$ = $1;
+        }
     ;
 
 
 literal:
     user_pred
         {
-	  AtomPtr ap($1);
+            //
+            // create literal with atom
+            //
+            $$ = new Literal(AtomPtr($1));
 
-	  //
-	  // create positive literal with atom
-	  //
-	  $$ = new Literal<Positive>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | NOT user_pred
         {
-	  AtomPtr ap($2);
+            //
+            // create weakly negated literal with atom
+            //
+            $$ = new Literal(AtomPtr($2), true);
 
-	  //
-	  // create weakly negated literal with atom
-	  //
-	  $$ = new Literal<Negative>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
+        
     | external_atom
         {
-	  AtomPtr ap($1);
+            //
+            // create literal with external atom
+            //
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
 
-	  //
-	  // create positive literal with external atom
-	  //
-	  $$ = new Literal<Positive>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | NOT external_atom
         {
-	  AtomPtr ap($2);
-	  
-	  //
-	  // create weakly negated literal with external atom
-	  //
-	  $$ = new Literal<Negative>(ap);
+            //
+            // create literal with external atom
+            //
+            AtomPtr ap($2);
+            $$ = new Literal(ap, true);
+
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | builtin_pred
         {
-	  AtomPtr ap($1);
+            //
+            // create literal with builtin predicate
+            //
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
 
-	  //
-	  // create literal with builtin predicate
-	  //
-	  $$ = new Literal<Positive>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | aggregate
         {
-	  AtomPtr ap($1);
+            //
+            // create aggregate
+            //
+            AtomPtr ap($1);
+            $$ = new Literal(ap);
 
-	  //
-	  // create positive aggregate
-	  //
-	  $$ = new Literal<Positive>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     | NOT aggregate
         {
-	  AtomPtr ap($2);
+            //
+            // create negated aggregate
+            //
+            AtomPtr ap($2);
+            $$ = new Literal(ap, true);
 
-	  //
-	  // create negated aggregate
-	  //
-	  $$ = new Literal<Negative>(ap);
+            //
+            // Storing the literal as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
         }
     ;
           
@@ -586,91 +678,90 @@ literal:
 
 user_pred:
     propositional_atom
-    {
-      //
-      // pass the already created atom
-      //
-      $$ = $1;
-    }
+        {
+            //
+            // pass the already created atom
+            //
+            $$ = $1;
+        }
     | PARAM_OPEN terms PARAM_CLOSE
-    {
-      //
-      // create atom from a tuple
-      //
-      try
-	{
-	  $$ = new Atom<Positive>(*$2);
-	}
-      catch (SyntaxError& e)
-	{
-	  error(yylloc, e.what());
-	}
-      
-      delete $2;
-    }
-    | ident PARAM_OPEN terms PARAM_CLOSE
-    {
-      //
-      // create atom from predicate name and arguments
-      //
-      try
-	{
-	  $$ = new Atom<Positive>(Term(*$1), *$3);
-	}
-      catch (SyntaxError& e)
-	{
-	  error(yylloc, e.what());
-	}
-      
-      delete $1;
-      delete $3;
-    }
-    | TRUE_NOT PARAM_OPEN terms PARAM_CLOSE
-    {
-      //
-      // create negated atom from a tuple
-      //
-      try
-	{
-	  $$ = new Atom<Negative>(*$3);
-	}
-      catch (SyntaxError& e)
-	{
-	  error(yylloc, e.what());
-	}
-      
-      delete $3;
-    }
-    | TRUE_NOT ident PARAM_OPEN terms PARAM_CLOSE
-    {
-      //
-      // create negated atom from predicate name and arguments
-      //
-      try
-	{
-	  $$ = new Atom<Negative>(Term(*$2), *$4);
-	}
-      catch (SyntaxError& e)
-	{
-	  error(yylloc, e.what());
-	}
-      
-      delete $2;
-      delete $4;
-    }
-    | PRED_INT PARAM_OPEN term PARAM_CLOSE
-    {
-      //
-      // create atom from a term
-      //
-//       Tuple t;
-//       t.push_back(*$3);
-//       $$ = new Atom("#int", t);
-//       $$->setAlwaysFO();
+        {
+            //
+            // create atom from a tuple
+            //
+            try
+            {
+                $$ = new Atom(*$2);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
 
-      ///@todo fix #int
-      delete $3;
-    }
+            delete $2;
+        }
+    | ident PARAM_OPEN terms PARAM_CLOSE
+        {
+            //
+            // create atom from predicate name and arguments
+            //
+            try
+            {
+                $$ = new Atom(*$1, *$3);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            delete $1;
+            delete $3;
+        }
+    | TRUE_NOT PARAM_OPEN terms PARAM_CLOSE
+        {
+            //
+            // create negated atom from a tuple
+            //
+            try
+            {
+                $$ = new Atom(*$3, true);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            delete $3;
+        }
+    | TRUE_NOT ident PARAM_OPEN terms PARAM_CLOSE
+        {
+            //
+            // create negated atom from predicate name and arguments
+            //
+            try
+            {
+                $$ = new Atom(*$2, *$4, true);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            delete $2;
+            delete $4;
+        }
+    | PRED_INT PARAM_OPEN term PARAM_CLOSE
+        {
+            //
+            // create atom from a term
+            //
+            Tuple t;
+            t.push_back(*$3);
+            $$ = new Atom("#int", t);
+            $$->setAlwaysFO();
+
+            delete $3;
+        }
     ;
 
 
@@ -688,12 +779,18 @@ external_atom:
             //
             try
             {
-	      $$ = new ExternalAtom(Term(*$2), *$6, *$4);
+            $$ = new ExternalAtom(*$2, *$6, *$4, (@1.end-1).line);
             }
             catch (SyntaxError& e)
             {
                 error(yylloc, e.what());
             }
+
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
 
             delete $2;
             delete $4;
@@ -704,21 +801,21 @@ external_atom:
 
 external_output:
         {
-	  //
-	  // emtpy tuple
-	  //
-	  $$ = new Tuple;
+            //
+            // emtpy tuple
+            //
+            $$ = new Tuple;
         }
     | PARAM_OPEN PARAM_CLOSE
         {
-	  //
-	  // emtpy tuple
-	  //
-	  $$ = new Tuple;
+            //
+            // emtpy tuple
+            //
+            $$ = new Tuple;
         }
     | PARAM_OPEN terms PARAM_CLOSE
         {
-	  $$ = $2;
+            $$ = $2;
         }
     ;
 
@@ -730,21 +827,13 @@ propositional_atom:
             // construction of an atom could throw an exception - don't throw
             // same exception again, but use bison's error handler as a general
             // interface for all errors that happen within the parsing.
-            ///@todo not true anymore
+            //
             try
 	      {
 		//
 		// create new atom from string
 		//
-                $$ = new Atom<Positive>(*$1);
-
-		///@todo hm, removed the SyntaxErrors from Atom<>:
-		///non-ground propositional variables should be
-		///allowed?
-		if ($$->getPredicate().isVariable())
-		  {
-		    error(yylloc, "propositional Atom must be ground. Probably not a HEX-program?");
-		  }
+                $$ = new Atom(*$1);
 	      }
             catch (SyntaxError& e)
 	      {
@@ -755,21 +844,25 @@ propositional_atom:
         }
     | TRUE_NOT ident
         {
-	  //
-	  // create new negated atom from string
-	  // 
-	  $$ = new Atom<Negative>(*$2);
+            //
+            // create new negated atom from string
+            // 
+            $$ = new Atom(*$2, true);
 
-	  delete $2;
+            delete $2;
         }
     ;
 
+
+/*
+ext_include : EXT_INCLUDE PRED_LESS ident PRED_GREATER NEWLINE
+*/
 
 
 builtin_pred:
     term binop term
         {
-            $$ = new BuiltinPredicate(*$1, *$2, *$3);
+            $$ = new BuiltinPredicate(*$1, *$3, *$2);
 
             delete $1;
             delete $2;
@@ -777,7 +870,7 @@ builtin_pred:
         } 
     | binop PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
         {
-            $$ = new BuiltinPredicate(*$3, *$1, *$5);
+            $$ = new BuiltinPredicate(*$3, *$5, *$1);
 
             delete $1;
             delete $3;
@@ -900,13 +993,13 @@ aggregate:
     ;
 
 binop:
-    PRED_EQUAL { $$ = new Term("="); }
-    | EQUALS { $$ = new Term("="); }
-    | PRED_UNEQUAL { $$ = new Term("!="); }
-    | PRED_LESS { $$ = new Term("<"); }
-    | PRED_GREATER { $$ = new Term(">"); }
-    | PRED_LESS_OR_EQ { $$ = new Term("<="); }
-    | PRED_GREATER_OR_EQ { $$ = new Term(">="); }
+    PRED_EQUAL { $$ = new std::string("="); }
+    | EQUALS { $$ = new std::string("="); }
+    | PRED_UNEQUAL { $$ = new std::string("!="); }
+    | PRED_LESS { $$ = new std::string("<"); }
+    | PRED_GREATER { $$ = new std::string(">"); }
+    | PRED_LESS_OR_EQ { $$ = new std::string("<="); }
+    | PRED_GREATER_OR_EQ { $$ = new std::string(">="); }
     ;
 
 /*
@@ -916,35 +1009,22 @@ tertop   : PLUS
 */
 
 aggregate_pred:
-aggregate_type CURLY_OPEN terms COLON body CURLY_CLOSE
-{
-  //
-  // in higher-order mode we cannot have aggregates, because then they would
-  // almost certainly be recursive, because of our atom-rewriting!
-  //
-  if (Globals::Instance()->getOption("NoPredicate"))
-    {
-      error(yylloc, "Aggregates only allowed in FO-mode (use --firstorder)");
-    }
+    aggregate_type CURLY_OPEN terms COLON body CURLY_CLOSE
+        {
+            try
+            {
+                $$ = new AggregateAtom(*$1, *$3, *$5);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
 
-  try
-    {
-      Term type(*$1);
-      BodyPtr bp($5);
-      $$ = new AggregateAtom(type, *$3, bp);
-      delete $1;
-      delete $3;
-    }
-  catch (SyntaxError& e)
-    {
-      error(yylloc, e.what());
-    }
-  
-  delete $1;
-  delete $3;
-  delete $5;
-}
-;
+            delete $1;
+            delete $3;
+            delete $5;
+        }
+    ;
 
 aggregate_type:
     PRED_ANY
@@ -956,7 +1036,16 @@ aggregate_type:
     | PRED_TIMES
     ;
 
+/*
+terms1   : PARAM_OPEN term PARAM_CLOSE
+         ;
 
+terms2   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+
+terms3   : PARAM_OPEN term PARAM_SEPARATOR term PARAM_SEPARATOR term PARAM_CLOSE
+         ;
+*/
 
 terms:
     term
@@ -972,12 +1061,12 @@ terms:
         }
     | terms PARAM_SEPARATOR term
         {
-            $$ = $1;
-
             //
             // tuple is a vector, term is copied
             //
-            $$->push_back(*$3);
+            $1->push_back(*$3);
+                    
+            $$ = $1;
 
             delete $3;
         }

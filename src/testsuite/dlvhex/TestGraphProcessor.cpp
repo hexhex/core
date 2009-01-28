@@ -50,24 +50,26 @@ CPPUNIT_TEST_SUITE_REGISTRATION(TestGraphProcessor);
 void
 TestGraphProcessor::setUp()
 {
-  aX = AtomPtr(new Atom<Positive>("a(X)"));
-  aZ = AtomPtr(new Atom<Positive>("a(Z)"));
-  aa = AtomPtr(new Atom<Positive>("a(a)"));
-  ab = AtomPtr(new Atom<Positive>("a(\"b\")"));
+//    RuleBody_t* b1 = new RuleBody_t();
+        
+    aX = AtomPtr(new Atom("a(X)"));
+    aZ = AtomPtr(new Atom("a(Z)"));
+    aa = AtomPtr(new Atom("a(a)"));
+    ab = AtomPtr(new Atom("a(\"b\")"));
 
-  bX = AtomPtr(new Atom<Positive>("b(X)"));
-  bZ = AtomPtr(new Atom<Positive>("b(Z)"));
-  ba = AtomPtr(new Atom<Positive>("b(a)"));
-  bb = AtomPtr(new Atom<Positive>("b(\"b\")"));
+    bX = AtomPtr(new Atom("b(X)"));
+    bZ = AtomPtr(new Atom("b(Z)"));
+    ba = AtomPtr(new Atom("b(a)"));
+    bb = AtomPtr(new Atom("b(\"b\")"));
 
-  pX = AtomPtr(new Atom<Positive>("p(X)"));
-  pZ = AtomPtr(new Atom<Positive>("p(Z)"));
-  pa = AtomPtr(new Atom<Positive>("p(a)"));
-  pb = AtomPtr(new Atom<Positive>("p(\"b\")"));
+    pX = AtomPtr(new Atom("p(X)"));
+    pZ = AtomPtr(new Atom("p(Z)"));
+    pa = AtomPtr(new Atom("p(a)"));
+    pb = AtomPtr(new Atom("p(\"b\")"));
     
-  qX = AtomPtr(new Atom<Positive>("q(X)"));
-  qa = AtomPtr(new Atom<Positive>("q(a)"));
-  qb = AtomPtr(new Atom<Positive>("q(\"b\")"));
+    qX = AtomPtr(new Atom("q(X)"));
+    qa = AtomPtr(new Atom("q(a)"));
+    qb = AtomPtr(new Atom("q(\"b\")"));
 }
 
 void
@@ -96,54 +98,53 @@ TestGraphProcessor::testSimple()
      *
      */
 
-  HeadPtr h1(new Head);
-  HeadPtr h2(new Head);
-  HeadPtr h3(new Head);
-  HeadPtr h4(new Head);
-  HeadPtr h5(new Head);
-  HeadPtr h6(new Head);
-  BodyPtr b1(new Body);
-  BodyPtr b2(new Body);
-  BodyPtr b3(new Body);
-  BodyPtr b4(new Body);
-  BodyPtr b5(new Body);
-  BodyPtr b6(new Body);
+    RuleHead_t h1, h2, h3, h4, h5, h6;
+    RuleBody_t b1, b2, b3, b4, b5, b6;
 
-    h1->push_back(aX);
-    LiteralPtr lbX(new Literal<Negative>(bX));
-    b1->push_back(lbX);
-    LiteralPtr lpX(new Literal<Positive>(pX));
-    b1->push_back(lpX);
+    h1.insert(aX);
+    Literal lbX(bX, 1);
+    b1.insert(&lbX);
+    Literal lpX(pX);
+    b1.insert(&lpX);
 
-    h2->push_back(bZ);
-    LiteralPtr laZ(new Literal<Negative>(aZ));
-    b2->push_back(laZ);
-    LiteralPtr lpZ(new Literal<Positive>(pZ));
-    b2->push_back(lpZ);
+    h2.insert(bZ);
+    Literal laZ(aZ, 1);
+    b2.insert(&laZ);
+    Literal lpZ(pZ);
+    b2.insert(&lpZ);
 
-    h3->push_back(pX);
-    LiteralPtr lqX(new Literal<Positive>(qX));
-    b3->push_back(lqX);
+    h3.insert(pX);
+    Literal lqX(qX);
+    b3.insert(&lqX);
 
-    h4->push_back(qa);
-    h4->push_back(qb);
+    h4.insert(qa);
+    h4.insert(qb);
 
-    LiteralPtr laa(new Literal<Positive>(aa));
-    b5->push_back(laa);
+    Literal laa(aa);
+    b5.insert(&laa);
 
-    LiteralPtr lbb(new Literal<Positive>(bb));
-    b6->push_back(lbb);
+    Literal lbb(bb);
+    b6.insert(&lbb);
     
+    std::vector<Rule*> rules;
+    
+
     ProgramCtx ctx;
     ctx.setPluginContainer(PluginContainer::instance(""));
     ctx.setNodeGraph(new NodeGraph);
-    
-    ctx.getIDB()->push_back(RulePtr(new Rule(h1, b1)));
-    ctx.getIDB()->push_back(RulePtr(new Rule(h2, b2)));
-    ctx.getIDB()->push_back(RulePtr(new Rule(h3, b3)));
-    ctx.getIDB()->push_back(RulePtr(new Rule(h4, b4)));
-    ctx.getIDB()->push_back(RulePtr(new Rule(h5, b5)));
-    ctx.getIDB()->push_back(RulePtr(new Rule(h6, b6)));
+
+    rules.push_back(new Rule(h1, b1, "", 0));
+    ctx.getIDB()->addRule(rules.back());
+    rules.push_back(new Rule(h2, b2, "", 0));
+    ctx.getIDB()->addRule(rules.back());
+    rules.push_back(new Rule(h3, b3, "", 0));
+    ctx.getIDB()->addRule(rules.back());
+    rules.push_back(new Rule(h4, b4, "", 0));
+    ctx.getIDB()->addRule(rules.back());
+    rules.push_back(new Rule(h5, b5, "", 0));
+    ctx.getIDB()->addRule(rules.back());
+    rules.push_back(new Rule(h6, b6, "", 0));
+    ctx.getIDB()->addRule(rules.back());
 
     AtomSet facts;
 
@@ -204,7 +205,10 @@ TestGraphProcessor::testSimple()
     // clean up
     //
     delete cf;
-
+    
+    std::vector<Rule*>::const_iterator delrule = rules.begin();
+    while (delrule != rules.end())
+        delete *delrule++;
 }
 
 DLVHEX_NAMESPACE_END

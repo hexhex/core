@@ -67,6 +67,8 @@
 #include <getopt.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
+
 #include <boost/tokenizer.hpp>
 
 
@@ -82,37 +84,20 @@ const char*  WhoAmI;
  * @brief Print logo.
  */
 void
-printLogo(std::ostream &out)
+printLogo()
 {
-  out << "DLVHEX "
+	std::cout
+		<< "DLVHEX "
 #ifdef HAVE_CONFIG_H
-      << VERSION << " "
+		<< VERSION << " "
 #endif // HAVE_CONFIG_H
-      << "[build "
-      << __DATE__ 
+		<< "[build "
+		<< __DATE__ 
 #ifdef __GNUC__
-      << "   gcc " << __VERSION__ 
-#endif // __GNUC__
-      << "]"
-      << std::endl << std::endl;
-}
-
-
-/**
- * @brief Print logo and copyright.
- */
-void
-printVersion(std::ostream &out)
-{
-  printLogo(out);
-
-  out << "Copyright (C) 2005-2008 Roman Schindlauer and Thomas Krennwallner." << std::endl
-      << "This is free software; see the source for copying conditions.  There is NO" << std::endl
-      << "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE." << std::endl;
-
-  out << "See the file named AUTHORS for a list of contributors." << std::endl << std::endl;
-
-  out << "Homepage: http://www.kr.tuwien.ac.at/research/systems/dlvhex/" << std::endl;
+		<< "   gcc " << __VERSION__ 
+#endif
+		<< "]" << std::endl
+		<< std::endl;
 }
 
 
@@ -122,54 +107,50 @@ printVersion(std::ostream &out)
 void
 printUsage(std::ostream &out, bool full)
 {
-  printLogo(out);
+	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	out << "Usage: " << WhoAmI 
+		<< " [OPTION] FILENAME [FILENAME ...]" << std::endl
+		<< std::endl;
 
-  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	out << "   or: " << WhoAmI 
+		<< " [OPTION] --" << std::endl
+		<< std::endl;
 
-  out << "dlvhex is the name of a prototype application for computing the" << std::endl
-      << "models of so-called HEX-programs, which are an extension of" << std::endl
-      << "Answer-Set Programs towards integration of higher-order reasoning" << std::endl
-      << "and external computation sources." << std::endl << std::endl;
+	if (!full)
+	{
+		out << "Specify -h or --help for more detailed usage information." << std::endl
+			<< std::endl;
 
-  out << "Usage: " << WhoAmI << " [OPTION] FILENAME [FILENAME ...]" << std::endl
-      << std::endl;
+		return;
+	}
 
-  if (!full)
-    {
-      out << "Specify -h or --help for more detailed usage information." << std::endl
-	  << std::endl;
-      
-      return;
-    }
-
-  //
-  // As soos as we have more options, we can introduce sections here!
-  //
-  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  out << "Options:" << std::endl
-      << "     --               Parse from stdin." << std::endl
-      << " -s, --silent         Do not display anything than the actual result." << std::endl
-    //        << "--strongsafety     Check rules also for strong safety." << std::endl
-      << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
-      << "                      libraries (additionally to the installation plugin-dir" << std::endl
-      << "                      and $HOME/.dlvhex/plugins)." << std::endl
-      << " -f, --filter=foo[,bar[,...]]" << std::endl
-      << "                      Only display instances of the specified predicate(s)." << std::endl
-      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
-      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-      << "     --firstorder     No higher-order reasoning." << std::endl
-      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
-      << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
-      << "                      with --verbose)." << std::endl
-      << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
-      << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
-      << "                      1  - program analysis information (including dot-file)" << std::endl
-      << "                      2  - program modifications by plugins" << std::endl
-      << "                      4  - intermediate model generation info" << std::endl
-      << "                      8  - timing information (only if configured with" << std::endl
-      << "                                               --enable-debug)" << std::endl
-      << "                      add values for multiple categories." << std::endl;
+	//
+	// As soos as we have more options, we can introduce sections here!
+	//
+	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+	out << "     --               Parse from stdin." << std::endl
+		<< " -s, --silent         Do not display anything than the actual result." << std::endl
+		//        << "--strongsafety     Check rules also for strong safety." << std::endl
+		<< " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
+		<< "                      libraries (additionally to the installation plugin-dir" << std::endl
+		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
+		<< " -f, --filter=foo[,bar[,...]]" << std::endl
+		<< "                      Only display instances of the specified predicate(s)." << std::endl
+		<< " -a, --allmodels      Display all models also under weak constraints." << std::endl
+		<< " -r, --reverse        Reverse weak constraint ordering." << std::endl
+		<< "     --firstorder     No higher-order reasoning." << std::endl
+		<< "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
+		<< "                      with --verbose)." << std::endl
+		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+                << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
+		<< "                      1  - program analysis information (including dot-file)" << std::endl
+		<< "                      2  - program modifications by plugins" << std::endl
+		<< "                      4  - intermediate model generation info" << std::endl
+		<< "                      8  - timing information (only if configured with" << std::endl
+		<< "                                               --enable-debug)" << std::endl
+		<< "                      add values for multiple categories." << std::endl;
 }
 
 
@@ -357,11 +338,12 @@ main (int argc, char *argv[])
   // path to an optional plugin directory
   std::string optionPlugindir;
 
-  ///@todo dlt switch should be temporary until we have a proper rewriter for flogic!
+  //
+  // dlt switch should be temporary until we have a proper rewriter for flogic!
+  //
   bool optiondlt = false;
 
   bool helpRequested = false;
-  bool versionRequested = false;
 
   extern char* optarg;
   extern int optind;
@@ -376,7 +358,7 @@ main (int argc, char *argv[])
   int ch;
   int longid;
   
-  static const char* shortopts = "hsvf:p:arV";
+  static const char* shortopts = "f:hsvp:ar";
   static struct option longopts[] =
     {
       { "help", no_argument, 0, 'h' },
@@ -386,7 +368,6 @@ main (int argc, char *argv[])
       { "plugindir", required_argument, 0, 'p' },
       { "allmodels", no_argument, 0, 'a' },
       { "reverse", no_argument, 0, 'r' },
-      { "version", no_argument, 0, 'V' },
       { "firstorder", no_argument, &longid, 1 },
       { "weaksafety", no_argument, &longid, 2 },
       { "ruleml",     no_argument, &longid, 3 },
@@ -402,7 +383,7 @@ main (int argc, char *argv[])
       switch (ch)
 	{
 	case 'h':
-	  helpRequested = true;
+	  helpRequested = 1;
 	  break;
 
 	case 's':
@@ -442,10 +423,6 @@ main (int argc, char *argv[])
 	  Globals::Instance()->setOption("ReverseOrder", 1);
 	  break;
 
-	case 'V':
-	  versionRequested = true;
-	  break;
-
 	case 0:
 	  switch (longid)
 	    {
@@ -482,7 +459,7 @@ main (int argc, char *argv[])
 #if defined(HAVE_DLVDB)
 		  pctx.setProcess(new DLVDBProcess);
 #else
-		  printLogo(std::cerr);
+		  printLogo();
 		  std::cerr << "The command line option ``--solver=dlvdb´´ "
 			    << "requires that dlvhex has compiled-in dlvdb support. "
 			    << "Please reconfigure the dlvhex source." 
@@ -504,10 +481,13 @@ main (int argc, char *argv[])
 	}
     }
 
-  if (versionRequested)
+  //
+  // before anything else we dump the logo
+  //
+
+  if (!Globals::Instance()->getOption("Silent"))
     {
-      printVersion(std::cerr);
-      exit(0);
+      printLogo();
     }
 
   //
@@ -566,7 +546,6 @@ main (int argc, char *argv[])
   // DLVHEX main execution
   //
   /////////////////////////////////////////////////////////////////
-
   try
     {
 
@@ -599,16 +578,15 @@ main (int argc, char *argv[])
       //
       if (!pctx.getOptions()->empty())
 	{
-	  printUsage(std::cerr, false);
-
-	  std::cerr << WhoAmI << ": Unrecognized option(s) are ";
-
-	  const std::vector<std::string>* opts = pctx.getOptions();
-	  std::copy(opts->begin(), opts->end(),
-		    std::ostream_iterator<std::string>(std::cerr, " ")
-		    );
-
+	  std::cerr << "Unknown option(s):";
+	  
+	  std::vector<std::string>::const_iterator opb = pctx.getOptions()->begin();
+	  
+	  while (opb != pctx.getOptions()->end())
+	    std::cerr << " " << *opb++;
+	  
 	  std::cerr << std::endl;
+	  printUsage(std::cerr, false);
 	  
 	  exit(1);
 	}
@@ -621,17 +599,6 @@ main (int argc, char *argv[])
 	  printUsage(std::cerr, false);
 	  exit(1);
 	}
-
-
-      //
-      // before anything else we dump the logo
-      //
-      
-      if (!Globals::Instance()->getOption("Silent"))
-	{
-	  printLogo(std::cerr);
-	}
-  
       
       /////////////////////////////////////////////////////////////////
       //
@@ -673,14 +640,11 @@ main (int argc, char *argv[])
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Parsed Rules: "
-						  << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  rpv << *pctx.getIDB();
-	  Globals::Instance()->getVerboseStream() << std::endl
-						  << "Parsed EDB: "
-						  << std::endl;
-	  rpv << *pctx.getEDB();
+	  pctx.getIDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
+	  pctx.getEDB()->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       
@@ -695,14 +659,11 @@ main (int argc, char *argv[])
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Rewritten rules:"
-						  << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  rpv << *pctx.getIDB();
-	  Globals::Instance()->getVerboseStream() << std::endl
-						  << "Rewritten EDB:"
-						  << std::endl;
-	  rpv << *pctx.getEDB();
+	  pctx.getIDB()->accept(rpv);
+	  Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
+	  pctx.getEDB()->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       
@@ -718,8 +679,7 @@ main (int argc, char *argv[])
 	{
 	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:"
-						  << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
 
 	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
 	       node != nodegraph->getNodes().end();
@@ -756,11 +716,9 @@ main (int argc, char *argv[])
 	  
 	  Globals::Instance()->getVerboseStream() << std::endl;
 
-	  Globals::Instance()->getVerboseStream() << std::endl
-						  << "Optimized EDB:"
-						  << std::endl;
+	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  rpv << *pctx.getEDB();
+	  pctx.getEDB()->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       

@@ -34,73 +34,66 @@
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/PredefinedNames.h"
+
 
 DLVHEX_NAMESPACE_BEGIN
 
-
-AnswerSet::AnswerSet(bool wp)
-  : weakProcessing(wp),
-    maxLevel(1),
-    maxWeight(0)
-{ }
+unsigned AnswerSet::maxLevel = 1;
+unsigned AnswerSet::maxWeight = 0;
 
 
-const AtomSet&
-AnswerSet::getAtomSet() const
+AnswerSet::AnswerSet(const std::string& wcpr)
+    : WCprefix(wcpr)
 {
-  return atoms;
 }
 
 
 void
-AnswerSet::setAtomSet(const AtomSet& atomset)
+AnswerSet::setSet(const AtomSet& atomset)
 {
   // set atoms
-  this->atoms = atomset;
+  this->atoms = atomset.atoms;
 
   // check if we have a prefix for weak constraints
-  if (this->weakProcessing)
+  if (!this->WCprefix.empty())
     {
       AtomSet wcatoms;
     
-      // copy all atoms with a weak predicte to wcatoms
       for (AtomSet::const_iterator asit = this->atoms.begin();
 	   asit != this->atoms.end();
 	   ++asit)
 	{
-	  const Term& pred = (*asit)->getPredicate();
-	  if (pred.isSymbol() || pred.isString())
+	  if (asit->getPredicate().getString().substr(0, WCprefix.length()) == WCprefix)
 	    {
-	      const std::string& p = pred.getString();
-	      if (p.find(PredefinedNames::WEAKHEAD) == 0)
-		{
-		  wcatoms.insert(*asit);
-		}
+	      AtomPtr wca(new Atom(*asit));
+	      wcatoms.insert(wca);
 	    }
 	}
 
       //
       // this answer set has no weight atoms
       //
-      if (wcatoms.empty())
+      if (wcatoms.size() == 0)
 	{
 	  this->weights.push_back(0);
 	}
       else
 	{
-	  for (AtomSet::const_iterator asit = wcatoms.begin();
-	       asit != wcatoms.end(); ++asit)
+	  for (AtomSet::const_iterator asit = wcatoms.begin(); asit != wcatoms.end(); ++asit)
 	    {
-	      unsigned n = (*asit)->getArity();
-
-	      const Term& tlevel = (**asit)[n];
-	      const Term& tweight = (**asit)[n-1]; 
+	      Tuple args = asit->getArguments();
 	      
-	      assert(tlevel.isInt());
-	      assert(tweight.isInt());
+	      Term tlevel(*(args.end() - 1));
+	      Term tweight(*(args.end() - 2));
+	      
+	      if (!tlevel.isInt())
+		throw GeneralError("Weak constraint level instantiated with non-integer!");
 
 	      unsigned l = tlevel.getInt();
+	      
+	      if (!tweight.isInt())
+		throw GeneralError("Weak constraint weight instantiated with non-integer!");
+	      
 	      unsigned w = tweight.getInt();
 	      
 	      this->addWeight(w, l);
@@ -113,7 +106,7 @@ AnswerSet::setAtomSet(const AtomSet& atomset)
 bool
 AnswerSet::hasWeights() const
 {
-  return weakProcessing;
+  return !this->WCprefix.empty();
 }
 
 
@@ -125,192 +118,204 @@ AnswerSet::getWeightLevels() const
 
 
 void
-AnswerSet::addWeight(unsigned level, unsigned weight)
+AnswerSet::addWeight(unsigned weight,
+                     unsigned level)
 {
-  assert(level > 0);
+    assert(level > 0);
 
-  setMaxLevelWeight(level, weight);
+    setMaxLevelWeight(level, weight);
 
-  // create new levels if necessary, and initialize them with 0
-  weights.resize(level, 0);
+    //
+    // create new levels if necessary
+    //
+    if (this->weights.size() < level)
+    {
+        for (unsigned ws = this->weights.size(); ws < level; ++ws)
+            this->weights.push_back(0);
+    }
 
-  // levels start from one, the std::vector starts from 0, hence level - 1
-  weights[level - 1] += weight;
+    //
+    // levels start from one, the std::vector starts from 0, hence level - 1
+    //
+    this->weights[level - 1] += weight;
 }
 
 
 unsigned
 AnswerSet::getWeight(unsigned level) const
 {
-  // unspecified levels have weight 0
-  if (level > this->weights.size())
-    {
-      return 0;
-    }
+    //
+    // unspecified levels have weight 0
+    //
+    if (level > this->weights.size())
+        return 0;
 
-  return this->weights[level - 1];
+    return this->weights.at(level - 1);
 }
 
 
 bool
 AnswerSet::cheaperThan(const AnswerSet& answerset2) const
 {
-  bool ret = false;
-      
-  if (weakProcessing)
-    {
-      unsigned maxlevel = this->weights.size();
+    if (WCprefix.empty())
+        return 0;
+
+    int ret = 0;
+
+    unsigned maxlevel = this->weights.size();
     
-      if (answerset2.weights.size() > maxlevel)
-	{
-	  maxlevel = answerset2.weights.size();
-	}
+    if (answerset2.weights.size() > maxlevel)
+        maxlevel = answerset2.weights.size();
 
-      //
-      // higher levels have higher priority
-      //
-      for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
-	{
-	  if (this->getWeight(currlevel) < answerset2.getWeight(currlevel))
-	    {
-	      ret = !Globals::Instance()->getOption("ReverseOrder");
-	      break;
-	    }
+    //
+    // higher levels have higher priority
+    //
+    //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
+    {
+        if (this->getWeight(currlevel) < answerset2.getWeight(currlevel))
+        {
+            ret = !Globals::Instance()->getOption("ReverseOrder");
+            break;
+        }
 
-	  if (this->getWeight(currlevel) > answerset2.getWeight(currlevel))
-	    {
-	      ret = Globals::Instance()->getOption("ReverseOrder");
-	      break;
-	    }
-	}
+        if (this->getWeight(currlevel) > answerset2.getWeight(currlevel))
+		{
+            ret = Globals::Instance()->getOption("ReverseOrder");
+            break;
+		}
     }
 
-  return ret;
+    return ret;
 }
 
 
 bool
-AnswerSet::moreExpensiveThan(const LevelWeight& weights2) const
+AnswerSet::moreExpensiveThan(const weights_t& weights) const
 {
-  bool ret = false;
+    if (WCprefix.empty())
+        return 0;
 
-  if (weakProcessing)
-    {
-      unsigned maxlevel = this->weights.size();
+    int ret = 0;
+    //int ret = Globals::Instance()->getOption("ReverseOrder");
+
+    unsigned maxlevel = this->weights.size();
     
-      // find out the maximum of both levels
-      if (weights2.size() > maxlevel)
-	{
-	  maxlevel = weights2.size();
-	}
+    //
+    // find out the maximum of both levels
+    //
+    if (weights.size() > maxlevel)
+        maxlevel = weights.size();
 
-      //
-      // go through all levels
-      //
-      for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
-	{
-	  unsigned w = 0;
-	  
-	  //
-	  // only take weight from existing levels of the specified
-	  // weight vector - otherwise w is still 0 (nonspecified
-	  // levels have 0 weight)
-	  //
-	  if (currlevel <= weights2.size())
-	    {
-	      w = weights2.at(currlevel - 1);
-	    }
+    //
+    // go through all levels
+    //
+    //for (unsigned currlevel = 1; currlevel <= maxlevel; ++currlevel)
+    for (unsigned currlevel = maxlevel; currlevel >= 1; --currlevel)
+    {
+        unsigned w = 0;
 
-	  //
-	  // compare with weight from *this - getWeight ensures that
-	  // we don't read from unspecified levels (see getWeight) if
-	  // *this weighs more than the specified vector, it is more
-	  // expensive, return 1
-	  //
-	  if (this->getWeight(currlevel) > w)
-	    {
-	      ret = !Globals::Instance()->getOption("ReverseOrder");
-	      break;
-	    }
+        //
+        // only take weight from existing levels of the specified weight
+        // vector - otherwise w is still 0 (nonspecified levels have 0 weight)
+        //
+        if (currlevel <= weights.size())
+            w = weights.at(currlevel - 1);
 
-	  //
-	  // if this weighs less than the specified vector, it is
-	  // cheaper, return 0
-	  //
-	  if (this->getWeight(currlevel) < w)
-	    {
-	      ret = Globals::Instance()->getOption("ReverseOrder");
-	      break;
-	    }
-	}
+        //
+        // compare with weight from *this - getWeight ensures that we don't read
+        // from unspecified levels (see getWeight)
+        // if *this weighs more than the specified vector, it is more expensive,
+        // return 1
+        //
+        if (this->getWeight(currlevel) > w)
+        {
+            ret = !Globals::Instance()->getOption("ReverseOrder");
+            break;
+        }
+
+        //
+        // if this weighs less than the specified vector, it is cheaper, return
+        // 0
+        //
+        if (this->getWeight(currlevel) < w)
+		{
+            ret = Globals::Instance()->getOption("ReverseOrder");
+            break;
+		}
     }
 
-  //
-  // if weights at all levels were equal, *this is not more expensive
-  // than the specified vector; ret is still at 0
-  //
-  return ret;
+    //
+    // if weights at all levels were equal, *this is not more expensive than the
+    // specified vector; ret is still at 0
+    //
+
+    return ret;
 }
 
 
 int
 AnswerSet::operator< (const AnswerSet& answerset2) const
 {
-  //
-  // with weak constraints, we order the AnswerSets according to their
-  // weights
-  //
-  if (weakProcessing)
+    //
+    // with weak constraints, we order the AnswerSets according to their
+    // weights
+    //
+    if (!WCprefix.empty())
     {
-      //
-      // if we use reverse order, we simply toggle the return value:
-      //
-      //if (Globals::Instance()->getOption("ReverseOrder"))
-      //	isCheaper = 0;
+		bool isCheaper(1);
 
-      if (this->cheaperThan(answerset2))
-	{
-	  return true;
-	}
-      else if (answerset2.cheaperThan(*this))
-	{
-	  return false;
-	}
+		//
+		// if we use reverse order, we simply toggle the return value:
+		//
+		//if (Globals::Instance()->getOption("ReverseOrder"))
+		//	isCheaper = 0;
+
+        if (this->cheaperThan(answerset2))
+            return isCheaper;
+
+        if (answerset2.cheaperThan(*this))
+            return !isCheaper;
     }
 
-  //
-  // if the answersets have equal costs in weak constraint-mode, we
-  // have to check for normal equality, otherwise two equal-cost
-  // answer sets would be already considered as equal and only one of
-  // them could be inserted in a container<AnswerSet>!
-  //
+    //
+    // if the answersets have equal costs in weak constraint-mode, we have to
+    // check for normal equality, otherwise two equal-cost answer sets would be
+    // already considered as equal and only one of them could be inserted in a
+    // container<AnswerSet>!
+    //
 
-  return this->atoms < answerset2.atoms;
+    //
+    // in normal mode, we use the AtomSet::< comparison
+    //
+    return AtomSet::operator< (answerset2);
 }
 
 
 void
 AnswerSet::setMaxLevelWeight(unsigned l, unsigned w)
 {
-  maxLevel = std::max(l, maxLevel);
-  maxWeight = std::max(w, maxWeight);
+    if (l > maxLevel)
+        maxLevel = l;
+    if (w > maxWeight)
+        maxWeight = w;
 }
 
 
 unsigned
-AnswerSet::getMaxLevel() const
+AnswerSet::getMaxLevel()
 {
-  return maxLevel;
+    return maxLevel;
 }
 
 
 std::ostream&
 operator<< (std::ostream& out, const AnswerSet& atomset)
 {
-  ///@todo maybe we could add the weight handling to a visiting method
-  RawPrintVisitor rpv(out);
-  rpv << atomset.getAtomSet();
-  return out;
+    ///@todo maybe we could add the weight handling to a visiting method
+    RawPrintVisitor rpv(out);
+    const_cast<AnswerSet*>(&atomset)->accept(rpv);
+    return out;
 }
 
 

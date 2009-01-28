@@ -23,6 +23,10 @@ http://www.gnu.org/software/automake/
 ** libtool
 http://www.gnu.org/software/libtool/
 
+** pkg-config
+http://pkg-config.freedesktop.org/
+
+
 
 * Building, installing and testing dlvhex-dlplugin
 
@@ -40,8 +44,9 @@ bison 2.3. For installation instruction see the corresponding INSTALL
 files of the source packages.
 
 *** autotools
-The autotools include autoconf, automake, and libtool. See the
-installation instructions of the corresponding packages.
+The autotools include pkg-config, autoconf, automake, and libtool. See
+the installation instructions of the corresponding packages, or just
+install the native packages provided by your operating system.
 
 
 ** Configuration

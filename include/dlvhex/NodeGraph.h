@@ -36,7 +36,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/Program.h"
+#include "dlvhex/Rule.h"
 #include "dlvhex/AtomNode.h"
 
 #include <boost/shared_ptr.hpp>
@@ -57,7 +57,7 @@ private:
 
 	std::vector<AtomNodePtr> atomNodes;
 
-	mutable Program prog;
+	mutable std::vector<Rule*> prog;
 
 
 public:
@@ -69,7 +69,7 @@ public:
 	 * @brief returns the associated Program.
 	 * @return prog
 	 */
-	const Program&
+	const std::vector<Rule*>&
 	getProgram() const;
 
 	/**

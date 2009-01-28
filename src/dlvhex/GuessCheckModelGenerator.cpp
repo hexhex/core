@@ -35,12 +35,10 @@
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/ProgramCtx.h"
-#include "dlvhex/AtomSetFunctions.h"
-#include "dlvhex/NullVisitor.h"
-#include "dlvhex/PredefinedNames.h"
 
 #include <sstream>
 #include <boost/functional.hpp>
@@ -59,20 +57,6 @@ GuessCheckModelGenerator::compute(const Program&,
 { /* noop */ }
 
 
-
-
-///@todo this is preliminary, we should get the external atoms from
-///the component
-class GetExtAtomsVisitor : public NullVisitor
-{
-private:
-  std::vector<ExternalAtom*>& extatoms;
-public:
-  GetExtAtomsVisitor(std::vector<ExternalAtom*>& e) : extatoms(e) { }
-  void visit(ExternalAtom* const e) { extatoms.push_back(e); }
-};
-
-
 void
 GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 				  const AtomSet& I,
@@ -82,7 +66,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
   models.clear();
 
-  // component program
   Program guessingprogram;
 
   std::set<const ExternalAtom*> extatomInComp;
@@ -94,13 +77,17 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
        node != nodes.end();
        ++node)
     {
-      const Program& rules = (*node)->getRules();
+      const std::vector<Rule*>& rules = (*node)->getRules();
 
       //
       // add all rules from this node to the component
       //
-      guessingprogram.insert(guessingprogram.end(),
-			     rules.begin(), rules.end());
+      for (std::vector<Rule*>::const_iterator ri = rules.begin();
+	   ri != rules.end();
+	   ++ri)
+	{
+	  guessingprogram.addRule(*ri);
+	}
 
       if (typeid(*(*node)->getAtom()) == typeid(ExternalAtom))
 	{
@@ -121,21 +108,19 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	{
 	  Globals::Instance()->getVerboseStream() << "Computing guessings for rule ";
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  (*ri)->accept(&rpv);
+	  (*ri)->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
 
-      // get the external atoms of this rule
-      std::vector<ExternalAtom*> extatoms;
-      GetExtAtomsVisitor gev(extatoms);
-      (*ri)->accept(&gev);
+
+      const std::vector<ExternalAtom*>& eatoms = (*ri)->getExternalAtoms();
 
       //
       // go through all external atoms in this rule and make one guessing
       // rule each
       //
-      for (std::vector<ExternalAtom*>::const_iterator ei = extatoms.begin();
-	   ei != extatoms.end();
+      for (std::vector<ExternalAtom*>::const_iterator ei = eatoms.begin();
+	   ei != eatoms.end();
 	   ++ei)
 	{
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
@@ -144,6 +129,14 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    }
 
 	  //
+	  //@todo dependency graph is _not_ in sync with the
+	  //associated rules of of the component, hence we have to
+	  //check whether the external atom belongs _really_ to the
+	  //cycle and thus we have to create some guessing
+	  //rules. Non-cyclic external atoms had already been solved
+	  //in the weakly connected component evaluator and must not
+	  //be generated here.
+	  //
 	  // for the guessing only consider external atoms that are actually
 	  // in the cycle!
 	  //
@@ -151,64 +144,60 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    {
 	      ///@todo this might not work in case of non-unique
 	      ///external atom pointers...
-	      // continue;
+	      continue;
 	    }
 
 	  //
-	  // create the head of the guessing rule is the disjunction
-	  // of the nonground external replacement atom and its
-	  // negation
+	  // the head of the guessing rule is the disjunction of the nonground
+	  // external replacement atom and its negation
 	  //
-	  Tuple headargs = (*ei)->getInputList();
+	  RuleHead_t guesshead;
 
-	  const Tuple& extargs = (*ei)->getArguments();
+	  Tuple headargs((*ei)->getInputTerms());
+	  Tuple extargs((*ei)->getArguments());
+
 	  headargs.insert(headargs.end(), extargs.begin(), extargs.end());
 
-	  AtomPtr headatompt(new Atom<Positive>((*ei)->getReplacementName(), headargs));
-	  HeadPtr guesshead(new Head(1, headatompt));
+	  AtomPtr headatompt(new Atom((*ei)->getReplacementName(), headargs));
+	  guesshead.insert(headatompt);
 
 	  //
 	  // record the external atoms names - we will have to remove them
 	  // from the guess later!
 	  //
-	  externalNames.insert((*ei)->getReplacementName().getString());
+	  externalNames.insert((*ei)->getReplacementName());
 
-	  headatompt = AtomPtr(new Atom<Negative>((*ei)->getReplacementName(), headargs));
-	  guesshead->push_back(headatompt);
-
-
+	  headatompt = AtomPtr(new Atom((*ei)->getReplacementName(), headargs, 1));
+	  guesshead.insert(headatompt);
 
 	  //
 	  // the body contains all remaining rule atoms (to make it more
 	  // efficient)
 	  //
-	  BodyPtr guessbody(new Body);
+	  RuleBody_t guessbody;
 
-	  const BodyPtr& body = (*ri)->body();
-
-	  for (Body::const_iterator bi = body->begin();
-	       bi != body->end();
+	  for (RuleBody_t::const_iterator bi = (*ri)->getBody().begin();
+	       bi != (*ri)->getBody().end();
 	       ++bi)
 	    {
 	      //
 	      // don't add the current external atom itself, and no
 	      // negative literals!
 	      //
-	      const LiteralPtr& l = *bi;
+	      const Literal* l = *bi;
 
-	      if (l->getAtom().get() != *ei && typeid(*l) != typeid(Literal<Negative>))
+	      if (l->getAtom().get() != *ei && !l->isNAF())
 		{
-		  guessbody->push_back(*bi);
+		  guessbody.insert(*bi);
 		}
 	    }
-
-
 
 	  //
 	  // build the entire guessing rule
 	  //
-	  RulePtr guessrule(new Rule(guesshead, guessbody));
-	  guessingrules.push_back(guessrule);
+	  Rule* guessrule = new Rule(guesshead, guessbody);
+	  Registry::Instance()->storeObject(guessrule);
+	  guessingrules.addRule(guessrule);
 
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
@@ -217,7 +206,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	}
 
       // finally, add the original rule to the guessing rules
-      guessingrules.push_back(*ri);
+      guessingrules.addRule(*ri);
     }
 
 
@@ -254,7 +243,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	   guess != allguesses.end();
 	   ++guess)
 	{
-	  rpv << *guess;
+	  guess->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl;
 	}
     }
@@ -269,14 +258,14 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
        ++guess)
     {
       // re-add the initial set of facts
-      guess->insert(I.begin(), I.end());
+      guess->insert(I);
 
       if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	{
 	  Globals::Instance()->getVerboseStream() << std::endl;
 	  Globals::Instance()->getVerboseStream() << std::endl;
 	  Globals::Instance()->getVerboseStream() << "=== checking guess ";
-	  rpv << *guess;
+	  guess->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl;
 	}
 
@@ -294,8 +283,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	{
 	  // get the positive external result from the guess and
 	  // insert it into externalguess
-	  externalguess = matchPredicate(*guess, (*ei)->getReplacementName());
-	  externalguess = keepPositive(externalguess);
+	  guess->matchPredicate((*ei)->getReplacementName(), externalguess);
+	  externalguess.keepPos();
 
 	  try
 	    {
@@ -310,13 +299,13 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
 	      Globals::Instance()->getVerboseStream()<<"evaluating " << **ei << " with guess ";
-	      rpv << *guess;
+	      guess->accept(rpv);
 	      Globals::Instance()->getVerboseStream() << " as input" << std::endl;
 	      Globals::Instance()->getVerboseStream() << "external guess: ";
-	      rpv << externalguess;
+	      externalguess.accept(rpv);
 			    
 	      Globals::Instance()->getVerboseStream() << std::endl <<"check result  : ";
-	      rpv << checkresult;
+	      checkresult.accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
 	}
@@ -328,14 +317,15 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	}
 
 
+      ///@todo I'm not convinced that this should be equal, I think
+      ///this should be \subseteq!
       if (externalguess == checkresult)
 	{
 	  //
 	  // now check if the reduct against the (valid) guess yields a
 	  // program, whose model equals the guess
 	  //
-	  // 1) replace each head in P by flp_head_i (with all vars
-	  //    from orig. head) -> P'
+	  // 1) replace each head in P by flp_head_i (with all vars from orig. head) -> P'
 	  // 2) eval P' + guess = RED
 	  // 3) add to each rule body in P the flp_head_i literals -> P''
 	  // 4) add RED to P''
@@ -360,8 +350,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	       ruleit != guessingprogram.end();
 	       ++ruleit, ++ruleidx)
 	    {
-	      const HeadPtr& oldhead = (*ruleit)->head();
-	      const BodyPtr& oldbody = (*ruleit)->body();
+	      const RuleHead_t& oldhead = (*ruleit)->getHead();
+	      const RuleBody_t& oldbody = (*ruleit)->getBody();
 
 	      Tuple flpheadargs;
 
@@ -369,60 +359,59 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	      // collect all vars from head
 	      ///@todo it seems we are collecting all the arguments??
 	      //
-	      for (Head::const_iterator headit = oldhead->begin();
-		   headit != oldhead->end();
+	      for (RuleHead_t::const_iterator headit = oldhead.begin();
+		   headit != oldhead.end();
 		   ++headit)
 		{
 		  const Tuple& headargs = (*headit)->getArguments();
 
-		  flpheadargs.insert(flpheadargs.end(),
-				     headargs.begin(),
-				     headargs.end());
+		  for (Tuple::const_iterator argit = headargs.begin();
+		       argit != headargs.end();
+		       ++argit)
+		    {
+		      flpheadargs.push_back(*argit);
+		    }
 		}
 
 	      //
 	      // make flp head atom
 	      //
-	      ///@todo make this a macro, and it possibly clashes with
-	      ///the input program
 	      std::ostringstream atomname;
-	      atomname << PredefinedNames::FLPHEAD << ruleidx;
-	      Term flppred(atomname.str());
-	      AtomPtr flpheadatom(new Atom<Positive>(flppred, flpheadargs));
-
-	      // flpheadatom is at position ruleidx
-	      bodyPickerAtoms.push_back(flpheadatom);
+	      atomname << "flp_head_" << ruleidx; ///@todo make this a macro, and it possibly clashes with the input program
+	      AtomPtr flpheadatom(new Atom(atomname.str(), flpheadargs));
+	      bodyPickerAtoms.push_back(flpheadatom); // flpheadatom is at position ruleidx
 
 	      //
 	      // make new head
 	      //
-	      HeadPtr flphead(new Head(1, flpheadatom));
+	      RuleHead_t flphead;
+	      flphead.insert(flpheadatom);
 
 	      //
-	      // make new body (copy the old one)
+	      // make new body (equal to old one)
 	      //
-	      BodyPtr flpbody = oldbody;
+	      RuleBody_t flpbody(oldbody);
 
 	      //
 	      // make flp rule
 	      //
-	      RulePtr flprule(new Rule(flphead, flpbody));
+	      Rule* flprule = new Rule(flphead, flpbody);
+	      Registry::Instance()->storeObject(flprule);
 
 	      //
 	      // add flp rule to flp program
 	      //
-	      bodyPicker.push_back(flprule);
+	      bodyPicker.addRule(flprule);
 	    }
 
-	  // just to be sure...
 	  assert(bodyPickerAtoms.size() == ruleidx);
 
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
 	      Globals::Instance()->getVerboseStream() << "    checking guess reduct" << std::endl;
-	      rpv << bodyPicker;
+	      bodyPicker.accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl;
-	      rpv << *guess;
+	      guess->accept(rpv);
 	    }
 
 
@@ -444,16 +433,15 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << "    reduct answers"
-						      << std::endl;
-	      rpv << *reductanswers.begin();
+	      Globals::Instance()->getVerboseStream() << "    reduct answers" << std::endl;
+	      reductanswers.begin()->accept(rpv);
 	    }
 
 
 	  //
 	  // remove guess from result
 	  //
-	  AtomSet reductfacts = difference(*reductanswers.begin(), *guess);
+	  AtomSet reductfacts = reductanswers.begin()->difference(*guess);
  
 
 	  //
@@ -464,33 +452,33 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  std::vector<AtomPtr>::const_iterator bpa = bodyPickerAtoms.begin();
 
 	  //
-	  // take P and add flp_head_i to each r_i: bodyPickerAtoms
-	  // and guessingprogram must agree on the indices!
+	  // take P and add flp_head_i to each r_i
 	  //
 	  for (Program::const_iterator ruleit = guessingprogram.begin();
 	       ruleit != guessingprogram.end();
 	       ++ruleit, ++bpa)
 	    {
-	      const HeadPtr& oldhead = (*ruleit)->head();
-	      const BodyPtr& oldbody = (*ruleit)->body();
+	      const RuleHead_t& oldhead = (*ruleit)->getHead();
+	      const RuleBody_t& oldbody = (*ruleit)->getBody();
 	      
-	      // copy over old body
-	      BodyPtr newbody = oldbody;
+	      RuleBody_t newbody(oldbody);
 
 	      // get flpheadatom from above
-	      LiteralPtr flplit(new Literal<Positive>(*bpa));
+	      Literal* flplit = new Literal(*bpa);
+	      Registry::Instance()->storeObject(flplit);
 				
-	      newbody->push_back(flplit);
+	      newbody.insert(flplit);
 
 	      //
 	      // make rule
 	      //
-	      RulePtr reductrule(new Rule(oldhead, newbody));
+	      Rule* reductrule = new Rule(oldhead, newbody);
+	      Registry::Instance()->storeObject(reductrule);
 
 	      //
 	      // add flp rule to flp program
 	      //
-	      flpreduced.push_back(reductrule);
+	      flpreduced.addRule(reductrule);
 	    }
 
 	  
@@ -498,9 +486,9 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  // 4) now evaluate reducedprogram wrt. reductfacts + original EDB
 	  // 
 	  AtomSet reducedEDB;
-	  reducedEDB.insert(reductfacts.begin(), reductfacts.end());
-	  reducedEDB.insert(I.begin(), I.end());
-	  reducedEDB.insert(guess->begin(), guess->end());
+	  reducedEDB.insert(reductfacts);
+	  reducedEDB.insert(I);
+	  reducedEDB.insert(*guess);
 
 	  std::vector<AtomSet> reductanswers2;
 	  
@@ -509,14 +497,13 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  //
 	  solver->solve(flpreduced, reducedEDB, reductanswers2);
 
-	  // again, must be stratified
 	  assert(reductanswers2.size() == 1);
 			
 	  std::vector<AtomSet>::iterator strongf = reductanswers2.begin();
-	  strongf->insert(I.begin(), I.end());
-	  strongf->insert(guess->begin(), guess->end());
+	  strongf->insert(I);
+	  strongf->insert(*guess);
 
-	  const AtomSet& strongFacts = difference(*strongf, reductfacts);
+	  const AtomSet& strongFacts = strongf->difference(reductfacts);
 	  const AtomSet& weakFacts = *guess;
 	  
 	      
@@ -524,19 +511,19 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
 	      Globals::Instance()->getVerboseStream() << "    Reduced program result: " << std::endl;
-	      rpv << flpreduced;
+	      flpreduced.accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "reduced edb: ";
-	      rpv << reducedEDB;
+	      reducedEDB.accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "strongf:     ";
-	      rpv << *strongf;
+	      const_cast<AtomSet&>(*strongf).accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "reductfacts: ";
-	      rpv << reductfacts;
+	      const_cast<AtomSet&>(reductfacts).accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "strongFacts: ";
-	      rpv << strongFacts;
+	      const_cast<AtomSet&>(strongFacts).accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "weakFacts:   ";
-	      rpv << weakFacts;
+	      const_cast<AtomSet&>(weakFacts).accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "strongFacts: ";
-	      rpv << strongFacts;
+	      const_cast<AtomSet&>(strongFacts).accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl << "-------------------------" << std::endl;
 	    }
 
@@ -549,13 +536,12 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	      //
 	      // remove extatom replacement atoms, because they would
 	      // invalidate the minimality check below!
-	      ///@todo make this more efficient
 	      //
 	      for (std::set<std::string>::const_iterator si = externalNames.begin();
 		   si != externalNames.end();
 		   ++si)
 		{
-		  *guess = removePredicate(*guess, Term(*si));
+		  guess->remove(*si);
 		}
 
 	      // we found a candidate answer set
@@ -563,16 +549,14 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 		{
-		  Globals::Instance()->getVerboseStream() << "    reduced model does match!" 
-							  << std::endl;
+		  Globals::Instance()->getVerboseStream() << "    reduced model does match!" << std::endl;
 		}
 	    }
 	  else
 	    {
 	      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 		{
-		  Globals::Instance()->getVerboseStream() << "    reduced model does not match!" 
-							  << std::endl;
+		  Globals::Instance()->getVerboseStream() << "    reduced model does not match!" << std::endl;
 		}
 	    }
 	}
@@ -580,8 +564,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	{
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << "    guess incompatible with external result!" 
-						      << std::endl;
+	      Globals::Instance()->getVerboseStream() << "    guess incompatible with external result!" << std::endl;
 	    }
 	}
     }
@@ -633,7 +616,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    }
 	}
 
-      ///@todo a list should work without "external" erase
       for (std::vector<std::vector<AtomSet>::iterator>::const_iterator it = todelete.begin();
 	   it != todelete.end();
 	   ++it)
@@ -649,7 +631,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
 	      Globals::Instance()->getVerboseStream() << " Model passed minimality test: ";
-	      rpv << **ans;
+	      (*ans)->accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
 	}
@@ -658,7 +640,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
 	      Globals::Instance()->getVerboseStream() << " Model did not pass minimality test:";
-	      rpv << **ans;
+	      (*ans)->accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
 	}

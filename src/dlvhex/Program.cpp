@@ -1,6 +1,5 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
- * Copyright (C) 2008 Thomas Krennwallner
  * 
  * This file is part of dlvhex.
  *
@@ -22,59 +21,84 @@
 
 
 /**
- * @file DepGraphTest.cpp
- * @author Thomas Krennwallner
- * @date Sun Jun 30 10:12:44 2008
+ * @file Program.cpp
+ * @author Roman Schindlauer
+ * @date Tue Mar  7 16:51:41 CET 2006
  *
- * @brief Testsuite class for testing the dependency graph.
+ * @brief Program class.
  *
  *
  *
  */
 
 
-#include "testsuite/dlvhex/DepGraphTest.h"
-
-#include "dlvhex/HexDepGraphBuilder.h"
-#include "dlvhex/HexDepGraph.h"
+#include "dlvhex/Program.h"
+#include "dlvhex/BaseVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-// Registers the fixture into the 'registry'
-CPPUNIT_TEST_SUITE_REGISTRATION(DepGraphTest);
-
-void
-DepGraphTest::setUp()
+Program::Program()
 {
 }
 
-void
-DepGraphTest::tearDown() 
-{
-}
 
 void
-DepGraphTest::testDepGraphBuilder()
+Program::addRule(Rule* r)
 {
-  HexDepGraphBuilder hdgb;
+	rules.insert(r);
 
-  VertexProperty vp;
-  EdgeProperty ep;
-
-  HexDepGraph::vertex_descriptor u;
-  HexDepGraph::vertex_descriptor v;
-
-  u = hdgb.buildVertex(vp);
-  v = hdgb.buildVertex(vp);
-
-  hdgb.buildEdge(u, v, ep);
-
-  boost::shared_ptr<HexDepGraph> dg = hdgb.getDepGraph();
-
-  CPPUNIT_ASSERT(boost::num_vertices(*dg) == 2);
-  CPPUNIT_ASSERT(boost::num_edges(*dg) == 1);
+	//
+	// store the rule's external atoms also separately
+	//
+	for (RuleBody_t::const_iterator bi = r->getBody().begin();
+			bi != r->getBody().end();
+			++bi)
+	{
+	  if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
+	    {
+	      externalAtoms.push_back(static_cast<ExternalAtom*>((*bi)->getAtom().get()));
+	    }
+	}
 }
 
+
+void
+Program::deleteRule(iterator i)
+{
+	rules.erase(i.it);
+}
+
+
+void
+Program::addWeakConstraint(WeakConstraint* wc)
+{
+	///@todo don't add the same wc twice!
+
+	rules.insert(wc);
+
+	weakConstraints.push_back(wc);
+}
+
+
+const std::vector<WeakConstraint*>&
+Program::getWeakConstraints() const
+{
+	return weakConstraints;
+}
+
+
+const std::vector<ExternalAtom*>&
+Program::getExternalAtoms() const
+{
+	return externalAtoms;
+}
+
+
+void
+Program::accept(BaseVisitor& v)
+{
+  v.visit(this);
+}
 
 DLVHEX_NAMESPACE_END
 

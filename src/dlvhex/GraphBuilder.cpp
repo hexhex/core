@@ -34,6 +34,7 @@
 #include "dlvhex/NodeGraph.h"
 #include "dlvhex/Component.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Registry.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/AggregateAtom.h"
 #include "dlvhex/PluginContainer.h"
@@ -42,8 +43,6 @@
 #include <iostream>
 #include <sstream>
 
-#include <boost/iterator/indirect_iterator.hpp>
-
 DLVHEX_NAMESPACE_BEGIN
 
 
@@ -51,9 +50,9 @@ DLVHEX_NAMESPACE_BEGIN
 struct LiteralUnifies
 {
   bool
-  operator() (const BaseLiteral& l1, const BaseLiteral& l2)
+  operator() (Literal* const& l1, Literal* const& l2)
   {
-    return l1.unifiesWith(l2);
+    return l1->getAtom()->unifiesWith(l2->getAtom());
   }
 };
 
@@ -71,7 +70,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
   std::multimap<Term, AtomNodePtr> extinputs;
   std::multimap<Term, AtomNodePtr> agginputs;
 	
-  typedef std::multimap<ExternalAtom, std::pair<std::string,BodyPtr> > ExtAuxMap;
+  typedef std::multimap<ExternalAtom, std::pair<std::string,RuleBody_t> > ExtAuxMap;
   ExtAuxMap auxmap;
   unsigned auxcounter = 0;
 
@@ -83,7 +82,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
   //
   // go through all rules of the given program
   //
-  for (Program::const_iterator r = program.begin();
+  for (Program::iterator r = program.begin();
        r != program.end();
        ++r)
     {
@@ -95,10 +94,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
       //
       // go through entire head disjunction
       //
-      const HeadPtr& head = (*r)->head();
+      const RuleHead_t& head = (*r)->getHead();
 
-      for (Head::const_iterator hi = head->begin();
-	   hi != head->end();
+      for (RuleHead_t::const_iterator hi = head.begin();
+	   hi != head.end();
 	   ++hi)
 	{
 	  //
@@ -127,12 +126,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  currentHeadNodes.push_back(hn);
 	}
 
-      ///@todo what should we do with constraints???
-#if 0
       //
       // constraint: create virtual head node to keep the rule
       //
-      if (head->empty())
+      if (head.size() == 0)
 	{
 	  AtomPtr va(new boolAtom);
 	  
@@ -140,7 +137,6 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  
 	  currentHeadNodes.push_back(vn);
 	}
-#endif // 0
 
 
       std::vector<AtomNodePtr> currentBodyNodes;
@@ -150,10 +146,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
       // go through rule body
       //
       
-      const BodyPtr& body = (*r)->body();
+      const RuleBody_t& body = (*r)->getBody();
       
-      for (Body::const_iterator li = body->begin();
-	   li != body->end();
+      for (RuleBody_t::const_iterator li = body.begin();
+	   li != body.end();
 	   ++li)
 	{
 	  const AtomPtr at = (*li)->getAtom();
@@ -172,7 +168,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  // inputs!
 	  //
 
-	  if (typeid(**li) == typeid(Literal<Positive>))
+	  if (!(*li)->isNAF())
 	    {
 	      currentBodyNodes.push_back(bn);
 	    }
@@ -189,7 +185,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	       currhead != currentHeadNodes.end();
 	       ++currhead)
 	    {
-	      if (typeid(**li) == typeid(Literal<Positive>))
+	      if ((*li)->isNAF())
 		{
 		  Dependency::addDep(*r, bn, *currhead, Dependency::NEG_PRECEDING);
 		}
@@ -213,19 +209,14 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	    {
 	      ExternalAtom* ext = static_cast<ExternalAtom*>((*li)->getAtom().get());
 	      
-	      boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getPredicate().getString());
+	      boost::shared_ptr<PluginAtom> pluginAtom = container.getAtom(ext->getFunctionName());
 	      
 	      if (!pluginAtom)
 		{
-		  std::ostringstream oss;
-
-		  oss << "Could not find plugin for external atom " 
-		      << ext->getPredicate();
-
-		  throw PluginError(oss.str());
+		  throw PluginError("Could not find plugin for external atom " + ext->getFunctionName());
 		}
 
-	      const Tuple& input = ext->getInputList();
+	      const Tuple& input = ext->getInputTerms();
 
 	      //
 	      // check input and output arity of external atoms
@@ -237,8 +228,8 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  
 		  PluginError e("Arity mismatch for input list");
 
-		  atomstr << ext->getPredicate() << "["
-			  << ext->getInputList() << "](" 
+		  atomstr << ext->getFunctionName() << "["
+			  << ext->getInputTerms() << "](" 
 			  << ext->getArguments() << ")"
 			  << " in line "
 			  << ext->getLine();
@@ -253,8 +244,8 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  
 		  PluginError e("Arity mismatch for output list");
 
-		  atomstr << ext->getPredicate() << "["
-			  << ext->getInputList() << "](" 
+		  atomstr << ext->getFunctionName() << "["
+			  << ext->getInputTerms() << "](" 
 			  << ext->getArguments() << ")"
 			  << " in line "
 			  << ext->getLine();
@@ -304,11 +295,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      
 	      AggregateAtom* agg = static_cast<AggregateAtom*>((*li)->getAtom().get());
 	      
-	      const BodyPtr& aggb = agg->getBody();
+	      const RuleBody_t& aggb = agg->getBody();
 	      
-	      for (Body::const_iterator aggit = aggb->begin();
-		   aggit != aggb->end();
-		   ++aggit)
+	      for (RuleBody_t::const_iterator aggit = aggb.begin(); aggit != aggb.end(); ++aggit)
 		{
 		  //
 		  // store the AtomNode of this aggregate atom
@@ -352,7 +341,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      // ok, this extatom needs an auxiliary rule.
 	      // get the parameters, i.e., the input terms
 	      //
-	      const Tuple& extinput = ext->getInputList();
+	      const Tuple& extinput = ext->getInputTerms();
 			
 
 	      //
@@ -360,7 +349,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      // (ordinary or external) that have variables with the
 	      // aux_head in common and that are not weakly negated!
 	      //
-	      BodyPtr auxbody(new Body);
+	      RuleBody_t auxbody;
 
 
 	      for (std::vector<AtomNodePtr>::iterator currbody = currentBodyNodes.begin();
@@ -408,9 +397,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 			  //
 			  // make new literals with the (ordinary) body atoms of the new aux rule
 			  //
-			  LiteralPtr l(new Literal<Positive>((*currbody)->getAtom()));
+			  Literal* l = new Literal((*currbody)->getAtom());
+			  Registry::Instance()->storeObject(l);
 			  // add the literal to the auxiliary rule body
-			  auxbody->push_back(l);
+			  auxbody.insert(l);
 			  break;
 			}
 		    }
@@ -424,22 +414,15 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 	      std::string auxname;
 
-	      std::pair<ExtAuxMap::const_iterator, ExtAuxMap::const_iterator>
-		range = auxmap.equal_range(*ext);
+	      std::pair<ExtAuxMap::const_iterator, ExtAuxMap::const_iterator> range = auxmap.equal_range(*ext);
 
-	      for (ExtAuxMap::const_iterator rgit = range.first;
-		   rgit != range.second;
-		   ++rgit)
+	      for (ExtAuxMap::const_iterator rgit = range.first; rgit != range.second; ++rgit)
 		{
-		  const std::pair<std::string, BodyPtr>& tup = rgit->second;
-		  const BodyPtr& mauxbody = tup.second;
+		  const std::pair<std::string, RuleBody_t>& tup = rgit->second;
+		  const RuleBody_t& mauxbody = tup.second;
 
-		  ///@todo I doubt that this works if Body is unsorted -> sort them first!
-		  if (auxbody->size() == mauxbody->size() &&
-		      std::equal(boost::make_indirect_iterator(auxbody->begin()),
-				 boost::make_indirect_iterator(auxbody->end()),
-				 boost::make_indirect_iterator(mauxbody->begin()),
-				 LiteralUnifies()))
+		  if (auxbody.size() == mauxbody.size() &&
+		      std::equal(auxbody.begin(), auxbody.end(), mauxbody.begin(), LiteralUnifies()))
 		    {
 		      // everything unifies, reuse auxname from the ExtMap
 		      auxname = tup.first;
@@ -447,8 +430,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		    }
 		}
 
-	      // no body in the auxmap unifies with our current body
-	      if (auxname.empty())
+	      if (auxname.empty()) // no body in the auxmap unifies with our current body
 		{
 		  std::ostringstream oss;
 		  oss << ext->getReplacementName() << "_aux" << auxcounter;
@@ -461,16 +443,14 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		  auxmap.insert(std::make_pair(*ext, std::make_pair(auxname, auxbody)));
 		}
 
-	      Term auxpred(auxname);
-
 	      // set the new auxiliary name for this extatom
-	      ext->setAuxPredicate(auxpred);
+	      ext->setAuxPredicate(auxname);
 
 	      //
 	      // make a new atom with the ext-parameters as arguments,
 	      // this will be the head of the auxiliary rule
 	      //
-	      AtomPtr auxheadatom(new Atom<Positive>(auxpred, extinput));
+	      AtomPtr auxheadatom(new Atom(auxname, extinput));
 
 	      //
 	      // add a new head node for the graph with this atom
@@ -480,23 +460,25 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      //
 	      // now we create the auxiliary rule
 	      //
-	      HeadPtr auxhead(new Head(1, auxheadatom));
+	      RuleHead_t auxhead;
 
-	      RulePtr auxrule(new Rule(auxhead, auxbody));
+	      auxhead.insert(auxheadatom);
+
+	      Rule* auxrule = new Rule(auxhead, auxbody);
+
+	      Registry::Instance()->storeObject(auxrule);
 
 	      //
 	      // add EXTERNAL_AUX dependency from this new head to the
 	      // external atom node
-	      ///@todo empty RulePtr() right?
-	      Dependency::addDep(RulePtr(), auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
+	      //
+	      Dependency::addDep(0, auxheadnode, *currextbody, Dependency::EXTERNAL_AUX);
 
 	      //
 	      // and finally go through auxbody and add dependencies
 	      // to the new auxhead
 	      //
-	      for (Body::const_iterator it = auxbody->begin();
-		   it != auxbody->end();
-		   ++it)
+	      for (RuleBody_t::const_iterator it = auxbody.begin(); it != auxbody.end(); ++it)
 		{
 		  //
 		  // make a node for each of these new atoms
@@ -547,22 +529,22 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	  //
 	  // add EXTERNAL dependency: from this node to the external
 	  // atom (second in the pair of the multimap)
-	  ///@todo empty RulePtr() right?
+	  //
 	  for (mi i = erange.first; i != erange.second; ++i)
 	    {
-	      Dependency::addDep(RulePtr(), *node, i->second, Dependency::EXTERNAL);
+	      Dependency::addDep(0, *node, i->second, Dependency::EXTERNAL);
 	    }
 
 	  //
 	  // add PRECEDING dependency: from this node to the aggregate
 	  // atom (i->second)
-	  ///@todo empty RulePtr() right?
+	  //
 	  for (mi i = arange.first; i != arange.second; ++i)
 	    {
 	      /// @todo is a PRECEDING dependency sufficient for
 	      /// aggregate atoms, or do we need to add a new
 	      /// dependency type?
-	      Dependency::addDep(RulePtr(), *node, i->second, Dependency::PRECEDING);
+	      Dependency::addDep(0, *node, i->second, Dependency::PRECEDING);
 	    }
 	}
     }

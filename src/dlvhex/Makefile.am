@@ -22,9 +22,6 @@ EXTRA_DIST = \
 dist-hook:
 	$(LN_S) @FLEXLEXER_H@ $(top_distdir)/src/dlvhex
 
-# remove $prefix/lib/dlvhex directory after uninstall
-uninstall-hook:
-	-test -d $(DESTDIR)$(pkglibdir) && rmdir $(DESTDIR)$(pkglibdir); exit 0
 
 # global preprocessor flags
 AM_CPPFLAGS = \
@@ -67,17 +64,13 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 libdlvhexbase_la_SOURCES = \
     HexParser.ypp \
     HexScanner.lpp \
+    Atom.cpp \
     AggregateAtom.cpp \
     AtomNode.cpp \
-    BaseAtom.cpp \
-    BaseLiteral.cpp \
-    BaseQuery.cpp \
-    BaseRule.cpp \
+    AtomSet.cpp \
     BoostComponentFinder.cpp \
-    BuiltinPredicate.cpp \
     Component.cpp \
     ComponentFinder.cpp \
-    Constraint.cpp \
     Dependency.cpp \
     DependencyGraph.cpp \
     EvaluateExtatom.cpp \
@@ -88,18 +81,20 @@ libdlvhexbase_la_SOURCES = \
     GraphBuilder.cpp \
     GraphProcessor.cpp \
     GuessCheckModelGenerator.cpp \
+    Literal.cpp \
     NodeGraph.cpp \
     OrdinaryModelGenerator.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
-    PredefinedNames.cpp \
     PrintVisitor.cpp \
+    Program.cpp \
     ProgramCtx.cpp \
+    Repository.cpp \
+    Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    Term.cpp \
-    WeakConstraint.cpp
+    Term.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \

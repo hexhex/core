@@ -79,34 +79,31 @@ RuleMLOutputBuilder::buildResult(std::ostream& stream, const ResultContainer& fa
     {
 	stream << "<And>" << std::endl;
 
-	const AtomSet& atoms = (*as)->getAtomSet();
-
-	for (AtomSet::const_iterator f = atoms.begin(); f != atoms.end(); ++f)
+	for (AnswerSet::const_iterator f = (*as)->begin();
+	     f != (*as)->end();
+	     ++f)
 	  {
-	    bool isNegated = typeid(**f) == typeid(Atom<Negative>);
-
-	    if (isNegated)
+	    if (f->isStronglyNegated())
 	      {
 		stream << "<Neg>";
 	      }
 
-	    stream << "<Atom>"
-		   << "<Rel>"
-		   << "<![CDATA[" << (*f)->getPredicate() << "]]>"
-		   << "</Rel>";
+	    stream << "<Atom>";
+	    
+	    stream << "<Rel>";
+	    stream << "<![CDATA[" << f->getArgument(0) << "]]>";
+	    stream << "</Rel>";
 
-	    const Tuple& args = (*f)->getArguments();
-
-	    for (Tuple::const_iterator it = args.begin(); it != args.end(); ++it)
+	    for (unsigned i = 1; i <= f->getArity(); i++)
 	      {
-		stream << "<Ind>"
-		       << "<![CDATA[" << *it << "]]>"
-		       << "</Ind>";
+		stream << "<Ind>";
+		stream << "<![CDATA[" << f->getArgument(i) << "]]>";
+		stream << "</Ind>";
 	      }
 
 	    stream << "</Atom>";
 	    
-	    if (isNegated)
+	    if (f->isStronglyNegated())
 	      {
 		stream << "</Neg>";
 	      }

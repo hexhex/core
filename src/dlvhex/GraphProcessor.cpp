@@ -125,9 +125,7 @@ GraphProcessor::run(const AtomSet& in)
 	  // with each of these models (*mi), we loop through all leaf components.
 	  // result sets of one component are input to the next.
 	  //
-	  for (std::vector<AtomSet>::iterator mi = resultModels.begin();
-	       mi != resultModels.end();
-	       ++mi)
+	  for (std::vector<AtomSet>::iterator mi = resultModels.begin(); mi != resultModels.end(); ++mi)
 	    {
 	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		{
@@ -136,7 +134,7 @@ GraphProcessor::run(const AtomSet& in)
 							  << leaves.size()
 							  << " leaves: " << std::endl;
 		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		  rpv << *mi;
+		  mi->accept(rpv);
 		  Globals::Instance()->getVerboseStream() << std::endl << "==============================" << std::endl;
 		}
 	      
@@ -200,7 +198,7 @@ GraphProcessor::run(const AtomSet& in)
 			   tmpi != f1.end();
 			   ++tmpi)
 			{
-			  rpv << *tmpi;
+			  tmpi->accept(rpv);
 			  Globals::Instance()->getVerboseStream() << std::endl;
 			}
 		      
@@ -237,8 +235,8 @@ GraphProcessor::run(const AtomSet& in)
 				{
 				  AtomSet un;
 
-				  un.insert(i1->begin(), i1->end());
-				  un.insert(i2->begin(), i2->end());
+				  un.insert(*i1);
+				  un.insert(*i2);
 
 				  // add back the multiplied results
 				  componentLayerResult.push_back(un);
@@ -260,7 +258,7 @@ GraphProcessor::run(const AtomSet& in)
 		       ++it)
 		    {
 		      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		      rpv << *it;
+		      const_cast<AtomSet&>(*it).accept(rpv);
 		      Globals::Instance()->getVerboseStream() << std::endl;
 		    }
 		  
@@ -356,7 +354,7 @@ GraphProcessor::run(const AtomSet& in)
 		   ++it)
 		{
 		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-		  rpv << *it;
+		  it->accept(rpv);
 		  Globals::Instance()->getVerboseStream() << std::endl;
 		}
 	    }

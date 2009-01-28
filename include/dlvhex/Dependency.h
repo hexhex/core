@@ -98,7 +98,7 @@ public:
 	 * @brief Construct a dependency of a specific type to a given AtomNode
 	 * target.
 	 */
-	Dependency(const RulePtr&, const AtomNodePtr&, Type);
+	Dependency(Rule*, const AtomNodePtr&, Type);
 
 	/**
 	 * @brief Return the dependency type.
@@ -111,7 +111,7 @@ public:
 	 *
 	 * @return the rule that created this dependency.
 	 */
-	RulePtr
+	Rule*
 	getRule() const;
 
 	/**
@@ -125,7 +125,7 @@ public:
 	 *
 	 */
 	static void
-	addDep(const RulePtr&, const AtomNodePtr&, const AtomNodePtr&, Type);
+	addDep(Rule*, const AtomNodePtr&, const AtomNodePtr&, Type);
 
 	/**
 	 * @brief Comparison operator needed for std::set<Dependency>.
@@ -148,7 +148,7 @@ private:
 	/**
 	 * a dependency belongs to a certain rule.
 	 */
-	RulePtr rule;
+	Rule* rule;
 
 };
 

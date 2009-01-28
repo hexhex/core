@@ -31,8 +31,6 @@
  *
  */
 
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomSet.h"
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"
@@ -267,7 +265,7 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
 	      {
 		oss.str("");
 		
-		nodes[y]->getAtom()->accept(&rpv);
+		nodes[y]->getAtom()->accept(rpv);
 
 		std::string at(oss.str());
 

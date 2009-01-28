@@ -25,7 +25,7 @@
  * @author Thomas Krennwallner
  * @date   Mon Oct 23 18:16:28 2006
  * 
- * @brief  The base class for all Visitors.
+ * @brief  The baseclass for all Visitors.
  * 
  * 
  */
@@ -35,20 +35,18 @@
 #define _DLVHEX_BASEVISITOR_H
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/NegationTraits.h"
-#include "dlvhex/QueryTraits.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
 //
 // forward declarations
 //
-template<typename T> class Query;
+class Program;
+class AtomSet;
 class Rule;
-class Constraint;
 class WeakConstraint;
-template<typename T> class Atom;
-template<typename T> class Literal;
+class Literal;
+class Atom;
 class ExternalAtom;
 class BuiltinPredicate;
 class AggregateAtom;
@@ -57,7 +55,7 @@ class AggregateAtom;
 /**
  * @brief The baseclass for all visitors.
  *
- * When calling the accept(BaseVisitor*) method of an object, the
+ * When calling the accept(BaseVisitor&) method of an object, the
  * object knows its own type and calls the corresponding visiting
  * method of BaseVisitor.
  */
@@ -68,15 +66,15 @@ public:
   ~BaseVisitor()
   { }
 
-  // visit different types of queries
+  virtual void
+  visit(Program* const) = 0;
+
+  // a set of atoms
 
   virtual void
-  visit(Query<Brave>* const) = 0;
+  visit(AtomSet* const) = 0;
 
-  virtual void
-  visit(Query<Cautious>* const) = 0;
-
-  // visit different types of rules
+  // different types of rules
 
   virtual void
   visit(Rule* const) = 0;
@@ -84,24 +82,15 @@ public:
   virtual void
   visit(WeakConstraint* const) = 0;
 
-  virtual void
-  visit(Constraint* const) = 0;
-
-  // visit positive and negative literals
+  // a literal
 
   virtual void
-  visit(Literal<Positive>* const) = 0;
+  visit(Literal* const) = 0;
+
+  // different types of atoms
 
   virtual void
-  visit(Literal<Negative>* const) = 0;
-
-  // visit different types of atoms
-
-  virtual void
-  visit(Atom<Positive>* const) = 0;
-
-  virtual void
-  visit(Atom<Negative>* const) = 0;
+  visit(Atom* const) = 0;
 
   virtual void
   visit(ExternalAtom* const) = 0;

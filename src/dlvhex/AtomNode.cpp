@@ -32,9 +32,8 @@
 
 #include "dlvhex/AtomNode.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/Registry.h"
 
-#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -128,47 +127,42 @@ AtomNode::getSucceeding() const
 }
 
 
-const Program&
+const std::vector<Rule*>&
 AtomNode::getRules() const
 {
-  //
-  // only start the rule-creation machinery if this AtomNode is a
-  // head-node and the cache is still empty
-  //
-
-  // we call getRules for the very first time
-  if (this->rules.empty() && isHead())
-    {
-      typedef std::set<RulePtr> SetOfRules;
-      SetOfRules ruleset;
-      
-      for (std::set<Dependency>::const_iterator d = getPreceding().begin();
-	   d != getPreceding().end(); ++d)
+	//
+	// only start the rule-creation machinery if this AtomNode is a
+	// head-node and the cache is still empty
+	//
+	if (this->rules.empty() && isHead()) // we call getRules for the very first time
 	{
-	  Dependency::Type deptype = d->getType();
-	  
-	  //
-	  // if deptype is none of DISJ, PREC, or NEG_PREC, we
-	  // skip it and continue our search for rule candidates
-	  // only these types of dependency stem from actual rules
-	  //
-	  if (deptype & ~(Dependency::DISJUNCTIVE |
-			  Dependency::PRECEDING |
-			  Dependency::NEG_PRECEDING))
-	    {
-	      continue; // we only take care of head or body dependencies
-	    }
-	  
-	  // try to create a new rule in the ruleset
-	  ruleset.insert(d->getRule());
-	}
-      
-      // and now add the fresh rules to our own "rule cache"
-      std::copy(ruleset.begin(), ruleset.end(),
-		std::inserter(this->rules, this->rules.begin()));
-    }
+		typedef std::set<Rule*> SetOfRules;
+		SetOfRules ruleset;
 
-  return this->rules;
+		for (std::set<Dependency>::const_iterator d = getPreceding().begin();
+				d != getPreceding().end(); ++d)
+		{
+			Dependency::Type deptype = d->getType();
+
+			//
+			// if deptype is none of DISJ, PREC, or NEG_PREC, we
+			// skip it and continue our search for rule candidates
+			// only these types of dependency stem from actual rules
+			//
+			if (deptype & ~(Dependency::DISJUNCTIVE | Dependency::PRECEDING | Dependency::NEG_PRECEDING))
+			{
+				continue; // we only take care of head or body dependencies
+			}
+
+			// try to create a new rule in the ruleset
+			ruleset.insert(d->getRule());
+		}
+
+		// and now add the fresh rules to our own "rule cache"
+		std::copy(ruleset.begin(), ruleset.end(), std::inserter(this->rules, this->rules.begin()));
+	}
+
+	return this->rules;
 }
 
 
