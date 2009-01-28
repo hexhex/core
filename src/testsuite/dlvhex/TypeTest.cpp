@@ -37,7 +37,7 @@
 
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/AtomSetFunctions.h"
-
+#include <boost/iterator/indirect_iterator.hpp>
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -195,6 +195,7 @@ AtomTest::testSerialization()
   out.str("");
   
   ho->accept(&rpv);
+
   CPPUNIT_ASSERT(out.str() == "Bob(foo,Var,S)");
   
   out.str("");
@@ -270,7 +271,19 @@ AtomSetTest::testConstruction()
   s2.insert(a5);
   s2.insert(a4);
 
-  CPPUNIT_ASSERT(s1 == s2);
+  RawPrintVisitor rpv(std::cerr);
+  std::cerr << std::endl;
+  std::cerr << std::endl;
+  rpv << s1;
+  std::cerr << std::endl;
+  rpv << s2;
+  std::cerr << std::endl;
+  std::cerr << std::endl;
+
+  //  CPPUNIT_ASSERT(s1 == s2);
+  CPPUNIT_ASSERT(std::equal(boost::make_indirect_iterator(s1.begin()),
+			    boost::make_indirect_iterator(s1.end()),
+			    boost::make_indirect_iterator(s2.begin())));
   
   s1.clear();
   s2.clear();
