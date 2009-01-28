@@ -85,8 +85,11 @@ DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
             ModelGenerator* mg;
 
             //
-            // if we have a negated edge in this nodeset, we have an unstratifed
-            // component (because the nodeset is already a SCC!)
+            // if we have a negated edge in this nodeset, we have an
+            // unstratifed component (because the nodeset is already a
+            // SCC!).
+	    //
+	    // This is also true for cycles through a disjunction.
             //
             if (hasNegEdge(*scc))
             {

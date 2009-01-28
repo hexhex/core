@@ -317,6 +317,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	}
 
 
+      ///@todo I'm not convinced that this should be equal, I think
+      ///this should be \subseteq!
       if (externalguess == checkresult)
 	{
 	  //
