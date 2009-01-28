@@ -1,3 +1,13 @@
+2009-01-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/TypeTest.cpp: Add boost:indirect_iterator.
+
+	* src/dlvhex/Makefile.am (uninstall-hook): Remove installed dlvhex subdir.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/DepGraphDirector.tcc: New file.
+	* include/dlvhex/DepGraphDirector.h: Likewise.
+
 2008-08-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
