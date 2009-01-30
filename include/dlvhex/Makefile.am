@@ -34,12 +34,13 @@ pkginclude_HEADERS = \
 	ExternalAtom.h \
 	globals.h \
 	GraphBuilder.h \
+	HexDepGraph.h \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
-    PlatformDefinitions.h \
+	PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \
