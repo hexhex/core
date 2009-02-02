@@ -150,7 +150,6 @@ struct HexDepGraphType
   typedef boost::property_map<HexDepGraph, boost::edge_bundle_t>::type EdgeProperty;
 };
 
-
 DLVHEX_NAMESPACE_END
 
 #endif /* _DLVHEX_HEXDEPGRAPH_H */
