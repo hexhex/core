@@ -100,7 +100,7 @@ class DLVHEX_EXPORT DepGraphDirector : public BaseVisitor
   virtual void
   visit(AggregateAtom* const);
 
-  virtual DepGraph
+  virtual boost::shared_ptr<DepGraph>
   getComponents();
 };
 

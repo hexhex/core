@@ -42,16 +42,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
 
 /**
  * @brief Class for building a dependency graph from a HEX program.
  *
- * Takes a set of rules and builds the according dependency graph.
+ * Takes a set of rules and builds the according dependency graph,
  * including any artificial nodes that had to be created for auxiliary
  * rules, e.g., for external atoms with variable input parameters.
  */
-
 template<class DepGraph, class Vertex, class Edge, class VP, class EP>
 class DLVHEX_EXPORT HexDepGraphDirector :
   public DepGraphDirector<HexDepGraph,
@@ -62,11 +60,13 @@ class DLVHEX_EXPORT HexDepGraphDirector :
 {
  public:
   
-  typedef HexDepGraphBuilder<HexDepGraph, HexDepGraphType::Vertex, HexDepGraphType::Edge, HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty> HexDGBuilder;
+  typedef HexDepGraphBuilder<HexDepGraph,
+    HexDepGraphType::Vertex, HexDepGraphType::Edge,
+    HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty> HexDGBuilder;
 
   HexDepGraphDirector(HexDGBuilder&, PluginContainer&);
   
-  virtual HexDepGraph
+  virtual boost::shared_ptr<HexDepGraph>
   getComponents();
 };
 
