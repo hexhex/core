@@ -1,8 +1,18 @@
+2009-02-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/DepGraphDirector.h (getComponents): Return a
+	boost::shared_ptr<>.
+	* include/dlvhex/HexDepGraphDirector.h: Likewise.
+
+	* include/dlvhex/HexDepGraphBuilder.h: Add documentation.
+	* include/dlvhex/DepGraphBuilder.h: Likewise.
+
 2009-02-02  DAO Tran Minh  <dao@kr.tuwien.ac.at>
-	* include/dlvhex/DepGraphBuilder.tcc: Add DepGraphBuilder.tcc
-	* include/dlvhex/DepGraphDirector.tcc: Add DepGraphDirector.tcc
-	* include/dlvhex/HexDepGraphBuilder.h: Add HexDepGraphBuilder.h
-	* include/dlvhex/HexDepGraphDirector.h: Add HexDepGraphDirector.h
+
+	* include/dlvhex/DepGraphBuilder.tcc: New file.
+	* include/dlvhex/DepGraphDirector.tcc: Likewise.
+	* include/dlvhex/HexDepGraphBuilder.h: Likewise.
+	* include/dlvhex/HexDepGraphDirector.h: Likewise.
 
 2009-01-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
