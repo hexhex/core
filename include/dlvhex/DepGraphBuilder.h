@@ -65,7 +65,6 @@ DLVHEX_NAMESPACE_END
 
 #endif /* _DLVHEX_DEPGRAPHBUILDER_H */
 
-
 // Local Variables:
 // mode: C++
 // End:

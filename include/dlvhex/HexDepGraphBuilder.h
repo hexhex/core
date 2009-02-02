@@ -33,12 +33,12 @@
  */
 
 
-#if !defined(_DLVHEX_HEXDEPGRAPH_BUILDER_H)
-#define _DLVHEX_HEXDEPGRAPH_BUILDER_H
+#if !defined(_DLVHEX_HEXDEPGRAPHBUILDER_H)
+#define _DLVHEX_HEXDEPGRAPHBUILDER_H
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/HexDepGraph.h"
-#include "dlvhex/DepGraphBuilder.tcc"
+#include "dlvhex/DepGraphBuilder.h"
 
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -86,7 +86,7 @@ class DLVHEX_EXPORT HexDepGraphBuilder
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_HEXDEPGRAPH_BUILDER_H */
+#endif /* _DLVHEX_HEXDEPGRAPHBUILDER_H */
 
 
 // Local Variables:

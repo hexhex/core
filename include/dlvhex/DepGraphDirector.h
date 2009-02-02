@@ -22,7 +22,7 @@
 
 
 /**
- * @file DepGraphDirector.tcc
+ * @file DepGraphDirector.h
  * @author Thomas Krennwallner
  * @author DAO Tran Minh
  * @date Mon Feb 02 12:33:21 CET 2009
@@ -32,8 +32,8 @@
  *
  */
 
-#if !defined(_DLVHEX_DEPGRAPHDIRECTOR_TCC)
-#define _DLVHEX_DEPGRAPHDIRECTOR_TCC
+#if !defined(_DLVHEX_DEPGRAPHDIRECTOR_H)
+#define _DLVHEX_DEPGRAPHDIRECTOR_H
 
 #include "dlvhex/PlatformDefinitions.h"
 
@@ -106,9 +106,7 @@ class DLVHEX_EXPORT DepGraphDirector : public BaseVisitor
 
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_DEPGRAPHDIRECTOR_TCC */
-
-#include "dlvhex/DepGraphDirector.tcc"
+#endif /* _DLVHEX_DEPGRAPHDIRECTOR_H */
 
 // Local Variables:
 // mode: C++

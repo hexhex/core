@@ -37,7 +37,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/DepGraphDirector.tcc"
+#include "dlvhex/DepGraphDirector.h"
 #include "dlvhex/HexDepGraph.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -53,14 +53,19 @@ DLVHEX_NAMESPACE_BEGIN
  */
 
 template<class DepGraph, class Vertex, class Edge, class VP, class EP>
-class DLVHEX_EXPORT HexDepGraphDirector : public DepGraphDirector<HexDepGraph, HexDepGraphType::Vertex, HexDepGraphType::Edge, HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty>
+class DLVHEX_EXPORT HexDepGraphDirector :
+  public DepGraphDirector<HexDepGraph,
+			  HexDepGraphType::Vertex,
+			  HexDepGraphType::Edge,
+			  HexDepGraphType::VertexProperty,
+			  HexDepGraphType::EdgeProperty>
 {
  public:
-
+  
   typedef HexDepGraphBuilder<HexDepGraph, HexDepGraphType::Vertex, HexDepGraphType::Edge, HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty> HexDGBuilder;
 
- HexDepGraphDirector(HexDGBuilder&, PluginContainer&);
-
+  HexDepGraphDirector(HexDGBuilder&, PluginContainer&);
+  
   virtual HexDepGraph
   getComponents();
 };
