@@ -1,3 +1,9 @@
+2009-02-02  DAO Tran Minh  <dao@kr.tuwien.ac.at>
+	* include/dlvhex/DepGraphBuilder.tcc: Add DepGraphBuilder.tcc
+	* include/dlvhex/DepGraphDirector.tcc: Add DepGraphDirector.tcc
+	* include/dlvhex/HexDepGraphBuilder.h: Add HexDepGraphBuilder.h
+	* include/dlvhex/HexDepGraphDirector.h: Add HexDepGraphDirector.h
+
 2009-01-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am (pkginclude_HEADERS): Add HexDepGraph.h.
