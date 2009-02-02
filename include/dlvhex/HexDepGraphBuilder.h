@@ -37,51 +37,78 @@
 #define _DLVHEX_HEXDEPGRAPHBUILDER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/HexDepGraph.h"
-#include "dlvhex/DepGraphBuilder.h"
 
-#include <boost/graph/subgraph.hpp>
-#include <boost/graph/adjacency_list.hpp>
+#include "dlvhex/DepGraphBuilder.h"
+#include "dlvhex/HexDepGraph.h"
+
+#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
-class PluginContainer;
-class Program;
 
-
+/**
+ * @brief implementation of a dependency graph builder for HexDepGraph.
+ */
 class DLVHEX_EXPORT HexDepGraphBuilder 
-: public DepGraphBuilder<HexDepGraph, HexDepGraphType::Vertex, HexDepGraphType::Edge, HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty>
+  : public DepGraphBuilder<HexDepGraph, 
+			   HexDepGraphType::Vertex, 
+			   HexDepGraphType::Edge, 
+			   HexDepGraphType::VertexProperty, 
+			   HexDepGraphType::EdgeProperty>
 {
  protected:
+  /// the HEX dependency graph
   boost::shared_ptr<HexDepGraph> dg;
+
   
  public:
 
- HexDepGraphBuilder() : dg(new HexDepGraph)
-    { }
+  HexDepGraphBuilder()
+    : dg(new HexDepGraph)
+  { }
   
-  
+
+  /** 
+   * @return dependency graph
+   */
   virtual boost::shared_ptr<HexDepGraph>
-    getDepGraph() const
-    {
-      return dg;
-    }
+  getDepGraph() const
+  {
+    return dg;
+  }
   
   
+  /** 
+   * Add a new node to the dependency graph.
+   * 
+   * @param vp vertex property
+   * 
+   * @return new vertex
+   */
   virtual HexDepGraphType::Vertex
-    buildVertex(HexDepGraphType::VertexProperty& vp)
-    {
-      return boost::add_vertex(vp, *dg);
-    }
+  buildVertex(HexDepGraphType::VertexProperty& vp)
+  {
+    return boost::add_vertex(vp, *dg);
+  }
+
   
-  
+  /** 
+   * Add an edge to the dependency graph.
+   * 
+   * @param u start node
+   * @param v end node
+   * @param ep edge property
+   * 
+   * @return new edge
+   */
   virtual HexDepGraphType::Edge
-    buildEdge(HexDepGraphType::Vertex u, HexDepGraphType::Vertex v, HexDepGraphType::EdgeProperty& ep)
-    {
-      std::pair<HexDepGraphType::Edge, bool> eret = boost::add_edge(u, v, ep, *dg);
-      return eret.first;
-    }
+  buildEdge(HexDepGraphType::Vertex u,
+	    HexDepGraphType::Vertex v,
+	    HexDepGraphType::EdgeProperty& ep)
+  {
+    std::pair<HexDepGraphType::Edge, bool> eret = boost::add_edge(u, v, ep, *dg);
+    return eret.first;
+  }
 };
 
 DLVHEX_NAMESPACE_END

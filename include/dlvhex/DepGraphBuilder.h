@@ -28,7 +28,7 @@
  * @author DAO Tran Minh
  * @date Mon Feb 02 11:30:40 CEST 2009
  *
- * @brief Classes for creating the dependency graph.
+ * @brief Abstract base class for creating a dependency graph.
  *
  *
  */
@@ -44,18 +44,39 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief Abstract base class for building a DepGraph.
+ * @brief Abstract base class for building a dependency graph.
  */
 template <class DG, class Vertex, class Edge, class VP, class EP>
 class DLVHEX_EXPORT DepGraphBuilder
 {
  public:
+  /** 
+   * @return the dependency graph
+   */
   virtual boost::shared_ptr<DG>
   getDepGraph() const = 0;
 
+  /** 
+   * Create a new node in the dependency graph with a designated
+   * vertex property.
+   * 
+   * @param vp vertex property
+   * 
+   * @return new vertex
+   */
   virtual Vertex
   buildVertex(VP& vp) = 0;
 
+  /** 
+   * Create a new edge in the dependency graph with a designated edge
+   * property.
+   * 
+   * @param u start node
+   * @param v end node
+   * @param ep edge proptery
+   * 
+   * @return new edge
+   */
   virtual Edge
   buildEdge(Vertex u, Vertex v, EP& ep) = 0;
 };
