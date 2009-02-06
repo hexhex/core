@@ -81,6 +81,7 @@ libdlvhexbase_la_SOURCES = \
     GraphBuilder.cpp \
     GraphProcessor.cpp \
     GuessCheckModelGenerator.cpp \
+    HexDepGraphDirector.cpp \
     Literal.cpp \
     NodeGraph.cpp \
     OrdinaryModelGenerator.cpp \
