@@ -1,7 +1,6 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
- * Copyright (C) 2008 Thomas Krennwallner
- * Copyright (C) 2009 Thomas Krennwallner, DAO Tran Minh
+ * Copyright (C) 2008, 2009 Thomas Krennwallner, DAO Tran Minh
  * 
  * This file is part of dlvhex.
  *
@@ -44,41 +43,61 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief Abstract base class for building a dependency graph.
+ * @brief Abstract base class for building a dependency graph with
+ * traits DG.
  */
-template <class DG, class Vertex, class Edge, class VP, class EP>
+template <typename DG>
 class DLVHEX_EXPORT DepGraphBuilder
 {
  public:
   /** 
    * @return the dependency graph
    */
-  virtual boost::shared_ptr<DG>
+  virtual boost::shared_ptr<typename DG::type>
   getDepGraph() const = 0;
 
   /** 
-   * Create a new node in the dependency graph with a designated
-   * vertex property.
+   * Create a new node in the dependency graph.
    * 
-   * @param vp vertex property
-   * 
-   * @return new vertex
+   * @return new vertex id
    */
-  virtual Vertex
-  buildVertex(VP& vp) = 0;
+  virtual typename DG::Vertex
+  buildVertex() = 0;
 
   /** 
-   * Create a new edge in the dependency graph with a designated edge
-   * property.
+   * @return the vertex properties of the graph
+   */
+  virtual typename DG::VertexProperty
+  getVertexProperties() = 0;
+
+  /** 
+   * @return begin and end iterator range of the vertices
+   */
+  virtual std::pair<typename DG::VertexIterator, typename DG::VertexIterator>
+  getVertices() = 0;
+
+  /** 
+   * Create a new edge in the dependency graph.
    * 
    * @param u start node
    * @param v end node
-   * @param ep edge proptery
    * 
-   * @return new edge
+   * @return new edge id
    */
-  virtual Edge
-  buildEdge(Vertex u, Vertex v, EP& ep) = 0;
+  virtual typename DG::Edge
+  buildEdge(const typename DG::Vertex& u, const typename DG::Vertex& v) = 0;
+
+  /** 
+   * @return the edge properties of the graph
+   */
+  virtual typename DG::EdgeProperty
+  getEdgeProperties() = 0;
+
+  /** 
+   * @return begin and end iterator range of the edges
+   */
+  virtual std::pair<typename DG::EdgeIterator, typename DG::EdgeIterator>
+  getEdges() = 0;
 };
 
 

@@ -49,46 +49,79 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * @brief implementation of a dependency graph builder for HexDepGraph.
  */
-class DLVHEX_EXPORT HexDepGraphBuilder 
-  : public DepGraphBuilder<HexDepGraph, 
-			   HexDepGraphType::Vertex, 
-			   HexDepGraphType::Edge, 
-			   HexDepGraphType::VertexProperty, 
-			   HexDepGraphType::EdgeProperty>
+class DLVHEX_EXPORT HexDepGraphBuilder : public DepGraphBuilder<HexDepGraphType>
 {
  protected:
   /// the HEX dependency graph
-  boost::shared_ptr<HexDepGraph> dg;
+  boost::shared_ptr<HexDepGraphType::type> dg;
 
   
  public:
 
   HexDepGraphBuilder()
-    : dg(new HexDepGraph)
+    : dg(new HexDepGraphType::type)
   { }
   
 
   /** 
    * @return dependency graph
    */
-  virtual boost::shared_ptr<HexDepGraph>
+  virtual boost::shared_ptr<HexDepGraphType::type>
   getDepGraph() const
   {
     return dg;
   }
   
+
+  /** 
+   * @return vertex range
+   */
+  virtual std::pair<HexDepGraphType::VertexIterator, HexDepGraphType::VertexIterator>
+  getVertices()
+  {
+    return boost::vertices(*dg);
+  }
+
+
+  /** 
+   * @return vertex property map
+   */
+  virtual HexDepGraphType::VertexProperty
+  getVertexProperties()
+  {
+    return boost::get(boost::vertex_bundle, *dg);
+  }
+
   
+  /** 
+   * @return edge range
+   */
+  virtual std::pair<HexDepGraphType::EdgeIterator, HexDepGraphType::EdgeIterator>
+  getEdges()
+  {
+    return boost::edges(*dg);
+  }
+
+
+  /** 
+   * @return edge property map
+   */
+  virtual HexDepGraphType::EdgeProperty
+  getEdgeProperties()
+  {
+    return boost::get(boost::edge_bundle, *dg);
+  }
+
+
   /** 
    * Add a new node to the dependency graph.
    * 
-   * @param vp vertex property
-   * 
-   * @return new vertex
+   * @return new vertex id
    */
   virtual HexDepGraphType::Vertex
-  buildVertex(HexDepGraphType::VertexProperty& vp)
+  buildVertex()
   {
-    return boost::add_vertex(vp, *dg);
+    return boost::add_vertex(*dg);
   }
 
   
@@ -97,16 +130,13 @@ class DLVHEX_EXPORT HexDepGraphBuilder
    * 
    * @param u start node
    * @param v end node
-   * @param ep edge property
    * 
-   * @return new edge
+   * @return new edge id
    */
   virtual HexDepGraphType::Edge
-  buildEdge(HexDepGraphType::Vertex u,
-	    HexDepGraphType::Vertex v,
-	    HexDepGraphType::EdgeProperty& ep)
+  buildEdge(const HexDepGraphType::Vertex& u, const HexDepGraphType::Vertex& v)
   {
-    std::pair<HexDepGraphType::Edge, bool> eret = boost::add_edge(u, v, ep, *dg);
+    std::pair<HexDepGraphType::Edge, bool> eret = boost::add_edge(u, v, *dg);
     return eret.first;
   }
 };

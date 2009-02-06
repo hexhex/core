@@ -38,7 +38,13 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include "dlvhex/DepGraphDirector.h"
+#include "dlvhex/HexDepGraphBuilder.h"
 #include "dlvhex/HexDepGraph.h"
+
+#include "dlvhex/Atom.h"
+#include "dlvhex/Rule.h"
+
+#include <map>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -50,23 +56,73 @@ DLVHEX_NAMESPACE_BEGIN
  * including any artificial nodes that had to be created for auxiliary
  * rules, e.g., for external atoms with variable input parameters.
  */
-template<class DepGraph, class Vertex, class Edge, class VP, class EP>
-class DLVHEX_EXPORT HexDepGraphDirector :
-  public DepGraphDirector<HexDepGraph,
-			  HexDepGraphType::Vertex,
-			  HexDepGraphType::Edge,
-			  HexDepGraphType::VertexProperty,
-			  HexDepGraphType::EdgeProperty>
+class DLVHEX_EXPORT HexDepGraphDirector : public DepGraphDirector<HexDepGraphType>
 {
  public:
-  
-  typedef HexDepGraphBuilder<HexDepGraph,
-    HexDepGraphType::Vertex, HexDepGraphType::Edge,
-    HexDepGraphType::VertexProperty, HexDepGraphType::EdgeProperty> HexDGBuilder;
+  typedef DepGraphBuilder<HexDepGraphType> Builder;
+  typedef std::map<AtomPtr, HexDepGraphType::Vertex> AtomMap;
 
-  HexDepGraphDirector(HexDGBuilder&, PluginContainer&);
+
+ protected:
+  Builder& builder;
+
+  ///@todo move AtomMap to GraphProperty?
+  AtomMap atoms;
+
+
+  HexDepGraphType::Vertex
+  addAtom(const AtomPtr&, VertexAttribute::Type);
+
+  typedef std::vector<HexDepGraphType::Vertex> Vertices;
+
+  void
+  addUnifDeps(HexDepGraphType::Vertex,
+	      const AtomPtr&,
+	      Rule*);
+
+  void
+  addHeadDeps(const RuleHead_t&, Rule*, Vertices&);
+
+  void
+  addBodyDeps(const RuleBody_t&, Rule*, const Vertices&);
+
+//   void
+//   addExternalDeps(const Vertices&, int);
+
+
+ public:
+
+  explicit
+  HexDepGraphDirector(Builder&);
   
-  virtual boost::shared_ptr<HexDepGraph>
+  virtual void
+  visit(Program* const);
+
+  virtual void
+  visit(AtomSet* const);
+
+  virtual void
+  visit(Rule* const);
+
+  virtual void
+  visit(WeakConstraint* const);
+
+  virtual void
+  visit(Literal* const);
+
+  virtual void
+  visit(Atom* const);
+
+  virtual void
+  visit(ExternalAtom* const);
+
+  virtual void
+  visit(BuiltinPredicate* const);
+
+  virtual void
+  visit(AggregateAtom* const);
+
+  virtual boost::shared_ptr<HexDepGraphType::type>
   getComponents();
 };
 

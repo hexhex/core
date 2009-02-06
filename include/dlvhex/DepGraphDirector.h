@@ -53,55 +53,12 @@ class PluginContainer;
  * including any artificial nodes that had to be created for auxiliary
  * rules, e.g., for external atoms with variable input parameters.
  */
-
-template<class DepGraph, class Vertex, class Edge, class VP, class EP>
+template<typename DG>
 class DLVHEX_EXPORT DepGraphDirector : public BaseVisitor
 {
  public:
-  typedef DepGraphBuilder<DepGraph, Vertex, Edge, VP, EP> DGBuilder;
-
- protected:
-  DGBuilder& builder;
-  PluginContainer& container;
-
-  void
-  constructHead(const RuleHead_t&) throw (PluginError);
-
-  void
-  constructBody(const RuleBody_t&) throw (PluginError);
-
- public:
-  DepGraphDirector(DGBuilder&, PluginContainer&);
-
-  virtual void
-  visit(Program* const);
-
-  virtual void
-  visit(AtomSet* const);
-
-  virtual void
-  visit(Rule* const);
-
-  virtual void
-  visit(WeakConstraint* const);
-
-  virtual void
-  visit(Literal* const);
-
-  virtual void
-  visit(Atom* const);
-
-  virtual void
-  visit(ExternalAtom* const);
-
-  virtual void
-  visit(BuiltinPredicate* const);
-
-  virtual void
-  visit(AggregateAtom* const);
-
-  virtual boost::shared_ptr<DepGraph>
-  getComponents();
+  virtual boost::shared_ptr<typename DG::type>
+  getComponents() = 0;
 };
 
 DLVHEX_NAMESPACE_END
