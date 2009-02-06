@@ -38,6 +38,9 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/Atom.h"
+#include "dlvhex/Rule.h"
+
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
@@ -58,7 +61,7 @@ struct DLVHEX_EXPORT VertexAttribute
   };
 
   Type type;
-  int atom;
+  AtomPtr atom;
 };
 
 
@@ -76,9 +79,9 @@ struct DLVHEX_EXPORT EdgeAttribute
    * @brief Types of dependencies
    *
    * - UNIFYING: The atoms of two nodes can be unified.
-   * - PRECEDING: A preceding dependency points from a body atom node to its head
+   * - POSITIVE: A positive dependency points from a body atom node to its head
    *   atom node.
-   * - NEG_PRECEDING: Like preceding, but with a weakly negated body atom.
+   * - NEGATIVE: Like positive, but with a weakly negated body atom.
    * - DISJUNCTIVE: Dependency between two head atom nodes of a disjunctive
    *   head.
    * - EXTERNAL: If an input argument of an external atom is of type
@@ -89,21 +92,23 @@ struct DLVHEX_EXPORT EdgeAttribute
   enum Type
   {
     UNIFYING = 0x1,
-    PRECEDING = 0x2,
-    NEG_PRECEDING = 0x4,
+    POSITIVE = 0x2,
+    NEGATIVE = 0x4,
     DISJUNCTIVE = 0x8,
     EXTERNAL = 0x10,
     EXTERNAL_AUX = 0x20
   };
 
   Type type;
-  int rule;
+  Rule* rule;
 };
 
 
 /// currently empty
 struct GraphProperty
-{ };
+{
+  ///@todo move AtomMap and RuleMap here?
+};
 
 
 ///@brief a bundle of vertex properties (we need the index for subgraphs)
@@ -131,10 +136,12 @@ typedef boost::graph_traits<HexDepGraph> HexDepGraphTraits;
 
 
 /**
- * @brief the HEX dependency graph types
+ * @brief the associated types for a HEX dependency graph
  */
 struct HexDepGraphType
 {
+  typedef HexDepGraph type;
+
   ///@brief the type of a vertex
   typedef HexDepGraphTraits::vertex_descriptor Vertex;
   ///@brief the type of a vertex iterator
