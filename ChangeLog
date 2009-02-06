@@ -1,3 +1,23 @@
+2009-02-06  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am (libdlvhexbase_la_SOURCES): Add
+	HexDepGraphDirector.cpp.
+
+	* include/dlvhex/Makefile.am (pkginclude_HEADERS): Add
+	DepGraphBuilder.h, DepGraphDirector.h, HexDepGraphBuilder.h, and
+	HexDepGraphDirector.h.
+
+	* include/dlvhex/HexDepGraph.h: Use actual pointers in the vertex
+	and edge properties.
+
+	* include/dlvhex/DepGraphBuilder.h: Adapt interface to use graph
+	traits.
+	* include/dlvhex/DepGraphDirector.h: Likewise.
+	* include/dlvhex/HexDepGraphBuilder.h: Likewise.
+	* include/dlvhex/HexDepGraphDirector.h: Likewise.
+
+	* src/dlvhex/HexDepGraphDirector.cpp: New file.
+
 2009-02-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/DepGraphDirector.h (getComponents): Return a
