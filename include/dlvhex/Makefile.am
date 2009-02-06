@@ -26,6 +26,8 @@ pkginclude_HEADERS = \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
 	Component.h \
+	DepGraphBuilder.h \
+	DepGraphDirector.h \
 	Dependency.h \
 	DependencyGraph.h \
 	DLVProcess.h \
@@ -35,6 +37,8 @@ pkginclude_HEADERS = \
 	globals.h \
 	GraphBuilder.h \
 	HexDepGraph.h \
+	HexDepGraphBuilder.h \
+	HexDepGraphDirector.h \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
