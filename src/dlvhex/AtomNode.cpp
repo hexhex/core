@@ -52,8 +52,9 @@ AtomNode::AtomNode()
 
 AtomNode::AtomNode(const AtomPtr& atom)
     : atom(atom),
-      inHead(0),
-      inBody(0)
+      inHead(false),
+      inBody(false),
+      auxFlag(false)
 {
     ///@todo here, we increase the nodecounter and assign it to the
     ///node id. can we be sure that every time a new node is created -
@@ -66,16 +67,22 @@ AtomNode::AtomNode(const AtomPtr& atom)
 void
 AtomNode::setHead()
 {
-	inHead = 1;
+	inHead = true;
 }
 
 
 void
 AtomNode::setBody()
 {
-	inBody = 1;
+	inBody = true;
 }
 
+
+void
+AtomNode::setAux()
+{
+	auxFlag = true;
+}
 
 bool
 AtomNode::isHead() const
@@ -88,6 +95,12 @@ bool
 AtomNode::isBody() const
 {
 	return inBody;
+}
+
+bool
+AtomNode::isAux() const
+{
+	return auxFlag;
 }
 
 

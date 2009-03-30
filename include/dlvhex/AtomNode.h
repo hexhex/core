@@ -98,6 +98,19 @@ public:
 	isBody() const;
 
 	/**
+	 * @brief Sets the aux-flag of the Node.
+	 */
+	void
+	setAux();
+
+	/**
+	 * @brief Returns the aux-flag of the AtomNode.
+	 */
+	bool
+	isAux() const;
+
+
+	/**
 	 * @brief Adds a preceding dependency for this AtomNode.
 	 *
 	 * A preceding dependency means that this AtomNode depends on another one.
@@ -159,6 +172,11 @@ private:
 	 * @brief body-flag.
 	 */
 	bool inBody;
+
+	/**
+	 * @brief auxiliary-flag.
+	 */
+	bool auxFlag;
 
 	/**
 	 * @brief Rules that belong to this AtomNode (in case it occured
