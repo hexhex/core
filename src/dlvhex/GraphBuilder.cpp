@@ -453,9 +453,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 	      AtomPtr auxheadatom(new Atom(auxname, extinput));
 
 	      //
-	      // add a new head node for the graph with this atom
+	      // add a new _auxiliary_ head node for the graph with this atom
 	      //
 	      AtomNodePtr auxheadnode = nodegraph.addUniqueHeadNode(auxheadatom);
+	      auxheadnode->setAux();
 
 	      //
 	      // now we create the auxiliary rule
