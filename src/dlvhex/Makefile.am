@@ -41,13 +41,8 @@ pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
-    AnswerSet.cpp \
     dlvhex.cpp \
-    RuleMLOutputBuilder.cpp \
-    ResultContainer.cpp \
-    TextOutputBuilder.cpp \
-    HexParserDriver.cpp \
-    URLBuf.cpp
+    RuleMLOutputBuilder.cpp 
 
 #
 # -static: statically link libdlvhexbase
@@ -94,7 +89,12 @@ libdlvhexbase_la_SOURCES = \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    Term.cpp
+    Term.cpp \
+    ResultContainer.cpp \
+    TextOutputBuilder.cpp \
+    HexParserDriver.cpp \
+    AnswerSet.cpp \
+    URLBuf.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
