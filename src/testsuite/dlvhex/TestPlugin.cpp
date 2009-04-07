@@ -147,6 +147,33 @@ public:
 
 
 
+class TestZeroArityAtom : public PluginAtom
+{
+protected:
+	bool succeed;
+public:
+  TestZeroArityAtom(bool succeed): succeed(succeed)
+  {
+    setOutputArity(0);
+  }
+  
+  virtual void
+  retrieve(const Query&, Answer& answer) throw(PluginError)
+  {
+		if( succeed )
+		{
+			// succeed by returning an empty tuple
+			answer.addTuple(Tuple());
+		}
+		else
+		{
+			// fail by returning no tuple
+		}
+  }
+};
+
+
+
 class TestConcatAtom : public PluginAtom
 {
 public:
@@ -208,11 +235,15 @@ public:
 	  boost::shared_ptr<PluginAtom> testA(new TestAAtom);
 	  boost::shared_ptr<PluginAtom> testB(new TestBAtom);
 	  boost::shared_ptr<PluginAtom> testC(new TestCAtom);
+	  boost::shared_ptr<PluginAtom> testZeroArity0(new TestZeroArityAtom(false));
+	  boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
 	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
 
 	  a["testA"] = testA;
 	  a["testB"] = testB;
 	  a["testC"] = testC;
+	  a["testZeroArity0"] = testZeroArity0;
+	  a["testZeroArity1"] = testZeroArity1;
 	  a["testConcat"] = testConcat;
 	}
 

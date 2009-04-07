@@ -766,7 +766,57 @@ user_pred:
 
 
 external_atom:
-    AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE external_output
+    AMPERSAND ident external_output
+        {
+            //
+            // create new external atom from:
+            // name string
+            // arguments
+            //
+            try
+            {
+            $$ = new ExternalAtom(*$2, *$3, Tuple(), (@1.end-1).line);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            delete $2;
+            delete $3;
+        }
+    | AMPERSAND ident BRACKET_OPEN BRACKET_CLOSE external_output
+        {
+            //
+            // create new external atom from:
+            // name string
+            // arguments
+            //
+            try
+            {
+            $$ = new ExternalAtom(*$2, *$5, Tuple(), (@1.end-1).line);
+            }
+            catch (SyntaxError& e)
+            {
+                error(yylloc, e.what());
+            }
+
+            //
+            // Storing the atom as a ProgramObject. We don't have to take care
+            // of deleting this pointer any more now.
+            //
+            Registry::Instance()->storeObject($$);
+
+            delete $2;
+            delete $5;
+        }
+    | AMPERSAND ident BRACKET_OPEN terms BRACKET_CLOSE external_output
         {
             /// @todo two external atoms with same name and input?
             /// how "equal" are they?

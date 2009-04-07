@@ -1,3 +1,11 @@
+2009-04-07  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/HexParser.ypp: Zero arity: parsing "&ext", "&ext[]", "&ext[]()" and "&ext()". 
+	* src/testsuite/dlvhex/TestPlugin.cpp: Added two test atoms for zero arity testing.
+	* examples/extatom9.hex: Testcase for zero arity predicate parsing and evaluation.
+	* examples/tests/extatom9.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+
 2009-04-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/PluginInterface.cpp (checkInputArity): Fix a segfault
