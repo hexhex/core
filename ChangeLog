@@ -1,8 +1,15 @@
-2009-04-06  Peter Schueller      <ps@kr.tuwien.ac.at>
+2009-04-07  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
-	* src/testsuite/dlvhex/Makefile.am: Linking in libcurl for testing.
-	* src/dlvhex/Makefile.am: Linking tested modules into libdlvhexbase instead
-	of the dlvhex binary.
+	* src/dlvhex/PluginInterface.cpp (checkInputArity): Fix a segfault
+	in case of empty inputType.
+
+2009-04-06  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/Makefile.am: Linking in libcurl for
+	testing.
+
+	* src/dlvhex/Makefile.am: Linking tested modules into
+	libdlvhexbase instead of the dlvhex binary.
 
 2009-03-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

@@ -132,10 +132,16 @@ PluginAtom::addInputTuple()
 bool
 PluginAtom::checkInputArity(const unsigned arity) const
 {
-	if (inputType.back() == TUPLE)
-		return true;
+  bool ret = (inputType.size() == arity);
 
-    return (inputType.size() == arity);
+  if (!inputType.empty())
+    {
+      return inputType.back() == TUPLE ? true : ret;
+    }
+  else
+    {
+      return ret;
+    }
 }
 
 
@@ -149,7 +155,7 @@ PluginAtom::setOutputArity(const unsigned arity)
 bool
 PluginAtom::checkOutputArity(const unsigned arity) const
 {
-    return (arity == outputSize);
+    return arity == outputSize;
 }
 
 
