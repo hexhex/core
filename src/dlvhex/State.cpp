@@ -1,7 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2007, 2008 Thomas Krennwallner
- * 
+ *
  * This file is part of dlvhex.
  *
  * dlvhex is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @file State.cpp
  * @author Thomas Krennwallner
- * @date 
+ * @date
  *
  * @brief State class.
  *
@@ -140,7 +140,7 @@ OpenPluginsState::openPlugins(ProgramCtx* ctx)
        pi != ctx->getPlugins()->end(); ++pi)
     {
       PluginInterface* plugin = *pi;
-	  
+
       if (plugin != 0)
 	{
 	  // print plugin's version information
@@ -155,7 +155,7 @@ OpenPluginsState::openPlugins(ProgramCtx* ctx)
 	    }
 
 	  std::stringstream pluginhelp;
-			  
+
 	  plugin->setOptions(Globals::Instance()->getOption("HelpRequested"), *ctx->getOptions(), pluginhelp);
 
 	  if (!pluginhelp.str().empty())
@@ -164,7 +164,7 @@ OpenPluginsState::openPlugins(ProgramCtx* ctx)
 	    }
 	}
     }
-  
+
   boost::shared_ptr<State> next(new ConvertState);
   changeState(ctx, next);
 
@@ -179,7 +179,7 @@ ConvertState::convert(ProgramCtx* ctx)
   DEBUG_START_TIMER;
 
   ///@todo move file/uri opening into its own state
-  
+
   const std::vector<std::string>& allFiles = ctx->getInputSources();
   assert(allFiles.size() > 0);
 
@@ -204,9 +204,9 @@ ConvertState::convert(ProgramCtx* ctx)
 	  URLBuf ubuf;
 	  ubuf.open(*f);
 	  std::istream is(&ubuf);
-	  
+
 	  tmpin << is.rdbuf();
-	  
+
 	  if (ubuf.responsecode() == 404)
 	    {
 	      throw GeneralError("Requested URL " + *f + " was not found");
@@ -220,14 +220,14 @@ ConvertState::convert(ProgramCtx* ctx)
       else // file
 	{
 	  std::ifstream ifs;
-	      
+
 	  ifs.open(f->c_str());
-	      
+
 	  if (!ifs.is_open())
 	    {
 	      throw GeneralError("File " + *f + " not found");
 	    }
-	      
+
 	  tmpin << ifs.rdbuf();
 	  ifs.close();
 	}
@@ -235,20 +235,20 @@ ConvertState::convert(ProgramCtx* ctx)
       //
       // create a stringbuffer on the heap (will be deleted later) to
       // hold the file-content. put it into the context input
-      //	
+      //
       ctx->getInput().rdbuf(new std::stringbuf(tmpin.str()));
-      
+
       //
       // new output stream with stringbuffer on the heap
       //
       std::ostream converterResult(new std::stringbuf);
-      
+
       for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
 	   pi != ctx->getPlugins()->end();
 	   ++pi)
 	{
 	  std::vector<PluginConverter*> pcs = (*pi)->createConverters();
-	  
+
 	  if (pcs.size() > 0)
 	    {
 	      //
@@ -258,22 +258,22 @@ ConvertState::convert(ProgramCtx* ctx)
 		   it != pcs.end(); ++it)
 		{
 		  (*it)->convert(ctx->getInput(), converterResult);
-		  
+
 		  //
 		  // old input buffer can be deleted now
 		  //
 		  delete ctx->getInput().rdbuf();
-		  
+
 		  //
 		  // store the current output buffer
 		  //
 		  std::streambuf* tmp = converterResult.rdbuf();
-		  
+
 		  //
 		  // make a new buffer for the output (=reset the output)
 		  //
 		  converterResult.rdbuf(new std::stringbuf);
-		  
+
 		  //
 		  // set the input buffer to be the output of the last
 		  // rewriting. now, after each loop, the converted
@@ -287,7 +287,7 @@ ConvertState::convert(ProgramCtx* ctx)
       // result of last converter can be removed now
       delete converterResult.rdbuf();
 
-      
+
       //
       // at this point, the whole program is in the context input stream - either
       // directly read from the file or as a result of some previous
@@ -295,7 +295,7 @@ ConvertState::convert(ProgramCtx* ctx)
       //
 
       ///@todo move dlt code outside!
-      
+
 // 	  FILE* fp = 0;
 
 // 	  //
@@ -305,20 +305,20 @@ ConvertState::convert(ProgramCtx* ctx)
 // 	    {
 // 	      char tempfile[L_tmpnam];
 // 	      mkstemp(tempfile);
-	      
+
 // 	      std::ofstream dlttemp(tempfile);
-	      
+
 // 	      //
 // 	      // write program into tempfile
 // 	      //
 // 	      dlttemp << input.rdbuf();
-			    
+
 // 	      dlttemp.close();
 
 // 	      std::string execPreParser("dlt -silent -preparsing " + std::string(tempfile));
-			    
+
 // 	      fp = popen(execPreParser.c_str(), "r");
-			    
+
 // 	      if (fp == NULL)
 // 		{
 // 		  throw GeneralError("Unable to call Preparser dlt");
@@ -326,7 +326,7 @@ ConvertState::convert(ProgramCtx* ctx)
 
 // 	      __gnu_cxx::stdio_filebuf<char>* fb;
 // 	      fb = new __gnu_cxx::stdio_filebuf<char>(fp, std::ios::in);
-			    
+
 // 	      std::istream inpipe(fb);
 
 // 	      //
@@ -335,14 +335,14 @@ ConvertState::convert(ProgramCtx* ctx)
 // 	      // input-buffer and set input to the buffer from the
 // 	      // dlt-call
 // 	      //
-// 	      delete input.rdbuf(); 
+// 	      delete input.rdbuf();
 // 	      input.rdbuf(fb);
 // 	    }
     }
 
   boost::shared_ptr<State> next(new ParseState);
   changeState(ctx, next);
-  
+
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   DEBUG_STOP_TIMER("Calling plugin converters:              ");
 }
@@ -354,7 +354,7 @@ ParseState::parse(ProgramCtx* ctx)
   DEBUG_START_TIMER;
 
   HexParserDriver driver;
-	      
+
   //
   // tell the parser driver where the rules are actually coming
   // from (needed for error-messages)
@@ -368,19 +368,19 @@ ParseState::parse(ProgramCtx* ctx)
 //       if (optiondlt)
 // 	{
 // 	  int dltret = pclose(fp);
-	  
+
 // 	  if (dltret != 0)
 // 	    {
 // 	      throw GeneralError("Preparser dlt returned error");
 // 	    }
 // 	}
-	
+
   //
   // wherever the input-buffer was created before - now we don't
   // need it anymore
   //
   delete ctx->getInput().rdbuf();
-      
+
 //      if (optiondlt)
 // 	{
 // 	  unlink(tempfile);
@@ -398,7 +398,7 @@ void
 RewriteState::rewrite(ProgramCtx* ctx)
 {
   DEBUG_START_TIMER;
-  
+
   //
   // now call rewriters
   //
@@ -534,9 +534,9 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
     {
       next = boost::shared_ptr<State>(new StrongSafetyCheckState);
     }
-    
+
   changeState(ctx, next);
-      
+
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   DEBUG_STOP_TIMER("Safety checking:                        ");
 }
@@ -618,7 +618,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
     {
       omg.compute(*ctx->getIDB(), *ctx->getEDB(), models);
     }
-  
+
   ///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
 
   //
@@ -628,15 +628,15 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
   // prefix in order to be able to compute each asnwer set's costs!
   //
   std::string wcprefix;
-  
+
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
       wcprefix = "wch__";
     }
-  
+
   ResultContainer* result = new ResultContainer(wcprefix);
   ctx->setResultContainer(result);
-  
+
   //
   // put GraphProcessor result into ResultContainer
   ///@todo we can do better, for sure
@@ -646,7 +646,7 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
     {
       ctx->getResultContainer()->addSet(*it);
     }
-  
+
   boost::shared_ptr<State> next(new PostProcessState);
   changeState(ctx, next);
 
@@ -676,7 +676,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
     {
       gp.run(*ctx->getEDB());
     }
-  
+
   ///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
 
   //
@@ -686,21 +686,21 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   // prefix in order to be able to compute each asnwer set's costs!
   //
   std::string wcprefix;
-  
+
   if (ctx->getIDB()->getWeakConstraints().size() > 0)
     {
       wcprefix = "wch__";
     }
-  
+
   ResultContainer* result = new ResultContainer(wcprefix);
   ctx->setResultContainer(result);
-  
+
   //
   // put GraphProcessor result into ResultContainer
   ///@todo we can do better, for sure
   //
   AtomSet* res;
-  
+
   while ((res = gp.getNextModel()) != 0)
     {
       ctx->getResultContainer()->addSet(*res);
@@ -780,12 +780,15 @@ OutputState::output(ProgramCtx* ctx)
 	}
     }
 
+
+  ctx->setOutputBuilder(outputbuilder);
+
   ctx->getResultContainer()->print(std::cout, ctx->getOutputBuilder());
 
   ///@todo explicit endstate which does nothing?
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
-	    
+
   //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   DEBUG_STOP_TIMER("Building output:                        ");
 }
