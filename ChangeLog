@@ -1,3 +1,8 @@
+2009-05-05  Alessandra Martello  <a.martello@mat.unical.it>
+
+	* src/dlvhex/State.cpp: Bag fixed. Bound the OutputBuilder created
+	within a PluginInterface to the ProgramContext.
+
 2009-04-07  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/HexParser.ypp: Zero arity: parsing "&ext", "&ext[]", "&ext[]()" and "&ext()". 
