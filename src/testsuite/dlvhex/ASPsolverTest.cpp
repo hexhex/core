@@ -38,6 +38,9 @@
 #include "dlvhex/DLVProcess.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/PrintVisitor.h"
+#include "dlvhex/DLVresultParserDriver.h"
+
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -161,6 +164,20 @@ ASPsolverTest::testResult()
     CPPUNIT_ASSERT(as->size() == 0);
     answersets.clear();
 
+
+    //
+    // empty program using hardcoded program options
+    //
+    std::vector<std::string> opt;
+    opt.push_back("-silent");
+    opt.push_back("/dev/null");
+
+    ASPSolver<DLVPrintVisitor,DLVresultParserDriver> mysolver(dlv);
+    CPPUNIT_ASSERT_NO_THROW(mysolver.solve(opt, answersets));
+    CPPUNIT_ASSERT(answersets.size() == 1);
+    as = answersets.begin();
+    CPPUNIT_ASSERT(as->size() == 0);
+    answersets.clear();
 }
 
 DLVHEX_NAMESPACE_END
