@@ -55,6 +55,10 @@ class DLVHEX_EXPORT BaseASPSolver
 
   virtual void
   solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError) = 0;
+
+  virtual void
+  solve(const std::vector<std::string>&, std::vector<AtomSet>&) throw (FatalError) = 0;
+
 };
 
 
@@ -80,6 +84,15 @@ public:
    */
   void
   solve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
+
+  /**
+   * @brief Calls the answer set solver with some options.
+   * 
+   * @param opt list of program options passed to the solver
+   * @param answersets list of answer sets.
+   */
+  void
+  solve(const std::vector<std::string>& opt, std::vector<AtomSet>& answersets) throw (FatalError);
 
 };
 
