@@ -63,30 +63,6 @@ DLVProcess::~DLVProcess()
 BaseASPSolver*
 DLVProcess::createSolver()
 {
-  if (ipipe == 0 && opipe == 0)
-    {
-      // first, setup the iostreams
-      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-	{
-	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
-	  
-	  tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
-	  tmpopipe->push(std::cerr);
-	  
-	  opipe = tmpopipe;
-	}
-      else
-	{
-	  opipe = new std::iostream(&proc);
-	}
-      
-      ipipe = new std::iostream(&proc);
-      
-      // let ProcessBuf throw std::ios_base::failure
-      opipe->exceptions(std::ios_base::badbit);
-      ipipe->exceptions(std::ios_base::badbit);
-    }
-    
   if (Globals::Instance()->getOption("NoPredicate"))
     {
       return new ASPSolver<HOPrintVisitor, DLVresultParserDriver>(*this);
@@ -129,9 +105,49 @@ DLVProcess::commandline() const
 
 
 void
+DLVProcess::setupStreams()
+{
+  if (ipipe == 0 && opipe == 0)
+    {
+      // first, setup the iostreams
+      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+	{
+	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
+	  
+	  tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
+	  tmpopipe->push(std::cerr);
+	  
+	  opipe = tmpopipe;
+	}
+      else
+	{
+	  opipe = new std::iostream(&proc);
+	}
+      
+      ipipe = new std::iostream(&proc);
+      
+      // let ProcessBuf throw std::ios_base::failure
+      opipe->exceptions(std::ios_base::badbit);
+      ipipe->exceptions(std::ios_base::badbit);
+    }
+}
+
+
+void
 DLVProcess::spawn()
 {
+  setupStreams();
   proc.open(commandline());
+}
+
+
+void
+DLVProcess::spawn(const std::vector<std::string>& opt)
+{
+  setupStreams();
+  std::vector<std::string> tmp(opt);
+  tmp.insert(tmp.begin(), path());
+  proc.open(tmp);
 }
 
 

@@ -65,6 +65,10 @@ class DLVHEX_EXPORT DLVProcess : public Process
   
   /// dlv command line options
   std::vector<std::string> argv;
+
+  /// initialize in/out streams
+  void
+  setupStreams();
   
  public:
   DLVProcess();
@@ -89,6 +93,9 @@ class DLVHEX_EXPORT DLVProcess : public Process
 
   virtual void
   spawn();
+
+  virtual void
+  spawn(const std::vector<std::string>&);
 
   virtual void
   endoffile();

@@ -71,6 +71,9 @@ public:
   spawn() = 0;
 
   virtual void
+  spawn(const std::vector<std::string>&) = 0;
+
+  virtual void
   endoffile() = 0;
 
   virtual int
