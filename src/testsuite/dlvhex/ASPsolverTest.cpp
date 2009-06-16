@@ -172,11 +172,35 @@ ASPsolverTest::testResult()
     opt.push_back("-silent");
     opt.push_back("/dev/null");
 
-    ASPSolver<DLVPrintVisitor,DLVresultParserDriver> mysolver(dlv);
-    CPPUNIT_ASSERT_NO_THROW(mysolver.solve(opt, answersets));
+    // solve the empty program
+    ASPFileSolver<DLVresultParserDriver> *mysolver = new ASPFileSolver<DLVresultParserDriver>(dlv, opt);
+    CPPUNIT_ASSERT_NO_THROW(mysolver->solve(idb4, edb4, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
+    answersets.clear();
+
+
+    // this one does the real solving
+    ASPSolver<DLVPrintVisitor,DLVresultParserDriver> *mysolver2 = new ASPSolver<DLVPrintVisitor,DLVresultParserDriver>(dlv);
+
+    // this one solves the empty program and ignores the result
+    DLVDBProcess dlvdb;
+    ASPFileSolver<NullParser> *mysolver3 = new ASPFileSolver<NullParser>(dlvdb, opt);
+
+    ASPSolverComposite c;
+    c.addSolver(mysolver);
+    c.addSolver(mysolver2);
+    c.addSolver(mysolver3);
+
+    CPPUNIT_ASSERT_NO_THROW(c.solve(idb3, edb3, answersets));
+    CPPUNIT_ASSERT(answersets.size() == 3); // we have 3 due to /dev/null
+    as = answersets.begin();
+    CPPUNIT_ASSERT(as->size() == 0); // the first answer set stems from /dev/null
+    ++as;
+    CPPUNIT_ASSERT(as->size() == 1); // the next two from idb3/edb3
+    ++as;
+    CPPUNIT_ASSERT(as->size() == 1);
     answersets.clear();
 }
 
