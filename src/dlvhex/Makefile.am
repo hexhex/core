@@ -102,6 +102,7 @@ libaspsolver_la_SOURCES = \
     DLVresultScanner.lpp \
     DLVresultParserDriver.cpp \
     ParserDriver.cpp \
+    ASPSolver.cpp \
     DLVProcess.cpp \
     ProcessBuf.cpp
 
