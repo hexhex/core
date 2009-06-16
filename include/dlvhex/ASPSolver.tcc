@@ -149,10 +149,16 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
 
 
 
+template<typename Parser>
+ASPFileSolver<Parser>::ASPFileSolver(Process& p, const std::vector<std::string>& o)
+  : proc(p),
+    options(o)
+{ }
 
-template<typename Builder, typename Parser>
+
+template<typename Parser>
 void
-ASPSolver<Builder,Parser>::solve(const std::vector<std::string>& opt, std::vector<AtomSet>& as)
+ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet>& as)
   throw (FatalError)
 {
   int retcode = -1;
@@ -161,7 +167,7 @@ ASPSolver<Builder,Parser>::solve(const std::vector<std::string>& opt, std::vecto
     {
       DEBUG_START_TIMER;
 
-      proc.spawn(opt);
+      proc.spawn(options);
 
       proc.endoffile(); // send EOF to process
 

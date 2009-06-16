@@ -56,8 +56,64 @@ class DLVHEX_EXPORT BaseASPSolver
   virtual void
   solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError) = 0;
 
-  virtual void
-  solve(const std::vector<std::string>&, std::vector<AtomSet>&) throw (FatalError) = 0;
+};
+
+
+/**
+ * @brief ASPSolver composite
+ */
+class DLVHEX_EXPORT ASPSolverComposite : public BaseASPSolver
+{
+private:
+
+  std::vector<BaseASPSolver*> solvers;
+
+public:
+
+  ASPSolverComposite();
+
+  virtual
+  ~ASPSolverComposite();
+
+  void
+  addSolver(BaseASPSolver* s);
+  
+  void
+  solve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
+
+};
+
+
+
+/**
+ * @brief A debugging parser which ignores the input
+ */
+struct NullParser
+{
+  void
+  parse(std::istream&, std::vector<AtomSet>&)
+  { }
+};
+      
+ 
+
+/**
+ * @brief ASP solver class for files
+ */
+template<typename Parser>
+class DLVHEX_EXPORT ASPFileSolver : public BaseASPSolver
+{
+private:
+  Process& proc;
+
+  std::vector<std::string> options;
+
+public:
+
+  ASPFileSolver(Process& p, const std::vector<std::string>& o);
+
+  void
+  solve(const Program&, const AtomSet&, std::vector<AtomSet>& as) throw (FatalError);
 
 };
 
@@ -84,15 +140,6 @@ public:
    */
   void
   solve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
-
-  /**
-   * @brief Calls the answer set solver with some options.
-   * 
-   * @param opt list of program options passed to the solver
-   * @param answersets list of answer sets.
-   */
-  void
-  solve(const std::vector<std::string>& opt, std::vector<AtomSet>& answersets) throw (FatalError);
 
 };
 
