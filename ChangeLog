@@ -1,3 +1,26 @@
+2009-06-16  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Add test for nested ASP solver.
+
+	* src/dlvhex/Makefile.am (libaspsolver_la_SOURCES): Add ASPSolver.cpp.
+
+	* include/dlvhex/ASPSolver.h (ASPSolverComposite): New composite solver.
+	(ASPFileSolver): New file solver.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+2009-06-12  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Process.h (Process::spawn): Add spawn method with list of options.
+	* include/dlvhex/DLVProcess.h (DLVProcess::spawn): Likewise.
+	* src/dlvhex/DLVProcess.cpp (DLVProcess::spawn): Likewise
+
+	* include/dlvhex/ASPSolver.h (BaseASPSolver::solve): Add solve method with list of options.
+	(ASPSolver<Builder,Parser>::solve): Likewise.
+	* include/dlvhex/ASPSolver.tcc (ASPSolver<Builder,Parser>::solve): Likewise.
+
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Add test for ASP solver with list of options.
+
 2009-05-05  Alessandra Martello  <a.martello@mat.unical.it>
 
 	* src/dlvhex/State.cpp: Bag fixed. Bound the OutputBuilder created
