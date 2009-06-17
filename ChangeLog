@@ -1,3 +1,9 @@
+2009-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ParserDriver.h: Forward declaration for generated include
+	file (allows to install ParserDriver.h without installing location.hh).
+	* src/dlvhex/ParserDriver.cpp: Including location.hh only in this file.
+
 2009-06-16  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/ASPsolverTest.cpp: Add test for nested ASP solver.

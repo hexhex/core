@@ -35,6 +35,11 @@
 #include <iostream>
 #include <sstream>
 
+//
+// this is included from src/, not include/ !
+// the makefile has to ensure that this file is created before, by bison
+#include "location.hh"
+
 DLVHEX_NAMESPACE_BEGIN
 
 ParserDriver::ParserDriver()

@@ -36,16 +36,15 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-//
-// this is included from src/, not include/ !
-// the makefile has to ensure that this file is created before, by bison
-//
-#include "dlvhex/location.hh"
-
 #include "dlvhex/Error.h"
 
 #include <string>
 
+// forward declaration (so we don't need to include bison-generated files here)
+namespace yy
+{
+  class location;
+}
 
 DLVHEX_NAMESPACE_BEGIN
 
