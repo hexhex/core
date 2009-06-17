@@ -852,7 +852,7 @@ AC_LANG_POP([C++])dnl
     gcc*)
       # We can specify multiple tags in this variable because it's used by
       # BOOST_FIND_LIB that does a `for tag in -$boost_cv_lib_tag' ...
-      boost_cv_lib_tag="$boost_cv_lib_tag -gcc"
+      boost_cv_lib_tag="$boost_cv_lib_tag -x$boost_cv_lib_tag -gcc"
       ;; #(
     unknown)
       AC_MSG_WARN([[could not figure out which toolset name to use for $CXX]])
