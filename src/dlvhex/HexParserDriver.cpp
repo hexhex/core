@@ -56,6 +56,7 @@ namespace sp = boost::spirit;
 
 using sp::ch_p;
 using sp::str_p;
+using sp::space_p;
 
 // private namespace, as this parser part should only be used
 // via the HexParserDriver interface
@@ -98,6 +99,7 @@ struct HexSpiritGrammar:
     rule_t disj;
     rule_t user_pred;
     rule_t body; // body of a rule or constraint or aggregate
+		rule_t clause;
     rule_t root;
   };
 };
@@ -106,12 +108,19 @@ struct HexSpiritGrammar:
 template<typename ScannerT>
 HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
 {
+	// shortcut for sp::discard_node_d()
+	const sp::node_parser_gen<sp::discard_node_op> rm =
+		sp::node_parser_gen<sp::discard_node_op>();
+
   // identifier or string
-  ident = sp::leaf_node_d[sp::regex_p("[a-z][a-zA-Z0-9_]*") | sp::confix_p("\"", *sp::anychar_p, "\"")];
+  ident
+		= sp::reduced_node_d[sp::regex_p("[a-z][a-zA-Z0-9_]*")]
+		| sp::reduced_node_d[sp::confix_p("\"", *sp::anychar_p, "\"")];
   // variable
-  var = sp::leaf_node_d[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
+  var
+		= sp::reduced_node_d[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
   // nonnegative integer
-  number = sp::leaf_node_d[+sp::digit_p];
+  number = sp::reduced_node_d[+sp::digit_p];
   ident_or_var = ident | var;
   ident_or_var_or_number = ident | var | number;
   aggregate_leq_binop = str_p("<=") | '<';
@@ -121,10 +130,8 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   tertop = ch_p('*') | '+';
   cons = str_p(":-") | str_p("<-");
   // identifiers, variables, numbers, anonymous variables
-  term = ident_or_var_or_number | sp::leaf_node_d[ch_p('_')];
-  terms
-    = (term >> ',' >> terms)
-    | term;
+  term = ident_or_var_or_number | sp::reduced_node_d[ch_p('_')];
+  terms = term >> *(rm[ch_p(',')] >> term);
   user_pred
     = !(ch_p('-')|ch_p('~')) >> // optional negation
       (
@@ -143,34 +150,41 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
     | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
   builtin_pred
     = (term >> '=' >> term >> tertop >> term) // TODO: changelog: previously not supported
-    | (tertop >> '(' >> term >> ',' >> term >> ',' >> term >> ')') // TODO: changelog: previously not supported
-    | (binop >> '(' >> term >> ',' >> term >> ')') // TODO: changelog: previously not supported
+    | (tertop >> '(' >> term >> rm[ch_p(',')] >> term >> rm[ch_p(',')] >> term >> ')') // TODO: changelog: previously not supported
+    | (binop >> '(' >> term >> rm[ch_p(',')] >> term >> ')') // TODO: changelog: previously not supported
     | (term >> binop >> term)
     | (str_p("#int") >> '(' >> term >> ')') // TODO: was user_pred previously, but this is wrong ("#int(X) :- foo(X)." is not allowed)
-    | (str_p("#succ") >> '(' >> term >> ',' >> term >> ')')  // TODO: changelog: previously not supported
+    | (str_p("#succ") >> '(' >> term >> rm[ch_p(',')] >> term >> ')')  // TODO: changelog: previously not supported
     ;
   literal
     = builtin_pred
     | ( !(str_p("not")|str_p("non")) >> (user_pred | external_atom | aggregate) );
-  disj
-    = (user_pred >> 'v' >> disj)
-    | (user_pred >> 'v' >> user_pred);
+  disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body
-    = literal >> *(ch_p(',') >> literal);
-  root
-    =
-     *( // comment
-        sp::discard_node_d[sp::comment_p("%")]
-      | (str_p("#maxint") >> '=' >> number >> '.') // TODO: previously implemented in a wrong way (no "." at the end!)
+    = literal >> *(rm[ch_p(',')] >> literal);
+	clause
+		=   (str_p("#maxint") >> '=' >> number >> rm[ch_p('.')]) // TODO: previously implemented in a wrong way (no "." at the end!)
       // TODO: sp::eol_p should be added, but this does not work (because of skip parser?)
-      | (str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')') // TODO: change and add "." at the end?
-      | // rule
-        ((disj|user_pred) >> !(cons >> !body) >> ch_p('.'))
+      | (str_p("#namespace") >> '(' >> ident >> rm[ch_p(',')] >> ident >> ')') // TODO: change and add "." at the end?
+      | // rule (optional body/condition)
+        ((disj|user_pred) >> !(cons >> !body) >> rm[ch_p('.')])
       | // constraint
-        (cons >> body >> '.')
+        (cons >> body >> rm[ch_p('.')])
       | // weak constraint
-        (str_p(":~") >> body >> '.' >> !(ch_p('[') >> !ident_or_var_or_number >> ch_p(':') >> !ident_or_var_or_number >> ch_p(']')))
-      )
+        (str_p(":~") >> body >> rm[ch_p('.')] >>
+				// optional weight
+				 !( rm[ch_p('[')]
+					  >> !ident_or_var_or_number
+						>> rm[ch_p(':')]
+						>> !ident_or_var_or_number
+						>> rm[ch_p(']')]
+				  ));
+  root =
+		*( // comment
+       rm[sp::comment_p("%")]
+		 | clause
+		 | sp::eol_p
+		 )
      // end_p enforces a "full" match in case of success even with trailing newlines
      >> sp::end_p;
 }
@@ -252,7 +266,7 @@ HexParserDriver::parse(std::istream& is,
 
     // parse generic tree (no special ast actions are used except lexeme_p)
     sp::tree_parse_info<pos_iterator_t> info =
-      sp::pt_parse(it_begin, it_end, grammar, sp::space_p);
+      sp::ast_parse(it_begin, it_end, grammar, sp::space_p);
 
     // debug output
     std::cerr << "spirit match: full=" << info.full << ", match=" << info.match << std::endl;
