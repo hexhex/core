@@ -63,6 +63,11 @@ using sp::space_p;
 namespace
 {
 
+typedef sp::position_iterator<const char*> pos_iterator_t;
+
+template<typename NodeT>
+void printSpiritAST(std::ostream& o, NodeT& node, const std::string& indent="");
+
 // see "The Grammar" in the spirit docs
 struct HexSpiritGrammar:
   public sp::grammar<HexSpiritGrammar>
@@ -97,12 +102,29 @@ struct HexSpiritGrammar:
     rule_t aggregate_pred;
     rule_t builtin_pred;
     rule_t disj;
+		rule_t neg;
     rule_t user_pred;
     rule_t body; // body of a rule or constraint or aggregate
 		rule_t clause;
     rule_t root;
   };
 };
+
+struct lift_node_op
+{
+	template <typename MatchT>
+	void operator()(MatchT& m) const
+	{    
+		// if match has one tree with more than one child, replace match by these children
+		// (do as if the rule were inlined in the other rule)
+		if (m.trees.size() == 1 && m.trees.begin()->children.size() > 1)
+		{
+			std::swap(m.trees, m.trees.begin()->children);
+		}    
+	}    
+};
+const sp::node_parser_gen<lift_node_op> lift_node_d =
+    sp::node_parser_gen<lift_node_op>();
 
 // impl of HexSpiritGrammar
 template<typename ScannerT>
@@ -130,19 +152,19 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   tertop = ch_p('*') | '+';
   cons = str_p(":-") | str_p("<-");
   // identifiers, variables, numbers, anonymous variables
-  term = ident_or_var_or_number | sp::reduced_node_d[ch_p('_')];
+  term = ident_or_var_or_number | ch_p('_');
   terms = term >> *(rm[ch_p(',')] >> term);
+	// strong negation
+	neg = ch_p('-')|ch_p('~');
   user_pred
-    = !(ch_p('-')|ch_p('~')) >> // optional negation
-      (
-        // optional ident/var + parentheses
-        (!ident_or_var >> '(' >> terms >> ')')
-      | ident_or_var
+    = ( ( !neg >> ident_or_var >> '(' >> lift_node_d[terms] >> ')')
+			| ( '(' >> lift_node_d[terms] >> ')' )
+      | ( !neg >> ident_or_var)
       );
-  external_atom = ch_p('&') >> ident >> !('[' >> !terms >> ']') >> !('(' >> !terms >> ')');
+  external_atom = ch_p('&') >> ident >> !('[' >> lift_node_d[!terms] >> ']') >> !('(' >> lift_node_d[!terms] >> ')');
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
-    >> '{' >> terms >> ':' >> body >> '}';
+    >> '{' >> lift_node_d[terms] >> ':' >> lift_node_d[body] >> '}';
   aggregate
     = (term >> aggregate_binop >> aggregate_pred)
     | (aggregate_pred >> aggregate_binop >> term)
@@ -167,9 +189,9 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
       // TODO: sp::eol_p should be added, but this does not work (because of skip parser?)
       | (str_p("#namespace") >> '(' >> ident >> rm[ch_p(',')] >> ident >> ')') // TODO: change and add "." at the end?
       | // rule (optional body/condition)
-        ((disj|user_pred) >> !(cons >> !body) >> rm[ch_p('.')])
+        (disj >> !(cons >> !body) >> rm[ch_p('.')])
       | // constraint
-        (cons >> body >> rm[ch_p('.')])
+        (cons >> sp::gen_pt_node_d[body] >> rm[ch_p('.')])
       | // weak constraint
         (str_p(":~") >> body >> rm[ch_p('.')] >>
 				// optional weight
@@ -192,7 +214,7 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
 // AST debugging
 
 template<typename NodeT>
-void printSpiritAST(std::ostream& o, NodeT& node, const std::string& indent="")
+void printSpiritAST(std::ostream& o, NodeT& node, const std::string& indent)
 {
   o << indent << "'" << std::string(node.value.begin(), node.value.end()) << "'" << std::endl;
   if( !node.children.empty() )
@@ -258,7 +280,6 @@ HexParserDriver::parse(std::istream& is,
     HexSpiritGrammar grammar;
 
     // while remembering line numbers
-    typedef sp::position_iterator<const char*> pos_iterator_t;
     pos_iterator_t it_begin(input.c_str(), input.c_str()+input.size());
     pos_iterator_t it_end;
 
