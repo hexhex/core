@@ -80,16 +80,16 @@ do
 			elif cat <<EOF | python
 # -*- coding: utf-8 -*-
 # now check if set difference yields incomparability
-import sys, sets
+import sys
 a1 = $a1
 a2 = $a2
 z1 = zip(a1,a2)
 z2 = zip(z1, range(len(z1)))
 z3 = [ e for e in z2 if e[0][0] != e[0][1] ]
 for e in z3: print 'In Answerset ' + str($nas) + ' (fact ' + str(e[1]) + '): ' + e[0][0] + ' vs. ' + e[0][1]
-s1 = sets.Set(a1)
-s2 = sets.Set(a2)
-sys.exit(len(s1 - s2))
+s1 = set(a1)
+s2 = set(a2)
+sys.exit(len(s1.symmetric_difference(s2)))
 EOF
 			then
 				echo "WARN: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas has different ordering)"
