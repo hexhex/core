@@ -72,6 +72,8 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       try
         {
 	  Builder builder(proc.getOutput());
+	  if( !Globals::Instance()->maxint.empty() )
+	    proc.getOutput() << Globals::Instance()->maxint << std::endl;
 	  const_cast<Program&>(prg).accept(builder);
 	  const_cast<AtomSet&>(facts).accept(builder);
 	}
