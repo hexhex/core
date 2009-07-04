@@ -244,36 +244,65 @@ bool
 ExternalAtom::operator< (const Atom& atom2) const
 {
   bool ret = false;
-
   if (typeid(atom2) == typeid(ExternalAtom))
-    {
-      const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
+  {
+    const ExternalAtom* ea2 = static_cast<const ExternalAtom*>(&atom2);
 
+    // dummy loop so that we can break out of it
+    do
+    {
       if (this->functionName < ea2->functionName)
-	{
-	  ret = true;
-	}
-      else if ((this->functionName == ea2->functionName)
-	      && (this->getArity() < ea2->getArity()))
-	{
-	  ret = true;
-	}
-      else if ((this->getArity() == ea2->getArity())
-	      && (this->isStrongNegated < ea2->isStrongNegated))
-	{
-	  ret = true;
-	}
-      else if ((this->isStrongNegated == ea2->isStrongNegated)
-	      && (this->inputList < ea2->inputList))
-	{
-	  ret = true;
-	}
-      else if ((this->inputList == ea2->inputList)
-	      && (this->getArguments() < ea2->getArguments()))
-	{
-	  ret = true;
-	}
+      {
+	ret = true;
+      }
+      else if (this->functionName > ea2->functionName)
+      {
+	// must be false
+	break;
+      }
+
+      if (this->getArity() < ea2->getArity())
+      {
+	ret = true;
+      }
+      else if (this->getArity() > ea2->getArity())
+      {
+	// must be false
+	break;
+      }
+
+      if (this->isStrongNegated < ea2->isStrongNegated)
+      {
+	ret = true;
+      }
+      else if (this->isStrongNegated > ea2->isStrongNegated)
+      {
+	// must be false
+	break;
+      }
+
+      if (this->inputList < ea2->inputList)
+      {
+	ret = true;
+      }
+      else if (this->inputList > ea2->inputList)
+      {
+	// must be false
+	break;
+      }
+
+      if (this->getArguments() < ea2->getArguments())
+      {
+	ret = true;
+      }
+      else if (this->getArguments() > ea2->getArguments())
+      {
+	// must be false
+	break;
+      }
     }
+    while(false);
+  }
 
   return ret;
 }
@@ -294,7 +323,7 @@ ExternalAtom::getLine() const
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=8 tw=80: */
+/* vim: set noet sw=2 ts=8 tw=80: */
 
 // Local Variables:
 // mode: C++
