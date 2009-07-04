@@ -72,6 +72,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       try
         {
 	  Builder builder(proc.getOutput());
+		// TODO: this is marked as "temporary hack" in globals.h
 	  if( !Globals::Instance()->maxint.empty() )
 	    proc.getOutput() << Globals::Instance()->maxint << std::endl;
 	  const_cast<Program&>(prg).accept(builder);
