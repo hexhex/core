@@ -22,10 +22,10 @@
 
 /**
  * @file   HexParserDriver.h
- * @author Roman Schindlauer
+ * @author Roman Schindlauer, Peter Schüller
  * @date   Wed Mar 22 14:39:32 CET 2006
  * 
- * @brief  C++ interface to the bison parser.
+ * @brief  interface to hex parser using boost::spirit
  * 
  * 
  */
@@ -43,10 +43,6 @@
 
 #include <iosfwd>
 #include <string>
-
-
-// some forward declaration 
-class HexFlexLexer;
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -72,9 +68,6 @@ public:
           Program& program,
           AtomSet& EDB) throw (SyntaxError);
 
-    HexFlexLexer*
-    getLexer();
-
     const std::string&
     getInputFilename() const;
 
@@ -82,9 +75,6 @@ public:
     setOrigin(const std::string&);
 
 private:
-
-    /// lexer object which scans the stream
-    HexFlexLexer* lexer;
 
     std::string source;
 

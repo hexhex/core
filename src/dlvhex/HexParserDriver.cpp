@@ -22,24 +22,32 @@
 
 /**
  * @file   HexParserDriver.cpp
- * @author Roman Schindlauer
+ * @author Peter Schüller, Roman Schindlauer
  * @date   Wed Mar 22 14:38:53 CET 2006
  * 
- * @brief  C++ interface to the bison parser.
+ * @brief  C++ parser using boost::spirit
  * 
  * 
  */
 
-#include "dlvhex/HexParser.hpp"
+#include "dlvhex/HexParserDriver.h"
 #include "dlvhex/ParserDriver.h"
-#include "dlvhex/HexFlexLexer.h"
+#include "dlvhex/Program.h"
+#include "dlvhex/Atom.h"
+#include "dlvhex/AtomSet.h"
+#include "dlvhex/ExternalAtom.h"
+#include "dlvhex/AggregateAtom.h"
+#include "dlvhex/Literal.h"
+#include "dlvhex/Term.h"
+#include "dlvhex/Rule.h"
+#include "dlvhex/Registry.h"
+#include "dlvhex/globals.h"
+#include "dlvhex/SpiritFilePositionNode.h"
 
 #include <boost/spirit/core.hpp>
 #include <boost/spirit/utility/regex.hpp>
 #include <boost/spirit/utility/confix.hpp>
 #include <boost/spirit/iterator/multi_pass.hpp>
-#include <boost/spirit/iterator/position_iterator.hpp>
-#include <boost/spirit/tree/parse_tree.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -66,19 +74,7 @@ namespace
 // parsing and creating the boost::spirit parse tree (PT)
 //
 
-// data we want to store in the parse tree
-// (this data is set manually by sp::access_node_d in the grammar)
-// TODO: write a custom factory which does this automatically for each node
-struct CustomNodeData
-{
-  // where was the match to this node?
-  sp::file_position pos;
-
-  CustomNodeData(): pos() {}
-  CustomNodeData& operator=(const CustomNodeData& n)
-   { pos = n.pos; return *this; }
-};
-typedef sp::node_val_data_factory<CustomNodeData> factory_t;
+typedef FilePositionNodeFactory<FilePositionNodeData> factory_t;
 
 // iterator which remembers file positions (useful for error messages)
 typedef sp::position_iterator<const char*> pos_iterator_t;
@@ -162,15 +158,6 @@ struct HexSpiritGrammar:
     rule< S, c, tag<Root> > root;
   };
 };
-
-void recordFilePosition(node_t& node, const pos_iterator_t& first, const pos_iterator_t& last)
-{
-  // it is only possible this way, because node_val_data lacks non-const value()
-  CustomNodeData data = node.value.value(); // get
-  data.pos = first.get_position(); // modify
-  node.value.value(data); // set
-  (void)last; // keep compiler happy
-}
 
 // TODO: use the older one and trim in the create* funtions, or copy correctly working _d into this source file with a different name
 // newer boost requires this
@@ -257,7 +244,7 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   naf = str_p("not")|str_p("non");
   literal
     = builtin_pred
-    | ( !naf >> (user_pred | sp::access_node_d[external_atom][&recordFilePosition] | aggregate) );
+    | ( !naf >> (user_pred | external_atom | aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> rm[ch_p('.')];
@@ -282,7 +269,7 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   root
     = *( // comment
          rm[sp::comment_p("%")]
-       | sp::access_node_d[clause][&recordFilePosition]
+       | clause
        )
        // end_p enforces a "full" match (in case of success) even with trailing newlines
        >> !sp::end_p;
@@ -582,7 +569,7 @@ AtomPtr createExtAtomFromExtAtom(node_t& node)
       }
     }
   }
-  // TODO: changelog bugfix/check if this breaks something: the pointer returned was stored in registry AND refcounted using AtomPtr in the old parser (and the literal created from that external atom is also stored into the registry)
+  // TODO: bugfix/check if this breaks something: the pointer is stored in registry AND refcounted using AtomPtr like in the old parser
   ExternalAtom* extat = new ExternalAtom(
     createStringFromNode(node.children[1]),
     outputs, inputs, node.value.value().pos.line);
@@ -721,22 +708,13 @@ Term createTermFromIdentVarNumber(node_t& node)
 // boost::spirit Part end
 
 HexParserDriver::HexParserDriver()
-    : lexer(new HexFlexLexer(this)),
-      source("")
+    : source("")
 {
 }
 
 
 HexParserDriver::~HexParserDriver()
 {
-    delete lexer;
-}
-
-
-HexFlexLexer*
-HexParserDriver::getLexer()
-{
-    return lexer;
 }
 
 
