@@ -158,9 +158,10 @@ PrintVisitor::visit(Atom* const a)
 void
 PrintVisitor::visit(BuiltinPredicate* const bp)
 {
-  stream << bp->getArgument(1)
-	 << bp->getArgument(0)
-	 << bp->getArgument(2);
+	if( bp->getArity() == 2 )
+		stream << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+	else
+		stream << bp->getArgument(3) << "=" << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
 }
 
 
