@@ -95,9 +95,15 @@ struct HexSpiritGrammar:
   enum RuleTags {
     None = 0, Root,
     Maxint, Namespace, Rule, Constraint, WeakConstraint,
-    Body, Number, Disj,
+    Body, Number, IdentVarNumber, Disj,
     UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
-    Neg, Terms, Term
+    Neg, Naf, Terms, Term,
+    Literal,
+    Aggregate, AggregatePred, AggregateRel, AggregateRange,
+    ExtAtom, ExtInputs, ExtOutputs,
+    BuiltinPred, BuiltinOther,
+    BuiltinTertopPrefix, BuiltinTertopInfix,
+    BuiltinBinopPrefix, BuiltinBinopInfix,
   };
 
   // S = ScannerT
@@ -116,20 +122,30 @@ struct HexSpiritGrammar:
     rule_t var;
     rule< S, c, tag<Number> > number;
     rule_t ident_or_var;
-    rule_t ident_or_var_or_number;
+    rule< S, c, tag<IdentVarNumber> > ident_or_var_or_number;
     rule_t cons;
     rule< S, c, tag<Term> > term;
     rule< S, c, tag<Terms> > terms; // list of terms
-    rule_t literal;
-    rule_t external_atom;
     rule_t aggregate_leq_binop;
     rule_t aggregate_geq_binop;
     rule_t aggregate_binop;
     rule_t binop;
     rule_t tertop;
-    rule_t aggregate;
-    rule_t aggregate_pred;
-    rule_t builtin_pred;
+    rule< S, c, tag<ExtInputs> > external_inputs;
+    rule< S, c, tag<ExtOutputs> > external_outputs;
+    rule< S, c, tag<ExtAtom> > external_atom;
+    rule< S, c, tag<Aggregate> > aggregate;
+    rule< S, c, tag<AggregatePred> > aggregate_pred;
+    rule< S, c, tag<AggregateRel> > aggregate_rel;
+    rule< S, c, tag<AggregateRange> > aggregate_range;
+    rule< S, c, tag<Naf> > naf;
+    rule< S, c, tag<BuiltinTertopInfix> > builtin_tertop_infix;
+    rule< S, c, tag<BuiltinTertopPrefix> > builtin_tertop_prefix;
+    rule< S, c, tag<BuiltinBinopInfix> > builtin_binop_infix;
+    rule< S, c, tag<BuiltinBinopPrefix> > builtin_binop_prefix;
+    rule< S, c, tag<BuiltinOther> > builtin_other;
+    rule< S, c, tag<BuiltinPred> > builtin_pred;
+    rule< S, c, tag<Literal> > literal;
     rule< S, c, tag<Disj> > disj;
     rule< S, c, tag<Neg> > neg;
     rule< S, c, tag<UserPredClassical> > user_pred_classical;
@@ -173,7 +189,7 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   // identifier or string
   ident
     = flatten[sp::regex_p("[a-z][a-zA-Z0-9_]*")]
-    | flatten[sp::confix_p("\"", *sp::anychar_p, "\"")];
+    | flatten[sp::regex_p("\"[^\"]*\"")];
   // variable
   var
     = flatten[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
@@ -211,27 +227,37 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
     = !neg >> ident_or_var;
   user_pred
     = user_pred_classical | user_pred_tuple | user_pred_atom;
+  external_inputs
+    = ch_p('[') >> !terms >> ch_p(']');
+  external_outputs
+    = ch_p('(') >> !terms >> ch_p(')');
   external_atom
-    = ch_p('&') >> ident >> !('[' >> !terms >> ']') >> !('(' >> !terms >> ')');
+    = ch_p('&') >> ident >> !external_inputs >> !external_outputs;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';
-  aggregate
+  aggregate_rel
     = (term >> aggregate_binop >> aggregate_pred)
-    | (aggregate_pred >> aggregate_binop >> term)
-    | (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
+    | (aggregate_pred >> aggregate_binop >> term);
+  aggregate_range
+    = (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
     | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
-  builtin_pred
-    = (term >> '=' >> term >> tertop >> term)
-    | (tertop >> '(' >> term >> rm[ch_p(',')] >> term >> rm[ch_p(',')] >> term >> ')')
-    | (binop >> '(' >> term >> rm[ch_p(',')] >> term >> ')')
-    | (term >> binop >> term)
-    | (str_p("#int") >> '(' >> term >> ')')
-    | (str_p("#succ") >> '(' >> term >> rm[ch_p(',')] >> term >> ')')
-    ;
+  aggregate = aggregate_rel | aggregate_range;
+  builtin_tertop_infix = term >> '=' >> term >> tertop >> term;
+  builtin_tertop_prefix =
+    tertop >> '(' >> term >> rm[ch_p(',')] >> term >> rm[ch_p(',')] >> term >> ')';
+  builtin_binop_prefix = binop >> '(' >> term >> rm[ch_p(',')] >> term >> ')';
+  builtin_binop_infix = term >> binop >> term;
+  builtin_other
+    = (str_p("#int") >> '(' >> term >> ')')
+    | (str_p("#succ") >> '(' >> term >> ch_p(',') >> term >> ')');
+  builtin_pred =
+    builtin_tertop_infix | builtin_tertop_prefix |
+    builtin_binop_infix | builtin_binop_prefix | builtin_other;
+  naf = str_p("not")|str_p("non");
   literal
     = builtin_pred
-    | ( !(str_p("not")|str_p("non")) >> (user_pred | external_atom | aggregate) );
+    | ( !naf >> (user_pred | sp::access_node_d[external_atom][&recordFilePosition] | aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> rm[ch_p('.')];
@@ -244,21 +270,19 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   constraint =  (cons >> body >> rm[ch_p('.')]);
   // weak constraint
   wconstraint =
-    str_p(":~") >> body >> rm[ch_p('.')]
+    str_p(":~") >> body >> ch_p('.')
     // optional weight
-    >> !( rm[ch_p('[')]
+    >> !( ch_p('[')
        >> !ident_or_var_or_number
-       >> rm[ch_p(':')]
+       >> ch_p(':')
        >> !ident_or_var_or_number
-       >> rm[ch_p(']')]
+       >> ch_p(']')
         );
-  clause
-    = sp::access_node_d[maxint | namespace_ | rule_ | constraint | wconstraint]
-        [&recordFilePosition];
+  clause = maxint | namespace_ | rule_ | constraint | wconstraint;
   root
     = *( // comment
          rm[sp::comment_p("%")]
-       | clause
+       | sp::access_node_d[clause][&recordFilePosition]
        )
        // end_p enforces a "full" match (in case of success) even with trailing newlines
        >> !sp::end_p;
@@ -282,6 +306,20 @@ void printSpiritPT(std::ostream& o, const node_t& node, const std::string& inden
 //
 
 void createASTFromClause(node_t& node, Program& program, AtomSet& edb);
+std::string createStringFromNode(node_t& node,
+    HexSpiritGrammar::RuleTags verifyRuleTag = HexSpiritGrammar::None);
+RuleHead_t createRuleHeadFromDisj(node_t& node);
+RuleBody_t createRuleBodyFromBody(node_t& node);
+AtomPtr createAtomFromUserPred(node_t& node);
+Literal* createLiteralFromLiteral(node_t& node);
+AtomPtr createBuiltinPredFromBuiltinPred(node_t& node);
+AtomPtr createExtAtomFromExtAtom(node_t& node);
+AggregateAtomPtr createAggregateFromAggregate(node_t& node);
+Term createTermFromTerm(node_t& node);
+Term createTermFromIdentVarNumber(node_t& node);
+Tuple createTupleFromTerms(node_t& node);
+AggregateAtomPtr createAggregateFromAggregatePred(node_t& node);
+
 void createAST(node_t& node, Program& program, AtomSet& edb)
 {
   // node is from "root" rule
@@ -294,8 +332,8 @@ void createAST(node_t& node, Program& program, AtomSet& edb)
 // descend into tree at node, until one child with value is found
 // return this as string
 // assert if multiple children with values are found
-std::string createStringFromNode(node_t& node,
-    HexSpiritGrammar::RuleTags verifyRuleTag = HexSpiritGrammar::None)
+std::string createStringFromNode(
+    node_t& node, HexSpiritGrammar::RuleTags verifyRuleTag)
 {
   // verify the tag
   assert(verifyRuleTag == HexSpiritGrammar::None || node.value.id() == verifyRuleTag);
@@ -307,22 +345,24 @@ std::string createStringFromNode(node_t& node,
     at = at.children[0];
   // if we find one child which has a value, we return it
   if( at.value.begin() != at.value.end() )
-    return std::string(at.value.begin(), at.value.end());
+  {
+    std::string ret(at.value.begin(), at.value.end());
+    //std::cerr << "createStringFromNode returns '" << ret << "'" << std::endl;
+    return ret;
+  }
   // if we find multiple children which have a value, this is an error
   assert(false && "found multiple value children in createStringFromNode");
 }
 
-RuleHead_t createRuleHeadFromDisj(node_t& node);
-RuleBody_t createRuleBodyFromBody(node_t& node);
 void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
 {
   // node is from "clause" rule
   assert(node.children.size() == 1);
   node_t& child = node.children[0];
-  //printSpiritPT(std::cerr, child);
   switch(child.value.id().to_long())
   {
   case HexSpiritGrammar::Maxint:
+    //printSpiritPT(std::cerr, child, "maxint>>");
     Globals::Instance()->maxint = "#maxint=" + createStringFromNode(
         child.children[2], HexSpiritGrammar::Number) + ".";
     break;
@@ -337,6 +377,7 @@ void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
     break;
   case HexSpiritGrammar::Rule:
     {
+      //printSpiritPT(std::cerr, child, "rule>>");
       RuleHead_t head = createRuleHeadFromDisj(child.children[0]);
       RuleBody_t body;
       if( child.children.size() == 3 )
@@ -346,7 +387,10 @@ void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
       if( body.empty() && head.size() == 1 )
       {
         // atom -> edb
-        edb.insert(*head.begin());
+        AtomPtr at = *head.begin();
+        if( !at->isGround() )
+          throw SyntaxError("fact not safe!");
+        edb.insert(at);
       }
       else
       {
@@ -376,15 +420,36 @@ void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
     }
     break;
   case HexSpiritGrammar::WeakConstraint:
-    // TODO: weak constraints
-    printSpiritPT(std::cerr, child);
+    {
+      Term leftTerm(1);
+      Term rightTerm(1);
+      if( child.children.size() > 6 )
+      {
+        // there is some weight
+        unsigned offset = 0;
+        if( !child.children[4].children.empty() )
+        {
+          // found first weight
+          leftTerm = createTermFromIdentVarNumber(child.children[4]);
+          offset = 1;
+        }
+        if( !child.children[5+offset].children.empty() )
+        {
+          // found second weight
+          rightTerm = createTermFromIdentVarNumber(child.children[5+offset]);
+        }
+      }
+      WeakConstraint* c = new WeakConstraint(
+        createRuleBodyFromBody(child.children[1]),
+        leftTerm, rightTerm);
+      program.addWeakConstraint(c);
+    }
     break;
   default:
     assert(false && "encountered unknown node in createASTFromClause!");
   }
 }
 
-AtomPtr createAtomFromUserPred(node_t& node);
 RuleHead_t createRuleHeadFromDisj(node_t& node)
 {
   assert(node.value.id() == HexSpiritGrammar::Disj);
@@ -398,11 +463,190 @@ RuleBody_t createRuleBodyFromBody(node_t& node)
 {
   assert(node.value.id() == HexSpiritGrammar::Body);
   RuleBody_t body;
-  // TODO
+  for(node_t::tree_iterator it = node.children.begin();
+      it != node.children.end(); ++it)
+    body.insert(createLiteralFromLiteral(*it));
   return body;
 }
 
-Tuple createTupleFromTerms(node_t& node);
+Literal* createLiteralFromLiteral(node_t& node)
+{
+  assert(node.value.id() == HexSpiritGrammar::Literal);
+  Literal* lit = 0;
+  if( node.children[0].value.id() == HexSpiritGrammar::BuiltinPred )
+  {
+    lit = new Literal(createBuiltinPredFromBuiltinPred(node.children[0]));
+  }
+  else
+  {
+    bool naf = node.children[0].value.id() == HexSpiritGrammar::Naf;
+    int offset = naf?1:0;
+    switch(node.children[offset].value.id().to_long())
+    {
+    case HexSpiritGrammar::UserPred:
+      lit = new Literal(createAtomFromUserPred(node.children[offset]), naf);
+      break;
+    case HexSpiritGrammar::ExtAtom:
+      lit = new Literal(createExtAtomFromExtAtom(node.children[offset]), naf);
+      break;
+    case HexSpiritGrammar::Aggregate:
+      lit = new Literal(createAggregateFromAggregate(node.children[offset]), naf);
+      break;
+    default:
+      assert(false && "encountered unknown node in createLiteralFromLiteral!");
+    }
+  }
+  assert(lit);
+  Registry::Instance()->storeObject(lit);
+  return lit;
+}
+
+AtomPtr createBuiltinPredFromBuiltinPred(node_t& node)
+{
+  assert(node.value.id() == HexSpiritGrammar::BuiltinPred);
+  node_t& child = node.children[0];
+  switch(child.value.id().to_long())
+  {
+  case HexSpiritGrammar::BuiltinTertopPrefix:
+    return AtomPtr(new BuiltinPredicate(
+          createTermFromTerm(child.children[2]),
+          createTermFromTerm(child.children[3]),
+          createTermFromTerm(child.children[4]),
+          createStringFromNode(child.children[0])));
+  case HexSpiritGrammar::BuiltinTertopInfix:
+    return AtomPtr(new BuiltinPredicate(
+          createTermFromTerm(child.children[2]),
+          createTermFromTerm(child.children[4]),
+          createTermFromTerm(child.children[0]),
+          createStringFromNode(child.children[3])));
+  case HexSpiritGrammar::BuiltinBinopPrefix:
+    return AtomPtr(new BuiltinPredicate(
+          createTermFromTerm(child.children[2]),
+          createTermFromTerm(child.children[3]),
+          createStringFromNode(child.children[0])));
+  case HexSpiritGrammar::BuiltinBinopInfix:
+    return AtomPtr(new BuiltinPredicate(
+          createTermFromTerm(child.children[0]),
+          createTermFromTerm(child.children[2]),
+          createStringFromNode(child.children[1])));
+  case HexSpiritGrammar::BuiltinOther:
+    {
+      Tuple t;
+      t.push_back(createTermFromTerm(child.children[2]));
+      if( child.children.size() == 6 )
+        t.push_back(createTermFromTerm(child.children[4]));
+      AtomPtr at(new Atom(
+          createStringFromNode(child.children[0]), t));
+      at->setAlwaysFO();
+      return at;
+    }
+  default:
+    assert(false && "encountered unknown node in createBuiltinPredFromBuiltinPred!");
+    return AtomPtr(); // keep the compiler happy
+  }
+}
+
+AtomPtr createExtAtomFromExtAtom(node_t& node)
+{
+  //printSpiritPT(std::cerr, node, ">>");
+  assert(node.value.id() == HexSpiritGrammar::ExtAtom);
+  Tuple inputs;
+  Tuple outputs;
+  if( node.children.size() > 2 )
+  {
+    // either input or output
+    unsigned offset = 0;
+    if( node.children[2].value.id() == HexSpiritGrammar::ExtInputs )
+    {
+      // input
+      offset = 1;
+      if( node.children[2].children.size() > 2 )
+      {
+        // there is at least one term
+        //printSpiritPT(std::cerr, node.children[2].children[1], ">>ii");
+        inputs = createTupleFromTerms(node.children[2].children[1]);
+      }
+    }
+    // check for output
+    if( node.children.size() > (2+offset) )
+    {
+      if( node.children[2+offset].value.id() == HexSpiritGrammar::ExtOutputs )
+      {
+        // output
+        if( node.children[2+offset].children.size() > 2 )
+        {
+          // there is at least one term
+          //printSpiritPT(std::cerr, node.children[2+offset].children[1], ">>oo");
+          outputs = createTupleFromTerms(node.children[2+offset].children[1]);
+        }
+      }
+    }
+  }
+  // TODO: changelog bugfix/check if this breaks something: the pointer returned was stored in registry AND refcounted using AtomPtr in the old parser (and the literal created from that external atom is also stored into the registry)
+  ExternalAtom* extat = new ExternalAtom(
+    createStringFromNode(node.children[1]),
+    outputs, inputs, node.value.value().pos.line);
+
+  // Storing the atom as a ProgramObject. We don't have to take care
+  // of deleting this pointer any more now.
+  Registry::Instance()->storeObject(extat);
+
+  return AtomPtr(extat);
+}
+
+AggregateAtomPtr createAggregateFromAggregate(node_t& node)
+{
+  assert(node.value.id() == HexSpiritGrammar::Aggregate);
+
+  AggregateAtomPtr agg;
+  Term leftTerm;
+  std::string leftComp;
+  Term rightTerm;
+  std::string rightComp;
+
+  node_t& child = node.children[0];
+  if( child.value.id() == HexSpiritGrammar::AggregateRel )
+  {
+    // binary relation between aggregate and term
+    if( child.children[0].value.id() == HexSpiritGrammar::Term )
+    {
+      leftTerm = createTermFromTerm(child.children[0]);
+      leftComp = createStringFromNode(child.children[1]);
+      agg = createAggregateFromAggregatePred(child.children[2]);
+    }
+    else
+    {
+      agg = createAggregateFromAggregatePred(child.children[0]);
+      rightComp = createStringFromNode(child.children[1]);
+      rightTerm = createTermFromTerm(child.children[2]);
+    }
+  }
+  else
+  {
+    // aggregate is in (ternary) range between terms
+    assert(child.value.id() == HexSpiritGrammar::AggregateRange);
+    leftTerm = createTermFromTerm(child.children[0]);
+    leftComp = createStringFromNode(child.children[1]);
+    agg = createAggregateFromAggregatePred(child.children[2]);
+    rightComp = createStringFromNode(child.children[3]);
+    rightTerm = createTermFromTerm(child.children[4]);
+  }
+  agg->setComp(leftComp, rightComp);
+  agg->setLeftTerm(leftTerm);
+  agg->setRightTerm(rightTerm);
+  return agg;
+}
+
+AggregateAtomPtr createAggregateFromAggregatePred(node_t& node)
+{
+  assert(node.value.id() == HexSpiritGrammar::AggregatePred);
+  AggregateAtomPtr agg(new AggregateAtom(
+        createStringFromNode(node.children[0]),
+        createTupleFromTerms(node.children[2]),
+        createRuleBodyFromBody(node.children[4])));
+  return agg;
+}
+
 AtomPtr createAtomFromUserPred(node_t& node)
 {
   assert(node.value.id() == HexSpiritGrammar::UserPred);
@@ -427,8 +671,6 @@ AtomPtr createAtomFromUserPred(node_t& node)
   }
 }
 
-Term createTermFromTerm(node_t& node);
-
 Tuple createTupleFromTerms(node_t& node)
 {
   assert(node.value.id() == HexSpiritGrammar::Terms);
@@ -439,9 +681,9 @@ Tuple createTupleFromTerms(node_t& node)
   return t;
 }
 
-Term createTermFromTerm(node_t& node)
+Term createTerm_Helper(node_t& node, HexSpiritGrammar::RuleTags verify)
 {
-  assert(node.value.id() == HexSpiritGrammar::Term);
+  assert(node.value.id() == verify);
   std::string s = createStringFromNode(node);
   if( s == "_" )
   {
@@ -462,6 +704,16 @@ Term createTermFromTerm(node_t& node)
     // string term
     return Term(s);
   }
+}
+
+Term createTermFromTerm(node_t& node)
+{
+  return createTerm_Helper(node, HexSpiritGrammar::Term);
+}
+
+Term createTermFromIdentVarNumber(node_t& node)
+{
+  return createTerm_Helper(node, HexSpiritGrammar::IdentVarNumber);
 }
 
 } // anonymous namespace
@@ -522,15 +774,6 @@ HexParserDriver::parse(std::istream& is,
   sp::tree_parse_info<pos_iterator_t, factory_t> info =
     sp::pt_parse<factory_t>(it_begin, it_end, grammar, sp::space_p);
 
-  // debug output
-  std::cerr << "spirit match: full=" << info.full << ", match=" << info.match << std::endl;
-  node_t::children_t::iterator itt;
-  for(itt = info.trees.begin(); itt != info.trees.end(); ++itt)
-  {
-    std::cerr << "got tree from spirit:" << std::endl;
-    printSpiritPT(std::cerr, *itt);
-  }
-
   // successful parse?
   if( !info.full )
     throw SyntaxError("Could not parse complete input!",
@@ -541,28 +784,6 @@ HexParserDriver::parse(std::istream& is,
 
   // create dlvhex AST from spirit (rudimentary) AST
   createAST(*info.trees.begin(), program, EDB);
-
-  return;
-
-  // old parser code
-  yy::HexParser parser(this, program, EDB);
-  parser.set_debug_level(false);
-  std::istringstream input_is(input);
-  lexer->switch_streams(&input_is, &std::cerr);
-
-  try
-    {
-      parser.parse();
-    }
-  catch (SyntaxError& e)
-    {
-      //
-      // is there was an error on the bison part, add the filename and throw
-      // again
-      //
-      e.setFile(this->source);
-      throw e;
-    }
 } 
 
 

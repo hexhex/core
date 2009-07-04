@@ -42,6 +42,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class AggregateAtom;
+typedef boost::shared_ptr<AggregateAtom> AggregateAtomPtr;
 
 /**
  * @brief Aggregate atom.
