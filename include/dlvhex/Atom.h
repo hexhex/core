@@ -82,6 +82,8 @@ class Atom;
  */
 typedef boost::shared_ptr<Atom> AtomPtr;
 
+class BuiltinPredicate;
+typedef boost::shared_ptr<BuiltinPredicate> BuiltinPredicatePtr;
 
 
 /**
@@ -385,7 +387,10 @@ public:
 class DLVHEX_EXPORT BuiltinPredicate : public Atom
 {
 public:
+	// binary predicate
 	BuiltinPredicate(const Term&, const Term&, const std::string&);
+	// ternary predicate
+	BuiltinPredicate(const Term&, const Term&, const Term&, const std::string&);
 
 	/**
 	 * @brief accepts a visitor.
