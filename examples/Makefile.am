@@ -15,6 +15,8 @@ EXTRA_DIST = \
     simple1.hex \
     weak1.hex \
     weak2.hex \
+    maxint.hex \
+    tertop.hex \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
@@ -29,4 +31,6 @@ EXTRA_DIST = \
     tests/simple1.out \
     tests/weak1.out \
     tests/weak1r.out \
-    tests/weak2.out
+    tests/weak2.out \
+    tests/maxint.out \
+    tests/tertop.out
