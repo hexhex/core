@@ -416,6 +416,10 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 	      std::pair<ExtAuxMap::const_iterator, ExtAuxMap::const_iterator> range = auxmap.equal_range(*ext);
 
+	      // either the range must be empty, or the first one must not be the end
+	      // (this is violated if the operator< does not work correctly for ExtAtom)
+	      assert(range.first != auxmap.end() || range.first == range.second);
+
 	      for (ExtAuxMap::const_iterator rgit = range.first; rgit != range.second; ++rgit)
 		{
 		  const std::pair<std::string, RuleBody_t>& tup = rgit->second;
@@ -492,9 +496,9 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 		  Dependency::addDep(auxrule, auxbodynode, auxheadnode, Dependency::PRECEDING);
 		}
 
-	    } // ordinary body-lit loop
+	    } // if (!ext->pureGroundInput())
 
-	} // if (!ext->pureGroundInput())
+	} // ordinary body-lit loop
     }
 
   //
@@ -554,8 +558,7 @@ GraphBuilder::run(const Program& program, NodeGraph& nodegraph, PluginContainer&
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=4 tw=80: */
-
+/* vim: set noet sw=2 ts=8: */
 
 // Local Variables:
 // mode: C++

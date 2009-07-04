@@ -253,19 +253,23 @@ ExternalAtom::operator< (const Atom& atom2) const
 	{
 	  ret = true;
 	}
-      else if (this->getArity() < ea2->getArity())
+      else if ((this->functionName == ea2->functionName)
+	      && (this->getArity() < ea2->getArity()))
 	{
 	  ret = true;
 	}
-      else if (this->isStrongNegated < ea2->isStrongNegated)
+      else if ((this->getArity() == ea2->getArity())
+	      && (this->isStrongNegated < ea2->isStrongNegated))
 	{
 	  ret = true;
 	}
-      else if (this->inputList < ea2->inputList)
+      else if ((this->isStrongNegated == ea2->isStrongNegated)
+	      && (this->inputList < ea2->inputList))
 	{
 	  ret = true;
 	}
-      else if (this->getArguments() < ea2->getArguments())
+      else if ((this->inputList == ea2->inputList)
+	      && (this->getArguments() < ea2->getArguments()))
 	{
 	  ret = true;
 	}
@@ -290,8 +294,7 @@ ExternalAtom::getLine() const
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=4 tw=80: */
-
+/* vim: set noet sw=4 ts=8 tw=80: */
 
 // Local Variables:
 // mode: C++
