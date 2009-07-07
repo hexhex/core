@@ -149,27 +149,6 @@ struct HexSpiritGrammar:
   };
 };
 
-// this is the same as leaf_node_d in older boost::spirit or reduced_node_d in newer
-// boost::spirit. this does NOT imply a lexeme_d (and we don't want to imply it!)
-struct my_reduced_node_op
-{
-    template <typename MatchT>
-    void operator()(MatchT& m) const
-    {
-        if (m.trees.size() == 1)
-        {
-            m.trees.begin()->children.clear();
-        }
-        else if (m.trees.size() > 1)
-        {
-            typedef typename MatchT::node_factory_t node_factory_t;
-            m = MatchT(m.length(), node_factory_t::group_nodes(m.trees));
-        }
-    }
-};
-const sp::node_parser_gen<my_reduced_node_op> flatten_d =
-    sp::node_parser_gen<my_reduced_node_op>();
-
 // impl of HexSpiritGrammar
 template<typename ScannerT>
 HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
@@ -180,14 +159,14 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
 
   // identifier or string
   ident
-    = flatten_d[sp::regex_p("[a-z][a-zA-Z0-9_]*")]
-    | flatten_d[sp::regex_p("\"[^\"]*\"")];
+    = sp::regex_p("[a-z][a-zA-Z0-9_]*")
+    | sp::regex_p("\"[^\"]*\"");
   // variable
   var
-    = flatten_d[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
+    = sp::regex_p("[A-Z][a-zA-Z0-9_]*");
   // nonnegative integer
   number
-    = flatten_d[+sp::digit_p];
+    = sp::regex_p("[0-9]+");
   ident_or_var
     = ident | var;
   ident_or_var_or_number
