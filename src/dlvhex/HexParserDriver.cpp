@@ -197,20 +197,20 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   aggregate_geq_binop
     = str_p(">=") | '>';
   aggregate_binop
-    = aggregate_leq_binop | aggregate_geq_binop | str_p("==") | '=';
+    = aggregate_leq_binop | aggregate_geq_binop | "==" | '=';
   binop
-    = aggregate_binop | str_p("!=") | str_p("<>");
+    = aggregate_binop | "!=" | "<>";
   tertop
     = ch_p('*') | '+';
   cons
-    = str_p(":-") | str_p("<-");
+    = str_p(":-") | "<-";
   // identifiers, variables, numbers, anonymous variables
   term
-    = ident_or_var_or_number | ch_p('_');
+    = ident_or_var_or_number | '_';
   terms
     = term >> *(rm[ch_p(',')] >> term);
   neg
-    = ch_p('-')|ch_p('~');
+    = ch_p('-')|'~';
   user_pred_classical
     = !neg >> ident_or_var >> '(' >> terms >> ')';
   user_pred_tuple
@@ -220,11 +220,11 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   user_pred
     = user_pred_classical | user_pred_tuple | user_pred_atom;
   external_inputs
-    = ch_p('[') >> !terms >> ch_p(']');
+    = '[' >> !terms >> ']';
   external_outputs
-    = ch_p('(') >> !terms >> ch_p(')');
+    = '(' >> !terms >> ')';
   external_atom
-    = ch_p('&') >> ident >> !external_inputs >> !external_outputs;
+    = '&' >> ident >> !external_inputs >> !external_outputs;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';
@@ -237,46 +237,42 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   aggregate = aggregate_rel | aggregate_range;
   builtin_tertop_infix = term >> '=' >> term >> tertop >> term;
   builtin_tertop_prefix =
-    tertop >> '(' >> term >> ch_p(',') >> term >> ch_p(',') >> term >> ')';
-  builtin_binop_prefix = binop >> '(' >> term >> ch_p(',') >> term >> ')';
+    tertop >> '(' >> term >> ',' >> term >> ',' >> term >> ')';
+  builtin_binop_prefix = binop >> '(' >> term >> ',' >> term >> ')';
   builtin_binop_infix = term >> binop >> term;
   builtin_other
     = (str_p("#int") >> '(' >> term >> ')')
-    | (str_p("#succ") >> '(' >> term >> ch_p(',') >> term >> ')');
+    | (str_p("#succ") >> '(' >> term >> ',' >> term >> ')');
   builtin_pred =
     builtin_tertop_infix | builtin_tertop_prefix |
     builtin_binop_infix | builtin_binop_prefix | builtin_other;
-  naf = str_p("not")|str_p("non");
+  naf = str_p("not") | "non";
   literal
     = builtin_pred
     | ( !naf >> (user_pred | external_atom | aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
-  maxint = str_p("#maxint") >> '=' >> number >> ch_p('.');
+  maxint = str_p("#maxint") >> '=' >> number >> '.';
   // TODO: change #namespace to have "." at the end?
   // TODO: sp::eol_p should be added, but this does not work (because of skip parser?)
-  namespace_ = str_p("#namespace") >> '(' >> ident >> ch_p(',') >> ident >> ')';
+  namespace_ = str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')';
   // rule (optional body/condition)
-  rule_ = disj >> !(cons >> !body) >> ch_p('.');
+  rule_ = disj >> !(cons >> !body) >> '.';
   // constraint
-  constraint =  (cons >> body >> ch_p('.'));
+  constraint = (cons >> body >> '.');
   // weak constraint
   wconstraint =
-    str_p(":~") >> body >> ch_p('.')
+    ":~" >> body >> '.' >>
     // optional weight
-    >> !( ch_p('[')
-       >> !ident_or_var_or_number
-       >> ch_p(':')
-       >> !ident_or_var_or_number
-       >> ch_p(']')
-        );
+    !( '[' >> !ident_or_var_or_number >> ':' >> !ident_or_var_or_number >> ']');
   clause = maxint | namespace_ | rule_ | constraint | wconstraint;
   root
     = *( // comment
          rm[sp::comment_p("%")]
        | clause
        )
-       // end_p enforces a "full" match (in case of success) even with trailing newlines
+       // end_p enforces a "full" match (in case of success)
+       // even with trailing newlines
        >> !sp::end_p;
 }
 
