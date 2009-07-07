@@ -74,16 +74,6 @@ namespace
 // parsing and creating the boost::spirit parse tree (PT)
 //
 
-typedef FilePositionNodeFactory<FilePositionNodeData> factory_t;
-
-// iterator which remembers file positions (useful for error messages)
-typedef sp::position_iterator<const char*> pos_iterator_t;
-// node type for spirit PT
-typedef sp::tree_match<pos_iterator_t, factory_t>::node_t node_t;
-
-// boost::spirit PT debugging
-void printSpiritPT(std::ostream& o, const node_t& node, const std::string& indent="");
-
 // the grammar of hex (see "The Grammar" in the spirit docs)
 struct HexSpiritGrammar:
   public sp::grammar<HexSpiritGrammar>
@@ -159,11 +149,26 @@ struct HexSpiritGrammar:
   };
 };
 
-// TODO: use the older one and trim in the create* funtions, or copy correctly working _d into this source file with a different name
-// newer boost requires this
-#define flatten sp::reduced_node_d
-// KBS boost requires this (this does not work correctly in newer boost)
-//#define flatten sp::leaf_node_d
+// this is the same as leaf_node_d in older boost::spirit or reduced_node_d in newer
+// boost::spirit. this does NOT imply a lexeme_d (and we don't want to imply it!)
+struct my_reduced_node_op
+{
+    template <typename MatchT>
+    void operator()(MatchT& m) const
+    {
+        if (m.trees.size() == 1)
+        {
+            m.trees.begin()->children.clear();
+        }
+        else if (m.trees.size() > 1)
+        {
+            typedef typename MatchT::node_factory_t node_factory_t;
+            m = MatchT(m.length(), node_factory_t::group_nodes(m.trees));
+        }
+    }
+};
+const sp::node_parser_gen<my_reduced_node_op> flatten_d =
+    sp::node_parser_gen<my_reduced_node_op>();
 
 // impl of HexSpiritGrammar
 template<typename ScannerT>
@@ -175,14 +180,14 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
 
   // identifier or string
   ident
-    = flatten[sp::regex_p("[a-z][a-zA-Z0-9_]*")]
-    | flatten[sp::regex_p("\"[^\"]*\"")];
+    = flatten_d[sp::regex_p("[a-z][a-zA-Z0-9_]*")]
+    | flatten_d[sp::regex_p("\"[^\"]*\"")];
   // variable
   var
-    = flatten[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
+    = flatten_d[sp::regex_p("[A-Z][a-zA-Z0-9_]*")];
   // nonnegative integer
   number
-    = flatten[+sp::digit_p];
+    = flatten_d[+sp::digit_p];
   ident_or_var
     = ident | var;
   ident_or_var_or_number
@@ -232,8 +237,8 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   aggregate = aggregate_rel | aggregate_range;
   builtin_tertop_infix = term >> '=' >> term >> tertop >> term;
   builtin_tertop_prefix =
-    tertop >> '(' >> term >> rm[ch_p(',')] >> term >> rm[ch_p(',')] >> term >> ')';
-  builtin_binop_prefix = binop >> '(' >> term >> rm[ch_p(',')] >> term >> ')';
+    tertop >> '(' >> term >> ch_p(',') >> term >> ch_p(',') >> term >> ')';
+  builtin_binop_prefix = binop >> '(' >> term >> ch_p(',') >> term >> ')';
   builtin_binop_infix = term >> binop >> term;
   builtin_other
     = (str_p("#int") >> '(' >> term >> ')')
@@ -247,14 +252,14 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
     | ( !naf >> (user_pred | external_atom | aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
-  maxint = str_p("#maxint") >> '=' >> number >> rm[ch_p('.')];
+  maxint = str_p("#maxint") >> '=' >> number >> ch_p('.');
   // TODO: change #namespace to have "." at the end?
   // TODO: sp::eol_p should be added, but this does not work (because of skip parser?)
-  namespace_ = str_p("#namespace") >> '(' >> ident >> rm[ch_p(',')] >> ident >> ')';
+  namespace_ = str_p("#namespace") >> '(' >> ident >> ch_p(',') >> ident >> ')';
   // rule (optional body/condition)
-  rule_ = disj >> !(cons >> !body) >> rm[ch_p('.')];
+  rule_ = disj >> !(cons >> !body) >> ch_p('.');
   // constraint
-  constraint =  (cons >> body >> rm[ch_p('.')]);
+  constraint =  (cons >> body >> ch_p('.'));
   // weak constraint
   wconstraint =
     str_p(":~") >> body >> ch_p('.')
@@ -274,6 +279,16 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
        // end_p enforces a "full" match (in case of success) even with trailing newlines
        >> !sp::end_p;
 }
+
+typedef FilePositionNodeFactory<FilePositionNodeData> factory_t;
+
+// iterator which remembers file positions (useful for error messages)
+typedef sp::position_iterator<const char*> pos_iterator_t;
+// node type for spirit PT
+typedef sp::tree_match<pos_iterator_t, factory_t>::node_t node_t;
+
+// boost::spirit PT debugging
+void printSpiritPT(std::ostream& o, const node_t& node, const std::string& indent="");
 
 void printSpiritPT(std::ostream& o, const node_t& node, const std::string& indent)
 {
@@ -357,7 +372,7 @@ void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
     {
       std::string prefix = createStringFromNode(child.children[2]);
       if( prefix[0] == '"' ) prefix = prefix.substr(1, prefix.length()-2);
-      std::string ns = createStringFromNode(child.children[3]);
+      std::string ns = createStringFromNode(child.children[4]);
       if( ns[0] == '"' ) ns = ns.substr(1, ns.length()-2);
       Term::namespaces.push_back(std::make_pair(ns,prefix));
     }
@@ -367,7 +382,7 @@ void createASTFromClause(node_t& node, Program& program, AtomSet& edb)
       //printSpiritPT(std::cerr, child, "rule>>");
       RuleHead_t head = createRuleHeadFromDisj(child.children[0]);
       RuleBody_t body;
-      if( child.children.size() == 3 )
+      if( child.children.size() == 4 )
         // nonempty body
         body = createRuleBodyFromBody(child.children[2]);
 
@@ -497,8 +512,8 @@ AtomPtr createBuiltinPredFromBuiltinPred(node_t& node)
   case HexSpiritGrammar::BuiltinTertopPrefix:
     return AtomPtr(new BuiltinPredicate(
           createTermFromTerm(child.children[2]),
-          createTermFromTerm(child.children[3]),
           createTermFromTerm(child.children[4]),
+          createTermFromTerm(child.children[6]),
           createStringFromNode(child.children[0])));
   case HexSpiritGrammar::BuiltinTertopInfix:
     return AtomPtr(new BuiltinPredicate(
@@ -509,7 +524,7 @@ AtomPtr createBuiltinPredFromBuiltinPred(node_t& node)
   case HexSpiritGrammar::BuiltinBinopPrefix:
     return AtomPtr(new BuiltinPredicate(
           createTermFromTerm(child.children[2]),
-          createTermFromTerm(child.children[3]),
+          createTermFromTerm(child.children[4]),
           createStringFromNode(child.children[0])));
   case HexSpiritGrammar::BuiltinBinopInfix:
     return AtomPtr(new BuiltinPredicate(
