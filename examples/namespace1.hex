@@ -1,4 +1,4 @@
-#namespace("ex","http://example.org#")
+#namespace("ex","http://example.org#").
 a("ex:foo").
 b("ex:foo").
 d("http://example.org#bar").

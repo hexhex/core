@@ -232,9 +232,7 @@ HexSpiritGrammar::definition<ScannerT>::definition(HexSpiritGrammar const&)
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> '.';
-  // TODO: change #namespace to have "." at the end?
-  // TODO: sp::eol_p should be added, but this does not work (because of skip parser?)
-  namespace_ = str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')';
+  namespace_ = str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')' >> '.';
   // rule (optional body/condition)
   rule_ = disj >> !(cons >> !body) >> '.';
   // constraint
