@@ -87,6 +87,7 @@ libdlvhexbase_la_SOURCES = \
     Term.cpp \
     ResultContainer.cpp \
     TextOutputBuilder.cpp \
+    HexGrammarPTToASTConverter.cpp \
     HexParserDriver.cpp \
     AnswerSet.cpp \
     URLBuf.cpp

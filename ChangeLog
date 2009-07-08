@@ -5,6 +5,7 @@
 		binary operators (prefix) and #succ.
 	Corrected location of #int builtin in parser (previously allowed in rule head).
 	Corrected #maxint parsing (missing trailing dot).
+	Changing syntax of #namespace directive (missing trailing dot).
 
 2009-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
 

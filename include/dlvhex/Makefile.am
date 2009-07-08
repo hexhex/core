@@ -9,6 +9,10 @@ noinst_HEADERS = \
 	GraphProcessor.h \
 	HexParserDriver.h \
 	SpiritFilePositionNode.h \
+	SpiritDebugging.h \
+	HexGrammar.h \
+	HexGrammar.tcc \
+	HexGrammarPTToASTConverter.h \
 	ParserDriver.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
