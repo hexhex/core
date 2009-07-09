@@ -162,7 +162,7 @@ void DLVResultGrammarPTToResultConverter::appendPTToResult(
       it != node.children.end(); ++it)
   {
     node_t& at = *it;
-    printSpiritPT(std::cerr, at, "node");
+    //printSpiritPT(std::cerr, at, "node");
     // skip empty lines and end marker
     if( at.value.id() != DLVResultGrammar::AnswerSet )
       continue;
