@@ -4,7 +4,6 @@ AUTOMAKE_OPTIONS = gnu
 noinst_HEADERS = \
 	ASPSolver.h \
 	ASPSolver.tcc \
-	DLVresultFlexLexer.h \
 	DLVresultParserDriver.h \
 	GraphProcessor.h \
 	HexParserDriver.h \

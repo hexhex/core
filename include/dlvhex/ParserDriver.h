@@ -40,12 +40,6 @@
 
 #include <string>
 
-// forward declaration (so we don't need to include bison-generated files here)
-namespace yy
-{
-  class location;
-}
-
 DLVHEX_NAMESPACE_BEGIN
 
 /**
@@ -54,16 +48,7 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT ParserDriver
 {
 protected:
-    ParserDriver();
-
-public:
-
-    // Error handling.
-    void
-    error(const yy::location& l, const std::string& m) throw (SyntaxError);
-
-    void
-    error(const std::string& m) throw (SyntaxError);
+    ParserDriver() {}
 };
 
 DLVHEX_NAMESPACE_END
