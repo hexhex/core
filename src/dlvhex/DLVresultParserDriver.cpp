@@ -312,6 +312,11 @@ DLVresultParserDriver::parse(std::istream& is,
   std::ostringstream buf;
   buf << is.rdbuf();
   std::string input = buf.str();
+  if( Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
+  {
+    Globals::Instance()->getVerboseStream() <<
+      "Got Result:\n===\n" << input << "\n===" << std::endl;
+  }
 
   DLVResultGrammar grammar;
   typedef DLVResultGrammarPTToResultConverter Converter;

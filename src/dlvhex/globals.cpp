@@ -61,6 +61,7 @@ Globals::Globals()
     verboseLevel[COMPONENT_EVALUATION] = 4;
     verboseLevel[MODEL_GENERATOR] = 4;
     verboseLevel[GRAPH_PROCESSOR] = 4;
+    verboseLevel[DUMP_OUTPUT] = 4;
 
 	//
 	// time benchmarking
