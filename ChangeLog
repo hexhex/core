@@ -1,3 +1,18 @@
+2009-07-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Fix AC_CONFIG_SUBDIRS bug, see also
+	<https://gnunet.org/mantis/view.php?id=1340>.
+
+	* m4/boost.m4: Applied a patch by Benoit Sigoure
+	<tsuna@lrde.epita.fr> (boost.m4 maintainer) for the 'xgcc' bug.
+
+2009-06-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* m4/boost.m4: Update boost.m4 from http://repo.or.cz/w/boost.m4.git.
+	(_BOOST_FIND_COMPILER_TAG): Add "-x$boost_cv_lib_tag" to
+	$boost_cv_lib_tag, it seems that boost 1.39 uses "xgcc40" instead
+	of "gcc40" in the library names.
+
 2009-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/ParserDriver.h: Forward declaration for generated include
