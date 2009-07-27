@@ -41,7 +41,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-Atom::Atom()
+// this constructor is used by BuiltinPredicate!
+Atom::Atom(): arguments(), isStrongNegated(false), isAlwaysFO(false)
 { }
 
 
@@ -329,6 +330,14 @@ BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const std::st
 	arguments.push_back(Term(b));
 	arguments.push_back(t1);
 	arguments.push_back(t2);
+}
+
+BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const Term& t3, const std::string& b)
+{
+	arguments.push_back(Term(b));
+	arguments.push_back(t1);
+	arguments.push_back(t2);
+	arguments.push_back(t3);
 }
 
 
