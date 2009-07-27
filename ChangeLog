@@ -6,6 +6,34 @@
 	* m4/boost.m4: Applied a patch by Benoit Sigoure
 	<tsuna@lrde.epita.fr> (boost.m4 maintainer) for the 'xgcc' bug.
 
+2009-07-04  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolver.tcc: Pass #maxint line to DLV.
+
+	* include/dlvhex/Atom.h: Fix noninitialized bools in protected
+	constructor, which is used by BuiltinPredicate constructor.
+	Add support for ternary builtin predicates (#succ).
+	* src/dlvhex/Atom.cpp: Likewise.
+
+	* src/dlvhex/ExternalAtom.cpp (ExternalAtom::operator<): Fix
+	comparison bug where external atoms have variables in both input-
+	and output lists.
+
+	* src/dlvhex/GraphBuilder.cpp: Add assertion for checking the
+	iterators after calling std::equal_range.
+
+	* src/testsuite/dlvhex/run-dlvhex-tests.sh: Remove deprecated Sets
+	library.
+	
+2009-07-02  Peter Schueller  <ps@kr.tuwien.ac.at>
+  
+	* examples/maxint.hex: Verify correct handling of #maxint builtin.
+	* examples/tests/maxint.out: Likewise.
+
+	* examples/tertop.hex: Verify correct handling of ternary
+	arithmetic predicates.
+	* examples/tests/tertop.out: Likewise.
+	
 2009-06-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* m4/boost.m4: Update boost.m4 from http://repo.or.cz/w/boost.m4.git.
