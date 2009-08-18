@@ -92,13 +92,14 @@ public:
 	typedef enum { DUMP_CONVERTED_PROGRAM,
 	               DUMP_PARSED_PROGRAM,
 	               DUMP_REWRITTEN_PROGRAM,
-				   SAFETY_ANALYSIS,
+	               SAFETY_ANALYSIS,
 	               DUMP_DEPENDENCY_GRAPH,
 	               DUMP_OPTIMIZED_PROGRAM,
 	               COMPONENT_EVALUATION,
 	               MODEL_GENERATOR,
 	               GRAPH_PROCESSOR,
-	               PROFILING } verboseAction_t;
+	               PROFILING,
+	               DUMP_OUTPUT } verboseAction_t;
 
 	/**
 	 * Singleton instance.

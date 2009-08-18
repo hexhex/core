@@ -6,6 +6,13 @@
 	* m4/boost.m4: Applied a patch by Benoit Sigoure
 	<tsuna@lrde.epita.fr> (boost.m4 maintainer) for the 'xgcc' bug.
 
+2009-07-13  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Dumping dlv(db) result
+	output in debugging verbosity level 4.
+	* src/dlvhex/globals.cpp: Likewise.
+	* include/dlvhex/globals.h: Likewise.
+
 2009-07-09  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexParserDriver.h: Rewriting the parser using
