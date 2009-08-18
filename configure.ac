@@ -110,12 +110,6 @@ if test "$GXX" = "yes"; then
    CXXFLAGS="$CXXFLAGS -W -Wall"
 fi
 
-# check for lex/yacc
-AM_PROG_LEX
-# include bison generated-stuff in dist
-AC_PROG_YACC
-
-
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_CHECK_HEADERS([sys/param.h])
@@ -126,63 +120,6 @@ case $host_os in
 	CPPFLAGS="$CPPFLAGS -I/opt/local/include -I/sw/include"
      ;;
 esac 
-
-
-#
-# search for FlexLexer.h so we can add it at `make dist' time
-#
-absolute_srcdir=`pwd`
-absolute_srcdir=$absolute_srcdir/$srcdir
-FLEXLEXER_H=$absolute_srcdir/src/dlvhex/FlexLexer.h
-if test -r $FLEXLEXER_H ; then : ; else
-
-	AC_LANG_PUSH([C++])
-	AC_CHECK_HEADER([FlexLexer.h])
-	AC_LANG_POP([C++])
-
-	# first we guess the prefix of flex
-	AC_PATH_PROG([flexexec], [flex], [notfound])
-	flexbindir=`AS_DIRNAME(["$flexexec"])`
-	flexprefix=`AS_DIRNAME(["$flexbindir"])`
-
-	if test "$flexexec" = notfound; then
-	   AC_MSG_ERROR([flex not found. Download it at http://flex.sourceforge.net/])
-	fi
-
-	include_paths="$flexprefix/include"
-
-	# then we check all compiler flags for include paths
-	flags="$CPPFLAGS $CXXFLAGS $CFLAGS"
-	for f in $flags
-	do
-		case $f in
-		-I*) include_paths="$include_paths $f" ;;
-		esac
-	done
-
-	# TODO: get default include paths from compiler?
-	include_paths="$include_paths /usr/local/include /usr/include"
-
-	# get rid of -I compiler flags
-	paths=`echo $include_paths | sed s,-I,,g`
-
-	AC_MSG_CHECKING([for FlexLexer.h path in $paths])
-
-	# get the FIRST occurence of FlexLexer.h
-	FLEXLEXER_H=`find $paths -maxdepth 1 -name FlexLexer.h 2>/dev/null | head -n1`
-
-	AC_MSG_RESULT([$FLEXLEXER_H])
-
-	if test -z "$FLEXLEXER_H" ; then AC_MSG_ERROR([Could not find FlexLexer.h]) fi
-
-	# and now, add the dirname of FlexLexer.h to the include paths
-	flexlexerpath=`AS_DIRNAME(["$FLEXLEXER_H"])`
-	CPPFLAGS="-I$flexlexerpath $CPPFLAGS"
-fi
-
-AC_SUBST([FLEXLEXER_H])
-
-
 
 # Checks for libtool's libltdl
 AC_LIB_LTDL
@@ -210,11 +147,12 @@ fi
 AM_CONDITIONAL([HAVE_CPPUNIT], [test x$have_cppunit = xtrue])
 
 # checking for boost libs
-BOOST_REQUIRE([1.35.0])
+BOOST_REQUIRE([1.33.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
+BOOST_REGEX
 #BOOST_GRAPH #right now, we don't care about the libboost-graph shared library
 BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
 BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
@@ -291,6 +229,5 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  Using the following libraries:
  Boost: $BOOST_CPPFLAGS
  Curl: $LIBCURL_CPPFLAGS
- FlexLexer: $FLEXLEXER_H
 
 EOF

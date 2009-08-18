@@ -44,10 +44,6 @@
 #include <string>
 
 
-// some forward declaration
-class DLVresultFlexLexer;
-
-
 DLVHEX_NAMESPACE_BEGIN
 
 /**
@@ -61,17 +57,11 @@ public:
     virtual
     ~DLVresultParserDriver();
 
+    // this function parses input and APPENDS it to the atomset
     void
     parse(std::istream& is,
           std::vector<AtomSet>&) throw (SyntaxError);
 
-    DLVresultFlexLexer*
-    getLexer();
-
-private:
-
-    /// lexer object which scans the stream
-    DLVresultFlexLexer* lexer;
 };
 
 

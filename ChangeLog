@@ -6,6 +6,48 @@
 	* m4/boost.m4: Applied a patch by Benoit Sigoure
 	<tsuna@lrde.epita.fr> (boost.m4 maintainer) for the 'xgcc' bug.
 
+2009-07-09  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexParserDriver.h: Rewriting the parser using
+	boost::spirit. Added functionality: ternary operators (prefix
+	and infix notation), binary operators (prefix notation), and
+	#succ. Fixes: #int handling (previously allowed in rule heads),
+	Changed functionality: #namespace syntax (trailing dot).
+	* include/dlvhex/DLVresultParserDriver.h: Likewise.
+	* include/dlvhex/ParserDriver.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/AggregateAtom.h: Likewise.
+	* src/dlvhex/HexParserDriver.cpp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/ParserDriver.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* examples/maxint.hex: Likewise.
+	* examples/tertop.hex: Likewise.
+	* examples/namespace1.hex: Likewise.
+	* examples/namespace2.hex: Likewise.
+	* examples/tests/maxint.out: Likewise.
+	* examples/tests/tertop.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/dlvhex/Makefile.am: Likewise.
+	* examples/Makefile.am: Likewise.
+	* configure.ac: Likewise.
+
+	* include/dlvhex/HexGrammar.h: Likewise (new file).
+	* include/dlvhex/SpiritFilePositionNode.h: Likewise (new file).
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise (new file).
+	* include/dlvhex/HexGrammar.tcc: Likewise (new file).
+	* include/dlvhex/SpiritDebugging.h: Likewise (new file).
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise (new file).
+
+	* include/dlvhex/HexFlexLexer.h: Likewise (removed file).
+	* include/dlvhex/DLVresultFlexLexer.h: Likewise (removed file).
+	* src/dlvhex/DLVresultScanner.lpp: Likewise (removed file).
+	* src/dlvhex/HexParser.ypp: Likewise (removed file).
+	* src/dlvhex/HexScanner.lpp: Likewise (removed file).
+	* src/dlvhex/DLVresultParser.ypp: Likewise (removed file).
+
 2009-07-04  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/ASPSolver.tcc: Pass #maxint line to DLV.
@@ -26,7 +68,7 @@
 	library.
 	
 2009-07-02  Peter Schueller  <ps@kr.tuwien.ac.at>
-  
+
 	* examples/maxint.hex: Verify correct handling of #maxint builtin.
 	* examples/tests/maxint.out: Likewise.
 

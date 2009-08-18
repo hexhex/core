@@ -4,11 +4,14 @@ AUTOMAKE_OPTIONS = gnu
 noinst_HEADERS = \
 	ASPSolver.h \
 	ASPSolver.tcc \
-	DLVresultFlexLexer.h \
 	DLVresultParserDriver.h \
 	GraphProcessor.h \
-	HexFlexLexer.h \
 	HexParserDriver.h \
+	SpiritFilePositionNode.h \
+	SpiritDebugging.h \
+	HexGrammar.h \
+	HexGrammar.tcc \
+	HexGrammarPTToASTConverter.h \
 	ParserDriver.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
@@ -39,7 +42,7 @@ pkginclude_HEADERS = \
 	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
-    PlatformDefinitions.h \
+	PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \
 	PrintVisitor.h \

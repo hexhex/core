@@ -1,5 +1,5 @@
-#namespace("ex","http://example.org#")
-#namespace("","http://www.kr.tuwien.ac.at/default/")
+#namespace("ex","http://example.org#").
+#namespace("","http://www.kr.tuwien.ac.at/default/").
 a("ex:foo").
 b("ex:foo").
 d("http://example.org#bar").

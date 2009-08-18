@@ -39,6 +39,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class ExternalAtom;
+typedef boost::shared_ptr<ExternalAtom> ExternalAtomPtr;
+
 /**
  * @brief External atom class.
  */

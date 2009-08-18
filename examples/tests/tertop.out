@@ -1,3 +1,1 @@
-DLV [build BEN/Oct 11 2007   gcc 4.1.2 20061115 (prerelease) (Debian 4.1.1-21)]
-
-{mul1(1,6), mul1(2,3), mul1(3,2), mul1(6,1), mul2(1,6), mul2(2,3), mul2(3,2), mul2(6,1), plus1(0,6), plus1(1,5), plus1(2,4), plus1(3,3), plus1(4,2), plus1(5,1), plus1(6,0), plus2(0,6), plus2(1,5), plus2(2,4), plus2(3,3), plus2(4,2), plus2(5,1), plus2(6,0)}
+{plus2(0,6), plus2(1,5), plus2(2,4), plus2(3,3), plus2(4,2), plus2(5,1), plus2(6,0), plus1(0,6), plus1(1,5), plus1(2,4), plus1(3,3), plus1(4,2), plus1(5,1), plus1(6,0), mul2(1,6), mul2(2,3), mul2(3,2), mul2(6,1), mul1(1,6), mul1(2,3), mul1(3,2), mul1(6,1)}
