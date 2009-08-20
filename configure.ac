@@ -147,12 +147,11 @@ fi
 AM_CONDITIONAL([HAVE_CPPUNIT], [test x$have_cppunit = xtrue])
 
 # checking for boost libs
-BOOST_REQUIRE([1.33.0])
+BOOST_REQUIRE([1.35.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
-BOOST_REGEX
 #BOOST_GRAPH #right now, we don't care about the libboost-graph shared library
 BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
 BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])

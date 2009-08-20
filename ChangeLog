@@ -1,3 +1,19 @@
+2009-08-20  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	In boost 1.36, the previously (mistakenly) bidirectional
+	boost::spirit::position_iterator was changed into a forward
+	iterator. This no longer allows to use boost::regex parsers.
+	The multi_pass iterator adapter does not work well together
+	with the position_iterator, so we can no longer use regex_p.
+	* include/dlvhex/HexGrammar.h: Replacing regex_p by direct
+	spirit parser constructions, including postprocessing (trim).
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* configure.ac: No longer requiring/handling boost::regex.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/dlvhex/Makefile.am: Likewise.
+
 2009-07-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Fix AC_CONFIG_SUBDIRS bug, see also

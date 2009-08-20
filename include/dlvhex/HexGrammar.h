@@ -32,7 +32,7 @@
 #define DLVHEX_HEX_GRAMMAR_H_INCLUDED
 
 #include <boost/spirit/core.hpp>
-#include <boost/spirit/utility/regex.hpp>
+#include <boost/spirit/utility/chset.hpp>
 #include <boost/spirit/utility/confix.hpp>
 #include <boost/spirit/tree/common.hpp>
 

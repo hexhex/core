@@ -42,10 +42,10 @@ AM_CPPFLAGS = \
 
 dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
 
-dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) $(DLVHEX_LIBS) @LIBCURL@  @BOOST_REGEX_LDFLAGS@
+dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) $(DLVHEX_LIBS) @LIBCURL@
 
 dlvhexTS_LDADD = \
-    @LIBLTDL@ @LIBADD_DL@ @BOOST_REGEX_LIBS@ \
+    @LIBLTDL@ @LIBADD_DL@ \
     $(top_builddir)/src/dlvhex/libdlvhexbase.la \
     $(top_builddir)/src/dlvhex/libaspsolver.la
 

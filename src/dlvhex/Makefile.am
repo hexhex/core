@@ -25,12 +25,12 @@ dlvhex_SOURCES = \
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-dlvhex_LDFLAGS = -static -export-dynamic @BOOST_REGEX_LDFLAGS@
+dlvhex_LDFLAGS = -static -export-dynamic
 
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ @BOOST_REGEX_LIBS@ libdlvhexbase.la libaspsolver.la
+dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \

@@ -36,8 +36,9 @@
 #include "dlvhex/globals.h"
 
 #include <boost/spirit/core.hpp>
-#include <boost/spirit/utility/regex.hpp>
 #include <boost/spirit/tree/parse_tree.hpp>
+#include <boost/spirit/utility/chset.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include <sstream>
 #include <iostream>
@@ -91,11 +92,12 @@ DLVResultGrammar::definition<ScannerT>::definition(DLVResultGrammar const&)
   const sp::node_parser_gen<sp::discard_node_op> rm =
     sp::node_parser_gen<sp::discard_node_op>();
 
+  sp::chset<> alnum_("a-zA-Z0-9_");
   ident
-    = sp::regex_p("[a-z][a-zA-Z0-9_]*")
-    | sp::regex_p("\"[^\"]*\"");
+    = sp::token_node_d[sp::lower_p >> *alnum_]
+    | sp::token_node_d['"' >> *(~sp::ch_p('"')) >> '"'];
   number
-    = sp::regex_p("[0-9]+");
+    = sp::token_node_d[+sp::digit_p];
   groundterm
     = ident | number;
   neg
@@ -217,6 +219,7 @@ std::string DLVResultGrammarPTToResultConverter::createStringFromNode(
   if( at->value.begin() != at->value.end() )
   {
     std::string ret(at->value.begin(), at->value.end());
+    boost::trim(ret);
     //std::cerr << "createStringFromNode returns '" << ret << "'" << std::endl;
     return ret;
   }

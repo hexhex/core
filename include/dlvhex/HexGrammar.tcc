@@ -41,16 +41,17 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   const sp::node_parser_gen<sp::discard_node_op> rm =
     sp::node_parser_gen<sp::discard_node_op>();
 
+  sp::chset<> alnum_("a-zA-Z0-9_");
   // identifier or string
   ident
-    = sp::regex_p("[a-z][a-zA-Z0-9_]*")
-    | sp::regex_p("\"[^\"]*\"");
+    = sp::token_node_d[sp::lower_p >> *alnum_]
+    | sp::token_node_d['"' >> *(~ch_p('"')) >> '"'];
   // variable
   var
-    = sp::regex_p("[A-Z][a-zA-Z0-9_]*");
+    = sp::token_node_d[sp::upper_p >> *alnum_];
   // nonnegative integer
   number
-    = sp::regex_p("[0-9]+");
+    = sp::token_node_d[+sp::digit_p];
   ident_or_var
     = ident | var;
   ident_or_var_or_number

@@ -33,6 +33,7 @@
 #include "dlvhex/Registry.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/SpiritDebugging.h"
+#include <boost/algorithm/string/trim.hpp>
 
 #include <sstream>
 #include <cassert>
@@ -68,6 +69,7 @@ std::string HexGrammarPTToASTConverter::createStringFromNode(
   if( at.value.begin() != at.value.end() )
   {
     std::string ret(at.value.begin(), at.value.end());
+    boost::trim(ret);
     //std::cerr << "createStringFromNode returns '" << ret << "'" << std::endl;
     return ret;
   }
