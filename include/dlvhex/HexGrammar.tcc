@@ -42,12 +42,10 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
     sp::node_parser_gen<sp::discard_node_op>();
 
   sp::chset<> alnum_("a-zA-Z0-9_");
-  // identifier
+  // identifier or string
   ident
-    = sp::token_node_d[sp::lower_p >> *alnum_];
-  // string
-  string
-    = sp::token_node_d['"' >> *(~ch_p('"')) >> '"'];
+    = sp::token_node_d[sp::lower_p >> *alnum_]
+    | sp::token_node_d['"' >> *(~ch_p('"')) >> '"'];
   // variable
   var
     = sp::token_node_d[sp::upper_p >> *alnum_];
@@ -55,9 +53,9 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   number
     = sp::token_node_d[+sp::digit_p];
   ident_or_var
-    = ident | string | var;
+    = ident | var;
   ident_or_var_or_number
-    = ident | string | var | number;
+    = ident | var | number;
   aggregate_leq_binop
     = str_p("<=") | '<';
   aggregate_geq_binop
@@ -119,7 +117,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> '.';
-  namespace_ = str_p("#namespace") >> '(' >> (ident|string) >> ',' >> (ident|string) >> ')' >> '.';
+  namespace_ = str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')' >> '.';
   // rule (optional body/condition)
   rule_ = disj >> !(cons >> !body) >> '.';
   // constraint

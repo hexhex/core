@@ -68,7 +68,6 @@ struct HexGrammar:
     boost::spirit::rule< S, c, tag<Root> > const& start() const { return root; }
 
     boost::spirit::rule<S>                               ident;
-    boost::spirit::rule<S>                               string;
     boost::spirit::rule<S>                               var;
     boost::spirit::rule<S, c, tag<Number> >              number;
     boost::spirit::rule<S>                               ident_or_var;

@@ -1,9 +1,5 @@
 2009-08-20  Peter Schueller  <ps@kr.tuwien.ac.at>
 
-	* include/dlvhex/HexGrammar.h: Fixing minor parser issue
-	which until now allowed predicate names to be strings.
-	* include/dlvhex/HexGrammar.tcc: Likewise.
-
 	In boost 1.36, the previously (mistakenly) bidirectional
 	boost::spirit::position_iterator was changed into a forward
 	iterator. This no longer allows to use boost::regex parsers.
