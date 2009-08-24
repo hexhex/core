@@ -147,7 +147,7 @@ fi
 AM_CONDITIONAL([HAVE_CPPUNIT], [test x$have_cppunit = xtrue])
 
 # checking for boost libs
-BOOST_REQUIRE([1.35.0])
+BOOST_REQUIRE([1.37.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER

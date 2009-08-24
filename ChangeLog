@@ -1,3 +1,9 @@
+2009-08-24  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* configure.ac: Requiring boost >= 1.37, as it contains the
+	important fix https://svn.boost.org/trac/boost/changeset/49234
+	to the position_iterator.
+
 2009-08-20  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	In boost 1.36, the previously (mistakenly) bidirectional
