@@ -54,6 +54,7 @@ Globals::Globals()
     verboseLevel[DUMP_CONVERTED_PROGRAM] = 2;
     verboseLevel[DUMP_REWRITTEN_PROGRAM] = 2;
     verboseLevel[DUMP_OPTIMIZED_PROGRAM] = 2;
+    verboseLevel[PLUGIN_LOADING] = 4;
 
 	//
 	// intermediate model generation

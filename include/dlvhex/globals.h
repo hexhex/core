@@ -95,6 +95,7 @@ public:
 	               SAFETY_ANALYSIS,
 	               DUMP_DEPENDENCY_GRAPH,
 	               DUMP_OPTIMIZED_PROGRAM,
+	               PLUGIN_LOADING,
 	               COMPONENT_EVALUATION,
 	               MODEL_GENERATOR,
 	               GRAPH_PROCESSOR,

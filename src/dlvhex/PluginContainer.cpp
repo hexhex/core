@@ -30,6 +30,7 @@
  * 
  */
 
+#include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
@@ -101,6 +102,11 @@ PluginContainer::PluginContainer(const std::string& optionPath)
 	     << homedir << "/" USER_PLUGIN_DIR << ':'
 	     << SYS_PLUGIN_DIR;
 
+  if( Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING) )
+  {
+    Globals::Instance()->getVerboseStream() <<
+      "Plugin Search Path: \"" << searchpath.str() << "\"" << std::endl;
+  }
   if (lt_dlsetsearchpath(searchpath.str().c_str()))
     {
       throw GeneralError("Could not set libltdl search path: " + searchpath.str());
@@ -130,6 +136,11 @@ PluginContainer::importPlugins()
   for (std::vector<std::string>::const_iterator it = pluginList.begin();
        it != pluginList.end(); ++it)
     {
+      if( Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING) )
+      {
+        Globals::Instance()->getVerboseStream() <<
+          "Loading Plugin Library: \"" << *it << "\"" << std::endl;
+      }
       lt_dlhandle dlHandle = lt_dlopenext(it->c_str());
 
       ///@todo if we cannot open the plugin, we bail out. maybe we
