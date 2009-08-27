@@ -128,6 +128,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
     // optional weight
     !( '[' >> !ident_or_var_or_number >> ':' >> !ident_or_var_or_number >> ']');
   clause = maxint | namespace_ | rule_ | constraint | wconstraint;
+  ///@todo: namespace, maxint before other things
   root
     = *( // comment
          rm[sp::comment_p("%")]

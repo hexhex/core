@@ -13,6 +13,7 @@ EXTRA_DIST = \
     msp.hex \
     namespace1.hex \
     namespace2.hex \
+    percentparser.hex \
     simple1.hex \
     weak1.hex \
     weak2.hex \
@@ -30,6 +31,7 @@ EXTRA_DIST = \
     tests/msp.out \
     tests/namespace1.out \
     tests/namespace2.out \
+    tests/percentparser.out \
     tests/simple1.out \
     tests/weak1.out \
     tests/weak1r.out \

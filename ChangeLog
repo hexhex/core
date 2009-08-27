@@ -1,3 +1,14 @@
+2009-08-27  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexGrammar.tcc: Adding TODO.
+
+	* examples/percentparser.hex: Adding testcase for % parsing.
+	* examples/tests/percentparser.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/Makefile.am: Likewise.
+
+	* examples/tests/weak2.out: Fixing ordering of answer sets.
+
 2009-08-24  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* configure.ac: Requiring boost >= 1.37, as it contains the
