@@ -116,10 +116,10 @@ public:
 
 	/**
 	 * @brief Check if the specified verbose action can be carried out.
-	 *
-	 * This function checks if the predefined (see Globals::Globals()) value of
-	 * the specified verbose action (see Globals::verboseLevel) is less or
-	 * equal than the verbose level given as a parameter.
+	 * 
+	 * This function checks if the predefined (see Globals::Globals())
+	 * bit of the specified verbose action (see Globals::verboseLevel)
+	 * is set in the verbose level given as a parameter.
 	 */
 	bool
 	doVerbose(verboseAction_t);
@@ -196,6 +196,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_GLOBALS_H
 
+// vim: noet ts=8 sw=4 tw=80
 
 // Local Variables:
 // mode: C++
