@@ -1,3 +1,9 @@
+2009-08-28  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* examples/weak2.hex: Changing testcase s.t. ordering of
+	answer sets with same weight no longer poses a problem.
+	* examples/tests/weak2.out: Likewise.
+
 2009-08-27  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Adding TODO.
