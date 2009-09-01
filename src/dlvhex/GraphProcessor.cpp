@@ -34,6 +34,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include <iostream>
 #include "dlvhex/globals.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ModelGenerator.h"
@@ -106,7 +107,7 @@ GraphProcessor::run(const AtomSet& in)
 	  Globals::Instance()->getVerboseStream() << "=======================" << std::endl
 						  << "current iteration has "
 						  << leaves.size()
-						  << " leaf components" << std::endl
+						  << " leaf components $\\bar{T}$" << std::endl
 						  << "=======================" << std::endl;
 	}
 
@@ -130,7 +131,7 @@ GraphProcessor::run(const AtomSet& in)
 	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		{
 		  Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-							  << "current input for leaf layer with "
+							  << "current input interpretation $M$ for leaf layer with "
 							  << leaves.size()
 							  << " leaves: " << std::endl;
 		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
@@ -148,12 +149,13 @@ GraphProcessor::run(const AtomSet& in)
 	      //
 	      // now loop through these leaf components with componentInput as input
 	      //
-	      for (std::vector<Component*>::iterator ci = leaves.begin(); ci != leaves.end(); ++ci)
+	      unsigned u = 0;
+	      for (std::vector<Component*>::iterator ci = leaves.begin(); ci != leaves.end(); ++ci, ++u)
 		{
 		  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		    {
 		      Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-							      << "computing leaf component: " << std::endl;
+							      << "computing leaf component with idx " << u << ": " << std::endl;
 		      (*ci)->dump(Globals::Instance()->getVerboseStream());
 		      Globals::Instance()->getVerboseStream() << std::endl << "==============================" << std::endl;
 		    }
@@ -180,8 +182,9 @@ GraphProcessor::run(const AtomSet& in)
 	      //
 	      // collect the results of each component and multiply them
 	      //
+	      u = 0;
 	      for (std::vector<Component*>::iterator ci = leaves.begin();
-		   ci != leaves.end(); ++ci)
+		   ci != leaves.end(); ++ci, ++u)
 		{
 		  // get the result of this component
 		  (*ci)->getResult(f1);
@@ -189,9 +192,8 @@ GraphProcessor::run(const AtomSet& in)
 		  if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		    {
 		      Globals::Instance()->getVerboseStream() << "==============================" << std::endl
-							      << "result of leaf ("
-							      << f1.size()
-							      << "):" << std::endl;
+							      << "result of leaf with idx " << u
+							      << "(" << f1.size() << " answer sets):" << std::endl;
 		      
 		      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
 		      for (std::vector<AtomSet>::iterator tmpi = f1.begin();
@@ -250,8 +252,7 @@ GraphProcessor::run(const AtomSet& in)
 	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 		{
 		  Globals::Instance()->getVerboseStream() << "current allLeavesResult (" 
-							  << allLeavesResult.size() 
-							  << "):" << std::endl;
+							  << allLeavesResult.size() << " answer sets ):" << std::endl;
 		  
 		  for (std::set<AtomSet>::iterator it = allLeavesResult.begin();
 		       it != allLeavesResult.end();
@@ -272,6 +273,23 @@ GraphProcessor::run(const AtomSet& in)
 	      // allLeavesResult.
 	      //
 	      allLeavesResult.insert(componentLayerResult.begin(), componentLayerResult.end());
+
+	      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+		{
+		  Globals::Instance()->getVerboseStream() << "current allLeavesResult (" 
+							  << allLeavesResult.size() << " answer sets ):" << std::endl;
+		  
+		  for (std::set<AtomSet>::iterator it = allLeavesResult.begin();
+		       it != allLeavesResult.end();
+		       ++it)
+		    {
+		      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		      const_cast<AtomSet&>(*it).accept(rpv);
+		      Globals::Instance()->getVerboseStream() << std::endl;
+		    }
+		  
+		  Globals::Instance()->getVerboseStream() << "current allLeavesResult end" << std::endl;
+		}
 
 	    } // foreach resultModels
 
@@ -397,8 +415,7 @@ GraphProcessor::getNextModel()
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=4 tw=80: */
-
+// vim: set noet sw=4 ts=8 tw=80:
 
 // Local Variables:
 // mode: C++

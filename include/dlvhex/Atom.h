@@ -322,6 +322,8 @@ protected:
 
 	/**
 	 * @todo doc
+	 * @todo TODO move this into Program, and add "isNumeric" (which requires #maxint) as another boolean "requirement"
+	 * @todo TODO actually use this boolean to check whether we need firstorder mode or #maxint set
 	 */
 	bool isAlwaysFO;
 };

@@ -688,7 +688,7 @@ main (int argc, char *argv[])
 	      Globals::Instance()->getVerboseStream() << **node << std::endl;
 	    }
 	  
-	  Globals::Instance()->getVerboseStream() << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
 	}
       
       /////////////////////////////////////////////////////////////////
@@ -714,7 +714,7 @@ main (int argc, char *argv[])
 	      Globals::Instance()->getVerboseStream() << **node << std::endl;
 	    }
 	  
-	  Globals::Instance()->getVerboseStream() << std::endl;
+	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
 
 	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
 	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
@@ -806,9 +806,7 @@ main (int argc, char *argv[])
  return 0;
 }
 
-
-/* vim: set noet sw=4 ts=4 tw=80: */
-
+/* vim: set noet sw=8 ts=8 tw=80: */
 
 // Local Variables:
 // mode: C++
