@@ -1,3 +1,8 @@
+2009-09-02  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/Component.cpp: Clearing result bevore reevaluating
+	component. This increases performance.
+
 2009-09-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/GraphProcessor.cpp: Added/improved debug output.

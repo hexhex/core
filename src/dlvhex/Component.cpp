@@ -193,6 +193,13 @@ ProgramComponent::~ProgramComponent()
 void
 ProgramComponent::evaluate(std::vector<AtomSet>& input)
 {
+  // clear internally stored result upon re-evaluation
+  if( evaluated )
+  {
+    evaluated = false;
+    result.clear();
+  }
+
   if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
       std::cerr << "Evaluating program component:" << std::endl;
@@ -270,6 +277,13 @@ ExternalComponent::ExternalComponent(AtomNodePtr node, PluginContainer& pc)
 void
 ExternalComponent::evaluate(std::vector<AtomSet>& input)
 {
+  // clear internally stored result upon re-evaluation
+  if( evaluated )
+  {
+    evaluated = false;
+    result.clear();
+  }
+
     //if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     //    std::cerr << "Evaluating external component" << std::endl;
 
