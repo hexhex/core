@@ -45,7 +45,7 @@ struct HexGrammar:
   public boost::spirit::grammar<HexGrammar>
 {
   enum RuleTags {
-    None = 0, Root, Maxint, Namespace,
+    None = 0, Root, Clause, Maxint, Namespace,
     Rule, Constraint, WeakConstraint, Body, Disj,
     Number, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
     UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
@@ -107,7 +107,7 @@ struct HexGrammar:
     boost::spirit::rule<S, c, tag<Rule> >                rule_;
     boost::spirit::rule<S, c, tag<Constraint> >          constraint;
     boost::spirit::rule<S, c, tag<WeakConstraint> >      wconstraint;
-    boost::spirit::rule<S>                               clause;
+    boost::spirit::rule<S, c, tag<Clause> >              clause;
     boost::spirit::rule<S, c, tag<Root> >                root;
   };
 };

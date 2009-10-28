@@ -47,7 +47,8 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   assert(node.value.id() == HexGrammar::Root);
   for(node_t::tree_iterator it = node.children.begin();
       it != node.children.end(); ++it)
-    createASTFromClause(*it, program, edb);
+    if( it->value.id() == HexGrammar::Clause )
+      createASTFromClause(*it, program, edb);
 }
 
 // optionally assert whether node comes from certain rule

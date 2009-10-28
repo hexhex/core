@@ -1,3 +1,11 @@
+2009-10-28  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexGrammar.h: Fixing bug with empty input.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* examples/empty.hex: Likewise.
+	* examples/tests/empty.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+
 2009-09-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* m4/boost.m4: Fix for autoconf 2.64 (see also
