@@ -1,9 +1,0 @@
-% -*- prolog -*-
-
-in0(nil).
-in2(c).
-c(i).
-c(j).
-
-bar(X) :- &testB[IN,IN](X), in0(IN).
-foo(X) :- &testB[IN,IN](X), in2(IN).

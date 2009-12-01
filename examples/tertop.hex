@@ -1,7 +1,0 @@
-#maxint = 6.
-
-mul1(X,Y) :- 6 = X * Y, #int(X), #int(Y).
-mul2(X,Y) :- *(X, Y, 6), #int(X), #int(Y).
-plus1(X,Y) :- 6=X+Y, #int(X), #int(Y).
-plus2(X,Y) :- +(X,Y,6), #int(X), #int(Y).
-

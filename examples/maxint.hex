@@ -1,3 +1,0 @@
-#maxint = 4.
-
-foo(X) :- X=2+2, #int(X).
