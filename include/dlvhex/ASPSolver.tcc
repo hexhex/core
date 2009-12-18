@@ -225,6 +225,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_ASPSOLVER_TCC
 
+// vim:se ts=8:
 // Local Variables:
 // mode: C++
 // End:

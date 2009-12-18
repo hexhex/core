@@ -211,6 +211,7 @@ FixpointModelGenerator::compute(const Program& program,
 
 DLVHEX_NAMESPACE_END
 
+// vim:se ts=8:
 // Local Variables:
 // mode: C++
 // End:
