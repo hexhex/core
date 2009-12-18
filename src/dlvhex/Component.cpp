@@ -202,9 +202,10 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
 
   if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
     {
-      std::cerr << "Evaluating program component:" << std::endl;
-      RawPrintVisitor rpv(std::cerr);
+      Globals::Instance()->getVerboseStream() << "Evaluating program component:" << std::endl;
+      RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
       getBottom().accept(rpv);
+      Globals::Instance()->getVerboseStream() << "End (Evaluating program component)" << std::endl;
     }
 
   std::vector<AtomSet> res;
@@ -767,6 +768,7 @@ Subgraph::dump(std::ostream& out) const
 
 DLVHEX_NAMESPACE_END
 
+// vim:set ts=8:
 // Local Variables:
 // mode: C++
 // End:

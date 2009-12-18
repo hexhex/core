@@ -1,3 +1,9 @@
+2009-12-18  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Makefile.am: Installing more headers.
+	* src/dlvhex/Component.cpp: Fixing/improving verbose output.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
 2009-10-28  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.h: Fixing bug with empty input.

@@ -2,26 +2,23 @@ AUTOMAKE_OPTIONS = gnu
 
 # including headers for make dist
 noinst_HEADERS = \
-	ASPSolver.h \
-	ASPSolver.tcc \
-	DLVresultParserDriver.h \
 	GraphProcessor.h \
-	HexParserDriver.h \
-	SpiritFilePositionNode.h \
-	SpiritDebugging.h \
 	HexGrammar.h \
 	HexGrammar.tcc \
 	HexGrammarPTToASTConverter.h \
 	ParserDriver.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
+	SpiritDebugging.h \
+	SpiritFilePositionNode.h \
 	State.h \
-	TextOutputBuilder.h \
 	URLBuf.h
 
 pkginclude_HEADERS = \
 	AggregateAtom.h \
 	AnswerSet.h \
+	ASPSolver.h \
+	ASPSolver.tcc \
 	Atom.h \
 	AtomNode.h \
 	AtomSet.h \
@@ -32,11 +29,13 @@ pkginclude_HEADERS = \
 	Dependency.h \
 	DependencyGraph.h \
 	DLVProcess.h \
+	DLVresultParserDriver.h \
 	Error.h \
 	EvaluateExtatom.h \
 	ExternalAtom.h \
 	globals.h \
 	GraphBuilder.h \
+	HexParserDriver.h \
 	Literal.h \
 	ModelGenerator.h \
 	NamesTable.h \
@@ -54,4 +53,5 @@ pkginclude_HEADERS = \
 	Repository.h \
 	ResultContainer.h \
 	Rule.h \
-	Term.h
+	Term.h \
+	TextOutputBuilder.h

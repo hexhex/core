@@ -653,9 +653,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 DLVHEX_NAMESPACE_END
 
-/* vim: set noet sw=4 ts=4 tw=80: */
-
-
+/* vim: set noet sw=4 ts=8 tw=80: */
 // Local Variables:
 // mode: C++
 // End:

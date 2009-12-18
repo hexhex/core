@@ -112,10 +112,12 @@ DLVProcess::setupStreams()
       // first, setup the iostreams
       if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 	{
+	  Globals::Instance()->getVerboseStream() << "Setting up DLVProcess opipe to be verbose" << std::endl;
+
 	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
-	  
+
 	  tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
-	  tmpopipe->push(std::cerr);
+	  tmpopipe->push(Globals::Instance()->getVerboseStream());
 	  
 	  opipe = tmpopipe;
 	}
@@ -228,6 +230,7 @@ DLVDBProcess::commandline() const
 
 DLVHEX_NAMESPACE_END
 
+// vim:se ts=8:
 // Local Variables:
 // mode: C++
 // End:
