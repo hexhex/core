@@ -41,8 +41,9 @@ do
     ANSWERSETS=$TESTDIR/$ANSWERSETS
 
 	if [ ! -f $HEXPROGRAM ] || [ ! -f $ANSWERSETS ]; then
-	    test ! -f $HEXPROGRAM && echo WARN: Could not find program file $HEXPROGRAM
-	    test ! -f $ANSWERSETS && echo WARN: Could not find answer sets file $ANSWERSETS
+	    test ! -f $HEXPROGRAM && echo FAIL: Could not find program file $HEXPROGRAM
+	    test ! -f $ANSWERSETS && echo FAIL: Could not find answer sets file $ANSWERSETS
+      let failed++
 	    continue
 	fi
 
@@ -96,7 +97,7 @@ EOF
 				let warned++
 			else
 				echo "FAIL: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas differs)"
-        			let failed++
+        let failed++
 			fi
 
 			let nas++
