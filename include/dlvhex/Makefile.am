@@ -6,7 +6,6 @@ noinst_HEADERS = \
 	HexGrammar.h \
 	HexGrammar.tcc \
 	HexGrammarPTToASTConverter.h \
-	ParserDriver.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
 	SpiritDebugging.h \
@@ -41,6 +40,7 @@ pkginclude_HEADERS = \
 	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
+	ParserDriver.h \
 	PlatformDefinitions.h \
 	PluginContainer.h \
 	PluginInterface.h \

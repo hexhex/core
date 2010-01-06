@@ -1,3 +1,8 @@
+2010-01-06  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Makefile.am: Installing one more header.
+	* dlvhex/trunk/dlvhex.pc.in: Added bindir to packageconfig file.
+
 2009-12-18  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am: Installing more headers.
