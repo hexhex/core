@@ -1,3 +1,8 @@
+2010-01-11  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* m4/boost.m4: Fix for boost header version check (updated to
+	newest version of boost.m4 from http://github.com/tsuna/boost.m4).
+
 2010-01-06  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/Makefile.am: Installing one more header.
