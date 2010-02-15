@@ -18,3 +18,4 @@
 ../extatom9.hex extatom9.out
 ../percentparser.hex percentparser.out
 ../empty.hex empty.out
+../operators.hex operators.out

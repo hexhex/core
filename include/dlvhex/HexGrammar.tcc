@@ -63,7 +63,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   aggregate_binop
     = aggregate_leq_binop | aggregate_geq_binop | "==" | '=';
   binop
-    = aggregate_binop | "!=" | "<>";
+    = str_p("<>") | "!=" | aggregate_binop;
   tertop
     = ch_p('*') | '+';
   cons

@@ -1,3 +1,10 @@
+2010-02-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexGrammar.tcc: Parser fix for operator <>.
+	* examples/operators.hex: Testcase for operator <>.
+	* examples/tests/operators.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+
 2010-01-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* m4/boost.m4: Fix for boost header version check (updated to
