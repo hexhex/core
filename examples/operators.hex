@@ -3,4 +3,5 @@ a(v).
 b(u).
 
 c(X,Y) :- a(X), b(Y), X <> Y.
+d(X,Y) :- a(X), b(Y), X != Y.
 

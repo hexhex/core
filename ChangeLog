@@ -1,7 +1,8 @@
-2010-02-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+2010-02-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Parser fix for operator <>.
-	* examples/operators.hex: Testcase for operator <>.
+	* examples/operators.hex: Testcase for operators <> and !=.
+	* examples/Makefile.am: Likewise.
 	* examples/tests/operators.out: Likewise.
 	* examples/tests/dlvhextests.test: Likewise.
 
