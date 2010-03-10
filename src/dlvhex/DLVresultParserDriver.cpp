@@ -264,7 +264,9 @@ void DLVResultGrammarPTToResultConverter::appendFactFromPropFact(
     neg = true;
   }
 
-  assert(!Globals::Instance()->getOption("NoPredicate"));
+  ///@todo TK: this assertion prevents parsing prop. atoms in HO-mode, even though we want to parse it, is it clever to ignore it?
+  //assert(!Globals::Instance()->getOption("NoPredicate"));
+
   AtomPtr atom(new Atom(
       createStringFromNode(node.children[offset], DLVResultGrammar::Ident),
       neg));
