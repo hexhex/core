@@ -52,7 +52,19 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT DLVresultParserDriver : public ParserDriver
 {
 public:
+    // Fri Mar 12 17:31:00 CET 2010 (CR)
+    //
+    // tells the parser how to interpret the answer-set
+    //    HO:         Assumes that the elements of the answer-set are higher-order atoms of kind: "a_2(p, x, y)" (where 2 is the arity).
+    //                The parser will just ignore the predicate name (a_2) and use it's first parameter as new predicate, i.e. "a_2(p, x, y)" is transformed into "p(x, y)"
+    //    FirstOrder: Will take atoms just as they are
+    //    AUTO:       Makes the parser behaviour dependent from the mode of the current dlvhex instance. In case that dlvhex runs in higher-order mode, the parser will also
+    //                run in HO mode, otherwise it will run in FirstOrder mode.
+    // by default, the parser will run in AUTO mode
+    enum ParseMode{ AUTO, FirstOrder, HO };
+
     DLVresultParserDriver();
+    DLVresultParserDriver(ParseMode mode);
 
     virtual
     ~DLVresultParserDriver();
@@ -62,6 +74,11 @@ public:
     parse(std::istream& is,
           std::vector<AtomSet>&) throw (SyntaxError);
 
+    // this function changes the parse mode of this instance (see description of enum "ParseMode")
+    void
+    setParseMode(ParseMode mode);
+private:
+    ParseMode pMode;
 };
 
 

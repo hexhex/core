@@ -45,12 +45,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-DLVresultParserDriver::DLVresultParserDriver()
+DLVresultParserDriver::DLVresultParserDriver() : pMode(AUTO)
 {
+}
+
+DLVresultParserDriver::DLVresultParserDriver(ParseMode mode)
+{
+	setParseMode(mode);
 }
 
 DLVresultParserDriver::~DLVresultParserDriver()
 {
+}
+
+void
+DLVresultParserDriver::setParseMode(ParseMode mode)
+{
+	pMode = mode;
 }
 
 // "The Grammar"
@@ -127,7 +138,7 @@ public:
   typedef boost::spirit::tree_match<iterator_t, factory_t>::node_t node_t;
 
 public:
-  DLVResultGrammarPTToResultConverter();
+  DLVResultGrammarPTToResultConverter(DLVresultParserDriver::ParseMode pMode);
 
   // convert the root node of the spirit parse tree (from HexSpiritGrammar)
   // to a program and edb
@@ -148,11 +159,14 @@ private:
   // create correct term type (numeric vs string)
   Term createTerm(node_t& node);
 
+  // interpret atoms as FO or HO atoms
+  DLVresultParserDriver::ParseMode pMode;
+
   void appendFactFromPropFact(node_t& node, AtomSet& result);
   void appendFactFromNonpropFact(node_t& node, AtomSet& result);
 };
 
-DLVResultGrammarPTToResultConverter::DLVResultGrammarPTToResultConverter()
+DLVResultGrammarPTToResultConverter::DLVResultGrammarPTToResultConverter(DLVresultParserDriver::ParseMode mode) : pMode(mode)
 {
 }
 
@@ -264,8 +278,11 @@ void DLVResultGrammarPTToResultConverter::appendFactFromPropFact(
     neg = true;
   }
 
-  ///@todo TK: this assertion prevents parsing prop. atoms in HO-mode, even though we want to parse it, is it clever to ignore it?
-  //assert(!Globals::Instance()->getOption("NoPredicate"));
+  // in case that we parse in HO-mode, prop. facts must not occur!
+  // we run in HO-mode iff
+  //    either 1. the mode is AUTO and this instance runs in HO mode
+  //    or 2. HO mode is explicitly requested
+  assert(!(pMode == DLVresultParserDriver::AUTO && Globals::Instance()->getOption("NoPredicate")) || (pMode == DLVresultParserDriver::HO));
 
   AtomPtr atom(new Atom(
       createStringFromNode(node.children[offset], DLVResultGrammar::Ident),
@@ -293,14 +310,20 @@ void DLVResultGrammarPTToResultConverter::appendFactFromNonpropFact(
     terms.push_back(createTerm(node.children[i]));
 
   AtomPtr atom;
-  if( Globals::Instance()->getOption("NoPredicate") )
+  // Determine the actual parse mode:
+  //   if higher-order mode is explicitly requested (pType == HO), or the mode is AUTO and the current instance runs in HO mode,
+  //       we will just take the arguments of the atom (and drop it's predicate), i.e. "a_i(p, ...)" is transformed into "p(...)"
+  //   otherwise we interpret it as first-order atom and take it as it is (including the predicate name)
+  if( (pMode == DLVresultParserDriver::AUTO && Globals::Instance()->getOption("NoPredicate")) || (pMode == DLVresultParserDriver::HO) )
   {
+    // HO --> drop the predicate name
     atom = AtomPtr(new Atom(
       terms,
       neg));
   }
   else
   {
+    // FO --> insert the predicate name
     atom = AtomPtr(new Atom(
       createStringFromNode(node.children[offset], DLVResultGrammar::Ident),
       terms,
@@ -343,7 +366,7 @@ DLVresultParserDriver::parse(std::istream& is,
   assert(info.trees.size() == 1);
 
   // create dlvhex AST from spirit parser tree
-  Converter converter;
+  Converter converter(pMode);
   converter.appendPTToResult(*info.trees.begin(), result);
 }
 
