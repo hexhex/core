@@ -19,3 +19,4 @@
 ../percentparser.hex percentparser.out
 ../empty.hex empty.out
 ../operators.hex operators.out
+../naftest.hex naftest.out

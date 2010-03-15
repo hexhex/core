@@ -110,7 +110,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   builtin_pred =
     builtin_tertop_infix | builtin_tertop_prefix |
     builtin_binop_infix | builtin_binop_prefix | builtin_other;
-  naf = str_p("not") | "non";
+  naf = sp::lexeme_d[(str_p("not") | "non") >> sp::space_p];
   literal
     = builtin_pred
     | ( !naf >> (user_pred | external_atom | aggregate) );
