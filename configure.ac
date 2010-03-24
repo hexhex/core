@@ -134,6 +134,8 @@ AC_SUBST(LIBLTDL)
 # fix for some versions of autoconf/libtool, see also https://gnunet.org/mantis/view.php?id=1340
 m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 
+PKG_PROG_PKG_CONFIG
+
 #
 # Check for external libraries
 #

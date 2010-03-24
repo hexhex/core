@@ -8,7 +8,6 @@ noinst_HEADERS = \
 	HexGrammarPTToASTConverter.h \
 	RuleMLOutputBuilder.h \
 	SafetyChecker.h \
-	SpiritDebugging.h \
 	SpiritFilePositionNode.h \
 	State.h \
 	URLBuf.h
@@ -53,5 +52,6 @@ pkginclude_HEADERS = \
 	Repository.h \
 	ResultContainer.h \
 	Rule.h \
+	SpiritDebugging.h \
 	Term.h \
 	TextOutputBuilder.h
