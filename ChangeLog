@@ -1,5 +1,13 @@
 2010-04-15  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* src/dlvhex/dlvhex.cpp: Added option --nocache and global option
+	UseExtAtomCache connected to it.
+	* src/dlvhex/EvaluateExtatom.cpp: Calling retrieveCached(...) instead
+	of retrieve(...) if that global option is 1 (it is by default).
+	* include/dlvhex/PluginInterface.h: Query: added operator< and made
+	the interpretation a copy instead of a reference (required for cache).
+	Added retrieveCached() function and query cache.
+	* src/dlvhex/PluginInterface.cpp: Implemented retrieveCached(...).
 	* include/dlvhex/BaseVisitor.h: Allowing to visit const objects.
 	* include/dlvhex/PrintVisitor.h: Likewise.
 	* include/dlvhex/Literal.h: Likewise.

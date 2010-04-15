@@ -65,6 +65,26 @@ PluginAtom::Query::getPatternTuple() const
     return pattern;
 }
 
+bool PluginAtom::Query::operator<(const Query& other) const
+{
+  return
+    ( interpretation < other.interpretation ) ||
+    ( interpretation == other.interpretation &&
+      input < other.input ) ||
+    ( interpretation == other.interpretation &&
+      input == other.input &&
+      pattern < other.pattern );
+}
+        
+#if 0
+bool PluginAtom::Query::operator==(const Query& other) const
+{
+  return
+      interpretation == other.interpretation &&
+      input == other.input &&
+      pattern == other.pattern;
+}
+#endif
         
 PluginAtom::Answer::Answer()
     : output(new std::vector<Tuple>)
@@ -159,12 +179,58 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 }
 
 
+void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (PluginError)
+{
+  // Cache answer for queries which were already done once:
+  //
+  // The most efficient way would be:
+  // * use cache for same inputSet + same *inputi + more specific pattern
+  // * store new cache for new inputSet/*inputi combination or unrelated (does not unify) pattern
+  // * replace cache for existing inputSet/*inputi combination and less specific (unifies in one direction) pattern
+  // 
+  // The currently implemented "poor (wo)man's version" is:
+  // * store answers in cache with queries as keys, disregard relations between patterns
+  ///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
+
+#if 0
+  #include "dlvhex/PrintVisitor.h"
+  #include <iostream>
+  std::cerr << "cache:" << std::endl;
+  for( QueryAnswerCache::const_iterator i = queryAnswerCache.begin(); i != queryAnswerCache.end(); ++i)
+  {
+	  std::cerr << "  query: <";
+	  RawPrintVisitor visitor(std::cerr);
+	  i->first.getInterpretation().accept(visitor);
+	  std::cerr << "|" << i->first.getInputTuple() << "|" << i->first.getPatternTuple() << ">" << std::endl;
+  }
+
+
+	  std::cerr << "retrieving query: <";
+	  RawPrintVisitor visitor(std::cerr);
+	  query.getInterpretation().accept(visitor);
+	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
+#endif
+
+  QueryAnswerCache::const_iterator it = queryAnswerCache.find(query);
+  if( it != queryAnswerCache.end() )
+  {
+    answer = it->second;
+  }
+  else
+  {
+    retrieve(query, answer);
+
+    // store in cache
+    queryAnswerCache.insert(std::make_pair(query, answer));
+  }
+}
+
+
 const std::vector<PluginAtom::InputType>&
 PluginAtom::getInputTypes() const
 {
   return inputType;
 }
-
 
 PluginAtom::InputType
 PluginAtom::getInputType(const unsigned index) const

@@ -34,9 +34,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
 
-#include <iostream>
 #include <sstream>
 #include <algorithm>
 
@@ -201,13 +201,17 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
       // - actual arguments of the external atom (maybe it is partly ground,
       // then the plugin can be more efficient)
       //
+
       PluginAtom::Query query(inputSet, *inputi, externalAtom->getArguments());
 
       PluginAtom::Answer answer;
 		
       try
 	{
-	  pluginAtom->retrieve(query, answer);
+          if( 1 == Globals::Instance()->getOption("UseExtAtomCache") )
+            pluginAtom->retrieveCached(query, answer);
+          else
+            pluginAtom->retrieve(query, answer);
 	}
       catch (PluginError& e)
 	{
@@ -271,6 +275,7 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 
 DLVHEX_NAMESPACE_END
 
+// vim:ts=8:
 // Local Variables:
 // mode: C++
 // End:

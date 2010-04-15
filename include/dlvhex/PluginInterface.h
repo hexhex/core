@@ -177,6 +177,11 @@
  * 
  * retrieve() always takes a query object as input and returns the result tuples in an
  * answer object.
+ * 
+ * By definition the same query should return the same result, this is used by the 
+ * method retrieveCached() which has the effect that retrieve() is never called twice
+ * for the same query (if you do not disable the cache via --nocache).
+ * 
  * The input parameters at call time are accessed by Query::getInputTuple():
  * 
  * \code
@@ -666,10 +671,14 @@ public:
         const Tuple&
         getPatternTuple() const;
 
+        /**
+         * \brief Comparison operator (strict weak ordering).
+         */
+        bool operator<(const Query& other) const;
 
     private:
 
-        const AtomSet& interpretation;
+        AtomSet interpretation;
 
         Tuple input;
 
@@ -796,11 +805,17 @@ public:
     checkOutputArity(unsigned arity) const;
 
     /**
+     * \brief Retrieve answer object according to a query,
+     * probably utilizing a cache s.t. the same query is not retrieved twice.
+     */
+    virtual void
+    retrieveCached(const Query&, Answer&) throw (PluginError);
+
+    /**
      * \brief Retrieve answer object according to a query.
      */
     virtual void
     retrieve(const Query&, Answer&) throw (PluginError) = 0;
-
 
     /**
      * \brief Returns the type of the input argument specified by position
@@ -832,6 +847,11 @@ private:
      */
     std::vector<InputType> inputType;
 
+    /**
+     * \brief Query/Answer cache
+     */
+    typedef std::map<Query, Answer> QueryAnswerCache;
+    QueryAnswerCache queryAnswerCache;
 };
 
 

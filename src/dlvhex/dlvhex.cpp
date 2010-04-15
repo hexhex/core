@@ -143,7 +143,8 @@ printUsage(std::ostream &out, bool full)
 		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
 		<< "                      with --verbose)." << std::endl
 		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-                << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+		<< "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+		<< "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
 		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
 		<< "                      1  - program analysis information (including dot-file)" << std::endl
 		<< "                      2  - program modifications by plugins" << std::endl
@@ -329,6 +330,7 @@ main (int argc, char *argv[])
   Globals::Instance()->setOption("StrongSafety", 1);
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
+  Globals::Instance()->setOption("UseExtAtomCache",1);
 
   // options only used here in main():
   bool optionPipe = false;
@@ -375,6 +377,7 @@ main (int argc, char *argv[])
       { "noeval",     no_argument, &longid, 5 },
       { "keepnsprefix", no_argument, &longid, 6 },
       { "solver", required_argument, &longid, 7 },
+      { "nocache",    no_argument, &longid, 8 },
       { NULL, 0, NULL, 0 }
     };
 
@@ -453,6 +456,7 @@ main (int argc, char *argv[])
 	      break;
 
 	    case 7:
+	      {
 	      std::string solver(optarg);
 	      if (solver == "dlvdb")
 		{
@@ -471,6 +475,11 @@ main (int argc, char *argv[])
 		{
 		  pctx.setProcess(new DLVProcess);
 		}
+	      }
+	      break;
+
+	    case 8:
+	      Globals::Instance()->setOption("UseExtAtomCache",0);
 	      break;
 	    }
 	  break;
