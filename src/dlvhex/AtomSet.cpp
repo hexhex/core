@@ -145,7 +145,7 @@ AtomSet::matchAtom(const AtomPtr& atom,
 
 
 void
-AtomSet::accept(BaseVisitor& v)
+AtomSet::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }
