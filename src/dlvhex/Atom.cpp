@@ -247,7 +247,7 @@ Atom::getAlwaysFO() const
 
 
 void
-Atom::accept(BaseVisitor& v)
+Atom::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }
@@ -342,7 +342,7 @@ BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const Term& t
 
 
 void
-BuiltinPredicate::accept(BaseVisitor& v)
+BuiltinPredicate::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }

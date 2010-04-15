@@ -67,35 +67,35 @@ public:
 
   /// iterate over all rules and calls Rule::accept with this visitor
   virtual void
-  visit(Program* const);
+  visit(const Program* const);
 
   /// outputs the Rule in
   /// 'a_1 v ... v a_k :- b_1, ..., b_m, not b_{m+1}, ... not b_n.'
   /// form, i.e., it calls accept(*this) on each a_i and b_j.
   virtual void
-  visit(Rule* const);
+  visit(const Rule* const);
 
   /// outputs the AtomSet in '{ a_1, ..., a_n }' form
   virtual void
-  visit(AtomSet* const);
+  visit(const AtomSet* const);
 
   /// outputs the Literal either as Atom 'a' or as 'not a'
   virtual void
-  visit(Literal* const);
+  visit(const Literal* const);
 
   /// outputs the Atom in 'p(t_1,...,t_n)' form
   virtual void
-  visit(Atom* const);
+  visit(const Atom* const);
 
   /// outputs the BuiltinPredicate in 't_1 COMP t_2' form
   virtual void
-  visit(BuiltinPredicate* const);
+  visit(const BuiltinPredicate* const);
 
   /// outputs the AggregateAtom in
   /// 't_l COMP { t_1,...,t_n : b_1,...,b_m } COMP t_r'
   /// form
   virtual void
-  visit(AggregateAtom* const);
+  visit(const AggregateAtom* const);
 
 };
 
@@ -113,19 +113,19 @@ public:
 
   /// calls PrintVisitor::visitRule and appends a newline
   virtual void
-  visit(Rule* const);
+  visit(const Rule* const);
 
   /// outputs a WeakConstraint in
   /// ':~ b_1, ..., b_m, not b_{m+1}, not b_n. [w:l]'
   /// form and appends a newline
   virtual void
-  visit(WeakConstraint* const);
+  visit(const WeakConstraint* const);
 
   /// outputs an ExternalAtom in
   /// '&f[i_1,...,i_n](o_1,...,o_m)'
   /// form
   virtual void
-  visit(ExternalAtom* const);
+  visit(const ExternalAtom* const);
 
 };
 
@@ -145,21 +145,21 @@ public:
   /// 'a_1. \n a_2. \n ... \n a_n.\n'
   /// form, i.e. this method is suitable for printing an EDB.
   virtual void
-  visit(AtomSet* const);
+  visit(const AtomSet* const);
 
   /// calls PrintVisitor::visitRule and appends a newline
   virtual void
-  visit(Rule* const);
+  visit(const Rule* const);
 
   /// calls DLVPrintVisitor::visitRule, i.e. it will output a
   /// constraint of form ':- b_1, ..., b_m, not b_{m+1}, not b_n.\n'
   virtual void
-  visit(WeakConstraint* const);
+  visit(const WeakConstraint* const);
 
   /// outputs an ExternalAtom in its replacement form, i.e. as Atom
   /// 'repl(i_1,...,i_n,o_1,...,o_m)'
   virtual void
-  visit(ExternalAtom* const);
+  visit(const ExternalAtom* const);
 
 };
 
@@ -177,7 +177,7 @@ public:
   /// outputs an Atom in higher order mode, i.e. in
   /// 'a_{n+1}(p,t_1,...t_n)' form except for pure first order atoms.
   virtual void
-  visit(Atom* const);
+  visit(const Atom* const);
 
 };
 

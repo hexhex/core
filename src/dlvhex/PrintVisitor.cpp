@@ -59,14 +59,14 @@ PrintVisitor::getStream()
 
 
 void
-PrintVisitor::visit(Program* const p)
+PrintVisitor::visit(const Program* const p)
 {
   std::for_each(p->begin(), p->end(), boost::bind2nd(std::mem_fun(&Rule::accept), *this));
 }
 
 
 void
-PrintVisitor::visit(AtomSet* const as)
+PrintVisitor::visit(const AtomSet* const as)
 {
   stream << '{';
 
@@ -86,7 +86,7 @@ PrintVisitor::visit(AtomSet* const as)
 
 
 void
-PrintVisitor::visit(Rule* const r)
+PrintVisitor::visit(const Rule* const r)
 {
   const RuleHead_t& head = r->getHead();
 
@@ -121,7 +121,7 @@ PrintVisitor::visit(Rule* const r)
 
 
 void
-PrintVisitor::visit(Literal* const l)
+PrintVisitor::visit(const Literal* const l)
 {
   if (l->isNAF())
     {
@@ -133,7 +133,7 @@ PrintVisitor::visit(Literal* const l)
 
 
 void
-PrintVisitor::visit(Atom* const a)
+PrintVisitor::visit(const Atom* const a)
 {
   if (a->isStronglyNegated())
     {
@@ -156,7 +156,7 @@ PrintVisitor::visit(Atom* const a)
 
 
 void
-PrintVisitor::visit(BuiltinPredicate* const bp)
+PrintVisitor::visit(const BuiltinPredicate* const bp)
 {
 	if( bp->getArity() == 2 )
 		stream << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
@@ -166,7 +166,7 @@ PrintVisitor::visit(BuiltinPredicate* const bp)
 
 
 void
-PrintVisitor::visit(AggregateAtom* const aa)
+PrintVisitor::visit(const AggregateAtom* const aa)
 {
   if (!aa->getCmpLeft().empty())
     {
@@ -205,14 +205,14 @@ RawPrintVisitor::RawPrintVisitor(std::ostream& s)
 
 
 void
-RawPrintVisitor::visit(Rule* const r)
+RawPrintVisitor::visit(const Rule* const r)
 {
   PrintVisitor::visit(r);
   stream << std::endl;
 }
 
 void
-RawPrintVisitor::visit(WeakConstraint* const wc)
+RawPrintVisitor::visit(const WeakConstraint* const wc)
 {
   const RuleBody_t& body = wc->getBody();
 
@@ -236,7 +236,7 @@ RawPrintVisitor::visit(WeakConstraint* const wc)
 
 
 void
-RawPrintVisitor::visit(ExternalAtom* const ea)
+RawPrintVisitor::visit(const ExternalAtom* const ea)
 {
   stream << '&' << ea->getFunctionName() << '[';
 
@@ -270,7 +270,7 @@ DLVPrintVisitor::DLVPrintVisitor(std::ostream& s)
 
 
 void
-DLVPrintVisitor::visit(AtomSet* const as)
+DLVPrintVisitor::visit(const AtomSet* const as)
 {
   for (AtomSet::atomset_t::const_iterator a = as->atoms.begin(); a != as->atoms.end(); ++a)
     {
@@ -281,7 +281,7 @@ DLVPrintVisitor::visit(AtomSet* const as)
 
 
 void
-DLVPrintVisitor::visit(Rule* const r)
+DLVPrintVisitor::visit(const Rule* const r)
 {
   PrintVisitor::visit(r);
   stream << std::endl;
@@ -289,14 +289,14 @@ DLVPrintVisitor::visit(Rule* const r)
 
 
 void
-DLVPrintVisitor::visit(WeakConstraint* const wc)
+DLVPrintVisitor::visit(const WeakConstraint* const wc)
 {
-  visit(static_cast<Rule* const>(wc));
+  visit(static_cast<const Rule* const>(wc));
 }
 
 
 void
-DLVPrintVisitor::visit(ExternalAtom* const ea)
+DLVPrintVisitor::visit(const ExternalAtom* const ea)
 {
   //
   // the replacement atom contains both the input and the output list
@@ -322,7 +322,7 @@ HOPrintVisitor::HOPrintVisitor(std::ostream& s)
 
 
 void
-HOPrintVisitor::visit(Atom* const a)
+HOPrintVisitor::visit(const Atom* const a)
 {
   if (a->getAlwaysFO()) // FO mode is always raw
     {

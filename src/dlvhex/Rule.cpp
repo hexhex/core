@@ -181,7 +181,7 @@ Rule::operator< (const Rule& rule2) const
 
 
 void
-Rule::accept(BaseVisitor& v)
+Rule::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }
@@ -303,7 +303,7 @@ WeakConstraint::operator== (const WeakConstraint& /* wc2 */) const
 
 
 void
-WeakConstraint::accept(BaseVisitor& v)
+WeakConstraint::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }

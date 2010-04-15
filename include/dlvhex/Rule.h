@@ -166,7 +166,7 @@ public:
 	 * \sa http://en.wikipedia.org/wiki/Visitor_pattern
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 
 protected:
 
@@ -259,7 +259,7 @@ public:
 	 * \sa http://en.wikipedia.org/wiki/Visitor_pattern
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 
 	/**
 	 * Returns the weight of the WC.

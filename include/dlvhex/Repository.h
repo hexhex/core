@@ -74,7 +74,7 @@ public:
     /// first order or higher order mode). For each representation
     /// form we implement the corresponding concrete Visitor class.
     virtual void
-    accept(BaseVisitor&) = 0;
+    accept(BaseVisitor&) const = 0;
 };
 
 

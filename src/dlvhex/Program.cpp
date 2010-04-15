@@ -95,7 +95,7 @@ Program::getExternalAtoms() const
 
 
 void
-Program::accept(BaseVisitor& v)
+Program::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }

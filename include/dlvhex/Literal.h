@@ -132,7 +132,7 @@ public:
 	 * \sa http://en.wikipedia.org/wiki/Visitor_pattern
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 
 	friend std::ostream&
 	operator<<(std::ostream&, const Literal&);

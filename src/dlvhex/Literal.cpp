@@ -109,7 +109,7 @@ Literal::operator< (const Literal& lit2) const
 
 
 void
-Literal::accept(BaseVisitor& v)
+Literal::accept(BaseVisitor& v) const
 {
   v.visit(this);
 }

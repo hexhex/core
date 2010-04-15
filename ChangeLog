@@ -1,3 +1,24 @@
+2010-04-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/BaseVisitor.h: Allowing to visit const objects.
+	* include/dlvhex/PrintVisitor.h: Likewise.
+	* include/dlvhex/Literal.h: Likewise.
+	* include/dlvhex/AtomSet.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/AggregateAtom.h: Likewise.
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* include/dlvhex/Repository.h: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/ExternalAtom.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+	* src/dlvhex/AtomSet.cpp: Likewise.
+
 2010-03-15  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Parser fix for NAF.

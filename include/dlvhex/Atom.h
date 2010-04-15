@@ -282,7 +282,7 @@ public:
 	 * according to its (the visitor's) type (plain text, XML, etc.)
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 	
 	/**
 	 * @brief Tests if the atom contains only constant arguments.
@@ -398,7 +398,7 @@ public:
 	 * @brief accepts a visitor.
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 
 };
 

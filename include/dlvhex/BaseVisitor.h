@@ -67,39 +67,39 @@ public:
   { }
 
   virtual void
-  visit(Program* const) = 0;
+  visit(const Program* const) = 0;
 
   // a set of atoms
 
   virtual void
-  visit(AtomSet* const) = 0;
+  visit(const AtomSet* const) = 0;
 
   // different types of rules
 
   virtual void
-  visit(Rule* const) = 0;
+  visit(const Rule* const) = 0;
 
   virtual void
-  visit(WeakConstraint* const) = 0;
+  visit(const WeakConstraint* const) = 0;
 
   // a literal
 
   virtual void
-  visit(Literal* const) = 0;
+  visit(const Literal* const) = 0;
 
   // different types of atoms
 
   virtual void
-  visit(Atom* const) = 0;
+  visit(const Atom* const) = 0;
 
   virtual void
-  visit(ExternalAtom* const) = 0;
+  visit(const ExternalAtom* const) = 0;
 
   virtual void
-  visit(BuiltinPredicate* const) = 0;
+  visit(const BuiltinPredicate* const) = 0;
 
   virtual void
-  visit(AggregateAtom* const) = 0;
+  visit(const AggregateAtom* const) = 0;
 
 };
 

@@ -250,7 +250,7 @@ public:
      * @brief accepts a visitor.
      */
     void
-    accept(BaseVisitor&);
+    accept(BaseVisitor&) const;
 
     /**
      * @brief Removes all Atoms from the atomset whose predicate match the specified string.

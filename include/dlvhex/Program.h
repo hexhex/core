@@ -247,7 +247,7 @@ public:
 	 * the rules in a program and calls Rule::accept() on them.
 	 */
 	virtual void
-	accept(BaseVisitor&);
+	accept(BaseVisitor&) const;
 
  private:
 
