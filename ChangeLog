@@ -1,3 +1,7 @@
+2010-04-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/State.cpp (OutputState::output): Fix OutputBuilder state.
+
 2010-04-15  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp: Added option --nocache and global option
