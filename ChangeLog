@@ -1,3 +1,13 @@
+2010-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/testsuite/dlvhex/Makefile.am (AUTOMAKE_OPTIONS): Remove.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/Makefile.am: Likewise.
+	* include/testsuite/dlvhex/Makefile.am: Likewise.
+	* include/testsuite/Makefile.am: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* include/Makefile.am: Likewise.
+
 2010-04-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/State.cpp (OutputState::output): Fix OutputBuilder state.

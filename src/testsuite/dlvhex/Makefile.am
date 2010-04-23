@@ -1,5 +1,3 @@
-AUTOMAKE_OPTIONS = gnu
-
 CLEANFILES = libdlvhextest.so
 
 EXTRA_DIST = run-dlvhex-tests.sh
