@@ -762,6 +762,8 @@ OutputState::output(ProgramCtx* ctx)
 
   if (outputbuilder == 0)
     {
+      OutputBuilder* tmpoutputbuilder = 0;
+
       // first look if some plugin has an OutputBuilder
       for (std::vector<PluginInterface*>::const_iterator pi = ctx->getPlugins()->begin();
 	   pi != ctx->getPlugins()->end(); ++pi)
@@ -769,7 +771,8 @@ OutputState::output(ProgramCtx* ctx)
 	  ///@todo this is very clumsy, what should we do if there
 	  ///are more than one output builders available from the
 	  ///atoms?
-	  outputbuilder = (*pi)->createOutputBuilder();
+	  tmpoutputbuilder = (*pi)->createOutputBuilder();
+	  outputbuilder = tmpoutputbuilder != 0 ? tmpoutputbuilder : outputbuilder;
 	}
 
       // if no plugin provides an OutputBuilder, we use our own to output the models
