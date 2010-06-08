@@ -202,6 +202,18 @@ ASPsolverTest::testResult()
     ++as;
     CPPUNIT_ASSERT(as->size() == 1);
     answersets.clear();
+
+
+		// read dlv program from string and return result
+		{
+			// single model: { b, a :- b }
+			ASPStringSolver solver(dlv);
+			CPPUNIT_ASSERT_NO_THROW(solver.solve("b. a:-b.", answersets));
+			CPPUNIT_ASSERT(answersets.size() == 1);
+			as = answersets.begin();
+			CPPUNIT_ASSERT(as->size() == 1);
+			answersets.clear();
+		}
 }
 
 DLVHEX_NAMESPACE_END

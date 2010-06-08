@@ -2,6 +2,13 @@
 
 	* AUTHORS: Add Peter & me to the list of authors.
 
+2010-05-14  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolver.h: Added ASPStringSolver, an ASPSolver which does
+	not take a parsed EDB/IDB but a string as input.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Testcase for above.
+
 2010-04-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/Makefile.am (AUTOMAKE_OPTIONS): Remove.

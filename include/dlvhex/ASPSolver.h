@@ -99,6 +99,7 @@ struct NullParser
 
 /**
  * @brief ASP solver class for files
+ * @todo ASPFileSolver and ASPStringSolver do not fit the class hierarchy and the solve() function in the base class: think about a unifying solution
  */
 template<typename Parser>
 class DLVHEX_EXPORT ASPFileSolver : public BaseASPSolver
@@ -141,6 +142,26 @@ public:
   void
   solve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
 
+};
+
+/**
+ * @brief ASP solver which does not require files nor parsed Program/AtomSet.
+ * @todo ASPFileSolver and ASPStringSolver do not fit the class hierarchy and the solve() function in the base class: think about a unifying solution
+ */
+class DLVHEX_EXPORT ASPStringSolver
+{
+private:
+  Process& proc;
+
+public:
+  ASPStringSolver(Process& proc);
+
+  virtual
+  ~ASPStringSolver();
+
+  //! give a DLV program as a string to this function and it returns the answer sets (or throws)
+  virtual void
+  solve(const std::string& inputProgram, std::vector<AtomSet>& outputAnswersets) throw (FatalError);
 };
 
 
