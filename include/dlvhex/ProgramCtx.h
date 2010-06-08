@@ -108,20 +108,20 @@ class DLVHEX_EXPORT ProgramCtx
   void
   setPluginContainer(PluginContainer*);
 
-  PluginContainer* const
+  PluginContainer*
   getPluginContainer() const;
   
 
   void
   addPlugins(const std::vector<PluginInterface*>&);
 
-  std::vector<PluginInterface*>* const
+  std::vector<PluginInterface*>*
   getPlugins() const;
 
   void
   addOption(const std::string&);
 
-  std::vector<std::string>* const
+  std::vector<std::string>*
   getOptions() const;
 
   void
@@ -136,41 +136,41 @@ class DLVHEX_EXPORT ProgramCtx
   getInput();
 
 
-  Program* const
+  Program*
   getIDB() const;
 
-  AtomSet* const
+  AtomSet*
   getEDB() const;
 
 
-  NodeGraph* const
+  NodeGraph*
   getNodeGraph() const;
 
   void
   setNodeGraph(NodeGraph*);
 
-  DependencyGraph* const
+  DependencyGraph*
   getDependencyGraph() const;
 
   void
   setDependencyGraph(DependencyGraph*);
 
 
-  Process* const
+  Process*
   getProcess() const;
 
   void
   setProcess(Process*);
 
 
-  ResultContainer* const
+  ResultContainer*
   getResultContainer() const;
 
   void
   setResultContainer(ResultContainer*);
 
 
-  OutputBuilder* const
+  OutputBuilder*
   getOutputBuilder() const;
 
   void
