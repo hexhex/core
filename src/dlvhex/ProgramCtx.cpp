@@ -95,7 +95,7 @@ ProgramCtx::addOption(const std::string& o)
 }
 
 
-std::vector<std::string>* const
+std::vector<std::string>*
 ProgramCtx::getOptions() const
 {
   return this->options;
@@ -112,14 +112,14 @@ ProgramCtx::setPluginContainer(PluginContainer* c)
 }
 
 
-PluginContainer* const
+PluginContainer*
 ProgramCtx::getPluginContainer() const
 {
   return this->container;
 } 
 
 
-std::vector<PluginInterface*>* const
+std::vector<PluginInterface*>*
 ProgramCtx::getPlugins() const
 {
   return this->plugins;
@@ -154,21 +154,21 @@ ProgramCtx::getInput()
 }
 
 
-Program* const
+Program*
 ProgramCtx::getIDB() const
 {
   return IDB;
 }
 
 
-AtomSet* const
+AtomSet*
 ProgramCtx::getEDB() const
 {
   return EDB;
 }
 
 
-NodeGraph* const
+NodeGraph*
 ProgramCtx::getNodeGraph() const
 {
   return nodegraph;
@@ -186,7 +186,7 @@ ProgramCtx::setNodeGraph(NodeGraph* ng)
 }
 
 
-DependencyGraph* const
+DependencyGraph*
 ProgramCtx::getDependencyGraph() const
 {
   return depgraph;
@@ -204,7 +204,7 @@ ProgramCtx::setDependencyGraph(DependencyGraph* dg)
 }
 
 
-Process* const
+Process*
 ProgramCtx::getProcess() const
 {
   return solver;
@@ -222,7 +222,7 @@ ProgramCtx::setProcess(Process* s)
 }
 
 
-ResultContainer* const
+ResultContainer*
 ProgramCtx::getResultContainer() const
 {
   return result;
@@ -240,7 +240,7 @@ ProgramCtx::setResultContainer(ResultContainer* c)
 }
 
 
-OutputBuilder* const
+OutputBuilder*
 ProgramCtx::getOutputBuilder() const
 {
   return outputbuilder;
