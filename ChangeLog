@@ -1,5 +1,10 @@
 2010-06-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/ProgramCtx.h: Fix const-pointer return type warnings.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* bootstrap.sh: Add sanity checks for the autotool commands.
+
 	* AUTHORS: Add Peter to the list of authors.
 
 2010-05-14  Peter Schueller  <ps@kr.tuwien.ac.at>
