@@ -1,4 +1,4 @@
-AC_PREREQ(2.61)
+AC_PREREQ([2.61])
 AC_INIT([dlvhex],[1.7.0],[tkren@kr.tuwien.ac.at])
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([src/config.h])
