@@ -1,3 +1,12 @@
+2010-06-14  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* NEWS: Update.
+
+	* configure.ac:: Require autoconf >= 2.61.
+
+	* m4/boost.m4: Updated to newest version of boost.m4 from
+	http://github.com/tsuna/boost.m4.
+
 2010-06-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/ProgramCtx.h: Fix const-pointer return type warnings.
