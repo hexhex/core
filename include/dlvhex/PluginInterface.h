@@ -745,7 +745,8 @@ public:
 protected:
 
     /// Ctor.
-    PluginAtom()
+    // @todo: this default is legacy, but it is dangerous!
+    PluginAtom(bool monotonic=true): monotonic(monotonic)
     { }
 
 
@@ -830,7 +831,17 @@ public:
     const std::vector<InputType>&
     getInputTypes() const;
 
+    /**
+     * @return monotonic
+     */
+    bool isMonotonic() const { return monotonic; }
+
 private:
+
+    /**
+     * \brief whether the function is monotonic or nonmonotonic
+     */
+    bool monotonic;
 
     /**
      * \brief Number of input arguments.
@@ -853,7 +864,6 @@ private:
     typedef std::map<Query, Answer> QueryAnswerCache;
     QueryAnswerCache queryAnswerCache;
 };
-
 
 
 /**
