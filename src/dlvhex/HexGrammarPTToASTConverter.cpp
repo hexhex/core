@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2009 Peter Schüller
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -443,3 +445,7 @@ Term HexGrammarPTToASTConverter::createTermFromTerm(node_t& node)
 DLVHEX_NAMESPACE_END
 
 // vim: set expandtab:
+
+// Local Variables:
+// mode: C++
+// End:

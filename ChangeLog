@@ -1,5 +1,9 @@
 2010-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	Update copyright information.
+
+	* doxygen.cfg: Update doxygen configuration via doxygen -u.
+
 	* src/dlvhex/PluginContainer.cpp (PluginContainer::findplugins):
 	Prevent loading of libdlvhexbase, this caused nasty duplicate
 	global variables.
