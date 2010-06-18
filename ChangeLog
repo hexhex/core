@@ -1,3 +1,23 @@
+2010-06-18  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/PluginInterface.h: New parameter for
+	PluginAtom which allows to declare external atoms as nonmonotonic.
+	* include/dlvhex/DependencyGraph.cpp: Selecting guess and check model
+	generator for SCCs which contain nonmonotonic atoms (was: fixed point
+	model generator, which led to wrong answer sets).
+	* src/dlvhex/DependencyGraph.h: Likewise.
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: New nonmonotonic external atom
+	for verifying the above bugfix.
+	* examples/Makefile.am: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/nonmon_guess.hex: Likewise.
+	* examples/nonmon_inc.hex: Likewise.
+	* examples/nonmon_noloop.hex: Likewise.
+	* examples/tests/nonmon_guess.out: Likewise.
+	* examples/tests/nonmon_inc.out: Likewise.
+	* examples/tests/nonmon_noloop.out: Likewise.
+
 2010-06-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac (BOOST_REQUIRE): Require boost >= 1.41.
