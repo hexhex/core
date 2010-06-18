@@ -1,3 +1,27 @@
+2010-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/PluginContainer.cpp (PluginContainer::findplugins):
+	Prevent loading of libdlvhexbase, this caused nasty duplicate
+	global variables.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Use singleton
+	instance methods.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* dlvhex.pc.in: Install libdlvhexbase and libaspsolver in $libdir.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* configure.ac: Better configuration output.
+
+	* NEWS: Update.
+
+	* include/dlvhex/Term.h: Make Term::names and Term::namespaces
+	private.
+	(Term::getNameSpaces,Term::getNames,Term::getAuxiliaryNames):
+	Singleton instance methods for Term::namespaces, Term::names,
+	Term::auxnames.
+	* src/dlvhex/Term.cpp: Likewise.
+
 2010-06-18  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/PluginInterface.h: New parameter for
