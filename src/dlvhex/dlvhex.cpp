@@ -194,17 +194,17 @@ insertNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::namespaces.size() == 0)
+  if (Term::getNameSpaces().size() == 0)
     return;
 
   std::string prefix;
 
-  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-       nm != Term::names.end();
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
        ++nm)
     {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-	   ns != Term::namespaces.end();
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
 	   ++ns)
 	{
 	  prefix = ns->second + ':';
@@ -253,7 +253,7 @@ insertNamespaces()
 		  r.replace(0, 1, "\"<");
 		  r.replace(r.length() - 1, 1, ">\"");
 	      
-		  Term::names.modify(nm, r);
+		  Term::getNames().modify(nm, r);
 		}
 	    }
 	}
@@ -267,18 +267,18 @@ removeNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::namespaces.size() == 0)
+  if (Term::getNameSpaces().size() == 0)
     return;
 
   std::string prefix;
   std::string fullns;
 
-  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-       nm != Term::names.end();
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
        ++nm)
     {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-	   ns != Term::namespaces.end();
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
 	   ++ns)
 	{
 	  fullns = ns->first;
@@ -298,7 +298,7 @@ removeNamespaces()
 
 	      r.replace(start, fullns.length(), prefix);
 
-	      Term::names.modify(nm, r);
+	      Term::getNames().modify(nm, r);
 	    }
 	}
     }

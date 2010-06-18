@@ -123,7 +123,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       if( prefix[0] == '"' ) prefix = prefix.substr(1, prefix.length()-2);
       std::string ns = createStringFromNode(child.children[4]);
       if( ns[0] == '"' ) ns = ns.substr(1, ns.length()-2);
-      Term::namespaces.push_back(std::make_pair(ns,prefix));
+      Term::getNameSpaces().push_back(std::make_pair(ns,prefix));
     }
     break;
   case HexGrammar::Rule:
