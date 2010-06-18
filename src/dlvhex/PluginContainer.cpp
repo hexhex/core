@@ -71,8 +71,11 @@ findplugins(const char* filename, lt_ptr data)
   std::string::size_type base = fn.find_last_of("/");
 
   // if basename starts with 'libdlvhex', then we should have a plugin here
-  /// @todo we could lt_dlopen the file here, to check if it is really a plugin
-  if (fn.substr(base).find("/libdlvhex") == 0)
+  /// @todo we could lt_dlopen the file here, to check if it is really
+  /// a plugin, for now we exclude loading of libdlvhexbase as it is
+  /// not a plugin and caused duplicate instantiations of the Term tables
+  if (fn.substr(base).find("/libdlvhex") == 0 &&
+      fn.substr(base).find("/libdlvhexbase") == std::string::npos)
     {
       pluginlist->push_back(fn);
     }
