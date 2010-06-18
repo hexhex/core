@@ -19,6 +19,12 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Use a more efficient replacement name technique for external atoms.
 
+** Support for nonmonotonic external atoms (instantiate your external atom with PluginAtom(false)).
+
+** Install libdlvhexbase.so and libaspsolver.so in $libdir instead of $pkglibdir (e.g., instead of /usr/local/lib/dlvhex, they are now located in /usr/local/lib).
+
+** Use singleton interface for the name tables, caused a nasty bug with duplicate global Term::names instantiations.
+
 **  Fix ticket #1.
 
 
