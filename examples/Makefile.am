@@ -20,6 +20,9 @@ EXTRA_DIST = \
     weak2.hex \
     maxint.hex \
     naftest.hex \
+    nonmon_noloop.hex \
+    nonmon_inc.hex \
+    nonmon_guess.hex \
     operators.hex \
     tertop.hex \
     tests/3col.out \
@@ -42,5 +45,8 @@ EXTRA_DIST = \
     tests/weak2.out \
     tests/maxint.out \
     tests/naftest.out \
+    tests/nonmon_noloop.out \
+    tests/nonmon_inc.out \
+    tests/nonmon_guess.out \
     tests/operators.out \
     tests/tertop.out

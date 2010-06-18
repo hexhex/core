@@ -1,0 +1,6 @@
+% this program should do a nondeterministic guess across the
+% nonmonotonic external atom testSetMinus
+seta(u). seta(v). seta(w).
+
+setc(X) :- &testSetMinus[seta,setd](X), seta(X).
+setd(Y) :- &testSetMinus[seta,setc](Y), seta(Y).

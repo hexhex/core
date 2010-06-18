@@ -88,7 +88,7 @@ public:
 private:
 
     bool
-    hasNegEdge(const std::vector<AtomNodePtr>&) const;
+    hasNegEdgeOrNonmonotonicExtatom(const std::vector<AtomNodePtr>&) const;
 
     bool
     isExternal(const std::vector<AtomNodePtr>&) const;
@@ -115,8 +115,9 @@ private:
     std::vector<Subgraph*>::iterator
     currentSubgraph;
 
-
     ComponentFinder* componentFinder;
+
+    const ProgramCtx& programCtx;
 };
 
 DLVHEX_NAMESPACE_END
