@@ -11,8 +11,8 @@ AM_CPPFLAGS = \
 # install dlvhex into $prefix/bin
 bin_PROGRAMS = dlvhex
 
-# install those libraries into $pkglibdir/lib
-pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
+# install those libraries into $libdir
+lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
