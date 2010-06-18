@@ -39,7 +39,6 @@
 #include "dlvhex/PluginInterface.h"
 
 #include <sstream>
-//#include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -96,12 +95,10 @@ DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
             //
             if (hasNegEdgeOrNonmonotonicExtatom(*scc))
             {
-                //std::cerr << "using guess check" << std::endl;
                 mg = new GuessCheckModelGenerator(ctx);
             }
             else
             {
-                //std::cerr << "using fixpoint" << std::endl;
                 mg = new FixpointModelGenerator(ctx);
             }
 
