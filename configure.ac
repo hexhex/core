@@ -19,8 +19,8 @@ esac
 AC_SUBST([HAVE_WIN32])
 
 #
-# the default system-wide plugin dir $(pkglibdir)/plugins can be
-# overridden by setting PLUGIN_DIR=... at configure-time
+# the default system-wide plugin dir ${pkglibdir}/plugins can be
+# overridden by setting SYS_PLUGIN_DIR=... at configure-time
 #
 if test "$SYS_PLUGIN_DIR" = ""; then
     sysplugindir="\${pkglibdir}/plugins"
@@ -28,9 +28,13 @@ else
     sysplugindir="$SYS_PLUGIN_DIR"
 fi
 
+# this goes into dlvhex.pc
 AC_SUBST(sysplugindir)
 
+# ${pkglibdir} can only be evaluated in the Makefiles, so no way to
+# put it in config.h
 CPPFLAGS="$CPPFLAGS -DSYS_PLUGIN_DIR='\"$sysplugindir\"'"
+
 
 #
 # the user plugin dir consists of the user home concatenated with
@@ -43,8 +47,10 @@ else
     userplugindir="$USER_PLUGIN_DIR"
 fi
 
+# this goes into dlvhex.pc
 AC_SUBST(userplugindir)
 
+# this can only be evaluated in the Makefiles
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
@@ -134,6 +140,7 @@ AC_SUBST(LIBLTDL)
 # fix for some versions of autoconf/libtool, see also https://gnunet.org/mantis/view.php?id=1340
 m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 
+# pkg-config support
 PKG_PROG_PKG_CONFIG
 
 #
@@ -162,7 +169,8 @@ BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
 AC_ARG_ENABLE(debug,
               [  --enable-debug          switch on debug routines (timers, ...)],
               [AC_DEFINE(DLVHEX_DEBUG, [], [Turns on timer routines for profiling])
-               debug_support=yes]
+               debug_support=yes],
+	      [debug_support=no]
               )
 
 # for debug, we need the boost_date_time library
@@ -216,6 +224,7 @@ cat <<EOF
  
 $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  
+ - Path settings
  prefix: $prefix
  exec_prefix: $exec_prefix
  
@@ -224,11 +233,20 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  pkglibdir: $libdir/$PACKAGE_TARNAME
  datadir: $datadir
 
- userplugindir: $HOME/$userplugindir
+ userplugindir: $userplugindir
  sysplugindir: $sysplugindir
 
- Using the following libraries:
- Boost: $BOOST_CPPFLAGS
- Curl: $LIBCURL_CPPFLAGS
+ - Using the following binaries:
+ DLV: $DLVPATH
+ DLVDB: $DLVDBPATH
+ doxygen: $DX_DOXYGEN
+
+ - Using the following libraries:
+ Boost: $boost_major_version $BOOST_CPPFLAGS
+ Curl: $libcurl_cv_lib_curl_version $LIBCURL_CPPFLAGS
+ Cppunit: $have_cppunit
+ 
+ - Options:
+ Debug: $debug_support
 
 EOF
