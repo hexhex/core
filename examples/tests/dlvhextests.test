@@ -20,3 +20,6 @@
 ../empty.hex empty.out
 ../operators.hex operators.out
 ../naftest.hex naftest.out
+../nonmon_noloop.hex nonmon_noloop.out
+../nonmon_inc.hex nonmon_inc.out
+../nonmon_guess.hex nonmon_guess.out
