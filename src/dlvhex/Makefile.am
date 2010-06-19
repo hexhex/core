@@ -23,7 +23,8 @@ dlvhex_SOURCES = \
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-dlvhex_LDFLAGS = -static -export-dynamic
+#dlvhex_LDFLAGS = -static -export-dynamic
+dlvhex_LDFLAGS = -export-dynamic
 
 #
 # dlvhex itself also uses the convenience libs (see below)
