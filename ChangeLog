@@ -1,5 +1,7 @@
 2010-06-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/dlvhex.cpp: Add --version information.
+
 	* src/dlvhex/PluginContainer.cpp (PluginContainer::importPlugins):
 	Do not load duplicate plugins.
 

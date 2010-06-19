@@ -5,7 +5,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** This is the last dlvhex release with major number 1.
 
-** Add support for dlvdb as ASP solver (--solver=).
+** Add support for dlvdb as ASP solver (--solver=dlvdb).
 
 ** Introduce dlvhex namespace.
 
@@ -19,7 +19,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Use a more efficient replacement name technique for external atoms.
 
-** Add support for a simple caching strategy for external atoms.
+** Add support for a simple caching strategy for external atoms (turn off with --nocache).
 
 ** Support for nonmonotonic external atoms (instantiate your external atom with PluginAtom(false)).
 
