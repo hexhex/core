@@ -1,3 +1,8 @@
+2010-06-21  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* testsuite/dlvhex/Makefile.am: Ensuring that testsuite uses
+	the libraries that were built in the builddir.
+
 2010-06-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/dlvhex.cpp: Add --version information.

@@ -4,7 +4,7 @@ EXTRA_DIST = run-dlvhex-tests.sh
 
 if HAVE_CPPUNIT
 TESTS = dlvhexTS run-dlvhex-tests.sh
-TESTS_ENVIRONMENT = TESTDIR=$(top_srcdir)/examples/tests DLVHEX=$(top_builddir)/src/dlvhex/dlvhex PARAMETERS="-s --plugindir=."
+TESTS_ENVIRONMENT = TESTDIR=$(top_srcdir)/examples/tests LD_LIBRARY_PATH=$(top_builddir)/src/dlvhex/.libs/ DLVHEX=$(top_builddir)/src/dlvhex/dlvhex PARAMETERS="-s --plugindir=."
 check_PROGRAMS = dlvhexTS
 else
 check_PROGRAMS = 
