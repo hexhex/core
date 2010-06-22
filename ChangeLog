@@ -1,3 +1,7 @@
+2010-06-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Makefile.am: Add support for make html and make install-html.
+
 2010-06-21  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* testsuite/dlvhex/Makefile.am: Ensuring that testsuite uses
