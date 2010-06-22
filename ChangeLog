@@ -1,5 +1,7 @@
 2010-06-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	Release version 1.7.0.
+
 	* Makefile.am: Add support for make html and make install-html.
 
 2010-06-21  Peter Schueller  <ps@kr.tuwien.ac.at>
