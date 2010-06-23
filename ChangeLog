@@ -1,5 +1,8 @@
 2010-06-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* README: Update.
+	* MAINTAINER-README: Likewise.
+
 	* Makefile.am (uninstall-local): Fix make uninstall when no-one
 	called make install-html.
 
