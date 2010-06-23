@@ -14,7 +14,7 @@ install-html-local:
 	cp -rv $(top_builddir)/doc/html $(DESTDIR)/$(docdir)
 
 uninstall-local:
-	test -d $(DESTDIR)/$(docdir)/html || exit 0
+	test -d $(DESTDIR)/$(docdir)/html || exit 0; \
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 
 
