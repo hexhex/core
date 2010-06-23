@@ -1,0 +1,8 @@
+{setd(w), setd(v), setd(u), seta(w), seta(v), seta(u)}
+{setd(w), setd(v), setc(u), seta(w), seta(v), seta(u)}
+{setd(w), setd(u), setc(v), seta(w), seta(v), seta(u)}
+{setd(w), setc(v), setc(u), seta(w), seta(v), seta(u)}
+{setd(v), setd(u), setc(w), seta(w), seta(v), seta(u)}
+{setd(v), setc(w), setc(u), seta(w), seta(v), seta(u)}
+{setd(u), setc(w), setc(v), seta(w), seta(v), seta(u)}
+{setc(w), setc(v), setc(u), seta(w), seta(v), seta(u)}

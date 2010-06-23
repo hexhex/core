@@ -11,8 +11,8 @@ AM_CPPFLAGS = \
 # install dlvhex into $prefix/bin
 bin_PROGRAMS = dlvhex
 
-# install those libraries into $pkglibdir/lib
-pkglib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
+# install those libraries into $libdir
+lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
@@ -23,7 +23,8 @@ dlvhex_SOURCES = \
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-dlvhex_LDFLAGS = -static -export-dynamic
+#dlvhex_LDFLAGS = -static -export-dynamic
+dlvhex_LDFLAGS = -export-dynamic
 
 #
 # dlvhex itself also uses the convenience libs (see below)

@@ -1,3 +1,94 @@
+2010-06-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update.
+	* MAINTAINER-README: Likewise.
+
+	* Makefile.am (uninstall-local): Fix make uninstall when no-one
+	called make install-html.
+
+2010-06-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	Release version 1.7.0.
+
+	* Makefile.am: Add support for make html and make install-html.
+
+2010-06-21  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* testsuite/dlvhex/Makefile.am: Ensuring that testsuite uses
+	the libraries that were built in the builddir.
+
+2010-06-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/dlvhex.cpp: Add --version information.
+
+	* src/dlvhex/PluginContainer.cpp (PluginContainer::importPlugins):
+	Do not load duplicate plugins.
+
+	* src/dlvhex/Makefile.am (dlvhex_LDFLAGS): Remove -static.
+
+	* include/dlvhex/ASPSolver.tcc: Use @todo instead of TODO.
+
+2010-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	Update copyright information.
+
+	* doxygen.cfg: Update doxygen configuration via doxygen -u.
+
+	* src/dlvhex/PluginContainer.cpp (PluginContainer::findplugins):
+	Prevent loading of libdlvhexbase, this caused nasty duplicate
+	global variables.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Use singleton
+	instance methods.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+
+	* dlvhex.pc.in: Install libdlvhexbase and libaspsolver in $libdir.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* configure.ac: Better configuration output.
+
+	* NEWS: Update.
+
+	* include/dlvhex/Term.h: Make Term::names and Term::namespaces
+	private.
+	(Term::getNameSpaces,Term::getNames,Term::getAuxiliaryNames):
+	Singleton instance methods for Term::namespaces, Term::names,
+	Term::auxnames.
+	* src/dlvhex/Term.cpp: Likewise.
+
+2010-06-18  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/PluginInterface.h: New parameter for
+	PluginAtom which allows to declare external atoms as nonmonotonic.
+	* include/dlvhex/DependencyGraph.cpp: Selecting guess and check model
+	generator for SCCs which contain nonmonotonic atoms (was: fixed point
+	model generator, which led to wrong answer sets).
+	* src/dlvhex/DependencyGraph.h: Likewise.
+
+	* src/testsuite/dlvhex/TestPlugin.cpp: New nonmonotonic external atom
+	for verifying the above bugfix.
+	* examples/Makefile.am: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/nonmon_guess.hex: Likewise.
+	* examples/nonmon_inc.hex: Likewise.
+	* examples/nonmon_noloop.hex: Likewise.
+	* examples/tests/nonmon_guess.out: Likewise.
+	* examples/tests/nonmon_inc.out: Likewise.
+	* examples/tests/nonmon_noloop.out: Likewise.
+
+2010-06-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac (BOOST_REQUIRE): Require boost >= 1.41.
+
+2010-06-14  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* NEWS: Update.
+
+	* configure.ac:: Require autoconf >= 2.61.
+
+	* m4/boost.m4: Updated to newest version of boost.m4 from
+	http://github.com/tsuna/boost.m4.
+
 2010-06-08  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/ProgramCtx.h: Fix const-pointer return type warnings.

@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -219,6 +221,75 @@ public:
     }
 };
 
+class TestSetMinusAtom : public PluginAtom
+{
+public:
+
+    TestSetMinusAtom():
+      PluginAtom(false)
+    {
+        addInputPredicate();
+        addInputPredicate();
+        setOutputArity(1);
+    }
+
+    virtual void
+    retrieve(const Query& query, Answer& answer) throw (PluginError)
+    {
+      const Tuple& in = query.getInputTuple();
+    
+      const std::string& s1 = in[0].getUnquotedString();
+      const std::string& s2 = in[1].getUnquotedString();
+      
+      AtomSet set1;
+      AtomSet set2;
+
+      query.getInterpretation().matchPredicate(s1, set1);
+      query.getInterpretation().matchPredicate(s2, set2);
+
+      std::set<std::string> terms1;
+      for(AtomSet::const_iterator it = set1.begin();
+          it != set1.end(); ++it)
+      {
+        const Tuple& args = it->getArguments();
+        assert(args.size() == 1);
+        assert(args[0].isSymbol());
+        terms1.insert(args[0].getString());
+        //std::cerr << "inset1 " << args[0].getString() << std::endl;
+      }
+
+      std::set<std::string> terms2;
+      for(AtomSet::const_iterator it = set2.begin();
+          it != set2.end(); ++it)
+      {
+        const Tuple& args = it->getArguments();
+        assert(args.size() == 1);
+        assert(args[0].isSymbol());
+        terms2.insert(args[0].getString());
+        //std::cerr << "inset2 " << args[0].getString() << std::endl;
+      }
+
+      std::vector<Tuple> out;
+      std::set<std::string> result;
+      std::insert_iterator<std::set<std::string> > 
+        iit(result, result.begin());
+      std::set_difference(
+          terms1.begin(), terms1.end(),
+          terms2.begin(), terms2.end(),
+          iit);
+      for(std::set<std::string>::const_iterator it = result.begin();
+          it != result.end(); ++it)
+      {
+        Tuple t;
+        t.push_back(Term(*it));
+        out.push_back(t);
+        //std::cerr << "inresult " << *it << std::endl;
+      }
+    
+      answer.addTuples(out);
+    }
+};
+
 
 class TestPlugin : public PluginInterface
 {
@@ -238,6 +309,7 @@ public:
 	  boost::shared_ptr<PluginAtom> testZeroArity0(new TestZeroArityAtom(false));
 	  boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
 	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
+	  boost::shared_ptr<PluginAtom> testSetMinus(new TestSetMinusAtom);
 
 	  a["testA"] = testA;
 	  a["testB"] = testB;
@@ -245,6 +317,7 @@ public:
 	  a["testZeroArity0"] = testZeroArity0;
 	  a["testZeroArity1"] = testZeroArity1;
 	  a["testConcat"] = testConcat;
+	  a["testSetMinus"] = testSetMinus;
 	}
 
 	virtual void

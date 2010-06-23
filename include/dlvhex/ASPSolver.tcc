@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -72,7 +74,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       try
         {
 	  Builder builder(proc.getOutput());
-		// TODO: this is marked as "temporary hack" in globals.h
+		///@todo: this is marked as "temporary hack" in globals.h
 	  if( !Globals::Instance()->maxint.empty() )
 	    proc.getOutput() << Globals::Instance()->maxint << std::endl;
 	  const_cast<Program&>(prg).accept(builder);

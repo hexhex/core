@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -35,6 +37,8 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/PluginInterface.h"
 
 #include <sstream>
 
@@ -49,7 +53,7 @@ DependencyGraph::DependencyGraph()
 
 DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
 
-  : nodegraph(*ctx.getNodeGraph()), componentFinder(cf)
+  : nodegraph(*ctx.getNodeGraph()), componentFinder(cf), programCtx(ctx)
 {
     const std::vector<AtomNodePtr> allnodes = nodegraph.getNodes();
 
@@ -91,7 +95,7 @@ DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
 	    //
 	    // This is also true for cycles through a disjunction.
             //
-            if (hasNegEdge(*scc))
+            if (hasNegEdgeOrNonmonotonicExtatom(*scc))
             {
                 mg = new GuessCheckModelGenerator(ctx);
             }
@@ -201,7 +205,7 @@ DependencyGraph::~DependencyGraph()
 ///@todo this function is actually meant for sccs - otherwise we would
 /// have to go through succeeding as well!
 bool
-DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes) const
+DependencyGraph::hasNegEdgeOrNonmonotonicExtatom(const std::vector<AtomNodePtr>& nodes) const
 {
     for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
          ni != nodes.end();
@@ -222,6 +226,20 @@ DependencyGraph::hasNegEdge(const std::vector<AtomNodePtr>& nodes) const
                 //
                 if (find(nodes.begin(), nodes.end(), (*di).getAtomNode()) != nodes.end())
                     return true;
+        }
+
+        ExternalAtomPtr ext =
+          boost::dynamic_pointer_cast<ExternalAtom>((*ni)->getAtom());
+        if( ext )
+        {
+          const std::string& func = ext->getFunctionName();
+          boost::shared_ptr<PluginAtom> pluginAtom =
+            programCtx.getPluginContainer()->getAtom(func);
+          if (!pluginAtom)
+            throw PluginError("Could not find plugin for external atom " + func + " (in depgraph)");
+
+          if( !pluginAtom->isMonotonic() )
+            return true;
         }
     }
 

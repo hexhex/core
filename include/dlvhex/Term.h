@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -318,24 +320,20 @@ public:
 	getAuxiliaryNames();
 
 	/**
-	 * @brief Table of all constant names of a program.
+	 * @brief Returns the list of auxiliary predicates.
 	 *
-	 * Since the UNA is valid for us, we store all constants in a global
-	 * (static) table and let each constant term only refer to the respective
-	 * table entry. NamesTable is a kind of orered hash map for unique items (we use
-	 * strings). As a reference to entries in NamesTable, we use iterators.
+	 * The list is given in terms of a NamesTable.
 	 */
-	static NamesTable<std::string> names;
+	static NamesTable<std::string>&
+	getNames();
 
 	/**
-	 * @brief List of namespaces.
+	 * @brief Returns the list of auxiliary predicates.
 	 *
-	 * Each entry in the list contains the namespace string and the abbreviation
-	 * string. The list of namespaces is administered as a static member within
-	 * Term, since namespaces have a direct effect on the constant terms in a
-	 * program.
+	 * The list is given in terms of a NamesTable.
 	 */
-	static std::vector<std::pair<std::string, std::string> > namespaces;
+	static std::vector<std::pair<std::string, std::string> >&
+	getNameSpaces();
 
 private:
 	
@@ -363,10 +361,36 @@ private:
 	std::string variableString;
 
 	/**
+	 * @brief initialize singleton member vars, used in getNames(), getNameSpaces(), getAuxiliaryNames()
+	 */
+	static void
+        initTables();
+
+	/**
+	 * @brief Table of all constant names of a program.
+	 *
+	 * Since the UNA is valid for us, we store all constants in a global
+	 * (static) table and let each constant term only refer to the respective
+	 * table entry. NamesTable is a kind of orered hash map for unique items (we use
+	 * strings). As a reference to entries in NamesTable, we use iterators.
+	 */
+	static NamesTable<std::string>* names;
+
+	/**
+	 * @brief List of namespaces.
+	 *
+	 * Each entry in the list contains the namespace string and the abbreviation
+	 * string. The list of namespaces is administered as a static member within
+	 * Term, since namespaces have a direct effect on the constant terms in a
+	 * program.
+	 */
+	static std::vector<std::pair<std::string, std::string> >* namespaces;
+
+	/**
 	 * @brief Additional list for auxiliary predicate names, to be removed
 	 * before final result output.
 	 */
-	static NamesTable<std::string> auxnames;
+	static NamesTable<std::string>* auxnames;
 
 };
 

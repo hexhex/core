@@ -1,16 +1,49 @@
-Release 1.7.0 (May 2008):
-    Add support for dlvdb as ASP solver (--solver=).
-    Introduce dlvhex namespace.
-    Introduce OutputBuilder interface, which allows plugins to have their own output formats.
-    Sanitize Plugin interface.
-    Use libltdl.
-    Add support for retrieving HEX-programs via HTTP (or whatever protocol libcurl supports).
-    Use a more efficient replacement name technique for external atoms.
-    Various bugs fixed.
+dlvhex NEWS -- history of user-visible changes.
 
-Release 1.6.0 (August 2007):
-    Variable arities of external atom input lists.
-    Debugged model-generation algorithm.
-    Added switch --reverse for reverse ordering of weak constrained models.
-    Added GPL license.
-    Improved documentation.
+
+* Version 1.7.0 (June 2010)
+
+** This is the last dlvhex release with major number 1.
+
+** Add support for dlvdb as ASP solver (--solver=dlvdb).
+
+** Introduce dlvhex namespace.
+
+** Introduce OutputBuilder interface, which allows plugins to have their own output formats.
+
+** Sanitize Plugin interface.
+
+** Use libltdl.
+
+** Add support for retrieving HEX-programs via HTTP (or whatever protocol libcurl supports).
+
+** Use a more efficient replacement name technique for external atoms.
+
+** Add support for a simple caching strategy for external atoms (turn off with --nocache).
+
+** Support for nonmonotonic external atoms (instantiate your external atom with PluginAtom(false)).
+
+** Install libdlvhexbase.so and libaspsolver.so in $libdir instead of $pkglibdir (e.g., instead of /usr/local/lib/dlvhex, they are now located in /usr/local/lib).
+
+** Use singleton interface for the name tables, caused a nasty bug with duplicate global Term::names instantiations.
+
+**  Fix ticket #1.
+
+
+
+* Version 1.6.0 (August 2007)
+
+** Variable arities of external atom input lists.
+
+** Debugged model-generation algorithm.
+
+** Added switch --reverse for reverse ordering of weak constrained models.
+
+** Added GPL license.
+
+** Improved documentation.
+
+Local variables:
+mode: outline
+paragraph-separate: "[ 	]*$"
+end:

@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -102,15 +104,17 @@ operator<< (std::ostream& out, const DLVHEX_NAMESPACE Tuple& tuple)
 //
 // initializing static members
 //
-std::vector<std::pair<std::string, std::string> > Term::namespaces;
+std::vector<std::pair<std::string, std::string> >* Term::namespaces = 0;
 
-NamesTable<std::string> Term::names;
+NamesTable<std::string>* Term::names = 0;
 
-NamesTable<std::string> Term::auxnames;
+NamesTable<std::string>* Term::auxnames = 0;
 
 
 Term::Term()
-	: type(NULLCONST), constantString(names.end()), variableString("")
+  : type(NULLCONST),
+    constantString(getNames().end()),
+    variableString("")
 {
 }
 
@@ -137,14 +141,14 @@ Term::Term(const std::string& name, bool addQuotes)
 {
 	if (name[0] == '\"')
 	{
-		constantString = names.insert(name);
+                constantString = getNames().insert(name);
 		type = STRING;
 	}
 	else
 	{
 		if (addQuotes)
 		{
-			constantString = names.insert("\"" + name + "\"");
+			constantString = getNames().insert("\"" + name + "\"");
 			type = STRING;
 		}
 		else
@@ -159,7 +163,7 @@ Term::Term(const std::string& name, bool addQuotes)
 			}
 			else
 			{
-				constantString = names.insert(name);
+				constantString = getNames().insert(name);
 				type = SYMBOL;
 			}
 		}
@@ -171,14 +175,14 @@ Term::Term(const char* name, bool addQuotes)
 {
 	if (name[0] == '\"')
 	{
-		constantString = names.insert(name);
+		constantString =  getNames().insert(name);
 		type = STRING;
 	}
 	else
 	{
 		if (addQuotes)
 		{
-			constantString = names.insert("\"" + (std::string)name + "\"");
+			constantString = getNames().insert("\"" + (std::string)name + "\"");
 			type = STRING;
 		}
 		else
@@ -193,7 +197,7 @@ Term::Term(const char* name, bool addQuotes)
 			}
 			else
 			{
-				constantString = names.insert((std::string)name);
+				constantString = getNames().insert((std::string)name);
 				type = SYMBOL;
 			}
 		}
@@ -252,7 +256,7 @@ const std::string&
 Term::getString() const
 {
 	assert((type == STRING) || (type == SYMBOL));
-	assert(constantString != names.end());
+	assert(constantString != getNames().end());
 
 	return *constantString;
 }
@@ -346,7 +350,7 @@ Term::compare(const Term& term2) const
 		
 		case SYMBOL:
 		case STRING:
-			assert(constantString != names.end());
+			assert(constantString != getNames().end());
 	
 			return constantString.cmp(term2.constantString);
 		
@@ -416,17 +420,59 @@ Term::operator>= (const Term& term2) const
 }
 
 
+//
+// reserve memory for static members for all singleton methods
+//
+void
+Term::initTables()
+{
+  if (auxnames == 0)
+    {
+      auxnames = new NamesTable<std::string>;
+    }
+
+  if (names == 0)
+    {
+      names = new NamesTable<std::string>;
+    }
+
+  if (namespaces == 0)
+    {
+      namespaces = new std::vector<std::pair<std::string, std::string> >;
+    }
+}
+
+
+
 void
 Term::registerAuxiliaryName(const std::string& auxname)
 {
-	auxnames.insert(auxname);
+  initTables();
+  auxnames->insert(auxname);
 }
 
 
 const NamesTable<std::string>&
 Term::getAuxiliaryNames()
 {
-	return auxnames;
+  initTables();
+  return *auxnames;
+}
+
+
+NamesTable<std::string>&
+Term::getNames()
+{
+  initTables();
+  return *names;
+}
+
+
+std::vector<std::pair<std::string, std::string> >&
+Term::getNameSpaces()
+{
+  initTables();
+  return *namespaces;
 }
 
 

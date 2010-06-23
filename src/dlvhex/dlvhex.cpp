@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -107,51 +109,72 @@ printLogo()
 void
 printUsage(std::ostream &out, bool full)
 {
-	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	out << "Usage: " << WhoAmI 
-		<< " [OPTION] FILENAME [FILENAME ...]" << std::endl
-		<< std::endl;
+  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  out << "Usage: " << WhoAmI 
+      << " [OPTION] FILENAME [FILENAME ...]" << std::endl
+      << std::endl;
+  
+  out << "   or: " << WhoAmI 
+      << " [OPTION] --" << std::endl
+      << std::endl;
+  
+  if (!full)
+    {
+      out << "Specify -h or --help for more detailed usage information." << std::endl
+	  << std::endl;
+      
+      return;
+    }
+  
+  //
+  // As soos as we have more options, we can introduce sections here!
+  //
+  //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
+  out << "     --               Parse from stdin." << std::endl
+      << " -s, --silent         Do not display anything than the actual result." << std::endl
+    //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
+      << "                      libraries (additionally to the installation plugin-dir" << std::endl
+      << "                      and $HOME/.dlvhex/plugins)." << std::endl
+      << " -f, --filter=foo[,bar[,...]]" << std::endl
+      << "                      Only display instances of the specified predicate(s)." << std::endl
+      << " -a, --allmodels      Display all models also under weak constraints." << std::endl
+      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
+      << "     --firstorder     No higher-order reasoning." << std::endl
+      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+      << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
+      << "                      with --verbose)." << std::endl
+      << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+      << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
+      << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
+      << "                      1  - program analysis information (including dot-file)" << std::endl
+      << "                      2  - program modifications by plugins" << std::endl
+      << "                      4  - intermediate model generation info" << std::endl
+      << "                      8  - timing information (only if configured with" << std::endl
+      << "                                               --enable-debug)" << std::endl
+      << "                      add values for multiple categories." << std::endl
+      << "     --version        Show version information." << std::endl;
+}
 
-	out << "   or: " << WhoAmI 
-		<< " [OPTION] --" << std::endl
-		<< std::endl;
 
-	if (!full)
-	{
-		out << "Specify -h or --help for more detailed usage information." << std::endl
-			<< std::endl;
+void
+printVersion()
+{
+  std::cout << PACKAGE_TARNAME << " " << VERSION << std::endl;
 
-		return;
-	}
+  std::cout << "Copyright (C) 2010 Roman Schindlauer, Thomas Krennwallner, Peter Schüller" << std::endl
+	    << "License LGPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/lgpl.html>" << std::endl
+	    << "This is free software: you are free to change and redistribute it." << std::endl
+	    << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
 
-	//
-	// As soos as we have more options, we can introduce sections here!
-	//
-	//      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	out << "     --               Parse from stdin." << std::endl
-		<< " -s, --silent         Do not display anything than the actual result." << std::endl
-		//        << "--strongsafety     Check rules also for strong safety." << std::endl
-		<< " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
-		<< "                      libraries (additionally to the installation plugin-dir" << std::endl
-		<< "                      and $HOME/.dlvhex/plugins)." << std::endl
-		<< " -f, --filter=foo[,bar[,...]]" << std::endl
-		<< "                      Only display instances of the specified predicate(s)." << std::endl
-		<< " -a, --allmodels      Display all models also under weak constraints." << std::endl
-		<< " -r, --reverse        Reverse weak constraint ordering." << std::endl
-		<< "     --firstorder     No higher-order reasoning." << std::endl
-		<< "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
-		<< "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
-		<< "                      with --verbose)." << std::endl
-		<< "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-		<< "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
-		<< "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
-		<< " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
-		<< "                      1  - program analysis information (including dot-file)" << std::endl
-		<< "                      2  - program modifications by plugins" << std::endl
-		<< "                      4  - intermediate model generation info" << std::endl
-		<< "                      8  - timing information (only if configured with" << std::endl
-		<< "                                               --enable-debug)" << std::endl
-		<< "                      add values for multiple categories." << std::endl;
+  std::cout << std::endl;
+
+  std::cout << "Homepage: http://www.kr.tuwien.ac.at/research/systems/dlvhex/" << std::endl
+	    << "Support: dlvhex-devel@lists.sourceforge.net" << std::endl
+	    << "Bug reports: http://sourceforge.net/apps/trac/dlvhex/" << std::endl;
+
+  exit(0);
 }
 
 
@@ -194,17 +217,17 @@ insertNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::namespaces.size() == 0)
+  if (Term::getNameSpaces().size() == 0)
     return;
 
   std::string prefix;
 
-  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-       nm != Term::names.end();
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
        ++nm)
     {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-	   ns != Term::namespaces.end();
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
 	   ++ns)
 	{
 	  prefix = ns->second + ':';
@@ -253,7 +276,7 @@ insertNamespaces()
 		  r.replace(0, 1, "\"<");
 		  r.replace(r.length() - 1, 1, ">\"");
 	      
-		  Term::names.modify(nm, r);
+		  Term::getNames().modify(nm, r);
 		}
 	    }
 	}
@@ -267,18 +290,18 @@ removeNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::namespaces.size() == 0)
+  if (Term::getNameSpaces().size() == 0)
     return;
 
   std::string prefix;
   std::string fullns;
 
-  for (NamesTable<std::string>::const_iterator nm = Term::names.begin();
-       nm != Term::names.end();
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
        ++nm)
     {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::namespaces.begin();
-	   ns != Term::namespaces.end();
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
 	   ++ns)
 	{
 	  fullns = ns->first;
@@ -298,7 +321,7 @@ removeNamespaces()
 
 	      r.replace(start, fullns.length(), prefix);
 
-	      Term::names.modify(nm, r);
+	      Term::getNames().modify(nm, r);
 	    }
 	}
     }
@@ -378,6 +401,7 @@ main (int argc, char *argv[])
       { "keepnsprefix", no_argument, &longid, 6 },
       { "solver", required_argument, &longid, 7 },
       { "nocache",    no_argument, &longid, 8 },
+      { "version",    no_argument, &longid, 9 },
       { NULL, 0, NULL, 0 }
     };
 
@@ -480,6 +504,10 @@ main (int argc, char *argv[])
 
 	    case 8:
 	      Globals::Instance()->setOption("UseExtAtomCache",0);
+	      break;
+
+	    case 9:
+	      printVersion();
 	      break;
 	    }
 	  break;
