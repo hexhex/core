@@ -37,6 +37,7 @@ libdlvhexbase_la_SOURCES = \
     AggregateAtom.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
+    Benchmarking.cpp \
     BoostComponentFinder.cpp \
     Component.cpp \
     ComponentFinder.cpp \
