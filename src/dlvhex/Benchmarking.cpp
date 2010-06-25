@@ -32,7 +32,9 @@
  */
 
 #include "dlvhex/Benchmarking.h"
+#include "dlvhex/globals.h"
 
+#if defined(DLVHEX_BENCHMARK)
 #include <boost/foreach.hpp>
 #include <iostream>
 
@@ -45,28 +47,6 @@ namespace
 {
 // id of controller lifetime stats
 ID myID;
-
-Count initialized;
-
-struct Initializer
-{
-  Initializer()
-  {
-    if( initialized == 0 )
-      BenchmarkController::Instance();
-    initialized++;
-  }
-
-  ~Initializer()
-  {
-    if( initialized == 1 )
-      BenchmarkController::Instance().finish();
-    initialized--;
-  }
-};
-
-Initializer myInitializer;
-
 }
 
 BenchmarkController::Stat::Stat(const std::string& name):
@@ -145,3 +125,4 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
 
 DLVHEX_NAMESPACE_END
 
+#endif // defined(DLVHEX_BENCHMARK)

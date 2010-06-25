@@ -43,6 +43,7 @@
 #include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <sstream>
 
@@ -66,7 +67,8 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
   
   try
     {
-      DEBUG_START_TIMER;
+      DLVHEX_BENCHMARK_REGISTER(aspCallParse,"Calling LP solver + parsing");
+      DLVHEX_BENCHMARK_START(aspCallParse);
 
       proc.spawn();
 
@@ -114,8 +116,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       // get exit code of process
       retcode = proc.close();
 
-      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
+      DLVHEX_BENCHMARK_STOP(aspCallParse);
     }
   catch (GeneralError& e)
     {
@@ -170,7 +171,8 @@ ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet
   
   try
     {
-      DEBUG_START_TIMER;
+      DLVHEX_BENCHMARK_REGISTER(aspCallParse,"Calling LP file solver + parsing");
+      DLVHEX_BENCHMARK_START(aspCallParse);
 
       proc.spawn(options);
 
@@ -183,8 +185,7 @@ ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet
       // get exit code of process
       retcode = proc.close();
 
-      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
+      DLVHEX_BENCHMARK_STOP(aspCallParse);
     }
   catch (GeneralError& e)
     {

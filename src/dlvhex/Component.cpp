@@ -41,6 +41,7 @@
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/PluginContainer.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <iostream>
 
@@ -224,13 +225,18 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
       try
         {
 	  modelGenerator->compute(atomnodes, *in, res);
+
+          DLVHEX_BENCHMARK_REGISTER(resCount,"Program-component res sets");
+          DLVHEX_BENCHMARK_COUNT(resCount,res.size());
         }
       catch (GeneralError&)
         {
 	  throw;
         }
 
-      DEBUG_START_TIMER;
+
+      DLVHEX_BENCHMARK_REGISTER(resIns,"Program-component res insrt");
+      DLVHEX_BENCHMARK_START(resIns);
 
       //
       // add all models that came from the model generator to the
@@ -238,8 +244,7 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
       //
       result.insert(result.end(), res.begin(), res.end());
 
-      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Program-component result insert time:   ");
+      DLVHEX_BENCHMARK_STOP(resIns);
     }
 
   evaluated = true;
@@ -303,7 +308,8 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-	  DEBUG_START_TIMER;
+          DLVHEX_BENCHMARK_REGISTER(xatomEval,"External evaluation");
+          DLVHEX_BENCHMARK_START(xatomEval);
 
 	  if (externalAtom->pureGroundInput())
 	    {
@@ -331,15 +337,15 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 		}
 	    }
 
-	  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	  DEBUG_STOP_TIMER("External evaluation time:               ");
+          DLVHEX_BENCHMARK_STOP(xatomEval);
         }
         catch (GeneralError&)
         {
             throw;
         }
 
-	DEBUG_START_TIMER;
+        DLVHEX_BENCHMARK_REGISTER(xresIns,"External result insert");
+        DLVHEX_BENCHMARK_START(xresIns);
 
         //
         // important: the component result must include also its input
@@ -356,8 +362,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 //		res.accept(rpv);
 //	    std::cerr << std::endl;
 
-	//                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	DEBUG_STOP_TIMER("External result insert time:            ");
+        DLVHEX_BENCHMARK_STOP(xresIns);
     }
 
     evaluated = true;

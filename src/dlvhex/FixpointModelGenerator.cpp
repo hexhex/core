@@ -89,7 +89,8 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-  DEBUG_START_TIMER;
+  DLVHEX_BENCHMARK_REGISTER(fpModelGen,"Fixpoint Model Generator");
+  DLVHEX_BENCHMARK_START(fpModelGen);
 
   models.clear();
   
@@ -207,8 +208,7 @@ FixpointModelGenerator::compute(const Program& program,
   
   models.push_back(currentI);
 
-  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Fixpoint Model Generator:               ");
+  DLVHEX_BENCHMARK_STOP(fpModelGen);
 }
 
 DLVHEX_NAMESPACE_END

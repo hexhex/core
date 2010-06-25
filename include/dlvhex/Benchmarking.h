@@ -35,6 +35,52 @@
 
 #include <dlvhex/PlatformDefinitions.h>
 
+#if defined(DLVHEX_DEBUG)
+# define DLVHEX_BENCHMARK
+#endif
+
+// usage example:
+//
+// DLVHEX_BENCHMARK_REGISTER(sid1,"calling dlv"));
+// DLVHEX_BENCHMARK_REGISTER(sid2,"fork+exec dlv"));
+// DLVHEX_BENCHMARK_REGISTER(sid3,"parse dlv result"));
+// 
+// DLVHEX_BENCHMARK_START(sid1)
+//   DLVHEX_BENCHMARK_START(sid2)
+//   // fork and exec
+//   DLVHEX_BENCHMARK_STOP(sid2)
+//
+//   DLVHEX_BENCHMARK_START(sid3)
+//   // parse result
+//   DLVHEX_BENCHMARK_STOP(sid3)
+// DLVHEX_BENCHMARK_STOP(sid1)
+//
+// you can also manage the stat IDs yourself
+// (e.g., for creating one instrumentation per custom external atom,
+//  not only one for some base class)
+// #if defined(DLVHEX_BENCHMARK)
+//   dlvhex::benchmark::ID myStoredSid =
+//     dlvhex::benchmark::BenchmarkController::Instance().getInstrumentationID("my message");
+// #endif
+
+#if defined(DLVHEX_BENCHMARK)
+# define DLVHEX_BENCHMARK_REGISTER(sid,msg) \
+    static DLVHEX_NAMESPACE benchmark::ID sid = DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().getInstrumentationID(msg)
+# define DLVHEX_BENCHMARK_START(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid)
+# define DLVHEX_BENCHMARK_STOP(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid)
+# define DLVHEX_BENCHMARK_COUNT(sid,num) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().count(sid,num)
+#else
+# define DLVHEX_BENCHMARK_REGISTER(sid,msg) do { } while(0)
+# define DLVHEX_BENCHMARK_START(sid)        do { } while(0)
+# define DLVHEX_BENCHMARK_STOP(sid)         do { } while(0)
+# define DLVHEX_BENCHMARK_COUNT(sid,num)    do { } while(0)
+#endif // defined(DLVHEX_BENCHMARK)
+
+#if defined(DLVHEX_BENCHMARK)
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <vector>
 #include <ostream>
@@ -54,7 +100,6 @@ class BenchmarkController
 private:
   // init, display start of benchmarking
   BenchmarkController();
-
 
   struct Stat
   {
@@ -76,10 +121,12 @@ private:
   std::ostream* output;
   Count printSkip;
 
+  inline std::ostream& printInSecs(std::ostream& o, const Duration& d, int width=0) const;
+
   // print information about stat
-  void printInformation(const Stat& st); // inline for performance
+  inline void printInformation(const Stat& st); // inline for performance
   // print continuous information about stat
-  void printInformationContinous(
+  inline void printInformationContinous(
     Stat& st, const Duration& dur); // inline for performance
   
 public:
@@ -108,30 +155,56 @@ public:
   // get ID or register new one
   ID getInstrumentationID(const std::string& name);
   // print information about ID
-  void printInformation(ID id); // inline for performance
+  inline void printInformation(ID id); // inline for performance
 
   // 
   // record measured things
   //
   
   // start timer
-  void start(ID id); // inline for performance
+  inline void start(ID id); // inline for performance
   // stop and record elapsed time, print stats
-  void stop(ID id); // inline for performance
+  inline void stop(ID id); // inline for performance
   // record count (no time), print stats
-  void count(ID id, Count increment=1); // inline for performance
+  inline void count(ID id, Count increment=1); // inline for performance
 };
+
+//inline
+std::ostream& BenchmarkController::printInSecs(std::ostream& out, const Duration& td, int width) const
+{
+  long in_secs = td.total_milliseconds();
+
+  long secs = in_secs / 1000;
+  long rest = in_secs % 1000;
+
+  out << std::setw(width) << secs << ".";
+
+  if (rest < 10)
+    {
+      out << "00";
+    }
+  else if (rest < 100)
+    {
+      out << "0";
+    }
+
+  return out << rest;
+}
 
 // print information about stat
 // inline for performance
 void BenchmarkController::printInformation(const Stat& st)
 {
   if( output )
+  {
     (*output) <<
-    "BM:" << std::setw(30) << st.name <<
-    " count:" << std::setw(6) << st.count <<
-    " avg:" << std::setw(6) << (st.duration/st.count) << "s"
-    " total:" << std::setw(6) << st.duration << "s" << std::endl;
+      "BM:" << std::setw(30) << st.name <<
+      ": count:" << std::setw(6) << st.count <<
+      " avg:";
+    printInSecs(*output, st.duration/st.count, 4) << "s" <<
+      " total:";
+    printInSecs(*output, st.duration, 6) << "s" << std::endl;
+  }
 }
 
 // print continuous information about stat
@@ -142,11 +215,15 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
   {
     st.prints = 0;
     if( output )
+    {
       (*output) <<
-      "BM:" << std::setw(30) << st.name <<
-      " count:" << std::setw(6) << st.count <<
-      " total:" << std::setw(6) << st.duration << "s" <<
-      " last:" << std::setw(6) << dur << "s" << std::endl;
+        "BM:" << std::setw(30) << st.name <<
+        ": count:" << std::setw(6) << st.count <<
+        " total:";
+      printInSecs(*output, st.duration, 6) << "s" <<
+        " last:";
+      printInSecs(*output, dur, 2) << "s" << std::endl;
+    }
   }
   else
   {
@@ -180,51 +257,14 @@ void BenchmarkController::count(ID id, Count increment)
 {
   Stat& s = instrumentations[id];
   s.count += increment;
+  s.prints += increment - 1;
   printInformationContinous(s,Duration());
 }
-
 
 } // namespace benchmark
 
 DLVHEX_NAMESPACE_END
 
-//DLVHEX_BENCHMARK_DO(static dlvhex::benchmark::ID sid = dlvhex::benchmark::register("calling dlv process"));
-
-//#define DLVHEX_BENCHMARK_DO(code) \
-//  do { code; } while(0)
-//
-//
-//#define DLVHEX_BENCHMARK_START(sid) \
-//  do { 
-//DLVHEX_BENCHMARK_START(sid)
-//DLVHEX_BENCHMARK_STOP(sid)
-//DLVHEX_BENCHMARK_COUNT(sid,num)
-//
-////#if defined(DLVHEX_DEBUG)
-//
-//#define DEBUG_START_TIMER						\
-//  boost::posix_time::ptime boosttimerstart;				\
-//  boost::posix_time::ptime boosttimerend;				\
-//  do {									\
-//    boosttimerstart = boost::posix_time::microsec_clock::local_time();	\
-//  } while(0)
-//#define DEBUG_RESTART_TIMER						\
-//  do {									\
-//    boosttimerstart = boost::posix_time::microsec_clock::local_time();	\
-//  } while(0)
-//#define DEBUG_STOP_TIMER(msg)						\
-//  do {									\
-//    boosttimerend = boost::posix_time::microsec_clock::local_time();	\
-//    if (Globals::Instance()->doVerbose(Globals::PROFILING)) {		\
-//      boost::posix_time::time_duration diff = boosttimerend - boosttimerstart; \
-//      Globals::Instance()->getVerboseStream() << msg  << diff << "s" << std::endl; \
-//      boosttimerstart = boosttimerend; }				\
-//  } while(0)
-//
-//#else
-//#define DEBUG_START_TIMER do { } while(0)
-//#define DEBUG_RESTART_TIMER do { } while(0)
-//#define DEBUG_STOP_TIMER(msg) do { } while(0)
-//#endif // DLVHEX_DEBUG
+#endif // defined(DLVHEX_BENCHMARK)
 
 #endif // DLVHEX_H_BENCHMARKING_INCLUDED_1555

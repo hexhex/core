@@ -87,7 +87,8 @@ OrdinaryModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
-  DEBUG_START_TIMER;
+  DLVHEX_BENCHMARK_REGISTER(oModelGen,"Ordinary Model Generator");
+  DLVHEX_BENCHMARK_START(oModelGen);
 
   models.clear();
 
@@ -119,8 +120,7 @@ OrdinaryModelGenerator::compute(const Program& program,
       models.push_back(*as);
     }
 
-  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Ordinary Model Generator:               ");
+  DLVHEX_BENCHMARK_STOP(oModelGen);
 }
 
 DLVHEX_NAMESPACE_END

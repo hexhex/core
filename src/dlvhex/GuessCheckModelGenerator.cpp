@@ -64,7 +64,8 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 				  const AtomSet& I,
 				  std::vector<AtomSet>& models)
 {
-  DEBUG_START_TIMER;
+  DLVHEX_BENCHMARK_REGISTER(gcModelGen,"Guess/check model generator");
+  DLVHEX_BENCHMARK_START(gcModelGen);
 
   models.clear();
 
@@ -648,8 +649,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	}
     }
 
-  //	        123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Guess-and-check model generator:        ");
+  DLVHEX_BENCHMARK_STOP(gcModelGen);
 }
 
 

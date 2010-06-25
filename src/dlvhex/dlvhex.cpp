@@ -65,6 +65,7 @@
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/DLVProcess.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <getopt.h>
 #include <iostream>
@@ -539,6 +540,23 @@ main (int argc, char *argv[])
   bool inputIsWrong = false;
 
   //
+  // now we have options, now we can init benchmarking
+  //
+
+  #if defined(DLVHEX_BENCHMARK)
+  benchmark::BenchmarkController& ctr =
+    benchmark::BenchmarkController::Instance();
+  if( Globals::Instance()->doVerbose(Globals::PROFILING) )
+  {
+    ctr.setOutput(&Globals::Instance()->getVerboseStream());
+    // for continuous statistics output, display every 1000'th output
+    ctr.setPrintInterval(999);
+  }
+  else
+    ctr.setOutput(0);
+  #endif
+
+  //
   // check if we have any input (stdin, file, or URI)
   // if inout is not or badly specified, remember this and show shorthelp
   // later if everthing was ok with the options
@@ -839,6 +857,11 @@ main (int argc, char *argv[])
   // execution completed
   //
   /////////////////////////////////////////////////////////////////
+
+  #if defined(DLVHEX_BENCHMARK)
+  // this should be done using some "at_exit_scope"
+  benchmark::BenchmarkController::Instance().finish();
+  #endif
  
  return 0;
 }

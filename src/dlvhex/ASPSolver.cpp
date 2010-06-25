@@ -89,7 +89,8 @@ ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw
   
   try
     {
-      DEBUG_START_TIMER;
+      DLVHEX_BENCHMARK_REGISTER(sid,"Calling LP string solver + parsing");
+      DLVHEX_BENCHMARK_START(sid);
 
       proc.spawn();
       proc.getOutput() << input << std::endl;
@@ -102,8 +103,7 @@ ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw
       // get exit code of process
       retcode = proc.close();
 
-      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
+      DLVHEX_BENCHMARK_STOP(sid);
     }
   catch (GeneralError& e)
     {
