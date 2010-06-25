@@ -1,3 +1,8 @@
+2010-06-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Bump version to 2.0.0.
+	Add compiler settings info.
+
 2010-06-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update.
