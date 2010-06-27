@@ -1,0 +1,331 @@
+%
+% benchmarking
+%
+% call: ./run.sh dlvhex --firstorder --silent reviewers-pureasp.dlv
+%
+% ./configure CPPFLAGS="-DNDEBUG" CXXFLAGS="-O3 -W -Wall"
+%
+% 5 reviewers (see EDB below):
+%
+%   strauss:
+%
+%     dlv: 0.132
+%     dlvhex "-O3 -DNDEBUG": 5.578
+%
+% 1) modifying Atom::operator<
+%    5.143
+%
+% 2) modifying Term String handling (quoted-unquoted)
+%    4.956
+%
+% 3) turning off debugging in DLVresultParser:
+%    4.937
+%
+% 4) additional lookup table for NamesTable:
+%    4.243
+%
+% 5) improved Term!= operator; returning string references in Term
+%    2.777
+%
+% 6) inlining stuff, some shortcuts for special cases:
+%    1.37
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% 6 reviewers:
+%
+%   strauss:
+%
+%     dlv: 0.354
+%     dlvhex: 4.138
+%
+% 1) using strdup instead of std::string in lexer
+%    3.950
+
+
+paper(subm1). 
+kw(subm1,"#Semantic_Web"). kw(subm1,"#OWL").  
+author(subm1,"#jdbr"). author(subm1,"#htom").
+
+paper(subm2). 
+kw(subm2,"#Semantic_Web"). kw(subm2,"#Answer_Set_Programming").
+author(subm2,"#teit"). author(subm2,"#gian"). 
+author(subm2,"#rsch"). author(subm2,"#apol").
+
+paper(subm3). 
+kw(subm3,"#Bioinformatics").  kw(subm3,"#WSMO"). 
+author(subm3,"#tpay").
+
+
+paper(subm4).
+kw(subm4,"#OWL-S").  kw(subm4,"#eCommerce"). 
+author(subm4,"#mpao").
+
+paper(subm5).
+kw(subm5,"#SWSF").  kw(subm5,"#RIF"). 
+author(subm5,"#bgro").
+
+paper(subm6).
+kw(subm6,"#WSMO").  kw(subm6,"#eCommerce"). 
+author(subm6,"#msto").
+
+paper(subm7).
+kw(subm7,"#Semantic_Web_Services").  kw(subm7,"#eCommerce"). 
+author(subm7,"#ihor").
+
+
+% We have the programm committee for our conference now in the program:
+pc("#vlif").
+pc("#mgel").
+pc("#dfen").
+pc("#fley").
+pc("#smil").
+pc("#mkif").
+pc("#ptra").
+pc("#teit").
+pc("#ihor").
+
+cand(X,P) :- kw(P,K), pc(X), dlperson(X), dlisAuthorOf(X,P1), dlkeyword(P1,K).
+cand(X,P) :- kw(P,K), pc(X), dloverlapsWith(K,K1), dlisAuthorOf(X,P1), dlkeyword(P1,K1).
+
+assign(X,P) v -assign(X,P) :- cand(X,P) .
+:- assign(X,P), assign(X1,P), X1 != X.
+:- assign(A,P), author(P,A).
+a(P) :- assign(X,P).
+:- paper(P), not a(P).
+
+
+dlisAuthorOf("#aber","#pa14").
+dlisAuthorOf("#apol","#pa7").
+dlisAuthorOf("#bgro","#pa14").
+dlisAuthorOf("#bpar","#pa8").
+dlisAuthorOf("#cbus","#pa7").
+dlisAuthorOf("#cfei","#pa7").
+dlisAuthorOf("#dfen","#pa1").
+dlisAuthorOf("#dfen","#pa7").
+dlisAuthorOf("#dmar","#pa8").
+dlisAuthorOf("#dmde","#pa14").
+dlisAuthorOf("#dmde","#pa8").
+dlisAuthorOf("#dmgu","#pa1").
+dlisAuthorOf("#dmgu","#pa14").
+dlisAuthorOf("#dmgu","#pa8").
+dlisAuthorOf("#drom","#pa7").
+dlisAuthorOf("#fley","#pa3").
+dlisAuthorOf("#fsca","#pa9").
+dlisAuthorOf("#fvha","#pa1").
+dlisAuthorOf("#ggot","#pa10").
+dlisAuthorOf("#ggot","#pa9").
+dlisAuthorOf("#gian","#pa11").
+dlisAuthorOf("#glau","#pa13").
+dlisAuthorOf("#gpfe","#pa9").
+dlisAuthorOf("#hbol","#pa14").
+dlisAuthorOf("#hlau","#pa7").
+dlisAuthorOf("#hman","#pa10").
+dlisAuthorOf("#htom","#pa11").
+dlisAuthorOf("#htom","#pa4").
+dlisAuthorOf("#hzen","#pa6").
+dlisAuthorOf("#ihor","#pa1").
+dlisAuthorOf("#jawu","#pa13").
+dlisAuthorOf("#jdbr","#pa7").
+dlisAuthorOf("#jhen","#pa5").
+dlisAuthorOf("#jisu","#pa14").
+dlisAuthorOf("#ksyc","#pa8").
+dlisAuthorOf("#mbur","#pa8").
+dlisAuthorOf("#mgel","#pa12").
+dlisAuthorOf("#mgel","#pa2").
+dlisAuthorOf("#mgru","#pa14").
+dlisAuthorOf("#mkif","#pa13").
+dlisAuthorOf("#mkif","#pa14").
+dlisAuthorOf("#mpao","#pa8").
+dlisAuthorOf("#mpap","#pa3").
+dlisAuthorOf("#msab","#pa8").
+dlisAuthorOf("#msol","#pa8").
+dlisAuthorOf("#msto","#pa7").
+dlisAuthorOf("#nleo","#pa9").
+dlisAuthorOf("#nsri","#pa8").
+dlisAuthorOf("#olas","#pa5").
+dlisAuthorOf("#pfps","#pa1").
+dlisAuthorOf("#ptra","#pa3").
+dlisAuthorOf("#rhul","#pa14").
+dlisAuthorOf("#rlar","#pa7").
+dlisAuthorOf("#rsch","#pa11").
+dlisAuthorOf("#rsch","#pa4").
+dlisAuthorOf("#sbat","#pa14").
+dlisAuthorOf("#sdus","#pa3").
+dlisAuthorOf("#smil","#pa14").
+dlisAuthorOf("#smil","#pa6").
+dlisAuthorOf("#smil","#pa8").
+dlisAuthorOf("#sper","#pa9").
+dlisAuthorOf("#stab","#pa14").
+dlisAuthorOf("#tble","#pa5").
+dlisAuthorOf("#tcso","#pa6").
+dlisAuthorOf("#teit","#pa10").
+dlisAuthorOf("#teit","#pa11").
+dlisAuthorOf("#teit","#pa4").
+dlisAuthorOf("#teit","#pa9").
+dlisAuthorOf("#tluk","#pa4").
+dlisAuthorOf("#tpay","#pa8").
+dlisAuthorOf("#ukel","#pa7").
+dlisAuthorOf("#vlif","#pa12").
+dlisAuthorOf("#vlif","#pa2").
+dlisAuthorOf("#wfab","#pa9").
+dlkeyword("#pa1","#OIL").
+dlkeyword("#pa1","#Semantic_Web").
+dlkeyword("#pa10","#Disjunctive_Logic_Programming").
+dlkeyword("#pa11","#Answer_Set_Programming").
+dlkeyword("#pa11","#Description_Logics").
+dlkeyword("#pa11","#Nonmonotonic_Reasoning").
+dlkeyword("#pa12","#Answer_Set_Programming").
+dlkeyword("#pa12","#Description_Logics").
+dlkeyword("#pa12","#Nonmonotonic_Reasoning").
+dlkeyword("#pa13","#Frame_Systems").
+dlkeyword("#pa13","#Knowledge_Representation").
+dlkeyword("#pa14","#SWSF").
+dlkeyword("#pa2","#Stable_Model_Semantics").
+dlkeyword("#pa3","#Service-Oriented_Architecture").
+dlkeyword("#pa4","#Answer_Set_Programming").
+dlkeyword("#pa4","#Description_Logics").
+dlkeyword("#pa4","#Semantic_Web").
+dlkeyword("#pa5","#Semantic_Web").
+dlkeyword("#pa7","#WSMO").
+dlkeyword("#pa8","#OWL-S").
+dlkeyword("#pa9","#Answer_Set_Programming").
+dlkeyword("#pa9","#Knowledge_Representation").
+dloverlapsWith("#Answer_Set_Programming","#Answer_Set_Programming").
+dloverlapsWith("#Answer_Set_Programming","#Disjunctive_Logic_Programming").
+dloverlapsWith("#Answer_Set_Programming","#Stable_Model_Semantics").
+dloverlapsWith("#Disjunctive_Logic_Programming","#Answer_Set_Programming").
+dloverlapsWith("#Disjunctive_Logic_Programming","#Disjunctive_Logic_Programming").
+dloverlapsWith("#Disjunctive_Logic_Programming","#Stable_Model_Semantics").
+dloverlapsWith("#OIL","#OIL").
+dloverlapsWith("#OIL","#OWL").
+dloverlapsWith("#OIL","#Ontologies").
+dloverlapsWith("#OIL","#RDFS").
+dloverlapsWith("#OWL","#OIL").
+dloverlapsWith("#OWL","#OWL").
+dloverlapsWith("#OWL","#Ontologies").
+dloverlapsWith("#OWL","#RDFS").
+dloverlapsWith("#OWL-S","#OWL-S").
+dloverlapsWith("#OWL-S","#SWSF").
+dloverlapsWith("#OWL-S","#SWSL").
+dloverlapsWith("#OWL-S","#Semantic_Web_Services").
+dloverlapsWith("#OWL-S","#WSDL-S").
+dloverlapsWith("#OWL-S","#WSML").
+dloverlapsWith("#OWL-S","#WSMO").
+dloverlapsWith("#Ontologies","#OIL").
+dloverlapsWith("#Ontologies","#OWL").
+dloverlapsWith("#Ontologies","#Ontologies").
+dloverlapsWith("#Ontologies","#RDFS").
+dloverlapsWith("#RDFS","#OIL").
+dloverlapsWith("#RDFS","#OWL").
+dloverlapsWith("#RDFS","#Ontologies").
+dloverlapsWith("#RDFS","#RDFS").
+dloverlapsWith("#SWSF","#OWL-S").
+dloverlapsWith("#SWSF","#SWSF").
+dloverlapsWith("#SWSF","#SWSL").
+dloverlapsWith("#SWSF","#Semantic_Web_Services").
+dloverlapsWith("#SWSF","#WSDL-S").
+dloverlapsWith("#SWSF","#WSML").
+dloverlapsWith("#SWSF","#WSMO").
+dloverlapsWith("#SWSL","#OWL-S").
+dloverlapsWith("#SWSL","#SWSF").
+dloverlapsWith("#SWSL","#SWSL").
+dloverlapsWith("#SWSL","#Semantic_Web_Services").
+dloverlapsWith("#SWSL","#WSDL-S").
+dloverlapsWith("#SWSL","#WSML").
+dloverlapsWith("#SWSL","#WSMO").
+dloverlapsWith("#Semantic_Web_Services","#OWL-S").
+dloverlapsWith("#Semantic_Web_Services","#SWSF").
+dloverlapsWith("#Semantic_Web_Services","#SWSL").
+dloverlapsWith("#Semantic_Web_Services","#Semantic_Web_Services").
+dloverlapsWith("#Semantic_Web_Services","#WSDL-S").
+dloverlapsWith("#Semantic_Web_Services","#WSML").
+dloverlapsWith("#Semantic_Web_Services","#WSMO").
+dloverlapsWith("#Service-Oriented_Architecture","#Service-Oriented_Architecture").
+dloverlapsWith("#Service-Oriented_Architecture","#Service-Oriented_Computing").
+dloverlapsWith("#Service-Oriented_Computing","#Service-Oriented_Architecture").
+dloverlapsWith("#Service-Oriented_Computing","#Service-Oriented_Computing").
+dloverlapsWith("#Stable_Model_Semantics","#Answer_Set_Programming").
+dloverlapsWith("#Stable_Model_Semantics","#Disjunctive_Logic_Programming").
+dloverlapsWith("#Stable_Model_Semantics","#Stable_Model_Semantics").
+dloverlapsWith("#WSDL-S","#OWL-S").
+dloverlapsWith("#WSDL-S","#SWSF").
+dloverlapsWith("#WSDL-S","#SWSL").
+dloverlapsWith("#WSDL-S","#Semantic_Web_Services").
+dloverlapsWith("#WSDL-S","#WSDL-S").
+dloverlapsWith("#WSDL-S","#WSML").
+dloverlapsWith("#WSDL-S","#WSMO").
+dloverlapsWith("#WSML","#OWL-S").
+dloverlapsWith("#WSML","#SWSF").
+dloverlapsWith("#WSML","#SWSL").
+dloverlapsWith("#WSML","#Semantic_Web_Services").
+dloverlapsWith("#WSML","#WSDL-S").
+dloverlapsWith("#WSML","#WSML").
+dloverlapsWith("#WSML","#WSMO").
+dloverlapsWith("#WSMO","#OWL-S").
+dloverlapsWith("#WSMO","#SWSF").
+dloverlapsWith("#WSMO","#SWSL").
+dloverlapsWith("#WSMO","#Semantic_Web_Services").
+dloverlapsWith("#WSMO","#WSDL-S").
+dloverlapsWith("#WSMO","#WSML").
+dloverlapsWith("#WSMO","#WSMO").
+dlperson("#aber").
+dlperson("#apol").
+dlperson("#bgro").
+dlperson("#bpar").
+dlperson("#cbus").
+dlperson("#cfei").
+dlperson("#dfen").
+dlperson("#dmar").
+dlperson("#dmde").
+dlperson("#dmgu").
+dlperson("#drom").
+dlperson("#fley").
+dlperson("#fsca").
+dlperson("#fvha").
+dlperson("#ggot").
+dlperson("#gian").
+dlperson("#glau").
+dlperson("#gpfe").
+dlperson("#hbol").
+dlperson("#hlau").
+dlperson("#hman").
+dlperson("#htom").
+dlperson("#hzen").
+dlperson("#ihor").
+dlperson("#jawu").
+dlperson("#jdbr").
+dlperson("#jhen").
+dlperson("#jisu").
+dlperson("#ksyc").
+dlperson("#mbur").
+dlperson("#mgel").
+dlperson("#mgru").
+dlperson("#mkif").
+dlperson("#mpao").
+dlperson("#mpap").
+dlperson("#msab").
+dlperson("#msol").
+dlperson("#msto").
+dlperson("#nleo").
+dlperson("#nsri").
+dlperson("#olas").
+dlperson("#pfps").
+dlperson("#ptra").
+dlperson("#rhul").
+dlperson("#rlar").
+dlperson("#rsch").
+dlperson("#sbat").
+dlperson("#sdus").
+dlperson("#smil").
+dlperson("#sper").
+dlperson("#stab").
+dlperson("#tble").
+dlperson("#tcso").
+dlperson("#teit").
+dlperson("#tluk").
+dlperson("#tpay").
+dlperson("#ukel").
+dlperson("#vlif").
+dlperson("#wfab").
+
