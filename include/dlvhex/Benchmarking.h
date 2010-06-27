@@ -34,6 +34,7 @@
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
 #include <dlvhex/PlatformDefinitions.h>
+#include "config.h"
 
 #if defined(DLVHEX_DEBUG)
 # define DLVHEX_BENCHMARK
