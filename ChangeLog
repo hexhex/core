@@ -1,3 +1,13 @@
+2010-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* benchmarks/reviewers6-pureasp.dlv: Add benchmarks for 6, 7, and 8 submissions.
+	* benchmarks/reviewers7-pureasp.dlv: Likewise.
+	* benchmarks/reviewers8-pureasp.dlv: Likewise.
+	* benchmarks/reviewers-pureasp.dlv: Likewise.
+
+	* configure.ac: Sanitize AUTOMAKE_OPTIONS.
+	* Makefile.am: Likewise.
+
 2010-06-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Bump version to 2.0.0.
