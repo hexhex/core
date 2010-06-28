@@ -46,6 +46,7 @@
 //#include "dlvhex/SpiritDebugging.h"
 #include "dlvhex/globals.h"
 
+#include <boost/optional.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
@@ -260,13 +261,13 @@ struct DLVResultGrammar:
 			//| lexeme[char_("a-z") >> *char_("a-zA-Z0-9_")];
 			| lexeme[ascii::lower > *(ascii::alnum|char_('_'))];
 		groundterm
-			= int_ // [ handle_int() ]
-			| ident; // [ handle_ident() ];
+			= int_ [ handle_int() ]
+			| ident [ handle_ident() ];
 		fact
 			// char_ synthesizes a char attribute!
-			= ( -char_('-') >> ident > -params ); // [ handle_fact(state) ];
+			= ( (-char_('-') >> ident) > -params ) [ handle_fact(state) ];
 		params
-			= '(' > groundterm > *(',' > groundterm) > ')';
+			%= '(' > groundterm > *(',' > groundterm) > ')';
 		answerset
 			= (lit('{') >> '}') [ handle_new_answerset(state) ]
 			| (lit('{') [ handle_new_answerset(state) ] > fact > *(',' > fact) > '}');
@@ -291,10 +292,10 @@ struct DLVResultGrammar:
 	*/
 
 	qi::rule<Iterator, ascii::space_type>                 answersets, answerset, fact;
-	qi::rule<Iterator, ascii::space_type>                 groundterm, ident, params;
-	//qi::rule<Iterator, dlvhex::Term(), ascii::space_type> groundterm;
-//	qi::rule<Iterator, std::string(), ascii::space_type>  ident;
-//	qi::rule<Iterator, std::vector<dlvhex::Term>(), ascii::space_type>  params;
+	//qi::rule<Iterator, ascii::space_type>                 groundterm, ident, params;
+	qi::rule<Iterator, dlvhex::Term(), ascii::space_type> groundterm;
+	qi::rule<Iterator, std::string(), ascii::space_type>  ident;
+	qi::rule<Iterator, std::vector<dlvhex::Term>(), ascii::space_type>  params;
 
 	ParserState& state;
 };
@@ -555,7 +556,7 @@ DLVresultParserDriver::parse(std::istream& is,
 
 	// @todo: this would not be multithreading safe (multiple answer sets parsed at once) but we instantiate the grammar only once for performance reasons
 	//grammar.setParserState(&state);
-	DLVHEX_BENCHMARK
+	//DLVHEX_BENCHMARK
   DLVResultGrammar<forward_iterator_type> grammar(state);
 
 	bool r = qi::phrase_parse(fwd_begin, fwd_end, grammar, ascii::space);
