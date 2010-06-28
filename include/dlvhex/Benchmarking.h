@@ -42,9 +42,9 @@
 
 // usage example:
 //
-// DLVHEX_BENCHMARK_REGISTER(sid1,"calling dlv"));
-// DLVHEX_BENCHMARK_REGISTER(sid2,"fork+exec dlv"));
-// DLVHEX_BENCHMARK_REGISTER(sid3,"parse dlv result"));
+// DLVHEX_BENCHMARK_REGISTER(sid1,"calling dlv");
+// DLVHEX_BENCHMARK_REGISTER(sid2,"fork+exec dlv");
+// DLVHEX_BENCHMARK_REGISTER(sid3,"parse dlv result");
 // 
 // DLVHEX_BENCHMARK_START(sid1)
 //   DLVHEX_BENCHMARK_START(sid2)
@@ -55,6 +55,7 @@
 //   // parse result
 //   DLVHEX_BENCHMARK_STOP(sid3)
 // DLVHEX_BENCHMARK_STOP(sid1)
+// DLVHEX_BENCHMARK_COUNT(sid4,someinteger)
 //
 // you can also manage the stat IDs yourself
 // (e.g., for creating one instrumentation per custom external atom,
