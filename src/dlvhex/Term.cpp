@@ -121,31 +121,21 @@ Term::Term()
 }
 
 
-Term::Term(const Term& term2)
-	: type(term2.type)
+Term::Term(const Term& term2):
+	type(term2.type),
+	constantString(term2.constantString),
+	constantInteger(term2.constantInteger),
+	variableString(term2.variableString)
 {
 	DLVHEX_BENCHMARK_REGISTER(sid,"Term() Copy");
 	DLVHEX_BENCHMARK_COUNT(sid,1);
-
-	if (this != &term2)
-	{
-		if (!term2.isVariable())
-		{
-			if( term2.isString() || term2.isSymbol() )
-				constantString = term2.constantString;
-			else
-				constantInteger = term2.constantInteger;
-		}
-		else
-			variableString = term2.variableString;
-	}
 }
 
 
 Term::Term(const std::string& name, bool addQuotes)
 {
 	DLVHEX_BENCHMARK_REGISTER(sid,"Term() String");
-	DLVHEX_BENCHMARK_COUNT(sid,1);
+	DLVHEX_BENCHMARK_START(sid);
 
 	if (name[0] == '\"')
 	{
@@ -176,13 +166,14 @@ Term::Term(const std::string& name, bool addQuotes)
 			}
 		}
 	}
+	DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 Term::Term(const char* name, bool addQuotes)
 {
 	DLVHEX_BENCHMARK_REGISTER(sid,"Term() const char*");
-	DLVHEX_BENCHMARK_COUNT(sid,1);
+	DLVHEX_BENCHMARK_START(sid);
 
 	if (name[0] == '\"')
 	{
@@ -213,6 +204,7 @@ Term::Term(const char* name, bool addQuotes)
 			}
 		}
 	}
+	DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
@@ -221,7 +213,6 @@ Term::Term(int num)
 {
 	DLVHEX_BENCHMARK_REGISTER(sid,"Term() int");
 	DLVHEX_BENCHMARK_COUNT(sid,1);
-
 }
 
 
