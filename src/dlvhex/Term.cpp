@@ -34,6 +34,7 @@
 
 
 #include "dlvhex/Term.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <cassert>
 
@@ -41,7 +42,6 @@
 // the standard operator<<'s, and we will fail to compile our own
 // operator<<s disgracefully.
 #include <iostream>
-
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -116,12 +116,17 @@ Term::Term()
     constantString(getNames().end()),
     variableString("")
 {
+	DLVHEX_BENCHMARK_REGISTER(sid,"Term() Nullconst");
+	DLVHEX_BENCHMARK_COUNT(sid,1);
 }
 
 
 Term::Term(const Term& term2)
 	: type(term2.type)
 {
+	DLVHEX_BENCHMARK_REGISTER(sid,"Term() Copy");
+	DLVHEX_BENCHMARK_COUNT(sid,1);
+
 	if (this != &term2)
 	{
 		if (!term2.isVariable())
@@ -139,6 +144,9 @@ Term::Term(const Term& term2)
 
 Term::Term(const std::string& name, bool addQuotes)
 {
+	DLVHEX_BENCHMARK_REGISTER(sid,"Term() String");
+	DLVHEX_BENCHMARK_COUNT(sid,1);
+
 	if (name[0] == '\"')
 	{
                 constantString = getNames().insert(name);
@@ -173,6 +181,9 @@ Term::Term(const std::string& name, bool addQuotes)
 
 Term::Term(const char* name, bool addQuotes)
 {
+	DLVHEX_BENCHMARK_REGISTER(sid,"Term() const char*");
+	DLVHEX_BENCHMARK_COUNT(sid,1);
+
 	if (name[0] == '\"')
 	{
 		constantString =  getNames().insert(name);
@@ -208,6 +219,9 @@ Term::Term(const char* name, bool addQuotes)
 Term::Term(int num)
 	: type(INTEGER), constantInteger(num)
 {
+	DLVHEX_BENCHMARK_REGISTER(sid,"Term() int");
+	DLVHEX_BENCHMARK_COUNT(sid,1);
+
 }
 
 
