@@ -218,7 +218,7 @@ insertNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
@@ -291,7 +291,7 @@ removeNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
