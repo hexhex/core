@@ -1,3 +1,7 @@
+2010-06-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Force automake >= 1.11.
+
 2010-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* benchmarks/reviewers6-pureasp.dlv: Add benchmarks for 6, 7, and 8 submissions.
