@@ -1,0 +1,23 @@
+BM:  BenchmarkController lifetime: count:     1 avg:   2.611s total:     2.611s
+BM:             Importing plugins: count:     1 avg:   0.000s total:     0.000s
+BM:     Calling plugin converters: count:     1 avg:   0.000s total:     0.000s
+BM:                 Parsing input: count:     1 avg:   0.026s total:     0.026s
+BM:                 Term() String: count:129106 avg:   0.000s total:     0.223s
+BM:                   Term() Copy: count:1088142 avg:   0.000s total:     0.000s
+BM:      Calling plugin rewriters: count:     1 avg:   0.000s total:     0.000s
+BM:           Building node graph: count:     1 avg:   0.000s total:     0.000s
+BM:            Term() const char*: count:     4 avg:   0.000s total:     0.000s
+BM:     Calling plugin optimizers: count:     1 avg:   0.000s total:     0.000s
+BM:     Building dependency graph: count:     1 avg:   0.001s total:     0.001s
+BM:               Safety checking: count:     1 avg:   0.000s total:     0.000s
+BM:        Strong safety checking: count:     1 avg:   0.000s total:     0.000s
+BM:         Setting up ProgramCtx: count:     1 avg:   0.000s total:     0.000s
+BM:   Evaluating dependency graph: count:     1 avg:   1.945s total:     1.945s
+BM:      Ordinary Model Generator: count:     1 avg:   1.656s total:     1.656s
+BM:   Calling LP solver + parsing: count:     1 avg:   0.955s total:     0.955s
+BM:              Term() Nullconst: count:128304 avg:   0.000s total:     0.000s
+BM:    Program-component res sets: count:   972 avg:   0.000s total:     0.000s
+BM:   Program-component res insrt: count:     1 avg:   0.068s total:     0.068s
+BM:   Postproc GraphProcessor res: count:     1 avg:   0.000s total:     0.000s
+BM:               Building output: count:     1 avg:   0.450s total:     0.450s
+
