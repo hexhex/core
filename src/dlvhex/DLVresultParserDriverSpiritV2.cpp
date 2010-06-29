@@ -145,9 +145,9 @@ struct handle_int
   template <typename Context>
   void operator()(int i, Context& ctx, qi::unused_type) const
   {
-    dlvhex::Term& ruleAttr = fusion::at_c<0>(ctx.attributes);
+    dlvhex::Term*& ruleAttr = fusion::at_c<0>(ctx.attributes);
 
-    ruleAttr = dlvhex::Term(i);
+    ruleAttr = new dlvhex::Term(i);
     //std::cerr << "created int " << i << std::endl;
   }
 };
@@ -157,9 +157,9 @@ struct handle_ident
   template <typename Context>
   void operator()(const std::string& s, Context& ctx, qi::unused_type) const
   {
-    dlvhex::Term& ruleAttr = fusion::at_c<0>(ctx.attributes);
+    dlvhex::Term*& ruleAttr = fusion::at_c<0>(ctx.attributes);
 
-    ruleAttr = dlvhex::Term(s, false);
+    ruleAttr = new dlvhex::Term(s, false);
     //std::cerr << "created ident '" << s << "'" << std::endl;
   }
 };
@@ -181,37 +181,38 @@ struct handle_fact
 {
   handle_fact(ParserState& state): state(state) {}
 
-	/*
+	#if 1
   void operator()(
 			boost::fusion::vector3<
 				boost::optional<char>,
 				std::string,
-				boost::optional<std::vector<dlvhex::Term> > >& attr,
+				boost::optional<PTuple> >& attr,
 			qi::unused_type, qi::unused_type) const
   {
 		// alias for fusion input
 		bool strong_neg = !!fusion::at_c<0>(attr);
 		const std::string& predicate = fusion::at_c<1>(attr);
 		bool propositional = !fusion::at_c<2>(attr);
-		Tuple* ptuple = 0;
+		PTuple* ptuple = 0;
 		if( !propositional )
 			ptuple = &fusion::at_c<2>(attr).get();
-	*/
+	#else
   void operator()(
 			const boost::fusion::vector2<
 				boost::fusion::vector2<
 					boost::optional<char>,
 					std::string>,
-				boost::optional<std::vector<dlvhex::Term> > >& attr,
+				boost::optional<PTuple> >& attr,
 			qi::unused_type, qi::unused_type) const
   {
 		// alias for fusion input
 		bool strong_neg = !!fusion::at_c<0>(fusion::at_c<0>(attr));
 		const std::string& predicate = fusion::at_c<1>(fusion::at_c<0>(attr));
 		bool propositional = !fusion::at_c<1>(attr);
-		Tuple const* ptuple = 0;
+		PTuple const* ptuple = 0;
 		if( !propositional )
 			ptuple = &fusion::at_c<1>(attr).get();
+	#endif
 
 		// alias for state
 		AtomSet& atomSet = state.result.back();
@@ -233,6 +234,10 @@ struct handle_fact
 			else
 			{
 				atomSet.insert(AtomPtr(new Atom(predicate, *ptuple, strong_neg)));
+			}
+			BOOST_FOREACH(Term* pterm, *ptuple)
+			{
+				delete pterm;
 			}
 		}
   }
@@ -274,7 +279,8 @@ struct DLVResultGrammar:
       ;
 		fact
 			// char_ synthesizes a char attribute!
-			= ( (-char_('-') >> ident) > -params )
+			//= ( (-char_('-') >> ident) > -params )
+			= ( -char_('-') > ident > -params )
 #ifndef DUMMYPARSE
       [ handle_fact(state) ]
 #endif
@@ -306,9 +312,9 @@ struct DLVResultGrammar:
 
 	qi::rule<Iterator, ascii::space_type>                 answersets, answerset, fact;
 #ifndef DUMMYPARSE
-	qi::rule<Iterator, dlvhex::Term(), ascii::space_type> groundterm;
+	qi::rule<Iterator, dlvhex::Term*(), ascii::space_type> groundterm;
 	qi::rule<Iterator, std::string(), ascii::space_type>  ident;
-	qi::rule<Iterator, std::vector<dlvhex::Term>(), ascii::space_type>  params;
+	qi::rule<Iterator, PTuple(), ascii::space_type>  params;
 #else
 	qi::rule<Iterator, ascii::space_type>                 groundterm, ident, params;
 #endif
