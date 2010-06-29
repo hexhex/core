@@ -33,36 +33,18 @@
  * 
  */
 
-#undef CWDEBUG
-#ifdef CWDEBUG
-# define _GNU_SOURCE
-# include <libcwd/sys.h>
-# include <libcwd/debug.h>
-#endif
-
-#undef BOOST_SPIRIT_DEBUG
-
 #include "dlvhex/DLVresultParserDriver.h"
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex/SpiritDebugging.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/Benchmarking.h"
 
-#include <boost/optional.hpp>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
-#include <boost/spirit/include/phoenix_object.hpp>
-#include <boost/spirit/include/phoenix_fusion.hpp>
-#include <boost/spirit/include/support_multi_pass.hpp>
+#include <boost/spirit/core.hpp>
+#include <boost/spirit/tree/parse_tree.hpp>
+#include <boost/spirit/utility/chset.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 #include <sstream>
 #include <iostream>
-
-namespace spirit = boost::spirit;
-namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
-namespace fusion = boost::fusion;
-namespace phoenix = boost::phoenix;
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -85,239 +67,68 @@ DLVresultParserDriver::setParseMode(ParseMode mode)
 	pMode = mode;
 }
 
-struct ParserState
-{
-	std::vector<AtomSet>& result;
-	bool dropPredicates; 
-
-  ParserState(std::vector<AtomSet>& result, bool dropPredicates):
-		result(result), dropPredicates(dropPredicates) {}
-};
-
-//
-// useful phoenix operator debugging stuff:
-// -> just add [ handle_dbg("message") ] to any rule/parser to get information
-//
-#if 1
-template<typename Attrib>
-void houtput(Attrib const& a)
-{
-#ifdef CWDEBUG
-  std::cerr << "XXX handling attribute " << libcwd::type_info_of(a).demangled_name() << std::endl;
-#endif
-};
-
-template<>
-void houtput(std::vector<char> const& a)
-{
-  std::cerr << "XXX got string  attribute '" << std::string(a.begin(), a.end()) << "'" << std::endl;
-}
-
-template<typename Content>
-void houtput(boost::optional<Content> const& a)
-{
-  if( !a )
-  {
-    std::cerr << "XXX optional (unset):" << std::endl;
-  }
-  else
-  {
-    std::cerr << "XXX optional:" << std::endl;
-  }
-  houtput(a.get());
-}
-
-struct handle_dbg
-{
-  handle_dbg(std::string s): s(s) {}
-  std::string s;
-  template<typename Attrib>
-  void operator()(Attrib& a, qi::unused_type, qi::unused_type) const
-  {
-    std::cerr << "DBG=" << s << std::endl;
-    houtput(a);
-  }
-};
-#endif
-
-struct handle_int
-{
-  template <typename Context>
-  void operator()(int i, Context& ctx, qi::unused_type) const
-  {
-    dlvhex::Term& ruleAttr = fusion::at_c<0>(ctx.attributes);
-
-    ruleAttr = dlvhex::Term(i);
-    //std::cerr << "created int " << i << std::endl;
-  }
-};
-
-struct handle_ident
-{
-  template <typename Context>
-  void operator()(const std::string& s, Context& ctx, qi::unused_type) const
-  {
-    dlvhex::Term& ruleAttr = fusion::at_c<0>(ctx.attributes);
-
-    ruleAttr = dlvhex::Term(s, false);
-    //std::cerr << "created ident '" << s << "'" << std::endl;
-  }
-};
-
-struct handle_new_answerset
-{
-  handle_new_answerset(ParserState& state): state(state) {}
-
-  void operator()(qi::unused_type, qi::unused_type, qi::unused_type) const
-  {
-		state.result.push_back(AtomSet());
-		//std::cerr << "created new atomset" << std::endl;
-  }
-
-  ParserState& state;
-};
-
-struct handle_fact
-{
-  handle_fact(ParserState& state): state(state) {}
-
-	/*
-  void operator()(
-			boost::fusion::vector3<
-				boost::optional<char>,
-				std::string,
-				boost::optional<std::vector<dlvhex::Term> > >& attr,
-			qi::unused_type, qi::unused_type) const
-  {
-		// alias for fusion input
-		bool strong_neg = !!fusion::at_c<0>(attr);
-		const std::string& predicate = fusion::at_c<1>(attr);
-		bool propositional = !fusion::at_c<2>(attr);
-		Tuple* ptuple = 0;
-		if( !propositional )
-			ptuple = &fusion::at_c<2>(attr).get();
-	*/
-  void operator()(
-			const boost::fusion::vector2<
-				boost::fusion::vector2<
-					boost::optional<char>,
-					std::string>,
-				boost::optional<std::vector<dlvhex::Term> > >& attr,
-			qi::unused_type, qi::unused_type) const
-  {
-		// alias for fusion input
-		bool strong_neg = !!fusion::at_c<0>(fusion::at_c<0>(attr));
-		const std::string& predicate = fusion::at_c<1>(fusion::at_c<0>(attr));
-		bool propositional = !fusion::at_c<1>(attr);
-		Tuple const* ptuple = 0;
-		if( !propositional )
-			ptuple = &fusion::at_c<1>(attr).get();
-
-		// alias for state
-		AtomSet& atomSet = state.result.back();
-		bool dropPredicates = state.dropPredicates;
-
-		// we cannot have propositional atoms in higher order mode
-		assert(!(dropPredicates && propositional));
-
-		if( propositional )
-		{
-			atomSet.insert(AtomPtr(new Atom(predicate, strong_neg)));
-		}
-		else
-		{
-			if( dropPredicates )
-			{
-				atomSet.insert(AtomPtr(new Atom(*ptuple, strong_neg)));
-			}
-			else
-			{
-				atomSet.insert(AtomPtr(new Atom(predicate, *ptuple, strong_neg)));
-			}
-		}
-  }
-
-  ParserState& state;
-};
-
-#undef DUMMYPARSE
-
 // "The Grammar"
-template<typename Iterator>
 struct DLVResultGrammar:
-  public qi::grammar<Iterator, ascii::space_type>
+  public boost::spirit::grammar<DLVResultGrammar>
 {
-	DLVResultGrammar(ParserState& state):
-		DLVResultGrammar::base_type(answersets), state(state)
-	{
-    using spirit::int_;
-    using spirit::_val;
-    using spirit::_1;
-    using qi::lexeme;
-    using qi::char_;
-    using qi::omit;
-    using qi::lit;
+  enum RuleTags {
+    None = 0, Root, AnswerSet, PropFact, NonpropFact, Groundterm, Neg, Ident, Number };
 
-		ident
-			= lexeme[char_('"') > *(char_ - '"') > char_('"')]
-			//| lexeme[char_("a-z") >> *char_("a-zA-Z0-9_")];
-			| lexeme[ascii::lower > *(ascii::alnum|char_('_'))];
-		groundterm
-			= int_
-#ifndef DUMMYPARSE
-      [ handle_int() ]
-#endif
-			| ident
-#ifndef DUMMYPARSE
-      [ handle_ident() ]
-#endif
-      ;
-		fact
-			// char_ synthesizes a char attribute!
-			= ( (-char_('-') >> ident) > -params )
-#ifndef DUMMYPARSE
-      [ handle_fact(state) ]
-#endif
-      ;
-		params
-			%= '(' > groundterm > *(',' > groundterm) > ')';
-		answerset
-			= (lit('{') >> '}') [ handle_new_answerset(state) ]
-			| (lit('{') [ handle_new_answerset(state) ] > fact > *(',' > fact) > '}');
-		answersets
-			// end_p enforces a "full" match (in case of success) even with trailing newlines
-			= *answerset > (qi::eol | qi::eoi);
+  // S = ScannerT
+  template<typename S>
+  struct definition
+  {
+    // shortcut
+    typedef boost::spirit::parser_context<> c;
+    template<int Tag> struct tag: public boost::spirit::parser_tag<Tag> {};
 
-    #ifdef BOOST_SPIRIT_DEBUG
-		BOOST_SPIRIT_DEBUG_NODE(answersets);
-		BOOST_SPIRIT_DEBUG_NODE(answerset);
-		BOOST_SPIRIT_DEBUG_NODE(fact);
-		BOOST_SPIRIT_DEBUG_NODE(groundterm);
-		BOOST_SPIRIT_DEBUG_NODE(ident);
-    #endif
-	}
+    definition(DLVResultGrammar const& self);
+    boost::spirit::rule< S, c, tag<Root> > const& start() const { return root; }
 
-	/*
-	void setParserState(ParserState* ps)
-	{
-		state = ps;
-	}
-	*/
-
-	qi::rule<Iterator, ascii::space_type>                 answersets, answerset, fact;
-#ifndef DUMMYPARSE
-	qi::rule<Iterator, dlvhex::Term(), ascii::space_type> groundterm;
-	qi::rule<Iterator, std::string(), ascii::space_type>  ident;
-	qi::rule<Iterator, std::vector<dlvhex::Term>(), ascii::space_type>  params;
-#else
-	qi::rule<Iterator, ascii::space_type>                 groundterm, ident, params;
-#endif
-
-	ParserState& state;
+    boost::spirit::rule<S, c, tag<Root> >        root;
+    boost::spirit::rule<S, c, tag<AnswerSet> >   answerset;
+    boost::spirit::rule<S, c, tag<PropFact> >    prop_fact;
+    boost::spirit::rule<S, c, tag<NonpropFact> > nonprop_fact;
+    boost::spirit::rule<S>                       fact;
+    boost::spirit::rule<S, c, tag<Groundterm> >  groundterm;
+    boost::spirit::rule<S, c, tag<Neg> >         neg;
+    boost::spirit::rule<S, c, tag<Ident> >       ident;
+    boost::spirit::rule<S, c, tag<Number> >      number;
+  };
 };
 
+template<typename ScannerT>
+DLVResultGrammar::definition<ScannerT>::definition(DLVResultGrammar const&)
+{
+  namespace sp = boost::spirit;
 
-#if 0
+  // shortcut for sp::discard_node_d()
+  const sp::node_parser_gen<sp::discard_node_op> rm =
+    sp::node_parser_gen<sp::discard_node_op>();
+
+  sp::chset<> alnum_("a-zA-Z0-9_");
+  ident
+    = sp::token_node_d[sp::lower_p >> *alnum_]
+    | sp::token_node_d['"' >> *(~sp::ch_p('"')) >> '"'];
+  number
+    = sp::token_node_d[+sp::digit_p];
+  groundterm
+    = ident | number;
+  neg
+    = sp::ch_p('-');
+  prop_fact
+    = !neg >> ident;
+  nonprop_fact
+    = !neg >> ident >> '(' >> groundterm >> *(rm[sp::ch_p(',')] >> groundterm) >> ')';
+  fact
+    = nonprop_fact | prop_fact;
+  answerset
+    = '{' >> !fact >> *(rm[sp::ch_p(',')] >> fact) >> rm[sp::ch_p('}')];
+  root
+    // end_p enforces a "full" match (in case of success) even with trailing newlines
+    = *answerset >> !sp::end_p;
+}
+
 // converts the parse tree from boost::spirit to a DLV result
 class DLVResultGrammarPTToResultConverter
 {
@@ -523,66 +334,52 @@ void DLVResultGrammarPTToResultConverter::appendFactFromNonpropFact(
   }
   result.insert(atom);
 }
-#endif
 
 void
 DLVresultParserDriver::parse(std::istream& is,
                              std::vector<AtomSet>& result) throw (SyntaxError)
 {
-#if 0
-	typedef std::istreambuf_iterator<char> base_iterator_type;
-	typedef spirit::multi_pass<base_iterator_type> forward_iterator_type;
-
-	// iterate over stream input
-	base_iterator_type in_begin(is);
-	 
-	// convert input iterator to forward iterator, usable by spirit parser
-	forward_iterator_type fwd_begin =
-		    spirit::make_default_multi_pass(in_begin);
-	forward_iterator_type fwd_end;
-	#else
-	std::ostringstream buf;
-	buf << is.rdbuf();
-	const std::string& input = buf.str();
-
-	typedef std::string::const_iterator forward_iterator_type;
-	// convert input iterator to forward iterator, usable by spirit parser
-	forward_iterator_type fwd_begin = input.begin();
-	forward_iterator_type fwd_end = input.end();
-	#endif
-
-	// TODO: dump linewise
-	/*
+  // put whole input from stream into a string
+  std::ostringstream buf;
+  buf << is.rdbuf();
+  std::string input = buf.str();
   if( Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
   {
     Globals::Instance()->getVerboseStream() <<
       "Got Result:\n===\n" << input << "\n===" << std::endl;
   }
-	*/
 
-	DLVHEX_BENCHMARK_REGISTER(sid,"qi::phrase_parse");
-	DLVHEX_BENCHMARK_START(sid);
+	DLVHEX_BENCHMARK_REGISTER(psid,"DLV result parse");
+	DLVHEX_BENCHMARK_START(psid);
 
-	//   if higher-order mode is explicitly requested (pType == HO), or the mode is AUTO and the current instance runs in HO mode,
-	//       we will just take the arguments of the atom (and drop it's predicate), i.e. "a_i(p, ...)" is transformed into "p(...)"
-	//   otherwise we interpret it as first-order atom and take it as it is (including the predicate name)
-	bool dropPredicates =
-		(pMode == DLVresultParserDriver::AUTO &&
-		 Globals::Instance()->getOption("NoPredicate"))
-		||
-		(pMode == DLVresultParserDriver::HO);
-	ParserState state(result, dropPredicates);
+  DLVResultGrammar grammar;
+  typedef DLVResultGrammarPTToResultConverter Converter;
 
-	// @todo: this would not be multithreading safe (multiple answer sets parsed at once) but we instantiate the grammar only once for performance reasons
-	//grammar.setParserState(&state);
-	//DLVHEX_BENCHMARK
-  DLVResultGrammar<forward_iterator_type> grammar(state);
-	bool r = qi::phrase_parse(fwd_begin, fwd_end, grammar, ascii::space);
+  Converter::iterator_t it_begin = input.c_str();
+  Converter::iterator_t it_end = input.c_str()+input.size();
 
-	DLVHEX_BENCHMARK_STOP(sid);
+  // parse ast
+  boost::spirit::tree_parse_info<Converter::iterator_t, Converter::factory_t> info =
+    boost::spirit::pt_parse<Converter::factory_t>(
+        it_begin, it_end, grammar, boost::spirit::space_p);
+  //printSpiritPT(std::cerr, *info.trees.begin());
+	DLVHEX_BENCHMARK_STOP(psid);
 
-	if (!r || fwd_begin != fwd_end)
-		throw SyntaxError("Could not parse complete DLV output!");
+  // successful parse?
+  if( !info.full )
+    throw SyntaxError("Could not parse complete DLV output!");
+
+  // if this is not ok, there is some bug and the following code will be incomplete
+  assert(info.trees.size() == 1);
+
+	DLVHEX_BENCHMARK_REGISTER(csid,"DLV result convert");
+	DLVHEX_BENCHMARK_START(csid);
+
+  // create dlvhex AST from spirit parser tree
+  Converter converter(pMode);
+  converter.appendPTToResult(*info.trees.begin(), result);
+
+	DLVHEX_BENCHMARK_STOP(csid);
 }
 
 DLVHEX_NAMESPACE_END
