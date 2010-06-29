@@ -114,8 +114,7 @@ private:
     Stat(const std::string& name);
   };
 
-  static BenchmarkController* instance;
-
+  ID myID;
   ID maxID;
   std::vector<Stat> instrumentations;
   std::map<std::string, ID> name2id;
@@ -136,7 +135,7 @@ public:
   static BenchmarkController& Instance();
 
   // delete singleton-> causes destructor to be called
-  void finish();
+  static void finish();
 
   // output benchmark results, destruct
   ~BenchmarkController();

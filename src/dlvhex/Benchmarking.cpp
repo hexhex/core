@@ -43,22 +43,14 @@ DLVHEX_NAMESPACE_BEGIN
 namespace benchmark
 {
 
-namespace
-{
-// id of controller lifetime stats
-ID myID;
-}
-
 BenchmarkController::Stat::Stat(const std::string& name):
   name(name), count(0), prints(0), start(), duration()
 {
 }
 
-BenchmarkController* BenchmarkController::instance = 0;
-
 // init, display start of benchmarking
 BenchmarkController::BenchmarkController():
-  maxID(0), instrumentations(), name2id(), output(&(std::cerr)), printSkip(0)
+  myID(0), maxID(0), instrumentations(), name2id(), output(&(std::cerr)), printSkip(0)
 {
   myID = getInstrumentationID("BenchmarkController lifetime");
   start(myID);
@@ -73,6 +65,11 @@ BenchmarkController::~BenchmarkController()
   {
     printInformation(st);
   }
+}
+
+namespace
+{
+BenchmarkController* instance = 0;
 }
 
 void BenchmarkController::finish()

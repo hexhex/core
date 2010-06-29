@@ -860,7 +860,7 @@ main (int argc, char *argv[])
 
   #if defined(DLVHEX_BENCHMARK)
   // this should be done using some "at_exit_scope"
-  benchmark::BenchmarkController::Instance().finish();
+  benchmark::BenchmarkController::finish();
   #endif
  
  return 0;
