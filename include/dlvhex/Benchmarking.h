@@ -33,16 +33,22 @@
 #ifndef DLVHEX_H_BENCHMARKING_INCLUDED_1555
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif // HAVE_CONFIG_H
-
 #include <dlvhex/PlatformDefinitions.h>
+#include <boost/scope_exit.hpp>
+#include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <vector>
+#include <ostream>
 
-#if defined(DLVHEX_DEBUG)
-# define DLVHEX_BENCHMARK
-#endif
-
+// Benchmarking is always compiled into dlvhex,
+// but benchmarking of dlvhex itself is only
+// activated if you configure with --enable-debug
+//
+// Plugins can use benchmarking of dlvhex by doing
+// #define DLVHEX_BENCHMARK
+// #include <dlvhex/Benchmarking.h>
+// in a .cpp file that wants to use benchmarking.
+//
 // usage example:
 //
 // DLVHEX_BENCHMARK_REGISTER(sid1,"calling dlv");
@@ -54,11 +60,19 @@
 //   // fork and exec
 //   DLVHEX_BENCHMARK_STOP(sid2)
 //
-//   DLVHEX_BENCHMARK_START(sid3)
-//   // parse result
-//   DLVHEX_BENCHMARK_STOP(sid3)
+//   {
+//      DLVHEX_BENCHMARK_SCOPE(sid3)
+//      parse result
+//      ...
+//   }
 // DLVHEX_BENCHMARK_STOP(sid1)
 // DLVHEX_BENCHMARK_COUNT(sid4,someinteger)
+// DLVHEX_BENCHMARK_REGISTER_AND_START(sid6,"reg start")
+// { 
+//   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid5,"reg scope")
+//   ...
+// }
+// DLVHEX_BENCHMARK_STOP(sid6)
 //
 // you can also manage the stat IDs yourself
 // (e.g., for creating one instrumentation per custom external atom,
@@ -77,18 +91,28 @@
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid)
 # define DLVHEX_BENCHMARK_COUNT(sid,num) \
     DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().count(sid,num)
+# define DLVHEX_BENCHMARK_SCOPE(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid); \
+    BOOST_SCOPE_EXIT( (sid) ) { \
+      DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid); \
+    } BOOST_SCOPE_EXIT_END
+# define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,msg) \
+    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE(sid); } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg) \
+    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid); } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) \
+    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_COUNT(sid,num); } while(0)
 #else
-# define DLVHEX_BENCHMARK_REGISTER(sid,msg) do { } while(0)
-# define DLVHEX_BENCHMARK_START(sid)        do { } while(0)
-# define DLVHEX_BENCHMARK_STOP(sid)         do { } while(0)
-# define DLVHEX_BENCHMARK_COUNT(sid,num)    do { } while(0)
+# define DLVHEX_BENCHMARK_REGISTER(sid,msg)               do { } while(0)
+# define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
+# define DLVHEX_BENCHMARK_STOP(sid)                       do { } while(0)
+# define DLVHEX_BENCHMARK_COUNT(sid,num)                  do { } while(0)
+# define DLVHEX_BENCHMARK_SCOPE(sid)                      do { } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,msg)     do { } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg)     do { } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) do { } while(0)
+
 #endif // defined(DLVHEX_BENCHMARK)
-
-#if defined(DLVHEX_BENCHMARK)
-
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <vector>
-#include <ostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -268,8 +292,6 @@ void BenchmarkController::count(ID id, Count increment)
 } // namespace benchmark
 
 DLVHEX_NAMESPACE_END
-
-#endif // defined(DLVHEX_BENCHMARK)
 
 #endif // DLVHEX_H_BENCHMARKING_INCLUDED_1555
 

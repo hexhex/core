@@ -34,6 +34,15 @@
  */
 
 #include "dlvhex/ModelGenerator.h"
+
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
+#endif
+
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
@@ -41,6 +50,7 @@
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <sstream>
 #include <boost/functional.hpp>
@@ -64,8 +74,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 				  const AtomSet& I,
 				  std::vector<AtomSet>& models)
 {
-  DLVHEX_BENCHMARK_REGISTER(gcModelGen,"Guess/check model generator");
-  DLVHEX_BENCHMARK_START(gcModelGen);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(gcModelGen,"Guess/check model generator");
 
   models.clear();
 
@@ -648,8 +657,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    }
 	}
     }
-
-  DLVHEX_BENCHMARK_STOP(gcModelGen);
 }
 
 

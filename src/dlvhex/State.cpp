@@ -36,6 +36,14 @@
 
 #include "dlvhex/State.h"
 
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
+#endif
+
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
@@ -128,8 +136,7 @@ State::output(ProgramCtx*)
 void
 OpenPluginsState::openPlugins(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Importing plugins");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Importing plugins");
 
   PluginContainer* container = ctx->getPluginContainer();
 
@@ -170,16 +177,13 @@ OpenPluginsState::openPlugins(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new ConvertState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 ConvertState::convert(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Calling plugin converters");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin converters");
 
   ///@todo move file/uri opening into its own state
 
@@ -345,16 +349,13 @@ ConvertState::convert(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new ParseState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 ParseState::parse(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Parsing input");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
   HexParserDriver driver;
 
@@ -391,16 +392,13 @@ ParseState::parse(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new RewriteState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 RewriteState::rewrite(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Calling plugin rewriters");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
 
   //
   // now call rewriters
@@ -430,16 +428,13 @@ RewriteState::rewrite(ProgramCtx* ctx)
     }
 
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Building node graph");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building node graph");
 
   //
   // The GraphBuilder creates nodes and dependency edges from the raw program.
@@ -450,16 +445,13 @@ CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new OptimizeState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 OptimizeState::optimize(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Calling plugin optimizers");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin optimizers");
 
   //
   // now call optimizers
@@ -478,8 +470,6 @@ OptimizeState::optimize(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new CreateDependencyGraphState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
@@ -487,8 +477,7 @@ OptimizeState::optimize(ProgramCtx* ctx)
 void
 CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Building dependency graph");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building dependency graph");
 
   //
   // The ComponentFinder provides functions for finding SCCs and WCCs from a
@@ -509,16 +498,13 @@ CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new SafetyCheckState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Safety checking");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
 
   //
   // Performing the safety check
@@ -539,8 +525,6 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
     }
 
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
@@ -548,24 +532,20 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 void
 StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Strong safety checking");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Strong safety checking");
 
   StrongSafetyChecker sschecker(*ctx->getDependencyGraph());
   sschecker();
 
   boost::shared_ptr<State> next(new SetupProgramCtxState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Setting up ProgramCtx");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Setting up ProgramCtx");
 
   //
   // now let the plugins setup the ProgramCtx
@@ -591,16 +571,13 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
     }
 
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 EvaluateProgramState::evaluate(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Evaluating Program");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating Program");
 
   //
   // We don't have a depedency graph, so just dump the program to an
@@ -652,16 +629,13 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new PostProcessState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Evaluating dependency graph");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating dependency graph");
 
   //
   // The GraphProcessor provides the actual strategy of how to compute the
@@ -711,16 +685,13 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new PostProcessState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 PostProcessState::postProcess(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Postproc GraphProcessor res");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Postproc GraphProcessor res");
 
   ///@todo filtering the atoms here is maybe to costly, how about
   ///ignoring the aux names when building the output, since the custom
@@ -747,16 +718,13 @@ PostProcessState::postProcess(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new OutputState);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 void
 OutputState::output(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER(sid,"Building output");
-  DLVHEX_BENCHMARK_START(sid);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building output");
 
   //
   // output format
@@ -794,8 +762,6 @@ OutputState::output(ProgramCtx* ctx)
   ///@todo explicit endstate which does nothing?
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
-
-  DLVHEX_BENCHMARK_STOP(sid);
 }
 
 

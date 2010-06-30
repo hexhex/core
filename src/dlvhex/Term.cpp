@@ -34,14 +34,14 @@
 
 
 #include "dlvhex/Term.h"
+
+// activate benchmarking manually, if needed
+// (makes dlvhex much much slower, but allows to count Term instantiations!)
+#undef DLVHEX_BENCHMARK
 #include "dlvhex/Benchmarking.h"
 
 #include <cassert>
-
-// include iostream, otherwise we do not have the declarations for all
-// the standard operator<<'s, and we will fail to compile our own
-// operator<<s disgracefully.
-#include <iostream>
+#include <ostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -116,8 +116,7 @@ Term::Term()
     constantString(getNames().end()),
     variableString("")
 {
-	DLVHEX_BENCHMARK_REGISTER(sid,"Term() Nullconst");
-	DLVHEX_BENCHMARK_COUNT(sid,1);
+	DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,"Term() Nullconst",1); // not enabled by --enable-debug! (see top of file)
 }
 
 
@@ -127,15 +126,13 @@ Term::Term(const Term& term2):
 	constantInteger(term2.constantInteger),
 	variableString(term2.variableString)
 {
-	DLVHEX_BENCHMARK_REGISTER(sid,"Term() Copy");
-	DLVHEX_BENCHMARK_COUNT(sid,1);
+	DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,"Term() Copy",1); // not enabled by --enable-debug! (see top of file)
 }
 
 
 Term::Term(const std::string& name, bool addQuotes)
 {
-	DLVHEX_BENCHMARK_REGISTER(sid,"Term() String");
-	DLVHEX_BENCHMARK_START(sid);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Term() String"); // not enabled by --enable-debug! (see top of file)
 
 	if (name[0] == '\"')
 	{
@@ -166,14 +163,12 @@ Term::Term(const std::string& name, bool addQuotes)
 			}
 		}
 	}
-	DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 Term::Term(const char* name, bool addQuotes)
 {
-	DLVHEX_BENCHMARK_REGISTER(sid,"Term() const char*");
-	DLVHEX_BENCHMARK_START(sid);
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Term() const char*"); // not enabled by --enable-debug! (see top of file)
 
 	if (name[0] == '\"')
 	{
@@ -204,15 +199,13 @@ Term::Term(const char* name, bool addQuotes)
 			}
 		}
 	}
-	DLVHEX_BENCHMARK_STOP(sid);
 }
 
 
 Term::Term(int num)
 	: type(INTEGER), constantInteger(num)
 {
-	DLVHEX_BENCHMARK_REGISTER(sid,"Term() int");
-	DLVHEX_BENCHMARK_COUNT(sid,1);
+	DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,"Term() int",1); // not enabled by --enable-debug! (see top of file)
 }
 
 

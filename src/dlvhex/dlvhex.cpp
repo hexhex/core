@@ -540,10 +540,9 @@ main (int argc, char *argv[])
   bool inputIsWrong = false;
 
   //
-  // now we have options, now we can init benchmarking
+  // now we have options, initialize benchmarking (--verbose=8)
   //
 
-  #if defined(DLVHEX_BENCHMARK)
   benchmark::BenchmarkController& ctr =
     benchmark::BenchmarkController::Instance();
   if( Globals::Instance()->doVerbose(Globals::PROFILING) )
@@ -554,7 +553,13 @@ main (int argc, char *argv[])
   }
   else
     ctr.setOutput(0);
-  #endif
+
+  // deconstruct benchmarking (= output results) at scope exit 
+  int dummy;
+  BOOST_SCOPE_EXIT( (dummy) ) {
+	  benchmark::BenchmarkController::finish();
+  }
+  BOOST_SCOPE_EXIT_END
 
   //
   // check if we have any input (stdin, file, or URI)
@@ -857,11 +862,6 @@ main (int argc, char *argv[])
   // execution completed
   //
   /////////////////////////////////////////////////////////////////
-
-  #if defined(DLVHEX_BENCHMARK)
-  // this should be done using some "at_exit_scope"
-  benchmark::BenchmarkController::finish();
-  #endif
  
  return 0;
 }

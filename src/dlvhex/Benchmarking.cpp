@@ -33,8 +33,6 @@
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/globals.h"
-
-#if defined(DLVHEX_BENCHMARK)
 #include <boost/foreach.hpp>
 #include <iostream>
 
@@ -121,8 +119,6 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
 } // namespace benchmark
 
 DLVHEX_NAMESPACE_END
-
-#endif // defined(DLVHEX_BENCHMARK)
 
 // Local Variables:
 // mode: C++

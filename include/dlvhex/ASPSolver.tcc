@@ -35,9 +35,14 @@
 #define _DLVHEX_ASPSOLVER_TCC
 
 
+// @todo: no header should use config.h, so i guess no .tcc should use it (at least no installed header/.tcc)
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
+
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
 
 #include "dlvhex/Error.h"
 #include "dlvhex/Program.h"
@@ -64,12 +69,10 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
   throw (FatalError)
 {
   int retcode = -1;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ASPSolver<B,P>::solve (+parse)");
   
   try
     {
-      DLVHEX_BENCHMARK_REGISTER(aspCallParse,"Calling LP solver + parsing");
-      DLVHEX_BENCHMARK_START(aspCallParse);
-
       proc.spawn();
 
       // send program and facts
@@ -116,7 +119,6 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
       // get exit code of process
       retcode = proc.close();
 
-      DLVHEX_BENCHMARK_STOP(aspCallParse);
     }
   catch (GeneralError& e)
     {
@@ -171,8 +173,7 @@ ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet
   
   try
     {
-      DLVHEX_BENCHMARK_REGISTER(aspCallParse,"Calling LP file solver + parsing");
-      DLVHEX_BENCHMARK_START(aspCallParse);
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(aspCallParse,"ASPFilesSolver<P>::solve (+parse)");
 
       proc.spawn(options);
 
@@ -184,8 +185,6 @@ ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet
       
       // get exit code of process
       retcode = proc.close();
-
-      DLVHEX_BENCHMARK_STOP(aspCallParse);
     }
   catch (GeneralError& e)
     {

@@ -31,21 +31,13 @@ dlvhex_LDFLAGS = -export-dynamic
 #
 dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
-
-if BENCHMARKING
-BENCHMARKING_SOURCEADD = Benchmarking.cpp
-else
-BENCHMARKING_SOURCEADD = 
-endif
-
-
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
     Atom.cpp \
     AggregateAtom.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
-    $(BENCHMARKING_SOURCEADD) \
+    Benchmarking.cpp \
     BoostComponentFinder.cpp \
     Component.cpp \
     ComponentFinder.cpp \

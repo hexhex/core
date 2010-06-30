@@ -33,17 +33,22 @@
  *
  */
 
+#include "dlvhex/ModelGenerator.h"
 
+// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ModelGenerator.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -89,8 +94,7 @@ FixpointModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 { 
-  DLVHEX_BENCHMARK_REGISTER(fpModelGen,"Fixpoint Model Generator");
-  DLVHEX_BENCHMARK_START(fpModelGen);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(fpModelGen,"Fixpoint Model Generator");
 
   models.clear();
   
@@ -207,8 +211,6 @@ FixpointModelGenerator::compute(const Program& program,
     }
   
   models.push_back(currentI);
-
-  DLVHEX_BENCHMARK_STOP(fpModelGen);
 }
 
 DLVHEX_NAMESPACE_END

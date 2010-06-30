@@ -32,8 +32,12 @@
  *
  */
 
+// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/Component.h"
@@ -225,26 +229,21 @@ ProgramComponent::evaluate(std::vector<AtomSet>& input)
       try
         {
 	  modelGenerator->compute(atomnodes, *in, res);
-
-          DLVHEX_BENCHMARK_REGISTER(resCount,"Program-component res sets");
-          DLVHEX_BENCHMARK_COUNT(resCount,res.size());
+          DLVHEX_BENCHMARK_REGISTER_AND_COUNT(resCount,"Program-component res sets",res.size());
         }
       catch (GeneralError&)
         {
 	  throw;
         }
 
-
-      DLVHEX_BENCHMARK_REGISTER(resIns,"Program-component res insrt");
-      DLVHEX_BENCHMARK_START(resIns);
-
       //
       // add all models that came from the model generator to the
       // result set (= set of sets!)
       //
-      result.insert(result.end(), res.begin(), res.end());
-
-      DLVHEX_BENCHMARK_STOP(resIns);
+      {
+        DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(resIns,"Program-component res insrt");
+        result.insert(result.end(), res.begin(), res.end());
+      }
     }
 
   evaluated = true;
@@ -308,8 +307,7 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 
         try
         {
-          DLVHEX_BENCHMARK_REGISTER(xatomEval,"External evaluation");
-          DLVHEX_BENCHMARK_START(xatomEval);
+          DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xatomEval,"External evaluation");
 
 	  if (externalAtom->pureGroundInput())
 	    {
@@ -336,16 +334,11 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
 		    }
 		}
 	    }
-
-          DLVHEX_BENCHMARK_STOP(xatomEval);
         }
         catch (GeneralError&)
         {
             throw;
         }
-
-        DLVHEX_BENCHMARK_REGISTER(xresIns,"External result insert");
-        DLVHEX_BENCHMARK_START(xresIns);
 
         //
         // important: the component result must include also its input
@@ -353,16 +346,17 @@ ExternalComponent::evaluate(std::vector<AtomSet>& input)
         // is due to our graphprocessor algorithm.
         /// @todo think about this!
         //
-        res.insert(*in);
+        {
+          DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xresIns,"External result insert");
+          res.insert(*in);
 
-        result.push_back(res);
+          result.push_back(res);
+        }
 
 //	    std::cerr << "got: ";
 //		RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
 //		res.accept(rpv);
 //	    std::cerr << std::endl;
-
-        DLVHEX_BENCHMARK_STOP(xresIns);
     }
 
     evaluated = true;
