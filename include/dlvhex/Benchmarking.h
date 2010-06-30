@@ -33,8 +33,11 @@
 #ifndef DLVHEX_H_BENCHMARKING_INCLUDED_1555
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
-#include <dlvhex/PlatformDefinitions.h>
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif // HAVE_CONFIG_H
+
+#include <dlvhex/PlatformDefinitions.h>
 
 #if defined(DLVHEX_DEBUG)
 # define DLVHEX_BENCHMARK
@@ -269,3 +272,8 @@ DLVHEX_NAMESPACE_END
 #endif // defined(DLVHEX_BENCHMARK)
 
 #endif // DLVHEX_H_BENCHMARKING_INCLUDED_1555
+
+
+// Local Variables:
+// mode: C++
+// End:
