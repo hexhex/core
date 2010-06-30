@@ -123,3 +123,7 @@ ID BenchmarkController::getInstrumentationID(const std::string& name)
 DLVHEX_NAMESPACE_END
 
 #endif // defined(DLVHEX_BENCHMARK)
+
+// Local Variables:
+// mode: C++
+// End:
