@@ -1,3 +1,16 @@
+2010-06-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Add BENCHMARKING for conditionally
+	compiling Benchmarking.cpp.
+	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:1.
+	(libaspsolver_la_LDFLAGS):  Bump version-info to 1:1:0.
+	* configure.ac: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* src/dlvhex/Benchmarking.cpp: Add emacs local variables.
+
+	* include/dlvhex/Benchmarking.h: Use HAVE_CONFIG_H.
+
 2010-06-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update.
