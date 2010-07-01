@@ -19,6 +19,7 @@ pkginclude_HEADERS = \
 	AtomNode.h \
 	AtomSet.h \
 	BaseVisitor.h \
+	Benchmarking.h \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
 	Component.h \

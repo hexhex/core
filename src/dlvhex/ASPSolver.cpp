@@ -34,7 +34,17 @@
 
 
 #include "dlvhex/ASPSolver.h"
+
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
+#endif
+
 #include "dlvhex/DLVresultParserDriver.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <cassert>
 
@@ -86,11 +96,10 @@ void
 ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw (FatalError)
 {
   int retcode = -1;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ASPStringSolver::solve (+parse)");
   
   try
     {
-      DEBUG_START_TIMER;
-
       proc.spawn();
       proc.getOutput() << input << std::endl;
       proc.endoffile();
@@ -101,9 +110,6 @@ ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw
       
       // get exit code of process
       retcode = proc.close();
-
-      //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-      DEBUG_STOP_TIMER("Calling LP solver + result parsing:     ");
     }
   catch (GeneralError& e)
     {

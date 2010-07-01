@@ -164,14 +164,16 @@ BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
 
 # debug
 AC_ARG_ENABLE(debug,
-              [  --enable-debug          switch on debug routines (timers, ...)],
+              [  --enable-debug          switch on debug and benchmarking routines (timers, ...)],
               [AC_DEFINE(DLVHEX_DEBUG, [], [Turns on timer routines for profiling])
-               debug_support=yes],
-	      [debug_support=no]
+               debug_support=true],
+	      [debug_support=false]
               )
 
+AM_CONDITIONAL([BENCHMARKING], [test x$debug_support = xtrue])
+
 # for debug, we need the boost_date_time library
-if test "$debug_support" = "yes"; then
+if test "$debug_support" = "true"; then
    BOOST_DATE_TIME
 fi
 

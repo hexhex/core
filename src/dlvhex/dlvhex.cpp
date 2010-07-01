@@ -65,6 +65,7 @@
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/DLVProcess.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <getopt.h>
 #include <iostream>
@@ -217,7 +218,7 @@ insertNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
@@ -290,7 +291,7 @@ removeNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
@@ -537,6 +538,29 @@ main (int argc, char *argv[])
     }
 
   bool inputIsWrong = false;
+
+  //
+  // now we have options, initialize benchmarking (--verbose=8)
+  //
+
+  benchmark::BenchmarkController& ctr =
+    benchmark::BenchmarkController::Instance();
+  if( Globals::Instance()->doVerbose(Globals::PROFILING) )
+  {
+    ctr.setOutput(&Globals::Instance()->getVerboseStream());
+    // for continuous statistics output, display every 1000'th output
+    ctr.setPrintInterval(999);
+  }
+  else
+    ctr.setOutput(0);
+
+  // deconstruct benchmarking (= output results) at scope exit 
+  int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+  BOOST_SCOPE_EXIT( (dummy) ) {
+	  (void)dummy;
+	  benchmark::BenchmarkController::finish();
+  }
+  BOOST_SCOPE_EXIT_END
 
   //
   // check if we have any input (stdin, file, or URI)
