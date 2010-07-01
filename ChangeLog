@@ -1,3 +1,40 @@
+2010-07-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Atom ABI change: bumping so-versions:
+	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:1.
+	(libaspsolver_la_LDFLAGS):  Bump version-info to 1:1:0.
+	* src/dlvhex/Benchmarking.cpp: Add emacs local variables.
+	* configure.ac: Added check for boost::date_time library.
+
+2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Added constructors for increasing parse
+	efficiency (minimizing copying of Term objects).
+	* src/dlvhex/Atom.cpp: Likewise.
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Rewrote DLVresultParserDriver
+	using Spirit V2 (for performance reasons).
+
+	* src/dlvhex/Term.cpp: Improving Term copy constructor efficiency,
+	added possibility for benchmarking (counting Term constructor invocations).
+
+	* include/dlvhex/ASPSolver.tcc: Using new benchmarking.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* include/dlvhex/Benchmarking.h: Replaced benchmarking by new
+	more versatile benchmarking system (usable by plugins, even if
+	dlvhex is not built with --enable-debug).
+	* include/dlvhex/globals.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/Benchmarking.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+
 2010-06-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* Makefile.am (AUTOMAKE_OPTIONS): Force automake >= 1.11.
