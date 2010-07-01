@@ -48,6 +48,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// we need this for parser performance (tests) ... should be removed with new AST
+typedef std::vector<dlvhex::Term*> PTuple;
 
 class Atom;
 
@@ -140,6 +142,7 @@ public:
 	 * only of the predicate identifier (which must not be a variable then).
 	 */
 	Atom(const std::string&, const Tuple&, bool = false);
+	Atom(const std::string&, const PTuple&, bool = false);
 
 	/**
 	 * Constructs an atom from a list of arguments.
@@ -153,6 +156,8 @@ public:
 	 */
 	explicit
 	Atom(const Tuple&, bool = false);
+	explicit
+	Atom(const PTuple&, bool = false);
 
 	/**
 	 * Returns the predicate of the atom.

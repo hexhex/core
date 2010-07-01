@@ -40,6 +40,7 @@
 
 #include <cassert>
 #include <boost/tokenizer.hpp>
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -123,11 +124,53 @@ Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
   // arguments
   arguments.insert(arguments.end(), arg.begin(), arg.end());
 }
+
+Atom::Atom(const std::string& pred, const PTuple& arg, bool neg)
+  : isStrongNegated(neg), isAlwaysFO(0)
+{
+  // predicate
+	arguments.reserve(1+arg.size());
+  arguments.push_back(Term(pred));
+
+  //
+  // propositonal atom must be ground:
+  //
+  if ((arg.size() == 0) && arguments.front().isVariable())
+    {
+      throw SyntaxError("propositional Atom must be ground");
+    }
+
+  // arguments
+	BOOST_FOREACH(Term* trm, arg)
+	{
+		arguments.push_back(*trm);
+	}
+}
 	
 
 Atom::Atom(const Tuple& arg, bool neg)
   : arguments(arg), isStrongNegated(neg), isAlwaysFO(0)
 {
+  if (arguments.size() == 0)
+    {
+      throw SyntaxError("Atom must contain at least one term");
+    }
+  else if ((arguments.size() == 1) && arguments.front().isVariable())
+    {
+      // propositonal atom must be ground:
+      throw SyntaxError("propositional Atom must be ground");
+    }
+}
+
+Atom::Atom(const PTuple& arg, bool neg)
+  : arguments(), isStrongNegated(neg), isAlwaysFO(0)
+{
+  // arguments
+	arguments.reserve(arg.size());
+	BOOST_FOREACH(Term* trm, arg)
+	{
+		arguments.push_back(*trm);
+	}
   if (arguments.size() == 0)
     {
       throw SyntaxError("Atom must contain at least one term");
