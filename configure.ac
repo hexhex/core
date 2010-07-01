@@ -1,6 +1,6 @@
 AC_PREREQ([2.61])
 AC_INIT([dlvhex],[2.0.0],[dlvhex-devel@lists.sourceforge.net])
-AM_INIT_AUTOMAKE([-W -Wall gnu check-news color-tests 1.11])
+AM_INIT_AUTOMAKE([-Wall gnu check-news color-tests 1.11])
 
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
 AC_CONFIG_HEADER([include/config.h])
@@ -112,6 +112,12 @@ fi
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
+
+# set default warning parameters for g++ compatible compilers
+# allow to disable certain warnings using custom CXXFLAGS
+if test "$GXX" = "yes"; then
+   CXXFLAGS="-W -Wall $CXXFLAGS"
+fi
 
 # Checks for header files.
 AC_HEADER_DIRENT

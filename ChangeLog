@@ -3,8 +3,11 @@
 	* src/dlvhex/Makefile.am: Atom ABI change: bumping so-versions:
 	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:1.
 	(libaspsolver_la_LDFLAGS):  Bump version-info to 1:1:0.
+
 	* src/dlvhex/Benchmarking.cpp: Add emacs local variables.
+
 	* configure.ac: Added check for boost::date_time library.
+	(CXXFLAGS): Turn on -W -Wall.
 
 2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
