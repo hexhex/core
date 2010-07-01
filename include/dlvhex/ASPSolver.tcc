@@ -35,7 +35,7 @@
 #define _DLVHEX_ASPSOLVER_TCC
 
 
-// @todo: no header should use config.h, so i guess no .tcc should use it (at least no installed header/.tcc)
+// @todo: no header should use config.h, so i guess no .tcc should use it (at least no installed header/.tcc) proposed solution: only instantiate Builder b; parser p; and pass by BaseBuilder*, BaseParser* to some helper [dlvhex::impl::solve_builder_parser] function in a cpp file which does the benchmarking
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -69,7 +69,7 @@ ASPSolver<Builder,Parser>::solve(const Program& prg,
   throw (FatalError)
 {
   int retcode = -1;
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ASPSolver<B,P>::solve (+parse)");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,"ASPSolver<B,P>::solve (+parse)");
   
   try
     {
@@ -173,7 +173,7 @@ ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet
   
   try
     {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(aspCallParse,"ASPFilesSolver<P>::solve (+parse)");
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(aspCallParse,"ASPFilesSolver<P>::solve (+parse)");
 
       proc.spawn(options);
 

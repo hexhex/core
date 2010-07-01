@@ -74,6 +74,9 @@
 // }
 // DLVHEX_BENCHMARK_STOP(sid6)
 //
+// if you want to have a benchmark scope within a template, you need to use
+// DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid7,"reg scope in template")
+//
 // you can also manage the stat IDs yourself
 // (e.g., for creating one instrumentation per custom external atom,
 //  not only one for some base class)
@@ -96,8 +99,15 @@
     BOOST_SCOPE_EXIT( (sid) ) { \
       DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid); \
     } BOOST_SCOPE_EXIT_END
+# define DLVHEX_BENCHMARK_SCOPE_TPL(sid) \
+    DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().start(sid); \
+    BOOST_SCOPE_EXIT_TPL( (sid) ) { \
+      DLVHEX_NAMESPACE benchmark::BenchmarkController::Instance().stop(sid); \
+    } BOOST_SCOPE_EXIT_END
 # define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,msg) \
-    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE(sid); } while(0)
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE(sid);
+# define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,msg) \
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE_TPL(sid);
 # define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg) \
     do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid); } while(0)
 # define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) \
@@ -108,7 +118,9 @@
 # define DLVHEX_BENCHMARK_STOP(sid)                       do { } while(0)
 # define DLVHEX_BENCHMARK_COUNT(sid,num)                  do { } while(0)
 # define DLVHEX_BENCHMARK_SCOPE(sid)                      do { } while(0)
+# define DLVHEX_BENCHMARK_SCOPE_TPL(sid)                  do { } while(0)
 # define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,msg)     do { } while(0)
+# define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,msg) do { } while(0)
 # define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg)     do { } while(0)
 # define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) do { } while(0)
 
