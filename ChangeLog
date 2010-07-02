@@ -1,3 +1,14 @@
+2010-07-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolver.h: Remove dependency to config.h.
+	(BaseASPSolver::doSolve): Add template method.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* src/dlvhex/Makefile.am (libaspsolver_la_LDFLAGS): Bump
+	version-info to 2:0:0.
+	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:0.
+
 2010-07-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/Makefile.am: Atom ABI change: bumping so-versions:
