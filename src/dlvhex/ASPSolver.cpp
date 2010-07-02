@@ -104,8 +104,8 @@ ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw
       proc.getOutput() << input << std::endl;
       proc.endoffile();
 
-      // parse result
-      DLVresultParserDriver parser;
+      // parse result (never drop predicates!)
+      DLVresultParserDriver parser(DLVresultParserDriver::FirstOrder);
       parser.parse(proc.getInput(), as);
       
       // get exit code of process

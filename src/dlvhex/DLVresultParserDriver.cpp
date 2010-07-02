@@ -271,20 +271,27 @@ struct DLVResultGrammar:
 		answerset
 			= (lit('{') >> '}') [ handle_new_answerset(state) ]
 			| (lit('{') [ handle_new_answerset(state) ] > fact > *(',' > fact) > '}');
+    costline
+      = lit("Cost") > +(ascii::alnum|char_("[]<>():"));
 		answersets
 			// end_p enforces a "full" match (in case of success) even with trailing newlines
-			= *answerset > (qi::eol | qi::eoi);
+			= *(
+            (-lit("Best model:") >> answerset)
+            |
+            costline
+         ) > (qi::eol | qi::eoi);
 
     #ifdef BOOST_SPIRIT_DEBUG
 		BOOST_SPIRIT_DEBUG_NODE(answersets);
 		BOOST_SPIRIT_DEBUG_NODE(answerset);
+		BOOST_SPIRIT_DEBUG_NODE(costline);
 		BOOST_SPIRIT_DEBUG_NODE(fact);
 		BOOST_SPIRIT_DEBUG_NODE(groundterm);
 		BOOST_SPIRIT_DEBUG_NODE(ident);
     #endif
 	}
 
-	qi::rule<Iterator, ascii::space_type>                  answersets, answerset, fact;
+	qi::rule<Iterator, ascii::space_type>                  answersets, answerset, fact, costline;
 	qi::rule<Iterator, dlvhex::Term*(), ascii::space_type> groundterm;
 	qi::rule<Iterator, std::string(), ascii::space_type>   ident;
 	qi::rule<Iterator, PTuple(), ascii::space_type>        params;

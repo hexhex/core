@@ -36,6 +36,8 @@
 #include <string>
 #include <ostream>
 
+/// @todo this header is useable only for SpiritV1, so it should be phased out, anyways BOOST_SPIRIT_DEBUG is more useful!
+
 // boost::spirit parse-tree debugging
 template<typename NodeT>
 void printSpiritPT(std::ostream& o, const NodeT& node, const std::string& indent="");
