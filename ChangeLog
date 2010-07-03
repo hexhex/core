@@ -1,6 +1,8 @@
 2010-07-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
-	* include/dlvhex/ASPSolver.h: Remove dependency to config.h.
+	* include/dlvhex/globals.h: Remove dependency on config.h.
+
+	* include/dlvhex/ASPSolver.h: Remove dependency on config.h.
 	(BaseASPSolver::doSolve): Add template method.
 	* include/dlvhex/ASPSolver.tcc: Likewise.
 	* src/dlvhex/ASPSolver.cpp: Likewise.
