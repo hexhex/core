@@ -141,7 +141,6 @@ printUsage(std::ostream &out, bool full)
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-      << "     --firstorder     No higher-order reasoning." << std::endl
       << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
@@ -347,10 +346,8 @@ main (int argc, char *argv[])
 
   // global defaults:
   ///@todo clean up!!
-  Globals::Instance()->setOption("NoPredicate", 1);
   Globals::Instance()->setOption("Silent", 0);
   Globals::Instance()->setOption("Verbose", 0);
-  Globals::Instance()->setOption("NoPredicate", 1);
   Globals::Instance()->setOption("StrongSafety", 1);
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
@@ -455,7 +452,7 @@ main (int argc, char *argv[])
 	  switch (longid)
 	    {
 	    case 1:
-	      Globals::Instance()->setOption("NoPredicate", 0);
+	      std::cerr << "warning: --firstorder is deprecated (autodetect)" << std::endl;
 	      break;
 
 	    case 2:

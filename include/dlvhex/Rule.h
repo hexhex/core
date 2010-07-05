@@ -138,6 +138,12 @@ public:
 	getExternalAtoms() const;
 
 	/**
+	 * Whether any literal/atom in the rule is higher order
+	 */
+	bool
+	isHigherOrder() const;
+
+	/**
 	 * @brief Test for equality.
 	 *
 	 * Two rules are equal, if they contain the same atoms in the body and the head.
@@ -327,7 +333,6 @@ DLVHEX_NAMESPACE_END
 #endif /* _DLVHEX_RULE_H */
 
 /* vim: set noet sw=4 ts=4 tw=80: */
-
 
 // Local Variables:
 // mode: C++

@@ -51,10 +51,10 @@ DLVHEX_NAMESPACE_BEGIN
  * A program is a set of rules. It does not include facts, they are stored
  * elsewhere as AtomSet.
  * @todo higher order vs first order:
- * @todo a) program knows whether HO or FO parsing/generation
+ * @done a) program knows whether HO or FO parsing/generation
  * @todo b) DLVresultParser and *OutputBuilder no longer decide with globals.h whether it is HO or FO
  * @todo    instead they have some setting in constructor
- * @todo c) Program class stores whether HO or FO program is stored (rule should know whether it is HO)
+ * @done c) Program class stores whether HO or FO program is stored (rule should know whether it is HO)
  * @todo d) --firstorder parameter no longer used (ignored with warning message) and removed from globals.h
  * @todo e) ASP*Solver classes can decide whether to use HO or FO (default = do not throw away things)
  */
@@ -274,6 +274,11 @@ public:
 	 * All external atoms.
 	 */
 	std::vector<ExternalAtom*> externalAtoms;
+
+	/**
+	 * Whether the program contains higher order atoms.
+	 */
+	bool higherOrder;
 };
 
 DLVHEX_NAMESPACE_END

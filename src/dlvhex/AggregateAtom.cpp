@@ -49,6 +49,7 @@ AggregateAtom::AggregateAtom(const std::string& aggtype,
       cmpLeft(""),
       cmpRight("")
 {
+TODO this check should be done when adding a rule to a program -> additional bool hasAggregates -> if hasAggregates and isHigherOrder after parsing -> error
     //
     // in higher-rder mode we cannot have aggregates, because then they would
     // almost certainly be recursive, because of our atom-rewriting!

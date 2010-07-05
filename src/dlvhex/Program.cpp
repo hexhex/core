@@ -39,7 +39,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-Program::Program()
+Program::Program():
+	higherOrder(false)
 {
 }
 
@@ -61,6 +62,8 @@ Program::addRule(Rule* r)
 	      externalAtoms.push_back(static_cast<ExternalAtom*>((*bi)->getAtom().get()));
 	    }
 	}
+
+	higherOrder |= r->isHigherOrder();
 }
 
 
@@ -68,6 +71,16 @@ void
 Program::deleteRule(iterator i)
 {
 	rules.erase(i.it);
+	/// @todo: if this is used often, we have a problem: we have to check all rules for higher order-ness (we should instead have 'deleteRules(set<iterator>)' or something similar) (this method is only used by plugins)
+	higherOrder = false;
+	BOOST_FOREACH(Rule* rule, rules)
+	{
+		higherOrder |= rule->isHigherOrder();
+	}
+	BOOST_FOREACH(WeakConstraint* wc, weakConstraints)
+	{
+		higherOrder |= wc->isHigherOrder();
+	}
 }
 
 
@@ -79,6 +92,8 @@ Program::addWeakConstraint(WeakConstraint* wc)
 	rules.insert(wc);
 
 	weakConstraints.push_back(wc);
+
+	higherOrder |= wc->isHigherOrder();
 }
 
 

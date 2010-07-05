@@ -65,6 +65,7 @@ DLVProcess::~DLVProcess()
 BaseASPSolver*
 DLVProcess::createSolver()
 {
+  TODO treat this by adding bool flag?
   if (Globals::Instance()->getOption("NoPredicate"))
     {
       return new ASPSolver<HOPrintVisitor, DLVresultParserDriver>(*this);

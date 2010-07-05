@@ -48,7 +48,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// we need this for parser performance (tests) ... should be removed with new AST
+// we need this for parser performance (tests) ... should be done more elegantly with new AST
 typedef std::vector<dlvhex::Term*> PTuple;
 
 class Atom;
@@ -266,18 +266,10 @@ public:
 	operator< (const Atom& atom2) const;
 	
 	/**
-	 * @brief Avoids serializing this Atom as a higher-order atom.
-	 *
-	 * @todo doc
-	 */
-	void
-	setAlwaysFO();
-
-	/**
-	 * @todo doc
+	 * Whether the atom is a higher order atom (i.e., requires higher-order mode).
 	 */
 	bool
-	getAlwaysFO() const;
+	isHigherOrder() const;
 
 	/**
 	 * @brief Accepts a visitor.
@@ -326,13 +318,6 @@ protected:
 	 * Flag indicating whehter the atoms was constructed as strongly negated.
 	 */
 	bool isStrongNegated;
-
-	/**
-	 * @todo doc
-	 * @todo TODO move this into Program, and add "isNumeric" (which requires #maxint) as another boolean "requirement"
-	 * @todo TODO actually use this boolean to check whether we need firstorder mode or #maxint set
-	 */
-	bool isAlwaysFO;
 };
 
 
@@ -406,7 +391,6 @@ public:
 	 */
 	virtual void
 	accept(BaseVisitor&) const;
-
 };
 
 

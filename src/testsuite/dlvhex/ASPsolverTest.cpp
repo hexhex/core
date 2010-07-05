@@ -52,7 +52,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION(ASPsolverTest);
 void
 ASPsolverTest::setUp()
 {
-    Globals::Instance()->setOption("NoPredicate", 0);
 }
 
 void

@@ -150,6 +150,26 @@ Rule::getExternalAtoms() const
 
 
 bool
+Rule::isHigherOrder() const
+{
+	/// @todo: We could cache this, but I guess it will only be called once for each rule, i.e., when it is added into the Program.
+	BOOST_FOREACH(AtomPtr headitem, head)
+	{
+		if( headitem->isHigherOrder() )
+			return true;
+	}
+
+	BOOST_FOREACH(Literal* bodyitem, body)
+	{
+		if( bodyitem->isHigherOrder() )
+			return true;
+	}
+
+	return false;
+}
+
+
+bool
 Rule::operator== (const Rule& rule2) const
 {
     const RuleHead_t& head2 = rule2.getHead();

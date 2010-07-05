@@ -165,6 +165,11 @@ public:
     unsigned
     getLine() const;
 
+		/**
+		 * External Atoms are never higher order atoms.
+		 */
+		bool
+		isHigherOrder() const { return false; }
 
 private:
 

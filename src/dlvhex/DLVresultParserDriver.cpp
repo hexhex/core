@@ -326,6 +326,7 @@ DLVresultParserDriver::parse(std::istream& is,
 	//   if higher-order mode is explicitly requested (pType == HO), or the mode is AUTO and the current instance runs in HO mode,
 	//       we will just take the arguments of the atom (and drop it's predicate), i.e. "a_i(p, ...)" is transformed into "p(...)"
 	//   otherwise we interpret it as first-order atom and take it as it is (including the predicate name)
+	TODO make bool flag for parser to control this behavior
 	bool dropPredicates =
 		(pMode == DLVresultParserDriver::AUTO &&
 		 Globals::Instance()->getOption("NoPredicate"))
