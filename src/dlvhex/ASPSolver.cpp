@@ -51,6 +51,18 @@
 DLVHEX_NAMESPACE_BEGIN
 
 
+BaseASPSolver::~BaseASPSolver()
+{}
+
+
+void
+BaseASPSolver::solve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"BaseASPSolver::solve (+parse)");
+  doSolve(p, s, as);
+}
+
+
 ASPSolverComposite::ASPSolverComposite()
   : solvers()
 { }
@@ -73,7 +85,7 @@ ASPSolverComposite::addSolver(BaseASPSolver* s)
 
   
 void
-ASPSolverComposite::solve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError)
+ASPSolverComposite::doSolve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError)
 {
   for (std::vector<BaseASPSolver*>::iterator it = solvers.begin(); it != solvers.end(); ++it)
     {

@@ -50,13 +50,16 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT BaseASPSolver
 {
+ protected:
+  virtual void
+  doSolve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError) = 0;
+
  public:
   virtual
-  ~BaseASPSolver()
-  {}
+  ~BaseASPSolver();
 
   virtual void
-  solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError) = 0;
+  solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError);
 
 };
 
@@ -70,6 +73,10 @@ private:
 
   std::vector<BaseASPSolver*> solvers;
 
+  void
+  doSolve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
+
+
 public:
 
   ASPSolverComposite();
@@ -80,9 +87,6 @@ public:
   void
   addSolver(BaseASPSolver* s);
   
-  void
-  solve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
-
 };
 
 
@@ -111,12 +115,13 @@ private:
 
   std::vector<std::string> options;
 
+  void
+  doSolve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
+
+
 public:
 
   ASPFileSolver(Process& p, const std::vector<std::string>& o);
-
-  void
-  solve(const Program&, const AtomSet&, std::vector<AtomSet>& as) throw (FatalError);
 
 };
 
@@ -130,10 +135,6 @@ class DLVHEX_EXPORT ASPSolver : public BaseASPSolver
 private:
   Process& proc;
 
-public:
-  /// Ctor.
-  ASPSolver(Process& p);
-
   /**
    * @brief Calls the answer set solver with a program.
    * 
@@ -142,7 +143,11 @@ public:
    * @param answersets list of answer sets.
    */
   void
-  solve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
+  doSolve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
+
+public:
+  /// Ctor.
+  ASPSolver(Process& p);
 
 };
 

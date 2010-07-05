@@ -34,16 +34,6 @@
 #if !defined(_DLVHEX_ASPSOLVER_TCC)
 #define _DLVHEX_ASPSOLVER_TCC
 
-
-// @todo: no header should use config.h, so i guess no .tcc should use it (at least no installed header/.tcc) proposed solution: only instantiate Builder b; parser p; and pass by BaseBuilder*, BaseParser* to some helper [dlvhex::impl::solve_builder_parser] function in a cpp file which does the benchmarking
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif // HAVE_CONFIG_H
-
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
-
 #include "dlvhex/Error.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
@@ -63,13 +53,12 @@ ASPSolver<Builder,Parser>::ASPSolver(Process& p)
 
 template<typename Builder, typename Parser>
 void
-ASPSolver<Builder,Parser>::solve(const Program& prg,
-				 const AtomSet& facts,
-				 std::vector<AtomSet>& as)
+ASPSolver<Builder,Parser>::doSolve(const Program& prg,
+				   const AtomSet& facts,
+				   std::vector<AtomSet>& as)
   throw (FatalError)
 {
   int retcode = -1;
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,"ASPSolver<B,P>::solve (+parse)");
   
   try
     {
@@ -166,15 +155,13 @@ ASPFileSolver<Parser>::ASPFileSolver(Process& p, const std::vector<std::string>&
 
 template<typename Parser>
 void
-ASPFileSolver<Parser>::solve(const Program&, const AtomSet&, std::vector<AtomSet>& as)
+ASPFileSolver<Parser>::doSolve(const Program&, const AtomSet&, std::vector<AtomSet>& as)
   throw (FatalError)
 {
   int retcode = -1;
   
   try
     {
-      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(aspCallParse,"ASPFilesSolver<P>::solve (+parse)");
-
       proc.spawn(options);
 
       proc.endoffile(); // send EOF to process
