@@ -82,6 +82,18 @@ libaspsolver_la_SOURCES = \
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,
+# So, libtool library versions are described by three integers:
+# current
+#     The most recent interface number that this library implements.
+# revision
+#     The implementation number of the current interface.
+# age
+#     The difference between the newest and oldest interfaces that this
+#     library implements. In other words, the library implements all the
+#     interface numbers in the range from number current - age to current. 
+# If two libraries have identical current and age numbers, then the dynamic
+# linker chooses the library with the greater revision number. 
+#
 # the USENIX paper `Library Interface Versioning in Solaris and Linux'
 # <http://www.usenix.org/publications/library/proceedings/als00/2000papers/papers/full_papers/browndavid/browndavid.pdf>,
 # and for library incompatibilities, see
