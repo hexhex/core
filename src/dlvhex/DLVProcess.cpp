@@ -61,21 +61,7 @@ DLVProcess::~DLVProcess()
   delete ipipe;
 }
 
-namespace
-{
-  class DLVFOParser: public DLVresultParserDriver
-  {
-    DLVFOParser(): DLVresultParserDriver(FirstOrder) { }
-    virtual ~DLVFOParser() {}
-  };
-
-  class DLVHOParser: public DLVresultParserDriver
-  {
-    DLVHOParser(): DLVresultParserDriver(HO) { }
-    virtual ~DLVHOParser() {}
-  };
-}
-
+/*
 BaseASPSolver*
 DLVProcess::createSolver(bool higherOrder)
 {
@@ -88,6 +74,7 @@ DLVProcess::createSolver(bool higherOrder)
       return new ASPSolver<DLVPrintVisitor, DLVFOParser>(*this);
     }
 }
+*/
 
 
 void
@@ -114,6 +101,7 @@ DLVProcess::commandline() const
   tmp.push_back("-nofacts");
   tmp.push_back("-silent");
   tmp.insert(tmp.end(), argv.begin(), argv.end());
+  /// @todo: how about the ASPFileSolver - is the final -- then ignored?
   tmp.push_back("--"); // request stdin as last parameter!
 
   return tmp;

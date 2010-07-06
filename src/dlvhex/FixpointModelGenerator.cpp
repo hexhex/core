@@ -98,9 +98,6 @@ FixpointModelGenerator::compute(const Program& program,
 
   models.clear();
   
-  // get a new ASP Solver
-  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
-
   std::vector<AtomSet> answersets;
     
 
@@ -179,7 +176,7 @@ FixpointModelGenerator::compute(const Program& program,
       try
         {
 	  answersets.clear();
-	  solver->solve(program, edb, answersets);
+	  ASPSolverManager::Instance().solve(program, edb, answersets);
         }
       catch (GeneralError&)
         {

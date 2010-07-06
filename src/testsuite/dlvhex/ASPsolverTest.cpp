@@ -61,14 +61,13 @@ ASPsolverTest::tearDown()
 
 void
 ASPsolverTest::testResult()
-{
-    DLVProcess dlv;
+{ 
+    ASPSolverManager& mgr = ASPSolverManager::Instance();
+    typedef ASPSolverManager::DLVSoftware DLVSoftware;
 
     std::vector<AtomSet> answersets;
     std::vector<AtomSet>::const_iterator as;
 
-    std::auto_ptr<BaseASPSolver> solver(dlv.createSolver());
-    
     //
     // empty model: { a :- b }
     //
@@ -80,7 +79,7 @@ ASPsolverTest::testResult()
     b2.insert(new Literal(AtomPtr(new Atom(Tuple(1, Term("b"))))));
     Rule* r2 = new Rule(h2, b2);
     idb2.addRule(r2);
-    CPPUNIT_ASSERT_NO_THROW(solver->solve(idb2, edb2, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -94,7 +93,7 @@ ASPsolverTest::testResult()
     Tuple t1;
     edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")))));
     edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")), true)));
-    CPPUNIT_ASSERT_NO_THROW(solver->solve(idb1, edb1, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb1, edb1, answersets));
     CPPUNIT_ASSERT(answersets.size() == 0);
     answersets.clear();
     
@@ -102,7 +101,7 @@ ASPsolverTest::testResult()
     // single model: { b, a :- b }
     //
     edb2.insert(AtomPtr(new Atom(Tuple(1, Term("b")))));
-    CPPUNIT_ASSERT_NO_THROW(solver->solve(idb2, edb2, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 1);
@@ -140,7 +139,7 @@ ASPsolverTest::testResult()
     t34.push_back(Term("s"));
     t34.push_back(Term("a"));
     edb3.insert(AtomPtr(new Atom(t34)));
-    CPPUNIT_ASSERT_NO_THROW(solver->solve(idb3, edb3, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb3, edb3, answersets));
     CPPUNIT_ASSERT(answersets.size() == 2);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 1);
@@ -159,7 +158,7 @@ ASPsolverTest::testResult()
     edb4.insert(AtomPtr(new Atom(t4)));
 
     // b should not be in the result then!
-    CPPUNIT_ASSERT_NO_THROW(solver->solve(idb4, edb4, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb4, edb4, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -167,49 +166,19 @@ ASPsolverTest::testResult()
 
 
     //
-    // empty program using hardcoded program options
+    // empty program
     //
-    std::vector<std::string> opt;
-    opt.push_back("-silent");
-    opt.push_back("/dev/null");
-
-    // solve the empty program
-    ASPFileSolver<DLVresultParserDriver> *mysolver = new ASPFileSolver<DLVresultParserDriver>(dlv, opt);
-    CPPUNIT_ASSERT_NO_THROW(mysolver->solve(idb4, edb4, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solveFile<DLVSoftware>("/dev/null", answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
-    answersets.clear();
-
-
-    // this one does the real solving
-    ASPSolver<DLVPrintVisitor,DLVresultParserDriver> *mysolver2 = new ASPSolver<DLVPrintVisitor,DLVresultParserDriver>(dlv);
-
-    // this one solves the empty program and ignores the result
-    DLVDBProcess dlvdb;
-    ASPFileSolver<NullParser> *mysolver3 = new ASPFileSolver<NullParser>(dlvdb, opt);
-
-    ASPSolverComposite c;
-    c.addSolver(mysolver);
-    c.addSolver(mysolver2);
-    c.addSolver(mysolver3);
-
-    CPPUNIT_ASSERT_NO_THROW(c.solve(idb3, edb3, answersets));
-    CPPUNIT_ASSERT(answersets.size() == 3); // we have 3 due to /dev/null
-    as = answersets.begin();
-    CPPUNIT_ASSERT(as->size() == 0); // the first answer set stems from /dev/null
-    ++as;
-    CPPUNIT_ASSERT(as->size() == 1); // the next two from idb3/edb3
-    ++as;
-    CPPUNIT_ASSERT(as->size() == 1);
     answersets.clear();
 
 
 		// read dlv program from string and return result
 		{
 			// single model: { b, a :- b }
-			ASPStringSolver solver(dlv);
-			CPPUNIT_ASSERT_NO_THROW(solver.solve("b. a:-b.", answersets));
+			CPPUNIT_ASSERT_NO_THROW(mgr.solveString<DLVSoftware>("b. a:-b.", answersets));
 			CPPUNIT_ASSERT(answersets.size() == 1);
 			as = answersets.begin();
 			CPPUNIT_ASSERT(as->size() == 1);

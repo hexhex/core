@@ -362,6 +362,12 @@ Atom::isHigherOrder() const
 }
 
 
+BuiltinPredicate::BuiltinPredicate(const Term& t1, const std::string& b)
+{
+	arguments.push_back(Term(b));
+	arguments.push_back(t1);
+}
+
 BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const std::string& b)
 {
 	arguments.push_back(Term(b));
@@ -384,6 +390,23 @@ BuiltinPredicate::accept(BaseVisitor& v) const
   v.visit(this);
 }
 
+bool BuiltinPredicate::isInfix() const
+{
+  switch(getArity())
+  {
+    case 1:
+      // #int is always prefix
+      return false;
+    case 2:
+      if( arguments.front().isSymbol() && arguments.front().getString() == "#succ" )
+        // #succ is always prefix
+        return false;
+      else
+        return true;
+    default:
+      return true;
+  }
+}
 
 DLVHEX_NAMESPACE_END
 

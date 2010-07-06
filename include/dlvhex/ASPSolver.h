@@ -45,137 +45,117 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-/**
- * @brief ASP solver base class.
- */
-class DLVHEX_EXPORT BaseASPSolver
+class ASPSolverManager
 {
- protected:
-  virtual void
-  doSolve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError) = 0;
+public:
+  //
+  // options and solver types
+  //
 
- public:
-  virtual
-  ~BaseASPSolver();
+  // generic options usable for every solver type
+  struct GenericOptions
+  {
+  };
 
-  virtual void
-  solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError);
+  // generic solver software
+  struct SoftwareBase
+  {
+    typedef GenericOptions Options;
+  };
 
-	void setStripHigherOrder(bool);
-	bool getStripHigherOrder() const;
+  // specific solver software DLV
+  struct DLVSoftware:
+    public SoftwareBase
+  {
+    struct Options:
+      public GenericOptions
+    {
+      Options();
 
- protected:
-	bool stripHigherOrder;
-};
+      // whether to rewrite all predicates to allow higher order in DLV
+      bool rewriteHigherOrder;
+      // whether to drop predicates in received answer sets
+      bool dropPredicates;
+    };
+  };
 
+  // specific solver software DLVDB
+  struct DLVDBSoftware:
+    public DLVSoftware
+  {
+    // extend generic options
+    /*
+    struct Options:
+      public DLVSoftware::Options
+    {
+      Options(const std::string& typfile);
 
-/**
- * @brief ASPSolver composite
- */
-class DLVHEX_EXPORT ASPSolverComposite : public BaseASPSolver
-{
-private:
-
-  std::vector<BaseASPSolver*> solvers;
-
-  void
-  doSolve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
-
+      std::string typFile;
+    };
+    */
+  };
 
 public:
+  //
+  // results
+  //
+  /*
+  struct Result
+  {
+    // this is a handle which allows to incrementally retrieve the next answer
+    // set and destroys the solver instance after the last answer set has been
+    // retrieved
+  };
+  */
 
-  ASPSolverComposite();
+public:
+  //
+  // singleton class (we may have a shared pool of solvers later on, and multithreaded access to this pool)
+  //
+  static ASPSolverManager& Instance();
 
-  virtual
-  ~ASPSolverComposite();
-
-  void
-  addSolver(BaseASPSolver* s);
+  //
+  // autodetecting interface:
+  //
   
-};
-
-
-
-/**
- * @brief A debugging parser which ignores the input
- */
-struct NullParser
-{
+  // solve idb/edb and add to result
+  // autodetects higher order in program (-> rewrite HO and parse in HO mode)
   void
-  parse(std::istream&, std::vector<AtomSet>&)
-  { }
-};
-      
- 
+  solve(const Program& idb, const AtomSet& edb, std::vector<AtomSet>& answersets) throw (FatalError);
 
-/**
- * @brief ASP solver class for files
- * @todo ASPFileSolver and ASPStringSolver do not fit the class hierarchy and the solve() function in the base class: think about a unifying solution
- */
-template<typename Parser>
-class DLVHEX_EXPORT ASPFileSolver : public BaseASPSolver
-{
+  // we have no autodetect file solver interface (if we have a file, we know which solver we want to use)
+
+  // we have no autodetect string solver interface (if we have a program, we know which solver we want to use)
+
+  //
+  // solver specific interface:
+  //
+
+  // solve idb/edb using specific solver and add to result
+  // allows to pass settings to the solver
+  template<typename Software>
+  void solve(
+      const Program& idb, const AtomSet& edb, std::vector<AtomSet>& result,
+      const typename Software::Options& options = typename Software::Options()) throw (FatalError);
+
+  // solve string program using specific solver and add to result
+  // allows to pass settings to the solver
+  template<typename Software>
+  void solveString(
+      const std::string& program, std::vector<AtomSet>& result,
+      const typename Software::Options& options = typename Software::Options()) throw (FatalError);
+
+  // solve program in file using specific solver and add to result
+  // allows to pass settings to the solver
+  template<typename Software>
+  void solveFile(
+      const std::string& filename, std::vector<AtomSet>& result,
+      const typename Software::Options& options = typename Software::Options()) throw (FatalError);
+
 private:
-  Process& proc;
-
-  std::vector<std::string> options;
-
-  void
-  doSolve(const Program& p, const AtomSet& s, std::vector<AtomSet>& as) throw (FatalError);
-
-
-public:
-
-  ASPFileSolver(Process& p, const std::vector<std::string>& o);
-
+  // singleton -> instantiate using Instance()
+  ASPSolverManager();
 };
-
-
-/**
- * @brief Templatetized ASP solver class.
- */
-template<typename Builder, typename Parser>
-class DLVHEX_EXPORT ASPSolver : public BaseASPSolver
-{
-private:
-  Process& proc;
-
-  /**
-   * @brief Calls the answer set solver with a program.
-   * 
-   * @param prg The actual program.
-   * @param facts The set of facts.
-   * @param answersets list of answer sets.
-   */
-  void
-  doSolve(const Program& prg, const AtomSet& facts, std::vector<AtomSet>& answersets) throw (FatalError);
-
-public:
-  /// Ctor.
-  ASPSolver(Process& p);
-
-};
-
-/**
- * @brief ASP solver which does not require files nor parsed Program/AtomSet.
- * @todo ASPFileSolver and ASPStringSolver do not fit the class hierarchy and the solve() function in the base class: think about a unifying solution
- */
-class DLVHEX_EXPORT ASPStringSolver
-{
-private:
-  Process& proc;
-
-public:
-  ASPStringSolver(Process& proc);
-
-  virtual
-  ~ASPStringSolver();
-
-  //! give a DLV program as a string to this function and it returns the answer sets (or throws)
-  virtual void
-  solve(const std::string& inputProgram, std::vector<AtomSet>& outputAnswersets) throw (FatalError);
-};
-
 
 DLVHEX_NAMESPACE_END
 

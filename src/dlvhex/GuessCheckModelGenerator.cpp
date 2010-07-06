@@ -222,9 +222,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
     }
 
 
-  // create a new ASP solver
-  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
-
   std::vector<AtomSet> allguesses;
 	
   //
@@ -232,7 +229,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
   //
   try
     {
-      solver->solve(guessingrules, I, allguesses);
+      ASPSolverManager::Instance().solve(guessingrules, I, allguesses);
     }
   catch (FatalError&)
     {
@@ -438,7 +435,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	  std::vector<AtomSet> reductanswers;
 	  
-	  solver->solve(bodyPicker, *guess, reductanswers);
+	  ASPSolverManager::Instance().solve(bodyPicker, *guess, reductanswers);
 
 	  // the program must be a satisfiable & stratified!
 	  assert(reductanswers.size() == 1);
@@ -507,7 +504,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  //
 	  // 5)
 	  //
-	  solver->solve(flpreduced, reducedEDB, reductanswers2);
+	  ASPSolverManager::Instance().solve(flpreduced, reducedEDB, reductanswers2);
 
 	  assert(reductanswers2.size() == 1);
 			

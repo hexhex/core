@@ -179,6 +179,16 @@ SafetyChecker::operator() () const throw (SyntaxError)
 			  safevars.insert(bodyarg[1]);
 			}
 		    }
+                  else if( pred == Term("#int") || pred == Term("#succ") )
+                  {
+                    for (Tuple::const_iterator ordit = bodyarg.begin(); ordit != bodyarg.end(); ++ordit)
+                      {
+                        if (ordit->isVariable())
+                          {
+                            safevars.insert(*ordit);
+                          }
+                      }
+                  }
 		}
 	      else // Atom or AggregateAtom?????
 		{

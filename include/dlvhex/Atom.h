@@ -381,9 +381,11 @@ public:
 class DLVHEX_EXPORT BuiltinPredicate : public Atom
 {
 public:
-	// binary predicate
+	// unary predicate (#int)
+	BuiltinPredicate(const Term&, const std::string&);
+	// binary predicate (#succ, ==, !=, <, ...)
 	BuiltinPredicate(const Term&, const Term&, const std::string&);
-	// ternary predicate
+	// ternary predicate (+, *)
 	BuiltinPredicate(const Term&, const Term&, const Term&, const std::string&);
 
 	/**
@@ -391,6 +393,11 @@ public:
 	 */
 	virtual void
 	accept(BaseVisitor&) const;
+
+  /**
+   * Whether this builtin is usually in infix notation
+   */
+  bool isInfix() const;
 };
 
 

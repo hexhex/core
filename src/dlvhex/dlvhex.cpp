@@ -64,7 +64,6 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
-#include "dlvhex/DLVProcess.h"
 #include "dlvhex/Benchmarking.h"
 
 #include <getopt.h>
@@ -352,6 +351,7 @@ main (int argc, char *argv[])
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
   Globals::Instance()->setOption("UseExtAtomCache",1);
+  Globals::Instance()->setOption("UseSolverSoftware",0); // 0 = dlv
 
   // options only used here in main():
   bool optionPipe = false;
@@ -483,7 +483,7 @@ main (int argc, char *argv[])
 	      if (solver == "dlvdb")
 		{
 #if defined(HAVE_DLVDB)
-		  pctx.setProcess(new DLVDBProcess);
+		  Globals::Instance()->setOption("UseSolverSoftware",1); // 1 = dlvdb
 #else
 		  printLogo();
 		  std::cerr << "The command line option ``--solver=dlvdb´´ "
@@ -495,7 +495,7 @@ main (int argc, char *argv[])
 		}
 	      else // default is DLV
 		{
-		  pctx.setProcess(new DLVProcess);
+		  Globals::Instance()->setOption("UseSolverSoftware",0); // 0 = dlvdb
 		}
 	      }
 	      break;

@@ -44,171 +44,19 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-
-template<typename Builder, typename Parser>
-ASPSolver<Builder,Parser>::ASPSolver(Process& p)
-  : proc(p)
-{ }
-
-
-template<typename Builder, typename Parser>
-void
-ASPSolver<Builder,Parser>::doSolve(const Program& prg,
-				   const AtomSet& facts,
-				   std::vector<AtomSet>& as)
-  throw (FatalError)
-{
-  int retcode = -1;
-  
-  try
-    {
-      proc.spawn();
-
-      // send program and facts
-      try
-        {
-	  Builder builder(proc.getOutput());
-		///@todo: this is marked as "temporary hack" in globals.h
-	  if( !Globals::Instance()->maxint.empty() )
-	    proc.getOutput() << Globals::Instance()->maxint << std::endl;
-	  const_cast<Program&>(prg).accept(builder);
-	  const_cast<AtomSet&>(facts).accept(builder);
-	}
-      catch (std::ios_base::failure& e)
-        {
-	  std::stringstream errstr1;
-	  std::stringstream errstr2;
-
-	  errstr2 << proc.path() << " error message:" << std::endl;
-
-	  std::istream& inp = proc.getInput();
-	  std::string s;
-
-	  while (inp.good() && std::getline(inp, s))
-	    {
-	      errstr2 << s << std::endl;
-	    }
-
-	  // now get the exit code of the process
-	  retcode = proc.close();
-	     
-	  errstr1 << "Received an error while sending a program to " << proc.path() 
-		 << " (exitcode = " << retcode << "): "
-		 << e.what();
-
-	  throw FatalError(errstr1.str() + errstr2.str());
-        }
-      
-      proc.endoffile(); // send EOF to process
-
-      // parse result
-      Parser parser;
-      parser.parse(proc.getInput(), as);
-      
-      // get exit code of process
-      retcode = proc.close();
-
-    }
-  catch (GeneralError& e)
-    {
-      std::stringstream errstr;
-
-      // get exit code of process
-      if (retcode == -1)
-	{
-	  retcode = proc.close();
-	}
-
-      errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg();
-
-      throw FatalError(errstr.str());
-    }
-  catch (std::exception& e)
-    {
-      throw FatalError(proc.path() + ": " + e.what());
-    }
-
-  // check for errors
-  if (retcode == 127)
-    {
-      throw FatalError("LP solver command `" + proc.path() + "´ not found!");
-    }
-  else if (retcode != 0) // other problem
-    {
-      std::stringstream errstr;
-
-      errstr << "LP solver `" << proc.path() << "´ bailed out with exitcode " << retcode << ": "
-	     << "re-run dlvhex with `strace -f´.";
-
-      throw FatalError(errstr.str());
-    }
-}
-
-
-
-template<typename Parser>
-ASPFileSolver<Parser>::ASPFileSolver(Process& p, const std::vector<std::string>& o)
-  : proc(p),
-    options(o)
-{ }
-
-
-template<typename Parser>
-void
-ASPFileSolver<Parser>::doSolve(const Program&, const AtomSet&, std::vector<AtomSet>& as)
-  throw (FatalError)
-{
-  int retcode = -1;
-  
-  try
-    {
-      proc.spawn(options);
-
-      proc.endoffile(); // send EOF to process
-
-      // parse result
-      Parser parser;
-      parser.parse(proc.getInput(), as);
-      
-      // get exit code of process
-      retcode = proc.close();
-    }
-  catch (GeneralError& e)
-    {
-      std::stringstream errstr;
-
-      // get exit code of process
-      if (retcode == -1)
-	{
-	  retcode = proc.close();
-	}
-
-      errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg();
-
-      throw FatalError(errstr.str());
-    }
-  catch (std::exception& e)
-    {
-      throw FatalError(proc.path() + ": " + e.what());
-    }
-
-  // check for errors
-  if (retcode == 127)
-    {
-      throw FatalError("LP solver command `" + proc.path() + "´ not found!");
-    }
-  else if (retcode != 0) // other problem
-    {
-      std::stringstream errstr;
-
-      errstr << "LP solver `" << proc.path() << "´ bailed out with exitcode " << retcode << ": "
-	     << "re-run dlvhex with `strace -f´.";
-
-      throw FatalError(errstr.str());
-    }
-}
-
-
+// DLV specialization
+template<>
+void ASPSolverManager::solve<ASPSolverManager::DLVSoftware>(
+    const Program& idb, const AtomSet& edb, std::vector<AtomSet>& result,
+    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
+template<>
+void ASPSolverManager::solveString<ASPSolverManager::DLVSoftware>(
+    const std::string& program, std::vector<AtomSet>& result,
+    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
+template<>
+void ASPSolverManager::solveFile<ASPSolverManager::DLVSoftware>(
+    const std::string& filename, std::vector<AtomSet>& result,
+    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
 
 DLVHEX_NAMESPACE_END
 

@@ -308,16 +308,18 @@ AtomPtr HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& nod
           createTermFromTerm(child.children[2]),
           createStringFromNode(child.children[1])));
   case HexGrammar::BuiltinOther:
-    {
-      // #int/1, #succ/2
-      Tuple t;
-      t.push_back(createTermFromTerm(child.children[2]));
-      if( child.children.size() == 6 )
-        t.push_back(createTermFromTerm(child.children[4]));
-      AtomPtr at(new Atom(
-          createStringFromNode(child.children[0]), t));
-      return at;
-    }
+    if( child.children.size() == 6 )
+      // #succ/2
+      return AtomPtr(new BuiltinPredicate(
+        createTermFromTerm(child.children[2]),
+        createTermFromTerm(child.children[4]),
+        createStringFromNode(child.children[0])));
+    else
+      // #int/1
+      return AtomPtr(new BuiltinPredicate(
+        createTermFromTerm(child.children[2]),
+        createStringFromNode(child.children[0])));
+
   default:
     assert(false && "encountered unknown node in createBuiltinPredFromBuiltinPred!");
     return AtomPtr(); // keep the compiler happy
