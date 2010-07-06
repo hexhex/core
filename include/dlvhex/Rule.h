@@ -144,6 +144,12 @@ public:
 	isHigherOrder() const;
 
 	/**
+	 * Whether any aggregate atom is present in the rule
+	 */
+	bool
+	hasAggregateAtoms() const;
+
+	/**
 	 * @brief Test for equality.
 	 *
 	 * Two rules are equal, if they contain the same atoms in the body and the head.

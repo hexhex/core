@@ -62,6 +62,17 @@ BaseASPSolver::solve(const Program& p, const AtomSet& s, std::vector<AtomSet>& a
   doSolve(p, s, as);
 }
 
+void
+BaseASPSolver::setStripHigherOrder(bool value)
+{
+    stripHigherOrder = value;
+}
+
+bool
+BaseASPSolver::getStripHigherOrder() const
+{
+    return stripHigherOrder;
+}
 
 ASPSolverComposite::ASPSolverComposite()
   : solvers()
@@ -116,8 +127,9 @@ ASPStringSolver::solve(const std::string& input, std::vector<AtomSet>& as) throw
       proc.getOutput() << input << std::endl;
       proc.endoffile();
 
-      // parse result (never drop predicates!)
-      DLVresultParserDriver parser(DLVresultParserDriver::FirstOrder);
+      // parse result
+      DLVresultParserDriver parser(
+	      stripHigherOrder?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
       parser.parse(proc.getInput(), as);
       
       // get exit code of process

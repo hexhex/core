@@ -309,13 +309,13 @@ AtomPtr HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& nod
           createStringFromNode(child.children[1])));
   case HexGrammar::BuiltinOther:
     {
+      // #int/1, #succ/2
       Tuple t;
       t.push_back(createTermFromTerm(child.children[2]));
       if( child.children.size() == 6 )
         t.push_back(createTermFromTerm(child.children[4]));
       AtomPtr at(new Atom(
           createStringFromNode(child.children[0]), t));
-      at->setAlwaysFO();
       return at;
     }
   default:

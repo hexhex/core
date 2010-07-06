@@ -77,7 +77,7 @@ namespace phoenix = boost::phoenix;
 
 DLVHEX_NAMESPACE_BEGIN
 
-DLVresultParserDriver::DLVresultParserDriver() : pMode(AUTO)
+DLVresultParserDriver::DLVresultParserDriver() : pMode(FirstOrder)
 {
 }
 
@@ -323,14 +323,7 @@ DLVresultParserDriver::parse(std::istream& is,
       "Got Result:\n===\n" << input << "\n===" << std::endl;
   }
 
-	//   if higher-order mode is explicitly requested (pType == HO), or the mode is AUTO and the current instance runs in HO mode,
-	//       we will just take the arguments of the atom (and drop it's predicate), i.e. "a_i(p, ...)" is transformed into "p(...)"
-	//   otherwise we interpret it as first-order atom and take it as it is (including the predicate name)
-	TODO make bool flag for parser to control this behavior
 	bool dropPredicates =
-		(pMode == DLVresultParserDriver::AUTO &&
-		 Globals::Instance()->getOption("NoPredicate"))
-		||
 		(pMode == DLVresultParserDriver::HO);
 	ParserState state(result, dropPredicates);
 

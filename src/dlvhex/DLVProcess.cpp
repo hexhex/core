@@ -61,18 +61,31 @@ DLVProcess::~DLVProcess()
   delete ipipe;
 }
 
+namespace
+{
+  class DLVFOParser: public DLVresultParserDriver
+  {
+    DLVFOParser(): DLVresultParserDriver(FirstOrder) { }
+    virtual ~DLVFOParser() {}
+  };
+
+  class DLVHOParser: public DLVresultParserDriver
+  {
+    DLVHOParser(): DLVresultParserDriver(HO) { }
+    virtual ~DLVHOParser() {}
+  };
+}
 
 BaseASPSolver*
-DLVProcess::createSolver()
+DLVProcess::createSolver(bool higherOrder)
 {
-  TODO treat this by adding bool flag?
-  if (Globals::Instance()->getOption("NoPredicate"))
+  if( higherOrder)
     {
-      return new ASPSolver<HOPrintVisitor, DLVresultParserDriver>(*this);
+      return new ASPSolver<HOPrintVisitor, DLVHOParser>(*this);
     }
   else
     {
-      return new ASPSolver<DLVPrintVisitor, DLVresultParserDriver>(*this);
+      return new ASPSolver<DLVPrintVisitor, DLVFOParser>(*this);
     }
 }
 

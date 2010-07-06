@@ -215,6 +215,8 @@ ASPsolverTest::testResult()
 			CPPUNIT_ASSERT(as->size() == 1);
 			answersets.clear();
 		}
+
+		/// @todo: add test for higher order solver
 }
 
 DLVHEX_NAMESPACE_END

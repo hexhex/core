@@ -326,8 +326,9 @@ HOPrintVisitor::HOPrintVisitor(std::ostream& s)
 void
 HOPrintVisitor::visit(const Atom* const a)
 {
-  if (a->getAlwaysFO()) // FO mode is always raw
+  if( !!dynamic_cast<const BuiltinPredicate* const>(a) )
     {
+			// builtin predicates are not higher-order-i-fied (#int/1, #succ/2, +/3, ...)
       RawPrintVisitor v(stream);
       a->accept(v);
     }

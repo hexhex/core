@@ -61,6 +61,11 @@ class DLVHEX_EXPORT BaseASPSolver
   virtual void
   solve(const Program&, const AtomSet&, std::vector<AtomSet>&) throw (FatalError);
 
+	void setStripHigherOrder(bool);
+	bool getStripHigherOrder() const;
+
+ protected:
+	bool stripHigherOrder;
 };
 
 
@@ -154,7 +159,6 @@ public:
 /**
  * @brief ASP solver which does not require files nor parsed Program/AtomSet.
  * @todo ASPFileSolver and ASPStringSolver do not fit the class hierarchy and the solve() function in the base class: think about a unifying solution
- * @todo all these solvers automatically drop predicates of atoms per default, this should be changed to a sensible default and should be configurable, if someone wants to use ASPSolver for some purpose where automatically dropping predicates is not desired
  */
 class DLVHEX_EXPORT ASPStringSolver
 {

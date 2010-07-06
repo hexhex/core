@@ -52,10 +52,10 @@ DLVHEX_NAMESPACE_BEGIN
  * elsewhere as AtomSet.
  * @todo higher order vs first order:
  * @done a) program knows whether HO or FO parsing/generation
- * @todo b) DLVresultParser and *OutputBuilder no longer decide with globals.h whether it is HO or FO
- * @todo    instead they have some setting in constructor
+ * @done b) DLVresultParser and *OutputBuilder no longer decide with globals.h whether it is HO or FO
+ * @done    instead they have some setting in constructor
  * @done c) Program class stores whether HO or FO program is stored (rule should know whether it is HO)
- * @todo d) --firstorder parameter no longer used (ignored with warning message) and removed from globals.h
+ * @done d) --firstorder parameter no longer used (ignored with warning message) and removed from globals.h
  * @todo e) ASP*Solver classes can decide whether to use HO or FO (default = do not throw away things)
  */
 class DLVHEX_EXPORT Program : public ProgramObject
@@ -258,6 +258,11 @@ public:
 	virtual void
 	accept(BaseVisitor&) const;
 
+	/**
+	 * Returns whether the program contains higher order atoms.
+	 */
+	bool isHigherOrder() const { return higherOrder; }
+
  private:
 
 	/**
@@ -279,6 +284,11 @@ public:
 	 * Whether the program contains higher order atoms.
 	 */
 	bool higherOrder;
+
+	/**
+	 * Whether the program contains aggregate atoms.
+	 */
+	bool aggregateAtoms;
 };
 
 DLVHEX_NAMESPACE_END

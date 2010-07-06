@@ -36,10 +36,12 @@
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
+#include "dlvhex/AggregateAtom.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Error.h"
 
+#include <boost/foreach.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -162,6 +164,21 @@ Rule::isHigherOrder() const
 	BOOST_FOREACH(Literal* bodyitem, body)
 	{
 		if( bodyitem->isHigherOrder() )
+			return true;
+	}
+
+	return false;
+}
+
+bool
+Rule::hasAggregateAtoms() const
+{
+	BOOST_FOREACH(Literal* bodyitem, body)
+	{
+		AggregateAtomPtr ptr =
+			boost::dynamic_pointer_cast<AggregateAtom>(
+					bodyitem->getAtom());
+		if( ptr != 0 )
 			return true;
 	}
 
