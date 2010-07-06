@@ -185,6 +185,18 @@ ASPsolverTest::testResult()
 			answersets.clear();
 		}
 
+#if defined(HAVE_DLVDB)
+		// same with dlvdb: read dlv program from string and return result
+		{
+			// single model: { b, a :- b }
+			CPPUNIT_ASSERT_NO_THROW(mgr.solveString<DLVDBSoftware>("b. a:-b.", answersets));
+			CPPUNIT_ASSERT(answersets.size() == 1);
+			as = answersets.begin();
+			CPPUNIT_ASSERT(as->size() == 1);
+			answersets.clear();
+		}
+#endif
+
 		/// @todo: add test for higher order solver
 }
 

@@ -57,56 +57,90 @@ public:
   {
   };
 
+  // base class for solver delegates
+  // (a delegate encapsulates the method of calling a specific ASP solver and retrieving the result)
+  template<typename O>
+  struct DelegateBase
+  {
+    typedef O Options;
+
+    DelegateBase(const Options& options): options(options) {}
+    virtual ~DelegateBase() {}
+
+    virtual void useASTInput(const Program& idb, const AtomSet& edb) = 0;
+    virtual void useStringInput(const std::string& program) = 0;
+    virtual void useFileInput(const std::string& fileName) = 0;
+    virtual void getOutput(std::vector<AtomSet>& result) = 0;
+
+    const Options& options;
+  };
+
   // generic solver software
   struct SoftwareBase
   {
     typedef GenericOptions Options;
+
+  private:
+    // this class and all subclasses are never to be used as instances
+    SoftwareBase();
   };
 
-  // specific solver software DLV
-  struct DLVSoftware:
+  // DLV type softwares
+  struct DLVTypeSoftware:
     public SoftwareBase
   {
+    // the options for DLVSoftware
     struct Options:
       public GenericOptions
     {
       Options();
+      virtual ~Options();
 
       // whether to rewrite all predicates to allow higher order in DLV
       bool rewriteHigherOrder;
       // whether to drop predicates in received answer sets
       bool dropPredicates;
     };
+
+    // the delegate for DLVSoftware
+    struct Delegate: public DelegateBase<Options>
+    {
+      Delegate(const Options& options, Process* proc);
+      virtual ~Delegate();
+      void useASTInput(const Program& idb, const AtomSet& edb);
+      void useStringInput(const std::string& program);
+      void useFileInput(const std::string& fileName);
+      void getOutput(std::vector<AtomSet>& result);
+      Process* proc;
+    };
   };
 
+  // specific solver software DLV
+  struct DLVSoftware:
+    public DLVTypeSoftware
+  {
+    // use same options
+
+    // inherit DLV delegate
+    struct Delegate: public DLVTypeSoftware::Delegate
+    {
+      Delegate(const Options& options);
+      virtual ~Delegate();
+    };
+  };
   // specific solver software DLVDB
   struct DLVDBSoftware:
-    public DLVSoftware
+    public DLVTypeSoftware
   {
-    // extend generic options
-    /*
-    struct Options:
-      public DLVSoftware::Options
+    // use same options
+
+    // inherit DLV delegate
+    struct Delegate: public DLVTypeSoftware::Delegate
     {
-      Options(const std::string& typfile);
-
-      std::string typFile;
+      Delegate(const Options& options);
+      virtual ~Delegate();
     };
-    */
   };
-
-public:
-  //
-  // results
-  //
-  /*
-  struct Result
-  {
-    // this is a handle which allows to incrementally retrieve the next answer
-    // set and destroys the solver instance after the last answer set has been
-    // retrieved
-  };
-  */
 
 public:
   //

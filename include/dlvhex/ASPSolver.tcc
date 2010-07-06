@@ -34,29 +34,40 @@
 #if !defined(_DLVHEX_ASPSOLVER_TCC)
 #define _DLVHEX_ASPSOLVER_TCC
 
-#include "dlvhex/Error.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomSet.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/Benchmarking.h"
-
-#include <sstream>
-
 DLVHEX_NAMESPACE_BEGIN
 
-// DLV specialization
-template<>
-void ASPSolverManager::solve<ASPSolverManager::DLVSoftware>(
+// instantiate the delegates which are identified by the software
+// use the delegates to process
+
+template<typename Software>
+void ASPSolverManager::solve(
     const Program& idb, const AtomSet& edb, std::vector<AtomSet>& result,
-    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
-template<>
-void ASPSolverManager::solveString<ASPSolverManager::DLVSoftware>(
+    const typename Software::Options& options) throw (FatalError)
+{
+  typename Software::Delegate delegate(options);
+  delegate.useASTInput(idb, edb);
+  delegate.getOutput(result);
+}
+
+template<typename Software>
+void ASPSolverManager::solveString(
     const std::string& program, std::vector<AtomSet>& result,
-    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
-template<>
-void ASPSolverManager::solveFile<ASPSolverManager::DLVSoftware>(
+    const typename Software::Options& options) throw (FatalError)
+{
+  typename Software::Delegate delegate(options);
+  delegate.useStringInput(program);
+  delegate.getOutput(result);
+}
+
+template<typename Software>
+void ASPSolverManager::solveFile(
     const std::string& filename, std::vector<AtomSet>& result,
-    const ASPSolverManager::DLVSoftware::Options& options) throw (FatalError);
+    const typename Software::Options& options) throw (FatalError)
+{
+  typename Software::Delegate delegate(options);
+  delegate.useFileInput(filename);
+  delegate.getOutput(result);
+}
 
 DLVHEX_NAMESPACE_END
 

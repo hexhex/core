@@ -263,6 +263,11 @@ public:
 	 */
 	bool isHigherOrder() const { return higherOrder; }
 
+	/**
+	 * Returns whether the program contains aggregate atoms.
+	 */
+	bool hasAggregateAtoms() const { return aggregateAtoms; }
+
  private:
 
 	/**

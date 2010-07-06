@@ -57,11 +57,6 @@ Program::addRule(Rule* r)
 	externalAtoms.insert(externalAtoms.end(),
 			r->getExternalAtoms().begin(),
 			r->getExternalAtoms().end());
-
-	// in higher-order mode we cannot have aggregates, because then they would
-	// almost certainly be recursive, because of our atom-rewriting!
-	if( higherOrder && aggregateAtoms )
-		throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
 }
 
 
@@ -109,11 +104,6 @@ Program::addWeakConstraint(WeakConstraint* wc)
 	externalAtoms.insert(externalAtoms.end(),
 			wc->getExternalAtoms().begin(),
 			wc->getExternalAtoms().end());
-
-	// in higher-order mode we cannot have aggregates, because then they would
-	// almost certainly be recursive, because of our atom-rewriting!
-	if( higherOrder && aggregateAtoms )
-		throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
 }
 
 
