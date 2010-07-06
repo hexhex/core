@@ -49,6 +49,7 @@
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/AtomSet.h"
 
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit

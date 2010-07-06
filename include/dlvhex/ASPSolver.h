@@ -35,15 +35,16 @@
 #define _DLVHEX_ASPSOLVER_H
 
 
-#include "dlvhex/AtomSet.h"
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/Process.h"
 
 #include <vector>
 
-#include "dlvhex/PlatformDefinitions.h"
-
 DLVHEX_NAMESPACE_BEGIN
+
+class Program;
+class AtomSet;
+class Process;
 
 class ASPSolverManager
 {
