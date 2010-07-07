@@ -95,6 +95,10 @@ public:
 	bool
 	isNAF() const;
 
+	/**
+	 * Whether the atom is a higher order atom.
+	 */
+	bool isHigherOrder() const;
 
 	/**
 	 * @brief Test for equality.

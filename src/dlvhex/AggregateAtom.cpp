@@ -49,13 +49,6 @@ AggregateAtom::AggregateAtom(const std::string& aggtype,
       cmpLeft(""),
       cmpRight("")
 {
-    //
-    // in higher-rder mode we cannot have aggregates, because then they would
-    // almost certainly be recursive, because of our atom-rewriting!
-    //
-    if (Globals::Instance()->getOption("NoPredicate"))
-        throw SyntaxError("Aggregates only allowed in FO-mode (use --firstorder)");
-
     this->arguments.push_back(Term(""));
 
 //    for (Tuple::const_iterator t = vars.begin(); t != vars.end(); ++t)

@@ -35,32 +35,28 @@
 
 
 #include "dlvhex/Program.h"
+#include "dlvhex/Error.h"
 #include "dlvhex/BaseVisitor.h"
+
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-Program::Program()
+Program::Program():
+	higherOrder(false), aggregateAtoms(false)
 {
 }
-
 
 void
 Program::addRule(Rule* r)
 {
 	rules.insert(r);
 
-	//
-	// store the rule's external atoms also separately
-	//
-	for (RuleBody_t::const_iterator bi = r->getBody().begin();
-			bi != r->getBody().end();
-			++bi)
-	{
-	  if (typeid(*(*bi)->getAtom()) == typeid(ExternalAtom))
-	    {
-	      externalAtoms.push_back(static_cast<ExternalAtom*>((*bi)->getAtom().get()));
-	    }
-	}
+	higherOrder |= r->isHigherOrder();
+	aggregateAtoms |= r->hasAggregateAtoms();
+	externalAtoms.insert(externalAtoms.end(),
+			r->getExternalAtoms().begin(),
+			r->getExternalAtoms().end());
 }
 
 
@@ -68,6 +64,29 @@ void
 Program::deleteRule(iterator i)
 {
 	rules.erase(i.it);
+
+	/// @todo: if this is used often, we have a problem: we have to check all rules for higher order-ness (we should instead have 'deleteRules(set<iterator>)' or something similar) (this method is only used by plugins)
+
+	higherOrder = false;
+	aggregateAtoms = false;
+	externalAtoms.clear();
+
+	BOOST_FOREACH(Rule* rule, rules)
+	{
+		higherOrder |= rule->isHigherOrder();
+		aggregateAtoms |= rule->hasAggregateAtoms();
+		externalAtoms.insert(externalAtoms.end(),
+				rule->getExternalAtoms().begin(),
+				rule->getExternalAtoms().end());
+	}
+	BOOST_FOREACH(WeakConstraint* wc, weakConstraints)
+	{
+		higherOrder |= wc->isHigherOrder();
+		aggregateAtoms |= wc->hasAggregateAtoms();
+		externalAtoms.insert(externalAtoms.end(),
+				wc->getExternalAtoms().begin(),
+				wc->getExternalAtoms().end());
+	}
 }
 
 
@@ -77,8 +96,14 @@ Program::addWeakConstraint(WeakConstraint* wc)
 	///@todo don't add the same wc twice!
 
 	rules.insert(wc);
-
 	weakConstraints.push_back(wc);
+
+	///@todo added 'externalAtoms.insert' because it was missing, not sure if this introduces a bug
+	higherOrder |= wc->isHigherOrder();
+	aggregateAtoms |= wc->hasAggregateAtoms();
+	externalAtoms.insert(externalAtoms.end(),
+			wc->getExternalAtoms().begin(),
+			wc->getExternalAtoms().end());
 }
 
 
