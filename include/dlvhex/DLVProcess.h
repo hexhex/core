@@ -48,10 +48,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declaration
-class BaseASPSolver;
-
-
 /**
  * @brief A wrapper process for the DLV ASP engine.
  */
@@ -77,12 +73,6 @@ class DLVHEX_EXPORT DLVProcess : public Process
 
   virtual
   ~DLVProcess();
-
-  /**
-   * @return a new BaseASPSolver
-   */
-  virtual BaseASPSolver*
-  createSolver();
 
   virtual void
   addOption(const std::string&);

@@ -61,21 +61,6 @@ DLVProcess::~DLVProcess()
   delete ipipe;
 }
 
-
-BaseASPSolver*
-DLVProcess::createSolver()
-{
-  if (Globals::Instance()->getOption("NoPredicate"))
-    {
-      return new ASPSolver<HOPrintVisitor, DLVresultParserDriver>(*this);
-    }
-  else
-    {
-      return new ASPSolver<DLVPrintVisitor, DLVresultParserDriver>(*this);
-    }
-}
-
-
 void
 DLVProcess::addOption(const std::string& option)
 {
@@ -96,10 +81,8 @@ DLVProcess::commandline() const
   std::vector<std::string> tmp;
 
   tmp.push_back(path());
-  // never include the set of initial facts in the answer sets
-  tmp.push_back("-nofacts");
-  tmp.push_back("-silent");
   tmp.insert(tmp.end(), argv.begin(), argv.end());
+  /// @todo: how about the ASPFileSolver - is the final -- then ignored?
   tmp.push_back("--"); // request stdin as last parameter!
 
   return tmp;
@@ -197,6 +180,8 @@ DLVDBProcess::DLVDBProcess()
 { }
 
 
+///@todo: perhaps we should have one process class, and configure it with path to binary and arguments from the outside (i.e., from some Software class in ASPSolver.h
+
 std::string
 DLVDBProcess::path() const
 {
@@ -217,9 +202,6 @@ DLVDBProcess::commandline() const
   tmp.push_back(path());
   tmp.push_back("-DBSupport"); // turn on database support
   tmp.push_back("-ORdr-"); // turn on rewriting of false body rules
-  // never include the set of initial facts in the answer sets
-  tmp.push_back("-nofacts");
-  tmp.push_back("-silent");
   tmp.insert(tmp.end(), argv.begin(), argv.end());
   tmp.push_back("--"); // request stdin as last parameter!
 

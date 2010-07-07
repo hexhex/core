@@ -83,8 +83,6 @@ class DLVHEX_EXPORT ProgramCtx
   NodeGraph* nodegraph;
   DependencyGraph* depgraph;
 
-  Process* solver;
-
   ResultContainer* result;
 
   OutputBuilder* outputbuilder;
@@ -155,13 +153,6 @@ class DLVHEX_EXPORT ProgramCtx
 
   void
   setDependencyGraph(DependencyGraph*);
-
-
-  Process*
-  getProcess() const;
-
-  void
-  setProcess(Process*);
 
 
   ResultContainer*
