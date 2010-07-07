@@ -96,19 +96,17 @@ OrdinaryModelGenerator::compute(const Program& program,
 
   models.clear();
 
-  ///
-  /// @todo: we don't get any extatom-replacement predicates in the
-  /// result - the asp solver result parser would throw them away (ho)
-  /// and so we couldn't get rid of them any more. this is why we have
-  /// to add the input edb below again!
-  ///
-  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
-
   std::vector<AtomSet> answersets;
 
   try
     {
-      solver->solve(program, I, answersets);
+      ///
+      /// @todo: we don't get any extatom-replacement predicates in the
+      /// result - the asp solver result parser would throw them away (ho)
+      /// and so we couldn't get rid of them any more. this is why we have
+      /// to add the input edb below again!
+      ///
+      ASPSolverManager::Instance().solve(program, I, answersets);
     }
   catch (GeneralError&)
     {
