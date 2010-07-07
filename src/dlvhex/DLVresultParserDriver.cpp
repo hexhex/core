@@ -77,7 +77,7 @@ namespace phoenix = boost::phoenix;
 
 DLVHEX_NAMESPACE_BEGIN
 
-DLVresultParserDriver::DLVresultParserDriver() : pMode(AUTO)
+DLVresultParserDriver::DLVresultParserDriver() : pMode(FirstOrder)
 {
 }
 
@@ -271,20 +271,28 @@ struct DLVResultGrammar:
 		answerset
 			= (lit('{') >> '}') [ handle_new_answerset(state) ]
 			| (lit('{') [ handle_new_answerset(state) ] > fact > *(',' > fact) > '}');
+    /// @todo: do not throw away weak answer set information but store it
+    costline
+      = lit("Cost") > +(ascii::alnum|char_("[]<>():"));
 		answersets
 			// end_p enforces a "full" match (in case of success) even with trailing newlines
-			= *answerset > (qi::eol | qi::eoi);
+			= *(
+            (-lit("Best model:") >> answerset)
+            |
+            costline
+         ) > (qi::eol | qi::eoi);
 
     #ifdef BOOST_SPIRIT_DEBUG
 		BOOST_SPIRIT_DEBUG_NODE(answersets);
 		BOOST_SPIRIT_DEBUG_NODE(answerset);
+		BOOST_SPIRIT_DEBUG_NODE(costline);
 		BOOST_SPIRIT_DEBUG_NODE(fact);
 		BOOST_SPIRIT_DEBUG_NODE(groundterm);
 		BOOST_SPIRIT_DEBUG_NODE(ident);
     #endif
 	}
 
-	qi::rule<Iterator, ascii::space_type>                  answersets, answerset, fact;
+	qi::rule<Iterator, ascii::space_type>                  answersets, answerset, fact, costline;
 	qi::rule<Iterator, dlvhex::Term*(), ascii::space_type> groundterm;
 	qi::rule<Iterator, std::string(), ascii::space_type>   ident;
 	qi::rule<Iterator, PTuple(), ascii::space_type>        params;
@@ -316,13 +324,7 @@ DLVresultParserDriver::parse(std::istream& is,
       "Got Result:\n===\n" << input << "\n===" << std::endl;
   }
 
-	//   if higher-order mode is explicitly requested (pType == HO), or the mode is AUTO and the current instance runs in HO mode,
-	//       we will just take the arguments of the atom (and drop it's predicate), i.e. "a_i(p, ...)" is transformed into "p(...)"
-	//   otherwise we interpret it as first-order atom and take it as it is (including the predicate name)
 	bool dropPredicates =
-		(pMode == DLVresultParserDriver::AUTO &&
-		 Globals::Instance()->getOption("NoPredicate"))
-		||
 		(pMode == DLVresultParserDriver::HO);
 	ParserState state(result, dropPredicates);
 
