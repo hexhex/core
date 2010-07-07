@@ -1,3 +1,62 @@
+2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolver.h: Replaced ASPSolver classes by
+	ASPSolverManager, which has an automatic mode (used by dlvhex) and
+	manual possibilities to select the used solver software and options.
+	This change yielded all the other fixes/changes below.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* include/dlvhex/DLVProcess.h: Decoupled Process from Solver,
+	now a process is created by ASPSolverManager and not by dlvhex itself,
+	and more of the process' properties are configured by the Solver.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Process.h: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* include/dlvhex/Literal.h: Literal, Atom, Rule, and Program now know
+	whether they are Higher Order or not, Program knows whether it contains
+	aggregates (this way the solver software can decide how each combination
+	has to be treated).
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+
+	* include/dlvhex/Atom.h: BuiltinPredicate: new unary constructor
+	(#int was previously stored as Atom with special magic).
+	New possibility to prefer infix vs prefix printing.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+
+	* include/dlvhex/DLVresultParserDriver.h: Defaulting to FirstOrder
+	parse mode, removed autodetect, removed coupling with dlvhex::Globals.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Allowing to parse weak answer
+	sets (returning just as normal answer sets, ignoring the weak information).
+
+	* examples/tertop.hex: Made testcase higher order to ensure 
+	functionality of ternary operators together with higher order.
+	* examples/tests/dlvhextests.test: Removed --firstorder options.
+	* src/dlvhex/dlvhex.cpp: Phasing out --firstorder option.
+	Better (less adhoc) handling of solver software selection.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Using new ASPSolverManager.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise,
+	and added dlvdb testcase.
+
+	* include/dlvhex/SpiritDebugging.h: Added @todo.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+
 2010-07-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/globals.h: Remove dependency on config.h.
