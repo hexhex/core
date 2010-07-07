@@ -253,6 +253,7 @@ ProcessBuf::close()
 
   // obviously we do not want to leave zombies around, so get status
   // code of the process
+  // @todo if close() is called multiple times, we should infinitely hang, is this intended?
   ::waitpid(process, &status, 0);
   process = -1;
 
