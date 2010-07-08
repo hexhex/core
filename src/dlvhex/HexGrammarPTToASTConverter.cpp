@@ -279,6 +279,18 @@ AtomPtr HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 }
 
+namespace
+{
+  std::string normalizeOperator(const std::string& in)
+  {
+    if( in == "==" )
+      return "=";
+    if( in == "<>" )
+      return "!=";
+    return in;
+  }
+}
+
 AtomPtr HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& node)
 {
   assert(node.value.id() == HexGrammar::BuiltinPred);
@@ -301,12 +313,14 @@ AtomPtr HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& nod
     return AtomPtr(new BuiltinPredicate(
           createTermFromTerm(child.children[2]),
           createTermFromTerm(child.children[4]),
-          createStringFromNode(child.children[0])));
+          normalizeOperator(
+            createStringFromNode(child.children[0]))));
   case HexGrammar::BuiltinBinopInfix:
     return AtomPtr(new BuiltinPredicate(
           createTermFromTerm(child.children[0]),
           createTermFromTerm(child.children[2]),
-          createStringFromNode(child.children[1])));
+          normalizeOperator(
+            createStringFromNode(child.children[1]))));
   case HexGrammar::BuiltinOther:
     if( child.children.size() == 6 )
       // #succ/2
