@@ -1,0 +1,7 @@
+#maxint=10.
+
+foo(X,Y,Z) :- +(X,Y,Z).
+bar(X,Y,Z) :- *(X,Y,Z).
+baz(X,Y) :- #succ(X,Y).
+boo(X) :- #int(X).
+

@@ -1,5 +1,12 @@
 2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* examples/tests/dlvhextests.test: Added testcases for recently
+	solved bugs.
+	* examples/equality.hex: Likewise.
+	* examples/tests/equality.out: Likewise.
+	* examples/builtin_safety.hex: Likewise.
+	* examples/tests/builtin_safety.out: Likewise.
+
 	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
 	* src/dlvhex/Atom.cpp: Likewise.
 	* src/dlvhex/SafetyChecker.cpp: Fix +,* safety checking (ticket #13).

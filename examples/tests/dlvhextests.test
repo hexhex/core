@@ -1,3 +1,4 @@
+../builtin_safety.hex builtin_safety.out
 ../simple1.hex simple1.out
 ../weak1.hex weak1.out -a
 ../weak1.hex weak1r.out -ra
@@ -10,6 +11,7 @@
 ../agg2.hex agg2.out
 ../msp.hex msp.out -a
 ../3col.hex 3col.out
+../equality.hex equality.out
 ../extatom1.hex extatom1.out
 ../extatom2.hex extatom2.out
 ../extatom4.hex extatom4.out
