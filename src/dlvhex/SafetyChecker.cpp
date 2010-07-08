@@ -40,6 +40,19 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+namespace
+{
+  std::set<std::string> safeBuiltinPredicates;
+  struct Init {
+    Init() {
+      safeBuiltinPredicates.insert("#int");
+      safeBuiltinPredicates.insert("#succ");
+      safeBuiltinPredicates.insert("*");
+      safeBuiltinPredicates.insert("+");
+    }
+  };
+  Init init;
+}
 
 SafetyCheckerBase::~SafetyCheckerBase()
 { }
@@ -163,8 +176,9 @@ SafetyChecker::operator() () const throw (SyntaxError)
 	      const Tuple& bodyarg = at.getArguments();
 
 	      //
-	      // in case of BuiltinPredicate: only equality with only one
-	      // variable is safe, just like in dlv
+	      // in case of BuiltinPredicate:
+	      // * purely arithmetic predicates are fully safe (#succ, #int, *, +)
+	      // * equality with only one variable is safe, just like in dlv
 	      //
 	      if (typeid(at) == typeid(BuiltinPredicate))
 		{
@@ -179,8 +193,9 @@ SafetyChecker::operator() () const throw (SyntaxError)
 			  safevars.insert(bodyarg[1]);
 			}
 		    }
-                  else if( pred == Term("#int") || pred == Term("#succ") )
+                  else if( safeBuiltinPredicates.count(pred.getString()) != 0 )
                   {
+		    // -> all variables inside are safe
                     for (Tuple::const_iterator ordit = bodyarg.begin(); ordit != bodyarg.end(); ++ordit)
                       {
                         if (ordit->isVariable())
@@ -426,6 +441,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 
 DLVHEX_NAMESPACE_END
 
+// vim:ts=8:noet:sw=2:
 // Local Variables:
 // mode: C++
 // End:

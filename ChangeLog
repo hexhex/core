@@ -2,6 +2,7 @@
 
 	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
 	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Fix +,* safety checking (ticket #13).
 
 2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
