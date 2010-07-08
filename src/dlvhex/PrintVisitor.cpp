@@ -168,15 +168,15 @@ PrintVisitor::visit(const BuiltinPredicate* const bp)
       break;
     case 2:
       if( bp->isInfix() )
-        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << ")";
-      else
         stream << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+      else
+        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << ")";
       break;
     case 3:
       if( bp->isInfix() )
-        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << "," << bp->getArgument(3) << ")";
-      else
         stream << bp->getArgument(3) << "=" << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+      else
+        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << "," << bp->getArgument(3) << ")";
       break;
     default:
       assert(false && "unknown arity in printing BuiltinPredicate");

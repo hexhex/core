@@ -398,7 +398,7 @@ bool BuiltinPredicate::isInfix() const
       // #int is always prefix
       return false;
     case 2:
-      if( arguments.front().isSymbol() && arguments.front().getString() == "#succ" )
+      if( getPredicate() == Term("#succ") )
         // #succ is always prefix
         return false;
       else

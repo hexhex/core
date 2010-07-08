@@ -1,5 +1,10 @@
 2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
+	* src/dlvhex/Atom.cpp: Likewise.
+
+2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
 	* include/dlvhex/ASPSolver.h: Replaced ASPSolver classes by
 	ASPSolverManager, which has an automatic mode (used by dlvhex) and
 	manual possibilities to select the used solver software and options.
