@@ -13,6 +13,7 @@
 	* examples/tests/equality.out: Likewise.
 	* examples/builtin_safety.hex: Likewise.
 	* examples/tests/builtin_safety.out: Likewise.
+	* examples/Makefile.am: Likewise.
 
 	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
 	* src/dlvhex/Atom.cpp: Likewise.
