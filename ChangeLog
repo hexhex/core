@@ -1,4 +1,11 @@
-2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+2010-07-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update dependency description.
+	* MAINTAINER-README: Likewise.
+
+	* NEWS: Update list of user-visible changes.
+
+2010-07-08  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* examples/tests/dlvhextests.test: Added testcases for recently
 	solved bugs.
@@ -9,11 +16,13 @@
 
 	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
 	* src/dlvhex/Atom.cpp: Likewise.
-	* src/dlvhex/SafetyChecker.cpp: Fix +,* safety checking (ticket #13).
+
+	* src/dlvhex/SafetyChecker.cpp: Fix +,* safety checking (ticket #11 #13).
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fix == vs = as well
 	as <> vs != builtin binary operator treatment (ticket #14).
 
-2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+2010-07-07  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/ASPSolver.h: Replaced ASPSolver classes by
 	ASPSolverManager, which has an automatic mode (used by dlvhex) and
@@ -58,7 +67,7 @@
 	* src/dlvhex/DLVresultParserDriver.cpp: Allowing to parse weak answer
 	sets (returning just as normal answer sets, ignoring the weak information).
 
-	* examples/tertop.hex: Made testcase higher order to ensure 
+	* examples/tertop.hex: Made testcase higher order to ensure
 	functionality of ternary operators together with higher order.
 	* examples/tests/dlvhextests.test: Removed --firstorder options.
 	* src/dlvhex/dlvhex.cpp: Phasing out --firstorder option.
