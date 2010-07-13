@@ -1,3 +1,18 @@
+2010-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Makefile.am: Add TestTypes test in testsuite.
+	* configure.ac: Likewise.
+	* testsuite/TestTypes.cpp: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
+	* include/dlvhex/Term.h: Add new primitive types for the new AST.
+	* include/dlvhex/SymbolTable.h: Likewise.
+	* include/dlvhex/AtomTable.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/NamesTable.h: Remove.
+
 2010-07-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update dependency description.
