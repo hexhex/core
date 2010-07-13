@@ -1,5 +1,9 @@
 2010-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/Makefile.am: Remove Atom.cpp and Term.cpp.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/Term.cpp: Likewise.
+
 	* Makefile.am: Add TestTypes test in testsuite.
 	* configure.ac: Likewise.
 	* testsuite/TestTypes.cpp: Likewise.
