@@ -61,9 +61,10 @@ struct Term
 {
   enum Type
     {
-      CONSTANT = 0,
-      INTEGER = 1,
-      VARIABLE = 2
+      SYMBOL = 0,  // dedicated symbol table for term symbols
+      STRING = 2,  // dedicated symbol table for term strings (with namespaces collapsed)
+      INTEGER = 1, // for integers, the id is the value (no symbol table)
+      VARIABLE = 3 // dedicated symbol table for variables
     };
 
   Type type;     /// type of the atom

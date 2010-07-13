@@ -59,10 +59,12 @@ struct Atom
   /// different types of atoms
   enum Type
     {
-      ORDINARY = 0,
-      BUILTIN = 1,
-      AGGREGATE = 2,
-      EXTERNAL = 3
+      ORDINARY = 0,    // dedicated symbol table for ground ordinary atoms, dedicated symbol table for nonground ordinary atoms
+      BUILTIN = 1,     // dedicated symbol table for builtins
+      AGGREGATE = 2,   // dedicated symbol table for aggregates
+      EXTERNAL = 3,    // dedicated symbol table for external atoms
+      GROUND = 0x8000, // only relevant for ORDINARY
+      NEG = 0x4000     // do we want this for strong negation?
     };
 
 
