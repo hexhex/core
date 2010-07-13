@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_CASE( testAtomLiteral )
 {
   Atom at1(Atom::AGGREGATE, 23);
 
-  BOOST_CHECK_EQUAL(at1.type, Atom::AGGREGATE);
-  BOOST_CHECK_EQUAL(at1.id, 23);
+  BOOST_CHECK_EQUAL((Atom::Type)at1.type, Atom::AGGREGATE);
+  BOOST_CHECK_EQUAL(at1.id, (AtomID)23);
 
   Literal l = Literal(at1);
 
@@ -39,8 +39,8 @@ BOOST_AUTO_TEST_CASE( testAtomLiteral )
 
   Atom atnegl(l);
 
-  BOOST_CHECK_EQUAL(atnegl.type, Atom::AGGREGATE);
-  BOOST_CHECK_EQUAL(atnegl.id, 23);
+  BOOST_CHECK_EQUAL((Atom::Type)atnegl.type, Atom::AGGREGATE);
+  BOOST_CHECK_EQUAL(atnegl.id, (AtomID)23);
 
   l = -l;
 
@@ -48,13 +48,13 @@ BOOST_AUTO_TEST_CASE( testAtomLiteral )
 
   Atom atposl(l);
 
-  BOOST_CHECK_EQUAL(atposl.type, Atom::AGGREGATE);
-  BOOST_CHECK_EQUAL(atposl.id, 23);
+  BOOST_CHECK_EQUAL((Atom::Type)atposl.type, Atom::AGGREGATE);
+  BOOST_CHECK_EQUAL(atposl.id, (AtomID)23);
 
   Atom at2 = Atom(at1);
 
-  BOOST_CHECK_EQUAL(at2.type, Atom::AGGREGATE);
-  BOOST_CHECK_EQUAL(at2.id, 23);
+  BOOST_CHECK_EQUAL((Atom::Type)at2.type, Atom::AGGREGATE);
+  BOOST_CHECK_EQUAL(at2.id, (AtomID)23);
 
   l = Literal(at2);
 
@@ -67,15 +67,15 @@ BOOST_AUTO_TEST_CASE( testAtomLiteral )
   BOOST_CHECK_EQUAL(sizeof(Atom), sizeof(Literal));
   BOOST_CHECK_EQUAL(sizeof(Term), sizeof(PackedTerm));
 
-  std::cout << "__alignof__ AtomType: " << __alignof__(Atom::Type) << std::endl;
-  std::cout << "__alignof__ TermType: " << __alignof__(Term::Type) << std::endl;
-  std::cout << "__alignof__ AtomID: " << __alignof__(AtomID) << std::endl;
-  std::cout << "__alignof__ TermID: " << __alignof__(TermID) << std::endl;
+  BOOST_TEST_MESSAGE(  "__alignof__ AtomType: " << __alignof__(Atom::Type) );
+  BOOST_TEST_MESSAGE( "__alignof__ TermType: " << __alignof__(Term::Type) );
+  BOOST_TEST_MESSAGE( "__alignof__ AtomID: " << __alignof__(AtomID) );
+  BOOST_TEST_MESSAGE( "__alignof__ TermID: " << __alignof__(TermID) );
 
-  std::cout << "__alignof__ Literal: " << __alignof__(Literal) << std::endl;
-  std::cout << "__alignof__ Atom: " << __alignof__(Atom) << std::endl;
-  std::cout << "__alignof__ Term: " << __alignof__(Term) << std::endl;
-  std::cout << "__alignof__ PackedTerm: " << __alignof__(PackedTerm) << std::endl;
+  BOOST_TEST_MESSAGE( "__alignof__ Literal: " << __alignof__(Literal) );
+  BOOST_TEST_MESSAGE( "__alignof__ Atom: " << __alignof__(Atom) );
+  BOOST_TEST_MESSAGE( "__alignof__ Term: " << __alignof__(Term) );
+  BOOST_TEST_MESSAGE( "__alignof__ PackedTerm: " << __alignof__(PackedTerm) );
 }
 
 
@@ -95,27 +95,29 @@ BOOST_AUTO_TEST_CASE( testTables )
 
   SymbolTable::iterator beg = stab.begin();
 
-  std::cout << "a: " << (it_a - beg) << std::endl;
-  std::cout << "b: " << (it_b - beg) << std::endl;
-  std::cout << "c: " << (it_c - beg) << std::endl;
-  std::cout << "x: " << (it_x - beg) << std::endl;
-  std::cout << "y: " << (it_y - beg) << std::endl;
-  std::cout << "z: " << (it_z - beg) << std::endl;
-  std::cout << "z': " << (it_zprime - beg) << std::endl;
+  BOOST_TEST_MESSAGE( "a: " << (it_a - beg) );
+  BOOST_TEST_MESSAGE( "b: " << (it_b - beg) );
+  BOOST_TEST_MESSAGE( "c: " << (it_c - beg) );
+  BOOST_TEST_MESSAGE( "x: " << (it_x - beg) );
+  BOOST_TEST_MESSAGE( "y: " << (it_y - beg) );
+  BOOST_TEST_MESSAGE( "z: " << (it_z - beg) );
+  BOOST_TEST_MESSAGE( "z': " << (it_zprime - beg) );
 
-  Term a(Term::CONSTANT, it_a - beg);
-  Term b(Term::CONSTANT, it_b - beg);
-  Term c(Term::CONSTANT, it_c - beg);
+  BOOST_CHECK_EQUAL((it_z - beg), (it_zprime - beg));
+
+  Term a(Term::SYMBOL, it_a - beg);
+  Term b(Term::SYMBOL, it_b - beg);
+  Term c(Term::SYMBOL, it_c - beg);
   Term x(Term::VARIABLE, it_x - beg);
-  Term y(Term::CONSTANT, it_y - beg);
+  Term y(Term::SYMBOL, it_y - beg);
   Term z(Term::VARIABLE, it_z - beg);
 
-  std::cout << "Term " << a << " has symbol " << stab[a.id] << std::endl;
-  std::cout << "Term " << b << " has symbol " << stab[b.id] << std::endl;
-  std::cout << "Term " << c << " has symbol " << stab[c.id] << std::endl;
-  std::cout << "Term " << x << " has symbol " << stab[x.id] << std::endl;
-  std::cout << "Term " << y << " has symbol " << stab[y.id] << std::endl;
-  std::cout << "Term " << z << " has symbol " << stab[z.id] << std::endl;
+  BOOST_TEST_MESSAGE( "Term " << a << " has symbol " );
+  BOOST_TEST_MESSAGE( "Term " << b << " has symbol " );
+  BOOST_TEST_MESSAGE( "Term " << c << " has symbol " );
+  BOOST_TEST_MESSAGE( "Term " << x << " has symbol " );
+  BOOST_TEST_MESSAGE( "Term " << y << " has symbol " );
+  BOOST_TEST_MESSAGE( "Term " << z << " has symbol " );
   
 
   AtomTable atab;
@@ -145,17 +147,19 @@ BOOST_AUTO_TEST_CASE( testTables )
 
   AtomTable::iterator atbeg = atab.begin();
 
-  std::cout << "a(b,c,z): " << (it_1 - atbeg) << std::endl;
-  std::cout << "b(c,z,a): " << (it_2 - atbeg) << std::endl;
-  std::cout << "a(b,c,z)': " << (it_3 - atbeg) << std::endl;
+  BOOST_TEST_MESSAGE( "a(b,c,z): " << (it_1 - atbeg) );
+  BOOST_TEST_MESSAGE( "b(c,z,a): " << (it_2 - atbeg) );
+  BOOST_TEST_MESSAGE( "a(b,c,z)': " << (it_3 - atbeg) );
+
+  BOOST_CHECK_EQUAL((it_1 - atbeg),(it_3 - atbeg));
 
   Atom a1(Atom::ORDINARY, it_1 - atbeg);
   Atom a2(Atom::ORDINARY, it_2 - atbeg);
   Atom a3(Atom::ORDINARY, it_3 - atbeg);
 
-  std::cout << "Atom " << a1 << " has Tuple " << atab[a1.id] << std::endl;
-  std::cout << "Atom " << a2 << " has Tuple " << atab[a2.id] << std::endl;
-  std::cout << "Atom " << a3 << " has Tuple " << atab[a3.id] << std::endl;
+  BOOST_TEST_MESSAGE( "Atom " << a1 << " has Tuple " << atab[a1.id] );
+  BOOST_TEST_MESSAGE( "Atom " << a2 << " has Tuple " << atab[a2.id] );
+  BOOST_TEST_MESSAGE( "Atom " << a3 << " has Tuple " << atab[a3.id] );
 }
 
 

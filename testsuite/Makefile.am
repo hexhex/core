@@ -13,7 +13,9 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 TESTS = \
 	TestTypes
 
-TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples
+TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
+
+#TEST_SUITE_LOG = testsuite.log
 
 check_PROGRAMS = \
 	TestTypes
