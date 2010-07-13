@@ -23,7 +23,7 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 
 
-SUBDIRS = libltdl examples include src
+SUBDIRS = libltdl examples include src testsuite
 
 EXTRA_DIST = \
     COPYING.LESSER \
