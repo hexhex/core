@@ -17,8 +17,10 @@ ID Concept:
 * type bits specify maintype, subtype, and properties of entity
 
 Type integer concept:
-* 4 bits "Maintype" (currently only 2 used)
-  mask 0xF0000000
+* 1 bit "NAFbit" (MSB) (reserved for literal)
+  mask 0x80000000
+* 3 bits "Maintype" (currently only 2 used)
+  mask 0x70000000
 * 4 bits "Subtype"
   mask 0x0F000000
 * 8 bits "Properties"
@@ -28,19 +30,29 @@ Type integer concept:
 
 Maintypes:
 * 0x0 Atom
-  Subtypes:
-    * 0x0 Ordinary Atom
+  Subtypes (all Non-Ordinary Atoms have bit 0x2 set):
+    * 0x0 Ordinary Ground Atom
+      Address points into OrdinaryGroundAtom-Table
       Properties:
-        mask 0x1: ground (0) vs nonground (1)
-          0: Address points into OrdinaryGroundAtom-Table
-          1: Address points into OrdinaryNongroundAtom-Table
-        mask 0x2: positive (0) vs strongly negated (1)
-        mask 0x4: user-defined (0) vs dlvhex-defined (1) (e.g., "ex... predicates")
-    * 0x1 Builtin Atom
+        mask 0x01: positive (0) vs strongly negated (1)
+          Address points to non-negated item's Address in OrdinaryGroundAtom-Table
+        mask 0x02: user-defined (0) vs dlvhex-defined (1) (e.g., "ex... predicates")
+        mask 0x0C: output (print) mode
+          0x00 default print mode (policy may be hide or show)
+          0x04 hide mode (for dlvhex-defined, or for explicitly hidden)
+          0x08 show mode (explicitly shown)
+          0x0C unused
+    * 0x1 Ordinary Nonground Atom
+      Address points into OrdinaryNongroundAtom-Table
+      Properties:
+        mask 0x01: positive (0) vs strongly negated (1)
+          (no special treatment of Address)
+        mask 0x02: user-defined (0) vs dlvhex-defined (1) (e.g., "ex... predicates")
+    * 0x2 Builtin Atom
       Address points into BuiltinAtom-Table
-    * 0x2 Aggregate Atom
+    * 0x3 Aggregate Atom
       Address points into AggregateAtom-Table
-    * 0x3 External Atom
+    * 0x6 External Atom
       Address points into ExternalAtom-Table
 
 * 0x1 Term
@@ -57,12 +69,13 @@ Maintypes:
         mask 0x1: non-anonymous (0) vs anonymous (1)
 
 * 0x2 Literal
-  Subtypes: none
-  Properties:
-    mask 0x1: positive (0) vs negation as failure (1)
-  Address points into Atom-Table!
+  Subtypes inherited from Atom
+  Properties inherited from Atom
+  Address points into corresponding Atom-Tables!
+  NAFBit: positive (0) vs negation as failure (1)
 
 * 0x3 Rule
+  Address points into Rule-Table
   Subtypes:
     * 0x0 regular rule
       Properties:
