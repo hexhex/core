@@ -1,0 +1,84 @@
+Concept for the registry of Entities (ID-Concept is a prerequisite to this):
+
+Tables are:
+* OrdinaryGroundAtomTable
+  Stores:
+    * String representation
+    * Vector of (Constant/String/Integer) Term IDs (predicate = first term)
+  Indices:
+    * UNIQUE hash index (ensure that same ground atoms gets the same IDs)
+    * String representation (lookup ID by atom string)
+    * Predicate Term ID (lookup atoms with same predicate)
+    * ?first/second/... argument Term ID (lookup atoms with same first/second/... argument)
+* OrdinaryNongroundAtomTable
+  Stores:
+    * vector of Term IDs (predicate = first term)
+  Indices:
+    * Predicate Term ID (lookup atoms with same predicate)
+    * ?first/second/... argument Term ID (lookup atoms with same first/second/... argument)
+* BuiltinAtomTable
+  Stores:
+    * vector of Term IDs (predicate = first term)
+  Indices:
+    * ?Predicate Term ID (lookup builtins of same type)
+    * ?first/second/... argument Term ID (lookup atoms with same first/second/... argument)
+* AggregateAtomTable
+  Stores:
+    * Operator Constant Term ID (#max, #sum, ...)
+    * Left/Right Comparison Operator Constant Term ID
+    * Left/Right Term ID
+    * list of Variable Term IDs (body variables)
+    * list of Literal IDs (body condition)
+  Indices:
+    * ?Left/Right Variable Term IDs (lookup by free outer variables)
+    * ?Literal nonbound Variable Term IDs (lookup by free inner variables)
+    * ?Literal bound Variable Term IDs (lookup by bound inner variables)
+* ExternalAtomTable
+  Stores:
+    * Constant Term ID (function)
+    * vector of Term IDs (inputs)
+    * vector of Term IDs (outputs)
+  Indices:
+    * Constant Term ID (lookup by function)
+    * Term IDs (lookup by Terms in input)
+    * Term IDs (lookup by Terms in output)
+* ConstantTable
+  Stores:
+    * string
+  Indices:
+    * UNIQUE hash index (ensure that same constants get the same IDs)
+    * String representation (lookup ID by constant string)
+* StringTable
+  Stores:
+    * string
+  Indices:
+    * UNIQUE hash index (ensure that same strings get the same IDs)
+    * String representation (lookup ID by string)
+* VariableTable
+  Stores:
+    * string
+  Indices:
+    * UNIQUE hash index (ensure that same variables get the same IDs)
+    * String representation (lookup ID by string)
+* RuleTable
+  Stores:
+    * list of AtomIDs (disjunctive head)
+    * list of LiteralIDs (conjunctive body)
+    TODO weak
+  Indices:
+    TODO
+
+Open Questions:
+* why do we split constant and string, but not rules?
+
+  PS:
+  some splits are necessary because we need extra addresses (e.g., ordinary ground atoms)
+  other splits are useful because the entities are treated very differently (e.g., aggregate atoms vs external atoms)
+  is the split between constant and string (and variable) necessary?
+  could we need a split between rule and constraint and weak constraint?
+
+* how do queries fit into the system? (we want to have them at some point)
+  
+  PS:
+  they should fit pretty well as a new maintype (we have 4 unused maintypes)
+
