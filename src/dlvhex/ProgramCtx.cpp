@@ -202,6 +202,18 @@ ProgramCtx::setDependencyGraph(DependencyGraph* dg)
     }
 }
 
+ASPSolverManager::SoftwareConfigurationPtr
+ProgramCtx::getASPSoftware() const
+{
+  assert(aspsoftware != 0);
+  return aspsoftware;
+}
+
+void
+ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr software)
+{
+  aspsoftware = software;
+}
 
 
 ResultContainer*

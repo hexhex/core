@@ -1,3 +1,30 @@
+2010-07-14  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolverManager.h: Revised ASPSolver interface
+	another time, allowing plugins to determine default dlvhex solver method.
+	Added dlvdb ".typ" file support to dlvhex (now also usable for plugins).
+	Removed DLVDBProcess, DLVProcess is a generic debugging-capable process.
+	ASPSolverManager::SoftwareConfiguration is stored in ProgramCtx and
+	determines dlvhex solver software usage and options.
+	* include/dlvhex/ASPSolver.h: Likewise.
+	* include/dlvhex/DLVProcess.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/ASPSolverManager.cpp: Likewise.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
+	* include/dlvhex/ASPSolver.tcc: Likewise (removed file).
+
 2010-07-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update dependency description.

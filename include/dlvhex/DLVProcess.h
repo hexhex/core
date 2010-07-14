@@ -49,7 +49,8 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * @brief A wrapper process for the DLV ASP engine.
+ * @brief A wrapper process for the DLV/DLVDB ASP engine.
+ * @todo this class should have a name similar to DebuggingSupportChildProcess to really capture its purpose
  */
 class DLVHEX_EXPORT DLVProcess : public Process
 {
@@ -57,11 +58,14 @@ class DLVHEX_EXPORT DLVProcess : public Process
   /// communication buffer
   ProcessBuf proc;
   
-  // iostreams to the dlv process
+  /// iostreams to the dlv process
   std::istream* ipipe;
   std::ostream* opipe;
   
-  /// dlv command line options
+  /// executable path/name
+  std::string executable;
+
+  /// command line options
   std::vector<std::string> argv;
 
   /// initialize in/out streams
@@ -76,6 +80,9 @@ class DLVHEX_EXPORT DLVProcess : public Process
 
   virtual void
   addOption(const std::string&);
+
+  virtual void
+  setPath(const std::string&);
 
   virtual std::string
   path() const;
@@ -101,24 +108,6 @@ class DLVHEX_EXPORT DLVProcess : public Process
   virtual std::istream&
   getInput();
 };
-
-
-/**
- * @brief A wrapper process for the DLVDB ASP engine.
- */
-class DLVHEX_EXPORT DLVDBProcess : public DLVProcess
-{
- public:
-  DLVDBProcess();
-
-  virtual std::string
-  path() const;
-
-  virtual std::vector<std::string>
-  commandline() const;
-
-};
-
 
 DLVHEX_NAMESPACE_END
 

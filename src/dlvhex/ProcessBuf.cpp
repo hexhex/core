@@ -33,7 +33,9 @@
  */
 
 #include "dlvhex/ProcessBuf.h"
+#include "dlvhex/globals.h"
 
+#include <boost/foreach.hpp>
 #include <sstream>
 #include <cerrno>
 #include <cstdio>
@@ -113,6 +115,16 @@ ProcessBuf::initBuffers()
 pid_t
 ProcessBuf::open(const std::vector<std::string>& av)
 {
+  if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
+  {
+    Globals::Instance()->getVerboseStream() << "ProcessBuf open:";
+    BOOST_FOREACH(const std::string& arg, av)
+    {
+      Globals::Instance()->getVerboseStream() << " " << arg;
+    }
+    Globals::Instance()->getVerboseStream() << std::endl;
+  }
+
   // close before re-open it
   if (process != -1)
     {

@@ -65,6 +65,8 @@
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Benchmarking.h"
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
 
 #include <getopt.h>
 #include <iostream>
@@ -75,6 +77,8 @@
 
 
 DLVHEX_NAMESPACE_USE
+
+using namespace ASPSolver;
 
 
 /// argv[0]
@@ -326,8 +330,6 @@ removeNamespaces()
     }
 }
 
-
-
 int
 main (int argc, char *argv[])
 {
@@ -351,7 +353,16 @@ main (int argc, char *argv[])
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
   Globals::Instance()->setOption("UseExtAtomCache",1);
-  Globals::Instance()->setOption("UseSolverSoftware",0); // 0 = dlv
+
+  // per default use DLV as ASP solver software
+  ASPSolverManager::SoftwareConfigurationPtr dlvSoftware(
+    new DLVSoftware::Configuration);
+  pctx.setASPSoftware(dlvSoftware);
+
+#if defined(HAVE_DLVDB)
+  // allow to use dlvdbSoftware (we need this here to handle .typ file arguments)
+  boost::shared_ptr<DLVDBSoftware::Configuration> dlvdbSoftware;
+#endif
 
   // options only used here in main():
   bool optionPipe = false;
@@ -483,7 +494,12 @@ main (int argc, char *argv[])
 	      if (solver == "dlvdb")
 		{
 #if defined(HAVE_DLVDB)
-		  Globals::Instance()->setOption("UseSolverSoftware",1); // 1 = dlvdb
+		  // use DLVDB as ASP solver software
+		  dlvSoftware.reset();
+		  dlvdbSoftware =
+	            boost::shared_ptr<DLVDBSoftware::Configuration>(
+		      new DLVDBSoftware::Configuration);
+		  pctx.setASPSoftware(dlvdbSoftware);
 #else
 		  printLogo();
 		  std::cerr << "The command line option ``--solver=dlvdb´´ "
@@ -493,9 +509,9 @@ main (int argc, char *argv[])
 		  exit(1);
 #endif // HAVE_DLVDB
 		}
-	      else // default is DLV
+	      else
 		{
-		  Globals::Instance()->setOption("UseSolverSoftware",0); // 0 = dlvdb
+	  	  // nothing todo as default is DLV
 		}
 	      }
 	      break;
@@ -588,10 +604,30 @@ main (int argc, char *argv[])
     {
       //
       // collect filenames/URIs
+      // if we use dlvdb, filter out .typ files
       //
+      #if defined(HAVE_DLVDB)
+      bool foundTyp = false;
+      #endif
       for (int i = optind; i < argc; ++i)
 	{
-	  pctx.addInputSource(argv[i]);
+	  std::string arg(argv[i]);
+          #if defined(HAVE_DLVDB)
+	  if( dlvdbSoftware != 0 && arg.substr(arg.size()-4) == ".typ" )
+	  {
+		  if( foundTyp )
+		  {
+			  std::cerr << "cannot use more than one .typ file with dlvdb!" << std::endl;
+			  exit(-1);
+		  }
+		  foundTyp = true;
+		  dlvdbSoftware->options.typFile = arg;
+	  }
+	  else
+	  #endif
+	  {
+		  pctx.addInputSource(arg);
+	  }
 	}
     }
 
