@@ -11,6 +11,8 @@ IDs consist of a type part and a table index part.
 
 An ID of any Entity allows to infer the type of entity (i.e., in which table it is stored).
 
+An ID of ~0x0 indicates an error (not found ...).
+
 ID Concept:
 * 64 bit unsigned integer ID = 32 bit unsigned "type" integer + 32 bit unsigned "address" integer
 * address integer = index into container where entity is registered

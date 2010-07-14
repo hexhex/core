@@ -68,6 +68,44 @@ Tables are:
   Indices:
     TODO
 
+Unique Index Overview:
+* OrdinaryGroundAtomTable
+* ConstantTable
+* StringTable
+* VariableTable
+
+To access the tables, special inline functions in some Repository (manager singleton) should be used.
+The storage of entities which have a unique index cannot be changed once they are in a table.
+-> for these entities the lookup returns a const ref/iterator
+-> for other entities the lookup returns a non-const ref/iterator or provides a possibility for storing back
+
+Repository methods and complexity requirements:
+* const StorageType& getByID<StorageType>(ID) const (call it getReadonlyByID?)
+  O(1)
+  assertion if StorageType and ID incompatible
+  throws if ID not found
+* StorageType& getByID<StorageType>(ID) (call it getModifyableByID?)
+  O(1)
+  assertion if StorageType and ID incompatible
+  assertion if Table is unique hashed (can only return const)
+  throws if ID not found
+* void getCopyByID<StorageType>(ID, StorageType&)
+  O(1+copying StorageType)
+  assertion if StorageType and ID incompatible
+  throws if ID not found
+* store<StorageType>(const StorageType& entity)
+  O(hash calc + lookup + insert(includes copy StorageType))
+  determines table from StorageType
+  calculates hash
+  returns ID if existing
+  inserts, calculates new ID and returns new ID if not existing
+* getID<StorageType>(const StorageType& entity)
+  O(hash calc + lookup)
+  determines table from StorageType
+  calculates hash
+  returns ID if existing, -1 = ~0x0 otherwise
+* TODO: index access functions
+
 Open Questions:
 * why do we split constant and string, but not rules?
 
@@ -81,4 +119,10 @@ Open Questions:
   
   PS:
   they should fit pretty well as a new maintype (we have 4 unused maintypes)
+
+* do we need a unique index on variables?
+
+  PS:
+  probably not, as this would be an ID distributed over various rules, where the variables are not related at all
+  BUT: within one rule, the same variable should definitely get the same ID
 
