@@ -1,3 +1,9 @@
+2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Table-Concept.txt: Add some comments.
+	Orgmode.
+	* ID-Concept.txt: Likewise.
+
 2010-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Term.h: Update types of the primitives.
