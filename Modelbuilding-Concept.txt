@@ -33,9 +33,34 @@ Concept for building (TODO) and representing models:
      * calculating result model A'/B':
        A' = A1 & A2
        B' = B1 & B2
+   * Second attempt:
+     AB
+     00 = irrelevant (not part of component)
+     11 = undefined
+     01 = positive
+     10 = negative
+     * compatibility check:
+       DIFF = (A1 ^ A2) | (B1 ^ B2)
+       NOTIRREL = (A1 | B1) & (A2 | B2)
+       NONCOMPATIBLE = DIFF & NOTIRREL
+       models are joinable iff NONCOMPATIBLE is zero
+     * calculating result model A'/B':
+       A' = A1 | A2
+       B' = B1 | B2
+     * calculation (in batches, keeping only A'/B'):
+       calculate A1 ^ A2
+       calculate B1 ^ B2
+       OR these two
+       calculate A1 | A2 and store in A'
+       calculate B1 | B2 and store in B'
+       AND these two
+       AND to result of above OR
+       check if all zeroes
+       if not, discard
+       if all batches ok, A'/B' is the result
+
      
-PS: Can we do better in terms of bit encoding/join efficiency? (The "First
-attempt" can be fully batch processed (64 bits at once, perhaps even more with
-MMX/SSE), but it uses 3*n ANDS, 2*n ORs, 2*n XORs and 2*n NOTs and one "all
-ones" check for compatibility checking and 2*n ANDS for actually joining.)
+PS: Can we do better in terms of bit encoding/join efficiency?
+* First attempt: 3*n AND, 2*n OR, 2*n XOR, 2*n NOT, n ones-check, 2*n AND for actually joining.
+* Second attempt: 2*n AND, 4*n OR, 2*n XOR, n zeroes-check, actual join happens during compatibility check.
      
