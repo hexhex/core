@@ -1,3 +1,9 @@
+2010-07-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* Table-Concept.txt: More comments.
+	* Modelbuilding-Concept.txt: Started writing concept
+	for model representation (and later model building).
+
 2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* Table-Concept.txt: Add some comments.

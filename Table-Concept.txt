@@ -124,6 +124,13 @@ another parameter in all those functions below. We probably also need
 to set all members of Term and Atom as const, so no-one can change
 them once they are constructed.
 
+PS: @singleton: this is true, we can add this parameter - these functions
+could simply be methods of a repository object and we can have multiple
+repositories.  @const: this is the idea of "assertion if Table is unique
+hashed (can only return const)" below (terms and atoms cannot be modified
+once they are in the table, so they can only be returned as copies not as
+references).
+
 ** const StorageType& getByID<StorageType>(ID) const (call it getReadonlyByID?)
    O(1)
    assertion if StorageType and ID incompatible
@@ -180,3 +187,6 @@ them once they are constructed.
   ids for the same non-ground atom. This is handy i guess for
   unification, as unifiable atoms must have the same node id in the
   depgraph. Hm, should we create an index of unifiable atoms???
+
+  PS: this indexing should be achieved by indices into terms of the nonground atom table
+  (see above: - Predicate Term (lookup atoms with same predicate, see above) - ?first/second/... argument Term ID (lookup atoms with same first/second/... argument))

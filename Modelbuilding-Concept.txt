@@ -1,0 +1,41 @@
+# -*- org -*-
+#+STARTUP: showall
+
+Concept for building (TODO) and representing models:
+
+* Interpretations/Models:
+** Bit-Vectors will be used to represent sets of ground atoms
+** We need Partial Models which then can be joined
+** An atom can occur positive/negative/undefined,
+   and an atom can be irrelevant (not part of the current component)
+** Therefore we need a 4-valued representation (2 bits)
+   * Knuth remarks in fascicle 1 pg 31, that it is better to have two vectors
+     of bits, not one vector where even and odd bits have different meanings.
+     (This appears to be correct in the next "first attempt" case.)
+   * First attempt:
+     Bit encoding:
+     AB
+     11 = irrelevant (not part of component)
+     00 = undefined
+     01 = positive
+     10 = negative
+
+     We have two bitsets, each of size n=|known ground atoms|:
+     * one bitset for A bits
+     * one bitset for B bits
+
+     Joining two partial Models A1/B1 and A2/B2 works as follows:
+     * compatibility check: ^ = bitwise xor, ~ = bitwise not
+       SAME = ~(A1 ^ A2) & ~(B1 ^ B2)
+       IRREL = (A1 & B1) |  (A2 & B2)
+       COMPATIBLE = SAME | IRREL
+       models are joinable iff COMPATIBLE contains no zero
+     * calculating result model A'/B':
+       A' = A1 & A2
+       B' = B1 & B2
+     
+PS: Can we do better in terms of bit encoding/join efficiency? (The "First
+attempt" can be fully batch processed (64 bits at once, perhaps even more with
+MMX/SSE), but it uses 3*n ANDS, 2*n ORs, 2*n XORs and 2*n NOTs and one "all
+ones" check for compatibility checking and 2*n ANDS for actually joining.)
+     
