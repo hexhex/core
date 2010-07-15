@@ -1,3 +1,7 @@
+2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Model.h: Initial draft.
+
 2010-07-15  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* Table-Concept.txt: More comments.
