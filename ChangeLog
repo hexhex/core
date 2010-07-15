@@ -1,3 +1,8 @@
+2010-07-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* bm3.7.0/*: Added BitMagic library sources to tree
+	(http://bmagic.sourceforge.net/).
+
 2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* include/dlvhex/Model.h: Initial draft.
