@@ -1,3 +1,9 @@
+2010-07-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* clang.diff: Added diff to make it build with clang (debug stream does
+	not work, as boost::iostream currently does not work with clang, there
+	are other strange issues)
+
 2010-07-16  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Add some checks for BitMagic (configure
