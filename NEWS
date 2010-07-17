@@ -11,7 +11,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Improve speed of answer set parser.
 
-** Fix tickets #11, #12, #13, #14. 
+** Fix tickets #7, #11, #12, #13, #14. 
 
 
 * Version 1.7.0 (June 2010)
