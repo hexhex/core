@@ -1,4 +1,5 @@
--*- org -*-
+# -*- org -*-
+#+STARTUP: showall
 
 This is the README file for maintainers and subversion users and
 developers. Do not include this file in the distribution.
@@ -51,8 +52,23 @@ script. It is being built using the `bootstrap.sh' script. Just run
 
 prior to configuration.  This will automagically generate all
 Makefile.in's and the `configure' script with help of the autotools.
-After its execution, follow the configuration instructions in the
-README file.
+Right after the bootstrap, run
+
+ $ ./configure
+
+possibly with some options or environment variables (see README and
+the paragraphs below). After its execution, follow the configuration
+instructions in the README file. If you want to try out several builds
+with different setup options or even with different libraries and
+compilers in parallel, just create a directory and configure in there:
+
+ $ mkdir build
+ $ cd build
+ $ ../configure
+
+Then run make inside `build' and you will generate the object code,
+libraries, binaries, etc. without interfering of the source directory
+above. You can play around and create different build directories.
 
 *** Build and compiler flags
 You can either globally or locally setup the compiler and compiler
@@ -63,16 +79,34 @@ or other compiler-flags, set CXX and CXXFLAGS in the `make' run.
 **** CXX
 Set this variable to the C++ compiler you want to use to build
 dlvhex. You can also use this variable to set some compiler frontends
-such as `ccache' or `distcc'.
+such as `ccache g++' or `distcc g++', or even use a different compiler
+than g++ like clang++.
 
 **** CXXFLAGS
 For more pedantic compiler warnings, add `-Weffc++'.
 
 ** Build
-Invoke `make' to build the engine and the API libraries.
+Invoke `make' (either in the top-level source directory or inside a
+build directory):
+
+ $ make
+
+This builds the engine and the API libraries. You can parallelize the
+build buy calling `make' with option `-j N', where N is the number of
+parallel compiler calls.
 
 ** Installation
-Invoke `make install'.
+Invoke
+
+ $ sudo make install
+
+to install dlvhex. (If you have configured dlvhex with a user-writable
+prefix then `make install' without sudo wrapping should work.)
+Sometimes it is necessary to run
+
+ $ sudo ldconfig
+
+after the first installation to refresh the shared library cache.
 
 ** Testsuite
 Execute `make check' to build an run the testsuite. Note that the
@@ -99,7 +133,7 @@ New developers may find
 <http://sourceforge.net/apps/trac/dlvhex/wiki/NewDeveloper> helpful.
 
 
-* Distributing the plugin
+* Distributing the package
 There are two make targets which take care of creating a dlvhex source
 package:
 

@@ -1,4 +1,5 @@
--*- org -*-
+# -*- org -*-
+#+STARTUP: showall
 
 This file provides some hints how to install and run dlvhex.
 
@@ -126,6 +127,6 @@ dlv. `dlvhex --help' displays a short help with available command-line
 parameters. For an introduction how to write HEX-programs, see the
 documentation provided at
 <http://http://www.kr.tuwien.ac.at/research/systems/dlvhex/> or look
-at the examples directory here. DLV programs are described at
+at the `examples' directory here. DLV programs are described at
 <http://www.dbai.tuwien.ac.at/proj/dlv/#docs>.
 
