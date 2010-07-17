@@ -1,3 +1,14 @@
+2010-07-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	Release version 1.7.1.
+	
+	* configure.ac: Bump version to 1.7.1.
+
+	* NEWS: Describe changes to 1.7.1.
+
+	* MAINTAINER-README: Update.
+	* README: Likewise.
+
 2010-07-14  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/ASPSolverManager.h: Revised ASPSolver interface
