@@ -64,7 +64,9 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/RuleMLOutputBuilder.h"
 #include "dlvhex/PrintVisitor.h"
-#include "dlvhex/DLVProcess.h"
+#include "dlvhex/Benchmarking.h"
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
 
 #include <getopt.h>
 #include <iostream>
@@ -75,6 +77,8 @@
 
 
 DLVHEX_NAMESPACE_USE
+
+using namespace ASPSolver;
 
 
 /// argv[0]
@@ -140,7 +144,6 @@ printUsage(std::ostream &out, bool full)
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-      << "     --firstorder     No higher-order reasoning." << std::endl
       << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
@@ -217,7 +220,7 @@ insertNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
@@ -290,7 +293,7 @@ removeNamespaces()
 {
   ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (Term::getNameSpaces().size() == 0)
+  if (Term::getNameSpaces().empty())
     return;
 
   std::string prefix;
@@ -327,8 +330,6 @@ removeNamespaces()
     }
 }
 
-
-
 int
 main (int argc, char *argv[])
 {
@@ -346,14 +347,22 @@ main (int argc, char *argv[])
 
   // global defaults:
   ///@todo clean up!!
-  Globals::Instance()->setOption("NoPredicate", 1);
   Globals::Instance()->setOption("Silent", 0);
   Globals::Instance()->setOption("Verbose", 0);
-  Globals::Instance()->setOption("NoPredicate", 1);
   Globals::Instance()->setOption("StrongSafety", 1);
   Globals::Instance()->setOption("AllModels", 0);
   Globals::Instance()->setOption("ReverseAllModels", 0);
   Globals::Instance()->setOption("UseExtAtomCache",1);
+
+  // per default use DLV as ASP solver software
+  ASPSolverManager::SoftwareConfigurationPtr dlvSoftware(
+    new DLVSoftware::Configuration);
+  pctx.setASPSoftware(dlvSoftware);
+
+#if defined(HAVE_DLVDB)
+  // allow to use dlvdbSoftware (we need this here to handle .typ file arguments)
+  boost::shared_ptr<DLVDBSoftware::Configuration> dlvdbSoftware;
+#endif
 
   // options only used here in main():
   bool optionPipe = false;
@@ -454,7 +463,7 @@ main (int argc, char *argv[])
 	  switch (longid)
 	    {
 	    case 1:
-	      Globals::Instance()->setOption("NoPredicate", 0);
+	      std::cerr << "warning: --firstorder is deprecated (autodetect)" << std::endl;
 	      break;
 
 	    case 2:
@@ -485,7 +494,12 @@ main (int argc, char *argv[])
 	      if (solver == "dlvdb")
 		{
 #if defined(HAVE_DLVDB)
-		  pctx.setProcess(new DLVDBProcess);
+		  // use DLVDB as ASP solver software
+		  dlvSoftware.reset();
+		  dlvdbSoftware =
+	            boost::shared_ptr<DLVDBSoftware::Configuration>(
+		      new DLVDBSoftware::Configuration);
+		  pctx.setASPSoftware(dlvdbSoftware);
 #else
 		  printLogo();
 		  std::cerr << "The command line option ``--solver=dlvdb´´ "
@@ -495,9 +509,9 @@ main (int argc, char *argv[])
 		  exit(1);
 #endif // HAVE_DLVDB
 		}
-	      else // default is DLV
+	      else
 		{
-		  pctx.setProcess(new DLVProcess);
+	  	  // nothing todo as default is DLV
 		}
 	      }
 	      break;
@@ -539,6 +553,29 @@ main (int argc, char *argv[])
   bool inputIsWrong = false;
 
   //
+  // now we have options, initialize benchmarking (--verbose=8)
+  //
+
+  benchmark::BenchmarkController& ctr =
+    benchmark::BenchmarkController::Instance();
+  if( Globals::Instance()->doVerbose(Globals::PROFILING) )
+  {
+    ctr.setOutput(&Globals::Instance()->getVerboseStream());
+    // for continuous statistics output, display every 1000'th output
+    ctr.setPrintInterval(999);
+  }
+  else
+    ctr.setOutput(0);
+
+  // deconstruct benchmarking (= output results) at scope exit 
+  int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+  BOOST_SCOPE_EXIT( (dummy) ) {
+	  (void)dummy;
+	  benchmark::BenchmarkController::finish();
+  }
+  BOOST_SCOPE_EXIT_END
+
+  //
   // check if we have any input (stdin, file, or URI)
   // if inout is not or badly specified, remember this and show shorthelp
   // later if everthing was ok with the options
@@ -567,10 +604,30 @@ main (int argc, char *argv[])
     {
       //
       // collect filenames/URIs
+      // if we use dlvdb, filter out .typ files
       //
+      #if defined(HAVE_DLVDB)
+      bool foundTyp = false;
+      #endif
       for (int i = optind; i < argc; ++i)
 	{
-	  pctx.addInputSource(argv[i]);
+	  std::string arg(argv[i]);
+          #if defined(HAVE_DLVDB)
+	  if( dlvdbSoftware != 0 && arg.substr(arg.size()-4) == ".typ" )
+	  {
+		  if( foundTyp )
+		  {
+			  std::cerr << "cannot use more than one .typ file with dlvdb!" << std::endl;
+			  exit(-1);
+		  }
+		  foundTyp = true;
+		  dlvdbSoftware->options.typFile = arg;
+	  }
+	  else
+	  #endif
+	  {
+		  pctx.addInputSource(arg);
+	  }
 	}
     }
 

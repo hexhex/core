@@ -1,4 +1,13 @@
+
 dlvhex NEWS -- history of user-visible changes.
+
+* Version 2.0.0
+
+** Code clean-ups and beautifications.
+
+** Improve speed of answer set parser.
+
+** Fix tickets #11, #12, #13, #14. 
 
 
 * Version 1.7.0 (June 2010)
@@ -13,7 +22,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Sanitize Plugin interface.
 
-** Use libltdl.
+** Use libltdl for loading the plugins.
 
 ** Add support for retrieving HEX-programs via HTTP (or whatever protocol libcurl supports).
 
@@ -27,7 +36,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Use singleton interface for the name tables, caused a nasty bug with duplicate global Term::names instantiations.
 
-**  Fix ticket #1.
+** Fix ticket #1.
 
 
 

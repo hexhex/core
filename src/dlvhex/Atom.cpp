@@ -40,11 +40,12 @@
 
 #include <cassert>
 #include <boost/tokenizer.hpp>
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 // this constructor is used by BuiltinPredicate!
-Atom::Atom(): arguments(), isStrongNegated(false), isAlwaysFO(false)
+Atom::Atom(): arguments(), isStrongNegated(false)
 { }
 
 
@@ -55,13 +56,12 @@ Atom::~Atom()
 Atom::Atom(const Atom& atom2)
   : ProgramObject(),
     arguments(atom2.arguments),
-    isStrongNegated(atom2.isStrongNegated),
-    isAlwaysFO(atom2.isAlwaysFO)
+    isStrongNegated(atom2.isStrongNegated)
 { }
 
 
 Atom::Atom(const std::string& atom, bool neg)
-  : isStrongNegated(neg), isAlwaysFO(0)
+  : isStrongNegated(neg)
 {
   std::string::size_type par;
 	
@@ -107,7 +107,7 @@ Atom::Atom(const std::string& atom, bool neg)
 	
 
 Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
-  : isStrongNegated(neg), isAlwaysFO(0)
+  : isStrongNegated(neg)
 {
   // predicate
   arguments.push_back(Term(pred));
@@ -123,11 +123,53 @@ Atom::Atom(const std::string& pred, const Tuple& arg, bool neg)
   // arguments
   arguments.insert(arguments.end(), arg.begin(), arg.end());
 }
+
+Atom::Atom(const std::string& pred, const PTuple& arg, bool neg)
+  : isStrongNegated(neg)
+{
+  // predicate
+	arguments.reserve(1+arg.size());
+  arguments.push_back(Term(pred));
+
+  //
+  // propositonal atom must be ground:
+  //
+  if ((arg.size() == 0) && arguments.front().isVariable())
+    {
+      throw SyntaxError("propositional Atom must be ground");
+    }
+
+  // arguments
+	BOOST_FOREACH(Term* trm, arg)
+	{
+		arguments.push_back(*trm);
+	}
+}
 	
 
 Atom::Atom(const Tuple& arg, bool neg)
-  : arguments(arg), isStrongNegated(neg), isAlwaysFO(0)
+  : arguments(arg), isStrongNegated(neg)
 {
+  if (arguments.size() == 0)
+    {
+      throw SyntaxError("Atom must contain at least one term");
+    }
+  else if ((arguments.size() == 1) && arguments.front().isVariable())
+    {
+      // propositonal atom must be ground:
+      throw SyntaxError("propositional Atom must be ground");
+    }
+}
+
+Atom::Atom(const PTuple& arg, bool neg)
+  : arguments(), isStrongNegated(neg)
+{
+  // arguments
+	arguments.reserve(arg.size());
+	BOOST_FOREACH(Term* trm, arg)
+	{
+		arguments.push_back(*trm);
+	}
   if (arguments.size() == 0)
     {
       throw SyntaxError("Atom must contain at least one term");
@@ -235,20 +277,6 @@ Atom::operator!= (const Atom& atom2) const
 
 
 void
-Atom::setAlwaysFO()
-{
-	isAlwaysFO = 1;
-}
-
-
-bool
-Atom::getAlwaysFO() const
-{
-	return isAlwaysFO;
-}
-
-
-void
 Atom::accept(BaseVisitor& v) const
 {
   v.visit(this);
@@ -326,6 +354,19 @@ Atom::operator< (const Atom& atom2) const
 }
 
 
+bool
+Atom::isHigherOrder() const
+{
+	assert(!arguments.empty());
+	return arguments.front().isVariable();
+}
+
+
+BuiltinPredicate::BuiltinPredicate(const Term& t1, const std::string& b)
+{
+	arguments.push_back(Term(b));
+	arguments.push_back(t1);
+}
 
 BuiltinPredicate::BuiltinPredicate(const Term& t1, const Term& t2, const std::string& b)
 {
@@ -349,6 +390,23 @@ BuiltinPredicate::accept(BaseVisitor& v) const
   v.visit(this);
 }
 
+bool BuiltinPredicate::isInfix() const
+{
+  switch(getArity())
+  {
+    case 1:
+      // #int is always prefix
+      return false;
+    case 2:
+      if( getPredicate() == Term("#succ") )
+        // #succ is always prefix
+        return false;
+      else
+        return true;
+    default:
+      return true;
+  }
+}
 
 DLVHEX_NAMESPACE_END
 

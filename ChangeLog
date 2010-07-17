@@ -1,3 +1,194 @@
+2010-07-14  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolverManager.h: Revised ASPSolver interface
+	another time, allowing plugins to determine default dlvhex solver method.
+	Added dlvdb ".typ" file support to dlvhex (now also usable for plugins).
+	Removed DLVDBProcess, DLVProcess is a generic debugging-capable process.
+	ASPSolverManager::SoftwareConfiguration is stored in ProgramCtx and
+	determines dlvhex solver software usage and options.
+	* include/dlvhex/ASPSolver.h: Likewise.
+	* include/dlvhex/DLVProcess.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/ASPSolverManager.cpp: Likewise.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
+	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
+	* include/dlvhex/ASPSolver.tcc: Likewise (removed file).
+
+2010-07-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update dependency description.
+	* MAINTAINER-README: Likewise.
+
+	* NEWS: Update list of user-visible changes.
+
+2010-07-08  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* examples/tests/dlvhextests.test: Added testcases for recently
+	solved bugs.
+	* examples/equality.hex: Likewise.
+	* examples/tests/equality.out: Likewise.
+	* examples/builtin_safety.hex: Likewise.
+	* examples/tests/builtin_safety.out: Likewise.
+	* examples/Makefile.am: Likewise.
+
+	* src/dlvhex/PrintVisitor.cpp: Fix #succ rewriting (ticket #12).
+	* src/dlvhex/Atom.cpp: Likewise.
+
+	* src/dlvhex/SafetyChecker.cpp: Fix +,* safety checking (ticket #11 #13).
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fix == vs = as well
+	as <> vs != builtin binary operator treatment (ticket #14).
+
+2010-07-07  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/ASPSolver.h: Replaced ASPSolver classes by
+	ASPSolverManager, which has an automatic mode (used by dlvhex) and
+	manual possibilities to select the used solver software and options.
+	This change yielded all the other fixes/changes below.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* include/dlvhex/DLVProcess.h: Decoupled Process from Solver,
+	now a process is created by ASPSolverManager and not by dlvhex itself,
+	and more of the process' properties are configured by the Solver.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Process.h: Likewise.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* include/dlvhex/Literal.h: Literal, Atom, Rule, and Program now know
+	whether they are Higher Order or not, Program knows whether it contains
+	aggregates (this way the solver software can decide how each combination
+	has to be treated).
+	* include/dlvhex/Program.h: Likewise.
+	* include/dlvhex/Rule.h: Likewise.
+	* include/dlvhex/ExternalAtom.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/Rule.cpp: Likewise.
+	* src/dlvhex/Program.cpp: Likewise.
+	* src/dlvhex/AggregateAtom.cpp: Likewise.
+	* src/dlvhex/Literal.cpp: Likewise.
+
+	* include/dlvhex/Atom.h: BuiltinPredicate: new unary constructor
+	(#int was previously stored as Atom with special magic).
+	New possibility to prefer infix vs prefix printing.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/PrintVisitor.cpp: Likewise.
+	* src/dlvhex/SafetyChecker.cpp: Likewise.
+
+	* include/dlvhex/DLVresultParserDriver.h: Defaulting to FirstOrder
+	parse mode, removed autodetect, removed coupling with dlvhex::Globals.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Allowing to parse weak answer
+	sets (returning just as normal answer sets, ignoring the weak information).
+
+	* examples/tertop.hex: Made testcase higher order to ensure
+	functionality of ternary operators together with higher order.
+	* examples/tests/dlvhextests.test: Removed --firstorder options.
+	* src/dlvhex/dlvhex.cpp: Phasing out --firstorder option.
+	Better (less adhoc) handling of solver software selection.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Using new ASPSolverManager.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise,
+	and added dlvdb testcase.
+
+	* include/dlvhex/SpiritDebugging.h: Added @todo.
+	* src/dlvhex/ProcessBuf.cpp: Likewise.
+
+2010-07-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/globals.h: Remove dependency on config.h.
+
+	* include/dlvhex/ASPSolver.h: Remove dependency on config.h.
+	(BaseASPSolver::doSolve): Add template method.
+	* include/dlvhex/ASPSolver.tcc: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* src/dlvhex/Makefile.am (libaspsolver_la_LDFLAGS): Bump
+	version-info to 2:0:0.
+	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:0.
+
+2010-07-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* src/dlvhex/Makefile.am: Atom ABI change: bumping so-versions:
+	(libdlvhexbase_la_LDFLAGS): Bump version-info to 6:0:1.
+	(libaspsolver_la_LDFLAGS):  Bump version-info to 1:1:0.
+
+	* src/dlvhex/Benchmarking.cpp: Add emacs local variables.
+
+	* configure.ac: Added check for boost::date_time library.
+	(CXXFLAGS): Turn on -W -Wall.
+
+2010-07-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Atom.h: Added constructors for increasing parse
+	efficiency (minimizing copying of Term objects).
+	* src/dlvhex/Atom.cpp: Likewise.
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Rewrote DLVresultParserDriver
+	using Spirit V2 (for performance reasons).
+
+	* src/dlvhex/Term.cpp: Improving Term copy constructor efficiency,
+	added possibility for benchmarking (counting Term constructor invocations).
+
+	* include/dlvhex/ASPSolver.tcc: Using new benchmarking.
+	* src/dlvhex/Component.cpp: Likewise.
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Likewise.
+	* src/dlvhex/FixpointModelGenerator.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* include/dlvhex/Benchmarking.h: Replaced benchmarking by new
+	more versatile benchmarking system (usable by plugins, even if
+	dlvhex is not built with --enable-debug).
+	* include/dlvhex/globals.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/Benchmarking.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+
+2010-06-28  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Force automake >= 1.11.
+
+2010-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* benchmarks/reviewers6-pureasp.dlv: Add benchmarks for 6, 7, and 8 submissions.
+	* benchmarks/reviewers7-pureasp.dlv: Likewise.
+	* benchmarks/reviewers8-pureasp.dlv: Likewise.
+	* benchmarks/reviewers-pureasp.dlv: Likewise.
+
+	* configure.ac: Sanitize AUTOMAKE_OPTIONS.
+	* Makefile.am: Likewise.
+
+2010-06-25  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Bump version to 2.0.0.
+	Add compiler settings info.
+
+2010-06-23  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update.
+	* MAINTAINER-README: Likewise.
+
+	* Makefile.am (uninstall-local): Fix make uninstall when no-one
+	called make install-html.
+
 2010-06-22  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	Release version 1.7.0.

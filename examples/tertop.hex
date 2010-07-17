@@ -5,3 +5,5 @@ mul2(X,Y) :- *(X, Y, 6), #int(X), #int(Y).
 plus1(X,Y) :- 6=X+Y, #int(X), #int(Y).
 plus2(X,Y) :- +(X,Y,6), #int(X), #int(Y).
 
+% force it to be higher order
+X(foo) :- mul1(X,X).

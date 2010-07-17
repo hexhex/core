@@ -33,15 +33,20 @@
  *
  */
 
+#include "dlvhex/ModelGenerator.h"
 
+// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ModelGenerator.h"
-#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -87,23 +92,21 @@ OrdinaryModelGenerator::compute(const Program& program,
                                 const AtomSet &I,
                                 std::vector<AtomSet> &models)
 {
-  DEBUG_START_TIMER;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(oModelGen,"Ordinary Model Generator");
 
   models.clear();
-
-  ///
-  /// @todo: we don't get any extatom-replacement predicates in the
-  /// result - the asp solver result parser would throw them away (ho)
-  /// and so we couldn't get rid of them any more. this is why we have
-  /// to add the input edb below again!
-  ///
-  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
 
   std::vector<AtomSet> answersets;
 
   try
     {
-      solver->solve(program, I, answersets);
+      ///
+      /// @todo: we don't get any extatom-replacement predicates in the
+      /// result - the asp solver result parser would throw them away (ho)
+      /// and so we couldn't get rid of them any more. this is why we have
+      /// to add the input edb below again!
+      ///
+      ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), program, I, answersets);
     }
   catch (GeneralError&)
     {
@@ -118,9 +121,6 @@ OrdinaryModelGenerator::compute(const Program& program,
       as->insert(I);
       models.push_back(*as);
     }
-
-  //                123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Ordinary Model Generator:               ");
 }
 
 DLVHEX_NAMESPACE_END

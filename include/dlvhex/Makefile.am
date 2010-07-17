@@ -13,12 +13,13 @@ noinst_HEADERS = \
 pkginclude_HEADERS = \
 	AggregateAtom.h \
 	AnswerSet.h \
+	ASPSolverManager.h \
 	ASPSolver.h \
-	ASPSolver.tcc \
 	Atom.h \
 	AtomNode.h \
 	AtomSet.h \
 	BaseVisitor.h \
+	Benchmarking.h \
 	BoostComponentFinder.h \
 	ComponentFinder.h \
 	Component.h \

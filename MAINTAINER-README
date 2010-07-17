@@ -1,18 +1,12 @@
 -*- org -*-
 
-This is the README file for maintainers and subversion users. Do not
-include this file in the distribution.
+This is the README file for maintainers and subversion users and
+developers. Do not include this file in the distribution.
 
 
 * Dependencies
 
-** All the dependencies mentioned in README
-
-** flex
-http://flex.sourceforge.net/
-
-** bison
-http://www.gnu.org/software/bison/
+** All the dependencies mentioned in README, plus...
 
 ** autoconf
 http://www.gnu.org/software/autoconf/
@@ -28,36 +22,37 @@ http://pkg-config.freedesktop.org/
 
 
 
-* Building, installing and testing dlvhex-dlplugin
+* Building, installing, and testing dlvhex
 
 ** Prerequisites
-
 See README for all the basic tools and libraries needed in order to
 build dlvhex.
 
 The development tools include:
-
-*** flex + bison
-dlvhex uses relatively new features of flex and bison, so install the
-newest versions of these tools. dlvhex was tested with flex 2.5.33 and
-bison 2.3. For installation instruction see the corresponding INSTALL
-files of the source packages.
 
 *** autotools
 The autotools include pkg-config, autoconf, automake, and libtool. See
 the installation instructions of the corresponding packages, or just
 install the native packages provided by your operating system.
 
+In Debian/Ubuntu, you need to install the following packages:
+- automake
+- autoconf
+- pkg-config
+- libtool
+- libltdl-dev
+
 
 ** Configuration
+Right after a subversion check-put, you need to create the `configure'
+script. It is being built using the `bootstrap.sh' script. Just run
 
-The `configure' script is being built using the `bootstrap.sh'
-script. After its execution, follow the configuration instructions in
-the README file.
+ $ ./bootstrap.sh
 
-*** bootstrap.sh
-Generates Makefile.in's and the `configure' script with help of the
-autotools.
+prior to configuration.  This will automagically generate all
+Makefile.in's and the `configure' script with help of the autotools.
+After its execution, follow the configuration instructions in the
+README file.
 
 *** Build and compiler flags
 You can either globally or locally setup the compiler and compiler
@@ -71,36 +66,25 @@ dlvhex. You can also use this variable to set some compiler frontends
 such as `ccache' or `distcc'.
 
 **** CXXFLAGS
-Add `-O2' and `-W -Wall' for a descent performance boost and warning
-output. For even more pedantic compiler warnings, add `-Weffc++'.
-
+For more pedantic compiler warnings, add `-Weffc++'.
 
 ** Build
-
 Invoke `make' to build the engine and the API libraries.
 
 ** Installation
-
 Invoke `make install'.
 
-
 ** Testsuite
-
 Execute `make check' to build an run the testsuite. Note that the
 testsuite depends on the cppunit library (see also README).
 
-
 ** Cleanup
-
 To clean a build, you can choose from a bunch of cleanup targets of
 the automatically generated Makefiles:
 
 *** make clean
 Removes everything which has been build using `make', but does not
 remove the generated flex scanner and bison parser source code.
-
-*** make maintainer-clean-generic
-Removes the flex scanner and bison parser.
 
 *** make distclean
 This target removes the compiled objects and generated Makefiles from
@@ -110,8 +94,12 @@ the build directory. After that, you have to call `configure' again.
 This target removes almost everything in the build directory.
 
 
-* Distributing the plugin
+* Development
+New developers may find
+<http://sourceforge.net/apps/trac/dlvhex/wiki/NewDeveloper> helpful.
 
+
+* Distributing the plugin
 There are two make targets which take care of creating a dlvhex source
 package:
 

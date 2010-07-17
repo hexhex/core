@@ -36,10 +36,12 @@
 
 #include "dlvhex/Rule.h"
 #include "dlvhex/ExternalAtom.h"
+#include "dlvhex/AggregateAtom.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Error.h"
 
+#include <boost/foreach.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -146,6 +148,41 @@ const std::vector<ExternalAtom*>&
 Rule::getExternalAtoms() const
 {
     return externalAtoms;
+}
+
+
+bool
+Rule::isHigherOrder() const
+{
+	/// @todo: We could cache this, but I guess it will only be called once for each rule, i.e., when it is added into the Program.
+	BOOST_FOREACH(AtomPtr headitem, head)
+	{
+		if( headitem->isHigherOrder() )
+			return true;
+	}
+
+	BOOST_FOREACH(Literal* bodyitem, body)
+	{
+		if( bodyitem->isHigherOrder() )
+			return true;
+	}
+
+	return false;
+}
+
+bool
+Rule::hasAggregateAtoms() const
+{
+	BOOST_FOREACH(Literal* bodyitem, body)
+	{
+		AggregateAtomPtr ptr =
+			boost::dynamic_pointer_cast<AggregateAtom>(
+					bodyitem->getAtom());
+		if( ptr != 0 )
+			return true;
+	}
+
+	return false;
 }
 
 

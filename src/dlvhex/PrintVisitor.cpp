@@ -160,10 +160,27 @@ PrintVisitor::visit(const Atom* const a)
 void
 PrintVisitor::visit(const BuiltinPredicate* const bp)
 {
-	if( bp->getArity() == 2 )
-		stream << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
-	else
-		stream << bp->getArgument(3) << "=" << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+	switch(bp->getArity())
+  {
+    case 1:
+      assert(!bp->isInfix());
+      stream << bp->getArgument(0) << "(" << bp->getArgument(1) << ")";
+      break;
+    case 2:
+      if( bp->isInfix() )
+        stream << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+      else
+        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << ")";
+      break;
+    case 3:
+      if( bp->isInfix() )
+        stream << bp->getArgument(3) << "=" << bp->getArgument(1) << bp->getArgument(0) << bp->getArgument(2);
+      else
+        stream << bp->getArgument(0) << "(" << bp->getArgument(1) << "," << bp->getArgument(2) << "," << bp->getArgument(3) << ")";
+      break;
+    default:
+      assert(false && "unknown arity in printing BuiltinPredicate");
+  }
 }
 
 
@@ -326,29 +343,21 @@ HOPrintVisitor::HOPrintVisitor(std::ostream& s)
 void
 HOPrintVisitor::visit(const Atom* const a)
 {
-  if (a->getAlwaysFO()) // FO mode is always raw
-    {
-      RawPrintVisitor v(stream);
-      a->accept(v);
-    }
-  else // print HO representation
-    {
-      if (a->isStronglyNegated())
+  if (a->isStronglyNegated())
 	{
 	  stream << '-';
 	}
 
-      // output a_n
-      stream << "a_" << a->getArity() << '(';
+  // output a_n
+  stream << "a_" << a->getArity() << '(';
 
-      // output predicate and arguments
-      for (unsigned i = 0; i < a->getArity(); i++)
+  // output predicate and arguments
+  for (unsigned i = 0; i < a->getArity(); i++)
 	{
 	  stream << a->getArgument(i) << ',';
 	}
 
-      stream << a->getArgument(a->getArity()) << ')';
-    }
+  stream << a->getArgument(a->getArity()) << ')';
 }
 
 DLVHEX_NAMESPACE_END
