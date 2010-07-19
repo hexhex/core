@@ -33,6 +33,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "testsuite/dlvhex/ASPsolverTest.h"
 
 #include "dlvhex/Error.h"
@@ -63,7 +67,8 @@ void
 ASPsolverTest::testResult()
 { 
     ASPSolverManager& mgr = ASPSolverManager::Instance();
-    typedef ASPSolverManager::DLVSoftware DLVSoftware;
+    typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
+    DLVConfiguration dlvconfig;
 
     std::vector<AtomSet> answersets;
     std::vector<AtomSet>::const_iterator as;
@@ -79,7 +84,7 @@ ASPsolverTest::testResult()
     b2.insert(new Literal(AtomPtr(new Atom(Tuple(1, Term("b"))))));
     Rule* r2 = new Rule(h2, b2);
     idb2.addRule(r2);
-    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb2, edb2, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve(dlvconfig, idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -93,7 +98,7 @@ ASPsolverTest::testResult()
     Tuple t1;
     edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")))));
     edb1.insert(AtomPtr(new Atom(Tuple(1, Term("a")), true)));
-    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb1, edb1, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve(dlvconfig, idb1, edb1, answersets));
     CPPUNIT_ASSERT(answersets.size() == 0);
     answersets.clear();
     
@@ -101,7 +106,7 @@ ASPsolverTest::testResult()
     // single model: { b, a :- b }
     //
     edb2.insert(AtomPtr(new Atom(Tuple(1, Term("b")))));
-    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb2, edb2, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve(dlvconfig, idb2, edb2, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 1);
@@ -139,7 +144,7 @@ ASPsolverTest::testResult()
     t34.push_back(Term("s"));
     t34.push_back(Term("a"));
     edb3.insert(AtomPtr(new Atom(t34)));
-    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb3, edb3, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve(dlvconfig, idb3, edb3, answersets));
     CPPUNIT_ASSERT(answersets.size() == 2);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 1);
@@ -158,7 +163,7 @@ ASPsolverTest::testResult()
     edb4.insert(AtomPtr(new Atom(t4)));
 
     // b should not be in the result then!
-    CPPUNIT_ASSERT_NO_THROW(mgr.solve<DLVSoftware>(idb4, edb4, answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solve(dlvconfig, idb4, edb4, answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -168,7 +173,7 @@ ASPsolverTest::testResult()
     //
     // empty program
     //
-    CPPUNIT_ASSERT_NO_THROW(mgr.solveFile<DLVSoftware>("/dev/null", answersets));
+    CPPUNIT_ASSERT_NO_THROW(mgr.solveFile(dlvconfig, "/dev/null", answersets));
     CPPUNIT_ASSERT(answersets.size() == 1);
     as = answersets.begin();
     CPPUNIT_ASSERT(as->size() == 0);
@@ -178,7 +183,7 @@ ASPsolverTest::testResult()
 		// read dlv program from string and return result
 		{
 			// single model: { b, a :- b }
-			CPPUNIT_ASSERT_NO_THROW(mgr.solveString<DLVSoftware>("b. a:-b.", answersets));
+			CPPUNIT_ASSERT_NO_THROW(mgr.solveString(dlvconfig, "b. a:-b.", answersets));
 			CPPUNIT_ASSERT(answersets.size() == 1);
 			as = answersets.begin();
 			CPPUNIT_ASSERT(as->size() == 1);
@@ -188,8 +193,11 @@ ASPsolverTest::testResult()
 #if defined(HAVE_DLVDB)
 		// same with dlvdb: read dlv program from string and return result
 		{
+      typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVDBSoftware> DLVDBConfiguration;
+      DLVDBConfiguration dlvdbconfig;
+
 			// single model: { b, a :- b }
-			CPPUNIT_ASSERT_NO_THROW(mgr.solveString<DLVDBSoftware>("b. a:-b.", answersets));
+			CPPUNIT_ASSERT_NO_THROW(mgr.solveString(dlvdbconfig, "b. a:-b.", answersets));
 			CPPUNIT_ASSERT(answersets.size() == 1);
 			as = answersets.begin();
 			CPPUNIT_ASSERT(as->size() == 1);

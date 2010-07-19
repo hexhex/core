@@ -36,6 +36,7 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ASPSolverManager.h"
 
 #include <vector>
 #include <string>
@@ -82,6 +83,8 @@ class DLVHEX_EXPORT ProgramCtx
 
   NodeGraph* nodegraph;
   DependencyGraph* depgraph;
+
+  ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
   ResultContainer* result;
 
@@ -153,6 +156,13 @@ class DLVHEX_EXPORT ProgramCtx
 
   void
   setDependencyGraph(DependencyGraph*);
+
+
+  ASPSolverManager::SoftwareConfigurationPtr
+  getASPSoftware() const;
+
+  void
+  setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr);
 
 
   ResultContainer*

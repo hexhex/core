@@ -73,6 +73,7 @@ libdlvhexbase_la_SOURCES = \
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
     DLVresultParserDriver.cpp \
+    ASPSolverManager.cpp \
     ASPSolver.cpp \
     DLVProcess.cpp \
     ProcessBuf.cpp

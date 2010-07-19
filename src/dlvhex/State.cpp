@@ -44,6 +44,8 @@
 #  endif
 #endif
 
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/GraphBuilder.h"
@@ -557,6 +559,21 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
       (*pi)->setupProgramCtx(*ctx);
     }
 
+  // if we solve using DLV, automagically set higher order mode
+  // (this has to be done globally for the global solver configuration,
+  // it can be done locally for other usages of ASPSolver(Manager))
+  ASPSolverManager::SoftwareConfigurationPtr aspsoftware = ctx->getASPSoftware();
+  typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
+  boost::shared_ptr<DLVConfiguration> dlvconfiguration =
+    boost::dynamic_pointer_cast<DLVConfiguration>(aspsoftware);
+  if( dlvconfiguration != 0 )
+  {
+    if( ctx->getIDB()->isHigherOrder() )
+    {
+      dlvconfiguration->options.rewriteHigherOrder = true;
+      dlvconfiguration->options.dropPredicates = true;
+    }
+  }
 
   boost::shared_ptr<State> next;
 

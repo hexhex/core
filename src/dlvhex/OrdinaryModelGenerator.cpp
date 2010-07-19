@@ -43,7 +43,7 @@
 #  endif
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Benchmarking.h"
@@ -106,7 +106,7 @@ OrdinaryModelGenerator::compute(const Program& program,
       /// and so we couldn't get rid of them any more. this is why we have
       /// to add the input edb below again!
       ///
-      ASPSolverManager::Instance().solve(program, I, answersets);
+      ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), program, I, answersets);
     }
   catch (GeneralError&)
     {

@@ -43,7 +43,7 @@
 #  endif
 #endif
 
-#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
@@ -229,7 +229,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
   //
   try
     {
-      ASPSolverManager::Instance().solve(guessingrules, I, allguesses);
+      ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), guessingrules, I, allguesses);
     }
   catch (FatalError&)
     {
@@ -435,7 +435,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	  std::vector<AtomSet> reductanswers;
 	  
-	  ASPSolverManager::Instance().solve(bodyPicker, *guess, reductanswers);
+	  ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), bodyPicker, *guess, reductanswers);
 
 	  // the program must be a satisfiable & stratified!
 	  assert(reductanswers.size() == 1);
@@ -504,7 +504,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  //
 	  // 5)
 	  //
-	  ASPSolverManager::Instance().solve(flpreduced, reducedEDB, reductanswers2);
+	  ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), flpreduced, reducedEDB, reductanswers2);
 
 	  assert(reductanswers2.size() == 1);
 			

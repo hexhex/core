@@ -43,7 +43,7 @@
 #  endif
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
@@ -176,7 +176,7 @@ FixpointModelGenerator::compute(const Program& program,
       try
         {
 	  answersets.clear();
-	  ASPSolverManager::Instance().solve(program, edb, answersets);
+	  ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), program, edb, answersets);
         }
       catch (GeneralError&)
         {

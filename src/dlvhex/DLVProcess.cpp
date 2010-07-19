@@ -37,10 +37,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/DLVProcess.h"
-#include "dlvhex/DLVresultParserDriver.h"
-#include "dlvhex/ASPSolver.h"
 #include "dlvhex/globals.h"
-#include "dlvhex/PrintVisitor.h"
 
 #include <iostream>
 #include <boost/iostreams/tee.hpp>
@@ -50,7 +47,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 DLVProcess::DLVProcess()
-  : proc(), ipipe(0), opipe(0)
+  : proc(), ipipe(0), opipe(0), executable(), argv()
 { }
 
 
@@ -68,10 +65,16 @@ DLVProcess::addOption(const std::string& option)
 }
 
 
+void
+DLVProcess::setPath(const std::string& path)
+{
+  executable = path;
+}
+
 std::string
 DLVProcess::path() const
 {
-  return DLVPATH;
+  return executable;
 }
 
 
@@ -80,10 +83,9 @@ DLVProcess::commandline() const
 {
   std::vector<std::string> tmp;
 
+  assert(!path().empty());
   tmp.push_back(path());
   tmp.insert(tmp.end(), argv.begin(), argv.end());
-  /// @todo: how about the ASPFileSolver - is the final -- then ignored?
-  tmp.push_back("--"); // request stdin as last parameter!
 
   return tmp;
 }
@@ -133,6 +135,7 @@ DLVProcess::spawn(const std::vector<std::string>& opt)
 {
   setupStreams();
   std::vector<std::string> tmp(opt);
+  assert(!path().empty());
   tmp.insert(tmp.begin(), path());
   proc.open(tmp);
 }
@@ -172,45 +175,6 @@ DLVProcess::getInput()
   assert(ipipe != 0);
   return *ipipe;
 }
-
-
-
-DLVDBProcess::DLVDBProcess()
-  : DLVProcess()
-{ }
-
-
-///@todo: perhaps we should have one process class, and configure it with path to binary and arguments from the outside (i.e., from some Software class in ASPSolver.h
-
-std::string
-DLVDBProcess::path() const
-{
-#if defined(HAVE_DLVDB)
-  return DLVDBPATH;
-#else
-  return DLVProcess::path();
-#endif
-}
-
-
-std::vector<std::string>
-DLVDBProcess::commandline() const
-{
-#if defined(HAVE_DLVDB)
-  std::vector<std::string> tmp;
-
-  tmp.push_back(path());
-  tmp.push_back("-DBSupport"); // turn on database support
-  tmp.push_back("-ORdr-"); // turn on rewriting of false body rules
-  tmp.insert(tmp.end(), argv.begin(), argv.end());
-  tmp.push_back("--"); // request stdin as last parameter!
-
-  return tmp;
-#else
-  return DLVProcess::commandline();
-#endif /* HAVE_DLVDB */
-}
-
 
 DLVHEX_NAMESPACE_END
 
