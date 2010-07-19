@@ -2,19 +2,13 @@
 
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
-* TODO Use boost spirit instead of flex/bison
-<http://spirit.sourceforge.net/distrib/spirit_1_8_5/libs/spirit/doc/techniques.html>
 * TODO Add support for GraphML
 The GraphML could be handy for debugging the dependency graph and
 other stuff: <http://graphml.graphdrawing.org/>
 
 Obviously, Boost.Graph has support for it.
 * TODO unsetenv("LD_LIBRARY_PATH")?
-* TODO Guess & Check model generator is broken
-and sometimes, in firstorder mode, we can see a copy of the input
-program as higher-order program in the debug output.
 * TODO Check if the undecorated external atom replacement and aux names are working
-* DONE Fixpoint model generators is broken
 * TODO Fix extatom3.hex and dawg.hex testcases
 This goes in line with GuessCheckModelGenerator: if there are already
 solved stratified replacement atoms in the result and there are
@@ -75,7 +69,6 @@ hierarchy. We need to rewrite in
 - graph builder (though a bit differently: external dependencies)
 * TODO Send unknown command line options to dlv?
 Handy for passing, e.g., optimization flags to dlv.
-* DONE Add a dlvhex facade to couple all intermediate products
 * TODO HEX-parser should create metainformation of the program
 Like no. of external and HO atoms, aggregates, ...; given this
 information, we can effectively choose what parts of dlvhex have to be
