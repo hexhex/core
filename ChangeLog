@@ -1,3 +1,10 @@
+2010-07-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* TODO: Update.
+
+	* include/dlvhex/Makefile.am: Highlight which header file belongs
+	to which library.
+
 2010-07-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	Release version 1.7.1.
