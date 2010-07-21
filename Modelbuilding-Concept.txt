@@ -9,6 +9,7 @@ Concept for building (TODO) and representing models:
 ** An atom can occur positive/negative/undefined,
    and an atom can be irrelevant (not part of the current component)
 ** Therefore we need a 4-valued representation (2 bits)
+	(see further down for 3-valued representation)
    * Knuth remarks in fascicle 1 pg 31, that it is better to have two vectors
      of bits, not one vector where even and odd bits have different meanings.
      (This appears to be correct in the next "first attempt" case.)
@@ -64,3 +65,27 @@ PS: Can we do better in terms of bit encoding/join efficiency?
 * First attempt: 3*n AND, 2*n OR, 2*n XOR, 2*n NOT, n ones-check, 2*n AND for actually joining.
 * Second attempt: 2*n AND, 4*n OR, 2*n XOR, n zeroes-check, actual join happens during compatibility check.
      
+** If we rewrite extended programs we only need something three-valued,
+   and can (hopefully) do more efficient joins.
+   An atom can occur positive, or it does not occur,
+   and and an atom can be irrelevant (not part of the current component)
+   * First attempt:
+     AB
+     00 = irrelevant (not part of component)
+     01 = not present
+     10 = positive present
+     11 = unused/invalid combination
+     * compatibility check:
+       COMPAT = (A1 & B2) | (A2 & B1)
+       models are joinable iff COMPAT is zero
+     * calculating result model A'/B':
+       A' = A1 | A2
+       B' = B1 | B2
+     * calculation (in batches):
+       calculate A1 & B2
+       calculate A2 & B1
+       OR these two
+       check if all zeroes
+       if not, discard
+       if all batches ok, A' = A1 | A2 and B' = B1 | B2 is the result
+     * Operations: 2*n AND, n OR, n zero-check, 2*n OR for joining
