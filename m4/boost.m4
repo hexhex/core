@@ -541,13 +541,11 @@ AC_DEFUN([BOOST_GRAPH],
 # Look for Boost.IOStreams.  For the documentation of PREFERRED-RT-OPT, see the
 # documentation of BOOST_FIND_LIB above.
 AC_DEFUN([BOOST_IOSTREAMS],
-[m4_pattern_allow([BOOST_IOSTREAMS_USE_DEPRECATED])
-boost_iostreams_save_CPPFLAGS=$CPPFLAGS
+[boost_iostreams_save_CPPFLAGS=$CPPFLAGS
 CPPFLAGS="$CPPFLAGS -DBOOST_IOSTREAMS_USE_DEPRECATED"
 BOOST_FIND_LIB([iostreams], [$1],
                 [boost/iostreams/device/file_descriptor.hpp],
-                [boost::iostreams::file_descriptor fd(0); fd.close();],
-                [#define BOOST_IOSTREAMS_USE_DEPRECATED])
+                [boost::iostreams::file_descriptor fd(0); fd.close();])
 CPPFLAGS=$boost_iostreams_save_CPPFLAGS
 ])# BOOST_IOSTREAMS
 
