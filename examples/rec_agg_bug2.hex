@@ -1,0 +1,5 @@
+% #int(V) should make the rule in line 4 expansion safe, but it does not
+#maxint=5.
+foo(3).
+minusone(X,V) :- &testMinusOne[X](V), foo(X), #int(V).
+foo(Z) :- #min{ V: minusone(X,V) } = Z.

@@ -221,6 +221,38 @@ public:
     }
 };
 
+class TestMinusOneAtom : public PluginAtom
+{
+public:
+
+    TestMinusOneAtom():
+      PluginAtom()
+    {
+        addInputConstant();
+        setOutputArity(1);
+    }
+
+    virtual void
+    retrieve(const Query& query, Answer& answer) throw (PluginError)
+    {
+      const Tuple& in = query.getInputTuple();
+    
+      const std::string& s1 = in[0].getUnquotedString();
+      
+      std::stringstream s;
+      s << s1;
+      int i;
+      s >> i;
+      if( i > 0 )
+        i--;
+
+      Tuple t;
+      t.push_back(Term(i));
+      answer.addTuple(t);
+    }
+};
+
+
 class TestSetMinusAtom : public PluginAtom
 {
 public:
@@ -310,6 +342,7 @@ public:
 	  boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
 	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
 	  boost::shared_ptr<PluginAtom> testSetMinus(new TestSetMinusAtom);
+	  boost::shared_ptr<PluginAtom> testMinusOne(new TestMinusOneAtom);
 
 	  a["testA"] = testA;
 	  a["testB"] = testB;
@@ -318,6 +351,7 @@ public:
 	  a["testZeroArity1"] = testZeroArity1;
 	  a["testConcat"] = testConcat;
 	  a["testSetMinus"] = testSetMinus;
+	  a["testMinusOne"] = testMinusOne;
 	}
 
 	virtual void
