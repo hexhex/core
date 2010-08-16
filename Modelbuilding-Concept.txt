@@ -89,3 +89,25 @@ PS: Can we do better in terms of bit encoding/join efficiency?
        if not, discard
        if all batches ok, A' = A1 | A2 and B' = B1 | B2 is the result
      * Operations: 2*n AND, n OR, n zero-check, 2*n OR for joining
+
+* Online vs Offline Model Building
+** We want to do both (either everything is online, or everything is offline)
+** We do not want to implement everything twice
+** Solution: For online model building we need kind of an Iterator interface:
+   * initialize(bool retainModels)
+   * getNextModel(...)
+   * rewind()
+   We can use this interface for offline model building:
+   * we always retain models
+   * we always obtain all models as soon as we setup such an iterator
+   * -> for all iterators except the first layer, we iterate on retained models in some cache
+   * -> we have a calculation localized to the current unit and its predecessors (this is beneficial to debugging)
+   * -> we only need minimal implementation difference to get offline model building
+   * -> we can later extend this to do on-demand evaluation plan building with offline model building (iterators must not refer to child evaluation units)
+ 
+* Projected vs Not-Projected Model Building
+** We want to do both (for each evaluation unit, switch on/off input and output projection independently)
+** This should be as easy as doing it with one decision for the overall evaluation graph
+** Projection can be handled by the iterators
+** (PS) I have an idea for a joining input iterator which can handle model graphs with projection just as it handles model graphs without projection
+

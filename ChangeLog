@@ -1,3 +1,10 @@
+2010-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/BoostComponentFinder.cpp: Applied the nice part of the
+	clang diff (the one that does not deal with a clang bug).
+	* Modelbuilding-Concept.txt: Thoughts on online vs offline and
+	projected vs non projected model building.
+
 2010-07-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
