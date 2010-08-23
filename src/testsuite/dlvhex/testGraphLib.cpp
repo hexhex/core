@@ -5,7 +5,8 @@
 #include <vector>
 #include <cassert>
 
-//#include <boost/graph/graph_traits.hpp>
+#include <boost/foreach.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
 #define BOOST_TEST_MODULE __FILE__
@@ -54,10 +55,15 @@ private:
   // vecS is important, because it creates an implicit vertex index (and descriptors of vecS are integers)
   typedef boost::adjacency_list<
     boost::vecS, boost::vecS, boost::bidirectionalS,
-    EvalUnitPropertyBundle, EvalUnitDepPropertyBundle> EvalGraphInt;
+    EvalUnitPropertyBundle, EvalUnitDepPropertyBundle>
+      EvalGraphInt;
+  typedef typename boost::graph_traits<EvalGraphInt> Traits;
+
 public:
   typedef typename EvalGraphInt::vertex_descriptor EvalUnit;
   typedef typename EvalGraphInt::edge_descriptor EvalUnitDep;
+  typedef typename Traits::out_edge_iterator PredecessorIterator;
+  typedef typename Traits::in_edge_iterator SuccessorIterator;
 
   // members
 private:
@@ -65,19 +71,54 @@ private:
 
   // methods
 public:
-  EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
+  inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
   {
     return boost::add_vertex(prop, eg);
   }
-  EvalUnitDep addDependency(const EvalUnit& u1, const EvalUnit& u2,
+  inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
     const EvalUnitDepPropertyBundle& prop)
   {
     bool success;
     EvalUnitDep dep;
     boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
-    assert(success &&
-      "EvalGraph::addDependency failed (foreign EvalUnit?)");
+    // if this fails, we tried to add a foreign eval unit or something strange like this
+    assert(success);
     return dep;
+  }
+
+  // predecessors are eval units providing input to us,
+  // edges are dependencies, so predecessors are at outgoing edges
+  inline std::pair<PredecessorIterator, PredecessorIterator>
+  getPredecessors(EvalUnit u) const
+  {
+    return boost::out_edges(u, eg);
+  }
+
+  // successors are eval units we provide input to,
+  // edges are dependencies, so successors are at incoming edges
+  inline std::pair<SuccessorIterator, SuccessorIterator>
+  getSuccessors(EvalUnit u) const
+  {
+    return boost::in_edges(u, eg);
+  }
+
+  inline const EvalUnitDepPropertyBundle& propsOf(EvalUnitDep u) const
+  {
+    return eg[u];
+  }
+
+  inline const EvalUnitPropertyBundle& propsOf(EvalUnit u) const
+  {
+    return eg[u];
+  }
+
+  inline EvalUnit sourceOf(EvalUnitDep d) const
+  {
+    return boost::source(d, eg);
+  }
+  inline EvalUnit targetOf(EvalUnitDep d) const
+  {
+    return boost::target(d, eg);
   }
 };
 
@@ -88,6 +129,8 @@ class Interpretation
 {
 public:
   // create empty
+  Interpretation(): atoms() {}
+  // create from atom set
   Interpretation(const AtomSet& as): atoms(as) {}
   // create as union
   Interpretation(const Interpretation& i1, const Interpretation& i2);
@@ -198,10 +241,15 @@ public:
 
   // return helper map that stores for each unit the set of i/omodels there
   // usage: modelsAtUnit()[EvalUnit u].
-  const ModelList& modelsAt(EvalUnit unit, ModelType type) const
+  inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
     assert(0 <= type <= 4);
     return boost::get(mau, unit).models[type];
+  }
+
+  inline const ModelPropertyBundle& propsOf(Model m) const
+  {
+    return mg[m];
   }
 };
 
@@ -212,9 +260,57 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   ModelType type,
   const std::list<Model>& deps)
 {
+  typedef typename EvalGraphT::PredecessorIterator PredecessorIterator;
+
   #ifdef DEBUG
+  switch(type)
+  {
+  case MT_IN:
+    // check whether model depends on all units unit location depends on
+    {
+      PredecessorIterator it, end;
+      std::set<EvalUnit> preds;
+      for(boost::tie(it, end) = eg.getPredecessors(location); it != end; ++it)
+      {
+        std::cerr << "pred = " << eg.targetOf(*it) << std::endl;
+        preds.insert(eg.targetOf(*it));
+      }
+      // check if size is equal
+      assert(preds.size() == deps.size());
+      // remove all deps
+      BOOST_FOREACH(Model m, deps)
+      {
+        std::cerr << "loc = " << propsOf(m).location << std::endl;
+        preds.erase(propsOf(m).location);
+      }
+      // check if empty
+      assert(preds.empty());
+    }
+    break;
+
+  case MT_OUT:
+  case MT_OUTPROJ:
+  case MT_INPROJ:
+    break;
+  }
   #endif
-  // TODO
+
+  ModelPropertyBundle prop;
+  prop.location = location;
+  prop.type = type;
+  // @todo allow for initializing prop.props?
+  Model m = boost::add_vertex(prop, mg);
+
+  BOOST_FOREACH(Model dm, deps)
+  {
+    ModelDepPropertyBundle dprop; // @todo handle this
+    ModelDep dep;
+    bool success;
+    boost::tie(dep, success) = boost::add_edge(m, dm, dprop, mg);
+    assert(success);
+  }
+
+  return m;
 }
 
 #if 0
@@ -345,7 +441,14 @@ BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
 {
   BOOST_REQUIRE(mg.modelsAt(u2, MT_OUT).size() == 1);
-  BOOST_CHECK(*(mg.modelsAt(u2, MT_OUT).begin()) == m5);
+  BOOST_CHECK(mg.modelsAt(u2, MT_OUT)[0] == m5);
+
+  BOOST_REQUIRE(mg.modelsAt(u2, MT_IN).size() == 2);
+  BOOST_CHECK(mg.modelsAt(u2, MT_IN)[0] == m3);
+  BOOST_CHECK(mg.modelsAt(u2, MT_IN)[1] == m4);
+
+  BOOST_CHECK(mg.propsOf(m10).location == u3);
+  BOOST_CHECK(mg.propsOf(m10).type == MT_OUT);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
