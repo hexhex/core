@@ -12,42 +12,54 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
-template<typename EvalUnitPropertiesT, typename EvalUnitDepPropertiesT>
+struct none_t {};
+
+template<
+  typename EvalUnitPropertyBaseT = none_t,
+  typename EvalUnitDepPropertyBaseT = none_t>
 class EvalGraph
 {
+  //////////////////////////////////////////////////////////////////////////////
   // types
+  //////////////////////////////////////////////////////////////////////////////
 public:
-  struct EvalUnitPropertyBundle
+  struct EvalUnitPropertyBundle:
+    public EvalUnitPropertyBaseT
   {
+    // storage
+
+    // input projection or not
     bool iproject;
+    // output projection or not
     bool oproject;
-    EvalUnitPropertiesT props;
 
-    EvalUnitPropertyBundle():
-        iproject(false), oproject(false), props() {}
+    // init
     EvalUnitPropertyBundle(
-      const EvalUnitPropertiesT& props):
-        iproject(false), oproject(false), props(props) {}
+      bool iproject = false,
+      bool oproject = false):
+        iproject(iproject), oproject(oproject) {}
     EvalUnitPropertyBundle(
-      bool iproject,
-      bool oproject,
-      const EvalUnitPropertiesT& props = EvalUnitPropertiesT()):
-        iproject(iproject), oproject(oproject), props(props) {}
+      const EvalUnitPropertyBaseT& base,
+      bool iproject = false,
+      bool oproject = false):
+        EvalUnitPropertyBaseT(base),
+        iproject(iproject), oproject(oproject) {}
   };
-  struct EvalUnitDepPropertyBundle
+  struct EvalUnitDepPropertyBundle:
+    public EvalUnitDepPropertyBaseT
   {
+    // storage
     unsigned joinOrder;
-    EvalUnitDepPropertiesT props;
 
-    EvalUnitDepPropertyBundle():
-        joinOrder(0), props() {}
+    // init
     EvalUnitDepPropertyBundle(
-      const EvalUnitDepPropertiesT& props):
-        joinOrder(0), props(props) {}
+      unsigned joinOrder = 0):
+        joinOrder(joinOrder) {}
     EvalUnitDepPropertyBundle(
-      unsigned joinOrder,
-      const EvalUnitDepPropertiesT& props = EvalUnitDepPropertiesT()):
-        joinOrder(joinOrder), props(props) {}
+      const EvalUnitDepPropertyBaseT& base,
+      unsigned joinOrder = 0):
+        EvalUnitDepPropertyBaseT(base),
+        joinOrder(joinOrder) {}
   };
 
 private:
@@ -65,11 +77,15 @@ public:
   typedef typename Traits::out_edge_iterator PredecessorIterator;
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
+  //////////////////////////////////////////////////////////////////////////////
   // members
+  //////////////////////////////////////////////////////////////////////////////
 private:
   EvalGraphInt eg;
 
+  //////////////////////////////////////////////////////////////////////////////
   // methods
+  //////////////////////////////////////////////////////////////////////////////
 public:
   inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
   {
@@ -167,43 +183,58 @@ enum ModelType
   MT_OUTPROJ = 3,
 };
 
-template<typename EvalGraphT, typename ModelPropertiesT, typename ModelDepPropertiesT>
+template<typename EvalGraphT, typename ModelPropertyBaseT, typename ModelDepPropertyBaseT>
 class ModelGraph
 {
+  //////////////////////////////////////////////////////////////////////////////
   // types
+  //////////////////////////////////////////////////////////////////////////////
 public:
   typedef typename EvalGraphT::EvalUnit EvalUnit;
   typedef typename EvalGraphT::EvalUnitDep EvalUnitDep;
 
-  struct ModelPropertyBundle
+  struct ModelPropertyBundle:
+    public ModelPropertyBaseT
   {
+    // storage
+
     // location of this model
-    typename EvalGraphT::EvalUnit location;
+    EvalUnit location;
     // type of this model
     ModelType type;
-    // other properties not managed by ModelGraph
-    ModelPropertiesT props;
 
-    ModelPropertyBundle():
-      location(), type(MT_IN), props() {}
+    // init
+    ModelPropertyBundle(
+      EvalUnit location = EvalUnit(),
+      ModelType type = MT_IN):
+        location(location),
+        type(type) {}
+    ModelPropertyBundle(
+      const ModelPropertyBaseT& base,
+      EvalUnit location = EvalUnit(),
+      ModelType type = MT_IN):
+        ModelPropertyBaseT(base),
+        location(location),
+        type(type) {}
   };
 
-  struct ModelDepPropertyBundle
+  struct ModelDepPropertyBundle:
+    public ModelDepPropertyBaseT
   {
+    // storage
+
     // join order
     unsigned joinOrder;
-    // other properties not managed by ModelGraph
-    ModelDepPropertiesT props;
 
-    ModelDepPropertyBundle():
-        joinOrder(0), props() {}
+    // init
     ModelDepPropertyBundle(
-      const ModelDepPropertiesT& props):
-        joinOrder(0), props(props) {}
+      unsigned joinOrder = 0):
+        joinOrder(joinOrder) {}
     ModelDepPropertyBundle(
-      unsigned joinOrder,
-      const ModelDepPropertiesT& props = ModelDepPropertiesT()):
-        joinOrder(joinOrder), props(props) {}
+      const ModelDepPropertyBaseT& base,
+      unsigned joinOrder = 0):
+        ModelDepPropertyBaseT(base),
+        joinOrder(joinOrder) {}
   };
 
 private:
@@ -226,7 +257,9 @@ public:
   typedef boost::vector_property_map<EvalUnitModels>
     EvalUnitModelsPropertyMap;
 
+  //////////////////////////////////////////////////////////////////////////////
   // members
+  //////////////////////////////////////////////////////////////////////////////
 private:
   // which eval graph is this model graph linked to
   EvalGraphT& eg;
@@ -234,7 +267,9 @@ private:
   // "exterior property map" for the eval graph: which models are present at which unit
   EvalUnitModelsPropertyMap mau;
 
+  //////////////////////////////////////////////////////////////////////////////
   // methods
+  //////////////////////////////////////////////////////////////////////////////
 public:
   // initialize with link to eval graph
   ModelGraph(EvalGraphT& eg):
@@ -265,7 +300,7 @@ public:
     ModelType type,
     const std::vector<Model>& deps=std::vector<Model>());
 
-  // return helper map that stores for each unit the set of i/omodels there
+  // return helper list that stores for each unit the set of i/omodels there
   // usage: modelsAtUnit()[EvalUnit u].
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
@@ -279,6 +314,7 @@ public:
   }
 };
 
+// ModelGraph<...>::addModel(...) implementation
 template<typename EvalGraphT, typename ModelPropertiesT, typename ModelDepPropertiesT>
 typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::Model
 ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
@@ -290,8 +326,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   typedef typename EvalGraphT::EvalUnitDepPropertyBundle EvalUnitDepPropertyBundle;
   typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
 
-  // We do these checks even in non-debug mode,
-  // as they are not too costly and very important.
+  #ifndef NDEBUG
   switch(type)
   {
   case MT_IN:
@@ -397,6 +432,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
     }
     break;
   }
+  #endif
 
   // add model
   ModelPropertyBundle prop;
@@ -420,43 +456,76 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   boost::get(mau, location).models[type].push_back(m);
 
   return m;
-}
+} // ModelGraph<...>::addModel(...) implementation
+
 
 #if 0
-template<EvaluationGraphT>
+template<typename EvaluationGraphT>
 class ModelBuilder
 {
-  // this is an "exterior property map" for the eval graph
-  // it stores model building data
-  struct EvalUnitCurrentModel
+  // types
+public:
+  // create a model graph suited to our needs
+  typedef ... ModelGraph;
+
+private:
+  // "exterior property map" for the eval graph:
+  // which models are currently used at which unit
+  // (=model building state)
+  typedef std::vector<Model> ModelList;
+  struct EvalUnitModelBuildingData
   {
     Model imodel;
     Model omodel;
-    int orefcount;
+    unsigned orefcount;
   };
-  typedef std::vector<EvalUnitCurrentModel> EvalUnitCurrentModelPropertyMap;
-  EvalUnitCurrentModelPropertyMap current;
+  typedef boost::vector_property_map<EvalUnitModelBuildingData>
+    EvalUnitModelBuildingPropertyMap;
+
+  // members
+private:
+  EvalUnitModelBuildingPropertyMap mbd;
+
+  // methods
+public:
+};
 #endif
-
-struct none_t {};
-
 
 //
 // test types
 //
 
-// eval unit properties = rules
-// dependency properties = nothing
-typedef EvalGraph<std::string, none_t>
+// TestEvalGraph
+struct TestEvalUnitPropertyBase
+{
+  // rules in the eval unit
+  std::string rules;
+
+  TestEvalUnitPropertyBase() {}
+  TestEvalUnitPropertyBase(const std::string& rules):
+    rules(rules) {}
+};
+
+typedef EvalGraph<TestEvalUnitPropertyBase>
   TestEvalGraph;
 typedef TestEvalGraph::EvalUnit EvalUnit; 
 typedef TestEvalGraph::EvalUnitDep EvalUnitDep; 
-typedef TestEvalGraph::EvalUnitPropertyBundle UnitCfg;
+//typedef TestEvalGraph::EvalUnitPropertyBundle UnitCfg;
+typedef TestEvalUnitPropertyBase UnitCfg;
 typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 
-// model properties = interpretation
-// dependency properties = nothing
-typedef ModelGraph<TestEvalGraph, Interpretation, none_t>
+// TestModelGraph
+struct TestModelPropertyBase
+{
+  // interpretation of the model
+  Interpretation interpretation;
+
+  TestModelPropertyBase() {}
+  TestModelPropertyBase(const Interpretation& interpretation):
+    interpretation(interpretation) {}
+};
+
+typedef ModelGraph<TestEvalGraph, TestModelPropertyBase, none_t>
   TestModelGraph;
 typedef TestModelGraph::Model Model;
 typedef TestModelGraph::ModelPropertyBundle ModelProp;
@@ -476,13 +545,21 @@ struct EvalGraphE2Fixture
 
   EvalGraphE2Fixture()
   {
+    BOOST_TEST_MESSAGE("adding u1");
     u1 = eg.addUnit(UnitCfg("plan(a) v plan(b)."));
+    BOOST_TEST_MESSAGE("adding u2");
     u2 = eg.addUnit(UnitCfg("need(p,C) :- &cost[plan](C). :- need(_,money).")); 
+    BOOST_TEST_MESSAGE("adding u3");
     u3 = eg.addUnit(UnitCfg("use(X) v use(Y).")); 
+    BOOST_TEST_MESSAGE("adding u4");
     u4 = eg.addUnit(UnitCfg("need(u,C) :- &cost[use](C). :- need(_,money)."));
+    BOOST_TEST_MESSAGE("adding e21");
     e21 = eg.addDependency(u2, u1, UnitDepCfg(0));
+    BOOST_TEST_MESSAGE("adding e31");
     e31 = eg.addDependency(u3, u1, UnitDepCfg(0));
+    BOOST_TEST_MESSAGE("adding e42");
     e42 = eg.addDependency(u4, u2, UnitDepCfg(0));
+    BOOST_TEST_MESSAGE("adding e43");
     e43 = eg.addDependency(u4, u3, UnitDepCfg(1));
   }
 
@@ -504,36 +581,50 @@ struct ModelGraphM2Fixture:
     depm.reserve(2);
 
     // u1
+    BOOST_TEST_MESSAGE("adding m1");
     m1 = mg.addModel(u1, MT_OUT);
+    BOOST_TEST_MESSAGE("adding m2");
     m2 = mg.addModel(u1, MT_OUT);
 
     // u2
+    BOOST_TEST_MESSAGE("adding m3");
     depm.clear(); depm.push_back(m1);
     m3 = mg.addModel(u2, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m4");
     depm.clear(); depm.push_back(m2);
     m4 = mg.addModel(u2, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m5");
     depm.clear(); depm.push_back(m4);
     m5 = mg.addModel(u2, MT_OUT, depm);
 
     // u3
+    BOOST_TEST_MESSAGE("adding m6");
     depm.clear(); depm.push_back(m1);
     m6 = mg.addModel(u3, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m7");
     depm.clear(); depm.push_back(m2);
     m7 = mg.addModel(u3, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m8");
     depm.clear(); depm.push_back(m6);
     m8 = mg.addModel(u3, MT_OUT, depm);
+    BOOST_TEST_MESSAGE("adding m9");
     depm.clear(); depm.push_back(m6);
     m9 = mg.addModel(u3, MT_OUT, depm);
+    BOOST_TEST_MESSAGE("adding m10");
     depm.clear(); depm.push_back(m7);
     m10 = mg.addModel(u3, MT_OUT, depm);
+    BOOST_TEST_MESSAGE("adding m11");
     depm.clear(); depm.push_back(m7);
     m11 = mg.addModel(u3, MT_OUT, depm);
 
     // u4
+    BOOST_TEST_MESSAGE("adding m12");
     depm.clear(); depm.push_back(m5); depm.push_back(m10);
     m12 = mg.addModel(u4, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m13");
     depm.clear(); depm.push_back(m5); depm.push_back(m11);
     m13 = mg.addModel(u4, MT_IN, depm);
+    BOOST_TEST_MESSAGE("adding m14");
     depm.clear(); depm.push_back(m12);
     m14 = mg.addModel(u4, MT_OUT, depm);
   }
