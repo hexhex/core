@@ -9,11 +9,17 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
 struct none_t {};
 
+//
+// the EvalGraph template manages a generic evaluation graph:
+// it takes care of a correct join order among in-edges of units
+//
 template<
   typename EvalUnitPropertyBaseT = none_t,
   typename EvalUnitDepPropertyBaseT = none_t>
@@ -23,27 +29,15 @@ class EvalGraph
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
+  typedef EvalUnitPropertyBaseT EvalUnitPropertyBase;
+  typedef EvalUnitDepPropertyBaseT EvalUnitDepPropertyBase;
+
   struct EvalUnitPropertyBundle:
-    public EvalUnitPropertyBaseT
+    public EvalUnitPropertyBase
   {
-    // storage
-
-    // input projection or not
-    bool iproject;
-    // output projection or not
-    bool oproject;
-
-    // init
     EvalUnitPropertyBundle(
-      bool iproject = false,
-      bool oproject = false):
-        iproject(iproject), oproject(oproject) {}
-    EvalUnitPropertyBundle(
-      const EvalUnitPropertyBaseT& base,
-      bool iproject = false,
-      bool oproject = false):
-        EvalUnitPropertyBaseT(base),
-        iproject(iproject), oproject(oproject) {}
+      const EvalUnitPropertyBase& base = EvalUnitPropertyBase()):
+        EvalUnitPropertyBase(base) {}
   };
   struct EvalUnitDepPropertyBundle:
     public EvalUnitDepPropertyBaseT
@@ -56,9 +50,9 @@ public:
       unsigned joinOrder = 0):
         joinOrder(joinOrder) {}
     EvalUnitDepPropertyBundle(
-      const EvalUnitDepPropertyBaseT& base,
+      const EvalUnitDepPropertyBase& base,
       unsigned joinOrder = 0):
-        EvalUnitDepPropertyBaseT(base),
+        EvalUnitDepPropertyBase(base),
         joinOrder(joinOrder) {}
   };
 
@@ -91,9 +85,28 @@ public:
   {
     return boost::add_vertex(prop, eg);
   }
+
   inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
     const EvalUnitDepPropertyBundle& prop)
   {
+    #ifndef NDEBUG
+    // check if the joinOrder is correct
+    // (require that dependencies are added in join order)
+    PredecessorIterator pit, pend;
+    boost::tie(pit,pend) = getPredecessors(u1);
+    unsigned count;
+    for(count = 0; pit != pend; ++pit, ++count)
+    {
+      const EvalUnitDepPropertyBundle& predprop = propsOf(*pit);
+      if( prop.joinOrder == predprop.joinOrder )
+        throw std::runtime_error("EvalGraph::addDependency "
+            "reusing join order not allowed");
+    }
+    if( count != prop.joinOrder )
+      throw std::runtime_error("EvalGraph::addDependency "
+          "using wrong (probably too high) join order");
+    #endif
+
     bool success;
     EvalUnitDep dep;
     boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
@@ -136,7 +149,7 @@ public:
   {
     return boost::target(d, eg);
   }
-};
+}; // class EvalGraph<...>
 
 // for testing we use stupid types
 typedef std::set<std::string> AtomSet;
@@ -166,13 +179,28 @@ public:
 
 private:
   AtomSet atoms;
-};
+}; // class Interpretation
 
 // syntactic operator<< sugar for printing interpretations
 std::ostream& operator<<(std::ostream& o, const Interpretation& i)
 {
   return i.print(o);
 }
+
+// projection properties for eval units
+// such properties are required by the model graph
+struct EvalUnitProjectionProperties
+{
+  // storage
+  bool iproject;
+  bool oproject;
+
+  // init
+  EvalUnitProjectionProperties(
+    bool iproject = false,
+    bool oproject = false):
+      iproject(iproject), oproject(oproject) {}
+};
 
 // this is used as index into an array by struct EvalUnitModels
 enum ModelType
@@ -183,15 +211,40 @@ enum ModelType
   MT_OUTPROJ = 3,
 };
 
-template<typename EvalGraphT, typename ModelPropertyBaseT, typename ModelDepPropertyBaseT>
+//
+// the ModelGraph template manages a generic model graph,
+// corresponding to an EvalGraph type:
+// it manages projection for units and corresponding model types
+// it manages correspondance of dependencies between models and units
+// it manages correspondance of join orders between model and unit dependencies
+//
+template<
+  typename EvalGraphT,
+  typename ModelPropertyBaseT = none_t,
+  typename ModelDepPropertyBaseT = none_t>
 class ModelGraph
 {
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
+  typedef EvalGraphT MyEvalGraph;
+  typedef ModelPropertyBaseT ModelPropertyBase;
+  typedef ModelDepPropertyBaseT ModelDepPropertyBase;
+
+  // concept check: must be an eval graph
+  BOOST_CONCEPT_ASSERT((boost::Convertible<
+      EvalGraphT,
+      EvalGraph<
+        typename EvalGraphT::EvalUnitPropertyBase,
+        typename EvalGraphT::EvalUnitDepPropertyBase> >));
   typedef typename EvalGraphT::EvalUnit EvalUnit;
   typedef typename EvalGraphT::EvalUnitDep EvalUnitDep;
+
+  // concept check: eval graph must store projection properties for units
+  BOOST_CONCEPT_ASSERT((boost::Convertible<
+      typename EvalGraphT::EvalUnitPropertyBundle,
+      EvalUnitProjectionProperties>));
 
   struct ModelPropertyBundle:
     public ModelPropertyBaseT
@@ -312,7 +365,7 @@ public:
   {
     return mg[m];
   }
-};
+}; // class ModelGraph
 
 // ModelGraph<...>::addModel(...) implementation
 template<typename EvalGraphT, typename ModelPropertiesT, typename ModelDepPropertiesT>
@@ -459,14 +512,21 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
 } // ModelGraph<...>::addModel(...) implementation
 
 
+// TODO continue here
 #if 0
-template<typename EvaluationGraphT>
+// todo: EvalGraphT must provide ModelGeneratorFactories in eval unit properties
+template<typename EvalGraphT>
 class ModelBuilder
 {
   // types
 public:
+  typedef typename EvalGraphT::EvalUnit EvalUnit;
+  typedef typename EvalGraphT::EvalUnitDep EvalUnitDep;
+
   // create a model graph suited to our needs
-  typedef ... ModelGraph;
+  typedef ModelGraph<EvalGraphT> ModelGraph;
+  typedef typename ModelGraph::Model Model;
+  typedef typename ModelGraph::ModelDep ModelDep;
 
 private:
   // "exterior property map" for the eval graph:
@@ -496,7 +556,8 @@ public:
 //
 
 // TestEvalGraph
-struct TestEvalUnitPropertyBase
+struct TestEvalUnitPropertyBase:
+  public EvalUnitProjectionProperties
 {
   // rules in the eval unit
   std::string rules;
