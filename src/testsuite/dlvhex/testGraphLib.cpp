@@ -57,8 +57,18 @@ public:
   };
 
 private:
-  // vecS is not bad, because we will not really add a huge amount of eval units, and we won't remove any units.
-  // vecS is important, because it creates an implicit vertex index (and descriptors of vecS are integers)
+  // rationales for choice of vecS here:
+  // * we will add eval units once and don't remove units later on,
+  //   therefore the high cost of removing units is not problematic
+  //   (if we need to modify the eval graph, this should be done before
+  //    creating it in this form, and it should be done on a listS representation
+  //    - for that we could add a template parameter StorageT to this class
+  //    and convertibility from listS to vecS storage)
+  // * vecS creates an implicit vertex index, as descriptors of vecS are integers
+  // * therefore we can create vector_property_maps over EvalUnit and EvalUnitDep,
+  //   and these property maps have efficient lookup.
+  // * therefore we can distribute the properties among several such maps and
+  //   need not put all into one property bundle
   typedef boost::adjacency_list<
     boost::vecS, boost::vecS, boost::bidirectionalS,
     EvalUnitPropertyBundle, EvalUnitDepPropertyBundle>
@@ -152,23 +162,27 @@ public:
 }; // class EvalGraph<...>
 
 // for testing we use stupid types
-typedef std::set<std::string> AtomSet;
+typedef std::set<std::string> TestAtomSet;
 
-class Interpretation
+class TestInterpretation
 {
 public:
+  typedef boost::shared_ptr<TestInterpretation> Ptr;
+  typedef boost::shared_ptr<const TestInterpretation> ConstPtr;
+
+public:
   // create empty
-  Interpretation(): atoms() {}
+  TestInterpretation(): atoms() {}
   // create from atom set
-  Interpretation(const AtomSet& as): atoms(as) {}
+  TestInterpretation(const TestAtomSet& as): atoms(as) {}
   // create as union
-  Interpretation(const Interpretation& i1, const Interpretation& i2);
+  TestInterpretation(const TestInterpretation& i1, const TestInterpretation& i2);
   // destruct
-  ~Interpretation() {}
+  ~TestInterpretation() {}
   // output
   std::ostream& print(std::ostream& o) const
   {
-    AtomSet::const_iterator it = atoms.begin();
+    TestAtomSet::const_iterator it = atoms.begin();
     o << "{" << *it;
     ++it;
     for(;it != atoms.end(); ++it)
@@ -178,11 +192,11 @@ public:
   }
 
 private:
-  AtomSet atoms;
+  TestAtomSet atoms;
 }; // class Interpretation
 
 // syntactic operator<< sugar for printing interpretations
-std::ostream& operator<<(std::ostream& o, const Interpretation& i)
+std::ostream& operator<<(std::ostream& o, const TestInterpretation& i)
 {
   return i.print(o);
 }
@@ -511,45 +525,204 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   return m;
 } // ModelGraph<...>::addModel(...) implementation
 
+//
+// responsibility of a ProgramCtx class is to provide types of program and related objects
+//
 
-// TODO continue here
-#if 0
-// todo: EvalGraphT must provide ModelGeneratorFactories in eval unit properties
-template<typename EvalGraphT>
-class ModelBuilder
+// the ProgramCtxTraits template checks if something is a ProgramCtx and gathers types
+template<typename ProgramCtxT>
+struct ProgramCtxTraits
+{
+  typedef typename ProgramCtxT::Rule Rule;
+  typedef typename ProgramCtxT::Constraint Constraint;
+};
+
+// for testing we use stupid types
+struct TestProgramCtx
+{
+  typedef std::string Rule;
+  typedef std::string Constraint;
+};
+
+//
+// A model generator does the following:
+// * it is constructed by a ModelGeneratorFactory which knows the program
+//   (and can precompute information for evaluation,
+//    and may also provide this to the model generator)
+// * it is evaluated on a (probably empty) input interpretation
+// * this evaluation can be performed online
+// * evaluation yields a (probably empty) set of output interpretations
+//
+template<typename InterpretationT>
+class ModelGeneratorBase
 {
   // types
 public:
+  typedef InterpretationT Interpretation;
+  typedef boost::shared_ptr<ModelGeneratorBase<Interpretation> > Ptr;
+  typedef typename Interpretation::Ptr InterpretationPtr;
+  typedef typename Interpretation::ConstPtr InterpretationConstPtr;
+
+  // storage
+protected:
+  InterpretationConstPtr input;
+
+  // members
+public:
+  // initialize with factory and input interpretation
+  ModelGeneratorBase(InterpretationConstPtr input):
+    input(input) {}
+  virtual ~ModelGeneratorBase() {}
+
+  // generate and return next model, return null after last model
+  virtual InterpretationPtr generateNextModel() = 0;
+};
+
+//
+// a model generator factory provides model generators
+// for a certain program ctx
+//
+template<typename InterpretationT, typename ProgramCtxT>
+class ModelGeneratorFactoryBase
+{
+  // types
+public:
+  typedef InterpretationT Interpretation;
+  typedef ProgramCtxT ProgramCtx;
+
+public:
+  typedef ModelGeneratorBase<InterpretationT> ModelGeneratorBase;
+  typedef typename ModelGeneratorBase::Ptr ModelGeneratorPtr;
+  typedef boost::shared_ptr<ModelGeneratorFactoryBase<InterpretationT, ProgramCtxT> > Ptr;
+
+  // storage
+public:
+  const ProgramCtx& programCtx;
+
+  // methods
+public:
+  ModelGeneratorFactoryBase(const ProgramCtx& programCtx):
+    programCtx(programCtx) {}
+  virtual ~ModelGeneratorFactoryBase() {}
+
+  virtual ModelGeneratorPtr createModelGenerator(const Interpretation& input) = 0;
+};
+
+class TestModelGeneratorFactory:
+  public ModelGeneratorFactoryBase<TestInterpretation, TestProgramCtx>
+{
+public:
+  class ModelGenerator:
+    public ModelGeneratorBase
+  {
+  public:
+    ModelGenerator(
+        InterpretationConstPtr input,
+        TestModelGeneratorFactory& factory):
+      ModelGeneratorBase(input) {}
+    virtual ~ModelGenerator() {}
+
+    virtual InterpretationPtr generateNextModel()
+    {
+      std::cerr << "wahoo generating next model!" << std::endl;
+      // TODO
+    }
+  };
+
+  virtual ModelGeneratorPtr createModelGenerator(
+      ModelGenerator::InterpretationConstPtr input)
+  {
+    return ModelGeneratorPtr(new ModelGenerator(input, *this));
+  }
+};
+
+// model generator factory properties for eval units
+// such properties are required by model builders
+template<typename InterpretationT, typename ProgramCtxT>
+struct EvalUnitModelGeneratorFactoryProperties
+{
+  typedef InterpretationT Interpretation;
+  typedef ProgramCtxT ProgramCtx;
+  typedef ModelGeneratorFactoryBase<InterpretationT, ProgramCtxT>
+    ModelGeneratorFactory;
+
+  typename ModelGeneratorFactory::Ptr mgf; // aka model generator factory
+};
+
+// Decision help for "putting properties into the base bundle vs
+// putting properties into extra property maps":
+// * stuff that may be required for optimizing the EvalGraph
+//   should go into the base bundles
+// * stuff that is used for model building only (after the EvalGraph is fixed)
+//   should go into extra property maps
+
+//TODO: create base class ModelBuiderBase
+template<typename EvalGraphT>
+class OnlineModelBuilder
+{
+  // types
+public:
+  // concept check: EvalGraphT must be an eval graph
+  BOOST_CONCEPT_ASSERT((boost::Convertible<
+      EvalGraphT,
+      EvalGraph<
+        typename EvalGraphT::EvalUnitPropertyBase,
+        typename EvalGraphT::EvalUnitDepPropertyBase> >));
   typedef typename EvalGraphT::EvalUnit EvalUnit;
   typedef typename EvalGraphT::EvalUnitDep EvalUnitDep;
+
+  // concept check: eval graph must store model generator factory properties for units
+  BOOST_CONCEPT_ASSERT((boost::Convertible<
+      typename EvalGraphT::EvalUnitPropertyBundle,
+      EvalUnitModelGeneratorFactoryProperties<
+        typename EvalGraphT::EvalUnitPropertyBundle::Interpretation,
+        typename EvalGraphT::EvalUnitPropertyBundle::ProgramCtx> >));
+  typedef typename EvalGraphT::EvalUnitPropertyBundle::Interpretation Interpretation;
+  typedef typename EvalGraphT::EvalUnitPropertyBundle::ProgramCtx ProgramCtx;
+  typedef typename EvalGraphT::EvalUnitPropertyBundle::ModelGeneratorFactory
+      ModelGeneratorFactory;
 
   // create a model graph suited to our needs
   typedef ModelGraph<EvalGraphT> ModelGraph;
   typedef typename ModelGraph::Model Model;
   typedef typename ModelGraph::ModelDep ModelDep;
 
-private:
-  // "exterior property map" for the eval graph:
-  // which models are currently used at which unit
-  // (=model building state)
-  typedef std::vector<Model> ModelList;
-  struct EvalUnitModelBuildingData
+  // properties required at each eval unit for model building:
+  // model generator factory
+  // current models and refcount
+  struct EvalUnitModelBuildingProperties
   {
+    // storage
+
+    // factory for creating model generators
+    // (such a factory is bound to the program at the corresponding eval unit)
+    // (it is initialized once)
+    typename ModelGeneratorFactory::Ptr mgfactory;
+    // currently running model generator
+    // (such a model generator is bound to some input model)
+    // (it is reinitialized for each new input model)
+    typename ModelGeneratorFactory::ModelGeneratorBase::Ptr currentmg;
     Model imodel;
     Model omodel;
     unsigned orefcount;
   };
-  typedef boost::vector_property_map<EvalUnitModelBuildingData>
+  typedef boost::vector_property_map<EvalUnitModelBuildingProperties>
     EvalUnitModelBuildingPropertyMap;
 
   // members
 private:
-  EvalUnitModelBuildingPropertyMap mbd;
+  EvalGraphT& eg;
+  ModelGraph mg;
+  EvalUnitModelBuildingPropertyMap mbd; // aka. model building data
 
   // methods
 public:
+  OnlineModelBuilder(EvalGraphT& eg):
+    eg(eg), mg(eg), mbd()
+  {
+  }
+  ~OnlineModelBuilder() { }
 };
-#endif
 
 //
 // test types
@@ -557,7 +730,8 @@ public:
 
 // TestEvalGraph
 struct TestEvalUnitPropertyBase:
-  public EvalUnitProjectionProperties
+  public EvalUnitProjectionProperties,
+  public EvalUnitModelGeneratorFactoryProperties<TestInterpretation, TestProgramCtx>
 {
   // rules in the eval unit
   std::string rules;
@@ -571,18 +745,15 @@ typedef EvalGraph<TestEvalUnitPropertyBase>
   TestEvalGraph;
 typedef TestEvalGraph::EvalUnit EvalUnit; 
 typedef TestEvalGraph::EvalUnitDep EvalUnitDep; 
-//typedef TestEvalGraph::EvalUnitPropertyBundle UnitCfg;
-typedef TestEvalUnitPropertyBase UnitCfg;
-typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 
 // TestModelGraph
 struct TestModelPropertyBase
 {
   // interpretation of the model
-  Interpretation interpretation;
+  TestInterpretation interpretation;
 
   TestModelPropertyBase() {}
-  TestModelPropertyBase(const Interpretation& interpretation):
+  TestModelPropertyBase(const TestInterpretation& interpretation):
     interpretation(interpretation) {}
 };
 
@@ -606,6 +777,9 @@ struct EvalGraphE2Fixture
 
   EvalGraphE2Fixture()
   {
+    typedef TestEvalUnitPropertyBase UnitCfg;
+    typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
+
     BOOST_TEST_MESSAGE("adding u1");
     u1 = eg.addUnit(UnitCfg("plan(a) v plan(b)."));
     BOOST_TEST_MESSAGE("adding u2");
@@ -691,6 +865,21 @@ struct ModelGraphM2Fixture:
   }
 
   ~ModelGraphM2Fixture() {}
+};
+
+// test online model building algorithm with graph M2
+struct OnlineModelBuilderM2Fixture:
+  public EvalGraphE2Fixture
+{
+  OnlineModelBuilder<TestEvalGraph> omb;
+
+  OnlineModelBuilderM2Fixture():
+    EvalGraphE2Fixture(),
+    omb(eg)
+  {
+  }
+
+  ~OnlineModelBuilderM2Fixture() {}
 };
 
 BOOST_AUTO_TEST_SUITE(root)
