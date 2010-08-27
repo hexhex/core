@@ -78,6 +78,7 @@ private:
 public:
   typedef typename EvalGraphInt::vertex_descriptor EvalUnit;
   typedef typename EvalGraphInt::edge_descriptor EvalUnitDep;
+  typedef typename Traits::vertex_iterator EvalUnitIterator;
   typedef typename Traits::out_edge_iterator PredecessorIterator;
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
@@ -123,6 +124,12 @@ public:
     // if this fails, we tried to add a foreign eval unit or something strange like this
     assert(success);
     return dep;
+  }
+
+  inline std::pair<EvalUnitIterator, EvalUnitIterator>
+  getEvalUnits() const
+  {
+    return boost::vertices(eg);
   }
 
   // predecessors are eval units providing input to us,
@@ -372,6 +379,7 @@ public:
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
     assert(0 <= type <= 4);
+    assert(0 <= unit <= 4);
     return boost::get(mau, unit).models[type];
   }
 
@@ -591,8 +599,7 @@ public:
   typedef ProgramCtxT ProgramCtx;
 
 public:
-  typedef ModelGeneratorBase<InterpretationT> ModelGeneratorBase;
-  typedef typename ModelGeneratorBase::Ptr ModelGeneratorPtr;
+  typedef typename ModelGeneratorBase<InterpretationT>::Ptr ModelGeneratorPtr;
   typedef boost::shared_ptr<ModelGeneratorFactoryBase<InterpretationT, ProgramCtxT> > Ptr;
 
   // storage
@@ -613,13 +620,13 @@ class TestModelGeneratorFactory:
 {
 public:
   class ModelGenerator:
-    public ModelGeneratorBase
+    public ModelGeneratorBase<TestInterpretation>
   {
   public:
     ModelGenerator(
         InterpretationConstPtr input,
         TestModelGeneratorFactory& factory):
-      ModelGeneratorBase(input) {}
+      ModelGeneratorBase<TestInterpretation>(input) {}
     virtual ~ModelGenerator() {}
 
     virtual InterpretationPtr generateNextModel()
@@ -656,6 +663,42 @@ struct EvalUnitModelGeneratorFactoryProperties
 // * stuff that is used for model building only (after the EvalGraph is fixed)
 //   should go into extra property maps
 
+template<typename T>
+inline std::ostream& printopt_main(std::ostream& o, const T& t)
+{
+  if( !t )
+    return o << "unset";
+  else
+    return o << t;
+}
+template<typename TT>
+inline std::ostream& printopt_main(std::ostream& o, const boost::shared_ptr<TT>& t)
+{
+  if( t == 0 )
+    return o << "null";
+  else
+    return o << t;
+}
+
+template<typename T>
+struct printopt_container
+{
+  const T& t;
+  printopt_container(const T& t): t(t) {}
+};
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& o, printopt_container<T> c)
+{
+  return printopt_main(o, c.t);
+}
+
+template<typename T>
+inline printopt_container<T> printopt(const T& t)
+{
+  return printopt_container<T>(t);
+}
+
 //TODO: create base class ModelBuiderBase
 template<typename EvalGraphT>
 class OnlineModelBuilder
@@ -677,15 +720,22 @@ public:
       EvalUnitModelGeneratorFactoryProperties<
         typename EvalGraphT::EvalUnitPropertyBundle::Interpretation,
         typename EvalGraphT::EvalUnitPropertyBundle::ProgramCtx> >));
-  typedef typename EvalGraphT::EvalUnitPropertyBundle::Interpretation Interpretation;
-  typedef typename EvalGraphT::EvalUnitPropertyBundle::ProgramCtx ProgramCtx;
-  typedef typename EvalGraphT::EvalUnitPropertyBundle::ModelGeneratorFactory
+  typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
+  typedef typename EvalUnitPropertyBundle::Interpretation Interpretation;
+  typedef typename EvalUnitPropertyBundle::ProgramCtx ProgramCtx;
+  typedef typename EvalUnitPropertyBundle::ModelGeneratorFactory
       ModelGeneratorFactory;
 
   // create a model graph suited to our needs
-  typedef ModelGraph<EvalGraphT> ModelGraph;
-  typedef typename ModelGraph::Model Model;
-  typedef typename ModelGraph::ModelDep ModelDep;
+  struct ModelProcessingProperties
+  {
+    // whether we already tried to create all output models for this (MT_IN/MT_INPROJ) model
+    bool childrenCreated;
+  };
+  typedef ModelGraph<EvalGraphT, ModelProcessingProperties> MyModelGraph;
+  typedef typename MyModelGraph::Model Model;
+  typedef typename boost::optional<Model> OptionalModel;
+  typedef typename MyModelGraph::ModelDep ModelDep;
 
   // properties required at each eval unit for model building:
   // model generator factory
@@ -694,17 +744,47 @@ public:
   {
     // storage
 
-    // factory for creating model generators
-    // (such a factory is bound to the program at the corresponding eval unit)
-    // (it is initialized once)
-    typename ModelGeneratorFactory::Ptr mgfactory;
     // currently running model generator
     // (such a model generator is bound to some input model)
     // (it is reinitialized for each new input model)
-    typename ModelGeneratorFactory::ModelGeneratorBase::Ptr currentmg;
-    Model imodel;
-    Model omodel;
+    typename ModelGeneratorFactory::ModelGeneratorPtr currentmg;
+    bool needInput;
+    OptionalModel imodel;
+    OptionalModel omodel;
     unsigned orefcount;
+
+    EvalUnitModelBuildingProperties():
+      currentmg(), needInput(false), imodel(), omodel(), orefcount(0) {}
+
+    std::ostream& print(std::ostream& o) const
+    {
+      return o <<
+        "currentmg = " << printopt(currentmg) <<
+        ", needInput = " << needInput <<
+        ", imodel = " << printopt(imodel) <<
+        ", omodel = " << printopt(omodel) <<
+        ", orefcount = " << orefcount;
+    }
+    #if 0
+    {
+      std::cerr << "EvalUnitMBP: this = " << this << " currentmg = " << currentmg << std::endl;
+    }
+    EvalUnitModelBuildingProperties(const EvalUnitModelBuildingProperties& p):
+      currentmg(p.currentmg), imodel(p.imodel), omodel(p.omodel), orefcount(p.orefcount)
+    {
+      std::cerr << "EvalUnitMBP: copyconstructing this = " << this << " from " << &p << " currentmg = " << currentmg << std::endl;
+    }
+    ~EvalUnitModelBuildingProperties()
+    {
+      std::cerr << "EvalUnitMBP: destructing this = " << this << "currentmg was " << currentmg << std::endl;
+    }
+
+    EvalUnitModelBuildingProperties& operator=(const EvalUnitModelBuildingProperties& p)
+    {
+      std::cerr << "EvalUnitMBP: assigning " << &p << " to this = " << this << "currentmg was " << currentmg << " new currentmg = " << p.currentmg << std::endl;
+      return *this;
+    }
+    #endif
   };
   typedef boost::vector_property_map<EvalUnitModelBuildingProperties>
     EvalUnitModelBuildingPropertyMap;
@@ -712,16 +792,134 @@ public:
   // members
 private:
   EvalGraphT& eg;
-  ModelGraph mg;
-  EvalUnitModelBuildingPropertyMap mbd; // aka. model building data
+  MyModelGraph mg;
+  EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
 
   // methods
 public:
   OnlineModelBuilder(EvalGraphT& eg):
-    eg(eg), mg(eg), mbd()
+    eg(eg), mg(eg), mbp()
   {
+    // initialize mbp for each vertex in eg:
+    // * determine needInput
+    typename EvalGraphT::EvalUnitIterator it, end;
+    for(boost::tie(it, end) = eg.getEvalUnits(); it != end; ++it)
+    {
+      EvalUnit u = *it;
+      EvalUnitModelBuildingProperties& mbprops = mbp[u];
+      typename EvalGraphT::PredecessorIterator it, end;
+      boost::tie(it, end) = eg.getPredecessors(u);
+      if( it != end )
+        mbprops.needInput = true;
+      else
+        mbprops.needInput = false;
+    }
   }
+
   ~OnlineModelBuilder() { }
+
+  EvalGraphT& getEvalGraph() { return eg; }
+  MyModelGraph& getModelGraph() { return mg; }
+
+  // get next input model (projected if projection is configured) at unit u
+  OptionalModel getNextIModel(EvalUnit u)
+  {
+    // TODO
+
+    return OptionalModel();
+  }
+
+protected:
+  std::ostream& printModelBuildingPropertyMap(std::ostream& o)
+  {
+    o << "mbp contents:";
+    typename std::vector<EvalUnitModelBuildingProperties>::const_iterator it, end;
+    unsigned u = 0;
+    it = mbp.storage_begin();
+    end = mbp.storage_end();
+    if( it == end )
+      return o << " empty" << std::endl;
+    else
+      o << std::endl;
+    for(; it != end; ++it, ++u)
+    {
+      const EvalUnitModelBuildingProperties& uprop = *it;
+      uprop.print(o << "  [" << u << "]=>") << std::endl;
+    }
+    return o << std::endl;
+  }
+
+public:
+
+  OptionalModel getNextOModelForIModel(
+      EvalUnit u,
+      OptionalModel imodel,
+      OptionalModel previousOModel)
+  {
+    // TODO
+  }
+
+  // get next output model (projected if projection is configured) at unit u
+  OptionalModel getNextOModel(EvalUnit u)
+  {
+    printModelBuildingPropertyMap(std::cerr) << std::endl;
+    std::cerr << "OnlineModelBuilder<...>::getNextOModel(" << u << "):" << std::endl;
+    const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+    std::cerr << "  rules = '" << uprops.rules << "'" << std::endl;
+    EvalUnitModelBuildingProperties& mbprops = mbp[u];
+    mbprops.print(std::cerr) << std::endl;
+
+    // are we allowed to go to the next model here?
+    if( mbprops.orefcount > 1 )
+    {
+      // no -> give up our model refcount and return no model at all
+      mbprops.orefcount--;
+      mbprops.omodel = OptionalModel();
+      return OptionalModel();
+    }
+
+    // initialization?
+    if( !mbprops.imodel && mbprops.needInput )
+    {
+      assert(mbprops.orefcount == 0);
+      // get next input for this unit (stores into mprops.imodel)
+      getNextIModel(u);
+      mbprops.omodel = OptionalModel();
+    }
+    do
+    {
+      // fail if there is no input at this point
+      if( !mbprops.imodel && mbprops.needInput )
+      {
+        assert(mbprops.orefcount == 0);
+        return OptionalModel();
+      }
+
+      // remember previous omodel
+      OptionalModel previousModel = mbprops.omodel;
+
+      // unregister usage of previous omodel if there is one
+      if( !!mbprops.omodel )
+      {
+        assert(mbprops.orefcount == 1);
+        mbprops.orefcount--;
+        mbprops.omodel = OptionalModel();
+      }
+
+      // try to advance omodel (stores into mbprops.omodel)
+      getNextOModelForIModel(u, mbprops.imodel, previousModel);
+      if( !!mbprops.omodel )
+      {
+        // no next omodel found (stores into mbprops.imodel)
+        getNextIModel(u);
+      }
+    }
+    while( !mbprops.omodel );
+    // register imodel/omodel here
+    mbprops.orefcount++;
+    assert(mbprops.orefcount == 1);
+    return mbprops.omodel;
+  }
 };
 
 //
@@ -871,12 +1069,26 @@ struct ModelGraphM2Fixture:
 struct OnlineModelBuilderM2Fixture:
   public EvalGraphE2Fixture
 {
-  OnlineModelBuilder<TestEvalGraph> omb;
+  typedef OnlineModelBuilder<TestEvalGraph> ModelBuilder;
+  typedef ModelBuilder::OptionalModel OptionalModel;
+
+  ModelBuilder omb;
+  EvalUnit ufinal;
 
   OnlineModelBuilderM2Fixture():
     EvalGraphE2Fixture(),
     omb(eg)
   {
+    typedef TestEvalUnitPropertyBase UnitCfg;
+    typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
+
+    BOOST_TEST_MESSAGE("adding ufinal");
+    ufinal = eg.addUnit(UnitCfg());
+    BOOST_TEST_MESSAGE("adding dependencies from ufinal to all other models");
+    eg.addDependency(ufinal, u1, UnitDepCfg(0));
+    eg.addDependency(ufinal, u2, UnitDepCfg(1));
+    eg.addDependency(ufinal, u3, UnitDepCfg(2));
+    eg.addDependency(ufinal, u4, UnitDepCfg(3));
   }
 
   ~OnlineModelBuilderM2Fixture() {}
@@ -900,6 +1112,15 @@ BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
 
   BOOST_CHECK(mg.propsOf(m10).location == u3);
   BOOST_CHECK(mg.propsOf(m10).type == MT_OUT);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_m2, OnlineModelBuilderM2Fixture)
+{
+  BOOST_MESSAGE("requesting model");
+  OptionalModel m = omb.getNextOModel(u1);
+  BOOST_CHECK(!!m);
+  BOOST_MESSAGE("TODO: check model contents");
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
