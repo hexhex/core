@@ -14,159 +14,8 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
-struct none_t {};
-
-//
-// the EvalGraph template manages a generic evaluation graph:
-// it takes care of a correct join order among in-edges of units
-//
-template<
-  typename EvalUnitPropertyBaseT = none_t,
-  typename EvalUnitDepPropertyBaseT = none_t>
-class EvalGraph
-{
-  //////////////////////////////////////////////////////////////////////////////
-  // types
-  //////////////////////////////////////////////////////////////////////////////
-public:
-  typedef EvalUnitPropertyBaseT EvalUnitPropertyBase;
-  typedef EvalUnitDepPropertyBaseT EvalUnitDepPropertyBase;
-
-  struct EvalUnitPropertyBundle:
-    public EvalUnitPropertyBase
-  {
-    EvalUnitPropertyBundle(
-      const EvalUnitPropertyBase& base = EvalUnitPropertyBase()):
-        EvalUnitPropertyBase(base) {}
-  };
-  struct EvalUnitDepPropertyBundle:
-    public EvalUnitDepPropertyBaseT
-  {
-    // storage
-    unsigned joinOrder;
-
-    // init
-    EvalUnitDepPropertyBundle(
-      unsigned joinOrder = 0):
-        joinOrder(joinOrder) {}
-    EvalUnitDepPropertyBundle(
-      const EvalUnitDepPropertyBase& base,
-      unsigned joinOrder = 0):
-        EvalUnitDepPropertyBase(base),
-        joinOrder(joinOrder) {}
-  };
-
-private:
-  // rationales for choice of vecS here:
-  // * we will add eval units once and don't remove units later on,
-  //   therefore the high cost of removing units is not problematic
-  //   (if we need to modify the eval graph, this should be done before
-  //    creating it in this form, and it should be done on a listS representation
-  //    - for that we could add a template parameter StorageT to this class
-  //    and convertibility from listS to vecS storage)
-  // * vecS creates an implicit vertex index, as descriptors of vecS are integers
-  // * therefore we can create vector_property_maps over EvalUnit and EvalUnitDep,
-  //   and these property maps have efficient lookup.
-  // * therefore we can distribute the properties among several such maps and
-  //   need not put all into one property bundle
-  typedef boost::adjacency_list<
-    boost::vecS, boost::vecS, boost::bidirectionalS,
-    EvalUnitPropertyBundle, EvalUnitDepPropertyBundle>
-      EvalGraphInt;
-  typedef typename boost::graph_traits<EvalGraphInt> Traits;
-
-public:
-  typedef typename EvalGraphInt::vertex_descriptor EvalUnit;
-  typedef typename EvalGraphInt::edge_descriptor EvalUnitDep;
-  typedef typename Traits::vertex_iterator EvalUnitIterator;
-  typedef typename Traits::out_edge_iterator PredecessorIterator;
-  typedef typename Traits::in_edge_iterator SuccessorIterator;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // members
-  //////////////////////////////////////////////////////////////////////////////
-private:
-  EvalGraphInt eg;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // methods
-  //////////////////////////////////////////////////////////////////////////////
-public:
-  inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
-  {
-    return boost::add_vertex(prop, eg);
-  }
-
-  inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
-    const EvalUnitDepPropertyBundle& prop)
-  {
-    #ifndef NDEBUG
-    // check if the joinOrder is correct
-    // (require that dependencies are added in join order)
-    PredecessorIterator pit, pend;
-    boost::tie(pit,pend) = getPredecessors(u1);
-    unsigned count;
-    for(count = 0; pit != pend; ++pit, ++count)
-    {
-      const EvalUnitDepPropertyBundle& predprop = propsOf(*pit);
-      if( prop.joinOrder == predprop.joinOrder )
-        throw std::runtime_error("EvalGraph::addDependency "
-            "reusing join order not allowed");
-    }
-    if( count != prop.joinOrder )
-      throw std::runtime_error("EvalGraph::addDependency "
-          "using wrong (probably too high) join order");
-    #endif
-
-    bool success;
-    EvalUnitDep dep;
-    boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
-    // if this fails, we tried to add a foreign eval unit or something strange like this
-    assert(success);
-    return dep;
-  }
-
-  inline std::pair<EvalUnitIterator, EvalUnitIterator>
-  getEvalUnits() const
-  {
-    return boost::vertices(eg);
-  }
-
-  // predecessors are eval units providing input to us,
-  // edges are dependencies, so predecessors are at outgoing edges
-  inline std::pair<PredecessorIterator, PredecessorIterator>
-  getPredecessors(EvalUnit u) const
-  {
-    return boost::out_edges(u, eg);
-  }
-
-  // successors are eval units we provide input to,
-  // edges are dependencies, so successors are at incoming edges
-  inline std::pair<SuccessorIterator, SuccessorIterator>
-  getSuccessors(EvalUnit u) const
-  {
-    return boost::in_edges(u, eg);
-  }
-
-  inline const EvalUnitDepPropertyBundle& propsOf(EvalUnitDep u) const
-  {
-    return eg[u];
-  }
-
-  inline const EvalUnitPropertyBundle& propsOf(EvalUnit u) const
-  {
-    return eg[u];
-  }
-
-  inline EvalUnit sourceOf(EvalUnitDep d) const
-  {
-    return boost::source(d, eg);
-  }
-  inline EvalUnit targetOf(EvalUnitDep d) const
-  {
-    return boost::target(d, eg);
-  }
-}; // class EvalGraph<...>
+#include "EvalGraph.hpp"
+#include "ModelGraph.hpp"
 
 // for testing we use stupid types
 typedef std::set<std::string> TestAtomSet;
@@ -207,331 +56,6 @@ std::ostream& operator<<(std::ostream& o, const TestInterpretation& i)
 {
   return i.print(o);
 }
-
-// projection properties for eval units
-// such properties are required by the model graph
-struct EvalUnitProjectionProperties
-{
-  // storage
-  bool iproject;
-  bool oproject;
-
-  // init
-  EvalUnitProjectionProperties(
-    bool iproject = false,
-    bool oproject = false):
-      iproject(iproject), oproject(oproject) {}
-};
-
-// this is used as index into an array by struct EvalUnitModels
-enum ModelType
-{
-  MT_IN = 0,
-  MT_INPROJ = 1,
-  MT_OUT = 2,
-  MT_OUTPROJ = 3,
-};
-
-//
-// the ModelGraph template manages a generic model graph,
-// corresponding to an EvalGraph type:
-// it manages projection for units and corresponding model types
-// it manages correspondance of dependencies between models and units
-// it manages correspondance of join orders between model and unit dependencies
-//
-template<
-  typename EvalGraphT,
-  typename ModelPropertyBaseT = none_t,
-  typename ModelDepPropertyBaseT = none_t>
-class ModelGraph
-{
-  //////////////////////////////////////////////////////////////////////////////
-  // types
-  //////////////////////////////////////////////////////////////////////////////
-public:
-  typedef EvalGraphT MyEvalGraph;
-  typedef ModelPropertyBaseT ModelPropertyBase;
-  typedef ModelDepPropertyBaseT ModelDepPropertyBase;
-
-  // concept check: must be an eval graph
-  BOOST_CONCEPT_ASSERT((boost::Convertible<
-      EvalGraphT,
-      EvalGraph<
-        typename EvalGraphT::EvalUnitPropertyBase,
-        typename EvalGraphT::EvalUnitDepPropertyBase> >));
-  typedef typename EvalGraphT::EvalUnit EvalUnit;
-  typedef typename EvalGraphT::EvalUnitDep EvalUnitDep;
-
-  // concept check: eval graph must store projection properties for units
-  BOOST_CONCEPT_ASSERT((boost::Convertible<
-      typename EvalGraphT::EvalUnitPropertyBundle,
-      EvalUnitProjectionProperties>));
-
-  struct ModelPropertyBundle:
-    public ModelPropertyBaseT
-  {
-    // storage
-
-    // location of this model
-    EvalUnit location;
-    // type of this model
-    ModelType type;
-
-    // init
-    ModelPropertyBundle(
-      EvalUnit location = EvalUnit(),
-      ModelType type = MT_IN):
-        location(location),
-        type(type) {}
-    ModelPropertyBundle(
-      const ModelPropertyBaseT& base,
-      EvalUnit location = EvalUnit(),
-      ModelType type = MT_IN):
-        ModelPropertyBaseT(base),
-        location(location),
-        type(type) {}
-  };
-
-  struct ModelDepPropertyBundle:
-    public ModelDepPropertyBaseT
-  {
-    // storage
-
-    // join order
-    unsigned joinOrder;
-
-    // init
-    ModelDepPropertyBundle(
-      unsigned joinOrder = 0):
-        joinOrder(joinOrder) {}
-    ModelDepPropertyBundle(
-      const ModelDepPropertyBaseT& base,
-      unsigned joinOrder = 0):
-        ModelDepPropertyBaseT(base),
-        joinOrder(joinOrder) {}
-  };
-
-private:
-  typedef boost::adjacency_list<
-    boost::listS, boost::listS, boost::directedS,
-    ModelPropertyBundle, ModelDepPropertyBundle>
-      ModelGraphInt;
-
-public:
-  typedef typename ModelGraphInt::vertex_descriptor Model;
-  typedef typename ModelGraphInt::edge_descriptor ModelDep;
-
-  // "exterior property map" for the eval graph: which models are present at which unit
-  typedef std::vector<Model> ModelList;
-  struct EvalUnitModels
-  {
-    std::vector<ModelList> models;
-    EvalUnitModels(): models(4, ModelList()) {}
-  };
-  typedef boost::vector_property_map<EvalUnitModels>
-    EvalUnitModelsPropertyMap;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // members
-  //////////////////////////////////////////////////////////////////////////////
-private:
-  // which eval graph is this model graph linked to
-  EvalGraphT& eg;
-  ModelGraphInt mg;
-  // "exterior property map" for the eval graph: which models are present at which unit
-  EvalUnitModelsPropertyMap mau;
-
-  //////////////////////////////////////////////////////////////////////////////
-  // methods
-  //////////////////////////////////////////////////////////////////////////////
-public:
-  // initialize with link to eval graph
-  ModelGraph(EvalGraphT& eg):
-    eg(eg) {}
-
-  // create a new model including dependencies
-  // returns the new model
-  // modelsAtUnit is automatically updated
-  // order of dependencies determines join order
-  //
-  // MT_IN models:
-  // * checks if join order is equal to join order of eval graph
-  // * checks if input models depend on all units this unit depends on
-  //
-  // MT_INPROJ models:
-  // * checks if model depends on MT_IN model at same unit
-  // * checks if projection is configured for unit
-  //
-  // MT_OUT models:
-  // * checks if model depends on MT_IN or MT_INPROJ at same unit
-  //   iff unit has predecessors
-  //
-  // MT_OUTPROJ models:
-  // * checks if model depends on MT_OUT at same unit
-  // * checks if projection is configured for unit
-  Model addModel(
-    EvalUnit location,
-    ModelType type,
-    const std::vector<Model>& deps=std::vector<Model>());
-
-  // return helper list that stores for each unit the set of i/omodels there
-  // usage: modelsAtUnit()[EvalUnit u].
-  inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
-  {
-    assert(0 <= type <= 4);
-    assert(0 <= unit <= 4);
-    return boost::get(mau, unit).models[type];
-  }
-
-  inline const ModelPropertyBundle& propsOf(Model m) const
-  {
-    return mg[m];
-  }
-}; // class ModelGraph
-
-// ModelGraph<...>::addModel(...) implementation
-template<typename EvalGraphT, typename ModelPropertiesT, typename ModelDepPropertiesT>
-typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::Model
-ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
-  EvalUnit location,
-  ModelType type,
-  const std::vector<Model>& deps)
-{
-  typedef typename EvalGraphT::PredecessorIterator PredecessorIterator;
-  typedef typename EvalGraphT::EvalUnitDepPropertyBundle EvalUnitDepPropertyBundle;
-  typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
-
-  #ifndef NDEBUG
-  switch(type)
-  {
-  case MT_IN:
-    {
-      // input models:
-      // * checks if join order is equal to join order of eval graph
-      // * checks if input models depend on all units this unit depends on
-      // (this is an implicit check if we exactly use all predecessor units)
-      PredecessorIterator it, end;
-      for(boost::tie(it, end) = eg.getPredecessors(location);
-          it != end; ++it)
-      {
-        // check whether each predecessor is stored at the right position in the vector
-        // the join order starts at 0, so we use it for indexing into the deps vector
-
-        // check if joinOrder == index is within range of deps vector
-        const EvalUnitDepPropertyBundle& predprop = eg.propsOf(*it);
-        if( predprop.joinOrder >= deps.size() )
-          throw std::runtime_error("ModelGraph::addModel MT_IN "
-            "not enough join dependencies");
-
-        // check if correct unit is referenced by model
-        EvalUnit predunit = eg.targetOf(*it);
-        const ModelPropertyBundle& depprop = propsOf(deps[predprop.joinOrder]);
-        if( depprop.location != predunit )
-          throw std::runtime_error("ModelGraph::addModel MT_IN "
-            "with wrong join order");
-      }
-      // if we are here we found for each predecessor one unit in deps,
-      // assuming joinOrder of predecessors are correct,
-      // the models in the deps vector exactly use all predecessor units
-    }
-    break;
-
-  case MT_INPROJ:
-    {
-      // projected input models
-      // * checks if model depends on MT_IN model at same unit
-      // * checks if projection is configured for unit
-      if( deps.size() != 1 )
-        throw std::runtime_error("ModelGraph::addModel MT_INPROJ "
-          "must depend on exactly one MT_IN model");
-      const ModelPropertyBundle& depprop = propsOf(deps[0]);
-      if( depprop.location != location )
-        throw std::runtime_error("ModelGraph::addModel MT_INPROJ "
-          "must depend on model at same eval unit");
-      if( depprop.type != MT_IN )
-        throw std::runtime_error("ModelGraph::addModel MT_INPROJ "
-          "must depend on exactly one MT_IN model");
-      const EvalUnitPropertyBundle& unitprop = eg.propsOf(location);
-      if( !unitprop.iproject )
-        throw std::runtime_error("ModelGraph::addModel MT_INPROJ "
-          "only possible for units with iproject==true");
-    }
-    break;
-
-  case MT_OUT:
-    {
-      // output models:
-      // * checks if model depends on MT_IN or MT_INPROJ at same unit
-      //   iff unit has predecessors
-      PredecessorIterator it, end;
-      boost::tie(it, end) = eg.getPredecessors(location);
-      if( (it != end && deps.size() != 1) ||
-          (it == end && deps.size() != 0) )
-        throw std::runtime_error("ModelGraph::addModel MT_OUT "
-          "must depend on one input model iff unit has predecessors");
-      if( deps.size() == 1 )
-      {
-        const ModelPropertyBundle& depprop = propsOf(deps[0]);
-        if( depprop.location != location )
-          throw std::runtime_error("ModelGraph::addModel MT_OUT "
-            "must depend on model at same eval unit");
-        const EvalUnitPropertyBundle& unitprop = eg.propsOf(location);
-        if( (unitprop.iproject && depprop.type != MT_INPROJ) ||
-            (!unitprop.iproject && depprop.type != MT_IN) )
-          throw std::runtime_error("ModelGraph::addModel MT_OUT "
-            "must depend on MT_INPROJ model for iproject==true eval unit "
-            "and on MT_IN model for iproject==false eval unit");
-      }
-    }
-    break;
-
-  case MT_OUTPROJ:
-    {
-      // projected output models:
-      // * checks if model depends on MT_OUT at same unit
-      // * checks if projection is configured for unit
-      if( deps.size() != 1 )
-        throw std::runtime_error("ModelGraph::addModel MT_OUTPROJ "
-          "must depend on exactly one MT_OUT model");
-      const ModelPropertyBundle& depprop = propsOf(deps[0]);
-      if( depprop.location != location )
-        throw std::runtime_error("ModelGraph::addModel MT_OUTPROJ "
-          "must depend on model at same eval unit");
-      if( depprop.type != MT_OUT )
-        throw std::runtime_error("ModelGraph::addModel MT_OUTPROJ "
-          "must depend on exactly one MT_OUT model");
-      const EvalUnitPropertyBundle& unitprop = eg.propsOf(location);
-      if( !unitprop.oproject )
-        throw std::runtime_error("ModelGraph::addModel MT_OUTPROJ "
-          "only possible for units with oproject==true");
-    }
-    break;
-  }
-  #endif
-
-  // add model
-  ModelPropertyBundle prop;
-  prop.location = location;
-  prop.type = type;
-  Model m = boost::add_vertex(prop, mg);
-
-  // add model dependencies
-  for(unsigned i = 0; i < deps.size(); ++i)
-  {
-    ModelDepPropertyBundle dprop(i);
-    ModelDep dep;
-    bool success;
-    boost::tie(dep, success) = boost::add_edge(m, deps[i], dprop, mg);
-    assert(success);
-  }
-
-  // update modelsAt property map (models at each eval unit are registered there)
-  assert(0 <= type);
-  assert(type < boost::get(mau, location).models.size()) ;
-  boost::get(mau, location).models[type].push_back(m);
-
-  return m;
-} // ModelGraph<...>::addModel(...) implementation
 
 //
 // responsibility of a ProgramCtx class is to provide types of program and related objects
@@ -734,6 +258,7 @@ public:
   };
   typedef ModelGraph<EvalGraphT, ModelProcessingProperties> MyModelGraph;
   typedef typename MyModelGraph::Model Model;
+  typedef typename MyModelGraph::ModelPropertyBundle ModelPropertyBundle;
   typedef typename boost::optional<Model> OptionalModel;
   typedef typename MyModelGraph::ModelDep ModelDep;
 
@@ -749,6 +274,9 @@ public:
     // (it is reinitialized for each new input model)
     typename ModelGeneratorFactory::ModelGeneratorPtr currentmg;
     bool needInput;
+		// this is the same as 'childrenGenerated' for Models,
+		// but for eval units without inputs -> only valid if needInput == false
+    bool modelsGenerated;
     OptionalModel imodel;
     OptionalModel omodel;
     unsigned orefcount;
@@ -851,12 +379,67 @@ protected:
 
 public:
 
+	/**
+	 * we have two very different situations:
+	 * 1) all omodels for that imodel have been generated
+	 * 2) otherwise, which we can split into
+	 * 2a) no model has been generated (-> no currentmg)
+	 * 2b) some models have been generated (-> currentmg)
+	 *
+	 * if the imodel is not set (i.e., u does not need input) then the properties of
+	 * the unit say whether all omodels have been generated or not
+	 */
   OptionalModel getNextOModelForIModel(
       EvalUnit u,
       OptionalModel imodel,
       OptionalModel previousOModel)
   {
-    // TODO
+		EvalUnitModelBuildingProperties& umbprops = mbp[u];
+		const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+		if( !umbprops.needInput )
+		{
+			assert(!imodel); // an imodel is present iff we need input
+			if( umbprops.modelsGenerated )
+			{
+				// we don't need input and all omodels exist
+			}
+			else
+			{
+				// we may need to generate some more models
+				if( !umbprops.currentmg )
+				{
+					// we need a model generator
+				}
+				else
+				{
+					// we have a model generator
+				}
+			}
+		}
+		else
+		{
+			// uprops.needInput
+			assert(!!imodel); // an imodel is present iff we need input
+			const ModelPropertyBundle& mprops = mg.propsOf(imodel.get());
+			if( mprops.childrenCreated )
+			{
+				// we have all omodels to this imodel
+			}
+			else
+			{
+				// we may need to generate some more omodels
+				if( !umbprops.currentmg )
+				{
+					// we need a model generator
+				}
+				else
+				{
+					// we have a model generator
+				}
+			}
+		}
+		// todo: this might not be a good idea
+		return OptionalModel();
   }
 
   // get next output model (projected if projection is configured) at unit u
@@ -1103,12 +686,17 @@ BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 
 BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
 {
+	TestModelGraph::ModelList::const_iterator it;
+
   BOOST_REQUIRE(mg.modelsAt(u2, MT_OUT).size() == 1);
-  BOOST_CHECK(mg.modelsAt(u2, MT_OUT)[0] == m5);
+	it = mg.modelsAt(u2, MT_OUT).begin();
+  BOOST_CHECK(*it == m5);
 
   BOOST_REQUIRE(mg.modelsAt(u2, MT_IN).size() == 2);
-  BOOST_CHECK(mg.modelsAt(u2, MT_IN)[0] == m3);
-  BOOST_CHECK(mg.modelsAt(u2, MT_IN)[1] == m4);
+	it = mg.modelsAt(u2, MT_IN).begin();
+  BOOST_CHECK(*it == m3);
+	++it;
+  BOOST_CHECK(*it == m4);
 
   BOOST_CHECK(mg.propsOf(m10).location == u3);
   BOOST_CHECK(mg.propsOf(m10).type == MT_OUT);
