@@ -147,7 +147,17 @@ public:
     return eg[u];
   }
 
+  inline EvalUnitDepPropertyBundle& propsOf(EvalUnitDep u)
+  {
+    return eg[u];
+  }
+
   inline const EvalUnitPropertyBundle& propsOf(EvalUnit u) const
+  {
+    return eg[u];
+  }
+
+  inline EvalUnitPropertyBundle& propsOf(EvalUnit u)
   {
     return eg[u];
   }

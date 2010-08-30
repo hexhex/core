@@ -100,13 +100,17 @@ public:
 
 private:
   typedef boost::adjacency_list<
-    boost::listS, boost::listS, boost::directedS,
+    boost::listS, boost::listS, boost::bidirectionalS,
     ModelPropertyBundle, ModelDepPropertyBundle>
       ModelGraphInt;
+  typedef typename boost::graph_traits<ModelGraphInt> Traits;
 
 public:
   typedef typename ModelGraphInt::vertex_descriptor Model;
   typedef typename ModelGraphInt::edge_descriptor ModelDep;
+  typedef typename Traits::vertex_iterator ModelIterator;
+  typedef typename Traits::out_edge_iterator PredecessorIterator;
+  typedef typename Traits::in_edge_iterator SuccessorIterator;
 
   // "exterior property map" for the eval graph: which models are present at which unit
   typedef std::list<Model> ModelList;
@@ -163,7 +167,6 @@ public:
     const std::vector<Model>& deps=std::vector<Model>());
 
   // return helper list that stores for each unit the set of i/omodels there
-  // usage: modelsAtUnit()[EvalUnit u].
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
     assert(0 <= type <= 4);
@@ -171,9 +174,49 @@ public:
     return boost::get(mau, unit).models[type];
   }
 
+  // return list of relevant imodels at unit (depends on projection whether this is MT_IN or MT_INPROJ)
+  inline const ModelList& relevantIModelsAt(EvalUnit unit) const
+  {
+    if( eg.propsOf(unit).iproject )
+      return modelsAt(unit, MT_INPROJ);
+    else
+      return modelsAt(unit, MT_IN);
+  }
+
+  // return list of relevant omodels at unit (depends on projection whether this is MT_OUT or MT_OUTPROJ)
+  inline const ModelList& relevantOModelsAt(EvalUnit unit) const
+  {
+    if( eg.propsOf(unit).oproject )
+      return modelsAt(unit, MT_OUTPROJ);
+    else
+      return modelsAt(unit, MT_OUT);
+  }
+
   inline const ModelPropertyBundle& propsOf(Model m) const
   {
     return mg[m];
+  }
+
+  // @todo make some properties non-writable! (i.e., those managed by modelgraph)!
+  inline ModelPropertyBundle& propsOf(Model m)
+  {
+    return mg[m];
+  }
+
+  // predecessors are models this model is based on
+  // edges are dependencies, so predecessors are at outgoing edges
+  inline std::pair<PredecessorIterator, PredecessorIterator>
+  getPredecessors(Model m) const
+  {
+    return boost::out_edges(m, mg);
+  }
+
+  // successors are models this model contributed to,
+  // edges are dependencies, so successors are at incoming edges
+  inline std::pair<SuccessorIterator, SuccessorIterator>
+  getSuccessors(Model m) const
+  {
+    return boost::in_edges(m, mg);
   }
 }; // class ModelGraph
 
