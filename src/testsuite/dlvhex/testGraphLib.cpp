@@ -16,199 +16,7 @@
 
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
-
-// for testing we use stupid types
-typedef std::set<std::string> TestAtomSet;
-
-class TestInterpretation
-{
-public:
-  typedef boost::shared_ptr<TestInterpretation> Ptr;
-  typedef boost::shared_ptr<const TestInterpretation> ConstPtr;
-
-public:
-  // create empty
-  TestInterpretation(): atoms() {}
-  // create from atom set
-  TestInterpretation(const TestAtomSet& as): atoms(as) {}
-  // create as union
-  TestInterpretation(const TestInterpretation& i1, const TestInterpretation& i2);
-  // destruct
-  ~TestInterpretation() {}
-  // output
-  std::ostream& print(std::ostream& o) const
-  {
-    TestAtomSet::const_iterator it = atoms.begin();
-    o << "{" << *it;
-    ++it;
-    for(;it != atoms.end(); ++it)
-      o << "," << *it;
-    o << "}";
-    return o;
-  }
-
-private:
-  TestAtomSet atoms;
-}; // class Interpretation
-
-// syntactic operator<< sugar for printing interpretations
-std::ostream& operator<<(std::ostream& o, const TestInterpretation& i)
-{
-  return i.print(o);
-}
-
-//
-// responsibility of a ProgramCtx class is to provide types of program and related objects
-//
-
-// the ProgramCtxTraits template checks if something is a ProgramCtx and gathers types
-template<typename ProgramCtxT>
-struct ProgramCtxTraits
-{
-  typedef typename ProgramCtxT::Rule Rule;
-  typedef typename ProgramCtxT::Constraint Constraint;
-};
-
-// for testing we use stupid types
-struct TestProgramCtx
-{
-  typedef std::string Rule;
-  typedef std::string Constraint;
-
-  Rule rules;
-
-  TestProgramCtx(const Rule& rules): rules(rules) {}
-};
-
-//
-// A model generator does the following:
-// * it is constructed by a ModelGeneratorFactory which knows the program
-//   (and can precompute information for evaluation,
-//    and may also provide this to the model generator)
-// * it is evaluated on a (probably empty) input interpretation
-// * this evaluation can be performed online
-// * evaluation yields a (probably empty) set of output interpretations
-//
-template<typename InterpretationT>
-class ModelGeneratorBase
-{
-  // types
-public:
-  typedef InterpretationT Interpretation;
-  // those typedefs are just to remove the 'typename's from the interface
-  typedef typename Interpretation::ConstPtr InterpretationConstPtr;
-  typedef typename Interpretation::Ptr InterpretationPtr;
-  typedef boost::shared_ptr<ModelGeneratorBase<Interpretation> > Ptr;
-
-  // storage
-protected:
-  InterpretationConstPtr input;
-
-  // members
-public:
-  // initialize with factory and input interpretation
-  ModelGeneratorBase(InterpretationConstPtr input):
-    input(input) {}
-  virtual ~ModelGeneratorBase() {}
-
-  // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel() = 0;
-};
-
-//
-// a model generator factory provides model generators
-// for a certain program ctx
-//
-template<typename InterpretationT, typename ProgramCtxT>
-class ModelGeneratorFactoryBase
-{
-  // types
-public:
-  typedef InterpretationT Interpretation;
-  typedef ProgramCtxT ProgramCtx;
-
-public:
-  typedef boost::shared_ptr<ModelGeneratorFactoryBase<InterpretationT, ProgramCtxT> > Ptr;
-
-  typedef ModelGeneratorBase<InterpretationT> MyModelGeneratorBase;
-  typedef typename MyModelGeneratorBase::Ptr ModelGeneratorPtr;
-  typedef typename MyModelGeneratorBase::InterpretationConstPtr InterpretationConstPtr;
-
-  // storage
-public:
-  const ProgramCtx& programCtx;
-
-  // methods
-public:
-  ModelGeneratorFactoryBase(const ProgramCtx& programCtx):
-    programCtx(programCtx) {}
-  virtual ~ModelGeneratorFactoryBase() {}
-
-  virtual ModelGeneratorPtr createModelGenerator(
-      InterpretationConstPtr input) = 0;
-};
-
-class TestModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<TestInterpretation, TestProgramCtx>
-{
-  //
-  // types
-  //
-public:
-  typedef ModelGeneratorFactoryBase<TestInterpretation, TestProgramCtx> Base;
-
-  class ModelGenerator:
-    public ModelGeneratorBase<TestInterpretation>
-  {
-  public:
-    ModelGenerator(
-        InterpretationConstPtr input,
-        TestModelGeneratorFactory& factory):
-      ModelGeneratorBase<TestInterpretation>(input) {}
-    virtual ~ModelGenerator() {}
-
-    virtual InterpretationPtr generateNextModel()
-    {
-      std::cerr << "wahoo generating next model!" << std::endl;
-      // TODO
-    }
-  };
-
-  //
-  // members
-  //
-public:
-  TestModelGeneratorFactory(const TestProgramCtx& ctx):
-    Base(ctx)
-  {
-  }
-
-  virtual ModelGeneratorPtr createModelGenerator(
-      InterpretationConstPtr input)
-  {
-    return ModelGeneratorPtr(new ModelGenerator(input, *this));
-  }
-};
-
-// model generator factory properties for eval units
-// such properties are required by model builders
-template<typename InterpretationT, typename ProgramCtxT>
-struct EvalUnitModelGeneratorFactoryProperties
-{
-  typedef InterpretationT Interpretation;
-  typedef ProgramCtxT ProgramCtx;
-  typedef ModelGeneratorFactoryBase<InterpretationT, ProgramCtxT>
-    ModelGeneratorFactory;
-
-  typename ModelGeneratorFactory::Ptr mgf; // aka model generator factory
-};
-
-// Decision help for "putting properties into the base bundle vs
-// putting properties into extra property maps":
-// * stuff that may be required for optimizing the EvalGraph
-//   should go into the base bundles
-// * stuff that is used for model building only (after the EvalGraph is fixed)
-//   should go into extra property maps
+#include "ModelGenerator.hpp"
 
 template<typename T>
 inline std::ostream& printopt_main(std::ostream& o, const T& t)
@@ -262,6 +70,214 @@ inline printopt_container<T> printopt(const T& t)
   return printopt_container<T>(t);
 }
 
+// model generator factory properties for eval units
+// such properties are required by model builders
+template<typename InterpretationT>
+struct EvalUnitModelGeneratorFactoryProperties
+{
+	typedef InterpretationT Interpretation;
+
+  // aka model generator factory
+  typename ModelGeneratorFactoryBase<InterpretationT>::Ptr
+		mgf; // aka model generator factory
+};
+
+//
+// responsibility of a ProgramCtx class is to provide types of program and related objects
+//
+
+// the ProgramCtxTraits template checks if something is a ProgramCtx and gathers types
+template<typename ProgramCtxT>
+struct ProgramCtxTraits
+{
+  typedef typename ProgramCtxT::Rule Rule;
+  typedef typename ProgramCtxT::Constraint Constraint;
+};
+
+// for testing we use stupid types
+struct TestProgramCtx
+{
+  typedef std::string Rule;
+  typedef std::string Constraint;
+
+  Rule rules;
+
+  TestProgramCtx(const Rule& rules): rules(rules)
+	{
+		//std::cerr << this << " TestProgramCtx()" << std::endl;
+	}
+
+  ~TestProgramCtx()
+	{
+		//std::cerr << this << " ~TestProgramCtx()" << std::endl;
+	}
+};
+
+
+
+
+
+
+
+
+// for testing we use stupid types
+typedef std::set<std::string> TestAtomSet;
+
+class TestInterpretation
+{
+public:
+  typedef boost::shared_ptr<TestInterpretation> Ptr;
+  typedef boost::shared_ptr<const TestInterpretation> ConstPtr;
+
+public:
+  // create empty
+  TestInterpretation(): atoms() {}
+  // create from atom set
+  TestInterpretation(const TestAtomSet& as): atoms(as) {}
+  // create as union
+  TestInterpretation(const TestInterpretation& i1, const TestInterpretation& i2);
+  // destruct
+  ~TestInterpretation() {}
+  // output
+  std::ostream& print(std::ostream& o) const
+  {
+    TestAtomSet::const_iterator it = atoms.begin();
+    o << "{" << *it;
+    ++it;
+    for(;it != atoms.end(); ++it)
+      o << "," << *it;
+    o << "}";
+    return o;
+  }
+
+private:
+  TestAtomSet atoms;
+}; // class Interpretation
+
+// syntactic operator<< sugar for printing interpretations
+std::ostream& operator<<(std::ostream& o, const TestInterpretation& i)
+{
+  return i.print(o);
+}
+
+class TestModelGeneratorFactory:
+  public ModelGeneratorFactoryBase<TestInterpretation>
+{
+  //
+  // types
+  //
+public:
+  typedef ModelGeneratorFactoryBase<TestInterpretation>
+		Base;
+
+  class ModelGenerator:
+    public ModelGeneratorBase<TestInterpretation>
+  {
+  public:
+    typedef std::list<TestInterpretation::Ptr>
+			TestModelList;
+
+		TestModelGeneratorFactory& factory;
+
+    // list of models
+    TestModelList models;
+    // next output model
+    TestModelList::iterator mit;
+
+  public:
+    ModelGenerator(
+        InterpretationConstPtr input,
+        TestModelGeneratorFactory& factory):
+      ModelGeneratorBase<TestInterpretation>(input),
+			factory(factory),
+      models(),
+      mit()
+    {
+			const std::string& rules = factory.ctx.rules;
+      std::cerr << this << " initializing TestModelGeneratorFactory::ModelGenerator:" << std::endl <<
+        "  rules '" << rules << "'" << std::endl;
+
+      // hardcode models of given programs with given inputs
+      if( rules == "plan(a) v plan(b)." )
+      {
+        assert(!input);
+        TestAtomSet ma;
+        ma.insert("plan(a)");
+        TestAtomSet mb;
+        mb.insert("plan(b)");
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
+        mit = models.begin();
+      }
+      else
+      {
+        std::cerr << "TODO hardcode rules '" << rules << "'" << std::endl;
+      }
+      BOOST_FOREACH(TestInterpretation::Ptr intp, models)
+        std::cerr << "  model " << *intp << std::endl;
+    }
+
+    virtual ~ModelGenerator()
+    {
+      std::cerr << this << " destructing ModelGenerator" << std::endl;
+    }
+
+    virtual InterpretationPtr generateNextModel()
+    {
+			const std::string& rules = factory.ctx.rules;
+      std::cerr << this << " returning next model for rules '" << rules << "': ";
+      if( mit == models.end() )
+      {
+        std::cerr << "null" << std::endl;
+        return InterpretationPtr();
+      }
+      else
+      {
+        InterpretationPtr ret = *mit;
+        mit++;
+        std::cerr << *ret << std::endl;
+        return ret;
+      }
+    }
+  };
+
+  //
+  // storage
+  //
+public:
+	const TestProgramCtx& ctx;
+
+  //
+  // members
+  //
+public:
+  TestModelGeneratorFactory(const TestProgramCtx& ctx):
+    ctx(ctx)
+  {
+    std::cerr << this << " creating TestModelGeneratorFactory for rules '" << ctx.rules << "'" <<  std::endl;
+  }
+
+  virtual ~TestModelGeneratorFactory()
+  {
+    std::cerr << this << " destructing TestModelGeneratorFactory" << std::endl;
+  }
+
+  virtual ModelGeneratorPtr createModelGenerator(
+      InterpretationConstPtr input)
+  {
+    std::cerr << this << " creating new model generator for input " << printopt(input) << std::endl;
+    return ModelGeneratorPtr(new ModelGenerator(input, *this));
+  }
+};
+
+// Decision help for "putting properties into the base bundle vs
+// putting properties into extra property maps":
+// * stuff that may be required for optimizing the EvalGraph
+//   should go into the base bundles
+// * stuff that is used for model building only (after the EvalGraph is fixed)
+//   should go into extra property maps
+
+
 /*
 template<
   typename EvalGraphT,
@@ -292,14 +308,11 @@ public:
   BOOST_CONCEPT_ASSERT((boost::Convertible<
       typename EvalGraphT::EvalUnitPropertyBundle,
       EvalUnitModelGeneratorFactoryProperties<
-        typename EvalGraphT::EvalUnitPropertyBundle::Interpretation,
-        typename EvalGraphT::EvalUnitPropertyBundle::ProgramCtx> >));
-  typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
+        typename EvalGraphT::EvalUnitPropertyBundle::Interpretation> >));
+  typedef typename EvalGraphT::EvalUnitPropertyBundle
+		EvalUnitPropertyBundle;
   typedef typename EvalUnitPropertyBundle::Interpretation Interpretation;
   typedef typename EvalUnitPropertyBundle::Interpretation::Ptr InterpretationPtr;
-  typedef typename EvalUnitPropertyBundle::ProgramCtx ProgramCtx;
-  typedef typename EvalUnitPropertyBundle::ModelGeneratorFactory
-      ModelGeneratorFactory;
 
   // create a model graph suited to our needs
   struct ModelProperties
@@ -332,7 +345,7 @@ public:
     // currently running model generator
     // (such a model generator is bound to some input model)
     // (it is reinitialized for each new input model)
-    typename ModelGeneratorFactory::ModelGeneratorPtr currentmg;
+  	typename ModelGeneratorBase<Interpretation>::Ptr currentmg;
 
     bool needInput;
 
@@ -460,7 +473,8 @@ protected:
   std::ostream& printModelBuildingPropertyMap(std::ostream& o)
   {
     o << "mbp contents:";
-    typename std::vector<EvalUnitModelBuildingProperties>::const_iterator it, end;
+    typename std::vector<EvalUnitModelBuildingProperties>::const_iterator
+			it, end;
     unsigned u = 0;
     it = mbp.storage_begin();
     end = mbp.storage_end();
@@ -549,6 +563,11 @@ template<typename EvalGraphT>
 typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
 {
+  std::ostringstream dbgstr;
+  dbgstr << "aOMwI[" << u << "]";
+  const std::string& dbg = dbgstr.str();
+	std::cerr << dbg << "entering advanceOModelWithoutInput(" << u << ")" << std::endl;
+
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   assert(!mbprops.needInput);
@@ -561,6 +580,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   if( !!mbprops.omodel_l_current )
   {
     // we have an omodel iterator
+		std::cerr << dbg << "  omodel iterator is set" << std::endl;
     assert(mbprops.orefcount == 1);
 
     // try to advance iterator on model graph
@@ -569,6 +589,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     it++;
     if( it != rel_omodels.end() )
     {
+			std::cerr << dbg << "  advance successful" << std::endl;
       // advance was successful!
       mbprops.omodel_l_current = it;
       assert(mbprops.orefcount == 1);
@@ -578,12 +599,14 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   else
   {
     // we don't have an omodel iterator
+		std::cerr << dbg << "  omodel iterator not set" << std::endl;
     assert(mbprops.orefcount == 0);
 
     if( !rel_omodels.empty() )
     {
       // but we have a nonempty list of models
       // use the first one
+			std::cerr << dbg << "  omodels list is not empty" << std::endl;
       typename ModelList::const_iterator it = rel_omodels.begin();
       mbprops.omodel_l_current = it;
       mbprops.orefcount++;
@@ -597,6 +620,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   // if we know that all models have been generated -> fail
   if( mbprops.modelsCreated )
   {
+		std::cerr << dbg << "  all models have been created" << std::endl;
     mbprops.omodel_l_current = boost::none;
     mbprops.orefcount = 0;
     return boost::none;
@@ -609,21 +633,23 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   if( !mbprops.currentmg )
   {
     // mgf is of type ModelGeneratorFactory::Ptr
-    ///@todo initialize the following from something more meaningful? or use optional<Interpretation>?
-    typename Interpretation::ConstPtr emptyInt(new Interpretation);
-    mbprops.currentmg = eg.propsOf(u).mgf->createModelGenerator(emptyInt);
+		std::cerr << dbg << "  creating model generator" << std::endl;
+    mbprops.currentmg = eg.propsOf(u).mgf->createModelGenerator(
+				typename Interpretation::ConstPtr());
   }
 
   // todo factorize model creation/storage?
 
   // use model generator to create new model
+	std::cerr << dbg << "  generating next model" << std::endl;
   assert(mbprops.currentmg);
   InterpretationPtr intp =
     mbprops.currentmg->generateNextModel();
 
   if( intp )
   {
-    // we got a new interpretation
+    // we got a new model
+		std::cerr << dbg << "  got new model" << std::endl;
 
     // create model (no dependencies)
     // TODO: handle output projection here? (with no input ... there should not be anything to project?)
@@ -637,22 +663,29 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     // advance iterator to that model
     if( !mbprops.omodel_l_current )
     {
+			std::cerr << dbg << "  starting at first model" << std::endl;
       mbprops.omodel_l_current = rel_omodels.begin();
       mbprops.orefcount++;
     }
     else
     {
-      assert(!!mbprops.omodel_l_current && mbprops.omodel_l_current.get() != rel_omodels.end());
+			std::cerr << dbg << "  advancing model" << std::endl;
+      assert(!!mbprops.omodel_l_current &&
+					mbprops.omodel_l_current.get() != rel_omodels.end());
       mbprops.omodel_l_current.get()++;
-      assert(!!mbprops.omodel_l_current && mbprops.omodel_l_current.get() != rel_omodels.end());
+      assert(!!mbprops.omodel_l_current &&
+					mbprops.omodel_l_current.get() != rel_omodels.end());
     }
-    assert(!!mbprops.omodel_l_current && *(mbprops.omodel_l_current.get()) == m);
+    assert(!!mbprops.omodel_l_current &&
+				*(mbprops.omodel_l_current.get()) == m);
     assert(mbprops.orefcount == 1);
+		std::cerr << dbg << "returning model " << m << std::endl;
     return m;
   }
   else
   {
     // no futher models for this model generator
+		std::cerr << dbg << "  no further model" << std::endl;
 
     // mark this unit as finished for creating models
     mbprops.modelsCreated = true;
@@ -663,6 +696,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     // return failure
     mbprops.omodel_l_current = boost::none;
     mbprops.orefcount = 0;
+		std::cerr << dbg << "returning no model" << std::endl;
     return boost::none;
   }
 }
@@ -723,16 +757,19 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::getNextOModel(
     EvalUnit u)
 {
-  printModelBuildingPropertyMap(std::cerr) << std::endl;
-  std::cerr << "OnlineModelBuilder<...>::getNextOModel(" << u << "):" << std::endl;
+  std::ostringstream dbgstr;
+  dbgstr << "gnOM[" << u << "] ";
+  const std::string& dbg = dbgstr.str();
+  std::cerr << dbg << "entering OnlineModelBuilder<...>::getNextOModel(" << u << "):" << std::endl;
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  std::cerr << "  rules = '" << uprops.rules << "'" << std::endl;
+  std::cerr << dbg << "  rules = '" << uprops.ctx.rules << "'" << std::endl;
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  mbprops.print(std::cerr) << std::endl;
+  mbprops.print(std::cerr << dbg) << std::endl;
 
   // are we allowed to go to the next model here?
   if( mbprops.orefcount > 1 )
   {
+    std::cerr << dbg << "not allowed to continue because of orefcount > 1" << std::endl;
     // no -> give up our model refcount and return no model at all
     mbprops.orefcount--;
     /// @todo do we need to do the following here?
@@ -743,6 +780,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   // initialization?
   if( !mbprops.imodel && mbprops.needInput )
   {
+    std::cerr << dbg << "  getting next imodel (none present and we need one)" << std::endl;
     assert(mbprops.orefcount == 0);
     // get next input for this unit (stores into mprops.imodel)
     getNextIModel(u);
@@ -756,22 +794,34 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     // fail if there is no input at this point
     if( !mbprops.imodel && mbprops.needInput )
     {
+      std::cerr << dbg << "failing with no input" << std::endl;
       assert(mbprops.orefcount == 0);
-      return OptionalModel();
+			return boost::none;
     }
 
+    std::cerr << dbg << "  advancing omodel" << std::endl;
     // advance omodel, maybe advance to null model
     // advancing is only allowed if orefcount <= 1
     omodel = advanceOModel(u);
     if( !omodel )
     {
-      // no next omodel found
-      // -> advance imodel (stores into mbprops.imodel)
-      getNextIModel(u);
+			if( mbprops.needInput )
+			{
+				std::cerr << dbg << "  no omodel and have input models -> advancing imodel" << std::endl;
+				// no next omodel found
+				// -> advance imodel (stores into mbprops.imodel)
+				getNextIModel(u);
+			}
+			else
+			{
+				std::cerr << dbg << "  no omodel and do not need input models -> failing" << std::endl;
+				return boost::none;
+			}
     }
   }
   while( !omodel );
   assert(mbprops.orefcount == 1);
+  std::cerr << dbg << "returning omodel " << printopt(omodel) << std::endl;
   return omodel;
 }
 
@@ -783,14 +833,20 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
 // TestEvalGraph
 struct TestEvalUnitPropertyBase:
   public EvalUnitProjectionProperties,
-  public EvalUnitModelGeneratorFactoryProperties<TestInterpretation, TestProgramCtx>
+  public EvalUnitModelGeneratorFactoryProperties<TestInterpretation>
 {
-  // rules in the eval unit
-  std::string rules;
+	TestProgramCtx ctx;
 
-  TestEvalUnitPropertyBase() {}
+  TestEvalUnitPropertyBase():
+		EvalUnitProjectionProperties(),
+		EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
+		ctx("unset")
+	{ }
   TestEvalUnitPropertyBase(const std::string& rules):
-    rules(rules) {}
+		EvalUnitProjectionProperties(),
+		EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
+		ctx(rules)
+	{ }
 };
 
 typedef EvalGraph<TestEvalUnitPropertyBase>
@@ -947,13 +1003,13 @@ struct OnlineModelBuilderM2Fixture:
 
     // setup model generator factories
     eg.propsOf(u1).mgf.reset( 
-      new TestModelGeneratorFactory(TestProgramCtx(eg.propsOf(u1).rules)));
+      new TestModelGeneratorFactory(eg.propsOf(u1).ctx));
     eg.propsOf(u2).mgf.reset(
-      new TestModelGeneratorFactory(TestProgramCtx(eg.propsOf(u2).rules)));
+      new TestModelGeneratorFactory(eg.propsOf(u2).ctx));
     eg.propsOf(u3).mgf.reset(
-      new TestModelGeneratorFactory(TestProgramCtx(eg.propsOf(u3).rules)));
+      new TestModelGeneratorFactory(eg.propsOf(u3).ctx));
     eg.propsOf(u4).mgf.reset(
-      new TestModelGeneratorFactory(TestProgramCtx(eg.propsOf(u4).rules)));
+      new TestModelGeneratorFactory(eg.propsOf(u4).ctx));
 
   }
 
@@ -988,10 +1044,14 @@ BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
 BOOST_FIXTURE_TEST_CASE(online_model_building_m2, OnlineModelBuilderM2Fixture)
 {
   BOOST_MESSAGE("requesting model");
-  OptionalModel m = omb.getNextOModel(u1);
-  BOOST_CHECK(!!m);
-  BOOST_MESSAGE("TODO: check model contents");
-
+  OptionalModel m1 = omb.getNextOModel(u1);
+  BOOST_CHECK(!!m1);
+  BOOST_MESSAGE("TODO: check model m1 contents");
+  OptionalModel m2 = omb.getNextOModel(u1);
+  BOOST_CHECK(!!m2);
+  BOOST_MESSAGE("TODO: check model m2 contents");
+  OptionalModel nom3 = omb.getNextOModel(u1);
+  BOOST_CHECK(!nom3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
