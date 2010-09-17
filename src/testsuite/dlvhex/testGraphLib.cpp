@@ -1,3 +1,24 @@
+/* dlvhex -- Answer-Set Programming with external interfaces.
+ * Copyright (C) 2010 Peter Schüller
+ * 
+ * This file is part of dlvhex.
+ *
+ * dlvhex is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * dlvhex is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with dlvhex; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
+ */
+
 #include <iostream>
 #include <set>
 #include <list>
@@ -197,6 +218,9 @@ public:
     return o;
   }
 
+  inline const TestAtomSet& getAtoms() const
+    { return atoms; };
+
 private:
   TestAtomSet atoms;
 }; // class Interpretation
@@ -274,7 +298,7 @@ public:
     virtual InterpretationPtr generateNextModel()
     {
 			const std::string& rules = factory.ctx.rules;
-      LOG_METHOD("gNM",this);
+      LOG_METHOD("generateNextModel()",this);
       LOG("returning next model for rules '" << rules << "':");
       if( mit == models.end() )
       {
@@ -513,14 +537,6 @@ public:
   EvalGraphT& getEvalGraph() { return eg; }
   MyModelGraph& getModelGraph() { return mg; }
 
-  // get next input model (projected if projection is configured) at unit u
-  OptionalModel getNextIModel(EvalUnit u)
-  {
-    // TODO
-
-    return OptionalModel();
-  }
-
 protected:
   std::ostream& printModelBuildingPropertyMap(std::ostream& o)
   {
@@ -543,6 +559,9 @@ protected:
   }
 
 public:
+
+  // get next input model (projected if projection is configured) at unit u
+  OptionalModel getNextIModel(EvalUnit u);
 
 	/**
    * nonrecursive "get next" wrt. a mandatory imodel
@@ -590,7 +609,27 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
     EvalUnit u)
 {
+  std::ostringstream dbgstr;
+  dbgstr << "aOMfIM[" << u << "]";
+  LOG_METHOD(dbgstr.str(),this);
+  LOG("=OnlineModelBuilder<...>::advanceOModelForIModel(" << u << ")");
   // TODO
+  LOG("TODO");
+}
+
+// get next input model (projected if projection is configured) at unit u
+template<typename EvalGraphT>
+typename OnlineModelBuilder<EvalGraphT>::OptionalModel
+OnlineModelBuilder<EvalGraphT>::getNextIModel(
+    EvalUnit u)
+{
+  std::ostringstream dbgstr;
+  dbgstr << "gnIM[" << u << "]";
+  LOG_METHOD(dbgstr.str(),this);
+  LOG("=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
+  // TODO
+  LOG("TODO");
+  return OptionalModel();
 }
 
 /**
@@ -810,7 +849,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     EvalUnit u)
 {
   std::ostringstream dbgstr;
-  dbgstr << "gnOM[" << u << "] ";
+  dbgstr << "gnOM[" << u << "]";
   LOG_METHOD(dbgstr.str(), this);
   LOG("=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
@@ -1027,8 +1066,8 @@ struct ModelGraphM2Fixture:
   ~ModelGraphM2Fixture() {}
 };
 
-// test online model building algorithm with graph M2
-struct OnlineModelBuilderM2Fixture:
+// test online model building algorithm with graph E2
+struct OnlineModelBuilderE2Fixture:
   public EvalGraphE2Fixture
 {
   typedef OnlineModelBuilder<TestEvalGraph> ModelBuilder;
@@ -1037,7 +1076,7 @@ struct OnlineModelBuilderM2Fixture:
   ModelBuilder omb;
   EvalUnit ufinal;
 
-  OnlineModelBuilderM2Fixture():
+  OnlineModelBuilderE2Fixture():
     EvalGraphE2Fixture(),
     omb(eg)
   {
@@ -1065,7 +1104,7 @@ struct OnlineModelBuilderM2Fixture:
 
   }
 
-  ~OnlineModelBuilderM2Fixture() {}
+  ~OnlineModelBuilderE2Fixture() {}
 };
 
 BOOST_AUTO_TEST_SUITE(root)
@@ -1093,17 +1132,50 @@ BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
   BOOST_CHECK(mg.propsOf(m10).type == MT_OUT);
 }
 
-BOOST_FIXTURE_TEST_CASE(online_model_building_m2, OnlineModelBuilderM2Fixture)
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u1, OnlineModelBuilderE2Fixture)
 {
-  BOOST_MESSAGE("requesting model");
+  BOOST_MESSAGE("requesting model #1");
   OptionalModel m1 = omb.getNextOModel(u1);
-  BOOST_CHECK(!!m1);
-  BOOST_MESSAGE("TODO: check model m1 contents");
+  BOOST_REQUIRE(!!m1);
+  {
+    TestInterpretation& ti1 = *(omb.getModelGraph().propsOf(m1.get()).interpretation);
+    BOOST_CHECK(ti1.getAtoms().size() == 1);
+    BOOST_CHECK(ti1.getAtoms().count("plan(a)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
   OptionalModel m2 = omb.getNextOModel(u1);
-  BOOST_CHECK(!!m2);
-  BOOST_MESSAGE("TODO: check model m2 contents");
-  OptionalModel nom3 = omb.getNextOModel(u1);
-  BOOST_CHECK(!nom3);
+  BOOST_REQUIRE(!!m2);
+  {
+    TestInterpretation& ti2 = *(omb.getModelGraph().propsOf(m2.get()).interpretation);
+    BOOST_CHECK(ti2.getAtoms().size() == 1);
+    BOOST_CHECK(ti2.getAtoms().count("plan(b)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel nfm = omb.getNextOModel(u1);
+  BOOST_CHECK(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2, OnlineModelBuilderE2Fixture)
+{
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m3 = omb.getNextIModel(u2);
+  BOOST_REQUIRE(!!m3);
+  {
+    BOOST_MESSAGE("TODO: check model m3 contents");
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel m4 = omb.getNextOModel(u2);
+  BOOST_REQUIRE(!!m4);
+  {
+    BOOST_MESSAGE("TODO: check model m4 contents");
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel nfm = omb.getNextOModel(u2);
+  BOOST_CHECK(!nfm);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
