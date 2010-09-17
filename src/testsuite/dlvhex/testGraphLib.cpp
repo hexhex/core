@@ -14,6 +14,7 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
+#include "Logger.hpp"
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
@@ -69,6 +70,52 @@ inline printopt_container<T> printopt(const T& t)
 {
   return printopt_container<T>(t);
 }
+
+// ******************** //
+
+// 'print_method' usage:
+// if some class has a method "std::ostream& print(std::ostream&) const"
+// and you have an object o of this type
+// then you can simply do "std::cerr << ... << print_method(o) << ... " to print it
+
+// TODO: refactor print_opt to use print_container as base class
+
+template<typename T>
+struct print_container
+{
+  const T& t;
+  print_container(const T& t): t(t) {}
+  virtual ~print_container() {}
+  virtual std::ostream& print(std::ostream& o) const = 0;
+};
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& o, const print_container<T>& c)
+{
+  return c.print(o);
+}
+
+template<typename T>
+struct print_method_container:
+  public print_container<T>
+{
+  //typedef std::ostream& (T::*PrintFn)(std::ostream&);
+  //PrintFn fn;
+
+  print_method_container(const T& t)://, PrintFn fn):
+    print_container<T>(t) {} // , fn(fn) {}
+  virtual ~print_method_container() {}
+  virtual std::ostream& print(std::ostream& o) const
+    { return print_container<T>::t.print(o); }
+};
+
+template<typename T>
+inline print_method_container<T> print_method(const T& t)
+{
+  return print_method_container<T>(t);
+}
+
+
 
 // model generator factory properties for eval units
 // such properties are required by model builders
@@ -193,9 +240,9 @@ public:
       models(),
       mit()
     {
+      LOG_METHOD("ModelGenerator()", this);
 			const std::string& rules = factory.ctx.rules;
-      std::cerr << this << " initializing TestModelGeneratorFactory::ModelGenerator:" << std::endl <<
-        "  rules '" << rules << "'" << std::endl;
+      LOG("rules '" << rules << "'");
 
       // hardcode models of given programs with given inputs
       if( rules == "plan(a) v plan(b)." )
@@ -213,29 +260,32 @@ public:
       {
         std::cerr << "TODO hardcode rules '" << rules << "'" << std::endl;
       }
+
+      LOG_INDENT();
       BOOST_FOREACH(TestInterpretation::Ptr intp, models)
-        std::cerr << "  model " << *intp << std::endl;
+        LOG("model " << *intp);
     }
 
     virtual ~ModelGenerator()
     {
-      std::cerr << this << " destructing ModelGenerator" << std::endl;
+      LOG_METHOD("~ModelGenerator()", this);
     }
 
     virtual InterpretationPtr generateNextModel()
     {
 			const std::string& rules = factory.ctx.rules;
-      std::cerr << this << " returning next model for rules '" << rules << "': ";
+      LOG_METHOD("gNM",this);
+      LOG("returning next model for rules '" << rules << "':");
       if( mit == models.end() )
       {
-        std::cerr << "null" << std::endl;
+        LOG("null");
         return InterpretationPtr();
       }
       else
       {
         InterpretationPtr ret = *mit;
         mit++;
-        std::cerr << *ret << std::endl;
+        LOG(*ret);
         return ret;
       }
     }
@@ -254,18 +304,20 @@ public:
   TestModelGeneratorFactory(const TestProgramCtx& ctx):
     ctx(ctx)
   {
-    std::cerr << this << " creating TestModelGeneratorFactory for rules '" << ctx.rules << "'" <<  std::endl;
+    LOG_METHOD("TestModelGeneratorFactory()", this);
+    LOG("rules='" << ctx.rules << "'");
   }
 
   virtual ~TestModelGeneratorFactory()
   {
-    std::cerr << this << " destructing TestModelGeneratorFactory" << std::endl;
+    LOG_METHOD("~TestModelGeneratorFactory()", this);
   }
 
   virtual ModelGeneratorPtr createModelGenerator(
       InterpretationConstPtr input)
   {
-    std::cerr << this << " creating new model generator for input " << printopt(input) << std::endl;
+    LOG_METHOD("createModelGenerator()", this);
+    LOG("input=" << printopt(input));
     return ModelGeneratorPtr(new ModelGenerator(input, *this));
   }
 };
@@ -565,8 +617,8 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
 {
   std::ostringstream dbgstr;
   dbgstr << "aOMwI[" << u << "]";
-  const std::string& dbg = dbgstr.str();
-	std::cerr << dbg << "entering advanceOModelWithoutInput(" << u << ")" << std::endl;
+  LOG_METHOD(dbgstr.str(),this);
+  LOG("=advanceOModelWithoutInput(" << u << ")");
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
@@ -580,7 +632,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   if( !!mbprops.omodel_l_current )
   {
     // we have an omodel iterator
-		std::cerr << dbg << "  omodel iterator is set" << std::endl;
+    LOG("omodel iterator is set");
     assert(mbprops.orefcount == 1);
 
     // try to advance iterator on model graph
@@ -589,7 +641,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     it++;
     if( it != rel_omodels.end() )
     {
-			std::cerr << dbg << "  advance successful" << std::endl;
+			LOG("advance successful");
       // advance was successful!
       mbprops.omodel_l_current = it;
       assert(mbprops.orefcount == 1);
@@ -599,14 +651,14 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   else
   {
     // we don't have an omodel iterator
-		std::cerr << dbg << "  omodel iterator not set" << std::endl;
+		LOG("omodel iterator not set");
     assert(mbprops.orefcount == 0);
 
     if( !rel_omodels.empty() )
     {
       // but we have a nonempty list of models
       // use the first one
-			std::cerr << dbg << "  omodels list is not empty" << std::endl;
+			LOG("omodels list is not empty");
       typename ModelList::const_iterator it = rel_omodels.begin();
       mbprops.omodel_l_current = it;
       mbprops.orefcount++;
@@ -620,7 +672,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   // if we know that all models have been generated -> fail
   if( mbprops.modelsCreated )
   {
-		std::cerr << dbg << "  all models have been created" << std::endl;
+    LOG("all models have been created");
     mbprops.omodel_l_current = boost::none;
     mbprops.orefcount = 0;
     return boost::none;
@@ -633,7 +685,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   if( !mbprops.currentmg )
   {
     // mgf is of type ModelGeneratorFactory::Ptr
-		std::cerr << dbg << "  creating model generator" << std::endl;
+    LOG("creating model generator");
     mbprops.currentmg = eg.propsOf(u).mgf->createModelGenerator(
 				typename Interpretation::ConstPtr());
   }
@@ -641,7 +693,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   // todo factorize model creation/storage?
 
   // use model generator to create new model
-	std::cerr << dbg << "  generating next model" << std::endl;
+  LOG("generating next model");
   assert(mbprops.currentmg);
   InterpretationPtr intp =
     mbprops.currentmg->generateNextModel();
@@ -649,7 +701,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   if( intp )
   {
     // we got a new model
-		std::cerr << dbg << "  got new model" << std::endl;
+		LOG("got new model");
 
     // create model (no dependencies)
     // TODO: handle output projection here? (with no input ... there should not be anything to project?)
@@ -663,13 +715,13 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     // advance iterator to that model
     if( !mbprops.omodel_l_current )
     {
-			std::cerr << dbg << "  starting at first model" << std::endl;
+      LOG("starting at first model");
       mbprops.omodel_l_current = rel_omodels.begin();
       mbprops.orefcount++;
     }
     else
     {
-			std::cerr << dbg << "  advancing model" << std::endl;
+			LOG("advancing model");
       assert(!!mbprops.omodel_l_current &&
 					mbprops.omodel_l_current.get() != rel_omodels.end());
       mbprops.omodel_l_current.get()++;
@@ -679,13 +731,13 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     assert(!!mbprops.omodel_l_current &&
 				*(mbprops.omodel_l_current.get()) == m);
     assert(mbprops.orefcount == 1);
-		std::cerr << dbg << "returning model " << m << std::endl;
+    LOG("returning model " << m);
     return m;
   }
   else
   {
     // no futher models for this model generator
-		std::cerr << dbg << "  no further model" << std::endl;
+    LOG("no further model");
 
     // mark this unit as finished for creating models
     mbprops.modelsCreated = true;
@@ -696,7 +748,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     // return failure
     mbprops.omodel_l_current = boost::none;
     mbprops.orefcount = 0;
-		std::cerr << dbg << "returning no model" << std::endl;
+		LOG("returning no model");
     return boost::none;
   }
 }
@@ -759,17 +811,17 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
 {
   std::ostringstream dbgstr;
   dbgstr << "gnOM[" << u << "] ";
-  const std::string& dbg = dbgstr.str();
-  std::cerr << dbg << "entering OnlineModelBuilder<...>::getNextOModel(" << u << "):" << std::endl;
+  LOG_METHOD(dbgstr.str(), this);
+  LOG("=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  std::cerr << dbg << "  rules = '" << uprops.ctx.rules << "'" << std::endl;
+  LOG("rules = '" << uprops.ctx.rules << "'");
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  mbprops.print(std::cerr << dbg) << std::endl;
+  LOG("mbprops = " << print_method(mbprops));
 
   // are we allowed to go to the next model here?
   if( mbprops.orefcount > 1 )
   {
-    std::cerr << dbg << "not allowed to continue because of orefcount > 1" << std::endl;
+    LOG("not allowed to continue because of orefcount > 1");
     // no -> give up our model refcount and return no model at all
     mbprops.orefcount--;
     /// @todo do we need to do the following here?
@@ -780,7 +832,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   // initialization?
   if( !mbprops.imodel && mbprops.needInput )
   {
-    std::cerr << dbg << "  getting next imodel (none present and we need one)" << std::endl;
+    LOG("getting next imodel (none present and we need one)");
     assert(mbprops.orefcount == 0);
     // get next input for this unit (stores into mprops.imodel)
     getNextIModel(u);
@@ -794,12 +846,12 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     // fail if there is no input at this point
     if( !mbprops.imodel && mbprops.needInput )
     {
-      std::cerr << dbg << "failing with no input" << std::endl;
+      LOG("failing with no input");
       assert(mbprops.orefcount == 0);
 			return boost::none;
     }
 
-    std::cerr << dbg << "  advancing omodel" << std::endl;
+    LOG("advancing omodel");
     // advance omodel, maybe advance to null model
     // advancing is only allowed if orefcount <= 1
     omodel = advanceOModel(u);
@@ -807,21 +859,21 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     {
 			if( mbprops.needInput )
 			{
-				std::cerr << dbg << "  no omodel and have input models -> advancing imodel" << std::endl;
+        LOG("no omodel and have input models -> advancing imodel");
 				// no next omodel found
 				// -> advance imodel (stores into mbprops.imodel)
 				getNextIModel(u);
 			}
 			else
 			{
-				std::cerr << dbg << "  no omodel and do not need input models -> failing" << std::endl;
+        LOG("no omodel and do not need input models -> failing");
 				return boost::none;
 			}
     }
   }
   while( !omodel );
   assert(mbprops.orefcount == 1);
-  std::cerr << dbg << "returning omodel " << printopt(omodel) << std::endl;
+  LOG("returning omodel " << printopt(omodel));
   return omodel;
 }
 
