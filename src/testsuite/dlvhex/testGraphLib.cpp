@@ -27,6 +27,7 @@
 #include <cassert>
 
 #include <boost/foreach.hpp>
+//#include <boost/type_traits/remove_const.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
@@ -39,104 +40,6 @@
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
-
-template<typename T>
-inline std::ostream& printopt_main(std::ostream& o, const T& t)
-{
-  if( !t )
-    return o << "unset";
-  else
-    return o << t;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, const boost::shared_ptr<TT>& t)
-{
-  if( t == 0 )
-    return o << "null";
-  else
-    return o << t;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, boost::optional<typename std::list<TT>::const_iterator> it)
-{
-  if( !it )
-    return o << "unset";
-  else
-    return o << *it;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, boost::optional<typename std::list<TT>::iterator> it)
-{
-  if( !it )
-    return o << "unset";
-  else
-    return o << *it;
-}
-
-template<typename T>
-struct printopt_container
-{
-  const T& t;
-  printopt_container(const T& t): t(t) {}
-};
-
-template<typename T>
-inline std::ostream& operator<<(std::ostream& o, printopt_container<T> c)
-{
-  return printopt_main(o, c.t);
-}
-
-template<typename T>
-inline printopt_container<T> printopt(const T& t)
-{
-  return printopt_container<T>(t);
-}
-
-// ******************** //
-
-// 'print_method' usage:
-// if some class has a method "std::ostream& print(std::ostream&) const"
-// and you have an object o of this type
-// then you can simply do "std::cerr << ... << print_method(o) << ... " to print it
-
-// TODO: refactor print_opt to use print_container as base class
-
-template<typename T>
-struct print_container
-{
-  const T& t;
-  print_container(const T& t): t(t) {}
-  virtual ~print_container() {}
-  virtual std::ostream& print(std::ostream& o) const = 0;
-};
-
-template<typename T>
-inline std::ostream& operator<<(std::ostream& o, const print_container<T>& c)
-{
-  return c.print(o);
-}
-
-template<typename T>
-struct print_method_container:
-  public print_container<T>
-{
-  //typedef std::ostream& (T::*PrintFn)(std::ostream&);
-  //PrintFn fn;
-
-  print_method_container(const T& t)://, PrintFn fn):
-    print_container<T>(t) {} // , fn(fn) {}
-  virtual ~print_method_container() {}
-  virtual std::ostream& print(std::ostream& o) const
-    { return print_container<T>::t.print(o); }
-};
-
-template<typename T>
-inline print_method_container<T> print_method(const T& t)
-{
-  return print_method_container<T>(t);
-}
-
-
 
 // model generator factory properties for eval units
 // such properties are required by model builders
@@ -202,10 +105,19 @@ public:
   TestInterpretation(): atoms() {}
   // create from atom set
   TestInterpretation(const TestAtomSet& as): atoms(as) {}
-  // create as union
-  TestInterpretation(const TestInterpretation& i1, const TestInterpretation& i2);
   // destruct
   ~TestInterpretation() {}
+
+	void add(const TestAtomSet& as)
+	{
+		atoms.insert(as.begin(), as.end());
+	}
+
+	void add(const TestInterpretation& i)
+	{
+		add(i.getAtoms());
+	}
+
   // output
   std::ostream& print(std::ostream& o) const
   {
@@ -338,10 +250,11 @@ public:
   }
 
   virtual ModelGeneratorPtr createModelGenerator(
-      InterpretationConstPtr input)
+      TestInterpretation::ConstPtr input)
+      //InterpretationConstPtr input)
   {
     LOG_METHOD("createModelGenerator()", this);
-    LOG("input=" << printopt(input));
+    LOG("input=" << printptr(input));
     return ModelGeneratorPtr(new ModelGenerator(input, *this));
   }
 };
@@ -432,7 +345,7 @@ public:
 		// imodel currently being present in iteration
     OptionalModel imodel;
 
-		// successor of imodel
+		// current successor of imodel
     OptionalModelSuccessorIterator omodel_s_current;
 
     // storage if needInput == false
@@ -444,10 +357,18 @@ public:
     // iterator in mg.modelsAt(u, MT_OUT) or mg.modelsAt(u, MT_OUTPROJ)
 		OptionalModelListIterator omodel_l_current;
 
+		#ifndef NDEBUG
+		MyModelGraph* mg;
+		#endif
+
     EvalUnitModelBuildingProperties():
       currentmg(), needInput(false), orefcount(0),
       imodel(), omodel_s_current(),
-      omodel_l_current(), modelsCreated(false) {}
+      omodel_l_current(), modelsCreated(false)
+			#ifndef NDEBUG
+			,mg(NULL)
+			#endif
+			{}
 
     /**
      * \brief advance the omodel to the next omodel
@@ -468,18 +389,54 @@ public:
      *   else
      *     get first and return it
      */
-    OptionalModel advanceOModelToNextIfPossible(const MyModelGraph& mg);
+    //OptionalModel advanceOModelToNextIfPossible(const MyModelGraph& mg);
+
+    bool hasOModel() const
+      { return needInput?(!!omodel_s_current):(!!omodel_l_current); }
+
+		// @todo: generally store mg in properties even for non debugging?
+    Model getOModel(const MyModelGraph& mg) const
+		{
+			if( needInput )
+			{
+				assert(!!omodel_s_current);
+				return mg.sourceOf(*omodel_s_current.get());
+			}
+			else
+			{
+				assert(!!omodel_l_current);
+				return *omodel_l_current.get();
+			}
+		}
 
     std::ostream& print(std::ostream& o) const
     {
-      return o <<
-        "currentmg = " << printopt(currentmg) <<
+      o <<
+        "currentmg = " << printptr(currentmg) <<
         ", needInput = " << needInput <<
-        ", orefcount = " << orefcount <<
-        ", imodel = " << printopt(imodel) <<
-        ", omodel_s_current = " << printopt(omodel_s_current) <<
-        ", omodel_l_current = " << printopt(omodel_l_current) <<
+        ", orefcount = " << orefcount;
+			#ifndef NDEBUG
+			o <<
+				", imodel = " << printopt(imodel) << //( (!!imodel) ? imodel.get() : std::string("unset") ) <<
+        ", omodel_s_current = ";
+			if( !!omodel_s_current )
+				o << mg->dbg(mg->sourceOf(*omodel_s_current.get()))
+					<< "->"
+				  << mg->dbg(mg->targetOf(*omodel_s_current.get()));
+			else
+				o << "unset";
+			o <<
+				", omodel_l_current = ";
+			if( !!omodel_l_current )
+				o << mg->dbg(*omodel_l_current.get());
+			else
+				o << "unset";
+			#else
+      o << ", imodel/omodel_s_current/omodel_l_current=[please recompile without -DNDEBUG]";
+			#endif
+			o <<
         ", modelsCreated = " << modelsCreated;
+			return o;
     }
     #if 0
     {
@@ -562,6 +519,8 @@ public:
 
   // get next input model (projected if projection is configured) at unit u
   OptionalModel getNextIModel(EvalUnit u);
+	// helper for getNextIModel
+	Model createIModelFromPredecessorOModels(EvalUnit u);
 
 	/**
    * nonrecursive "get next" wrt. a mandatory imodel
@@ -617,7 +576,90 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
   LOG("TODO");
 }
 
+template<typename EvalGraphT>
+typename OnlineModelBuilder<EvalGraphT>::Model
+OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
+    EvalUnit u)
+{
+  LOG_FUNCTION("cIMFPOM");
+  LOG("=OnlineModelBuilder<...>::createIModelFromPredecessorOModels(" << u << ")");
+
+	// create vector of dependencies
+	std::vector<Model> deps;
+	typename EvalGraphT::PredecessorIterator pit, pend;
+	boost::tie(pit, pend) = eg.getPredecessors(u);
+	for(; pit != pend; ++pit)
+	{
+		EvalUnit pred = eg.targetOf(*pit);
+		EvalUnitModelBuildingProperties& predmbprops = mbp[pred];
+		LOG("found predecessor unit " << pred << " with current omodel mbprops: " << print_method(predmbprops));
+		Model predmodel = predmbprops.getOModel(mg);
+		deps.push_back(predmodel);
+	}
+  
+  // create interpretation
+  InterpretationPtr pjoin;
+  if( deps.size() == 1 )
+  {
+    // only link
+    LOG("only one predecessor -> linking to omodel");
+		pjoin = mg.propsOf(deps.front()).interpretation;
+		assert(pjoin != 0);
+  }
+  else
+  {
+    // create joined interpretation
+    LOG("more than one predecessor -> joining omodels");
+    pjoin = InterpretationPtr(new Interpretation);
+    LOG("new interpretation = " << printptr(pjoin));
+    typename std::vector<Model>::const_iterator it;
+    for(it = deps.begin(); it != deps.end(); ++it)
+    {
+      InterpretationPtr predinterpretation = mg.propsOf(*it).interpretation;
+      LOG("predecessor omodel " << *it <<
+          " has interpretation " << printptr(predinterpretation) <<
+          " with contents " << print_method(*predinterpretation));
+      assert(predinterpretation != 0);
+      pjoin->add(*predinterpretation);
+      LOG("pjoin now has contents " << print_method(*pjoin));
+    }
+  }
+
+	// create model
+	Model m = mg.addModel(u, MT_IN, deps);
+	LOG("returning new MT_IN model " << m);
+  mg.propsOf(m).interpretation = pjoin;
+	return m;
+}
+
 // get next input model (projected if projection is configured) at unit u
+/*
+ * Synopsis:
+ *   Get the next input model, by advancing at least one
+ *   predecessor output model using getNextOModel.
+ *   (Ensure that all combinations of input models are found.)
+ * Notation:
+ *   u has ordered predecessors $u_1,\ldots,u_k$
+ *   with omodel variables $m_1,\ldots,m_k$
+ * Initially: $\forall i: m_i = null$
+ * Invariant:
+ *   $m_i = null \Rightarrow \forall j >= i: m_j = null$
+ *   $iunset$: index of first unset model
+ *     $1$ if $m_1$ = null
+ *     smallest $i$ s.t. $m_{i-1} \neq null$ otherwise
+ *
+ * This algorithm has two (conditional) phases:
+ * 1) advance omodel at $u_k$ to the next omodel
+ *    Precondition: $m_k \neq $ null (a full model is present)
+ *    if this succeeds, return the new model and skip phase 2)
+ * 2) find a new full model
+ *    Precondition: 1) failed ($u_k$ has no next omodel) or $m_k = null$
+ *    This phase expands the input using getNextOModel($u_{iunset}$) until full,
+ *    and backtracks to the left if no next omodel exists.
+ *    Finding a full model returns the model.
+ *    Backtracking to index $0$ means there is no further imodel.
+ */
+// return value of null means failure / no more input models
 template<typename EvalGraphT>
 typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::getNextIModel(
@@ -627,9 +669,95 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   dbgstr << "gnIM[" << u << "]";
   LOG_METHOD(dbgstr.str(),this);
   LOG("=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
-  // TODO
-  LOG("TODO");
-  return OptionalModel();
+
+  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+  LOG("rules: " << uprops.ctx.rules);
+  EvalUnitModelBuildingProperties& mbprops = mbp[u];
+  LOG("mbprops: " << print_method(mbprops));
+
+  typename EvalGraphT::PredecessorIterator pbegin, pend, pit, pfirstnull;
+  boost::tie(pbegin, pend) = eg.getPredecessors(u);
+  bool foundnull = false;
+  for(pit = pbegin; pit != pend; ++pit)
+  {
+    const typename EvalGraphT::EvalUnitDepPropertyBundle& depprop =
+      eg.propsOf(*pit);
+    typename EvalGraphT::EvalUnit predunit =
+      eg.targetOf(*pit);
+    const EvalUnitModelBuildingProperties& predmbprops =
+      mbp[predunit];
+    if( !foundnull && !predmbprops.hasOModel() )
+    {
+      pfirstnull = pit;
+      foundnull = true;
+    }
+    // if we found null, we must not find further o models
+    assert(!foundnull || !predmbprops.hasOModel());
+    LOG("pred unit " << predunit << " with join order " << depprop.joinOrder <<
+        " and mbprops " << print_method(predmbprops) );
+  }
+
+  // TODO: cache foundnull / pfirstnull in optional predecessor iterator
+  // + assert its correctness in debug code
+  if( !foundnull )
+  {
+    LOG("all predecessors have omodels -> phase 1/advance last one");
+    typename EvalGraphT::EvalUnit advanceunit =
+      eg.targetOf(*(pend - 1));
+    LOG("advanceunit = " << advanceunit);
+    OptionalModel om = getNextOModel(advanceunit);
+    if( !!om )
+    {
+      LOG("found full input model!");
+      Model im = createIModelFromPredecessorOModels(u);
+      LOG("returning newly created imodel " << im);
+      mbprops.imodel = im;
+      LOG("mbprops: " << print_method(mbprops));
+      return im;
+    }
+    else
+    {
+      LOG("no further omodel");
+      pfirstnull = pend - 1;
+      if( pfirstnull == pbegin )
+      {
+        LOG("no more input models (one predecessor)!");
+        return boost::none;
+      }
+      // else continue with phase 2
+    }
+  }
+  
+  LOG("phase 2/find next full model");
+  do
+  {
+    assert(pfirstnull != pend);
+
+    typename EvalGraphT::EvalUnit unsetpredunit =
+      eg.targetOf(*pfirstnull);
+    OptionalModel om = getNextOModel(unsetpredunit);
+    if( !om )
+    {
+      LOG("did not find model at unit " << unsetpredunit << " -> need to backtrack");
+      LOG("TODO backtrack in inner loop");
+    }
+    else
+    {
+      LOG("found omodel " << om.get() << " at unit " << unsetpredunit);
+      pfirstnull++;
+      if( pfirstnull == pend )
+      {
+        LOG("found full input model!");
+				Model im = createIModelFromPredecessorOModels(u);
+        LOG("returning newly created imodel " << im);
+				mbprops.imodel = im;
+				LOG("mbprops: " << print_method(mbprops));
+				return im;
+      }
+    }
+  }
+  while(true);
+  assert(false);
 }
 
 /**
@@ -666,7 +794,9 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   assert(!mbprops.omodel_s_current);
 
   typedef typename MyModelGraph::ModelList ModelList;
+	LOG("fee");
   const ModelList& rel_omodels = mg.relevantOModelsAt(u);
+	LOG("foo");
 
   if( !!mbprops.omodel_l_current )
   {
@@ -677,6 +807,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
     // try to advance iterator on model graph
     typename ModelList::const_iterator it =
       mbprops.omodel_l_current.get();
+    assert( it != rel_omodels.end() );
     it++;
     if( it != rel_omodels.end() )
     {
@@ -1109,6 +1240,7 @@ struct OnlineModelBuilderE2Fixture:
 
 BOOST_AUTO_TEST_SUITE(root)
 
+#if 1
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 {
   BOOST_MESSAGE("TODO: check size of resulting graph or something like that");
@@ -1138,24 +1270,25 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u1, OnlineModelBuilderE2Fixture
   OptionalModel m1 = omb.getNextOModel(u1);
   BOOST_REQUIRE(!!m1);
   {
-    TestInterpretation& ti1 = *(omb.getModelGraph().propsOf(m1.get()).interpretation);
-    BOOST_CHECK(ti1.getAtoms().size() == 1);
-    BOOST_CHECK(ti1.getAtoms().count("plan(a)") == 1);
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m1.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(a)") == 1);
   }
 
   BOOST_MESSAGE("requesting model #2");
   OptionalModel m2 = omb.getNextOModel(u1);
   BOOST_REQUIRE(!!m2);
   {
-    TestInterpretation& ti2 = *(omb.getModelGraph().propsOf(m2.get()).interpretation);
-    BOOST_CHECK(ti2.getAtoms().size() == 1);
-    BOOST_CHECK(ti2.getAtoms().count("plan(b)") == 1);
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m2.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(b)") == 1);
   }
 
   BOOST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextOModel(u1);
-  BOOST_CHECK(!nfm);
+  BOOST_REQUIRE(!nfm);
 }
+#endif
 
 BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2, OnlineModelBuilderE2Fixture)
 {
@@ -1163,19 +1296,23 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2, OnlineModelBuilderE2Fixture
   OptionalModel m3 = omb.getNextIModel(u2);
   BOOST_REQUIRE(!!m3);
   {
-    BOOST_MESSAGE("TODO: check model m3 contents");
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m3.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(a)") == 1);
   }
 
   BOOST_MESSAGE("requesting model #2");
-  OptionalModel m4 = omb.getNextOModel(u2);
+  OptionalModel m4 = omb.getNextIModel(u2);
   BOOST_REQUIRE(!!m4);
   {
-    BOOST_MESSAGE("TODO: check model m4 contents");
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m4.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(b)") == 1);
   }
 
   BOOST_MESSAGE("requesting model #3");
-  OptionalModel nfm = omb.getNextOModel(u2);
-  BOOST_CHECK(!nfm);
+  OptionalModel nfm = omb.getNextIModel(u2);
+  BOOST_REQUIRE(!nfm);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

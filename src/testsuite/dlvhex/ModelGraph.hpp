@@ -28,6 +28,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
+#include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "EvalGraph.hpp"
 
@@ -138,8 +140,15 @@ public:
   struct EvalUnitModels
   {
 		// for each type of model we have a model list
-    std::vector<ModelList> models;
-    EvalUnitModels(): models(4, ModelList()) {}
+    boost::shared_ptr< std::vector<ModelList> > models;
+    EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
+      { LOG("EvalUnitModels()@" << this); }
+    EvalUnitModels(const EvalUnitModels& eum): models(eum.models)
+      { LOG("EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
+		~EvalUnitModels()
+      { LOG("~EvalUnitModels()@" << this << " sizes=" <<
+				(*models)[0].size() << " " << (*models)[1].size() << " " <<
+				(*models)[2].size() << " " << (*models)[3].size()); }
   };
   typedef boost::vector_property_map<EvalUnitModels>
     EvalUnitModelsPropertyMap;
@@ -160,7 +169,10 @@ private:
 public:
   // initialize with link to eval graph
   ModelGraph(EvalGraphT& eg):
-    eg(eg) {}
+    eg(eg), mg(), mau()
+	{
+    // @todo: resize/reserve memory for mau s.t. it need not be reallocated too often?
+	}
 
   // create a new model including dependencies
   // returns the new model
@@ -192,7 +204,7 @@ public:
   {
     assert(0 <= type <= 4);
     assert(0 <= unit <= 4);
-    return boost::get(mau, unit).models[type];
+    return (*mau[unit].models)[type];
   }
 
   // return list of relevant imodels at unit (depends on projection whether this is MT_IN or MT_INPROJ)
@@ -225,7 +237,7 @@ public:
   }
 
   // predecessors are models this model is based on
-  // edges are dependencies, so predecessors are at outgoing edges
+  // predecessors are dependencies, so predecessors are at targetOf(iterators)
   inline std::pair<PredecessorIterator, PredecessorIterator>
   getPredecessors(Model m) const
   {
@@ -233,12 +245,33 @@ public:
   }
 
   // successors are models this model contributed to,
-  // edges are dependencies, so successors are at incoming edges
+  // successors are dependencies, so successors are at sourceOf(iterators)
   inline std::pair<SuccessorIterator, SuccessorIterator>
   getSuccessors(Model m) const
   {
     return boost::in_edges(m, mg);
   }
+
+  inline Model sourceOf(ModelDep d) const
+  {
+    return boost::source(d, mg);
+  }
+  inline Model targetOf(ModelDep d) const
+  {
+    return boost::target(d, mg);
+  }
+
+	inline const void* dbg(Model m) const
+	{
+		return reinterpret_cast<const void*>(&mg[m]);
+	}
+	inline const void* dbg(const boost::optional<Model>& m) const
+	{
+		if( !!m )
+			return dbg(m.get());
+		else
+			return 0;
+	}
 }; // class ModelGraph
 
 // ModelGraph<...>::addModel(...) implementation
@@ -252,8 +285,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   typedef typename EvalGraphT::PredecessorIterator PredecessorIterator;
   typedef typename EvalGraphT::EvalUnitDepPropertyBundle EvalUnitDepPropertyBundle;
   typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
+  LOG_METHOD("MG::addModel", this);
 
   #ifndef NDEBUG
+  LOG("running debug checks");
   switch(type)
   {
   case MT_IN:
@@ -366,6 +401,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   prop.location = location;
   prop.type = type;
   Model m = boost::add_vertex(prop, mg);
+  LOG("add_vertex returned " << m);
 
   // add model dependencies
   for(unsigned i = 0; i < deps.size(); ++i)
@@ -378,9 +414,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   }
 
   // update modelsAt property map (models at each eval unit are registered there)
+  LOG("updating mau");
   assert(0 <= type);
-  assert(type < boost::get(mau, location).models.size()) ;
-  boost::get(mau, location).models[type].push_back(m);
+  assert(type < mau[location].models->size()) ;
+  (*mau[location].models)[type].push_back(m);
 
   return m;
 } // ModelGraph<...>::addModel(...) implementation
