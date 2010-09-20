@@ -174,7 +174,7 @@ public:
       ModelGeneratorBase<TestInterpretation>(input),
 			factory(factory),
       models(),
-      mit()
+      mit(models.begin())
     {
       LOG_METHOD("ModelGenerator()", this);
 			const std::string& rules = factory.ctx.rules;
@@ -191,6 +191,57 @@ public:
         models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
         models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
         mit = models.begin();
+      }
+      else if( rules == "need(p,C) :- &cost[plan](C). :- need(_,money)." )
+      {
+        assert(input);
+        const TestAtomSet& inp = input->getAtoms();
+        assert(inp.size() == 1);
+        if( inp.count("plan(a)") == 1 )
+        {
+          // no models (constraint violated)
+        }
+        else if( inp.count("plan(b)") == 1 )
+        {
+          TestAtomSet a;
+          a.insert("need(p,time)");
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(a)));
+          mit = models.begin();
+        }
+        else
+        {
+          assert(false);
+        }
+      }
+      else if( rules == "use(X) v use(Y) :- plan(P), choose(P,X,Y). choose(a,c,d). choose(b,e,f)." )
+      {
+        assert(input);
+        const TestAtomSet& inp = input->getAtoms();
+        assert(inp.size() == 1);
+        if( inp.count("plan(a)") == 1 )
+        {
+          TestAtomSet ma;
+          ma.insert("use(c)");
+          TestAtomSet mb;
+          mb.insert("use(d)");
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
+          mit = models.begin();
+        }
+        else if( inp.count("plan(b)") == 1 )
+        {
+          TestAtomSet ma;
+          ma.insert("use(e)");
+          TestAtomSet mb;
+          mb.insert("use(f)");
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
+          mit = models.begin();
+        }
+        else
+        {
+          assert(false);
+        }
       }
       else
       {
@@ -307,12 +358,12 @@ public:
   struct ModelProperties
   {
     // whether we already tried to create all output models for this (MT_IN/MT_INPROJ) model
-    bool childrenCreated;
+    bool childModelsGenerated;
     // the interpretation data of this model
     InterpretationPtr interpretation;
 
     ModelProperties():
-      childrenCreated(false), interpretation() {}
+      childModelsGenerated(false), interpretation() {}
   };
   typedef ModelGraph<EvalGraphT, ModelProperties> MyModelGraph;
   typedef typename MyModelGraph::Model Model;
@@ -320,6 +371,8 @@ public:
   typedef boost::optional<Model> OptionalModel;
   typedef boost::optional<typename MyModelGraph::ModelList::const_iterator>
     OptionalModelListIterator;
+  typedef typename MyModelGraph::SuccessorIterator
+    ModelSuccessorIterator;
   typedef boost::optional<typename MyModelGraph::SuccessorIterator>
 		OptionalModelSuccessorIterator;
   typedef typename MyModelGraph::ModelDep ModelDep;
@@ -350,9 +403,9 @@ public:
 
     // storage if needInput == false
 
-		// this is the same as 'childrenGenerated' for Models,
+		// this is the same as 'childModelsGenerated' for Models,
 		// but for eval units without inputs -> only valid if needInput == false
-    bool modelsCreated;
+    bool childModelsGenerated;
 
     // iterator in mg.modelsAt(u, MT_OUT) or mg.modelsAt(u, MT_OUTPROJ)
 		OptionalModelListIterator omodel_l_current;
@@ -364,7 +417,7 @@ public:
     EvalUnitModelBuildingProperties():
       currentmg(), needInput(false), orefcount(0),
       imodel(), omodel_s_current(),
-      omodel_l_current(), modelsCreated(false)
+      omodel_l_current(), childModelsGenerated(false)
 			#ifndef NDEBUG
 			,mg(NULL)
 			#endif
@@ -435,7 +488,7 @@ public:
       o << ", imodel/omodel_s_current/omodel_l_current=[please recompile without -DNDEBUG]";
 			#endif
 			o <<
-        ", modelsCreated = " << modelsCreated;
+        ", childModelsGenerated = " << childModelsGenerated;
 			return o;
     }
     #if 0
@@ -515,12 +568,15 @@ protected:
     return o << std::endl;
   }
 
-public:
-
-  // get next input model (projected if projection is configured) at unit u
-  OptionalModel getNextIModel(EvalUnit u);
 	// helper for getNextIModel
 	Model createIModelFromPredecessorOModels(EvalUnit u);
+
+  // helper for advanceOModelForIModel and advanceOModelWithoutInput
+  OptionalModel createNextModel(EvalUnit u);
+
+public:
+  // get next input model (projected if projection is configured) at unit u
+  OptionalModel getNextIModel(EvalUnit u);
 
 	/**
    * nonrecursive "get next" wrt. a mandatory imodel
@@ -551,37 +607,12 @@ public:
   OptionalModel getNextOModel(EvalUnit u);
 };
 
-/**
- * nonrecursive "get next" wrt. a mandatory imodel
- *
- * two situations:
- * 1) all omodels for that imodel have been generated
- *    -> use model graph only
- * 2) otherwise:
- *   a) no model has been generated (-> no currentmg)
- *      -> start model generator and get first model
- *   b) some models have been generated (-> currentmg)
- *      -> continue to use model generator currentmg
- */
-template<typename EvalGraphT>
-typename OnlineModelBuilder<EvalGraphT>::OptionalModel
-OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
-    EvalUnit u)
-{
-  std::ostringstream dbgstr;
-  dbgstr << "aOMfIM[" << u << "]";
-  LOG_METHOD(dbgstr.str(),this);
-  LOG("=OnlineModelBuilder<...>::advanceOModelForIModel(" << u << ")");
-  // TODO
-  LOG("TODO");
-}
-
 template<typename EvalGraphT>
 typename OnlineModelBuilder<EvalGraphT>::Model
 OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
     EvalUnit u)
 {
-  LOG_FUNCTION("cIMFPOM");
+  LOG_FUNCTION("cIMfPOM");
   LOG("=OnlineModelBuilder<...>::createIModelFromPredecessorOModels(" << u << ")");
 
 	// create vector of dependencies
@@ -691,7 +722,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       pfirstnull = pit;
       foundnull = true;
     }
-    // if we found null, we must not find further o models
+    // if we found null, we must not find further omodels
     assert(!foundnull || !predmbprops.hasOModel());
     LOG("pred unit " << predunit << " with join order " << depprop.joinOrder <<
         " and mbprops " << print_method(predmbprops) );
@@ -722,6 +753,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       if( pfirstnull == pbegin )
       {
         LOG("no more input models (one predecessor)!");
+        mbprops.imodel = boost::none;
         return boost::none;
       }
       // else continue with phase 2
@@ -739,7 +771,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     if( !om )
     {
       LOG("did not find model at unit " << unsetpredunit << " -> need to backtrack");
-      LOG("TODO backtrack in inner loop");
+      LOG("TODO backtrack in inner loop, set mbprops.imodel accordingly");
     }
     else
     {
@@ -760,6 +792,156 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   assert(false);
 }
 
+// [checks if model generation is still possible given current input model]
+// [checks if no model is currently stored as current omodel]
+// if no model generator is running
+//   determines input interpretation
+//   start model generator
+// get next model from model generator
+// if successful
+//   create in model graph
+//   return model
+// else
+//   set finished for model generation
+//   return null
+template<typename EvalGraphT>
+typename OnlineModelBuilder<EvalGraphT>::OptionalModel
+OnlineModelBuilder<EvalGraphT>::createNextModel(
+    EvalUnit u)
+{
+  std::ostringstream dbgstr;
+  dbgstr << "cNM[" << u << "]";
+  LOG_METHOD(dbgstr.str(),this);
+  LOG("=createNextModel(" << u << ")");
+
+  EvalUnitModelBuildingProperties& mbprops = mbp[u];
+  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+
+  #ifndef NDEBUG
+  // check if there can be a next model
+
+  // TODO: factorize into policy structure? [model handling without/with input]
+  if( mbprops.needInput )
+  {
+    // if there is input, the input's children must not be already generated
+    assert(!!mbprops.imodel);
+    assert(!mg.propsOf(mbprops.imodel.get()).childModelsGenerated);
+    assert(!mbprops.omodel_s_current);
+  }
+  else
+  {
+    // if there is no input, the children must not be already generated
+    assert(!mbprops.childModelsGenerated);
+    assert(!mbprops.omodel_s_current);
+  }
+  assert(mbprops.orefcount == 0);
+  #endif
+
+  if( !mbprops.currentmg )
+  {
+    LOG("no model generator running");
+
+    // TODO: factorize into policy structure? [model handling without/with input]
+    // determine input
+    typename Interpretation::ConstPtr input;
+    if( mbprops.needInput )
+    {
+      // input for creating model comes from current imodel
+      assert(!!mbprops.imodel);
+      input = mg.propsOf(mbprops.imodel.get()).interpretation;
+      assert(input);
+    }
+    else
+    {
+      // no input for creating model
+      assert(!input);
+    }
+
+    // mgf is of type ModelGeneratorFactory::Ptr
+    LOG("creating model generator");
+    mbprops.currentmg =
+      eg.propsOf(u).mgf->createModelGenerator(input);
+  }
+
+  // use model generator to create new model
+  LOG("generating next model");
+  assert(mbprops.currentmg);
+  InterpretationPtr intp =
+    mbprops.currentmg->generateNextModel();
+
+  if( intp )
+  {
+    // create model
+    std::vector<Model> deps;
+    if( mbprops.needInput )
+      deps.push_back(mbprops.imodel.get());
+    Model m = mg.addModel(u, MT_OUT, deps);
+    // we got a new model
+    LOG("stored new model " << m);
+
+    // configure model
+    mg.propsOf(m).interpretation = intp;
+
+    // TODO: handle projection here?
+    assert(uprops.iproject == false);
+    assert(uprops.oproject == false);
+
+    // TODO: factorize into policy structure? [model handling without/with input]
+    if( mbprops.needInput )
+    {
+      LOG("setting omodel_s_current iterator");
+      ModelSuccessorIterator sbegin, send;
+      boost::tie(sbegin, send) = mg.getSuccessors(mbprops.imodel.get());
+      /*{
+        for(ModelSuccessorIterator it = sbegin; it != send; ++it)
+        {
+          LOG("found successor " << mg.sourceOf(*it));
+        }
+      }*/
+      ModelSuccessorIterator sit = send;
+      sit--;
+      assert(mg.sourceOf(*sit) == m);
+      mbprops.omodel_s_current = sit;
+    }
+    else
+    {
+      LOG("setting omodel_l_current iterator");
+      typedef typename MyModelGraph::ModelList ModelList;
+      const ModelList& rel_omodels = mg.relevantOModelsAt(u);
+      typename ModelList::const_iterator it = rel_omodels.end();
+      it--;
+      assert(*it == m);
+      mbprops.omodel_l_current = it;
+    }
+    LOG("setting refcount to 1");
+    mbprops.orefcount = 1;
+    LOG("returning model " << m);
+    return m;
+  }
+  else
+  {
+    // no further models for this model generator
+    LOG("no further model");
+
+    if( mbprops.needInput )
+    {
+      // mark this input model as finished for creating models
+      ModelPropertyBundle& imodelprops = mg.propsOf(mbprops.imodel.get());
+      imodelprops.childModelsGenerated = true;
+    }
+    else
+    {
+      // mark this unit as finished for creating models
+      mbprops.childModelsGenerated = true;
+    }
+
+    // free model generator
+    mbprops.currentmg.reset();
+    LOG("returning no model");
+    return boost::none;
+  }
+}
+
 /**
  * nonrecursive "get next" without input
  *
@@ -773,8 +955,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
  *      -> continue to use model generator currentmg
  *
  * our strategy is as follows:
- * if possible, advance on model graph
- * if this yields no model
+ * advance on model graph if possible
+ * if this yields no model and not all models have been generated
  *   if no model generator is running, start one
  *   use model generator
  */
@@ -794,41 +976,48 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   assert(!mbprops.omodel_s_current);
 
   typedef typename MyModelGraph::ModelList ModelList;
-	LOG("fee");
   const ModelList& rel_omodels = mg.relevantOModelsAt(u);
-	LOG("foo");
 
+  LOG("trying to advance on model graph");
   if( !!mbprops.omodel_l_current )
   {
     // we have an omodel iterator
-    LOG("omodel iterator is set");
+    LOG("omodel_l_current is set");
     assert(mbprops.orefcount == 1);
 
     // try to advance iterator on model graph
-    typename ModelList::const_iterator it =
+    typename ModelList::const_iterator& omodel_l_current =
       mbprops.omodel_l_current.get();
-    assert( it != rel_omodels.end() );
-    it++;
-    if( it != rel_omodels.end() )
+    assert(omodel_l_current != rel_omodels.end());
+    omodel_l_current++;
+    if( omodel_l_current != rel_omodels.end() )
     {
-			LOG("advance successful");
-      // advance was successful!
-      mbprops.omodel_l_current = it;
+      Model m = *omodel_l_current;
+			LOG("advance successful, returning model " << mg.dbg(m));
       assert(mbprops.orefcount == 1);
-      return *it;
+      return m;
+    }
+    else
+    {
+			LOG("resetting iterator");
+      // reset iterator here because we cannot be sure that it can
+      // point to a "current" model anymore, and we need to set it anew
+      // anyways in case we create a new model below
+      mbprops.omodel_l_current = boost::none;
+      mbprops.orefcount = 0;
     }
   }
   else
   {
     // we don't have an omodel iterator
-		LOG("omodel iterator not set");
+		LOG("omodel_l_current not set");
     assert(mbprops.orefcount == 0);
 
     if( !rel_omodels.empty() )
     {
       // but we have a nonempty list of models
       // use the first one
-			LOG("omodels list is not empty");
+			LOG("omodels list is not empty -> using it");
       typename ModelList::const_iterator it = rel_omodels.begin();
       mbprops.omodel_l_current = it;
       mbprops.orefcount++;
@@ -838,140 +1027,136 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelWithoutInput(EvalUnit u)
   }
 
   // here we know: we cannot advance on the model graph 
+  LOG("advancing on model graph failed");
+  assert(!mbprops.omodel_l_current);
+  assert(mbprops.orefcount == 0);
   
   // if we know that all models have been generated -> fail
-  if( mbprops.modelsCreated )
+  if( mbprops.childModelsGenerated )
   {
-    LOG("all models have been created");
-    mbprops.omodel_l_current = boost::none;
-    mbprops.orefcount = 0;
+    LOG("all models have been created -> returning no model");
     return boost::none;
   }
 
-  // if not all models have been generated
+  // here, not all models have been generated
   // -> create model generator if not existing
   // -> use model generator
 
-  if( !mbprops.currentmg )
+  LOG("attempting to create new model");
+  OptionalModel m = createNextModel(u);
+  LOG("returning model " << printopt(m));
+  return m;
+}
+
+/**
+ * nonrecursive "get next" wrt. a mandatory imodel
+ *
+ * two situations:
+ * 1) all omodels for that imodel have been generated
+ *    -> use model graph only
+ * 2) otherwise:
+ *   a) no model has been generated (-> no currentmg)
+ *      -> start model generator and get first model
+ *   b) some models have been generated (-> currentmg)
+ *      -> continue to use model generator currentmg
+ *
+ * our strategy is as follows:
+ * advance on model graph if possible
+ * if this yields no model and not all models have been generated
+ *   if no model generator is running, start one
+ *   use model generator
+ */
+template<typename EvalGraphT>
+typename OnlineModelBuilder<EvalGraphT>::OptionalModel
+OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
+    EvalUnit u)
+{
+  std::ostringstream dbgstr;
+  dbgstr << "aOMfIM[" << u << "]";
+  LOG_METHOD(dbgstr.str(),this);
+  LOG("=OnlineModelBuilder<...>::advanceOModelForIModel(" << u << ")");
+
+  // prepare
+  EvalUnitModelBuildingProperties& mbprops = mbp[u];
+  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+  assert(mbprops.needInput);
+  assert(!!mbprops.imodel);
+  assert(!mbprops.omodel_l_current);
+
+  // get imodel + properties
+  Model imodel = mbprops.imodel.get(); // Model == void* -> no ref!
+  ModelPropertyBundle& imodelprops = mg.propsOf(imodel);
+  LOG("have imodel " << imodel << ": "
+      "childModelsGenerated=" << imodelprops.childModelsGenerated);
+
+  // get successor list of imodel
+  ModelSuccessorIterator sbegin, send;
+  boost::tie(sbegin, send) = mg.getSuccessors(imodel);
+  if( sbegin != send )
+    LOG("imodel has at least one successor");
+
+  LOG("trying to advance on model graph");
+  if( !!mbprops.omodel_s_current )
   {
-    // mgf is of type ModelGeneratorFactory::Ptr
-    LOG("creating model generator");
-    mbprops.currentmg = eg.propsOf(u).mgf->createModelGenerator(
-				typename Interpretation::ConstPtr());
-  }
+    LOG("omodel_s_current is set");
+    assert(mbprops.orefcount == 1);
 
-  // todo factorize model creation/storage?
-
-  // use model generator to create new model
-  LOG("generating next model");
-  assert(mbprops.currentmg);
-  InterpretationPtr intp =
-    mbprops.currentmg->generateNextModel();
-
-  if( intp )
-  {
-    // we got a new model
-		LOG("got new model");
-
-    // create model (no dependencies)
-    // TODO: handle output projection here? (with no input ... there should not be anything to project?)
-    assert(uprops.iproject == false);
-    assert(uprops.oproject == false);
-    Model m = mg.addModel(u, MT_OUT);
-
-    // configure model
-    mg.propsOf(m).interpretation = intp;
-
-    // advance iterator to that model
-    if( !mbprops.omodel_l_current )
+    ModelSuccessorIterator& omodel_s_current = mbprops.omodel_s_current.get();
+    assert(omodel_s_current != send);
+    omodel_s_current++;
+    if( omodel_s_current != send )
     {
-      LOG("starting at first model");
-      mbprops.omodel_l_current = rel_omodels.begin();
-      mbprops.orefcount++;
+      Model m = mg.targetOf(*omodel_s_current);
+      LOG("advance successful, returning model " << mg.dbg(m));
+      return m;
     }
     else
     {
-			LOG("advancing model");
-      assert(!!mbprops.omodel_l_current &&
-					mbprops.omodel_l_current.get() != rel_omodels.end());
-      mbprops.omodel_l_current.get()++;
-      assert(!!mbprops.omodel_l_current &&
-					mbprops.omodel_l_current.get() != rel_omodels.end());
+      LOG("resetting iterator");
+      // reset iterator here because we cannot be sure that it can
+      // point to a "current" model anymore, and we need to set it anew
+      // anyways in case we create a new model below
+      mbprops.omodel_s_current = boost::none;
+      mbprops.orefcount = 0;
     }
-    assert(!!mbprops.omodel_l_current &&
-				*(mbprops.omodel_l_current.get()) == m);
-    assert(mbprops.orefcount == 1);
-    LOG("returning model " << m);
-    return m;
   }
   else
   {
-    // no futher models for this model generator
-    LOG("no further model");
+    LOG("omodel_s_current not set");
+    assert(mbprops.orefcount == 0);
 
-    // mark this unit as finished for creating models
-    mbprops.modelsCreated = true;
+    if( sbegin != send )
+    {
+      LOG("there are successors -> using them");
+      mbprops.omodel_s_current = sbegin;
+      mbprops.orefcount++;
+      assert(mbprops.orefcount == 1);
+      Model m = mg.targetOf(*sbegin);
+      LOG("returning first successor model " << m);
+      return m;
+    }
+  }
 
-    // free model generator
-    mbprops.currentmg.reset();
+  // here we know: we cannot advance on the model graph 
+  LOG("advancing on model graph failed");
+  assert(!mbprops.omodel_s_current);
+  assert(mbprops.orefcount == 0);
 
-    // return failure
-    mbprops.omodel_l_current = boost::none;
-    mbprops.orefcount = 0;
-		LOG("returning no model");
+  if( imodelprops.childModelsGenerated )
+  {
+    LOG("all successors created -> returning no model");
     return boost::none;
   }
-}
 
-/*
+  // here, not all models have been generated
+  // -> create model generator if not existing
+  // -> use model generator
 
-  if( !umbprops.needInput )
-  {
-    assert(!imodel); // an imodel is present iff we need input
-    if( umbprops.modelsCreated )
-    {
-      // we don't need input and all omodels exist
-          TODO: correctly factorize nextomodel to imodel vs nextomodel without imodel
-    }
-    else
-    {
-      // we may need to generate some more models
-      if( !umbprops.currentmg )
-      {
-        // we need a model generator
-      }
-      else
-      {
-        // we have a model generator
-      }
-    }
-  }
-  else
-  {
-    // uprops.needInput
-    assert(!!imodel); // an imodel is present iff we need input
-    const ModelPropertyBundle& mprops = mg.propsOf(imodel.get());
-    if( mprops.childrenCreated )
-    {
-      // we have all omodels to this imodel
-    }
-    else
-    {
-      // we may need to generate some more omodels
-      if( !umbprops.currentmg )
-      {
-        // we need a model generator
-      }
-      else
-      {
-        // we have a model generator
-      }
-    }
-  }
-  // todo: this might not be a good idea
-  return OptionalModel();
+  LOG("attempting to create new model");
+  OptionalModel m = createNextModel(u);
+  LOG("returning model " << printopt(m));
+  return m;
 }
-*/
 
 // get next output model (projected if projection is configured) at unit u
 template<typename EvalGraphT>
@@ -1115,7 +1300,8 @@ struct EvalGraphE2Fixture
     BOOST_TEST_MESSAGE("adding u2");
     u2 = eg.addUnit(UnitCfg("need(p,C) :- &cost[plan](C). :- need(_,money).")); 
     BOOST_TEST_MESSAGE("adding u3");
-    u3 = eg.addUnit(UnitCfg("use(X) v use(Y).")); 
+    // u3: EDB will NOT be part of this in the real system, but here it is useful to know what's going on
+    u3 = eg.addUnit(UnitCfg("use(X) v use(Y) :- plan(P), choose(P,X,Y). choose(a,c,d). choose(b,e,f)."));
     BOOST_TEST_MESSAGE("adding u4");
     u4 = eg.addUnit(UnitCfg("need(u,C) :- &cost[use](C). :- need(_,money)."));
     BOOST_TEST_MESSAGE("adding e21");
@@ -1240,7 +1426,7 @@ struct OnlineModelBuilderE2Fixture:
 
 BOOST_AUTO_TEST_SUITE(root)
 
-#if 1
+#if 0
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 {
   BOOST_MESSAGE("TODO: check size of resulting graph or something like that");
@@ -1264,7 +1450,7 @@ BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphM2Fixture)
   BOOST_CHECK(mg.propsOf(m10).type == MT_OUT);
 }
 
-BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u1, OnlineModelBuilderE2Fixture)
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u1_output, OnlineModelBuilderE2Fixture)
 {
   BOOST_MESSAGE("requesting model #1");
   OptionalModel m1 = omb.getNextOModel(u1);
@@ -1288,9 +1474,8 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u1, OnlineModelBuilderE2Fixture
   OptionalModel nfm = omb.getNextOModel(u1);
   BOOST_REQUIRE(!nfm);
 }
-#endif
 
-BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2, OnlineModelBuilderE2Fixture)
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2Fixture)
 {
   BOOST_MESSAGE("requesting model #1");
   OptionalModel m3 = omb.getNextIModel(u2);
@@ -1312,6 +1497,118 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2, OnlineModelBuilderE2Fixture
 
   BOOST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextIModel(u2);
+  BOOST_REQUIRE(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2Fixture)
+{
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m6 = omb.getNextIModel(u3);
+  BOOST_REQUIRE(!!m6);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m6.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(a)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel m7 = omb.getNextIModel(u3);
+  BOOST_REQUIRE(!!m7);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m7.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(b)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel nfm = omb.getNextIModel(u3);
+  BOOST_REQUIRE(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_output, OnlineModelBuilderE2Fixture)
+{
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m5 = omb.getNextOModel(u2);
+  BOOST_REQUIRE(!!m5);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m5.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("need(p,time)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel nfm = omb.getNextOModel(u2);
+  BOOST_REQUIRE(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2Fixture)
+{
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m8 = omb.getNextOModel(u3);
+  BOOST_REQUIRE(!!m8);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m8.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(c)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel m9 = omb.getNextOModel(u3);
+  BOOST_REQUIRE(!!m9);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m9.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(d)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel m10 = omb.getNextOModel(u3);
+  BOOST_REQUIRE(!!m10);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m10.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(e)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #4");
+  OptionalModel m11 = omb.getNextOModel(u3);
+  BOOST_REQUIRE(!!m11);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m11.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(f)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #5");
+  OptionalModel nfm = omb.getNextOModel(u3);
+  BOOST_REQUIRE(!nfm);
+}
+#endif
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2Fixture)
+{
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m12 = omb.getNextIModel(u4);
+  BOOST_REQUIRE(!!m12);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m12.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 2);
+    BOOST_CHECK(ti.getAtoms().count("need(p,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(e)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel m13 = omb.getNextIModel(u4);
+  BOOST_REQUIRE(!!m13);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m13.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 2);
+    BOOST_CHECK(ti.getAtoms().count("need(p,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(f)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel nfm = omb.getNextIModel(u4);
   BOOST_REQUIRE(!nfm);
 }
 
