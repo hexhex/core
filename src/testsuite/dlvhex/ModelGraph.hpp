@@ -349,14 +349,9 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
     {
       // output models:
       // * checks if model depends on MT_IN or MT_INPROJ at same unit
-      //   iff unit has predecessors
       PredecessorIterator it, end;
       boost::tie(it, end) = eg.getPredecessors(location);
-      if( (it != end && deps.size() != 1) ||
-          (it == end && deps.size() != 0) )
-        throw std::runtime_error("ModelGraph::addModel MT_OUT "
-          "must depend on one input model iff unit has predecessors");
-      if( deps.size() == 1 )
+      if( it != end )
       {
         const ModelPropertyBundle& depprop = propsOf(deps[0]);
         if( depprop.location != location )
@@ -366,8 +361,8 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
         if( (unitprop.iproject && depprop.type != MT_INPROJ) ||
             (!unitprop.iproject && depprop.type != MT_IN) )
           throw std::runtime_error("ModelGraph::addModel MT_OUT "
-            "must depend on MT_INPROJ model for iproject==true eval unit "
-            "and on MT_IN model for iproject==false eval unit");
+            "must depend on MT_INPROJ model for iproject==true "
+            "and on MT_IN model for iproject==false");
       }
     }
     break;

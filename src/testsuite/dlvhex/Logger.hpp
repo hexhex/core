@@ -25,6 +25,8 @@
 #include <iostream>
 #include <sstream>
 #include <boost/preprocessor/cat.hpp>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 
 // singleton logger class
 class Logger
@@ -140,62 +142,6 @@ Logger& Logger::Instance()
 #define LOG_METHOD(method,object) LOG_PSCOPE(method,object,true)
 
 
-/*
-template<typename T>
-inline std::ostream& printopt_main(std::ostream& o, const T& t)
-{
-  if( !t )
-    return o << "unset";
-  else
-    return o << t;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, const boost::shared_ptr<TT>& t)
-{
-  if( t == 0 )
-    return o << "null";
-  else
-    return o << t;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, const boost::optional<TT>& opt)
-{
-  typename std::list<TT>::const_iterator>
-  if( !it )
-    return o << "unset";
-  else
-    return o << *it;
-}
-template<typename TT>
-inline std::ostream& printopt_main(std::ostream& o, boost::optional<typename std::list<TT>::iterator> it)
-{
-  if( !it )
-    return o << "unset";
-  else
-    return o << *it;
-}
-
-template<typename T>
-struct printopt_container
-{
-  const T& t;
-  printopt_container(const T& t): t(t) {}
-};
-
-template<typename T>
-inline std::ostream& operator<<(std::ostream& o, printopt_container<T> c)
-{
-  return printopt_main(o, c.t);
-}
-
-template<typename T>
-inline printopt_container<T> printopt(const T& t)
-{
-  return printopt_container<T>(t);
-}
-*/
-
-// ******************** //
 
 // 'print<foo>' usage:
 // if some class has a method "std::ostream& print(std::ostream&) const"
@@ -226,34 +172,34 @@ struct print_stream_container:
     { return o << t; }
 };
 
-/*
-template<typename T>
-struct print_stream_container_noref:
-  public print_container
-{
-  T t;
-  print_stream_container_noref(T t): t(t) {}
-  virtual ~print_stream_container_noref() {}
-  virtual std::ostream& print(std::ostream& o) const
-    { return o << t; }
-};
-*/
-
-template<typename T>
 struct print_method_container:
   public print_container
 {
-  const T& t;
-  print_method_container(const T& t): t(t) {}
+  typedef boost::function<std::ostream& (std::ostream&)>
+    PrintFn;
+  PrintFn fn;
+  print_method_container(const PrintFn& fn): fn(fn) {}
   virtual ~print_method_container() {}
   virtual std::ostream& print(std::ostream& o) const
-    { return t.print(o); }
+    { return fn(o); }
 };
 
+// this can be used if T contains a method "ostream& print(ostream&) const"
 template<typename T>
 inline print_container* print_method(const T& t)
 {
-  return new print_method_container<const T&>(t);
+  return new print_method_container(
+      boost::bind(&T::print, &t, _1));
+}
+
+// this can be used if some third party method is used to print T
+// e.g. std::ostream& BAR::printFOO(std::ostream& o, const FOO& p) const
+// is printed as
+// ... << print_function(boost::bind(&BAR::printFOO, &bar, _1, foo)) << ...
+inline print_container* print_function(
+    const print_method_container::PrintFn& fn)
+{
+  return new print_method_container(fn);
 }
 
 template<typename T1, typename T2>
@@ -303,37 +249,5 @@ inline print_container* printptr(const T* const t)
   else
     return new print_stream_container<const char*>("null");
 }
-
-/*
-// display optional models as addresses of models
-template<typename T>
-inline print_container* printoptmodel(const boost::optional<T>& t)
-{
-  if( !!t )
-	{
-		T model = t.get();
-    return new print_stream_container<const void*>(
-        reinterpret_cast<const void*>(&t.get()));
-	}
-  else
-    return new print_stream_container<const char*>("unset");
-}
-*/
-
-// display optional iterators to models as addresses of models (as in omodel_l_current)
-template<typename T>
-inline print_container* printoptitermodel(const boost::optional<T>& t)
-{
-  if( !!t )
-	{
-		const T& iter = t.get();
-		const typename T::value_type& ref = *iter;
-    return new print_stream_container<const void*>(
-        reinterpret_cast<const void*>(&ref));
-	}
-  else
-    return new print_stream_container<const char*>("unset");
-}
-
 
 #endif // LOGGER_HPP_INCLUDED__17092010
