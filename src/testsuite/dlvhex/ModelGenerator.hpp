@@ -22,6 +22,7 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
+#include <ostream>
 #include <boost/shared_ptr.hpp>
 
 //
@@ -57,6 +58,10 @@ public:
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel() = 0;
+
+  // debug output
+  virtual std::ostream& print(std::ostream& o) const
+    { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
 //
@@ -86,6 +91,8 @@ public:
 
   virtual ModelGeneratorPtr createModelGenerator(
       InterpretationConstPtr input) = 0;
+  virtual std::ostream& print(std::ostream& o) const
+    { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
 };
 
 #endif //MODEL_GENERATOR_HPP_INCLUDED__30082010

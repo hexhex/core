@@ -42,6 +42,18 @@ enum ModelType
   MT_OUTPROJ = 3,
 };
 
+inline const char* toString(ModelType mt)
+{
+  switch(mt)
+  {
+  case MT_IN:      return "IN     ";
+  case MT_INPROJ:  return "INPROJ ";
+  case MT_OUT:     return "OUT    ";
+  case MT_OUTPROJ: return "OUTPROJ";
+  default: assert(false);
+  }
+}
+
 //
 // the ModelGraph template manages a generic model graph,
 // corresponding to an EvalGraph type:
@@ -100,6 +112,11 @@ public:
         ModelPropertyBaseT(base),
         location(location),
         type(type) {}
+    std::ostream& print(std::ostream& o) const
+    {
+      return o << toString(type) << " at unit " << location << ", " <<
+        print_method(static_cast<ModelPropertyBaseT>(*this));
+    }
   };
 
   struct ModelDepPropertyBundle:
@@ -140,15 +157,19 @@ public:
   struct EvalUnitModels
   {
 		// for each type of model we have a model list
-    boost::shared_ptr< std::vector<ModelList> > models;
-    EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
+    //boost::shared_ptr< std::vector<ModelList> > models;
+    //EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
+    std::vector<ModelList> models;
+    EvalUnitModels(): models(4, ModelList())
       { LOG("EvalUnitModels()@" << this); }
     EvalUnitModels(const EvalUnitModels& eum): models(eum.models)
       { LOG("EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
 		~EvalUnitModels()
-      { LOG("~EvalUnitModels()@" << this << " sizes=" <<
-				(*models)[0].size() << " " << (*models)[1].size() << " " <<
-				(*models)[2].size() << " " << (*models)[3].size()); }
+      { LOG("~EvalUnitModels()@" << this); }
+    inline ModelList& getModels(ModelType t)
+      { assert(0 <= t <= 4); return models[t]; }
+    inline const ModelList& getModels(ModelType t) const
+      { assert(0 <= t <= 4); return models[t]; }
   };
   typedef boost::vector_property_map<EvalUnitModels>
     EvalUnitModelsPropertyMap;
@@ -171,7 +192,12 @@ public:
   ModelGraph(EvalGraphT& eg):
     eg(eg), mg(), mau()
 	{
-    // @todo: resize/reserve memory for mau s.t. it need not be reallocated too often?
+    // get last unit
+    // as eg uses vecS this is the maximum index we need in mau
+    EvalUnit lastUnit = *(eg.getEvalUnits().second - 1);
+    // do it this way as we are not allowed to do
+    // mau.store->reserve(lastUnit)
+    mau[lastUnit] = EvalUnitModels();
 	}
 
   // create a new model including dependencies
@@ -202,9 +228,7 @@ public:
   // return helper list that stores for each unit the set of i/omodels there
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
   {
-    assert(0 <= type <= 4);
-    assert(0 <= unit <= 4);
-    return (*mau[unit].models)[type];
+    return mau[unit].getModels(type);
   }
 
   // return list of relevant imodels at unit (depends on projection whether this is MT_IN or MT_INPROJ)
@@ -230,10 +254,19 @@ public:
     return mg[m];
   }
 
-  // @todo make some properties non-writable! (i.e., those managed by modelgraph)!
   inline ModelPropertyBundle& propsOf(Model m)
   {
     return mg[m];
+  }
+
+  inline const ModelDepPropertyBundle& propsOf(ModelDep d) const
+  {
+    return mg[d];
+  }
+
+  inline ModelDepPropertyBundle& propsOf(ModelDep d)
+  {
+    return mg[d];
   }
 
   // predecessors are models this model is based on
@@ -260,18 +293,6 @@ public:
   {
     return boost::target(d, mg);
   }
-
-	inline const void* dbg(Model m) const
-	{
-		return reinterpret_cast<const void*>(&mg[m]);
-	}
-	inline const void* dbg(const boost::optional<Model>& m) const
-	{
-		if( !!m )
-			return dbg(m.get());
-		else
-			return 0;
-	}
 }; // class ModelGraph
 
 // ModelGraph<...>::addModel(...) implementation
@@ -410,9 +431,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
 
   // update modelsAt property map (models at each eval unit are registered there)
   LOG("updating mau");
-  assert(0 <= type);
-  assert(type < mau[location].models->size()) ;
-  (*mau[location].models)[type].push_back(m);
+  mau[location].getModels(type).push_back(m);
 
   return m;
 } // ModelGraph<...>::addModel(...) implementation
