@@ -38,7 +38,6 @@ AC_SUBST(sysplugindir)
 # put it in config.h
 CPPFLAGS="$CPPFLAGS -DSYS_PLUGIN_DIR='\"$sysplugindir\"'"
 
-
 #
 # the user plugin dir consists of the user home concatenated with
 # and USER_PLUGIN_DIR, which is .dlvhex/plugins by default and can be
@@ -80,6 +79,32 @@ fi
 # put the dlv path into config.h
 #
 AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
+
+
+#
+# the user didn't supply a path for dlv-lib
+#
+if test "$DLVLIB" = ""; then
+    # we assume "dlv-lib"
+    DLVLIB=dlv
+fi
+# and check if it exists
+dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
+dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+dnl   LIBS="-l${DLVLIB} $LIBS"
+dnl   ], [], [-ldl -lpthread])
+AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+# todo: fix this pfusch
+LIBS="-l${DLVLIB} -ldl -lpthread $LIBS"
+
+
+if test "$DLVDBPATH" = notfound; then
+    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
+else
+    # put the dlvdb path into config.h
+    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
+    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
+fi
 
 
 #
@@ -251,6 +276,7 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
 
  - Using the following binaries:
  DLV: $DLVPATH
+ DLVLIB: $DLVLIBPATH
  DLVDB: $DLVDBPATH
  doxygen: $DX_DOXYGEN
 

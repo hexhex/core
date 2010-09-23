@@ -95,6 +95,10 @@ public:
   //! it creates a useable delegate for solving
   struct SoftwareConfigurationBase
   {
+    //! this method provides the options for the created delegates
+    virtual const GenericOptions& getOptions() const = 0;
+    virtual GenericOptions& getOptions() = 0;
+
     //! this method creates as many delegates as required (therefore it is const)
     virtual DelegatePtr createDelegate() const = 0;
   };
@@ -121,6 +125,12 @@ public:
 
     //! destructor
     virtual ~SoftwareConfiguration() {}
+
+    //! provides options for the created delegates
+    virtual const GenericOptions& getOptions() const
+      { return options; }
+    virtual GenericOptions& getOptions()
+      { return options; }
 
     //! creating the delegate
     virtual DelegatePtr createDelegate() const

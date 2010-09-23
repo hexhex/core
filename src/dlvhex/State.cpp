@@ -562,17 +562,21 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   // if we solve using DLV, automagically set higher order mode
   // (this has to be done globally for the global solver configuration,
   // it can be done locally for other usages of ASPSolver(Manager))
-  ASPSolverManager::SoftwareConfigurationPtr aspsoftware = ctx->getASPSoftware();
-  typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
-  boost::shared_ptr<DLVConfiguration> dlvconfiguration =
-    boost::dynamic_pointer_cast<DLVConfiguration>(aspsoftware);
-  if( dlvconfiguration != 0 )
+  try
   {
+    ASPSolverManager::SoftwareConfigurationPtr aspsoftware =
+      ctx->getASPSoftware();
+    ASPSolver::DLVOptions& dlvoptions =
+      dynamic_cast<ASPSolver::DLVOptions&>(aspsoftware->getOptions());
     if( ctx->getIDB()->isHigherOrder() )
     {
-      dlvconfiguration->options.rewriteHigherOrder = true;
-      dlvconfiguration->options.dropPredicates = true;
+      dlvoptions.rewriteHigherOrder = true;
+      dlvoptions.dropPredicates = true;
     }
+  }
+  catch(const std::bad_cast&)
+  {
+    // no dlv options
   }
 
   boost::shared_ptr<State> next;

@@ -52,39 +52,39 @@ class Process;
 namespace ASPSolver
 {
 
+// specific options for DLV
+struct DLVOptions:
+  public ASPSolverManager::GenericOptions
+{
+  DLVOptions();
+  virtual ~DLVOptions();
+
+  // whether to rewrite all predicates to allow higher order in DLV (default=no)
+  bool rewriteHigherOrder;
+
+  // whether to drop predicates in received answer sets (default=no)
+  bool dropPredicates;
+
+  // commandline arguments to add (default="-silent")
+  // this does not include the .typ file for dlvdb
+  // (this is managed by DLVDBSoftware::Options/DLVDBSoftware::Delegate)
+  std::vector<std::string> arguments;
+};
+
 // DLV softwares
 struct DLVSoftware:
   public ASPSolverManager::SoftwareBase
 {
   typedef ASPSolverManager::SoftwareConfiguration<DLVSoftware> Configuration;
 
-  // specific options for DLV
-  struct Options:
-    public ASPSolverManager::GenericOptions
-  {
-    Options();
-    virtual ~Options();
-
-    // whether to rewrite all predicates to allow higher order in DLV (default=no)
-    bool rewriteHigherOrder;
-
-    // whether to drop predicates in received answer sets (default=no)
-    bool dropPredicates;
-
-    // commandline arguments to add (default="-silent")
-    // this does not include the .typ file for dlvdb
-    // (this is managed by DLVDBSoftware::Options/DLVDBSoftware::Delegate)
-    std::vector<std::string> arguments;
-  };
+  typedef DLVOptions Options;
 
   // the delegate for DLVSoftware
   class Delegate:
     public ASPSolverManager::DelegateInterface
   {
   public:
-    typedef DLVSoftware::Options Options;
-
-    Delegate(const Options& options);
+    Delegate(const DLVOptions& options);
     virtual ~Delegate();
     void useASTInput(const Program& idb, const AtomSet& edb);
     void useStringInput(const std::string& program);
@@ -95,8 +95,33 @@ struct DLVSoftware:
     virtual void setupProcess();
 
   protected:
-    Options options;
+    DLVOptions options;
     DLVProcess proc;
+  };
+};
+
+// DLV software via shared library interface
+struct DLVLibSoftware:
+  public DLVSoftware
+{
+  typedef ASPSolverManager::SoftwareConfiguration<DLVLibSoftware> Configuration;
+  //typedef DLVOptions Options;
+
+  class Delegate:
+    public ASPSolverManager::DelegateInterface
+  {
+  public:
+    Delegate(const DLVOptions& options);
+    virtual ~Delegate();
+    virtual void useASTInput(const Program& idb, const AtomSet& edb);
+    virtual void useStringInput(const std::string& program);
+    virtual void useFileInput(const std::string& fileName);
+    virtual void getOutput(std::vector<AtomSet>& result);
+  protected:
+    DLVOptions options;
+    // pimpl idiom
+    struct DelegateImpl;
+    DelegateImpl* pimpl;
   };
 };
 
@@ -108,7 +133,7 @@ struct DLVDBSoftware:
 
   // specific options
   struct Options:
-    public DLVSoftware::Options
+    public DLVOptions
   {
     Options();
     virtual ~Options();
@@ -123,8 +148,6 @@ struct DLVDBSoftware:
     public DLVSoftware::Delegate
   {
   public:
-    typedef DLVDBSoftware::Options Options;
-
     Delegate(const Options& options);
     virtual ~Delegate();
 

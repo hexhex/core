@@ -32,7 +32,8 @@
  *
  */
 
-
+// @todo: this is required in dlv.h from libdlv s.t. UINT8_MAX is defined, this is ugly, perhaps UINT8_MAX can be replaced by something more portable?
+#define __STDC_LIMIT_MACROS
 #include "dlvhex/ASPSolver.h"
 
 // activate benchmarking if activated by configure option --enable-debug
@@ -41,6 +42,10 @@
 #  ifdef DLVHEX_DEBUG
 #    define DLVHEX_BENCHMARK
 #  endif
+#endif
+
+#if HAVE_LIBDLV
+# include <dlv.h>
 #endif
 
 #include "dlvhex/DLVresultParserDriver.h"
@@ -61,7 +66,7 @@ DLVHEX_NAMESPACE_BEGIN
 namespace ASPSolver
 {
 
-DLVSoftware::Options::Options():
+DLVOptions::DLVOptions():
   ASPSolverManager::GenericOptions(),
   rewriteHigherOrder(false),
   dropPredicates(false),
@@ -70,7 +75,7 @@ DLVSoftware::Options::Options():
   arguments.push_back("-silent");
 }
 
-DLVSoftware::Options::~Options()
+DLVOptions::~DLVOptions()
 {
 }
 
@@ -216,6 +221,193 @@ DLVSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
   CATCH_RETHROW_DLVDELEGATE
 }
 
+
+#if defined(HAVE_LIBDLV)
+// pimpl idiom
+struct DLVLibSoftware::Delegate::DelegateImpl
+{
+  class MObserver: public MODEL_Observer
+  {
+  public:
+    void handleResult( const MODEL &m )
+    {
+      std::cerr << "TODO MObserver::handleResult(M): " << m << std::endl;
+    }
+    
+    void handleResult( const bool b )
+    {
+      std::cerr << "TODO MObserver::handleResult(b): " << b << std::endl;
+    }
+  };
+
+  class MAObserver : public MODEL_ATOM_Observer
+  {
+  public:
+    void handleResult( const MODEL_ATOM &m )
+    {
+      std::cerr << "TODO MAObserver::handleResult(MA): " << m << std::endl;
+    }
+    
+    void handleResult( const bool b )
+    {
+      std::cerr << "TODO MObserver::handleResult(b): " << b << std::endl;
+    }
+  };
+
+  const Options& options;
+  PROGRAM_HANDLER *ph;
+  MObserver mo;
+  MAObserver mao;
+
+  DelegateImpl(const Options& options):
+    options(options),
+    ph(create_program_handler()),
+    mo(),
+    mao()
+  {
+    //ph->subscribe(mo);
+    //ph->subscribe(mao);
+  }
+
+  ~DelegateImpl()
+  {
+    destroy_program_handler(ph);
+  }
+};
+
+DLVLibSoftware::Delegate::Delegate(const Options& opt):
+  options(opt),
+  pimpl(new DelegateImpl(options))
+{
+}
+
+DLVLibSoftware::Delegate::~Delegate()
+{
+  delete pimpl;
+}
+
+#if 0
+  if( options.includeFacts )
+    proc.addOption("-facts");
+  else
+    proc.addOption("-nofacts");
+  BOOST_FOREACH(const std::string& arg, options.arguments)
+  {
+    proc.addOption(arg);
+  }
+
+#define CATCH_RETHROW_DLVDELEGATE \
+  catch(const GeneralError& e) { \
+    std::stringstream errstr; \
+    int retcode = proc.close(); \
+    errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg(); \
+    throw FatalError(errstr.str()); \
+  } \
+  catch(const std::exception& e) \
+  { \
+    throw FatalError(proc.path() + ": " + e.what()); \
+  }
+#endif
+
+void
+DLVLibSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useASTInput");
+
+  if( idb.isHigherOrder() && !options.rewriteHigherOrder )
+    throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
+
+  // in higher-order mode we cannot have aggregates, because then they would
+  // almost certainly be recursive, because of our atom-rewriting!
+  if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
+    throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
+
+  #if 0
+  try
+  {
+    setupProcess();
+    // request stdin as last parameter
+    proc.addOption("--");
+    // fork dlv process
+    proc.spawn();
+
+    typedef boost::shared_ptr<DLVPrintVisitor> PrinterPtr;
+    std::ostream& programStream = proc.getOutput();
+
+    ///@todo: this is marked as "temporary hack" in globals.h -> move this info into ProgramCtx and allow ProgramCtx to contribute to the solving process
+    if( !Globals::Instance()->maxint.empty() )
+      programStream << Globals::Instance()->maxint << std::endl;
+
+    // output program
+    PrinterPtr printer;
+    if( options.rewriteHigherOrder )
+      printer = PrinterPtr(new HOPrintVisitor(programStream));
+    else
+      printer = PrinterPtr(new DLVPrintVisitor(programStream));
+    idb.accept(*printer);
+    edb.accept(*printer);
+
+    proc.endoffile();
+  }
+  CATCH_RETHROW_DLVDELEGATE
+    #endif
+}
+
+void
+DLVLibSoftware::Delegate::useStringInput(const std::string& program)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useStringInput");
+
+  #if 0
+  try
+  {
+    setupProcess();
+    // request stdin as last parameter
+    proc.addOption("--");
+    // fork dlv process
+    proc.spawn();
+    proc.getOutput() << program << std::endl;
+    proc.endoffile();
+  }
+  CATCH_RETHROW_DLVDELEGATE
+  #endif
+}
+
+void
+DLVLibSoftware::Delegate::useFileInput(const std::string& fileName)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useFileInput");
+
+  #if 0
+  try
+  {
+    setupProcess();
+    proc.addOption(fileName);
+    // fork dlv process
+    proc.spawn();
+    proc.endoffile();
+  }
+  CATCH_RETHROW_DLVDELEGATE
+    #endif
+}
+
+void
+DLVLibSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::getOutput");
+
+  #if 0
+  try
+  {
+    // parse result
+    DLVresultParserDriver parser(
+      options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
+    parser.parse(proc.getInput(), result);
+  }
+  CATCH_RETHROW_DLVDELEGATE
+  #endif
+}
+#endif
 
 #if defined(HAVE_DLVDB)
 DLVDBSoftware::Options::Options():

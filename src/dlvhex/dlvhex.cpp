@@ -148,7 +148,7 @@ printUsage(std::ostream &out, bool full)
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvlib,dlvdb)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
       << "                      1  - program analysis information (including dot-file)" << std::endl
@@ -508,6 +508,23 @@ main (int argc, char *argv[])
 			    << std::endl;
 		  exit(1);
 #endif // HAVE_DLVDB
+		}
+	      else if (solver == "dlvlib")
+		{
+#if defined(HAVE_LIBDLV)
+		  // use DLVLIB as ASP solver software
+		  dlvSoftware =
+		    ASPSolverManager::SoftwareConfigurationPtr(
+		      new DLVLibSoftware::Configuration);
+		  pctx.setASPSoftware(dlvSoftware);
+#else
+		  printLogo();
+		  std::cerr << "The command line option ``--solver=dlvlib´´ "
+			    << "requires that dlvhex compiled-in dlv-lib support. "
+			    << "Please reconfigure the dlvhex source." 
+			    << std::endl;
+		  exit(1);
+#endif // HAVE_LIBDLV
 		}
 	      else
 		{
