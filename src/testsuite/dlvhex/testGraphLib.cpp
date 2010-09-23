@@ -188,6 +188,8 @@ public:
       LOG_METHOD("ModelGenerator()", this);
 			const std::string& rules = factory.ctx.rules;
       LOG("rules '" << rules << "'");
+      if( input )
+        LOG("input '" << *input << "'");
 
       // hardcode models of given programs with given inputs
       if( rules == "plan(a) v plan(b)." )
@@ -252,9 +254,31 @@ public:
           assert(false);
         }
       }
+      else if( rules == "need(u,C) :- &cost[use](C). :- need(_,money)." )
+      {
+        assert(input);
+        const TestAtomSet& inp = input->getAtoms();
+        assert(inp.size() == 2);
+        if( inp.count("need(p,time)") == 1 && inp.count("use(e)") )
+        {
+          TestAtomSet ma;
+          ma.insert("need(u,time)");
+          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+          mit = models.begin();
+        }
+        else if( inp.count("need(p,time)") == 1 && inp.count("use(f)") )
+        {
+          // no models (constraint violated)
+        }
+        else
+        {
+          assert(false);
+        }
+      }
       else
       {
         std::cerr << "TODO hardcode rules '" << rules << "'" << std::endl;
+        assert(false);
       }
 
       LOG_INDENT();
@@ -483,7 +507,7 @@ public:
       ", currentisuccessor = ";
     if( !!p.currentisuccessor )
       o << mg.sourceOf(*p.currentisuccessor.get())
-        << "->"
+        << " -> "
         << mg.targetOf(*p.currentisuccessor.get());
     else
       o << "unset";
@@ -502,24 +526,54 @@ public:
     return mg.sourceOf(*p.currentisuccessor.get());
   }
 
+private:
+  typedef typename EvalGraphT::Observer EvalGraphObserverBase;
+  class EvalGraphObserver:
+    public EvalGraphObserverBase
+  {
+  public:
+    EvalGraphObserver(Self& omb): omb(omb) {}
+    virtual ~EvalGraphObserver() {}
+    virtual void addUnit(EvalUnit u)
+    {
+      LOG("observing addUnit(" << u << ")");
+      EvalUnitModelBuildingProperties& mbprops =
+        omb.mbp[u];
+      mbprops.needInput = false;
+    }
+    virtual void addDependency(EvalUnitDep d)
+    {
+      LOG("observing addDependency(" << omb.eg.sourceOf(d) << " -> " << omb.eg.targetOf(d) << ")");
+      EvalUnitModelBuildingProperties& mbprops =
+        omb.mbp[omb.eg.sourceOf(d)];
+      mbprops.needInput = true;
+    }
+
+  protected:
+    Self& omb;
+  };
+
   // members
 private:
   EvalGraphT& eg;
   MyModelGraph mg;
   EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
+  boost::shared_ptr<EvalGraphObserver> ego;
 
   // methods
 public:
   OnlineModelBuilder(EvalGraphT& eg):
-    eg(eg), mg(eg), mbp()
+    eg(eg), mg(eg), mbp(),
+    // setup observer to do the things below in case EvalGraph is changed
+    // after the creation of this OnlineModelBuilder
+    ego(new EvalGraphObserver(*this))
   {
     // initialize mbp for each vertex in eg:
-    // * determine needInput
-    // @todo: do something like this if eval units are added afterwards
     typename EvalGraphT::EvalUnitIterator it, end;
     for(boost::tie(it, end) = eg.getEvalUnits(); it != end; ++it)
     {
       EvalUnit u = *it;
+      LOG("initializing mbp for unit " << u);
       EvalUnitModelBuildingProperties& mbprops = mbp[u];
       EvalUnitPredecessorIterator it, end;
       boost::tie(it, end) = eg.getPredecessors(u);
@@ -531,6 +585,7 @@ public:
         assert(!eg.propsOf(u).iproject);
       }
     }
+    eg.addObserver(ego);
   }
 
   ~OnlineModelBuilder() { }
@@ -685,6 +740,14 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
 		Model predmodel = getOModel(predmbprops);
 		deps.push_back(predmodel);
 	}
+
+  // check if there is an existing model created from these predecessors
+  OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
+  if( !!oexisting )
+  {
+    LOG("found and will return existing successor imodel " << oexisting.get());
+    return oexisting.get();
+  }
   
   // create interpretation
   InterpretationPtr pjoin;
@@ -1483,7 +1546,6 @@ typedef OnlineModelBuilderE2TFixture<EvalGraphE2MirroredFixture>
 
 BOOST_AUTO_TEST_SUITE(root)
 
-#if 0
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 {
   BOOST_MESSAGE("TODO: check size of resulting graph or something like that");
@@ -1640,9 +1702,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
   OptionalModel nfm = omb.getNextOModel(u3);
   BOOST_REQUIRE(!nfm);
 }
-#endif
 
-#if 1
 BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2Fixture)
 {
   omb.logEvalGraphModelGraph();
@@ -1704,6 +1764,69 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
   omb.logEvalGraphModelGraph();
   BOOST_REQUIRE(!nfm);
 }
-#endif
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_output, OnlineModelBuilderE2Fixture)
+{
+  omb.logEvalGraphModelGraph();
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel m14 = omb.getNextOModel(u4);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!m14);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(m14.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 1);
+    BOOST_CHECK(ti.getAtoms().count("need(u,time)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel nfm = omb.getNextOModel(u4);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2_ufinal_input, OnlineModelBuilderE2Fixture)
+{
+  omb.logEvalGraphModelGraph();
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel mcomplete = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 4);
+    BOOST_CHECK(ti.getAtoms().count("need(u,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("need(u,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(e)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(b)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel nfm = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!nfm);
+}
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineModelBuilderE2MirroredFixture)
+{
+  omb.logEvalGraphModelGraph();
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel mcomplete = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete.get()).interpretation);
+    BOOST_CHECK(ti.getAtoms().size() == 4);
+    BOOST_CHECK(ti.getAtoms().count("need(u,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("need(u,time)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("use(e)") == 1);
+    BOOST_CHECK(ti.getAtoms().count("plan(b)") == 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel nfm = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!nfm);
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -97,11 +97,21 @@ public:
   typedef typename Traits::out_edge_iterator PredecessorIterator;
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
+  class Observer
+  {
+  public:
+    virtual ~Observer() {}
+    virtual void addUnit(EvalUnit u) = 0;
+    virtual void addDependency(EvalUnitDep d) = 0;
+  };
+  typedef boost::shared_ptr<Observer> ObserverPtr;
+
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
 private:
   EvalGraphInt eg;
+  std::set<ObserverPtr> observers;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
@@ -109,7 +119,10 @@ private:
 public:
   inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
   {
-    return boost::add_vertex(prop, eg);
+    EvalUnit u = boost::add_vertex(prop, eg);
+    BOOST_FOREACH(ObserverPtr o, observers)
+      { o->addUnit(u); }
+    return u;
   }
 
   inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
@@ -138,7 +151,19 @@ public:
     boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
     // if this fails, we tried to add a foreign eval unit or something strange like this
     assert(success);
+    BOOST_FOREACH(ObserverPtr o, observers)
+      { o->addDependency(dep); }
     return dep;
+  }
+
+  void addObserver(ObserverPtr o)
+  {
+    observers.insert(o);
+  }
+
+  void eraseObserver(ObserverPtr o)
+  {
+    observers.erase(o);
   }
 
   inline std::pair<EvalUnitIterator, EvalUnitIterator>
