@@ -51,7 +51,7 @@ inline const char* toString(ModelType mt)
   case MT_INPROJ:  return "INPROJ ";
   case MT_OUT:     return "OUT    ";
   case MT_OUTPROJ: return "OUTPROJ";
-  default: assert(false);
+  default: assert(false); return ""; // keep compiler happy with NDEBUG
   }
 }
 

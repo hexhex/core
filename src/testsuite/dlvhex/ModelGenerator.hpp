@@ -25,6 +25,13 @@
 #include <ostream>
 #include <boost/shared_ptr.hpp>
 
+class InterpretationBase
+{
+  // debug
+  std::ostream& print(std::ostream& o) const
+  { return o << "InterpretationBase::print() not overloaded"; }
+};
+
 //
 // A model generator does the following:
 // * it is constructed by a ModelGeneratorFactory which knows the program
@@ -39,6 +46,8 @@ class ModelGeneratorBase
 {
   // types
 public:
+  BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
+
   typedef InterpretationT Interpretation;
   // those typedefs are just to remove the 'typename's from the interface
   typedef typename Interpretation::ConstPtr InterpretationConstPtr;
