@@ -11,15 +11,30 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS)
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 TESTS = \
-	TestTypes
+  TestTypes \
+  TestModelGraph \
+  TestEvalGraph \
+  TestOnlineModelBuilder
+
 
 TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
 
 #TEST_SUITE_LOG = testsuite.log
 
 check_PROGRAMS = \
-	TestTypes
+  TestTypes \
+  TestModelGraph \
+  TestEvalGraph \
+  TestOnlineModelBuilder
+
 
 TestTypes_SOURCES = TestTypes.cpp 
 TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
+
+TestModelGraph_SOURCES = TestModelGraph.cpp 
+
+TestEvalGraph_SOURCES = TestEvalGraph.cpp 
+
+TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp 
+
