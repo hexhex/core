@@ -5,6 +5,11 @@
 	* Modelbuilding-Concept.txt: Thoughts on online vs offline and
 	projected vs non projected model building.
 
+2010-08-04  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* m4/boost.m4: Temporary fix for iostreams configure check for
+	boost versions >=1.44.
+
 2010-07-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* TODO: Update.
