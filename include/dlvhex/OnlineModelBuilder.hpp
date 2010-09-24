@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2010 Peter Schüller
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -19,6 +21,13 @@
  * 02110-1301 USA.
  */
 
+/**
+ * @file   OnlineModelBuilder.hpp
+ * @author Peter Schueller <ps@kr.tuwien.ac.at>
+ * 
+ * @brief  Template for online model building of a ModelGraph based on an EvalGraph.
+ */
+
 #ifndef ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 #define ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 
@@ -26,19 +35,6 @@
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
-
-// model generator factory properties for eval units
-// such properties are required by model builders
-template<typename InterpretationT>
-struct EvalUnitModelGeneratorFactoryProperties
-{
-  BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
-	typedef InterpretationT Interpretation;
-
-  // aka model generator factory
-  typename ModelGeneratorFactoryBase<InterpretationT>::Ptr
-		mgf; // aka model generator factory
-};
 
 template<typename EvalGraphT>
 class OnlineModelBuilder

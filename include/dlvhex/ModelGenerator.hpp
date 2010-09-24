@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2010 Peter Schüller
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -17,6 +19,13 @@
  * License along with dlvhex; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA.
+ */
+
+/**
+ * @file   ModelGenerator.hpp
+ * @author Peter Schueller <ps@kr.tuwien.ac.at>
+ * 
+ * @brief  Base classes for model generators.
  */
 
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
@@ -102,6 +111,19 @@ public:
       InterpretationConstPtr input) = 0;
   virtual std::ostream& print(std::ostream& o) const
     { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
+};
+
+// model generator factory properties for eval units
+// such properties are required by model builders
+template<typename InterpretationT>
+struct EvalUnitModelGeneratorFactoryProperties
+{
+  BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
+	typedef InterpretationT Interpretation;
+
+  // aka model generator factory
+  typename ModelGeneratorFactoryBase<InterpretationT>::Ptr
+		mgf; // aka model generator factory
 };
 
 #endif //MODEL_GENERATOR_HPP_INCLUDED__30082010

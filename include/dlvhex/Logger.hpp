@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2010 Peter Schüller
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -19,6 +21,13 @@
  * 02110-1301 USA.
  */
 
+/**
+ * @file   Logger.hpp
+ * @author Peter Schueller <ps@kr.tuwien.ac.at>
+ * 
+ * @brief  Logging facility with comfortable indentation and closures.
+ */
+
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
 
@@ -27,6 +36,7 @@
 #include <boost/preprocessor/cat.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
+#include <boost/optional.hpp>
 
 // singleton logger class
 class Logger
@@ -110,18 +120,6 @@ public:
     }
   };
 };
-
-namespace
-{
-  Logger* instance = 0;
-}
-
-Logger& Logger::Instance()
-{
-  if( instance == 0 )
-    instance = new Logger();
-  return *instance;
-}
 
 #ifndef NDEBUG
 #  define LOG(streamout) do { \

@@ -1,5 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
- * Copyright (C) 2010 Peter Schüller
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -19,6 +21,13 @@
  * 02110-1301 USA.
  */
 
+/**
+ * @file   EvalGraph.cpp
+ * @author Peter Schueller <ps@kr.tuwien.ac.at>
+ * 
+ * @brief  Template for Evaluation Graph.
+ */
+
 #ifndef EVAL_GRAPH_HPP_INCLUDED__29082010
 #define EVAL_GRAPH_HPP_INCLUDED__29082010
 
@@ -28,6 +37,8 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/foreach.hpp>
 
 struct none_t {};
 
