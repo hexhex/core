@@ -226,6 +226,7 @@ DLVSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
 // pimpl idiom
 struct DLVLibSoftware::Delegate::DelegateImpl
 {
+  /*
   class MObserver: public MODEL_Observer
   {
   public:
@@ -253,20 +254,34 @@ struct DLVLibSoftware::Delegate::DelegateImpl
       std::cerr << "TODO MObserver::handleResult(b): " << b << std::endl;
     }
   };
+  */
 
   const Options& options;
   PROGRAM_HANDLER *ph;
-  MObserver mo;
-  MAObserver mao;
+  //MObserver mo;
+  //MAObserver mao;
 
   DelegateImpl(const Options& options):
     options(options),
-    ph(create_program_handler()),
-    mo(),
-    mao()
+    ph(create_program_handler()) //,
+    //mo(),
+    //mao()
   {
     //ph->subscribe(mo);
     //ph->subscribe(mao);
+    if( options.includeFacts )
+      ph->setOption(INCLUDE_FACTS, 1);
+    else
+      ph->setOption(INCLUDE_FACTS, 0);
+    BOOST_FOREACH(const std::string& arg, options.arguments)
+    {
+      if( arg == "-silent" )
+      {
+	// do nothing?
+      }
+      else
+	throw std::runtime_error("dlv-lib commandline option not implemented: " + arg);
+    }
   }
 
   ~DelegateImpl()
@@ -286,29 +301,6 @@ DLVLibSoftware::Delegate::~Delegate()
   delete pimpl;
 }
 
-#if 0
-  if( options.includeFacts )
-    proc.addOption("-facts");
-  else
-    proc.addOption("-nofacts");
-  BOOST_FOREACH(const std::string& arg, options.arguments)
-  {
-    proc.addOption(arg);
-  }
-
-#define CATCH_RETHROW_DLVDELEGATE \
-  catch(const GeneralError& e) { \
-    std::stringstream errstr; \
-    int retcode = proc.close(); \
-    errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg(); \
-    throw FatalError(errstr.str()); \
-  } \
-  catch(const std::exception& e) \
-  { \
-    throw FatalError(proc.path() + ": " + e.what()); \
-  }
-#endif
-
 void
 DLVLibSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
 {
@@ -322,35 +314,34 @@ DLVLibSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
   if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
     throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
 
-  #if 0
-  try
+  std::stringstream programStream;
+
+  ///@todo: this is marked as "temporary hack" in globals.h -> move this info into ProgramCtx and allow ProgramCtx to contribute to the solving process
+  if( !Globals::Instance()->maxint.empty() )
   {
-    setupProcess();
-    // request stdin as last parameter
-    proc.addOption("--");
-    // fork dlv process
-    proc.spawn();
-
-    typedef boost::shared_ptr<DLVPrintVisitor> PrinterPtr;
-    std::ostream& programStream = proc.getOutput();
-
-    ///@todo: this is marked as "temporary hack" in globals.h -> move this info into ProgramCtx and allow ProgramCtx to contribute to the solving process
-    if( !Globals::Instance()->maxint.empty() )
-      programStream << Globals::Instance()->maxint << std::endl;
-
-    // output program
-    PrinterPtr printer;
-    if( options.rewriteHigherOrder )
-      printer = PrinterPtr(new HOPrintVisitor(programStream));
-    else
-      printer = PrinterPtr(new DLVPrintVisitor(programStream));
-    idb.accept(*printer);
-    edb.accept(*printer);
-
-    proc.endoffile();
+    programStream << Globals::Instance()->maxint << std::endl;
+    /*
+    std::istringstream iss(Globals::Instance()->maxint);
+    int mi;
+    iss >> mi;
+    std::cerr << "setting maxint '" << Globals::Instance()->maxint << "' to " << mi << std::endl;
+    pimpl->ph->setMaxInt(mi);
+    */
   }
-  CATCH_RETHROW_DLVDELEGATE
-    #endif
+
+  // output program
+  typedef boost::shared_ptr<DLVPrintVisitor> PrinterPtr;
+  PrinterPtr printer;
+  if( options.rewriteHigherOrder )
+    printer = PrinterPtr(new HOPrintVisitor(programStream));
+  else
+    printer = PrinterPtr(new DLVPrintVisitor(programStream));
+  idb.accept(*printer);
+  edb.accept(*printer);
+
+  pimpl->ph->clearProgram();
+  pimpl->ph->Parse(programStream);
+  pimpl->ph->ResolveProgram(SYNCRONOUSLY);
 }
 
 void
@@ -358,19 +349,11 @@ DLVLibSoftware::Delegate::useStringInput(const std::string& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useStringInput");
 
-  #if 0
-  try
-  {
-    setupProcess();
-    // request stdin as last parameter
-    proc.addOption("--");
-    // fork dlv process
-    proc.spawn();
-    proc.getOutput() << program << std::endl;
-    proc.endoffile();
-  }
-  CATCH_RETHROW_DLVDELEGATE
-  #endif
+  std::stringstream prog(program);
+
+  pimpl->ph->clearProgram();
+  pimpl->ph->Parse(prog);
+  pimpl->ph->ResolveProgram(SYNCRONOUSLY);
 }
 
 void
@@ -378,17 +361,9 @@ DLVLibSoftware::Delegate::useFileInput(const std::string& fileName)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useFileInput");
 
-  #if 0
-  try
-  {
-    setupProcess();
-    proc.addOption(fileName);
-    // fork dlv process
-    proc.spawn();
-    proc.endoffile();
-  }
-  CATCH_RETHROW_DLVDELEGATE
-    #endif
+  pimpl->ph->clearProgram();
+  pimpl->ph->ParseFile(fileName.c_str());
+  pimpl->ph->ResolveProgram(SYNCRONOUSLY);
 }
 
 void
@@ -396,16 +371,54 @@ DLVLibSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::getOutput");
 
-  #if 0
-  try
+  const std::vector<MODEL> *models = pimpl->ph->getAllModels();
+
+  assert(result.empty()); // at the moment we implement this only for adding to empty vector (easily possible to extend)
+
+  // create empty atom set for each model
+  result.resize(models->size());
+
+  std::vector<MODEL>::const_iterator itm;
+  std::vector<AtomSet>::iterator itr;
+  // iterate over models
+  for(itm = models->begin(), itr = result.begin();
+      itm != models->end() && itr != result.end(); ++itm, ++itr)
   {
-    // parse result
-    DLVresultParserDriver parser(
-      options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(proc.getInput(), result);
+    // iterate over atoms
+    for(MODEL_ATOMS::const_iterator ita = itm->begin();
+	ita != itm->end(); ++ita)
+    {
+      // i have a hunch this might be the encoding
+      assert(ita->getName()[0] != '-');
+
+      //PTuple = std::vector<dlvhex::Term*>
+      dlvhex::PTuple ptuple;
+      ptuple.push_back(new dlvhex::Term(ita->getName()));
+      for(MODEL_TERMS::const_iterator itt = ita->getParams().begin();
+	  itt != ita->getParams().end(); ++itt)
+      {
+	switch(itt->type)
+	{
+	case 1:
+	  // string terms
+	  ptuple.push_back(new dlvhex::Term(itt->data.item));
+	  break;
+	case 2:
+	  // int terms
+	  ptuple.push_back(new dlvhex::Term(itt->data.number));
+	  break;
+	default:
+	  throw "unknown term type!";
+	}
+      }
+      itr->insert(dlvhex::AtomPtr(new dlvhex::Atom(ptuple)));
+    }
   }
-  CATCH_RETHROW_DLVDELEGATE
-  #endif
+  assert(itm == models->end() && itr == result.end());
+
+  // TODO: is this necessary?
+  // delete models;
+ 
 }
 #endif
 
