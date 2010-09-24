@@ -41,6 +41,7 @@
 #define _DLVHEX_ATOM_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include <climits>
 
 DLVHEX_NAMESPACE_BEGIN
 
