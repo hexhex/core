@@ -34,11 +34,11 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
-TestModelGraph_SOURCES = TestModelGraph.cpp fixtureE2M2.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
+TestModelGraph_SOURCES = TestModelGraph.cpp dummytypes.cpp fixtureE2M2.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
 
-TestEvalGraph_SOURCES = TestEvalGraph.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
+TestEvalGraph_SOURCES = TestEvalGraph.cpp dummytypes.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
 
-TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp fixtureE2M2.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
+TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp dummytypes.cpp fixtureE1.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
 
 # test it with NDEBUG (the real situation)
 TestModelGraphND_SOURCES = $(TestModelGraph_SOURCES)

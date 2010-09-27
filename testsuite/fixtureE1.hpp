@@ -22,35 +22,26 @@
  */
 
 /**
- * @file   fixtureE2.hpp
+ * @file   fixtureE1.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Interface for testing fixtures related to sample graph $\mathcal{E}_2$.
+ * @brief  Interface for testing fixtures related to sample graph $\mathcal{E}_1$.
  */
 
-#ifndef FIXTUREE2_HPP_INCLUDED__24092010
-#define FIXTUREE2_HPP_INCLUDED__24092010
+#ifndef FIXTUREE1_HPP_INCLUDED__24092010
+#define FIXTUREE1_HPP_INCLUDED__24092010
 
 #include "dummytypes.hpp"
 
 // setup eval graph $\cE_2$
-struct EvalGraphE2Fixture
+struct EvalGraphE1Fixture
 {
   TestEvalGraph eg;
-  EvalUnit u1, u2, u3, u4;
-  EvalUnitDep e21, e31, e42, e43;
+  EvalUnit u1, u2, u3;
+  EvalUnitDep e21, e32;
 
-  EvalGraphE2Fixture(bool mirrored=false);
-  ~EvalGraphE2Fixture() {}
+  EvalGraphE1Fixture();
+  ~EvalGraphE1Fixture() {}
 };
 
-// setup eval graph $\cE_2$ with different join order between u_2 and u_3 (switched)
-struct EvalGraphE2MirroredFixture:
-  public EvalGraphE2Fixture
-{
-  EvalGraphE2MirroredFixture():
-    EvalGraphE2Fixture(true) {}
-  ~EvalGraphE2MirroredFixture() {}
-};
-
-#endif // FIXTUREE2_HPP_INCLUDED__24092010
+#endif // FIXTUREE1_HPP_INCLUDED__24092010

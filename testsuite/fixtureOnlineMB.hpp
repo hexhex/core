@@ -28,15 +28,67 @@
  * @brief  Implementation of testing fixture for online model building with graph $\mathcal{E}_2$.
  */
 
-#ifndef FIXTUREE2OMB_HPP_INCLUDED__24092010
-#define FIXTUREE2OMB_HPP_INCLUDED__24092010
+#ifndef FIXTUREONLINEMB_HPP_INCLUDED__24092010
+#define FIXTUREONLINEMB_HPP_INCLUDED__24092010
 
+#include "fixtureE1.hpp"
 #include "fixtureE2.hpp"
 
 #include "dlvhex/Logger.hpp"
 #include <boost/test/unit_test.hpp>
 
-// test online model building algorithm with graph E2
+
+// fixture for testing online model building with graph E1
+// for that we add a final unit depending on all other units
+// and we setup model generator factories
+template<typename EvalGraphE1BaseFixtureT>
+struct OnlineModelBuilderE1TFixture:
+  public EvalGraphE1BaseFixtureT
+{
+  typedef EvalGraphE1BaseFixtureT Base;
+  typedef OnlineModelBuilder<TestEvalGraph> ModelBuilder;
+  typedef ModelBuilder::OptionalModel OptionalModel;
+
+  ModelBuilder omb;
+  EvalUnit ufinal;
+
+  OnlineModelBuilderE1TFixture():
+    EvalGraphE1BaseFixtureT(),
+    omb(Base::eg)
+  {
+    TestEvalGraph& eg = Base::eg;
+    TestEvalGraph::EvalUnit& u1 = Base::u1;
+    TestEvalGraph::EvalUnit& u2 = Base::u2;
+    TestEvalGraph::EvalUnit& u3 = Base::u3;
+
+    LOG_SCOPE("OnlineModelBuilderE1TFixture<...>", true);
+    typedef TestEvalUnitPropertyBase UnitCfg;
+    typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
+
+    // setup final unit
+    BOOST_TEST_MESSAGE("adding ufinal");
+    LOG("ufinal = " << ufinal);
+    ufinal = eg.addUnit(UnitCfg());
+    BOOST_TEST_MESSAGE("adding dependencies from ufinal to all other units");
+    eg.addDependency(ufinal, u3, UnitDepCfg(0));
+    eg.addDependency(ufinal, u2, UnitDepCfg(1));
+    eg.addDependency(ufinal, u1, UnitDepCfg(2));
+
+    // setup model generator factories
+    eg.propsOf(u1).mgf.reset( 
+      new TestModelGeneratorFactory(eg.propsOf(u1).ctx));
+    eg.propsOf(u2).mgf.reset(
+      new TestModelGeneratorFactory(eg.propsOf(u2).ctx));
+    eg.propsOf(u3).mgf.reset(
+      new TestModelGeneratorFactory(eg.propsOf(u3).ctx));
+  }
+
+  ~OnlineModelBuilderE1TFixture() {}
+};
+
+// fixture for testing online model building with graph E2
+// for that we add a final unit depending on all other units
+// and we setup model generator factories
 template<typename EvalGraphE2BaseFixtureT>
 struct OnlineModelBuilderE2TFixture:
   public EvalGraphE2BaseFixtureT
@@ -66,11 +118,11 @@ struct OnlineModelBuilderE2TFixture:
     BOOST_TEST_MESSAGE("adding ufinal");
     LOG("ufinal = " << ufinal);
     ufinal = eg.addUnit(UnitCfg());
-    BOOST_TEST_MESSAGE("adding dependencies from ufinal to all other models");
-    eg.addDependency(ufinal, u1, UnitDepCfg(0));
-    eg.addDependency(ufinal, u2, UnitDepCfg(1));
-    eg.addDependency(ufinal, u3, UnitDepCfg(2));
-    eg.addDependency(ufinal, u4, UnitDepCfg(3));
+    BOOST_TEST_MESSAGE("adding dependencies from ufinal to all other units");
+    eg.addDependency(ufinal, u4, UnitDepCfg(0));
+    eg.addDependency(ufinal, u3, UnitDepCfg(1));
+    eg.addDependency(ufinal, u2, UnitDepCfg(2));
+    eg.addDependency(ufinal, u1, UnitDepCfg(3));
 
     // setup model generator factories
     eg.propsOf(u1).mgf.reset( 
@@ -81,11 +133,14 @@ struct OnlineModelBuilderE2TFixture:
       new TestModelGeneratorFactory(eg.propsOf(u3).ctx));
     eg.propsOf(u4).mgf.reset(
       new TestModelGeneratorFactory(eg.propsOf(u4).ctx));
-
   }
 
   ~OnlineModelBuilderE2TFixture() {}
 };
+
+// create one normal E1 model building fixture
+typedef OnlineModelBuilderE1TFixture<EvalGraphE1Fixture>
+  OnlineModelBuilderE1Fixture;
 
 // create one normal E2 model building fixture
 typedef OnlineModelBuilderE2TFixture<EvalGraphE2Fixture>
@@ -94,4 +149,4 @@ typedef OnlineModelBuilderE2TFixture<EvalGraphE2Fixture>
 typedef OnlineModelBuilderE2TFixture<EvalGraphE2MirroredFixture>
   OnlineModelBuilderE2MirroredFixture;
 
-#endif // FIXTUREE2OMB_HPP_INCLUDED__24092010
+#endif // FIXTUREONLINEMB_HPP_INCLUDED__24092010

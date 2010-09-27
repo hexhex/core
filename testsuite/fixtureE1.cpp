@@ -22,53 +22,41 @@
  */
 
 /**
- * @file   fixtureE2.cpp
+ * @file   fixtureE1.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Implementation of testing fixtures related to sample graph $\mathcal{E}_2$.
+ * @brief  Implementation of testing fixtures related to sample graph $\mathcal{E}_1$.
  */
 
-#include "fixtureE2.hpp"
+#include "fixtureE1.hpp"
 
 #include <boost/test/unit_test.hpp>
 
-EvalGraphE2Fixture::EvalGraphE2Fixture(bool mirrored)
+EvalGraphE1Fixture::EvalGraphE1Fixture()
 {
-  LOG_SCOPE("EvalGraphE2Fixture", true);
+  LOG_SCOPE("EvalGraphE1Fixture", true);
   typedef TestEvalUnitPropertyBase UnitCfg;
   typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 
   BOOST_TEST_MESSAGE("adding u1");
-  u1 = eg.addUnit(UnitCfg("plan(a) v plan(b)."));
+  // u1: EDB will NOT be part of this in the real system, but here it is useful to know what's going on
+  u1 = eg.addUnit(UnitCfg(
+    "plan(a) v plan(b)."
+    "use(X) v use(Y) :- plan(P), choose(P,X,Y)."
+    "choose(a,c,d). choose(b,e,f)."));
   LOG("u1 = " << u1);
   BOOST_TEST_MESSAGE("adding u2");
-  u2 = eg.addUnit(UnitCfg("need(p,C) :- &cost[plan](C). :- need(_,money).")); 
+  u2 = eg.addUnit(UnitCfg(
+    "need(p,C) :- &cost[plan](C)."
+    "need(u,C) :- &cost[use](C).")); 
   LOG("u2 = " << u2);
   BOOST_TEST_MESSAGE("adding u3");
-  // u3: EDB will NOT be part of this in the real system, but here it is useful to know what's going on
-  u3 = eg.addUnit(UnitCfg("use(X) v use(Y) :- plan(P), choose(P,X,Y). choose(a,c,d). choose(b,e,f)."));
+  u3 = eg.addUnit(UnitCfg(
+    ":- need(X,money)."));
   LOG("u3 = " << u3);
-  BOOST_TEST_MESSAGE("adding u4");
-  u4 = eg.addUnit(UnitCfg("need(u,C) :- &cost[use](C). :- need(_,money)."));
-  LOG("u4 = " << u4);
   BOOST_TEST_MESSAGE("adding e21");
   e21 = eg.addDependency(u2, u1, UnitDepCfg(0));
-  BOOST_TEST_MESSAGE("adding e31");
-  e31 = eg.addDependency(u3, u1, UnitDepCfg(0));
-  LOG("mirrored = " << mirrored);
-  if( mirrored )
-  {
-    BOOST_TEST_MESSAGE("adding e43");
-    e43 = eg.addDependency(u4, u3, UnitDepCfg(0));
-    BOOST_TEST_MESSAGE("adding e42");
-    e42 = eg.addDependency(u4, u2, UnitDepCfg(1));
-  }
-  else
-  {
-    BOOST_TEST_MESSAGE("adding e42");
-    e42 = eg.addDependency(u4, u2, UnitDepCfg(0));
-    BOOST_TEST_MESSAGE("adding e43");
-    e43 = eg.addDependency(u4, u3, UnitDepCfg(1));
-  }
+  BOOST_TEST_MESSAGE("adding e32");
+  e32 = eg.addDependency(u3, u2, UnitDepCfg(0));
 }
 

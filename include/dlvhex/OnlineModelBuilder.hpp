@@ -156,7 +156,13 @@ public:
     void setIModel(OptionalModel m)
     {
       // we can change the imodel iff currentmg is null
-      assert(!(imodel != m && currentmg != 0));
+      assert(!(!!m && imodel != m && currentmg != 0));
+      // log warning if we unset the imodel if currentmg is not null
+      if( !m && imodel != m && currentmg != 0 )
+      {
+        LOG("WARNING: unsetting imodel while currentmg is null -> unsetting currentmg too");
+        currentmg.reset();
+      }
       imodel = m;
     }
 
@@ -530,10 +536,11 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   LOG_METHOD(dbgstr.str(),this);
   LOG("=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
   logModelBuildingPropertyMap();
-  #endif
 
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   LOG("rules: " << uprops.ctx.rules);
+  #endif
+
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
   LOG("mbprops: " << printEUMBP(mbprops));
 
@@ -691,10 +698,11 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
   dbgstr << "cNM[" << u << "]";
   LOG_FUNCTION(dbgstr.str()); // only called from within object -> do not log this ptr
   LOG("=createNextModel(" << u << ")");
+
+  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   #endif
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
 
   #ifndef NDEBUG
   // check if there can be a next model
@@ -809,7 +817,6 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
 
   // prepare
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   assert(mbprops.orefcount <= 1);
   assert(!!mbprops.getIModel());
 
@@ -835,7 +842,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
     currentisuccessor++;
     if( currentisuccessor != send )
     {
-      Model m = mg.targetOf(*currentisuccessor);
+      Model m = mg.sourceOf(*currentisuccessor);
       LOG("advance successful, returning model " << m);
       return m;
     }
@@ -860,7 +867,7 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
       mbprops.currentisuccessor = sbegin;
       mbprops.orefcount++;
       assert(mbprops.orefcount == 1);
-      Model m = mg.targetOf(*sbegin);
+      Model m = mg.sourceOf(*sbegin);
       LOG("returning first successor model " << m);
       return m;
     }
@@ -898,9 +905,10 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   dbgstr << "gnOM[" << u << "]";
   LOG_METHOD(dbgstr.str(), this);
   LOG("=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
-  #endif
 
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+  #endif
+
   logModelBuildingPropertyMap();
   LOG("rules = '" << uprops.ctx.rules << "'");
   EvalUnitModelBuildingProperties& mbprops = mbp[u];

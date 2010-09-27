@@ -312,6 +312,15 @@ public:
   {
     return boost::target(d, mg);
   }
+
+  inline unsigned countModels() const
+  {
+    return boost::num_vertices(mg);
+  }
+  inline unsigned countModelDeps() const
+  {
+    return boost::num_edges(mg);
+  }
 }; // class ModelGraph
 
 // ModelGraph<...>::addModel(...) implementation

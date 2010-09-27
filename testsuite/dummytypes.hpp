@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   dummytypes.cpp
+ * @file   dummytypes.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Dummy replacement types for testing (model building) templates.
@@ -35,6 +35,7 @@
 #include "dlvhex/EvalGraph.hpp"
 #include "dlvhex/ModelGraph.hpp"
 #include "dlvhex/ModelGenerator.hpp"
+#include <boost/test/unit_test.hpp>
 
 // for testing we use stupid types
 struct TestProgramCtx
@@ -87,10 +88,14 @@ public:
   std::ostream& print(std::ostream& o) const
   {
     TestAtomSet::const_iterator it = atoms.begin();
-    o << "{" << *it;
-    ++it;
-    for(;it != atoms.end(); ++it)
-      o << "," << *it;
+    o << "{";
+    if( !atoms.empty() )
+    {
+      o << *it;
+      ++it;
+      for(;it != atoms.end(); ++it)
+        o << "," << *it;
+    }
     o << "}";
     return o;
   }
@@ -135,112 +140,7 @@ public:
   public:
     ModelGenerator(
         InterpretationConstPtr input,
-        TestModelGeneratorFactory& factory):
-      ModelGeneratorBase<TestInterpretation>(input),
-			factory(factory),
-      models(),
-      mit(models.begin())
-    {
-      LOG_METHOD("ModelGenerator()", this);
-			const std::string& rules = factory.ctx.rules;
-      LOG("rules '" << rules << "'");
-      if( input )
-        LOG("input '" << *input << "'");
-
-      // hardcode models of given programs with given inputs
-      if( rules == "plan(a) v plan(b)." )
-      {
-        assert(!input);
-        TestAtomSet ma;
-        ma.insert("plan(a)");
-        TestAtomSet mb;
-        mb.insert("plan(b)");
-        models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
-        models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
-        mit = models.begin();
-      }
-      else if( rules == "need(p,C) :- &cost[plan](C). :- need(_,money)." )
-      {
-        assert(input);
-        const TestAtomSet& inp = input->getAtoms();
-        assert(inp.size() == 1);
-        if( inp.count("plan(a)") == 1 )
-        {
-          // no models (constraint violated)
-        }
-        else if( inp.count("plan(b)") == 1 )
-        {
-          TestAtomSet a;
-          a.insert("need(p,time)");
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(a)));
-          mit = models.begin();
-        }
-        else
-        {
-          assert(false);
-        }
-      }
-      else if( rules == "use(X) v use(Y) :- plan(P), choose(P,X,Y). choose(a,c,d). choose(b,e,f)." )
-      {
-        assert(input);
-        const TestAtomSet& inp = input->getAtoms();
-        assert(inp.size() == 1);
-        if( inp.count("plan(a)") == 1 )
-        {
-          TestAtomSet ma;
-          ma.insert("use(c)");
-          TestAtomSet mb;
-          mb.insert("use(d)");
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
-          mit = models.begin();
-        }
-        else if( inp.count("plan(b)") == 1 )
-        {
-          TestAtomSet ma;
-          ma.insert("use(e)");
-          TestAtomSet mb;
-          mb.insert("use(f)");
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
-          mit = models.begin();
-        }
-        else
-        {
-          assert(false);
-        }
-      }
-      else if( rules == "need(u,C) :- &cost[use](C). :- need(_,money)." )
-      {
-        assert(input);
-        const TestAtomSet& inp = input->getAtoms();
-        assert(inp.size() == 2);
-        if( inp.count("need(p,time)") == 1 && inp.count("use(e)") )
-        {
-          TestAtomSet ma;
-          ma.insert("need(u,time)");
-          models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
-          mit = models.begin();
-        }
-        else if( inp.count("need(p,time)") == 1 && inp.count("use(f)") )
-        {
-          // no models (constraint violated)
-        }
-        else
-        {
-          assert(false);
-        }
-      }
-      else
-      {
-        std::cerr << "TODO hardcode rules '" << rules << "'" << std::endl;
-        assert(false);
-      }
-
-      LOG_INDENT();
-      BOOST_FOREACH(TestInterpretation::Ptr intp, models)
-        LOG("model " << *intp);
-    }
+        TestModelGeneratorFactory& factory);
 
     virtual ~ModelGenerator()
     {
@@ -251,6 +151,7 @@ public:
     {
 			const std::string& rules = factory.ctx.rules;
       LOG_METHOD("generateNextModel()",this);
+      factory.generateNextModelCount++;
       LOG("returning next model for rules '" << rules << "':");
       if( mit == models.end() )
       {
@@ -279,13 +180,15 @@ public:
   //
 public:
 	const TestProgramCtx& ctx;
+  unsigned generateNextModelCount;
 
   //
   // members
   //
 public:
   TestModelGeneratorFactory(const TestProgramCtx& ctx):
-    ctx(ctx)
+    ctx(ctx),
+    generateNextModelCount(0)
   {
     LOG_METHOD("TestModelGeneratorFactory()", this);
     LOG("rules='" << ctx.rules << "'");
@@ -294,6 +197,7 @@ public:
   virtual ~TestModelGeneratorFactory()
   {
     LOG_METHOD("~TestModelGeneratorFactory()", this);
+    LOG("generateNextModelCount=" << generateNextModelCount);
   }
 
   virtual ModelGeneratorPtr createModelGenerator(
@@ -353,5 +257,75 @@ typedef TestModelGraph::Model Model;
 typedef TestModelGraph::ModelPropertyBundle ModelProp;
 typedef TestModelGraph::ModelDep ModelDep;
 typedef TestModelGraph::ModelDepPropertyBundle ModelDepProp;
+
+template<typename EvalGraphT>
+class CounterVerification
+{
+protected:
+  EvalGraphT& eg;
+
+  typedef std::map<TestEvalGraph::EvalUnit, unsigned> IterCountMap;
+  std::vector<IterCountMap> counters;
+
+public:
+  CounterVerification(EvalGraphT& eg, unsigned iterations):
+    eg(eg),
+    counters(iterations + 1, IterCountMap())
+  {
+    recordCounters(0);
+  }
+
+  void recordCounters(unsigned iteration)
+  {
+    assert(iteration <= counters.size());
+
+    LOG_SCOPE("CounterVerification", false);
+
+    LOG("recording iteration " << iteration);
+    typename EvalGraphT::EvalUnitIterator unit, unitsbegin, unitsend;
+    boost::tie(unitsbegin, unitsend) = eg.getEvalUnits();
+    for(unit = unitsbegin; unit != unitsend; ++unit)
+    {
+      boost::shared_ptr<TestModelGeneratorFactory> mgf =
+        boost::dynamic_pointer_cast<TestModelGeneratorFactory>(
+          eg.propsOf(*unit).mgf);
+      if( !mgf )
+      {
+        LOG("could not downcast mgf of unit " << *unit << "!");
+      }
+      else
+      {
+        counters[iteration][*unit] = mgf->generateNextModelCount;
+        LOG("initial counter of mgf of unit " << *unit << " = " << counters[iteration][*unit]);
+      }
+    }
+  }
+
+  void printCounters()
+  {
+    typename EvalGraphT::EvalUnitIterator unit, unitsbegin, unitsend;
+    boost::tie(unitsbegin, unitsend) = eg.getEvalUnits();
+    for(unsigned counteridx = 0; counteridx != counters.size(); ++counteridx)
+    {
+      LOG("model generation counter for iteration " << counteridx << ":");
+      LOG_INDENT();
+      for(unit = unitsbegin; unit != unitsend; ++unit)
+      {
+        LOG("u" << *unit << " -> " << counters[counteridx][*unit]);
+      }
+    }
+  }
+
+  void verifyEqual(unsigned iterationa, unsigned iterationb)
+  {
+    assert(iterationa < iterationb <= counters.size());
+    typename EvalGraphT::EvalUnitIterator unit, unitsbegin, unitsend;
+    boost::tie(unitsbegin, unitsend) = eg.getEvalUnits();
+    for(unit = unitsbegin; unit != unitsend; ++unit)
+    {
+      BOOST_CHECK((counters[iterationa][*unit] - counters[iterationb][*unit]) == 0);
+    }
+  }
+};
 
 #endif // DUMMYTYPES_HPP_INCLUDED__24092010
