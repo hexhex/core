@@ -33,6 +33,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <set>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -246,6 +247,23 @@ inline print_container* printptr(const T* const t)
         reinterpret_cast<const void* const>(t));
   else
     return new print_stream_container<const char*>("null");
+}
+
+template<typename T>
+inline print_container* printset(const std::set<T>& t)
+{
+  std::ostringstream o;
+  o << "{";
+  typename std::set<T>::const_iterator it = t.begin();
+  if( it != t.end() )
+  {
+    o << *it;
+    it++;
+  }
+  for(; it != t.end(); ++it)
+    o << "," << *it;
+  o << "}";
+  return new print_stream_container<std::string>(o.str());
 }
 
 #endif // LOGGER_HPP_INCLUDED__17092010

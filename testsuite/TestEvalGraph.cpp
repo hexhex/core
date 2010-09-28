@@ -47,6 +47,7 @@
 
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/EvalGraph.hpp"
+#include "dlvhex/CAUAlgorithms.hpp"
 
 #include "fixtureE2.hpp"
 
@@ -54,12 +55,81 @@ BOOST_AUTO_TEST_SUITE(root_TestEvalGraph)
 
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)
 {
-  BOOST_MESSAGE("TODO: check size of resulting graph or something like that, so far we only check that there is no throw and no segfault");
+  BOOST_CHECK_EQUAL(eg.countEvalUnits(), 4);
+  BOOST_CHECK_EQUAL(eg.countEvalUnitDeps(), 4);
 }
 
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2mirrored, EvalGraphE2MirroredFixture)
 {
-  BOOST_MESSAGE("TODO: check size of resulting graph or something like that, so far we only check that there is no throw and no segfault");
+  BOOST_CHECK_EQUAL(eg.countEvalUnits(), 4);
+  BOOST_CHECK_EQUAL(eg.countEvalUnitDeps(), 4);
 }
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u1, EvalGraphE2Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u1, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_REQUIRE_EQUAL(caus.size(), 0);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u1, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], true);
+  BOOST_CHECK_EQUAL(jr[u2], false);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u2, EvalGraphE2Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u2, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_CHECK_EQUAL(caus.size(), 0);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u2, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], true);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u3, EvalGraphE2Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u3, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_CHECK_EQUAL(caus.size(), 0);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u3, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], false);
+  BOOST_CHECK_EQUAL(jr[u3], true);
+  BOOST_CHECK_EQUAL(jr[u4], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u4, EvalGraphE2Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u4, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_CHECK_EQUAL(caus.size(), 1);
+  BOOST_CHECK_EQUAL(caus.count(u1), 1);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u4, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], true);
+  BOOST_CHECK_EQUAL(jr[u2], true);
+  BOOST_CHECK_EQUAL(jr[u3], true);
+  BOOST_CHECK_EQUAL(jr[u4], true);
+}
+
+// TODO: more interesting eval graphs and fixtures
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -82,7 +82,6 @@ public:
         joinOrder(joinOrder) {}
   };
 
-private:
   // rationales for choice of vecS here:
   // * we will add eval units once and don't remove units later on,
   //   therefore the high cost of removing units is not problematic
@@ -101,7 +100,6 @@ private:
       EvalGraphInt;
   typedef typename boost::graph_traits<EvalGraphInt> Traits;
 
-public:
   typedef typename EvalGraphInt::vertex_descriptor EvalUnit;
   typedef typename EvalGraphInt::edge_descriptor EvalUnitDep;
   typedef typename Traits::vertex_iterator EvalUnitIterator;
@@ -128,6 +126,9 @@ private:
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
+  inline const EvalGraphInt& getInt() const
+    { return eg; }
+
   inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
   {
     EvalUnit u = boost::add_vertex(prop, eg);
@@ -199,14 +200,14 @@ public:
     return boost::in_edges(u, eg);
   }
 
-  inline const EvalUnitDepPropertyBundle& propsOf(EvalUnitDep u) const
+  inline const EvalUnitDepPropertyBundle& propsOf(EvalUnitDep d) const
   {
-    return eg[u];
+    return eg[d];
   }
 
-  inline EvalUnitDepPropertyBundle& propsOf(EvalUnitDep u)
+  inline EvalUnitDepPropertyBundle& propsOf(EvalUnitDep d)
   {
-    return eg[u];
+    return eg[d];
   }
 
   inline const EvalUnitPropertyBundle& propsOf(EvalUnit u) const
@@ -226,6 +227,15 @@ public:
   inline EvalUnit targetOf(EvalUnitDep d) const
   {
     return boost::target(d, eg);
+  }
+
+  inline unsigned countEvalUnits() const
+  {
+    return boost::num_vertices(eg);
+  }
+  inline unsigned countEvalUnitDeps() const
+  {
+    return boost::num_edges(eg);
   }
 }; // class EvalGraph<...>
 
