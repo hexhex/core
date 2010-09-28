@@ -50,6 +50,7 @@
 #include "dlvhex/CAUAlgorithms.hpp"
 
 #include "fixtureE2.hpp"
+#include "fixtureEx1.hpp"
 
 BOOST_AUTO_TEST_SUITE(root_TestEvalGraph)
 
@@ -130,6 +131,98 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u4, EvalGraphE2
   BOOST_CHECK_EQUAL(jr[u4], true);
 }
 
-// TODO: more interesting eval graphs and fixtures
+BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u4, EvalGraphEx1Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u4, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_REQUIRE_EQUAL(caus.size(), 0);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u4, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], false);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], true);
+  BOOST_CHECK_EQUAL(jr[u5], false);
+  BOOST_CHECK_EQUAL(jr[u6], false);
+  BOOST_CHECK_EQUAL(jr[u7], false);
+  BOOST_CHECK_EQUAL(jr[u8], false);
+  BOOST_CHECK_EQUAL(jr[u9], false);
+  BOOST_CHECK_EQUAL(jr[u10], false);
+  BOOST_CHECK_EQUAL(jr[u11], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u7, EvalGraphEx1Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u7, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_REQUIRE_EQUAL(caus.size(), 1);
+  BOOST_REQUIRE_EQUAL(caus.count(u2), 1);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u7, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], true);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], true);
+  BOOST_CHECK_EQUAL(jr[u5], true);
+  BOOST_CHECK_EQUAL(jr[u6], true);
+  BOOST_CHECK_EQUAL(jr[u7], true);
+  BOOST_CHECK_EQUAL(jr[u8], false);
+  BOOST_CHECK_EQUAL(jr[u9], false);
+  BOOST_CHECK_EQUAL(jr[u10], false);
+  BOOST_CHECK_EQUAL(jr[u11], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u9, EvalGraphEx1Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u9, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_REQUIRE_EQUAL(caus.size(), 0);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u9, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], false);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], false);
+  BOOST_CHECK_EQUAL(jr[u5], false);
+  BOOST_CHECK_EQUAL(jr[u6], false);
+  BOOST_CHECK_EQUAL(jr[u7], false);
+  BOOST_CHECK_EQUAL(jr[u8], false);
+  BOOST_CHECK_EQUAL(jr[u9], true);
+  BOOST_CHECK_EQUAL(jr[u10], false);
+  BOOST_CHECK_EQUAL(jr[u11], false);
+}
+
+BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u11, EvalGraphEx1Fixture)
+{
+  CAUAlgorithms::AncestryPropertyMap apm;
+  std::set<EvalUnit> caus;
+  CAUAlgorithms::findCAUs(caus, eg, u11, apm);
+  CAUAlgorithms::logAPM(apm);
+  BOOST_REQUIRE_EQUAL(caus.size(), 1);
+  BOOST_REQUIRE_EQUAL(caus.count(u7), 1);
+
+  CAUAlgorithms::JoinRelevancePropertyMap jr;
+  CAUAlgorithms::markJoinRelevance(jr, eg, u11, caus, apm);
+  BOOST_CHECK_EQUAL(jr[u1], false);
+  BOOST_CHECK_EQUAL(jr[u2], false);
+  BOOST_CHECK_EQUAL(jr[u3], false);
+  BOOST_CHECK_EQUAL(jr[u4], false);
+  BOOST_CHECK_EQUAL(jr[u5], false);
+  BOOST_CHECK_EQUAL(jr[u6], false);
+  BOOST_CHECK_EQUAL(jr[u7], true);
+  BOOST_CHECK_EQUAL(jr[u8], false);
+  BOOST_CHECK_EQUAL(jr[u9], true);
+  BOOST_CHECK_EQUAL(jr[u10], true);
+  BOOST_CHECK_EQUAL(jr[u11], true);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
