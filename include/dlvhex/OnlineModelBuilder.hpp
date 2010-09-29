@@ -231,7 +231,7 @@ private:
   };
 
   // members
-private:
+protected:
   EvalGraphT& eg;
   MyModelGraph mg;
   EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
@@ -245,7 +245,11 @@ public:
     // after the creation of this OnlineModelBuilder
     ego(new EvalGraphObserver(*this))
   {
-    // initialize mbp for each vertex in eg:
+    // allocate full mbp (plus one unit, as we will likely get an additional vertex)
+    EvalUnitModelBuildingProperties& mbproptemp = mbp[eg.countEvalUnits()];
+    (void)mbproptemp;
+
+    // initialize mbp for each vertex in eg
     typename EvalGraphT::EvalUnitIterator it, end;
     for(boost::tie(it, end) = eg.getEvalUnits(); it != end; ++it)
     {
@@ -265,10 +269,10 @@ public:
     eg.addObserver(ego);
   }
 
-  ~OnlineModelBuilder() { }
+  virtual ~OnlineModelBuilder() { }
 
-  EvalGraphT& getEvalGraph() { return eg; }
-  MyModelGraph& getModelGraph() { return mg; }
+  inline EvalGraphT& getEvalGraph() { return eg; }
+  inline MyModelGraph& getModelGraph() { return mg; }
 
 protected:
 	// helper for getNextIModel
@@ -286,10 +290,10 @@ protected:
 
 public:
   // get next input model (projected if projection is configured) at unit u
-  OptionalModel getNextIModel(EvalUnit u);
+  virtual OptionalModel getNextIModel(EvalUnit u);
 
   // get next output model (projected if projection is configured) at unit u
-  OptionalModel getNextOModel(EvalUnit u);
+  virtual OptionalModel getNextOModel(EvalUnit u);
 
   // debugging methods
 public:
@@ -576,7 +580,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     }
     mbprops.setIModel(odummy);
     LOG("returning model " << printopt(odummy));
-      logModelBuildingPropertyMap();
+    logModelBuildingPropertyMap();
     return odummy;
   }
 

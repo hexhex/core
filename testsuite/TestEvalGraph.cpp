@@ -76,7 +76,7 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u1, EvalGraphE2
 
   CAUAlgorithms::JoinRelevancePropertyMap jr;
   CAUAlgorithms::markJoinRelevance(jr, eg, u1, caus, apm);
-  BOOST_CHECK_EQUAL(jr[u1], true);
+  BOOST_CHECK_EQUAL(jr[u1], false);
   BOOST_CHECK_EQUAL(jr[u2], false);
   BOOST_CHECK_EQUAL(jr[u3], false);
   BOOST_CHECK_EQUAL(jr[u4], false);
@@ -93,7 +93,7 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u2, EvalGraphE2
   CAUAlgorithms::JoinRelevancePropertyMap jr;
   CAUAlgorithms::markJoinRelevance(jr, eg, u2, caus, apm);
   BOOST_CHECK_EQUAL(jr[u1], false);
-  BOOST_CHECK_EQUAL(jr[u2], true);
+  BOOST_CHECK_EQUAL(jr[u2], false);
   BOOST_CHECK_EQUAL(jr[u3], false);
   BOOST_CHECK_EQUAL(jr[u4], false);
 }
@@ -110,7 +110,7 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u3, EvalGraphE2
   CAUAlgorithms::markJoinRelevance(jr, eg, u3, caus, apm);
   BOOST_CHECK_EQUAL(jr[u1], false);
   BOOST_CHECK_EQUAL(jr[u2], false);
-  BOOST_CHECK_EQUAL(jr[u3], true);
+  BOOST_CHECK_EQUAL(jr[u3], false);
   BOOST_CHECK_EQUAL(jr[u4], false);
 }
 
@@ -125,10 +125,10 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_e2_findCAUs_markJoinRelevance_u4, EvalGraphE2
 
   CAUAlgorithms::JoinRelevancePropertyMap jr;
   CAUAlgorithms::markJoinRelevance(jr, eg, u4, caus, apm);
-  BOOST_CHECK_EQUAL(jr[u1], true);
+  BOOST_CHECK_EQUAL(jr[u1], false);
   BOOST_CHECK_EQUAL(jr[u2], true);
   BOOST_CHECK_EQUAL(jr[u3], true);
-  BOOST_CHECK_EQUAL(jr[u4], true);
+  BOOST_CHECK_EQUAL(jr[u4], false);
 }
 
 BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u4, EvalGraphEx1Fixture)
@@ -144,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u4, EvalGraphE
   BOOST_CHECK_EQUAL(jr[u1], false);
   BOOST_CHECK_EQUAL(jr[u2], false);
   BOOST_CHECK_EQUAL(jr[u3], false);
-  BOOST_CHECK_EQUAL(jr[u4], true);
+  BOOST_CHECK_EQUAL(jr[u4], false);
   BOOST_CHECK_EQUAL(jr[u5], false);
   BOOST_CHECK_EQUAL(jr[u6], false);
   BOOST_CHECK_EQUAL(jr[u7], false);
@@ -166,12 +166,12 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u7, EvalGraphE
   CAUAlgorithms::JoinRelevancePropertyMap jr;
   CAUAlgorithms::markJoinRelevance(jr, eg, u7, caus, apm);
   BOOST_CHECK_EQUAL(jr[u1], false);
-  BOOST_CHECK_EQUAL(jr[u2], true);
+  BOOST_CHECK_EQUAL(jr[u2], false);
   BOOST_CHECK_EQUAL(jr[u3], false);
   BOOST_CHECK_EQUAL(jr[u4], true);
   BOOST_CHECK_EQUAL(jr[u5], true);
   BOOST_CHECK_EQUAL(jr[u6], true);
-  BOOST_CHECK_EQUAL(jr[u7], true);
+  BOOST_CHECK_EQUAL(jr[u7], false);
   BOOST_CHECK_EQUAL(jr[u8], false);
   BOOST_CHECK_EQUAL(jr[u9], false);
   BOOST_CHECK_EQUAL(jr[u10], false);
@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u9, EvalGraphE
   BOOST_CHECK_EQUAL(jr[u6], false);
   BOOST_CHECK_EQUAL(jr[u7], false);
   BOOST_CHECK_EQUAL(jr[u8], false);
-  BOOST_CHECK_EQUAL(jr[u9], true);
+  BOOST_CHECK_EQUAL(jr[u9], false);
   BOOST_CHECK_EQUAL(jr[u10], false);
   BOOST_CHECK_EQUAL(jr[u11], false);
 }
@@ -218,11 +218,11 @@ BOOST_FIXTURE_TEST_CASE(eval_graph_ex1_findCAUs_markJoinRelevance_u11, EvalGraph
   BOOST_CHECK_EQUAL(jr[u4], false);
   BOOST_CHECK_EQUAL(jr[u5], false);
   BOOST_CHECK_EQUAL(jr[u6], false);
-  BOOST_CHECK_EQUAL(jr[u7], true);
+  BOOST_CHECK_EQUAL(jr[u7], false);
   BOOST_CHECK_EQUAL(jr[u8], false);
   BOOST_CHECK_EQUAL(jr[u9], true);
   BOOST_CHECK_EQUAL(jr[u10], true);
-  BOOST_CHECK_EQUAL(jr[u11], true);
+  BOOST_CHECK_EQUAL(jr[u11], false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

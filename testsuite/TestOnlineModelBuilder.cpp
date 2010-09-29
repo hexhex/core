@@ -86,7 +86,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e1_ufinal_input, OnlineModelBuilde
   BOOST_REQUIRE(!!mfull);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(mfull.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
@@ -109,7 +109,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m3);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m3.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(a)"), 1);
   }
 
@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m4);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m4.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
@@ -138,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m6);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m6.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(a)"), 1);
   }
 
@@ -147,7 +147,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m7);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m7.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
@@ -167,7 +167,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m5);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m5.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
   }
 
@@ -187,7 +187,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m8);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m8.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(c)"), 1);
   }
 
@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m9);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m9.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(d)"), 1);
   }
 
@@ -205,7 +205,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m10);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m10.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
 
@@ -214,7 +214,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m11);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m11.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
 
@@ -236,7 +236,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m12);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m12.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
@@ -247,7 +247,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2F
   BOOST_REQUIRE(!!m13);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m13.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
@@ -271,7 +271,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
   BOOST_REQUIRE(!!m12);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m12.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
@@ -282,7 +282,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
   BOOST_REQUIRE(!!m13);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m13.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 2U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
@@ -306,7 +306,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_output, OnlineModelBuilderE2
   BOOST_REQUIRE(!!m14);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(m14.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 1U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
   }
 
@@ -329,7 +329,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_ufinal_input, OnlineModelBuilde
   BOOST_REQUIRE(!!mcomplete);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
@@ -355,7 +355,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineMod
   BOOST_REQUIRE(!!mcomplete);
   {
     TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete.get()).interpretation);
-    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4U);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);

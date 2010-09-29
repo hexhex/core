@@ -69,10 +69,22 @@ namespace CAUAlgorithms
 
   void logAPM(const AncestryPropertyMap& apm);
 
+  //
+  // "Join relevant" are those units where simple iteration over omodels is
+  // not allowed, therefore everything with a CAU above is join relevant. A
+  // CAU itself is only join relevant if it has a CAU above.
+  //
+
   // store for each unit whether it is relevant for joining
   // if it is relevant, offline model building ensures to use a common omodel
   // otherwise, offline model building just iterates over all omodels at that unit
   typedef boost::vector_property_map<bool> JoinRelevancePropertyMap;
+
+  // initialize with false (ensure one-time allocation)
+  template<typename EvalGraphT>
+  void initJoinRelevance(
+      JoinRelevancePropertyMap& jr,
+      const EvalGraphT& eg);
 
   // given the results of findCAUs(caus, eg, u),
   // mark all units between u and elements of caus
@@ -201,20 +213,41 @@ public:
   typedef typename Graph::edge_descriptor Edge;
 
 public:
-  RelevanceMarkingVisitor(const AncestryPropertyMap& apm, JoinRelevancePropertyMap& jr):
-    apm(apm), jr(jr) {}
+  RelevanceMarkingVisitor(
+      const AncestryPropertyMap& apm,
+      JoinRelevancePropertyMap& jr,
+      Vertex donotmark):
+    apm(apm), jr(jr), donotmark(donotmark) {}
 
   template<typename G>
   void discover_vertex(Vertex v, const G& g) const
   {
-    if( !apm[v].empty() )
+    if( v != donotmark && !apm[v].empty() )
       jr[v] = true;
   }
 
 protected:
   const AncestryPropertyMap& apm;
   JoinRelevancePropertyMap& jr;
+  Vertex donotmark;
 };
+
+// initialize with false (ensure one-time allocation)
+template<typename EvalGraphT>
+void initJoinRelevance(
+    JoinRelevancePropertyMap& jr,
+    const EvalGraphT& eg)
+{
+  // initialize all from jr at once by initializing last+1 one
+  jr[eg.countEvalUnits()] = false;
+
+  typedef typename EvalGraphT::EvalUnitIterator EvalUnitIterator;
+  EvalUnitIterator it, end;
+  for(boost::tie(it, end) = eg.getEvalUnits(); it != end; ++it)
+  {
+    jr[*it] = false;
+  }
+}
 
 // given the results of findCAUs(caus, eg, u),
 // mark all units between u and elements of caus
@@ -237,15 +270,7 @@ void markJoinRelevance(
   RGraphInt reg(eg.getInt());
 
   // mark all irrelevant
-  typename RGraphInt::vertex_iterator itv, endv;
-  boost::tie(itv, endv) = boost::vertices(reg);
-  for(; itv != endv; ++itv)
-  {
-    jr[*itv] = false;
-  }
-
-  // mark unit u relevant (it causes the join)
-  jr[u] = true;
+  initJoinRelevance(jr, eg);
 
   // do DFS starting from each CAU
   typename std::set<EvalUnit>::const_iterator cau;
@@ -253,7 +278,7 @@ void markJoinRelevance(
   {
     LOG("marking relevance from cau " << *cau);
     RelevanceMarkingVisitor<typename EvalGraphT::EvalGraphInt>
-      visitor(apm, jr);
+      visitor(apm, jr, *cau);
     boost::two_bit_color_map<boost::identity_property_map>
       cmap(eg.countEvalUnits());
     boost::depth_first_visit(

@@ -22,14 +22,14 @@
  */
 
 /**
- * @file   fixtureOnlineMB.cpp
+ * @file   fixtureOfflineMB.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Implementation of testing fixtures for full online model building.
+ * @brief  Implementation of testing fixtures for offline model building.
  */
 
-#ifndef FIXTUREONLINEMB_HPP_INCLUDED__24092010
-#define FIXTUREONLINEMB_HPP_INCLUDED__24092010
+#ifndef FIXTUREOFFLINEMB_HPP_INCLUDED__24092010
+#define FIXTUREOFFLINEMB_HPP_INCLUDED__24092010
 
 #include "fixtureE1.hpp"
 #include "fixtureE2.hpp"
@@ -37,62 +37,51 @@
 #include "dlvhex/Logger.hpp"
 #include <boost/test/unit_test.hpp>
 
-
-// fixture for testing online model building with some underlying eval graph fixture
-// for that we add a final unit depending on all other units
-// and we setup model generator factories
+// fixture for testing offline model building with various graphs
+// we setup model generator factories
 template<typename EvalGraphBaseFixtureT>
-struct OnlineModelBuilderTFixture:
+struct OfflineModelBuilderTFixture:
   public EvalGraphBaseFixtureT
 {
   typedef EvalGraphBaseFixtureT Base;
-  typedef OnlineModelBuilder<TestEvalGraph> ModelBuilder;
+  typedef OfflineModelBuilder<TestEvalGraph> ModelBuilder;
   typedef ModelBuilder::OptionalModel OptionalModel;
 
   ModelBuilder omb;
   EvalUnit ufinal;
 
-  OnlineModelBuilderTFixture():
+  OfflineModelBuilderTFixture():
     EvalGraphBaseFixtureT(),
     omb(Base::eg)
   {
-    LOG_SCOPE("OnlineModelBuilderTFixture<...>", true);
+    LOG_SCOPE("OfflineModelBuilderTFixture<...>", true);
     typedef TestEvalUnitPropertyBase UnitCfg;
     typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
     TestEvalGraph& eg = Base::eg;
 
-    // setup final unit
-    BOOST_TEST_MESSAGE("adding ufinal");
-    LOG("ufinal = " << ufinal);
-    ufinal = eg.addUnit(UnitCfg());
-
     TestEvalGraph::EvalUnitIterator it, itend;
     boost::tie(it, itend) = eg.getEvalUnits();
-    for(; it != itend && *it != ufinal; ++it)
+    for(; it != itend; ++it)
     {
       LOG("setting up TestModelGeneratorFactory on unit " << *it);
       eg.propsOf(*it).mgf.reset( 
         new TestModelGeneratorFactory(eg.propsOf(*it).ctx));
-
-      LOG("adding dependency from ufinal to unit " << *it << " join order " << *it);
-      // we can do this because we know that eval units (= vertices of a vecS adjacency list) are unsigned integers
-      eg.addDependency(ufinal, *it, UnitDepCfg(*it));
     }
   }
 
-  ~OnlineModelBuilderTFixture() {}
+  ~OfflineModelBuilderTFixture() {}
 };
 
 // create one normal E1 model building fixture
-typedef OnlineModelBuilderTFixture<EvalGraphE1Fixture>
-  OnlineModelBuilderE1Fixture;
+typedef OfflineModelBuilderTFixture<EvalGraphE1Fixture>
+  OfflineModelBuilderE1Fixture;
 
 // create one normal E2 model building fixture
-typedef OnlineModelBuilderTFixture<EvalGraphE2Fixture>
-  OnlineModelBuilderE2Fixture;
+typedef OfflineModelBuilderTFixture<EvalGraphE2Fixture>
+  OfflineModelBuilderE2Fixture;
 
 // create one E2 model building fixture with mirrored join order u2/u3
-typedef OnlineModelBuilderTFixture<EvalGraphE2MirroredFixture>
-  OnlineModelBuilderE2MirroredFixture;
+typedef OfflineModelBuilderTFixture<EvalGraphE2MirroredFixture>
+  OfflineModelBuilderE2MirroredFixture;
 
-#endif // FIXTUREONLINEMB_HPP_INCLUDED__24092010
+#endif // FIXTUREOFFLINEMB_HPP_INCLUDED__24092010
