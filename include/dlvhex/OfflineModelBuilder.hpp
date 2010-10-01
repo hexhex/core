@@ -251,9 +251,43 @@ template<typename EvalGraphT>
 unsigned OfflineModelBuilder<EvalGraphT>::buildIModelsRecursively(
     EvalUnit u)
 {
-  // TODO
-  throw std::runtime_error("not implemented");
-  return 0;
+  #ifndef NDEBUG
+  std::ostringstream dbgstr;
+  dbgstr << "bIMR[" << u << "]";
+  LOG_FUNCTION(dbgstr.str());
+  LOG("=OfflineModelBuilder<...>::buildIModelsRecursively(" << u << ")@" << printptr(this));
+  #endif
+
+  // no assertions here, we succeed if we already built the models
+  if( offmbp[u].builtIModels == true )
+  {
+    unsigned count = Base::mg.modelsAt(u,MT_IN).size(); // TODO: how about iproject?
+    LOG("already built -> counting " << count << " imodels");
+    return count;
+  }
+
+  typename EvalGraphT::PredecessorIterator pbegin, pend;
+  boost::tie(pbegin, pend) = Base::eg.getPredecessors(u);
+
+  typename EvalGraphT::PredecessorIterator pit;
+  for(pit = pbegin; pit != pend; ++pit)
+  {
+    EvalUnit upred = Base::eg.targetOf(*pit);
+    if( offmbp[upred].builtOModels == false )
+    {
+      LOG("predecessor " << upred << " has no built omodels");
+      unsigned count = buildOModelsRecursively(upred);
+      LOG("built " << count << " models in predecessor");
+    }
+    else
+    {
+      LOG("predecessor " << upred << " has omodels");
+    }
+  }
+
+  unsigned count = buildIModels(u);
+  LOG("built " << count << " imodels here");
+  return count;
 }
 
 template<typename EvalGraphT>
@@ -261,9 +295,35 @@ template<typename EvalGraphT>
 unsigned OfflineModelBuilder<EvalGraphT>::buildOModelsRecursively(
     EvalUnit u)
 {
-  // TODO
-  throw std::runtime_error("not implemented");
-  return 0;
+  #ifndef NDEBUG
+  std::ostringstream dbgstr;
+  dbgstr << "bOMR[" << u << "]";
+  LOG_FUNCTION(dbgstr.str());
+  LOG("=OfflineModelBuilder<...>::buildOModelsRecursively(" << u << ")@" << printptr(this));
+  #endif
+
+  // no assertions here, we succeed if we already built the models
+  if( offmbp[u].builtOModels == true )
+  {
+    unsigned count = Base::mg.modelsAt(u,MT_OUT).size(); // TODO: how about oproject?
+    LOG("already built -> counting " << count << " omodels");
+    return count;
+  }
+
+  if( offmbp[u].builtIModels == false )
+  {
+    LOG("have no imodels");
+    unsigned count = buildIModelsRecursively(u);
+    LOG("built " << count << " imodels here");
+  }
+  else
+  {
+    LOG("already have imodels");
+  }
+  
+  unsigned count = buildOModels(u);
+  LOG("built " << count << " omodels here");
+  return count;
 }
 
 template<typename EvalGraphT>

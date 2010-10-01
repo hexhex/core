@@ -526,4 +526,50 @@ BOOST_FIXTURE_TEST_CASE(offline_model_building_e2_u4_output, OfflineModelBuilder
   }
 }
 
+BOOST_FIXTURE_TEST_CASE(offline_model_building_e2_u4_input_recursively, OfflineModelBuilderE2Fixture)
+{
+  unsigned mcount = omb.buildIModelsRecursively(u4);
+  BOOST_REQUIRE_EQUAL(mcount,2U);
+  {
+    typedef ModelBuilder::MyModelGraph MyModelGraph;
+    MyModelGraph& mg = omb.getModelGraph();
+    const MyModelGraph::ModelList& models = mg.modelsAt(u4, MT_IN);
+    BOOST_REQUIRE_EQUAL(models.size(),2U);
+
+    std::set< std::set<std::string> > refints;
+    {
+      // create reference models in refints
+      std::set<std::string> refint_m1, refint_m2;
+      refint_m1.insert("need(p,time)");
+      refint_m1.insert("use(e)");
+      refint_m2.insert("need(p,time)");
+      refint_m2.insert("use(f)");
+      refints.insert(refint_m1);
+      refints.insert(refint_m2);
+    }
+    verifyModels(mg, models, refints);
+  }
+}
+
+BOOST_FIXTURE_TEST_CASE(offline_model_building_e2_u4_output_recursively, OfflineModelBuilderE2Fixture)
+{
+  unsigned omcount4 = omb.buildOModelsRecursively(u4);
+  BOOST_REQUIRE_EQUAL(omcount4,1U);
+  {
+    typedef ModelBuilder::MyModelGraph MyModelGraph;
+    MyModelGraph& mg = omb.getModelGraph();
+    const MyModelGraph::ModelList& models = mg.modelsAt(u4, MT_OUT);
+    BOOST_REQUIRE_EQUAL(models.size(),1U);
+
+    std::set< std::set<std::string> > refints;
+    {
+      // create reference models in refints
+      std::set<std::string> refint_m1;
+      refint_m1.insert("need(u,time)");
+      refints.insert(refint_m1);
+    }
+    verifyModels(mg, models, refints);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
