@@ -33,6 +33,7 @@
 
 #include "fixtureE1.hpp"
 #include "fixtureE2.hpp"
+#include "fixtureEx1.hpp"
 
 #include "dlvhex/Logger.hpp"
 #include <boost/test/unit_test.hpp>
@@ -83,7 +84,7 @@ struct OnlineModelBuilderTFixture:
   ~OnlineModelBuilderTFixture() {}
 };
 
-// create one normal E1 model building fixture
+// create one E1 model building fixture
 typedef OnlineModelBuilderTFixture<EvalGraphE1Fixture>
   OnlineModelBuilderE1Fixture;
 
@@ -94,5 +95,9 @@ typedef OnlineModelBuilderTFixture<EvalGraphE2Fixture>
 // create one E2 model building fixture with mirrored join order u2/u3
 typedef OnlineModelBuilderTFixture<EvalGraphE2MirroredFixture>
   OnlineModelBuilderE2MirroredFixture;
+
+// create one Ex1 model building fixture
+typedef OnlineModelBuilderTFixture<EvalGraphEx1Fixture>
+  OnlineModelBuilderEx1Fixture;
 
 #endif // FIXTUREONLINEMB_HPP_INCLUDED__24092010

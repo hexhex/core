@@ -42,7 +42,7 @@ EvalGraphEx1Fixture::EvalGraphEx1Fixture()
   u1 = eg.addUnit(UnitCfg("a v b."));
 
   BOOST_TEST_MESSAGE("adding u2");
-  u2 = eg.addUnit(UnitCfg("f :- b")); 
+  u2 = eg.addUnit(UnitCfg("f :- b.")); 
 
   BOOST_TEST_MESSAGE("adding u3");
   u3 = eg.addUnit(UnitCfg("c v d."));
@@ -54,7 +54,7 @@ EvalGraphEx1Fixture::EvalGraphEx1Fixture()
   u5 = eg.addUnit(UnitCfg("g v h :- f."));
 
   BOOST_TEST_MESSAGE("adding u6");
-  u6 = eg.addUnit(UnitCfg("j :- d. :- f, c."));
+  u6 = eg.addUnit(UnitCfg("i :- h. :- g."));
 
   BOOST_TEST_MESSAGE("adding u7");
   u7 = eg.addUnit(UnitCfg("k :- j, i."));

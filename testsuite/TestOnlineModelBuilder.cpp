@@ -77,6 +77,7 @@
 
 BOOST_AUTO_TEST_SUITE(root_TestOnlineModelBuilder)
 
+#if 0
 BOOST_FIXTURE_TEST_CASE(online_model_building_e1_ufinal_input, OnlineModelBuilderE1Fixture)
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
@@ -363,6 +364,108 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineMod
   }
 
   BOOST_MESSAGE("requesting model #2");
+  OptionalModel nfm = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!nfm);
+
+  DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_END
+}
+#endif
+
+BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuilderEx1Fixture)
+{
+  DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
+
+  BOOST_MESSAGE("requesting model #1");
+  OptionalModel mcomplete1 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete1);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete1.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("a"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("c"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("l"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("m"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel mcomplete2 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete2);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete2.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 4U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("a"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("c"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("l"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("n"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #3");
+  OptionalModel mcomplete3 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete3);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete3.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 5U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("a"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("d"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("j"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("l"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("m"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #4");
+  OptionalModel mcomplete4 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete4);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete4.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 5U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("a"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("d"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("j"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("l"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("n"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #5");
+  OptionalModel mcomplete5 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete5);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete5.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 9U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("b"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("d"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("m"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("f"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("h"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("i"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("j"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("k"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("o"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #6");
+  OptionalModel mcomplete6 = omb.getNextIModel(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE(!!mcomplete6);
+  {
+    TestInterpretation& ti = *(omb.getModelGraph().propsOf(mcomplete6.get()).interpretation);
+    BOOST_CHECK_EQUAL(ti.getAtoms().size(), 8U);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("b"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("d"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("n"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("f"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("h"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("i"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("j"), 1);
+    BOOST_CHECK_EQUAL(ti.getAtoms().count("k"), 1);
+  }
+
+  BOOST_MESSAGE("requesting model #7");
   OptionalModel nfm = omb.getNextIModel(ufinal);
   omb.logEvalGraphModelGraph();
   BOOST_REQUIRE(!nfm);

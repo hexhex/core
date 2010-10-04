@@ -188,10 +188,181 @@ TestModelGeneratorFactory::ModelGenerator::ModelGenerator(
       mit = models.begin();
     }
   }
+  else if( rules.size() == 6 && rules.substr(1,3) == " v " && rules[5] == '.' )
+  {
+    // generic "a v b." for one-character a's or b's
+    assert(!input);
+    TestAtomSet ma;
+    ma.insert(rules.substr(0,1));
+    TestAtomSet mb;
+    mb.insert(rules.substr(4,1));
+    models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+    models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
+    mit = models.begin();
+  }
+  else if( rules == "f :- b." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("b") == 1 )
+    {
+      TestAtomSet m;
+      m.insert("f");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+    else
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
+  else if( rules == "j :- d. :- f, c." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("f") == 1 && inp.count("c") == 1 )
+    {
+      // no model
+    }
+    else
+    {
+      if( inp.count("d") == 1 )
+      {
+        TestAtomSet m;
+        m.insert("j");
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+        mit = models.begin();
+      }
+      else
+      {
+        TestAtomSet m;
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+        mit = models.begin();
+      }
+    }
+  }
+  else if( rules == "g v h :- f." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("f") == 1 )
+    {
+      TestAtomSet ma;
+      ma.insert("g");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(ma)));
+      TestAtomSet mb;
+      mb.insert("h");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(mb)));
+      mit = models.begin();
+    }
+    else
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
+  else if( rules == "i :- h. :- g." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("g") == 1 )
+    {
+      // no model
+    }
+    else
+    {
+      if( inp.count("h") == 1 )
+      {
+        TestAtomSet m;
+        m.insert("i");
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+        mit = models.begin();
+      }
+      else
+      {
+        TestAtomSet m;
+        models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+        mit = models.begin();
+      }
+    }
+  }
+  else if( rules == "k :- j, i." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("j") == 1 && inp.count("i") == 1 )
+    {
+      TestAtomSet m;
+      m.insert("k");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+    else
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
+  else if( rules == "o :- m, k." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("m") == 1 && inp.count("k") == 1 )
+    {
+      TestAtomSet m;
+      m.insert("o");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+    else
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
+  else if( rules == "l :- not k." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( inp.count("k") == 1 )
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+    else
+    {
+      TestAtomSet m;
+      m.insert("l");
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
+  else if( rules == ":- k, l. :- o, not k." )
+  {
+    assert(input);
+    const TestAtomSet& inp = input->getAtoms();
+    if( (inp.count("k") == 1 && inp.count("l") == 1) ||
+        (inp.count("o") == 1 && inp.count("k") == 0) )
+    {
+      // no model
+    }
+    else
+    {
+      TestAtomSet m;
+      models.push_back(TestInterpretation::Ptr(new TestInterpretation(m)));
+      mit = models.begin();
+    }
+  }
   else
   {
     std::cerr << "TODO hardcode rules '" << rules << "'" << std::endl;
-    assert(false);
+    throw std::runtime_error("not implemented!");
   }
 
   LOG_INDENT();

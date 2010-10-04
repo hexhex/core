@@ -572,4 +572,19 @@ BOOST_FIXTURE_TEST_CASE(offline_model_building_e2_u4_output_recursively, Offline
   }
 }
 
+BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_u11_output_recursively, OfflineModelBuilderEx1Fixture)
+{
+  unsigned omcount11 = omb.buildOModelsRecursively(u11);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE_EQUAL(omcount11,1U);
+  {
+    typedef ModelBuilder::MyModelGraph MyModelGraph;
+    MyModelGraph& mg = omb.getModelGraph();
+    const MyModelGraph::ModelList& models = mg.modelsAt(u4, MT_OUT);
+    BOOST_REQUIRE_EQUAL(models.size(),0U);
+  }
+}
+
+// TODO: generate and check overall model in ex1 and other examples
+
 BOOST_AUTO_TEST_SUITE_END()

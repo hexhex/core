@@ -537,6 +537,15 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       const typename std::set<Model>& succs = itsucc->second;
       iters.push_back(succs.begin());
       ends.push_back(succs.end());
+      #ifndef NDEBUG
+      LOG("model " << m << " at cursor index " <<
+          static_cast<unsigned>(iters.size()) << " has successors:");
+      LOG_INDENT();
+      for(SuccIter sit = succs.begin(); sit != succs.end(); ++sit)
+      {
+        LOG(*sit);
+      }
+      #endif
     }
     else
     {
@@ -567,7 +576,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   do
   {
     #ifndef NDEBUG
-    LOG("at loop begin with cursor at " << static_cast<unsigned>(cursorit - iters.begin()));
+    LOG("at loop begin with cursor at " << static_cast<unsigned>(cursorit - iters.begin()) << " at model " << **cursorit);
     for(SuccIterIter at = iters.begin();
         at != cursorit; ++at)
     {
@@ -607,25 +616,31 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     }
     else
     {
-      LOG("at " << *nextit);
+      LOG("seeing model " << *nextit << " at position " <<
+          static_cast<unsigned>(nextcursorit - iters.begin()));
       if( *nextit == **cursorit )
       {
-        LOG("equal to model at cursor -> next cursor");
+        LOG("model is equal to model at cursor -> next cursor");
         cursorit++;
         cursorend++;
       }
       else
       {
-        LOG("bigger than model at cursor -> backtrack");
+        LOG("model is bigger than model at cursor -> backtrack");
         SuccIterIter backtrackercursorit = cursorit;
         SuccIterIter backtrackercursorend = cursorend;
         do
         {
           LOG("backtracking at " <<
             static_cast<unsigned>(backtrackercursorit - iters.begin()));
-          // advance until we reach at least *nextit
+          // advance until we reach at least *nextit or fail
           SuccIter& backtrackerit = *backtrackercursorit;
           SuccIter& backtrackerend = *backtrackercursorend;
+          if( backtrackerit == backtrackerend )
+          {
+            LOG("backtrack cursor already at end -> fail");
+            return boost::none;
+          }
           backtrackerit++;
           LOG("advanced to model " << *backtrackerit);
           while( (backtrackerit != backtrackerend) &&
