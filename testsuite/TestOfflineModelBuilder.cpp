@@ -576,15 +576,91 @@ BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_u11_output_recursively, Offli
 {
   unsigned omcount11 = omb.buildOModelsRecursively(u11);
   omb.logEvalGraphModelGraph();
-  BOOST_REQUIRE_EQUAL(omcount11,1U);
+  BOOST_REQUIRE(omcount11 > 0U);
   {
     typedef ModelBuilder::MyModelGraph MyModelGraph;
     MyModelGraph& mg = omb.getModelGraph();
-    const MyModelGraph::ModelList& models = mg.modelsAt(u4, MT_OUT);
-    BOOST_REQUIRE_EQUAL(models.size(),0U);
+    const MyModelGraph::ModelList& models = mg.modelsAt(u11, MT_OUT);
+    BOOST_REQUIRE_EQUAL(models.size(),omcount11);
   }
 }
 
-// TODO: generate and check overall model in ex1 and other examples
+BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_ufinal_input_recursively, OfflineModelBuilderEx1Fixture)
+{
+  unsigned imcountfinal = omb.buildIModelsRecursively(ufinal);
+  omb.logEvalGraphModelGraph();
+  BOOST_REQUIRE_EQUAL(imcountfinal,6U);
+  {
+    typedef ModelBuilder::MyModelGraph MyModelGraph;
+    MyModelGraph& mg = omb.getModelGraph();
+    const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
+    BOOST_REQUIRE_EQUAL(models.size(),6U);
+
+    std::set< std::set<std::string> > refints;
+    {
+      // create reference models in refints
+      { // {b, d, m, f, h, i, j, k, o}
+        std::set<std::string> refint;
+        refint.insert("b");
+        refint.insert("d");
+        refint.insert("m");
+        refint.insert("f");
+        refint.insert("h");
+        refint.insert("i");
+        refint.insert("j");
+        refint.insert("k");
+        refint.insert("o");
+        refints.insert(refint);
+      }
+      { // {b, d, n, f, h, i, j, k}
+        std::set<std::string> refint;
+        refint.insert("b");
+        refint.insert("d");
+        refint.insert("n");
+        refint.insert("f");
+        refint.insert("h");
+        refint.insert("i");
+        refint.insert("j");
+        refint.insert("k");
+        refints.insert(refint);
+      }
+      { // {a, c, n, l}
+        std::set<std::string> refint;
+        refint.insert("a");
+        refint.insert("c");
+        refint.insert("n");
+        refint.insert("l");
+        refints.insert(refint);
+      }
+      { // {a, c, m, l}
+        std::set<std::string> refint;
+        refint.insert("a");
+        refint.insert("c");
+        refint.insert("m");
+        refint.insert("l");
+        refints.insert(refint);
+      }
+      { // {a, d, n, j, l}
+        std::set<std::string> refint;
+        refint.insert("a");
+        refint.insert("d");
+        refint.insert("n");
+        refint.insert("j");
+        refint.insert("l");
+        refints.insert(refint);
+      }
+      { // {a, d, m, j, l}
+        std::set<std::string> refint;
+        refint.insert("a");
+        refint.insert("d");
+        refint.insert("m");
+        refint.insert("j");
+        refint.insert("l");
+        refints.insert(refint);
+      }
+    }
+    verifyModels(mg, models, refints);
+  }
+}
 
 BOOST_AUTO_TEST_SUITE_END()

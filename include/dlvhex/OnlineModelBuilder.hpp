@@ -573,8 +573,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       else
       {
         dummy = mg.modelsAt(u, MT_IN).front();
-        assert(mg.propsOf(dummy).dummy);
         LOG("setting existing dummy model " << dummy);
+        assert(mg.propsOf(dummy).dummy);
       }
       odummy = dummy;
     }

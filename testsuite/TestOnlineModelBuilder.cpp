@@ -77,7 +77,6 @@
 
 BOOST_AUTO_TEST_SUITE(root_TestOnlineModelBuilder)
 
-#if 0
 BOOST_FIXTURE_TEST_CASE(online_model_building_e1_ufinal_input, OnlineModelBuilderE1Fixture)
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
@@ -370,7 +369,6 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineMod
 
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_END
 }
-#endif
 
 BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuilderEx1Fixture)
 {

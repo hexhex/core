@@ -113,9 +113,6 @@ public:
 protected:
   // get next input model (projected if projection is configured) at unit u
   virtual OptionalModel getNextIModel(EvalUnit u);
-
-  // get next output model (projected if projection is configured) at unit u
-  //virtual OptionalModel getNextOModel(EvalUnit u);
 };
 
 template<typename EvalGraphT>
@@ -336,6 +333,7 @@ OfflineModelBuilder<EvalGraphT>::getNextIModel(
   dbgstr << "offgnIM[" << u << "]";
   LOG_FUNCTION(dbgstr.str());
   LOG("=OfflineModelBuilder<...>::getNextIModel(" << u << ")");
+  //logEvalGraphModelGraph();
   #endif
 
   assert(!!currentjrp);
@@ -352,7 +350,10 @@ OfflineModelBuilder<EvalGraphT>::getNextIModel(
     const ModelList& mlist = Base::mg.modelsAt(u, MT_IN);
     if( !!offmbp[u].currentIModel )
     {
+      //assert(offmbp[u].currentIModel.get() != mlist.end());
       LOG("advancing iterator");
+      //if( Base::mg.propsOf(*offmbp[u].currentIModel.get()).dummy == 1 )
+      //  logEvalGraphModelGraph();
       offmbp[u].currentIModel.get()++;
     }
     else
@@ -376,56 +377,5 @@ OfflineModelBuilder<EvalGraphT>::getNextIModel(
     }
   }
 }
-
-#if 0
-template<typename EvalGraphT>
-typename OfflineModelBuilder<EvalGraphT>::OptionalModel
-OfflineModelBuilder<EvalGraphT>::getNextOModel(
-    EvalUnit u)
-{
-  #ifndef NDEBUG
-  std::ostringstream dbgstr;
-  dbgstr << "offgnOM[" << u << "]";
-  LOG_FUNCTION(dbgstr.str());
-  LOG("=OfflineModelBuilder<...>::getNextOModel(" << u << ")");
-  #endif
-
-  assert(!!currentjrp);
-  if( currentjrp.get()[u] )
-  {
-    LOG("join relevant");
-    return Base::getNextOModel(u);
-  }
-  else
-  {
-    LOG("not join relevant");
-    assert(offmbp[u].builtOModels);
-    // TODO how about oproj?
-    const ModelList& mlist = Base::mg.modelsAt(u, MT_OUT);
-    if( !!offmbp[u].currentOModel )
-    {
-      LOG("advancing iterator");
-      offmbp[u].currentOModel.get()++;
-    }
-    else
-    {
-      LOG("initializing iterator");
-      offmbp[u].currentOModel = mlist.begin();
-    }
-    if( offmbp[u].currentOModel.get() == mlist.end() )
-    {
-      LOG("no more models");
-      offmbp[u].currentOModel = boost::none;
-      return boost::none;
-    }
-    else
-    {
-      Model m = *offmbp[u].currentOModel.get();
-      LOG("got model " << m);
-      return m;
-    }
-  }
-}
-#endif
 
 #endif // OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010

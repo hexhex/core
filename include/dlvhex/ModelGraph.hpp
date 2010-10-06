@@ -171,20 +171,25 @@ public:
   typedef std::list<Model> ModelList;
   struct EvalUnitModels
   {
+  protected:
 		// for each type of model we have a model list
-    //boost::shared_ptr< std::vector<ModelList> > models;
-    //EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
-    std::vector<ModelList> models;
-    EvalUnitModels(): models(4, ModelList())
+    // (we need to use a pointer here, because otherwise resizing 
+    //  the EvalUnitModelsPropertyMap will invalidate all iterators to the list)
+    // (this additinoally makes resizing the property map cheaper)
+    boost::shared_ptr< std::vector<ModelList> > models;
+  public:
+    EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
       { LOG("EvalUnitModels()@" << this); }
     EvalUnitModels(const EvalUnitModels& eum): models(eum.models)
       { LOG("EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
 		~EvalUnitModels()
       { LOG("~EvalUnitModels()@" << this); }
     inline ModelList& getModels(ModelType t)
-      { assert(0 <= t <= 4); return models[t]; }
+      { assert(0 <= t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
     inline const ModelList& getModels(ModelType t) const
-      { assert(0 <= t <= 4); return models[t]; }
+      { assert(0 <= t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
+    void reallocate()
+      { models.reset(new std::vector<ModelList>(models->begin(), models->end())); }
   };
   typedef boost::vector_property_map<EvalUnitModels>
     EvalUnitModelsPropertyMap;
@@ -210,9 +215,15 @@ public:
     // get last unit
     // as eg uses vecS this is the maximum index we need in mau
     EvalUnit lastUnit = *(eg.getEvalUnits().second - 1);
+    // this is an integer -> reserve for one more unit
+    lastUnit++;
     // do it this way as we are not allowed to do
     // mau.store->reserve(lastUnit)
     mau[lastUnit] = EvalUnitModels();
+    // now reallocate all (we do not want duplicate pointers to model lists)
+    // @todo: this is a real hack, we should create our own vector property map with custom resizing
+    for(unsigned u = 0; u <= lastUnit; ++u)
+      mau[u].reallocate();
 	}
 
   // create a new model including dependencies
