@@ -135,17 +135,14 @@ public:
 	// -> make all derived classes efficient using small inline methods
 	//virtual ~Table() {}
 
-	// retrieve value by ID
-	//inline const ValueT& getByID(ID id) const throw (NotFound) = 0;
-	// add value and return ID
-	// throw on unique index violations
-	//inline ID add(const ValueT& value) throw(Duplicate) = 0;
-	// store value with given ID, value must already exist
-	// throw on unique index violations
-	//inline void modify(ID id, const ValueT& value) throw(Duplicate,NotFound) = 0;
-	// store value with given ID, value may or may not already exist
-	// throw on unique index violations
-	//inline void store(ID id, const ValueT& value) throw(Duplicate) = 0;
+	inline const ValueT& getByID(ID id) const throw (NotFound)
+	{
+		typedef typename Container::template index<impl::IDTag>::type IDIndex;
+		const IDIndex& idx = container.template get<impl::IDTag>();
+		if( id.address >= idx.size() ) // this only works for random access indices
+			throw NotFound();
+		return idx.at(id.address);
+	}
 
 	// TODO: make this inline {} for #ifdef NDEBUG and generic otherwise -> never override in derived classes
 	void logContents()
@@ -207,8 +204,6 @@ public:
 
 	// methods
 public:
-	inline const Symbol& getByID(ID id) const throw (NotFound);
-
 	inline const Symbol& getByString(const std::string& str) const throw(NotFound);
 
 	// special high performance method for parsing
@@ -220,17 +215,6 @@ public:
 	// store symbol, assuming it does not exist (this is only asserted)
 	inline ID storeAndGetID(const Symbol& symb) throw();
 };
-
-const Symbol&
-MySymbolTable::getByID(
-		ID id) const throw (NotFound)
-{
-	typedef Container::index<impl::IDTag>::type IDIndex;
-	const IDIndex& idx = container.get<impl::IDTag>();
-	if( id.address >= idx.size() ) // this only works for random access indices
-		throw NotFound();
-	return idx.at(id.address);
-}
 
 const Symbol&
 MySymbolTable::getByString(
