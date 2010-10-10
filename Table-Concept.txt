@@ -31,10 +31,10 @@ Concept for the registry of Entities (ID-Concept is a prerequisite to this):
   - ?first/second/... argument Term ID (lookup atoms with same
     first/second/... argument)
 
-- TODO can nonground and ground table be unified?
+- TODO can nonground and ground table be unified? -> PS: no, we want contiguious IDs for ground atoms (for bitset interpretations)
 
 - TODO can we have different indices for different optimization
-  settings? (turn some index off when this and that happens)
+  settings? (turn some index off when this and that happens) -> PS: i guess this is only possible during compile time
 
 ** BuiltinAtomTable
 - Stores:
@@ -63,36 +63,20 @@ Concept for the registry of Entities (ID-Concept is a prerequisite to this):
   - Constant Term ID (function)
   - vector of Term IDs (inputs)
   - vector of Term IDs (outputs)
+  - pointer to plugin atom (stores which input is predicate, which is constant)
 
 - Indices:
-  - Constant Term ID (lookup by function)
-  - Term IDs (lookup by Terms in input)
-  - Term IDs (lookup by Terms in output)
+  - function Term ID
+  - ?Term IDs (lookup by Terms in input)
+  - ?Term IDs (lookup by Terms in output)
 
-- TODO how to differentiate predicate input from constant input?
-
-** ConstantTable
+** SymbolTable
 - Stores:
-  - string
+  - string (constant, string, or variable)
+  - id (includes type, e.g., anonymous var)
 
 - Indices:
-  - UNIQUE hash index (ensure that same constants get the same IDs)
-  - String representation (lookup ID by constant string)
-
-** StringTable
-- Stores:
-  - string
-
-- Indices:
-  - UNIQUE hash index (ensure that same strings get the same IDs)
-  - String representation (lookup ID by string)
-
-** VariableTable
-- Stores:
-  - string
-
-- Indices:
-  - UNIQUE hash index (ensure that same variables get the same IDs)
+  - UNIQUE hash index (ensure that same symbols get the same IDs)
   - String representation (lookup ID by string)
 
 ** RuleTable
@@ -106,56 +90,36 @@ Concept for the registry of Entities (ID-Concept is a prerequisite to this):
 
 * Unique Index Overview
 ** OrdinaryGroundAtomTable
-** ConstantTable
-** StringTable
-** VariableTable
+** SymbolTable
 
 
 * Repository methods and complexity requirements
 
-To access the tables, special inline functions in some Repository (manager singleton) should be used.
+To access the tables, special inline functions in some Repository should be used.
 The storage of entities which have a unique index cannot be changed once they are in a table.
 -> for these entities the lookup returns a const ref/iterator
 -> for other entities the lookup returns a non-const ref/iterator or provides a possibility for storing back
 
-TK: I think having a singleton of the repository is too
-restrictive. It's just a gut feeling. in a sense, we would just need
-another parameter in all those functions below. We probably also need
+TK: We probably also need
 to set all members of Term and Atom as const, so no-one can change
 them once they are constructed.
 
-PS: @singleton: this is true, we can add this parameter - these functions
-could simply be methods of a repository object and we can have multiple
-repositories.  @const: this is the idea of "assertion if Table is unique
+PS: This is the idea of "assertion if Table is unique
 hashed (can only return const)" below (terms and atoms cannot be modified
 once they are in the table, so they can only be returned as copies not as
 references).
 
-** const StorageType& getByID<StorageType>(ID) const (call it getReadonlyByID?)
+** class Table<StorageType> with specializations for each storage type
+** const StorageType& tbl.getByID(ID) const throw (NotFound)
    O(1)
-   assertion if StorageType and ID incompatible
    throws if ID not found
-** StorageType& getByID<StorageType>(ID) (call it getModifyableByID?)
-   O(1)
-   assertion if StorageType and ID incompatible
-   assertion if Table is unique hashed (can only return const)
-   throws if ID not found
-** void getCopyByID<StorageType>(ID, StorageType&)
-   O(1+copying StorageType)
-   assertion if StorageType and ID incompatible
-   throws if ID not found
-** store<StorageType>(const StorageType& entity)
-   O(hash calc + lookup + insert(includes copy StorageType))
-   determines table from StorageType
-   calculates hash
-   returns ID if existing
-   inserts, calculates new ID and returns new ID if not existing
-** getID<StorageType>(const StorageType& entity)
-   O(hash calc + lookup)
-   determines table from StorageType
-   calculates hash
-   returns ID if existing, -1 = ~0x0 otherwise
-** TODO: index access functions
+
+special functions of special tables:
+
+** const OrdinaryAtom& OrdinaryGroundAtomTable::getByString(const std::string& str) const
+** const OrdinaryAtom& OrdinaryGroundAtomTable::getByPredicate(ID term) const
+** const OrdinaryAtom& OrdinaryNongroundAtomTable::getByPredicate(ID term) const
+** const ExternalAtom& ExternalAtomTable::getByFunction(ID term) const
 
 * Open Questions
 ** why do we split constant and string, but not rules?

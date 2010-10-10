@@ -13,32 +13,32 @@ make it compatible such that we can easily retrieve them
 ** Rules (regular rules, constraints, weak constraints)
 
 Entities are stored in Tables and referenced by IDs.
-IDs consist of a type part and a table index part.
+IDs consist of a kind part and a table index part.
 
-An ID of any Entity allows to infer the type of entity (i.e., in which table it is stored).
+An ID of any Entity allows to infer the kind of entity (i.e., in which table it is stored).
 
 An ID of ~0x0 indicates an error (not found ...).
 
 * ID Concept:
-** 64 bit unsigned integer ID = 32 bit unsigned "type" integer + 32 bit unsigned "address" integer
+** 64 bit unsigned integer ID = 32 bit unsigned "kind" integer + 32 bit unsigned "address" integer
 ** address integer = index into container where entity is registered
-** type bits specify maintype, subtype, and properties of entity
+** Kind bits specify mainkind, subkind, and properties of entity
 
-* Type integer concept:
+* Kind integer concept:
 ** 1 bit "NAFbit" (MSB) (reserved for literal)
    mask 0x80000000
-** 3 bits "Maintype"
+** 3 bits "Mainkind"
    mask 0x70000000
-** 4 bits "Subtype"
+** 4 bits "Subkind"
    mask 0x0F000000
 ** 8 bits "Properties"
    mask 0x00FF0000
 ** 16 bits unused
    mask 0x0000FFFF
 
-* Maintypes:
+* Mainkinds:
 ** 0x0 Atom
-   Subtypes (all Non-Ordinary Atoms have bit 0x2 set):
+   Subkinds (all Non-Ordinary Atoms have bit 0x2 set):
    * 0x0 Ordinary Ground Atom
      Address points into OrdinaryGroundAtom-Table
      Properties:
@@ -64,34 +64,34 @@ An ID of ~0x0 indicates an error (not found ...).
      Address points into ExternalAtom-Table
 
 ** 0x1 Term
-   Subtypes:
+   Subkinds:
    * 0x0 Constant (=Symbol)
-     Address points into Constant-Table
+     Address points into Symbol-Table
    * 0x2 Quoted String
-     Address points into String-Table (namespaces are stored in a collapsed way)
+     Address points into Symbol-Table (namespaces are stored in a collapsed way)
    * 0x1 Integer
      Address = Value of Integer, no Table
    * 0x3 Variable
-     Address points into Variable-Table (anonymous variables are marked and expanded to real variables)
+     Address points into Symbol-Table (anonymous variables are marked and expanded to real variables)
      Properties:
         mask 0x1: non-anonymous (0) vs anonymous (1)
 
 ** 0x2 Literal
-   Subtypes inherited from Atom
+   Subkinds inherited from Atom
    Properties inherited from Atom
    Address points into corresponding Atom-Tables!
    NAFBit: positive (0) vs negation as failure (1)
 
 ** 0x3 Rule
    Address points into Rule-Table
-   Subtypes:
+   Subkinds:
    * 0x0 regular rule
      Properties:
         mask 0x10: non-disjunctive (0) vs disjunctive (1)
         mask 0x20: non-fact (0) vs fact (1)
    * 0x1 constraint
    * 0x2 weak constraint
-   Properties for all subtypes:
+   Properties for all subkinds:
      mask 0x01: ground (0) vs nonground (1)
      mask 0x02: first order (0) vs higher order (1)
      mask 0x04: no aggregates atoms (0) vs contains aggregate atoms (1)

@@ -13,6 +13,7 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 TESTS = \
   TestTypes \
+  TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
@@ -24,6 +25,7 @@ TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=d
 
 check_PROGRAMS = \
   TestTypes \
+  TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
@@ -35,6 +37,9 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
+TestTables_SOURCES = TestTables.cpp 
+TestTables_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
 TestModelGraph_SOURCES = TestModelGraph.cpp dummytypes.cpp fixtureE2M2.cpp fixtureE2.cpp $(top_srcdir)/src/dlvhex/Logger.cpp
 
 TestEvalGraph_SOURCES = TestEvalGraph.cpp dummytypes.cpp fixtureE2.cpp fixtureEx1.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
@@ -44,6 +49,10 @@ TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp dummytypes.cpp fixtu
 TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fixtureE1.cpp fixtureE2.cpp fixtureEx1.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
 
 # test it with NDEBUG (the real situation)
+TestTablesND_SOURCES = $(TestTables_SOURCES)
+TestTablesND_LDADD = $(TestTables_LDADD)
+TestTablesND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
 TestModelGraphND_SOURCES = $(TestModelGraph_SOURCES)
 TestModelGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
