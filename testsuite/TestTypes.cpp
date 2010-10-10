@@ -31,6 +31,7 @@
  * 
  */
 
+#include <boost/cstdint.hpp>
 #include "dlvhex/Term.h"
 #include "dlvhex/Atom.h"
 #include "dlvhex/SymbolTable.h"
