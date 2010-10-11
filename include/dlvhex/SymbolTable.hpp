@@ -41,7 +41,12 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
+
+#ifndef NDEBUG
+#include <iomanip>
+#endif
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -60,8 +65,11 @@ struct ID
 
 	static const IDKind NAF_MASK =             0x80000000;
 	static const IDKind MAINKIND_MASK =        0x70000000;
+  static const uint8_t MAINKIND_SHIFT =      28;
 	static const IDKind SUBKIND_MASK =         0x0F000000;
+  static const uint8_t SUBKIND_SHIFT =       24;
 	static const IDKind PROPERTY_MASK =        0x00FF0000;
+  static const uint8_t PROPERTY_SHIFT =      16;
 	static const IDKind UNUSED_MASK =          0x0000FFFF;
 
 	static const IDKind MAINKIND_ATOM =        0x00000000;
@@ -82,30 +90,51 @@ struct ID
 	inline bool isTermInteger() const { return isTerm() && (kind & SUBKIND_MASK) == SUBKIND_INTEGER; }
 	inline bool isTermVariable() const { return isTerm() && (kind & SUBKIND_MASK) == SUBKIND_VARIABLE; }
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
+
+  std::ostream& print(std::ostream& o) const;
 };
+
+std::ostream& ID::print(std::ostream& o) const
+{
+  o << "ID(0x" <<
+      std::hex << std::setw(8) << kind << "," <<
+      std::dec << std::setw(4) << address << ",";
+  if( !!(kind & NAF_MASK) )
+    o << " naf";
+  const unsigned MAINKIND_MAX = 4;
+  const char* mainkinds[MAINKIND_MAX] = {
+    " atom",
+    " term",
+    " literal",
+    " rule",
+  };
+  const unsigned mainkind = (kind & MAINKIND_MASK) >> MAINKIND_SHIFT;
+  assert(mainkind < MAINKIND_MAX);
+  o << mainkinds[mainkind];
+
+  const unsigned SUBKIND_MAX = 7;
+  const char* subkinds[MAINKIND_MAX][SUBKIND_MAX] = {
+    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
+    { " constant",        " integer",            " quotedstr",       " variable",  "", "", ""          },
+    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
+    { " regular"          " constraint",         " weak_constraint", "",           "", "", ""          }
+  };
+  const unsigned subkind = (kind & SUBKIND_MASK) >> SUBKIND_SHIFT;
+  assert(subkind < SUBKIND_MAX);
+  assert(subkinds[mainkind][subkind][0] != 0);
+  o << subkinds[mainkind][subkind];
+  return o << ")";
+}
 
 const ID ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
 
-
-template<uint8_t maintype,uint8_t subtype>
-std::ostream& debugID(std::ostream& o, IDKind type) // IDKind = uint32_t
-{
-  //assert((type & 0x70000000) == maintype << );
-  //assert((type & 0xFF00) == (second << 8));
-}
-
-template<uint8_t second>
-std::ostream& debugID<0x25>(std::ostream& o, IDKind type)
-{
-	const uint8_t first = 0x25;
-  assert((type & 0xFF) == first);
-  assert((type & 0xFF00) == (second << 8));
-}
-
 namespace impl
 {
-	// tag for ID index
-	struct IDTag {};
+  // these tags are common to all containers
+	struct KindTag {};
+	struct AddressTag {};
+
+  // these tags are special
 	struct SymbolTag {};
 }
 
@@ -135,20 +164,12 @@ public:
 	// -> make all derived classes efficient using small inline methods
 	//virtual ~Table() {}
 
-	inline const ValueT& getByID(ID id) const throw (NotFound)
-	{
-		typedef typename Container::template index<impl::IDTag>::type IDIndex;
-		const IDIndex& idx = container.template get<impl::IDTag>();
-		if( id.address >= idx.size() ) // this only works for random access indices
-			throw NotFound();
-		return idx.at(id.address);
-	}
-
 	// TODO: make this inline {} for #ifdef NDEBUG and generic otherwise -> never override in derived classes
-	void logContents()
-	{
-		LOG("TODO: logContents");
-	}
+  #ifndef NDEBUG
+	void logContents(const std::string& indent);
+  #else
+  inline void logContents(const std::string&) { }
+  #endif
 };
 
 /*const OrdinaryAtom& OrdinaryGroundAtomTable::getByString(const std::string& str) const
@@ -158,6 +179,22 @@ const ExternalAtom& ExternalAtomTable::getByFunction(ID term) const
 
 const Symbol&       SymbolTable::getByString(const std::string& str) const
 */
+
+template<typename ValueT, typename IndexT>
+void Table<ValueT,IndexT>::logContents(const std::string& indent)
+{
+  LOG_METHOD(indent,this);
+  // debugging assumes that each container can be iterated by AddressTag index and contains KindTag index
+	typedef typename Container::template index<impl::AddressTag>::type AddressIndex;
+	AddressIndex& aidx = container.template get<impl::AddressTag>();
+
+	for(typename AddressIndex::const_iterator it = aidx.begin();
+      it != aidx.end(); ++it)
+  {
+    const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
+    LOG(print_method(ID(it->kind, address)) << " -> " << print_method(static_cast<const ValueT&>(*it)));
+  }
+}
 
 // anonymous variables get new names to become real and distinct variables, each anonymous variable gets a new ID
 struct Symbol
@@ -177,8 +214,13 @@ struct Symbol
   };
 
   Symbol(IDKind kind, const std::string& symbol): kind(kind), symbol(symbol) {}
+  std::ostream& print(std::ostream& o) const;
 };
 
+std::ostream& Symbol::print(std::ostream& o) const
+{
+  return o << "Symbol(" << symbol << ")";
+}
 
 // TODO: rename once it's sufficiently stable
 class MySymbolTable:
@@ -187,9 +229,14 @@ class MySymbolTable:
 		Symbol,
 		// index is
 		boost::multi_index::indexed_by<
-			// running ID
+			// address = running ID for constant access
 			boost::multi_index::random_access<
-				boost::multi_index::tag<impl::IDTag>
+				boost::multi_index::tag<impl::AddressTag>
+			>,
+			// kind
+			boost::multi_index::ordered_non_unique<
+				boost::multi_index::tag<impl::KindTag>,
+				BOOST_MULTI_INDEX_MEMBER(Symbol,IDKind,kind)
 			>,
 			// unique IDs for unique symbol strings
 			boost::multi_index::hashed_unique<
@@ -204,6 +251,10 @@ public:
 
 	// methods
 public:
+  // retrieve by ID
+  // assert that id.kind is correct for Symbol
+	inline const Symbol& getByID(ID id) const throw (NotFound);
+
 	inline const Symbol& getByString(const std::string& str) const throw(NotFound);
 
 	// special high performance method for parsing
@@ -215,6 +266,22 @@ public:
 	// store symbol, assuming it does not exist (this is only asserted)
 	inline ID storeAndGetID(const Symbol& symb) throw();
 };
+
+const Symbol&
+MySymbolTable::getByID(
+  ID id) const throw (NotFound)
+{
+	assert(id.isTerm());
+	// integers are not allowed in this table!
+	assert(id.isTermConstant() ||
+			id.isTermQuotedString() ||
+			id.isTermVariable());
+  typedef Container::index<impl::AddressTag>::type AddressIndex;
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+  if( id.address >= idx.size() ) // this only works for random access indices
+    throw NotFound();
+  return idx.at(id.address);
+}
 
 const Symbol&
 MySymbolTable::getByString(
@@ -242,7 +309,7 @@ ID MySymbolTable::getIDByStringNothrow(
 	else
 		return ID(
 				it->kind, // kind
-				container.project<impl::IDTag>(it) - container.get<impl::IDTag>().begin() // address
+				container.project<impl::AddressTag>(it) - container.get<impl::AddressTag>().begin() // address
 				);
 }
 
@@ -258,10 +325,10 @@ ID MySymbolTable::storeAndGetID(
 			ID(symb.kind,0).isTermVariable());
 	assert(!symb.symbol.empty());
 
-	typedef Container::index<impl::IDTag>::type IDIndex;
-	IDIndex& idx = container.get<impl::IDTag>();
+	typedef Container::index<impl::AddressTag>::type AddressIndex;
+	AddressIndex& idx = container.get<impl::AddressTag>();
 
-	IDIndex::const_iterator it;
+	AddressIndex::const_iterator it;
 	bool success;
 	boost::tie(it, success) = idx.push_back(symb);
 	(void)success;
@@ -269,7 +336,7 @@ ID MySymbolTable::storeAndGetID(
 
 	return ID(
 			symb.kind, // kind
-			container.project<impl::IDTag>(it) - idx.begin() // address
+			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
 }
 

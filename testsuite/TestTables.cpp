@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(testSymbolTable)
 	{
 		MySymbolTable stab;
 
-		BOOST_CHECK_THROW(stab.getByID(ID_FAIL), MySymbolTable::NotFound);
+		BOOST_CHECK_THROW(stab.getByID(ID(symX.kind, 0)), MySymbolTable::NotFound);
 		BOOST_CHECK_THROW(stab.getByString(stra), MySymbolTable::NotFound);
 		BOOST_CHECK(ID_FAIL == stab.getIDByStringNothrow(stra));
 
@@ -71,6 +71,8 @@ BOOST_AUTO_TEST_CASE(testSymbolTable)
 		BOOST_CHECK_NO_THROW(stab.getByString(stra));
 		BOOST_CHECK(ida == stab.getIDByStringNothrow(stra));
 		BOOST_CHECK_EQUAL(ida.address, 0);
+
+    stab.logContents("SymbolTable");
 	}
 
 	{
@@ -120,6 +122,8 @@ BOOST_AUTO_TEST_CASE(testSymbolTable)
 
 		const Symbol& gisymhello = stab.getByID(idhello);
 		BOOST_CHECK_EQUAL(symhello.symbol, gisymhello.symbol);
+
+    stab.logContents("SymbolTable");
 	}
 }
 
