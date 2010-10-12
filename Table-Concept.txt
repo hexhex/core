@@ -70,7 +70,7 @@ Concept for the registry of Entities (ID-Concept is a prerequisite to this):
   - ?Term IDs (lookup by Terms in input)
   - ?Term IDs (lookup by Terms in output)
 
-** SymbolTable
+** TermTable (for all terms, except integers which are implicitly stored in IDs)
 - Stores:
   - string (constant, string, or variable)
   - id (includes type, e.g., anonymous var)

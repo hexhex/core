@@ -40,7 +40,7 @@ An ID of ~0x0 indicates an error (not found ...).
 ** 0x0 Atom
    Subkinds (all Non-Ordinary Atoms have bit 0x2 set):
    * 0x0 Ordinary Ground Atom
-     Address points into OrdinaryGroundAtom-Table
+     Address points into OrdinaryAtom-Table
      Properties:
         mask 0x01: positive (0) vs strongly negated (1)
           Address points to non-negated item's Address in OrdinaryGroundAtom-Table
@@ -51,7 +51,7 @@ An ID of ~0x0 indicates an error (not found ...).
           0x08 show mode (explicitly shown)
           0x0C unused
    * 0x1 Ordinary Nonground Atom
-     Address points into OrdinaryNongroundAtom-Table
+     Address points into OrdinaryAtom-Table
      Properties:
         mask 0x01: positive (0) vs strongly negated (1)
           (no special treatment of Address)
@@ -65,14 +65,13 @@ An ID of ~0x0 indicates an error (not found ...).
 
 ** 0x1 Term
    Subkinds:
-   * 0x0 Constant (=Symbol)
-     Address points into Symbol-Table
-   * 0x2 Quoted String
-     Address points into Symbol-Table (namespaces are stored in a collapsed way)
+   * 0x0 Constant or Quoted String
+     Address points into Term-Table
+     For quoted strings, all namespaces are stored expanded
    * 0x1 Integer
      Address = Value of Integer, no Table
-   * 0x3 Variable
-     Address points into Symbol-Table (anonymous variables are marked and expanded to real variables)
+   * 0x2 Variable
+     Address points into Term-Table (anonymous variables are marked and expanded to real variables)
      Properties:
         mask 0x1: non-anonymous (0) vs anonymous (1)
 

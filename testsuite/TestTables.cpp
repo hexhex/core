@@ -32,7 +32,11 @@
  */
 
 #include <boost/cstdint.hpp>
-#include "dlvhex/SymbolTable.hpp"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/Term.hpp"
+#include "dlvhex/TermTable.hpp"
+#include "dlvhex/OrdinaryAtom.hpp"
+#include "dlvhex/OrdinaryAtomTable.hpp"
 
 #define BOOST_TEST_MODULE "TestTypes"
 #include <boost/test/unit_test.hpp>
@@ -41,49 +45,49 @@
 
 DLVHEX_NAMESPACE_USE
 
-BOOST_AUTO_TEST_CASE(testSymbolTable) 
+BOOST_AUTO_TEST_CASE(testTermTable) 
 {
-	Symbol syma(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "a");
-	Symbol symb(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "b");
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "a");
 	std::string stra("a");
 
-	Symbol symX(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "X");
-	Symbol symY(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "Y");
-	Symbol symZ(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE | ID::PROPERTY_ANONYMOUS, "Z");
-	std::string strZ("Z");
+	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "b");
 
-	Symbol symhello(ID::MAINKIND_TERM | ID::SUBKIND_QUOTEDSTRING, "\"Hello World\"");
+	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "\"Hello World\"");
 	std::string strhello("\"Hello World\"");
 
-	BOOST_CHECK_EQUAL(sizeof(Symbol), 8);
-	BOOST_CHECK_EQUAL(sizeof(syma), 8);
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "X");
+
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "Y");
+
+	Term term_Z(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE | ID::PROPERTY_ANONYMOUS, "Z");
+	std::string strZ("Z");
+
+	BOOST_CHECK_EQUAL(sizeof(ID), 8);
 
 	{
-		MySymbolTable stab;
+		TermTable stab;
 
-		BOOST_CHECK_THROW(stab.getByID(ID(symX.kind, 0)), MySymbolTable::NotFound);
-		BOOST_CHECK_THROW(stab.getByString(stra), MySymbolTable::NotFound);
-		BOOST_CHECK(ID_FAIL == stab.getIDByStringNothrow(stra));
+		BOOST_CHECK_EQUAL(ID_FAIL, stab.getIDByString(stra));
 
-		ID ida = stab.storeAndGetID(syma);
+		ID ida = stab.storeAndGetID(term_a);
+    BOOST_CHECK_EQUAL(sizeof(ida), 8);
 
-		BOOST_CHECK_NO_THROW(stab.getByID(ida));
-		BOOST_CHECK_NO_THROW(stab.getByString(stra));
-		BOOST_CHECK(ida == stab.getIDByStringNothrow(stra));
+		BOOST_CHECK_EQUAL(ida.kind, stab.getByID(ida).kind);
+		BOOST_CHECK_EQUAL(ida, stab.getIDByString(stra));
 		BOOST_CHECK_EQUAL(ida.address, 0);
 
-    stab.logContents("SymbolTable");
+    stab.logContents("TermTable");
 	}
 
 	{
-		MySymbolTable stab;
+		TermTable stab;
 
-		ID ida = stab.storeAndGetID(syma);
-		ID idX = stab.storeAndGetID(symX);
-		ID idb = stab.storeAndGetID(symb);
-		ID idY = stab.storeAndGetID(symY);
-		ID idhello = stab.storeAndGetID(symhello);
-		ID idZ = stab.storeAndGetID(symZ);
+		ID ida = stab.storeAndGetID(term_a);
+		ID idX = stab.storeAndGetID(term_X);
+		ID idb = stab.storeAndGetID(term_b);
+		ID idY = stab.storeAndGetID(term_Y);
+		ID idhello = stab.storeAndGetID(term_hello);
+		ID idZ = stab.storeAndGetID(term_Z);
 
 		BOOST_CHECK_EQUAL(ida.address, 0);
 		BOOST_CHECK_EQUAL(idX.address, 1);
@@ -92,38 +96,80 @@ BOOST_AUTO_TEST_CASE(testSymbolTable)
 		BOOST_CHECK_EQUAL(idhello.address, 4);
 		BOOST_CHECK_EQUAL(idZ.address, 5);
 
-		BOOST_CHECK_EQUAL(ida.kind, syma.kind);
-		BOOST_CHECK_EQUAL(idX.kind, symX.kind);
-		BOOST_CHECK_EQUAL(idb.kind, symb.kind);
-		BOOST_CHECK_EQUAL(idY.kind, symY.kind);
-		BOOST_CHECK_EQUAL(idhello.kind, symhello.kind);
-		BOOST_CHECK_EQUAL(idZ.kind, symZ.kind);
+		BOOST_CHECK_EQUAL(ida.kind, term_a.kind);
+		BOOST_CHECK_EQUAL(idX.kind, term_X.kind);
+		BOOST_CHECK_EQUAL(idb.kind, term_b.kind);
+		BOOST_CHECK_EQUAL(idY.kind, term_Y.kind);
+		BOOST_CHECK_EQUAL(idhello.kind, term_hello.kind);
+		BOOST_CHECK_EQUAL(idZ.kind, term_Z.kind);
 
-		ID getida = stab.getIDByStringNothrow(stra);
-		BOOST_CHECK_EQUAL(ida.kind, syma.kind);
+		ID getida = stab.getIDByString(stra);
+		BOOST_CHECK_EQUAL(ida.kind, term_a.kind);
 		BOOST_CHECK_EQUAL(ida.address, 0);
 
-		const Symbol& gssyma = stab.getByString(stra);
-		BOOST_CHECK_EQUAL(ida.kind, gssyma.kind);
+		const Term& giterm_a = stab.getByID(ida);
+		BOOST_CHECK_EQUAL(term_a.symbol, giterm_a.symbol);
 
-		const Symbol& gisyma = stab.getByID(ida);
-		BOOST_CHECK_EQUAL(syma.symbol, gisyma.symbol);
-
-		ID getidhello = stab.getIDByStringNothrow(strhello);
-		BOOST_CHECK_EQUAL(idhello.kind, symhello.kind);
+		ID getidhello = stab.getIDByString(strhello);
+		BOOST_CHECK_EQUAL(idhello.kind, term_hello.kind);
 		BOOST_CHECK_EQUAL(idhello.address, 4);
 
-		ID getidZ = stab.getIDByStringNothrow(strZ);
-		BOOST_CHECK_EQUAL(idZ.kind, symZ.kind);
+		ID getidZ = stab.getIDByString(strZ);
+		BOOST_CHECK_EQUAL(idZ.kind, term_Z.kind);
 		BOOST_CHECK_EQUAL(idZ.address, 5);
 
-		const Symbol& gisymX = stab.getByID(idX);
-		BOOST_CHECK_EQUAL(idX.kind, gisymX.kind);
+		const Term& giterm_X = stab.getByID(idX);
+		BOOST_CHECK_EQUAL(idX.kind, giterm_X.kind);
 
-		const Symbol& gisymhello = stab.getByID(idhello);
-		BOOST_CHECK_EQUAL(symhello.symbol, gisymhello.symbol);
+		const Term& giterm_hello = stab.getByID(idhello);
+		BOOST_CHECK_EQUAL(term_hello.symbol, giterm_hello.symbol);
 
-    stab.logContents("SymbolTable");
+    stab.logContents("TermTable");
+	}
+}
+
+BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable) 
+{
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "a");
+	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "b");
+	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "\"Hello World\"");
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "X");
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "Y");
+
+  TermTable stab;
+  ID ida = stab.storeAndGetID(term_a);
+  ID idX = stab.storeAndGetID(term_X);
+  ID idb = stab.storeAndGetID(term_b);
+  ID idY = stab.storeAndGetID(term_Y);
+  ID idhello = stab.storeAndGetID(term_hello);
+  stab.logContents("TermTable");
+
+  Tuple tupb; tupb.push_back(idb);
+  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", tupb);
+  Tuple tupab; tupab.push_back(ida); tupab.push_back(idb);
+  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", tupab);
+  Tuple tupaX; tupaX.push_back(ida); tupaX.push_back(idX);
+  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", tupaX);
+  Tuple tupYhello; tupYhello.push_back(idY); tupYhello.push_back(idhello);
+  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", tupYhello);
+
+	{
+		OrdinaryAtomTable oatab;
+
+		BOOST_CHECK_EQUAL(ID_FAIL, oatab.getIDByString("b"));
+
+		ID idatb = oatab.storeAndGetID(atb);
+
+		BOOST_CHECK_EQUAL(idatb.kind, oatab.getByID(idatb).kind);
+		BOOST_CHECK_EQUAL(idatb, oatab.getIDByString("b"));
+		BOOST_CHECK_EQUAL(idatb, oatab.getIDByTuple(tupb));
+		BOOST_CHECK_EQUAL(idatb.address, 0);
+
+    ID idatab = oatab.storeAndGetID(atab);
+    ID idataX = oatab.storeAndGetID(ataX);
+    ID idatYhello = oatab.storeAndGetID(atYhello);
+
+    oatab.logContents("OrdinaryAtomTable");
 	}
 }
 

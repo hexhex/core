@@ -31,13 +31,15 @@
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
 
-#include <iostream>
-#include <sstream>
-#include <set>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/optional.hpp>
+
+#include <iostream>
+#include <sstream>
+#include <set>
+#include <vector>
 
 // singleton logger class
 class Logger
@@ -265,5 +267,36 @@ inline print_container* printset(const std::set<T>& t)
   o << "}";
   return new print_stream_container<std::string>(o.str());
 }
+
+template<typename T>
+inline print_container* printvector(const std::vector<T>& t)
+{
+  std::ostringstream o;
+  o << "<";
+  typename std::vector<T>::const_iterator it = t.begin();
+  if( it != t.end() )
+  {
+    o << *it;
+    it++;
+  }
+  for(; it != t.end(); ++it)
+    o << "," << *it;
+  o << ">";
+  return new print_stream_container<std::string>(o.str());
+}
+
+// usage:
+//   derive YourType from ostream_printable<YourType>
+//   implement std::ostream& YourType::print(std::ostream& o) const;
+//   now you can << YourType << and it will use the print() function
+// see http://en.wikipedia.org/wiki/Barton–Nackman_trick
+template<typename T>
+class ostream_printable
+{
+  friend std::ostream& operator<<(std::ostream& o, const T& t) const
+    { return t.print(o); }
+  // to be defined in derived class
+  //std::ostream& print(std::ostream& o) const;
+};
 
 #endif // LOGGER_HPP_INCLUDED__17092010
