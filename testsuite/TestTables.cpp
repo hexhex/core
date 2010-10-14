@@ -22,13 +22,10 @@
  */
 
 /**
- * @file   TestTypes.cpp
- * @author Thomas Krennwallner <tkren@kr.tuwien.ac.at>
- * @date   Tue Jul 13 18:40:27 2010
+ * @file   TestTables.cpp
+ * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Test primitive types of dlvhex
- * 
- * 
+ * @brief  Test tables for storing AST data efficiently
  */
 
 #include <boost/cstdint.hpp>
@@ -41,7 +38,7 @@
 #include "dlvhex/AggregateAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
 
-#define BOOST_TEST_MODULE "TestTypes"
+#define BOOST_TEST_MODULE "TestTables"
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>

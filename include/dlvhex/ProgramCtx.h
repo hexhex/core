@@ -36,6 +36,12 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/TermTable.hpp"
+#include "dlvhex/OrdinaryAtomTable.hpp"
+#include "dlvhex/BuiltinAtomTable.hpp"
+#include "dlvhex/AggregateAtomTable.hpp"
+#include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 
 #include <vector>
@@ -58,6 +64,20 @@ class ResultContainer;
 class OutputBuilder;
 class State;
 
+/**
+ * @brief Registry for entities used in programs as IDs (collection of symbol tables)
+ */
+struct Registry
+{
+  TermTable terms;
+  // ordinary ground atoms
+  OrdinaryAtomTable ogatoms;
+  // ordinary nonground atoms
+  OrdinaryAtomTable onatoms;
+  BuiltinAtomTable batoms;
+  AggregateAtomTable aatoms;
+  RuleTable rules;
+};
 
 /**
  * @brief Program context class.
@@ -66,7 +86,15 @@ class State;
  */
 class DLVHEX_EXPORT ProgramCtx
 {
- private:
+private:
+	boost::shared_ptr<Registry> registry;
+
+  std::vector<ID> idb;
+  std::vector<ID> edb;
+
+  // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
+  ID maxint;
+
   std::vector<std::string>* options;
 
   std::vector<std::string> inputsources;
@@ -76,12 +104,8 @@ class DLVHEX_EXPORT ProgramCtx
 
   std::istream* programstream;
 
-  /// stores the rules of the program
-  Program* IDB;
-  /// stores the facts of the program
-  AtomSet* EDB;
 
-  NodeGraph* nodegraph;
+//  NodeGraph* nodegraph;
   DependencyGraph* depgraph;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
@@ -138,6 +162,7 @@ class DLVHEX_EXPORT ProgramCtx
   getInput();
 
 
+	#if 0
   Program*
   getIDB() const;
 
@@ -177,6 +202,7 @@ class DLVHEX_EXPORT ProgramCtx
 
   void
   setOutputBuilder(OutputBuilder*);
+	#endif
 
 
   //

@@ -37,14 +37,18 @@
 #include "dlvhex/ProgramCtx.h"
 
 #include "dlvhex/PluginContainer.h"
+
+#if 0
 #include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/NodeGraph.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/DLVProcess.h"
+#endif
+
+//#include "dlvhex/NodeGraph.h"
+//#include "dlvhex/DependencyGraph.h"
+//#include "dlvhex/ResultContainer.h"
+//#include "dlvhex/OutputBuilder.h"
 #include "dlvhex/State.h"
+#include "dlvhex/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -54,17 +58,20 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ProgramCtx::ProgramCtx()
-  : options(new std::vector<std::string>),
+  :
+		registry(),
+		idb(),
+		edb(),
+		maxint(ID_FAIL),
+		options(new std::vector<std::string>),
     container(0),
     plugins(new std::vector<PluginInterface*>),
     programstream(new std::istream(new std::stringbuf)),
-    IDB(new Program),
-    EDB(new AtomSet),
-    nodegraph(new NodeGraph),
+ //   nodegraph(new NodeGraph),
     depgraph(0),
     result(0),
     outputbuilder(0),
-    state(boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
+    state()//boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
 { }
 
 
@@ -73,9 +80,7 @@ ProgramCtx::~ProgramCtx()
   delete outputbuilder;
   delete result;
   delete depgraph;
-  delete nodegraph;
-  delete IDB;
-  delete EDB;
+  //delete nodegraph;
   //  std::vector<PluginInterface*> plugins;
 }
   
@@ -153,6 +158,7 @@ ProgramCtx::getInput()
 }
 
 
+#if 0
 Program*
 ProgramCtx::getIDB() const
 {
@@ -250,6 +256,7 @@ ProgramCtx::setOutputBuilder(OutputBuilder* o)
       this->outputbuilder = o;
     }
 }
+#endif
 
 
 void
