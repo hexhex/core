@@ -38,7 +38,7 @@ std::ostream& ID::print(std::ostream& o) const
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
     { " constant",        " integer",            " variable",        " builtin",   "", "", ""          },
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
-    { " regular"          " constraint",         " weak_constraint", "",           "", "", ""          }
+    { " regular",         " constraint",         " weak_constraint", "",           "", "", ""          }
   };
   const unsigned subkind = (kind & SUBKIND_MASK) >> SUBKIND_SHIFT;
   assert(subkind < SUBKIND_MAX);

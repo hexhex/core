@@ -69,11 +69,16 @@ struct ID:
 	static const IDKind SUBKIND_TERM_INTEGER =   0x01000000;
 	static const IDKind SUBKIND_TERM_VARIABLE =  0x02000000;
 	static const IDKind SUBKIND_TERM_BUILTIN =   0x03000000;
+
 	static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
 	static const IDKind SUBKIND_ATOM_BUILTIN =   0x02000000;
 	static const IDKind SUBKIND_ATOM_AGGREGATE = 0x03000000;
 	static const IDKind SUBKIND_ATOM_EXTERNAL =  0x06000000;
+
+	static const IDKind SUBKIND_RULE_REGULAR =        0x00000000;
+	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
+	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
 	static const IDKind PROPERTY_ANONYMOUS =     0x00010000;
 
@@ -97,10 +102,10 @@ struct ID:
   };
 
 	inline bool isTerm() const          { return (kind & MAINKIND_MASK) == MAINKIND_TERM; }
-	inline bool isTermConstant() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_CONSTANT; }
-	inline bool isTermInteger() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
-	inline bool isTermVariable() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
-	inline bool isTermBuiltin() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
+	inline bool isConstantTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_CONSTANT; }
+	inline bool isIntegerTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
+	inline bool isVariableTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
+	inline bool isBuiltinTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
 
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // ground or nonground atoms (due t o the special bits this can be checked by checking bit 2 of this field only)
@@ -112,8 +117,12 @@ struct ID:
 	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
   
 	inline bool isRule() const          { return (kind & MAINKIND_MASK) == MAINKIND_RULE; }
+	inline bool isRegularRule() const   { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_REGULAR; }
+	inline bool isConstraint() const    { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_CONSTRAINT; }
+	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
+	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }
 
 	std::ostream& print(std::ostream& o) const;
 };

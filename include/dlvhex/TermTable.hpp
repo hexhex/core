@@ -39,7 +39,6 @@
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>
-//#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -102,7 +101,7 @@ TermTable::getByID(
 {
 	assert(id.isTerm());
 	// integers are not allowed in this table!
-	assert(id.isTermConstant() || id.isTermVariable());
+	assert(id.isConstantTerm() || id.isVariableTerm());
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -136,7 +135,7 @@ ID TermTable::storeAndGetID(
 {
 	assert(ID(symb.kind,0).isTerm());
 	// integers are not allowed in this table!
-	assert(ID(symb.kind,0).isTermConstant() || ID(symb.kind,0).isTermVariable());
+	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm());
 	assert(!symb.symbol.empty());
 
 	AddressIndex& idx = container.get<impl::AddressTag>();

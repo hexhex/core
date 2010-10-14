@@ -37,22 +37,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct RuleAdornmentBase:
-  private ostream_printable<RuleAdornmentBase>
-{
-  virtual RuleAdornmentBase* clone() const = 0;
-  virtual std::ostream& print(std::ostream& o) const = 0;
-};
-
-struct WeakRuleAdornment:
-  public RuleAdornmentBase
-{
-  // TODO level and weight
-
-  virtual RuleAdornmentBase* clone() const;
-  virtual std::ostream& print(std::ostream& o) const;
-};
-
 struct Rule:
   private ostream_printable<Rule>
 {
@@ -65,16 +49,23 @@ struct Rule:
   // the IDs of literals in the body of this rule
   Tuple body;
 
-  // additional information (e.g., weak constraint weights, something else for the future?)
-  std::auto_ptr<RuleAdornmentBase> adornment;
+  // additional information for weak constraints (ID_FAIL if unused)
+  ID weight;
+  ID level;
 
   Rule(IDKind kind):
-    kind(kind), head(), body(), adornment() {}
+    kind(kind), head(), body(), weight(ID_FAIL), level(ID_FAIL)
+      { assert(ID(kind,0).isRule()); }
   Rule(IDKind kind, const Tuple& head, const Tuple& body):
-    kind(kind), head(head), body(body), adornment() {}
+    kind(kind), head(head), body(body), weight(ID_FAIL), level(ID_FAIL)
+      { assert(ID(kind,0).isRule()); }
+  Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level):
+    kind(kind), head(head), body(body), weight(weight), level(level)
+      { assert(ID(kind,0).isRule()); }
   std::ostream& print(std::ostream& o) const
     { o << "Rule(" << printvector(head) << " <- " << printvector(body);
-      if( adornment.get() != 0 ) o << " " << (*adornment);
+      if( weight != ID_FAIL || level != ID_FAIL )
+        o << " [" << weight << ":" << level << "]";
       return o << ")"; }
 };
 

@@ -35,6 +35,10 @@
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Table.hpp"
 
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 class RuleTable:
@@ -52,7 +56,7 @@ class RuleTable:
 				boost::multi_index::tag<impl::KindTag>,
 				BOOST_MULTI_INDEX_MEMBER(Rule,IDKind,kind)
 			>
-      // TODO more indices require?
+      // TODO more indices required?
 		>
 	>
 {
@@ -80,7 +84,7 @@ RuleTable::getByID(
   ID id) const throw ()
 {
 	assert(id.isRule());
-	assert(id.isRuleRegular() || id.isRuleConstraint() || id.isRuleWeakConstraint());
+	assert(id.isRegularRule() || id.isConstraint() || id.isWeakConstraint());
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -92,9 +96,9 @@ ID RuleTable::storeAndGetID(
 		const Rule& rule) throw()
 {
 	assert(ID(rule.kind,0).isRule());
-	assert(ID(rule.kind,0).isRuleRegular() ||
-    ID(rule.kind,0).isRuleConstraint() ||
-    ID(rule.kind,0).isRuleWeakConstraint());
+	assert(ID(rule.kind,0).isRegularRule() ||
+    ID(rule.kind,0).isConstraint() ||
+    ID(rule.kind,0).isWeakConstraint());
 	assert(!(rule.head.empty() && rule.body.empty()));
 
 	AddressIndex& idx = container.get<impl::AddressTag>();
