@@ -74,6 +74,8 @@ An ID of ~0x0 indicates an error (not found ...).
      Address points into Term-Table (anonymous variables are marked and expanded to real variables)
      Properties:
         mask 0x1: non-anonymous (0) vs anonymous (1)
+   * 0x3 Builtin
+     Address = builtin code of term, e.g., =, !=, <, <=, #sum, #int
 
 ** 0x2 Literal
    Subkinds inherited from Atom

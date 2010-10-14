@@ -16,7 +16,10 @@ std::ostream& ID::print(std::ostream& o) const
 {
   o << "ID(0x" <<
       std::setfill('0') << std::hex << std::setw(8) << kind << "," << std::setfill(' ') <<
-      std::dec << std::setw(4) << address << ",";
+      std::dec << std::setw(4) << address;
+  if( kind == ALL_ONES && address == ALL_ONES )
+    return o << " fail)"; // plus bailout
+
   if( !!(kind & NAF_MASK) )
     o << " naf";
   const unsigned MAINKIND_MAX = 4;
@@ -33,7 +36,7 @@ std::ostream& ID::print(std::ostream& o) const
   const unsigned SUBKIND_MAX = 7;
   const char* subkinds[MAINKIND_MAX][SUBKIND_MAX] = {
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
-    { " constant",        " integer",            " variable",        "",           "", "", ""          },
+    { " constant",        " integer",            " variable",        " builtin",   "", "", ""          },
     { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
     { " regular"          " constraint",         " weak_constraint", "",           "", "", ""          }
   };

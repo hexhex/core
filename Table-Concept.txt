@@ -31,7 +31,8 @@ Concept for the registry of Entities (ID-Concept is a prerequisite to this):
   - ?first/second/... argument Term ID (lookup atoms with same
     first/second/... argument)
 
-- TODO can nonground and ground table be unified? -> PS: no, we want contiguious IDs for ground atoms (for bitset interpretations)
+- nonground and ground table can be the same class, but not the same storage area
+  (we want contiguous IDs for ground atoms (for bitset interpretations))
 
 - TODO can we have different indices for different optimization
   settings? (turn some index off when this and that happens) -> PS: i guess this is only possible during compile time

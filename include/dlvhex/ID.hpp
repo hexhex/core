@@ -65,9 +65,10 @@ struct ID:
 	static const IDKind MAINKIND_LITERAL =       0x20000000;
 	static const IDKind MAINKIND_RULE =          0x30000000;
 
-	static const IDKind SUBKIND_CONSTANT =       0x00000000;
-	static const IDKind SUBKIND_INTEGER =        0x01000000;
-	static const IDKind SUBKIND_VARIABLE =       0x02000000;
+	static const IDKind SUBKIND_TERM_CONSTANT =  0x00000000;
+	static const IDKind SUBKIND_TERM_INTEGER =   0x01000000;
+	static const IDKind SUBKIND_TERM_VARIABLE =  0x02000000;
+	static const IDKind SUBKIND_TERM_BUILTIN =   0x03000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
 	static const IDKind SUBKIND_ATOM_BUILTIN =   0x02000000;
@@ -76,14 +77,41 @@ struct ID:
 
 	static const IDKind PROPERTY_ANONYMOUS =     0x00010000;
 
-	inline bool isTerm() const         { return (kind & MAINKIND_MASK) == MAINKIND_TERM; }
-	inline bool isTermConstant() const { return isTerm() && (kind & SUBKIND_MASK) == SUBKIND_CONSTANT; }
-	inline bool isTermInteger() const  { return isTerm() && (kind & SUBKIND_MASK) == SUBKIND_INTEGER; }
-	inline bool isTermVariable() const { return isTerm() && (kind & SUBKIND_MASK) == SUBKIND_VARIABLE; }
+  // for builtin terms, this is the address part (no table)
+  enum TermBuiltinAddress
+  {
+    TERM_BUILTIN_EQ,
+    TERM_BUILTIN_NE,
+    TERM_BUILTIN_LT,
+    TERM_BUILTIN_LE,
+    TERM_BUILTIN_GT,
+    TERM_BUILTIN_GE,
+    TERM_BUILTIN_AGGSUM,
+    TERM_BUILTIN_AGGCOUNT,
+    TERM_BUILTIN_AGGMIN,
+    TERM_BUILTIN_AGGAVG,
+    TERM_BUILTIN_INT,
+    TERM_BUILTIN_SUCC,
+    TERM_BUILTIN_MUL,
+    TERM_BUILTIN_ADD,
+  };
 
-	inline bool isAtom() const         { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
-  // ground or nonground atoms (due to the special bits this can be checked by checking bit 2 of this field only)
-	inline bool isOrdinaryAtom() const { return isAtom() && (kind & SUBKIND_ATOM_BUILTIN) != SUBKIND_ATOM_BUILTIN; }
+	inline bool isTerm() const          { return (kind & MAINKIND_MASK) == MAINKIND_TERM; }
+	inline bool isTermConstant() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_CONSTANT; }
+	inline bool isTermInteger() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
+	inline bool isTermVariable() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
+	inline bool isTermBuiltin() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
+
+	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
+  // ground or nonground atoms (due t o the special bits this can be checked by checking bit 2 of this field only)
+	inline bool isOrdinaryAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_ATOM_BUILTIN) != SUBKIND_ATOM_BUILTIN; }
+	inline bool isBuiltinAtom() const   { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_BUILTIN; }
+	inline bool isAggregateAtom() const { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_AGGREGATE; }
+	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
+
+	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
+  
+	inline bool isRule() const          { return (kind & MAINKIND_MASK) == MAINKIND_RULE; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 
@@ -92,7 +120,7 @@ struct ID:
 
 std::size_t hash_value(const ID& id);
 
-const ID ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
+const ID        ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
 
 typedef std::vector<ID> Tuple;
 

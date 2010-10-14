@@ -32,7 +32,7 @@
 #define ORDINARYATOMTABLE_HPP_INCLUDED__12102010
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/OrdinaryAtom.hpp"
+#include "dlvhex/Atoms.hpp"
 #include "dlvhex/Table.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -62,7 +62,7 @@ class OrdinaryAtomTable:
 			// unique IDs for unique tuples
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::TupleTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,Tuple,tuple)
+				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom::Atom,Tuple,tuple)
 			>
 		>
 	>
@@ -149,7 +149,6 @@ ID OrdinaryAtomTable::getIDByTuple(
   }
 }
 
-// special high performance method for parsing
 // store symbol, assuming it does not exist (this is only asserted)
 ID OrdinaryAtomTable::storeAndGetID(
 		const OrdinaryAtom& atm) throw()

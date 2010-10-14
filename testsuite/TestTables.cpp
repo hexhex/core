@@ -34,9 +34,11 @@
 #include <boost/cstdint.hpp>
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Term.hpp"
+#include "dlvhex/Atoms.hpp"
 #include "dlvhex/TermTable.hpp"
-#include "dlvhex/OrdinaryAtom.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
+#include "dlvhex/BuiltinAtomTable.hpp"
+#include "dlvhex/AggregateAtomTable.hpp"
 
 #define BOOST_TEST_MODULE "TestTypes"
 #include <boost/test/unit_test.hpp>
@@ -47,19 +49,19 @@ DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testTermTable) 
 {
-	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "a");
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "a");
 	std::string stra("a");
 
-	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "b");
+	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "b");
 
-	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "\"Hello World\"");
+	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"Hello World\"");
 	std::string strhello("\"Hello World\"");
 
-	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "X");
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "X");
 
-	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "Y");
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "Y");
 
-	Term term_Z(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE | ID::PROPERTY_ANONYMOUS, "Z");
+	Term term_Z(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | ID::PROPERTY_ANONYMOUS, "Z");
 	std::string strZ("Z");
 
 	BOOST_CHECK_EQUAL(sizeof(ID), 8);
@@ -130,11 +132,11 @@ BOOST_AUTO_TEST_CASE(testTermTable)
 
 BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable) 
 {
-	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "a");
-	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "b");
-	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_CONSTANT, "\"Hello World\"");
-	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "X");
-	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_VARIABLE, "Y");
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "a");
+	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "b");
+	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"Hello World\"");
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "X");
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "Y");
 
   TermTable stab;
   ID ida = stab.storeAndGetID(term_a);
@@ -170,6 +172,99 @@ BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable)
     ID idatYhello = oatab.storeAndGetID(atYhello);
 
     oatab.logContents("OrdinaryAtomTable");
+	}
+}
+
+BOOST_AUTO_TEST_CASE(testBuiltinAtomTable) 
+{
+  ID idint(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, ID::TERM_BUILTIN_INT);
+  ID idmul(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, ID::TERM_BUILTIN_MUL);
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "a");
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "X");
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "Y");
+
+  TermTable ttab;
+  ID ida = ttab.storeAndGetID(term_a);
+  ID idX = ttab.storeAndGetID(term_X);
+  ID idY = ttab.storeAndGetID(term_Y);
+  ttab.logContents("TermTable");
+
+  // #int(X)
+  Tuple tupintX; tupintX.push_back(idint); tupintX.push_back(idX);
+  BuiltinAtom atintX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN, tupintX);
+
+  // *(a,X,Y) or a*X=Y
+  Tuple tupmulaXY; tupmulaXY.push_back(idmul);
+  tupmulaXY.push_back(ida); tupmulaXY.push_back(idX); tupmulaXY.push_back(idY);
+  BuiltinAtom atmulaXY(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN, tupmulaXY);
+
+	{
+		BuiltinAtomTable batab;
+
+		ID idintX = batab.storeAndGetID(atintX);
+
+		BOOST_CHECK_EQUAL(idintX.kind, batab.getByID(idintX).kind);
+		BOOST_CHECK_EQUAL(idintX.address, 0);
+
+		BOOST_CHECK(batab.getByID(idintX).tuple == tupintX);
+
+		ID idmulaXY = batab.storeAndGetID(atmulaXY);
+
+    batab.logContents("BuiltinAtomTable");
+	}
+}
+
+BOOST_AUTO_TEST_CASE(testAggregateAtomTable) 
+{
+  // terms
+  ID idlt(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, ID::TERM_BUILTIN_LT);
+  ID idsum(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, ID::TERM_BUILTIN_AGGSUM);
+
+	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "a");
+	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "X");
+	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "Y");
+
+  TermTable ttab;
+  ID ida = ttab.storeAndGetID(term_a);
+  ID idX = ttab.storeAndGetID(term_X);
+  ID idY = ttab.storeAndGetID(term_Y);
+  ttab.logContents("TermTable");
+
+  // ordinary atoms
+  Tuple tupaXY; tupaXY.push_back(ida); tupaXY.push_back(idX); tupaXY.push_back(idY);
+  OrdinaryAtom ataXY(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X,Y)", tupaXY);
+
+  OrdinaryAtomTable oatab;
+  ID idaXY = oatab.storeAndGetID(ataXY);
+  oatab.logContents("OrdinaryAtomTable");
+
+  // a <= #sum{ X, Y: a(X,Y) }
+  Tuple tupext;
+  tupext.push_back(ida); tupext.push_back(idlt);
+  tupext.push_back(idsum);
+  tupext.push_back(ID_FAIL); tupext.push_back(ID_FAIL);
+
+  Tuple tupvars;
+  tupvars.push_back(idX); tupvars.push_back(idY);
+
+  Tuple tupatoms;
+  tupatoms.push_back(idaXY);
+
+  AggregateAtom at(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE, tupext, tupvars, tupatoms);
+
+	{
+		AggregateAtomTable aatab;
+
+		ID id = aatab.storeAndGetID(at);
+
+		BOOST_CHECK_EQUAL(id.kind, aatab.getByID(id).kind);
+		BOOST_CHECK_EQUAL(id.address, 0);
+
+		BOOST_CHECK(aatab.getByID(id).tuple == tupext);
+		BOOST_CHECK(aatab.getByID(id).variables == tupvars);
+		BOOST_CHECK(aatab.getByID(id).atoms == tupatoms);
+
+    aatab.logContents("AggregateAtomTable");
 	}
 }
 

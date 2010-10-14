@@ -22,10 +22,10 @@
  */
 
 /**
- * @file   OrdinaryAtom.hpp
+ * @file   Rule.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  OrdinaryAtom: store ordinary atoms
+ * @brief  Rule: store rules (not facts!), constraints, weak constraints
  */
 
 #ifndef ORDINARYATOM_HPP_INCLUDED__12102010
@@ -37,27 +37,47 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct OrdinaryAtom:
-  private ostream_printable<OrdinaryAtom>
+struct RuleAdornmentBase:
+  private ostream_printable<RuleAdornmentBase>
 {
-  // the kind part of the ID of this ordinary atom
-  IDKind kind;
-
-  // the textual representation of the whole thing
-  // this is stored for efficient parsing and printing
-  // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
-  std::string text;
-
-  // the ID representation of this atom
-  Tuple tuple;
-
-  OrdinaryAtom(IDKind kind, const std::string& text, const Tuple& tuple):
-    kind(kind), text(text), tuple(tuple) {}
-  std::ostream& print(std::ostream& o) const
-    { return o << "OrdinaryAtom(" << text << " " << printvector(tuple) << ")"; }
+  virtual RuleAdornmentBase* clone() const = 0;
+  virtual std::ostream& print(std::ostream& o) const = 0;
 };
 
+struct WeakRuleAdornment:
+  public RuleAdornmentBase
+{
+  // TODO level and weight
+
+  virtual RuleAdornmentBase* clone() const;
+  virtual std::ostream& print(std::ostream& o) const;
+};
+
+struct Rule:
+  private ostream_printable<Rule>
+{
+  // the kind part of the ID of this rule
+  IDKind kind;
+
+  // the IDs of ordinary atoms in the head of this rule
+  Tuple head;
+
+  // the IDs of literals in the body of this rule
+  Tuple body;
+
+  // additional information (e.g., weak constraint weights, something else for the future?)
+  std::auto_ptr<RuleAdornmentBase> adornment;
+
+  Rule(IDKind kind):
+    kind(kind), head(), body(), adornment() {}
+  Rule(IDKind kind, const Tuple& head, const Tuple& body):
+    kind(kind), head(head), body(body), adornment() {}
+  std::ostream& print(std::ostream& o) const
+    { o << "Rule(" << printvector(head) << " <- " << printvector(body);
+      if( adornment.get() != 0 ) o << " " << (*adornment);
+      return o << ")"; }
+};
 
 DLVHEX_NAMESPACE_END
 
-#endif // ORDINARYATOM_HPP_INCLUDED__12102010
+#endif // RULE_HPP_INCLUDED__12102010
