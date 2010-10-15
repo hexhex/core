@@ -68,6 +68,13 @@ void Registry::logContents() const
   rules.logContents("rules");
 }
 
+// TODO create something like a print visitor instead (reuse this code)
+void Registry::printTerm(ID id, std::string& append) const
+{
+	assert(id.isTerm());
+	append += terms.getByID(id).symbol;
+}
+	
 ProgramCtx::ProgramCtx()
   :
 		registry(),

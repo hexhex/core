@@ -87,6 +87,7 @@ struct Registry
   NamespaceTable namespaces;
 
   void logContents() const;
+	void printTerm(ID id, std::string& append) const;
 };
 
 typedef boost::shared_ptr<Registry> RegistryPtr;

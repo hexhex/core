@@ -55,7 +55,8 @@ struct Term:
   std::string symbol;
 
   Term(IDKind kind, const std::string& symbol):
-    kind(kind), symbol(symbol) {}
+    kind(kind), symbol(symbol)
+		{ assert(ID(kind,0).isTerm()); }
   std::ostream& print(std::ostream& o) const
     { return o << "Term(" << symbol << ")"; }
 };

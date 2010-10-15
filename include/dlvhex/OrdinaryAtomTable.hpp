@@ -143,7 +143,6 @@ ID OrdinaryAtomTable::getIDByNegTuple(
 {
 	typedef Container::index<impl::TupleTag>::type TupleIndex;
 	const TupleIndex& sidx = container.get<impl::TupleTag>();
-  const TupleIndex::key_from_value& extractor = sidx.key_extractor();
 	TupleIndex::const_iterator it = sidx.find(boost::make_tuple(tuple, neg));
 	if( it == sidx.end() )
 		return ID_FAIL;

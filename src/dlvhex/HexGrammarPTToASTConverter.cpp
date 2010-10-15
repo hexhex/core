@@ -113,13 +113,17 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   }
   else
   {
-    // string term
+    // string, variable, or constant term
     if( s[0] == '"' )
       LOG("warning: we should expand the namespace of s='" << s << "' here!");
     ID id = ctx.registry->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
-      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s);
+      Term term(ID::MAINKIND_TERM, s);
+      if( s[0] == '"' || islower(s[0]) )
+        term.kind |= ID::SUBKIND_TERM_CONSTANT;
+      else
+        term.kind |= ID::SUBKIND_TERM_VARIABLE;
       id = ctx.registry->terms.storeAndGetID(term);
     }
     return id;
@@ -150,7 +154,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       std::string ns = createStringFromNode(child.children[4]);
       if( ns[0] == '"' ) ns = ns.substr(1, ns.length()-2);
       bool success;
-      success = (ctx.registry->namespaces.insert( NamespaceTable::value_type(ns, prefix) )).second;
+      success = (ctx.registry->namespaces.insert(
+             NamespaceTable::value_type(ns, prefix) )).second;
       if( !success )
         throw SyntaxError("error adding namespace '"+ns+"'/'"+prefix+"'");
     }
@@ -281,10 +286,11 @@ ID HexGrammarPTToASTConverter::createLiteralFromLiteral(node_t& node)
 ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
 {
   // we should do it that way:
-  // lookup first by string
-  // if not found, create tuple and lookup by tuple
+  // lookup first by string (somehow normalized, best normalized to printing format)
+  // if not found, create tuple and lookup by tuple [best would be if normalization does not allow this to happen]
   // if not found, create from tuple and string
-  // TODO how about normalizing tuple "(a,b,c)" atoms to classial ones "a(b,c)"? 
+  // TODO normalize tuple "(a,b,c)" atoms to classial ones "a(b,c)"
+  // TODO normalize by removing spaces 
   // we will currently do it this way:
   // interpret tuple, lookup by tuple, store if new, otherwise reuse ID
 
@@ -349,34 +355,35 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
       return id;
   }
 
-  // atom.text (this probably can be done more efficiently!)
-  // TODO how about normalizing tuple "(a,b,c)" atoms to classial ones "a(b,c)"? 
-  #warning possible parsing efficiency problem
-  // go up the current node's first child, following first children to the leaf and get begin iterator
-  // go up the current node's last child, following last children to the leaf and get end iterator
+  // atom.text
+  // TODO this must be done more efficiently!
+  // TODO but we need to do the following in any case: normalizing tuple "(a,b,c)" atoms to classial ones "a(b,c)" (or to the kind of atoms that have to be parsed most likely, or the kind of atoms that should be printed?) 
+  #warning parsing efficiency problem
+  // ideal way:
+  // get begin iterator of first child, end iterator of last child
   // text should be between those
-
-  printSpiritPT(std::cerr, node, "PT");
-
-  // first
-  node_t* first = &node;
-  while( !first->children.empty() )
+  //
+  // our way:
+  // print it from the IDs in atom.tuple
+  if( atom.neg )
+    atom.text += "-";
+  Tuple::const_iterator it = atom.tuple.begin();
+  ctx.registry->printTerm(*it, atom.text);
+  it++;
+  if( it != atom.tuple.end() )
   {
-    first = &first->children.front();
-    printSpiritPT(std::cerr, *first, "f ");
+    atom.text += "(";
+    ctx.registry->printTerm(*it, atom.text);
+    it++;
+    while(it != atom.tuple.end())
+    {
+      atom.text += ",";
+      ctx.registry->printTerm(*it, atom.text);
+      it++;
+    }
+    atom.text += ")";
   }
-  // last
-  node_t* last = &node;
-  while( !last->children.empty() )
-  {
-    last = &last->children.back();
-    printSpiritPT(std::cerr, *last, "l ");
-  }
-  LOG("first " << printptr(&(first->value.begin()[0])) << " last " << printptr(&(last->value.end()[0])));
-  LOG("first " << static_cast<char>(first->value.begin()[0]) << " last " << static_cast<char>(last->value.end()[0]));
 
-  assert(first->value.begin() < last->value.end());
-  atom.text.insert(atom.text.end(), first->value.begin(), last->value.end());
   LOG("got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);
   LOG("stored atom " << atom << " which got id " << id);
