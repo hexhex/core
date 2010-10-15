@@ -57,12 +57,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+void Registry::logContents() const
+{
+  LOG_FUNCTION("Registry");
+  terms.logContents("terms");
+  ogatoms.logContents("ogatoms");
+  onatoms.logContents("onatoms");
+  batoms.logContents("batoms");
+  aatoms.logContents("aatoms");
+  rules.logContents("rules");
+}
+
 ProgramCtx::ProgramCtx()
   :
 		registry(),
 		idb(),
 		edb(),
-		maxint(ID_FAIL),
+		maxint(0),
 		options(new std::vector<std::string>),
     container(0),
     plugins(new std::vector<PluginInterface*>),

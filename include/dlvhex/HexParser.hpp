@@ -21,7 +21,6 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file   HexParser.hpp
  * @author Peter Schüller
@@ -33,11 +32,13 @@
 #define HEXPARSER_HPP_INCLUDED__14102010
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Error.h"
-#include <boost/scoped_ptr.hpp>
+
+#include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
+
+class ProgramCtx;
 
 /**
  * @brief Parses HEX-programs.
@@ -57,9 +58,7 @@ public:
   parse(const std::string& filename) throw (SyntaxError);
 
 private:
-  // PIMPL idiom
-  struct Impl;
-  boost::scoped_ptr<Impl> impl;
+  ProgramCtx& ctx;
 };
 
 DLVHEX_NAMESPACE_END

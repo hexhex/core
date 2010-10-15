@@ -62,6 +62,9 @@ struct Rule:
   Rule(IDKind kind, const Tuple& head, const Tuple& body, ID weight, ID level):
     kind(kind), head(head), body(body), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+  Rule(IDKind kind, ID weight, ID level):
+    kind(kind), head(), body(), weight(weight), level(level)
+      { assert(ID(kind,0).isRule()); }
   std::ostream& print(std::ostream& o) const
     { o << "Rule(" << printvector(head) << " <- " << printvector(body);
       if( weight != ID_FAIL || level != ID_FAIL )

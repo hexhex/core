@@ -35,6 +35,8 @@
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Table.hpp"
 
+#include <boost/multi_index/composite_key.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 class OrdinaryAtomTable:
@@ -62,7 +64,12 @@ class OrdinaryAtomTable:
 			// unique IDs for unique tuples
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::TupleTag>,
-				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom::Atom,Tuple,tuple)
+        boost::multi_index::composite_key<
+          //TODO check if this is more efficient: boost::reference_wrapper<const OrdinaryAtom>,
+          OrdinaryAtom,
+          BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom::Atom,Tuple,tuple),
+          BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,bool,neg)
+        >
 			>
 		>
 	>
@@ -85,9 +92,9 @@ public:
 	// if no, return ID_FAIL, otherwise return ID
 	inline ID getIDByString(const std::string& text) const throw();
 
-	// given tuple, look if already stored
+	// given neg and tuple in (partially specified atom) pa, look if already stored
 	// if no, return ID_FAIL, otherwise return ID
-	inline ID getIDByTuple(const Tuple& tuple) const throw();
+	inline ID getIDByNegTuple(bool neg, const Tuple& tuple) const throw();
 
 	// store atom, assuming it does not exist
   // assert that atom did not exist in table
@@ -131,12 +138,13 @@ ID OrdinaryAtomTable::getIDByString(
 
 // given string, look if already stored
 // if no, return ID_FAIL, otherwise return ID
-ID OrdinaryAtomTable::getIDByTuple(
-		const Tuple& tuple) const throw()
+ID OrdinaryAtomTable::getIDByNegTuple(
+    bool neg, const Tuple& tuple) const throw()
 {
 	typedef Container::index<impl::TupleTag>::type TupleIndex;
 	const TupleIndex& sidx = container.get<impl::TupleTag>();
-	TupleIndex::const_iterator it = sidx.find(tuple);
+  const TupleIndex::key_from_value& extractor = sidx.key_extractor();
+	TupleIndex::const_iterator it = sidx.find(boost::make_tuple(tuple, neg));
 	if( it == sidx.end() )
 		return ID_FAIL;
 	else

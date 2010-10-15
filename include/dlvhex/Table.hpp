@@ -77,19 +77,19 @@ public:
   // two important objectives: space efficiency and time efficiency
 
   #ifndef NDEBUG
-  void logContents(const std::string& indent);
+  void logContents(const std::string& indent) const;
   #else
-  inline void logContents(const std::string&) { }
+  inline void logContents(const std::string&) const { }
   #endif
 };
 
 template<typename ValueT, typename IndexT>
-void Table<ValueT,IndexT>::logContents(const std::string& indent)
+void Table<ValueT,IndexT>::logContents(const std::string& indent) const
 {
   LOG_METHOD(indent,this);
   // debugging assumes that each container can be iterated by AddressTag index and contains KindTag index
 	typedef typename Container::template index<impl::AddressTag>::type AddressIndex;
-	AddressIndex& aidx = container.template get<impl::AddressTag>();
+	const AddressIndex& aidx = container.template get<impl::AddressTag>();
 
 	for(typename AddressIndex::const_iterator it = aidx.begin();
       it != aidx.end(); ++it)

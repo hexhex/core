@@ -30,6 +30,7 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/ProgramCtx.h"
 
 #define BOOST_TEST_MODULE "TestHexParser"
 #include <boost/test/unit_test.hpp>
@@ -38,82 +39,53 @@
 
 DLVHEX_NAMESPACE_USE
 
-BOOST_AUTO_TEST_CASE(testHexParser) 
+BOOST_AUTO_TEST_CASE(testHexParserSimpleStream) 
 {
-  /*
-  // terms
-	Term term_a(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "a");
-	Term term_b(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "b");
-	Term term_hello(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "\"Hello World\"");
-	Term term_X(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "X");
-	Term term_Y(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, "Y");
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
 
-  TermTable stab;
-  ID ida = stab.storeAndGetID(term_a);
-  ID idX = stab.storeAndGetID(term_X);
-  ID idb = stab.storeAndGetID(term_b);
-  ID idY = stab.storeAndGetID(term_Y);
-  ID idhello = stab.storeAndGetID(term_hello);
-  stab.logContents("TermTable");
+  std::stringstream ss;
+  ss <<
+    "a. b. c(d,e)." << std::endl <<
+    "f(X) v b :- g(X), not h(X,X)." << std::endl;
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  // ordinary atoms
-  Tuple tupb; tupb.push_back(idb);
-  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", tupb);
-  Tuple tupab; tupab.push_back(ida); tupab.push_back(idb);
-  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", tupab);
-  Tuple tupaX; tupaX.push_back(ida); tupaX.push_back(idX);
-  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", tupaX);
-  Tuple tupYhello; tupYhello.push_back(idY); tupYhello.push_back(idhello);
-  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", tupYhello);
+  ctx.registry->logContents();
 
-  OrdinaryAtomTable oatab;
-  ID idatb = oatab.storeAndGetID(atb);
-  ID idatab = oatab.storeAndGetID(atab);
-  ID idataX = oatab.storeAndGetID(ataX);
-  ID idatYhello = oatab.storeAndGetID(atYhello);
-  oatab.logContents("OrdinaryAtomTable");
+  ID ida = ctx.registry->ogatoms.getIDByString("a");
+  ID idb = ctx.registry->ogatoms.getIDByString("b");
+  ID idcde = ctx.registry->ogatoms.getIDByString("c(d,e)");
+  BOOST_REQUIRE((ida | idb | idcde) != ID_FAIL);
 
-  // rules
-  Tuple empty;
+  ID idfX = ctx.registry->onatoms.getIDByString("f(X)");
+  ID idgX = ctx.registry->onatoms.getIDByString("g(X)");
+  ID idhXX = ctx.registry->onatoms.getIDByString("h(X,X)");
+  BOOST_REQUIRE((idfX | idgX | idhXX) != ID_FAIL);
 
-  // disjunctive fact "b v a(b)"
-  Tuple tupborab;
-  tupborab.push_back(idatb); tupborab.push_back(idatab);
-  Rule rule1(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, tupborab, empty);
+  // TODO: the following will become a bitset check
+  BOOST_REQUIRE(ctx.edb.size() == 3);
+  {
+    BOOST_CHECK(ctx.edb[0] == ida);
+    BOOST_CHECK(ctx.edb[1] == idb);
+    BOOST_CHECK(ctx.edb[2] == idcde);
+  }
 
-  // regular rule "b :- a(X)"
-  Tuple tupb2; tupb2.push_back(idatb);
-  Tuple tupaX2; tupaX2.push_back(idataX);
-  Rule rule2(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, tupb2, tupaX2);
-
-  // constraint ":- a(b)"
-  Tuple tupab2; tupab2.push_back(idatab);
-  Rule rule3(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT, empty, tupab2);
-
-  // weak constraint ":~ b, a(X). [3,X]"
-  Tuple tupbaX; tupbaX.push_back(idatb); tupbaX.push_back(idataX);
-  Rule rule4(ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT,
-      empty, tupbaX, ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 3), idX);
-
-	{
-		RuleTable rtab;
-
-		ID id1 = rtab.storeAndGetID(rule1);
-		BOOST_CHECK_EQUAL(id1.kind, rtab.getByID(id1).kind);
-		BOOST_CHECK_EQUAL(id1.address, 0);
-		BOOST_CHECK(rtab.getByID(id1).head == tupborab);
-		BOOST_CHECK(rtab.getByID(id1).body == empty);
-		BOOST_CHECK(rtab.getByID(id1).weight == ID_FAIL);
-		BOOST_CHECK(rtab.getByID(id1).level == ID_FAIL);
-
-		ID id2 = rtab.storeAndGetID(rule2);
-		ID id3 = rtab.storeAndGetID(rule3);
-		ID id4 = rtab.storeAndGetID(rule4);
-		BOOST_CHECK(rtab.getByID(id4).weight.address == 3);
-		BOOST_CHECK(rtab.getByID(id4).level == idX);
-
-    rtab.logContents("RuleTable");
-	}
-  */
+  BOOST_REQUIRE(ctx.idb.size() == 1);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.weight == ID_FAIL);
+    BOOST_CHECK(r.level == ID_FAIL);
+    BOOST_REQUIRE(r.head.size() == 2);
+    {
+      BOOST_CHECK(r.head[0] == idfX);
+      BOOST_CHECK(r.head[1] == idb);
+    }
+    BOOST_REQUIRE(r.body.size() == 2);
+    {
+      BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(idgX));
+      BOOST_CHECK(r.body[1] == ID::nafLiteralFromAtom(idhXX));
+    }
+  }
 }
 

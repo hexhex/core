@@ -81,6 +81,7 @@ struct ID:
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
 	static const IDKind PROPERTY_ANONYMOUS =     0x00010000;
+	static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 
   // for builtin terms, this is the address part (no table)
   enum TermBuiltinAddress
@@ -100,6 +101,13 @@ struct ID:
     TERM_BUILTIN_MUL,
     TERM_BUILTIN_ADD,
   };
+  
+  static inline ID posLiteralFromAtom(ID atom)
+    { assert(atom.isAtom()); return ID(atom.kind | MAINKIND_LITERAL, atom.address); }
+  static inline ID nafLiteralFromAtom(ID atom)
+    { assert(atom.isAtom()); return ID(atom.kind | MAINKIND_LITERAL | NAF_MASK, atom.address); }
+  static inline ID literalFromAtom(ID atom, bool naf)
+    { assert(atom.isAtom()); return (naf?nafLiteralFromAtom(atom):posLiteralFromAtom(atom)); }
 
 	inline bool isTerm() const          { return (kind & MAINKIND_MASK) == MAINKIND_TERM; }
 	inline bool isConstantTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_CONSTANT; }
@@ -110,6 +118,7 @@ struct ID:
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // ground or nonground atoms (due t o the special bits this can be checked by checking bit 2 of this field only)
 	inline bool isOrdinaryAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_ATOM_BUILTIN) != SUBKIND_ATOM_BUILTIN; }
+	inline bool isOrdinaryGroundAtom() const  { assert(isAtom() || isLiteral()); return !(kind & SUBKIND_MASK); }
 	inline bool isBuiltinAtom() const   { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_BUILTIN; }
 	inline bool isAggregateAtom() const { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_AGGREGATE; }
 	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
@@ -123,6 +132,8 @@ struct ID:
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }
+	inline ID operator|(const ID& id2) const  { return ID(kind | id2.kind, address | id2.address); }
+	inline ID operator&(const ID& id2) const  { return ID(kind & id2.kind, address & id2.address); }
 
 	std::ostream& print(std::ostream& o) const;
 };

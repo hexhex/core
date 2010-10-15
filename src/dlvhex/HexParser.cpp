@@ -1,4 +1,3 @@
-#if 0
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
  * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
@@ -23,52 +22,94 @@
  */
 
 /**
- * @file   HexParserDriver.cpp
- * @author Roman Schindlauer
- * @date   Wed Mar 22 14:38:53 CET 2006
+ * @file   HexParser.cpp
+ * @author Peter Schüller
  * 
- * @brief  C++ parser using boost::spirit
- * 
- * 
+ * @brief  HEX parser implementation
  */
 
-#include "dlvhex/HexParserDriver.h"
-#include "dlvhex/ParserDriver.h"
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/ProgramCtx.h"
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/HexGrammarPTToASTConverter.h"
-#include "dlvhex/SpiritDebugging.h"
 
-#include <iostream>
-#include <sstream>
+#include <boost/scope_exit.hpp>
 #include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-
-HexParserDriver::HexParserDriver()
-    : source("")
+HexParser::HexParser(ProgramCtx& ctx):
+  ctx(ctx)
+{
+}
+  
+HexParser::~HexParser()
 {
 }
 
-
-HexParserDriver::~HexParserDriver()
-{
-}
-
-
-const std::string&
-HexParserDriver::getInputFilename() const
-{
-    return  this->source;
-}
-
-
+// parse from istream into ctx, using registry in ctx
 void
-HexParserDriver::setOrigin(const std::string& org)
+HexParser::parse(std::istream& is) throw (SyntaxError)
 {
-    this->source = org;
+  // put whole input from stream into a string
+  // (an alternative would be the boost::spirit::multi_pass iterator
+  // but this can be done later when the parser is updated to Spirit V2)
+  std::ostringstream buf;
+  buf << is.rdbuf();
+  std::string input = buf.str();
+
+  HexGrammar grammar;
+  typedef HexGrammarPTToASTConverter Converter;
+
+  Converter::iterator_t it_begin(input.c_str(), input.c_str()+input.size());
+  Converter::iterator_t it_end;
+
+  // parse ast
+  boost::spirit::tree_parse_info<Converter::iterator_t, Converter::factory_t> info =
+    boost::spirit::pt_parse<Converter::factory_t>(
+        it_begin, it_end, grammar, boost::spirit::space_p);
+
+  // successful parse?
+  if( !info.full )
+    throw SyntaxError("Could not parse complete input!",
+        info.stop.get_position().line, "TODO");
+
+  // if this is not ok, there is some bug and the following code will be incomplete
+  assert(info.trees.size() == 1);
+
+  // create dlvhex AST from spirit parser tree
+  Converter converter(ctx);
+  converter.convertPTToAST(*info.trees.begin());
 }
 
+// parse from file into ctx, using registry in ctx
+void
+HexParser::parse(const std::string& filename) throw (SyntaxError)
+{
+  std::ifstream ifs;
+  ifs.open(filename.c_str());
+
+  if( !ifs.is_open() )
+  {
+    throw SyntaxError("File " + filename + " not found");
+  }
+
+  BOOST_SCOPE_EXIT((&ifs))
+  {
+    ifs.close();
+  }
+  BOOST_SCOPE_EXIT_END
+
+  parse(ifs);
+}
+
+DLVHEX_NAMESPACE_END
+
+// Local Variables:
+// mode: C++
+// End:
+
+#if 0
 void
 HexParserDriver::parse(std::istream& is,
                        Program& program,
@@ -127,10 +168,4 @@ HexParserDriver::parse(const std::string& file,
     ifs.close();
 } 
 
-DLVHEX_NAMESPACE_END
-
-// vim: set expandtab:
-// Local Variables:
-// mode: C++
-// End:
 #endif

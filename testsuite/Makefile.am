@@ -39,7 +39,7 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
-TestHexParser_SOURCES = TestHexParser.cpp  $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp $(top_srcdir)/src/dlvhex/ProgramCtx.cpp $(top_srcdir)/src/dlvhex/HexParser.cpp
+TestHexParser_SOURCES = TestHexParser.cpp  $(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp $(top_srcdir)/src/dlvhex/HexParser.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp $(top_srcdir)/src/dlvhex/ProgramCtx.cpp $(top_srcdir)/src/dlvhex/Error.cpp
 TestHexParser_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
 TestTables_SOURCES = TestTables.cpp  $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp

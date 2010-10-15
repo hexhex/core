@@ -44,11 +44,13 @@
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/set_of.hpp>
+
 #include <vector>
 #include <string>
 #include <iosfwd>
-
-#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -64,6 +66,10 @@ class ResultContainer;
 class OutputBuilder;
 class State;
 
+typedef boost::bimaps::bimap<
+  boost::bimaps::set_of<std::string>,
+  boost::bimaps::set_of<std::string> > NamespaceTable;
+
 /**
  * @brief Registry for entities used in programs as IDs (collection of symbol tables)
  */
@@ -77,7 +83,13 @@ struct Registry
   BuiltinAtomTable batoms;
   AggregateAtomTable aatoms;
   RuleTable rules;
+
+  NamespaceTable namespaces;
+
+  void logContents() const;
 };
+
+typedef boost::shared_ptr<Registry> RegistryPtr;
 
 /**
  * @brief Program context class.
@@ -86,14 +98,29 @@ struct Registry
  */
 class DLVHEX_EXPORT ProgramCtx
 {
-private:
-	boost::shared_ptr<Registry> registry;
+public:
+  // symbol storage of this program context
+  // (this is a shared ptr because we might want
+  // to have multiple program contexts sharing the same registry)
+  RegistryPtr registry;
 
+  // idb
   std::vector<ID> idb;
+
+  // edb
+  // TODO: this should become a bitset interpretation!
   std::vector<ID> edb;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
-  ID maxint;
+  uint32_t maxint;
+
+  // TODO: add visibility policy (as in clasp)
+
+  // TODO: selected solver software
+
+  // TODO: loaded external atoms
+
+  // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
   std::vector<std::string>* options;
 
