@@ -48,6 +48,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap/bimap.hpp>
 #include <boost/bimap/set_of.hpp>
+#include <boost/bind.hpp>
 
 #include <vector>
 #include <string>
@@ -93,6 +94,31 @@ struct Registry
 };
 
 typedef boost::shared_ptr<Registry> RegistryPtr;
+
+class Printer
+{
+protected:
+  std::ostream& out;
+  RegistryPtr registry;
+
+public:
+  Printer(std::ostream& out, RegistryPtr registry):
+    out(out), registry(registry) {}
+  virtual ~Printer() {}
+  virtual void print(ID id) = 0;
+  virtual void print(std::vector<ID> ids)
+    { std::for_each(ids.begin(), ids.end(), boost::bind(
+          // cast to resolve overload for boost::bind
+          static_cast< void (Printer::*)(ID) >(&Printer::print), this, _1)); }
+};
+
+class RawPrinter:
+  public Printer
+{
+public:
+  RawPrinter(std::ostream& out, RegistryPtr registry): Printer(out, registry) {}
+  virtual void print(ID id);
+};
 
 /**
  * @brief Program context class.

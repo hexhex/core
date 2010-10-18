@@ -29,6 +29,7 @@
  * 
  * @brief  Declaration of ASP solving facility (for concrete solvers see ASPSolver.h).
  * 
+ * @todo ideas from GB: provide interface for atom invention and for guess invention (i.e., an interface for introducing guesses and atoms into the program)
  */
 
 #if !defined(_DLVHEX_ASPSOLVER_MANAGER_H)
