@@ -268,6 +268,8 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
 	}
 }
 
+#warning TODO testExternalAtomTable
+
 BOOST_AUTO_TEST_CASE(testRuleTable) 
 {
   // terms

@@ -89,13 +89,15 @@ struct BuiltinAtom:
   public Atom,
   private ostream_printable<BuiltinAtom>
 {
+  BuiltinAtom(IDKind kind):
+    Atom(kind)
+    { assert(ID(kind,0).isBuiltinAtom()); }
   BuiltinAtom(IDKind kind, const Tuple& tuple):
     Atom(kind, tuple)
     { assert(ID(kind,0).isBuiltinAtom()); }
   std::ostream& print(std::ostream& o) const
     { return o << "BuiltinAtom(" << printvector(tuple) << ")"; }
 };
-
 
 struct AggregateAtom:
   public Atom,
@@ -119,6 +121,31 @@ struct AggregateAtom:
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
         printvector(variables) << " and atoms " << printvector(atoms) << ")"; }
+};
+
+struct ExternalAtom:
+  public Atom,
+  private ostream_printable<ExternalAtom>
+{
+  // &<predicate>[<inputs>](<outputs>)
+
+  // input predicate (constant term)
+  ID predicate;
+
+  // input terms
+  Tuple inputs;
+
+  // Atom::tuple is used for output terms
+
+  ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
+    Atom(kind, outputs), predicate(predicate), inputs(inputs)
+    { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
+  ExternalAtom(IDKind kind):
+    Atom(kind), predicate(ID_FAIL), inputs()
+    { assert(ID(kind,0).isExternalAtom()); }
+  std::ostream& print(std::ostream& o) const
+    { return o << "ExternalAtom( &" << predicate << " [ " << printvector(inputs) <<
+        " ] ( " << printvector(Atom::tuple) << " )"; }
 };
 
 DLVHEX_NAMESPACE_END

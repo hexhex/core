@@ -102,6 +102,11 @@ struct ID:
     TERM_BUILTIN_ADD,
   };
   
+  static inline ID termFromInteger(uint32_t i)
+    { return ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, i); }
+  static inline ID termFromBuiltin(TermBuiltinAddress b)
+    { return ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, b); }
+  static ID termFromBuiltinString(const std::string& op);
   static inline ID posLiteralFromAtom(ID atom)
     { assert(atom.isAtom()); return ID(atom.kind | MAINKIND_LITERAL, atom.address); }
   static inline ID nafLiteralFromAtom(ID atom)
@@ -132,8 +137,9 @@ struct ID:
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }
-	inline ID operator|(const ID& id2) const  { return ID(kind | id2.kind, address | id2.address); }
-	inline ID operator&(const ID& id2) const  { return ID(kind & id2.kind, address & id2.address); }
+	inline ID operator|(const ID& id2) const    { return ID(kind | id2.kind, address | id2.address); }
+	inline ID operator&(const ID& id2) const    { return ID(kind & id2.kind, address & id2.address); }
+	inline operator uint64_t() const            { return *reinterpret_cast<const uint64_t*>(this); }
 
 	std::ostream& print(std::ostream& o) const;
 };

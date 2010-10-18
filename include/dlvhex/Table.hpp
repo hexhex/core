@@ -49,6 +49,7 @@ namespace impl
 	struct TermTag {}; // Term
 	struct TextTag {}; // OrdinaryGroundAtom
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
+	struct PredicateTag {}; // ExternalAtom
 }
 
 template<typename ValueT, typename IndexT>

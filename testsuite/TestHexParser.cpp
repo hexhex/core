@@ -39,7 +39,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-BOOST_AUTO_TEST_CASE(testHexParserSimpleStream) 
+BOOST_AUTO_TEST_CASE(testHexParserSimple) 
 {
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
@@ -74,6 +74,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimpleStream)
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_REQUIRE(r.head.size() == 2);
@@ -89,3 +90,248 @@ BOOST_AUTO_TEST_CASE(testHexParserSimpleStream)
   }
 }
 
+BOOST_AUTO_TEST_CASE(testHexParserConstraint) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  ss <<
+    ":- g(X), not h(X,X)." << std::endl;
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+  ctx.registry->logContents();
+
+  ID idgX = ctx.registry->onatoms.getIDByString("g(X)");
+  ID idhXX = ctx.registry->onatoms.getIDByString("h(X,X)");
+  BOOST_REQUIRE((idgX | idhXX) != ID_FAIL);
+
+  BOOST_REQUIRE(ctx.idb.size() == 1);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT));
+    BOOST_CHECK(r.weight == ID_FAIL);
+    BOOST_CHECK(r.level == ID_FAIL);
+    BOOST_CHECK(r.head.size() == 0);
+    BOOST_REQUIRE(r.body.size() == 2);
+    {
+      BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(idgX));
+      BOOST_CHECK(r.body[1] == ID::nafLiteralFromAtom(idhXX));
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  ss <<
+    ":~ g(X), not h(X,X)." << std::endl <<
+    ":~ g(X). [X:4]";
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+  ctx.registry->logContents();
+
+  ID idX = ctx.registry->terms.getIDByString("X");
+  ID id1 = ID::termFromInteger(1);
+  ID id4 = ID::termFromInteger(4);
+  ID idgX = ctx.registry->onatoms.getIDByString("g(X)");
+  ID idhXX = ctx.registry->onatoms.getIDByString("h(X,X)");
+  BOOST_REQUIRE((idX | id1 | id4 | idgX | idhXX) != ID_FAIL);
+
+  BOOST_REQUIRE(ctx.idb.size() == 2);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT));
+    BOOST_CHECK(r.weight == id1);
+    BOOST_CHECK(r.level == id1);
+    BOOST_CHECK(r.head.size() == 0);
+    BOOST_REQUIRE(r.body.size() == 2);
+    {
+      BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(idgX));
+      BOOST_CHECK(r.body[1] == ID::nafLiteralFromAtom(idhXX));
+    }
+  }
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[1]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT));
+    BOOST_CHECK(r.weight == idX);
+    BOOST_CHECK(r.level == id4);
+    BOOST_CHECK(r.head.size() == 0);
+    BOOST_REQUIRE(r.body.size() == 1);
+    {
+      BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(idgX));
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(testHexParserTrueNegation) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  ss <<
+    "a. -b. -b :- a, -b, not -b, not a." << std::endl;
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+  ctx.registry->logContents();
+
+  ID ida = ctx.registry->ogatoms.getIDByString("a");
+  ID idmb = ctx.registry->ogatoms.getIDByString("-b");
+  BOOST_REQUIRE((ida | idmb) != ID_FAIL);
+
+  // TODO: the following will become a bitset check
+  BOOST_REQUIRE(ctx.edb.size() == 2);
+  {
+    BOOST_CHECK(ctx.edb[0] == ida);
+    BOOST_CHECK(ctx.edb[1] == idmb);
+  }
+
+  BOOST_REQUIRE(ctx.idb.size() == 1);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR));
+    BOOST_CHECK(r.weight == ID_FAIL);
+    BOOST_CHECK(r.level == ID_FAIL);
+    BOOST_REQUIRE(r.head.size() == 1);
+    {
+      BOOST_CHECK(r.head[0] == idmb);
+    }
+    BOOST_REQUIRE(r.body.size() == 4);
+    {
+      BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(ida));
+      BOOST_CHECK(r.body[1] == ID::posLiteralFromAtom(idmb));
+      BOOST_CHECK(r.body[2] == ID::nafLiteralFromAtom(idmb));
+      BOOST_CHECK(r.body[3] == ID::nafLiteralFromAtom(ida));
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  ss <<
+    ":- X != 4, X < Y, >=(X,Y), #int(X).";
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+  ctx.registry->logContents();
+
+  ID idX = ctx.registry->terms.getIDByString("X");
+  ID idY = ctx.registry->terms.getIDByString("Y");
+  ID id4 = ID::termFromInteger(4);
+  ID idne = ID::termFromBuiltin(ID::TERM_BUILTIN_NE);
+  ID idlt = ID::termFromBuiltin(ID::TERM_BUILTIN_LT);
+  ID idge = ID::termFromBuiltin(ID::TERM_BUILTIN_GE);
+  ID idint = ID::termFromBuiltin(ID::TERM_BUILTIN_INT);
+  BOOST_REQUIRE((idX | idY | id4 | idne | idlt | idge | idint) != ID_FAIL);
+
+  BOOST_REQUIRE(ctx.idb.size() == 1);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT));
+    BOOST_CHECK(r.weight == ID_FAIL);
+    BOOST_CHECK(r.level == ID_FAIL);
+    BOOST_CHECK(r.head.size() == 0);
+    BOOST_REQUIRE(r.body.size() == 4);
+    {
+      ID idlit = r.body[0];
+      BOOST_CHECK(idlit.isLiteral());
+      BOOST_CHECK(idlit.isBuiltinAtom());
+      const BuiltinAtom& at = ctx.registry->batoms.getByID(idlit);
+      BOOST_CHECK(ID(at.kind,0).isBuiltinAtom());
+      BOOST_REQUIRE(at.tuple.size() == 3);
+      BOOST_CHECK(at.tuple[0] == idne);
+      BOOST_CHECK(at.tuple[1] == idX);
+      BOOST_CHECK(at.tuple[2] == id4);
+    }
+    {
+      ID idlit = r.body[1];
+      BOOST_CHECK(idlit.isLiteral());
+      BOOST_CHECK(idlit.isBuiltinAtom());
+      const BuiltinAtom& at = ctx.registry->batoms.getByID(idlit);
+      BOOST_CHECK(ID(at.kind,0).isBuiltinAtom());
+      BOOST_REQUIRE(at.tuple.size() == 3);
+      BOOST_CHECK(at.tuple[0] == idlt);
+      BOOST_CHECK(at.tuple[1] == idX);
+      BOOST_CHECK(at.tuple[2] == idY);
+    }
+    {
+      ID idlit = r.body[2];
+      BOOST_CHECK(idlit.isLiteral());
+      BOOST_CHECK(idlit.isBuiltinAtom());
+      const BuiltinAtom& at = ctx.registry->batoms.getByID(idlit);
+      BOOST_CHECK(ID(at.kind,0).isBuiltinAtom());
+      BOOST_REQUIRE(at.tuple.size() == 3);
+      BOOST_CHECK(at.tuple[0] == idge);
+      BOOST_CHECK(at.tuple[1] == idX);
+      BOOST_CHECK(at.tuple[2] == idY);
+    }
+    {
+      ID idlit = r.body[3];
+      BOOST_CHECK(idlit.isLiteral());
+      BOOST_CHECK(idlit.isBuiltinAtom());
+      const BuiltinAtom& at = ctx.registry->batoms.getByID(idlit);
+      BOOST_CHECK(ID(at.kind,0).isBuiltinAtom());
+      BOOST_REQUIRE(at.tuple.size() == 2);
+      BOOST_CHECK(at.tuple[0] == idint);
+      BOOST_CHECK(at.tuple[1] == idX);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  ss <<
+    ":- &foo[a,b,X](b,X,4).";
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+  ctx.registry->logContents();
+
+  ID ida = ctx.registry->terms.getIDByString("a");
+  ID idb = ctx.registry->terms.getIDByString("b");
+  ID idX = ctx.registry->terms.getIDByString("X");
+  ID id4 = ID::termFromInteger(4);
+  ID idfoo = ctx.registry->terms.getIDByString("foo");
+  BOOST_REQUIRE((ida | idb | idX | id4 | idfoo) != ID_FAIL);
+
+  BOOST_REQUIRE(ctx.idb.size() == 1);
+  {
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT));
+    BOOST_CHECK(r.weight == ID_FAIL);
+    BOOST_CHECK(r.level == ID_FAIL);
+    BOOST_CHECK(r.head.size() == 0);
+    BOOST_REQUIRE(r.body.size() == 1);
+    {
+      ID idlit = r.body[0];
+      BOOST_CHECK(idlit.isLiteral());
+      BOOST_CHECK(idlit.isExternalAtom());
+      const ExternalAtom& at = ctx.registry->eatoms.getByID(idlit);
+      BOOST_CHECK(ID(at.kind,0).isExternalAtom());
+      BOOST_CHECK(at.predicate == idfoo);
+      BOOST_REQUIRE(at.inputs.size() == 3);
+      BOOST_CHECK(at.inputs[0] == ida);
+      BOOST_CHECK(at.inputs[1] == idb);
+      BOOST_CHECK(at.inputs[2] == idX);
+      BOOST_REQUIRE(at.tuple.size() == 3);
+      BOOST_CHECK(at.tuple[0] == idb);
+      BOOST_CHECK(at.tuple[1] == idX);
+      BOOST_CHECK(at.tuple[2] == id4);
+    }
+  }
+}

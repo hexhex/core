@@ -22,30 +22,37 @@
  */
 
 /**
- * @file   BuiltinAtomTable.hpp
+ * @file   ExternalAtomTable.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Table for storing Builtin Atoms
+ * @brief  Table for storing External Atoms
  */
 
-#ifndef BUILTINATOMTABLE_HPP_INCLUDED__12102010
-#define BUILTINATOMTABLE_HPP_INCLUDED__12102010
+#ifndef EXTERNALATOMTABLE_HPP_INCLUDED__18102010
+#define EXTERNALATOMTABLE_HPP_INCLUDED__18102010
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Table.hpp"
 
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
-class BuiltinAtomTable:
+class ExternalAtomTable:
 	public Table<
 		// value type is symbol struct
-		BuiltinAtom,
+		ExternalAtom,
 		// index is
 		boost::multi_index::indexed_by<
 			// address = running ID for constant access
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
+			>,
+			boost::multi_index::ordered_non_unique<
+				boost::multi_index::tag<impl::PredicateTag>,
+				BOOST_MULTI_INDEX_MEMBER(ExternalAtom,ID,predicate)
 			>
       #if 0
 			// kind TODO perhaps we do not need this index?
@@ -60,29 +67,30 @@ class BuiltinAtomTable:
 	// types
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
-  //typedef Container::index<impl::KindTag>::type KindIndex;
-	//typedef Container::index<impl::TupleTag>::type TupleIndex;
+  typedef Container::index<impl::PredicateTag>::type PredicateIndex;
 
 	// methods
 public:
   // retrieve by ID
   // assert that id.kind is correct
   // assert that ID exists in table
-	inline const BuiltinAtom& getByID(ID id) const throw ();
+	inline const ExternalAtom& getByID(ID id) const throw ();
 
 	// store atom, assuming it does not exist
-	inline ID storeAndGetID(const BuiltinAtom& atom) throw();
+	inline ID storeAndGetID(const ExternalAtom& atom) throw();
+
+  // TODO: get all predicate id's
 };
 
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
-const BuiltinAtom&
-BuiltinAtomTable::getByID(
+const ExternalAtom&
+ExternalAtomTable::getByID(
   ID id) const throw ()
 {
 	assert(id.isAtom() || id.isLiteral());
-	assert(id.isBuiltinAtom());
+	assert(id.isExternalAtom());
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -90,11 +98,11 @@ BuiltinAtomTable::getByID(
 }
 
 // store symbol, assuming it does not exist (this is only asserted)
-ID BuiltinAtomTable::storeAndGetID(
-		const BuiltinAtom& atm) throw()
+ID ExternalAtomTable::storeAndGetID(
+		const ExternalAtom& atm) throw()
 {
 	assert(ID(atm.kind,0).isAtom());
-	assert(ID(atm.kind,0).isBuiltinAtom());
+	assert(ID(atm.kind,0).isExternalAtom());
 	assert(!atm.tuple.empty());
 
 	AddressIndex& idx = container.get<impl::AddressTag>();

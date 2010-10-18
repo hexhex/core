@@ -41,6 +41,7 @@
 #include "dlvhex/OrdinaryAtomTable.hpp"
 #include "dlvhex/BuiltinAtomTable.hpp"
 #include "dlvhex/AggregateAtomTable.hpp"
+#include "dlvhex/ExternalAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 
@@ -82,6 +83,7 @@ struct Registry
   OrdinaryAtomTable onatoms;
   BuiltinAtomTable batoms;
   AggregateAtomTable aatoms;
+  ExternalAtomTable eatoms;
   RuleTable rules;
 
   NamespaceTable namespaces;

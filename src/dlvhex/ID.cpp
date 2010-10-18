@@ -47,4 +47,54 @@ std::ostream& ID::print(std::ostream& o) const
   return o << ")";
 }
 
+// returns builtin term ID
+// static
+ID ID::termFromBuiltinString(const std::string& op)
+{
+  assert(!op.empty());
+  switch(op.size())
+  {
+  case 1:
+    switch(op[0])
+    {
+    case '=': return ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+    case '<': return ID::termFromBuiltin(ID::TERM_BUILTIN_LT);
+    case '>': return ID::termFromBuiltin(ID::TERM_BUILTIN_GT);
+    case '*': return ID::termFromBuiltin(ID::TERM_BUILTIN_MUL);
+    case '+': return ID::termFromBuiltin(ID::TERM_BUILTIN_ADD);
+    default: assert(false); return ID_FAIL;
+    }
+  case 2:
+    if( op == "!=" || op == "<>" )
+    {
+      return ID::termFromBuiltin(ID::TERM_BUILTIN_NE);
+    }
+    else if( op == "<=" )
+    {
+      return ID::termFromBuiltin(ID::TERM_BUILTIN_LE);
+    }
+    else if( op == ">=" )
+    {
+      return ID::termFromBuiltin(ID::TERM_BUILTIN_GE);
+    }
+    else
+    {
+      assert(false); return ID_FAIL;
+    }
+  }
+  if( op == "#succ" )
+  {
+    return ID::termFromBuiltin(ID::TERM_BUILTIN_SUCC);
+  }
+  else if( op == "#int" )
+  {
+    return ID::termFromBuiltin(ID::TERM_BUILTIN_INT);
+  }
+  else
+  {
+    assert(false);
+    return ID_FAIL;
+  }
+}
+
 DLVHEX_NAMESPACE_END

@@ -212,8 +212,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       Rule r(
         ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT,
-        ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 1),
-        ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 1));
+        ID::termFromInteger(1),
+        ID::termFromInteger(1));
       if( child.children.size() > 6 )
       {
         // there is some weight
@@ -390,78 +390,77 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   return id;
 }
 
-namespace
-{
-  std::string normalizeOperator(const std::string& in)
-  {
-    if( in == "==" )
-      return "=";
-    if( in == "<>" )
-      return "!=";
-    return in;
-  }
-}
-
 ID HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& node)
 {
-  assert(false);
-  #if 0
   assert(node.value.id() == HexGrammar::BuiltinPred);
   node_t& child = node.children[0];
+
+  BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
   switch(child.value.id().to_long())
   {
   case HexGrammar::BuiltinTertopPrefix:
-    return AtomPtr(new BuiltinPredicate(
-          createTermFromTerm(child.children[2]),
-          createTermFromTerm(child.children[4]),
-          createTermFromTerm(child.children[6]),
+    atom.tuple.push_back(ID::termFromBuiltinString(
           createStringFromNode(child.children[0])));
+    atom.tuple.push_back(createTermFromTerm(child.children[2]));
+    atom.tuple.push_back(createTermFromTerm(child.children[4]));
+    atom.tuple.push_back(createTermFromTerm(child.children[6]));
+    break;
   case HexGrammar::BuiltinTertopInfix:
-    return AtomPtr(new BuiltinPredicate(
-          createTermFromTerm(child.children[2]),
-          createTermFromTerm(child.children[4]),
-          createTermFromTerm(child.children[0]),
+    atom.tuple.push_back(ID::termFromBuiltinString(
           createStringFromNode(child.children[3])));
+    atom.tuple.push_back(createTermFromTerm(child.children[2]));
+    atom.tuple.push_back(createTermFromTerm(child.children[4]));
+    atom.tuple.push_back(createTermFromTerm(child.children[0]));
+    break;
   case HexGrammar::BuiltinBinopPrefix:
-    return AtomPtr(new BuiltinPredicate(
-          createTermFromTerm(child.children[2]),
-          createTermFromTerm(child.children[4]),
-          normalizeOperator(
-            createStringFromNode(child.children[0]))));
+    atom.tuple.push_back(ID::termFromBuiltinString(
+          createStringFromNode(child.children[0])));
+    atom.tuple.push_back(createTermFromTerm(child.children[2]));
+    atom.tuple.push_back(createTermFromTerm(child.children[4]));
+    break;
   case HexGrammar::BuiltinBinopInfix:
-    return AtomPtr(new BuiltinPredicate(
-          createTermFromTerm(child.children[0]),
-          createTermFromTerm(child.children[2]),
-          normalizeOperator(
-            createStringFromNode(child.children[1]))));
+    atom.tuple.push_back(ID::termFromBuiltinString(
+          createStringFromNode(child.children[1])));
+    atom.tuple.push_back(createTermFromTerm(child.children[0]));
+    atom.tuple.push_back(createTermFromTerm(child.children[2]));
+    break;
   case HexGrammar::BuiltinOther:
     if( child.children.size() == 6 )
+    {
       // #succ/2
-      return AtomPtr(new BuiltinPredicate(
-        createTermFromTerm(child.children[2]),
-        createTermFromTerm(child.children[4]),
-        createStringFromNode(child.children[0])));
+      atom.tuple.push_back(ID::termFromBuiltinString(
+            createStringFromNode(child.children[0])));
+      atom.tuple.push_back(createTermFromTerm(child.children[2]));
+      atom.tuple.push_back(createTermFromTerm(child.children[4]));
+    }
     else
+    {
       // #int/1
-      return AtomPtr(new BuiltinPredicate(
-        createTermFromTerm(child.children[2]),
-        createStringFromNode(child.children[0])));
+      atom.tuple.push_back(ID::termFromBuiltinString(
+            createStringFromNode(child.children[0])));
+      atom.tuple.push_back(createTermFromTerm(child.children[2]));
+    }
+    break;
 
   default:
     assert(false && "encountered unknown node in createBuiltinPredFromBuiltinPred!");
-    return AtomPtr(); // keep the compiler happy
+    return ID_FAIL; // keep the compiler happy
   }
-  #endif
+
+  LOG("storing builtin atom " << atom);
+  ID id = ctx.registry->batoms.storeAndGetID(atom);
+  LOG("stored builtin atom " << atom << " which got id " << id);
+  return id;
 }
 
 ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 {
-  assert(false);
-  #if 0
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ExtAtom);
-  Tuple inputs;
-  Tuple outputs;
+  ExternalAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+  atom.predicate = createTerm_Helper(node.children[1], HexGrammar::Ident);
+  Tuple& inputs = atom.inputs;
+  Tuple& outputs = atom.tuple;
   if( node.children.size() > 2 )
   {
     // either input or output
@@ -492,12 +491,11 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
       }
     }
   }
-  ExternalAtom* extat = new ExternalAtom(
-    createStringFromNode(node.children[1]),
-    outputs, inputs, node.value.value().pos.line);
 
-  return AtomPtr(extat);
-  #endif
+  LOG("storing external atom " << atom);
+  ID id = ctx.registry->eatoms.storeAndGetID(atom);
+  LOG("stored external atom " << atom << " which got id " << id);
+  return id;
 }
 
 ID HexGrammarPTToASTConverter::createAggregateFromAggregate(node_t& node)

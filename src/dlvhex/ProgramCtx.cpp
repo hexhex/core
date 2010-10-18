@@ -65,6 +65,7 @@ void Registry::logContents() const
   onatoms.logContents("onatoms");
   batoms.logContents("batoms");
   aatoms.logContents("aatoms");
+  eatoms.logContents("eatoms");
   rules.logContents("rules");
 }
 
