@@ -365,24 +365,28 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   //
   // our way:
   // print it from the IDs in atom.tuple
+
+  std::stringstream ss;
+  RawPrinter printer(ss, ctx.registry);
   if( atom.neg )
-    atom.text += "-";
+    ss << "-";
   Tuple::const_iterator it = atom.tuple.begin();
-  ctx.registry->printTerm(*it, atom.text);
+  printer.print(*it);
   it++;
   if( it != atom.tuple.end() )
   {
-    atom.text += "(";
-    ctx.registry->printTerm(*it, atom.text);
+    ss << "(";
+    printer.print(*it);
     it++;
     while(it != atom.tuple.end())
     {
-      atom.text += ",";
-      ctx.registry->printTerm(*it, atom.text);
+      ss << ",";
+      printer.print(*it);
       it++;
     }
-    atom.text += ")";
+    ss << ")";
   }
+  atom.text = ss.str();
 
   LOG("got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);

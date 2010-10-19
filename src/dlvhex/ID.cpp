@@ -97,4 +97,30 @@ ID ID::termFromBuiltinString(const std::string& op)
   }
 }
 
+namespace
+{
+	const char* builtinTerms[] =
+	{
+		"=",
+		"!=",
+		"<",
+		"<=",
+		">",
+		">=",
+		"#sum",
+		"#count",
+		"#min",
+		"#avg",
+		"#int",
+		"#succ",
+		"*",
+		"+",
+	};
+}
+
+const char* ID::stringFromBuiltinTerm(IDAddress addr)
+{
+	return builtinTerms[addr];
+}
+
 DLVHEX_NAMESPACE_END

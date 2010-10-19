@@ -33,7 +33,6 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Logger.hpp"
-#include <boost/cstdint.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -107,6 +106,7 @@ struct ID:
   static inline ID termFromBuiltin(TermBuiltinAddress b)
     { return ID(ID::MAINKIND_TERM | ID::SUBKIND_TERM_BUILTIN, b); }
   static ID termFromBuiltinString(const std::string& op);
+  static const char* stringFromBuiltinTerm(IDAddress addr);
   static inline ID posLiteralFromAtom(ID atom)
     { assert(atom.isAtom()); return ID(atom.kind | MAINKIND_LITERAL, atom.address); }
   static inline ID nafLiteralFromAtom(ID atom)
@@ -129,6 +129,7 @@ struct ID:
 	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
 
 	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
+	inline bool isNaf() const           { return (kind & NAF_MASK) == NAF_MASK; }
   
 	inline bool isRule() const          { return (kind & MAINKIND_MASK) == MAINKIND_RULE; }
 	inline bool isRegularRule() const   { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_REGULAR; }

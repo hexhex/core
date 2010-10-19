@@ -90,7 +90,6 @@ struct Registry
   NamespaceTable namespaces;
 
   void logContents() const;
-	void printTerm(ID id, std::string& append) const;
 };
 
 typedef boost::shared_ptr<Registry> RegistryPtr;
@@ -105,11 +104,8 @@ public:
   Printer(std::ostream& out, RegistryPtr registry):
     out(out), registry(registry) {}
   virtual ~Printer() {}
+  void printmany(const std::vector<ID>& ids, const std::string& separator);
   virtual void print(ID id) = 0;
-  virtual void print(std::vector<ID> ids)
-    { std::for_each(ids.begin(), ids.end(), boost::bind(
-          // cast to resolve overload for boost::bind
-          static_cast< void (Printer::*)(ID) >(&Printer::print), this, _1)); }
 };
 
 class RawPrinter:

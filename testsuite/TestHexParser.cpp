@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   TestTypes.cpp
+ * @file   TestHexParser.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Test HEX parser
@@ -36,6 +36,18 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+
+#define LOG_REGISTRY_PROGRAM(ctx) \
+  ctx.registry->logContents(); \
+	RawPrinter printer(std::cerr, ctx.registry); \
+	LOG("edb"); \
+	printer.printmany(ctx.edb,"\n"); \
+	std::cerr << std::endl; \
+	LOG("edb end"); \
+	LOG("idb"); \
+	printer.printmany(ctx.idb,"\n"); \
+	std::cerr << std::endl; \
+	LOG("idb end");
 
 DLVHEX_NAMESPACE_USE
 
@@ -51,7 +63,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID ida = ctx.registry->ogatoms.getIDByString("a");
   ID idb = ctx.registry->ogatoms.getIDByString("b");
@@ -101,7 +113,7 @@ BOOST_AUTO_TEST_CASE(testHexParserConstraint)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID idgX = ctx.registry->onatoms.getIDByString("g(X)");
   ID idhXX = ctx.registry->onatoms.getIDByString("h(X,X)");
@@ -134,7 +146,7 @@ BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID idX = ctx.registry->terms.getIDByString("X");
   ID id1 = ID::termFromInteger(1);
@@ -180,7 +192,7 @@ BOOST_AUTO_TEST_CASE(testHexParserTrueNegation)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID ida = ctx.registry->ogatoms.getIDByString("a");
   ID idmb = ctx.registry->ogatoms.getIDByString("-b");
@@ -224,7 +236,7 @@ BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID idX = ctx.registry->terms.getIDByString("X");
   ID idY = ctx.registry->terms.getIDByString("Y");
@@ -300,7 +312,7 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
-  ctx.registry->logContents();
+	LOG_REGISTRY_PROGRAM(ctx);
 
   ID ida = ctx.registry->terms.getIDByString("a");
   ID idb = ctx.registry->terms.getIDByString("b");
