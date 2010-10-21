@@ -1,3 +1,13 @@
+2010-10-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am: Add builtin_safety2.hex for new DLV
+	release 2010-10-14.
+	* examples/builtin_safety1.hex: Likewise.
+	* examples/builtin_safety2.hex: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/builtin_safety1.out: Likewise.
+	* examples/tests/builtin_safety2.out: Likewise.
+
 2010-10-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	Release version 1.7.2.

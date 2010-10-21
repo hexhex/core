@@ -1,4 +1,4 @@
-../builtin_safety.hex builtin_safety.out
+../builtin_safety2.hex builtin_safety2.out
 ../simple1.hex simple1.out
 ../weak1.hex weak1.out -a
 ../weak1.hex weak1r.out -ra
