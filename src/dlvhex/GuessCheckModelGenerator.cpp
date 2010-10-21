@@ -34,13 +34,23 @@
  */
 
 #include "dlvhex/ModelGenerator.h"
-#include "dlvhex/ASPSolver.h"
+
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
+#endif
+
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Registry.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/EvaluateExtatom.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <sstream>
 #include <boost/functional.hpp>
@@ -64,7 +74,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 				  const AtomSet& I,
 				  std::vector<AtomSet>& models)
 {
-  DEBUG_START_TIMER;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(gcModelGen,"Guess/check model generator");
 
   models.clear();
 
@@ -212,9 +222,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
     }
 
 
-  // create a new ASP solver
-  std::auto_ptr<BaseASPSolver> solver(ctx.getProcess()->createSolver());
-
   std::vector<AtomSet> allguesses;
 	
   //
@@ -222,7 +229,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
   //
   try
     {
-      solver->solve(guessingrules, I, allguesses);
+      ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), guessingrules, I, allguesses);
     }
   catch (FatalError&)
     {
@@ -428,7 +435,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 
 	  std::vector<AtomSet> reductanswers;
 	  
-	  solver->solve(bodyPicker, *guess, reductanswers);
+	  ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), bodyPicker, *guess, reductanswers);
 
 	  // the program must be a satisfiable & stratified!
 	  assert(reductanswers.size() == 1);
@@ -497,7 +504,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  //
 	  // 5)
 	  //
-	  solver->solve(flpreduced, reducedEDB, reductanswers2);
+	  ASPSolverManager::Instance().solve(*ctx.getASPSoftware(), flpreduced, reducedEDB, reductanswers2);
 
 	  assert(reductanswers2.size() == 1);
 			
@@ -647,9 +654,6 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	    }
 	}
     }
-
-  //	        123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  DEBUG_STOP_TIMER("Guess-and-check model generator:        ");
 }
 
 

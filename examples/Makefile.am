@@ -3,7 +3,10 @@ EXTRA_DIST = \
     3col.hex \
     agg1.hex \
     agg2.hex \
+    builtin_safety1.hex \
+    builtin_safety2.hex \
     empty.hex \
+    equality.hex \
     extatom1.hex \
     extatom2.hex \
     extatom3.hex \
@@ -28,7 +31,9 @@ EXTRA_DIST = \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
+    tests/builtin_safety.out \
     tests/empty.out \
+    tests/equality.out \
     tests/extatom1.out \
     tests/extatom2.out \
     tests/extatom4.out \

@@ -1,10 +1,16 @@
--*- org -*-
+# -*- org -*-
+#+STARTUP: showall
 
 This file provides some hints how to install and run dlvhex.
 
 * You just want to use the binary
 We provide pre-compiled Debian/Ubuntu packages of dlvhex and its
-plugins at <https://launchpad.net/~tkren/+archive/asp>.
+plugins at <https://launchpad.net/~tkren/+archive/asp>. Just run
+
+ $ sudo add-apt-repository ppa:tkren/asp
+
+and then you can install dlvhex and the plugins using your favorite
+package management tool.
 
 * You want to build and install from the sources
 In this case, you probably need to install additional packages to
@@ -37,7 +43,13 @@ Popular Linux and Unix distributions such as Fedora, Debian, and
 NetBSD include pre-built Boost packages. E.g., in Debian/Ubuntu just
 run
 
- $ apt-get install libboost-dev libboost-graph-dev libboost-iostreams-dev
+ $ sudo apt-get install libboost-all-dev
+
+or
+
+ $ sudo apt-get install libboostN.NN-all-dev
+
+for boost version N.NN.
 
 If your Ubuntu system did not provide recent boost packages, have a
 look at <https://launchpad.net/~boost-latest/+archive/ppa>.
@@ -54,9 +66,9 @@ libcurl is a multi-protocol file transfer library. dlvhex uses it to
 retrieve programs specified by http-scheme URLs. This library is
 standard for most operating systems (see
 <http://curl.haxx.se/libcurl/> for source packages). Debian/Ubuntu
-provides packages called libcurlN-openssl-dev and libcurlN-gnutls-dev
-(or libcurlN-dev) for some N; install one of these and you will be
-able to compile dlvhex.
+provides packages called libcurl-dev, libcurlN-openssl-dev, and
+libcurlN-gnutls-dev (or libcurlN-dev) for some N; install one of these
+and you will be able to compile dlvhex.
 
 *** cppunit (optional)
 CppUnit is used for the unit-testing of dlvhex, but not necessary for
@@ -66,12 +78,12 @@ tarball.  dlvhex has been tested with cppunit 1.12.0. Like boost,
 cppunit packages are provided by the major Linux distributions. E.g.,
 in Debian/Ubuntu you just have to run
 
- $ apt-get install libcppunit-dev
+ $ sudo apt-get install libcppunit-dev
 
 ** Configuration
 Run `configure' to create the necessary Makefiles. As usual, use the
 --prefix switch to specify a custom installation location. dlvhex uses
-pkgconfig to share build-related configuration with plugins. So if you
+pkg-config to share build-related configuration with plugins. So if you
 also intend to compile plugins and use a custom prefix for dlvhex,
 make sure to adjust the PKG_CONFIG_PATH environment variable
 appropriately, otherwise the configuration of the plugins will not
@@ -101,12 +113,12 @@ according configure-switch, e.g., by calling
 you get a pdf of the documentation.
 
 ** Testing
-Run "make check" to build and execute the cppunit-based regression
+Run `make check' to build and execute the cppunit-based regression
 testsuite. Note that the testsuite is only being built if cppunit is
 installed.
 
 ** Installation
-Run "make install" to install the binary dlvhex, its libraries and the
+Run `make install' to install the binary dlvhex, its libraries and the
 corresponding header files, which are needed for developing plugins.
 
 * Running dlvhex
@@ -115,6 +127,6 @@ dlv. `dlvhex --help' displays a short help with available command-line
 parameters. For an introduction how to write HEX-programs, see the
 documentation provided at
 <http://http://www.kr.tuwien.ac.at/research/systems/dlvhex/> or look
-at the examples directory here. DLV programs are described at
+at the `examples' directory here. DLV programs are described at
 <http://www.dbai.tuwien.ac.at/proj/dlv/#docs>.
 

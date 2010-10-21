@@ -1,7 +1,10 @@
 AC_PREREQ([2.61])
-AC_INIT([dlvhex],[1.7.0],[tkren@kr.tuwien.ac.at])
+AC_INIT([dlvhex],[1.7.2],[dlvhex-devel@lists.sourceforge.net])
+AM_INIT_AUTOMAKE([-Wall gnu check-news color-tests 1.11])
+
 AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
-AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_HEADER([include/config.h])
+
 
 AC_CANONICAL_HOST
 
@@ -104,7 +107,6 @@ fi
 
 
 
-AM_INIT_AUTOMAKE
 
 # Check for C/C++ compiler
 AC_PROG_CC
@@ -112,8 +114,9 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 
 # set default warning parameters for g++ compatible compilers
+# allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
-   CXXFLAGS="$CXXFLAGS -W -Wall"
+   CXXFLAGS="-W -Wall $CXXFLAGS"
 fi
 
 # Checks for header files.
@@ -167,14 +170,16 @@ BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
 
 # debug
 AC_ARG_ENABLE(debug,
-              [  --enable-debug          switch on debug routines (timers, ...)],
+              [  --enable-debug          switch on debug and benchmarking routines (timers, ...)],
               [AC_DEFINE(DLVHEX_DEBUG, [], [Turns on timer routines for profiling])
-               debug_support=yes],
-	      [debug_support=no]
+               debug_support=true],
+	      [debug_support=false]
               )
 
+AM_CONDITIONAL([BENCHMARKING], [test x$debug_support = xtrue])
+
 # for debug, we need the boost_date_time library
-if test "$debug_support" = "yes"; then
+if test "$debug_support" = "true"; then
    BOOST_DATE_TIME
 fi
 
@@ -223,6 +228,14 @@ dnl output configuration
 cat <<EOF
  
 $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
+
+ - Compiler settings
+ CC: $CC
+ CXX: $CXX
+ CFLAGS: $CFLAGS
+ CPPFLAGS: $CPPFLAGS
+ CXXFLAGS: $CXXFLAGS
+ LDFLAGS: $LDFLAGS
  
  - Path settings
  prefix: $prefix

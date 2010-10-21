@@ -251,6 +251,16 @@ public:
 	virtual void
 	accept(BaseVisitor&) const;
 
+	/**
+	 * Returns whether the program contains higher order atoms.
+	 */
+	bool isHigherOrder() const { return higherOrder; }
+
+	/**
+	 * Returns whether the program contains aggregate atoms.
+	 */
+	bool hasAggregateAtoms() const { return aggregateAtoms; }
+
  private:
 
 	/**
@@ -267,6 +277,16 @@ public:
 	 * All external atoms.
 	 */
 	std::vector<ExternalAtom*> externalAtoms;
+
+	/**
+	 * Whether the program contains higher order atoms.
+	 */
+	bool higherOrder;
+
+	/**
+	 * Whether the program contains aggregate atoms.
+	 */
+	bool aggregateAtoms;
 };
 
 DLVHEX_NAMESPACE_END

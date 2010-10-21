@@ -62,7 +62,6 @@ ProgramCtx::ProgramCtx()
     EDB(new AtomSet),
     nodegraph(new NodeGraph),
     depgraph(0),
-    solver(new DLVProcess),
     result(0),
     outputbuilder(0),
     state(boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
@@ -73,7 +72,6 @@ ProgramCtx::~ProgramCtx()
 {
   delete outputbuilder;
   delete result;
-  delete solver;
   delete depgraph;
   delete nodegraph;
   delete IDB;
@@ -204,22 +202,17 @@ ProgramCtx::setDependencyGraph(DependencyGraph* dg)
     }
 }
 
-
-Process*
-ProgramCtx::getProcess() const
+ASPSolverManager::SoftwareConfigurationPtr
+ProgramCtx::getASPSoftware() const
 {
-  return solver;
+  assert(aspsoftware != 0);
+  return aspsoftware;
 }
 
-
 void
-ProgramCtx::setProcess(Process* s)
+ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr software)
 {
-  if (this->solver != s)
-    {
-      delete this->solver;
-      this->solver = s;
-    }
+  aspsoftware = software;
 }
 
 

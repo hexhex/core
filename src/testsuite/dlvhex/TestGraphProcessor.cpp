@@ -41,10 +41,14 @@
 #include "dlvhex/GraphProcessor.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginContainer.h"
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
 
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+using namespace ASPSolver;
 
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION(TestGraphProcessor);
@@ -132,6 +136,9 @@ TestGraphProcessor::testSimple()
     
 
     ProgramCtx ctx;
+    ASPSolverManager::SoftwareConfigurationPtr dlvSoftware(
+      new DLVSoftware::Configuration);
+    ctx.setASPSoftware(dlvSoftware);
     ctx.setPluginContainer(PluginContainer::instance(""));
     ctx.setNodeGraph(new NodeGraph);
 

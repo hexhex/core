@@ -77,6 +77,12 @@ Literal::isNAF() const
     return isWeaklyNegated;
 }
 
+bool
+Literal::isHigherOrder() const
+{
+    return atom->isHigherOrder();
+}
+
 
 bool
 Literal::operator== (const Literal& lit2) const

@@ -1,5 +1,10 @@
-AUTOMAKE_OPTIONS = gnu check-news 1.10
+# use at least automake >= 1.11
+AUTOMAKE_OPTIONS = 1.11
+
+# use ./m4 directory for additional macros
 ACLOCAL_AMFLAGS = -I m4
+
+# setup doxygen for automake use
 include doxygen.am
 
 pkgconfigdir = $(libdir)/pkgconfig
