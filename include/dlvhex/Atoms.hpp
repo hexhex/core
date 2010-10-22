@@ -58,31 +58,34 @@ protected:
     { assert(ID(kind,0).isAtom()); assert(!tuple.empty()); }
 };
 
+// regarding strong negation:
+// during the parse process we do the following:
+// we convert strong negation -<foo> into <foo'> (careful with variables in <foo>!)
+// we add constraint :- <foo>, <foo'>.
+// we somehow mark the <foo'> as strongly negated helper s.t. output can correctly print results
+//
+// for the first implementation, we leave out strong negation alltogether (not parseable)
 struct OrdinaryAtom:
   public Atom,
   private ostream_printable<OrdinaryAtom>
 {
-  // strong negation symbol (TODO: research how to extract this from IDKind for multi_index)
-  bool neg;
-
   // the textual representation of the whole thing
   // this is stored for efficient parsing and printing
-  // this includes strong negation [TODO: normalized to -]
   // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
   std::string text;
 
   OrdinaryAtom(IDKind kind):
-    Atom(kind), neg(false), text()
+    Atom(kind), text()
     { assert(ID(kind,0).isOrdinaryAtom()); }
   OrdinaryAtom(IDKind kind, const std::string& text):
-    Atom(kind), neg(false), text(text)
+    Atom(kind), text(text)
     { assert(ID(kind,0).isOrdinaryAtom()); assert(!text.empty()); }
-  OrdinaryAtom(IDKind kind, const std::string& text, bool neg, const Tuple& tuple):
-    Atom(kind, tuple), neg(neg), text(text)
+  OrdinaryAtom(IDKind kind, const std::string& text, const Tuple& tuple):
+    Atom(kind, tuple), text(text)
     { assert(ID(kind,0).isOrdinaryAtom());
       assert(!text.empty()); }
   std::ostream& print(std::ostream& o) const
-    { return o << "OrdinaryAtom('" << text << "' " << (neg?"-":"") << " " << printvector(tuple) << ")"; }
+    { return o << "OrdinaryAtom('" << text << "' " << printvector(tuple) << ")"; }
 };
 
 struct BuiltinAtom:

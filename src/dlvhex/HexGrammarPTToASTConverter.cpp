@@ -297,10 +297,12 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   assert(node.value.id() == HexGrammar::UserPred);
   node_t& prednode = node.children[0];
   OrdinaryAtom atom(ID::MAINKIND_ATOM);
-  atom.neg = (prednode.children[0].value.id() == HexGrammar::Neg);
-  int offset = atom.neg?1:0;
-  if( atom.neg )
-    atom.kind |= ID::PROPERTY_NEGATIVE;
+  bool neg = (prednode.children[0].value.id() == HexGrammar::Neg);
+  int offset = neg?1:0;
+	if( neg )
+		throw std::runtime_error("strong negation currently not implemented!");
+  //if( atom.neg )
+  //  atom.kind |= ID::PROPERTY_NEGATIVE;
   switch(prednode.value.id().to_long())
   {
   case HexGrammar::UserPredClassical:
@@ -346,11 +348,11 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // lookup if we already know this one
-  LOG("looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
+  //LOG("looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
+  LOG("looking up tuple " << printvector(atom.tuple));
   // TODO perhaps pass only ref to atom and let the key extractor do its magic
-  // TODO create a version without strong negation to increase speed?
   {
-    ID id = tbl->getIDByNegTuple(atom.neg, atom.tuple);
+    ID id = tbl->getIDByTuple(atom.tuple);
     if( id != ID_FAIL )
       return id;
   }
@@ -368,8 +370,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
 
   std::stringstream ss;
   RawPrinter printer(ss, ctx.registry);
-  if( atom.neg )
-    ss << "-";
+	// TODO: how to handle strong negation?
   Tuple::const_iterator it = atom.tuple.begin();
   printer.print(*it);
   it++;

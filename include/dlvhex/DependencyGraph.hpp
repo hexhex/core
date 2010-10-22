@@ -52,19 +52,23 @@ class DependencyGraph
 public:
   struct NodeInfo
   {
-    ID atom;
+    ID rule;
   };
 
   struct DependencyInfo
   {
-    // head/body
+    // dependenhead/body
     bool positive;
     bool negative;
     // head/head
     bool disjunctive;
     // external atoms
     bool external;
-    // unifications
+    // body/head for constraints
+    bool positive_constraint;
+    bool negative_constraint;
+
+    // unification dependency (additional flag)
     bool unifying;
   };
 

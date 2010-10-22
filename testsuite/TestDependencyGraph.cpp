@@ -65,7 +65,10 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
 	  // f(b) -(+)-> f(X) (unifying)
 	  // b -(+)-> X(a) (head/body = positive)
 	  // b -(-)-> f(b) (head/nafbody = negative)
-    "b :- X(a), not f(b)." << std::endl;
+    "b :- X(a), not f(b)." << std::endl <<
+	  // X(b) -(+c)-> f(X) (unifying pos_constraint)
+	  // f(a) -(-c)-> f(X) (unifying neg_constraint)
+    ":- X(b), not f(a)." << std::endl;
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
 
@@ -74,11 +77,13 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   ID ida = ctx.registry->ogatoms.getIDByString("a");
   ID idb = ctx.registry->ogatoms.getIDByString("b");
   ID idfb = ctx.registry->ogatoms.getIDByString("f(b)");
-  BOOST_REQUIRE((ida | idb | idfb) != ID_FAIL);
+  ID idfa = ctx.registry->ogatoms.getIDByString("f(a)");
+  BOOST_REQUIRE((ida | idb | idfb | idfa) != ID_FAIL);
 
   ID idfX = ctx.registry->onatoms.getIDByString("f(X)");
   ID idXa = ctx.registry->onatoms.getIDByString("X(a)");
-  BOOST_REQUIRE((idfX | idXa) != ID_FAIL);
+  ID idXb = ctx.registry->onatoms.getIDByString("X(b)");
+  BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
 
 	// TODO: build graph and check graph
 }

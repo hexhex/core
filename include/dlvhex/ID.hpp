@@ -80,7 +80,7 @@ struct ID:
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
 	static const IDKind PROPERTY_ANONYMOUS =     0x00010000;
-	static const IDKind PROPERTY_NEGATIVE =      0x00010000;
+	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 
   // for builtin terms, this is the address part (no table)
   enum TermBuiltinAddress

@@ -84,6 +84,7 @@ public:
   #endif
 };
 
+#ifndef NDEBUG
 template<typename ValueT, typename IndexT>
 void Table<ValueT,IndexT>::logContents(const std::string& indent) const
 {
@@ -100,6 +101,7 @@ void Table<ValueT,IndexT>::logContents(const std::string& indent) const
     LOG(ID(it->kind, address) << " -> " << static_cast<const ValueT&>(*it));
   }
 }
+#endif
 
 DLVHEX_NAMESPACE_END
 

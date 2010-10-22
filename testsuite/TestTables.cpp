@@ -145,14 +145,15 @@ BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable)
   stab.logContents("TermTable");
 
   Tuple tupb; tupb.push_back(idb);
-  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", false, tupb);
-  OrdinaryAtom atmb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_NEGATIVE, "-b", true, tupb);
+  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", tupb);
+#warning reenable true negation
+  ////OrdinaryAtom atmb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_NEGATIVE, "-b", tupb);
   Tuple tupab; tupab.push_back(ida); tupab.push_back(idb);
-  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", false, tupab);
+  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", tupab);
   Tuple tupaX; tupaX.push_back(ida); tupaX.push_back(idX);
-  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", false, tupaX);
+  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", tupaX);
   Tuple tupYhello; tupYhello.push_back(idY); tupYhello.push_back(idhello);
-  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", false, tupYhello);
+  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", tupYhello);
 
 	{
 		OrdinaryAtomTable oatab;
@@ -163,10 +164,11 @@ BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable)
 
 		BOOST_CHECK_EQUAL(idatb.kind, oatab.getByID(idatb).kind);
 		BOOST_CHECK_EQUAL(idatb, oatab.getIDByString("b"));
-		BOOST_CHECK_EQUAL(idatb, oatab.getIDByNegTuple(false, tupb));
+		BOOST_CHECK_EQUAL(idatb, oatab.getIDByTuple(tupb));
 		BOOST_CHECK_EQUAL(idatb.address, 0);
 
-		ID idatmb = oatab.storeAndGetID(atmb);
+#warning reenable true negation
+		////ID idatmb = oatab.storeAndGetID(atmb);
     ID idatab = oatab.storeAndGetID(atab);
     ID idataX = oatab.storeAndGetID(ataX);
     ID idatYhello = oatab.storeAndGetID(atYhello);
@@ -232,7 +234,7 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
 
   // ordinary atoms
   Tuple tupaXY; tupaXY.push_back(ida); tupaXY.push_back(idX); tupaXY.push_back(idY);
-  OrdinaryAtom ataXY(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X,Y)", false, tupaXY);
+  OrdinaryAtom ataXY(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X,Y)", tupaXY);
 
   OrdinaryAtomTable oatab;
   ID idaXY = oatab.storeAndGetID(ataXY);
@@ -289,13 +291,13 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
 
   // ordinary atoms
   Tuple tupb; tupb.push_back(idb);
-  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", false, tupb);
+  OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", tupb);
   Tuple tupab; tupab.push_back(ida); tupab.push_back(idb);
-  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", false, tupab);
+  OrdinaryAtom atab(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "a(b)", tupab);
   Tuple tupaX; tupaX.push_back(ida); tupaX.push_back(idX);
-  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", false, tupaX);
+  OrdinaryAtom ataX(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "a(X)", tupaX);
   Tuple tupYhello; tupYhello.push_back(idY); tupYhello.push_back(idhello);
-  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", false, tupYhello);
+  OrdinaryAtom atYhello(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN, "Y(\"Hello World\")", tupYhello);
 
   OrdinaryAtomTable oatab;
   ID idatb = oatab.storeAndGetID(atb);
