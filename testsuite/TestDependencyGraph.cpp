@@ -86,5 +86,9 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
 
 	DependencyGraph depgraph(ctx.registry, ctx.idb);
+
+	BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
+	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 8);
+
 	// TODO: build graph and check graph
 }

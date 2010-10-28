@@ -113,6 +113,9 @@ struct ID:
     { assert(atom.isAtom()); return ID(atom.kind | MAINKIND_LITERAL | NAF_MASK, atom.address); }
   static inline ID literalFromAtom(ID atom, bool naf)
     { assert(atom.isAtom()); return (naf?nafLiteralFromAtom(atom):posLiteralFromAtom(atom)); }
+  static inline ID atomFromLiteral(ID literal)
+    { assert(literal.isLiteral());
+			return ID((literal.kind & (~(NAF_MASK|MAINKIND_MASK))) | MAINKIND_ATOM, literal.address); }
 
 	inline bool isTerm() const          { return (kind & MAINKIND_MASK) == MAINKIND_TERM; }
 	inline bool isConstantTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_CONSTANT; }

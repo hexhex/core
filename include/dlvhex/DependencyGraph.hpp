@@ -58,7 +58,18 @@ class DependencyGraph
 public:
   struct NodeInfo
   {
+		// ID storage:
+		// store rule as rule
+		// store literal or atom as atom (in non-naf-negated form)
     ID id;
+
+		// property of atom IDs (unused for rules):
+		// at least one of them must be true
+		// both may be true
+		// this is independent from naf (naf is expressed only in dependency info)
+		bool inBody;
+		bool inHead;
+		NodeInfo(ID id, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
   };
 
   struct DependencyInfo
@@ -76,11 +87,18 @@ public:
 
     // unification dependency (additional flag)
     bool unifying;
+
+		DependencyInfo():
+    	positive(false), negative(false),
+			disjunctive(false),
+			external(false),
+			positive_constraint(false), negative_constraint(false) {}
   };
 
 	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
+	// for edge list we need setS because we don't want to have duplicate edges
   typedef boost::adjacency_list<
-    boost::listS, boost::listS, boost::bidirectionalS,
+    boost::listS, boost::setS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
   typedef boost::graph_traits<Graph> Traits;
 
@@ -95,6 +113,7 @@ private:
 	{
 		ID id;
 		Node node;
+		NodeMappingInfo(ID id, Node node): id(id), node(node) {}
 	};
 	typedef boost::multi_index_container<
 			NodeMappingInfo,
@@ -155,6 +174,22 @@ public:
 	// get target of dependency = node upon which the source depends
   inline Node targetOf(Dependency d) const
 		{ return boost::target(d, dg); }
+
+	// get node/dependency properties
+	inline const NodeInfo& propsOf(Node n) const
+		{ return dg[n]; }
+	inline NodeInfo& propsOf(Node n)
+		{ return dg[n]; }
+	inline const DependencyInfo& propsOf(Dependency d) const
+		{ return dg[d]; }
+	inline DependencyInfo& propsOf(Dependency d)
+		{ return dg[d]; }
+
+	// counting -> mainly for allocating and testing
+  inline unsigned countNodes() const
+		{ return boost::num_vertices(dg); }
+  inline unsigned countDependencies() const
+		{ return boost::num_edges(dg); }
 };
 
 DLVHEX_NAMESPACE_END
