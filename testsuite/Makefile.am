@@ -41,7 +41,9 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
-TestDependencyGraph_SOURCES = TestDependencyGraph.cpp \
+TestDependencyGraph_SOURCES = \
+	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
@@ -50,7 +52,8 @@ TestDependencyGraph_SOURCES = TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestDependencyGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
-TestHexParser_SOURCES = TestHexParser.cpp \
+TestHexParser_SOURCES = \
+	$(top_srcdir)/testsuite/TestHexParser.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \

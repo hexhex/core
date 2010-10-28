@@ -21,28 +21,86 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file DependencyGraph.cpp
- * @author Roman Schindlauer
+ * @author Roman Schindlauer, Peter Schüller
  * @date Mon Sep 19 12:19:38 CEST 2005
  *
  * @brief Classes for the dependency graph class and its subparts.
- *
- *
  */
 
-#include "dlvhex/DependencyGraph.h"
+#include "dlvhex/DependencyGraph.hpp"
 
-#include "dlvhex/Error.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/PluginInterface.h"
+//#include "dlvhex/Error.h"
+//#include "dlvhex/globals.h"
+//#include "dlvhex/ProgramCtx.h"
+//#include "dlvhex/PluginContainer.h"
+//#include "dlvhex/PluginInterface.h"
 
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+DependencyGraph::DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb)
+{
+#warning not implemented
+}
+
+DependencyGraph::~DependencyGraph()
+{
+#warning not implemented
+}
+
+#if 0
+
+  inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
+  {
+    EvalUnit u = boost::add_vertex(prop, eg);
+    BOOST_FOREACH(ObserverPtr o, observers)
+      { o->addUnit(u); }
+    return u;
+  }
+
+  inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
+    const EvalUnitDepPropertyBundle& prop)
+  {
+    #ifndef NDEBUG
+    // check if the joinOrder is correct
+    // (require that dependencies are added in join order)
+    PredecessorIterator pit, pend;
+    boost::tie(pit,pend) = getPredecessors(u1);
+    unsigned count;
+    for(count = 0; pit != pend; ++pit, ++count)
+    {
+      const EvalUnitDepPropertyBundle& predprop = propsOf(*pit);
+      if( prop.joinOrder == predprop.joinOrder )
+        throw std::runtime_error("EvalGraph::addDependency "
+            "reusing join order not allowed");
+    }
+    if( count != prop.joinOrder )
+      throw std::runtime_error("EvalGraph::addDependency "
+          "using wrong (probably too high) join order");
+    #endif
+
+    bool success;
+    EvalUnitDep dep;
+    boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
+    // if this fails, we tried to add a foreign eval unit or something strange like this
+    assert(success);
+    BOOST_FOREACH(ObserverPtr o, observers)
+      { o->addDependency(dep); }
+    return dep;
+  }
+
+  inline unsigned countEvalUnits() const
+  {
+    return boost::num_vertices(eg);
+  }
+  inline unsigned countEvalUnitDeps() const
+  {
+    return boost::num_edges(eg);
+  }
+	*/
 
 /*
 DependencyGraph::DependencyGraph()
@@ -51,6 +109,7 @@ DependencyGraph::DependencyGraph()
 */
 
 
+/*
 DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
 
   : nodegraph(*ctx.getNodeGraph()), componentFinder(cf), programCtx(ctx)
@@ -296,6 +355,7 @@ DependencyGraph::getNextSubgraph()
 
     return NULL;
 }
+#endif
 
 DLVHEX_NAMESPACE_END
 

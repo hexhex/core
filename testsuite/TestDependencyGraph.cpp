@@ -85,5 +85,6 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   ID idXb = ctx.registry->onatoms.getIDByString("X(b)");
   BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
 
+	DependencyGraph depgraph(ctx.registry, ctx.idb);
 	// TODO: build graph and check graph
 }

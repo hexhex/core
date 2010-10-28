@@ -89,6 +89,34 @@ struct Registry
 
   NamespaceTable namespaces;
 
+	#if 0
+	
+	// this can be done later, for now we can use hashtables and forget this more efficient method
+
+	//
+	// "address range" concept
+	//
+	// from IDKind we obtain integers starting at zero,
+	// for each distinct table a separate integer
+	// this way we can create efficient mappings from IDs of various kinds to use mapKindToAddressRange() method
+	// e.g., for looking up vertices in dependency graph by ID
+	//   -> first lookup O(1) by IDKind, then lookup vertex in O(1) by address in vector
+	//   -> vector storage with no useless storage allocation (one vector for each address range)
+	enum AddressRange
+	{
+		ARTERM = 0,
+		AROATOM,
+		ARONATOM,
+		ARBATOM,
+		ARAATOM,
+		AREATOM,
+		ARRULE,
+		AR_COUNT // this must stay the last entry
+	};
+	static inline AddressRange mapKindToAddressRange(IDKind kind);
+	static inline AddressRange maxAddressRange() { return AR_COUNT; }
+	#endif
+
   void logContents() const;
 };
 

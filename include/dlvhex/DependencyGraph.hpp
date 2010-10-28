@@ -38,11 +38,17 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/foreach.hpp>
+//#include <boost/foreach.hpp>
 
-#include <cassert>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/hashed_index.hpp>
 
-DLVHEX_NAMESPACE_USE
+//#include <cassert>
+
+DLVHEX_NAMESPACE_BEGIN
+
+struct Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
 
 class DependencyGraph
 {
@@ -52,12 +58,12 @@ class DependencyGraph
 public:
   struct NodeInfo
   {
-    ID rule;
+    ID id;
   };
 
   struct DependencyInfo
   {
-    // dependenhead/body
+    // dependency head/body
     bool positive;
     bool negative;
     // head/head
@@ -72,151 +78,85 @@ public:
     bool unifying;
   };
 
+	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
   typedef boost::adjacency_list<
     boost::listS, boost::listS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
   typedef boost::graph_traits<Graph> Traits;
 
-/*
-  typedef typename Graph::vertex_descriptor Node;
-  typedef typename Graph::edge_descriptor Dependency;
-  typedef typename Traits::vertex_iterator EvalUnitIterator;
-  typedef typename Traits::out_edge_iterator PredecessorIterator;
-  typedef typename Traits::in_edge_iterator SuccessorIterator;
+  typedef Graph::vertex_descriptor Node;
+  typedef Graph::edge_descriptor Dependency;
+  typedef Traits::out_edge_iterator PredecessorIterator;
+  typedef Traits::in_edge_iterator SuccessorIterator;
 
-  class Observer
-  {
-  public:
-    virtual ~Observer() {}
-    virtual void addUnit(EvalUnit u) = 0;
-    virtual void addDependency(EvalUnitDep d) = 0;
-  };
-  typedef boost::shared_ptr<Observer> ObserverPtr;
-  */
+private:
+	struct IDTag {};
+	struct NodeMappingInfo
+	{
+		ID id;
+		Node node;
+	};
+	typedef boost::multi_index_container<
+			NodeMappingInfo,
+			boost::multi_index::indexed_by<
+				boost::multi_index::hashed_unique<
+					boost::multi_index::tag<IDTag>,
+					BOOST_MULTI_INDEX_MEMBER(NodeMappingInfo,ID,id)
+				>
+			>
+		> NodeMapping;
+  typedef NodeMapping::index<IDTag>::type NodeIDIndex;
 
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
 private:
   Graph dg;
+	NodeMapping nm;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-	/*
-  inline const EvalGraphInt& getInt() const
-    { return eg; }
+	DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb);
+	~DependencyGraph();
 
-  inline EvalUnit addUnit(const EvalUnitPropertyBundle& prop)
-  {
-    EvalUnit u = boost::add_vertex(prop, eg);
-    BOOST_FOREACH(ObserverPtr o, observers)
-      { o->addUnit(u); }
-    return u;
-  }
+	// get node given some object id
+	inline Node getNode(ID id) const
+		{
+			const NodeIDIndex& idx = nm.get<IDTag>();
+			NodeIDIndex::const_iterator it = idx.find(id);
+			assert(it != idx.end());
+			return it->node;
+		}
 
-  inline EvalUnitDep addDependency(EvalUnit u1, EvalUnit u2,
-    const EvalUnitDepPropertyBundle& prop)
-  {
-    #ifndef NDEBUG
-    // check if the joinOrder is correct
-    // (require that dependencies are added in join order)
-    PredecessorIterator pit, pend;
-    boost::tie(pit,pend) = getPredecessors(u1);
-    unsigned count;
-    for(count = 0; pit != pend; ++pit, ++count)
-    {
-      const EvalUnitDepPropertyBundle& predprop = propsOf(*pit);
-      if( prop.joinOrder == predprop.joinOrder )
-        throw std::runtime_error("EvalGraph::addDependency "
-            "reusing join order not allowed");
-    }
-    if( count != prop.joinOrder )
-      throw std::runtime_error("EvalGraph::addDependency "
-          "using wrong (probably too high) join order");
-    #endif
+	// get node info given node
+	inline const NodeInfo& getNodeInfo(Node node) const
+		{ return dg[node]; }
 
-    bool success;
-    EvalUnitDep dep;
-    boost::tie(dep, success) = boost::add_edge(u1, u2, prop, eg);
-    // if this fails, we tried to add a foreign eval unit or something strange like this
-    assert(success);
-    BOOST_FOREACH(ObserverPtr o, observers)
-      { o->addDependency(dep); }
-    return dep;
-  }
+	// get dependency info given dependency
+	inline const DependencyInfo& getDependencyInfo(Dependency dep) const
+		{ return dg[dep]; }
 
-  void addObserver(ObserverPtr o)
-  {
-    observers.insert(o);
-  }
-
-  void eraseObserver(ObserverPtr o)
-  {
-    observers.erase(o);
-  }
-
-  inline std::pair<EvalUnitIterator, EvalUnitIterator>
-  getEvalUnits() const
-  {
-    return boost::vertices(eg);
-  }
-
-  // predecessors are eval units providing input to us,
-  // edges are dependencies, so predecessors are at outgoing edges
+	// get dependencies (to predecessors) = arcs from this node to others
   inline std::pair<PredecessorIterator, PredecessorIterator>
-  getPredecessors(EvalUnit u) const
-  {
-    return boost::out_edges(u, eg);
-  }
+  getDependencies(Node node) const
+		{ return boost::out_edges(node, dg); }
 
-  // successors are eval units we provide input to,
-  // edges are dependencies, so successors are at incoming edges
+	// get provides (dependencies to successors) = arcs from other nodes to this one
   inline std::pair<SuccessorIterator, SuccessorIterator>
-  getSuccessors(EvalUnit u) const
-  {
-    return boost::in_edges(u, eg);
-  }
+  getProvides(Node node) const
+		{ return boost::in_edges(node, dg); }
 
-  inline const EvalUnitDepPropertyBundle& propsOf(EvalUnitDep d) const
-  {
-    return eg[d];
-  }
+	// get source of dependency = node that depends
+  inline Node sourceOf(Dependency d) const
+		{ return boost::source(d, dg); }
 
-  inline EvalUnitDepPropertyBundle& propsOf(EvalUnitDep d)
-  {
-    return eg[d];
-  }
-
-  inline const EvalUnitPropertyBundle& propsOf(EvalUnit u) const
-  {
-    return eg[u];
-  }
-
-  inline EvalUnitPropertyBundle& propsOf(EvalUnit u)
-  {
-    return eg[u];
-  }
-
-  inline EvalUnit sourceOf(EvalUnitDep d) const
-  {
-    return boost::source(d, eg);
-  }
-  inline EvalUnit targetOf(EvalUnitDep d) const
-  {
-    return boost::target(d, eg);
-  }
-
-  inline unsigned countEvalUnits() const
-  {
-    return boost::num_vertices(eg);
-  }
-  inline unsigned countEvalUnitDeps() const
-  {
-    return boost::num_edges(eg);
-  }
-	*/
+	// get target of dependency = node upon which the source depends
+  inline Node targetOf(Dependency d) const
+		{ return boost::target(d, dg); }
 };
+
+DLVHEX_NAMESPACE_END
 
 #endif // DEPENDENCY_GRAPH_HPP_INCLUDED__18102010
