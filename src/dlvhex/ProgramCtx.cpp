@@ -69,6 +69,16 @@ void Registry::logContents() const
   rules.logContents("rules");
 }
 
+// lookup ground or nonground ordinary atoms (ID specifies this)
+const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
+{
+  assert(id.isOrdinaryAtom());
+  if( id.isOrdinaryGroundAtom() )
+    return ogatoms.getByID(id);
+  else
+    return onatoms.getByID(id);
+}
+
 void Printer::printmany(const std::vector<ID>& ids, const std::string& separator)
 {
 	std::vector<ID>::const_iterator it = ids.begin();

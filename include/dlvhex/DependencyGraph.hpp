@@ -74,25 +74,27 @@ public:
 
   struct DependencyInfo
   {
-    // dependency head/body
+    // rule -> body dependencies to NAF literals are negative (=false)
+    // all others are positive
     bool positive;
-    bool negative;
-    // head/head
-    bool disjunctive;
-    // external atoms
-    bool external;
-    // body/head for constraints
-    bool positive_constraint;
-    bool negative_constraint;
 
-    // unification dependency (additional flag)
-    bool unifying;
+    // dependency involves rule body or does not involve rule body
+    bool involvesRule;
+
+    // if does not involve rule body: dependency is unifying or disjunctive or both
+    bool disjunctive; // head <-> head in same rule
+    bool unifying; // body -(depends on)-> head in different or same rules, or head <-> head in different rules
+    bool external; // body -(depends on)-> head (head is input to external)
+
+    // if does involve rule body: 
+    // rule is constraint or not
+    bool constraint;
 
 		DependencyInfo():
-    	positive(false), negative(false),
-			disjunctive(false),
-			external(false),
-			positive_constraint(false), negative_constraint(false) {}
+    	positive(true),
+      involvesRule(false),
+      disjunctive(false), unifying(false), external(false),
+      constraint(false) {}
   };
 
 	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
@@ -130,8 +132,14 @@ private:
   // members
   //////////////////////////////////////////////////////////////////////////////
 private:
+  RegistryPtr registry;
   Graph dg;
 	NodeMapping nm;
+
+  void createNodesAndBasicDependencies(const std::vector<ID>& idb);
+  void createExternalDependencies();
+  void createAggregateDependencies();
+  void createUnifyingDependencies();
 
   //////////////////////////////////////////////////////////////////////////////
   // methods

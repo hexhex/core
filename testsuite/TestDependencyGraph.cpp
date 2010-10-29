@@ -60,14 +60,18 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   std::stringstream ss;
   ss <<
 		// a <-(+)-> f(X) (head/head = disjunctive)
+    // 2x head -> rule
     "a v f(X)." << std::endl <<
-	  // X(a) -(+)-> f(X) (unifying)
-	  // f(b) -(+)-> f(X) (unifying)
-	  // b -(+)-> X(a) (head/body = positive)
-	  // b -(-)-> f(b) (head/nafbody = negative)
+	  // X(a) -(+)-> f(X) (unifying+?)
+	  // f(b) -(+)-> f(X) (unifying+?)
+	  // b -> rule (head/rule = positive)
+    // rule -(+)-> X(a) (rule/body = positive)
+	  // rule -(-)-> f(b) (rule/nafbody = negative)
     "b :- X(a), not f(b)." << std::endl <<
 	  // X(b) -(+c)-> f(X) (unifying pos_constraint)
 	  // f(a) -(-c)-> f(X) (unifying neg_constraint)
+    // rule -> body (pos_constraint)
+    // rule -> nafbody (neg_constraint)
     ":- X(b), not f(a)." << std::endl;
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
@@ -88,7 +92,7 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
 	DependencyGraph depgraph(ctx.registry, ctx.idb);
 
 	BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
-	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 8);
+	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
 
 	// TODO: build graph and check graph
 }

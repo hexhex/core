@@ -118,6 +118,8 @@ struct Registry
 	#endif
 
   void logContents() const;
+  // lookup ground or nonground ordinary atoms (ID specifies this)
+  const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
 };
 
 typedef boost::shared_ptr<Registry> RegistryPtr;

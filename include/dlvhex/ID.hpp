@@ -124,9 +124,11 @@ struct ID:
 	inline bool isBuiltinTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
 
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
-  // ground or nonground atoms (due t o the special bits this can be checked by checking bit 2 of this field only)
+  // true for ground or nonground ordinary atoms
+  // (special bit trick)
 	inline bool isOrdinaryAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_ATOM_BUILTIN) != SUBKIND_ATOM_BUILTIN; }
-	inline bool isOrdinaryGroundAtom() const  { assert(isAtom() || isLiteral()); return !(kind & SUBKIND_MASK); }
+	inline bool isOrdinaryGroundAtom() const     { assert(isAtom() || isLiteral()); return !(kind & SUBKIND_MASK); }
+	inline bool isOrdinaryNongroundAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_ORDINARYN; }
 	inline bool isBuiltinAtom() const   { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_BUILTIN; }
 	inline bool isAggregateAtom() const { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_AGGREGATE; }
 	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
