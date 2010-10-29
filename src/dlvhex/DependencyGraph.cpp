@@ -40,15 +40,30 @@
 //#include "dlvhex/PluginContainer.h"
 //#include "dlvhex/PluginInterface.h"
 
+#include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
 
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
+std::ostream& DependencyGraph::NodeInfo::print(std::ostream& o) const
+{
+  return o << id << "\\n inBody=" << inBody << " inHead=" << inHead;
+}
+
+std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
+{
+  if( involvesRule )
+    return o << "rule dep:\\npositive=" << positive << "\\nconstraint=" << constraint;
+  else
+    return o << "nonrule dep:\\npositive=" << positive << "\\ndisjunctive=" << disjunctive << "\\nunifying=" << unifying << "\\nexternal=" << external;
+}
+
 DependencyGraph::DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb):
   registry(registry), dg(), nm()
 {
+  // TODO: pre-allocate dep graph? use vecS?
   createNodesAndBasicDependencies(idb);
   createExternalDependencies();
   createAggregateDependencies();
@@ -335,6 +350,76 @@ DependencyGraph::~DependencyGraph()
 {
 }
 
+namespace
+{
+  inline std::string graphviz_node_id(DependencyGraph::Node n)
+  {
+    std::ostringstream os;
+    os << "n" << printptr(n);
+    return os.str();
+  }
+}
+
+// output graph as graphviz source
+void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
+{
+  // boost::graph::graphviz is horribly broken!
+  // therefore we print it ourselves
+
+  RawPrinter printer(o, registry);
+
+  o << "digraph G {" << std::endl;
+
+  // print vertices
+  NodeIterator it, it_end;
+  for(boost::tie(it, it_end) = boost::vertices(dg);
+      it != it_end; ++it)
+  {
+    o << graphviz_node_id(*it) << "[label=\"";
+    const NodeInfo& nodeinfo = getNodeInfo(*it);
+    if( verbose )
+    {
+      printer.print(nodeinfo.id);
+      o << "\\n" << nodeinfo;
+    }
+    else
+    {
+      o << "0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT);
+      o << "/" << nodeinfo.id.address;
+    }
+    o << "\"";
+    if( nodeinfo.id.isRule() )
+      o << ",shape=box";
+    o << "];" << std::endl;
+  }
+
+  // print edges
+  DependencyIterator dit, dit_end;
+  for(boost::tie(dit, dit_end) = boost::edges(dg);
+      dit != dit_end; ++dit)
+  {
+    Node src = sourceOf(*dit);
+    Node target = targetOf(*dit);
+    const DependencyInfo& di = getDependencyInfo(*dit);
+    o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
+      "[label=\"";
+    if( verbose )
+    {
+      o << di;
+    }
+    else
+    {
+      o << (di.positive?"+":"-");
+      if( di.involvesRule )
+        o << (di.constraint?"constraint":"rule");
+      else
+        o << (di.disjunctive?"d":"") << (di.unifying?"u":"") << (di.external?"e":"");
+    }
+    o << "\"];" << std::endl;
+  }
+
+  o << "}" << std::endl;
+}
 
 #if 0
 

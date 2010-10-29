@@ -37,6 +37,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
   ctx.registry->logContents(); \
@@ -94,5 +95,17 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
 	BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
 	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
 
-	// TODO: build graph and check graph
+  // TODO test dependencies
+
+  const char* fnamev = "testDependencyGraphConstructionVerbose.dot";
+  LOG("dumping verbose graph to " << fnamev);
+  std::ofstream filev(fnamev);
+  depgraph.writeGraphViz(filev, true);
+
+  const char* fnamet = "testDependencyGraphConstructionTerse.dot";
+  LOG("dumping terse graph to " << fnamet);
+  std::ofstream filet(fnamet);
+  depgraph.writeGraphViz(filet, false);
 }
+
+// TODO: external dependencies

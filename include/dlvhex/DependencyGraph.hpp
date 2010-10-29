@@ -56,7 +56,8 @@ class DependencyGraph
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
-  struct NodeInfo
+  struct NodeInfo:
+    public ostream_printable<NodeInfo>
   {
 		// ID storage:
 		// store rule as rule
@@ -70,9 +71,11 @@ public:
 		bool inBody;
 		bool inHead;
 		NodeInfo(ID id, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
+    std::ostream& print(std::ostream& o) const;
   };
 
-  struct DependencyInfo
+  struct DependencyInfo:
+    public ostream_printable<DependencyInfo>
   {
     // rule -> body dependencies to NAF literals are negative (=false)
     // all others are positive
@@ -95,6 +98,7 @@ public:
       involvesRule(false),
       disjunctive(false), unifying(false), external(false),
       constraint(false) {}
+    std::ostream& print(std::ostream& o) const;
   };
 
 	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
@@ -106,6 +110,8 @@ public:
 
   typedef Graph::vertex_descriptor Node;
   typedef Graph::edge_descriptor Dependency;
+  typedef Traits::vertex_iterator NodeIterator;
+  typedef Traits::edge_iterator DependencyIterator;
   typedef Traits::out_edge_iterator PredecessorIterator;
   typedef Traits::in_edge_iterator SuccessorIterator;
 
@@ -147,6 +153,9 @@ private:
 public:
 	DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb);
 	~DependencyGraph();
+
+  // output graph as graphviz source
+  void writeGraphViz(std::ostream& o, bool verbose) const;
 
 	// get node given some object id
 	inline Node getNode(ID id) const
