@@ -1,5 +1,7 @@
 2010-10-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* NEWS: Update.
+
 	* src/dlvhex/GuessCheckModelGenerator.cpp: Sanitize verbose output.
 	* src/dlvhex/DLVProcess.cpp: Likewise.
 
