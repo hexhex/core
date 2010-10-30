@@ -629,6 +629,13 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	   it != todelete.end();
 	   ++it)
 	{
+	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+	    {
+	      Globals::Instance()->getVerboseStream() << " Killing model: ";
+	      (*it)->accept(rpv);
+	      Globals::Instance()->getVerboseStream() << std::endl;
+	    }
+
 	  models.erase(*it);
 	}
 
@@ -639,7 +646,7 @@ GuessCheckModelGenerator::compute(const std::vector<AtomNodePtr>& nodes,
 	  
 	  if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
 	    {
-	      Globals::Instance()->getVerboseStream() << " Model passed minimality test: ";
+	      Globals::Instance()->getVerboseStream() << " Model passed minimality test for now: ";
 	      (*ans)->accept(rpv);
 	      Globals::Instance()->getVerboseStream() << std::endl;
 	    }
