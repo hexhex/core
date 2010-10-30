@@ -323,45 +323,104 @@ public:
 };
 
 
+class TestEvenAtom : public PluginAtom
+{
+public:
+  TestEvenAtom()
+    : PluginAtom(false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(0);
+  }
+ 
+  virtual void
+  retrieve(const Query& query, Answer& answer) throw(PluginError)
+  {
+    // Even is true, iff input predicates hold for even individuals
+ 
+    if (query.getInterpretation().size() % 2 == 0)
+      {
+	// succeed by returning an empty tuple
+	answer.addTuple(Tuple());
+      }
+    else
+      {
+	// fail by returning no tuple
+      }
+  }
+};
+ 
+class TestOddAtom : public PluginAtom
+{
+public:
+  TestOddAtom()
+    : PluginAtom(false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer) throw(PluginError)
+  {
+    if (query.getInterpretation().size() % 2 != 0)
+      {
+	// succeed by returning an empty tuple
+	answer.addTuple(Tuple());
+      }
+    else
+      {
+	// fail by returning no tuple
+      }
+  }
+};
+
+
 class TestPlugin : public PluginInterface
 {
 public:
-	/*
-		virtual PluginRewriter*
-		createRewriter(istream& i, ostream& o)
-		{ return new MyRewriter(i,o); }
-		*/
+#if 0
+    virtual PluginRewriter*
+    createRewriter(istream& i, ostream& o)
+    { return new MyRewriter(i,o); }
+#endif //0
 
-	virtual void
-	getAtoms(AtomFunctionMap& a)
-	{
-	  boost::shared_ptr<PluginAtom> testA(new TestAAtom);
-	  boost::shared_ptr<PluginAtom> testB(new TestBAtom);
-	  boost::shared_ptr<PluginAtom> testC(new TestCAtom);
-	  boost::shared_ptr<PluginAtom> testZeroArity0(new TestZeroArityAtom(false));
-	  boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
-	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
-	  boost::shared_ptr<PluginAtom> testSetMinus(new TestSetMinusAtom);
-	  boost::shared_ptr<PluginAtom> testMinusOne(new TestMinusOneAtom);
+  virtual void
+  getAtoms(AtomFunctionMap& a)
+  {
+    boost::shared_ptr<PluginAtom> testA(new TestAAtom);
+    boost::shared_ptr<PluginAtom> testB(new TestBAtom);
+    boost::shared_ptr<PluginAtom> testC(new TestCAtom);
+    boost::shared_ptr<PluginAtom> testZeroArity0(new TestZeroArityAtom(false));
+    boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
+    boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
+    boost::shared_ptr<PluginAtom> testSetMinus(new TestSetMinusAtom);
+    boost::shared_ptr<PluginAtom> testMinusOne(new TestMinusOneAtom);
+    boost::shared_ptr<PluginAtom> testEven(new TestEvenAtom);
+    boost::shared_ptr<PluginAtom> testOdd(new TestOddAtom);
+    
+    a["testA"] = testA;
+    a["testB"] = testB;
+    a["testC"] = testC;
+    a["testZeroArity0"] = testZeroArity0;
+    a["testZeroArity1"] = testZeroArity1;
+    a["testConcat"] = testConcat;
+    a["testSetMinus"] = testSetMinus;
+    a["testMinusOne"] = testMinusOne;
+    a["testEven"] = testEven;
+    a["testOdd"] = testOdd;
+  }
 
-	  a["testA"] = testA;
-	  a["testB"] = testB;
-	  a["testC"] = testC;
-	  a["testZeroArity0"] = testZeroArity0;
-	  a["testZeroArity1"] = testZeroArity1;
-	  a["testConcat"] = testConcat;
-	  a["testSetMinus"] = testSetMinus;
-	  a["testMinusOne"] = testMinusOne;
-	}
-
-	virtual void
-	setOptions(bool /* doHelp */, std::vector<std::string>& /* argv */, std::ostream& /* out */)
-	{
-		//
-		// no options yet
-		//
-		return;
-	}
+  virtual void
+  setOptions(bool /* doHelp */, std::vector<std::string>& /* argv */, std::ostream& /* out */)
+  {
+    //
+    // no options yet
+    //
+    return;
+  }
 };
 
 TestPlugin theTestPlugin;
