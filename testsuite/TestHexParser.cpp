@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
-    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT));
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_EXTATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_CHECK(r.head.size() == 0);

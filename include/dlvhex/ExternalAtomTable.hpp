@@ -68,6 +68,7 @@ class ExternalAtomTable:
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
   typedef Container::index<impl::PredicateTag>::type PredicateIndex;
+	typedef PredicateIndex::iterator PredicateIterator;
 
 	// methods
 public:
@@ -76,18 +77,24 @@ public:
   // assert that ID exists in table
 	inline const ExternalAtom& getByID(ID id) const throw ();
 
+  // get all external atoms with certain predicate id
+	inline std::pair<PredicateIterator, PredicateIterator>
+	getRangeByPredicateID(ID id) const throw();
+
 	// store atom, assuming it does not exist
 	inline ID storeAndGetID(const ExternalAtom& atom) throw();
 
-  // TODO: get all predicate id's
+	// update
+	// (oldStorage must be from getByID() or from *const_iterator)
+	inline void update(
+			const ExternalAtom& oldStorage, ExternalAtom& newStorage) throw();
 };
 
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
 const ExternalAtom&
-ExternalAtomTable::getByID(
-  ID id) const throw ()
+ExternalAtomTable::getByID(ID id) const throw ()
 {
 	assert(id.isAtom() || id.isLiteral());
 	assert(id.isExternalAtom());
@@ -95,6 +102,15 @@ ExternalAtomTable::getByID(
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
   return idx.at(id.address);
+}
+
+// get all external atoms with certain predicate id
+std::pair<ExternalAtomTable::PredicateIterator, ExternalAtomTable::PredicateIterator>
+ExternalAtomTable::getRangeByPredicateID(ID id) const throw()
+{
+	assert(id.isTerm() && id.isConstantTerm());
+  const PredicateIndex& idx = container.get<impl::PredicateTag>();
+	return idx.equal_range(id);
 }
 
 // store symbol, assuming it does not exist (this is only asserted)
@@ -117,6 +133,16 @@ ID ExternalAtomTable::storeAndGetID(
 			atm.kind, // kind
 			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
+}
+
+void ExternalAtomTable::update(
+		const ExternalAtom& oldStorage, ExternalAtom& newStorage) throw()
+{
+	AddressIndex& idx = container.get<impl::AddressTag>();
+	AddressIndex::iterator it = idx.iterator_to(oldStorage);
+	assert(it != idx.end());
+	bool success = idx.replace(it, newStorage);
+	assert(success);
 }
 
 DLVHEX_NAMESPACE_END

@@ -612,8 +612,9 @@ class DLVHEX_EXPORT PluginOptimizer
 };
 #endif
 
-
-
+class PluginAtom;
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
+typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 
 /**
  * \brief Interface class for external Atoms.
@@ -734,6 +735,8 @@ public:
     /**
      * \brief Type of input parameter.
      *
+		 * @todo by PS: update this documentation, we have three input types: CONSTANT (clear), PREDICATE (clear), and TUPLE (undocumented: can be specified as last input type, this most likely means the atom gets as many constants as it can get from the program, like a variable length function)
+		 *
      * Currently, two types of input parameters can be specified: PREDICATE and
      * CONSTANT.
      * An input argument of type PREDICATE means that the atom needs those facts
@@ -842,7 +845,7 @@ public:
      */
     bool isMonotonic() const { return monotonic; }
 
-private:
+protected:
 
     /**
      * \brief whether the function is monotonic or nonmonotonic

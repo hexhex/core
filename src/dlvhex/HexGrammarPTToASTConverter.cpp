@@ -130,6 +130,22 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   }
 }
 
+namespace
+{
+  void markExternalPropertyIfExternalBody(Rule& r)
+  {
+    // determine external atom property
+    for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
+    {
+      if( itt->isExternalAtom() )
+      {
+        r.kind |= ID::PROPERTY_RULE_EXTATOMS;
+        return;
+      }
+    }
+  }
+}
+
 void HexGrammarPTToASTConverter::createASTFromClause(
     node_t& node)
 {
@@ -187,6 +203,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         //TODO: store file position in rule (it was stored for diagnostics)
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
+        markExternalPropertyIfExternalBody(r);
         ID id = ctx.registry->rules.storeAndGetID(r);
         ctx.idb.push_back(id);
         LOG("added rule " << r << " with id " << id << " to idb");
@@ -200,6 +217,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       r.body = createRuleBodyFromBody(child.children[1]);
+      markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       LOG("added constraint " << r << " with id " << id << " to idb");
@@ -232,6 +250,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       }
 
       r.body = createRuleBodyFromBody(child.children[1]);
+      markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       LOG("added weakconstraint " << r << " with id " << id << " to idb");

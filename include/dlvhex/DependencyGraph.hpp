@@ -45,10 +45,61 @@
 
 //#include <cassert>
 
+/*
+ * TODO update paper/formal stuff:
+ * definition of unifying dependency as in roman's thesis, not as in eswc paper
+ * rule nodes added to graph
+ * constraints have extra types of dependencies
+ * negative dependencies unclear in roman's thesis: def 4.6.2 after second point 2:
+ * "or b is a non-monotonic external atom" should imho be "or b \in B(r) and b a non-monotonic external atom"
+ * (doesn't this give us fixed-point vs guess-and-check model generator choice for free?)
+ * we will add those negative dependencies from rule to body atoms only
+ * add external dependency if constant input has a variable created by output of other extatom (not covered by roman's thesis)
+ *
+ * for eval only:
+ * create auxiliary input collecting predicates/rule before creating depedency graph
+ * pos dependency from ext. atom to its auxiliary input collecting predicate
+ */
+
 DLVHEX_NAMESPACE_BEGIN
 
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
+
+#if 0
+// TODO move this into plugin interface
+struct ExternalAtomMetaInformation
+{
+	bool isMonotonic;
+
+	enum InputType {
+		PREDICATE,
+		CONSTANT
+	};
+	std::vector<InputType> inputTypes;
+	unsigned outputArity;
+
+	ExternalAtomMetaInformation():
+		isMonotonic(false), inputTypes(), outputArity(0) { }
+	ExternalAtomMetaInformation(bool isMonotonic, InputType i1, unsigned outputArity):
+		isMonotonic(isMonotonic), inputTypes(), outputArity(outputArity)
+		{ inputTypes.push_back(i1); }
+	ExternalAtomMetaInformation(bool isMonotonic, InputType i1, InputType i2, unsigned outputArity):
+		isMonotonic(isMonotonic), inputTypes(), outputArity(outputArity)
+		{ inputTypes.push_back(i1); inputTypes.push_back(i2); }
+	ExternalAtomMetaInformation(bool isMonotonic, const std::vector<InputType>& inputTypes, unsigned outputArity):
+		isMonotonic(isMonotonic), inputTypes(inputTypes), outputArity(outputArity) {}
+};
+
+// TODO move this into plugin interface
+class ExternalAtomInformationProvider
+{
+public:
+	// given id of constant term indicating external atom name,
+	// return whether it is monotonic or not
+	virtual const ExternalAtomMetaInformation& getInformation(ID name) const = 0;
+};
+#endif
 
 class DependencyGraph
 {
@@ -78,8 +129,13 @@ public:
     public ostream_printable<DependencyInfo>
   {
     // rule -> body dependencies to NAF literals are negative (=false)
-    // all others are positive
+    // rule -> body dependencies to nonmonotonic external atoms may be both positive and negative
     bool positive;
+    bool negative;
+
+		// body -> head external dependency (predicate inputs only)
+		// body -> same body external dependency (constant inputs that are variables only)
+    bool external;
 
     // dependency involves rule body or does not involve rule body
     bool involvesRule;
@@ -87,22 +143,24 @@ public:
     // if does not involve rule body: dependency is unifying or disjunctive or both
     bool disjunctive; // head <-> head in same rule
     bool unifying; // body -(depends on)-> head in different or same rules, or head <-> head in different rules
-    bool external; // body -(depends on)-> head (head is input to external)
 
     // if does involve rule body: 
     // rule is constraint or not
     bool constraint;
 
 		DependencyInfo():
-    	positive(true),
+    	positive(false),
+			negative(false),
+			external(false),
       involvesRule(false),
-      disjunctive(false), unifying(false), external(false),
+      disjunctive(false), unifying(false),
       constraint(false) {}
     std::ostream& print(std::ostream& o) const;
   };
 
 	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
 	// for edge list we need setS because we don't want to have duplicate edges
+	// TODO: perhaps we do want to have duplicate edges after all
   typedef boost::adjacency_list<
     boost::listS, boost::setS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
@@ -121,6 +179,7 @@ private:
 	{
 		ID id;
 		Node node;
+		NodeMappingInfo(): id(ID_FAIL) {}
 		NodeMappingInfo(ID id, Node node): id(id), node(node) {}
 	};
 	typedef boost::multi_index_container<
@@ -142,17 +201,18 @@ private:
   Graph dg;
 	NodeMapping nm;
 
-  void createNodesAndBasicDependencies(const std::vector<ID>& idb);
-  void createExternalDependencies();
-  void createAggregateDependencies();
-  void createUnifyingDependencies();
-
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-	DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb);
+	DependencyGraph(RegistryPtr registry);
 	~DependencyGraph();
+
+  void createNodesAndBasicDependencies(const std::vector<ID>& idb);
+  void createUnifyingDependencies();
+  void createExternalDependencies();
+  void createAggregateDependencies();
+
 
   // output graph as graphviz source
   void writeGraphViz(std::ostream& o, bool verbose) const;

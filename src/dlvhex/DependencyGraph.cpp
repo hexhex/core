@@ -30,15 +30,10 @@
  */
 
 #include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/Logger.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Rule.hpp"
-#include "dlvhex/Logger.hpp"
-
-//#include "dlvhex/Error.h"
-//#include "dlvhex/globals.h"
-//#include "dlvhex/ProgramCtx.h"
-//#include "dlvhex/PluginContainer.h"
-//#include "dlvhex/PluginInterface.h"
+#include "dlvhex/PluginInterface.h"
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
@@ -54,48 +49,56 @@ std::ostream& DependencyGraph::NodeInfo::print(std::ostream& o) const
 
 std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
 {
-  if( involvesRule )
-    return o << "rule dep:\\npositive=" << positive << "\\nconstraint=" << constraint;
-  else
-    return o << "nonrule dep:\\npositive=" << positive << "\\ndisjunctive=" << disjunctive << "\\nunifying=" << unifying << "\\nexternal=" << external;
+	o << "dep:\\n" <<
+		(positive?" positive":"") << (negative?" negative":"") <<
+		(external?" external":"") << "\\n";
+	if( involvesRule )
+		o << (constraint?"constraint":"rule");
+	else
+		o << (disjunctive?"disjunctive ":"") << (unifying?"unifying":"");
+	return o;
 }
 
-DependencyGraph::DependencyGraph(RegistryPtr registry, const std::vector<ID>& idb):
+DependencyGraph::DependencyGraph(RegistryPtr registry):
   registry(registry), dg(), nm()
 {
-  // TODO: pre-allocate dep graph? use vecS?
-  createNodesAndBasicDependencies(idb);
-  createExternalDependencies();
-  createAggregateDependencies();
-  createUnifyingDependencies();
 }
 
-void DependencyGraph::createNodesAndBasicDependencies(const std::vector<ID>& idb)
+void DependencyGraph::createNodesAndBasicDependencies(
+		const std::vector<ID>& idb)
 {
+  // TODO: faster allocation of dep graph? use vecS?
+  LOG_SCOPE("cNaBD", false);
+  LOG("=createNodesAndBasicDependencies");
+
   const NodeIDIndex& idx = nm.get<IDTag>();
 
   // preset some dependencyinfos to avoid multiple construction
 	DependencyInfo di_head_rule;
+  di_head_rule.positive = true;
   di_head_rule.involvesRule = true;
 
 	DependencyInfo di_head_head;
+  di_head_head.positive = true;
   di_head_head.disjunctive = true;
 
 	DependencyInfo di_rule_pos_body;
+  di_rule_pos_body.positive = true;
   di_rule_pos_body.involvesRule = true;
 
 	DependencyInfo di_rule_neg_body;
+  di_rule_neg_body.negative = true;
   di_rule_neg_body.involvesRule = true;
-  di_rule_neg_body.positive = false;
 
 	DependencyInfo di_constraint_pos_body;
+  di_constraint_pos_body.positive = true;
   di_constraint_pos_body.constraint = true;
   di_constraint_pos_body.involvesRule = true;
 
 	DependencyInfo di_constraint_neg_body;
-  di_constraint_pos_body.constraint = true;
-  di_constraint_pos_body.involvesRule = true;
-  di_constraint_neg_body.positive = false;
+  di_constraint_neg_body.negative = true;
+  di_constraint_neg_body.constraint = true;
+  di_constraint_neg_body.involvesRule = true;
 
 	// create nodes and register them in node mapping table
 
@@ -231,22 +234,13 @@ void DependencyGraph::createNodesAndBasicDependencies(const std::vector<ID>& idb
 	} // FOREACH id in idb
 }
 
-void DependencyGraph::createAggregateDependencies()
-{
-#warning not implemented: aggregate dependencies
-}
-
-void DependencyGraph::createExternalDependencies()
-{
-#warning not implemented: external dependencies
-}
-
 void DependencyGraph::createUnifyingDependencies()
 {
   LOG_SCOPE("cUD", false);
   LOG("=createUnifyingDependencies");
 
 	DependencyInfo di_unifying;
+	di_unifying.positive = true;
   di_unifying.unifying = true;
 
   // go through node mapping table in two nested loops
@@ -257,6 +251,7 @@ void DependencyGraph::createUnifyingDependencies()
   // we skip all aggregate and external atoms
   // we skip inner loop if both inBody are true and both inHead are false
 
+	// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
   const NodeIDIndex& idx = nm.get<IDTag>();
   NodeIDIndex::const_iterator it1;
   for(it1 = idx.begin(); it1 != idx.end(); ++it1)
@@ -273,6 +268,7 @@ void DependencyGraph::createUnifyingDependencies()
     assert(it1->id.isOrdinaryAtom());
     const OrdinaryAtom& oa1 = registry->lookupOrdinaryAtom(it1->id);
 
+		// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
     NodeIDIndex::const_iterator it2(it1);
     it2++;
     for(; it2 != idx.end(); ++it2)
@@ -346,6 +342,299 @@ void DependencyGraph::createUnifyingDependencies()
   } // outer loop over atoms
 }
 
+void DependencyGraph::createExternalDependencies()
+{
+  LOG_SCOPE("cED", false);
+  LOG("=createExternalDependencies");
+
+  const NodeIDIndex& idx = nm.get<IDTag>();
+
+	//
+	// external predicate input dependencies
+	//
+
+	// for all external atoms:
+	// for all predicate inputs:
+	// assert that they are not variable terms
+	// go through all heads and find matching predicates (cache this)
+
+	// for given predicate constant term id, store list of matching nodes
+	typedef std::map<ID, std::list<NodeMappingInfo> > Matching;
+	Matching matching;
+
+	DependencyInfo di_ext_head;
+  di_ext_head.positive = true;
+  di_ext_head.external = true;
+
+	// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
+  NodeIDIndex::const_iterator itext;
+  for(itext = idx.begin(); itext != idx.end(); ++itext)
+  {
+		// skip non-external atoms
+    if( !itext->id.isAtom() || !itext->id.isExternalAtom() )
+      continue;
+
+		#ifndef NDEBUG
+    std::ostringstream os;
+    os << "itext:" << itext->id.address;
+    LOG_SCOPE(os.str(), false);
+		LOG("=" << itext->id);
+		#endif
+
+    const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
+		LOG("checking external atom " << eatom);
+
+		// lock weak pointer
+		assert(!eatom.pluginAtom.expired());
+		PluginAtomPtr pluginAtom(eatom.pluginAtom);
+
+		// make sure the meta information fits the external atom
+		// (only assert here, should be ensured by plugin loading or parsing)
+		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
+		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+
+		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
+		{
+			// only consider predicate inputs
+			if( pluginAtom->getInputType(at) != PluginAtom::PREDICATE )
+				continue;
+
+			ID idpred = eatom.inputs[at];
+
+			#ifndef NDEBUG
+			std::ostringstream os;
+			os << "at" << at;
+			LOG_SCOPE(os.str(), false);
+			LOG("= checking predicate input " << idpred << " at position " << at);
+			#endif
+
+			// this input must be a constant term, nothing else allowed
+			assert(idpred.isConstantTerm());
+
+			// put into cache if not inside
+			Matching::const_iterator itm = matching.find(idpred);
+			if( itm == matching.end() )
+			{
+				LOG("calculating dependencies: finding all rule heads that use predicate " << idpred);
+
+				// create empty node list in matching and set iterator to it
+				std::list<NodeMappingInfo>& nodelist = matching[idpred];
+				itm = matching.find(idpred);
+				assert(itm != matching.end());
+
+				// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
+				const NodeIDIndex& idx = nm.get<IDTag>();
+				NodeIDIndex::const_iterator ithead;
+				for(ithead = idx.begin(); ithead != idx.end(); ++ithead)
+				{
+					// skip all except ordinary atoms
+					if( !ithead->id.isAtom() || !ithead->id.isOrdinaryAtom() )
+						continue;
+
+					const NodeInfo& ni = propsOf(ithead->node);
+					assert(ni.id == ithead->id);
+
+					// skip all that are not present in rule head
+					if( !ni.inHead )
+						continue;
+
+					const OrdinaryAtom& oa = registry->lookupOrdinaryAtom(ithead->id);
+
+					std::ostringstream os;
+					os << "ithead:" << ithead->id.address;
+					LOG_SCOPE(os.str(), false);
+					LOG("= " << ithead->id << " = ordinary atom " << oa);
+
+					assert(!oa.tuple.empty());
+					// if we have higher order, external dependencies are complicated
+					// perhaps we just need to add the dependency, or we have to rewrite to
+					// higher order before we start creating the dependency graph
+					// for now we ignore this and enforce that no variable terms are in first
+					// position of a head if there is a predicate input
+					assert(!oa.tuple.front().isVariableTerm());
+					if( oa.tuple.front() == idpred )
+						nodelist.push_back(*ithead);
+				} // iterate over all ordinary atoms in rule heads
+			}
+			assert(itm != matching.end());
+
+			for(std::list<NodeMappingInfo>::const_iterator itl = itm->second.begin();
+					itl != itm->second.end(); ++itl)
+			{
+				LOG("storing external dependency " << itext->id << " -> " << itl->id);
+
+				Dependency dep;
+				bool success;
+				boost::tie(dep, success) = boost::add_edge(itext->node, itl->node, di_ext_head, dg);
+				if( !success )
+				{
+					// there already exists that edge -> get it)
+					boost::tie(dep, success) = boost::edge(itext->node, itl->node, dg);
+					assert(success);
+          // if we have an existing dependency, it must be between atoms
+					assert(propsOf(dep).involvesRule == false);
+					propsOf(dep).positive = true;
+					propsOf(dep).external = true;
+				}
+			} // iterate over matching and store dependencies
+		} // check all predicate inputs
+	} // check all external atoms
+
+	//
+	// external constant input dependencies
+	// and
+	// nonmonotonic external atom rule dependencies
+	//
+
+	// for all rules with external atoms:
+	// add negative dependency from rule to atom if it is nonmonotonic
+	// for all constant inputs that are variables:
+	// make dependency to all other body items that contain that variable (do not cache this)
+
+	DependencyInfo di_body_body_ext;
+	di_body_body_ext.positive = true;
+  di_body_body_ext.external = true;
+
+	// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
+  NodeIDIndex::const_iterator itrule;
+  for(itrule = idx.begin(); itrule != idx.end(); ++itrule)
+  {
+		// skip non-rules
+		// skip rules without external atoms
+    if( !itrule->id.isRule() || !itrule->id.doesRuleContainExtatoms() )
+      continue;
+
+		#ifndef NDEBUG
+    std::ostringstream os;
+    os << "itrule:" << itrule->id.address;
+    LOG_SCOPE(os.str(), false);
+		LOG("=" << itrule->id);
+		#endif
+
+    const Rule& rule = registry->rules.getByID(itrule->id);
+		LOG("found rule with external atoms: " << rule);
+		Tuple::const_iterator itext;
+		for(itext = rule.body.begin(); itext != rule.body.end(); ++itext)
+		{
+			if( itext->isExternalAtom() )
+			{
+				#ifndef NDEBUG
+				std::ostringstream os;
+				os << "itext:" << itext->address;
+				LOG_SCOPE(os.str(), false);
+				LOG("=" << *itext);
+				#endif
+
+				// retrieve from registry
+				const ExternalAtom& eatom =
+					registry->eatoms.getByID(*itext);
+				LOG("processing external atom " << eatom);
+
+				// lock weak pointer
+				assert(!eatom.pluginAtom.expired());
+				PluginAtomPtr pluginAtom(eatom.pluginAtom);
+
+				// make sure the meta information fits the external atom
+				// (only assert here, should be ensured by plugin loading or parsing)
+				assert(pluginAtom->checkInputArity(eatom.inputs.size()));
+				assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+
+				// get node to this id (remember we store all literals as atoms!)
+				Node extnode = getNode(ID::atomFromLiteral(*itext));
+
+				// add negative dependency if nonmonotonic
+				if( !pluginAtom->isMonotonic() )
+				{
+					LOG("storing nonmonotonic dependency " << itrule->id << " -> " << *itext);
+
+					// find existing positive edge and update
+					Dependency dep;
+					bool success;
+					boost::tie(dep, success) = boost::edge(itrule->node, extnode, dg);
+					assert(success);
+					// dependency must be between rule and body
+					// TODO: this is not an external dependency in Roman's thesis, but I guess it would not matter/hurt if it were
+					assert(propsOf(dep).involvesRule == true);
+					propsOf(dep).negative = true;
+				}
+
+				// find variables for constant inputs
+				for(unsigned at = 0; at != eatom.inputs.size(); ++at)
+				{
+					if( (pluginAtom->getInputType(at) == PluginAtom::CONSTANT) &&
+							(eatom.inputs[at].isVariableTerm()) )
+					{
+						LOG("at index " << at << ": found constant input that is a variable: " << eatom.inputs[at]);
+						// find all other body atoms of that rule containing that variable
+						// TODO this could probably be done faster
+						Tuple::const_iterator itat;
+						for(itat = rule.body.begin(); itat != rule.body.end(); ++itat)
+						{
+							// don't compare to self
+							if( itat == itext )
+								continue;
+
+							if( itat->isExternalAtom() )
+							{
+								LOG("checking if we depend on output list of external atom " << *itat);
+
+								const ExternalAtom& eatom =
+									registry->eatoms.getByID(*itat);
+								LOG("checking eatom " << eatom);
+
+								for(Tuple::const_iterator itvar = eatom.tuple.begin();
+										itvar != eatom.tuple.end(); ++itvar)
+								{
+									if( *itvar == eatom.inputs[at] )
+									{
+										LOG("adding body/body external dependency " << *itext << " <-> " << *itat);
+										Node atnode = getNode(ID::atomFromLiteral(*itat));
+
+										Dependency dep;
+										bool success;
+										boost::tie(dep, success) = boost::add_edge(extnode, atnode, di_body_body_ext, dg);
+										assert(success);
+										break; // done with this atom
+									}
+								} // iterate over output list of other body atom's arguments
+							}
+							else if( itat->isOrdinaryNongroundAtom() )
+							{
+								LOG("checking if we depend on ordinary nonground atom " << *itat);
+
+								const OrdinaryAtom& oatom =
+									registry->onatoms.getByID(*itat);
+								LOG("checking oatom " << oatom);
+
+								for(Tuple::const_iterator itvar = oatom.tuple.begin();
+										itvar != oatom.tuple.end(); ++itvar)
+								{
+									if( *itvar == eatom.inputs[at] )
+									{
+										LOG("adding body/body external dependency " << *itext << " <-> " << *itat);
+										Node atnode = getNode(ID::atomFromLiteral(*itat));
+
+										Dependency dep;
+										bool success;
+										boost::tie(dep, success) = boost::add_edge(extnode, atnode, di_body_body_ext, dg);
+										assert(success);
+										break; // done with this atom
+									}
+								} // iterate over other body atom's arguments
+							}
+						} // iterate over body of rule to find matches
+					} // if variable for constant input
+				} // iterate over inputs
+			} // if this is an external atom
+		} // go through all atoms in body (to find external ones)
+	} // go through all id's in mapping
+}
+
+void DependencyGraph::createAggregateDependencies()
+{
+#warning not implemented: aggregate dependencies
+}
+
 DependencyGraph::~DependencyGraph()
 {
 }
@@ -384,7 +673,17 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
     }
     else
     {
-      o << "0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT);
+			switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
+			{
+			case 0x00: o << "o g atom"; break;
+			case 0x01: o << "o n atom"; break;
+			case 0x03: o << "agg atom"; break;
+			case 0x06: o << "ext atom"; break;
+			case 0x30: o << "rule"; break;
+			case 0x31: o << "constraint"; break;
+			case 0x32: o << "weak constraint"; break;
+			default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
+			}
       o << "/" << nodeinfo.id.address;
     }
     o << "\"";
@@ -409,11 +708,14 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
     }
     else
     {
-      o << (di.positive?"+":"-");
+      o << "[" <<
+				(di.positive?"+":"") << (di.negative?"-":"") <<
+				(di.external?"ext":"") << " ";
       if( di.involvesRule )
-        o << (di.constraint?"constraint":"rule");
+        o << (di.constraint?"cnstr":"rule");
       else
-        o << (di.disjunctive?"d":"") << (di.unifying?"u":"") << (di.external?"e":"");
+        o << (di.disjunctive?"d":"") << (di.unifying?"u":"");
+			o << "]";
     }
     o << "\"];" << std::endl;
   }

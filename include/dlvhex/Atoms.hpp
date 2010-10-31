@@ -35,7 +35,14 @@
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ID.hpp"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
+
+class PluginAtom;
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
+typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 
 struct Atom
 {
@@ -142,6 +149,9 @@ struct ExternalAtom:
 
   // Atom::tuple is used for output terms
 
+	// weak pointer to plugin atom
+	PluginAtomWeakPtr pluginAtom;
+
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
     Atom(kind, outputs), predicate(predicate), inputs(inputs)
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
@@ -150,7 +160,8 @@ struct ExternalAtom:
     { assert(ID(kind,0).isExternalAtom()); }
   std::ostream& print(std::ostream& o) const
     { return o << "ExternalAtom( &" << predicate << " [ " << printvector(inputs) <<
-        " ] ( " << printvector(Atom::tuple) << " )"; }
+        " ] ( " << printvector(Atom::tuple) << " )" <<
+				"pluginAtom is " << (pluginAtom.expired()?"not set":"set"); }
 };
 
 DLVHEX_NAMESPACE_END

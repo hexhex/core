@@ -42,6 +42,7 @@ TestTypes_LDADD = \
 
 # test it with full debugging output
 TestDependencyGraph_SOURCES = \
+	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \

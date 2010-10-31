@@ -81,6 +81,7 @@ struct ID:
 
 	static const IDKind PROPERTY_ANONYMOUS =     0x00010000;
 	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
+	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
 
   // for builtin terms, this is the address part (no table)
   enum TermBuiltinAddress
@@ -140,6 +141,8 @@ struct ID:
 	inline bool isRegularRule() const   { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_REGULAR; }
 	inline bool isConstraint() const    { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_CONSTRAINT; }
 	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
+
+	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }
