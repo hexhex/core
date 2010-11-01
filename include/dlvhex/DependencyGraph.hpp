@@ -55,6 +55,10 @@
  * (doesn't this give us fixed-point vs guess-and-check model generator choice for free?)
  * we will add those negative dependencies from rule to body atoms only
  * add external dependency if constant input has a variable created by output of other extatom (not covered by roman's thesis)
+ * auxiliary rules do not take all body literals with the external atom's input variable, they only take positive literals!
+ *   (this is stated differently in the thesis. perhaps it would be more efficient to take the
+ *   transitive closure of dependencies over variables to make the body larger (and therefore reduce the grounding)
+ *   example: &foo[X](), bar(X,Y), not baz(X,Z), boo(Z) -> is it more efficient to take all body atoms instead of only bar(X,Y)?)
  *
  * for eval only:
  * create auxiliary input collecting predicates/rule before creating depedency graph
@@ -209,10 +213,23 @@ public:
 	~DependencyGraph();
 
   void createNodesAndBasicDependencies(const std::vector<ID>& idb);
-  void createUnifyingDependencies();
-  void createExternalDependencies();
-  void createAggregateDependencies();
 
+  void createUnifyingDependencies();
+
+	// determine external dependencies and create auxiliary rules for evaluation
+	// store auxiliary rules in registry and return IDs in createAuxRules parameter
+  void createExternalDependencies(std::vector<ID>& createdAuxRules);
+protected: // helpers for createExternalDependencies
+	// determine external dependencies for predicate inputs
+  void createExternalPredicateInputDependencies();
+	// determine external dependencies for constant inputs and create auxiliary rules for evaluation
+	// store auxiliary rules in registry and return IDs in createAuxRules parameter
+  void createExternalConstantInputDependencies(std::vector<ID>& createdAuxRules);
+	ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
+	ID createAuxiliaryRule(ID head, const std::list<DependencyGraph::NodeMappingInfo>& body);
+
+public:
+  void createAggregateDependencies();
 
   // output graph as graphviz source
   void writeGraphViz(std::ostream& o, bool verbose) const;

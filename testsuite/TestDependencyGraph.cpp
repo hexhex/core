@@ -205,11 +205,13 @@ BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction)
 	DependencyGraph depgraph(ctx.registry);
 	depgraph.createNodesAndBasicDependencies(ctx.idb);
 	depgraph.createUnifyingDependencies();
-	// TODO get and test returned new auxiliary rules
-	depgraph.createExternalDependencies();
+	// TODO use Iterator interface
+	std::vector<ID> auxRules;
+	depgraph.createExternalDependencies(auxRules);
 
-	BOOST_CHECK_EQUAL(depgraph.countNodes(), 13);
-	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12);
+	BOOST_CHECK_EQUAL(auxRules.size(), 1);
+	BOOST_CHECK_EQUAL(depgraph.countNodes(), 13+2); // 1 aux rule + 1 aux predicate
+	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3); // 3 aux dependencies
 
   // TODO test dependencies (will do manually with graphviz at the moment)
 

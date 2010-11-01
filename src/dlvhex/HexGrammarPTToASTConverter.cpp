@@ -97,7 +97,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE |
-        ID::PROPERTY_ANONYMOUS, "_");
+        ID::PROPERTY_VAR_ANONYMOUS, "_");
       id = ctx.registry->terms.storeAndGetID(term);
     }
     return id;
@@ -389,7 +389,6 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
 
   std::stringstream ss;
   RawPrinter printer(ss, ctx.registry);
-	// TODO: how to handle strong negation?
   Tuple::const_iterator it = atom.tuple.begin();
   printer.print(*it);
   it++;
