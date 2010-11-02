@@ -1,3 +1,18 @@
+2010-10-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* NEWS: Update.
+
+	* src/dlvhex/GuessCheckModelGenerator.cpp: Sanitize verbose output.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+
+	* src/dlvhex/GraphProcessor.cpp: Add minimality check for
+	allLeavesResult before adding to resultModels (ticket #33).
+
+	* examples/minimality.hex: New test for programs with headcycles (ticket #33).
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/minimality.out: Likewise.
+	* src/testsuite/dlvhex/TestPlugin.cpp: Likewise.
+
 2010-10-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* examples/Makefile.am: Add builtin_safety2.hex for new DLV

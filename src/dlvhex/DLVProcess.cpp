@@ -99,7 +99,9 @@ DLVProcess::setupStreams()
       // first, setup the iostreams
       if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 	{
-	  Globals::Instance()->getVerboseStream() << "Setting up DLVProcess opipe to be verbose" << std::endl;
+	  Globals::Instance()->getVerboseStream() << std::endl
+						  << "Setting up DLVProcess opipe to be verbose"
+						  << std::endl;
 
 	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
 
