@@ -40,9 +40,9 @@ DLVHEX_NAMESPACE_BEGIN
 PluginAtom::Query::Query(const AtomSet& i,
                          const Tuple& in,
                          const Tuple& pat)
-    : interpretation(i),
-      input(in),
-      pattern(pat)
+//    : interpretation(i),
+//      input(in),
+//      pattern(pat)
 {
 }
 
@@ -50,7 +50,7 @@ PluginAtom::Query::Query(const AtomSet& i,
 const AtomSet&
 PluginAtom::Query::getInterpretation() const
 {
-    return interpretation;
+//    return interpretation;
 }
 
 
@@ -69,6 +69,7 @@ PluginAtom::Query::getPatternTuple() const
 
 bool PluginAtom::Query::operator<(const Query& other) const
 {
+	/*
   return
     ( interpretation < other.interpretation ) ||
     ( interpretation == other.interpretation &&
@@ -76,6 +77,7 @@ bool PluginAtom::Query::operator<(const Query& other) const
     ( interpretation == other.interpretation &&
       input == other.input &&
       pattern < other.pattern );
+			*/
 }
         
 #if 0

@@ -36,13 +36,23 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/TermTable.hpp"
+#include "dlvhex/OrdinaryAtomTable.hpp"
+#include "dlvhex/BuiltinAtomTable.hpp"
+#include "dlvhex/AggregateAtomTable.hpp"
+#include "dlvhex/ExternalAtomTable.hpp"
+#include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
+
+#include <boost/shared_ptr.hpp>
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/set_of.hpp>
+#include <boost/bind.hpp>
 
 #include <vector>
 #include <string>
 #include <iosfwd>
-
-#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -58,6 +68,83 @@ class ResultContainer;
 class OutputBuilder;
 class State;
 
+typedef boost::bimaps::bimap<
+  boost::bimaps::set_of<std::string>,
+  boost::bimaps::set_of<std::string> > NamespaceTable;
+
+/**
+ * @brief Registry for entities used in programs as IDs (collection of symbol tables)
+ */
+struct Registry
+{
+  TermTable terms;
+  // ordinary ground atoms
+  OrdinaryAtomTable ogatoms;
+  // ordinary nonground atoms
+  OrdinaryAtomTable onatoms;
+  BuiltinAtomTable batoms;
+  AggregateAtomTable aatoms;
+  ExternalAtomTable eatoms;
+  RuleTable rules;
+
+  NamespaceTable namespaces;
+
+	#if 0
+	
+	// this can be done later, for now we can use hashtables and forget this more efficient method
+
+	//
+	// "address range" concept
+	//
+	// from IDKind we obtain integers starting at zero,
+	// for each distinct table a separate integer
+	// this way we can create efficient mappings from IDs of various kinds to use mapKindToAddressRange() method
+	// e.g., for looking up vertices in dependency graph by ID
+	//   -> first lookup O(1) by IDKind, then lookup vertex in O(1) by address in vector
+	//   -> vector storage with no useless storage allocation (one vector for each address range)
+	enum AddressRange
+	{
+		ARTERM = 0,
+		AROATOM,
+		ARONATOM,
+		ARBATOM,
+		ARAATOM,
+		AREATOM,
+		ARRULE,
+		AR_COUNT // this must stay the last entry
+	};
+	static inline AddressRange mapKindToAddressRange(IDKind kind);
+	static inline AddressRange maxAddressRange() { return AR_COUNT; }
+	#endif
+
+  void logContents() const;
+  // lookup ground or nonground ordinary atoms (ID specifies this)
+  const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
+};
+
+typedef boost::shared_ptr<Registry> RegistryPtr;
+
+class Printer
+{
+protected:
+  std::ostream& out;
+  RegistryPtr registry;
+
+public:
+  Printer(std::ostream& out, RegistryPtr registry):
+    out(out), registry(registry) {}
+  virtual ~Printer() {}
+  void printmany(const std::vector<ID>& ids, const std::string& separator);
+  virtual void print(ID id) = 0;
+};
+
+class RawPrinter:
+  public Printer
+{
+public:
+  RawPrinter(std::ostream& out, RegistryPtr registry): Printer(out, registry) {}
+  virtual void print(ID id);
+};
 
 /**
  * @brief Program context class.
@@ -66,7 +153,30 @@ class State;
  */
 class DLVHEX_EXPORT ProgramCtx
 {
- private:
+public:
+  // symbol storage of this program context
+  // (this is a shared ptr because we might want
+  // to have multiple program contexts sharing the same registry)
+  RegistryPtr registry;
+
+  // idb
+  std::vector<ID> idb;
+
+  // edb
+  // TODO: this should become a bitset interpretation!
+  std::vector<ID> edb;
+
+  // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
+  uint32_t maxint;
+
+  // TODO: add visibility policy (as in clasp)
+
+  // TODO: selected solver software
+
+  // TODO: loaded external atoms
+
+  // TODO: everything required for executing plain HEX programs (no rewriting involved)
+
   std::vector<std::string>* options;
 
   std::vector<std::string> inputsources;
@@ -76,12 +186,8 @@ class DLVHEX_EXPORT ProgramCtx
 
   std::istream* programstream;
 
-  /// stores the rules of the program
-  Program* IDB;
-  /// stores the facts of the program
-  AtomSet* EDB;
 
-  NodeGraph* nodegraph;
+//  NodeGraph* nodegraph;
   DependencyGraph* depgraph;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
@@ -138,6 +244,7 @@ class DLVHEX_EXPORT ProgramCtx
   getInput();
 
 
+	#if 0
   Program*
   getIDB() const;
 
@@ -177,6 +284,7 @@ class DLVHEX_EXPORT ProgramCtx
 
   void
   setOutputBuilder(OutputBuilder*);
+	#endif
 
 
   //

@@ -31,6 +31,13 @@
 
 	* NEWS: Describe changes to 1.7.2.
 
+2010-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/BoostComponentFinder.cpp: Applied the nice part of the
+	clang diff (the one that does not deal with a clang bug).
+	* Modelbuilding-Concept.txt: Thoughts on online vs offline and
+	projected vs non projected model building.
+
 2010-08-12  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/testsuite/dlvhex/TestPlugin.cpp: Added testcases for newly
@@ -62,6 +69,38 @@
 	* MAINTAINER-README: Update.
 	* README: Likewise.
 
+2010-07-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* clang.diff: Added diff to make it build with clang (debug stream does
+	not work, as boost::iostream currently does not work with clang, there
+	are other strange issues)
+
+2010-07-16  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Add some checks for BitMagic (configure
+	--with-bmagic=local forces local installation).
+
+2010-07-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* bm3.7.0/*: Added BitMagic library sources to tree
+	(http://bmagic.sourceforge.net/).
+
+2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Model.h: Initial draft.
+
+2010-07-15  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* Table-Concept.txt: More comments.
+	* Modelbuilding-Concept.txt: Started writing concept
+	for model representation (and later model building).
+
+2010-07-15  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* Table-Concept.txt: Add some comments.
+	Orgmode.
+	* ID-Concept.txt: Likewise.
+
 2010-07-14  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/ASPSolverManager.h: Revised ASPSolver interface
@@ -88,6 +127,31 @@
 	* src/testsuite/dlvhex/ASPsolverTest.cpp: Likewise.
 	* src/testsuite/dlvhex/TestGraphProcessor.cpp: Likewise.
 	* include/dlvhex/ASPSolver.tcc: Likewise (removed file).
+
+2010-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* include/dlvhex/Term.h: Update types of the primitives.
+	* include/dlvhex/Atom.h: Likewise.
+
+	* testsuite/TestTypes.cpp: Fix testsuite.
+	* testsuite/Makefile.am: Likewise.
+
+	* src/dlvhex/Makefile.am: Remove Atom.cpp and Term.cpp.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/Term.cpp: Likewise.
+
+	* Makefile.am: Add TestTypes test in testsuite.
+	* configure.ac: Likewise.
+	* testsuite/TestTypes.cpp: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
+	* include/dlvhex/Term.h: Add new primitive types for the new AST.
+	* include/dlvhex/SymbolTable.h: Likewise.
+	* include/dlvhex/AtomTable.h: Likewise.
+	* include/dlvhex/Atom.h: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* include/dlvhex/NamesTable.h: Remove.
 
 2010-07-09  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

@@ -44,6 +44,7 @@
 #include <iosfwd>
 #include <vector>
 #include <string>
+#include <cassert>
 
 
 DLVHEX_NAMESPACE_BEGIN

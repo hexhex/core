@@ -1,0 +1,80 @@
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1807 Warning: Member gap_bitset_and_count found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1838 Warning: Member gap_bitset_and_any found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1877 Warning: Member gap_bitset_sub_count found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1910 Warning: Member gap_bitset_sub_any found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1948 Warning: Member gap_bitset_xor_count found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1986 Warning: Member gap_bitset_xor_any found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2029 Warning: Member gap_bitset_or_count found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2076 Warning: Member gap_bitset_or_any found in multiple @ingroup groups! The member will be put in group bitfunc, and not in group gapfunc
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2384 Warning: The following parameters of bm::gap_capacity(const T *buf, const T *glevel_len) are not documented:
+  parameter 'glevel_len'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2166 Warning: argument 'dest_size' of command @param is not found in the argument list of bm::gap_convert_to_bitset(unsigned *dest, const T *buf, unsigned dest_len)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2166 Warning: The following parameters of bm::gap_convert_to_bitset(unsigned *dest, const T *buf, unsigned dest_len) are not documented:
+  parameter 'dest_len'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2150 Warning: The following parameters of bm::gap_convert_to_bitset_l(unsigned *dest, const T *buf, unsigned buf_len) are not documented:
+  parameter 'buf_len'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2462 Warning: Found unknown command `\parma'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2461 Warning: The following parameters of bm::gap_free_elements(const T *buf, const T *glevel_len) are not documented:
+  parameter 'glevel_len'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2242 Warning: The following parameters of bm::gap_set_all(T *buf, unsigned set_max, unsigned value) are not documented:
+  parameter 'value'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2852 Warning: The following parameters of bm::bit_block_calc_count_change(const bm::word_t *block, const bm::word_t *block_end, unsigned *bit_count) are not documented:
+  parameter 'block'
+  parameter 'block_end'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:4372 Warning: argument 'data' of command @param is not found in the argument list of bm::bit_count_nonzero_size(const T *blk, unsigned data_size)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:4372 Warning: The following parameters of bm::bit_count_nonzero_size(const T *blk, unsigned data_size) are not documented:
+  parameter 'blk'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:4344 Warning: The following parameters of bm::bit_operation_xor_any(const bm::word_t *BMRESTRICT src1, const bm::word_t *BMRESTRICT src1_end, const bm::word_t *BMRESTRICT src2) are not documented:
+  parameter 'src1_end'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:4319 Warning: The following parameters of bm::bit_operation_xor_count(const bm::word_t *BMRESTRICT src1, const bm::word_t *BMRESTRICT src1_end, const bm::word_t *BMRESTRICT src2) are not documented:
+  parameter 'src1_end'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1829 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_and_any(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1829 Warning: The following parameters of bm::gap_bitset_and_any(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1798 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_and_count(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1798 Warning: The following parameters of bm::gap_bitset_and_count(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2067 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_or_any(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2067 Warning: The following parameters of bm::gap_bitset_or_any(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2020 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_or_count(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:2020 Warning: The following parameters of bm::gap_bitset_or_count(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1901 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_sub_any(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1901 Warning: The following parameters of bm::gap_bitset_sub_any(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1868 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_sub_count(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1868 Warning: The following parameters of bm::gap_bitset_sub_count(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1977 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_xor_any(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1977 Warning: The following parameters of bm::gap_bitset_xor_any(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1939 Warning: argument 'dest' of command @param is not found in the argument list of bm::gap_bitset_xor_count(const unsigned *block, const T *buf)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:1939 Warning: The following parameters of bm::gap_bitset_xor_count(const unsigned *block, const T *buf) are not documented:
+  parameter 'block'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:354 Warning: argument 'buf1' of command @param is not found in the argument list of bm::wordcmp(T a, T b)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:354 Warning: argument 'buf2' of command @param is not found in the argument list of bm::wordcmp(T a, T b)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:354 Warning: The following parameters of bm::wordcmp(T a, T b) are not documented:
+  parameter 'a'
+  parameter 'b'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:332 Warning: argument 'buf1' of command @param is not found in the argument list of bm::wordcmp0(T w1, T w2)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:332 Warning: argument 'buf2' of command @param is not found in the argument list of bm::wordcmp0(T w1, T w2)
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:332 Warning: The following parameters of bm::wordcmp0(T w1, T w2) are not documented:
+  parameter 'w1'
+  parameter 'w2'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmserial.h:1130 Warning: The following parameters of bm::deserialize(BV &bv, const unsigned char *buf, bm::word_t *temp_block=0) are not documented:
+  parameter 'bv'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmserial.h:1042 Warning: The following parameters of bm::serialize(const BV &bv, unsigned char *buf, bm::word_t *temp_block, unsigned serialization_flags=0) are not documented:
+  parameter 'bv'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmtrans.h:677 Warning: The following parameters of bm::compute_tmatrix_rstat(const TMatrix &tmatrix, const unsigned char *pc_vector, typename TMatrix::rstat *rstat, unsigned effective_cols) are not documented:
+  parameter 'effective_cols'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:814 Warning: The following parameters of bm::dgap_2_gap(const T *dgap_buf, T *gap_buf, T gap_header=0) are not documented:
+  parameter 'gap_header'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmfunc.h:752 Warning: The following parameters of bm::for_each_dgap(const T *gap_buf, Func &func) are not documented:
+  parameter 'func'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bm.h:821 Warning: The following parameters of bm::bvector::bvector(strategy strat=BM_BIT, const gap_word_t *glevel_len=bm::gap_len_table< true >::_len, size_type bv_size=bm::id_max, const Alloc &alloc=Alloc()) are not documented:
+  parameter 'alloc'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/encoding.h:524 Warning: Found unknown command `\grief'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/encoding.h:513 Warning: Found unknown command `\grief'
+/home/tlk/dev/release3.7.0/bm3.7.0/src/bmalloc.h:186 Warning: The following parameters of bm::mem_alloc::alloc_gap_block(unsigned level, const gap_word_t *glevel_len) are not documented:
+  parameter 'glevel_len'

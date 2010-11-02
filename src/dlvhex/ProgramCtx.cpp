@@ -37,14 +37,18 @@
 #include "dlvhex/ProgramCtx.h"
 
 #include "dlvhex/PluginContainer.h"
+
+#if 0
 #include "dlvhex/Program.h"
 #include "dlvhex/AtomSet.h"
-#include "dlvhex/NodeGraph.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/DLVProcess.h"
+#endif
+
+//#include "dlvhex/NodeGraph.h"
+//#include "dlvhex/DependencyGraph.h"
+//#include "dlvhex/ResultContainer.h"
+//#include "dlvhex/OutputBuilder.h"
 #include "dlvhex/State.h"
+#include "dlvhex/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -53,18 +57,172 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+void Registry::logContents() const
+{
+  LOG_FUNCTION("Registry");
+  terms.logContents("terms");
+  ogatoms.logContents("ogatoms");
+  onatoms.logContents("onatoms");
+  batoms.logContents("batoms");
+  aatoms.logContents("aatoms");
+  eatoms.logContents("eatoms");
+  rules.logContents("rules");
+}
+
+// lookup ground or nonground ordinary atoms (ID specifies this)
+const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
+{
+  assert(id.isOrdinaryAtom());
+  if( id.isOrdinaryGroundAtom() )
+    return ogatoms.getByID(id);
+  else
+    return onatoms.getByID(id);
+}
+
+void Printer::printmany(const std::vector<ID>& ids, const std::string& separator)
+{
+	std::vector<ID>::const_iterator it = ids.begin();
+	if( it != ids.end() )
+	{
+		print(*it);
+		it++;
+		while( it != ids.end() )
+		{
+			out << separator;
+			print(*it);
+			it++;
+		}
+	}
+}
+
+void RawPrinter::print(ID id)
+{
+	switch(id.kind & ID::MAINKIND_MASK)
+	{
+	case ID::MAINKIND_LITERAL:
+		if(id.isNaf())
+			out << "not ";
+		// continue with atom here!
+	case ID::MAINKIND_ATOM:
+		switch(id.kind & ID::SUBKIND_MASK)
+		{
+		case ID::SUBKIND_ATOM_ORDINARYG:
+			out << registry->ogatoms.getByID(id).text;
+			break;
+		case ID::SUBKIND_ATOM_ORDINARYN:
+			out << registry->onatoms.getByID(id).text;
+			break;
+		case ID::SUBKIND_ATOM_BUILTIN:
+			{
+				const BuiltinAtom& atom = registry->batoms.getByID(id);
+				assert(atom.tuple.size() > 1);
+				//TODO prettier printing of builtins (infix vs prefix)
+				print(atom.tuple[0]);
+				out << "(";
+				//TODO make the following more efficient
+				std::vector<ID> tail(atom.tuple.begin() + 1, atom.tuple.end());
+				printmany(tail,",");
+				out << ")";
+			}
+			break;
+		case ID::SUBKIND_ATOM_AGGREGATE:
+			{
+				const AggregateAtom& atom = registry->aatoms.getByID(id);
+				out << "TODO(AggregateAtom)";
+			}
+			break;
+		case ID::SUBKIND_ATOM_EXTERNAL:
+			{
+				const ExternalAtom& atom = registry->eatoms.getByID(id);
+				out << "&";
+				print(atom.predicate);
+				out << "[";
+				printmany(atom.inputs,",");
+				out << "](";
+				printmany(atom.tuple,",");
+				out << ")";
+			}
+			break;
+		default:
+			assert(false);
+		}
+		break;
+	case ID::MAINKIND_TERM:
+		switch(id.kind & ID::SUBKIND_MASK)
+		{
+		case ID::SUBKIND_TERM_CONSTANT:
+		case ID::SUBKIND_TERM_VARIABLE:
+			out << registry->terms.getByID(id).symbol;
+			break;
+		case ID::SUBKIND_TERM_INTEGER:
+			out << id.address;
+			break;
+		case ID::SUBKIND_TERM_BUILTIN:
+			out << ID::stringFromBuiltinTerm(id.address);
+			break;
+		default:
+			assert(false);
+		}
+		break;
+	case ID::MAINKIND_RULE:
+		switch(id.kind & ID::SUBKIND_MASK)
+		{
+		case ID::SUBKIND_RULE_REGULAR:
+			{
+				const Rule& r = registry->rules.getByID(id);
+				printmany(r.head, " v ");
+				if( !r.body.empty() )
+				{
+					out << " :- ";
+					printmany(r.body, ", ");
+				}
+				out << ".";
+			}
+			break;
+		case ID::SUBKIND_RULE_CONSTRAINT:
+			{
+				out << ":- ";
+				const Rule& r = registry->rules.getByID(id);
+				printmany(r.body, ", ");
+				out << ".";
+			}
+			break;
+		case ID::SUBKIND_RULE_WEAKCONSTRAINT:
+			{
+				out << ":~ ";
+				const Rule& r = registry->rules.getByID(id);
+				printmany(r.body, ", ");
+				out << ". [";
+				print(r.weight);
+				out << ",";
+				print(r.level);
+				out << "]";
+			}
+			break;
+		default:
+			assert(false);
+		}
+		break;
+	default:
+		assert(false);
+	}
+}
+	
 ProgramCtx::ProgramCtx()
-  : options(new std::vector<std::string>),
+  :
+		registry(),
+		idb(),
+		edb(),
+		maxint(0),
+		options(new std::vector<std::string>),
     container(0),
     plugins(new std::vector<PluginInterface*>),
     programstream(new std::istream(new std::stringbuf)),
-    IDB(new Program),
-    EDB(new AtomSet),
-    nodegraph(new NodeGraph),
+ //   nodegraph(new NodeGraph),
     depgraph(0),
     result(0),
     outputbuilder(0),
-    state(boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
+    state()//boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
 { }
 
 
@@ -73,9 +231,7 @@ ProgramCtx::~ProgramCtx()
   delete outputbuilder;
   delete result;
   delete depgraph;
-  delete nodegraph;
-  delete IDB;
-  delete EDB;
+  //delete nodegraph;
   //  std::vector<PluginInterface*> plugins;
 }
   
@@ -153,6 +309,7 @@ ProgramCtx::getInput()
 }
 
 
+#if 0
 Program*
 ProgramCtx::getIDB() const
 {
@@ -250,6 +407,7 @@ ProgramCtx::setOutputBuilder(OutputBuilder* o)
       this->outputbuilder = o;
     }
 }
+#endif
 
 
 void

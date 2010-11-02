@@ -57,13 +57,13 @@
 
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginContainer.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomNode.h"
+//#include "dlvhex/Program.h"
+//#include "dlvhex/AtomNode.h"
 #include "dlvhex/NodeGraph.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/RuleMLOutputBuilder.h"
-#include "dlvhex/PrintVisitor.h"
+//#include "dlvhex/RuleMLOutputBuilder.h"
+//#include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
@@ -730,15 +730,16 @@ main (int argc, char *argv[])
       // expand constant names
       ///@todo move to Term
       //
-      insertNamespaces();
+      #warning TODO implement namespaces!
+      //insertNamespaces();
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
 	{
 	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
+	  RawPrinter rp(Globals::Instance()->getVerboseStream(), pctx);
+	  rp.print(pctx.getIDB());
 	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
-	  pctx.getEDB()->accept(rpv);
+	  rp.print(pctx.getEDB());
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
       
@@ -749,6 +750,8 @@ main (int argc, char *argv[])
       //
       /////////////////////////////////////////////////////////////////
       
+      #warning TODO implement rewriting
+      /*
       pctx.rewrite();
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
@@ -760,6 +763,7 @@ main (int argc, char *argv[])
 	  pctx.getEDB()->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
+	*/
       
       /////////////////////////////////////////////////////////////////
       //
@@ -791,6 +795,8 @@ main (int argc, char *argv[])
       //
       /////////////////////////////////////////////////////////////////
       
+      #warning TODO implement optimize
+      /*
       pctx.optimize();
       
       if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM))
@@ -815,6 +821,7 @@ main (int argc, char *argv[])
 	  pctx.getEDB()->accept(rpv);
 	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
 	}
+	*/
       
       /////////////////////////////////////////////////////////////////
       //
@@ -867,6 +874,8 @@ main (int argc, char *argv[])
       //
       /////////////////////////////////////////////////////////////////
       
+      #warning TODO implement postprocess
+      /*
       pctx.postProcess();
       
       //
@@ -876,6 +885,7 @@ main (int argc, char *argv[])
 	{
 	  removeNamespaces();
 	}
+	*/
       
       /////////////////////////////////////////////////////////////////
       //

@@ -30,6 +30,7 @@ LIBDLVHEXBASE = \
 	Atom.h \
 	AtomNode.h \
 	AtomSet.h \
+	AtomTable.h \
 	BaseVisitor.h \
 	Benchmarking.h \
 	BoostComponentFinder.h \
@@ -45,7 +46,6 @@ LIBDLVHEXBASE = \
 	HexParserDriver.h \
 	Literal.h \
 	ModelGenerator.h \
-	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
 	ParserDriver.h \
@@ -60,6 +60,7 @@ LIBDLVHEXBASE = \
 	ResultContainer.h \
 	Rule.h \
 	SpiritDebugging.h \
+	SymbolTable.h \
 	Term.h \
 	TextOutputBuilder.h
 

@@ -472,9 +472,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-#include "dlvhex/Term.h"
-#include "dlvhex/Atom.h"
-#include "dlvhex/AtomSet.h"
+#include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
 
 #include <map>
@@ -491,12 +489,17 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class Program;
+class AtomSet;
 class NodeGraph;
 class OutputBuilder;
 class ProgramCtx;
 
+class PluginConverter;
+class PluginRewriter;
+class PluginOptimizer;
 
+
+#if 0
 /**
  * \brief Converter class.
  *
@@ -568,11 +571,11 @@ class DLVHEX_EXPORT PluginRewriter
   /**
    * Rewriting funcition.
    *
-   * The rewriting is applied to a Program object. Also the set of initial
+   * The rewriting is applied to a ProgramCtx object. Also the set of initial
    * facts, the EDB, is passed to the rewriter and can be considered/altered.
    */
   virtual void
-  rewrite(Program&, AtomSet&) = 0;
+  rewrite(ProgramCtx&) = 0;
 };
 
 
@@ -607,9 +610,11 @@ class DLVHEX_EXPORT PluginOptimizer
   optimize(NodeGraph&, AtomSet&) = 0;
 
 };
+#endif
 
-
-
+class PluginAtom;
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
+typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 
 /**
  * \brief Interface class for external Atoms.
@@ -680,7 +685,7 @@ public:
 
     private:
 
-        AtomSet interpretation;
+        //AtomSet interpretation;
 
         Tuple input;
 
@@ -730,6 +735,8 @@ public:
     /**
      * \brief Type of input parameter.
      *
+		 * @todo by PS: update this documentation, we have three input types: CONSTANT (clear), PREDICATE (clear), and TUPLE (undocumented: can be specified as last input type, this most likely means the atom gets as many constants as it can get from the program, like a variable length function)
+		 *
      * Currently, two types of input parameters can be specified: PREDICATE and
      * CONSTANT.
      * An input argument of type PREDICATE means that the atom needs those facts
@@ -838,7 +845,7 @@ public:
      */
     bool isMonotonic() const { return monotonic; }
 
-private:
+protected:
 
     /**
      * \brief whether the function is monotonic or nonmonotonic
@@ -986,10 +993,12 @@ public:
     virtual std::vector<PluginConverter*>
     createConverters()
     {
+			#if 0
       PluginConverter* pc = this->createConverter();
       return pc 
 	? std::vector<PluginConverter*>(1, pc) 
 	: std::vector<PluginConverter*>();
+			#endif
     }
 
     /**

@@ -33,7 +33,6 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
-    Atom.cpp \
     AggregateAtom.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
@@ -64,7 +63,6 @@ libdlvhexbase_la_SOURCES = \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    Term.cpp \
     ResultContainer.cpp \
     TextOutputBuilder.cpp \
     HexGrammarPTToASTConverter.cpp \

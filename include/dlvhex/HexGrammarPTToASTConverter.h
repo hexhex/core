@@ -33,11 +33,10 @@
 #ifndef DLVHEX_HEX_GRAMMAR_PT_TO_AST_CONVERTER_H_INCLUDED
 #define DLVHEX_HEX_GRAMMAR_PT_TO_AST_CONVERTER_H_INCLUDED
 
-// HEX AST
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomSet.h"
-#include "dlvhex/AggregateAtom.h"
-#include "dlvhex/Error.h"
+#include "dlvhex/PlatformDefinitions.h"
+
+// AST
+#include "dlvhex/ID.hpp"
 
 // boost::spirit parsing
 #include "dlvhex/HexGrammar.h"
@@ -46,6 +45,8 @@
 #include <boost/spirit/iterator/position_iterator.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
+
+class ProgramCtx;
 
 // converts the parse tree from boost::spirit to the HEX AST
 class HexGrammarPTToASTConverter
@@ -60,11 +61,15 @@ public:
   typedef boost::spirit::tree_match<iterator_t, factory_t>::node_t node_t;
 
 public:
+  HexGrammarPTToASTConverter(ProgramCtx& ctx): ctx(ctx) { }
+
   // convert the root node of the spirit parse tree (from HexSpiritGrammar)
-  // to a program and edb
-  void convertPTToAST(node_t& node, Program& program, AtomSet& edb);
+  // to an idb and idb in ProgramCtx, using registry of ProgramCtx
+  void convertPTToAST(node_t& node);
 
 private:
+  ProgramCtx& ctx;
+
   //
   // general helpers
   //
@@ -72,44 +77,50 @@ private:
   // verify type of node
   // follow tree until a single content node is found
   // return its content as a string
+  // TODO: do not return but create result in ref arg
   std::string createStringFromNode(node_t& node,
       HexGrammar::RuleTags verifyRuleTag = HexGrammar::None);
 
   // use createStringFromNode to get data
-  // create correct term type (anonymous vs numeric vs string)
-  Term createTerm_Helper(node_t& node, HexGrammar::RuleTags verify);
+  // create correct term type and return id (anonymous vs numeric vs string)
+  ID createTerm_Helper(node_t& node, HexGrammar::RuleTags verify);
 
   //
   // converters for specific rules
   //
 
-  // rule "clause"
-  void createASTFromClause(node_t& node, Program& program, AtomSet& edb);
+  // rule "clause", put result into ctx.edb and ctx.idb
+  void createASTFromClause(node_t& node);
   // rule "disj"
-  RuleHead_t createRuleHeadFromDisj(node_t& node);
+  // TODO: do not return but create result in ref arg
+  Tuple createRuleHeadFromDisj(node_t& node);
   // rule "body"
-  RuleBody_t createRuleBodyFromBody(node_t& node);
+  // TODO: do not return but create result in ref arg
+  Tuple createRuleBodyFromBody(node_t& node);
 
   // rule "literal"
-  Literal* createLiteralFromLiteral(node_t& node);
+  ID createLiteralFromLiteral(node_t& node);
   // rule "user_pred"
-  AtomPtr createAtomFromUserPred(node_t& node);
+  ID createAtomFromUserPred(node_t& node);
   // rule "builtin_pred"
-  AtomPtr createBuiltinPredFromBuiltinPred(node_t& node);
+  ID createBuiltinPredFromBuiltinPred(node_t& node);
   // rule "external_atom"
-  AtomPtr createExtAtomFromExtAtom(node_t& node);
+  ID createExtAtomFromExtAtom(node_t& node);
 
   // rule "aggregate"
-  AggregateAtomPtr createAggregateFromAggregate(node_t& node);
+  ID createAggregateFromAggregate(node_t& node);
   // rule "aggregate_pred"
-  AggregateAtomPtr createAggregateFromAggregatePred(node_t& node);
+  ID createAggregateFromAggregatePred(node_t& node);
 
   // rule "terms"
+  // TODO: do not return but create result in ref arg
   Tuple createTupleFromTerms(node_t& node);
   // rule "ident_or_var_or_number"
-  Term createTermFromIdentVarNumber(node_t& node);
+  ID createTermFromIdentVarNumber(node_t& node);
+  // rule "ident_or_var"
+  ID createTermFromIdentVar(node_t& node);
   // rule "term"
-  Term createTermFromTerm(node_t& node);
+  ID createTermFromTerm(node_t& node);
 };
 
 DLVHEX_NAMESPACE_END
