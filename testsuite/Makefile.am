@@ -13,6 +13,7 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 TESTS = \
   TestTypes \
+  TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
   TestTables TestTablesND \
@@ -27,6 +28,7 @@ TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=d
 
 check_PROGRAMS = \
   TestTypes \
+  TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
   TestTables TestTablesND \
@@ -41,11 +43,25 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
-TestDependencyGraph_SOURCES = \
+TestComponentGraph_SOURCES = \
+	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
+	$(top_srcdir)/testsuite/TestComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
+TestDependencyGraph_SOURCES = \
+	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
@@ -76,6 +92,10 @@ TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp dummytypes.cpp fixtu
 TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fixtureE1.cpp fixtureE2.cpp fixtureEx1.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
 
 # test it with NDEBUG (the real situation)
+TestComponentGraphND_SOURCES = $(TestComponentGraph_SOURCES)
+TestComponentGraphND_LDADD = $(TestComponentGraph_LDADD)
+TestComponentGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
 TestDependencyGraphND_SOURCES = $(TestDependencyGraph_SOURCES)
 TestDependencyGraphND_LDADD = $(TestDependencyGraph_LDADD)
 TestDependencyGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG

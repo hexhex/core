@@ -70,41 +70,6 @@ DLVHEX_NAMESPACE_BEGIN
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
-#if 0
-// TODO move this into plugin interface
-struct ExternalAtomMetaInformation
-{
-	bool isMonotonic;
-
-	enum InputType {
-		PREDICATE,
-		CONSTANT
-	};
-	std::vector<InputType> inputTypes;
-	unsigned outputArity;
-
-	ExternalAtomMetaInformation():
-		isMonotonic(false), inputTypes(), outputArity(0) { }
-	ExternalAtomMetaInformation(bool isMonotonic, InputType i1, unsigned outputArity):
-		isMonotonic(isMonotonic), inputTypes(), outputArity(outputArity)
-		{ inputTypes.push_back(i1); }
-	ExternalAtomMetaInformation(bool isMonotonic, InputType i1, InputType i2, unsigned outputArity):
-		isMonotonic(isMonotonic), inputTypes(), outputArity(outputArity)
-		{ inputTypes.push_back(i1); inputTypes.push_back(i2); }
-	ExternalAtomMetaInformation(bool isMonotonic, const std::vector<InputType>& inputTypes, unsigned outputArity):
-		isMonotonic(isMonotonic), inputTypes(inputTypes), outputArity(outputArity) {}
-};
-
-// TODO move this into plugin interface
-class ExternalAtomInformationProvider
-{
-public:
-	// given id of constant term indicating external atom name,
-	// return whether it is monotonic or not
-	virtual const ExternalAtomMetaInformation& getInformation(ID name) const = 0;
-};
-#endif
-
 class DependencyGraph
 {
   //////////////////////////////////////////////////////////////////////////////
@@ -125,7 +90,8 @@ public:
 		// this is independent from naf (naf is expressed only in dependency info)
 		bool inBody;
 		bool inHead;
-		NodeInfo(ID id, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
+
+		NodeInfo(ID id=ID_FAIL, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -163,10 +129,11 @@ public:
   };
 
 	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
-	// for edge list we need setS because we don't want to have duplicate edges
+	// for out-edge list we need setS because we don't want to have duplicate edges
 	// TODO: perhaps we do want to have duplicate edges after all
+  // for vertices it is much easier to use vecS because so many nice algorithms need implicit vertex_index
   typedef boost::adjacency_list<
-    boost::listS, boost::setS, boost::bidirectionalS,
+    boost::setS, boost::vecS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
   typedef boost::graph_traits<Graph> Traits;
 
@@ -177,7 +144,7 @@ public:
   typedef Traits::out_edge_iterator PredecessorIterator;
   typedef Traits::in_edge_iterator SuccessorIterator;
 
-private:
+protected:
 	struct IDTag {};
 	struct NodeMappingInfo
 	{
@@ -200,7 +167,7 @@ private:
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
-private:
+protected:
   RegistryPtr registry;
   Graph dg;
 	NodeMapping nm;
@@ -210,7 +177,7 @@ private:
   //////////////////////////////////////////////////////////////////////////////
 public:
 	DependencyGraph(RegistryPtr registry);
-	~DependencyGraph();
+	virtual ~DependencyGraph();
 
   void createNodesAndBasicDependencies(const std::vector<ID>& idb);
 
@@ -232,8 +199,12 @@ public:
   void createAggregateDependencies();
 
   // output graph as graphviz source
-  void writeGraphViz(std::ostream& o, bool verbose) const;
+  virtual void writeGraphViz(std::ostream& o, bool verbose) const;
+protected: // helpers for writeGraphViz: extend for more output
+  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
+  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
+public:
 	// get node given some object id
 	inline Node getNode(ID id) const
 		{

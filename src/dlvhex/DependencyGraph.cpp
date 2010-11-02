@@ -799,8 +799,54 @@ namespace
   inline std::string graphviz_node_id(DependencyGraph::Node n)
   {
     std::ostringstream os;
-    os << "n" << printptr(n);
+    os << "n" << n;
     return os.str();
+  }
+}
+
+void DependencyGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const
+{
+  const NodeInfo& nodeinfo = getNodeInfo(n);
+  if( verbose )
+  {
+    RawPrinter printer(o, registry);
+    printer.print(nodeinfo.id);
+    o << "\\n" << nodeinfo;
+  }
+  else
+  {
+    switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
+    {
+    case 0x00: o << "o g atom"; break;
+    case 0x01: o << "o n atom"; break;
+    case 0x03: o << "agg atom"; break;
+    case 0x06: o << "ext atom"; break;
+    case 0x30: o << "rule"; break;
+    case 0x31: o << "constraint"; break;
+    case 0x32: o << "weak constraint"; break;
+    default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
+    }
+    o << "/" << nodeinfo.id.address;
+  }
+}
+
+void DependencyGraph::writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const
+{
+  const DependencyInfo& di = getDependencyInfo(dep);
+  if( verbose )
+  {
+    o << di;
+  }
+  else
+  {
+    o << "[" <<
+      (di.positive?"+":"") << (di.negative?"-":"") <<
+      (di.external?"ext":"") << " ";
+    if( di.involvesRule )
+      o << (di.constraint?"cnstr":"rule");
+    else
+      o << (di.disjunctive?"d":"") << (di.unifying?"u":"");
+    o << "]";
   }
 }
 
@@ -810,8 +856,6 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
   // boost::graph::graphviz is horribly broken!
   // therefore we print it ourselves
 
-  RawPrinter printer(o, registry);
-
   o << "digraph G {" << std::endl;
 
   // print vertices
@@ -820,29 +864,9 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
       it != it_end; ++it)
   {
     o << graphviz_node_id(*it) << "[label=\"";
-    const NodeInfo& nodeinfo = getNodeInfo(*it);
-    if( verbose )
-    {
-      printer.print(nodeinfo.id);
-      o << "\\n" << nodeinfo;
-    }
-    else
-    {
-			switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
-			{
-			case 0x00: o << "o g atom"; break;
-			case 0x01: o << "o n atom"; break;
-			case 0x03: o << "agg atom"; break;
-			case 0x06: o << "ext atom"; break;
-			case 0x30: o << "rule"; break;
-			case 0x31: o << "constraint"; break;
-			case 0x32: o << "weak constraint"; break;
-			default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
-			}
-      o << "/" << nodeinfo.id.address;
-    }
+    writeGraphVizNodeLabel(o, *it, verbose);
     o << "\"";
-    if( nodeinfo.id.isRule() )
+    if( getNodeInfo(*it).id.isRule() )
       o << ",shape=box";
     o << "];" << std::endl;
   }
@@ -854,261 +878,14 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
   {
     Node src = sourceOf(*dit);
     Node target = targetOf(*dit);
-    const DependencyInfo& di = getDependencyInfo(*dit);
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
-    if( verbose )
-    {
-      o << di;
-    }
-    else
-    {
-      o << "[" <<
-				(di.positive?"+":"") << (di.negative?"-":"") <<
-				(di.external?"ext":"") << " ";
-      if( di.involvesRule )
-        o << (di.constraint?"cnstr":"rule");
-      else
-        o << (di.disjunctive?"d":"") << (di.unifying?"u":"");
-			o << "]";
-    }
+    writeGraphVizDependencyLabel(o, *dit, verbose);
     o << "\"];" << std::endl;
   }
 
   o << "}" << std::endl;
 }
-
-#if 0
-
-DependencyGraph::DependencyGraph(ComponentFinder* cf, const ProgramCtx& ctx)
-
-  : nodegraph(*ctx.getNodeGraph()), componentFinder(cf), programCtx(ctx)
-{
-    const std::vector<AtomNodePtr> allnodes = nodegraph.getNodes();
-
-    Subgraph* subgraph = new Subgraph;
-
-    std::vector<std::vector<AtomNodePtr> > strongComponents;
-
-    //
-    // keep track of the nodes that belong to a SCC
-    //
-    std::vector<AtomNodePtr> visited;
-
-    //
-    // find all strong components
-    //
-    getStrongComponents(allnodes, strongComponents);
-
-    //
-    // go through strong components
-    //
-    for (std::vector<std::vector<AtomNodePtr> >::const_iterator scc = strongComponents.begin();
-        scc != strongComponents.end();
-        ++scc)
-    {
-        //
-        // we need a component object for each component that needs a special
-        // evaluation procedure:
-        // (i) stratified SCC with external atoms: fixpoint iteration
-        // (ii) unstratified SCC with external atoms: guess&check
-        //
-        if (isExternal(*scc))
-        {
-            ModelGenerator* mg;
-
-            //
-            // if we have a negated edge in this nodeset, we have an
-            // unstratifed component (because the nodeset is already a
-            // SCC!).
-	    //
-	    // This is also true for cycles through a disjunction.
-            //
-            if (hasNegEdgeOrNonmonotonicExtatom(*scc))
-            {
-                mg = new GuessCheckModelGenerator(ctx);
-            }
-            else
-            {
-                mg = new FixpointModelGenerator(ctx);
-            }
-
-	    ///@todo another memory leak *sigh*
-            Component* comp = new ProgramComponent(*scc, mg);
-
-            //
-            // component-object is finished, add it to the dependency graph
-            //
-            components.push_back(comp);
-
-            //
-            // add it also to the current subgraph
-            //
-            subgraph->addComponent(comp);
-
-            //
-            // mark these scc nodes as visited
-            //
-            for (std::vector<AtomNodePtr>::const_iterator ni = (*scc).begin();
-                ni != (*scc).end();
-                ++ni)
-            {
-	      ///@todo marking scc nodes as visited this is not so nice here
-                visited.push_back(*ni);
-            }
-        }
-    }
-
-    //
-    // now, after processing all SCCs of this WCC, let's see if there is any
-    // external atom left that was not in any SCC
-    //
-    for (std::vector<AtomNodePtr>::const_iterator weaknode = allnodes.begin();
-            weaknode != allnodes.end();
-            ++weaknode)
-    {
-        //
-        // add atomnodes to subgraph!
-        //
-        subgraph->addNode(*weaknode);
-
-        if (find(visited.begin(), visited.end(), *weaknode) == visited.end())
-        {
-            if (typeid(*((*weaknode)->getAtom())) == typeid(ExternalAtom))
-            {
-                //std::cout << "single node external atom!" << std::endl;
-	      Component* comp = new ExternalComponent(*weaknode, *ctx.getPluginContainer());
-
-                //
-                // the ExternalComponent-object only consists of a single
-                // node
-                //
-                comp->addAtomNode(*weaknode);
-
-                //
-                // keep track of the component-objects
-                //
-                components.push_back(comp);
-
-                //
-                // add it also to the current subgraph
-                //
-                subgraph->addComponent(comp);
-
-            }
-        }
-    }
-    
-
-    if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
-    {
-        subgraph->dump(Globals::Instance()->getVerboseStream());
-    }
-
-    //
-    // this WCC is through, so the corresponding subgraph is finished!
-    //
-    subgraphs.push_back(subgraph);
-
-    //
-    // reset subgraph iterator
-    //
-    currentSubgraph = subgraphs.begin();
-}
-
-///@todo this function is actually meant for sccs - otherwise we would
-/// have to go through succeeding as well!
-bool
-DependencyGraph::hasNegEdgeOrNonmonotonicExtatom(const std::vector<AtomNodePtr>& nodes) const
-{
-    for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        //
-        // since an SCC is always cyclic, we only have to consider preceding,
-        // not preceding AND succeeding!
-        //
-        for (std::set<Dependency>::const_iterator di = (*ni)->getPreceding().begin();
-                di != (*ni)->getPreceding().end();
-                ++di)
-        {
-            if (((*di).getType() == Dependency::NEG_PRECEDING) ||
-               ((*di).getType() == Dependency::DISJUNCTIVE))
-                //
-                // a scc has a negated edge only if the "target" of the edge is also in the cycle!
-                //
-                if (find(nodes.begin(), nodes.end(), (*di).getAtomNode()) != nodes.end())
-                    return true;
-        }
-
-        ExternalAtomPtr ext =
-          boost::dynamic_pointer_cast<ExternalAtom>((*ni)->getAtom());
-        if( ext )
-        {
-          const std::string& func = ext->getFunctionName();
-          boost::shared_ptr<PluginAtom> pluginAtom =
-            programCtx.getPluginContainer()->getAtom(func);
-          if (!pluginAtom)
-            throw PluginError("Could not find plugin for external atom " + func + " (in depgraph)");
-
-          if( !pluginAtom->isMonotonic() )
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-bool
-DependencyGraph::isExternal(const std::vector<AtomNodePtr>& nodes) const
-{
-    for (std::vector<AtomNodePtr>::const_iterator ni = nodes.begin();
-         ni != nodes.end();
-         ++ni)
-    {
-        if (typeid(*(*ni)->getAtom()) == typeid(ExternalAtom))
-            return true;
-    }
-
-    return false;
-}
-
-
-
-void
-DependencyGraph::getWeakComponents(const std::vector<AtomNodePtr>& nodes,
-                      std::vector<std::vector<AtomNodePtr> >& wccs)
-{
-//    componentFinder->findWeakComponents(nodes, wccs);
-}
-
-
-void
-DependencyGraph::getStrongComponents(const std::vector<AtomNodePtr>& nodes,
-                        std::vector<std::vector<AtomNodePtr> >& sccs)
-{
-    componentFinder->findStrongComponents(nodes, sccs);
-}
-
-
-std::vector<Component*>
-DependencyGraph::getComponents() const
-{
-    return components;
-}
-
-
-Subgraph*
-DependencyGraph::getNextSubgraph()
-{
-    if (currentSubgraph != subgraphs.end())
-        return *(currentSubgraph++);
-
-    return NULL;
-}
-#endif
 
 DLVHEX_NAMESPACE_END
 
