@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalGraph.cpp
+ * @file   EvalGraph.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Template for Evaluation Graph.
