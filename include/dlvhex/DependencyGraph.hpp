@@ -214,6 +214,10 @@ public:
 			return it->node;
 		}
 
+  // get range over all nodes
+  inline std::pair<NodeIterator, NodeIterator> getNodes() const
+    { return boost::vertices(dg); }
+
 	// get node info given node
 	inline const NodeInfo& getNodeInfo(Node node) const
 		{ return dg[node]; }

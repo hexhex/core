@@ -89,10 +89,8 @@ public:
   void calculateComponentInfo();
 
 protected:
-  // calculate scc, sccRepresentative
+  // calculate scc, sccRepresentative, sccMembers
   void calculateSCCs();
-  // calculate sccMembers
-  void calculateSCCMembers();
   // calculate roots, leaves
   void calculateSpecialNodeSets();
 

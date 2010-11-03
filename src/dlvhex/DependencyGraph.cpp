@@ -37,6 +37,7 @@
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <sstream>
 
@@ -216,7 +217,8 @@ void DependencyGraph::createNodesAndBasicDependencies(
 			else
 			{
 				// existing one -> set inBody
-				propsOf(it->node).inBody = true;
+        nat = it->node;
+				propsOf(nat).inBody = true;
 			}
 
 			// existing one or new one -> create dependency
@@ -809,12 +811,14 @@ void DependencyGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbo
   const NodeInfo& nodeinfo = getNodeInfo(n);
   if( verbose )
   {
+    o << "node" << n << " ";
     RawPrinter printer(o, registry);
     printer.print(nodeinfo.id);
     o << "\\n" << nodeinfo;
   }
   else
   {
+    o << n << ":";
     switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
     {
     case 0x00: o << "o g atom"; break;
@@ -826,7 +830,7 @@ void DependencyGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbo
     case 0x32: o << "weak constraint"; break;
     default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
     }
-    o << "/" << nodeinfo.id.address;
+    o << ":" << nodeinfo.id.address;
   }
 }
 
@@ -856,7 +860,8 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
   // boost::graph::graphviz is horribly broken!
   // therefore we print it ourselves
 
-  o << "digraph G {" << std::endl;
+  o << "digraph G {" << std::endl <<
+    "rankdir=BT;" << std::endl; // print root nodes at bottom, leaves at top!
 
   // print vertices
   NodeIterator it, it_end;
@@ -864,7 +869,16 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
       it != it_end; ++it)
   {
     o << graphviz_node_id(*it) << "[label=\"";
-    writeGraphVizNodeLabel(o, *it, verbose);
+    {
+      std::stringstream ss;
+      writeGraphVizNodeLabel(ss, *it, verbose);
+      // escape " into \"
+      boost::algorithm::replace_all_copy(
+        std::ostream_iterator<char>(o),
+        ss.str(),
+        "\"",
+        "\\\"");
+    }
     o << "\"";
     if( getNodeInfo(*it).id.isRule() )
       o << ",shape=box";
@@ -880,7 +894,16 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
     Node target = targetOf(*dit);
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
-    writeGraphVizDependencyLabel(o, *dit, verbose);
+    {
+      std::stringstream ss;
+      writeGraphVizDependencyLabel(o, *dit, verbose);
+      // escape " into \"
+      boost::algorithm::replace_all_copy(
+        std::ostream_iterator<char>(o),
+        ss.str(),
+        "\"",
+        "\\\"");
+    }
     o << "\"];" << std::endl;
   }
 
