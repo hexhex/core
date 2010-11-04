@@ -128,7 +128,6 @@ public:
     std::ostream& print(std::ostream& o) const;
   };
 
-	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
 	// for out-edge list we need setS because we don't want to have duplicate edges
 	// TODO: perhaps we do want to have duplicate edges after all
   // for vertices it is much easier to use vecS because so many nice algorithms need implicit vertex_index
@@ -178,6 +177,8 @@ protected:
 public:
 	DependencyGraph(RegistryPtr registry);
 	virtual ~DependencyGraph();
+
+  const Graph& getInternalGraph() const { return dg; }
 
   void createNodesAndBasicDependencies(const std::vector<ID>& idb);
 
