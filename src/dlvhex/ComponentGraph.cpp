@@ -51,8 +51,16 @@ ComponentGraph::~ComponentGraph()
 
 void ComponentGraph::calculateComponentInfo()
 {
+  // only do this once
+  assert(scc.empty());
+  assert(sccRepresentative.empty());
+
+  // resize all property maps
+  scc.resize(boost::num_vertices(dg));
+  sccRepresentative.resize(boost::num_vertices(dg));
+
+  // do the work
   calculateSCCs();
-  calculateSCCMembers();
   calculateSpecialNodeSets();
 }
 
@@ -60,21 +68,42 @@ void ComponentGraph::calculateSCCs()
 {
   LOG_SCOPE("cSCCs", false);
   LOG("=calculateSCCs");
-  // TODO
-}
 
-void ComponentGraph::calculateSCCMembers()
-{
-  LOG_SCOPE("cSCCM", false);
-  LOG("=calculateSCCMembers");
-  // TODO
+  unsigned scccount = boost::strong_components(
+      dg,
+      &scc[0], 
+      boost::root_map(&sccRepresentative[0]));
+  LOG("boost::strong_components created " << scccount << " components");
+
+  // prepare storage for sccMembers
+  sccMembers.resize(scccount);
+
+  // calcualte sccMembers
+  for(unsigned n = 0; n < scccount; ++n)
+  {
+    // get the component id from scc[n]
+    // add the node id to the set of nodes of this component
+    sccMembers[scc[n]].insert(static_cast<Node>(n));
+  }
 }
 
 void ComponentGraph::calculateSpecialNodeSets()
 {
   LOG_SCOPE("cSNS", false);
   LOG("=calculateSpecialNodeSets");
-  // TODO
+  NodeIterator it, it_end;
+  for(boost::tie(it, it_end) = getNodes(); it != it_end; ++it)
+  {
+    PredecessorIterator pred, pred_end;
+    boost::tie(pred, pred_end) = getDependencies(*it);
+    if( pred == pred_end )
+      leaves.insert(*it);
+
+    SuccessorIterator succ, succ_end;
+    boost::tie(succ, succ_end) = getProvides(*it);
+    if( succ == succ_end )
+      roots.insert(*it);
+  }
 }
 
 void ComponentGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const
@@ -91,13 +120,29 @@ void ComponentGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbos
 
   if( verbose )
   {
-    o << "\\nscc=" << sccnumber << " rep=" << representative;
+    if( sccMembers[sccnumber].size() == 1 )
+    {
+      o << " scc=" << sccnumber;
+    }
+    else
+    {
+      o << " SCC=" << sccnumber;
+      if( representative != n )
+        o << " rep=" << representative;
+    }
+    o << (root?" root":"") << (leaf?" leaf":"");
   }
   else
   {
-    o << "/scc" << sccnumber << ",rep" << representative;
+    if( sccMembers[sccnumber].size() > 1 )
+    {
+      o << "/SCC" << sccnumber;
+    }
+    else
+    {
+      o << "/scc" << sccnumber;
+    }
   }
-  o << (root?" root":"") << (leaf?" leaf":"");
 }
 
 DLVHEX_NAMESPACE_END

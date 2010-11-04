@@ -22,19 +22,19 @@
  */
 
 /**
- * @file   TestComponentGraph.cpp
+ * @file   TestEvaluationHeuristic.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Test the component graph
+ * @brief  Test evaluation heuristics
  */
 
-#include <boost/cstdint.hpp>
-#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/EvaluationHeuristicBase.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/ComponentGraph.hpp"
 
-#define BOOST_TEST_MODULE "TestComponentGraph"
+#define BOOST_TEST_MODULE "TestEvaluationHeuristic"
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
@@ -62,41 +62,6 @@ inline void makeGraphVizPdf(const char* fname)
 
 DLVHEX_NAMESPACE_USE
 
-class TestPluginAtomCount:
-	public PluginAtom
-{
-public:
-	TestPluginAtomCount(): PluginAtom()
-	{
-		monotonic = false;
-		inputSize = 1;
-		outputSize = 1;
-		inputType.push_back(PREDICATE);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
-class TestPluginAtomReach:
-	public PluginAtom
-{
-public:
-	TestPluginAtomReach(): PluginAtom()
-	{
-		monotonic = true;
-		inputSize = 2;
-		outputSize = 1;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
 class TestPluginAspCtxAcc:
 	public PluginAtom
 {
@@ -117,110 +82,6 @@ public:
 	virtual void retrieve(const Query&, Answer&) throw (PluginError)
 		{ assert(false); }
 };
-
-
-BOOST_AUTO_TEST_CASE(testNonext) 
-{
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-  std::stringstream ss;
-  ss <<
-    "a v f(X)." << std::endl <<
-    "b :- X(a), not f(b)." << std::endl <<
-    ":- X(b), not f(a)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
-	//LOG_REGISTRY_PROGRAM(ctx);
-
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
-	compgraph.calculateComponentInfo();
-
-  // TODO test dependencies (will do manually with graphviz at the moment)
-
-  const char* fnamev = "testComponentGraphNonextVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
-  std::ofstream filev(fnamev);
-  compgraph.writeGraphViz(filev, true);
-  makeGraphVizPdf(fnamev);
-
-  const char* fnamet = "testComponentGraphNonextTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
-  std::ofstream filet(fnamet);
-  compgraph.writeGraphViz(filet, false);
-  makeGraphVizPdf(fnamet);
-}
-
-BOOST_AUTO_TEST_CASE(testExt1) 
-{
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-  std::stringstream ss;
-  ss <<
-    "item(X) :- part(X)." << std::endl <<
-		"edge(Y) :- foo(Y)." << std::endl <<
-    "num(N) :- &count[item](N)." << std::endl <<
-    "reached(X) :- &reach[N,edge](X), startnode(N)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
-	//LOG_REGISTRY_PROGRAM(ctx);
-
-	// create dummy plugin atoms and register them into external atoms
-	PluginAtomPtr papCount(new TestPluginAtomCount);
-	PluginAtomPtr papReach(new TestPluginAtomReach);
-  ID idreach = ctx.registry->terms.getIDByString("reach");
-  ID idcount = ctx.registry->terms.getIDByString("count");
-  BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idreach);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papReach;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idcount);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papCount;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-
-	// create component graph!
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
-	std::vector<ID> auxRules;
-	compgraph.createExternalDependencies(auxRules);
-
-  compgraph.calculateComponentInfo();
-
-  // TODO test scc infos (will do manually with graphviz at the moment)
-
-  const char* fnamev = "testComponentGraphExt1Verbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
-  std::ofstream filev(fnamev);
-  compgraph.writeGraphViz(filev, true);
-  makeGraphVizPdf(fnamev);
-
-  const char* fnamet = "testComponentGraphExt1Terse.dot";
-  LOG("dumping terse graph to " << fnamet);
-  std::ofstream filet(fnamet);
-  compgraph.writeGraphViz(filet, false);
-  makeGraphVizPdf(fnamet);
-}
 
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
 BOOST_AUTO_TEST_CASE(testMCSMedEQ) 
@@ -384,5 +245,3 @@ BOOST_AUTO_TEST_CASE(testMCSMedD)
   makeGraphVizPdf(fnamet);
 }
 
-
-// TODO test SCCs containing extatoms

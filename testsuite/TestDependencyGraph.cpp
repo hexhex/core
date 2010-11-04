@@ -54,6 +54,13 @@
 
 DLVHEX_NAMESPACE_USE
 
+inline void makeGraphVizPdf(const char* fname)
+{
+  std::ostringstream ss;
+  ss << "dot " << fname << " -Tpdf -o " << fname << ".pdf";
+  system(ss.str().c_str());
+}
+
 class TestPluginAtomCount:
 	public PluginAtom
 {
@@ -139,11 +146,13 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   LOG("dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   depgraph.writeGraphViz(filev, true);
+  makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testDependencyGraphConstructionTerse.dot";
   LOG("dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   depgraph.writeGraphViz(filet, false);
+  makeGraphVizPdf(fnamet);
 }
 
 BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction) 
@@ -219,11 +228,13 @@ BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction)
   LOG("dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   depgraph.writeGraphViz(filev, true);
+  makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testExternalDependencyConstructionTerse.dot";
   LOG("dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   depgraph.writeGraphViz(filet, false);
+  makeGraphVizPdf(fnamet);
 }
 
 // TODO test aggregate dependencies

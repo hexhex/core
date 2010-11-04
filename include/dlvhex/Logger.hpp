@@ -293,7 +293,7 @@ inline print_container* printvector(const std::vector<T>& t)
 template<typename T>
 class ostream_printable
 {
-  friend std::ostream& operator<<(std::ostream& o, const T& t) const
+  friend std::ostream& operator<<(std::ostream& o, const T& t)
     { return t.print(o); }
   // to be defined in derived class
   //std::ostream& print(std::ostream& o) const;

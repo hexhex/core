@@ -119,7 +119,6 @@ ID ExternalAtomTable::storeAndGetID(
 {
 	assert(ID(atm.kind,0).isAtom());
 	assert(ID(atm.kind,0).isExternalAtom());
-	assert(!atm.tuple.empty());
 
 	AddressIndex& idx = container.get<impl::AddressTag>();
 
