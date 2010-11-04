@@ -39,6 +39,9 @@
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
 #include <boost/graph/filtered_graph.hpp>
+#include <boost/bimap/bimap.hpp>
+#include <boost/bimap/unordered_set_of.hpp>
+#include <boost/bimap/unordered_multiset_of.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -53,6 +56,9 @@ DLVHEX_NAMESPACE_BEGIN
 template<typename EvalGraphT>
 class EvalGraphBuilder
 {
+  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
+  BOOST_CONCEPT_ASSERT((boost::Convertible<typename EvalGraphT::EvalUnit, unsigned>));
+
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
@@ -60,6 +66,18 @@ public:
 	typedef EvalGraphT EvalGraph;
 
 protected:
+  // bidirectional mapping:
+  // set of components -> one eval unit
+  // set of components <- one eval unit
+  // we use identity as hash function as nodes and eval units are distinct unsigned ints
+  struct identity {
+    inline unsigned operator()(unsigned u) { return u; }
+  };
+  typedef boost::bimaps::bimap<
+      boost::bimaps::unordered_set_of<ComponentGraph::Node, identity >,
+      boost::bimaps::unordered_multiset_of<typename EvalGraph::EvalUnit, identity >
+    > NodeEvalUnitMapping;
+
   // for subgraph of component graph that still needs to be put into eval units:
   //
   // we cannot use subgraph to keep track of the rest of the component graph,
@@ -69,7 +87,6 @@ protected:
   // therefore we keep track of used components in an efficient way in the
   // following vector and filter the graph using boost::filtered_graph
   // (components are unsigned ints as verified by the following concept check)
-  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
   typedef std::vector<bool> UnusedNodesMap;
   struct UnusedVertexFilter
   {
@@ -99,6 +116,8 @@ protected:
 	const ComponentGraph& cg;
 	// eval graph
 	EvalGraph& eg;
+
+  NodeEvalUnitMapping mapping;
 
   //
   // subgraph of component graph that still needs to be put into eval units
@@ -198,10 +217,12 @@ template<typename EvalGraphT>
 EvalGraphBuilder<EvalGraphT>::EvalGraphBuilder(
 		const ComponentGraph& cg, EvalGraph& eg):
 	cg(cg), eg(eg),
+  // todo mapping
   unusedNodes(cg.countNodes(), true),
   unusedEdgeFilter(&cg, &unusedNodes),
   unusedVertexFilter(&unusedNodes),
-  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
+  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter),
+  cgrestLeaves(cg.getLeaves())
 {
 }
 

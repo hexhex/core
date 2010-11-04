@@ -87,6 +87,16 @@ public:
 
   // calculate above members, based on underlying dependency graph
   void calculateComponentInfo();
+  
+  //
+  // accessors
+  //
+
+  const ComponentMap& getSCC() const { return scc; }
+  const RepresentativeMap& getSCCRepresentative() const { return sccRepresentative; }
+  const SCCMap& getSCCMembers() const { return sccMembers; }
+  const RootContainer& getRoots() const { return roots; }
+  const LeafContainer& getLeaves() const { return leaves; }
 
 protected:
   // calculate scc, sccRepresentative, sccMembers

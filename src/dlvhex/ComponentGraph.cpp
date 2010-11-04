@@ -79,7 +79,7 @@ void ComponentGraph::calculateSCCs()
   sccMembers.resize(scccount);
 
   // calcualte sccMembers
-  for(unsigned n = 0; n < scccount; ++n)
+  for(unsigned n = 0; n < boost::num_vertices(dg); ++n)
   {
     // get the component id from scc[n]
     // add the node id to the set of nodes of this component

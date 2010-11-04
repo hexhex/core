@@ -156,5 +156,35 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
   // naive test approach: take all leaf components and add them as new eval unit
   // (this is stupid, but allowed, and it tests the dependency checking mechanism)
 
+  const ComponentGraph::SCCMap& sccMembers = compgraph.getSCCMembers();
+  const ComponentGraph::ComponentMap& scc = compgraph.getSCC();
+
+  while( !egbuilder.getRestLeaves().empty() )
+  {
+    typedef ComponentGraph::Node Node;
+    std::list<Node> leaves;
+
+    // go through all nodes and collect components
+    ComponentGraph::LeafContainer::const_iterator itl;
+    for(itl = egbuilder.getRestLeaves().begin();
+        itl != egbuilder.getRestLeaves().end(); ++itl)
+    {
+      const std::set<Node>& thisSCC = sccMembers[scc[*itl]];
+      LOG("for leaf " << *itl << " adding nodes " << printset(thisSCC));
+      leaves.insert(leaves.end(), thisSCC.begin(), thisSCC.end());
+    }
+
+    LOG("got leaves to add: " << printvector(std::vector<Node>(leaves.begin(), leaves.end())));
+
+    // enrich set of leaves by taking all nodes in the same component
+
+
+    // collect dependencies from leaves to existing eval units
+
+    assert(false);
+
+  }
+
+
   // TODO: test evalgraph
 }
