@@ -30,119 +30,271 @@
 
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/ProgramCtx.h"
 
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-ComponentGraph::ComponentGraph(RegistryPtr registry):
-  DependencyGraph(registry)
+ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
+  reg(reg),
+  #ifndef NDEBUG
+  dg(dg),
+  #endif
+  cg()
 {
+  calculateComponents(dg);
 }
 
 ComponentGraph::~ComponentGraph()
 {
 }
 
-void ComponentGraph::calculateComponentInfo()
+void ComponentGraph::calculateComponents(const DependencyGraph& dg_)
 {
-  // only do this once
-  assert(scc.empty());
-  assert(sccRepresentative.empty());
+  LOG_SCOPE("cCs", false);
+  LOG("=calculateComponents");
 
-  // resize all property maps
-  scc.resize(boost::num_vertices(dg));
-  sccRepresentative.resize(boost::num_vertices(dg));
+  typedef DependencyGraph::Node Node;
 
-  // do the work
-  calculateSCCs();
-  calculateSpecialNodeSets();
-}
-
-void ComponentGraph::calculateSCCs()
-{
-  LOG_SCOPE("cSCCs", false);
-  LOG("=calculateSCCs");
-
-  unsigned scccount = boost::strong_components(
-      dg,
-      &scc[0], 
-      boost::root_map(&sccRepresentative[0]));
+  //
+  // calculate SCCs
+  //
+  typedef std::vector<int> ComponentMap;
+  ComponentMap scc;
+  // resize property map
+  scc.resize(dg.countNodes());
+  // do it with boost
+  unsigned scccount = boost::strong_components(dg.getInternalGraph(), &scc[0]);
   LOG("boost::strong_components created " << scccount << " components");
 
-  // prepare storage for sccMembers
+  //
+  // calculate set of nodes for each SCC: sccMembers
+  //
+  typedef std::set<Node> NodeSet;
+  typedef std::vector<NodeSet> SCCMap;
+  SCCMap sccMembers;
   sccMembers.resize(scccount);
-
-  // calcualte sccMembers
-  for(unsigned n = 0; n < boost::num_vertices(dg); ++n)
+  for(unsigned n = 0; n < dg.countNodes(); ++n)
   {
     // get the component id from scc[n]
     // add the node id to the set of nodes of this component
     sccMembers[scc[n]].insert(static_cast<Node>(n));
   }
+
+  //
+  // create one component for each SCC
+  //
+  typedef std::vector<Component> SCCToComponentMap;
+  SCCToComponentMap sccToComponent(scccount);
+  for(unsigned s = 0; s < scccount; ++s)
+  {
+    //createComponentFromDepgraphSCC(dg, scc, *itc);
+    const NodeSet& nodes = sccMembers[s];
+    Component c = boost::add_vertex(cg);
+    LOG("created component node " << c << " for scc " << s << " with depgraph nodes " << printset(nodes));
+    sccToComponent[s] = c;
+    ComponentInfo& ci = propsOf(c);
+    // collect rule and eatom ids
+    for(NodeSet::const_iterator itn = nodes.begin();
+        itn != nodes.end(); ++itn)
+    {
+      #ifndef NDEBUG
+      ci.sources.insert(*itn);
+      #endif
+      ID id = dg.propsOf(*itn).id;
+      if( id.isRule() )
+      {
+        ci.rules.insert(id);
+      }
+      else if( id.isExternalAtom() )
+      {
+        ci.eatoms.insert(id);
+      }
+    }
+    LOG("-> rules " << printset(ci.rules));
+    LOG("-> eatoms " << printset(ci.eatoms));
+    // TODO: find more component properties (for complex model building) (perhaps we can cover this in the loop below?)
+  }
+
+  //
+  // create dependencies between components (now that all of them exist)
+  //
+  for(unsigned s = 0; s < scccount; ++s)
+  {
+    const NodeSet& nodes = sccMembers[s];
+    Component c = sccToComponent[s];
+
+    // look at out-dependencies only
+    // (successors will find and create all dependencies to this SCC)
+    for(NodeSet::const_iterator itn = nodes.begin();
+        itn != nodes.end(); ++itn)
+    {
+      DependencyGraph::PredecessorIterator it, it_end;
+      for(boost::tie(it, it_end) = dg.getDependencies(*itn);
+          it != it_end; ++it)
+      {
+        DependencyGraph::Dependency dep = *it;
+        Node targetnode = dg.targetOf(dep);
+        const DependencyGraph::NodeInfo& ni = dg.propsOf(targetnode);
+        unsigned targetscc = scc[targetnode];
+        if( targetscc == s )
+        {
+          // dependency within SCC
+          continue;
+        }
+        else
+        {
+          // dependency to other SCC
+          LOG("found dependency from SCC " << s << " to SCC " << targetscc);
+        }
+      }
+
+    } // collect dependencies outgoing from node *itn in SCC s
+  } // create dependencies outgoing from SCC s
 }
 
-void ComponentGraph::calculateSpecialNodeSets()
+namespace
 {
-  LOG_SCOPE("cSNS", false);
-  LOG("=calculateSpecialNodeSets");
-  NodeIterator it, it_end;
-  for(boost::tie(it, it_end) = getNodes(); it != it_end; ++it)
+  inline std::string graphviz_node_id(ComponentGraph::Component c)
   {
-    PredecessorIterator pred, pred_end;
-    boost::tie(pred, pred_end) = getDependencies(*it);
-    if( pred == pred_end )
-      leaves.insert(*it);
-
-    SuccessorIterator succ, succ_end;
-    boost::tie(succ, succ_end) = getProvides(*it);
-    if( succ == succ_end )
-      roots.insert(*it);
+    std::ostringstream os;
+    os << "c" << std::hex << c;
+    return os.str();
   }
 }
 
-void ComponentGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const
+void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const
 {
-  // additionally print SCC index and root/leaf membership
-  DependencyGraph::writeGraphVizNodeLabel(o, n, verbose);
-
-  assert(n < scc.size());
-  int sccnumber = scc[n];
-  assert(n < sccRepresentative.size());
-  Node representative = sccRepresentative[n];
-  bool root = roots.count(n)>0;
-  bool leaf = leaves.count(n)>0;
-
+  const ComponentInfo& componentinfo = getComponentInfo(c);
   if( verbose )
   {
-    if( sccMembers[sccnumber].size() == 1 )
+    o << "component" << c << ":\\n";
+    RawPrinter printer(o, reg);
+    #ifndef NDEBUG
+    o << "sources: " << printset(componentinfo.sources) << "\\n";
+    #endif
+    if( !componentinfo.rules.empty() )
     {
-      o << " scc=" << sccnumber;
+      o << "rules:\\n";
+      BOOST_FOREACH(ID id, componentinfo.rules)
+      {
+        printer.print(id);
+        o << "\\n";
+      }
     }
-    else
+    if( !componentinfo.eatoms.empty() )
     {
-      o << " SCC=" << sccnumber;
-      if( representative != n )
-        o << " rep=" << representative;
+      o << "eatoms:\\n";
+      BOOST_FOREACH(ID id, componentinfo.eatoms)
+      {
+        printer.print(id);
+        o << "\\n";
+      }
     }
-    o << (root?" root":"") << (leaf?" leaf":"");
   }
   else
   {
-    if( sccMembers[sccnumber].size() > 1 )
+    /*
+    o << n << ":";
+    switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
     {
-      o << "/SCC" << sccnumber;
+    case 0x00: o << "o g atom"; break;
+    case 0x01: o << "o n atom"; break;
+    case 0x03: o << "agg atom"; break;
+    case 0x06: o << "ext atom"; break;
+    case 0x30: o << "rule"; break;
+    case 0x31: o << "constraint"; break;
+    case 0x32: o << "weak constraint"; break;
+    default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
     }
-    else
-    {
-      o << "/scc" << sccnumber;
-    }
+    o << ":" << nodeinfo.id.address;
+    */
   }
+}
+
+void ComponentGraph::writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const
+{
+  const DependencyInfo& di = getDependencyInfo(dep);
+  if( verbose )
+  {
+    //o << di;
+  }
+  else
+  {
+    /*
+    o << "[" <<
+      (di.positive?"+":"") << (di.negative?"-":"") <<
+      (di.external?"ext":"") << " ";
+    if( di.involvesRule )
+      o << (di.constraint?"cnstr":"rule");
+    else
+      o << (di.disjunctive?"d":"") << (di.unifying?"u":"");
+    o << "]";
+    */
+  }
+}
+
+// output graph as graphviz source
+void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
+{
+  // boost::graph::graphviz is horribly broken!
+  // therefore we print it ourselves
+
+  o << "digraph G {" << std::endl <<
+    "rankdir=BT;" << std::endl; // print root nodes at bottom, leaves at top!
+
+  // print vertices
+  ComponentIterator it, it_end;
+  for(boost::tie(it, it_end) = boost::vertices(cg);
+      it != it_end; ++it)
+  {
+    o << graphviz_node_id(*it) << "[label=\"";
+    {
+      std::stringstream ss;
+      writeGraphVizComponentLabel(ss, *it, verbose);
+      // escape " into \"
+      boost::algorithm::replace_all_copy(
+        std::ostream_iterator<char>(o),
+        ss.str(),
+        "\"",
+        "\\\"");
+    }
+    o << "\"";
+    if( !getComponentInfo(*it).eatoms.empty() )
+      o << ",shape=box";
+    o << "];" << std::endl;
+  }
+
+  // print edges
+  DependencyIterator dit, dit_end;
+  for(boost::tie(dit, dit_end) = boost::edges(cg);
+      dit != dit_end; ++dit)
+  {
+    Component src = sourceOf(*dit);
+    Component target = targetOf(*dit);
+    o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
+      "[label=\"";
+    {
+      std::stringstream ss;
+      writeGraphVizDependencyLabel(o, *dit, verbose);
+      // escape " into \"
+      boost::algorithm::replace_all_copy(
+        std::ostream_iterator<char>(o),
+        ss.str(),
+        "\"",
+        "\\\"");
+    }
+    o << "\"];" << std::endl;
+  }
+
+  o << "}" << std::endl;
 }
 
 DLVHEX_NAMESPACE_END

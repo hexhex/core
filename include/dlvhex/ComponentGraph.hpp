@@ -39,74 +39,181 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * A component graph is a dependency graph with more capabilities,
- * required for building evaluation units.
+ * A component graph is created from a dependency graph by collapsing all rule
+ * nodes with their body and head nodes (except for external atoms),
+ * and then by collapsing all rules in the same SCC (including external atoms).
+ * Dependencies are collapsed as well.
  *
- * Capabilities are calculation of SCCs and other comfort data that is useful for
- * evaluation plan heuristics.
+ * A component graph is a dag (acyclic by the above construction).
+ *
+ * Vertices (= components) store a set of rules and information about the dependencies
+ * within the collapsed part of the dependency graph. These properties are calculated
+ * by calculateCollapsedComponentProperties(...).
+ *
+ * Edges (= collapsed dependencies) store information about the collapsed
+ * dependencies. These are calculated by calculateCollapsedDependencyProperties(...).
  */
-class ComponentGraph:
-  public DependencyGraph
+class ComponentGraph
 {
-  BOOST_CONCEPT_ASSERT((boost::Convertible<Node, unsigned int>));
+//  BOOST_CONCEPT_ASSERT((boost::Convertible<DependencyGraph::Node, unsigned int>));
 
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
-  // XXX use bidirectional map for this type?
-  typedef std::vector<int> ComponentMap;
-  typedef std::vector<Node> RepresentativeMap;
-  typedef std::vector<std::set<Node> > SCCMap;
-  typedef std::set<Node> RootContainer;
-  typedef std::set<Node> LeafContainer;
+  struct ComponentInfo:
+    public ostream_printable<ComponentInfo>
+  {
+    #ifndef NDEBUG
+    std::set<DependencyGraph::Node> sources;
+    #endif
+
+		// ID storage:
+		// store IDs of rules in component
+    std::set<ID> rules;
+
+    // store IDs of external atoms in component
+    std::set<ID> eatoms;
+
+    // TODO:
+    // whether it contains a positive cycle of dependencies over a monotonic external atom (-> fixedpoint)
+    // whether it contains a negative cycle of dependencies over a monotonic external atom (-> guess and check)
+    // whether it contains any cycle of dependencies over a nonmonotonic external atom (-> guess and check)
+		//bool posCycleMonotonicAtom;
+    // ...
+
+		ComponentInfo(): rules(), eatoms() {}
+    std::ostream& print(std::ostream& o) const;
+  };
+
+  struct DependencyInfo:
+    public ostream_printable<DependencyInfo>
+  {
+    #ifndef NDEBUG
+    std::set<DependencyGraph::Dependency> sources;
+    #endif
+
+    // All those can be independently true:
+
+    // whether it contains a positive rule dependency
+    bool positiveRule;
+    // whether it contains a negative rule dependency
+    bool negativeRule;
+    // whether it contains a positive constraint dependency
+    bool positiveConstraint;
+    // whether it contains a negative constraint dependency
+    bool negativeConstraint;
+    // whether it contains an external dependency
+    bool external;
+
+		DependencyInfo():
+    	positiveRule(false),
+			negativeRule(false),
+    	positiveConstraint(false),
+			negativeConstraint(false),
+			external(false) {}
+    std::ostream& print(std::ostream& o) const;
+  };
+
+  // we need listS because this graph will be changed a lot by collapsing nodes
+  // TODO: perhaps for out-edges (first listS) we could risk vecS?
+  typedef boost::adjacency_list<
+    boost::listS, boost::listS, boost::bidirectionalS,
+    ComponentInfo, DependencyInfo> Graph;
+  typedef boost::graph_traits<Graph> Traits;
+
+  typedef Graph::vertex_descriptor Component;
+  typedef Graph::edge_descriptor Dependency;
+  typedef Traits::vertex_iterator ComponentIterator;
+  typedef Traits::edge_iterator DependencyIterator;
+  typedef Traits::out_edge_iterator PredecessorIterator;
+  typedef Traits::in_edge_iterator SuccessorIterator;
 
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
-  // map nodes to the ID of their SCC
-  ComponentMap scc;
-  // map nodes to one representative per SCC
-  RepresentativeMap sccRepresentative;
-  // map SCC indices to sets of nodes
-  SCCMap sccMembers;
-
-  // collect root nodes
-  RootContainer roots;
-  // collect leaf nodes
-  LeafContainer leaves;
+  // for debugging and printing
+  RegistryPtr reg;
+  #ifndef NDEBUG
+  // in non-debug mode this graph's lifetime can end
+  // after the constructor finished
+  const DependencyGraph& dg;
+  #endif
+  Graph cg;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-  // enforce
-	ComponentGraph(RegistryPtr registry);
+	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();
 
-  // calculate above members, based on underlying dependency graph
-  void calculateComponentInfo();
-  
-  //
-  // accessors
-  //
+  // output graph as graphviz source
+  virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 
-  const ComponentMap& getSCC() const { return scc; }
-  const RepresentativeMap& getSCCRepresentative() const { return sccRepresentative; }
-  const SCCMap& getSCCMembers() const { return sccMembers; }
-  const RootContainer& getRoots() const { return roots; }
-  const LeafContainer& getLeaves() const { return leaves; }
+  // get range over all components
+  inline std::pair<ComponentIterator, ComponentIterator> getComponents() const
+    { return boost::vertices(cg); }
+
+	// get node info given node
+	inline const ComponentInfo& getComponentInfo(Component c) const
+		{ return cg[c]; }
+
+	// get dependency info given dependency
+	inline const DependencyInfo& getDependencyInfo(Dependency dep) const
+		{ return cg[dep]; }
+
+	// get dependencies (to predecessors) = arcs from this component to others
+  inline std::pair<PredecessorIterator, PredecessorIterator>
+  getDependencies(Component c) const
+		{ return boost::out_edges(c, cg); }
+
+	// get provides (dependencies to successors) = arcs from other component to this one
+  inline std::pair<SuccessorIterator, SuccessorIterator>
+  getProvides(Component c) const
+		{ return boost::in_edges(c, cg); }
+
+	// get source of dependency = component that depends
+  inline Component sourceOf(Dependency d) const
+		{ return boost::source(d, cg); }
+
+	// get target of dependency = component upon which the source depends
+  inline Component targetOf(Dependency d) const
+		{ return boost::target(d, cg); }
+
+	// get node/dependency properties
+	inline const ComponentInfo& propsOf(Component c) const
+		{ return cg[c]; }
+	inline ComponentInfo& propsOf(Component c)
+		{ return cg[c]; }
+	inline const DependencyInfo& propsOf(Dependency d) const
+		{ return cg[d]; }
+	inline DependencyInfo& propsOf(Dependency d)
+		{ return cg[d]; }
+
+	// counting -> mainly for allocating and testing
+  inline unsigned countComponents() const
+		{ return boost::num_vertices(cg); }
+  inline unsigned countDependencies() const
+		{ return boost::num_edges(cg); }
 
 protected:
-  // calculate scc, sccRepresentative, sccMembers
-  void calculateSCCs();
-  // calculate roots, leaves
-  void calculateSpecialNodeSets();
+  // helpers for writeGraphViz: extend for more output
+  virtual void writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const;
+  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
-public:
-  // add something to graphviz output
-  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
+  // helper for constructor
+  void calculateComponents(const DependencyGraph& dg);
+  void collapseComponent(Component c);
+  // calculate ComponentInfo from dependencies within a collapsed part of the dependency graph.
+  void calculateCollapsedComponentProperties(
+    const std::set<DependencyGraph::Node>& sourceNodes,
+    ComponentInfo& ci) const;
+  // Calculate DependencyInfo from collapsed dependencies.
+  void calculateCollapsedDependencyProperties(
+    const std::set<DependencyGraph::Dependency>& sourceDependencies,
+    DependencyInfo& di) const;
 };
 
 DLVHEX_NAMESPACE_END
