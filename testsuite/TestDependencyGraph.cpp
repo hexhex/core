@@ -96,6 +96,27 @@ public:
 		{ assert(false); }
 };
 
+class TestPluginAspCtxAcc:
+	public PluginAtom
+{
+public:
+	TestPluginAspCtxAcc(): PluginAtom()
+	{
+		monotonic = false;
+		inputSize = 5;
+		outputSize = 0;
+		inputType.push_back(CONSTANT);
+		inputType.push_back(PREDICATE);
+		inputType.push_back(PREDICATE);
+		inputType.push_back(PREDICATE);
+		inputType.push_back(CONSTANT);
+	}
+
+	// won't be used
+	virtual void retrieve(const Query&, Answer&) throw (PluginError)
+		{ assert(false); }
+};
+
 BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction) 
 {
   ProgramCtx ctx;
@@ -235,6 +256,101 @@ BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction)
   std::ofstream filet(fnamet);
   depgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
+}
+
+// example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
+BOOST_AUTO_TEST_CASE(testMCSMedEQ) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::stringstream ss;
+  // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
+  ss <<
+    "foo(X,c) :- bar. foo(c,Y) :- baz." << std::endl << // this is not from MCS, but required to test augmented dependencies!
+    "o2(xray_pneumonia)." << std::endl <<
+    "b3(pneumonia) :- a2(xray_pneumonia)." << std::endl <<
+    "o2(blood_marker)." << std::endl <<
+    "b3(marker) :- a2(blood_marker)." << std::endl <<
+    "o3(pneumonia)." << std::endl <<
+    "b4(need_ab) :- a3(pneumonia)." << std::endl <<
+    "o3(atyppneumonia)." << std::endl <<
+    "b4(need_strong) :- a3(atyppneumonia)." << std::endl <<
+    "o1(allergy_strong_ab)." << std::endl <<
+    "b4(allow_strong_ab) :- na1(allergy_strong_ab)." << std::endl <<
+    "a1(X) v na1(X) :- o1(X)." << std::endl <<
+    ":- not &dlv_asp_context_acc[1,a1,b1,o1,\"./medExample/kb1.dlv\"]()." << std::endl <<
+    "ctx(1)." << std::endl <<
+    "a2(X) v na2(X) :- o2(X)." << std::endl <<
+    ":- not &dlv_asp_context_acc[2,a2,b2,o2,\"./medExample/kb2.dlv\"]()." << std::endl <<
+    "ctx(2)." << std::endl <<
+    "a3(X) v na3(X) :- o3(X)." << std::endl <<
+    ":- not &dlv_asp_context_acc[3,a3,b3,o3,\"./medExample/kb3.dlv\"]()." << std::endl <<
+    "ctx(3)." << std::endl <<
+    "a4(X) v na4(X) :- o4(X)." << std::endl <<
+    ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
+    "ctx(4)." << std::endl;
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+	//LOG_REGISTRY_PROGRAM(ctx);
+
+	// create dummy plugin atoms and register them into external atoms
+	PluginAtomPtr papAspCtxAcc(new TestPluginAspCtxAcc);
+  ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
+  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
+	{
+		ExternalAtomTable::PredicateIterator it, it_end;
+		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
+				it != it_end; ++it)
+		{
+			ExternalAtom ea(*it);
+			ea.pluginAtom = papAspCtxAcc;
+			ctx.registry->eatoms.update(*it, ea);
+		}
+	}
+
+	// create dependency graph!
+	DependencyGraph depgraph(ctx.registry);
+	depgraph.createNodesAndBasicDependencies(ctx.idb);
+	depgraph.createUnifyingDependencies();
+	// TODO use Iterator interface
+	std::vector<ID> auxRules;
+	depgraph.createExternalDependencies(auxRules);
+
+	//BOOST_CHECK_EQUAL(auxRules.size(), 1);
+	//BOOST_CHECK_EQUAL(depgraph.countNodes(), 13+2);
+	//BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3);
+
+  // TODO test dependencies (will do manually with graphviz at the moment)
+
+  const char* fnamev = "testDependencyGraphMCSMedEqVerbose.dot";
+  LOG("dumping verbose graph to " << fnamev);
+  std::ofstream filev(fnamev);
+  depgraph.writeGraphViz(filev, true);
+  makeGraphVizPdf(fnamev);
+
+  const char* fnamet = "testDependencyGraphMCSMedEqTerse.dot";
+  LOG("dumping terse graph to " << fnamet);
+  std::ofstream filet(fnamet);
+  depgraph.writeGraphViz(filet, false);
+  makeGraphVizPdf(fnamet);
+
+  depgraph.augmentDependencies();
+
+  // TODO test augmented dependencies (will do manually with graphviz at the moment)
+
+  const char* fnameva = "testDependencyGraphAugmentedMCSMedEqVerbose.dot";
+  LOG("dumping verbose augmented graph to " << fnameva);
+  std::ofstream fileva(fnameva);
+  depgraph.writeGraphViz(fileva, true);
+  makeGraphVizPdf(fnameva);
+
+  const char* fnameta = "testDependencyGraphAugmentedMCSMedEqTerse.dot";
+  LOG("dumping terse augmented graph to " << fnameta);
+  std::ofstream fileta(fnameta);
+  depgraph.writeGraphViz(fileta, false);
+  makeGraphVizPdf(fnameta);
 }
 
 // TODO test aggregate dependencies

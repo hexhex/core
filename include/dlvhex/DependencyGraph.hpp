@@ -91,7 +91,8 @@ public:
 		bool inBody;
 		bool inHead;
 
-		NodeInfo(ID id=ID_FAIL, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
+		NodeInfo(ID id=ID_FAIL, bool inBody=false, bool inHead=false):
+      id(id), inBody(inBody), inHead(inHead) {}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -131,6 +132,7 @@ public:
 	// for out-edge list we need setS because we don't want to have duplicate edges
 	// TODO: perhaps we do want to have duplicate edges after all
   // for vertices it is much easier to use vecS because so many nice algorithms need implicit vertex_index
+  // TODO: do we need bidirectional? (at the moment yes, to find roots and leaves)
   typedef boost::adjacency_list<
     boost::setS, boost::vecS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
@@ -178,34 +180,25 @@ public:
 	DependencyGraph(RegistryPtr registry);
 	virtual ~DependencyGraph();
 
-  const Graph& getInternalGraph() const { return dg; }
-
   void createNodesAndBasicDependencies(const std::vector<ID>& idb);
-
   void createUnifyingDependencies();
-
 	// determine external dependencies and create auxiliary rules for evaluation
 	// store auxiliary rules in registry and return IDs in createAuxRules parameter
   void createExternalDependencies(std::vector<ID>& createdAuxRules);
-protected: // helpers for createExternalDependencies
-	// determine external dependencies for predicate inputs
-  void createExternalPredicateInputDependencies();
-	// determine external dependencies for constant inputs and create auxiliary rules for evaluation
-	// store auxiliary rules in registry and return IDs in createAuxRules parameter
-  void createExternalConstantInputDependencies(std::vector<ID>& createdAuxRules);
-	ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
-	ID createAuxiliaryRule(ID head, const std::list<DependencyGraph::NodeMappingInfo>& body);
-
-public:
   void createAggregateDependencies();
+
+  // helper for making construction of component graph easier:
+  // adds auxilary deps from rules to rule heads
+  // (all rules that create the same heads belong together)
+  // (default dependency properties)
+  void augmentDependencies();
 
   // output graph as graphviz source
   virtual void writeGraphViz(std::ostream& o, bool verbose) const;
-protected: // helpers for writeGraphViz: extend for more output
-  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
-  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
-public:
+  const Graph& getInternalGraph() const
+    { return dg; }
+
 	// get node given some object id
 	inline Node getNode(ID id) const
 		{
@@ -260,6 +253,21 @@ public:
 		{ return boost::num_vertices(dg); }
   inline unsigned countDependencies() const
 		{ return boost::num_edges(dg); }
+
+protected:
+  // helpers for createExternalDependencies
+  //
+	// determine external dependencies for predicate inputs
+  void createExternalPredicateInputDependencies();
+	// determine external dependencies for constant inputs and create auxiliary rules for evaluation
+	// store auxiliary rules in registry and return IDs in createAuxRules parameter
+  void createExternalConstantInputDependencies(std::vector<ID>& createdAuxRules);
+	ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
+	ID createAuxiliaryRule(ID head, const std::list<DependencyGraph::NodeMappingInfo>& body);
+
+  // helpers for writeGraphViz: extend for more output
+  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
+  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 };
 
 DLVHEX_NAMESPACE_END

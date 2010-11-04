@@ -50,13 +50,20 @@ std::ostream& DependencyGraph::NodeInfo::print(std::ostream& o) const
 
 std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
 {
-	o << "dep:\\n" <<
-		(positive?" positive":"") << (negative?" negative":"") <<
-		(external?" external":"") << "\\n";
-	if( involvesRule )
-		o << (constraint?"constraint":"rule");
-	else
-		o << (disjunctive?"disjunctive ":"") << (unifying?"unifying":"");
+  if( !positive && !negative )
+  {
+    o << "aux";
+  }
+  else
+  {
+    o << "dep:\\n" <<
+      (positive?" positive":"") << (negative?" negative":"") <<
+      (external?" external":"") << "\\n";
+    if( involvesRule )
+      o << (constraint?"constraint":"rule");
+    else
+      o << (disjunctive?"disjunctive ":"") << (unifying?"unifying":"");
+  }
 	return o;
 }
 
@@ -792,6 +799,38 @@ void DependencyGraph::createAggregateDependencies()
 #warning not implemented: aggregate dependencies
 }
 
+// helper for making construction of component graph easier:
+// adds auxilary deps from rules to rule heads
+// (all rules that create the same heads belong together)
+// (default dependency properties)
+void DependencyGraph::augmentDependencies()
+{
+	DependencyInfo di_aux;
+
+  NodeIterator it, it_end;
+  for(boost::tie(it, it_end) = getNodes(); it != it_end; ++it)
+  {
+    ID id = propsOf(*it).id;
+    if( id.isRule() )
+    {
+      // add reverse dependencies to heads
+      SuccessorIterator its, its_end;
+      for(boost::tie(its, its_end) = getProvides(*it);
+          its != its_end; ++its)
+      {
+        // head = source of dependency
+        Node head = sourceOf(*its);
+
+        // such dependencies must not exist, so we assert success
+        Dependency dep;
+        bool success;
+        boost::tie(dep, success) = boost::add_edge(*it, head, di_aux, dg);
+        assert(success);
+      }
+    }
+  }
+}
+
 DependencyGraph::~DependencyGraph()
 {
 }
@@ -814,7 +853,11 @@ void DependencyGraph::writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbo
     o << "node" << n << " ";
     RawPrinter printer(o, registry);
     printer.print(nodeinfo.id);
-    o << "\\n" << nodeinfo;
+    o << "\\n";
+    if( nodeinfo.id.isRule() )
+      o << nodeinfo.id; // do not print inBody, inHead
+    else
+      o << nodeinfo;
   }
   else
   {
