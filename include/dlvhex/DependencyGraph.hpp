@@ -101,7 +101,7 @@ public:
     //
     // * dependency A -> B where A is a regular rule and B is a regular rule:
     //   * one of A's positive body ordinary atom literals
-    //     unifies with one of B's head atoms -> "positiveRule"
+    //     unifies with one of B's head atoms -> "positiveRegularRule"
     //   * one of A's negative body ordinary atom literals
     //     unifies with one of B's head atoms -> "negativeRule"
     //   * one of A's head atoms unifies with one of B's head atoms
@@ -110,7 +110,7 @@ public:
     //   * one of A's positive body ordinary atom literals
     //     unifies with one of B's head atoms -> "positiveConstraint"
     //   * one of A's negative body ordinary atom literals
-    //     unifies with one of B's head atoms -> "negativeConstraint"
+    //     unifies with one of B's head atoms -> "negativeRule"
     // * dependency A -> X where A is a rule and X is an external atom:
     //   * X is present in the positive body of A and X is monotonic
     //     -> "positiveExternal"
@@ -125,22 +125,20 @@ public:
     //     -> "externalConstantInput"
     //   * a predicate input of X matches one head of rule A
     //     -> "externalPredicateInput"
-    bool positiveRule;
+    bool positiveRegularRule;
+    bool positiveConstraint;
     bool negativeRule;
     bool unifyingHead;
-    bool positiveConstraint;
-    bool negativeConstraint;
     bool positiveExternal;
     bool negativeExternal;
     bool externalConstantInput;
     bool externalPredicateInput;
 
 		DependencyInfo():
-    	positiveRule(false),
+    	positiveRegularRule(false),
+      positiveConstraint(false),
 			negativeRule(false),
 			unifyingHead(false),
-      positiveConstraint(false),
-      negativeConstraint(false),
       positiveExternal(false),
       negativeExternal(false),
       externalConstantInput(false),
@@ -198,8 +196,9 @@ protected:
     bool inHead;
     bool inBody;
     NodeList inHeadOfRules;
-    NodeList inPosBodyOfRules;
-    NodeList inNegBodyOfRules;
+    NodeList inPosBodyOfRegularRules; // only non-constraint rules
+    NodeList inPosBodyOfConstraints;
+    NodeList inNegBodyOfRules; // any rules
     ID headPredicate; // constant term, only for inHead
     const OrdinaryAtom* oatom;
 
@@ -356,8 +355,7 @@ protected:
     void createExternalPredicateInputDependenciesForInput(
         const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
 
-  // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", // "unifyingHead")
-  // (using previously filled HeadBodyHelper
+  // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", "unifyingHead")
   void createUnifyingDependencies(const HeadBodyHelper& hbh);
     // helpers
     // "unifyingHead" dependencies
