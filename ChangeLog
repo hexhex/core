@@ -1,3 +1,8 @@
+2010-11-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am (EXTRA_DIST): Add minimality and
+	builtin_safety{1,2} test cases.
+
 2010-10-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* NEWS: Update.
