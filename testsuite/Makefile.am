@@ -75,6 +75,7 @@ TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@
 
 TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \

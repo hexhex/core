@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   TestDependencyGraph.cpp
+ * @file   TestDependencyGraphFull.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Test the dependency graph builder (and the graph)
@@ -30,6 +30,7 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/DependencyGraphFull.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
@@ -117,7 +118,7 @@ public:
 		{ assert(false); }
 };
 
-BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction) 
+BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
@@ -154,29 +155,55 @@ BOOST_AUTO_TEST_CASE(testDependencyGraphConstruction)
   ID idXb = ctx.registry->onatoms.getIDByString("X(b)");
   BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
 
-	DependencyGraph depgraph(ctx.registry);
-	depgraph.createNodesAndBasicDependencies(ctx.idb);
-	depgraph.createUnifyingDependencies();
+  // full dependency graph
+  {
+    DependencyGraphFull depgraph(ctx.registry);
+    depgraph.createNodesAndBasicDependencies(ctx.idb);
+    depgraph.createUnifyingDependencies();
 
-	BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
-	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
 
-  // TODO test dependencies (will do manually with graphviz at the moment)
+    const char* fnamev = "testDependencyGraphNonextFullVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
 
-  const char* fnamev = "testDependencyGraphConstructionVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
-  std::ofstream filev(fnamev);
-  depgraph.writeGraphViz(filev, true);
-  makeGraphVizPdf(fnamev);
+    const char* fnamet = "testDependencyGraphNonextFullTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 
-  const char* fnamet = "testDependencyGraphConstructionTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
-  std::ofstream filet(fnamet);
-  depgraph.writeGraphViz(filet, false);
-  makeGraphVizPdf(fnamet);
+  // smaller more efficient dependency graph
+  {
+    DependencyGraph depgraph(ctx.registry);
+    std::vector<ID> auxRules;
+    depgraph.createDependencies(ctx.idb, auxRules);
+
+    // TODO
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
+
+    // TODO test dependencies (will do manually with graphviz at the moment)
+
+    const char* fnamev = "testDependencyGraphNonextVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testDependencyGraphNonextTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 }
 
-BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction) 
+BOOST_AUTO_TEST_CASE(testExtCountReach) 
 {
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
@@ -231,31 +258,57 @@ BOOST_AUTO_TEST_CASE(testExternalDependencyConstruction)
 		}
 	}
 
-	// create dependency graph!
-	DependencyGraph depgraph(ctx.registry);
-	depgraph.createNodesAndBasicDependencies(ctx.idb);
-	depgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
-	std::vector<ID> auxRules;
-	depgraph.createExternalDependencies(auxRules);
+  // full dependency graph
+  {
+    // clone registry, because full depgraph will modify it for auxiliary rules
+    RegistryPtr cloneRegistry(new Registry(*ctx.registry));
+    DependencyGraphFull depgraph(cloneRegistry);
+    depgraph.createNodesAndBasicDependencies(ctx.idb);
+    depgraph.createUnifyingDependencies();
+    std::vector<ID> auxRules;
+    depgraph.createExternalDependencies(auxRules);
 
-	BOOST_CHECK_EQUAL(auxRules.size(), 1);
-	BOOST_CHECK_EQUAL(depgraph.countNodes(), 13+2); // 1 aux rule + 1 aux predicate
-	BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3); // 3 aux dependencies
+    BOOST_CHECK_EQUAL(auxRules.size(), 1);
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 13+2); // 1 aux rule + 1 aux predicate
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3); // 3 aux dependencies
 
-  // TODO test dependencies (will do manually with graphviz at the moment)
+    const char* fnamev = "testDependencyGraphExtCountReachFullVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
 
-  const char* fnamev = "testExternalDependencyConstructionVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
-  std::ofstream filev(fnamev);
-  depgraph.writeGraphViz(filev, true);
-  makeGraphVizPdf(fnamev);
+    const char* fnamet = "testDependencyGraphExtCountReachFullTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 
-  const char* fnamet = "testExternalDependencyConstructionTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
-  std::ofstream filet(fnamet);
-  depgraph.writeGraphViz(filet, false);
-  makeGraphVizPdf(fnamet);
+  // smaller more efficient dependency graph
+  {
+    DependencyGraph depgraph(ctx.registry);
+    std::vector<ID> auxRules;
+    depgraph.createDependencies(ctx.idb, auxRules);
+
+    // TODO
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
+
+    // TODO test dependencies (will do manually with graphviz at the moment)
+
+    const char* fnamev = "testDependencyGraphExtCountReachVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testDependencyGraphExtCountReachTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 }
 
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
@@ -310,47 +363,53 @@ BOOST_AUTO_TEST_CASE(testMCSMedEQ)
 		}
 	}
 
-	// create dependency graph!
-	DependencyGraph depgraph(ctx.registry);
-	depgraph.createNodesAndBasicDependencies(ctx.idb);
-	depgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
-	std::vector<ID> auxRules;
-	depgraph.createExternalDependencies(auxRules);
+	// full dependency graph
+  {
+    // clone registry, because full depgraph will modify it for auxiliary rules
+    RegistryPtr cloneRegistry(new Registry(*ctx.registry));
+    DependencyGraphFull depgraph(cloneRegistry);
+    depgraph.createNodesAndBasicDependencies(ctx.idb);
+    depgraph.createUnifyingDependencies();
+    std::vector<ID> auxRules;
+    depgraph.createExternalDependencies(auxRules);
 
-	//BOOST_CHECK_EQUAL(auxRules.size(), 1);
-	//BOOST_CHECK_EQUAL(depgraph.countNodes(), 13+2);
-	//BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3);
+    const char* fnamev = "testDependencyGraphMCSMedEqFullVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
 
-  // TODO test dependencies (will do manually with graphviz at the moment)
+    const char* fnamet = "testDependencyGraphMCSMedEqFullTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 
-  const char* fnamev = "testDependencyGraphMCSMedEqVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
-  std::ofstream filev(fnamev);
-  depgraph.writeGraphViz(filev, true);
-  makeGraphVizPdf(fnamev);
+  // smaller more efficient dependency graph
+  {
+    DependencyGraph depgraph(ctx.registry);
+    std::vector<ID> auxRules;
+    depgraph.createDependencies(ctx.idb, auxRules);
 
-  const char* fnamet = "testDependencyGraphMCSMedEqTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
-  std::ofstream filet(fnamet);
-  depgraph.writeGraphViz(filet, false);
-  makeGraphVizPdf(fnamet);
+    // TODO
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
 
-  depgraph.augmentDependencies();
+    // TODO test dependencies (will do manually with graphviz at the moment)
 
-  // TODO test augmented dependencies (will do manually with graphviz at the moment)
+    const char* fnamev = "testDependencyGraphMCSMedEqVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
 
-  const char* fnameva = "testDependencyGraphAugmentedMCSMedEqVerbose.dot";
-  LOG("dumping verbose augmented graph to " << fnameva);
-  std::ofstream fileva(fnameva);
-  depgraph.writeGraphViz(fileva, true);
-  makeGraphVizPdf(fnameva);
-
-  const char* fnameta = "testDependencyGraphAugmentedMCSMedEqTerse.dot";
-  LOG("dumping terse augmented graph to " << fnameta);
-  std::ofstream fileta(fnameta);
-  depgraph.writeGraphViz(fileta, false);
-  makeGraphVizPdf(fnameta);
+    const char* fnamet = "testDependencyGraphMCSMedEqTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 }
 
 // TODO test aggregate dependencies
