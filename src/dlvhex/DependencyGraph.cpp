@@ -78,7 +78,7 @@ void DependencyGraph::createDependencies(
 {
   HeadBodyHelper hbh;
   createNodesAndIntraRuleDependencies(idb, createdAuxRules, hbh);
-  //TODO createExternalPredicateInputDependencies();
+  createExternalPredicateInputDependencies(hbh);
   //TODO createUnifyingDependencies(hbh);
 }
 
@@ -130,10 +130,12 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
     if( it == hbh_ididx.end() )
     {
       // new one -> insert
-      HeadBodyInfo hbi;
+      HeadBodyInfo hbi(&(registry->lookupOrdinaryAtom(idat)));
       hbi.id = idat;
       hbi.inHead = true;
-      hbi.inHeadOfRules.insert(idrule);
+      hbi.inHeadOfRules.push_back(nrule); //was: idrule
+      if( hbi.oatom->tuple[0].isConstantTerm() )
+        hbi.headPredicate = hbi.oatom->tuple[0];
       hbh.infos.insert(hbi);
     }
     else
@@ -141,8 +143,13 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
       // existing one -> update
       HeadBodyInfo hbi(*it);
       assert(hbi.id == idat);
+      if( hbi.inHead == false )
+      {
+        if( hbi.oatom->tuple[0].isConstantTerm() )
+          hbi.headPredicate = hbi.oatom->tuple[0];
+      }
       hbi.inHead = true;
-      hbi.inHeadOfRules.insert(idrule);
+      hbi.inHeadOfRules.push_back(nrule); //was: idrule
       bool success = hbh.infos.replace(it, hbi);
       assert(success);
     }
@@ -164,13 +171,13 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
       if( it == hbh_ididx.end() )
       {
         // new one -> insert
-        HeadBodyInfo hbi;
+        HeadBodyInfo hbi(&(registry->lookupOrdinaryAtom(idat)));
         hbi.id = idat;
         hbi.inBody = true;
         if( naf )
-          hbi.inNegBodyOfRules.insert(idrule);
+          hbi.inNegBodyOfRules.push_back(nrule); //was:idrule
         else
-          hbi.inPosBodyOfRules.insert(idrule);
+          hbi.inPosBodyOfRules.push_back(nrule); //was:idrule
         hbh.infos.insert(hbi);
       }
       else
@@ -180,9 +187,9 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
         assert(hbi.id == idat);
         hbi.inBody = true;
         if( naf )
-          hbi.inNegBodyOfRules.insert(idrule);
+          hbi.inNegBodyOfRules.push_back(nrule); //was:idrule
         else
-          hbi.inPosBodyOfRules.insert(idrule);
+          hbi.inPosBodyOfRules.push_back(nrule); //was:idrule
         bool success = hbh.infos.replace(it, hbi);
         assert(success);
       }
@@ -409,6 +416,102 @@ ID DependencyGraph::createAuxiliaryRule(
 	return id;
 }
 
+// create "externalPredicateInput" dependencies
+void DependencyGraph::createExternalPredicateInputDependencies(
+    const HeadBodyHelper& hbh)
+{
+  LOG_SCOPE("cEPID", false);
+  LOG("=createExternalPredicateInputDependencies");
+
+	// for all external atoms:
+	//   for all predicate inputs:
+	//     assert that they are not variable terms
+	//     find predicates in heads of rules that match the predicate input
+  //     (for that we use hbh)
+
+  // find all external atom nodes
+  const NodeIDIndex& nidx = nm.get<IDTag>();
+  for(NodeIDIndex::const_iterator itext = nidx.begin();
+      itext != nidx.end(); ++itext)
+  {
+    if( !itext->id.isAtom() || !itext->id.isExternalAtom() )
+      continue;
+
+		#ifndef NDEBUG
+    std::ostringstream os;
+    os << "itext" << itext->id.address;
+    LOG_SCOPE(os.str(), false);
+		LOG("=" << itext->id);
+		#endif
+
+    const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
+		LOG("checking external atom " << eatom);
+
+		// lock weak pointer
+		assert(!eatom.pluginAtom.expired());
+		PluginAtomPtr pluginAtom(eatom.pluginAtom);
+
+		// make sure the meta information fits the external atom
+		// (only assert here, should be ensured by plugin loading or parsing)
+		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
+		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
+
+		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
+		{
+			// only consider predicate inputs
+			if( pluginAtom->getInputType(at) != PluginAtom::PREDICATE )
+				continue;
+
+			ID idpred = eatom.inputs[at];
+
+			#ifndef NDEBUG
+			std::ostringstream os;
+			os << "at" << at;
+			LOG_SCOPE(os.str(), false);
+			LOG("= checking predicate input " << idpred << " at position " << at);
+			#endif
+
+			// this input must be a constant term, nothing else allowed
+			assert(idpred.isConstantTerm());
+
+      // here: we found a predicate input for this eatom where we need to calculate all dependencies
+      createExternalPredicateInputDependenciesForInput(*itext, idpred, hbh);
+    }
+  } // go through all external atom nodes
+}
+
+void DependencyGraph::createExternalPredicateInputDependenciesForInput(
+    const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh)
+{
+  LOG("finding all rules with heads that use predicate " << predicate);
+
+  DependencyInfo diExternalPredicateInput;
+  diExternalPredicateInput.externalPredicateInput = true;
+
+  const HeadBodyHelper::HeadPredicateIndex& hb_hpred = hbh.infos.get<HeadPredicateTag>();
+  HeadBodyHelper::HeadPredicateIndex::const_iterator it, it_end;
+  for(boost::tie(it, it_end) = hb_hpred.equal_range(predicate);
+      it != it_end; ++it)
+  {
+    // found atom that matches and is in at least one rule head
+    // (those that match and are only in body should have ID_FAIL stored in headPredicate)
+    assert(it->inHead);
+
+    LOG("found matchin ordinary atom: " << it->id);
+    for(NodeList::const_iterator itn = it->inHeadOfRules.begin();
+        itn != it->inHeadOfRules.end(); ++itn)
+    {
+      LOG("adding external dependency " << ni_eatom.id << " -> " << propsOf(*itn).id);
+
+      Dependency dep;
+      bool success;
+      boost::tie(dep, success) = boost::add_edge(
+          ni_eatom.node, *itn, diExternalPredicateInput, dg);
+      assert(success);
+    } // iterate over rules where this atom is head
+  } // iterate over atoms with matching predicate
+}
+
 //
 // graphviz output
 //
@@ -631,151 +734,6 @@ void DependencyGraph::createUnifyingDependencies()
       } // if oa1 and oa2 unify
     } // inner loop over atoms
   } // outer loop over atoms
-}
-
-// determine external dependencies and create auxiliary rules for evaluation
-// store auxiliary rules in registry and return IDs in createAuxRules parameter
-void DependencyGraph::createExternalDependencies(
-		std::vector<ID>& createdAuxRules)
-{
-	createExternalPredicateInputDependencies();
-	createExternalConstantInputDependencies(createdAuxRules);
-}
-
-// external predicate input dependencies
-void DependencyGraph::createExternalPredicateInputDependencies()
-{
-  LOG_SCOPE("cEPID", false);
-  LOG("=createExternalPredicateInputDependencies");
-
-  const NodeIDIndex& idx = nm.get<IDTag>();
-
-	// for all external atoms:
-	// for all predicate inputs:
-	// assert that they are not variable terms
-	// go through all heads and find matching predicates (cache this)
-
-	// for given predicate constant term id, store list of matching nodes
-	typedef std::map<ID, std::list<NodeMappingInfo> > Matching;
-	Matching matching;
-
-	DependencyInfo di_ext_head;
-  di_ext_head.positive = true;
-  di_ext_head.external = true;
-
-	// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
-  NodeIDIndex::const_iterator itext;
-  for(itext = idx.begin(); itext != idx.end(); ++itext)
-  {
-		// skip non-external atoms
-    if( !itext->id.isAtom() || !itext->id.isExternalAtom() )
-      continue;
-
-		#ifndef NDEBUG
-    std::ostringstream os;
-    os << "itext:" << itext->id.address;
-    LOG_SCOPE(os.str(), false);
-		LOG("=" << itext->id);
-		#endif
-
-    const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
-		LOG("checking external atom " << eatom);
-
-		// lock weak pointer
-		assert(!eatom.pluginAtom.expired());
-		PluginAtomPtr pluginAtom(eatom.pluginAtom);
-
-		// make sure the meta information fits the external atom
-		// (only assert here, should be ensured by plugin loading or parsing)
-		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
-		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
-
-		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
-		{
-			// only consider predicate inputs
-			if( pluginAtom->getInputType(at) != PluginAtom::PREDICATE )
-				continue;
-
-			ID idpred = eatom.inputs[at];
-
-			#ifndef NDEBUG
-			std::ostringstream os;
-			os << "at" << at;
-			LOG_SCOPE(os.str(), false);
-			LOG("= checking predicate input " << idpred << " at position " << at);
-			#endif
-
-			// this input must be a constant term, nothing else allowed
-			assert(idpred.isConstantTerm());
-
-			// put into cache if not inside
-			Matching::const_iterator itm = matching.find(idpred);
-			if( itm == matching.end() )
-			{
-				LOG("calculating dependencies: finding all rule heads that use predicate " << idpred);
-
-				// create empty node list in matching and set iterator to it
-				std::list<NodeMappingInfo>& nodelist = matching[idpred];
-				itm = matching.find(idpred);
-				assert(itm != matching.end());
-
-				// TODO: this iteration could probably be done more efficiently with an additional index in NodeMapping
-				const NodeIDIndex& idx = nm.get<IDTag>();
-				NodeIDIndex::const_iterator ithead;
-				for(ithead = idx.begin(); ithead != idx.end(); ++ithead)
-				{
-					// skip all except ordinary atoms
-					if( !ithead->id.isAtom() || !ithead->id.isOrdinaryAtom() )
-						continue;
-
-					const NodeInfo& ni = propsOf(ithead->node);
-					assert(ni.id == ithead->id);
-
-					// skip all that are not present in rule head
-					if( !ni.inHead )
-						continue;
-
-					const OrdinaryAtom& oa = registry->lookupOrdinaryAtom(ithead->id);
-
-					std::ostringstream os;
-					os << "ithead:" << ithead->id.address;
-					LOG_SCOPE(os.str(), false);
-					LOG("= " << ithead->id << " = ordinary atom " << oa);
-
-					assert(!oa.tuple.empty());
-					// if we have higher order, external dependencies are complicated
-					// perhaps we just need to add the dependency, or we have to rewrite to
-					// higher order before we start creating the dependency graph
-					// for now we ignore this and enforce that no variable terms are in first
-					// position of a head if there is a predicate input
-					assert(!oa.tuple.front().isVariableTerm());
-					if( oa.tuple.front() == idpred )
-						nodelist.push_back(*ithead);
-				} // iterate over all ordinary atoms in rule heads
-			}
-			assert(itm != matching.end());
-
-			for(std::list<NodeMappingInfo>::const_iterator itl = itm->second.begin();
-					itl != itm->second.end(); ++itl)
-			{
-				LOG("storing external dependency " << itext->id << " -> " << itl->id);
-
-				Dependency dep;
-				bool success;
-				boost::tie(dep, success) = boost::add_edge(itext->node, itl->node, di_ext_head, dg);
-				if( !success )
-				{
-					// there already exists that edge -> get it)
-					boost::tie(dep, success) = boost::edge(itext->node, itl->node, dg);
-					assert(success);
-          // if we have an existing dependency, it must be between atoms
-					assert(propsOf(dep).involvesRule == false);
-					propsOf(dep).positive = true;
-					propsOf(dep).external = true;
-				}
-			} // iterate over matching and store dependencies
-		} // check all predicate inputs
-	} // check all external atoms
 }
 
 // external constant input dependencies

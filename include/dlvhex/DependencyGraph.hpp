@@ -69,6 +69,7 @@ DLVHEX_NAMESPACE_BEGIN
 // some forwards
 struct Rule;
 struct ExternalAtom;
+struct OrdinaryAtom;
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 struct PluginAtom;
@@ -189,21 +190,27 @@ protected:
   typedef NodeMapping::index<IDTag>::type NodeIDIndex;
 
 protected:
-  typedef std::set<ID> IDSet;
+  typedef std::vector<Node> NodeList;
   struct HeadBodyInfo
   {
     // ordinary ground or nonground atom id
     ID id;
     bool inHead;
     bool inBody;
-    IDSet inHeadOfRules;
-    IDSet inPosBodyOfRules;
-    IDSet inNegBodyOfRules;
-    HeadBodyInfo(): id(ID_FAIL), inHead(false), inBody(false) {}
+    NodeList inHeadOfRules;
+    NodeList inPosBodyOfRules;
+    NodeList inNegBodyOfRules;
+    ID headPredicate; // constant term, only for inHead
+    const OrdinaryAtom* oatom;
+
+    HeadBodyInfo(const OrdinaryAtom* oatom = NULL):
+      id(ID_FAIL), inHead(false), inBody(false),
+      headPredicate(ID_FAIL), oatom(oatom) {}
   };
 
   struct InHeadTag {};
   struct InBodyTag {};
+  struct HeadPredicateTag {};
   struct HeadBodyHelper
   {
     typedef boost::multi_index_container<
@@ -220,12 +227,17 @@ protected:
           boost::multi_index::hashed_non_unique<
             boost::multi_index::tag<InBodyTag>,
             BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,bool,inBody)
+          >,
+          boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<HeadPredicateTag>,
+            BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,ID,headPredicate)
           >
         >
       > HBInfos;
     typedef HBInfos::index<IDTag>::type IDIndex;
     typedef HBInfos::index<InHeadTag>::type InHeadIndex;
     typedef HBInfos::index<InBodyTag>::type InBodyIndex;
+    typedef HBInfos::index<HeadPredicateTag>::type HeadPredicateIndex;
 
     HBInfos infos;
   };
@@ -322,23 +334,27 @@ protected:
       const std::vector<ID>& idb,
       std::vector<ID>& createdAuxRules,
       HeadBodyHelper& hbh);
-  void createNodesAndIntraRuleDependenciesForRule(
-      ID idrule,
-      std::vector<ID>& createdAuxRules,
-      HeadBodyHelper& hbh);
-  void createAuxiliaryRuleIfRequired(
-      ID idrule, Node nrule, const Rule& rule,
-      ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
-      const PluginAtomPtr& pluginAtom,
-      std::vector<ID>& createdAuxRules,
-      HeadBodyHelper& hbh);
-  // create auxiliary rule head (in registry) and return ID
-  ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
-  // create auxiliary rule (in registry) and return ID
-  ID createAuxiliaryRule(ID head, const std::list<ID>& body);
+    // helpers
+    void createNodesAndIntraRuleDependenciesForRule(
+        ID idrule,
+        std::vector<ID>& createdAuxRules,
+        HeadBodyHelper& hbh);
+    void createAuxiliaryRuleIfRequired(
+        ID idrule, Node nrule, const Rule& rule,
+        ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
+        const PluginAtomPtr& pluginAtom,
+        std::vector<ID>& createdAuxRules,
+        HeadBodyHelper& hbh);
+    // create auxiliary rule head (in registry) and return ID
+    ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
+    // create auxiliary rule (in registry) and return ID
+    ID createAuxiliaryRule(ID head, const std::list<ID>& body);
 
 	// create "externalPredicateInput" dependencies
-  void createExternalPredicateInputDependencies();
+  void createExternalPredicateInputDependencies(const HeadBodyHelper& hbh);
+    // helpers
+    void createExternalPredicateInputDependenciesForInput(
+        const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
 
   // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", // "unifyingHead")
   // (using previously filled HeadBodyHelper
