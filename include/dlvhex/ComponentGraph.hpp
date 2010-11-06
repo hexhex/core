@@ -70,13 +70,13 @@ public:
     public ostream_printable<ComponentInfo>
   {
     #ifndef NDEBUG
-    std::set<DependencyGraph::Node> sources;
+    std::list<DependencyGraph::Node> sources;
     #endif
 
-    std::set<ID> outerEatoms;
-    std::set<ID> innerRules;
-    std::set<ID> innerEatoms;
-    std::set<ID> innerConstraints;
+    std::list<ID> outerEatoms;
+    std::list<ID> innerRules;
+    std::list<ID> innerEatoms;
+    std::list<ID> innerConstraints;
 
     // TODO:
     // whether it contains a positive cycle of dependencies over a monotonic external atom (-> fixedpoint)
@@ -117,6 +117,8 @@ public:
   typedef Traits::out_edge_iterator PredecessorIterator;
   typedef Traits::in_edge_iterator SuccessorIterator;
 
+	typedef std::set<Component> ComponentSet;
+
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
@@ -136,6 +138,17 @@ protected:
 public:
 	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();
+
+	// collapse components given in range into one new component
+	// collapse incoming and outgoing dependencies
+	// update properties of dependencies
+	// update properties of component
+	// asserts that this operation does not make the DAG cyclic
+	Component collapseComponents(const ComponentSet& originals);
+
+	//
+	// accessors
+	//
 
   // output graph as graphviz source
   virtual void writeGraphViz(std::ostream& o, bool verbose) const;
@@ -186,6 +199,9 @@ public:
   inline unsigned countDependencies() const
 		{ return boost::num_edges(cg); }
 
+	//
+	// helpers
+	//
 protected:
   // helpers for writeGraphViz: extend for more output
   virtual void writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const;

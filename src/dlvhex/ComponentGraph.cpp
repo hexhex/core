@@ -117,7 +117,8 @@ void ComponentGraph::calculateComponents(
     //createComponentFromDepgraphSCC(dg, scc, *itc);
     const NodeSet& nodes = sccMembers[s];
     Component c = boost::add_vertex(cg);
-    LOG("created component node " << c << " for scc " << s << " with depgraph nodes " << printset(nodes));
+    LOG("created component node " << c << " for scc " << s <<
+				" with depgraph nodes " << printrange(nodes));
 		bool multimember = nodes.size() > 1;
     sccToComponent[s] = c;
     ComponentInfo& ci = propsOf(c);
@@ -126,18 +127,18 @@ void ComponentGraph::calculateComponents(
         itn != nodes.end(); ++itn)
     {
       #ifndef NDEBUG
-      ci.sources.insert(*itn);
+      ci.sources.push_back(*itn);
       #endif
       ID id = dg.propsOf(*itn).id;
       if( id.isRule() )
 			{
 				if( id.isRegularRule() )
 				{
-					ci.innerRules.insert(id);
+					ci.innerRules.push_back(id);
 				}
 				else if( id.isConstraint() || id.isWeakConstraint() )
 				{
-					ci.innerConstraints.insert(id);
+					ci.innerConstraints.push_back(id);
 				}
 				else
 				{
@@ -148,11 +149,11 @@ void ComponentGraph::calculateComponents(
       {
 				if( multimember )
 				{
-					ci.innerEatoms.insert(id);
+					ci.innerEatoms.push_back(id);
 				}
 				else
 				{
-					ci.outerEatoms.insert(id);
+					ci.outerEatoms.push_back(id);
 				}
       }
 			else
@@ -160,10 +161,10 @@ void ComponentGraph::calculateComponents(
 				assert(false);
 			}
     }
-    LOG("-> outerEatoms " << printset(ci.outerEatoms));
-    LOG("-> innerRules " << printset(ci.innerRules));
-    LOG("-> innerConstraints " << printset(ci.innerConstraints));
-    LOG("-> innerEatoms " << printset(ci.innerEatoms));
+    LOG("-> outerEatoms " << printrange(ci.outerEatoms));
+    LOG("-> innerRules " << printrange(ci.innerRules));
+    LOG("-> innerConstraints " << printrange(ci.innerConstraints));
+    LOG("-> innerEatoms " << printrange(ci.innerEatoms));
 
 		assert( ci.outerEatoms.empty() ||
 				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
@@ -222,6 +223,133 @@ void ComponentGraph::calculateComponents(
   } // create dependencies outgoing from SCC s
 }
 
+// collapse components given in range into one new component
+// collapse incoming and outgoing dependencies
+// update properties of dependencies
+// update properties of component
+// asserts that this operation does not make the DAG cyclic
+ComponentGraph::Component
+ComponentGraph::collapseComponents(
+		const ComponentSet& originals)
+{
+	LOG_SCOPE("cC", false);
+	LOG("= collapseComponents(" << printrange(originals) << ")");
+
+	typedef std::map<Component, DependencyInfo> DepMap;
+
+	// calculate set of dependencies incoming to the new component
+	DepMap incoming;
+	// calculate set of dependencies outgoing from the new component
+	DepMap outgoing;
+
+	// do this by iterating over all originals and over all their incoming and outgoing dependencies
+	ComponentSet::const_iterator ito;
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		LOG("original " << *ito << ":");
+		LOG_INDENT();
+
+		PredecessorIterator itpred, itpred_end;
+		for(boost::tie(itpred, itpred_end) = getDependencies(*ito);
+				itpred != itpred_end; ++itpred)
+		{
+			Dependency outgoing_dep = *itpred;
+			Component target = targetOf(outgoing_dep);
+			if( originals.count(target) == 0 )
+			{
+				// do not count dependencies within the new collapsed component
+				LOG("outgoing dependency to " << target);
+				outgoing[target] |= propsOf(outgoing_dep);
+			}
+		} // iterate over predecessors
+	} // iterate over originals
+
+	// do again, but for outgoing, now also check for duplicate violations
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		LOG("original " << *ito << ":");
+		LOG_INDENT();
+
+		SuccessorIterator itsucc, itsucc_end;
+		for(boost::tie(itsucc, itsucc_end) = getProvides(*ito);
+				itsucc != itsucc_end; ++itsucc)
+		{
+			Dependency incoming_dep = *itsucc;
+			Component source = sourceOf(incoming_dep);
+			if( originals.count(source) == 0 )
+			{
+				// do not count dependencies within the new collapsed component
+				LOG("incoming dependency from " << source);
+				incoming[source] |= propsOf(incoming_dep);
+				// assert that we do not create cycles
+				#ifndef NDEBUG
+				DepMap::const_iterator itdm = outgoing.find(source);
+				// if we have an incoming dep and an outgoing dep,
+				// we create a cycle so this collapsing is invalid
+				assert(itdm == outgoing.end());
+				#endif
+			}
+		} // iterate over successors
+	} // iterate over originals
+
+	//
+	// we prepared all dependencies, so now we create the component
+	//
+
+	Component c = boost::add_vertex(cg);
+	LOG("created component node " << c << " for collapsed component");
+
+	// build combined component info
+	ComponentInfo& ci = propsOf(c);
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		ComponentInfo& cio = propsOf(*ito);
+		#ifndef NDEBUG
+		ci.sources.insert(ci.sources.end(),
+				cio.sources.begin(), cio.sources.end());
+		#endif
+		ci.outerEatoms.insert(ci.outerEatoms.end(),
+				cio.outerEatoms.begin(), cio.outerEatoms.end());
+		ci.innerRules.insert(ci.innerRules.end(),
+				cio.innerRules.begin(), cio.innerRules.end());
+		ci.innerEatoms.insert(ci.innerEatoms.end(),
+				cio.innerEatoms.begin(), cio.innerEatoms.end());
+		ci.innerConstraints.insert(ci.innerConstraints.end(),
+				cio.innerConstraints.begin(), cio.innerConstraints.end());
+	}
+
+	// build incoming dependencies
+	for(DepMap::const_iterator itd = incoming.begin();
+			itd != incoming.end(); ++itd)
+	{
+		Dependency newdep;
+		bool success;
+		LOG("adding edge " << itd->first << " -> " << c);
+		boost::tie(newdep, success) = boost::add_edge(itd->first, c, itd->second, cg);
+		assert(success); // we only add new edges here, and each only once
+	}
+
+	// build outgoing dependencies
+	for(DepMap::const_iterator itd = outgoing.begin();
+			itd != outgoing.end(); ++itd)
+	{
+		Dependency newdep;
+		bool success;
+		LOG("adding edge " << c << " -> " << itd->first);
+		boost::tie(newdep, success) = boost::add_edge(c, itd->first, itd->second, cg);
+		assert(success); // we only add new edges here, and each only once
+	}
+
+	// remove all original components
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		boost::clear_vertex(*ito, cg);
+		boost::remove_vertex(*ito, cg);
+	}
+
+	return c;
+}
+
 namespace
 {
   std::string graphviz_node_id(ComponentGraph::Component c)
@@ -273,9 +401,9 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
   if( verbose )
   {
     o << "{";
-		//o << "component" << c << "|";
+		o << c << "|";
     #ifndef NDEBUG
-    o << "{sources|" << printset(ci.sources, "\\{", ",", "\\}") << "}|";
+    o << "{sources|" << printrange(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
 		printoutVerboseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
 		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);

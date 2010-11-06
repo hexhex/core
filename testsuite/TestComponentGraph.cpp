@@ -217,6 +217,79 @@ BOOST_AUTO_TEST_CASE(testExt1)
   std::ofstream filet(fnamet);
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
+
+	// test collapsing (poor man's way)
+	// [we trust on the order of components to stay the same!]
+	{
+		LOG("components are ordered as follows:" << printrange(
+					boost::make_iterator_range(compgraph.getComponents())));
+		typedef ComponentGraph::Component Component;
+		ComponentGraph::ComponentIterator it, itend, itc0, itc1, itc4;
+		boost::tie(it, itend) = compgraph.getComponents();
+		itc0 = it; it++;
+		itc1 = it; it++; it++; it++;
+		itc4 = it;
+
+		std::set<Component> coll;
+		coll.insert(*itc0);
+		coll.insert(*itc1);
+		coll.insert(*itc4);
+
+		Component comp1 = compgraph.collapseComponents(coll);
+		LOG("collapsing 1 yielded component " << comp1);
+		// now all iterators in this scope are invalid!
+	}
+
+	{
+		LOG("components are ordered as follows:" << printrange(
+					boost::make_iterator_range(compgraph.getComponents())));
+		typedef ComponentGraph::Component Component;
+		ComponentGraph::ComponentIterator it, itend, itc0, itc2;
+		boost::tie(it, itend) = compgraph.getComponents();
+		itc0 = it; it++; it++;
+		itc2 = it;
+
+		std::set<Component> coll;
+		coll.insert(*itc0);
+		coll.insert(*itc2);
+
+		Component comp2 = compgraph.collapseComponents(coll);
+		LOG("collapsing 2 yielded component " << comp2);
+		// now all iterators in this scope are invalid!
+	}
+
+	{
+		LOG("components are ordered as follows:" << printrange(
+					boost::make_iterator_range(compgraph.getComponents())));
+		typedef ComponentGraph::Component Component;
+		ComponentGraph::ComponentIterator it, itend, itc0, itc1;
+		boost::tie(it, itend) = compgraph.getComponents();
+		itc0 = it; it++;
+		itc1 = it;
+
+		std::set<Component> coll;
+		coll.insert(*itc0);
+		coll.insert(*itc1);
+
+		Component comp3 = compgraph.collapseComponents(coll);
+		LOG("collapsing 3 yielded component " << comp3);
+		// now all iterators in this scope are invalid!
+	}
+
+	// print final result
+	{
+		const char* fnamev = "testComponentGraphExt1CollapsedVerbose.dot";
+		LOG("dumping verbose graph to " << fnamev);
+		std::ofstream filev(fnamev);
+		compgraph.writeGraphViz(filev, true);
+		makeGraphVizPdf(fnamev);
+
+		const char* fnamet = "testComponentGraphExt1Collapsederse.dot";
+		LOG("dumping terse graph to " << fnamet);
+		std::ofstream filet(fnamet);
+		compgraph.writeGraphViz(filet, false);
+		makeGraphVizPdf(fnamet);
+	}
 }
 
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example

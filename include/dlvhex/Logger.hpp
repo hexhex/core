@@ -31,6 +31,7 @@
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
 
+#include <boost/range/iterator_range.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -249,6 +250,25 @@ inline print_container* printptr(const T* const t)
         reinterpret_cast<const void* const>(t));
   else
     return new print_stream_container<const char*>("null");
+}
+
+template<typename Range>
+inline print_container* printrange(Range r,
+		const char* open="<", const char* sep=",", const char* close=">")
+{
+  std::ostringstream o;
+  o << open;
+  typename Range::const_iterator it = boost::begin(r);
+  typename Range::const_iterator itend = boost::end(r);
+  if( it != itend )
+  {
+    o << *it;
+    it++;
+  }
+  for(; it != itend; ++it)
+    o << sep << *it;
+  o << close;
+  return new print_stream_container<std::string>(o.str());
 }
 
 template<typename T>
