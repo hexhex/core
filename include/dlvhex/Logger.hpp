@@ -252,10 +252,11 @@ inline print_container* printptr(const T* const t)
 }
 
 template<typename T>
-inline print_container* printset(const std::set<T>& t)
+inline print_container* printset(const std::set<T>& t,
+		const char* open="{", const char* sep=",", const char* close="}")
 {
   std::ostringstream o;
-  o << "{";
+  o << open;
   typename std::set<T>::const_iterator it = t.begin();
   if( it != t.end() )
   {
@@ -263,8 +264,8 @@ inline print_container* printset(const std::set<T>& t)
     it++;
   }
   for(; it != t.end(); ++it)
-    o << "," << *it;
-  o << "}";
+    o << sep << *it;
+  o << close;
   return new print_stream_container<std::string>(o.str());
 }
 

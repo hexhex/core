@@ -32,6 +32,7 @@
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ProgramCtx.h"
 
+#include <boost/range/iterator_range.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/property_map/property_map.hpp>
@@ -41,6 +42,18 @@
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+const ComponentGraph::DependencyInfo&
+ComponentGraph::DependencyInfo::operator|=(
+		const ComponentGraph::DependencyInfo& other)
+{
+	return DependencyGraph::DependencyInfo::operator|=(other);
+}
+
+std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const
+{
+	return o << static_cast<const DependencyGraph::DependencyInfo&>(*this);
+}
 
 ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
   reg(reg),
@@ -56,7 +69,13 @@ ComponentGraph::~ComponentGraph()
 {
 }
 
-void ComponentGraph::calculateComponents(const DependencyGraph& dg_)
+void ComponentGraph::calculateComponents(
+		#ifndef NDEBUG
+		const DependencyGraph&
+		#else
+		const DependencyGraph& dg
+		#endif
+	)
 {
   LOG_SCOPE("cCs", false);
   LOG("=calculateComponents");
@@ -99,9 +118,10 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg_)
     const NodeSet& nodes = sccMembers[s];
     Component c = boost::add_vertex(cg);
     LOG("created component node " << c << " for scc " << s << " with depgraph nodes " << printset(nodes));
+		bool multimember = nodes.size() > 1;
     sccToComponent[s] = c;
     ComponentInfo& ci = propsOf(c);
-    // collect rule and eatom ids
+    // collect rule and eatom ids in scc
     for(NodeSet::const_iterator itn = nodes.begin();
         itn != nodes.end(); ++itn)
     {
@@ -110,16 +130,44 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg_)
       #endif
       ID id = dg.propsOf(*itn).id;
       if( id.isRule() )
-      {
-        ci.rules.insert(id);
+			{
+				if( id.isRegularRule() )
+				{
+					ci.innerRules.insert(id);
+				}
+				else if( id.isConstraint() || id.isWeakConstraint() )
+				{
+					ci.innerConstraints.insert(id);
+				}
+				else
+				{
+					assert(false);
+				}
       }
       else if( id.isExternalAtom() )
       {
-        ci.eatoms.insert(id);
+				if( multimember )
+				{
+					ci.innerEatoms.insert(id);
+				}
+				else
+				{
+					ci.outerEatoms.insert(id);
+				}
       }
+			else
+			{
+				assert(false);
+			}
     }
-    LOG("-> rules " << printset(ci.rules));
-    LOG("-> eatoms " << printset(ci.eatoms));
+    LOG("-> outerEatoms " << printset(ci.outerEatoms));
+    LOG("-> innerRules " << printset(ci.innerRules));
+    LOG("-> innerConstraints " << printset(ci.innerConstraints));
+    LOG("-> innerEatoms " << printset(ci.innerEatoms));
+
+		assert( ci.outerEatoms.empty() ||
+				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
+
     // TODO: find more component properties (for complex model building) (perhaps we can cover this in the loop below?)
   }
 
@@ -142,80 +190,107 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg_)
       {
         DependencyGraph::Dependency dep = *it;
         Node targetnode = dg.targetOf(dep);
-        const DependencyGraph::NodeInfo& ni = dg.propsOf(targetnode);
         unsigned targetscc = scc[targetnode];
         if( targetscc == s )
         {
           // dependency within SCC
           continue;
         }
-        else
-        {
-          // dependency to other SCC
-          LOG("found dependency from SCC " << s << " to SCC " << targetscc);
-        }
-      }
 
+				Component targetc = sccToComponent[targetscc];
+				// dependency to other SCC -> store
+				LOG("found dependency from SCC " << s << " to SCC " << targetscc);
+
+				// create/update dependency
+				Dependency newdep;
+				bool success;
+
+				// use dependencyinfo from original dependency
+        //const DependencyGraph::NodeInfo& ni = dg.propsOf(targetnode);
+        const DependencyGraph::DependencyInfo& di = dg.propsOf(dep);
+
+				boost::tie(newdep, success) = boost::add_edge(c, targetc, DependencyInfo(di), cg);
+				if( !success )
+				{
+					boost::tie(newdep, success) = boost::edge(c, targetc, cg);
+					assert(success);
+					// update existing dependency
+					propsOf(newdep) |= di;
+				}
+      } // for each dependency of *itn
     } // collect dependencies outgoing from node *itn in SCC s
   } // create dependencies outgoing from SCC s
 }
 
 namespace
 {
-  inline std::string graphviz_node_id(ComponentGraph::Component c)
+  std::string graphviz_node_id(ComponentGraph::Component c)
   {
     std::ostringstream os;
     os << "c" << std::hex << c;
     return os.str();
   }
+
+	template<typename Range>
+	void printoutVerboseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	{
+		// see boost/range/iterator_range.hpp
+		typedef typename Range::const_iterator Iterator;
+		if( !boost::empty(idrange) )
+		{
+			o << "{" << prefix << "|";
+			Iterator it = boost::begin(idrange);
+			rp.print(*it);
+			it++;
+			for(; it != boost::end(idrange); ++it)
+			{
+				o << "\\n";
+				rp.print(*it);
+			}
+			o << "}|";
+		}
+	}
+
+	template<typename Range>
+	void printoutTerseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	{
+		// see boost/range/iterator_range.hpp
+		typedef typename Range::const_iterator Iterator;
+		if( !boost::empty(idrange) )
+		{
+			unsigned count = 0;
+			for(Iterator it = boost::begin(idrange); it != boost::end(idrange); ++it, ++count)
+				;
+			o << "{" << count << " " << prefix << "}|";
+		}
+	}
 }
 
 void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const
 {
-  const ComponentInfo& componentinfo = getComponentInfo(c);
+  const ComponentInfo& ci = getComponentInfo(c);
+	RawPrinter rp(o, reg);
   if( verbose )
   {
-    o << "component" << c << ":\\n";
-    RawPrinter printer(o, reg);
+    o << "{";
+		//o << "component" << c << "|";
     #ifndef NDEBUG
-    o << "sources: " << printset(componentinfo.sources) << "\\n";
+    o << "{sources|" << printset(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
-    if( !componentinfo.rules.empty() )
-    {
-      o << "rules:\\n";
-      BOOST_FOREACH(ID id, componentinfo.rules)
-      {
-        printer.print(id);
-        o << "\\n";
-      }
-    }
-    if( !componentinfo.eatoms.empty() )
-    {
-      o << "eatoms:\\n";
-      BOOST_FOREACH(ID id, componentinfo.eatoms)
-      {
-        printer.print(id);
-        o << "\\n";
-      }
-    }
+		printoutVerboseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
+		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
+		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
+		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+		o << "prop?}";
   }
   else
   {
-    /*
-    o << n << ":";
-    switch(nodeinfo.id.kind >> ID::SUBKIND_SHIFT)
-    {
-    case 0x00: o << "o g atom"; break;
-    case 0x01: o << "o n atom"; break;
-    case 0x03: o << "agg atom"; break;
-    case 0x06: o << "ext atom"; break;
-    case 0x30: o << "rule"; break;
-    case 0x31: o << "constraint"; break;
-    case 0x32: o << "weak constraint"; break;
-    default: o << "unknown type=0x" << std::hex << (nodeinfo.id.kind >> ID::SUBKIND_SHIFT); break;
-    }
-    o << ":" << nodeinfo.id.address;
-    */
+    o << "{";
+		printoutTerseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
+		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
+		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
+		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+		o << "prop?}";
   }
 }
 
@@ -224,20 +299,19 @@ void ComponentGraph::writeGraphVizDependencyLabel(std::ostream& o, Dependency de
   const DependencyInfo& di = getDependencyInfo(dep);
   if( verbose )
   {
-    //o << di;
+    o << di;
   }
   else
   {
-    /*
-    o << "[" <<
-      (di.positive?"+":"") << (di.negative?"-":"") <<
-      (di.external?"ext":"") << " ";
-    if( di.involvesRule )
-      o << (di.constraint?"cnstr":"rule");
-    else
-      o << (di.disjunctive?"d":"") << (di.unifying?"u":"");
-    o << "]";
-    */
+    o <<
+    (di.positiveRegularRule?" posR":"") <<
+    (di.positiveConstraint?" posC":"") <<
+    (di.negativeRule?" negR":"") <<
+    (di.unifyingHead?" unifying":"") <<
+    (di.positiveExternal?" posExt":"") <<
+    (di.negativeExternal?" negExt":"") <<
+    (di.externalConstantInput?" extConstInp":"") <<
+    (di.externalPredicateInput?" extPredInp":"");
   }
 }
 
@@ -255,7 +329,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
   for(boost::tie(it, it_end) = boost::vertices(cg);
       it != it_end; ++it)
   {
-    o << graphviz_node_id(*it) << "[label=\"";
+    o << graphviz_node_id(*it) << "[shape=record,label=\"";
     {
       std::stringstream ss;
       writeGraphVizComponentLabel(ss, *it, verbose);
@@ -266,10 +340,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
         "\"",
         "\\\"");
     }
-    o << "\"";
-    if( !getComponentInfo(*it).eatoms.empty() )
-      o << ",shape=box";
-    o << "];" << std::endl;
+    o << "\"];" << std::endl;
   }
 
   // print edges

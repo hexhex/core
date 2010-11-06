@@ -39,24 +39,29 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * A component graph is created from a dependency graph by collapsing all rule
- * nodes with their body and head nodes (except for external atoms),
- * and then by collapsing all rules in the same SCC (including external atoms).
- * Dependencies are collapsed as well.
+ * A component graph is created from a dependency graph by collecting SCCs
+ * into single nodes components.
  *
  * A component graph is a dag (acyclic by the above construction).
  *
  * Vertices (= components) store a set of rules and information about the dependencies
- * within the collapsed part of the dependency graph. These properties are calculated
- * by calculateCollapsedComponentProperties(...).
+ * within the collapsed part of the dependency graph.
  *
  * Edges (= collapsed dependencies) store information about the collapsed
- * dependencies. These are calculated by calculateCollapsedDependencyProperties(...).
+ * dependencies.
+ *
+ * A component contains
+ * - external atoms depending only on other components (=outer eatoms),
+ * - rules within the component (=inner rules),
+ * - constraints within the component (=inner constraints), and
+ * - external atoms depending on rules in the component (=inner eatoms).
+ *
+ * For each component, only one of these storages must hold an object, except for
+ * inner eatoms which can only exist if there are inner rules.
  */
 class ComponentGraph
 {
-//  BOOST_CONCEPT_ASSERT((boost::Convertible<DependencyGraph::Node, unsigned int>));
-
+  BOOST_CONCEPT_ASSERT((boost::Convertible<DependencyGraph::Node, unsigned int>));
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
@@ -68,12 +73,10 @@ public:
     std::set<DependencyGraph::Node> sources;
     #endif
 
-		// ID storage:
-		// store IDs of rules in component
-    std::set<ID> rules;
-
-    // store IDs of external atoms in component
-    std::set<ID> eatoms;
+    std::set<ID> outerEatoms;
+    std::set<ID> innerRules;
+    std::set<ID> innerEatoms;
+    std::set<ID> innerConstraints;
 
     // TODO:
     // whether it contains a positive cycle of dependencies over a monotonic external atom (-> fixedpoint)
@@ -82,43 +85,28 @@ public:
 		//bool posCycleMonotonicAtom;
     // ...
 
-		ComponentInfo(): rules(), eatoms() {}
+		ComponentInfo() {}
     std::ostream& print(std::ostream& o) const;
   };
 
   struct DependencyInfo:
+		public DependencyGraph::DependencyInfo,
     public ostream_printable<DependencyInfo>
   {
     #ifndef NDEBUG
     std::set<DependencyGraph::Dependency> sources;
     #endif
 
-    // All those can be independently true:
-
-    // whether it contains a positive rule dependency
-    bool positiveRule;
-    // whether it contains a negative rule dependency
-    bool negativeRule;
-    // whether it contains a positive constraint dependency
-    bool positiveConstraint;
-    // whether it contains a negative constraint dependency
-    bool negativeConstraint;
-    // whether it contains an external dependency
-    bool external;
-
-		DependencyInfo():
-    	positiveRule(false),
-			negativeRule(false),
-    	positiveConstraint(false),
-			negativeConstraint(false),
-			external(false) {}
+		DependencyInfo() {}
+		DependencyInfo(const DependencyGraph::DependencyInfo& other): DependencyGraph::DependencyInfo(other) {}
+		const DependencyInfo& operator|=(const DependencyInfo& other);
     std::ostream& print(std::ostream& o) const;
   };
 
   // we need listS because this graph will be changed a lot by collapsing nodes
-  // TODO: perhaps for out-edges (first listS) we could risk vecS?
+  // use setS for out-edges because we don't want to have multiple edges
   typedef boost::adjacency_list<
-    boost::listS, boost::listS, boost::bidirectionalS,
+    boost::setS, boost::listS, boost::bidirectionalS,
     ComponentInfo, DependencyInfo> Graph;
   typedef boost::graph_traits<Graph> Traits;
 
@@ -203,10 +191,11 @@ protected:
   virtual void writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const;
   virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
-  // helper for constructor
+protected:
+  // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
-  void collapseComponent(Component c);
   // calculate ComponentInfo from dependencies within a collapsed part of the dependency graph.
+	#if 0
   void calculateCollapsedComponentProperties(
     const std::set<DependencyGraph::Node>& sourceNodes,
     ComponentInfo& ci) const;
@@ -214,6 +203,7 @@ protected:
   void calculateCollapsedDependencyProperties(
     const std::set<DependencyGraph::Dependency>& sourceDependencies,
     DependencyInfo& di) const;
+	#endif
 };
 
 DLVHEX_NAMESPACE_END

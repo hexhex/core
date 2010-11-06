@@ -72,7 +72,7 @@ struct ExternalAtom;
 struct OrdinaryAtom;
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
-struct PluginAtom;
+class PluginAtom;
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 
 class DependencyGraph
@@ -144,6 +144,7 @@ public:
       externalConstantInput(false),
       externalPredicateInput(false)
       {}
+		const DependencyInfo& operator|=(const DependencyInfo& other);
     std::ostream& print(std::ostream& o) const;
   };
 

@@ -135,9 +135,8 @@ BOOST_AUTO_TEST_CASE(testNonext)
 	//LOG_REGISTRY_PROGRAM(ctx);
 
   DependencyGraph depgraph(ctx.registry);
-	depgraph.createNodesAndBasicDependencies(ctx.idb);
-	depgraph.createUnifyingDependencies();
-	depgraph.augmentDependencies();
+	std::vector<ID> auxRules;
+	depgraph.createDependencies(ctx.idb, auxRules);
 
 	ComponentGraph compgraph(depgraph, ctx.registry);
 
@@ -156,7 +155,6 @@ BOOST_AUTO_TEST_CASE(testNonext)
   makeGraphVizPdf(fnamet);
 }
 
-#if 0
 BOOST_AUTO_TEST_CASE(testExt1) 
 {
   ProgramCtx ctx;
@@ -200,15 +198,11 @@ BOOST_AUTO_TEST_CASE(testExt1)
 		}
 	}
 
-	// create component graph!
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
+	DependencyGraph depgraph(ctx.registry);
 	std::vector<ID> auxRules;
-	compgraph.createExternalDependencies(auxRules);
+	depgraph.createDependencies(ctx.idb, auxRules);
 
-  compgraph.calculateComponentInfo();
+	ComponentGraph compgraph(depgraph, ctx.registry);
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -234,6 +228,7 @@ BOOST_AUTO_TEST_CASE(testMCSMedEQ)
   std::stringstream ss;
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
   ss <<
+    "foo(X,c) :- bar. foo(c,Y) :- baz." << std::endl << // this is not from MCS, but required to test scc dependencies!
     "o2(xray_pneumonia)." << std::endl <<
     "b3(pneumonia) :- a2(xray_pneumonia)." << std::endl <<
     "o2(blood_marker)." << std::endl <<
@@ -276,15 +271,11 @@ BOOST_AUTO_TEST_CASE(testMCSMedEQ)
 		}
 	}
 
-	// create component graph!
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
+	DependencyGraph depgraph(ctx.registry);
 	std::vector<ID> auxRules;
-	compgraph.createExternalDependencies(auxRules);
+	depgraph.createDependencies(ctx.idb, auxRules);
 
-  compgraph.calculateComponentInfo();
+	ComponentGraph compgraph(depgraph, ctx.registry);
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -362,15 +353,11 @@ BOOST_AUTO_TEST_CASE(testMCSMedD)
 		}
 	}
 
-	// create component graph!
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
-	// TODO use Iterator interface
+	DependencyGraph depgraph(ctx.registry);
 	std::vector<ID> auxRules;
-	compgraph.createExternalDependencies(auxRules);
+	depgraph.createDependencies(ctx.idb, auxRules);
 
-  compgraph.calculateComponentInfo();
+	ComponentGraph compgraph(depgraph, ctx.registry);
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -386,7 +373,5 @@ BOOST_AUTO_TEST_CASE(testMCSMedD)
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
 }
-#endif
-
 
 // TODO test SCCs containing extatoms

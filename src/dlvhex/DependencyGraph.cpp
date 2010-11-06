@@ -44,6 +44,20 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+const DependencyGraph::DependencyInfo&
+DependencyGraph::DependencyInfo::operator|=(
+		const DependencyGraph::DependencyInfo& other)
+{
+	positiveRegularRule |= other.positiveRegularRule;
+	positiveConstraint |= other.positiveConstraint;
+	negativeRule |= other.negativeRule;
+	unifyingHead |= other.unifyingHead;
+	positiveExternal |= other.positiveExternal;
+	negativeExternal |= other.negativeExternal;
+	externalConstantInput |= other.externalConstantInput;
+	externalPredicateInput |= other.externalPredicateInput;
+}
+
 std::ostream& DependencyGraph::NodeInfo::print(std::ostream& o) const
 {
   return o << "id=" << id;
