@@ -38,6 +38,9 @@
 #define BOOST_TEST_MODULE "TestComponentGraph"
 #include <boost/test/unit_test.hpp>
 
+#include "fixturesExt1.hpp"
+#include "fixturesMCS.hpp"
+
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -62,63 +65,6 @@ inline void makeGraphVizPdf(const char* fname)
 }
 
 DLVHEX_NAMESPACE_USE
-
-class TestPluginAtomCount:
-	public PluginAtom
-{
-public:
-	TestPluginAtomCount(): PluginAtom()
-	{
-		monotonic = false;
-		inputSize = 1;
-		outputSize = 1;
-		inputType.push_back(PREDICATE);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
-class TestPluginAtomReach:
-	public PluginAtom
-{
-public:
-	TestPluginAtomReach(): PluginAtom()
-	{
-		monotonic = true;
-		inputSize = 2;
-		outputSize = 1;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
-class TestPluginAspCtxAcc:
-	public PluginAtom
-{
-public:
-	TestPluginAspCtxAcc(): PluginAtom()
-	{
-		monotonic = false;
-		inputSize = 5;
-		outputSize = 0;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
@@ -156,54 +102,10 @@ BOOST_AUTO_TEST_CASE(testNonext)
   makeGraphVizPdf(fnamet);
 }
 
-BOOST_AUTO_TEST_CASE(testExt1) 
+BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture) 
 {
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-  std::stringstream ss;
-  ss <<
-    "item(X) :- part(X)." << std::endl <<
-		"edge(Y) :- foo(Y)." << std::endl <<
-    "num(N) :- &count[item](N)." << std::endl <<
-    "reached(X) :- &reach[N,edge](X), startnode(N)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
-	//LOG_REGISTRY_PROGRAM(ctx);
-
-	// create dummy plugin atoms and register them into external atoms
-	PluginAtomPtr papCount(new TestPluginAtomCount);
-	PluginAtomPtr papReach(new TestPluginAtomReach);
-  ID idreach = ctx.registry->terms.getIDByString("reach");
-  ID idcount = ctx.registry->terms.getIDByString("count");
-  BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idreach);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papReach;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idcount);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papCount;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-
-	DependencyGraph depgraph(ctx.registry);
-	std::vector<ID> auxRules;
-	depgraph.createDependencies(ctx.idb, auxRules);
-
-	ComponentGraph compgraph(depgraph, ctx.registry);
+  LOG("createing compgraph");
+  ComponentGraph compgraph(depgraph, ctx.registry);
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
@@ -274,61 +176,8 @@ BOOST_AUTO_TEST_CASE(testExt1)
 }
 
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
-BOOST_AUTO_TEST_CASE(testMCSMedEQ) 
+BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxDependencyGraphFixture) 
 {
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-  std::stringstream ss;
-  // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
-  ss <<
-    "foo(X,c) :- bar. foo(c,Y) :- baz." << std::endl << // this is not from MCS, but required to test scc dependencies!
-    "o2(xray_pneumonia)." << std::endl <<
-    "b3(pneumonia) :- a2(xray_pneumonia)." << std::endl <<
-    "o2(blood_marker)." << std::endl <<
-    "b3(marker) :- a2(blood_marker)." << std::endl <<
-    "o3(pneumonia)." << std::endl <<
-    "b4(need_ab) :- a3(pneumonia)." << std::endl <<
-    "o3(atyppneumonia)." << std::endl <<
-    "b4(need_strong) :- a3(atyppneumonia)." << std::endl <<
-    "o1(allergy_strong_ab)." << std::endl <<
-    "b4(allow_strong_ab) :- na1(allergy_strong_ab)." << std::endl <<
-    "a1(X) v na1(X) :- o1(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[1,a1,b1,o1,\"./medExample/kb1.dlv\"]()." << std::endl <<
-    "ctx(1)." << std::endl <<
-    "a2(X) v na2(X) :- o2(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[2,a2,b2,o2,\"./medExample/kb2.dlv\"]()." << std::endl <<
-    "ctx(2)." << std::endl <<
-    "a3(X) v na3(X) :- o3(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[3,a3,b3,o3,\"./medExample/kb3.dlv\"]()." << std::endl <<
-    "ctx(3)." << std::endl <<
-    "a4(X) v na4(X) :- o4(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
-    "ctx(4)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
-	//LOG_REGISTRY_PROGRAM(ctx);
-
-	// create dummy plugin atoms and register them into external atoms
-	PluginAtomPtr papAspCtxAcc(new TestPluginAspCtxAcc);
-  ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-
-	DependencyGraph depgraph(ctx.registry);
-	std::vector<ID> auxRules;
-	depgraph.createDependencies(ctx.idb, auxRules);
-
 	ComponentGraph compgraph(depgraph, ctx.registry);
 
   // TODO test scc infos (will do manually with graphviz at the moment)
@@ -347,69 +196,9 @@ BOOST_AUTO_TEST_CASE(testMCSMedEQ)
 }
 
 // example using MCS-IE encoding from KR 2010 for calculation of diagnoses in medical example
-BOOST_AUTO_TEST_CASE(testMCSMedD) 
+BOOST_FIXTURE_TEST_CASE(testMCSMedD,ProgramMCSMedEQProgramCtxDependencyGraphFixture) 
 {
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-  std::stringstream ss;
-  // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting --ieexplain=D'
-  ss <<
-    "o2(xray_pneumonia)." << std::endl <<
-    "normal(r1) v d1(r1) v d2(r1)." << std::endl <<
-    "b3(pneumonia) :- d2(r1)." << std::endl <<
-    "b3(pneumonia) :- not d1(r1), a2(xray_pneumonia)." << std::endl <<
-    "o2(blood_marker)." << std::endl <<
-    "normal(r2) v d1(r2) v d2(r2)." << std::endl <<
-    "b3(marker) :- d2(r2)." << std::endl <<
-    "b3(marker) :- not d1(r2), a2(blood_marker)." << std::endl <<
-    "o3(pneumonia)." << std::endl <<
-    "normal(r3) v d1(r3) v d2(r3)." << std::endl <<
-    "b4(need_ab) :- d2(r3)." << std::endl <<
-    "b4(need_ab) :- not d1(r3), a3(pneumonia)." << std::endl <<
-    "o3(atyppneumonia)." << std::endl <<
-    "normal(r4) v d1(r4) v d2(r4)." << std::endl <<
-    "b4(need_strong) :- d2(r4)." << std::endl <<
-    "b4(need_strong) :- not d1(r4), a3(atyppneumonia)." << std::endl <<
-    "o1(allergy_strong_ab)." << std::endl <<
-    "normal(r5) v d1(r5) v d2(r5)." << std::endl <<
-    "b4(allow_strong_ab) :- d2(r5)." << std::endl <<
-    "b4(allow_strong_ab) :- not d1(r5), na1(allergy_strong_ab)." << std::endl <<
-    "a1(X) v na1(X) :- o1(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[1,a1,b1,o1,\"./medExample/kb1.dlv\"]()." << std::endl <<
-    "ctx(1)." << std::endl <<
-    "a2(X) v na2(X) :- o2(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[2,a2,b2,o2,\"./medExample/kb2.dlv\"]()." << std::endl <<
-    "ctx(2)." << std::endl <<
-    "a3(X) v na3(X) :- o3(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[3,a3,b3,o3,\"./medExample/kb3.dlv\"]()." << std::endl <<
-    "ctx(3)." << std::endl <<
-    "a4(X) v na4(X) :- o4(X)." << std::endl <<
-    ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
-    "ctx(4)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
 	//LOG_REGISTRY_PROGRAM(ctx);
-
-	// create dummy plugin atoms and register them into external atoms
-	PluginAtomPtr papAspCtxAcc(new TestPluginAspCtxAcc);
-  ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
-
-	DependencyGraph depgraph(ctx.registry);
-	std::vector<ID> auxRules;
-	depgraph.createDependencies(ctx.idb, auxRules);
 
 	ComponentGraph compgraph(depgraph, ctx.registry);
 

@@ -40,7 +40,8 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/unit_test.hpp>
 
-#include "dummytypes.hpp"
+#include "fixturesExt1.hpp"
+#include "fixturesMCS.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -67,185 +68,223 @@ inline void makeGraphVizPdf(const char* fname)
 
 DLVHEX_NAMESPACE_USE
 
-class TestPluginAspCtxAcc:
-	public PluginAtom
+BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGraphComponentGraphFixture) 
 {
-public:
-	TestPluginAspCtxAcc(): PluginAtom()
-	{
-		monotonic = false;
-		inputSize = 5;
-		outputSize = 0;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
-	}
-
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (PluginError)
-		{ assert(false); }
-};
-
-// example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
-BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ) 
-{
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
-	// create dummy plugin atoms
-	PluginAtomPtr papAspCtxAcc(new TestPluginAspCtxAcc);
-
   // eval graph
   FinalEvalGraph eg;
 
+  // write to dotfile and create pdf
   {
-    std::stringstream ss;
-    // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
-    ss <<
-      "foo(X,c) :- bar. foo(c,Y) :- baz." << std::endl << // this is not from MCS, but required to test scc dependencies!
-      "o2(xray_pneumonia)." << std::endl <<
-      "b3(pneumonia) :- a2(xray_pneumonia)." << std::endl <<
-      "o2(blood_marker)." << std::endl <<
-      "b3(marker) :- a2(blood_marker)." << std::endl <<
-      "o3(pneumonia)." << std::endl <<
-      "b4(need_ab) :- a3(pneumonia)." << std::endl <<
-      "o3(atyppneumonia)." << std::endl <<
-      "b4(need_strong) :- a3(atyppneumonia)." << std::endl <<
-      "o1(allergy_strong_ab)." << std::endl <<
-      "b4(allow_strong_ab) :- na1(allergy_strong_ab)." << std::endl <<
-      "a1(X) v na1(X) :- o1(X)." << std::endl <<
-      ":- not &dlv_asp_context_acc[1,a1,b1,o1,\"./medExample/kb1.dlv\"]()." << std::endl <<
-      "ctx(1)." << std::endl <<
-      "a2(X) v na2(X) :- o2(X)." << std::endl <<
-      ":- not &dlv_asp_context_acc[2,a2,b2,o2,\"./medExample/kb2.dlv\"]()." << std::endl <<
-      "ctx(2)." << std::endl <<
-      "a3(X) v na3(X) :- o3(X)." << std::endl <<
-      ":- not &dlv_asp_context_acc[3,a3,b3,o3,\"./medExample/kb3.dlv\"]()." << std::endl <<
-      "ctx(3)." << std::endl <<
-      "a4(X) v na4(X) :- o4(X)." << std::endl <<
-      ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
-      "ctx(4)." << std::endl;
-    HexParser parser(ctx);
-    BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+    const char* fnamev = "testEvalHeurExt1CGVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    compgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
 
-    //LOG_REGISTRY_PROGRAM(ctx);
+    const char* fnamet = "testEvalHeurExt1CGTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    compgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
 
-    // register dummy plugin atoms into external atoms
-    ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
-    BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-    {
-      ExternalAtomTable::PredicateIterator it, it_end;
-      for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
-          it != it_end; ++it)
-      {
-        ExternalAtom ea(*it);
-        ea.pluginAtom = papAspCtxAcc;
-        ctx.registry->eatoms.update(*it, ea);
-      }
-    }
+  //
+  // now the real testing starts
+  //
 
-    DependencyGraph depgraph(ctx.registry);
-    std::vector<ID> auxRules;
-    depgraph.createDependencies(ctx.idb, auxRules);
+  // create "final" (for a lack of a better name) eval graph
+  {
+    LOG("starting to build eval graph");
+
+    // create builder that supervises the construction of eg
+    EvalGraphBuilder egbuilder(compgraph, eg);
 
     {
-      ComponentGraph compgraph(depgraph, ctx.registry);
+      // create heuristic, which sends commands to egbuilder
+      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
+      heuristicOldDlvhex.build();
+      LOG("building eval graph finished");
 
-      // write to dotfile and create pdf
+      // log the (changed) component graph
       {
-        const char* fnamev = "testEvalHeurMCSMedEqCGVerbose.dot";
+        const char* fnamev = "testEvalHeurExt1Verbose.dot";
         LOG("dumping verbose graph to " << fnamev);
         std::ofstream filev(fnamev);
         compgraph.writeGraphViz(filev, true);
         makeGraphVizPdf(fnamev);
 
-        const char* fnamet = "testEvalHeurMCSMedEqCGTerse.dot";
+        const char* fnamet = "testEvalHeurExt1Terse.dot";
         LOG("dumping terse graph to " << fnamet);
         std::ofstream filet(fnamet);
         compgraph.writeGraphViz(filet, false);
         makeGraphVizPdf(fnamet);
       }
 
-      //
-      // now the real testing starts
-      //
-
-      // create "final" (for a lack of a better name) eval graph
-      {
-        LOG("starting to build eval graph");
-
-        // create builder that supervises the construction of eg
-        EvalGraphBuilder egbuilder(compgraph, eg);
-
-        {
-          // create heuristic, which sends commands to egbuilder
-          EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
-          heuristicOldDlvhex.build();
-          LOG("building eval graph finished");
-
-          // log the (changed) component graph
-          {
-            const char* fnamev = "testEvalHeurMCSMedEqVerbose.dot";
-            LOG("dumping verbose graph to " << fnamev);
-            std::ofstream filev(fnamev);
-            compgraph.writeGraphViz(filev, true);
-            makeGraphVizPdf(fnamev);
-
-            const char* fnamet = "testEvalHeurMCSMedEqTerse.dot";
-            LOG("dumping terse graph to " << fnamet);
-            std::ofstream filet(fnamet);
-            compgraph.writeGraphViz(filet, false);
-            makeGraphVizPdf(fnamet);
-          }
-
-          LOG("eval heuristic going out of scope");
-        }
-        LOG("eval graph builder going out of scope");
-      }
-      LOG("component graph going out of scope");
+      LOG("eval heuristic going out of scope");
     }
-    LOG("dependency graph going out of scope");
+    LOG("eval graph builder going out of scope");
   }
 
   // TODO check eval graph
-
-
-	#if 0
-  // naive test approach: take all leaf components and collapse them,
-	// then take all components "behind" this collapsed component
-  // * this creates a path
-	// * is stupid, but it should be allowed
-	// * this tests the dependency checking mechanism
-
-  const ComponentGraph::SCCMap& sccMembers = compgraph.getSCCMembers();
-  const ComponentGraph::ComponentMap& scc = compgraph.getSCC();
-
-  while( !egbuilder.getRestLeaves().empty() )
-  {
-    typedef ComponentGraph::Node Node;
-    std::list<Node> leaves;
-
-    // go through all nodes and collect components
-    ComponentGraph::LeafContainer::const_iterator itl;
-    for(itl = egbuilder.getRestLeaves().begin();
-        itl != egbuilder.getRestLeaves().end(); ++itl)
-    {
-      const std::set<Node>& thisSCC = sccMembers[scc[*itl]];
-      LOG("for leaf " << *itl << " adding nodes " << printset(thisSCC));
-      leaves.insert(leaves.end(), thisSCC.begin(), thisSCC.end());
-    }
-
-    LOG("got leaves to add: " << printvector(std::vector<Node>(leaves.begin(), leaves.end())));
-
-    // enrich set of leaves by taking all nodes in the same component
-
-
-    // collect dependencies from leaves to existing eval units
-
-    assert(false);
-
-  }
-	#endif
 }
+
+// example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
+BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDependencyGraphComponentGraphFixture) 
+{
+  // eval graph
+  FinalEvalGraph eg;
+
+  // write ComponentGraph to dotfile and create pdf
+  {
+    const char* fnamev = "testEvalHeurMCSMedEqCGVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    compgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testEvalHeurMCSMedEqCGTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    compgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
+
+  //
+  // now the real testing starts
+  //
+
+  // create "final" (for a lack of a better name) eval graph
+  {
+    LOG("starting to build eval graph");
+
+    // create builder that supervises the construction of eg
+    EvalGraphBuilder egbuilder(compgraph, eg);
+
+    {
+      // create heuristic, which sends commands to egbuilder
+      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
+      heuristicOldDlvhex.build();
+      LOG("building eval graph finished");
+
+      // log the (changed) component graph
+      {
+        const char* fnamev = "testEvalHeurMCSMedEqVerbose.dot";
+        LOG("dumping verbose graph to " << fnamev);
+        std::ofstream filev(fnamev);
+        compgraph.writeGraphViz(filev, true);
+        makeGraphVizPdf(fnamev);
+
+        const char* fnamet = "testEvalHeurMCSMedEqTerse.dot";
+        LOG("dumping terse graph to " << fnamet);
+        std::ofstream filet(fnamet);
+        compgraph.writeGraphViz(filet, false);
+        makeGraphVizPdf(fnamet);
+      }
+
+      LOG("eval heuristic going out of scope");
+    }
+    LOG("eval graph builder going out of scope");
+  }
+
+  // TODO check eval graph
+}
+
+// example using MCS-IE encoding from KR 2010 for calculation of diagnoses in medical example
+BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDependencyGraphComponentGraphFixture) 
+{
+  // eval graph
+  FinalEvalGraph eg;
+
+  // write ComponentGraph to dotfile and create pdf
+  {
+    const char* fnamev = "testEvalHeurMCSMedDCGVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    compgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testEvalHeurMCSMedDCGTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    compgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
+
+  //
+  // now the real testing starts
+  //
+
+  // create "final" (for a lack of a better name) eval graph
+  {
+    LOG("starting to build eval graph");
+
+    // create builder that supervises the construction of eg
+    EvalGraphBuilder egbuilder(compgraph, eg);
+
+    {
+      // create heuristic, which sends commands to egbuilder
+      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
+      heuristicOldDlvhex.build();
+      LOG("building eval graph finished");
+
+      // log the (changed) component graph
+      {
+        const char* fnamev = "testEvalHeurMCSMedDVerbose.dot";
+        LOG("dumping verbose graph to " << fnamev);
+        std::ofstream filev(fnamev);
+        compgraph.writeGraphViz(filev, true);
+        makeGraphVizPdf(fnamev);
+
+        const char* fnamet = "testEvalHeurMCSMedDTerse.dot";
+        LOG("dumping terse graph to " << fnamet);
+        std::ofstream filet(fnamet);
+        compgraph.writeGraphViz(filet, false);
+        makeGraphVizPdf(fnamet);
+      }
+
+      LOG("eval heuristic going out of scope");
+    }
+    LOG("eval graph builder going out of scope");
+  }
+
+  // TODO check eval graph
+}
+
+
+
+#if 0
+// naive test approach: take all leaf components and collapse them,
+// then take all components "behind" this collapsed component
+// * this creates a path
+// * is stupid, but it should be allowed
+// * this tests the dependency checking mechanism
+
+const ComponentGraph::SCCMap& sccMembers = compgraph.getSCCMembers();
+const ComponentGraph::ComponentMap& scc = compgraph.getSCC();
+
+while( !egbuilder.getRestLeaves().empty() )
+{
+  typedef ComponentGraph::Node Node;
+  std::list<Node> leaves;
+
+  // go through all nodes and collect components
+  ComponentGraph::LeafContainer::const_iterator itl;
+  for(itl = egbuilder.getRestLeaves().begin();
+      itl != egbuilder.getRestLeaves().end(); ++itl)
+  {
+    const std::set<Node>& thisSCC = sccMembers[scc[*itl]];
+    LOG("for leaf " << *itl << " adding nodes " << printset(thisSCC));
+    leaves.insert(leaves.end(), thisSCC.begin(), thisSCC.end());
+  }
+
+  LOG("got leaves to add: " << printvector(std::vector<Node>(leaves.begin(), leaves.end())));
+
+  // enrich set of leaves by taking all nodes in the same component
+
+
+  // collect dependencies from leaves to existing eval units
+
+  assert(false);
+
+}
+#endif

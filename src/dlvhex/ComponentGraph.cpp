@@ -409,7 +409,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
-		o << "prop?}";
+		o << "}";
   }
   else
   {
@@ -418,7 +418,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
-		o << "prop?}";
+		o << "}";
   }
 }
 
