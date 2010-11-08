@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ComponentGraph.cpp
+ * @file   ComponentGraph.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Component Graph interface.

@@ -93,6 +93,7 @@ public:
 		{ assert(false); }
 };
 
+// TODO reproduce/report clang bug: if this is put inside the BOOST_AUTO_TEST_CASE scope it does not compile with a strange and unreasonable concept check error
 typedef ComponentGraph::Component Component;
 typedef std::set<Component> ComponentSet;
 struct OriginalsDFSVisitor:
@@ -103,6 +104,7 @@ struct OriginalsDFSVisitor:
 	OriginalsDFSVisitor(const OriginalsDFSVisitor& other): boost::default_dfs_visitor(), origs(other.origs) {}
 	void discover_vertex(Component comp, const ComponentGraph::Graph&)
 	{
+    LOG("discover " << comp);
 		origs.insert(comp);
 	}
 };
@@ -117,8 +119,10 @@ struct OriginalsDFSTerminator
 	{
 		// return true if vertex shall not be expanded
 		// -> return true for eatoms and for members of origs
-		return (!cg.propsOf(comp).outerEatoms.empty())
-			|| (origs.find(comp) != origs.end());
+		bool hasEAtoms = (!cg.propsOf(comp).outerEatoms.empty());
+    bool isOrig = (origs.find(comp) != origs.end());
+    LOG("terminate?=" << hasEAtoms << "/" << isOrig << " @ " << comp);
+    return hasEAtoms || isOrig;
 	}
 };
 
@@ -180,6 +184,20 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
 
 	ComponentGraph compgraph(depgraph, ctx.registry);
 
+  {
+    const char* fnamev = "testEvalHeurMCSMedEqCGVerbose.dot";
+    LOG("dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    compgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testEvalHeurMCSMedEqCGTerse.dot";
+    LOG("dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    compgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
+
   //
   // now the real testing starts
   //
@@ -193,6 +211,7 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
 	typedef ComponentGraph::Component Component;
 	typedef ComponentGraph::ComponentIterator ComponentIterator;
 	typedef ComponentGraph::SuccessorIterator SuccessorIterator;
+	typedef ComponentGraph::PredecessorIterator PredecessorIterator;
 	typedef std::list<Component> RootContainer;
 	RootContainer roots;
 	ComponentIterator cit, cit_end;
@@ -245,10 +264,11 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
 		// add nodes to originals
 		// if hitting an original, do not continue (pointless)
 
-		OriginalsDFSVisitor dfs_vis(originals);
 		for(RootContainer::const_iterator itr = roots.begin();
 				itr != roots.end(); ++itr)
 		{
+      ComponentSet neworiginals;
+      OriginalsDFSVisitor dfs_vis(neworiginals);
 			CompColorHashMap ccHashMap(ccWhiteHashMap);
 			//CompColorMap ccMap(ccHashMap);
 			LOG("doing dfs visit for root " << *itr);
@@ -258,10 +278,23 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
 					dfs_vis,
 					CompColorMap(ccHashMap),
 					OriginalsDFSTerminator(compgraph, originals));
+      originals.insert(neworiginals.begin(), neworiginals.end());
+      neworiginals.clear();
 			LOG("dfs visit terminated: originals = " << printrange(originals));
 		}
-		// TODO: set roots
-		break;
+
+    // collapse originals into new component
+		Component newcomp = compgraph.collapseComponents(originals);
+    LOG("collapsing " << printrange(originals) << " yielded component " << newcomp);
+
+    // calculate new roots (= all successors of new component)
+    roots.clear();
+    PredecessorIterator pit, pit_end;
+    for(boost::tie(pit, pit_end) = compgraph.getDependencies(newcomp);
+        pit != pit_end; ++pit)
+    {
+			roots.push_back(compgraph.targetOf(*pit));
+		}
 	}
 	while( !roots.empty() );
 

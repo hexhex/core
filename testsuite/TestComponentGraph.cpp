@@ -30,6 +30,7 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
