@@ -218,62 +218,42 @@ BOOST_AUTO_TEST_CASE(testExt1)
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
 
-	// test collapsing (poor man's way)
+	// test collapsing (poor (wo)man's way)
 	// [we trust on the order of components to stay the same!]
 	{
 		LOG("components are ordered as follows:" << printrange(
 					boost::make_iterator_range(compgraph.getComponents())));
 		typedef ComponentGraph::Component Component;
-		ComponentGraph::ComponentIterator it, itend, itc0, itc1, itc4;
+		ComponentGraph::ComponentIterator it, itend, itc0, itc1, itc2, itc3, itc4, itc5, itc6;
 		boost::tie(it, itend) = compgraph.getComponents();
 		itc0 = it; it++;
-		itc1 = it; it++; it++; it++;
-		itc4 = it;
+		itc1 = it; it++;
+		itc2 = it; it++;
+		itc3 = it; it++;
+		itc4 = it; it++;
+		itc5 = it; it++;
+		itc6 = it; it++;
+		assert(it == itend);
 
-		std::set<Component> coll;
-		coll.insert(*itc0);
-		coll.insert(*itc1);
-		coll.insert(*itc4);
+		std::set<Component> coll0;
+		coll0.insert(*itc0);
+		coll0.insert(*itc1);
+		coll0.insert(*itc4);
 
-		Component comp1 = compgraph.collapseComponents(coll);
+		std::set<Component> coll1;
+		coll1.insert(*itc2);
+		coll1.insert(*itc5);
+
+		std::set<Component> coll2;
+		coll2.insert(*itc3);
+		coll2.insert(*itc6);
+
+		Component comp0 = compgraph.collapseComponents(coll0);
+		LOG("collapsing 0 yielded component " << comp0);
+		Component comp1 = compgraph.collapseComponents(coll1);
 		LOG("collapsing 1 yielded component " << comp1);
-		// now all iterators in this scope are invalid!
-	}
-
-	{
-		LOG("components are ordered as follows:" << printrange(
-					boost::make_iterator_range(compgraph.getComponents())));
-		typedef ComponentGraph::Component Component;
-		ComponentGraph::ComponentIterator it, itend, itc0, itc2;
-		boost::tie(it, itend) = compgraph.getComponents();
-		itc0 = it; it++; it++;
-		itc2 = it;
-
-		std::set<Component> coll;
-		coll.insert(*itc0);
-		coll.insert(*itc2);
-
-		Component comp2 = compgraph.collapseComponents(coll);
+		Component comp2 = compgraph.collapseComponents(coll2);
 		LOG("collapsing 2 yielded component " << comp2);
-		// now all iterators in this scope are invalid!
-	}
-
-	{
-		LOG("components are ordered as follows:" << printrange(
-					boost::make_iterator_range(compgraph.getComponents())));
-		typedef ComponentGraph::Component Component;
-		ComponentGraph::ComponentIterator it, itend, itc0, itc1;
-		boost::tie(it, itend) = compgraph.getComponents();
-		itc0 = it; it++;
-		itc1 = it;
-
-		std::set<Component> coll;
-		coll.insert(*itc0);
-		coll.insert(*itc1);
-
-		Component comp3 = compgraph.collapseComponents(coll);
-		LOG("collapsing 3 yielded component " << comp3);
-		// now all iterators in this scope are invalid!
 	}
 
 	// print final result

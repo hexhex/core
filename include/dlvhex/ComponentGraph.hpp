@@ -150,6 +150,10 @@ public:
 	// accessors
 	//
 
+	// get const graph to apply external algorithms
+	inline const Graph& getInternalGraph()
+		const { return cg; }
+
   // output graph as graphviz source
   virtual void writeGraphViz(std::ostream& o, bool verbose) const;
 

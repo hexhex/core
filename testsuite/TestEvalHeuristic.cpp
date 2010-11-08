@@ -28,16 +28,22 @@
  * @brief  Test evaluation heuristics
  */
 
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/EvalHeuristicOldDLVHEX.hpp"
+//#include "dlvhex/EvalGraphBuilder.hpp"
+//#include "dlvhex/EvalHeuristicOldDLVHEX.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
 
 // this must be included before dummytypes!
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/unit_test.hpp>
+
+#include <boost/unordered_map.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/property_map/property_map.hpp>
+#include <boost/graph/depth_first_search.hpp>
 
 #include "dummytypes.hpp"
 
@@ -87,6 +93,35 @@ public:
 		{ assert(false); }
 };
 
+typedef ComponentGraph::Component Component;
+typedef std::set<Component> ComponentSet;
+struct OriginalsDFSVisitor:
+	public boost::default_dfs_visitor
+{
+	ComponentSet& origs;
+	OriginalsDFSVisitor(ComponentSet& origs): boost::default_dfs_visitor(), origs(origs) {}
+	OriginalsDFSVisitor(const OriginalsDFSVisitor& other): boost::default_dfs_visitor(), origs(other.origs) {}
+	void discover_vertex(Component comp, const ComponentGraph::Graph&)
+	{
+		origs.insert(comp);
+	}
+};
+
+struct OriginalsDFSTerminator
+{
+	const ComponentGraph& cg;
+	const ComponentSet& origs;
+	OriginalsDFSTerminator(const ComponentGraph& cg, const ComponentSet& origs):
+		cg(cg), origs(origs) {}
+	bool operator()(Component comp, const ComponentGraph::Graph&)
+	{
+		// return true if vertex shall not be expanded
+		// -> return true for eatoms and for members of origs
+		return (!cg.propsOf(comp).outerEatoms.empty())
+			|| (origs.find(comp) != origs.end());
+	}
+};
+
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
 BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ) 
 {
@@ -96,6 +131,7 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
   std::stringstream ss;
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
   ss <<
+    "foo(X,c) :- bar. foo(c,Y) :- baz." << std::endl << // this is not from MCS, but required to test scc dependencies!
     "o2(xray_pneumonia)." << std::endl <<
     "b3(pneumonia) :- a2(xray_pneumonia)." << std::endl <<
     "o2(blood_marker)." << std::endl <<
@@ -138,23 +174,103 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
 		}
 	}
 
-	// create component graph
-	ComponentGraph compgraph(ctx.registry);
-	compgraph.createNodesAndBasicDependencies(ctx.idb);
-	compgraph.createUnifyingDependencies();
+	DependencyGraph depgraph(ctx.registry);
 	std::vector<ID> auxRules;
-	compgraph.createExternalDependencies(auxRules);
-  compgraph.calculateComponentInfo();
+	depgraph.createDependencies(ctx.idb, auxRules);
+
+	ComponentGraph compgraph(depgraph, ctx.registry);
 
   //
   // now the real testing starts
   //
 
-  TestEvalGraph evalgraph;
-  EvalGraphBuilder<TestEvalGraph> egbuilder(compgraph, evalgraph);
+	// old dlvhex approach:
+	// 1) start at all roots (= components not depending on another component)
+	// 2) mark from there using dfs/bfs until eatom hit (including eatom)
+	// 3) collapse this into new component c
+	// 4) take all nodes c depends on as new roots
+	// 5) goto 2)
+	typedef ComponentGraph::Component Component;
+	typedef ComponentGraph::ComponentIterator ComponentIterator;
+	typedef ComponentGraph::SuccessorIterator SuccessorIterator;
+	typedef std::list<Component> RootContainer;
+	RootContainer roots;
+	ComponentIterator cit, cit_end;
+	// find roots
+	for(boost::tie(cit, cit_end) = compgraph.getComponents();
+			cit != cit_end; ++cit)
+	{
+		SuccessorIterator sit, sit_end;
+		boost::tie(sit, sit_end) = compgraph.getProvides(*cit);
+		if( sit == sit_end )
+		{
+			roots.push_back(*cit);
+		}
+	}
 
-  // naive test approach: take all leaf components and add them as new eval unit
-  // (this is stupid, but allowed, and it tests the dependency checking mechanism)
+	// prepare dfs
+
+	// TODO think about how this can be made more efficient (below is the failsafe and slow version)
+	// (we could use two_bit_vector_property_map with custom IndexMap,
+	//  the index map knows the graph and can use properties of vertices to get some
+	//  index stored in the properties, the index is monotonically increasing and
+	//  managed by ComponentGraph.
+	//  we can preallocate a big property map (1.5*maxindex) -> no reallocations)
+
+	// we need a hash map, as component graph is no graph with vecS-storage
+	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+	CompColorHashMap ccWhiteHashMap;
+
+	// fill white hash map
+	for(boost::tie(cit, cit_end) = compgraph.getComponents();
+			cit != cit_end; ++cit)
+	{
+		//boost::put(ccWhiteHashMap, *cit, boost::white_color);
+		ccWhiteHashMap[*cit] = boost::white_color;
+	}
+
+	do
+	{
+		// step 2
+		LOG("starting step 2 of collapsing with roots " << printrange(roots));
+
+		// components to collapse
+		typedef std::set<Component> ComponentSet;
+		ComponentSet originals;
+
+		// do dfs:
+		// from each root
+		// up to and including first eatom
+		// add nodes to originals
+		// if hitting an original, do not continue (pointless)
+
+		OriginalsDFSVisitor dfs_vis(originals);
+		for(RootContainer::const_iterator itr = roots.begin();
+				itr != roots.end(); ++itr)
+		{
+			CompColorHashMap ccHashMap(ccWhiteHashMap);
+			//CompColorMap ccMap(ccHashMap);
+			LOG("doing dfs visit for root " << *itr);
+			boost::depth_first_visit(
+					compgraph.getInternalGraph(),
+					*itr, 
+					dfs_vis,
+					CompColorMap(ccHashMap),
+					OriginalsDFSTerminator(compgraph, originals));
+			LOG("dfs visit terminated: originals = " << printrange(originals));
+		}
+		// TODO: set roots
+		break;
+	}
+	while( !roots.empty() );
+
+	#if 0
+  // naive test approach: take all leaf components and collapse them,
+	// then take all components "behind" this collapsed component
+  // * this creates a path
+	// * is stupid, but it should be allowed
+	// * this tests the dependency checking mechanism
 
   const ComponentGraph::SCCMap& sccMembers = compgraph.getSCCMembers();
   const ComponentGraph::ComponentMap& scc = compgraph.getSCC();
@@ -184,7 +300,19 @@ BOOST_AUTO_TEST_CASE(testEvalHeuristicMCSMedEQ)
     assert(false);
 
   }
-
+	#endif
 
   // TODO: test evalgraph
+
+  const char* fnamev = "testEvalHeurMCSMedEqVerbose.dot";
+  LOG("dumping verbose graph to " << fnamev);
+  std::ofstream filev(fnamev);
+  compgraph.writeGraphViz(filev, true);
+  makeGraphVizPdf(fnamev);
+
+  const char* fnamet = "testEvalHeurMCSMedEqTerse.dot";
+  LOG("dumping terse graph to " << fnamet);
+  std::ofstream filet(fnamet);
+  compgraph.writeGraphViz(filet, false);
+  makeGraphVizPdf(fnamet);
 }
