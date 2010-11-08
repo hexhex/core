@@ -22,21 +22,38 @@
  */
 
 /**
- * @file   EvalHeuristicOldDLVHEX.hpp
+ * @file   EvalHeuristicBase.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Evaluation heuristic corresponding to old DLVHEX strategy.
+ * @brief  Evaluation heuristic base class.
  */
 
-#ifndef EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
-#define EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
+#ifndef EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
+#define EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
 
+#include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-// TODO
+/**
+ * An evaluation heuristic gets an eval graph builder and shall build an eval graph
+ * using methods of the eval graph builder only.
+ */
+template<typename EvalGraphBuilderT>
+class EvalHeuristicBase
+{
+protected:
+  EvalGraphBuilderT& builder;
+
+public:
+  EvalHeuristicBase(EvalGraphBuilderT& builder):
+    builder(builder) {}
+  virtual ~EvalHeuristicBase() {}
+  virtual void build() = 0;
+};
 
 DLVHEX_NAMESPACE_END
 
-#endif // EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
+#endif // EVAL_HEURISTICBASEX_HPP_INCLUDED__03112010

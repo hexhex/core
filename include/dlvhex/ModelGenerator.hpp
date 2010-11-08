@@ -31,10 +31,13 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
+#include "Logger.hpp"
 #include <ostream>
 #include <boost/shared_ptr.hpp>
 
-class InterpretationBase
+class InterpretationBase:
+  public ostream_printable<InterpretationBase>
+
 {
   // debug
   std::ostream& print(std::ostream& o) const
@@ -51,7 +54,8 @@ class InterpretationBase
 // * evaluation yields a (probably empty) set of output interpretations
 //
 template<typename InterpretationT>
-class ModelGeneratorBase
+class ModelGeneratorBase:
+  public ostream_printable<ModelGeneratorBase<InterpretationT> >
 {
   // types
 public:
@@ -87,7 +91,8 @@ public:
 // for a certain types of interpretations
 //
 template<typename InterpretationT>
-class ModelGeneratorFactoryBase
+class ModelGeneratorFactoryBase:
+  public ostream_printable<ModelGeneratorFactoryBase<InterpretationT> >
 {
   // types
 public:

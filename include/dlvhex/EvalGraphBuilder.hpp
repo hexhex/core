@@ -31,7 +31,7 @@
 #ifndef EVAL_GRAPH_BUILDER_HPP_INCLUDED__03112010
 #define EVAL_GRAPH_BUILDER_HPP_INCLUDED__03112010
 
-#include "dlvhex/EvalGraph.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/Logger.hpp"
 
@@ -46,24 +46,28 @@
 DLVHEX_NAMESPACE_BEGIN
 
 /**
- * This template provides a framework for building an evaluation graph.
- * It provides one method createEvalUnit() for creating an evaluation
- * unit; this method does all necessary checks.
+ * This template provides a framework for building an evaluation graph. It provides
+ * one modifier method createEvalUnit() for creating an evaluation unit; this method
+ * does all necessary checks.
  *
- * All evaluation planning heuristics must use this builder for creating
- * evaluation units and evaluation graphs.
+ * All evaluation planning heuristics must use this builder for creating evaluation
+ * units and evaluation graphs.
  */
-template<typename EvalGraphT>
+//template<typename EvalGraphT>
+// TODO make this a template for EvalGraphT and ComponentGraphT, for faster prototyping we use fixed types for these graphs
 class EvalGraphBuilder
 {
-  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
-  BOOST_CONCEPT_ASSERT((boost::Convertible<typename EvalGraphT::EvalUnit, unsigned>));
-
   //////////////////////////////////////////////////////////////////////////////
   // types
   //////////////////////////////////////////////////////////////////////////////
 public:
-	typedef EvalGraphT EvalGraph;
+	typedef FinalEvalGraph EvalGraphT;
+	typedef EvalGraphT::EvalUnit EvalUnit;
+
+  #if 0
+//  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
+//  BOOST_CONCEPT_ASSERT((boost::Convertible<typename EvalGraphT::EvalUnit, unsigned>));
+
 
 protected:
   // bidirectional mapping:
@@ -107,18 +111,20 @@ protected:
   };
   typedef boost::filtered_graph<ComponentGraph::Graph,
           UnusedEdgeFilter, UnusedVertexFilter> ComponentGraphRest;
+  #endif
 
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
 	// component graph (this is an input -> const)
-	const ComponentGraph& cg;
+	ComponentGraph& cg;
 	// eval graph
-	EvalGraph& eg;
+	EvalGraphT& eg;
 
-  NodeEvalUnitMapping mapping;
+  //NodeEvalUnitMapping mapping;
 
+  #if 0
   //
   // subgraph of component graph that still needs to be put into eval units
   //
@@ -136,6 +142,7 @@ protected:
   ComponentGraphRest cgrest;
   // leaves of cgrest
   ComponentGraph::LeafContainer cgrestLeaves;
+  #endif
 
 #if 0
   //
@@ -159,13 +166,16 @@ protected:
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-	EvalGraphBuilder(const ComponentGraph& cg, EvalGraph& eg);
+	EvalGraphBuilder(ComponentGraph& cg, EvalGraphT& eg);
 	virtual ~EvalGraphBuilder();
 
   //
   // accessors
   // 
-  inline const ComponentGraph::LeafContainer& getRestLeaves() const { return cgrestLeaves; }
+  inline const EvalGraphT& getEvaGraph() const { return eg; }
+  inline ComponentGraph& getComponentGraph() { return cg; }
+  inline const ComponentGraph& getComponentGraph() const { return cg; }
+  //inline const ComponentGraph::LeafContainer& getRestLeaves() const { return cgrestLeaves; }
 
   //
   // modifiers
@@ -187,8 +197,10 @@ public:
 	//  boost::iterator_range<Container>(first, beyond_last) )
   //
   // returns newly created eval unit
+  // TODO: for constraint sharing distinguish between "consumedNodes" and "sharedNodes"
 	template<typename NodeRange, typename UnitRange>
-	virtual typename EvalGraph::EvalUnit createEvalUnit(NodeRange nodes, UnitRange orderedDependencies);
+	virtual EvalUnit createEvalUnit(
+      NodeRange nodes, UnitRange orderedDependencies);
 #if 0
 protected:
   inline void ensureSup()
@@ -196,72 +208,6 @@ protected:
   virtual void recalculateSupportingInformation();
 #endif
 };
-
-template<typename EvalGraphT>
-bool
-EvalGraphBuilder<EvalGraphT>::UnusedEdgeFilter::operator()(
-    ComponentGraph::Dependency dep) const
-{
-  assert(cg);
-  assert(ucmap);
-
-  // edge is good (= unused) if both vertices are unused
-  ComponentGraph::Node n1 = cg->sourceOf(dep);
-  if( (*ucmap)[static_cast<unsigned>(n1)] == false )
-    return false;
-  ComponentGraph::Node n2 = cg->targetOf(dep);
-  return (*ucmap)[static_cast<unsigned>(n2)];
-}
-
-template<typename EvalGraphT>
-EvalGraphBuilder<EvalGraphT>::EvalGraphBuilder(
-		const ComponentGraph& cg, EvalGraph& eg):
-	cg(cg), eg(eg),
-  // todo mapping
-  unusedNodes(cg.countNodes(), true),
-  unusedEdgeFilter(&cg, &unusedNodes),
-  unusedVertexFilter(&unusedNodes),
-  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter),
-  cgrestLeaves(cg.getLeaves())
-{
-}
-
-template<typename EvalGraphT>
-EvalGraphBuilder<EvalGraphT>::~EvalGraphBuilder()
-{
-}
-
-// create eval unit
-// update unusedNodes
-// update cgrestLeaves
-template<typename EvalGraphT>
-template<typename NodeRange, typename UnitRange>
-typename EvalGraphT::EvalUnit
-EvalGraphBuilder<EvalGraphT>::createEvalUnit(
-  NodeRange nodes, UnitRange orderedDependencies)
-{
-	typename NodeRange::iterator itn;
-	typename UnitRange::iterator itu;
-	for(itn = boost::begin(nodes); itn != boost::end(nodes); ++itn)
-	{
-		LOG("adding node " << *itn << " to new eval unit");
-		// TODO
-	}
-	for(itu = boost::begin(orderedDependencies); itu != boost::end(orderedDependencies); ++itu)
-	{
-		LOG("adding dependency to unit " << *itu << " to eval graph");
-		// TODO
-	}
-  //supInvalid = true;
-}
-
-#if 0
-template<typename EvalGraphT>
-void EvalGraphBuilder<EvalGraphT>::recalculateSupportingInformation()
-{
-  supInvalid = false;
-}
-#endif
 
 DLVHEX_NAMESPACE_END
 

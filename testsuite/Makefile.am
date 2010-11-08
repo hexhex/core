@@ -47,6 +47,8 @@ TestTypes_LDADD = \
 # test it with full debugging output
 TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
