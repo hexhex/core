@@ -63,20 +63,30 @@ class EvalGraphBuilder
 public:
 	typedef FinalEvalGraph EvalGraphT;
 	typedef EvalGraphT::EvalUnit EvalUnit;
+  typedef ComponentGraph::Component Component;
+
+protected:
+  // we use identity as hash function as eval units are distinct unsigned ints
+  BOOST_CONCEPT_ASSERT((boost::Convertible<EvalUnit, unsigned>));
+  struct identity {
+    inline unsigned operator()(unsigned u) const { return u; }
+  };
+  // bidirectional mapping <one component> <-> <one eval unit>
+  // TODO: extend this to the situation below
+  typedef boost::bimaps::bimap<
+      boost::bimaps::unordered_set_of<Component>,
+      boost::bimaps::unordered_set_of<EvalUnit, identity>
+    > ComponentEvalUnitMapping;
 
   #if 0
 //  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
-//  BOOST_CONCEPT_ASSERT((boost::Convertible<typename EvalGraphT::EvalUnit, unsigned>));
 
 
 protected:
   // bidirectional mapping:
   // set of components -> one eval unit
   // set of components <- one eval unit
-  // we use identity as hash function as nodes and eval units are distinct unsigned ints
-  struct identity {
-    inline unsigned operator()(unsigned u) { return u; }
-  };
+  // remember: sets of components may intersect! (shared constraints)
   typedef boost::bimaps::bimap<
       boost::bimaps::unordered_set_of<ComponentGraph::Node, identity >,
       boost::bimaps::unordered_multiset_of<typename EvalGraph::EvalUnit, identity >
@@ -122,6 +132,7 @@ protected:
 	// eval graph
 	EvalGraphT& eg;
 
+  ComponentEvalUnitMapping mapping;
   //NodeEvalUnitMapping mapping;
 
   #if 0
@@ -198,15 +209,11 @@ public:
   //
   // returns newly created eval unit
   // TODO: for constraint sharing distinguish between "consumedNodes" and "sharedNodes"
-	template<typename NodeRange, typename UnitRange>
-	virtual EvalUnit createEvalUnit(
-      NodeRange nodes, UnitRange orderedDependencies);
-#if 0
-protected:
-  inline void ensureSup()
-    { if( supInvalid ) recalculateSupportingInformation(); }
-  virtual void recalculateSupportingInformation();
-#endif
+  // TODO activate this interface, for now we use a simple one "<one component> -> <one eval unit> with random dependency ordering"
+	//template<typename NodeRange, typename UnitRange>
+	//virtual EvalUnit createEvalUnit(
+  //  NodeRange nodes, UnitRange orderedDependencies);
+  virtual EvalUnit createEvalUnit(Component comp);
 };
 
 DLVHEX_NAMESPACE_END

@@ -134,6 +134,10 @@ void EvalHeuristicOldDlvhex::build()
 		ccWhiteHashMap[*cit] = boost::white_color;
 	}
 
+  // collect all created components here
+  // (we need to create them in the eval graph in the exact reverse order!)
+  std::list<Component> finishedComponents;
+
 	do
 	{
 		// step 2
@@ -172,6 +176,9 @@ void EvalHeuristicOldDlvhex::build()
 		Component newcomp = compgraph.collapseComponents(originals);
     LOG("collapsing " << printrange(originals) << " yielded component " << newcomp);
 
+    // register as finished
+    finishedComponents.push_back(newcomp);
+
     // calculate new roots (= all successors of new component)
     roots.clear();
     PredecessorIterator pit, pit_end;
@@ -182,6 +189,15 @@ void EvalHeuristicOldDlvhex::build()
 		}
 	}
 	while( !roots.empty() );
+
+  std::list<Component>::const_reverse_iterator it;
+  for(it = finishedComponents.rbegin();
+      it != finishedComponents.rend(); ++it)
+  {
+    // build eval unit
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
+    LOG("component " << *it << " became eval unit " << u);
+  }
 }
 
 DLVHEX_NAMESPACE_END

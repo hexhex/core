@@ -29,6 +29,7 @@
  */
 
 #include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/FinalModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 
 #include <boost/range/iterator_range.hpp>
@@ -109,6 +110,65 @@ void EvalGraphBuilder<EvalGraphT>::recalculateSupportingInformation()
 }
 #endif
 #endif
+
+typedef FinalEvalGraph::EvalUnitPropertyBundle
+  EvalUnitProperties;
+typedef FinalEvalGraph::EvalUnitDepPropertyBundle
+  EvalUnitDepProperties;
+
+namespace
+{
+  EvalUnitProperties eup_empty;
+}
+
+EvalGraphBuilder::EvalUnit
+EvalGraphBuilder::createEvalUnit(
+    Component comp)
+{
+  LOG_SCOPE("cEU", false);
+  LOG("= EvalGraphBuilder::createEvalUnit(" << comp << ")");
+
+  // create eval unit
+  EvalUnit u = eg.addUnit(eup_empty);
+  LOG("created unit " << u);
+
+  // associate with component
+  typedef ComponentEvalUnitMapping::value_type MappedPair;
+  bool success = mapping.insert(MappedPair(comp, u)).second;
+  assert(success); // component must not already exist here
+
+  // configure unit
+  EvalUnitProperties& uprops = eg.propsOf(u);
+
+  // TODO configure model generator factory depending on type of component
+  // TODO configure model generator factory depending on compiletime/runtime configuration
+  // TODO the above matters require a refactoring, the line below is for initial tests only
+  uprops.mgf.reset(new FinalModelGeneratorFactory(cg.propsOf(comp)));
+
+  // create dependencies
+
+  // find all dependencies and create them in eval graph
+  ComponentGraph::PredecessorIterator it, it_end;
+  unsigned joinOrder = 0;
+  for(boost::tie(it, it_end) = cg.getDependencies(comp);
+      it != it_end; ++it)
+  {
+    Component dcomp = cg.targetOf(*it);
+    LOG("found dependency to component " << dcomp);
+    ComponentEvalUnitMapping::left_const_iterator itu =
+      mapping.left.find(dcomp);
+    if( itu == mapping.left.end() )
+      throw std::runtime_error(
+          "tried to create an eval unit, "
+          "where not all predecessors have previously been created!");
+    EvalUnit du = itu->second;
+    LOG("adding dependency to unit " << du << " with joinOrder " << joinOrder);
+    eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
+    joinOrder++;
+  }
+
+  return u;
+}
 
 DLVHEX_NAMESPACE_END
 

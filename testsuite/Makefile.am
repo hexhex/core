@@ -45,8 +45,12 @@ TestTypes_LDADD = \
 	@LIBLTDL@ @LIBADD_DL@ 
 
 # test it with full debugging output
+
+#TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \

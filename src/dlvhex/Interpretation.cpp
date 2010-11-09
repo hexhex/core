@@ -22,38 +22,17 @@
  */
 
 /**
- * @file   FinialEvalGraph.hpp
- * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
- * @brief  Definition of eval graph as used in real dlvhex evaluation.
+ * @file Interpretation.cpp
+ * @author Peter Schüller
+ *
+ * @brief Implementation of the (bitset-)interpretation.
  */
 
-#ifndef FINAL_EVAL_GRAPH_HPP_INCLUDED__08112010
-#define FINAL_EVAL_GRAPH_HPP_INCLUDED__08112010
-
-#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/EvalGraph.hpp"
-//#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/Logger.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct FinalEvalUnitPropertyBase:
-  public EvalUnitProjectionProperties,
-  public EvalUnitModelGeneratorFactoryProperties<Interpretation>
-{
-  // XXX: storing it that way is easy but not nice, we SHOULD only store relevant information from ProgramCtx here in this local eval unit program ctx
-  // XXX: better store such things in mgf (ModelGeneratorFactory)
-  //ProgramCtx& programCtx;
-  //ComponentGraph::ComponentInfo ci;
-  //FinalEvalUnitPropertyBase(): ci() {}
-  //FinalEvalUnitPropertyBase(ComponentGraph::ComponentInfo& ci): ci(ci) {}
-};
-
-typedef EvalGraph<FinalEvalUnitPropertyBase> FinalEvalGraph;
+#warning TODO
 
 DLVHEX_NAMESPACE_END
-
-#endif // FINAL_EVAL_GRAPH_HPP_INCLUDED__08112010
-
