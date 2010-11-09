@@ -32,8 +32,10 @@
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
 #include "Logger.hpp"
-#include <ostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+#include <ostream>
 
 class InterpretationBase:
   public ostream_printable<InterpretationBase>

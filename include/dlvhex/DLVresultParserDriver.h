@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Registry;
+struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
 /**

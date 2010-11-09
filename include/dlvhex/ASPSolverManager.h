@@ -46,7 +46,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Registry;
+struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
 // this is kind of a program context for pure (=non-HEX) ASPs
