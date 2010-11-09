@@ -24,23 +24,19 @@
 
 /**
  * @file   DLVresultParserDriver.h
- * @author Roman Schindlauer
- * @date   Wed Mar 22 14:39:32 CET 2006
+ * @author Roman Schindlauer, Peter Schüller
  * 
- * @brief  C++ interface to the bison parser.
- * 
- * 
+ * @brief  Parser for DLV answer set output.
  */
-
-
 #if !defined(_DLVHEX_DLVRESULTPARSERDRIVER_H)
 #define _DLVHEX_DLVRESULTPARSERDRIVER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/ParserDriver.h"
-#include "dlvhex/AtomSet.h"
+#include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Error.h"
+
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 
 #include <iostream>
 #include <string>
@@ -48,10 +44,13 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
+
 /**
  * @brief Parses DLV answer sets.
  */
-class DLVHEX_EXPORT DLVresultParserDriver : public ParserDriver
+class DLVHEX_EXPORT DLVResultParser
 {
 public:
     // Tells the parser how to postprocess the answer-set:
@@ -65,30 +64,31 @@ public:
 	  // Default is FirstOrder.
     enum ParseMode{ FirstOrder, HO };
 
-    DLVresultParserDriver();
-    DLVresultParserDriver(ParseMode mode);
+    typedef boost::function<void (AnswerSet::Ptr)> AnswerSetAdder;
 
-    virtual
-    ~DLVresultParserDriver();
+protected:
+    RegistryPtr reg;
+    ParseMode pMode;
 
-    // this function parses input and APPENDS it to the atomset
-    void
-    parse(std::istream& is,
-          std::vector<AtomSet>&) throw (SyntaxError);
+public:
+    DLVResultParser(RegistryPtr reg);
+    DLVResultParser(RegistryPtr reg, ParseMode mode);
+    virtual ~DLVResultParser();
 
     // this function changes the parse mode of this instance (see description of enum "ParseMode")
-    void
-    setParseMode(ParseMode mode);
-private:
-    ParseMode pMode;
-};
+    void setParseMode(ParseMode mode);
 
+    // this function parses input,
+    // registers newly parsed atoms if necessary,
+    // sets parsed atoms to true in the interpretation of the answer set
+    // sets weak weights if present in the answer set
+    void parse(std::istream& is,
+        AnswerSetAdder answerSetAdder) throw (SyntaxError);
+};
 
 DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_DLVRESULTPARSERDRIVER_H
-
-
 
 // Local Variables:
 // mode: C++

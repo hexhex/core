@@ -33,6 +33,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ModelGenerator.hpp"
+#include "dlvhex/ID.hpp"
 
 #include <boost/shared_ptr.hpp>
 
@@ -50,11 +51,13 @@ public:
   // members
 public:
   Interpretation();
-  ~Interpretation();
+  virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
 
-protected:
-  std::ostream& print(std::ostream& o) const;
+  virtual std::ostream& print(std::ostream& o) const;
+
+  void add(const Interpretation& other);
+  void setFact(IDAddress id);
 };
 
 DLVHEX_NAMESPACE_END

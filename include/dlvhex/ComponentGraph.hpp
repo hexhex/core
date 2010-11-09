@@ -73,10 +73,10 @@ public:
     std::list<DependencyGraph::Node> sources;
     #endif
 
-    std::list<ID> outerEatoms;
-    std::list<ID> innerRules;
-    std::list<ID> innerEatoms;
-    std::list<ID> innerConstraints;
+    std::vector<ID> outerEatoms;
+    std::vector<ID> innerRules;
+    std::vector<ID> innerEatoms;
+    std::vector<ID> innerConstraints;
 
     // TODO:
     // whether it contains a positive cycle of dependencies over a monotonic external atom (-> fixedpoint)

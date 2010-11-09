@@ -36,7 +36,7 @@ DLVHEX_NAMESPACE_BEGIN
 FinalModelGenerator::InterpretationPtr
 FinalModelGenerator::generateNextModel()
 {
-  #warning TODO
+  throw std::runtime_error("TODO generateNextModel");
 }
 
 DLVHEX_NAMESPACE_END

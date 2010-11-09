@@ -36,6 +36,8 @@
 #include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
 
+#include <iomanip>
+
 template<typename EvalGraphT>
 class OnlineModelBuilder
 {
@@ -93,7 +95,7 @@ public:
       o <<
         ", interpretation=" << printptr(interpretation);
       if( interpretation )
-        o << print_method(*interpretation);
+        o << *interpretation;
       return o;
     }
   };
@@ -329,7 +331,7 @@ OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
     if( eg.propsOf(u).mgf )
     {
       LOG("model generator factory = " << printptr(eg.propsOf(u).mgf) <<
-          ":" << print_method(*eg.propsOf(u).mgf));
+          ":" << *eg.propsOf(u).mgf);
     }
     else
     {
@@ -353,7 +355,7 @@ OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
       for(mit = modelsAt.begin(); mit != modelsAt.end(); ++mit)
       {
         Model m = *mit;
-        LOG(toString(t) << "@" << m << ": " << print_method(mg.propsOf(m)));
+        LOG(toString(t) << "@" << m << ": " << mg.propsOf(m));
         // model dependencies (preds)
         ModelPredecessorIterator pit, pbegin, pend;
         boost::tie(pbegin, pend) = mg.getPredecessors(m);
@@ -451,10 +453,10 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
       InterpretationPtr predinterpretation = mg.propsOf(*it).interpretation;
       LOG("predecessor omodel " << *it <<
           " has interpretation " << printptr(predinterpretation) <<
-          " with contents " << print_method(*predinterpretation));
+          " with contents " << *predinterpretation);
       assert(predinterpretation != 0);
       pjoin->add(*predinterpretation);
-      LOG("pjoin now has contents " << print_method(*pjoin));
+      LOG("pjoin now has contents " << *pjoin);
     }
   }
 
@@ -542,7 +544,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   logModelBuildingPropertyMap();
 
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  LOG("rules: " << uprops.ctx.rules);
+  LOG("uprops: " << uprops);
   #endif
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
@@ -914,7 +916,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   #endif
 
   logModelBuildingPropertyMap();
-  LOG("rules = '" << uprops.ctx.rules << "'");
+  LOG("uprops = " << uprops);
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
   LOG("mbprops = " << printEUMBP(mbprops));
 

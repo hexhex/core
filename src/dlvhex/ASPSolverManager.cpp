@@ -34,6 +34,7 @@
 
 #include "dlvhex/ASPSolverManager.h"
 
+#if 0
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -52,9 +53,9 @@
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
 #include <boost/foreach.hpp>
 #include <cassert>
+#endif
 
 DLVHEX_NAMESPACE_BEGIN
-
 
 ASPSolverManager::GenericOptions::GenericOptions():
   includeFacts(false)
@@ -70,30 +71,17 @@ ASPSolverManager::ASPSolverManager()
 {
 }
 
-namespace
-{
-  ASPSolverManager* instance = 0;
-}
-
-//static
-ASPSolverManager& ASPSolverManager::Instance()
-{
-  if( instance == 0 )
-    instance = new ASPSolverManager;
-  return *instance;
-}
-
-//! solve idb/edb and add to result
-void ASPSolverManager::solve(
+//! solve idb/edb and get result provider
+ASPSolverManager::ResultsPtr ASPSolverManager::solve(
     const SoftwareConfigurationBase& solver,
-    const Program& idb, const AtomSet& edb,
-    std::vector<AtomSet>& result) throw (FatalError)
+    const ASPProgram& program) throw (FatalError)
 {
   DelegatePtr delegate = solver.createDelegate();
-  delegate->useASTInput(idb, edb);
-  delegate->getOutput(result);
+  delegate->useASTInput(program);
+  return delegate->getResults();
 }
 
+#if 0
 // solve string program and add to result
 void ASPSolverManager::solveString(
     const SoftwareConfigurationBase& solver,
@@ -115,7 +103,7 @@ void ASPSolverManager::solveFile(
   delegate->useFileInput(filename);
   delegate->getOutput(result);
 }
-
+#endif
 
 DLVHEX_NAMESPACE_END
 

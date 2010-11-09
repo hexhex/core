@@ -22,39 +22,51 @@
  */
 
 /**
- * @file Interpretation.cpp
+ * @file   AnswerSet.hpp
  * @author Peter Schüller
- *
- * @brief Implementation of the (bitset-)interpretation.
+ * 
+ * @brief  Answer set container: holds interpretation and information about model cost (for weak constraints).
  */
 
+#ifndef ANSWER_SET_HPP_INCLUDED__09112010
+#define ANSWER_SET_HPP_INCLUDED__09112010
+
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
 
+#include <boost/shared_ptr.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
-Interpretation::Interpretation()
-{
-}
+class Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
 
-Interpretation::~Interpretation()
+// this is kind of a program context for pure (=non-HEX) ASPs
+struct AnswerSet:
+  public ostream_printable<AnswerSet>
 {
-}
+  // types
+  typedef boost::shared_ptr<AnswerSet> Ptr;
+  typedef boost::shared_ptr<const AnswerSet> ConstPtr;
 
-std::ostream& Interpretation::print(std::ostream& o) const
-{
-#warning TODO
-  throw std::runtime_error("TODO");
-}
+  // storage
+  RegistryPtr registry;
+  Interpretation::Ptr interpretation;
+  int costWeight;
+  int costLevel;
 
-void Interpretation::add(const Interpretation& other)
-{
-  throw std::runtime_error("TODO");
-}
+  AnswerSet():
+    registry(), interpretation(new Interpretation), costWeight(-1), costLevel(-1) {}
+  virtual ~AnswerSet() {}
 
-void Interpretation::setFact(IDAddress id)
-{
-  throw std::runtime_error("TODO");
-}
+  virtual std::ostream& print(std::ostream& o) const;
+};
 
 DLVHEX_NAMESPACE_END
+
+#endif // ANSWER_SET_HPP_INCLUDED__09112010
+
+// Local Variables:
+// mode: C++
+// End:

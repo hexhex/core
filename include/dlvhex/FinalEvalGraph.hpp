@@ -41,7 +41,8 @@ DLVHEX_NAMESPACE_BEGIN
 
 struct FinalEvalUnitPropertyBase:
   public EvalUnitProjectionProperties,
-  public EvalUnitModelGeneratorFactoryProperties<Interpretation>
+  public EvalUnitModelGeneratorFactoryProperties<Interpretation>,
+  public ostream_printable<FinalEvalUnitPropertyBase>
 {
   // XXX: storing it that way is easy but not nice, we SHOULD only store relevant information from ProgramCtx here in this local eval unit program ctx
   // XXX: better store such things in mgf (ModelGeneratorFactory)
@@ -49,6 +50,8 @@ struct FinalEvalUnitPropertyBase:
   //ComponentGraph::ComponentInfo ci;
   //FinalEvalUnitPropertyBase(): ci() {}
   //FinalEvalUnitPropertyBase(ComponentGraph::ComponentInfo& ci): ci(ci) {}
+  std::ostream& print(std::ostream& o) const
+    { return o << static_cast<const EvalUnitModelGeneratorFactoryProperties<Interpretation> >(*this); }
 };
 
 typedef EvalGraph<FinalEvalUnitPropertyBase> FinalEvalGraph;

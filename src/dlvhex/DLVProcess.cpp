@@ -97,7 +97,7 @@ DLVProcess::setupStreams()
   if (ipipe == 0 && opipe == 0)
     {
       // first, setup the iostreams
-      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
+      if (true || Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
 	{
 	  Globals::Instance()->getVerboseStream() << "Setting up DLVProcess opipe to be verbose" << std::endl;
 

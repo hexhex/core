@@ -121,7 +121,8 @@ public:
 // model generator factory properties for eval units
 // such properties are required by model builders
 template<typename InterpretationT>
-struct EvalUnitModelGeneratorFactoryProperties
+struct EvalUnitModelGeneratorFactoryProperties:
+  public ostream_printable<EvalUnitModelGeneratorFactoryProperties<InterpretationT> >
 {
   BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
 	typedef InterpretationT Interpretation;
@@ -129,6 +130,13 @@ struct EvalUnitModelGeneratorFactoryProperties
   // aka model generator factory
   typename ModelGeneratorFactoryBase<InterpretationT>::Ptr
 		mgf; // aka model generator factory
+
+public:
+  virtual std::ostream& print(std::ostream& o) const
+    { if( mgf )
+        return o << *mgf;
+      else
+          return o << "0"; }
 };
 
 #endif //MODEL_GENERATOR_HPP_INCLUDED__30082010

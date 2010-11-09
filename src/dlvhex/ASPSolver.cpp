@@ -32,20 +32,31 @@
  *
  */
 
-
 #include "dlvhex/ASPSolver.h"
 
-// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
+#endif
+
+#undef DLVHEX_BENCHMARK
+
+#include "dlvhex/Benchmarking.h"
+#include "dlvhex/DLVProcess.h"
+#include "dlvhex/DLVresultParserDriver.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/AnswerSet.hpp"
+
+#include <boost/shared_ptr.hpp>
+#include <boost/foreach.hpp>
+#include <list>
+
+#if 0
+// activate benchmarking if activated by configure option --enable-debug
 #  ifdef DLVHEX_DEBUG
 #    define DLVHEX_BENCHMARK
 #  endif
-#endif
 
-#include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/DLVProcess.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Program.h"
 #include "dlvhex/globals.h"
@@ -53,8 +64,8 @@
 
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
-#include <boost/foreach.hpp>
 #include <cassert>
+#endif
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -74,99 +85,129 @@ DLVSoftware::Options::~Options()
 {
 }
 
+struct DLVSoftware::Delegate::Impl
+{
+  Options options;
+  DLVProcess proc;
+  RegistryPtr reg;
+
+  Impl(const Options& options):
+    options(options)
+  {
+  }
+
+  ~Impl()
+  {
+    int retcode = proc.close();
+
+    // check for errors
+    if (retcode == 127)
+    {
+      throw FatalError("LP solver command `" + proc.path() + "´ not found!");
+    }
+    else if (retcode != 0) // other problem
+    {
+      std::stringstream errstr;
+
+      errstr <<
+	"LP solver `" << proc.path() << "´ "
+	"bailed out with exitcode " << retcode << ": "
+	"re-run dlvhex with `strace -f´.";
+
+      throw FatalError(errstr.str());
+    }
+  }
+
+  void setupProcess()
+  {
+    proc.setPath(DLVPATH);
+    if( options.includeFacts )
+      proc.addOption("-facts");
+    else
+      proc.addOption("-nofacts");
+    BOOST_FOREACH(const std::string& arg, options.arguments)
+    {
+      proc.addOption(arg);
+    }
+  }
+};
+
 DLVSoftware::Delegate::Delegate(const Options& options):
-  options(options),
-  proc()
+  pimpl(new Impl(options))
 {
 }
 
 DLVSoftware::Delegate::~Delegate()
 {
-  int retcode = proc.close();
-
-  // check for errors
-  if (retcode == 127)
-  {
-    throw FatalError("LP solver command `" + proc.path() + "´ not found!");
-  }
-  else if (retcode != 0) // other problem
-  {
-    std::stringstream errstr;
-
-    errstr << "LP solver `" << proc.path() << "´ bailed out with exitcode " << retcode << ": "
-	   << "re-run dlvhex with `strace -f´.";
-
-    throw FatalError(errstr.str());
-  }
-}
-
-void DLVSoftware::Delegate::setupProcess()
-{
-  proc.setPath(DLVPATH);
-  if( options.includeFacts )
-    proc.addOption("-facts");
-  else
-    proc.addOption("-nofacts");
-  BOOST_FOREACH(const std::string& arg, options.arguments)
-  {
-    proc.addOption(arg);
-  }
 }
 
 #define CATCH_RETHROW_DLVDELEGATE \
   catch(const GeneralError& e) { \
     std::stringstream errstr; \
-    int retcode = proc.close(); \
-    errstr << proc.path() << " (exitcode = " << retcode << "): " + e.getErrorMsg(); \
+    int retcode = pimpl->proc.close(); \
+    errstr << pimpl->proc.path() << " (exitcode = " << retcode << \
+      "): " << e.getErrorMsg(); \
     throw FatalError(errstr.str()); \
   } \
   catch(const std::exception& e) \
   { \
-    throw FatalError(proc.path() + ": " + e.what()); \
+    throw FatalError(pimpl->proc.path() + ": " + e.what()); \
   }
 
 void
-DLVSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
+DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::useASTInput");
 
-  if( idb.isHigherOrder() && !options.rewriteHigherOrder )
-    throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
+  DLVProcess& proc = pimpl->proc;
+  pimpl->reg = program.registry;
+  assert(pimpl->reg);
+
+  // TODO HO checks
+  //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
+  //  throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
 
   // in higher-order mode we cannot have aggregates, because then they would
   // almost certainly be recursive, because of our atom-rewriting!
-  if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
-    throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
+  //if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
+  //  throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
 
   try
   {
-    setupProcess();
+    pimpl->setupProcess();
+    // handle maxint
+    if( program.maxint > 0 )
+    {
+      std::ostringstream os;
+      os << "-N=" << program.maxint;
+      proc.addOption(os.str());
+    }
     // request stdin as last parameter
     proc.addOption("--");
     // fork dlv process
     proc.spawn();
 
-    typedef boost::shared_ptr<DLVPrintVisitor> PrinterPtr;
     std::ostream& programStream = proc.getOutput();
 
-    ///@todo: this is marked as "temporary hack" in globals.h -> move this info into ProgramCtx and allow ProgramCtx to contribute to the solving process
-    if( !Globals::Instance()->maxint.empty() )
-      programStream << Globals::Instance()->maxint << std::endl;
-
     // output program
-    PrinterPtr printer;
-    if( options.rewriteHigherOrder )
-      printer = PrinterPtr(new HOPrintVisitor(programStream));
-    else
-      printer = PrinterPtr(new DLVPrintVisitor(programStream));
-    idb.accept(*printer);
-    edb.accept(*printer);
+    RawPrinter printer(programStream, program.registry);
+    // TODO HO stuff
+    //PrinterPtr printer;
+    //if( options.rewriteHigherOrder )
+    //  printer = PrinterPtr(new HOPrintVisitor(programStream));
+    //else
+    //  printer = PrinterPtr(new DLVPrintVisitor(programStream));
+    printer.printmany(program.edb, ".\n");
+    programStream << ".\n";
+    printer.printmany(program.idb, "\n");
+    programStream.flush();
 
     proc.endoffile();
   }
   CATCH_RETHROW_DLVDELEGATE
 }
 
+#if 0
 void
 DLVSoftware::Delegate::useStringInput(const std::string& program)
 {
@@ -200,23 +241,78 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
   }
   CATCH_RETHROW_DLVDELEGATE
 }
+#endif
 
-void
-DLVSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
+namespace
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::getOutput");
+  class DLVResults:
+    public ASPSolverManager::Results
+  {
+  public:
+    typedef std::list<AnswerSet::Ptr> Storage;
+    Storage answersets;
+    Storage::const_iterator current;
 
+    DLVResults():
+      current(answersets.begin()) {}
+    virtual ~DLVResults() {}
+
+    void add(AnswerSet::Ptr as)
+    {
+      LOG("DLVResults::add got answer set");
+      bool resetCurrent = answersets.empty();
+      
+      answersets.push_back(as);
+
+      // we do this because I'm not sure if a begin()==end() iterator
+      // becomes begin() or end() after insertion of the first element
+      // (this is the failsafe version)
+      if( resetCurrent )
+	current = answersets.begin();
+    }
+
+    virtual AnswerSet::Ptr getNextAnswerSet()
+    {
+      LOG("DLVResults::getNextAnswerSet() called");
+      if( current == answersets.end() )
+	return AnswerSet::Ptr();
+      else
+      {
+	Storage::const_iterator ret = current;
+	current++;
+	return *ret;
+      }
+    }
+  };
+}
+
+ASPSolverManager::ResultsPtr 
+DLVSoftware::Delegate::getResults()
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::getResults");
+
+  LOG("getting results");
   try
   {
+    // for now, we parse all results and store them into the result container
+    // later we should do kind of an online processing here
+
+    boost::shared_ptr<DLVResults> ret(new DLVResults);
+
     // parse result
-    DLVresultParserDriver parser(
-      options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(proc.getInput(), result);
+    DLVResultParser parser(pimpl->reg);
+    // TODO HO stuff
+    // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
+    parser.parse(pimpl->proc.getInput(), boost::bind(&DLVResults::add, *ret, _1));
+
+    ASPSolverManager::ResultsPtr baseret(ret);
+    return baseret;
   }
   CATCH_RETHROW_DLVDELEGATE
 }
 
 
+#if 0
 #if defined(HAVE_DLVDB)
 DLVDBSoftware::Options::Options():
   DLVSoftware::Options(),
@@ -251,6 +347,7 @@ void DLVDBSoftware::Delegate::setupProcess()
 }
 
 #endif // defined(HAVE_DLVDB)
+#endif
 
 } // namespace ASPSolver
 

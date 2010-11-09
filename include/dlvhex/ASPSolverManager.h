@@ -37,6 +37,8 @@
 
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Error.h"
 
 #include <boost/shared_ptr.hpp>
@@ -44,8 +46,23 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Program;
-class AtomSet;
+class Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
+
+// this is kind of a program context for pure (=non-HEX) ASPs
+struct ASPProgram
+{
+  RegistryPtr registry;
+  const std::vector<ID>& idb;
+  const std::vector<ID>& edb;
+  uint32_t maxint;
+
+  ASPProgram(
+      RegistryPtr registry,
+      const std::vector<ID>& idb, const std::vector<ID>& edb,
+      uint32_t maxint = 0):
+    registry(registry), idb(idb), edb(edb), maxint(maxint) {}
+};
 
 class ASPSolverManager
 {
@@ -64,15 +81,22 @@ public:
     bool includeFacts;
   };
 
+  struct Results
+  {
+    virtual ~Results() {}
+    virtual AnswerSet::Ptr getNextAnswerSet() = 0;
+  };
+  typedef boost::shared_ptr<Results> ResultsPtr;
+
   // interface for delegates
   class DelegateInterface
   {
   public:
     virtual ~DelegateInterface() {}
-    virtual void useASTInput(const Program& idb, const AtomSet& edb) = 0;
-    virtual void useStringInput(const std::string& program) = 0;
-    virtual void useFileInput(const std::string& fileName) = 0;
-    virtual void getOutput(std::vector<AtomSet>& result) = 0;
+    virtual void useASTInput(const ASPProgram& program) = 0;
+    //virtual void useStringInput(const std::string& program) = 0;
+    //virtual void useFileInput(const std::string& fileName) = 0;
+    virtual ResultsPtr getResults() = 0;
   };
   typedef boost::shared_ptr<DelegateInterface> DelegatePtr;
 
@@ -131,17 +155,14 @@ public:
   };
 
 public:
-  //
-  // singleton class (we may have a shared pool of solvers later on, and multithreaded access to this pool)
-  //
-  static ASPSolverManager& Instance();
+  ASPSolverManager();
 
-  //! solve idb/edb and add to result
-  void solve(
+  //! solve idb/edb and get result provider
+  ResultsPtr solve(
       const SoftwareConfigurationBase& solver,
-      const Program& idb, const AtomSet& edb,
-      std::vector<AtomSet>& answersets) throw (FatalError);
+      const ASPProgram& program) throw (FatalError);
 
+  /*
   // solve string program and add to result
   void solveString(
       const SoftwareConfigurationBase& solver,
@@ -153,10 +174,7 @@ public:
       const SoftwareConfigurationBase& solver,
       const std::string& filename,
       std::vector<AtomSet>& result) throw (FatalError);
-
-private:
-  // singleton -> instantiate using Instance()
-  ASPSolverManager();
+      */
 };
 
 DLVHEX_NAMESPACE_END
