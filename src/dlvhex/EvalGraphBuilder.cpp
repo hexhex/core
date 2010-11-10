@@ -58,8 +58,12 @@ EvalGraphBuilder<EvalGraphT>::UnusedEdgeFilter::operator()(
 
 //template<typename EvalGraphT>
 EvalGraphBuilder::EvalGraphBuilder(
-		ComponentGraph& cg, EvalGraphT& eg):
-	cg(cg), eg(eg)
+    ProgramCtx& ctx, 
+		ComponentGraph& cg,
+    EvalGraphT& eg):
+  ctx(ctx),
+	cg(cg),
+  eg(eg)
   #if 0
   ,
   // todo mapping
@@ -143,7 +147,7 @@ EvalGraphBuilder::createEvalUnit(
   // TODO configure model generator factory depending on type of component
   // TODO configure model generator factory depending on compiletime/runtime configuration
   // TODO the above matters require a refactoring, the line below is for initial tests only
-  uprops.mgf.reset(new FinalModelGeneratorFactory(cg.propsOf(comp)));
+  uprops.mgf.reset(new FinalModelGeneratorFactory(ctx, cg.propsOf(comp)));
 
   // create dependencies
 

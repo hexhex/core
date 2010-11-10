@@ -83,7 +83,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
 
   {
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(compgraph, eg);
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
 
     {
       // create heuristic, which sends commands to egbuilder

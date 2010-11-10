@@ -46,8 +46,22 @@ Interpretation::~Interpretation()
 
 std::ostream& Interpretation::print(std::ostream& o) const
 {
+  return print(o, "{", ",", "}");
+}
+
+std::ostream& Interpretation::printAsFacts(std::ostream& o) const
+{
+  print(o, "", ".", "");
+  // make sure the last fact (if any fact exists) gets a dot
+  if( bits.first() != bits.end() )
+    o << ".";
+  return o;
+}
+
+std::ostream& Interpretation::print(std::ostream& o, const char* first, const char* sep, const char* last) const
+{
   Storage::enumerator it = bits.first();
-  o << "{";
+  o << first;
   RawPrinter printer(o, registry);
   if( it != bits.end() )
   {
@@ -55,11 +69,11 @@ std::ostream& Interpretation::print(std::ostream& o) const
     it++;
     for(; it != bits.end(); ++it)
     {
-      o << ",";
+      o << sep;
       printer.print(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
     }
   }
-  return o << "}";
+  return o << last;
 }
 
 void Interpretation::add(const Interpretation& other)

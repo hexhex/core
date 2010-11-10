@@ -115,8 +115,10 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
 
   std::stringstream ss;
   ss <<
+    "part(leg). item(table)." << std::endl <<
+    "startnode(vienna). edge(vienna,london)." << std::endl <<
     "item(X) :- part(X)." << std::endl <<
-		"edge(Y) :- foo(Y)." << std::endl <<
+		"edge(Y,Y) :- foo(Y)." << std::endl <<
     "num(N) :- &count[item](N)." << std::endl <<
     "reached(X) :- &reach[N,edge](X), startnode(N)." << std::endl;
   program = ss.str();

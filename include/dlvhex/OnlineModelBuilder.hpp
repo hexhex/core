@@ -445,8 +445,6 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
   {
     // create joined interpretation
     LOG("more than one predecessor -> joining omodels");
-    pjoin = InterpretationPtr(new Interpretation);
-    LOG("new interpretation = " << printptr(pjoin));
     typename std::vector<Model>::const_iterator it;
     for(it = deps.begin(); it != deps.end(); ++it)
     {
@@ -455,7 +453,16 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
           " has interpretation " << printptr(predinterpretation) <<
           " with contents " << *predinterpretation);
       assert(predinterpretation != 0);
-      pjoin->add(*predinterpretation);
+      if( pjoin == 0 )
+      {
+        // copy interpretation
+        pjoin.reset(new Interpretation(*predinterpretation));
+      }
+      else
+      {
+        // merge interpretation
+        pjoin->add(*predinterpretation);
+      }
       LOG("pjoin now has contents " << *pjoin);
     }
   }

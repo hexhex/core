@@ -43,8 +43,7 @@
   ctx.registry->logContents(); \
 	RawPrinter printer(std::cerr, ctx.registry); \
 	LOG("edb"); \
-	printer.printmany(ctx.edb,"\n"); \
-	std::cerr << std::endl; \
+	std::cerr << *ctx.edb << std::endl; \
 	LOG("edb end"); \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \

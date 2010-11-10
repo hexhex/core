@@ -65,7 +65,9 @@ public:
   virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
 
+  virtual std::ostream& print(std::ostream& o, const char* first, const char* sep, const char* last) const;
   virtual std::ostream& print(std::ostream& o) const;
+  virtual std::ostream& printAsFacts(std::ostream& o) const;
 
   void add(const Interpretation& other);
   void reserve(IDAddress id);

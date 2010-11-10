@@ -54,12 +54,13 @@ struct ASPProgram
 {
   RegistryPtr registry;
   const std::vector<ID>& idb;
-  const std::vector<ID>& edb;
+  Interpretation::ConstPtr edb;
   uint32_t maxint;
 
   ASPProgram(
       RegistryPtr registry,
-      const std::vector<ID>& idb, const std::vector<ID>& edb,
+      const std::vector<ID>& idb,
+      Interpretation::ConstPtr edb,
       uint32_t maxint = 0):
     registry(registry), idb(idb), edb(edb), maxint(maxint) {}
 };

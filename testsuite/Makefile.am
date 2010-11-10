@@ -54,13 +54,20 @@ TestTypes_LDADD = \
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
-	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \

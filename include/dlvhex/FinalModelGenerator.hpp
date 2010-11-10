@@ -25,7 +25,7 @@
  * @file   FinalModelGenerator.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Concrete model generator used for prototype. (TODO refactor)
+ * @brief  Concrete model generator used for prototype. (TODO refactor, this should be AcycliModelGenerator, perhaps even a template parameterized by solver software)
  */
 
 #ifndef FINAL_MODEL_GENERATOR_HPP_INCLUDED__09112010
@@ -35,10 +35,16 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/ASPSolverManager.h"
+
+#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
+class ProgramCtx;
 class FinalModelGeneratorFactory;
+struct Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
 
 //
 // A model generator does the following:
@@ -61,11 +67,14 @@ public:
 protected:
   Factory& factory;
 
+  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  InterpretationConstPtr postprocessedInput;
+  // result handle for asp solver evaluation, using externallyAugmentedInput
+  ASPSolverManager::ResultsPtr currentResults;
+
   // members
 public:
-  FinalModelGenerator(Factory& factory, InterpretationConstPtr input):
-    ModelGeneratorBase<Interpretation>(input),
-    factory(factory) {}
+  FinalModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~FinalModelGenerator() {}
 
   // generate and return next model, return null after last model
@@ -86,16 +95,21 @@ class FinalModelGeneratorFactory:
 {
   // types
 public:
+  friend class FinalModelGenerator;
   typedef ComponentGraph::ComponentInfo ComponentInfo;
 
   // storage
 protected:
-  ComponentInfo ci;
+  // TODO: add information, which auxiliary inputs to take for which external atoms
+  // TODO: add information, which external atoms to evaluate and into which auxiliary atoms
+  // TODO: implement rewriting to take auxiliary atoms instead of external atoms
+  ProgramCtx& ctx;
+  std::vector<ID> eatoms;
+  std::vector<ID> idb;
 
   // methods
 public:
-  FinalModelGeneratorFactory(const ComponentInfo& ci):
-    ci(ci) {}
+  FinalModelGeneratorFactory(ProgramCtx& ctx, const ComponentInfo& ci);
   virtual ~FinalModelGeneratorFactory() {}
 
   virtual ModelGeneratorPtr createModelGenerator(

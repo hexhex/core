@@ -45,6 +45,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class ProgramCtx;
+
 /**
  * This template provides a framework for building an evaluation graph. It provides
  * one modifier method createEvalUnit() for creating an evaluation unit; this method
@@ -127,6 +129,8 @@ protected:
   // members
   //////////////////////////////////////////////////////////////////////////////
 protected:
+  // overall program context
+  ProgramCtx& ctx;
 	// component graph (this is an input -> const)
 	ComponentGraph& cg;
 	// eval graph
@@ -177,13 +181,13 @@ protected:
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-	EvalGraphBuilder(ComponentGraph& cg, EvalGraphT& eg);
+	EvalGraphBuilder(ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg);
 	virtual ~EvalGraphBuilder();
 
   //
   // accessors
   // 
-  inline const EvalGraphT& getEvaGraph() const { return eg; }
+  inline const EvalGraphT& getEvalGraph() const { return eg; }
   inline ComponentGraph& getComponentGraph() { return cg; }
   inline const ComponentGraph& getComponentGraph() const { return cg; }
   //inline const ComponentGraph::LeafContainer& getRestLeaves() const { return cgrestLeaves; }

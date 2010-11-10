@@ -44,6 +44,7 @@
 #include "dlvhex/ExternalAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/Interpretation.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap/bimap.hpp>
@@ -163,8 +164,7 @@ public:
   std::vector<ID> idb;
 
   // edb
-  // TODO: this should become a bitset interpretation!
-  std::vector<ID> edb;
+  Interpretation::Ptr edb;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

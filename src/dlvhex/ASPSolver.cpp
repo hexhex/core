@@ -197,8 +197,15 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
     //  printer = PrinterPtr(new HOPrintVisitor(programStream));
     //else
     //  printer = PrinterPtr(new DLVPrintVisitor(programStream));
-    printer.printmany(program.edb, ".\n");
-    programStream << ".\n";
+
+    if( program.edb != 0 )
+    {
+      // print edb interpretation as facts
+      program.edb->printAsFacts(programStream);
+      programStream << "\n";
+      programStream.flush();
+    }
+
     printer.printmany(program.idb, "\n");
     programStream.flush();
 

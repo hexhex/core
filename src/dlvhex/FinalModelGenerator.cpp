@@ -30,13 +30,88 @@
 
 #include "dlvhex/FinalModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
+
+FinalModelGeneratorFactory::FinalModelGeneratorFactory(
+    ProgramCtx& ctx,
+    const ComponentInfo& ci):
+  ctx(ctx),
+  eatoms(ci.outerEatoms),
+  idb()
+{
+  // this model generator can handle:
+  // components with outer eatoms
+  // components with inner rules
+  // components with inner constraints
+  // this model generator CANNOT handle:
+  // components with inner eatoms
+
+  assert(ci.innerEatoms.empty());
+  // TODO: manage auxiliaries for eatoms in idb
+  idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+  // copy rules and constraints to idb
+  idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
+  idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
+}
+
+FinalModelGenerator::FinalModelGenerator(
+    Factory& factory,
+    InterpretationConstPtr input):
+  ModelGeneratorBase<Interpretation>(input),
+  factory(factory)
+{
+}
 
 FinalModelGenerator::InterpretationPtr
 FinalModelGenerator::generateNextModel()
 {
-  throw std::runtime_error("TODO generateNextModel");
+  if( currentResults == 0 )
+  {
+    // we need to create currentResults
+
+    // create new interpretation as copy
+    Interpretation::Ptr newint;
+    if( input == 0 )
+    {
+      newint.reset(new Interpretation(factory.ctx.registry));
+    }
+    else
+    {
+      newint.reset(new Interpretation(*input));
+    }
+
+    // augment input with edb
+    newint->add(*factory.ctx.edb);
+
+    // manage outer external atoms
+    if( !factory.eatoms.empty() )
+    {
+      // augment input to get externallyAugmentedInput
+      throw std::runtime_error("TODO: augment input");
+    }
+
+    // store in model generator and store as const
+    postprocessedInput = newint;
+
+    ASPSolver::DLVSoftware::Configuration dlvConfiguration;
+    ASPProgram program(factory.ctx.registry, factory.idb, postprocessedInput, factory.ctx.maxint);
+    ASPSolverManager mgr;
+    currentResults = mgr.solve(dlvConfiguration, program);
+  }
+
+  assert(currentResults != 0);
+  AnswerSet::Ptr ret = currentResults->getNextAnswerSet();
+  if( ret == 0 )
+  {
+    currentResults.reset();
+    // the following is just for freeing memory
+    postprocessedInput.reset();
+  }
+
+  return ret->interpretation;
 }
 
 DLVHEX_NAMESPACE_END
