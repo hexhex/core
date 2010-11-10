@@ -2,12 +2,14 @@
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
     $(BOOST_CPPFLAGS) \
+    $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
-    -DBOOST_TEST_DYN_LINK \
-    -DCWDEBUG
+    -DBOOST_TEST_DYN_LINK
+    
+    #-DCWDEBUG
 
 # global linker flags
-AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) -lcwd
+AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)

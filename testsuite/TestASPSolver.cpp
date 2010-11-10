@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimple)
 
   std::stringstream ss;
   ss <<
-    "a. b. c(d,e). g(a)." << std::endl <<
+    "a. c(d,e). g(a)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));

@@ -35,7 +35,10 @@ DLVHEX_NAMESPACE_BEGIN
 
 std::ostream& AnswerSet::print(std::ostream& o) const
 {
-  #warning TODO
+  o << *interpretation;
+  if( costWeight != -1 || costLevel != -1 )
+    o << ",weight=" << costWeight << ",level=" << costLevel;
+  return o;
 }
 
 #if 0

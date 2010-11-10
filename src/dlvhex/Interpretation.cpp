@@ -30,10 +30,13 @@
 
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-Interpretation::Interpretation()
+Interpretation::Interpretation(RegistryPtr registry):
+  registry(registry),
+  bits()
 {
 }
 
@@ -43,18 +46,40 @@ Interpretation::~Interpretation()
 
 std::ostream& Interpretation::print(std::ostream& o) const
 {
-#warning TODO
-  throw std::runtime_error("TODO");
+  Storage::enumerator it = bits.first();
+  o << "{";
+  RawPrinter printer(o, registry);
+  if( it != bits.end() )
+  {
+    printer.print(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      o << ",";
+      printer.print(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    }
+  }
+  return o << "}";
 }
 
 void Interpretation::add(const Interpretation& other)
 {
-  throw std::runtime_error("TODO");
+  if( other.bits.size() > bits.size() )
+    bits.resize(other.bits.size());
+  bits |= other.bits;
+}
+
+void Interpretation::reserve(IDAddress maxid)
+{
+  if( bits.size() <= maxid )
+    bits.resize(maxid+1);
 }
 
 void Interpretation::setFact(IDAddress id)
 {
-  throw std::runtime_error("TODO");
+  //if( bits.size() <= id )
+  //  bits.resize(id+1);
+  bits.set(id);
 }
 
 DLVHEX_NAMESPACE_END

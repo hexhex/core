@@ -118,7 +118,7 @@ struct ParserState
       DLVResultParser::AnswerSetAdder adder,
       bool dropPredicates):
     registry(registry),
-    current(new AnswerSet),
+    current(new AnswerSet(registry)),
 		adder(adder),
     dropPredicates(dropPredicates) {}
 };
@@ -221,7 +221,7 @@ struct handle_finished_answerset
   void operator()(qi::unused_type, qi::unused_type, qi::unused_type) const
   {
     state.adder(state.current);
-		state.current.reset(new AnswerSet());
+		state.current.reset(new AnswerSet(state.registry));
   }
 
   ParserState& state;

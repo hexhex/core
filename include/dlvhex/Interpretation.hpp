@@ -35,9 +35,14 @@
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/ID.hpp"
 
+#include <bm/bm.h>
+
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
+
+struct Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
 
 class Interpretation:
   public InterpretationBase,
@@ -48,15 +53,22 @@ public:
   typedef boost::shared_ptr<Interpretation> Ptr;
   typedef boost::shared_ptr<const Interpretation> ConstPtr;
 
+  // storage
+protected:
+  RegistryPtr registry;
+  typedef bm::bvector<> Storage;
+  Storage bits;
+
   // members
 public:
-  Interpretation();
+  Interpretation(RegistryPtr registry);
   virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
 
   virtual std::ostream& print(std::ostream& o) const;
 
   void add(const Interpretation& other);
+  void reserve(IDAddress id);
   void setFact(IDAddress id);
 };
 

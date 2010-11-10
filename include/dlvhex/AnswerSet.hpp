@@ -51,13 +51,12 @@ struct AnswerSet:
   typedef boost::shared_ptr<const AnswerSet> ConstPtr;
 
   // storage
-  RegistryPtr registry;
   Interpretation::Ptr interpretation;
   int costWeight;
   int costLevel;
 
-  AnswerSet():
-    registry(), interpretation(new Interpretation), costWeight(-1), costLevel(-1) {}
+  AnswerSet(RegistryPtr registry):
+    interpretation(new Interpretation(registry)), costWeight(-1), costLevel(-1) {}
   virtual ~AnswerSet() {}
 
   virtual std::ostream& print(std::ostream& o) const;
