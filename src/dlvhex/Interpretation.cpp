@@ -58,7 +58,9 @@ std::ostream& Interpretation::printAsFacts(std::ostream& o) const
   return o;
 }
 
-std::ostream& Interpretation::print(std::ostream& o, const char* first, const char* sep, const char* last) const
+std::ostream& Interpretation::print(
+    std::ostream& o,
+    const char* first, const char* sep, const char* last) const
 {
   Storage::enumerator it = bits.first();
   o << first;
@@ -78,22 +80,7 @@ std::ostream& Interpretation::print(std::ostream& o, const char* first, const ch
 
 void Interpretation::add(const Interpretation& other)
 {
-  if( other.bits.size() > bits.size() )
-    bits.resize(other.bits.size());
   bits |= other.bits;
-}
-
-void Interpretation::reserve(IDAddress maxid)
-{
-  if( bits.size() <= maxid )
-    bits.resize(maxid+1);
-}
-
-void Interpretation::setFact(IDAddress id)
-{
-  //if( bits.size() <= id )
-  //  bits.resize(id+1);
-  bits.set(id);
 }
 
 DLVHEX_NAMESPACE_END

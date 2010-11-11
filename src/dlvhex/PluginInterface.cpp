@@ -214,6 +214,26 @@ void PluginAtom::setRegistry(RegistryPtr reg)
   assert(predicateID != ID_FAIL);
 }
 
+// fail if registry does not exists
+// calculate and register replacementPredicateID if not existing
+// return replacementPredicateID
+ID PluginAtom::getReplacementPredicateID()
+{
+  if( replacementPredicateID == ID_FAIL )
+  {
+    assert(registry != 0);
+    std::stringstream s;
+    s << "aux_ext_" << predicate;
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, s.str());
+    ID tmp = registry->terms.getIDByString(t.symbol);
+    // we do not want this to exist!
+    assert(tmp == ID_FAIL);
+    replacementPredicateID = registry->terms.storeAndGetID(t);
+  }
+  assert(replacementPredicateID != ID_FAIL);
+  return replacementPredicateID;
+}
+
 DLVHEX_NAMESPACE_END
 
 // Local Variables:

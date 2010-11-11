@@ -83,6 +83,12 @@ public:
   // debug output
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorBase::print() not overloaded"; }
+protected:
+  virtual void evaluateExternalAtoms(InterpretationPtr i) const;
+  virtual InterpretationPtr projectEAtomInputInterpretation(
+    const ExternalAtom& eatom, InterpretationConstPtr full) const;
+  virtual void buildEAtomInputTuples(
+    const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
 };
 
 //

@@ -300,6 +300,24 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   if( inputVariables.empty() )
     return;
 
+  // build unique ordered list of input variables, and
+  // build mapping from input variable in aux predicate to input for eatom
+  std::list<ID> uniqueInputVariables(inputVariableSet.begin(), inputVariableSet.end());
+  ExternalAtom::AuxInputMapping auxInputMapping;
+  for(std::list<ID>::const_iterator ituiv = uniqueInputVariables.begin();
+      ituiv != uniqueInputVariables.end(); ++ituiv)
+  {
+    std::list<unsigned> replaceWhere;
+    for(unsigned at = 0; at != eatom.inputs.size(); ++at)
+    {
+      if( eatom.inputs[at] == *ituiv )
+        replaceWhere.push_back(at);
+    }
+    LOG("auxInputMapping: aux argument " << auxInputMapping.size() <<
+        " replaced at positions " << printrange(replaceWhere));
+    auxInputMapping.push_back(replaceWhere);
+  }
+
   // collect positive body literals of this rule which provide grounding
   // for these variables
   std::list<ID> auxBody;
@@ -366,7 +384,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   // derived by a rule with body auxBody
 
   // create/invent auxiliary predicate and rule and add to registry
-  ID auxHead = createAuxiliaryRuleHead(idrule, idat, inputVariables);
+  ID auxHead = createAuxiliaryRuleHead(idrule, idat, uniqueInputVariables);
   ID auxRule = createAuxiliaryRule(auxHead, auxBody);
   // pass auxiliary rule to outside
   createdAuxRules.push_back(auxRule);
@@ -382,6 +400,12 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   diExternalConstantInput.externalConstantInput = true;
   boost::tie(dep, success) = boost::add_edge(neatom, nauxRule, diExternalConstantInput, dg);
   assert(success);
+
+  // store link to auxiliary predicate in external atom (for more comfortable model building)
+  ExternalAtom eatomstoreback(eatom);
+  eatomstoreback.auxInputPredicate = auxHead;
+  eatomstoreback.auxInputMapping.swap(auxInputMapping);
+  registry->eatoms.update(eatom, eatomstoreback);
 }
 
 ID DependencyGraph::createAuxiliaryRuleHead(
@@ -484,6 +508,8 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
 		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
 
+    // collect ID of all predicate constant terms (will store these back)
+    std::set<IDAddress> predicateInputPredicates;
 		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
 		{
 			// only consider predicate inputs
@@ -501,10 +527,16 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 
 			// this input must be a constant term, nothing else allowed
 			assert(idpred.isConstantTerm());
+      predicateInputPredicates.insert(idpred.address);
 
       // here: we found a predicate input for this eatom where we need to calculate all dependencies
       createExternalPredicateInputDependenciesForInput(*itext, idpred, hbh);
     }
+
+    // store predicateInputPredicates back into eatom
+    ExternalAtom eatomstoreback(eatom);
+    eatomstoreback.predicateInputPredicates.swap(predicateInputPredicates);
+    registry->eatoms.update(eatom, eatomstoreback);
   } // go through all external atom nodes
 }
 

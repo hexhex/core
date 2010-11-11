@@ -86,6 +86,7 @@ public:
 	typedef Container::index<impl::TextTag>::type TextIndex;
 	typedef Container::index<impl::TupleTag>::type TupleIndex;
   typedef Container::index<impl::PredicateTag>::type PredicateIndex;
+	typedef AddressIndex::iterator AddressIterator;
 	typedef PredicateIndex::iterator PredicateIterator;
 
 	// methods
@@ -114,6 +115,10 @@ public:
   // get all ordinary atoms with certain predicate id
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
+
+  // get range over all atoms sorted by address
+	inline std::pair<AddressIterator, AddressIterator>
+	getAllByAddress() const throw();
 };
 
 // retrieve by ID
@@ -217,6 +222,14 @@ OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
 	assert(id.isTerm());
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
+}
+
+// get range over all atoms sorted by address
+std::pair<OrdinaryAtomTable::AddressIterator, OrdinaryAtomTable::AddressIterator>
+OrdinaryAtomTable::getAllByAddress() const throw()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
 }
 
 DLVHEX_NAMESPACE_END

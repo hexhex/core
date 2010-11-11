@@ -70,10 +70,13 @@ public:
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
   void add(const Interpretation& other);
-  void reserve(IDAddress id);
-  void setFact(IDAddress id);
+  inline void setFact(IDAddress id)
+    { bits.set(id); }
+  inline bool getFact(IDAddress id) const
+    { return bits.get_bit(id); }
 
   const Storage& getStorage() const { return bits; }
+  Storage& getStorage() { return bits; }
 };
 
 typedef Interpretation::Ptr InterpretationPtr;
