@@ -115,6 +115,19 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   return true;
 }
 
+std::ostream& ExternalAtom::print(std::ostream& o) const
+{
+  return o <<
+    "ExternalAtom( &" << predicate << " [ " << printvector(inputs) <<
+    " ] ( " << printvector(Atom::tuple) << " )" <<
+    "pluginAtom is " << (pluginAtom.expired()?"not set":"set");
+}
+
+void ExternalAtom::updatePredicateInputMask()
+{
+  throw "TODO updatePredicateInputMask";
+}
+
 DLVHEX_NAMESPACE_END
 
 

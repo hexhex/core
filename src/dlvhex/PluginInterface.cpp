@@ -34,39 +34,13 @@
  */     
 
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Term.hpp"
+#include "dlvhex/ID.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-PluginAtom::Query::Query(const AtomSet& i,
-                         const Tuple& in,
-                         const Tuple& pat)
-//    : interpretation(i),
-//      input(in),
-//      pattern(pat)
-{
-}
-
-
-const AtomSet&
-PluginAtom::Query::getInterpretation() const
-{
-//    return interpretation;
-}
-
-
-const Tuple&
-PluginAtom::Query::getInputTuple() const
-{
-    return input;
-}
-
-
-const Tuple&
-PluginAtom::Query::getPatternTuple() const
-{
-    return pattern;
-}
-
+#if 0
 bool PluginAtom::Query::operator<(const Query& other) const
 {
 	/*
@@ -80,7 +54,6 @@ bool PluginAtom::Query::operator<(const Query& other) const
 			*/
 }
         
-#if 0
 bool PluginAtom::Query::operator==(const Query& other) const
 {
   return
@@ -90,37 +63,10 @@ bool PluginAtom::Query::operator==(const Query& other) const
 }
 #endif
         
-PluginAtom::Answer::Answer()
-    : output(new std::vector<Tuple>)
+PluginAtom::Answer::Answer():
+  output(new std::vector<Tuple>)
 {
 }
-
-
-void
-PluginAtom::Answer::addTuple(const Tuple& out)
-{
-    output->push_back(out);
-}
-
-
-void
-PluginAtom::Answer::addTuples(const std::vector<Tuple>& out)
-{
-    output->insert(output->end(), out.begin(), out.end());
-}
-
-void
-PluginAtom::Answer::setTuples(const std::vector<Tuple>& out)
-{
-    *output = out;
-}
-
-boost::shared_ptr<std::vector<Tuple> >
-PluginAtom::Answer::getTuples() const
-{
-    return output;
-}
-
 
 void
 PluginAtom::addInputPredicate()
@@ -215,6 +161,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
 	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
 #endif
 
+  #if 0
   QueryAnswerCache::const_iterator it = queryAnswerCache.find(query);
   if( it != queryAnswerCache.end() )
   {
@@ -227,6 +174,9 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
     // store in cache
     queryAnswerCache.insert(std::make_pair(query, answer));
   }
+  #endif
+
+  retrieve(query, answer);
 }
 
 
@@ -246,6 +196,22 @@ PluginAtom::getInputType(const unsigned index) const
 	}
 
     return inputType[index];
+}
+
+void PluginAtom::setRegistry(RegistryPtr reg)
+{
+  // i think we really don't want to change registry during the lifetime,
+  // it would invalidate the cache and more bad things would happen
+  assert(registry == 0);
+  assert(reg != 0);
+  registry = reg;
+  predicateID = registry->terms.getIDByString(predicate);
+  if( predicateID == ID_FAIL )
+  {
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, predicate);
+    predicateID = registry->terms.storeAndGetID(t);
+  }
+  assert(predicateID != ID_FAIL);
 }
 
 DLVHEX_NAMESPACE_END

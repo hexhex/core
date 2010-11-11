@@ -24,8 +24,7 @@
 
 /**
  * \file   PluginInterface.h
- * \author Roman Schindlauer
- * \date   Thu Sep 1 15:36:10 2005
+ * \author Roman Schindlauer, Peter Schüller
  *
  * \brief Declaration of Classes PluginAtom, PluginRewriter,
  * and PluginInterface.
@@ -472,6 +471,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
+#include "dlvhex/ID.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
 
@@ -489,7 +489,6 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class AtomSet;
 class NodeGraph;
 class OutputBuilder;
 class ProgramCtx;
@@ -497,6 +496,11 @@ class ProgramCtx;
 class PluginConverter;
 class PluginRewriter;
 class PluginOptimizer;
+
+struct Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
+class Interpretation;
+typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 
 
 #if 0
@@ -633,109 +637,69 @@ public:
     /**
      * \brief Query class for wrapping the input of an external atom call.
      */
-    class DLVHEX_EXPORT Query
+    struct DLVHEX_EXPORT Query
     {
-    public:
-        /**
-         * \brief Query Constructor.
-         *
-         * A query has three components:
-         * - The input interpretation,
-         * - the input arguments, and
-         * - the output tuple.
-		 * .
-         * The input arguments are the ground terms of the input list. The
-         * output tuple corresponds to the atom's output list: If it contains
-         * variables, the query will be a functional one for those missing
-         * values; if it is nullary or completely ground, the query will be a
-         * boolean one. Either way, the answer will contain exactly those tuples
-         * that are in the output of the atom's function for the interpretation
-         * and the input arguments.
-         */
-        Query(const AtomSet&,
-              const Tuple&,
-              const Tuple&);
+      InterpretationConstPtr interpretation;
+      Tuple input;
+      Tuple pattern;
 
-        /**
-         * \brief Returns the input interpretation.
-		 *
-		 * An external atom is evaluated w.r.t. the 
-		 * The interpretation is one part of the input to an external atom,
-		 * which is evaluated
-         */
-        const AtomSet&
-        getInterpretation() const;
+      /**
+       * The input arguments are the ground terms of the input list.
+       *
+       * The output tuple corresponds to the atom's output list: if it contains
+       * variables, the query will be a functional one for those missing values; if
+       * it is nullary or completely ground, the query will be a boolean one.
+       *
+       * The answer shall contain exactly those tuples that match the pattern and are
+       * in the output of the atom's function for the interpretation and the input
+       * arguments.
+       */
+      // interpretation is a bitset of ground atoms,
+      //   where the predicate is equal to the constant of a predicate input
+      // input is a vector of constant/integer term IDs:
+      //   for predicate inputs it is the predicate of the ground atoms
+      //   for constant inputs it is the input constant
+      //     (possibly obtained from an auxiliary input rule+predicate)
+      // pattern is a vector of term IDs:
+      //   constants are to be answered "in a boolean way"
+      //   variables are to be answered "in a unifying way"
+      Query(InterpretationConstPtr interpretation,
+            const Tuple& input,
+            const Tuple& pattern):
+        interpretation(interpretation),
+        input(input),
+        pattern(pattern) {}
 
-        /**
-         * \brief Returns the input parameter tuple.
-         */
-        const Tuple&
-        getInputTuple() const;
+      // no accessors as this will always be supplied to plugins as a const ref
 
-        /**
-         * \brief Return the input pattern.
-         */
-        const Tuple&
-        getPatternTuple() const;
-
-        /**
-         * \brief Comparison operator (strict weak ordering).
-         */
-        bool operator<(const Query& other) const;
-
-    private:
-
-        //AtomSet interpretation;
-
-        Tuple input;
-
-        Tuple pattern;
+      // strict weak ordering required for using this as index in a map
+      // TODO we should use a hash map instead
+      //bool operator<(const Query& other) const;
     };
-
 
     /**
      * \brief Answer class for wrapping the output of an external atom call.
      */
-    class DLVHEX_EXPORT Answer
+    struct DLVHEX_EXPORT Answer
     {
-    public:
-        /// Ctor.
-        Answer();
+      Answer();
 
-        /**
-         * \brief Adds an output tuple to the answer object.
-         */
-        void
-        addTuple(const Tuple&);
-
-        /**
-         * \brief Adds a set of tuples to the output of the answer object.
-         */
-        void
-        addTuples(const std::vector<Tuple>&);
-
-        /**
-         * \brief Replace the output of the answer object.
-         */
-        void
-        setTuples(const std::vector<Tuple>&);
-
-        /**
-         * \brief Returns the output tuples of the answer object.
-         */
-        boost::shared_ptr<std::vector<Tuple> >
-        getTuples() const;
+      // simple accessors, controlled by constness of object
+      std::vector<Tuple>& get() { return *output; }
+      const std::vector<Tuple>& get() const { return *output; }
 
     private:
-
-        boost::shared_ptr<std::vector<Tuple> > output;
+      boost::shared_ptr<std::vector<Tuple> > output;
     };
 
 
     /**
      * \brief Type of input parameter.
      *
-		 * @todo by PS: update this documentation, we have three input types: CONSTANT (clear), PREDICATE (clear), and TUPLE (undocumented: can be specified as last input type, this most likely means the atom gets as many constants as it can get from the program, like a variable length function)
+     * @todo by PS: update this documentation, we have THREE!!! input types: CONSTANT
+     * (clear), PREDICATE (clear), and TUPLE (undocumented: can be specified as last
+     * input type, this most likely means the atom gets as many constants as it can
+     * get from the program, like a variable length function)
 		 *
      * Currently, two types of input parameters can be specified: PREDICATE and
      * CONSTANT.
@@ -753,9 +717,12 @@ public:
 
 protected:
 
-    /// Ctor.
-    // @todo: this default is legacy, but it is dangerous!
-    PluginAtom(bool monotonic=true): monotonic(monotonic)
+    // the user must derive from this to create custom external atoms
+    // the name of the external atom as it appears in the HEX program must be specified here
+    // (this is required to create an auxiliary name and it is useful to have a non-loose connection of each PluginAtom with its name)
+    PluginAtom(const std::string& predicate, bool monotonic=false):
+      predicate(predicate),
+      monotonic(monotonic)
     { }
 
 
@@ -845,7 +812,25 @@ public:
      */
     bool isMonotonic() const { return monotonic; }
 
+    // provide registry pointer
+    // (calculates predicate ID)
+    virtual void setRegistry(RegistryPtr reg);
+
+    ID getPredicateID() const
+      { return predicateID; }
+
 protected:
+    // the predicate of the atom as it appears in HEX programs
+    // (without leading &)
+    //
+    // this is not stored as ID, because plugins must be allowed to create
+    // atoms without knowing the registry they will be used with
+    //
+    // setting the registry provides the predicate ID
+    std::string predicate;
+
+    // the id of the predicate name, ID_FAIL if no registry is set
+    ID predicateID;
 
     /**
      * \brief whether the function is monotonic or nonmonotonic
@@ -870,8 +855,12 @@ protected:
     /**
      * \brief Query/Answer cache
      */
-    typedef std::map<Query, Answer> QueryAnswerCache;
-    QueryAnswerCache queryAnswerCache;
+    //typedef boost::unordered_map<const Query, const Answer> QueryAnswerCache;
+    //QueryAnswerCache queryAnswerCache;
+
+    // the registry related to this atom
+    RegistryPtr registry;
+#warning spend some thinking about where the registry must be stored and where not
 };
 
 

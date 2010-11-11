@@ -52,11 +52,11 @@ class Interpretation:
 public:
   typedef boost::shared_ptr<Interpretation> Ptr;
   typedef boost::shared_ptr<const Interpretation> ConstPtr;
+  typedef bm::bvector<> Storage;
 
   // storage
 protected:
   RegistryPtr registry;
-  typedef bm::bvector<> Storage;
   Storage bits;
 
   // members
@@ -72,7 +72,12 @@ public:
   void add(const Interpretation& other);
   void reserve(IDAddress id);
   void setFact(IDAddress id);
+
+  const Storage& getStorage() const { return bits; }
 };
+
+typedef Interpretation::Ptr InterpretationPtr;
+typedef Interpretation::ConstPtr InterpretationConstPtr;
 
 DLVHEX_NAMESPACE_END
 

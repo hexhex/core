@@ -43,7 +43,12 @@
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/Interpretation.hpp"
 #include "fixturesDepgraphCompgraphGeneric.hpp"
+
+using dlvhex::ID;
+using dlvhex::Tuple;
 
 //
 // dummy plugin atoms
@@ -52,35 +57,142 @@ class TestPluginAtomCount:
 	public dlvhex::PluginAtom
 {
 public:
-	TestPluginAtomCount(): dlvhex::PluginAtom()
+	TestPluginAtomCount():
+    dlvhex::PluginAtom("count", false)
 	{
-		monotonic = false;
 		inputSize = 1;
 		outputSize = 1;
 		inputType.push_back(PREDICATE);
 	}
 
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (dlvhex::PluginError)
-		{ assert(false); }
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+	{
+    // calculate count of matches with single predicate input parameter
+    // if pattern is variable, return tuple with count
+    // otherwise:
+    //   if pattern equal to count return empty tuple
+    //   otherwise return no tuple
+
+    // calculate count
+    assert(q.input.size() == 1);
+    ID pred = q.input.front();
+
+    // we know that we only have one predicate input
+    // -> count bits in interpretation
+    assert(q.interpretation != 0);
+    const dlvhex::Interpretation::Storage& bits = q.interpretation->getStorage();
+    unsigned count = bits.count();
+
+    // assert that we only get good bits by iterating through all
+    // ground atoms matching given predicate
+    {
+      // this is tricky :-)
+      dlvhex::Interpretation::Storage controlbits;
+      controlbits.resize(bits.size());
+      dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+      assert(registry != 0);
+      for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(pred);
+          it != it_end; ++it)
+      {
+        const dlvhex::OrdinaryAtom& oatom = *it;
+        controlbits.set(registry->ogatoms.getIDByStorage(oatom));
+      }
+
+      // now all bits that are possibly be allowed to be on in
+      // "bits" are on in "controlbits"
+      unsigned shouldbecount = controlbits.count();
+      // so this must not increase the count
+      controlbits |= bits;
+      // assert this!
+      assert(shouldbecount == controlbits.count());
+    }
+
+    assert(q.pattern.size() == 1);
+    ID out = q.pattern.front();
+    if( out.isTerm() && out.isVariableTerm() )
+    {
+      Tuple t;
+      t.push_back(ID::termFromInteger(count));
+      a.get().push_back(t);
+    }
+    else if( out.isTerm() && out.isIntegerTerm() )
+    {
+      if( out.address == count )
+        a.get().push_back(Tuple());
+    }
+    else
+    {
+      assert("wrong input in pattern for count pluginAtom!");
+    }
+  }
 };
 
 class TestPluginAtomReach:
 	public dlvhex::PluginAtom
 {
 public:
-	TestPluginAtomReach(): dlvhex::PluginAtom()
+	TestPluginAtomReach():
+    dlvhex::PluginAtom("reach", true)
 	{
-		monotonic = true;
 		inputSize = 2;
 		outputSize = 1;
 		inputType.push_back(CONSTANT);
 		inputType.push_back(PREDICATE);
 	}
 
-	// won't be used
-	virtual void retrieve(const Query&, Answer&) throw (dlvhex::PluginError)
-		{ assert(false); }
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    // we fake this and do not make transitive closure!
+
+    // given constant input C and predicate input P,
+    // get list of atoms matching P(C,X)
+    // where X is anything if pattern contains a variable
+    // where X is equal to the term in the pattern if pattern does not contain a variable
+    //
+    // if pattern is variable, return tuple for each X with X
+    // otherwise
+    //   if pattern equal to one X return empty tuple
+    //   otherwise return no tuple
+
+    // get inputs
+    assert(q.input.size() == 2);
+    ID start = q.input[0];
+    ID pred = q.input[1];
+    LOG("calculating reach fake extatom for start " << start << " and predicate " << pred);
+
+    // build set of found targets
+    std::set<ID> targets;
+    assert(q.interpretation != 0);
+    dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+    assert(registry != 0);
+    for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(pred);
+        it != it_end; ++it)
+    {
+      const dlvhex::OrdinaryAtom& oatom = *it;
+      // the edge predicate must be binary
+      assert(oatom.tuple.size() == 3);
+      if( oatom.tuple[1] == start )
+        targets.insert(oatom.tuple[2]);
+    }
+    LOG("found targets " << printrange(targets));
+
+    assert(q.pattern.size() == 1);
+    ID out = q.pattern.front();
+    if( out.isTerm() && out.isVariableTerm() )
+    {
+      BOOST_FOREACH(ID id, targets)
+      {
+        Tuple t;
+        t.push_back(id);
+        a.get().push_back(t);
+      }
+    }
+    else
+    {
+      if( targets.find(out) != targets.end() )
+        a.get().push_back(Tuple());
+    }
+  }
 };
 
 // provide program
@@ -113,6 +225,14 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   using namespace dlvhex;
   ctx.registry = RegistryPtr(new Registry);
 
+  papCount->setRegistry(ctx.registry);
+  papReach->setRegistry(ctx.registry);
+  ID idreach = papReach->getPredicateID();
+  ID idcount = papCount->getPredicateID();
+  BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
+  LOG("got ID: reach = " << idreach);
+  LOG("got ID: count = " << idcount);
+
   std::stringstream ss;
   ss <<
     "part(leg). item(table)." << std::endl <<
@@ -125,9 +245,7 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   HexParser parser(ctx);
   parser.parse(ss);
 
-  ID idreach = ctx.registry->terms.getIDByString("reach");
-  ID idcount = ctx.registry->terms.getIDByString("count");
-  BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
+  //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
 		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idreach);
