@@ -224,10 +224,12 @@ ID PluginAtom::getReplacementPredicateID()
     assert(registry != 0);
     std::stringstream s;
     s << "aux_ext_" << predicate;
-    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, s.str());
-    ID tmp = registry->terms.getIDByString(t.symbol);
+    replacementPredicate = s.str();
+    ID tmp = registry->terms.getIDByString(replacementPredicate);
     // we do not want this to exist!
     assert(tmp == ID_FAIL);
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
+        replacementPredicate);
     replacementPredicateID = registry->terms.storeAndGetID(t);
   }
   assert(replacementPredicateID != ID_FAIL);

@@ -123,9 +123,10 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
 std::ostream& ExternalAtom::print(std::ostream& o) const
 {
   return o <<
-    "ExternalAtom( &" << predicate << " [ " << printvector(inputs) <<
-    " ] ( " << printvector(Atom::tuple) << " )" <<
-    "pluginAtom is " << (pluginAtom.expired()?"not set":"set");
+    "ExternalAtom(&" << predicate << "[" << printvector(inputs) <<
+    "](" << printvector(Atom::tuple) << ")" <<
+    " pluginAtom=" << (pluginAtom.expired()?"expired":"set") <<
+    " auxInputPredicate=" << auxInputPredicate;
 }
 
 void ExternalAtom::updatePredicateInputMask() const

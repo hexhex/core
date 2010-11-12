@@ -53,10 +53,7 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   ctx.registry->logContents(); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb"); \
-	printer.printmany(ctx.edb,"\n"); \
-	std::cerr << std::endl; \
-	LOG("edb end"); \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
@@ -78,6 +75,8 @@ typedef FinalOnlineModelBuilder::OptionalModel OptionalModel;
 
 BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGraphComponentGraphFixture) 
 {
+  LOG_REGISTRY_PROGRAM(ctx);
+
   // eval graph
   FinalEvalGraph eg;
 
@@ -137,8 +136,15 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   // evaluate
   BOOST_MESSAGE("requesting model #1");
   OptionalModel m1 = omb.getNextIModel(ufinal);
+  BOOST_REQUIRE(!!m1);
+  InterpretationConstPtr int1 = omb.getModelGraph().propsOf(m1.get()).interpretation;
+  BOOST_REQUIRE(int1 != 0);
+  LOG("model #1 is " << *int1);
+  omb.logEvalGraphModelGraph();
 
-  LOG("eval/model graph after requesting first model");
+  BOOST_MESSAGE("requesting model #2");
+  OptionalModel m2 = omb.getNextIModel(ufinal);
+  BOOST_REQUIRE(!m2);
   omb.logEvalGraphModelGraph();
 }
 

@@ -384,7 +384,8 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   // derived by a rule with body auxBody
 
   // create/invent auxiliary predicate and rule and add to registry
-  ID auxHead = createAuxiliaryRuleHead(idrule, idat, uniqueInputVariables);
+  ID auxHeadPred = createAuxiliaryRuleHeadPredicate(idrule, idat);
+  ID auxHead = createAuxiliaryRuleHead(auxHeadPred, uniqueInputVariables);
   ID auxRule = createAuxiliaryRule(auxHead, auxBody);
   // pass auxiliary rule to outside
   createdAuxRules.push_back(auxRule);
@@ -403,15 +404,13 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
 
   // store link to auxiliary predicate in external atom (for more comfortable model building)
   ExternalAtom eatomstoreback(eatom);
-  eatomstoreback.auxInputPredicate = auxHead;
+  eatomstoreback.auxInputPredicate = auxHeadPred;
   eatomstoreback.auxInputMapping.swap(auxInputMapping);
   registry->eatoms.update(eatom, eatomstoreback);
 }
 
-ID DependencyGraph::createAuxiliaryRuleHead(
-		ID forRule,
-		ID forEAtom,
-		const std::list<ID>& variables)
+// create auxiliary rule head predicate (in registry) and return ID
+ID DependencyGraph::createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom)
 {
 	std::ostringstream os;
 	os << "aux_inp_r" << forRule.address << "ea" << forEAtom.address;
@@ -421,13 +420,18 @@ ID DependencyGraph::createAuxiliaryRuleHead(
 
 	// register predicate name
 	Term pterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, pred);
-	ID idpred = registry->terms.storeAndGetID(pterm);
+	return registry->terms.storeAndGetID(pterm);
+}
 
+ID DependencyGraph::createAuxiliaryRuleHead(
+    ID idauxpred,
+		const std::list<ID>& variables)
+{
 	// create ordinary nonground atom
 	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
 
 	// set tuple
-	head.tuple.push_back(idpred);
+	head.tuple.push_back(idauxpred);
 	head.tuple.insert(head.tuple.end(), variables.begin(), variables.end());
 
 	// TODO: outsource this, together with printing in HexGrammarPTToASTConverter.cpp, use iterator interface

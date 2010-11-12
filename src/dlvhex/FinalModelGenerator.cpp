@@ -43,7 +43,8 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
     const ComponentInfo& ci):
   ctx(ctx),
   eatoms(ci.outerEatoms),
-  idb()
+  idb(),
+  xidb()
 {
   // this model generator can handle:
   // components with outer eatoms
@@ -53,11 +54,124 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
   // components with inner eatoms
 
   assert(ci.innerEatoms.empty());
-  // TODO: manage auxiliaries for eatoms in idb
-  idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+
   // copy rules and constraints to idb
+  // TODO we do not need this except for debugging
+  idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
   idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
+
+  // transform original innerRules and innerConstraints to xidb with only auxiliaries
+  xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
+  std::back_insert_iterator<std::vector<ID> > inserter(xidb);
+  std::transform(ci.innerRules.begin(), ci.innerRules.end(),
+      inserter, boost::bind(&FinalModelGeneratorFactory::convertRule, this, _1));
+  std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
+      inserter, boost::bind(&FinalModelGeneratorFactory::convertRule, this, _1));
+
+  #ifndef NDEBUG
+  {
+    {
+      std::ostringstream s;
+      RawPrinter printer(s,ctx.registry);
+      printer.printmany(idb," ");
+      LOG("FinalModelGeneratorFactory got idb " << s.str());
+    }
+    {
+      std::ostringstream s;
+      RawPrinter printer(s,ctx.registry);
+      printer.printmany(xidb," ");
+      LOG("FinalModelGeneratorFactory got xidb " << s.str());
+    }
+  }
+  #endif
+}
+
+// get rule
+// rewrite all eatoms in body to auxiliary replacement atoms
+// store and return id
+ID FinalModelGeneratorFactory::convertRule(ID ruleid)
+{
+  if( !ruleid.doesRuleContainExtatoms() )
+    return ruleid;
+
+  // we need to rewrite
+  const Rule& rule = ctx.registry->rules.getByID(ruleid);
+  #ifndef NDEBUG
+  {
+    std::stringstream s;
+    RawPrinter printer(s, ctx.registry);
+    printer.print(ruleid);
+    LOG("rewriting rule " << s.str() << " from " << rule << " with id " << ruleid << " to auxiliary predicates");
+  }
+  #endif
+
+  // copy it
+  Rule newrule(rule);
+  for(Tuple::iterator itlit = newrule.body.begin();
+      itlit != newrule.body.end(); ++itlit)
+  {
+    if( !itlit->isExternalAtom() )
+      continue;
+
+    bool naf = itlit->isNaf();
+    const ExternalAtom& eatom = ctx.registry->eatoms.getByID(
+        ID::atomFromLiteral(*itlit));
+    LOG("rewriting external atom " << eatom << " literal with id " << *itlit);
+
+    // lock weak pointer
+    assert(!eatom.pluginAtom.expired());
+    PluginAtomPtr pluginAtom(eatom.pluginAtom);
+
+    // create replacement atom
+    OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+    replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
+    replacement.tuple.insert(replacement.tuple.end(), eatom.inputs.begin(), eatom.inputs.end());
+    replacement.tuple.insert(replacement.tuple.end(), eatom.tuple.begin(), eatom.tuple.end());
+
+    // bit trick: replacement is ground so far, by setting one bit we make it nonground
+    bool ground = true;
+    BOOST_FOREACH(ID term, replacement.tuple)
+    {
+      if( term.isVariableTerm() )
+        ground = false;
+    }
+    if( !ground )
+      replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+
+    // text
+    #warning cache this partially site 1?
+    std::stringstream s;
+    RawPrinter printer(s, ctx.registry);
+    s << pluginAtom->getReplacementPredicate();
+    s << "(";
+    printer.printmany(eatom.inputs,",");
+    if( !eatom.inputs.empty() )
+      s << ",";
+    printer.printmany(eatom.tuple,",");
+    s << ")";
+    replacement.text = s.str();
+
+    ID idreplacement;
+    if( ground )
+      idreplacement = ctx.registry->ogatoms.storeAndGetID(replacement);
+    else
+      idreplacement = ctx.registry->onatoms.storeAndGetID(replacement);
+    LOG(" => created replacement " << replacement << " which got " << idreplacement);
+
+    *itlit = ID::literalFromAtom(idreplacement, naf);
+  }
+
+  ID newruleid = ctx.registry->rules.storeAndGetID(newrule);
+  #ifndef NDEBUG
+  {
+    std::stringstream s;
+    RawPrinter printer(s, ctx.registry);
+    printer.print(newruleid);
+    LOG("rewritten rule " << s.str() << " from " << newrule << " got id " << newruleid);
+  }
+  #endif
+  return newruleid;
 }
 
 FinalModelGenerator::FinalModelGenerator(
@@ -103,7 +217,7 @@ FinalModelGenerator::generateNextModel()
     postprocessedInput = newint;
 
     ASPSolver::DLVSoftware::Configuration dlvConfiguration;
-    ASPProgram program(factory.ctx.registry, factory.idb, postprocessedInput, factory.ctx.maxint);
+    ASPProgram program(factory.ctx.registry, factory.xidb, postprocessedInput, factory.ctx.maxint);
     ASPSolverManager mgr;
     currentResults = mgr.solve(dlvConfiguration, program);
   }
@@ -115,6 +229,7 @@ FinalModelGenerator::generateNextModel()
     currentResults.reset();
     // the following is just for freeing memory
     postprocessedInput.reset();
+    return InterpretationPtr();
   }
 
   return ret->interpretation;
@@ -163,26 +278,56 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
     }
     #endif
 
+    // go over all ground input tuples as grounded by auxiliary inputs rule
     BOOST_FOREACH(const Tuple& inputtuple, inputs)
     {
       // query
       PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
       PluginAtom::Answer answer;
-      LOG("querying external atom &" << eatom.predicate << "!");
+      LOG("querying external atom &" << eatom.predicate << " with input tuple " << printrange(inputtuple));
       pluginAtom->retrieveCached(query, answer);
 
       // integrate result into interpretation
       BOOST_FOREACH(const Tuple& t, answer.get())
       {
+        // check answer tuple, if it corresponds to pattern
+        #warning TODO verify answer tuple! (as done in dlvhex trunk using std::mismatch)
+
+        // create replacement atom for each tuple
+        OrdinaryAtom replacement(
+            ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
+
+        // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
+        replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
+        replacement.tuple.insert(replacement.tuple.end(), inputtuple.begin(), inputtuple.end());
+        replacement.tuple.insert(replacement.tuple.end(), t.begin(), t.end());
+
+        // text
+        #warning cache this partially site 2 ?
         std::stringstream s;
         RawPrinter printer(s, factory.ctx.registry);
-        s << "[";
+        s << pluginAtom->getReplacementPredicate();
+        s << "(";
+        printer.printmany(inputtuple,",");
+        if( !inputtuple.empty() )
+          s << ",";
         printer.printmany(t,",");
-        s << "]";
-        LOG("TODO integrate answer tuple " << s.str() << " <=> " << printrange(t));
+        s << ")";
+        replacement.text = s.str();
+        LOG("integrating " << replacement <<
+            " (from external answer tuple " << printrange(t) << ")");
+
+        ID idreplacement = factory.ctx.registry->ogatoms.storeAndGetID(replacement);
+        LOG(" => got ID " << idreplacement);
+        
+        i->setFact(idreplacement.address);
       }
-    }
-  }
+
+      LOG("interpretation is now " << *i);
+    } // go over all input tuples of this eatom
+    LOG("interpretation after all input tuples is " << *i);
+  } // go over all eatoms
+  LOG("interpretation after all eatoms is " << *i);
 }
 
 InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
@@ -217,7 +362,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
   }
 
   // otherwise we have to calculate a bit, using the aux input predicate
-  LOG("matching aux input predicate, original eatom.inputs = " << printrange(eatom.inputs));
+  LOG("matching aux input predicate " << eatom.auxInputPredicate << ", original eatom.inputs = " << printrange(eatom.inputs));
   dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
   assert(factory.ctx.registry != 0);
   for(boost::tie(it, it_end) =

@@ -661,8 +661,10 @@ public:
       //   for constant inputs it is the input constant
       //     (possibly obtained from an auxiliary input rule+predicate)
       // pattern is a vector of term IDs:
-      //   constants are to be answered "in a boolean way"
-      //   variables are to be answered "in a unifying way"
+      //   answer tuples must contain the same number of terms as the pattern tuple
+      //   constants must be the same
+      //   variables must be substituted
+      //   TODO verify and specify if the same variable may be substituted differently: may  &dosomething[](X,b,X) return an answer tuple (a,b,c)?
       Query(InterpretationConstPtr interpretation,
             const Tuple& input,
             const Tuple& pattern):
@@ -829,6 +831,8 @@ public:
     // calculate and register replacementPredicateID if not existing
     // return replacementPredicateID
     ID getReplacementPredicateID();
+    const std::string& getReplacementPredicate() const
+      { return replacementPredicate; }
 
 protected:
     // the predicate of the atom as it appears in HEX programs
@@ -843,6 +847,8 @@ protected:
     // the id of the predicate name, ID_FAIL if no registry is set
     ID predicateID;
 
+    // the string of the replacement predicate (this can be seen as a cache)
+    std::string replacementPredicate;
     // the id of the predicate replacement name, ID_FAIL if not yet known
     ID replacementPredicateID;
 

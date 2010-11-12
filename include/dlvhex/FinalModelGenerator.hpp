@@ -106,12 +106,12 @@ public:
 
   // storage
 protected:
-  // TODO: add information, which auxiliary inputs to take for which external atoms
-  // TODO: add information, which external atoms to evaluate and into which auxiliary atoms
-  // TODO: implement rewriting to take auxiliary atoms instead of external atoms
   ProgramCtx& ctx;
   std::vector<ID> eatoms;
+  // original idb (containing eatoms, but already including auxiliary input rules)
   std::vector<ID> idb;
+  // rewritten idb (containing replacements for eatoms) TODO we could remove the auxiliary input rules for xidb
+  std::vector<ID> xidb; // x stands for transformed
 
   // methods
 public:
@@ -121,6 +121,11 @@ public:
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
     { return ModelGeneratorPtr(new FinalModelGenerator(*this, input)); }
+
+  // get rule
+  // rewrite all eatoms in body to auxiliary replacement atoms
+  // store and return id
+  ID convertRule(ID ruleid);
 
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }

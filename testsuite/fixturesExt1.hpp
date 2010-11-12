@@ -67,6 +67,9 @@ public:
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
 	{
+    LOG_SCOPE("TPEAC::r",false);
+    LOG("= TestPluginAtomCount::retrieve");
+
     // calculate count of matches with single predicate input parameter
     // if pattern is variable, return tuple with count
     // otherwise:
@@ -75,19 +78,22 @@ public:
 
     // calculate count
     assert(q.input.size() == 1);
-    ID pred = q.input.front();
+    const ID pred = q.input.front();
+    LOG("input predicate is " << pred);
 
     // we know that we only have one predicate input
     // -> count bits in interpretation
     assert(q.interpretation != 0);
     const dlvhex::Interpretation::Storage& bits = q.interpretation->getStorage();
     unsigned count = bits.count();
+    LOG("found " << count << " bits in interpretation " << *q.interpretation);
 
     // assert that we only get good bits by iterating through all
     // ground atoms matching given predicate
     {
       // this is tricky :-)
-      dlvhex::Interpretation::Storage controlbits;
+      dlvhex::InterpretationPtr controlint(new dlvhex::Interpretation(registry));
+      dlvhex::Interpretation::Storage& controlbits = controlint->getStorage();
       controlbits.resize(bits.size());
       dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
       assert(registry != 0);
@@ -95,12 +101,13 @@ public:
           it != it_end; ++it)
       {
         const dlvhex::OrdinaryAtom& oatom = *it;
-        controlbits.set(registry->ogatoms.getIDByStorage(oatom));
+        controlbits.set(registry->ogatoms.getIDByStorage(oatom).address);
       }
 
       // now all bits that are possibly be allowed to be on in
       // "bits" are on in "controlbits"
       unsigned shouldbecount = controlbits.count();
+      LOG("control interpretation has " << shouldbecount << " bits: " << *controlint);
       // so this must not increase the count
       controlbits |= bits;
       // assert this!
@@ -109,20 +116,12 @@ public:
 
     assert(q.pattern.size() == 1);
     ID out = q.pattern.front();
-    if( out.isTerm() && out.isVariableTerm() )
+    if( (out.isTerm() && out.isVariableTerm()) ||
+        (out.isTerm() && out.isIntegerTerm() && out.address == count) )
     {
       Tuple t;
       t.push_back(ID::termFromInteger(count));
       a.get().push_back(t);
-    }
-    else if( out.isTerm() && out.isIntegerTerm() )
-    {
-      if( out.address == count )
-        a.get().push_back(Tuple());
-    }
-    else
-    {
-      assert("wrong input in pattern for count pluginAtom!");
     }
   }
 };
@@ -190,7 +189,11 @@ public:
     else
     {
       if( targets.find(out) != targets.end() )
-        a.get().push_back(Tuple());
+      {
+        Tuple t;
+        t.push_back(out);
+        a.get().push_back(t);
+      }
     }
   }
 };

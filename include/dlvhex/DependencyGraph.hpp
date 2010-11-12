@@ -345,8 +345,10 @@ protected:
         const PluginAtomPtr& pluginAtom,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
+    // create auxiliary rule head predicate (in registry) and return ID
+    ID createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom);
     // create auxiliary rule head (in registry) and return ID
-    ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
+    ID createAuxiliaryRuleHead(ID idauxpred, const std::list<ID>& variables);
     // create auxiliary rule (in registry) and return ID
     ID createAuxiliaryRule(ID head, const std::list<ID>& body);
 
