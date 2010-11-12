@@ -99,13 +99,20 @@ TestASPSolver_LDADD = @LIBLTDL@ @LIBADD_DL@
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
-	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
@@ -119,6 +126,7 @@ TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/testsuite/TestComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -133,6 +141,7 @@ TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -147,6 +156,8 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/testsuite/TestHexParser.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
@@ -168,6 +179,10 @@ TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fix
 TestEvalEndToEndND_SOURCES = $(TestEvalEndToEnd_SOURCES)
 TestEvalEndToEndND_LDADD = $(TestEvalEndToEnd_LDADD)
 TestEvalEndToEndND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
+TestASPSolverND_SOURCES = $(TestASPSolver_SOURCES)
+TestASPSolverND_LDADD = $(TestASPSolver_LDADD)
+TestASPSolverND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestEvalHeuristicND_SOURCES = $(TestEvalHeuristic_SOURCES)
 TestEvalHeuristicND_LDADD = $(TestEvalHeuristic_LDADD)

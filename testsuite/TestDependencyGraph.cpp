@@ -34,6 +34,7 @@
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/Interpretation.hpp"
 
 #define BOOST_TEST_MODULE "TestDependencyGraph"
 #include <boost/test/unit_test.hpp>
@@ -47,10 +48,7 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   ctx.registry->logContents(); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb"); \
-	printer.printmany(ctx.edb,"\n"); \
-	std::cerr << std::endl; \
-	LOG("edb end"); \
+	LOG("edb " << *ctx.edb); \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \

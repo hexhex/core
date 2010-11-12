@@ -48,9 +48,9 @@ class TestPluginAspCtxAcc:
 	public dlvhex::PluginAtom
 {
 public:
-	TestPluginAspCtxAcc(): dlvhex::PluginAtom()
+	TestPluginAspCtxAcc():
+    dlvhex::PluginAtom("dlv_asp_context_acc", false)
 	{
-		monotonic = false;
 		inputSize = 5;
 		outputSize = 0;
 		inputType.push_back(CONSTANT);
@@ -111,6 +111,11 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   using namespace dlvhex;
   ctx.registry = RegistryPtr(new Registry);
 
+  papAspCtxAcc->setRegistry(ctx.registry);
+  ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
+  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
+  LOG("got ID: dlv_asp_context_acc = " << idAspCtxAcc);
+
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
   std::stringstream ss;
   ss <<
@@ -141,8 +146,7 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   HexParser parser(ctx);
   parser.parse(ss);
 
-  ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
+  //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
 		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
@@ -160,6 +164,11 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
 {
   using namespace dlvhex;
   ctx.registry = RegistryPtr(new Registry);
+
+  papAspCtxAcc->setRegistry(ctx.registry);
+  ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
+  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
+  LOG("got ID: dlv_asp_context_acc = " << idAspCtxAcc);
 
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting --ieexplain=D'
   std::stringstream ss;
@@ -200,8 +209,7 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
   HexParser parser(ctx);
   parser.parse(ss);
 
-  ID idAspCtxAcc = ctx.registry->terms.getIDByString("dlv_asp_context_acc");
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
+  //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
 		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);

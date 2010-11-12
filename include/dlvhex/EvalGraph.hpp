@@ -31,6 +31,9 @@
 #ifndef EVAL_GRAPH_HPP_INCLUDED__29082010
 #define EVAL_GRAPH_HPP_INCLUDED__29082010
 
+//TODO this is required only for ostream_printable, we should make this independent from logger
+#include "dlvhex/Logger.hpp"
+
 #include <cassert>
 
 #include <boost/graph/graph_traits.hpp>

@@ -97,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(compgraph, eg);
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
 
     {
       // create heuristic, which sends commands to egbuilder
@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(compgraph, eg);
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
 
     {
       // create heuristic, which sends commands to egbuilder
@@ -219,7 +219,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(compgraph, eg);
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
 
     {
       // create heuristic, which sends commands to egbuilder

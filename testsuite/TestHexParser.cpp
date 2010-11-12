@@ -31,6 +31,7 @@
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Interpretation.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParser"
 #include <boost/test/unit_test.hpp>
@@ -40,10 +41,7 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   ctx.registry->logContents(); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb"); \
-	printer.printmany(ctx.edb,"\n"); \
-	std::cerr << std::endl; \
-	LOG("edb end"); \
+	LOG("edb " << *ctx.edb); \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
@@ -75,13 +73,10 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   ID idhXX = ctx.registry->onatoms.getIDByString("h(X,X)");
   BOOST_REQUIRE((idfX | idgX | idhXX) != ID_FAIL);
 
-  // TODO: the following will become a bitset check
-  BOOST_REQUIRE(ctx.edb.size() == 3);
-  {
-    BOOST_CHECK(ctx.edb[0] == ida);
-    BOOST_CHECK(ctx.edb[1] == idb);
-    BOOST_CHECK(ctx.edb[2] == idcde);
-  }
+  BOOST_REQUIRE(ctx.edb != 0);
+  BOOST_CHECK(ctx.edb->getFact(ida.address));
+  BOOST_CHECK(ctx.edb->getFact(idb.address));
+  BOOST_CHECK(ctx.edb->getFact(idcde.address));
 
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {

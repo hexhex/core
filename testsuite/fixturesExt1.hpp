@@ -46,6 +46,7 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Interpretation.hpp"
 #include "fixturesDepgraphCompgraphGeneric.hpp"
+#include <boost/foreach.hpp>
 
 using dlvhex::ID;
 using dlvhex::Tuple;
