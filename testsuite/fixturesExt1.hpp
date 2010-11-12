@@ -169,6 +169,11 @@ public:
         it != it_end; ++it)
     {
       const dlvhex::OrdinaryAtom& oatom = *it;
+
+      // skip ogatoms not present in interpretation
+      if( !q.interpretation->getFact(registry->ogatoms.getIDByStorage(oatom).address) )
+        continue;
+
       // the edge predicate must be binary
       assert(oatom.tuple.size() == 3);
       if( oatom.tuple[1] == start )

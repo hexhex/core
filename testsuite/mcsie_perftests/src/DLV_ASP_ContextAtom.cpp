@@ -38,12 +38,12 @@
 #include "DLV_ASP_ContextAtom.h"
 #include "Timing.h"
 
-#include "dlvhex/DLVProcess.h"
-#include "dlvhex/AtomSet.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/HexParserDriver.h"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/TextOutputBuilder.h"
+#include <dlvhex/DLVProcess.h>
+#include <dlvhex/HexParser.hpp>
+#include <dlvhex/ProgramCtx.h>
+#include <dlvhex/ASPSolver.h>
+#include <dlvhex/ASPSolverManager.h>
+#include <dlvhex/Logger.hpp>
 
 namespace dlvhex {
   namespace mcsdiagexpl {
@@ -55,7 +55,99 @@ void printSet (std::string s) {
 }
 
 void
-DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginError) {
+DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginError)
+{
+  LOG_SCOPE("DACA::r",false);
+  LOG("= DLV_ASP_ContextAtom::retrieve");
+
+  // query.input is tuple [context_id,belief_pred,input_pred,outputs_pred,program]
+  // get name of context program
+  const std::string& programStr = registry->terms.getByID(query.input[4]).symbol;
+  std::string program = programStr.substr(1, programStr.size()-2);
+  LOG("retrieving context for program '" << program << "'");
+
+  // we use an extra registry for this external program
+  ProgramCtx kbctx;
+  kbctx.registry.reset(new Registry());
+
+  // parse program
+  HexParser parser(kbctx);
+  parser.parse(program);
+
+  // add inputs to program
+  ID inputsPredID = query.input[2];
+  {
+    dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+    for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(inputsPredID);
+        it != it_end; ++it)
+    {
+      const dlvhex::OrdinaryAtom& oatom = *it;
+
+      // skip ogatoms not present in interpretation
+      if( !query.interpretation->getFact(
+            registry->ogatoms.getIDByStorage(oatom).address) )
+        continue;
+
+      // add symbol of second term to program as fact
+
+      // must be unary
+      assert(oatom.tuple.size() == 2);
+      ID inputTermID = oatom.tuple[1];
+      const Term& inputTerm = registry->terms.getByID(inputTermID);
+      LOG("found active input " << inputTerm.symbol << " " << inputTermID);
+
+      // create term symbol (this is now another registry!) and add
+      ID kbInputTermID = kbctx.registry->terms.getIDByString(inputTerm.symbol);
+      if( kbInputTermID == ID_FAIL )
+        kbInputTermID = kbctx.registry->terms.storeAndGetID(inputTerm);
+      LOG("in kbctx this term has id " << kbInputTermID);
+
+      // create unary fact (this is now another registry!)
+      OrdinaryAtom kboatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+      kboatom.tuple.push_back(kbInputTermID);
+      kboatom.text = inputTerm.symbol;
+      ID kbInputFactID = kbctx.registry->ogatoms.getIDByTuple(kboatom.tuple);
+      if( kbInputFactID == ID_FAIL )
+        kbInputFactID = kbctx.registry->ogatoms.storeAndGetID(kboatom);
+      LOG("in kbctx this fact has id " << kbInputFactID);
+
+      // add to edb
+      kbctx.edb->setFact(kbInputFactID.address);
+    }
+    LOG("after adding inputs: kbctx.edb is " << *kbctx.edb);
+  }
+
+  // add constraints for outputs to program
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+#warning TODO: add constraints to ctx program
+
+  // check if there is one answer set, if yes return true, false otherwise
+  {
+    typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
+    DLVConfiguration dlv;
+    //dlv.options.includeFacts = true;
+    ASPProgram program(kbctx.registry, kbctx.idb, kbctx.edb, kbctx.maxint);
+    ASPSolverManager mgr;
+    ASPSolverManager::ResultsPtr res = mgr.solve(dlv, program);
+    AnswerSet::Ptr firstAnswerSet = res->getNextAnswerSet();
+    if( firstAnswerSet != 0 )
+    {
+      LOG("got answer set " << *firstAnswerSet->interpretation);
+      Tuple t;
+      answer.get().push_back(t);
+    }
+    else
+    {
+      LOG("got no answer set!");
+    }
+  }
+
+  #if 0
   std::set<std::string> oset,aset,bset, aointerset, ominusaset;
   set<string> interset, accset;
 
@@ -189,6 +281,7 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     Tuple out;
     answer.addTuple(out);
   }
+  #endif
 }
 
   } // namespace mcsdiagexpl

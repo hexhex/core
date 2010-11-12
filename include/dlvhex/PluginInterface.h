@@ -493,7 +493,6 @@ class NodeGraph;
 class OutputBuilder;
 class ProgramCtx;
 
-class PluginConverter;
 class PluginRewriter;
 class PluginOptimizer;
 
@@ -503,7 +502,6 @@ class Interpretation;
 typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 
 
-#if 0
 /**
  * \brief Converter class.
  *
@@ -540,6 +538,7 @@ class DLVHEX_EXPORT PluginConverter
   convert(std::istream& i, std::ostream& o) = 0;
 };
 
+#if 0
 
 /**
  * \brief Rewriter class.

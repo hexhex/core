@@ -348,7 +348,7 @@ OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
 
     // models
     LOG_SCOPE("models", false);
-    for(ModelType t = MT_IN; t <= MT_OUTPROJ; ++t)
+    for(ModelType t = MT_IN; t <= MT_OUTPROJ; t = static_cast<ModelType>(static_cast<unsigned>(t)+1))
     {
       const ModelList& modelsAt = mg.modelsAt(u, t);
       typename MyModelGraph::ModelList::const_iterator mit;

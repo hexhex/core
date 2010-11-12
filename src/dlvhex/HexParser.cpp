@@ -36,6 +36,8 @@
 #include <boost/scope_exit.hpp>
 #include <fstream>
 
+#include <unistd.h>
+
 DLVHEX_NAMESPACE_BEGIN
 
 HexParser::HexParser(ProgramCtx& ctx):
@@ -98,7 +100,10 @@ HexParser::parse(const std::string& filename) throw (SyntaxError)
 
   if( !ifs.is_open() )
   {
-    throw SyntaxError("File " + filename + " not found");
+    char* ch = get_current_dir_name();
+    std::string cwd(ch);
+    free(ch);
+    throw SyntaxError("File '" + filename + "' could not be opened with cwd '" + cwd + "'");
   }
 
   BOOST_SCOPE_EXIT((&ifs))

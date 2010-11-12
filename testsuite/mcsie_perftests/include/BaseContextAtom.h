@@ -33,21 +33,22 @@
 #define _DLVHEX_MCSDIAGEXPL_BASECONTEXTATOM_H
 
 #include <dlvhex/PluginInterface.h>
+#include <dlvhex/PluginInterface.h>
 #include <sstream>
 
 namespace dlvhex {
   namespace mcsdiagexpl {
 
     class BaseContextAtom : public PluginAtom {
-
-      private:
-        std::string atom_name;
+;
 
       protected:
 	int context_id;
 
       public:
-        BaseContextAtom(std::string name): atom_name(name), context_id(-1) {
+        BaseContextAtom(std::string name):
+          PluginAtom(name, false),
+          context_id(-1) {
           addInputConstant();
           addInputPredicate();
           addInputPredicate();
@@ -56,14 +57,10 @@ namespace dlvhex {
           setOutputArity(0);
         }
 
-        std::string 
-        getExtAtomName() { 
-          return atom_name; 
-        }
-
         virtual void retrieve(const Query& query, Answer& answer) throw (PluginError) = 0;
 
       protected:
+        #if 0
         void
         convertAtomSetToStringSet(AtomSet& as, std::set<std::string>& sset) {
           for (AtomSet::const_iterator ai = as.begin(); ai != as.end(); ++ai) {
@@ -100,6 +97,7 @@ namespace dlvhex {
 
         }
 
+        #endif
     };
 
   } // namespace mcsdiagexpl

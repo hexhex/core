@@ -47,7 +47,7 @@ struct GenericDepGraphFixture:
     auxRules(),
     depgraph(Base::ctx.registry)
     { depgraph.createDependencies(Base::ctx.idb, auxRules); }
-  ~ProgramCtxFixtureT() {}
+  ~GenericDepGraphFixture() {}
 };
 
 // extends ProgramCtxFixtureT
