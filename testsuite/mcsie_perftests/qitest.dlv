@@ -1,0 +1,8 @@
+rule(r1). rule(r2). rule(r3). rule(r4). rule(r5).
+e1(R) v ne1(R) :- rule(R).
+e2(R) v ne2(R) :- rule(R).
+
+e1(r1) v  e1(r2).
+e1(r4).
+e2(r5).
+

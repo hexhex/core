@@ -1,0 +1,3 @@
+% infer for a non-penguin that it can fly
+can_fly :- bird, not penguin.
+
