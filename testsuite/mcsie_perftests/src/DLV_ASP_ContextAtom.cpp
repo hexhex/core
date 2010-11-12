@@ -150,23 +150,76 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       // TODO: add bset here and simplify loop above
     }
   }
+  LOG("got output beliefs: " << printrange(oset));
+  LOG("got present output beliefs: " << printrange(aset));
+
   // calculate set differences and add constraints
-  StringSet aminusoset, ominusaset;
+  StringSet ainoset, ominusaset;
   {
     typedef std::insert_iterator<StringSet> Inserter;
-    Inserter aminusoinsert(ominusaset, ominusaset.begin());
-    Inserter ominusainsert(aminusoset, aminusoset.begin());
-    set_difference(oset.begin(), oset.end(), aset.begin(), aset.end(), ominusainsert);
-    set_difference(aset.begin(), aset.end(), oset.begin(), oset.end(), aminusoinsert);
+    {
+      Inserter ominusainsert(ominusaset, ominusaset.begin());
+      std::set_difference(oset.begin(), oset.end(), aset.begin(), aset.end(), ominusainsert);
+    }
+    {
+      Inserter ainoinsert(ainoset, ainoset.begin());
+      std::set_intersection(aset.begin(), aset.end(), oset.begin(), oset.end(), ainoinsert);
+    }
 
     // add O - A as Constraint ":- x."
     // => enforce that beliefs not in A are not there
-    TODO
+    LOG("enforcing the following beliefs to be absent: " << printrange(ominusaset));
+    for(StringSet::const_iterator it = ominusaset.begin();
+        it != ominusaset.end(); ++it)
+    {
+      // term
+      Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *it);
+      ID kbidt = kbctx.registry->terms.getIDByString(t.symbol);
+      if( kbidt == ID_FAIL )
+        kbidt = kbctx.registry->terms.storeAndGetID(t);
+
+      // ordinary atom
+      OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+      oa.tuple.push_back(kbidt);
+      oa.text = *it;
+      ID kbidoa = kbctx.registry->ogatoms.getIDByTuple(oa.tuple);
+      if( kbidoa == ID_FAIL )
+        kbidoa = kbctx.registry->ogatoms.storeAndGetID(oa);
+
+      // constraint :- *it.
+      Rule constraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+      constraint.body.push_back(ID::posLiteralFromAtom(kbidoa));
+      ID kbidconstraint = kbctx.registry->rules.storeAndGetID(constraint);
+      kbctx.idb.push_back(kbidconstraint);
+    }
+
     // add A - O as Constraint ":- not x."
     // => enforce that beliefs in A are there
-    TODO
+    LOG("enforcing the following beliefs to be present: " << printrange(ainoset));
+    for(StringSet::const_iterator it = ainoset.begin();
+        it != ainoset.end(); ++it)
+    {
+      // term
+      Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *it);
+      ID kbidt = kbctx.registry->terms.getIDByString(t.symbol);
+      if( kbidt == ID_FAIL )
+        kbidt = kbctx.registry->terms.storeAndGetID(t);
+
+      // ordinary atom
+      OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+      oa.tuple.push_back(kbidt);
+      oa.text = *it;
+      ID kbidoa = kbctx.registry->ogatoms.getIDByTuple(oa.tuple);
+      if( kbidoa == ID_FAIL )
+        kbidoa = kbctx.registry->ogatoms.storeAndGetID(oa);
+
+      // constraint :- not *it.
+      Rule constraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+      constraint.body.push_back(ID::nafLiteralFromAtom(kbidoa));
+      ID kbidconstraint = kbctx.registry->rules.storeAndGetID(constraint);
+      kbctx.idb.push_back(kbidconstraint);
+    }
   }
-#warning TODO: add constraints to ctx program
 
   // check if there is one answer set, if yes return true, false otherwise
   {
@@ -174,6 +227,13 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     DLVConfiguration dlv;
     //dlv.options.includeFacts = true;
     ASPProgram program(kbctx.registry, kbctx.idb, kbctx.edb, kbctx.maxint);
+    #ifndef NDEBUG
+    LOG("BEGIN context program ===");
+    RawPrinter printer(std::cerr, kbctx.registry);
+    printer.printmany(kbctx.idb, "\n");
+    std::cerr << std::endl << *kbctx.edb << std::endl;
+    LOG("END context program ===");
+    #endif
     ASPSolverManager mgr;
     ASPSolverManager::ResultsPtr res = mgr.solve(dlv, program);
     AnswerSet::Ptr firstAnswerSet = res->getNextAnswerSet();

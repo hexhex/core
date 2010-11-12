@@ -53,7 +53,8 @@
 #include <fstream>
 #include <cstdlib>
 
-#define LOG_REGISTRY_PROGRAM(ctx) \
+#ifndef NDEBUG
+# define LOG_REGISTRY_PROGRAM(ctx) \
   ctx.registry->logContents(); \
 	RawPrinter printer(std::cerr, ctx.registry); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
@@ -61,6 +62,10 @@
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
 	LOG("idb end");
+#else
+# define LOG_REGISTRY_PROGRAM(ctx) \
+  do {} while(false);
+#endif
 
 
 inline void makeGraphVizPdf(const char* fname)
@@ -116,9 +121,11 @@ int main(int argn, char** argv)
   {
     mcsdiagexpl::InputConverter converter;
     converter.convert(infile, rewrittenfile);
+    #ifndef NDEBUG
     std::cerr <<
       "rewriting yielded the following:" << std::endl <<
       rewrittenfile.str() << std::endl;
+    #endif
   }
 
   // prepare program context
