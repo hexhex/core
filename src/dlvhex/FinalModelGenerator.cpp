@@ -139,26 +139,33 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     if( !ground )
       replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 
-    // text
-    #warning cache this partially site 1?
-    std::stringstream s;
-    RawPrinter printer(s, ctx.registry);
-    s << pluginAtom->getReplacementPredicate();
-    s << "(";
-    printer.printmany(eatom.inputs,",");
-    if( !eatom.inputs.empty() )
-      s << ",";
-    printer.printmany(eatom.tuple,",");
-    s << ")";
-    replacement.text = s.str();
-
-    ID idreplacement;
+    OrdinaryAtomTable* oat;
     if( ground )
-      idreplacement = ctx.registry->ogatoms.storeAndGetID(replacement);
+      oat = &ctx.registry->ogatoms;
     else
-      idreplacement = ctx.registry->onatoms.storeAndGetID(replacement);
-    LOG(" => created replacement " << replacement << " which got " << idreplacement);
+      oat = &ctx.registry->onatoms;
 
+    // this replacement might already exists
+    ID idreplacement = oat->getIDByTuple(replacement.tuple);
+    if( idreplacement == ID_FAIL )
+    {
+      // text
+      #warning cache this partially site 1?
+      std::stringstream s;
+      RawPrinter printer(s, ctx.registry);
+      s << pluginAtom->getReplacementPredicate();
+      s << "(";
+      printer.printmany(eatom.inputs,",");
+      if( !eatom.inputs.empty() && !eatom.tuple.empty() )
+        s << ",";
+      printer.printmany(eatom.tuple,",");
+      s << ")";
+      replacement.text = s.str();
+
+      idreplacement = oat->storeAndGetID(replacement);
+      LOG("created new replacement " << replacement << " which got " << idreplacement);
+    }
+    LOG(" => storing replacement " << idreplacement);
     *itlit = ID::literalFromAtom(idreplacement, naf);
   }
 
@@ -302,24 +309,28 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
         replacement.tuple.insert(replacement.tuple.end(), inputtuple.begin(), inputtuple.end());
         replacement.tuple.insert(replacement.tuple.end(), t.begin(), t.end());
 
-        // text
-        #warning cache this partially site 2 ?
-        std::stringstream s;
-        RawPrinter printer(s, factory.ctx.registry);
-        s << pluginAtom->getReplacementPredicate();
-        s << "(";
-        printer.printmany(inputtuple,",");
-        if( !inputtuple.empty() )
-          s << ",";
-        printer.printmany(t,",");
-        s << ")";
-        replacement.text = s.str();
-        LOG("integrating " << replacement <<
-            " (from external answer tuple " << printrange(t) << ")");
+        // this replacement might already exists
+        LOG("integrating external answer tuple " << printrange(t));
+        ID idreplacement = factory.ctx.registry->ogatoms.getIDByTuple(replacement.tuple);
+        if( idreplacement == ID_FAIL )
+        {
+          // text
+          #warning cache this partially site 2 ?
+          std::stringstream s;
+          RawPrinter printer(s, factory.ctx.registry);
+          s << pluginAtom->getReplacementPredicate();
+          s << "(";
+          printer.printmany(inputtuple,",");
+          if( !inputtuple.empty() && !t.empty() )
+            s << ",";
+          printer.printmany(t,",");
+          s << ")";
+          replacement.text = s.str();
 
-        ID idreplacement = factory.ctx.registry->ogatoms.storeAndGetID(replacement);
-        LOG(" => got ID " << idreplacement);
-        
+          LOG("integrating " << replacement);
+          idreplacement = factory.ctx.registry->ogatoms.storeAndGetID(replacement);
+          LOG("got ID " << idreplacement);
+        }
         i->setFact(idreplacement.address);
       }
 

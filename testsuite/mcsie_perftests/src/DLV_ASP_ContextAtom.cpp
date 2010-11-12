@@ -118,12 +118,54 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
   }
 
   // add constraints for outputs to program
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
-  LOG("TODO: add constraints to ctx program XXXXXXXXXXXXXXXXXXXXXXX");
+  // convert query to string sets
+  typedef std::set<std::string> StringSet;
+  StringSet aset, oset; // aset = belief_pred, oset = outputs_pred
+  {
+    ID apredid = query.input[1];
+    ID opredid = query.input[3];
+
+    const Interpretation::Storage& storage = query.interpretation->getStorage();
+    Interpretation::Storage::enumerator it;
+    ID oaid(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, 0);
+    for(it = storage.first(); it != storage.end(); ++it)
+    {
+      // create ID
+      oaid.address = *it;
+      // lookup
+      const OrdinaryAtom& oa = registry->ogatoms.getByID(oaid);
+      assert(oa.tuple.size() == 2);
+      LOG("got term " << oa.tuple[1]);
+      const Term& term = registry->terms.getByID(oa.tuple[1]);
+      LOG("this is symbol " << term.symbol);
+
+      if( oa.tuple[0] == apredid )
+      {
+        aset.insert(term.symbol);
+      }
+      else if( oa.tuple[0] == opredid )
+      {
+        oset.insert(term.symbol);
+      }
+      // TODO: add bset here and simplify loop above
+    }
+  }
+  // calculate set differences and add constraints
+  StringSet aminusoset, ominusaset;
+  {
+    typedef std::insert_iterator<StringSet> Inserter;
+    Inserter aminusoinsert(ominusaset, ominusaset.begin());
+    Inserter ominusainsert(aminusoset, aminusoset.begin());
+    set_difference(oset.begin(), oset.end(), aset.begin(), aset.end(), ominusainsert);
+    set_difference(aset.begin(), aset.end(), oset.begin(), oset.end(), aminusoinsert);
+
+    // add O - A as Constraint ":- x."
+    // => enforce that beliefs not in A are not there
+    TODO
+    // add A - O as Constraint ":- not x."
+    // => enforce that beliefs in A are there
+    TODO
+  }
 #warning TODO: add constraints to ctx program
 
   // check if there is one answer set, if yes return true, false otherwise

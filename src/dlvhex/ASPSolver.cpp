@@ -282,7 +282,9 @@ namespace
 
     virtual AnswerSet::Ptr getNextAnswerSet()
     {
-      if( current == answersets.end() )
+      // if no answer set was ever added, or we reached the end
+      if( (resetCurrent == true) ||
+	  (current == answersets.end()) )
       {
 	return AnswerSet::Ptr();
       }

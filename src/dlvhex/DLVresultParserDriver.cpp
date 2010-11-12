@@ -371,11 +371,13 @@ DLVResultParser::parse(
 	forward_iterator_type fwd_end = input.end();
 
 	// @todo dump linewise before each line parse (see above todo)
+  #ifndef NDEBUG
   if( true || Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
   {
     Globals::Instance()->getVerboseStream() <<
       "Got Result:\n===\n" << input << "\n===" << std::endl;
   }
+  #endif
 
 	bool dropPredicates =
 		(pMode == DLVResultParser::HO);

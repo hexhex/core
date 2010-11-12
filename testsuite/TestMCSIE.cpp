@@ -205,8 +205,8 @@ int main(int argn, char** argv)
   LOG("evaluating");
   if( mbmode == "online" )
   {
-    typedef typename FinalOnlineModelBuilder::Model Model;
-    typedef typename FinalOnlineModelBuilder::OptionalModel OptionalModel;
+    typedef FinalOnlineModelBuilder::Model Model;
+    typedef FinalOnlineModelBuilder::OptionalModel OptionalModel;
     LOG("creating model builder");
     FinalOnlineModelBuilder mb(evalgraph);
 
@@ -223,7 +223,8 @@ int main(int argn, char** argv)
       {
         InterpretationConstPtr interpretation =
           mb.getModelGraph().propsOf(m.get()).interpretation;
-        LOG("model is " << *interpretation);
+        // output model
+        std::cout << *interpretation << std::endl;
         mb.logEvalGraphModelGraph();
       }
     }
@@ -232,9 +233,9 @@ int main(int argn, char** argv)
   }
   else if( mbmode == "offline" )
   {
-    typedef typename FinalOfflineModelBuilder::Model Model;
-    typedef typename FinalOfflineModelBuilder::OptionalModel OptionalModel;
-    typedef typename FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
+    typedef FinalOfflineModelBuilder::Model Model;
+    typedef FinalOfflineModelBuilder::OptionalModel OptionalModel;
+    typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
 
     LOG("creating model builder");
     FinalOfflineModelBuilder mb(evalgraph);
@@ -253,7 +254,8 @@ int main(int argn, char** argv)
     {
       InterpretationConstPtr interpretation =
         mg.propsOf(m).interpretation;
-      LOG("model is " << *interpretation);
+      // output model
+      std::cout << *interpretation << std::endl;
     }
     return 0;
   }
