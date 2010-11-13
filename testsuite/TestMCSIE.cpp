@@ -29,6 +29,7 @@
  */
 
 // dlvhex
+#define DLVHEX_BENCHMARK
 
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
@@ -40,6 +41,7 @@
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
+#include "dlvhex/Benchmarking.h"
 
 // mcsie
 
@@ -78,6 +80,7 @@ inline void makeGraphVizPdf(const char* fname)
 template<typename GraphVizzyT>
 inline void writeGraphViz(const GraphVizzyT& gv, const char* fnamestart)
 {
+  #ifndef NDEBUG
   std::string fnamev(fnamestart);
   fnamev += "Verbose.dot";
   LOG("dumping verbose graph to " << fnamev);
@@ -91,6 +94,7 @@ inline void writeGraphViz(const GraphVizzyT& gv, const char* fnamestart)
   std::ofstream filet(fnamet.c_str());
   gv.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet.c_str());
+  #endif
 }
 
 DLVHEX_NAMESPACE_USE
@@ -107,6 +111,25 @@ int main(int argn, char** argv)
     return -1;
   }
 
+  //
+  // setup benchmarking
+  //
+  benchmark::BenchmarkController& ctr =
+    benchmark::BenchmarkController::Instance();
+  ctr.setOutput(&std::cerr);
+  // for continuous statistics output, display every 1000'th output
+  ctr.setPrintInterval(999);
+  // deconstruct benchmarking (= output results) at scope exit 
+  int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+  BOOST_SCOPE_EXIT( (dummy) ) {
+	  (void)dummy;
+	  benchmark::BenchmarkController::finish();
+  }
+  BOOST_SCOPE_EXIT_END
+
+  //
+  // preprocess arguments
+  //
   const std::string heurimode(argv[1]);
   const std::string mbmode(argv[2]);
 
@@ -119,8 +142,10 @@ int main(int argn, char** argv)
   // rewrite
   std::stringstream rewrittenfile;
   {
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidrewrite, "rewrite mcsie");
     mcsdiagexpl::InputConverter converter;
     converter.convert(infile, rewrittenfile);
+    DLVHEX_BENCHMARK_STOP(sidrewrite);
     #ifndef NDEBUG
     std::cerr <<
       "rewriting yielded the following:" << std::endl <<
@@ -139,8 +164,10 @@ int main(int argn, char** argv)
 
   // parse HEX program
   LOG("parsing HEX program");
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
   HexParser parser(ctx);
   parser.parse(rewrittenfile);
+  DLVHEX_BENCHMARK_STOP(sidhexparse);
 
   // link parsed external atoms to plugin atoms
   //TODO this should become a common functionality using some pluginAtom registry
@@ -160,18 +187,23 @@ int main(int argn, char** argv)
 
   // create dependency graph
   LOG("creating dependency graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
   std::vector<dlvhex::ID> auxRules;
   dlvhex::DependencyGraph depgraph(ctx.registry);
   depgraph.createDependencies(ctx.idb, auxRules);
+  DLVHEX_BENCHMARK_STOP(siddepgraph);
   writeGraphViz(depgraph, "MCSIEDepGraph");
 
   // create component graph
   LOG("creating component graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidcompgraph, "create componentgraph");
   dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
+  DLVHEX_BENCHMARK_STOP(sidcompgraph);
   writeGraphViz(compgraph, "MCSIECompGraph");
 
   // create eval graph
   LOG("creating eval graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidevalgraph, "create evalgraph");
   FinalEvalGraph evalgraph;
   EvalGraphBuilder egbuilder(ctx, compgraph, evalgraph);
 
@@ -190,9 +222,11 @@ int main(int argn, char** argv)
     std::cerr << "usage: <heurimode> must be one of 'old',TODO" << std::endl;
     return -1;
   }
+  DLVHEX_BENCHMARK_STOP(sidevalgraph);
 
   // setup final unit
   LOG("setting up final unit");
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidfinalunit, "creating final unit");
   EvalUnit ufinal;
   {
     ufinal = evalgraph.addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
@@ -207,6 +241,7 @@ int main(int argn, char** argv)
       evalgraph.addDependency(ufinal, *it, FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
     }
   }
+  DLVHEX_BENCHMARK_STOP(sidfinalunit);
 
   // evaluate
   LOG("evaluating");
@@ -215,28 +250,35 @@ int main(int argn, char** argv)
     typedef FinalOnlineModelBuilder::Model Model;
     typedef FinalOnlineModelBuilder::OptionalModel OptionalModel;
     LOG("creating model builder");
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidonlinemb, "create online mb");
     FinalOnlineModelBuilder mb(evalgraph);
+    DLVHEX_BENCHMARK_STOP(sidonlinemb);
 
     LOG("logging eval/model graph:");
     mb.logEvalGraphModelGraph();
 
     // get and print all models
     OptionalModel m;
+    DLVHEX_BENCHMARK_REGISTER(sidgetnextonlinemodel, "get next online model");
+    DLVHEX_BENCHMARK_REGISTER(sidprintoffmodel, "print offline model");
     do
     {
       LOG("requesting model");
+      DLVHEX_BENCHMARK_START(sidgetnextonlinemodel);
       m = mb.getNextIModel(ufinal);
+      DLVHEX_BENCHMARK_STOP(sidgetnextonlinemodel);
       if( !!m )
       {
+        DLVHEX_BENCHMARK_START(sidprintoffmodel);
         InterpretationConstPtr interpretation =
           mb.getModelGraph().propsOf(m.get()).interpretation;
         // output model
         std::cout << *interpretation << std::endl;
+        DLVHEX_BENCHMARK_STOP(sidprintoffmodel);
         mb.logEvalGraphModelGraph();
       }
     }
     while( !!m );
-    return 0;
   }
   else if( mbmode == "offline" )
   {
@@ -245,16 +287,21 @@ int main(int argn, char** argv)
     typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
 
     LOG("creating model builder");
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemb, "create offline mb");
     FinalOfflineModelBuilder mb(evalgraph);
+    DLVHEX_BENCHMARK_STOP(sidofflinemb);
 
     LOG("logging eval/model graph:");
     mb.logEvalGraphModelGraph();
 
     LOG("creating all final imodels");
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemodels, "create offline models");
     mb.buildIModelsRecursively(ufinal);
+    DLVHEX_BENCHMARK_STOP(sidofflinemodels);
     mb.logEvalGraphModelGraph();
 
     LOG("printing models");
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidprintoffmodels, "print offline models");
     MyModelGraph& mg = mb.getModelGraph();
     const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
     BOOST_FOREACH(Model m, models)
@@ -264,12 +311,13 @@ int main(int argn, char** argv)
       // output model
       std::cout << *interpretation << std::endl;
     }
-    return 0;
+    DLVHEX_BENCHMARK_STOP(sidprintoffmodels);
   }
   else
   {
     std::cerr << "usage: <mbmode> must be one of 'online','offline'" << std::endl;
     return -1;
   }
+  return 0;
 }
 

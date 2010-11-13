@@ -28,11 +28,13 @@
  * @brief Implementation of the final model generator (preliminary).
  */
 
+#define DLVHEX_BENCHMARK
 #include "dlvhex/FinalModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <boost/foreach.hpp>
 
@@ -223,10 +225,12 @@ FinalModelGenerator::generateNextModel()
     // store in model generator and store as const
     postprocessedInput = newint;
 
+    DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,"initiating external solver");
     ASPSolver::DLVSoftware::Configuration dlvConfiguration;
     ASPProgram program(factory.ctx.registry, factory.xidb, postprocessedInput, factory.ctx.maxint);
     ASPSolverManager mgr;
     currentResults = mgr.solve(dlvConfiguration, program);
+    DLVHEX_BENCHMARK_STOP(sidaspsolve);
   }
 
   assert(currentResults != 0);
@@ -246,6 +250,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 {
   LOG_SCOPE("eEA",false);
   LOG("= evaluateExternalAtoms with interpretation " << *i);
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atoms");
 
   // for each external atom in factory.eatoms:
   //   build input interpretation

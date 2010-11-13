@@ -33,10 +33,12 @@
  *      
  */     
 
+#define DLVHEX_BENCHMARK
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/ID.hpp"
+#include "dlvhex/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -131,6 +133,7 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 
 void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (PluginError)
 {
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
   // Cache answer for queries which were already done once:
   //
   // The most efficient way would be:
