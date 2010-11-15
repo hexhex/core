@@ -29,6 +29,7 @@
  */
 
 #define DLVHEX_BENCHMARK
+
 #include "dlvhex/FinalModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ASPSolver.h"
@@ -251,6 +252,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
   LOG_SCOPE("eEA",false);
   LOG("= evaluateExternalAtoms with interpretation " << *i);
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atoms");
+	DLVHEX_BENCHMARK_REGISTER(sidier,"integrate external results");
 
   // for each external atom in factory.eatoms:
   //   build input interpretation
@@ -299,6 +301,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
       LOG("querying external atom &" << eatom.predicate << " with input tuple " << printrange(inputtuple));
       pluginAtom->retrieveCached(query, answer);
 
+			DLVHEX_BENCHMARK_START(sidier);
       // integrate result into interpretation
       BOOST_FOREACH(const Tuple& t, answer.get())
       {
@@ -338,6 +341,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
         }
         i->setFact(idreplacement.address);
       }
+			DLVHEX_BENCHMARK_STOP(sidier);
 
       LOG("interpretation is now " << *i);
     } // go over all input tuples of this eatom
@@ -349,6 +353,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
   const ExternalAtom& eatom, InterpretationConstPtr full) const
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGenerator::projectEAII");
   eatom.updatePredicateInputMask();
   InterpretationPtr ret;
   if( full == 0 )
@@ -364,6 +369,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
   InterpretationConstPtr i,
   std::list<Tuple>& inputs) const
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGenerator::buildEAIT");
   LOG_SCOPE("bEAIT", false);
   LOG("= buildEAtomInputTuples " << eatom);
 
