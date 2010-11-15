@@ -38,16 +38,12 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <vector>
 
 DLVHEX_NAMESPACE_BEGIN
-
-class Program;
-class AtomSet;
-class Process;
 
 namespace ASPSolver
 {
@@ -86,17 +82,14 @@ struct DLVSoftware:
 
     Delegate(const Options& options);
     virtual ~Delegate();
-    void useASTInput(const Program& idb, const AtomSet& edb);
-    void useStringInput(const std::string& program);
-    void useFileInput(const std::string& fileName);
-    void getOutput(std::vector<AtomSet>& result);
+    virtual void useASTInput(const ASPProgram& program);
+    //void useStringInput(const std::string& program);
+    //void useFileInput(const std::string& fileName);
+    virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
-    virtual void setupProcess();
-
-  protected:
-    Options options;
-    DLVProcess proc;
+    struct Impl;
+    boost::scoped_ptr<Impl> pimpl;
   };
 };
 

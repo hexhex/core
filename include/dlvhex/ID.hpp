@@ -44,6 +44,7 @@ struct ID:
 {
 	IDKind kind;
 	IDAddress address;
+	ID(): kind(ALL_ONES), address(ALL_ONES) {}
 	ID(IDKind kind, IDAddress address): kind(kind), address(address) {}
 	// no virtual here!
 	// this struct must fit into an uint64_t and have no vtable!

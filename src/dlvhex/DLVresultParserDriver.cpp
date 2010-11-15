@@ -24,7 +24,7 @@
 
 
 /**
- * @file   DLVresultParserDriver.cpp
+ * @file   DLVResultParser.cpp
  * @author Roman Schindlauer, Peter Schüller
  * @date   Wed Mar 22 14:38:53 CET 2006
  * 
@@ -36,11 +36,14 @@
 // use this for developing the parser
 #undef CWDEBUG
 #ifdef CWDEBUG
-# define _GNU_SOURCE
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
 # include <libcwd/sys.h>
 # include <libcwd/debug.h>
 #endif
 
+//#include "dlvhex/DLVResultParser.hpp"
 #include "dlvhex/DLVresultParserDriver.h"
 
 // use this for debugging parser progress (XML style)
@@ -56,6 +59,10 @@
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/globals.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/Term.hpp"
+#include "dlvhex/Atoms.hpp"
+#include "dlvhex/ProgramCtx.h"
 
 #include <boost/optional.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -77,35 +84,46 @@ namespace phoenix = boost::phoenix;
 
 DLVHEX_NAMESPACE_BEGIN
 
-DLVresultParserDriver::DLVresultParserDriver() : pMode(FirstOrder)
+DLVResultParser::DLVResultParser(RegistryPtr reg):
+  reg(reg),
+  pMode(FirstOrder)
 {
 }
 
-DLVresultParserDriver::DLVresultParserDriver(ParseMode mode)
+DLVResultParser::DLVResultParser(RegistryPtr reg, ParseMode mode):
+  reg(reg),
+  pMode(mode)
 {
-	setParseMode(mode);
 }
 
-DLVresultParserDriver::~DLVresultParserDriver()
+DLVResultParser::~DLVResultParser()
 {
 }
 
 void
-DLVresultParserDriver::setParseMode(ParseMode mode)
+DLVResultParser::setParseMode(ParseMode mode)
 {
 	pMode = mode;
 }
 
 struct ParserState
 {
-	std::vector<AtomSet>& result;
+  RegistryPtr registry;
+  AnswerSet::Ptr current;
+  DLVResultParser::AnswerSetAdder adder;
 	bool dropPredicates; 
 
-  ParserState(std::vector<AtomSet>& result, bool dropPredicates):
-		result(result), dropPredicates(dropPredicates) {}
+  ParserState(
+      RegistryPtr registry,
+      DLVResultParser::AnswerSetAdder adder,
+      bool dropPredicates):
+    registry(registry),
+    current(new AnswerSet(registry)),
+		adder(adder),
+    dropPredicates(dropPredicates) {}
 };
 
-#if 0
+#if 1
 //
 // useful phoenix operator debugging stuff:
 // -> just add [ handle_dbg("message") ] to any rule/parser to get information
@@ -156,33 +174,54 @@ struct handle_int
   template <typename Context>
   void operator()(int i, Context& ctx, qi::unused_type) const
   {
-    dlvhex::Term*& ruleAttr = fusion::at_c<0>(ctx.attributes);
+    ID& ruleAttr = fusion::at_c<0>(ctx.attributes);
 
-    ruleAttr = new dlvhex::Term(i);
+    ruleAttr = ID::termFromInteger(i);
     //std::cerr << "created int " << i << std::endl;
   }
 };
 
+namespace
+{
+  inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
+  {
+    ID id = registry->terms.getIDByString(s);
+    if( id == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM, s);
+      // we can only get strings or constants
+      assert(s[0] == '"' || islower(s[0]));
+      id = registry->terms.storeAndGetID(term);
+    }
+    return id;
+  }
+}
+
 struct handle_ident
 {
+  handle_ident(ParserState& state): state(state) {}
+
   template <typename Context>
   void operator()(const std::string& s, Context& ctx, qi::unused_type) const
   {
-    dlvhex::Term*& ruleAttr = fusion::at_c<0>(ctx.attributes);
+    ID& ruleAttr = fusion::at_c<0>(ctx.attributes);
 
-    ruleAttr = new dlvhex::Term(s, false);
+    ID id = getOrRegisterTerm(state.registry, s);
+    ruleAttr = id;
     //std::cerr << "created ident '" << s << "'" << std::endl;
   }
+
+  ParserState& state;
 };
 
-struct handle_new_answerset
+struct handle_finished_answerset
 {
-  handle_new_answerset(ParserState& state): state(state) {}
+  handle_finished_answerset(ParserState& state): state(state) {}
 
   void operator()(qi::unused_type, qi::unused_type, qi::unused_type) const
   {
-		state.result.push_back(AtomSet());
-		//std::cerr << "created new atomset" << std::endl;
+    state.adder(state.current);
+		state.current.reset(new AnswerSet(state.registry));
   }
 
   ParserState& state;
@@ -196,43 +235,52 @@ struct handle_fact
 			boost::fusion::vector3<
 				boost::optional<char>,
 				std::string,
-				boost::optional<PTuple> >& attr,
+				boost::optional<Tuple> >& attr,
 			qi::unused_type, qi::unused_type) const
   {
 		// alias for fusion input
 		bool strong_neg = !!fusion::at_c<0>(attr);
+    assert(!strong_neg);
 		const std::string& predicate = fusion::at_c<1>(attr);
-		bool propositional = !fusion::at_c<2>(attr);
-		PTuple* ptuple = 0;
-		if( !propositional )
-			ptuple = &fusion::at_c<2>(attr).get();
+    ID predid = getOrRegisterTerm(state.registry, predicate);
+    OrdinaryAtom atom(ID::MAINKIND_ATOM);
+    atom.tuple.push_back(predid);
+    boost::optional<Tuple>& tup = fusion::at_c<2>(attr);
+    if( !!tup )
+      atom.tuple.insert(atom.tuple.end(), tup.get().begin(), tup.get().end());
 
-		// alias for state
-		AtomSet& atomSet = state.result.back();
-		bool dropPredicates = state.dropPredicates;
-
-		// we cannot have propositional atoms in higher order mode
-		assert(!(dropPredicates && propositional));
-
-		if( propositional )
-		{
-			atomSet.insert(AtomPtr(new Atom(predicate, strong_neg)));
-		}
-		else
-		{
-			if( dropPredicates )
-			{
-				atomSet.insert(AtomPtr(new Atom(*ptuple, strong_neg)));
-			}
-			else
-			{
-				atomSet.insert(AtomPtr(new Atom(predicate, *ptuple, strong_neg)));
-			}
-			BOOST_FOREACH(Term* pterm, *ptuple)
-			{
-				delete pterm;
-			}
-		}
+    // TODO lookup by string in registry, then by tuple
+    ID id = state.registry->ogatoms.getIDByTuple(atom.tuple);
+    if( id == ID_FAIL )
+    {
+      {
+        #warning parsing efficiency problem see HexGrammarPTToASTConverter
+        std::stringstream ss;
+        RawPrinter printer(ss, state.registry);
+        Tuple::const_iterator it = atom.tuple.begin();
+        printer.print(*it);
+        it++;
+        if( it != atom.tuple.end() )
+        {
+          ss << "(";
+          printer.print(*it);
+          it++;
+          while(it != atom.tuple.end())
+          {
+            ss << ",";
+            printer.print(*it);
+            it++;
+          }
+          ss << ")";
+        }
+        atom.text = ss.str();
+      }
+      LOG("storing atom " << atom);
+      id = state.registry->ogatoms.storeAndGetID(atom);
+    }
+    //TODO make more efficient (cache pointer to interpretation or even function object)
+    LOG("setting fact " << id);
+    state.current->interpretation->setFact(id.address);
   }
 
   ParserState& state;
@@ -261,7 +309,7 @@ struct DLVResultGrammar:
 			| lexeme[ascii::lower > *(ascii::alnum|char_('_'))];
 		groundterm
 			= int_ [ handle_int() ]
-			| ident [ handle_ident() ]
+			| ident [ handle_ident(state) ]
       ;
 		fact
 			// char_ synthesizes a char attribute!
@@ -269,8 +317,8 @@ struct DLVResultGrammar:
 		params
 			%= '(' > groundterm > *(',' > groundterm) > ')';
 		answerset
-			= (lit('{') >> '}') [ handle_new_answerset(state) ]
-			| (lit('{') [ handle_new_answerset(state) ] > fact > *(',' > fact) > '}');
+			= (lit('{') >> '}') [ handle_finished_answerset(state) ]
+			| (lit('{') > fact > *(',' > fact) > lit('}') [ handle_finished_answerset(state) ]);
     /// @todo: do not throw away weak answer set information but store it
     costline
       = lit("Cost") > +(ascii::alnum|char_("[]<>():"));
@@ -292,25 +340,30 @@ struct DLVResultGrammar:
     #endif
 	}
 
-	qi::rule<Iterator, ascii::space_type>                  answersets, answerset, fact, costline;
-	qi::rule<Iterator, dlvhex::Term*(), ascii::space_type> groundterm;
+	qi::rule<Iterator, ascii::space_type>                  answersets,
+                                                         answerset,
+                                                         fact,
+                                                         costline;
+	qi::rule<Iterator, ID(), ascii::space_type>            groundterm;
 	qi::rule<Iterator, std::string(), ascii::space_type>   ident;
-	qi::rule<Iterator, PTuple(), ascii::space_type>        params;
+	qi::rule<Iterator, Tuple(), ascii::space_type>         params;
 
 	ParserState& state;
 };
 
 void
-DLVresultParserDriver::parse(std::istream& is,
-                             std::vector<AtomSet>& result) throw (SyntaxError)
+DLVResultParser::parse(
+    std::istream& is,
+    AnswerSetAdder adder) throw (SyntaxError)
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVresultParserDriver::parse");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVResultParser::parse");
 
   // @todo: read each line to the next endl, then parse, then get exactly one answer set per parse, maybe reuse the grammar (state can be avoided by using attributes, AtomSetPtr and AtomPtr or just use a new AST with integers instead)
 
 	std::ostringstream buf;
 	buf << is.rdbuf();
 	const std::string& input = buf.str();
+  LOG("parsing input '" << input << "'");
 
 	typedef std::string::const_iterator forward_iterator_type;
 	// convert input iterator to forward iterator, usable by spirit parser
@@ -318,15 +371,17 @@ DLVresultParserDriver::parse(std::istream& is,
 	forward_iterator_type fwd_end = input.end();
 
 	// @todo dump linewise before each line parse (see above todo)
-  if( Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
+  #ifndef NDEBUG
+  if( true || Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
   {
     Globals::Instance()->getVerboseStream() <<
       "Got Result:\n===\n" << input << "\n===" << std::endl;
   }
+  #endif
 
 	bool dropPredicates =
-		(pMode == DLVresultParserDriver::HO);
-	ParserState state(result, dropPredicates);
+		(pMode == DLVResultParser::HO);
+	ParserState state(reg, adder, dropPredicates);
 
   DLVResultGrammar<forward_iterator_type> grammar(state);
   try

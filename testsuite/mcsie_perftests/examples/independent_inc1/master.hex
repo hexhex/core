@@ -1,0 +1,23 @@
+#context(1,"dlv_asp_context_acc", "./independent_inc1/dlvctx_ctx1.dlv").
+% context 1 contains the rule "c :- a"
+r1:(1:a) :- not (2:b).
+
+#context(2,"dlv_asp_context_acc", "./independent_inc1/dlvctx_ctx2.dlv").
+% context 2 contains the rule "b :- d" and the constraint ":- e"
+r2:(2:d) :- (1:c).
+r3:(2:e).
+
+% there should exist no equilibrium
+%
+% the subset-minimal diagnoses are
+%
+%Dm:EQ: ({r1,r3},{}):({},{})
+%Dm:EQ: ({r3},{r2}):({},{b})
+%Dm:EQ: ({r2,r3},{}):({c},{})
+%Dm:EQ: ({r3},{r1}):({c},{b})
+%
+% the subset-minimal explanations are
+%
+%Em:({r3},{})
+%Em:({r1,r2},{r1,r2})
+

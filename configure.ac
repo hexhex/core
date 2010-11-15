@@ -223,7 +223,7 @@ fi
 
 if test x$have_bm != xtrue; then
    # force local bmagic
-   BM_CPPFLAGS="-I\${top_srcdir}/bm3.7.0"
+   BM_CPPFLAGS="-I\${top_srcdir}/bm3.7.0/"
    BM_VERSION=3.7.0
 fi
 

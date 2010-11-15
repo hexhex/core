@@ -33,40 +33,16 @@
  *      
  */     
 
+#define DLVHEX_BENCHMARK
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Term.hpp"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-PluginAtom::Query::Query(const AtomSet& i,
-                         const Tuple& in,
-                         const Tuple& pat)
-//    : interpretation(i),
-//      input(in),
-//      pattern(pat)
-{
-}
-
-
-const AtomSet&
-PluginAtom::Query::getInterpretation() const
-{
-//    return interpretation;
-}
-
-
-const Tuple&
-PluginAtom::Query::getInputTuple() const
-{
-    return input;
-}
-
-
-const Tuple&
-PluginAtom::Query::getPatternTuple() const
-{
-    return pattern;
-}
-
+#if 0
 bool PluginAtom::Query::operator<(const Query& other) const
 {
 	/*
@@ -79,48 +55,54 @@ bool PluginAtom::Query::operator<(const Query& other) const
       pattern < other.pattern );
 			*/
 }
+#endif
         
-#if 0
 bool PluginAtom::Query::operator==(const Query& other) const
 {
   return
-      interpretation == other.interpretation &&
-      input == other.input &&
-      pattern == other.pattern;
+      (input == other.input) &&
+      (pattern == other.pattern) &&
+      (
+        (interpretation == other.interpretation) ||
+        (interpretation != 0 && other.interpretation != 0 &&
+         *interpretation == *other.interpretation)
+      );
 }
-#endif
+
+// hash function for QueryAnswerCache
+std::size_t hash_value(const PluginAtom::Query& q)
+{
+  std::size_t seed = 0;
+  boost::hash_combine(seed, q.input);
+  //LOG("hash_combine inp " << printrange(q.input) << " yields " << seed);
+  boost::hash_combine(seed, q.pattern);
+  //LOG("hash_combine pat " << printrange(q.pattern) << " yields " << seed);
+  // TODO: can we take hash of pointer to interpretation here?
+  if( q.interpretation == 0 )
+  {
+    boost::hash_combine(seed, 0);
+  }
+  else
+  {
+    // TODO: outsource this
+    //boost::hash_combine(seed, q.interpretation->getStorage());
+    const Interpretation::Storage& bits = q.interpretation->getStorage();
+    for(Interpretation::Storage::enumerator en = bits.first();
+        en != bits.end(); ++en)
+    {
+      boost::hash_combine(seed, *en);
+      //LOG("hash_combine at " << *en << " yields " << seed);
+    }
+  }
+  //LOG("hash_combine returning " << seed);
+  return seed;
+}
         
-PluginAtom::Answer::Answer()
-    : output(new std::vector<Tuple>)
+PluginAtom::Answer::Answer():
+  output(new std::vector<Tuple>),
+  used(false)
 {
 }
-
-
-void
-PluginAtom::Answer::addTuple(const Tuple& out)
-{
-    output->push_back(out);
-}
-
-
-void
-PluginAtom::Answer::addTuples(const std::vector<Tuple>& out)
-{
-    output->insert(output->end(), out.begin(), out.end());
-}
-
-void
-PluginAtom::Answer::setTuples(const std::vector<Tuple>& out)
-{
-    *output = out;
-}
-
-boost::shared_ptr<std::vector<Tuple> >
-PluginAtom::Answer::getTuples() const
-{
-    return output;
-}
-
 
 void
 PluginAtom::addInputPredicate()
@@ -185,6 +167,7 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 
 void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (PluginError)
 {
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
   // Cache answer for queries which were already done once:
   //
   // The most efficient way would be:
@@ -215,17 +198,39 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
 	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
 #endif
 
-  QueryAnswerCache::const_iterator it = queryAnswerCache.find(query);
-  if( it != queryAnswerCache.end() )
+  //LOG("before queryAnswerCache");
+  Answer& ans = queryAnswerCache[query];
+  //LOG("after queryAnswerCache");
+  if( ans.hasBeenUsed() )
   {
-    answer = it->second;
+    // answer was not default constructed
+    // -> use cache
+    answer = ans;
   }
   else
   {
-    retrieve(query, answer);
-
-    // store in cache
-    queryAnswerCache.insert(std::make_pair(query, answer));
+    // answer was default constructed
+    // -> retrieve and replace in cache
+    {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
+      #if 0
+      #ifndef NDEBUG
+      std::stringstream o;
+      RawPrinter printer(o, query.interpretation->getRegistry());
+      o << "retrieving for ";
+      printer.printmany(query.input, ",");
+      o << "/";
+      printer.printmany(query.pattern, ",");
+      o << "/" << *query.interpretation;
+      LOG(o.str());
+      #endif
+      #endif
+      retrieve(query, ans);
+      // if there was no answer, perhaps it has never been used, so we use it manually
+      ans.use();
+      //LOG("after retrieve: answ is used = " << ans.hasBeenUsed());
+    }
+    answer = ans;
   }
 }
 
@@ -246,6 +251,44 @@ PluginAtom::getInputType(const unsigned index) const
 	}
 
     return inputType[index];
+}
+
+void PluginAtom::setRegistry(RegistryPtr reg)
+{
+  // i think we really don't want to change registry during the lifetime,
+  // it would invalidate the cache and more bad things would happen
+  assert(registry == 0);
+  assert(reg != 0);
+  registry = reg;
+  predicateID = registry->terms.getIDByString(predicate);
+  if( predicateID == ID_FAIL )
+  {
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, predicate);
+    predicateID = registry->terms.storeAndGetID(t);
+  }
+  assert(predicateID != ID_FAIL);
+}
+
+// fail if registry does not exists
+// calculate and register replacementPredicateID if not existing
+// return replacementPredicateID
+ID PluginAtom::getReplacementPredicateID()
+{
+  if( replacementPredicateID == ID_FAIL )
+  {
+    assert(registry != 0);
+    std::stringstream s;
+    s << "aux_ext_" << predicate;
+    replacementPredicate = s.str();
+    ID tmp = registry->terms.getIDByString(replacementPredicate);
+    // we do not want this to exist!
+    assert(tmp == ID_FAIL);
+    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
+        replacementPredicate);
+    replacementPredicateID = registry->terms.storeAndGetID(t);
+  }
+  assert(replacementPredicateID != ID_FAIL);
+  return replacementPredicateID;
 }
 
 DLVHEX_NAMESPACE_END

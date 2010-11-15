@@ -24,7 +24,7 @@
 
 /**
  * @file   OutputBuilder.h
- * @author Roman Schindlauer
+ * @author Roman Schindlauer, Peter Schüller
  * @date   Mon Feb 20 14:32:29 CET 2006
  * 
  * @brief  Builders for solver result.
@@ -36,15 +36,18 @@
 #define _DLVHEX_OUTPUTBUILDER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/ResultContainer.h"
+#include "dlvhex/AnswerSet.hpp"
 
 #include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declaration
-class ResultContainer;
+struct Results
+{
+  virtual ~Results() {}
+  virtual AnswerSet::Ptr getNextAnswerSet() = 0;
+};
+typedef boost::shared_ptr<Results> ResultsPtr;
 
 /**
  * @brief Base Builder for building solver output.
@@ -66,8 +69,7 @@ public:
      * @brief Build answer set.
      */
     virtual void
-    buildResult(std::ostream&, const ResultContainer&) = 0;
-
+    buildResult(std::ostream& ostream, ResultsPtr results) = 0;
 };
 
 

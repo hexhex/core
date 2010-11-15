@@ -109,9 +109,9 @@
 # define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,msg) \
     DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE_TPL(sid);
 # define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg) \
-    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid); } while(0)
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid);
 # define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) \
-    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_COUNT(sid,num); } while(0)
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_COUNT(sid,num);
 #else
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg)               do { } while(0)
 # define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
@@ -241,8 +241,15 @@ void BenchmarkController::printInformation(const Stat& st)
       "BM:" << std::setw(30) << st.name <<
       ": count:" << std::setw(6) << st.count <<
       " avg:";
-    printInSecs(*output, st.duration/st.count, 4) << "s" <<
-      " total:";
+		if( st.count > 0 )
+		{
+			printInSecs(*output, st.duration/st.count, 4);
+		}
+		else
+		{
+			(*output) << "   -.---";
+		}
+		(*output) << "s" << " total:";
     printInSecs(*output, st.duration, 6) << "s" << std::endl;
   }
 }

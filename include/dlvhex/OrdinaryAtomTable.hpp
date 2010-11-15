@@ -35,6 +35,11 @@
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Table.hpp"
 
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 class OrdinaryAtomTable:
@@ -63,6 +68,13 @@ class OrdinaryAtomTable:
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::TupleTag>,
 				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom::Atom,Tuple,tuple)
+			>,
+			boost::multi_index::hashed_non_unique<
+				boost::multi_index::tag<impl::PredicateTag>,
+        // we cannot use BOOST_MULTI_INDEX_CONST_MEM_FUN here, it required MemberFunName to be in Class
+				//BOOST_MULTI_INDEX_CONST_MEM_FUN(OrdinaryAtom,ID,front)
+        boost::multi_index::const_mem_fun_explicit<OrdinaryAtom,ID,
+           ID (Atom::*)() const,&Atom::front>
 			>
 		>
 	>
@@ -73,6 +85,9 @@ public:
   //typedef Container::index<impl::KindTag>::type KindIndex;
 	typedef Container::index<impl::TextTag>::type TextIndex;
 	typedef Container::index<impl::TupleTag>::type TupleIndex;
+  typedef Container::index<impl::PredicateTag>::type PredicateIndex;
+	typedef AddressIndex::iterator AddressIterator;
+	typedef PredicateIndex::iterator PredicateIterator;
 
 	// methods
 public:
@@ -89,9 +104,21 @@ public:
 	// if no, return ID_FAIL, otherwise return ID
 	inline ID getIDByTuple(const Tuple& tuple) const throw();
 
+  // get ID given storage retrieved by other means
+  // (storage must have originated from iterator from here)
+	inline ID getIDByStorage(const OrdinaryAtom& atom) const throw ();
+
 	// store atom, assuming it does not exist
   // assert that atom did not exist in table
 	inline ID storeAndGetID(const OrdinaryAtom& atom) throw();
+
+  // get all ordinary atoms with certain predicate id
+	inline std::pair<PredicateIterator, PredicateIterator>
+	getRangeByPredicateID(ID id) const throw();
+
+  // get range over all atoms sorted by address
+	inline std::pair<AddressIterator, AddressIterator>
+	getAllByAddress() const throw();
 };
 
 // retrieve by ID
@@ -149,6 +176,23 @@ ID OrdinaryAtomTable::getIDByTuple(
   }
 }
 
+// get ID given storage retrieved by other means
+// (storage must have originated from iterator from here)
+ID OrdinaryAtomTable::getIDByStorage(
+    const OrdinaryAtom& atom) const throw ()
+{
+  // we cannot assert anything really useful here!
+  // (if the user specifies another storage, iterator_to will segfault
+  //  anyway as there is no associated internal multi_index storage node)
+  const AddressIndex& aidx = container.get<impl::AddressTag>();
+  AddressIndex::const_iterator it = aidx.iterator_to(atom);
+  assert(atom.kind == it->kind);
+  return ID(
+      atom.kind, // kind
+      it - aidx.begin() // address
+      );
+}
+
 // store symbol, assuming it does not exist (this is only asserted)
 ID OrdinaryAtomTable::storeAndGetID(
 		const OrdinaryAtom& atm) throw()
@@ -169,6 +213,23 @@ ID OrdinaryAtomTable::storeAndGetID(
 			atm.kind, // kind
 			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
+}
+
+// get all ordinary atoms with certain predicate id
+std::pair<OrdinaryAtomTable::PredicateIterator, OrdinaryAtomTable::PredicateIterator>
+OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
+{
+	assert(id.isTerm());
+  const PredicateIndex& idx = container.get<impl::PredicateTag>();
+	return idx.equal_range(id);
+}
+
+// get range over all atoms sorted by address
+std::pair<OrdinaryAtomTable::AddressIterator, OrdinaryAtomTable::AddressIterator>
+OrdinaryAtomTable::getAllByAddress() const throw()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
 }
 
 DLVHEX_NAMESPACE_END

@@ -193,7 +193,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         ID id = *head.begin();
         if( !id.isOrdinaryGroundAtom() )
           throw SyntaxError("fact '"+ctx.registry->ogatoms.getByID(id).text+"' not safe!");
-        ctx.edb.push_back(id);
+        ctx.edb->setFact(id.address);
         LOG("added fact with id " << id << " to edb");
       }
       else

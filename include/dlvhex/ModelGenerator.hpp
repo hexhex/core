@@ -31,10 +31,15 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
-#include <ostream>
+#include "Logger.hpp"
 #include <boost/shared_ptr.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+#include <ostream>
 
-class InterpretationBase
+class InterpretationBase:
+  public ostream_printable<InterpretationBase>
+
 {
   // debug
   std::ostream& print(std::ostream& o) const
@@ -51,7 +56,8 @@ class InterpretationBase
 // * evaluation yields a (probably empty) set of output interpretations
 //
 template<typename InterpretationT>
-class ModelGeneratorBase
+class ModelGeneratorBase:
+  public ostream_printable<ModelGeneratorBase<InterpretationT> >
 {
   // types
 public:
@@ -87,7 +93,8 @@ public:
 // for a certain types of interpretations
 //
 template<typename InterpretationT>
-class ModelGeneratorFactoryBase
+class ModelGeneratorFactoryBase:
+  public ostream_printable<ModelGeneratorFactoryBase<InterpretationT> >
 {
   // types
 public:
@@ -116,7 +123,8 @@ public:
 // model generator factory properties for eval units
 // such properties are required by model builders
 template<typename InterpretationT>
-struct EvalUnitModelGeneratorFactoryProperties
+struct EvalUnitModelGeneratorFactoryProperties:
+  public ostream_printable<EvalUnitModelGeneratorFactoryProperties<InterpretationT> >
 {
   BOOST_CONCEPT_ASSERT((boost::Convertible<InterpretationT, InterpretationBase>));
 	typedef InterpretationT Interpretation;
@@ -124,6 +132,13 @@ struct EvalUnitModelGeneratorFactoryProperties
   // aka model generator factory
   typename ModelGeneratorFactoryBase<InterpretationT>::Ptr
 		mgf; // aka model generator factory
+
+public:
+  virtual std::ostream& print(std::ostream& o) const
+    { if( mgf )
+        return o << *mgf;
+      else
+          return o << "0"; }
 };
 
 #endif //MODEL_GENERATOR_HPP_INCLUDED__30082010

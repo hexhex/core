@@ -38,7 +38,6 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
-//#include <boost/foreach.hpp>
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -67,8 +66,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// some forwards
+struct Rule;
+struct ExternalAtom;
+struct OrdinaryAtom;
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
+class PluginAtom;
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 
 class DependencyGraph
 {
@@ -81,59 +86,78 @@ public:
   {
 		// ID storage:
 		// store rule as rule
-		// store literal or atom as atom (in non-naf-negated form)
+		// store external atom body literal as atom (in non-naf-negated form)
+    // store nothing else as node
     ID id;
 
-		// property of atom IDs (unused for rules):
-		// at least one of them must be true
-		// both may be true
-		// this is independent from naf (naf is expressed only in dependency info)
-		bool inBody;
-		bool inHead;
-
-		NodeInfo(ID id=ID_FAIL, bool inBody=false, bool inHead=false): id(id), inBody(inBody), inHead(inHead) {}
+		NodeInfo(ID id=ID_FAIL): id(id) {}
     std::ostream& print(std::ostream& o) const;
   };
 
   struct DependencyInfo:
     public ostream_printable<DependencyInfo>
   {
-    // rule -> body dependencies to NAF literals are negative (=false)
-    // rule -> body dependencies to nonmonotonic external atoms may be both positive and negative
-    bool positive;
-    bool negative;
-
-		// body -> head external dependency (predicate inputs only)
-		// body -> same body external dependency (constant inputs that are variables only)
-    bool external;
-
-    // dependency involves rule body or does not involve rule body
-    bool involvesRule;
-
-    // if does not involve rule body: dependency is unifying or disjunctive or both
-    bool disjunctive; // head <-> head in same rule
-    bool unifying; // body -(depends on)-> head in different or same rules, or head <-> head in different rules
-
-    // if does involve rule body: 
-    // rule is constraint or not
-    bool constraint;
+    // the following dependencies are stored in this graph:
+    //
+    // * dependency A -> B where A is a regular rule and B is a regular rule:
+    //   * one of A's positive body ordinary atom literals
+    //     unifies with one of B's head atoms -> "positiveRegularRule"
+    //   * one of A's negative body ordinary atom literals
+    //     unifies with one of B's head atoms -> "negativeRule"
+    //   * one of A's head atoms unifies with one of B's head atoms
+    //     -> "unifyingHead"
+    // * dependency A -> B where A is a constraint and B is a regular rule:
+    //   * one of A's positive body ordinary atom literals
+    //     unifies with one of B's head atoms -> "positiveConstraint"
+    //   * one of A's negative body ordinary atom literals
+    //     unifies with one of B's head atoms -> "negativeRule"
+    // * dependency A -> X where A is a rule and X is an external atom:
+    //   * X is present in the positive body of A and X is monotonic
+    //     -> "positiveExternal"
+    //   * X is present in the positive body of A and X is nonmonotonic
+    //     -> "positiveExternal" and "negativeExternal"
+    //   * X is present in the negative body of A and X is monotonic
+    //     -> "negativeExternal"
+    //   * X is present in the negative body of A and X is nonmonotonic
+    //     -> "positiveExternal" and "negativeExternal"
+    // * dependency X -> A where X is an external atom and A is a rule:
+    //   * A is the auxiliary input rule providing input for X in rule/constraint B
+    //     -> "externalConstantInput"
+    //   * a predicate input of X matches one head of rule A
+    //     -> "externalPredicateInput"
+    bool positiveRegularRule;
+    bool positiveConstraint;
+    bool negativeRule;
+    bool unifyingHead;
+    bool positiveExternal;
+    bool negativeExternal;
+    bool externalConstantInput;
+    bool externalPredicateInput;
 
 		DependencyInfo():
-    	positive(false),
-			negative(false),
-			external(false),
-      involvesRule(false),
-      disjunctive(false), unifying(false),
-      constraint(false) {}
+    	positiveRegularRule(false),
+      positiveConstraint(false),
+			negativeRule(false),
+			unifyingHead(false),
+      positiveExternal(false),
+      negativeExternal(false),
+      externalConstantInput(false),
+      externalPredicateInput(false)
+      {}
+		const DependencyInfo& operator|=(const DependencyInfo& other);
     std::ostream& print(std::ostream& o) const;
   };
 
-	//TODO: find out which adjacency list is best suited for subgraph/filtergraph
-	// for out-edge list we need setS because we don't want to have duplicate edges
-	// TODO: perhaps we do want to have duplicate edges after all
-  // for vertices it is much easier to use vecS because so many nice algorithms need implicit vertex_index
+  // for out-edge list we use vecS so we may have duplicate edges which is not a
+  // problem (at least not for the SCC algorithm, for drawing the graph we must take
+  // care a bit, but drawing a graph need not be efficient)
+  //
+  // for vertices it is necesssary to use vecS because so many nice algorithms need
+  // implicit vertex_index
+  //
+  // TODO: do we need bidirectional? (at the moment yes, to find roots and leaves)
   typedef boost::adjacency_list<
-    boost::setS, boost::vecS, boost::bidirectionalS,
+    boost::vecS, boost::vecS, boost::bidirectionalS,
     NodeInfo, DependencyInfo> Graph;
   typedef boost::graph_traits<Graph> Traits;
 
@@ -164,6 +188,60 @@ protected:
 		> NodeMapping;
   typedef NodeMapping::index<IDTag>::type NodeIDIndex;
 
+protected:
+  typedef std::vector<Node> NodeList;
+  struct HeadBodyInfo
+  {
+    // ordinary ground or nonground atom id
+    ID id;
+    bool inHead;
+    bool inBody;
+    NodeList inHeadOfRules;
+    NodeList inPosBodyOfRegularRules; // only non-constraint rules
+    NodeList inPosBodyOfConstraints;
+    NodeList inNegBodyOfRules; // any rules
+    ID headPredicate; // constant term, only for inHead
+    const OrdinaryAtom* oatom;
+
+    HeadBodyInfo(const OrdinaryAtom* oatom = NULL):
+      id(ID_FAIL), inHead(false), inBody(false),
+      headPredicate(ID_FAIL), oatom(oatom) {}
+  };
+
+  struct InHeadTag {};
+  struct InBodyTag {};
+  struct HeadPredicateTag {};
+  struct HeadBodyHelper
+  {
+    typedef boost::multi_index_container<
+        HeadBodyInfo,
+        boost::multi_index::indexed_by<
+          boost::multi_index::hashed_unique<
+            boost::multi_index::tag<IDTag>,
+            BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,ID,id)
+          >,
+          boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<InHeadTag>,
+            BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,bool,inHead)
+          >,
+          boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<InBodyTag>,
+            BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,bool,inBody)
+          >,
+          boost::multi_index::hashed_non_unique<
+            boost::multi_index::tag<HeadPredicateTag>,
+            BOOST_MULTI_INDEX_MEMBER(HeadBodyInfo,ID,headPredicate)
+          >
+        >
+      > HBInfos;
+    typedef HBInfos::index<IDTag>::type IDIndex;
+    typedef HBInfos::index<InHeadTag>::type InHeadIndex;
+    typedef HBInfos::index<InBodyTag>::type InBodyIndex;
+    typedef HBInfos::index<HeadPredicateTag>::type HeadPredicateIndex;
+
+    HBInfos infos;
+  };
+
   //////////////////////////////////////////////////////////////////////////////
   // members
   //////////////////////////////////////////////////////////////////////////////
@@ -179,32 +257,15 @@ public:
 	DependencyGraph(RegistryPtr registry);
 	virtual ~DependencyGraph();
 
-  void createNodesAndBasicDependencies(const std::vector<ID>& idb);
-
-  void createUnifyingDependencies();
-
-	// determine external dependencies and create auxiliary rules for evaluation
-	// store auxiliary rules in registry and return IDs in createAuxRules parameter
-  void createExternalDependencies(std::vector<ID>& createdAuxRules);
-protected: // helpers for createExternalDependencies
-	// determine external dependencies for predicate inputs
-  void createExternalPredicateInputDependencies();
-	// determine external dependencies for constant inputs and create auxiliary rules for evaluation
-	// store auxiliary rules in registry and return IDs in createAuxRules parameter
-  void createExternalConstantInputDependencies(std::vector<ID>& createdAuxRules);
-	ID createAuxiliaryRuleHead(ID forRule, ID forEAtom, const std::list<ID>& variables);
-	ID createAuxiliaryRule(ID head, const std::list<DependencyGraph::NodeMappingInfo>& body);
-
-public:
-  void createAggregateDependencies();
+  // this method creates all dependencies
+  void createDependencies(const std::vector<ID>& idb, std::vector<ID>& createdAuxRules);
 
   // output graph as graphviz source
   virtual void writeGraphViz(std::ostream& o, bool verbose) const;
-protected: // helpers for writeGraphViz: extend for more output
-  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
-  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
-public:
+  const Graph& getInternalGraph() const
+    { return dg; }
+
 	// get node given some object id
 	inline Node getNode(ID id) const
 		{
@@ -259,7 +320,67 @@ public:
 		{ return boost::num_vertices(dg); }
   inline unsigned countDependencies() const
 		{ return boost::num_edges(dg); }
+
+protected:
+  // create node, update mapping
+  inline Node createNode(ID id);
+  
+protected:
+  // create nodes for rules and external atoms
+  // create "positiveExternal" and "negativeExternal" dependencies
+  // create "externalConstantInput" dependencies and auxiliary rules
+  // fill HeadBodyHelper (required for efficient unification)
+  void createNodesAndIntraRuleDependencies(
+      const std::vector<ID>& idb,
+      std::vector<ID>& createdAuxRules,
+      HeadBodyHelper& hbh);
+    // helpers
+    void createNodesAndIntraRuleDependenciesForRule(
+        ID idrule,
+        std::vector<ID>& createdAuxRules,
+        HeadBodyHelper& hbh);
+    void createAuxiliaryRuleIfRequired(
+        ID idrule, Node nrule, const Rule& rule,
+        ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
+        const PluginAtomPtr& pluginAtom,
+        std::vector<ID>& createdAuxRules,
+        HeadBodyHelper& hbh);
+    // create auxiliary rule head predicate (in registry) and return ID
+    ID createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom);
+    // create auxiliary rule head (in registry) and return ID
+    ID createAuxiliaryRuleHead(ID idauxpred, const std::list<ID>& variables);
+    // create auxiliary rule (in registry) and return ID
+    ID createAuxiliaryRule(ID head, const std::list<ID>& body);
+
+	// create "externalPredicateInput" dependencies
+  void createExternalPredicateInputDependencies(const HeadBodyHelper& hbh);
+    // helpers
+    void createExternalPredicateInputDependenciesForInput(
+        const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh);
+
+  // build all unifying dependencies ("{positive,negative}{Rule,Constraint}", "unifyingHead")
+  void createUnifyingDependencies(const HeadBodyHelper& hbh);
+    // helpers
+    // "unifyingHead" dependencies
+    void createHeadHeadUnifyingDependencies(const HeadBodyHelper& hbh);
+    // "{positive,negative}{Rule,Constraint}" dependencies
+    void createHeadBodyUnifyingDependencies(const HeadBodyHelper& hbh);
+
+protected:
+  // helpers for writeGraphViz: extend for more output
+  virtual void writeGraphVizNodeLabel(std::ostream& o, Node n, bool verbose) const;
+  virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 };
+
+DependencyGraph::Node DependencyGraph::createNode(ID id)
+{
+  Node n = boost::add_vertex(NodeInfo(id), dg);
+  NodeIDIndex::const_iterator it;
+  bool success;
+  boost::tie(it, success) = nm.insert(NodeMappingInfo(id, n));
+  assert(success);
+  return n;
+}
 
 DLVHEX_NAMESPACE_END
 

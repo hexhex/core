@@ -36,11 +36,20 @@
 #include <boost/scope_exit.hpp>
 #include <fstream>
 
+#include <unistd.h>
+
 DLVHEX_NAMESPACE_BEGIN
 
 HexParser::HexParser(ProgramCtx& ctx):
   ctx(ctx)
 {
+  // prepare ctx: we need an edb and a registry
+  assert(ctx.registry != 0);
+  if( ctx.edb == 0 )
+  {
+    // create empty interpretation using this context's registry
+    ctx.edb.reset(new Interpretation(ctx.registry));
+  }
 }
   
 HexParser::~HexParser()
@@ -91,7 +100,10 @@ HexParser::parse(const std::string& filename) throw (SyntaxError)
 
   if( !ifs.is_open() )
   {
-    throw SyntaxError("File " + filename + " not found");
+    char* ch = get_current_dir_name();
+    std::string cwd(ch);
+    free(ch);
+    throw SyntaxError("File '" + filename + "' could not be opened with cwd '" + cwd + "'");
   }
 
   BOOST_SCOPE_EXIT((&ifs))

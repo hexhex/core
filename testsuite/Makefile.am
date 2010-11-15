@@ -2,18 +2,21 @@
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
     $(BOOST_CPPFLAGS) \
+    $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
     -DBOOST_TEST_DYN_LINK
+    
+    #-DCWDEBUG
 
 # global linker flags
-AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS)
+AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 TESTS = \
-  TestTypes \
-  TestEvaluationHeuristic TestEvaluationHeuristicND \
+  TestEvalEndToEnd TestEvalEndToEndND \
+  TestEvalHeuristic TestEvalHeuristicND \
   TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
@@ -28,8 +31,9 @@ TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=d
 #TEST_SUITE_LOG = testsuite.log
 
 check_PROGRAMS = \
-  TestTypes \
-  TestEvaluationHeuristic TestEvaluationHeuristicND \
+  TestASPSolver TestASPSolverND \
+  TestEvalEndToEnd TestEvalEndToEndND \
+  TestEvalHeuristic TestEvalHeuristicND \
   TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
@@ -39,17 +43,38 @@ check_PROGRAMS = \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
+noinst_PROGRAMS = \
+  TestMCSIE TestMCSIEND
 
-TestTypes_SOURCES = TestTypes.cpp 
-TestTypes_LDADD = \
-	@LIBLTDL@ @LIBADD_DL@ 
 
-# test it with full debugging output
-TestEvaluationHeuristic_SOURCES = \
-	$(top_srcdir)/testsuite/TestEvaluationHeuristic.cpp \
+# full debugging output
+
+TestMCSIE_SOURCES = \
+	$(top_srcdir)/testsuite/TestMCSIE.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/DLV_ASP_ContextAtom.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/InputConverter.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRule.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRuleEntry.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/Global.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/Timing.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
+	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
+  $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
@@ -57,12 +82,85 @@ TestEvaluationHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestEvaluationHeuristic_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include -ferror-limit=5
+
+TestEvalEndToEnd_SOURCES = \
+	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
+	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
+	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
+	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestEvalEndToEnd_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
+TestASPSolver_SOURCES = \
+	$(top_srcdir)/testsuite/TestASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestASPSolver_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
+#TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
+TestEvalHeuristic_SOURCES = \
+	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
+	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
+	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
+	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestEvalHeuristic_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
 TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/testsuite/TestComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -75,7 +173,9 @@ TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@
 
 TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -90,6 +190,8 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/testsuite/TestHexParser.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
@@ -108,9 +210,21 @@ TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp dummytypes.cpp fixtu
 TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fixtureE1.cpp fixtureE2.cpp fixtureEx1.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
 
 # test it with NDEBUG (the real situation)
-TestEvaluationHeuristicND_SOURCES = $(TestEvaluationHeuristic_SOURCES)
-TestEvaluationHeuristicND_LDADD = $(TestEvaluationHeuristic_LDADD)
-TestEvaluationHeuristicND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestMCSIEND_SOURCES = $(TestMCSIE_SOURCES)
+TestMCSIEND_LDADD = $(TestMCSIE_LDADD)
+TestMCSIEND_CPPFLAGS = $(TestMCSIE_CPPFLAGS) -DNDEBUG
+
+TestEvalEndToEndND_SOURCES = $(TestEvalEndToEnd_SOURCES)
+TestEvalEndToEndND_LDADD = $(TestEvalEndToEnd_LDADD)
+TestEvalEndToEndND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
+TestASPSolverND_SOURCES = $(TestASPSolver_SOURCES)
+TestASPSolverND_LDADD = $(TestASPSolver_LDADD)
+TestASPSolverND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
+TestEvalHeuristicND_SOURCES = $(TestEvalHeuristic_SOURCES)
+TestEvalHeuristicND_LDADD = $(TestEvalHeuristic_LDADD)
+TestEvalHeuristicND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestComponentGraphND_SOURCES = $(TestComponentGraph_SOURCES)
 TestComponentGraphND_LDADD = $(TestComponentGraph_LDADD)

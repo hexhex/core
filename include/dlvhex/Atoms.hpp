@@ -38,11 +38,17 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 
+#include <vector>
+#include <list>
+
 DLVHEX_NAMESPACE_BEGIN
 
 class PluginAtom;
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
+class Interpretation;
+typedef boost::shared_ptr<Interpretation> InterpretationPtr;
+typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 
 struct Atom
 {
@@ -54,6 +60,9 @@ struct Atom
   // (aggregate atoms add an "inner tuple" for the aggregate conditions)
   // (external atoms add an "input tuple" for the inputs)
   Tuple tuple;
+
+  // used for indices
+  ID front() const { return tuple.front(); }
 
 protected:
   // atom should not be used directly, so no public constructor
@@ -135,13 +144,15 @@ struct AggregateAtom:
         printvector(variables) << " and atoms " << printvector(atoms) << ")"; }
 };
 
+// this is one concrete atom in one rule
+// the general external atom functionality provided by the user is "PluginAtom"
 struct ExternalAtom:
   public Atom,
   private ostream_printable<ExternalAtom>
 {
   // &<predicate>[<inputs>](<outputs>)
 
-  // input predicate (constant term)
+  // external atom name (constant term)
   ID predicate;
 
   // input terms
@@ -152,16 +163,70 @@ struct ExternalAtom:
 	// weak pointer to plugin atom
 	PluginAtomWeakPtr pluginAtom;
 
+  // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here
+  ID auxInputPredicate;
+  // this mapping stores for each argument of auxInputPredicate
+  // a list of positions in the input tuple where this argument applies
+  // e.g., for &foo[a,C,d,X,C]() we have aux(C,X) and inputs <a,C,d,X,C>
+  // then we have mapping < [1,4], [3] >:
+  // for index 0 = argument C we have to set index 1 and 4 in inputs
+  // for index 1 = argument X we have to set index 3 in inputs
+  typedef std::vector<std::list<unsigned> > AuxInputMapping;
+  AuxInputMapping auxInputMapping;
+
+  // auxiliary replacement predicate name is stored in pluginAtom!
+
+  // kind of a cache: interpretation with all ground atoms set that must be passed to
+  // the pluginAtom for subsequent calls this must be extended (new values may have
+  // been invented), but this extension need only look to the bits not yet covered by
+  // predicateInputMask
+  //
+  // updatePredicateInputMask may update this while this object is stored in an
+  // ExternalAtomTable (where only const refs can be retrieved) we should be fine "as
+  // long as we don't use predicateInputMask in an index of the
+  // multi_index_container"
+  //
+public:
+  // this stores the addresses of IDs of all relevant input predicates for this eatom
+  std::set<IDAddress> predicateInputPredicates;
+protected:
+  // this stores the bitset interpretation for masking inputs
+  // this is managed by updatePredicateInputMask -> protected
+  mutable InterpretationPtr predicateInputMask;
+  // this stores the address of the last ogatom already inspected for predicateInputMask
+  mutable IDAddress predicateInputMaskKnownOGAtoms;
+
+public:
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
-    Atom(kind, outputs), predicate(predicate), inputs(inputs)
+    Atom(kind, outputs),
+    predicate(predicate),
+    inputs(inputs),
+    pluginAtom(),
+    auxInputPredicate(ID_FAIL),
+    predicateInputPredicates(),
+    predicateInputMask(),
+    predicateInputMaskKnownOGAtoms(0)
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
   ExternalAtom(IDKind kind):
-    Atom(kind), predicate(ID_FAIL), inputs()
+    Atom(kind),
+    predicate(ID_FAIL),
+    inputs(),
+    pluginAtom(),
+    auxInputPredicate(ID_FAIL),
+    predicateInputPredicates(),
+    predicateInputMask(),
+    predicateInputMaskKnownOGAtoms(0)
     { assert(ID(kind,0).isExternalAtom()); }
-  std::ostream& print(std::ostream& o) const
-    { return o << "ExternalAtom( &" << predicate << " [ " << printvector(inputs) <<
-        " ] ( " << printvector(Atom::tuple) << " )" <<
-				"pluginAtom is " << (pluginAtom.expired()?"not set":"set"); }
+
+  std::ostream& print(std::ostream& o) const;
+
+  // updates predicateInputMask
+  // needs a non-expired pluginAtom pointer (this is only asserted)
+  // uses pluginAtom pointer to get the registry
+  // we make this const so that we can call it on eatoms in ExternalAtomTable
+  void updatePredicateInputMask() const;
+  InterpretationConstPtr getPredicateInputMask() const
+    { return predicateInputMask; }
 };
 
 DLVHEX_NAMESPACE_END

@@ -28,29 +28,30 @@
  * @brief  Unit tests for EvalGraph template.
  */
 
+#include "dlvhex/EvalGraph.hpp"
+#include "dlvhex/CAUAlgorithms.hpp"
+#include "dlvhex/Logger.hpp"
+
+// must be included before fixtures!
+#define BOOST_TEST_MODULE __FILE__
+#include <boost/test/unit_test.hpp>
+
+#include "fixtureE2.hpp"
+#include "fixtureEx1.hpp"
+
+#include <boost/foreach.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/property_map/vector_property_map.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+
 #include <iostream>
 #include <set>
 #include <list>
 #include <string>
 #include <vector>
 #include <cassert>
-
-#include <boost/foreach.hpp>
-//#include <boost/type_traits/remove_const.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/property_map/vector_property_map.hpp>
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
-#define BOOST_TEST_MODULE __FILE__
-#include <boost/test/included/unit_test.hpp>
-
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/CAUAlgorithms.hpp"
-
-#include "fixtureE2.hpp"
-#include "fixtureEx1.hpp"
 
 BOOST_AUTO_TEST_SUITE(root_TestEvalGraph)
 

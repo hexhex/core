@@ -109,7 +109,8 @@ public:
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
   struct ModelPropertyBundle:
-    public ModelPropertyBaseT
+    public ModelPropertyBaseT,
+    public ostream_printable<ModelPropertyBundle>
   {
     // storage
 
@@ -149,7 +150,8 @@ public:
   };
 
   struct ModelDepPropertyBundle:
-    public ModelDepPropertyBaseT
+    public ModelDepPropertyBaseT,
+    public ostream_printable<ModelDepPropertyBundle>
   {
     // storage
 

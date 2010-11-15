@@ -31,6 +31,9 @@
 #ifndef EVAL_GRAPH_HPP_INCLUDED__29082010
 #define EVAL_GRAPH_HPP_INCLUDED__29082010
 
+//TODO this is required only for ostream_printable, we should make this independent from logger
+#include "dlvhex/Logger.hpp"
+
 #include <cassert>
 
 #include <boost/graph/graph_traits.hpp>
@@ -40,7 +43,10 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
 
-struct none_t {};
+struct none_t
+{
+  inline std::ostream& print(std::ostream& o) const { return o; }
+};
 
 //
 // the EvalGraph template manages a generic evaluation graph:
@@ -59,14 +65,19 @@ public:
   typedef EvalUnitDepPropertyBaseT EvalUnitDepPropertyBase;
 
   struct EvalUnitPropertyBundle:
-    public EvalUnitPropertyBase
+    public EvalUnitPropertyBase,
+    public ostream_printable<EvalUnitPropertyBundle>
   {
     EvalUnitPropertyBundle(
       const EvalUnitPropertyBase& base = EvalUnitPropertyBase()):
         EvalUnitPropertyBase(base) {}
+
+    std::ostream& print(std::ostream& o) const
+      { return o << static_cast<const EvalUnitPropertyBase>(*this); }
   };
   struct EvalUnitDepPropertyBundle:
-    public EvalUnitDepPropertyBaseT
+    public EvalUnitDepPropertyBaseT,
+    public ostream_printable<EvalUnitDepPropertyBundle>
   {
     // storage
     unsigned joinOrder;
@@ -80,6 +91,10 @@ public:
       unsigned joinOrder = 0):
         EvalUnitDepPropertyBase(base),
         joinOrder(joinOrder) {}
+
+    std::ostream& print(std::ostream& o) const
+      { return o << "joinOrder=" << joinOrder << " " <<
+        static_cast<const EvalUnitDepPropertyBase>(*this); }
   };
 
   // rationales for choice of vecS here:
