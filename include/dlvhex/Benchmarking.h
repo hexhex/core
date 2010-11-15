@@ -241,8 +241,15 @@ void BenchmarkController::printInformation(const Stat& st)
       "BM:" << std::setw(30) << st.name <<
       ": count:" << std::setw(6) << st.count <<
       " avg:";
-    printInSecs(*output, st.duration/st.count, 4) << "s" <<
-      " total:";
+		if( st.count > 0 )
+		{
+			printInSecs(*output, st.duration/st.count, 4);
+		}
+		else
+		{
+			(*output) << "   -.---";
+		}
+		(*output) << "s" << " total:";
     printInSecs(*output, st.duration, 6) << "s" << std::endl;
   }
 }
