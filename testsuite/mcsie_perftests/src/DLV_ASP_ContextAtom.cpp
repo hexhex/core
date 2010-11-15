@@ -74,55 +74,13 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
   HexParser parser(kbctx);
   parser.parse(program);
 
-  // add inputs to program
-  ID inputsPredID = query.input[2];
-  {
-    dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-    for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(inputsPredID);
-        it != it_end; ++it)
-    {
-      const dlvhex::OrdinaryAtom& oatom = *it;
-
-      // skip ogatoms not present in interpretation
-      if( !query.interpretation->getFact(
-            registry->ogatoms.getIDByStorage(oatom).address) )
-        continue;
-
-      // add symbol of second term to program as fact
-
-      // must be unary
-      assert(oatom.tuple.size() == 2);
-      ID inputTermID = oatom.tuple[1];
-      const Term& inputTerm = registry->terms.getByID(inputTermID);
-      LOG("found active input " << inputTerm.symbol << " " << inputTermID);
-
-      // create term symbol (this is now another registry!) and add
-      ID kbInputTermID = kbctx.registry->terms.getIDByString(inputTerm.symbol);
-      if( kbInputTermID == ID_FAIL )
-        kbInputTermID = kbctx.registry->terms.storeAndGetID(inputTerm);
-      LOG("in kbctx this term has id " << kbInputTermID);
-
-      // create unary fact (this is now another registry!)
-      OrdinaryAtom kboatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-      kboatom.tuple.push_back(kbInputTermID);
-      kboatom.text = inputTerm.symbol;
-      ID kbInputFactID = kbctx.registry->ogatoms.getIDByTuple(kboatom.tuple);
-      if( kbInputFactID == ID_FAIL )
-        kbInputFactID = kbctx.registry->ogatoms.storeAndGetID(kboatom);
-      LOG("in kbctx this fact has id " << kbInputFactID);
-
-      // add to edb
-      kbctx.edb->setFact(kbInputFactID.address);
-    }
-    LOG("after adding inputs: kbctx.edb is " << *kbctx.edb);
-  }
-
   // add constraints for outputs to program
   // convert query to string sets
   typedef std::set<std::string> StringSet;
-  StringSet aset, oset; // aset = belief_pred, oset = outputs_pred
+  StringSet aset, bset, oset; // aset = belief_pred, bset = inputs_pred, oset = outputs_pred
   {
     ID apredid = query.input[1];
+		ID inputsPredID = query.input[2];
     ID opredid = query.input[3];
 
     const Interpretation::Storage& storage = query.interpretation->getStorage();
@@ -147,11 +105,43 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       {
         oset.insert(term.symbol);
       }
-      // TODO: add bset here and simplify loop above
+      else if( oa.tuple[0] == inputsPredID )
+      {
+        bset.insert(term.symbol);
+      }
     }
   }
   LOG("got output beliefs: " << printrange(oset));
   LOG("got present output beliefs: " << printrange(aset));
+  LOG("got bridge rule inputs: " << printrange(bset));
+
+  // add inputs (= bridge rule heads) to program
+  {
+		for(StringSet::const_iterator inp = bset.begin(); inp != bset.end(); ++inp)
+    {
+      // add symbol to program as fact
+			Term inputTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *inp);
+
+      // create term symbol (this is now another registry!) and add
+      ID kbInputTermID = kbctx.registry->terms.getIDByString(inputTerm.symbol);
+      if( kbInputTermID == ID_FAIL )
+        kbInputTermID = kbctx.registry->terms.storeAndGetID(inputTerm);
+      LOG("in kbctx this term has id " << kbInputTermID);
+
+      // create unary fact (this is now another registry!)
+      OrdinaryAtom kboatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+      kboatom.tuple.push_back(kbInputTermID);
+      kboatom.text = inputTerm.symbol;
+      ID kbInputFactID = kbctx.registry->ogatoms.getIDByTuple(kboatom.tuple);
+      if( kbInputFactID == ID_FAIL )
+        kbInputFactID = kbctx.registry->ogatoms.storeAndGetID(kboatom);
+      LOG("in kbctx this fact has id " << kbInputFactID);
+
+      // add to edb
+      kbctx.edb->setFact(kbInputFactID.address);
+    }
+    LOG("after adding inputs: kbctx.edb is " << *kbctx.edb);
+  }
 
   // calculate set differences and add constraints
   StringSet ainoset, ominusaset;
