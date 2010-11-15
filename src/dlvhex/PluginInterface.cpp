@@ -205,7 +205,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
   {
     // answer was not default constructed
     // -> use cache
-    return ans;
+    answer = ans;
   }
   else
   {
