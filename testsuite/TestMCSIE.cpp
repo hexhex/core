@@ -53,6 +53,8 @@
 
 // other
 
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/bind.hpp>
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -79,29 +81,163 @@ inline void makeGraphVizPdf(const char* fname)
   system(ss.str().c_str());
 }
 
-template<typename GraphVizzyT>
-inline void writeGraphViz(const GraphVizzyT& gv, const char* fnamestart)
+typedef boost::function<void (std::ostream&)> GraphVizFunc;
+
+inline void writeGraphVizFunctors(GraphVizFunc vfunc, GraphVizFunc tfunc, const char* fnamestart)
 {
-  #ifndef NDEBUG
   std::string fnamev(fnamestart);
   fnamev += "Verbose.dot";
   LOG("dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev.c_str());
-  gv.writeGraphViz(filev, true);
+	vfunc(filev);
   makeGraphVizPdf(fnamev.c_str());
 
   std::string fnamet(fnamestart);
   fnamet += "Terse.dot";
   LOG("dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet.c_str());
-  gv.writeGraphViz(filet, false);
+  tfunc(filet);
   makeGraphVizPdf(fnamet.c_str());
-  #endif
+}
+
+template<typename GraphVizzyT>
+inline void writeGraphViz(const GraphVizzyT& gv, const char* fnamestart)
+{
+  #ifndef NDEBUG
+	GraphVizFunc vfunc = boost::bind(&GraphVizzyT::writeGraphViz, gv, _1, true);
+	GraphVizFunc tfunc = boost::bind(&GraphVizzyT::writeGraphViz, gv, _1, false);
+	writeGraphVizFunctors(vfunc, tfunc, fnamestart);
+	#endif
 }
 
 DLVHEX_NAMESPACE_USE
 
 typedef FinalEvalGraph::EvalUnit EvalUnit;
+
+//
+// model graph printing: putting this into ModelGraph is insane (modelgraph has a too abstract view of the model)
+// TODO think about improving the above situation
+//
+
+/* graphviz schema:
+digraph G {
+    compound=true;
+    subgraph evalunit1 {
+      model1 [label1];
+    }
+    subgraph cluster1 {
+      ...
+    }
+    ...
+    model1 -> model2;
+    ...
+}
+*/
+// output graph as graphviz source
+template<typename ModelGraphT>
+void writeEgMgGraphViz(
+		std::ostream& o, bool verbose,
+		const FinalEvalGraph& eg, const ModelGraphT& mg)
+{
+	typedef typename ModelGraphT::ModelList ModelList;
+	typedef typename ModelGraphT::Model Model;
+	typedef typename ModelGraphT::ModelPredecessorIterator ModelPredecessorIterator;
+
+  // boost::graph::graphviz is horribly broken!
+  // therefore we print it ourselves
+
+  o << "digraph G {" << std::endl <<
+    "rankdir=BT;" << std::endl << // print root nodes at bottom, leaves at top!
+    "compound=true;" << std::endl; // print clusters = eval units, inside nodes = models
+
+	// stream deps into this stream
+	std::stringstream odeps;
+
+  FinalEvalGraph::EvalUnitIterator uit, ubegin, uend;
+  boost::tie(ubegin, uend) = eg.getEvalUnits();
+  for(uit = ubegin; uit != uend; ++uit)
+  {
+    EvalUnit u = *uit;
+    o << "subgraph u" << u << " [label=\"";
+    {
+      std::stringstream s;
+			if( eg.propsOf(u).mgf != 0 )
+			{
+				s << eg.propsOf(u).mgf;
+			}
+			else
+			{
+				s << "NULL";
+			}
+      // escape " into \"
+      boost::algorithm::replace_all_copy(
+        std::ostream_iterator<char>(o),
+        s.str(),
+        "\"",
+        "\\\"");
+    }
+		o << "\"]{" << std::endl;
+
+    // models in this subgraph
+		{
+			for(ModelType t = MT_IN; t <= MT_OUTPROJ; t = static_cast<ModelType>(static_cast<unsigned>(t)+1))
+			{
+				const ModelList& modelsAt = mg.modelsAt(u, t);
+				typename ModelList::const_iterator mit;
+				for(mit = modelsAt.begin(); mit != modelsAt.end(); ++mit)
+				{
+					Model m = *mit;
+					o << "m" << m << "[label=\"";
+					{
+						std::stringstream s;
+						s << mg.propsOf(m);
+						// escape " into \"
+						boost::algorithm::replace_all_copy(
+							std::ostream_iterator<char>(o),
+							s.str(),
+							"\"",
+							"\\\"");
+					}
+					o << "\"];" << std::endl;
+
+					// model dependencies (preds)
+					ModelPredecessorIterator pit, pbegin, pend;
+					boost::tie(pbegin, pend) = mg.getPredecessors(m);
+					for(pit = pbegin; pit != pend; ++pit)
+					{
+						odeps <<
+							"m" << m << " -> m" << mg.targetOf(*pit) <<
+							"[label=\"" << mg.propsOf(*pit).joinOrder << "\"];" << std::endl;
+					}
+				} // through all models
+			}
+		}
+		o << "}" << std::endl;
+
+		/*
+    // unit dependencies
+    typename EvalGraphT::PredecessorIterator pit, pbegin, pend;
+    boost::tie(pbegin, pend) = eg.getPredecessors(u);
+    for(pit = pbegin; pit != pend; ++pit)
+    {
+      LOG("-> depends on unit " << eg.targetOf(*pit) << "/join order " << eg.propsOf(*pit).joinOrder);
+    }
+		*/
+
+  }
+
+	// deps between models
+	o << odeps.str() << std::endl;
+	o << "}" << std::endl;
+}
+
+
+
+
+
+
+
+
 typedef OnlineModelBuilder<FinalEvalGraph> FinalOnlineModelBuilder;
 typedef OfflineModelBuilder<FinalEvalGraph> FinalOfflineModelBuilder;
 
@@ -299,6 +435,9 @@ int main(int argn, char** argv)
     }
     while( !!m );
     mb.logEvalGraphModelGraph();
+		GraphVizFunc func = boost::bind(&writeEgMgGraphViz, _1,
+				true, mb.getEvalGraph(), mb.getModelGraph());
+		writeGraphVizFunctors(func, func, "MCSIEEgMg");
   }
   else if( mbmode == "offline" )
   {
