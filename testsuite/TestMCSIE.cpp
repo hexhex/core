@@ -33,6 +33,7 @@
 
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
@@ -218,9 +219,19 @@ int main(int argn, char** argv)
 
     writeGraphViz(compgraph, "MCSIEEvalGraph");
   }
+  else if( heurimode == "trivial" )
+  {
+    // trivial heuristic: just take component graph
+    // (maximum number of eval units, probably large overhead)
+    LOG("building eval graph with trivial heuristics");
+    EvalHeuristicTrivial heuristic(egbuilder);
+    heuristic.build();
+
+    writeGraphViz(compgraph, "MCSIEEvalGraph");
+  }
   else
   {
-    std::cerr << "usage: <heurimode> must be one of 'old',TODO" << std::endl;
+    std::cerr << "usage: <heurimode> must be one of 'old','trivial'" << std::endl;
     return -1;
   }
   DLVHEX_BENCHMARK_STOP(sidevalgraph);

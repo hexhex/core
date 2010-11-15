@@ -127,8 +127,7 @@ public:
   // store and return id
   ID convertRule(ID ruleid);
 
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
+  virtual std::ostream& print(std::ostream& o) const;
 };
 
 DLVHEX_NAMESPACE_END

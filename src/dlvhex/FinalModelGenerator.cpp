@@ -184,6 +184,24 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
   return newruleid;
 }
 
+std::ostream& FinalModelGeneratorFactory::print(
+    std::ostream& o) const
+{
+  RawPrinter printer(o, ctx.registry);
+  o << "FinalModelGenerator:";
+  if( !eatoms.empty() )
+  {
+    o << "eatoms ";
+    printer.printmany(eatoms,",");
+  }
+  if( !xidb.empty() )
+  {
+    o << "xidb ";
+    printer.printmany(xidb,",");
+  }
+  return o;
+}
+
 FinalModelGenerator::FinalModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
