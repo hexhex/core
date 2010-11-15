@@ -48,6 +48,7 @@
 #include "Global.h"
 #include "DLV_ASP_ContextAtom.h"
 #include "InputConverter.h"
+#include "OutputRewriter.h"
 
 // other
 
@@ -243,8 +244,12 @@ int main(int argn, char** argv)
   }
   DLVHEX_BENCHMARK_STOP(sidfinalunit);
 
+  // prepare for output
+  mcsdiagexpl::EQOutputBuilder ob;
+
   // evaluate
   LOG("evaluating");
+  DLVHEX_BENCHMARK_REGISTER(sidoutputmodel, "output model");
   if( mbmode == "online" )
   {
     typedef FinalOnlineModelBuilder::Model Model;
@@ -260,7 +265,6 @@ int main(int argn, char** argv)
     // get and print all models
     OptionalModel m;
     DLVHEX_BENCHMARK_REGISTER(sidgetnextonlinemodel, "get next online model");
-    DLVHEX_BENCHMARK_REGISTER(sidprintoffmodel, "print offline model");
     do
     {
       LOG("requesting model");
@@ -269,16 +273,21 @@ int main(int argn, char** argv)
       DLVHEX_BENCHMARK_STOP(sidgetnextonlinemodel);
       if( !!m )
       {
-        DLVHEX_BENCHMARK_START(sidprintoffmodel);
         InterpretationConstPtr interpretation =
           mb.getModelGraph().propsOf(m.get()).interpretation;
+        LOG("got model " << *interpretation);
+
         // output model
-        std::cout << *interpretation << std::endl;
-        DLVHEX_BENCHMARK_STOP(sidprintoffmodel);
+        {
+          DLVHEX_BENCHMARK_SCOPE(sidoutputmodel);
+          ob.printEQ(std::cout, interpretation);
+        }
+
         mb.logEvalGraphModelGraph();
       }
     }
     while( !!m );
+    mb.logEvalGraphModelGraph();
   }
   else if( mbmode == "offline" )
   {
@@ -308,8 +317,13 @@ int main(int argn, char** argv)
     {
       InterpretationConstPtr interpretation =
         mg.propsOf(m).interpretation;
+      LOG("got model " << *interpretation);
+
       // output model
-      std::cout << *interpretation << std::endl;
+      {
+        DLVHEX_BENCHMARK_SCOPE(sidoutputmodel);
+        ob.printEQ(std::cout, interpretation);
+      }
     }
     DLVHEX_BENCHMARK_STOP(sidprintoffmodels);
   }

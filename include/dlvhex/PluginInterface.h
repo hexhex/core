@@ -480,6 +480,7 @@
 #include <iosfwd>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 
 #define PLUGINIMPORTFUNCTION importPlugin
@@ -676,6 +677,9 @@ public:
       // strict weak ordering required for using this as index in a map
       // TODO we should use a hash map instead
       //bool operator<(const Query& other) const;
+
+      // equality for hashing
+      bool operator==(const Query& other) const;
     };
 
     /**
@@ -686,11 +690,23 @@ public:
       Answer();
 
       // simple accessors, controlled by constness of object
-      std::vector<Tuple>& get() { return *output; }
+      std::vector<Tuple>& get() { used = true; return *output; }
       const std::vector<Tuple>& get() const { return *output; }
+
+      // for efficient hashtable management
+      bool hasBeenUsed() const { return used; }
+      void use() { used = true; }
+
+      Answer& operator=(const Answer& other)
+        { output = other.output; used = true; return *this; }
+
+      // do not allow comparison (will produce linker error)
+      bool operator==(const Answer& other) const;
 
     private:
       boost::shared_ptr<std::vector<Tuple> > output;
+      // true if this was default-constructed and never used
+      bool used;
     };
 
 
@@ -874,14 +890,16 @@ protected:
     /**
      * \brief Query/Answer cache
      */
-    //typedef boost::unordered_map<const Query, const Answer> QueryAnswerCache;
-    //QueryAnswerCache queryAnswerCache;
+    typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
+    QueryAnswerCache queryAnswerCache;
 
     // the registry related to this atom
     RegistryPtr registry;
 #warning spend some thinking about where the registry must be stored and where not
 };
 
+// hash function for QueryAnswerCache
+std::size_t hash_value(const PluginAtom::Query& q);
 
 /**
  * \brief Factory base class for representing plugins and creating necessary objects.

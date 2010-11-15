@@ -34,6 +34,8 @@
 #endif /* HAVE_CONFIG_H */
 
 #include "OutputRewriter.h"
+#include <dlvhex/ProgramCtx.h>
+/*
 #include "dlvhex/globals.h"
 #include "dlvhex/ResultContainer.h"
 #include "EquilibriumPrintVisitor.h"
@@ -45,6 +47,7 @@
 #include "dlvhex/HexParserDriver.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/TextOutputBuilder.h"
+*/
 
 #include <iostream>
 #include <sstream>
@@ -55,6 +58,7 @@
 namespace dlvhex {
   namespace mcsdiagexpl {
 
+#if 0
 bool same_AtomSet (boost::tuple<AtomSet,AtomSet,AnswerSetPtr> first, boost::tuple<AtomSet,AtomSet,AnswerSetPtr> second)
 { 
 	return ( (first.get<0>() == second.get<0>()) && (first.get<1>() == second.get<1>())); 
@@ -379,6 +383,78 @@ OutputRewriter::buildResult(std::ostream& stream, const ResultContainer& facts)
 
   if (results.empty())
     return;
+}
+#endif
+
+void
+EQOutputBuilder::buildResult(std::ostream& stream, ResultsPtr results)
+{
+  assert(results != 0);
+  AnswerSet::Ptr as = results->getNextAnswerSet();
+  while( as != 0 )
+  {
+    printEQ(stream, as->interpretation);
+  }
+}
+
+void EQOutputBuilder::printEQ(
+    std::ostream& out, InterpretationConstPtr interpretation) const
+{
+  // BS = Belief Set
+  typedef std::list<std::string> BSContainer;
+  typedef std::vector<BSContainer> EQContainer;
+
+  RegistryPtr registry = interpretation->getRegistry();
+
+  // get number of contexts from ctx(N) predicate
+  unsigned maxctx = 0;
+  ID idctx = registry->terms.getIDByString("ctx");
+  assert(idctx != ID_FAIL);
+  OrdinaryAtomTable::PredicateIterator itpred, itpredend;
+  for(boost::tie(itpred, itpredend) =
+      registry->ogatoms.getRangeByPredicateID(idctx);
+      itpred != itpredend; ++itpred)
+  {
+    const OrdinaryAtom& oa = *itpred;
+    assert(oa.tuple[1].isIntegerTerm());
+    unsigned ctxid = oa.tuple[1].address;
+    if( ctxid > maxctx )
+      maxctx = ctxid;
+  }
+  // now maxctx is 1-based maximum id
+
+  // create pre-sized container
+  EQContainer eqs(maxctx);
+
+  // collect bs for each ctx
+  #warning this can be done in a more efficient way (i.e., iterate interpretation only once)
+  const Interpretation::Storage& bits = interpretation->getStorage();
+  for(unsigned u = 0; u < maxctx; ++u)
+  {
+    std::stringstream s;
+    s << "a" << (u+1);
+    ID idpred = registry->terms.getIDByString(s.str());
+    for(Interpretation::Storage::enumerator en = bits.first();
+        en != bits.end(); ++en)
+    {
+      const OrdinaryAtom& oa =
+        registry->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+      if( oa.tuple[0] == idpred )
+      {
+        const Term& t =
+          registry->terms.getByID(oa.tuple[1]);
+        eqs[u].push_back(t.symbol);
+      }
+    }
+  }
+  out << "(";
+  for(unsigned u = 0; u < maxctx; ++u)
+  {
+    if( u != 0 )
+      out << ",";
+    out << printrange(eqs[u], "{", ",", "}");
+  }
+  out << ")" << std::endl;
 }
 
 }//namespace mcsdiagexpl

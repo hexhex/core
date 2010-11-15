@@ -34,32 +34,20 @@
 #define _DLVHEX_MCSDIAGEXPL_OUTPUTREWRITER_H_
 
 #include "dlvhex/OutputBuilder.h"
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
-#include "dlvhex/AtomSet.h"
-
 
 namespace dlvhex {
   namespace mcsdiagexpl {
 
-  typedef std::list< boost::tuple<AtomSet,AtomSet,AnswerSetPtr> > ResultList;
-
-  class OutputRewriter : public OutputBuilder {
-
-    private:
-      bool checkAddMinimalResult(ResultList& rs, AtomSet& d1, AtomSet& d2);
-      std::vector<AtomSet> getExplaination(ResultList& minRes);
-
+  class EQOutputBuilder : public OutputBuilder {
     public:
-      /// Dtor
-      virtual
-      ~OutputRewriter() {};
+      EQOutputBuilder() {};
+      virtual ~EQOutputBuilder() {};
 
-      /// Ctor
-      OutputRewriter() {};
+      virtual void buildResult(
+          std::ostream& out, ResultsPtr results);
 
-      virtual void
-      buildResult(std::ostream&, const ResultContainer&);
+      virtual void printEQ(
+          std::ostream& out, InterpretationConstPtr interpretation) const;
    };
 
   } // END namespace mcsdiagexpl

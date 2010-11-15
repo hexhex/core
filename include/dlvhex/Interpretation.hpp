@@ -77,6 +77,10 @@ public:
 
   const Storage& getStorage() const { return bits; }
   Storage& getStorage() { return bits; }
+
+  RegistryPtr getRegistry() const { return registry; }
+
+  bool operator==(const Interpretation& other) const;
 };
 
 typedef Interpretation::Ptr InterpretationPtr;

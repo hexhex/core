@@ -279,16 +279,18 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
     std::list<Tuple> inputs;
     buildEAtomInputTuples(eatom, i, inputs);
     #ifndef NDEBUG
-    LOG("eatom input tuples:");
-    LOG_INDENT();
-    BOOST_FOREACH(const Tuple& t, inputs)
     {
-      std::stringstream s;
-      RawPrinter printer(s, factory.ctx.registry);
-      s << "[";
-      printer.printmany(t,",");
-      s << "]";
-      LOG(s.str());
+      LOG("eatom input tuples:");
+      LOG_INDENT();
+      BOOST_FOREACH(const Tuple& t, inputs)
+      {
+        std::stringstream s;
+        RawPrinter printer(s, factory.ctx.registry);
+        s << "[";
+        printer.printmany(t,",");
+        s << "]";
+        LOG(s.str());
+      }
     }
     #endif
 
@@ -300,6 +302,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
       PluginAtom::Answer answer;
       LOG("querying external atom &" << eatom.predicate << " with input tuple " << printrange(inputtuple));
       pluginAtom->retrieveCached(query, answer);
+      LOG("got " << answer.get().size() << " answer tuples!");
 
 			DLVHEX_BENCHMARK_START(sidier);
       // integrate result into interpretation
@@ -353,7 +356,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
   const ExternalAtom& eatom, InterpretationConstPtr full) const
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGenerator::projectEAII");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGen::projectEAII");
   eatom.updatePredicateInputMask();
   InterpretationPtr ret;
   if( full == 0 )
@@ -369,7 +372,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
   InterpretationConstPtr i,
   std::list<Tuple>& inputs) const
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGenerator::buildEAIT");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGen::buildEAIT");
   LOG_SCOPE("bEAIT", false);
   LOG("= buildEAtomInputTuples " << eatom);
 

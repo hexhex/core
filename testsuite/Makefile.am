@@ -58,6 +58,7 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/Global.cpp \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/Timing.cpp \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
@@ -89,6 +90,7 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \

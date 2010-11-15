@@ -55,18 +55,52 @@ bool PluginAtom::Query::operator<(const Query& other) const
       pattern < other.pattern );
 			*/
 }
+#endif
         
 bool PluginAtom::Query::operator==(const Query& other) const
 {
   return
-      interpretation == other.interpretation &&
-      input == other.input &&
-      pattern == other.pattern;
+      (input == other.input) &&
+      (pattern == other.pattern) &&
+      (
+        (interpretation == other.interpretation) ||
+        (interpretation != 0 && other.interpretation != 0 &&
+         *interpretation == *other.interpretation)
+      );
 }
-#endif
+
+// hash function for QueryAnswerCache
+std::size_t hash_value(const PluginAtom::Query& q)
+{
+  std::size_t seed = 0;
+  boost::hash_combine(seed, q.input);
+  //LOG("hash_combine inp " << printrange(q.input) << " yields " << seed);
+  boost::hash_combine(seed, q.pattern);
+  //LOG("hash_combine pat " << printrange(q.pattern) << " yields " << seed);
+  // TODO: can we take hash of pointer to interpretation here?
+  if( q.interpretation == 0 )
+  {
+    boost::hash_combine(seed, 0);
+  }
+  else
+  {
+    // TODO: outsource this
+    //boost::hash_combine(seed, q.interpretation->getStorage());
+    const Interpretation::Storage& bits = q.interpretation->getStorage();
+    for(Interpretation::Storage::enumerator en = bits.first();
+        en != bits.end(); ++en)
+    {
+      boost::hash_combine(seed, *en);
+      //LOG("hash_combine at " << *en << " yields " << seed);
+    }
+  }
+  //LOG("hash_combine returning " << seed);
+  return seed;
+}
         
 PluginAtom::Answer::Answer():
-  output(new std::vector<Tuple>)
+  output(new std::vector<Tuple>),
+  used(false)
 {
 }
 
@@ -164,22 +198,40 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
 	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
 #endif
 
-  #if 0
-  QueryAnswerCache::const_iterator it = queryAnswerCache.find(query);
-  if( it != queryAnswerCache.end() )
+  //LOG("before queryAnswerCache");
+  Answer& ans = queryAnswerCache[query];
+  //LOG("after queryAnswerCache");
+  if( ans.hasBeenUsed() )
   {
-    answer = it->second;
+    // answer was not default constructed
+    // -> use cache
+    return ans;
   }
   else
   {
-    retrieve(query, answer);
-
-    // store in cache
-    queryAnswerCache.insert(std::make_pair(query, answer));
+    // answer was default constructed
+    // -> retrieve and replace in cache
+    {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
+      #if 0
+      #ifndef NDEBUG
+      std::stringstream o;
+      RawPrinter printer(o, query.interpretation->getRegistry());
+      o << "retrieving for ";
+      printer.printmany(query.input, ",");
+      o << "/";
+      printer.printmany(query.pattern, ",");
+      o << "/" << *query.interpretation;
+      LOG(o.str());
+      #endif
+      #endif
+      retrieve(query, ans);
+      // if there was no answer, perhaps it has never been used, so we use it manually
+      ans.use();
+      //LOG("after retrieve: answ is used = " << ans.hasBeenUsed());
+    }
+    answer = ans;
   }
-  #endif
-
-  retrieve(query, answer);
 }
 
 
