@@ -239,6 +239,13 @@ FinalModelGenerator::generateNextModel()
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       evaluateExternalAtoms(newint);
+
+      if( factory.xidb.empty() )
+      {
+        // we only have eatoms -> return singular result
+        currentResults = ASPSolverManager::ResultsPtr(new EmptyResults());
+        return newint;
+      }
     }
 
     // store in model generator and store as const
@@ -257,7 +264,7 @@ FinalModelGenerator::generateNextModel()
   if( ret == 0 )
   {
     currentResults.reset();
-    // the following is just for freeing memory
+    // the following is just for freeing memory early
     postprocessedInput.reset();
     return InterpretationPtr();
   }

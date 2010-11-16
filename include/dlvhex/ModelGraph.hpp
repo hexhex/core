@@ -22,7 +22,8 @@
 #ifndef MODEL_GRAPH_HPP_INCLUDED__29082010
 #define MODEL_GRAPH_HPP_INCLUDED__29082010
 
-#include <cassert>
+#include "EvalGraph.hpp"
+#include "Logger.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -31,8 +32,8 @@
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "Logger.hpp"
-#include "EvalGraph.hpp"
+#include <cassert>
+#include <iomanip>
 
 // this is used as index into an array by struct EvalUnitModels
 enum ModelType
@@ -47,9 +48,9 @@ inline const char* toString(ModelType mt)
 {
   switch(mt)
   {
-  case MT_IN:      return "IN     ";
-  case MT_INPROJ:  return "INPROJ ";
-  case MT_OUT:     return "OUT    ";
+  case MT_IN:      return "IN";
+  case MT_INPROJ:  return "INPROJ";
+  case MT_OUT:     return "OUT";
   case MT_OUTPROJ: return "OUTPROJ";
   default: assert(false); return ""; // keep compiler happy with NDEBUG
   }
@@ -142,7 +143,7 @@ public:
         type(type) {}
     std::ostream& print(std::ostream& o) const
     {
-      return o << toString(type) << " at unit " << location << ", " <<
+      return o << std::setw(7) << toString(type) << " at unit " << location << ", " <<
         print_method(static_cast<ModelPropertyBaseT>(*this));
     }
     // the model graph will manage the set of successors

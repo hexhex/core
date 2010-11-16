@@ -141,7 +141,7 @@ void writeEgMgGraphViz(
 {
 	typedef typename ModelGraphT::ModelList ModelList;
 	typedef typename ModelGraphT::Model Model;
-	typedef typename ModelGraphT::ModelPredecessorIterator ModelPredecessorIterator;
+	typedef typename ModelGraphT::PredecessorIterator ModelPredecessorIterator;
 
   // boost::graph::graphviz is horribly broken!
   // therefore we print it ourselves
@@ -158,12 +158,13 @@ void writeEgMgGraphViz(
   for(uit = ubegin; uit != uend; ++uit)
   {
     EvalUnit u = *uit;
-    o << "subgraph u" << u << " [label=\"";
+    o << "subgraph clusteru" << u << "{" << std::endl;
+    o << "label=\"";
     {
       std::stringstream s;
 			if( eg.propsOf(u).mgf != 0 )
 			{
-				s << eg.propsOf(u).mgf;
+				s << *eg.propsOf(u).mgf;
 			}
 			else
 			{
@@ -176,7 +177,7 @@ void writeEgMgGraphViz(
         "\"",
         "\\\"");
     }
-		o << "\"]{" << std::endl;
+		o << "\";" << std::endl;
 
     // models in this subgraph
 		{
@@ -190,13 +191,36 @@ void writeEgMgGraphViz(
 					o << "m" << m << "[label=\"";
 					{
 						std::stringstream s;
-						s << mg.propsOf(m);
+						s << toString(mg.propsOf(m).type) << " " << m << " @" << mg.propsOf(m).location << "\\n";
+            if( mg.propsOf(m).interpretation != 0 )
+              s << *mg.propsOf(m).interpretation;
 						// escape " into \"
+            /*
 						boost::algorithm::replace_all_copy(
 							std::ostream_iterator<char>(o),
 							s.str(),
 							"\"",
 							"\\\"");
+            */
+            const std::string& str = s.str();
+            unsigned at = 0;
+            for(std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+            {
+              char c = *it;
+              if( c == '\\' ) // assume this is a newline
+                at = 0;
+              if( c == '\"' )
+                o << "\\\"";
+              else
+                o << c;
+              // make a new line at least all 25 characters if there is a ,
+              at++;
+              if( at > 25 && c == ',' )
+              {
+                at = 0;
+                o << "\\n";
+              }
+            }
 					}
 					o << "\"];" << std::endl;
 
@@ -401,6 +425,7 @@ int main(int argn, char** argv)
   {
     typedef FinalOnlineModelBuilder::Model Model;
     typedef FinalOnlineModelBuilder::OptionalModel OptionalModel;
+    typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
     LOG("creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidonlinemb, "create online mb");
     FinalOnlineModelBuilder mb(evalgraph);
@@ -435,9 +460,11 @@ int main(int argn, char** argv)
     }
     while( !!m );
     mb.logEvalGraphModelGraph();
-		GraphVizFunc func = boost::bind(&writeEgMgGraphViz, _1,
+    #ifndef NDEBUG
+		GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
 				true, mb.getEvalGraph(), mb.getModelGraph());
 		writeGraphVizFunctors(func, func, "MCSIEEgMg");
+    #endif
   }
   else if( mbmode == "offline" )
   {
