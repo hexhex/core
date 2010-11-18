@@ -57,16 +57,26 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-void Registry::logContents() const
+std::ostream& Registry::print(std::ostream& o) const
 {
-  LOG_FUNCTION("Registry");
-  terms.logContents("terms");
-  ogatoms.logContents("ogatoms");
-  onatoms.logContents("onatoms");
-  batoms.logContents("batoms");
-  aatoms.logContents("aatoms");
-  eatoms.logContents("eatoms");
-  rules.logContents("rules");
+  return
+    o <<
+      "REGISTRY BEGIN" << std::endl <<
+      "terms:" << std::endl <<
+      terms <<
+      "ogatoms:" << std::endl <<
+      ogatoms <<
+      "onatoms:" << std::endl <<
+      onatoms <<
+      "batoms:" << std::endl <<
+      batoms <<
+      "aatoms:" << std::endl <<
+      aatoms <<
+      "eatoms:" << std::endl <<
+      eatoms <<
+      "rules:" << std::endl <<
+      rules <<
+      "REGISTRY END" << std::endl;
 }
 
 // lookup ground or nonground ordinary atoms (ID specifies this)

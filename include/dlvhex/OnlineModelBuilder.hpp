@@ -89,11 +89,12 @@ public:
       interpretation(), dummy(false), childModelsGenerated(false) {}
     std::ostream& print(std::ostream& o) const
     {
+      if( dummy )
+        o << "dummy ";
+      if( childModelsGenerated )
+        o << "childModelsGenerated ";
       o <<
-        "dummy=" << dummy <<
-        ", childModelsGenerated=" << childModelsGenerated; 
-      o <<
-        ", interpretation=" << printptr(interpretation);
+        "interpretation=" << printptr(interpretation);
       if( interpretation )
         o << *interpretation;
       return o;
@@ -299,43 +300,39 @@ public:
 
   // debugging methods
 public:
-  #ifndef NDEBUG
-  void logEvalGraphModelGraph();
-  void logModelBuildingPropertyMap();
-  #else
-  inline void logEvalGraphModelGraph() {}
-  inline void logModelBuildingPropertyMap() {}
-  #endif
+  void printEvalGraphModelGraph(std::ostream&);
+  void printModelBuildingPropertyMap(std::ostream&);
 };
 
-#ifndef NDEBUG
 template<typename EvalGraphT>
 void
-OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
+OnlineModelBuilder<EvalGraphT>::printEvalGraphModelGraph(std::ostream& o)
 {
-  LOG_SCOPE("egmg", false);
-  LOG("=eval graph/model graph");
+  o << "eval graph/model graph" << std::endl;
   typename EvalGraphT::EvalUnitIterator uit, ubegin, uend;
   boost::tie(ubegin, uend) = eg.getEvalUnits();
   for(uit = ubegin; uit != uend; ++uit)
   {
+    std::string indent = "  ";
     EvalUnit u = *uit;
-    std::stringstream s; s << "u " << u;
-    LOG_SCOPE(s.str(), false);
-    LOG("=unit " << u);
+    std::stringstream s; s << "u " << u << " ";
+    indent = s.str();
+    o << indent << "=unit " << std::endl;
 
     // EvalUnitProjectionProperties
-    LOG("iproject = " << eg.propsOf(u).iproject << " oproject = " << eg.propsOf(u).oproject);
+    o << indent << "iproject = " << eg.propsOf(u).iproject << " oproject = " << eg.propsOf(u).oproject << std::endl;
 
     // EvalUnitModelGeneratorFactoryProperties
     if( eg.propsOf(u).mgf )
     {
-      LOG("model generator factory = " << printptr(eg.propsOf(u).mgf) <<
-          ":" << *eg.propsOf(u).mgf);
+      o << indent  <<
+        "model generator factory = " << printptr(eg.propsOf(u).mgf) <<
+        ":" << *eg.propsOf(u).mgf << std::endl;
     }
     else
     {
-      LOG("no model generator factory");
+      o << indent  <<
+        "no model generator factory" << std::endl;
     }
 
     // unit dependencies
@@ -343,11 +340,13 @@ OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
     boost::tie(pbegin, pend) = eg.getPredecessors(u);
     for(pit = pbegin; pit != pend; ++pit)
     {
-      LOG("-> depends on unit " << eg.targetOf(*pit) << "/join order " << eg.propsOf(*pit).joinOrder);
+      o << indent <<
+        "-> depends on unit " << eg.targetOf(*pit) <<
+        "/join order " << eg.propsOf(*pit).joinOrder << std::endl;
     }
 
     // models
-    LOG_SCOPE("models", false);
+    indent += "models ";
     for(ModelType t = MT_IN; t <= MT_OUTPROJ; t = static_cast<ModelType>(static_cast<unsigned>(t)+1))
     {
       const ModelList& modelsAt = mg.modelsAt(u, t);
@@ -355,34 +354,38 @@ OnlineModelBuilder<EvalGraphT>::logEvalGraphModelGraph()
       for(mit = modelsAt.begin(); mit != modelsAt.end(); ++mit)
       {
         Model m = *mit;
-        LOG(toString(t) << "@" << m << ": " << mg.propsOf(m));
+        o << indent <<
+          toString(t) << "@" << m << ": " << mg.propsOf(m) << std::endl;
         // model dependencies (preds)
         ModelPredecessorIterator pit, pbegin, pend;
         boost::tie(pbegin, pend) = mg.getPredecessors(m);
         for(pit = pbegin; pit != pend; ++pit)
         {
-          LOG("-> depends on model " << mg.targetOf(*pit) << "/join order " << mg.propsOf(*pit).joinOrder);
+          o << indent <<
+            "-> depends on model " << mg.targetOf(*pit) <<
+            "/join order " << mg.propsOf(*pit).joinOrder << std::endl;
         }
         // model dependencies (succs)
         ModelSuccessorIterator sit, sbegin, send;
         boost::tie(sbegin, send) = mg.getSuccessors(m);
         for(sit = sbegin; sit != send; ++sit)
         {
-          LOG("<- input for model  " << mg.sourceOf(*sit) << "/join order " << mg.propsOf(*sit).joinOrder);
+          o << indent <<
+            "<- input for model  " << mg.sourceOf(*sit) <<
+            "/join order " << mg.propsOf(*sit).joinOrder << std::endl;
         }
       }
       if( modelsAt.empty() )
-        LOG(toString(t) << " empty");
+        o << indent << toString(t) << " empty" << std::endl;
     }
   }
 }
 
 template<typename EvalGraphT>
 void
-OnlineModelBuilder<EvalGraphT>::logModelBuildingPropertyMap()
+OnlineModelBuilder<EvalGraphT>::printModelBuildingPropertyMap(std::ostream& o)
 {
-  LOG_SCOPE("mbp", false);
-  LOG("=model building property map");
+  o << "model building property map" << std::endl;
   typename std::vector<EvalUnitModelBuildingProperties>::const_iterator
     it, end;
   unsigned u = 0;
@@ -390,18 +393,17 @@ OnlineModelBuilder<EvalGraphT>::logModelBuildingPropertyMap()
   end = mbp.storage_end();
   if( it == end )
   {
-    LOG("empty");
+     o << "empty" << std::endl;
   }
   else
   {
     for(; it != end; ++it, ++u)
     {
       const EvalUnitModelBuildingProperties& uprop = *it;
-      LOG(u << "=>" << printEUMBP(uprop));
+      o << " " << u << "=>" << printEUMBP(uprop) << std::endl;
     }
   }
 }
-#endif
 
 template<typename EvalGraphT>
 typename OnlineModelBuilder<EvalGraphT>::Model
@@ -548,7 +550,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   dbgstr << "gnIM[" << u << "]";
   LOG_METHOD(dbgstr.str(),this);
   LOG("=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
-  logModelBuildingPropertyMap();
+  printModelBuildingPropertyMap(std::cerr);
 
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   LOG("uprops: " << uprops);
@@ -589,7 +591,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     }
     mbprops.setIModel(odummy);
     LOG("returning model " << printopt(odummy));
-    logModelBuildingPropertyMap();
+    #ifndef NDEBUG
+    printModelBuildingPropertyMap(std::cerr);
+    #endif
     return odummy;
   }
 
@@ -609,7 +613,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     {
       LOG("got null cursor, returning no imodel");
       mbprops.setIModel(boost::none);
-      logModelBuildingPropertyMap();
+      #ifndef NDEBUG
+      printModelBuildingPropertyMap(std::cerr);
+      #endif
       return boost::none;
     }
     else
@@ -655,7 +661,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
         {
           LOG("backtracking impossible, returning no imodel");
           mbprops.setIModel(boost::none);
-          logModelBuildingPropertyMap();
+          #ifndef NDEBUG
+          printModelBuildingPropertyMap(std::cerr);
+          #endif
           return boost::none;
         }
         else
@@ -667,7 +675,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
           {
             LOG("got null cursor, returning no imodel");
             mbprops.setIModel(boost::none);
-            logModelBuildingPropertyMap();
+            #ifndef NDEBUG
+            printModelBuildingPropertyMap(std::cerr);
+            #endif
             return boost::none;
           }
           else
@@ -685,7 +695,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   Model im = createIModelFromPredecessorOModels(u);
   LOG("returning newly created imodel " << im);
   mbprops.setIModel(im);
-  logModelBuildingPropertyMap();
+  #ifndef NDEBUG
+  printModelBuildingPropertyMap(std::cerr);
+  #endif
   return im;
 }
 
@@ -920,10 +932,10 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   LOG("=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
 
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+  printModelBuildingPropertyMap(std::cerr);
+  LOG("uprops = " << uprops);
   #endif
 
-  logModelBuildingPropertyMap();
-  LOG("uprops = " << uprops);
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
   LOG("mbprops = " << printEUMBP(mbprops));
 
@@ -933,7 +945,9 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     LOG("not allowed to continue because of orefcount > 1");
     // no -> give up our model refcount and return no model at all
     mbprops.orefcount--;
-    logModelBuildingPropertyMap();
+    #ifndef NDEBUG
+    printModelBuildingPropertyMap(std::cerr);
+    #endif
     return OptionalModel();
   }
 
@@ -955,7 +969,9 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     {
       LOG("failing with no input");
       assert(mbprops.orefcount == 0);
-      logModelBuildingPropertyMap();
+      #ifndef NDEBUG
+      printModelBuildingPropertyMap(std::cerr);
+      #endif
 			return boost::none;
     }
 
@@ -974,7 +990,9 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   while( !omodel );
   assert(mbprops.orefcount == 1);
   LOG("returning omodel " << printopt(omodel));
-  logModelBuildingPropertyMap();
+  #ifndef NDEBUG
+  printModelBuildingPropertyMap(std::cerr);
+  #endif
   return omodel;
 }
 

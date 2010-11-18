@@ -53,7 +53,8 @@ namespace impl
 }
 
 template<typename ValueT, typename IndexT>
-class Table
+class Table:
+  public ostream_printable< Table<ValueT,IndexT> >
 {
 	// types
 public:
@@ -77,18 +78,12 @@ public:
   // we will only create those accessors we really need
   // two important objectives: space efficiency and time efficiency
 
-  #ifndef NDEBUG
-  void logContents(const std::string& indent) const;
-  #else
-  inline void logContents(const std::string&) const { }
-  #endif
+  virtual std::ostream& print(std::ostream& o) const;
 };
 
-#ifndef NDEBUG
 template<typename ValueT, typename IndexT>
-void Table<ValueT,IndexT>::logContents(const std::string& indent) const
+std::ostream& Table<ValueT,IndexT>::print(std::ostream& o) const
 {
-  LOG_METHOD(indent,this);
   // debugging assumes that each container can be iterated by AddressTag index and contains KindTag index
 	typedef typename Container::template index<impl::AddressTag>::type AddressIndex;
 	const AddressIndex& aidx = container.template get<impl::AddressTag>();
@@ -98,10 +93,10 @@ void Table<ValueT,IndexT>::logContents(const std::string& indent) const
   {
     const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
     // for the next line to work, ValueT must be derived from ostream_printable<ValueT> 
-    LOG(ID(it->kind, address) << " -> " << static_cast<const ValueT&>(*it));
+    o << ID(it->kind, address) << " -> " << static_cast<const ValueT&>(*it) << std::endl;
   }
+  return o;
 }
-#endif
 
 DLVHEX_NAMESPACE_END
 

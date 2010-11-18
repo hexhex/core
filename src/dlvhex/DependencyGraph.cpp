@@ -56,6 +56,7 @@ DependencyGraph::DependencyInfo::operator|=(
 	negativeExternal |= other.negativeExternal;
 	externalConstantInput |= other.externalConstantInput;
 	externalPredicateInput |= other.externalPredicateInput;
+  return *this;
 }
 
 std::ostream& DependencyGraph::NodeInfo::print(std::ostream& o) const

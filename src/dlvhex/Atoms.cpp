@@ -30,9 +30,9 @@
 
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Logger.hpp"
-#include "dlvhex/PluginInterface.h"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/PluginInterface.h"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 
 #include <boost/foreach.hpp>

@@ -79,6 +79,7 @@ public:
   typedef ModelDepPropertyBaseT ModelDepPropertyBase;
 
   // concept check: must be an eval graph
+  // TODO: solve not via convertible but via other helper
   BOOST_CONCEPT_ASSERT((boost::Convertible<
       EvalGraphT,
       EvalGraph<
@@ -257,6 +258,12 @@ public:
   // intersect sets of successors of models mm
   // return first intersected element, boost::none if none
   boost::optional<Model> getSuccessorIntersection(EvalUnit location, const std::vector<Model>& mm) const;
+
+  inline std::pair<ModelIterator, ModelIterator> getModels() const
+    { return boost::vertices(mg); }
+
+  inline const ModelGraphInt& getInternalGraph() const
+    { return mg; }
 
   // return helper list that stores for each unit the set of i/omodels there
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
