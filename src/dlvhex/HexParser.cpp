@@ -100,7 +100,7 @@ HexParser::parse(const std::string& filename) throw (SyntaxError)
 
   if( !ifs.is_open() )
   {
-    char* ch = get_current_dir_name();
+    char* ch = getcwd(NULL, 0);
     std::string cwd(ch);
     free(ch);
     throw SyntaxError("File '" + filename + "' could not be opened with cwd '" + cwd + "'");
