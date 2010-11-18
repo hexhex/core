@@ -623,7 +623,7 @@ int main(int argn, char** argv)
     //#  undef LOG
     //#  define LOG(streamout) do { std::ostringstream os; os << streamout; } while(false);
     //LOG("creating model builder");
-    { std::ostringstream os; os << "creating model builder"; }
+    //{ std::ostringstream os; os << "creating model builder"; }
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemb, "create offline mb");
     FinalOfflineModelBuilder mb(evalgraph);
     DLVHEX_BENCHMARK_STOP(sidofflinemb);

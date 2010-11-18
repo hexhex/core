@@ -1,5 +1,6 @@
 -*- org -*-
 
+* TODO add configure options for various debugging switches (-lmcheck -D_GLIBCXX_DEBUG -DNDEBUG)
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
 * TODO Add support for GraphML

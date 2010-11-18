@@ -51,7 +51,7 @@
 #include <cstdlib>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  ctx.registry->logContents(); \
+  LOG(*ctx.registry); \
 	RawPrinter printer(std::cerr, ctx.registry); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG("idb"); \
@@ -131,7 +131,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   }
 
   LOG("initial eval/model graph:");
-  omb.logEvalGraphModelGraph();
+  omb.printEvalGraphModelGraph(std::cerr);
 
   // evaluate
   BOOST_MESSAGE("requesting model #1");
@@ -140,11 +140,11 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   InterpretationConstPtr int1 = omb.getModelGraph().propsOf(m1.get()).interpretation;
   BOOST_REQUIRE(int1 != 0);
   LOG("model #1 is " << *int1);
-  omb.logEvalGraphModelGraph();
+  omb.printEvalGraphModelGraph(std::cerr);
 
   BOOST_MESSAGE("requesting model #2");
   OptionalModel m2 = omb.getNextIModel(ufinal);
   BOOST_REQUIRE(!m2);
-  omb.logEvalGraphModelGraph();
+  omb.printEvalGraphModelGraph(std::cerr);
 }
 

@@ -427,12 +427,15 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
 	}
 
   // check if there is an existing model created from these predecessors
+  #warning reactivate!
+  #if 0
   OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
   if( !!oexisting )
   {
     LOG("found and will return existing successor imodel " << oexisting.get());
     return oexisting.get();
   }
+  #endif
   
   // create interpretation
   InterpretationPtr pjoin;
@@ -492,8 +495,9 @@ OnlineModelBuilder<EvalGraphT>::ensureModelIncrement(
   LOG("=OnlineModelBuilder<...>::ensureModelIncrement(" << u << "," << ucursor1 << ")");
   #endif
 
-  EvalUnitPredecessorIterator pbegin =
-    eg.getPredecessors(u).first;
+  EvalUnitPredecessorIterator pbegin, pend;
+  boost::tie(pbegin, pend) = eg.getPredecessors(u);
+  assert(pbegin != pend);
   do
   {
     typename EvalGraphT::EvalUnit ucursor =

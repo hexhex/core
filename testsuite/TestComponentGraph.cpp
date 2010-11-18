@@ -46,12 +46,9 @@
 #include <cstdlib>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  ctx.registry->logContents(); \
+  LOG(*ctx.registry); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb"); \
-	printer.printmany(ctx.edb,"\n"); \
-	std::cerr << std::endl; \
-	LOG("edb end"); \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
