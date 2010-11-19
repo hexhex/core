@@ -529,11 +529,12 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   // shortcut if only one dependency
   if( mm.size() == 1 )
   {
-    LOG("one-dependency shortcut");
+    LOG("one-dependency shortcut: simply finding corresponding model");
     typename ModelPropertyBundle::SuccessorModelMap::const_iterator itsucc =
       propsOf(mm.front()).successors.find(location);
     if( itsucc != propsOf(mm.front()).successors.end() )
     {
+      // found successor set -> good (take first, which should be the only one)
       const std::set<Model>& succs = itsucc->second;
       LOG("found successor (" << succs.size() << ")");
       assert(succs.size() == 1);
@@ -541,7 +542,8 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     }
     else
     {
-      LOG("succs empty");
+      // did not find successor set
+      LOG("no successors");
       return boost::none;
     }
   }
