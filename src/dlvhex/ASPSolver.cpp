@@ -328,6 +328,10 @@ DLVLibSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
     pimpl->ph->setMaxInt(mi);
     */
   }
+  else
+  {
+    pimpl->ph->setMaxInt(10);
+  }
 
   // output program
   typedef boost::shared_ptr<DLVPrintVisitor> PrinterPtr;
@@ -340,6 +344,10 @@ DLVLibSoftware::Delegate::useASTInput(const Program& idb, const AtomSet& edb)
   edb.accept(*printer);
 
   pimpl->ph->clearProgram();
+  std::cerr <<
+    "sending program to dlv-lib:===" << std::endl <<
+    programStream.str() << std::endl <<
+    "==============================" << std::endl;
   pimpl->ph->Parse(programStream);
   pimpl->ph->ResolveProgram(SYNCRONOUSLY);
 }
@@ -388,12 +396,19 @@ DLVLibSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
     for(MODEL_ATOMS::const_iterator ita = itm->begin();
 	ita != itm->end(); ++ita)
     {
+      const char* pname = ita->getName();
+      assert(pname);
+
       // i have a hunch this might be the encoding
-      assert(ita->getName()[0] != '-');
+      assert(pname[0] != '-');
 
       //PTuple = std::vector<dlvhex::Term*>
       dlvhex::PTuple ptuple;
-      ptuple.push_back(new dlvhex::Term(ita->getName()));
+      if( options.rewriteHigherOrder == false )
+      {
+	//std::cerr << "creating predicate with first term '" << pname << "'" << std::endl;
+	ptuple.push_back(new dlvhex::Term(pname));
+      }
       for(MODEL_TERMS::const_iterator itt = ita->getParams().begin();
 	  itt != ita->getParams().end(); ++itt)
       {
@@ -401,14 +416,16 @@ DLVLibSoftware::Delegate::getOutput(std::vector<AtomSet>& result)
 	{
 	case 1:
 	  // string terms
+	  //std::cerr << "creating string term '" << itt->data.item << "'" << std::endl;
 	  ptuple.push_back(new dlvhex::Term(itt->data.item));
 	  break;
 	case 2:
 	  // int terms
+	  //std::cerr << "creating int term '" << itt->data.number << "'" << std::endl;
 	  ptuple.push_back(new dlvhex::Term(itt->data.number));
 	  break;
 	default:
-	  throw "unknown term type!";
+	  throw std::runtime_error("unknown term type!");
 	}
       }
       itr->insert(dlvhex::AtomPtr(new dlvhex::Atom(ptuple)));

@@ -172,14 +172,14 @@ Term::Term(const char* name, bool addQuotes)
 
 	if (name[0] == '\"')
 	{
-		constantString =  getNames().insert(name);
+		constantString = getNames().insert(std::string(name));
 		type = STRING;
 	}
 	else
 	{
 		if (addQuotes)
 		{
-			constantString = getNames().insert("\"" + (std::string)name + "\"");
+			constantString = getNames().insert("\"" + std::string(name) + "\"");
 			type = STRING;
 		}
 		else
@@ -194,7 +194,7 @@ Term::Term(const char* name, bool addQuotes)
 			}
 			else
 			{
-				constantString = getNames().insert((std::string)name);
+				constantString = getNames().insert(std::string(name));
 				type = SYMBOL;
 			}
 		}
