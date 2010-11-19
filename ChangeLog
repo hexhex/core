@@ -1,3 +1,8 @@
+2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Set error-limit to 5 for clang.
+	* testsuite/Makefile.am: Likewise.
+
 2010-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/BoostComponentFinder.cpp: Applied the nice part of the

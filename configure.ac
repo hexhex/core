@@ -113,11 +113,23 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
 
+# check compiler
+
 # set default warning parameters for g++ compatible compilers
 # allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
 fi
+
+# check for clang
+case $CXX in
+   clang*)
+     CXXFLAGS="$CXXFLAGS -ferror-limit=5"
+   ;;
+   *)
+   ;;
+esac
+
 
 # Checks for header files.
 AC_HEADER_DIRENT

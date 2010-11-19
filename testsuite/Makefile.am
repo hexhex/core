@@ -5,7 +5,7 @@ AM_CPPFLAGS = \
     $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
     -DBOOST_TEST_DYN_LINK
-    
+
     #-DCWDEBUG
 
 # global linker flags
@@ -65,7 +65,7 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
-  $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
+        $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
