@@ -36,6 +36,10 @@
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
 
+#ifndef NDEBUG
+# define COMPGRAPH_SOURCESDEBUG
+#endif
+
 DLVHEX_NAMESPACE_BEGIN
 
 /**
@@ -69,7 +73,7 @@ public:
   struct ComponentInfo:
     public ostream_printable<ComponentInfo>
   {
-    #ifndef NDEBUG
+    #ifdef COMPGRAPH_SOURCESDEBUG
     std::list<DependencyGraph::Node> sources;
     #endif
 
@@ -93,7 +97,7 @@ public:
 		public DependencyGraph::DependencyInfo,
     public ostream_printable<DependencyInfo>
   {
-    #ifndef NDEBUG
+    #ifdef COMPGRAPH_SOURCESDEBUG
     std::set<DependencyGraph::Dependency> sources;
     #endif
 
@@ -125,7 +129,7 @@ public:
 protected:
   // for debugging and printing
   RegistryPtr reg;
-  #ifndef NDEBUG
+  #ifdef COMPGRAPH_SOURCESDEBUG
   // in non-debug mode this graph's lifetime can end
   // after the constructor finished
   const DependencyGraph& dg;
@@ -135,6 +139,9 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
+private:
+  // not implemented on purpose because forbidden to use
+	ComponentGraph(const Component& other);
 public:
 	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();

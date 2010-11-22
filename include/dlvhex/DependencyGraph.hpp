@@ -253,6 +253,9 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
+private:
+  // not implemented on purpose because forbidden to use
+	DependencyGraph(const Dependency& other);
 public:
 	DependencyGraph(RegistryPtr registry);
 	virtual ~DependencyGraph();

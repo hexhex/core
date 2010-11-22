@@ -76,7 +76,8 @@ typedef boost::bimaps::bimap<
 /**
  * @brief Registry for entities used in programs as IDs (collection of symbol tables)
  */
-struct Registry
+struct Registry:
+  public ostream_printable<Registry>
 {
   TermTable terms;
   // ordinary ground atoms
@@ -118,7 +119,7 @@ struct Registry
 	static inline AddressRange maxAddressRange() { return AR_COUNT; }
 	#endif
 
-  void logContents() const;
+  virtual std::ostream& print(std::ostream& o) const;
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
 };

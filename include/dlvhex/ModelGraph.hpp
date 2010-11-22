@@ -22,7 +22,8 @@
 #ifndef MODEL_GRAPH_HPP_INCLUDED__29082010
 #define MODEL_GRAPH_HPP_INCLUDED__29082010
 
-#include <cassert>
+#include "EvalGraph.hpp"
+#include "Logger.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -31,8 +32,8 @@
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "Logger.hpp"
-#include "EvalGraph.hpp"
+#include <cassert>
+#include <iomanip>
 
 // this is used as index into an array by struct EvalUnitModels
 enum ModelType
@@ -47,9 +48,9 @@ inline const char* toString(ModelType mt)
 {
   switch(mt)
   {
-  case MT_IN:      return "IN     ";
-  case MT_INPROJ:  return "INPROJ ";
-  case MT_OUT:     return "OUT    ";
+  case MT_IN:      return "IN";
+  case MT_INPROJ:  return "INPROJ";
+  case MT_OUT:     return "OUT";
   case MT_OUTPROJ: return "OUTPROJ";
   default: assert(false); return ""; // keep compiler happy with NDEBUG
   }
@@ -78,6 +79,7 @@ public:
   typedef ModelDepPropertyBaseT ModelDepPropertyBase;
 
   // concept check: must be an eval graph
+  // TODO: solve not via convertible but via other helper
   BOOST_CONCEPT_ASSERT((boost::Convertible<
       EvalGraphT,
       EvalGraph<
@@ -142,8 +144,7 @@ public:
         type(type) {}
     std::ostream& print(std::ostream& o) const
     {
-      return o << toString(type) << " at unit " << location << ", " <<
-        print_method(static_cast<ModelPropertyBaseT>(*this));
+      return o << print_method(static_cast<ModelPropertyBaseT>(*this));
     }
     // the model graph will manage the set of successors
     friend class ModelGraph<EvalGraphT, ModelPropertyBaseT, ModelDepPropertyBaseT>;
@@ -256,6 +257,12 @@ public:
   // intersect sets of successors of models mm
   // return first intersected element, boost::none if none
   boost::optional<Model> getSuccessorIntersection(EvalUnit location, const std::vector<Model>& mm) const;
+
+  inline std::pair<ModelIterator, ModelIterator> getModels() const
+    { return boost::vertices(mg); }
+
+  inline const ModelGraphInt& getInternalGraph() const
+    { return mg; }
 
   // return helper list that stores for each unit the set of i/omodels there
   inline const ModelList& modelsAt(EvalUnit unit, ModelType type) const
@@ -488,8 +495,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
 } // ModelGraph<...>::addModel(...) implementation
 
 // ModelGraph<...>::getSuccessorIntersection(...) implementation
-// intersect sets of successors of models mm
-// return first intersected element, boost::none if none
+//
+// given an eval unit and for each predecessor of this unit a model,
+// this method intersects the successor models of all these models
+// return first intersected element, boost::none if none exists
 template<typename EvalGraphT, typename ModelPropertiesT, typename ModelDepPropertiesT>
 boost::optional<typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::Model>
 ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorIntersection(
@@ -498,6 +507,8 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::EvalUnit location,
     const std::vector<typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::Model>& mm) const
 {
+  throw "this method is buggy! if used it will cause the evaluation to loose models!";
+#warning this method is buggy! if used it will cause the evaluation to loose models!
   LOG_SCOPE("gSI", false);
   LOG("=getSuccessorIntersection(" << location << "," << mm.size() << ")");
 
@@ -518,11 +529,12 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   // shortcut if only one dependency
   if( mm.size() == 1 )
   {
-    LOG("one-dependency shortcut");
+    LOG("one-dependency shortcut: simply finding corresponding model");
     typename ModelPropertyBundle::SuccessorModelMap::const_iterator itsucc =
       propsOf(mm.front()).successors.find(location);
     if( itsucc != propsOf(mm.front()).successors.end() )
     {
+      // found successor set -> good (take first, which should be the only one)
       const std::set<Model>& succs = itsucc->second;
       LOG("found successor (" << succs.size() << ")");
       assert(succs.size() == 1);
@@ -530,13 +542,15 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     }
     else
     {
-      LOG("succs empty");
+      // did not find successor set
+      LOG("no successors");
       return boost::none;
     }
   }
 
   // regular processing
   typedef typename std::set<Model>::const_iterator SuccIter;
+  // for each predecessor model we have a begin and an end iterator of all of their successors
   typename std::vector<SuccIter> iters;
   typename std::vector<SuccIter> ends;
 
@@ -552,7 +566,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       ends.push_back(succs.end());
       #ifndef NDEBUG
       LOG("model " << m << " at cursor index " <<
-          static_cast<unsigned>(iters.size()) << " has successors:");
+          static_cast<unsigned>(iters.size()-1) << " has successors:");
       LOG_INDENT();
       for(SuccIter sit = succs.begin(); sit != succs.end(); ++sit)
       {
@@ -573,8 +587,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
 
   // join loop
   typedef typename std::vector<SuccIter>::iterator SuccIterIter;
+  // the currently investigated model's sucessor begin and end iterators
   SuccIterIter cursorit = iters.begin();
   SuccIterIter cursorend = ends.begin();
+  // the last model's sucessor begin and end iterators
   SuccIterIter lastcursorit = iters.end() - 1;
   SuccIterIter lastcursorend = ends.end() - 1;
 
@@ -589,11 +605,14 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   do
   {
     #ifndef NDEBUG
-    LOG("at loop begin with cursor at " << static_cast<unsigned>(cursorit - iters.begin()) << " at model " << **cursorit);
+    LOG("at loop begin with cursor at " <<
+        static_cast<unsigned>(cursorit - iters.begin()) <<
+        " at model " << **cursorit);
     for(SuccIterIter at = iters.begin();
         at != cursorit; ++at)
     {
-      LOG("iterator " << static_cast<unsigned>(at - iters.begin()) << " pointing to model " << **at);
+      LOG("iterator " << static_cast<unsigned>(at - iters.begin()) <<
+          " pointing to model " << **at);
     }
     #endif
     // success condition
@@ -605,16 +624,19 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       return m;
     }
 
+    // peek at next model
+    assert(cursorit != iters.end());
+    assert(cursorend != ends.end());
     SuccIterIter nextcursorit = cursorit + 1;
     SuccIterIter nextcursorend = cursorend + 1;
-    // these are not end() cursors!
     assert(nextcursorit != iters.end());
     assert(nextcursorend != ends.end());
 
+    // get current/end iterator range for next model
     SuccIter& nextit = *nextcursorit;
     SuccIter& nextend = *nextcursorend;
 
-    // try to increment here until we reach *cursorit or more
+    // try to increment next model until we reach *cursorit or more
     while( (nextit != nextend) &&
            (*nextit < **cursorit) )
     {
@@ -624,6 +646,8 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     }
     if( nextit == nextend )
     {
+      // this predecessor model cannot provide more elements and there are no bigger ones
+      // -> fail for the whole join
       LOG("beyond last element -> fail");
       return boost::none;
     }
@@ -649,24 +673,28 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
           // advance until we reach at least *nextit or fail
           SuccIter& backtrackerit = *backtrackercursorit;
           SuccIter& backtrackerend = *backtrackercursorend;
-          if( backtrackerit == backtrackerend )
-          {
-            LOG("backtrack cursor already at end -> fail");
-            return boost::none;
-          }
+          assert(backtrackerit != backtrackerend);
           backtrackerit++;
-          LOG("advanced to model " << *backtrackerit);
           while( (backtrackerit != backtrackerend) &&
                  (*backtrackerit < *nextit) )
           {
-            backtrackerit++;
             LOG("advanced to model " << *backtrackerit);
+            backtrackerit++;
           }
-          if( backtrackercursorit == iters.begin() )
-              break;
-          LOG("going back further");
-          backtrackercursorit--;
-          backtrackercursorend--;
+          if( backtrackerit == backtrackerend )
+          {
+            LOG("backtrack cursor at end -> fail");
+            return boost::none;
+          }
+          else
+          {
+            LOG("backtrack successful -> found model " << *backtrackerit);
+            if( backtrackercursorit == iters.begin() )
+                break;
+            LOG("going back further");
+            backtrackercursorit--;
+            backtrackercursorend--;
+          }
         }
         while(true);
         assert(backtrackercursorit == iters.begin());

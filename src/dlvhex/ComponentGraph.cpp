@@ -57,7 +57,7 @@ std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const
 
 ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
   reg(reg),
-  #ifndef NDEBUG
+  #ifdef COMPGRAPH_SOURCESDEBUG
   dg(dg),
   #endif
   cg()
@@ -69,13 +69,7 @@ ComponentGraph::~ComponentGraph()
 {
 }
 
-void ComponentGraph::calculateComponents(
-		#ifndef NDEBUG
-		const DependencyGraph&
-		#else
-		const DependencyGraph& dg
-		#endif
-	)
+void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 {
   LOG_SCOPE("cCs", false);
   LOG("=calculateComponents");
@@ -126,7 +120,7 @@ void ComponentGraph::calculateComponents(
     for(NodeSet::const_iterator itn = nodes.begin();
         itn != nodes.end(); ++itn)
     {
-      #ifndef NDEBUG
+      #ifdef COMPGRAPH_SOURCESDEBUG
       ci.sources.push_back(*itn);
       #endif
       ID id = dg.propsOf(*itn).id;
@@ -282,7 +276,7 @@ ComponentGraph::collapseComponents(
 				LOG("incoming dependency from " << source);
 				incoming[source] |= propsOf(incoming_dep);
 				// assert that we do not create cycles
-				#ifndef NDEBUG
+        #ifdef COMPGRAPH_SOURCESDEBUG
 				DepMap::const_iterator itdm = outgoing.find(source);
 				// if we have an incoming dep and an outgoing dep,
 				// we create a cycle so this collapsing is invalid
@@ -304,7 +298,7 @@ ComponentGraph::collapseComponents(
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
 		ComponentInfo& cio = propsOf(*ito);
-		#ifndef NDEBUG
+    #ifdef COMPGRAPH_SOURCESDEBUG
 		ci.sources.insert(ci.sources.end(),
 				cio.sources.begin(), cio.sources.end());
 		#endif
@@ -402,7 +396,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
   {
     o << "{";
 		o << c << "|";
-    #ifndef NDEBUG
+    #ifdef COMPGRAPH_SOURCESDEBUG
     o << "{sources|" << printrange(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
 		printoutVerboseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);

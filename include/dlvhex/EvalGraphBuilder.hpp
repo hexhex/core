@@ -33,6 +33,7 @@
 
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Logger.hpp"
 
 #include <boost/range/iterator_range.hpp>
@@ -135,6 +136,8 @@ protected:
 	ComponentGraph& cg;
 	// eval graph
 	EvalGraphT& eg;
+  // configuration for model generator factory
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
 
   ComponentEvalUnitMapping mapping;
   //NodeEvalUnitMapping mapping;
@@ -181,7 +184,9 @@ protected:
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
-	EvalGraphBuilder(ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg);
+	EvalGraphBuilder(
+      ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
 	virtual ~EvalGraphBuilder();
 
   //

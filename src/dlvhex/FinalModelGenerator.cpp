@@ -43,7 +43,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 FinalModelGeneratorFactory::FinalModelGeneratorFactory(
     ProgramCtx& ctx,
-    const ComponentInfo& ci):
+    const ComponentInfo& ci,
+    ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
+  externalEvalConfig(externalEvalConfig),
   ctx(ctx),
   eatoms(ci.outerEatoms),
   idb(),
@@ -184,6 +186,21 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
   return newruleid;
 }
 
+std::ostream& FinalModelGeneratorFactory::print(
+    std::ostream& o) const
+{
+  RawPrinter printer(o, ctx.registry);
+  if( !eatoms.empty() )
+  {
+    printer.printmany(eatoms,",");
+  }
+  if( !xidb.empty() )
+  {
+    printer.printmany(xidb,",");
+  }
+  return o;
+}
+
 FinalModelGenerator::FinalModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
@@ -221,16 +238,22 @@ FinalModelGenerator::generateNextModel()
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       evaluateExternalAtoms(newint);
+
+      if( factory.xidb.empty() )
+      {
+        // we only have eatoms -> return singular result
+        currentResults = ASPSolverManager::ResultsPtr(new EmptyResults());
+        return newint;
+      }
     }
 
     // store in model generator and store as const
     postprocessedInput = newint;
 
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,"initiating external solver");
-    ASPSolver::DLVSoftware::Configuration dlvConfiguration;
     ASPProgram program(factory.ctx.registry, factory.xidb, postprocessedInput, factory.ctx.maxint);
     ASPSolverManager mgr;
-    currentResults = mgr.solve(dlvConfiguration, program);
+    currentResults = mgr.solve(*factory.externalEvalConfig, program);
     DLVHEX_BENCHMARK_STOP(sidaspsolve);
   }
 
@@ -239,7 +262,7 @@ FinalModelGenerator::generateNextModel()
   if( ret == 0 )
   {
     currentResults.reset();
-    // the following is just for freeing memory
+    // the following is just for freeing memory early
     postprocessedInput.reset();
     return InterpretationPtr();
   }

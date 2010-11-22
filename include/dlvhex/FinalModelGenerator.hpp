@@ -63,6 +63,25 @@ class FinalModelGenerator:
 public:
   typedef FinalModelGeneratorFactory Factory;
 
+protected:
+  struct EmptyResults:
+    public ASPSolverManager::Results
+  {
+    EmptyResults() {}
+    virtual ~EmptyResults() {}
+    virtual AnswerSet::Ptr getNextAnswerSet() { return AnswerSet::Ptr(); }
+  };
+
+  struct SingularResults:
+    public ASPSolverManager::Results
+  {
+    SingularResults(AnswerSet::Ptr as): ASPSolverManager::Results(), ret(as) {}
+    virtual ~SingularResults() {}
+    virtual AnswerSet::Ptr getNextAnswerSet()
+      { AnswerSet::Ptr p = ret; ret.reset(); return p; };
+    AnswerSet::Ptr ret;
+  };
+
   // storage
 protected:
   Factory& factory;
@@ -106,6 +125,8 @@ public:
 
   // storage
 protected:
+  // which solver shall be used for external evaluation?
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
   std::vector<ID> eatoms;
   // original idb (containing eatoms, but already including auxiliary input rules)
@@ -115,7 +136,9 @@ protected:
 
   // methods
 public:
-  FinalModelGeneratorFactory(ProgramCtx& ctx, const ComponentInfo& ci);
+  FinalModelGeneratorFactory(
+      ProgramCtx& ctx, const ComponentInfo& ci,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
   virtual ~FinalModelGeneratorFactory() {}
 
   virtual ModelGeneratorPtr createModelGenerator(
@@ -127,8 +150,7 @@ public:
   // store and return id
   ID convertRule(ID ruleid);
 
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorFactoryBase::print() not overloaded"; }
+  virtual std::ostream& print(std::ostream& o) const;
 };
 
 DLVHEX_NAMESPACE_END

@@ -46,9 +46,9 @@
 #include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  ctx.registry->logContents(); \
+  LOG(*ctx.registry); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb " << *ctx.edb); \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG("idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \

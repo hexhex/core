@@ -28,7 +28,7 @@ LIBDLVHEXBASE = \
 	AggregateAtom.h \
 	AnswerSet.h \
 	Atom.h \
-	AtomNode.h \
+	#AtomNode.h \
 	AtomSet.h \
 	AtomTable.h \
 	BaseVisitor.h \

@@ -5,7 +5,7 @@ AM_CPPFLAGS = \
     $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
     -DBOOST_TEST_DYN_LINK
-    
+
     #-DCWDEBUG
 
 # global linker flags
@@ -62,8 +62,10 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
-  $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
+        $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
@@ -82,8 +84,8 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ 
-TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include -ferror-limit=5
+TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ -L$(top_srcdir)/dlv-lib -ldlv
+TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include  -I$(top_srcdir)/dlv-lib
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
@@ -137,6 +139,7 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
@@ -162,6 +165,7 @@ TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
@@ -177,6 +181,7 @@ TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \

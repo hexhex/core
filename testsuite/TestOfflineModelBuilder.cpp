@@ -575,7 +575,7 @@ BOOST_FIXTURE_TEST_CASE(offline_model_building_e2_u4_output_recursively, Offline
 BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_u11_output_recursively, OfflineModelBuilderEx1Fixture)
 {
   unsigned omcount11 = omb.buildOModelsRecursively(u11);
-  omb.logEvalGraphModelGraph();
+  omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(omcount11 > 0U);
   {
     typedef ModelBuilder::MyModelGraph MyModelGraph;
@@ -588,7 +588,7 @@ BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_u11_output_recursively, Offli
 BOOST_FIXTURE_TEST_CASE(offline_model_building_ex1_ufinal_input_recursively, OfflineModelBuilderEx1Fixture)
 {
   unsigned imcountfinal = omb.buildIModelsRecursively(ufinal);
-  omb.logEvalGraphModelGraph();
+  omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE_EQUAL(imcountfinal,6U);
   {
     typedef ModelBuilder::MyModelGraph MyModelGraph;

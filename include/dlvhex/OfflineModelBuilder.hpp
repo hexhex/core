@@ -99,8 +99,8 @@ public:
 
   inline EvalGraphT& getEvalGraph() { return Base::getEvalGraph(); }
   inline MyModelGraph& getModelGraph() { return Base::getModelGraph(); }
-  inline void logEvalGraphModelGraph() { Base::logEvalGraphModelGraph(); }
-  inline void logModelBuildingPropertyMap() { Base::logModelBuildingPropertyMap(); }
+  void printEvalGraphModelGraph(std::ostream& o) { Base::printEvalGraphModelGraph(o); }
+  void printModelBuildingPropertyMap(std::ostream& o) { Base::printModelBuildingPropertyMap(o); }
 
   virtual unsigned buildIModels(EvalUnit u);
   virtual unsigned buildOModels(EvalUnit u);

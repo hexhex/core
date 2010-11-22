@@ -141,6 +141,11 @@ private:
   // methods
   //////////////////////////////////////////////////////////////////////////////
 public:
+	EvalGraph()
+    {}
+  // this is not implemented on purpose (=linker error) because it is forbidden to use
+  // (it cannot be private as this would cause concept checks to fail (TODO: check why clang produces such bad error messages in this case)
+	EvalGraph(const EvalGraph& other);
   inline const EvalGraphInt& getInt() const
     { return eg; }
 
