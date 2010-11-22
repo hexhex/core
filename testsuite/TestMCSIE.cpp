@@ -32,39 +32,8 @@
 #define DLVHEX_BENCHMARK
 
 #include "dlvhex/HexParser.hpp"
-// #undef NDEBUG here fixes the bug completely
-//# undef NDEBUG
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Logger.hpp"
-#if 0
-# undef NDEBUG
-#    define LOG_CLOSURE_ID1 BOOST_PP_CAT(log_closure1_,__LINE__)
-#    define LOG_CLOSURE_ID2 BOOST_PP_CAT(log_closure2_,__LINE__)
-#    define LOG_CLOSURE_ID3 BOOST_PP_CAT(log_closure3_,__LINE__)
-      #  undef LOG
-      #  define LOG(streamout) do { std::ostringstream os; os << streamout; } while(false);
-      #  undef LOG_FUNCTION
-      #  define LOG_FUNCTION(func) \
-          const std::string LOG_CLOSURE_ID1(func);
-      #  undef LOG_METHOD
-      #  define LOG_METHOD(method,object) \
-          const std::string LOG_CLOSURE_ID1(method); \
-          const void* const LOG_CLOSURE_ID2(object);
-      #  undef LOG_SCOPE
-      #  define LOG_SCOPE(name,msg) \
-          const std::string LOG_CLOSURE_ID1(name); \
-          const bool LOG_CLOSURE_ID2(msg);
-      #  undef LOG_PSCOPE
-      #  define LOG_PSCOPE(name,ptr,msg) \
-          const std::string LOG_CLOSURE_ID1(name); \
-          const void* const LOG_CLOSURE_ID2(ptr); \
-          const bool LOG_CLOSURE_ID3(msg);
-#endif
-
-//#  define LOG(streamout) do { \
-//       Logger::Instance().startline(); \
-//       Logger::Instance().stream() << streamout << std::endl; \
-//     } while(false);
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Table.hpp"
 #include "dlvhex/TermTable.hpp"
@@ -73,15 +42,9 @@
 #include "dlvhex/AggregateAtomTable.hpp"
 #include "dlvhex/ExternalAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
-
-
-// #undef NDEBUG here fixes the bug partially
-//# undef NDEBUG
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
-// #undef NDEBUG here does not fix the bug
-//#ifdef NDEBUG
-//# undef NDEBUG
-//#endif
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
@@ -91,8 +54,6 @@
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/Benchmarking.h"
-
-
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
 
@@ -138,7 +99,6 @@ typedef boost::function<void (std::ostream&)> GraphVizFunc;
 
 inline void writeGraphVizFunctors(GraphVizFunc vfunc, GraphVizFunc tfunc, const std::string& fnamestart)
 {
-  /*
   std::string fnamev(fnamestart);
   fnamev += "Verbose.dot";
   LOG("dumping verbose graph to " << fnamev);
@@ -152,15 +112,14 @@ inline void writeGraphVizFunctors(GraphVizFunc vfunc, GraphVizFunc tfunc, const 
   std::ofstream filet(fnamet.c_str());
   tfunc(filet);
   makeGraphVizPdf(fnamet.c_str());
-  */
 }
 
 template<typename GraphVizzyT>
 inline void writeGraphViz(const GraphVizzyT& gv, const std::string& fnamestart)
 {
-	//GraphVizFunc vfunc = boost::bind(&GraphVizzyT::writeGraphViz, boost::cref(gv), _1, true);
-	//GraphVizFunc tfunc = boost::bind(&GraphVizzyT::writeGraphViz, boost::cref(gv), _1, false);
-	//writeGraphVizFunctors(vfunc, tfunc, fnamestart);
+	GraphVizFunc vfunc = boost::bind(&GraphVizzyT::writeGraphViz, boost::cref(gv), _1, true);
+	GraphVizFunc tfunc = boost::bind(&GraphVizzyT::writeGraphViz, boost::cref(gv), _1, false);
+	writeGraphVizFunctors(vfunc, tfunc, fnamestart);
 }
 
 DLVHEX_NAMESPACE_USE
@@ -372,9 +331,9 @@ typedef OfflineModelBuilder<FinalEvalGraph> FinalOfflineModelBuilder;
 
 int main(int argn, char** argv)
 {
-  if( argn != 4 )
+  if( argn != 5 )
   {
-    std::cerr << "usage: " << argv[0] << " <heurimode> <mbmode> <inputfile>" << std::endl;
+    std::cerr << "usage: " << argv[0] << " <heurimode> <mbmode> <backend> <inputfile>" << std::endl;
     return -1;
   }
 
@@ -399,7 +358,8 @@ int main(int argn, char** argv)
   //
   const std::string heurimode(argv[1]);
   const std::string mbmode(argv[2]);
-  const std::string fname(argv[3]);
+  const std::string backend(argv[3]);
+  const std::string fname(argv[4]);
 
   // configure mcsie
   mcsdiagexpl::Global::getInstance()->setKR2010rewriting();
@@ -453,9 +413,6 @@ int main(int argn, char** argv)
 
   //LOG_REGISTRY_PROGRAM(ctx);
 
-      //#  undef LOG
-      //#  define LOG(streamout) do { std::ostringstream os; os << streamout; } while(false);
-
   // create dependency graph
   LOG("creating dependency graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
@@ -464,7 +421,7 @@ int main(int argn, char** argv)
   depgraph.createDependencies(ctx.idb, auxRules);
   DLVHEX_BENCHMARK_STOP(siddepgraph);
   #ifndef NDEBUG
-  //writeGraphViz(depgraph, fname+"MCSIEDepGraph");
+  writeGraphViz(depgraph, fname+"MCSIEDepGraph");
   #endif
 
   // create component graph
@@ -473,24 +430,30 @@ int main(int argn, char** argv)
   dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
   #ifndef NDEBUG
-  //writeGraphViz(compgraph, fname+"MCSIECompGraph");
+  writeGraphViz(compgraph, fname+"MCSIECompGraph");
   #endif
+
+  // manage external evaluation configuration / backend
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+  if( backend == "dlv" )
+  {
+    externalEvalConfig.reset(new ASPSolver::DLVSoftware::Configuration);
+  }
+  else if( backend == "libdlv" )
+  {
+    externalEvalConfig.reset(new ASPSolver::DLVLibSoftware::Configuration);
+  }
+  else
+  {
+    std::cerr << "usage: <backend> must be one of 'dlv','libdlv'" << std::endl;
+    return -1;
+  }
 
   // create eval graph
   LOG("creating eval graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidevalgraph, "create evalgraph");
   FinalEvalGraph evalgraph;
-  EvalGraphBuilder egbuilder(ctx, compgraph, evalgraph);
-
-
-     // #  undef LOG
-     // #  define LOG(streamout) do { std::ostringstream os; os << streamout; } while(false);
-
-
-
-
-
-
+  EvalGraphBuilder egbuilder(ctx, compgraph, evalgraph, externalEvalConfig);
 
   // use one of several heuristics
   if( heurimode == "old" )
@@ -523,7 +486,7 @@ int main(int argn, char** argv)
   DLVHEX_BENCHMARK_STOP(sidevalgraph);
 
   #ifndef NDEBUG
-  //writeGraphViz(compgraph, fname+"MCSIEEvalGraph");
+  writeGraphViz(compgraph, fname+"MCSIEEvalGraph");
   #endif
 
   // setup final unit
@@ -566,9 +529,9 @@ int main(int argn, char** argv)
     // get and print all models
     OptionalModel m;
     DLVHEX_BENCHMARK_REGISTER(sidgetnextonlinemodel, "get next online model");
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     unsigned mcount = 0;
-    //#endif
+    #endif
     do
     {
       LOG("requesting model");
@@ -579,7 +542,7 @@ int main(int argn, char** argv)
       {
         InterpretationConstPtr interpretation =
           mb.getModelGraph().propsOf(m.get()).interpretation;
-        //#ifndef NDEBUG
+        #ifndef NDEBUG
         LOG("got model#" << mcount << ":" << *interpretation);
         std::set<Model> onlyFor;
         onlyFor.insert(m.get());
@@ -589,7 +552,7 @@ int main(int argn, char** argv)
         smodel << fname << "MCSIEOnlineModel" << mcount;
         writeGraphVizFunctors(func, func, smodel.str());
         mcount++;
-        //#endif
+        #endif
 
         // output model
         {
@@ -604,9 +567,9 @@ int main(int argn, char** argv)
       }
     }
     while( !!m );
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     mb.printEvalGraphModelGraph(std::cerr);
-    //#endif
+    #endif
     #ifndef NDEBUG
 		GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
@@ -620,10 +583,7 @@ int main(int argn, char** argv)
     typedef FinalOfflineModelBuilder::OptionalModel OptionalModel;
     typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
 
-    //#  undef LOG
-    //#  define LOG(streamout) do { std::ostringstream os; os << streamout; } while(false);
-    //LOG("creating model builder");
-    //{ std::ostringstream os; os << "creating model builder"; }
+    LOG("creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemb, "create offline mb");
     FinalOfflineModelBuilder mb(evalgraph);
     DLVHEX_BENCHMARK_STOP(sidofflinemb);
@@ -632,23 +592,23 @@ int main(int argn, char** argv)
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemodels, "create offline models");
     mb.buildIModelsRecursively(ufinal);
     DLVHEX_BENCHMARK_STOP(sidofflinemodels);
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     mb.printEvalGraphModelGraph(std::cerr);
-    //#endif
+    #endif
 
     LOG("printing models");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidprintoffmodels, "print offline models");
     MyModelGraph& mg = mb.getModelGraph();
     const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
-    //#ifndef NDEBUG
+    #ifndef NDEBUG
     unsigned mcount = 0;
-    //#endif
+    #endif
 
     BOOST_FOREACH(Model m, models)
     {
       InterpretationConstPtr interpretation =
         mg.propsOf(m).interpretation;
-      //#ifndef NDEBUG
+      #ifndef NDEBUG
       LOG("got model#" << mcount << ":" << *interpretation);
       std::set<Model> onlyFor;
       onlyFor.insert(m);
@@ -658,7 +618,7 @@ int main(int argn, char** argv)
       smodel << fname << "MCSIEOfflineModel" << mcount;
       writeGraphVizFunctors(func, func, smodel.str());
       mcount++;
-      //#endif
+      #endif
 
       // output model
       {

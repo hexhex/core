@@ -93,6 +93,34 @@ struct DLVSoftware:
   };
 };
 
+// "DLV as a shared library" softwares
+struct DLVLibSoftware:
+  public DLVSoftware
+{
+  typedef ASPSolverManager::SoftwareConfiguration<DLVLibSoftware> Configuration;
+
+  //typedef DLVSoftware::Options Options;
+
+  // the delegate for DLVSoftware
+  class Delegate:
+    public ASPSolverManager::DelegateInterface
+  {
+  public:
+    typedef DLVSoftware::Options Options;
+
+    Delegate(const Options& options);
+    virtual ~Delegate();
+    virtual void useASTInput(const ASPProgram& program);
+    //void useStringInput(const std::string& program);
+    //void useFileInput(const std::string& fileName);
+    virtual ASPSolverManager::ResultsPtr getResults();
+
+  protected:
+    struct Impl;
+    boost::scoped_ptr<Impl> pimpl;
+  };
+};
+
 // DLVDB software (inherits most from DLV)
 struct DLVDBSoftware:
   public DLVSoftware

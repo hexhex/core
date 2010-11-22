@@ -32,6 +32,8 @@
  *
  */
 
+#define __STDC_LIMIT_MACROS
+#include <boost/cstdint.hpp>
 #include "dlvhex/ASPSolver.h"
 
 #ifdef HAVE_CONFIG_H
@@ -45,6 +47,8 @@
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/AnswerSet.hpp"
+
+#include "dlv.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
@@ -322,6 +326,231 @@ DLVSoftware::Delegate::getResults()
   }
   CATCH_RETHROW_DLVDELEGATE
 }
+
+//
+// DLVLibSoftware
+//
+
+struct DLVLibSoftware::Delegate::Impl
+{
+  Options options;
+  PROGRAM_HANDLER *ph;
+  RegistryPtr reg;
+
+  Impl(const Options& options):
+    options(options),
+    ph(create_program_handler())
+  {
+    if( options.includeFacts )
+      ph->setOption(INCLUDE_FACTS, 1);
+    else
+      ph->setOption(INCLUDE_FACTS, 0);
+    BOOST_FOREACH(const std::string& arg, options.arguments)
+    {
+      if( arg == "-silent" )
+      {
+	// do nothing?
+      }
+      else
+	throw std::runtime_error("dlv-lib commandline option not implemented: " + arg);
+    }
+  }
+
+  ~Impl()
+  {
+    destroy_program_handler(ph);
+  }
+};
+
+DLVLibSoftware::Delegate::Delegate(const Options& options):
+  pimpl(new Impl(options))
+{
+}
+
+DLVLibSoftware::Delegate::~Delegate()
+{
+}
+
+void
+DLVLibSoftware::Delegate::useASTInput(const ASPProgram& program)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useASTInput");
+
+  // TODO HO checks
+
+  try
+  {
+    pimpl->reg = program.registry;
+    assert(pimpl->reg);
+    if( program.maxint != 0 )
+      pimpl->ph->setMaxInt(program.maxint);
+
+    pimpl->ph->clearProgram();
+
+    // output program
+    std::stringstream programStream;
+    RawPrinter printer(programStream, program.registry);
+    // TODO HO stuff
+
+    if( program.edb != 0 )
+    {
+      // print edb interpretation as facts
+      program.edb->printAsFacts(programStream);
+      programStream << "\n";
+      programStream.flush();
+    }
+
+    printer.printmany(program.idb, "\n");
+    programStream.flush();
+
+    LOG("sending program to dlv-lib:===");
+    LOG(programStream.str());
+    LOG("==============================");
+    pimpl->ph->Parse(programStream);
+    pimpl->ph->ResolveProgram(SYNCRONOUSLY);
+  }
+  catch(const std::exception& e)
+  {
+    LOG("EXCEPTION: " << e.what());
+    throw;
+  }
+}
+
+// reuse DLVResults class from above
+
+ASPSolverManager::ResultsPtr 
+DLVLibSoftware::Delegate::getResults()
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::getResults");
+
+  //LOG("getting results");
+  try
+  {
+    // for now, we parse all results and store them into the result container
+    // later we should do kind of an online processing here
+
+    boost::shared_ptr<DLVResults> ret(new DLVResults);
+
+    // TODO really do incremental model fetching
+    const std::vector<MODEL> *models = pimpl->ph->getAllModels();
+    std::vector<MODEL>::const_iterator itm;
+    // iterate over models
+    for(itm = models->begin();
+        itm != models->end(); ++itm)
+    {
+      AnswerSet::Ptr as(new AnswerSet(pimpl->reg));
+
+      // iterate over atoms
+      for(MODEL_ATOMS::const_iterator ita = itm->begin();
+  	ita != itm->end(); ++ita)
+      {
+        const char* pname = ita->getName();
+        assert(pname);
+  
+        // i have a hunch this might be the encoding
+        assert(pname[0] != '-');
+
+	typedef std::list<const char*> ParmList;
+	ParmList parms;
+  	//LOG("creating predicate with first term '" << pname << "'");
+	parms.push_back(pname);
+  
+	// TODO HO stuff
+	// TODO integer terms
+
+        for(MODEL_TERMS::const_iterator itt = ita->getParams().begin();
+  	  itt != ita->getParams().end(); ++itt)
+        {
+	  switch(itt->type)
+	  {
+	  case 1:
+	    // string terms
+	    //std::cerr << "creating string term '" << itt->data.item << "'" << std::endl;
+	    parms.push_back(itt->data.item);
+	    break;
+	  case 2:
+	    // int terms
+	    //std::cerr << "creating int term '" << itt->data.number << "'" << std::endl;
+	    assert(false);
+	    //ptuple.push_back(new dlvhex::Term(itt->data.number));
+	    break;
+	  default:
+	    throw std::runtime_error("unknown term type!");
+	  }
+        }
+
+	// for each param in parms: find id and put into tuple
+#warning TODO create something like inline ID TermTable::getByStringOrRegister(const std::string& symbol, IDKind kind)
+	Tuple ptuple;
+	ptuple.reserve(parms.size());
+	assert(pimpl->reg);
+	for(ParmList::const_iterator itp = parms.begin();
+	    itp != parms.end(); ++itp)
+	{
+	  // constant term
+	  ID id = pimpl->reg->terms.getIDByString(*itp);
+	  if( id == ID_FAIL )
+	  {
+	    Term t(ID::MAINKIND_TERM  | ID::SUBKIND_TERM_CONSTANT, *itp);
+	    id = pimpl->reg->terms.storeAndGetID(t);
+	  }
+	  assert(id != ID_FAIL);
+	  LOG("got term " << *itp << " with id " << id);
+	  ptuple.push_back(id);
+	}
+
+	// ogatom
+	ID fid = pimpl->reg->ogatoms.getIDByTuple(ptuple);
+	if( fid == ID_FAIL )
+	{
+	  OrdinaryAtom a(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+	  a.tuple.swap(ptuple);
+	  {
+	    #warning parsing efficiency problem see HexGrammarPTToASTConverter
+	    std::stringstream ss;
+	    RawPrinter printer(ss, pimpl->reg);
+	    Tuple::const_iterator it = ptuple.begin();
+	    printer.print(*it);
+	    it++;
+	    if( it != ptuple.end() )
+	    {
+	      ss << "(";
+	      printer.print(*it);
+	      it++;
+	      while(it != ptuple.end())
+	      {
+		ss << ",";
+		printer.print(*it);
+		it++;
+	      }
+	      ss << ")";
+	    }
+	    a.text = ss.str();
+	  }
+	  fid = pimpl->reg->ogatoms.storeAndGetID(a);
+	  LOG("added fact " << a << " with id " << fid);
+	}
+	LOG("got fact with id " << fid);
+	assert(fid != ID_FAIL);
+	as->interpretation->setFact(fid.address);
+      }
+
+      ret->add(as);
+    }
+  
+    // TODO: is this necessary?
+    // delete models;
+   
+    ASPSolverManager::ResultsPtr baseret(ret);
+    return baseret;
+  }
+  catch(const std::exception& e)
+  {
+    LOG("EXCEPTION: " << e.what());
+    throw;
+  }
+}
+
 
 
 #if 0

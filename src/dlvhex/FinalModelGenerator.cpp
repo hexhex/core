@@ -43,7 +43,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 FinalModelGeneratorFactory::FinalModelGeneratorFactory(
     ProgramCtx& ctx,
-    const ComponentInfo& ci):
+    const ComponentInfo& ci,
+    ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
+  externalEvalConfig(externalEvalConfig),
   ctx(ctx),
   eatoms(ci.outerEatoms),
   idb(),
@@ -249,10 +251,9 @@ FinalModelGenerator::generateNextModel()
     postprocessedInput = newint;
 
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,"initiating external solver");
-    ASPSolver::DLVSoftware::Configuration dlvConfiguration;
     ASPProgram program(factory.ctx.registry, factory.xidb, postprocessedInput, factory.ctx.maxint);
     ASPSolverManager mgr;
-    currentResults = mgr.solve(dlvConfiguration, program);
+    currentResults = mgr.solve(*factory.externalEvalConfig, program);
     DLVHEX_BENCHMARK_STOP(sidaspsolve);
   }
 

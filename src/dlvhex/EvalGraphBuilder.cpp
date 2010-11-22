@@ -60,10 +60,12 @@ EvalGraphBuilder<EvalGraphT>::UnusedEdgeFilter::operator()(
 EvalGraphBuilder::EvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
-    EvalGraphT& eg):
+    EvalGraphT& eg,
+    ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
   ctx(ctx),
 	cg(cg),
-  eg(eg)
+  eg(eg),
+  externalEvalConfig(externalEvalConfig)
   #if 0
   ,
   // todo mapping
@@ -147,7 +149,7 @@ EvalGraphBuilder::createEvalUnit(
   // TODO configure model generator factory depending on type of component
   // TODO configure model generator factory depending on compiletime/runtime configuration
   // TODO the above matters require a refactoring, the line below is for initial tests only
-  uprops.mgf.reset(new FinalModelGeneratorFactory(ctx, cg.propsOf(comp)));
+  uprops.mgf.reset(new FinalModelGeneratorFactory(ctx, cg.propsOf(comp), externalEvalConfig));
 
   // create dependencies
 

@@ -84,8 +84,8 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ 
-TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include 
+TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ -L$(top_srcdir)/dlv-lib -ldlv
+TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include  -I$(top_srcdir)/dlv-lib
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \

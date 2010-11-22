@@ -125,6 +125,8 @@ public:
 
   // storage
 protected:
+  // which solver shall be used for external evaluation?
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
   std::vector<ID> eatoms;
   // original idb (containing eatoms, but already including auxiliary input rules)
@@ -134,7 +136,9 @@ protected:
 
   // methods
 public:
-  FinalModelGeneratorFactory(ProgramCtx& ctx, const ComponentInfo& ci);
+  FinalModelGeneratorFactory(
+      ProgramCtx& ctx, const ComponentInfo& ci,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
   virtual ~FinalModelGeneratorFactory() {}
 
   virtual ModelGeneratorPtr createModelGenerator(
