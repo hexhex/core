@@ -1,3 +1,8 @@
+2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammar.h: adding grammar for module atom
+	* include/dlvhex/HexGrammar.tcc: adding grammar for module atom
+
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Set error-limit to 5 for clang.
