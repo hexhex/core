@@ -331,6 +331,8 @@ typedef OfflineModelBuilder<FinalEvalGraph> FinalOfflineModelBuilder;
 
 int main(int argn, char** argv)
 {
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidoverall, "overall timing");
+  
   if( argn != 5 )
   {
     std::cerr << "usage: " << argv[0] << " <heurimode> <mbmode> <backend> <inputfile>" << std::endl;
@@ -441,7 +443,12 @@ int main(int argn, char** argv)
   }
   else if( backend == "libdlv" )
   {
+    #ifdef HAVE_LIBDLV
     externalEvalConfig.reset(new ASPSolver::DLVLibSoftware::Configuration);
+    #else
+    std::cerr << "sorry, libdlv not compiled in" << std::endl;
+    return -1;
+    #endif // HAVE_LIBDLV
   }
   else
   {
@@ -576,6 +583,12 @@ int main(int argn, char** argv)
 		writeGraphVizFunctors(func, func, fname+"MCSIEOnlineEgMg");
     #endif
     //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+
+    DLVHEX_BENCHMARK_STOP(sidoverall);
+    std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
+      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps ";
+    benchmark::BenchmarkController::Instance().printCount(std::cerr, sidgetnextonlinemodel) << " models ";
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
   }
   else if( mbmode == "offline" )
   {

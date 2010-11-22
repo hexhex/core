@@ -196,6 +196,10 @@ public:
   ID getInstrumentationID(const std::string& name);
   // print information about ID
   inline void printInformation(ID id); // inline for performance
+  // print only count of ID
+  inline std::ostream& printCount(std::ostream& out, ID id); // inline for performance
+  // print only duration of ID
+  inline std::ostream& printDuration(std::ostream& out, ID id); // inline for performance
 
   // 
   // record measured things
@@ -252,6 +256,19 @@ void BenchmarkController::printInformation(const Stat& st)
 		(*output) << "s" << " total:";
     printInSecs(*output, st.duration, 6) << "s" << std::endl;
   }
+}
+
+// print only count of ID
+std::ostream& BenchmarkController::printCount(std::ostream& out, ID id)
+{
+  Stat& st = instrumentations[id];
+  return out << st.count;
+}
+
+std::ostream& BenchmarkController::printDuration(std::ostream& out, ID id)
+{
+  Stat& st = instrumentations[id];
+  return printInSecs(out, st.duration);
 }
 
 // print continuous information about stat

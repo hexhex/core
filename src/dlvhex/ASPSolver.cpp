@@ -48,7 +48,9 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/AnswerSet.hpp"
 
-#include "dlv.h"
+#ifdef HAVE_LIBDLV
+# include "dlv.h"
+#endif
 
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
@@ -330,6 +332,7 @@ DLVSoftware::Delegate::getResults()
 //
 // DLVLibSoftware
 //
+#ifdef HAVE_LIBDLV
 
 struct DLVLibSoftware::Delegate::Impl
 {
@@ -550,6 +553,7 @@ DLVLibSoftware::Delegate::getResults()
     throw;
   }
 }
+#endif // HAVE_LIBDLV
 
 
 

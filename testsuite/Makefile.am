@@ -65,7 +65,7 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
-        $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
+  $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
@@ -84,8 +84,8 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ -L$(top_srcdir)/dlv-lib -ldlv
-TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include  -I$(top_srcdir)/dlv-lib
+TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@
+TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \

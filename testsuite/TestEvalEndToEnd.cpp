@@ -39,6 +39,8 @@
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/OnlineModelBuilder.hpp"
+#include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 
 // this must be included before dummytypes!
 #define BOOST_TEST_MODULE __FILE__
@@ -82,7 +84,9 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
 
   {
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
+    ASPSolverManager::SoftwareConfigurationPtr extEvalConfig(
+        new ASPSolver::DLVSoftware::Configuration);
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder

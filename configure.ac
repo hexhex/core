@@ -83,6 +83,23 @@ AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 
 #
+# the user didn't supply a path for dlv-lib
+#
+if test "$DLVLIB" = ""; then
+    # we assume we don't have LIBDLV
+    foo=$foo;
+else
+  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+  LIBS="-l${DLVLIB} -ldl -lpthread $LIBS"
+fi
+# and check if it exists
+dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
+dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+dnl   LIBS="-l${DLVLIB} $LIBS"
+dnl   ], [], [-ldl -lpthread])
+
+
+#
 # the user didn't supply a path for dlvdb
 #
 if test "$DLVDB" = ""; then

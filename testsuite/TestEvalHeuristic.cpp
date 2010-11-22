@@ -35,6 +35,7 @@
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/ASPSolverManager.h"
 
 // this must be included before dummytypes!
 #define BOOST_TEST_MODULE __FILE__
@@ -97,7 +98,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
+    ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
@@ -158,7 +160,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
+    ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
@@ -219,7 +222,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
     LOG("starting to build eval graph");
 
     // create builder that supervises the construction of eg
-    EvalGraphBuilder egbuilder(ctx, compgraph, eg);
+    ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
+    EvalGraphBuilder egbuilder(ctx, compgraph, eg, extEvalConfig);
 
     {
       // create heuristic, which sends commands to egbuilder
