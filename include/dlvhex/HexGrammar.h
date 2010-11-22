@@ -52,7 +52,7 @@ struct HexGrammar:
     Number, Ident, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
     UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
     Aggregate, AggregatePred, AggregateRel, AggregateRange,
-    ExtAtom, ExtInputs, ExtOutputs,
+    ExtAtom, ModHeader, ModInputs, ModOutput, ModAtom, ExtInputs, ExtOutputs,
     BuiltinPred, BuiltinOther,
     BuiltinTertopPrefix, BuiltinTertopInfix,
     BuiltinBinopPrefix, BuiltinBinopInfix,
@@ -70,6 +70,9 @@ struct HexGrammar:
     boost::spirit::rule< S, c, tag<Root> > const& start() const { return root; }
 
     boost::spirit::rule<S, c, tag<Ident> >               ident;
+    boost::spirit::rule<S>                               idents;
+    boost::spirit::rule<S>                               pred_decl;
+    boost::spirit::rule<S>                               pred_list;
     boost::spirit::rule<S>                               var;
     boost::spirit::rule<S, c, tag<Number> >              number;
     boost::spirit::rule<S, c, tag<IdentVar> >            ident_or_var;
@@ -85,6 +88,9 @@ struct HexGrammar:
     boost::spirit::rule<S, c, tag<ExtInputs> >           external_inputs;
     boost::spirit::rule<S, c, tag<ExtOutputs> >          external_outputs;
     boost::spirit::rule<S, c, tag<ExtAtom> >             external_atom;
+    boost::spirit::rule<S, c, tag<ModInputs> >           module_inputs;
+    boost::spirit::rule<S, c, tag<ModOutput> >           module_output;
+    boost::spirit::rule<S, c, tag<ModAtom> >             module_atom;
     boost::spirit::rule<S, c, tag<Aggregate> >           aggregate;
     boost::spirit::rule<S, c, tag<AggregatePred> >       aggregate_pred;
     boost::spirit::rule<S, c, tag<AggregateRel> >        aggregate_rel;
@@ -110,6 +116,7 @@ struct HexGrammar:
     boost::spirit::rule<S, c, tag<Constraint> >          constraint;
     boost::spirit::rule<S, c, tag<WeakConstraint> >      wconstraint;
     boost::spirit::rule<S, c, tag<Clause> >              clause;
+    boost::spirit::rule<S, c, tag<ModHeader> >           mod_header;
     boost::spirit::rule<S, c, tag<Root> >                root;
   };
 };

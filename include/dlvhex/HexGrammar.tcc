@@ -48,6 +48,8 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   ident
     = sp::token_node_d[sp::lower_p >> *alnum_]
     | sp::token_node_d['"' >> *(~ch_p('"')) >> '"'];
+  idents
+    = ident >> *(rm[ch_p(',')] >> ident);
   // variable
   var
     = sp::token_node_d[sp::upper_p >> *alnum_];
@@ -91,6 +93,12 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
     = '(' >> !terms >> ')';
   external_atom
     = '&' >> ident >> !external_inputs >> !external_outputs;
+  module_inputs
+    = '[' >> !terms >> ']';
+  module_output
+    = '(' >> !terms >> ')';
+  module_atom
+    = '@' >> ident >> module_inputs >> str_p("::") >> ident >> module_output ;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';
@@ -130,11 +138,18 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
     // optional weight
     !( '[' >> !ident_or_var_or_number >> ':' >> !ident_or_var_or_number >> ']');
   clause = maxint | namespace_ | rule_ | constraint | wconstraint;
+  pred_decl
+    = ident >> '/' >> number;
+  pred_list
+    = pred_decl >> *(rm[ch_p(',')] >> pred_decl);
+  mod_header 
+    = str_p("#module") >> '(' >> ident >> ',' >> '[' >> !pred_list >>']' >> ')' >> '.'; 
+
   ///@todo: namespace, maxint before other things
   root
     = *( // comment
          rm[sp::comment_p("%")]
-       | clause
+       | clause | mod_header
        )
        // end_p enforces a "full" match (in case of success)
        // even with trailing newlines
