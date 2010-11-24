@@ -193,10 +193,9 @@ BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
-BOOST_GRAPH #right now, we don't care about the libboost-graph shared library
+BOOST_GRAPH
+BOOST_PROGRAM_OPTIONS
 BOOST_TEST
-BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
-BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
 
 
 # debug
@@ -290,6 +289,7 @@ AC_CONFIG_FILES([
            src/testsuite/Makefile
            src/testsuite/dlvhex/Makefile
            testsuite/Makefile
+           testsuite/benchgen/Makefile
 ])
 
 
