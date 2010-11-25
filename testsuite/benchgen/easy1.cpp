@@ -144,7 +144,7 @@ int main(int ac,char** av)
     ("calcs,c", po::value<unsigned>(&config.c)->required(),
       "number of rules calculating symbols from guesses in each stratum")
     ("icalcs,i", po::value<unsigned>(&config.i)->required(),
-      "number of rules calculating guesses from symbols in each stratum")
+      "number of constraints on calculated symbols in each stratum")
     ("kabove,k", po::value<unsigned>(&config.k)->required(),
       "access k strata above")
     ("links,l", po::value<unsigned>(&config.l)->required(),
@@ -218,17 +218,6 @@ int main(int ac,char** av)
     LOG("calcSymsHere " << printrange(calcSymsHere));
     calcSymbols[atStratum] = calcSymsHere;
 
-    // derive guesses from stratum
-    for(unsigned u = 0; u < config.i; ++u)
-    {
-      const std::string& gsym = guessSymsHere[random.getInRange(0, 2*config.g-1)];
-      const std::string& csym = calcSymsHere[random.getInRange(0, config.s-1)];
-      std::string naf;
-      if( random.getBool() )
-        naf = "not ";
-      o << stratumpred << "(" << gsym << ") :- " << naf << stratumpred << "(" << csym << ")." << std::endl;
-    }
-
     // derive stratum from guesses
     for(unsigned u = 0; u < config.s; ++u)
     {
@@ -240,7 +229,7 @@ int main(int ac,char** av)
       o << stratumpred << "(" << csym << ") :- " << naf << stratumpred << "(" << gsym << ")." << std::endl;
     }
 
-    // derive stratum non-externally from strata above
+    // derive calculated stratum non-externally from strata above
     if( atStratum != 0 )
     {
       for(unsigned u = 0; u < (config.k*config.l); ++u)
@@ -269,7 +258,7 @@ int main(int ac,char** av)
       }
     }
 
-    // derive stratum externally from strata above
+    // derive calculated stratum externally from strata above
     if( atStratum != 0 )
     {
       for(unsigned u = 0; u < (config.k*config.e); ++u)
@@ -289,6 +278,24 @@ int main(int ac,char** av)
           "&above[" << stratumprefix << strat1 << "," << ssym1a << "]" <<
           "(" << ssym1b << ")." << std::endl;
       }
+    }
+
+    // constrain calculated stratum
+    for(unsigned u = 0; u < config.i; ++u)
+    {
+      const std::string& csym1 = calcSymsHere[random.getInRange(0, config.s-1)];
+      std::string naf1;
+      if( random.getBool() )
+        naf1 = "not ";
+
+      const std::string& csym2 = calcSymsHere[random.getInRange(0, config.s-1)];
+      std::string naf2;
+      if( random.getBool() )
+        naf2 = "not ";
+
+      o << ":- " <<
+        naf1 << stratumpred << "(" << csym1 << ")," <<
+        naf2 << stratumpred << "(" << csym2 << ")." << std::endl;
     }
   }
   return 0;
