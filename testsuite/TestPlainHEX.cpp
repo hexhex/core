@@ -574,9 +574,7 @@ int main(int argn, char** argv)
     // get and print all models
     OptionalModel m;
     DLVHEX_BENCHMARK_REGISTER(sidgetnextonlinemodel, "get next online model");
-    #ifndef NDEBUG
     unsigned mcount = 0;
-    #endif
     do
     {
       LOG("requesting model");
@@ -596,8 +594,8 @@ int main(int argn, char** argv)
         std::stringstream smodel;
         smodel << fname << "PlainHEXOnlineModel" << mcount;
         writeGraphVizFunctors(func, func, smodel.str());
-        mcount++;
         #endif
+        mcount++;
 
         // output model
         {
@@ -623,8 +621,7 @@ int main(int argn, char** argv)
 
     DLVHEX_BENCHMARK_STOP(sidoverall);
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
-      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps ";
-    benchmark::BenchmarkController::Instance().printCount(std::cerr, sidgetnextonlinemodel) << " models ";
+      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
     benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
   }
   else if( mbmode == "offline" )
@@ -650,9 +647,7 @@ int main(int argn, char** argv)
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidprintoffmodels, "print offline models");
     MyModelGraph& mg = mb.getModelGraph();
     const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
-    #ifndef NDEBUG
     unsigned mcount = 0;
-    #endif
 
     BOOST_FOREACH(Model m, models)
     {
@@ -667,8 +662,8 @@ int main(int argn, char** argv)
       std::stringstream smodel;
       smodel << fname << "PlainHEXOfflineModel" << mcount;
       writeGraphVizFunctors(func, func, smodel.str());
-      mcount++;
       #endif
+      mcount++;
 
       // output model
       {
@@ -681,6 +676,11 @@ int main(int argn, char** argv)
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
 		writeGraphVizFunctors(func, func, fname+"PlainHEXOfflineEgMg");
     #endif
+
+    DLVHEX_BENCHMARK_STOP(sidoverall);
+    std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
+      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
   }
   else
   {
