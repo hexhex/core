@@ -22,10 +22,10 @@
  */
 
 /**
- * @file   TestEvalMCSIE.cpp
+ * @file   TestEvalPlainHEX.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Test evaluation using MCSIE sources.
+ * @brief  Test evaluation using PlainHEX sources.
  */
 
 // dlvhex
@@ -56,14 +56,7 @@
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
-
-// mcsie
-
-#include "Global.h"
-#include "DLV_ASP_ContextAtom.h"
-#include "InputConverter.h"
-#include "OutputRewriter.h"
-// defining LOG to use stringstream here solves the problem if NDEBUG is #undef'd after Logger.hpp
+#include "dlvhex/OutputBuilder.h"
 
 // other
 
@@ -329,8 +322,67 @@ void writeEgMgGraphViz(
 typedef OnlineModelBuilder<FinalEvalGraph> FinalOnlineModelBuilder;
 typedef OfflineModelBuilder<FinalEvalGraph> FinalOfflineModelBuilder;
 
+class AbovePluginAtom:
+	public dlvhex::PluginAtom
+{
+public:
+	AbovePluginAtom():
+    dlvhex::PluginAtom("above", true)
+	{
+		inputSize = 2;
+		outputSize = 1;
+		inputType.push_back(PREDICATE);
+		inputType.push_back(CONSTANT);
+	}
+
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    // get inputs
+    assert(q.input.size() == 2);
+    ID pred = q.input[0];
+    ID cmp = q.input[1];
+    LOG("calculating above extatom for predicate " << pred << " and symbol " << cmp);
+    const Term& cmpt = registry->terms.getByID(cmp);
+
+    // get query
+    assert(q.pattern.size() == 1);
+    ID out = q.pattern.front();
+
+    // build set of found targets
+    assert(q.interpretation != 0);
+    dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+    assert(registry != 0);
+    for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(pred);
+        it != it_end; ++it)
+    {
+      const dlvhex::OrdinaryAtom& oatom = *it;
+
+      // skip ogatoms not present in interpretation
+      if( !q.interpretation->getFact(registry->ogatoms.getIDByStorage(oatom).address) )
+        continue;
+
+      // the edge predicate must be unary
+      assert(oatom.tuple.size() == 2);
+      const Term& t = registry->terms.getByID(oatom.tuple[1]);
+      if( t.symbol >= cmpt.symbol )
+      {
+        if( (out.isTerm() && out.isVariableTerm()) ||
+            (out == oatom.tuple[1]) )
+        {
+          Tuple t;
+          t.push_back(oatom.tuple[1]);
+          a.get().push_back(t);
+        }
+      }
+    }
+  }
+};
+
 int main(int argn, char** argv)
 {
+  try
+  {
+
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidoverall, "overall timing");
   
   if( argn != 5 )
@@ -363,32 +415,17 @@ int main(int argn, char** argv)
   const std::string backend(argv[3]);
   const std::string fname(argv[4]);
 
-  // configure mcsie
-  mcsdiagexpl::Global::getInstance()->setKR2010rewriting();
-
   // get input
   std::ifstream infile(fname.c_str());
 
-  // rewrite
-  std::stringstream rewrittenfile;
-  {
-    DLVHEX_BENCHMARK_REGISTER_AND_START(sidrewrite, "rewrite mcsie");
-    mcsdiagexpl::InputConverter converter;
-    converter.convert(infile, rewrittenfile);
-    DLVHEX_BENCHMARK_STOP(sidrewrite);
-    #ifndef NDEBUG
-    std::cerr <<
-      "rewriting yielded the following:" << std::endl <<
-      rewrittenfile.str() << std::endl;
-    #endif
-  }
+  // don't rewrite
 
   // prepare program context
   ProgramCtx ctx;
   ctx.registry.reset(new Registry);
 
-  // create dlv ctx plugin atom
-  PluginAtomPtr pa(new mcsdiagexpl::DLV_ASP_ContextAtom);
+  // create all testing plugin atoms
+  PluginAtomPtr pa(new AbovePluginAtom);
   pa->setRegistry(ctx.registry);
   ID idpa = pa->getPredicateID();
 
@@ -396,7 +433,7 @@ int main(int argn, char** argv)
   LOG("parsing HEX program");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
   HexParser parser(ctx);
-  parser.parse(rewrittenfile);
+  parser.parse(infile);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
   // link parsed external atoms to plugin atoms
@@ -423,7 +460,7 @@ int main(int argn, char** argv)
   depgraph.createDependencies(ctx.idb, auxRules);
   DLVHEX_BENCHMARK_STOP(siddepgraph);
   #ifndef NDEBUG
-  writeGraphViz(depgraph, fname+"MCSIEDepGraph");
+  writeGraphViz(depgraph, fname+"PlainHEXDepGraph");
   #endif
 
   // create component graph
@@ -432,7 +469,7 @@ int main(int argn, char** argv)
   dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
   #ifndef NDEBUG
-  writeGraphViz(compgraph, fname+"MCSIECompGraph");
+  writeGraphViz(compgraph, fname+"PlainHEXCompGraph");
   #endif
 
   // manage external evaluation configuration / backend
@@ -493,7 +530,7 @@ int main(int argn, char** argv)
   DLVHEX_BENCHMARK_STOP(sidevalgraph);
 
   #ifndef NDEBUG
-  writeGraphViz(compgraph, fname+"MCSIEEvalGraph");
+  writeGraphViz(compgraph, fname+"PlainHEXEvalGraph");
   #endif
 
   // setup final unit
@@ -516,7 +553,8 @@ int main(int argn, char** argv)
   DLVHEX_BENCHMARK_STOP(sidfinalunit);
 
   // prepare for output
-  mcsdiagexpl::EQOutputBuilder ob;
+  //GenericOutputBuilder ob;
+  #warning reactivate and redesign outputbuilder
 
   //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
 
@@ -556,15 +594,14 @@ int main(int argn, char** argv)
         GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
             true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
         std::stringstream smodel;
-        smodel << fname << "MCSIEOnlineModel" << mcount;
+        smodel << fname << "PlainHEXOnlineModel" << mcount;
         writeGraphVizFunctors(func, func, smodel.str());
         mcount++;
         #endif
 
         // output model
         {
-          DLVHEX_BENCHMARK_SCOPE(sidoutputmodel);
-          ob.printEQ(std::cout, interpretation);
+          std::cout << *interpretation << std::endl;
         }
         //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
 
@@ -580,7 +617,7 @@ int main(int argn, char** argv)
     #ifndef NDEBUG
 		GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
-		writeGraphVizFunctors(func, func, fname+"MCSIEOnlineEgMg");
+		writeGraphVizFunctors(func, func, fname+"PlainHEXOnlineEgMg");
     #endif
     //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
 
@@ -628,22 +665,21 @@ int main(int argn, char** argv)
       GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
           true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
       std::stringstream smodel;
-      smodel << fname << "MCSIEOfflineModel" << mcount;
+      smodel << fname << "PlainHEXOfflineModel" << mcount;
       writeGraphVizFunctors(func, func, smodel.str());
       mcount++;
       #endif
 
       // output model
       {
-        DLVHEX_BENCHMARK_SCOPE(sidoutputmodel);
-        ob.printEQ(std::cout, interpretation);
+        std::cout << *interpretation << std::endl;
       }
     }
     DLVHEX_BENCHMARK_STOP(sidprintoffmodels);
     #ifndef NDEBUG
 		GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
-		writeGraphVizFunctors(func, func, fname+"MCSIEOfflineEgMg");
+		writeGraphVizFunctors(func, func, fname+"PlainHEXOfflineEgMg");
     #endif
   }
   else
@@ -652,5 +688,12 @@ int main(int argn, char** argv)
     return -1;
   }
   return 0;
+  
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << "exception: " << e.what() << std::endl;
+    return -1;
+  }
 }
 

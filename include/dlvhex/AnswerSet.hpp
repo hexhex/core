@@ -62,6 +62,8 @@ struct AnswerSet:
   virtual std::ostream& print(std::ostream& o) const;
 };
 
+typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
+
 DLVHEX_NAMESPACE_END
 
 #endif // ANSWER_SET_HPP_INCLUDED__09112010
