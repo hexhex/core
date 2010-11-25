@@ -290,6 +290,7 @@ AC_CONFIG_FILES([
            src/testsuite/dlvhex/Makefile
            testsuite/Makefile
            testsuite/benchgen/Makefile
+           testsuite/olddlvhex_perfplugins/Makefile
 ])
 
 

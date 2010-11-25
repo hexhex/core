@@ -1,4 +1,4 @@
-SUBDIRS = benchgen
+SUBDIRS = benchgen olddlvhex_perfplugins
 
 # global preprocessor flags
 AM_CPPFLAGS = \
