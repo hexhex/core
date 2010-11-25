@@ -117,6 +117,9 @@ void randomizeRange(RandomNumbers& rn, Range& l)
 
 int main(int ac,char** av)
 {
+  try
+  {
+
   Config config;
   /*
   config.n = 4;
@@ -272,31 +275,66 @@ int main(int ac,char** av)
         if( random.getBool() )
           naf1 = "not ";
 
+        unsigned strat2 = random.getInRange(
+            std::max<int>(0, static_cast<int>(atStratum)-static_cast<int>(config.k)),
+            atStratum-1);
+        const std::string& ssym2 = calcSymbols[strat2][random.getInRange(0, config.s-1)];
+        std::string naf2;
+        if( random.getBool() )
+          naf2 = "not ";
+
         const std::string& tsym = calcSymsHere[random.getInRange(0, config.s-1)];
 
-        o << stratumpred << "(" << tsym << ") :- " << naf1 <<
+        o << stratumpred << "(" << tsym << ") :- " <<
+          naf2 << stratumpred << "(" << ssym2 << ")," <<
+          naf1 <<
           "&above[" << stratumprefix << strat1 << "," << ssym1a << "]" <<
           "(" << ssym1b << ")." << std::endl;
       }
     }
 
-    // constrain calculated stratum
+    // constrain guessed and calculated stratum
     for(unsigned u = 0; u < config.i; ++u)
     {
       const std::string& csym1 = calcSymsHere[random.getInRange(0, config.s-1)];
+      const std::string& gsym1 = guessSymsHere[random.getInRange(0, 2*config.g-1)];
       std::string naf1;
       if( random.getBool() )
         naf1 = "not ";
+      std::string sym1 = csym1;
+      if( random.getBool() )
+        sym1 = gsym1;
 
       const std::string& csym2 = calcSymsHere[random.getInRange(0, config.s-1)];
+      const std::string& gsym2 = guessSymsHere[random.getInRange(0, 2*config.g-1)];
       std::string naf2;
       if( random.getBool() )
         naf2 = "not ";
+      std::string sym2 = csym2;
+      if( random.getBool() )
+        sym2 = gsym2;
+
+      const std::string& csym3 = calcSymsHere[random.getInRange(0, config.s-1)];
+      const std::string& gsym3 = guessSymsHere[random.getInRange(0, 2*config.g-1)];
+      std::string naf3;
+      if( random.getBool() )
+        naf3 = "not ";
+      std::string sym3 = csym3;
+      if( random.getBool() )
+        sym3 = gsym3;
 
       o << ":- " <<
-        naf1 << stratumpred << "(" << csym1 << ")," <<
-        naf2 << stratumpred << "(" << csym2 << ")." << std::endl;
+        naf1 << stratumpred << "(" << sym1 << ")," <<
+        naf2 << stratumpred << "(" << sym2 << ")," <<
+        naf3 << stratumpred << "(" << sym3 << ")." << std::endl;
     }
   }
   return 0;
+
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << "exception: " << e.what() << std::endl;
+    return -1;
+  }
 }
