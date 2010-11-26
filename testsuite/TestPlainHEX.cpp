@@ -378,6 +378,123 @@ public:
   }
 };
 
+class SenseNotArmed1PluginAtom:
+	public dlvhex::PluginAtom
+{
+public:
+	SenseNotArmed1PluginAtom():
+    dlvhex::PluginAtom("senseNotArmed1", false)
+	{
+		inputSize = 4;
+		outputSize = 0;
+		inputType.push_back(PREDICATE);
+		inputType.push_back(PREDICATE);
+		inputType.push_back(CONSTANT);
+		inputType.push_back(CONSTANT);
+	}
+
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    #if 0
+    // get inputs
+    assert(q.input.size() == 2);
+    ID pred = q.input[0];
+    ID cmp = q.input[1];
+    LOG("calculating above extatom for predicate " << pred << " and symbol " << cmp);
+    const Term& cmpt = registry->terms.getByID(cmp);
+
+    // get query
+    assert(q.pattern.size() == 1);
+    ID out = q.pattern.front();
+
+    // build set of found targets
+    assert(q.interpretation != 0);
+    dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+    assert(registry != 0);
+    for(boost::tie(it, it_end) = registry->ogatoms.getRangeByPredicateID(pred);
+        it != it_end; ++it)
+    {
+      const dlvhex::OrdinaryAtom& oatom = *it;
+
+      // skip ogatoms not present in interpretation
+      if( !q.interpretation->getFact(registry->ogatoms.getIDByStorage(oatom).address) )
+        continue;
+
+      // the edge predicate must be unary
+      assert(oatom.tuple.size() == 2);
+      const Term& t = registry->terms.getByID(oatom.tuple[1]);
+      if( t.symbol >= cmpt.symbol )
+      {
+        if( (out.isTerm() && out.isVariableTerm()) ||
+            (out == oatom.tuple[1]) )
+        {
+          Tuple t;
+          t.push_back(oatom.tuple[1]);
+          a.get().push_back(t);
+        }
+      }
+    }
+    #endif
+    throw "todo implement SenseNotArmed1PluginAtom::retrieve";
+  }
+};
+
+class SenseNotArmed2PluginAtom:
+	public dlvhex::PluginAtom
+{
+public:
+	SenseNotArmed2PluginAtom():
+    dlvhex::PluginAtom("senseNotArmed2", false)
+	{
+		inputSize = 3;
+		outputSize = 0;
+		inputType.push_back(PREDICATE);
+		inputType.push_back(PREDICATE);
+		inputType.push_back(CONSTANT);
+	}
+
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    // get inputs
+    assert(q.input.size() == 3);
+    ID preddisarm = q.input[0];
+    ID predlook = q.input[1];
+    ID time = q.input[2];
+    LOG("calculating senseNotArmed2 extatom for " << preddisarm << "/" << predlook << "/" << time);
+
+    // get outputs
+    assert(q.pattern.size() == 0);
+
+    // check if <preddisarm>(time) and <predlook>(time) part of interpretation
+
+    Tuple tdisarm;
+    tdisarm.push_back(preddisarm);
+    tdisarm.push_back(time);
+    ID iddisarm = registry->ogatoms.getIDByTuple(tdisarm);
+
+    Tuple tlook;
+    tlook.push_back(predlook);
+    tlook.push_back(time);
+    ID idlook = registry->ogatoms.getIDByTuple(tlook);
+
+    if( iddisarm == ID_FAIL || idlook == ID_FAIL )
+    {
+      // cannot be part of interpretation -> return no tuple as condition not true
+      return;
+    }
+
+    // check interpretation
+    assert(q.interpretation != 0);
+    if( q.interpretation->getFact(iddisarm.address) &&
+        q.interpretation->getFact(idlook.address) )
+    {
+      // found both facts
+      Tuple t;
+      a.get().push_back(t);
+    }
+  }
+};
+
 int main(int argn, char** argv)
 {
   try
@@ -425,9 +542,23 @@ int main(int argn, char** argv)
   ctx.registry.reset(new Registry);
 
   // create all testing plugin atoms
-  PluginAtomPtr pa(new AbovePluginAtom);
-  pa->setRegistry(ctx.registry);
-  ID idpa = pa->getPredicateID();
+  typedef std::list<PluginAtomPtr> PluginList;
+  PluginList patoms;
+  {
+    PluginAtomPtr pa(new AbovePluginAtom);
+    pa->setRegistry(ctx.registry);
+    patoms.push_back(pa);
+  }
+  {
+    PluginAtomPtr pa(new SenseNotArmed1PluginAtom);
+    pa->setRegistry(ctx.registry);
+    patoms.push_back(pa);
+  }
+  {
+    PluginAtomPtr pa(new SenseNotArmed2PluginAtom);
+    pa->setRegistry(ctx.registry);
+    patoms.push_back(pa);
+  }
 
   // parse HEX program
   LOG("parsing HEX program");
@@ -440,14 +571,21 @@ int main(int argn, char** argv)
   //TODO this should become a common functionality using some pluginAtom registry
   //TODO we should make the ExternalAtom::pluginAtom member mutable
 	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idpa);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = pa;
-			ctx.registry->eatoms.update(*it, ea);
-		}
+    for(PluginList::iterator itpa = patoms.begin();
+        itpa != patoms.end(); ++itpa)
+    {
+      PluginAtomPtr pa_ptr = *itpa;
+      ID pa_id = pa_ptr->getPredicateID();
+
+      ExternalAtomTable::PredicateIterator it, it_end;
+      for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(pa_id);
+          it != it_end; ++it)
+      {
+        ExternalAtom ea(*it);
+        ea.pluginAtom = pa_ptr;
+        ctx.registry->eatoms.update(*it, ea);
+      }
+    }
 	}
 
   //LOG_REGISTRY_PROGRAM(ctx);
