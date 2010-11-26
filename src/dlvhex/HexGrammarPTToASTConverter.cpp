@@ -346,12 +346,13 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // groundness
+  LOG("checking groundness of tuple " << printrange(atom.tuple));
   IDKind kind = 0;
   BOOST_FOREACH(const ID& id, atom.tuple)
   {
     kind |= id.kind;
     // make this sure to make the groundness check work
-    assert((kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
+    assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
   }
   const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
   OrdinaryAtomTable* tbl;
