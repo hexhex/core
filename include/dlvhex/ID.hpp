@@ -75,6 +75,7 @@ struct ID:
 	static const IDKind SUBKIND_ATOM_BUILTIN =   0x02000000;
 	static const IDKind SUBKIND_ATOM_AGGREGATE = 0x03000000;
 	static const IDKind SUBKIND_ATOM_EXTERNAL =  0x06000000;
+	static const IDKind SUBKIND_ATOM_MODULE =    0x08000000;
 
 	static const IDKind SUBKIND_RULE_REGULAR =        0x00000000;
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
@@ -84,6 +85,7 @@ struct ID:
 	static const IDKind PROPERTY_TERM_AUX      = 0x00020000;
 	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
+	static const IDKind PROPERTY_RULE_MODATOMS = 0x00100000;
 	static const IDKind PROPERTY_RULE_AUX =      0x00200000;
 	static const IDKind PROPERTY_ATOM_AUX      = 0x00020000;
 
@@ -137,6 +139,7 @@ struct ID:
 	inline bool isBuiltinAtom() const   { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_BUILTIN; }
 	inline bool isAggregateAtom() const { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_AGGREGATE; }
 	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
+	inline bool isModuleAtom() const    { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_MODULE; }
 
 	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
 	inline bool isNaf() const           { return (kind & NAF_MASK) == NAF_MASK; }
@@ -147,6 +150,7 @@ struct ID:
 	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
 
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
+	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }

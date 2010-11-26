@@ -275,13 +275,16 @@ ComponentGraph::collapseComponents(
 				// do not count dependencies within the new collapsed component
 				LOG("incoming dependency from " << source);
 				incoming[source] |= propsOf(incoming_dep);
-				// assert that we do not create cycles
-        #ifdef COMPGRAPH_SOURCESDEBUG
+				// ensure that we do not create cycles
+        // (this check is not too costly, so this is no assertion but a real runtime check)
 				DepMap::const_iterator itdm = outgoing.find(source);
 				// if we have an incoming dep and an outgoing dep,
 				// we create a cycle so this collapsing is invalid
-				assert(itdm == outgoing.end());
-				#endif
+        if( itdm != outgoing.end() )
+        {
+          throw std::runtime_error(
+              "collapseComponents tried to create a cycle!");
+        }
 			}
 		} // iterate over successors
 	} // iterate over originals

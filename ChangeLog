@@ -1,3 +1,9 @@
+2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* ID-Concept.txt: adding definition for module atom
+	* include/dlvhex/ID.hpp: adding definition for module atom
+	* src/dlvhex/ID.hpp: adding definition for module atom
+
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammar.h: adding grammar for module atom

@@ -33,11 +33,11 @@ std::ostream& ID::print(std::ostream& o) const
   assert(mainkind < MAINKIND_MAX);
   o << mainkinds[mainkind];
 
-  const unsigned SUBKIND_MAX = 7;
+  const unsigned SUBKIND_MAX = 9;
   const char* subkinds[MAINKIND_MAX][SUBKIND_MAX] = {
-    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
+    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external", "", " module" },
     { " constant",        " integer",            " variable",        " builtin",   "", "", ""          },
-    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external" },
+    { " ordinary_ground", " ordinary_nonground", " builtin",         " aggregate", "", "", " external", "", " module" },
     { " regular",         " constraint",         " weak_constraint", "",           "", "", ""          }
   };
   const unsigned subkind = (kind & SUBKIND_MASK) >> SUBKIND_SHIFT;

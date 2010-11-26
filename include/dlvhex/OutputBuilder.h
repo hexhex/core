@@ -72,6 +72,20 @@ public:
     buildResult(std::ostream& ostream, ResultsPtr results) = 0;
 };
 
+class GenericOutputBuilder:
+  public OutputBuilder
+{
+public:
+  GenericOutputBuilder() {};
+  virtual ~GenericOutputBuilder() {};
+
+  virtual void buildResult(
+      std::ostream& out, ResultsPtr results);
+  virtual void printAnswerSet(
+      std::ostream& out, AnswerSetPtr as);
+};
+
+
 
 DLVHEX_NAMESPACE_END
 

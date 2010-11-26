@@ -1,3 +1,5 @@
+SUBDIRS = benchgen olddlvhex_perfplugins
+
 # global preprocessor flags
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
@@ -44,29 +46,22 @@ check_PROGRAMS = \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
 noinst_PROGRAMS = \
-  TestMCSIE TestMCSIEND
+  TestMCSIE TestMCSIEND \
+  TestPlainHEX TestPlainHEXND
 
 
 # full debugging output
 
-TestMCSIE_SOURCES = \
-	$(top_srcdir)/testsuite/TestMCSIE.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/DLV_ASP_ContextAtom.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/InputConverter.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRule.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRuleEntry.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/Global.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/Timing.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
+PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
-        $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
+  $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
+	$(top_srcdir)/src/dlvhex/OutputBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
@@ -84,8 +79,26 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@ -L$(top_srcdir)/dlv-lib -ldlv
-TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include  -I$(top_srcdir)/dlv-lib
+
+TestMCSIE_SOURCES = \
+	$(top_srcdir)/testsuite/TestMCSIE.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/DLV_ASP_ContextAtom.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/InputConverter.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRule.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRuleEntry.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/Global.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/Timing.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
+	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
+  $(PLAINHEXSOURCES)
+TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@
+TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
+
+TestPlainHEX_SOURCES = \
+	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
+  $(PLAINHEXSOURCES)
+TestPlainHEX_LDADD = @LIBLTDL@ @LIBADD_DL@
+TestPlainHEX_CPPFLAGS = $(AM_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
@@ -218,6 +231,10 @@ TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fix
 TestMCSIEND_SOURCES = $(TestMCSIE_SOURCES)
 TestMCSIEND_LDADD = $(TestMCSIE_LDADD)
 TestMCSIEND_CPPFLAGS = $(TestMCSIE_CPPFLAGS) -DNDEBUG
+
+TestPlainHEXND_SOURCES = $(TestPlainHEX_SOURCES)
+TestPlainHEXND_LDADD = $(TestPlainHEX_LDADD)
+TestPlainHEXND_CPPFLAGS = $(TestPlainHEX_CPPFLAGS) -DNDEBUG
 
 TestEvalEndToEndND_SOURCES = $(TestEvalEndToEnd_SOURCES)
 TestEvalEndToEndND_LDADD = $(TestEvalEndToEnd_LDADD)

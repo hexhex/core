@@ -83,6 +83,23 @@ AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 
 #
+# the user didn't supply a path for dlv-lib
+#
+if test "$DLVLIB" = ""; then
+    # we assume we don't have LIBDLV
+    foo=$foo;
+else
+  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+  LIBS="-l${DLVLIB} -ldl -lpthread $LIBS"
+fi
+# and check if it exists
+dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
+dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+dnl   LIBS="-l${DLVLIB} $LIBS"
+dnl   ], [], [-ldl -lpthread])
+
+
+#
 # the user didn't supply a path for dlvdb
 #
 if test "$DLVDB" = ""; then
@@ -176,10 +193,9 @@ BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
-BOOST_GRAPH #right now, we don't care about the libboost-graph shared library
+BOOST_GRAPH
+BOOST_PROGRAM_OPTIONS
 BOOST_TEST
-BOOST_FIND_HEADER([boost/ptr_container/indirect_fun.hpp])
-BOOST_FIND_HEADER([boost/graph/adjacency_list.hpp])
 
 
 # debug
@@ -273,6 +289,8 @@ AC_CONFIG_FILES([
            src/testsuite/Makefile
            src/testsuite/dlvhex/Makefile
            testsuite/Makefile
+           testsuite/benchgen/Makefile
+           testsuite/olddlvhex_perfplugins/Makefile
 ])
 
 
