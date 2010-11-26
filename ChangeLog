@@ -4,6 +4,10 @@
 	* include/dlvhex/ID.hpp: adding definition for module atom
 	* src/dlvhex/ID.hpp: adding definition for module atom
 
+	* include/dlvhex/HexGrammar.tcc: put Module atom in literal
+	* testsuite/TestHexParserModule.cpp: test case for Module atom
+	* Makefile.am: defining test: TestHexParserModule
+
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammar.h: adding grammar for module atom

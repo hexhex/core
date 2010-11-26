@@ -123,7 +123,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   naf = sp::lexeme_d[(str_p("not") | "non") >> sp::space_p];
   literal
     = builtin_pred
-    | ( !naf >> (user_pred | external_atom | aggregate) );
+    | ( !naf >> (user_pred | external_atom | module_atom |aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> '.';

@@ -22,6 +22,7 @@ TESTS = \
   TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
+  TestHexParserModule TestHexParserModuleND \
   TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
@@ -39,6 +40,7 @@ check_PROGRAMS = \
   TestComponentGraph TestComponentGraphND \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
+  TestHexParserModule TestHexParserModuleND \
   TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
@@ -216,6 +218,18 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestHexParser_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
+TestHexParserModule_SOURCES = \
+	$(top_srcdir)/testsuite/TestHexParserModule.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestHexParserModule_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
 TestTables_SOURCES = TestTables.cpp  $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp
 TestTables_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -259,6 +273,10 @@ TestDependencyGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 TestHexParserND_SOURCES = $(TestHexParser_SOURCES)
 TestHexParserND_LDADD = $(TestHexParser_LDADD)
 TestHexParserND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
+TestHexParserModuleND_SOURCES = $(TestHexParserModule_SOURCES)
+TestHexParserModuleND_LDADD = $(TestHexParserModule_LDADD)
+TestHexParserModuleND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestTablesND_SOURCES = $(TestTables_SOURCES)
 TestTablesND_LDADD = $(TestTables_LDADD)
