@@ -8,6 +8,7 @@
 	* testsuite/TestHexParserModule.cpp: test case for Module atom
 	* Makefile.am: defining test: TestHexParserModule
 
+	* testsuite/TestHexParserModule.cpp: adding test to parse module header
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammar.h: adding grammar for module atom

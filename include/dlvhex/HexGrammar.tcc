@@ -149,7 +149,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   root
     = *( // comment
          rm[sp::comment_p("%")]
-       | clause | mod_header
+       | clause | mod_header 
        )
        // end_p enforces a "full" match (in case of success)
        // even with trailing newlines
