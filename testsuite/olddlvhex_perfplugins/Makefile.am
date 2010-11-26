@@ -1,9 +1,9 @@
-lib_LTLIBRARIES = libdlvhex_aboveplugin.la
+lib_LTLIBRARIES = libdlvhex_testplugin.la
 
 # quick and dirty hack, build with installed dlvhex
 AM_CPPFLAGS = \
     -I/home/staff/ps/include/ \
     $(BOOST_CPPFLAGS)
 
-libdlvhex_aboveplugin_la_SOURCES = aboveplugin.cpp
-libdlvhex_aboveplugin_la_LDFLAGS = -avoid-version -module
+libdlvhex_testplugin_la_SOURCES = testplugin.cpp
+libdlvhex_testplugin_la_LDFLAGS = -avoid-version -module

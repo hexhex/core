@@ -54,15 +54,71 @@ public:
   }
 };
 
-class AbovePlugin : public PluginInterface
+class SenseNotArmed2PluginAtom : public PluginAtom
+{
+public:
+	SenseNotArmed2PluginAtom()
+	{
+		addInputPredicate();
+		addInputPredicate();
+		addInputConstant();
+		setOutputArity(0);
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer) throw(PluginError)
+	{
+    const Tuple& in = query.getInputTuple();
+  
+    /*
+    {
+      const std::string& disarm = in[0].getUnquotedString();
+      const std::string& look = in[1].getUnquotedString();
+      const std::string& time = in[2].getUnquotedString();
+      std::cerr << "query with " << disarm << " " << look << " " << time << std::endl;
+    }
+    */
+    //std::cerr << "query with " << in[0] << " " << in[1] << " " << in[2] << std::endl;
+
+    AtomSet setdis;
+    {
+      Tuple tupdis;
+      tupdis.push_back(in[0]);
+      tupdis.push_back(in[2]);
+      AtomPtr dis(new Atom(tupdis));
+      query.getInterpretation().matchAtom(dis, setdis);
+    }
+
+    AtomSet setlook;
+    {
+      Tuple tuplook;
+      tuplook.push_back(in[1]);
+      tuplook.push_back(in[2]);
+      AtomPtr look(new Atom(tuplook));
+      query.getInterpretation().matchAtom(look, setlook);
+    }
+
+    std::vector<Tuple> out;
+    if( !setdis.empty() && !setlook.empty() )
+    {
+      Tuple t;
+      out.push_back(t);
+      answer.addTuples(out);
+    }
+  }
+};
+
+class BenchTestPlugin : public PluginInterface
 {
 public:
 	virtual void
 	getAtoms(AtomFunctionMap& a)
 	{
 	  boost::shared_ptr<PluginAtom> above(new AboveAtom);
+	  boost::shared_ptr<PluginAtom> senseNotArmed2(new SenseNotArmed2PluginAtom);
 
 	  a["above"] = above;
+	  a["senseNotArmed2"] = senseNotArmed2;
 	}
 
 	virtual void
@@ -75,15 +131,15 @@ public:
 	}
 };
 
-AbovePlugin theTestPlugin;
+BenchTestPlugin theTestPlugin;
 
 DLVHEX_NAMESPACE_END
 
 extern "C"
-DLVHEX_NAMESPACE AbovePlugin*
+DLVHEX_NAMESPACE BenchTestPlugin*
 PLUGINIMPORTFUNCTION()
 {
-	DLVHEX_NAMESPACE theTestPlugin.setPluginName("dlvhex-aboveplugin");
+	DLVHEX_NAMESPACE theTestPlugin.setPluginName("dlvhex-benchtestplugin");
 	DLVHEX_NAMESPACE theTestPlugin.setVersion(0,0,1);
 	return & DLVHEX_NAMESPACE theTestPlugin;
 }
