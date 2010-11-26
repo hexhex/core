@@ -67,6 +67,8 @@
 #include <fstream>
 #include <cstdlib>
 
+#include "graphviz.hpp"
+
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(*ctx.registry); \
@@ -80,13 +82,6 @@
 # define LOG_REGISTRY_PROGRAM(ctx) \
   do {} while(false);
 #endif
-
-inline void makeGraphVizPdf(const char* fname)
-{
-  std::ostringstream ss;
-  ss << "dot " << fname << " -Tpdf -o " << fname << ".pdf";
-  //system(ss.str().c_str());
-}
 
 typedef boost::function<void (std::ostream&)> GraphVizFunc;
 
