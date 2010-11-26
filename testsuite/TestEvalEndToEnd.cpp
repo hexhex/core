@@ -47,6 +47,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "fixturesExt1.hpp"
+#include "graphviz.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -60,13 +61,6 @@
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
 	LOG("idb end");
-
-inline void makeGraphVizPdf(const char* fname)
-{
-  std::ostringstream ss;
-  ss << "dot " << fname << " -Tpdf -o " << fname << ".pdf";
-  system(ss.str().c_str());
-}
 
 DLVHEX_NAMESPACE_USE
 
