@@ -427,7 +427,7 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
 	}
 
   // check if there is an existing model created from these predecessors
-  #if 0
+  #if 1
   OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
   if( !!oexisting )
   {
