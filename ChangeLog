@@ -1,10 +1,11 @@
 2010-11-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
-	* TestHexParserModule.cpp: testing whether the module atom is registered
-	* HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
-	* ProgramCtx.h: registering module atoms
-	* Atoms.hpp: add struct ModuleAtom
-	* ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
+	* testsuite/TestHexParserModule.cpp: testing whether the module atom is registered
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
+	* include/dlvhex/HexGrammarPTToASTConverter.h: likewise
+	* include/dlvhex/ProgramCtx.h: registering module atoms
+	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
+	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
 
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
