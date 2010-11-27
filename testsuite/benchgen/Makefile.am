@@ -47,4 +47,3 @@ bomb3_SOURCES = \
 revsel1_SOURCES = \
 	$(top_srcdir)/testsuite/benchgen/revsel1.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp
-revsel1_LDADD = -lgmpxx -lgmp 
