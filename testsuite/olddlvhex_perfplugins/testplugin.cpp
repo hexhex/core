@@ -108,6 +108,41 @@ public:
   }
 };
 
+// the name Gen2 is due to another generic Gen1 in TestPlainHEX
+class Gen2PluginAtom : public PluginAtom
+{
+public:
+	Gen2PluginAtom(unsigned arity):
+    PluginAtom(false)
+	{
+		setOutputArity(0);
+		addInputPredicate();
+    for(unsigned u = 0; u < arity; ++u)
+      addInputConstant();
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer) throw(PluginError)
+	{
+    const Tuple& in = query.getInputTuple();
+    AtomPtr atm(new Atom(in));
+
+    AtomSet setatm;
+    {
+      query.getInterpretation().matchAtom(atm, setatm);
+    }
+
+    if( !setatm.empty() )
+    {
+      std::vector<Tuple> out;
+      Tuple t;
+      out.push_back(t);
+      answer.addTuples(out);
+    }
+  }
+};
+
+
 class BenchTestPlugin : public PluginInterface
 {
 public:
@@ -116,9 +151,15 @@ public:
 	{
 	  boost::shared_ptr<PluginAtom> above(new AboveAtom);
 	  boost::shared_ptr<PluginAtom> senseNotArmed2(new SenseNotArmed2PluginAtom);
+	  boost::shared_ptr<PluginAtom> gen2_1(new Gen2PluginAtom(1));
+	  boost::shared_ptr<PluginAtom> gen2_2(new Gen2PluginAtom(2));
+	  boost::shared_ptr<PluginAtom> gen2_3(new Gen2PluginAtom(3));
 
 	  a["above"] = above;
 	  a["senseNotArmed2"] = senseNotArmed2;
+	  a["gen1"] = gen2_1;
+	  a["gen2"] = gen2_2;
+	  a["gen3"] = gen2_3;
 	}
 
 	virtual void

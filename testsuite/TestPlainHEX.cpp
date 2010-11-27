@@ -461,7 +461,6 @@ public:
     assert(q.pattern.size() == 0);
 
     // check if <preddisarm>(time) and <predlook>(time) part of interpretation
-
     Tuple tdisarm;
     tdisarm.push_back(preddisarm);
     tdisarm.push_back(time);
@@ -486,6 +485,85 @@ public:
       // found both facts
       Tuple t;
       a.get().push_back(t);
+    }
+  }
+};
+
+class GenPluginAtom1:
+	public dlvhex::PluginAtom
+{
+public:
+	GenPluginAtom1(const std::string& name, unsigned arity):
+    dlvhex::PluginAtom(name, false)
+	{
+		inputSize = 1;
+		outputSize = arity;
+		inputType.push_back(PREDICATE);
+	}
+
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    // get input
+    assert(q.input.size() == 1);
+    ID pred = q.input[0];
+
+    // get outputs
+    assert(q.pattern.size() == outputSize);
+
+    // build unifier
+    OrdinaryAtom unifier(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
+    unifier.tuple.push_back(pred);
+    unifier.tuple.insert(unifier.tuple.begin(), q.pattern.begin(), q.pattern.end());
+
+    // check if <pred>(pattern) part of interpretation (=forward <pred> via external atom)
+    assert(q.interpretation != 0);
+    const Interpretation::Storage& bits = q.interpretation->getStorage();
+    for(Interpretation::Storage::enumerator it = bits.first();
+        it != bits.end(); ++it)
+    {
+      const OrdinaryAtom& ogatom = registry->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+      if( ogatom.unifiesWith(unifier) )
+      {
+        Tuple partial;
+        partial.insert(partial.begin(), ogatom.tuple.begin()+1, ogatom.tuple.end());
+        a.get().push_back(partial);
+      }
+    }
+  }
+};
+
+class GenPluginAtom2:
+	public dlvhex::PluginAtom
+{
+public:
+	GenPluginAtom2(const std::string& name, unsigned arity):
+    dlvhex::PluginAtom(name, false)
+	{
+		inputSize = 1+arity;
+		outputSize = 0;
+		inputType.push_back(PREDICATE);
+    for(unsigned u = 0; u < arity; ++u)
+      inputType.push_back(CONSTANT);
+	}
+
+	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
+  {
+    // get input
+    assert(q.input.size() == inputSize);
+
+    // get outputs
+    assert(q.pattern.size() == 0);
+
+    ID idoutput = registry->ogatoms.getIDByTuple(q.input);
+    // no ogatom -> cannot be in interpretation
+    if( idoutput == ID_FAIL )
+      return;
+
+    assert(q.interpretation != 0);
+    if( q.interpretation->getFact(idoutput.address) )
+    {
+      // success = found = true!
+      a.get().push_back(Tuple());
     }
   }
 };
@@ -551,6 +629,11 @@ int main(int argn, char** argv)
   }
   {
     PluginAtomPtr pa(new SenseNotArmed2PluginAtom);
+    pa->setRegistry(ctx.registry);
+    patoms.push_back(pa);
+  }
+  {
+    PluginAtomPtr pa(new GenPluginAtom2("gen2",2));
     pa->setRegistry(ctx.registry);
     patoms.push_back(pa);
   }
