@@ -51,10 +51,11 @@ void HexGrammarPTToASTConverter::convertPTToAST(
 {
   // node is from "root" rule
   assert(node.value.id() == HexGrammar::Root);
-  for(node_t::tree_iterator it = node.children.begin();
-      it != node.children.end(); ++it)
-    if( it->value.id() == HexGrammar::Clause )
-      createASTFromClause(*it);
+  for(node_t::tree_iterator it = node.children.begin();it != node.children.end(); ++it){
+    if( it->value.id() == HexGrammar::Clause ) createASTFromClause(*it);
+    if( it->value.id() == HexGrammar::ModHeader ) doModuleHeader(*it);
+  }
+
 }
 
 // optionally assert whether node comes from certain rule
@@ -149,6 +150,13 @@ namespace
       }
     }
   }
+}
+
+void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
+{
+  // node is from "mod_header" rule
+  assert(node.children.size() == 9);
+  LOG("got module header: " << createStringFromNode(node.children[2], HexGrammar::Ident) << "'");
 }
 
 void HexGrammarPTToASTConverter::createASTFromClause(
@@ -531,7 +539,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 
 ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
 {
-  std::cout << "test from HexGrammarPTToASTConverter.cpp" << std::endl;
+  std::cout << "create module atom: " << createStringFromNode(node.children[1], HexGrammar::Ident) <<std::endl;
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ModAtom);
   ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);

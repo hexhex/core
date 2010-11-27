@@ -89,6 +89,8 @@ private:
   // converters for specific rules
   //
 
+  // rule "mod_header"
+  void doModuleHeader(node_t& node);
   // rule "clause", put result into ctx.edb and ctx.idb
   void createASTFromClause(node_t& node);
   // rule "disj"

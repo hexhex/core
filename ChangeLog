@@ -16,6 +16,10 @@
 	* testsuite/TestHexParserModule.cpp: updating test cases for module output
 	* Committed in revision 2494
 
+	* TestHexParserModule.cpp: add module header test
+	* HexGrammarPTToASTConverter.cpp: add method if module header is found (doModuleHeader)
+	* HexGrammarPTToASTConverter.h: add method if module header is found (doModuleHeader)
+
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* ID-Concept.txt: adding definition for module atom
