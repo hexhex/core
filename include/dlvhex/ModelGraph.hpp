@@ -507,10 +507,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::EvalUnit location,
     const std::vector<typename ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::Model>& mm) const
 {
-  throw "this method is buggy! if used it will cause the evaluation to loose models!";
-#warning this method is buggy! if used it will cause the evaluation to loose models!
+  const unsigned predecessors = mm.size();
+
   LOG_SCOPE("gSI", false);
-  LOG("=getSuccessorIntersection(" << location << "," << mm.size() << ")");
+  LOG("=getSuccessorIntersection(" << location << "," << predecessors << ")");
 
   #ifndef NDEBUG
   BOOST_FOREACH(Model m, mm)
@@ -527,7 +527,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   #endif
 
   // shortcut if only one dependency
-  if( mm.size() == 1 )
+  if( predecessors == 1 )
   {
     LOG("one-dependency shortcut: simply finding corresponding model");
     typename ModelPropertyBundle::SuccessorModelMap::const_iterator itsucc =
@@ -586,126 +586,76 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   // here we have the guarantee, that every pair of iterators has at least one element in the range
 
   // join loop
-  typedef typename std::vector<SuccIter>::iterator SuccIterIter;
-  // the currently investigated model's sucessor begin and end iterators
-  SuccIterIter cursorit = iters.begin();
-  SuccIterIter cursorend = ends.begin();
-  // the last model's sucessor begin and end iterators
-  SuccIterIter lastcursorit = iters.end() - 1;
-  SuccIterIter lastcursorend = ends.end() - 1;
 
-  // invariant: elements at cursor and in front of cursor point to the same successor
-  // -> if cursor is at the end, we found a common successor (stored in all iterators)
+  // this is the position where we currently "are"
+  unsigned at = 0;
+
+  // invariant: *iters[at] == *iters[at-1] == ... == *iters[0] (they point to the same successor model)
+  // -> if "at == predecessors-1" cursor is at the end, we found a common successor (stored in all iterators)
 
   // strategy:
-  // try to find same successor at cursor+1:
-  //   increment successor at cursor+1 as long as it is smaller than successor at cursor
-  //     if it is equal -> cursor++
-  //     else -> cursor = iters.begin() and increment *cursor
+  // try to find equal successor at [at+1] as it already is at [at]
+  //   increment iters[at+1] while < iters[at]
+  //     if equal -> at++
+  //     else -> increment all iters[X<=at] until >= iters[at+1] and set at = 0
   do
   {
     #ifndef NDEBUG
-    LOG("at loop begin with cursor at " <<
-        static_cast<unsigned>(cursorit - iters.begin()) <<
-        " at model " << **cursorit);
-    for(SuccIterIter at = iters.begin();
-        at != cursorit; ++at)
+    LOG("at loop begin with cursor at " << at << ", models:");
+    for(unsigned u = 0; u < predecessors; ++u)
     {
-      LOG("iterator " << static_cast<unsigned>(at - iters.begin()) <<
-          " pointing to model " << **at);
+      LOG("  iterator " << u << " pointing to model " << *iters[u]);
     }
     #endif
     // success condition
-    if( cursorit == lastcursorit )
+    if( at == (predecessors-1) )
     {
-      assert(cursorend == lastcursorend);
-      Model m = **cursorit;
+      Model m = *iters[0];
       LOG("found common successor model " << m << " -> returning");
       return m;
     }
 
-    // peek at next model
-    assert(cursorit != iters.end());
-    assert(cursorend != ends.end());
-    SuccIterIter nextcursorit = cursorit + 1;
-    SuccIterIter nextcursorend = cursorend + 1;
-    assert(nextcursorit != iters.end());
-    assert(nextcursorend != ends.end());
+    assert((at+1) < predecessors);
 
-    // get current/end iterator range for next model
-    SuccIter& nextit = *nextcursorit;
-    SuccIter& nextend = *nextcursorend;
-
-    // try to increment next model until we reach *cursorit or more
-    while( (nextit != nextend) &&
-           (*nextit < **cursorit) )
+    // try to advance iters[at+1]
+    while( *iters[at+1] < *iters[at] )
     {
-      LOG("seeing model " << *nextit << " at position " <<
-          static_cast<unsigned>(nextcursorit - iters.begin()));
-      nextit++;
+      iters[at+1]++;
+      if( iters[at+1] == ends[at+1] )
+      {
+        LOG("no suitable model at " << at << " -> returning none");
+        return boost::none;
+      }
+      LOG("advancing " << (at+1) << " to model " << *iters[at+1]);
     }
-    if( nextit == nextend )
+
+    // check if same or greater
+    if( *iters[at+1] == *iters[at] )
     {
-      // this predecessor model cannot provide more elements and there are no bigger ones
-      // -> fail for the whole join
-      LOG("beyond last element -> fail");
-      return boost::none;
+      LOG("model at " << (at+1) << " equal to model at " << at << " -> next position");
+      at++;
     }
     else
     {
-      LOG("seeing model " << *nextit << " at position " <<
-          static_cast<unsigned>(nextcursorit - iters.begin()));
-      if( *nextit == **cursorit )
+      LOG("model at " << (at+1) << " bigger than model at " << at << " -> backtracking");
+      for(unsigned u = 0; u <= at; ++u)
       {
-        LOG("model is equal to model at cursor -> next cursor");
-        cursorit++;
-        cursorend++;
-      }
-      else
-      {
-        LOG("model is bigger than model at cursor -> backtrack");
-        SuccIterIter backtrackercursorit = cursorit;
-        SuccIterIter backtrackercursorend = cursorend;
-        do
+        while( *iters[u] < *iters[at+1] )
         {
-          LOG("backtracking at " <<
-            static_cast<unsigned>(backtrackercursorit - iters.begin()));
-          // advance until we reach at least *nextit or fail
-          SuccIter& backtrackerit = *backtrackercursorit;
-          SuccIter& backtrackerend = *backtrackercursorend;
-          assert(backtrackerit != backtrackerend);
-          backtrackerit++;
-          while( (backtrackerit != backtrackerend) &&
-                 (*backtrackerit < *nextit) )
+          iters[u]++;
+          if( iters[u] == ends[u] )
           {
-            LOG("advanced to model " << *backtrackerit);
-            backtrackerit++;
-          }
-          if( backtrackerit == backtrackerend )
-          {
-            LOG("backtrack cursor at end -> fail");
+            LOG("no suitable model at " << u << " -> returning none");
             return boost::none;
           }
-          else
-          {
-            LOG("backtrack successful -> found model " << *backtrackerit);
-            if( backtrackercursorit == iters.begin() )
-                break;
-            LOG("going back further");
-            backtrackercursorit--;
-            backtrackercursorend--;
-          }
+          LOG("advancing " << (u) << " to model " << *iters[u]);
         }
-        while(true);
-        assert(backtrackercursorit == iters.begin());
-        assert(backtrackercursorend == ends.begin());
       }
+      // restart loop
+      at = 0;
     }
   }
-  while(cursorit != iters.end());
-
-  LOG("returning failure");
-  return boost::none;
+  while(true);
 } // ModelGraph<...>::getSuccessorIntersection(...) implementation
 
 #endif // MODEL_GRAPH_HPP_INCLUDED__29082010

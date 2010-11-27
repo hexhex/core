@@ -77,15 +77,14 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
 
   BOOST_REQUIRE((idp) != ID_FAIL);
   BOOST_REQUIRE((idq) != ID_FAIL);
-/*  BOOST_REQUIRE((idr) != ID_FAIL);
+  BOOST_REQUIRE((idr) != ID_FAIL);
   BOOST_REQUIRE((idb) != ID_FAIL);
-  BOOST_REQUIRE((idc) != ID_FAIL);*/
+  BOOST_REQUIRE((idc) != ID_FAIL);
   BOOST_REQUIRE((idmymod) != ID_FAIL);
 
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
-    std::cout << "r.kind: " << r.kind << std::endl;
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);

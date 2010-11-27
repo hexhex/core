@@ -41,6 +41,7 @@
 
 #include "fixturesExt1.hpp"
 #include "fixturesMCS.hpp"
+#include "graphviz.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -55,13 +56,6 @@
 	LOG("idb end");
 
 DLVHEX_NAMESPACE_USE
-
-inline void makeGraphVizPdf(const char* fname)
-{
-  std::ostringstream ss;
-  ss << "dot " << fname << " -Tpdf -o " << fname << ".pdf";
-  system(ss.str().c_str());
-}
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {

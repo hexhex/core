@@ -162,7 +162,9 @@ void RawPrinter::print(ID id)
 				print(atom.predicate);
 				out << "[";
 				printmany(atom.inputs,",");
-				out << "](";
+				out << "]::";
+				print(atom.outputpredicate);
+				out << "(";
 				printmany(atom.tuple,",");
 				out << ")";
 			}

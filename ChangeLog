@@ -7,6 +7,13 @@
 	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
 	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
 
+	* include/dlvhex/HexGrammar.tcc: allowing empty module inputs and module output with 0 arity
+	* include/dlvhex/Atoms.hpp: fixing struct ModuleAtom
+	* src/dlvhex/Atoms.cpp: fixing print output ModuleAtom
+	* src/dlvhex/ProgramCtx.cpp: fixing print output ModuleAtom
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: updating createModAtomFromModAtom
+	* testsuite/TestHexParserModule.cpp: updating test cases for module output
+
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* ID-Concept.txt: adding definition for module atom

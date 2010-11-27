@@ -98,7 +98,7 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
   module_output
     = '(' >> !terms >> ')';
   module_atom
-    = '@' >> ident >> module_inputs >> str_p("::") >> ident >> module_output ;
+    = '@' >> ident >> !module_inputs >> str_p("::") >> ident >> !module_output ;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';

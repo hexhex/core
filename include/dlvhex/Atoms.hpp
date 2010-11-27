@@ -235,13 +235,14 @@ struct ModuleAtom:
   public Atom,
   private ostream_printable<ModuleAtom>
   {
-  // &<predicate>[<inputs>](<outputs>)
+  // @<predicate>[<inputs>]::<outputpredicate>(<outputs>)
 
-  // external atom name (constant term)
+  // module atom name (constant term)
   ID predicate;
-
   // input terms
   Tuple inputs;
+  // module output predicate
+  ID outputpredicate;
 
   // Atom::tuple is used for output terms
 
@@ -282,10 +283,11 @@ protected:
   mutable IDAddress predicateInputMaskKnownOGAtoms;
 
 public:
-  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
+  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputpredicate, const Tuple& outputs):
     Atom(kind, outputs),
     predicate(predicate),
     inputs(inputs),
+    outputpredicate(outputpredicate),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
     predicateInputPredicates(),
@@ -296,6 +298,7 @@ public:
     Atom(kind),
     predicate(ID_FAIL),
     inputs(),
+    outputpredicate(ID_FAIL),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
     predicateInputPredicates(),

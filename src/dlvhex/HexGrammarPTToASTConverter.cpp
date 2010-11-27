@@ -353,12 +353,13 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // groundness
+  LOG("checking groundness of tuple " << printrange(atom.tuple));
   IDKind kind = 0;
   BOOST_FOREACH(const ID& id, atom.tuple)
   {
     kind |= id.kind;
     // make this sure to make the groundness check work
-    assert((kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
+    assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
   }
   const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
   OrdinaryAtomTable* tbl;
@@ -552,6 +553,10 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
         inputs = createTupleFromTerms(node.children[2].children[1]);
       }
     }
+    offset = offset + 1;
+    assert(node.children[2+offset].value.id() == HexGrammar::Ident);
+    atom.outputpredicate = createTerm_Helper(node.children[2+offset], HexGrammar::Ident);
+    offset = offset + 1;
     // check for output
     if( node.children.size() > (2+offset) )
     {

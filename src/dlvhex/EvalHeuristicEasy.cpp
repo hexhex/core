@@ -32,8 +32,9 @@
 #include "dlvhex/Logger.hpp"
 
 #include <boost/unordered_map.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <boost/property_map/property_map.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/properties.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -50,21 +51,184 @@ EvalHeuristicEasy::~EvalHeuristicEasy()
 typedef ComponentGraph::Component Component;
 typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
+typedef ComponentGraph::ComponentSet ComponentSet;
 
-// trivial strategy:
-// do a topological sort of the tree
-// build eval units in that order
+namespace
+{
+
+template<typename ComponentGraph, typename Sequence>
+void topologicalSortOfComponents(const ComponentGraph& compgraph, Sequence& comps)
+{
+  // we need a hash map, as component graph is no graph with vecS-storage
+  //
+  typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+  CompColorHashMap ccWhiteHashMap;
+  // fill white hash map
+  ComponentIterator cit, cit_end;
+  for(boost::tie(cit, cit_end) = compgraph.getComponents();
+      cit != cit_end; ++cit)
+  {
+    //boost::put(ccWhiteHashMap, *cit, boost::white_color);
+    ccWhiteHashMap[*cit] = boost::white_color;
+  }
+  CompColorHashMap ccHashMap(ccWhiteHashMap);
+
+  //
+  // do topological sort
+  //
+  std::back_insert_iterator<Sequence> compinserter(comps);
+  boost::topological_sort(
+      compgraph.getInternalGraph(),
+      compinserter,
+      boost::color_map(CompColorMap(ccHashMap)));
+}
+
+// collect all components on the way
+struct DFSVisitor:
+  public boost::default_dfs_visitor
+{
+  const ComponentGraph& cg;
+  ComponentSet& comps;
+  DFSVisitor(const ComponentGraph& cg, ComponentSet& comps): boost::default_dfs_visitor(), cg(cg), comps(comps) {}
+  DFSVisitor(const DFSVisitor& other): boost::default_dfs_visitor(), cg(other.cg), comps(other.comps) {}
+  template<typename GraphT>
+  void discover_vertex(Component comp, const GraphT&)
+  {
+    comps.insert(comp);
+  }
+};
+
+template<typename ComponentGraph, typename Set>
+void transitivePredecessorComponents(const ComponentGraph& compgraph, Component from, Set& preds)
+{
+  // we need a hash map, as component graph is no graph with vecS-storage
+  //
+  typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
+  typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+  CompColorHashMap ccWhiteHashMap;
+  // fill white hash map
+  ComponentIterator cit, cit_end;
+  for(boost::tie(cit, cit_end) = compgraph.getComponents();
+      cit != cit_end; ++cit)
+  {
+    //boost::put(ccWhiteHashMap, *cit, boost::white_color);
+    ccWhiteHashMap[*cit] = boost::white_color;
+  }
+  CompColorHashMap ccHashMap(ccWhiteHashMap);
+
+  //
+  // do DFS
+  //
+  DFSVisitor dfs_vis(compgraph, preds);
+  //LOG("doing dfs visit for root " << *itr);
+  boost::depth_first_visit(
+      compgraph.getInternalGraph(),
+      from, 
+      dfs_vis,
+      CompColorMap(ccHashMap));
+  LOG("predecessors of " << from << " are " << printrange(preds));
+}
+
+}
+
 void EvalHeuristicEasy::build()
 {
   ComponentGraph& compgraph = builder.getComponentGraph();
-  typedef ComponentGraph::Component Component;
-  typedef ComponentGraph::ComponentSet ComponentSet;
+
+  bool didSomething;
+  do
+  {
+    didSomething = false;
 
   //
-  // forall external atoms:
-  // merge with rules that contain them if they don't depend on something else
-  // TODO relax that condition
+  // forall external components e:
+  // merge with all rules that 
+  // * depend on e 
+  // * do not contain external atoms
+  // * do not depend on something e does not (transitively) depend on
   //
+  {
+    ComponentIterator cit;
+    for(cit = compgraph.getComponents().first; // do not use boost::tie here! the container is modified in the loop!
+        cit != compgraph.getComponents().second; ++cit)
+    {
+      Component comp = *cit;
+      if( compgraph.propsOf(comp).outerEatoms.empty() )
+        continue;
+
+      LOG("checking whether to collapse external component " << comp << " with successors");
+
+      // get predecessors
+      ComponentSet preds;
+      transitivePredecessorComponents(compgraph, comp, preds);
+
+      // get successors
+      ComponentSet collapse;
+      bool addedToCollapse;
+      // do this as long as we find new ones
+      // if we do not do this loop, we might miss something
+      // as PredecessorIterator not necessarily honours topological order
+      // (TODO this could be made more efficient)
+      do
+      {
+        addedToCollapse = false;
+
+        ComponentGraph::SuccessorIterator sit, sit_end;
+        for(boost::tie(sit, sit_end) = compgraph.getProvides(comp);
+            sit != sit_end; ++sit)
+        {
+          Component succ = compgraph.sourceOf(*sit);
+
+          // skip successors with eatoms
+          if( !compgraph.propsOf(succ).outerEatoms.empty() )
+            continue;
+          // do not check found stuff twice
+          if( collapse.find(succ) != collapse.end() )
+            continue;
+
+          LOG("found successor " << succ);
+
+          ComponentGraph::PredecessorIterator pit, pit_end;
+          bool good = true;
+          for(boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
+              pit != pit_end; ++pit)
+          {
+            Component dependson = compgraph.targetOf(*pit);
+            if( preds.find(dependson) == preds.end() )
+            {
+              LOG("successor bad as it depends on other node " << dependson);
+              good = false;
+              break;
+            }
+          }
+          if( good )
+          {
+            // collapse with this
+            collapse.insert(succ);
+            preds.insert(succ);
+            addedToCollapse = true;
+          }
+        }
+      }
+      while(addedToCollapse);
+
+      // collapse if not nonempty
+      if( !collapse.empty() )
+      {
+        collapse.insert(comp);
+        Component c = compgraph.collapseComponents(collapse);
+        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
+
+        // restart loop after collapse
+        cit = compgraph.getComponents().first;
+        didSomething = true;
+      }
+    }
+  }
+
+#if 0
+  // this is the old non-transitive version of the above
   {
     ComponentIterator cit;
     for(cit = compgraph.getComponents().first; // do not use boost::tie here! the container is modified in the loop!
@@ -76,12 +240,22 @@ void EvalHeuristicEasy::build()
 
       LOG("checking whether to collapse external component " << comp);
 
+      // get predecessors (we could do transitive closure here)
+      ComponentSet preds;
+      ComponentGraph::PredecessorIterator pit, pit_end;
+      for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp);
+          pit != pit_end; ++pit)
+      {
+        preds.insert(compgraph.targetOf(*pit));
+      }
+      // insert this component
+      preds.insert(comp);
+
       // get successors
       ComponentSet collapse;
       ComponentGraph::SuccessorIterator sit, sit_end;
       for(boost::tie(sit, sit_end) = compgraph.getProvides(comp);
-          sit != sit_end;
-          ++sit)
+          sit != sit_end; ++sit)
       {
         Component succ = compgraph.sourceOf(*sit);
 
@@ -92,22 +266,23 @@ void EvalHeuristicEasy::build()
         LOG("found successor " << succ);
 
         ComponentGraph::PredecessorIterator pit, pit_end;
-        boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
         bool good = true;
-        assert(pit != pit_end);
-        if( compgraph.targetOf(*pit) != comp )
+        for(boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
+            pit != pit_end; ++pit)
         {
-          LOG("successor bad as it depends on other node " << compgraph.targetOf(*pit));
-          good = false;
-        }
-        pit++;
-        if( pit != pit_end )
-        {
-          good = false;
-          LOG("successor bad as it depends on more nodes");
+          Component dependson = compgraph.targetOf(*pit);
+          if( preds.find(dependson) == preds.end() )
+          {
+            LOG("successor bad as it depends on other node " << dependson);
+            good = false;
+            break;
+          }
         }
         if( good )
+        {
           collapse.insert(succ);
+          preds.insert(succ);
+        }
       }
 
       // collapse if not nonempty
@@ -119,14 +294,15 @@ void EvalHeuristicEasy::build()
 
         // restart loop after collapse
         cit = compgraph.getComponents().first;
+        didSomething = true;
       }
     }
   }
+  #endif
 
   //
-  // forall components with only inner rules:
-  // if they contain a guess, merge with children that do not contain a guess and no eatoms and do not depend on anything else
-  // TODO relax that condition
+  // forall components with only inner rules or constraints:
+  // merge with children that are no eatoms and do not depend on anything else
   //
   {
     ComponentIterator cit = compgraph.getComponents().first;
@@ -139,7 +315,7 @@ void EvalHeuristicEasy::build()
         continue;
       }
 
-      LOG("checking whether to collapse internal-only component " << comp);
+      LOG("checking whether to collapse internal-only component " << comp << " with children");
 
       // get successors
       ComponentSet collapse;
@@ -185,6 +361,7 @@ void EvalHeuristicEasy::build()
 
         // restart loop after collapse
         cit = compgraph.getComponents().first;
+        didSomething = true;
       }
       else
       {
@@ -196,41 +373,123 @@ void EvalHeuristicEasy::build()
   }
 
   //
+  // forall components with only inner rules or constraints:
+  // merge with components that depend on exactly the same predecessors
+  //
+  {
+    ComponentIterator cit = compgraph.getComponents().first;
+    do
+    {
+      Component comp = *cit;
+      if( !compgraph.propsOf(comp).outerEatoms.empty() )
+      {
+        cit++;
+        continue;
+      }
+
+      LOG("checking whether to collapse internal-only component " << comp << " with others");
+      ComponentSet collapse;
+
+      // get direct predecessors
+      ComponentSet preds;
+      {
+        ComponentGraph::PredecessorIterator pit, pit_end;
+        for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp);
+            pit != pit_end; ++pit)
+        {
+          preds.insert(compgraph.targetOf(*pit));
+        }
+      }
+      if( preds.empty() )
+      {
+        // do not combine stuff that depends only on edb
+        cit++;
+        continue;
+      }
+
+      // compare all further ones (further because of symmetry breaking)
+      ComponentIterator cit2 =  cit;
+      cit2++;
+      while( cit2 != compgraph.getComponents().second )
+      {
+        Component comp2 = *cit2;
+        LOG("checking other component " << comp2);
+        ComponentSet preds2;
+        {
+          ComponentGraph::PredecessorIterator pit, pit_end;
+          for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp2);
+              pit != pit_end; ++pit)
+          {
+            preds2.insert(compgraph.targetOf(*pit));
+          }
+        }
+
+        if( preds2 == preds )
+          collapse.insert(comp2);
+
+        cit2++;
+      }
+
+      if( !collapse.empty() )
+      {
+        // collapse! (decreases graph size)
+        collapse.insert(comp);
+        assert(collapse.size() > 1);
+        Component c = compgraph.collapseComponents(collapse);
+        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
+
+        // restart loop after collapse
+        cit = compgraph.getComponents().first;
+        didSomething = true;
+      }
+      else
+      {
+        // advance
+        ++cit;
+      }
+    }
+    while(cit != compgraph.getComponents().second);
+  }
+
+  //
+  // forall components with only inner constraints:
+  // merge with all other constraint-only components
+  //
+  if(false){
+    ComponentSet collapse;
+
+    ComponentIterator cit;
+    for(cit = compgraph.getComponents().first; // do not use boost::tie here! the container is modified in the loop!
+        cit != compgraph.getComponents().second; ++cit)
+    {
+      Component comp = *cit;
+      if( compgraph.propsOf(comp).outerEatoms.empty() &&
+          compgraph.propsOf(comp).innerRules.empty() )
+        collapse.insert(comp);
+    }
+
+    if( !collapse.empty() )
+    {
+      // collapse! (decreases graph size)
+      LOG("collapsing constraint-only nodes " << printrange(collapse));
+      Component c = compgraph.collapseComponents(collapse);
+      didSomething = true;
+    }
+  }
+
+  }
+  while(didSomething);
+
+  //
   // create eval units using topological sort
   //
-
+  ComponentContainer sortedcomps;
+  topologicalSortOfComponents(compgraph, sortedcomps);
+  for(ComponentContainer::const_iterator it = sortedcomps.begin();
+      it != sortedcomps.end(); ++it)
   {
-    // we need a hash map, as component graph is no graph with vecS-storage
-    //
-    typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-    typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
-    CompColorHashMap ccWhiteHashMap;
-    // fill white hash map
-    ComponentIterator cit, cit_end;
-    for(boost::tie(cit, cit_end) = compgraph.getComponents();
-        cit != cit_end; ++cit)
-    {
-      //boost::put(ccWhiteHashMap, *cit, boost::white_color);
-      ccWhiteHashMap[*cit] = boost::white_color;
-    }
-    CompColorHashMap ccHashMap(ccWhiteHashMap);
-
-    //
-    // do topological sort
-    //
-    ComponentContainer comps;
-    std::back_insert_iterator<ComponentContainer> compinserter(comps);
-    boost::topological_sort(
-        compgraph.getInternalGraph(),
-        compinserter,
-        boost::color_map(CompColorMap(ccHashMap)));
-
-    for(ComponentContainer::const_iterator it = comps.begin();
-        it != comps.end(); ++it)
-    {
-      EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-      LOG("component " << *it << " became eval unit " << u);
-    }
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
+    LOG("component " << *it << " became eval unit " << u);
   }
 }
 

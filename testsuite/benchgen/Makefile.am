@@ -18,9 +18,32 @@ LIBS = $(BOOST_DATE_TIME_LIBS) $(BOOST_PROGRAM_OPTIONS_LIBS) $(BOOST_SYSTEM_LIBS
 #LIBS = $(BOOST_PROGRAM_OPTIONS_LIBS)
 
 
-noinst_PROGRAMS = easy1
+noinst_PROGRAMS = easy1 matrix1 matrix2 bomb1 bomb2 bomb3 revsel1
 
 easy1_SOURCES = \
 	$(top_srcdir)/testsuite/benchgen/easy1.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp
 
+matrix1_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/matrix1.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
+
+matrix2_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/matrix2.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
+
+bomb1_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/bomb1.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
+
+bomb2_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/bomb2.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
+
+bomb3_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/bomb3.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
+
+revsel1_SOURCES = \
+	$(top_srcdir)/testsuite/benchgen/revsel1.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp
