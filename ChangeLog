@@ -1,3 +1,11 @@
+2010-11-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* TestHexParserModule.cpp: testing whether the module atom is registered
+	* HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
+	* ProgramCtx.h: registering module atoms
+	* Atoms.hpp: add struct ModuleAtom
+	* ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
+
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* ID-Concept.txt: adding definition for module atom
@@ -9,6 +17,7 @@
 	* Makefile.am: defining test: TestHexParserModule
 
 	* testsuite/TestHexParserModule.cpp: adding test to parse module header
+
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammar.h: adding grammar for module atom

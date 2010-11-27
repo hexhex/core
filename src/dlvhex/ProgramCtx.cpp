@@ -74,6 +74,8 @@ std::ostream& Registry::print(std::ostream& o) const
       aatoms <<
       "eatoms:" << std::endl <<
       eatoms <<
+      "matoms:" << std::endl <<
+      matoms <<
       "rules:" << std::endl <<
       rules <<
       "REGISTRY END" << std::endl;
@@ -145,6 +147,18 @@ void RawPrinter::print(ID id)
 			{
 				const ExternalAtom& atom = registry->eatoms.getByID(id);
 				out << "&";
+				print(atom.predicate);
+				out << "[";
+				printmany(atom.inputs,",");
+				out << "](";
+				printmany(atom.tuple,",");
+				out << ")";
+			}
+			break;
+		case ID::SUBKIND_ATOM_MODULE:
+			{
+				const ModuleAtom& atom = registry->matoms.getByID(id);
+				out << "@";
 				print(atom.predicate);
 				out << "[";
 				printmany(atom.inputs,",");

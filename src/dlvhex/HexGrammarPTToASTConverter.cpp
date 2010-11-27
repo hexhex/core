@@ -141,6 +141,11 @@ namespace
       {
         r.kind |= ID::PROPERTY_RULE_EXTATOMS;
         return;
+      } else 
+      if( itt->isModuleAtom() )
+      {
+        r.kind |= ID::PROPERTY_RULE_MODATOMS;
+        return;
       }
     }
   }
@@ -294,6 +299,8 @@ ID HexGrammarPTToASTConverter::createLiteralFromLiteral(node_t& node)
     return ID::literalFromAtom(createAtomFromUserPred(node.children[offset]), naf);
   case HexGrammar::ExtAtom:
     return ID::literalFromAtom(createExtAtomFromExtAtom(node.children[offset]), naf);
+  case HexGrammar::ModAtom:
+    return ID::literalFromAtom(createModAtomFromModAtom(node.children[offset]), naf);
   case HexGrammar::Aggregate:
     return ID::literalFromAtom(createAggregateFromAggregate(node.children[offset]), naf);
   default:
@@ -518,6 +525,52 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
   LOG("storing external atom " << atom);
   ID id = ctx.registry->eatoms.storeAndGetID(atom);
   LOG("stored external atom " << atom << " which got id " << id);
+  return id;
+}
+
+ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
+{
+  std::cout << "test from HexGrammarPTToASTConverter.cpp" << std::endl;
+  //printSpiritPT(std::cerr, node, ">>");
+  assert(node.value.id() == HexGrammar::ModAtom);
+  ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
+  atom.predicate = createTerm_Helper(node.children[1], HexGrammar::Ident);
+  Tuple& inputs = atom.inputs;
+  Tuple& outputs = atom.tuple;
+  if( node.children.size() > 2 )
+  {
+    // either input or output
+    unsigned offset = 0;
+    if( node.children[2].value.id() == HexGrammar::ModInputs )
+    {
+      // input
+      offset = 1;
+      if( node.children[2].children.size() > 2 )
+      {
+        // there is at least one term
+        //printSpiritPT(std::cerr, node.children[2].children[1], ">>ii");
+        inputs = createTupleFromTerms(node.children[2].children[1]);
+      }
+    }
+    // check for output
+    if( node.children.size() > (2+offset) )
+    {
+      if( node.children[2+offset].value.id() == HexGrammar::ModOutput )
+      {
+        // output
+        if( node.children[2+offset].children.size() > 2 )
+        {
+          // there is at least one term
+          //printSpiritPT(std::cerr, node.children[2+offset].children[1], ">>oo");
+          outputs = createTupleFromTerms(node.children[2+offset].children[1]);
+        }
+      }
+    }
+  }
+
+  LOG("storing module atom " << atom);
+  ID id = ctx.registry->matoms.storeAndGetID(atom);
+  LOG("stored module atom " << atom << " which got id " << id);
   return id;
 }
 

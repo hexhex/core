@@ -106,8 +106,8 @@ private:
   ID createBuiltinPredFromBuiltinPred(node_t& node);
   // rule "external_atom"
   ID createExtAtomFromExtAtom(node_t& node);
-  // rule "external_atom"
-  ID createExtAtomFromModAtom(node_t& node);
+  // rule "module_atom"
+  ID createModAtomFromModAtom(node_t& node);
 
   // rule "aggregate"
   ID createAggregateFromAggregate(node_t& node);

@@ -51,16 +51,21 @@ DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms) 
 {
+  std::cout << "test 1" <<std::endl;
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
+  std::cout << "test 2" <<std::endl;
 
   std::stringstream ss;
-  ss << "#module(mymod,[p/0,q/1,r/2])." << std::endl <<
-        ":- @mymod[p,q]::r(b,c).";
+//  ss << "#module(mymod,[p/0,q/1,r/2])." << std::endl <<
+  ss << ":- @mymod[p,q]::r(b,c).";
+//  ss << ":- &mymod[p,q](r,b,c).";
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  std::cout << "test 3" <<std::endl;
 
 	LOG_REGISTRY_PROGRAM(ctx);
+  std::cout << "test 4" <<std::endl;
 
   ID idp = ctx.registry->terms.getIDByString("p");
   ID idq = ctx.registry->terms.getIDByString("q");
@@ -68,11 +73,19 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   ID idb = ctx.registry->terms.getIDByString("b");
   ID idc = ctx.registry->terms.getIDByString("c");
   ID idmymod = ctx.registry->terms.getIDByString("mymod");
-  BOOST_REQUIRE((idp | idq | idr | idb | idc |idmymod) != ID_FAIL);
+  std::cout << "test 5" <<std::endl;
+
+  BOOST_REQUIRE((idp) != ID_FAIL);
+  BOOST_REQUIRE((idq) != ID_FAIL);
+/*  BOOST_REQUIRE((idr) != ID_FAIL);
+  BOOST_REQUIRE((idb) != ID_FAIL);
+  BOOST_REQUIRE((idc) != ID_FAIL);*/
+  BOOST_REQUIRE((idmymod) != ID_FAIL);
 
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    std::cout << "r.kind: " << r.kind << std::endl;
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
