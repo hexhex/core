@@ -6,6 +6,7 @@
 	* include/dlvhex/ProgramCtx.h: registering module atoms
 	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
 	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
+	* Committed in revision 2490 and 2491
 
 	* include/dlvhex/HexGrammar.tcc: allowing empty module inputs and module output with 0 arity
 	* include/dlvhex/Atoms.hpp: fixing struct ModuleAtom
@@ -13,18 +14,22 @@
 	* src/dlvhex/ProgramCtx.cpp: fixing print output ModuleAtom
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: updating createModAtomFromModAtom
 	* testsuite/TestHexParserModule.cpp: updating test cases for module output
+	* Committed in revision 2494
 
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* ID-Concept.txt: adding definition for module atom
 	* include/dlvhex/ID.hpp: adding definition for module atom
 	* src/dlvhex/ID.hpp: adding definition for module atom
+	* Comitted at revision 2477.
 
 	* include/dlvhex/HexGrammar.tcc: put Module atom in literal
 	* testsuite/TestHexParserModule.cpp: test case for Module atom
 	* Makefile.am: defining test: TestHexParserModule
+	* Committed revision 2478.
 
 	* testsuite/TestHexParserModule.cpp: adding test to parse module header
+	* Committed revision 2480.
 
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
