@@ -266,6 +266,8 @@ FinalModelGenerator::generateNextModel()
     postprocessedInput.reset();
     return InterpretationPtr();
   }
+  DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,"external answersets");
+  DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 
   return ret->interpretation;
 }

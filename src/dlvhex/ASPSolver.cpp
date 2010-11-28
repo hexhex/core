@@ -40,7 +40,7 @@
 #  include "config.h"
 #endif
 
-#undef DLVHEX_BENCHMARK
+#define DLVHEX_BENCHMARK
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/DLVProcess.h"
@@ -56,6 +56,7 @@
 
 #ifdef HAVE_LIBCLINGO
 #include <clingo/clingo_app.h>
+#include <boost/tokenizer.hpp>
 #endif
 
 #include <boost/shared_ptr.hpp>
@@ -64,9 +65,6 @@
 
 #if 0
 // activate benchmarking if activated by configure option --enable-debug
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/PrintVisitor.h"
@@ -607,7 +605,7 @@ void DLVDBSoftware::Delegate::setupProcess()
 //
 // ClingoSoftware
 //
-
+#ifdef HAVE_LIBCLINGO
 ClingoSoftware::Options::Options():
   ASPSolverManager::GenericOptions()
 {
@@ -627,10 +625,12 @@ public:
   typedef RawPrinter Base;
   GringoPrinter(std::ostream& out, RegistryPtr registry):
     RawPrinter(out, registry) {}
+
   virtual void print(ID id)
   {
     if( id.isRule() && id.isRegularRule() )
     {
+      // disjunction in rule heads is | not v
       const Rule& r = registry->rules.getByID(id);
       printmany(r.head, " | ");
       if( !r.body.empty() )
@@ -641,7 +641,142 @@ public:
       out << ".";
     }
     else
+    {
       Base::print(id);
+    }
+  }
+};
+
+class ClingoResults:
+  public ASPSolverManager::Results
+{
+public:
+  typedef std::list<AnswerSet::Ptr> Storage;
+  Storage answersets;
+  bool resetCurrent;
+  Storage::const_iterator current;
+
+  ClingoResults():
+    resetCurrent(true),
+    current() {}
+  virtual ~ClingoResults() {}
+
+  void add(AnswerSet::Ptr as)
+  {
+    answersets.push_back(as);
+
+    // we do this because I'm not sure if a begin()==end() iterator
+    // becomes begin() or end() after insertion of the first element
+    // (this is the failsafe version)
+    if( resetCurrent )
+    {
+      current = answersets.begin();
+      resetCurrent = false;
+    }
+  }
+
+  virtual AnswerSet::Ptr getNextAnswerSet()
+  {
+    // if no answer set was ever added, or we reached the end
+    if( (resetCurrent == true) ||
+	(current == answersets.end()) )
+    {
+      return AnswerSet::Ptr();
+    }
+    else
+    {
+      Storage::const_iterator ret = current;
+      current++;
+      return *ret;
+    }
+  }
+};
+
+#warning TODO move this into registry or term table
+  inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
+  {
+    ID id = registry->terms.getIDByString(s);
+    if( id == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM, s);
+      // we can only get strings or constants
+      assert(s[0] == '"' || islower(s[0]));
+      id = registry->terms.storeAndGetID(term);
+    }
+    return id;
+  }
+
+class MyClaspOutputFormat:
+  public Clasp::OutputFormat
+{
+public:
+  typedef Clasp::OutputFormat Base;
+  boost::shared_ptr<ClingoResults> results;
+  RegistryPtr registry;
+
+  MyClaspOutputFormat(
+      boost::shared_ptr<ClingoResults> results,
+      RegistryPtr registry):
+    Base(),
+    results(results),
+    registry(registry)
+  {
+  }
+
+  virtual ~MyClaspOutputFormat()
+  {
+  }
+
+  virtual void printModel(
+      const Clasp::Solver& s, const Clasp::Enumerator&)
+  {
+    LOG("getting model from clingo!");
+
+    AnswerSet::Ptr as(new AnswerSet(registry));
+
+    const Clasp::AtomIndex& index = *s.strategies().symTab;
+    for (Clasp::AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it)
+    {
+      if (s.value(it->second.lit.var()) == Clasp::trueValue(it->second.lit) && !it->second.name.empty())
+      {
+	const char* groundatom = it->second.name.c_str();
+
+	// try to do it via string (unstructured)
+	ID idga = registry->ogatoms.getIDByString(groundatom);
+	if( idga == ID_FAIL )
+	{
+	  // parse groundatom, register and store
+	  LOG("parsing clingo ground atom '" << groundatom << "'");
+	  OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+	  ogatom.text = groundatom;
+	  {
+	    // create ogatom.tuple
+	    boost::char_separator<char> sep(",()");
+	    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+	    tokenizer tok(ogatom.text, sep);
+	    for(tokenizer::iterator it = tok.begin();
+		it != tok.end(); ++it)
+	    {
+	      LOG("got token '" << *it << "'");
+	      ID id = getOrRegisterTerm(registry, *it);
+	      assert(id != ID_FAIL);
+	      ogatom.tuple.push_back(id);
+	    }
+	  }
+	  idga = registry->ogatoms.storeAndGetID(ogatom);
+	}
+	assert(idga != ID_FAIL);
+	as->interpretation->setFact(idga.address);
+      }
+    }
+
+    LOG("got model from clingo: " << *as);
+    results->add(as);
+  }
+
+  virtual void printStats(
+      const Clasp::SolverStatistics&, const Clasp::Enumerator&)
+  {
   }
 };
 
@@ -649,9 +784,11 @@ class MyClingoApp: public ClingoApp<CLINGO>
 {
 public:
   typedef ClingoApp<CLINGO> Base;
+  boost::shared_ptr<ClingoResults> results;
 
   MyClingoApp():
-    Base()
+    Base(),
+    results(new ClingoResults())
   {
     LOG("MyClingoApp()");
   }
@@ -661,7 +798,7 @@ public:
     LOG("~MyClingoApp()");
   }
 
-  void solve(std::string& program)
+  void solve(std::string& program, RegistryPtr registry)
   {
     try
     {
@@ -693,18 +830,18 @@ public:
 
       // configure in out
       Streams s;
+      LOG("sending to clingo:" << std::endl << "===" << std::endl << program << std::endl << "===");
       s.appendStream(
 	  Streams::StreamPtr(new std::istringstream(program)),
 	  "dlvhex_to_clingo");
       in_.reset(new FromGringo<CLINGO>(*this, s));
-      out_.reset(new Clasp::AspOutput(cmdOpts_.basic.asp09));
+      out_.reset(new MyClaspOutputFormat(results, registry));
 
       Clasp::ClaspFacade clasp;
       facade_ = &clasp;
       clingo.iStats = false;
       clasp.solve(*in_, config_, this);
-      LOG("after clasp.solve");
-      printResult(reason_end);
+      LOG("after clasp.solve: results contains " << results->answersets.size() << " answer sets");
     }
     catch(const std::exception& e)
     {
@@ -749,11 +886,15 @@ ClingoSoftware::Delegate::~Delegate()
 void
 ClingoSoftware::Delegate::useASTInput(const ASPProgram& program)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware::Delegate::useASTInput");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware useASTInput");
+
+  #warning TODO handle program.maxint for clingo
 
   // output program to stream
   std::string str;
   {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidprepare,"prepare clingo input");
+
     std::ostringstream programStream;
     GringoPrinter printer(programStream, program.registry);
 
@@ -769,96 +910,15 @@ ClingoSoftware::Delegate::useASTInput(const ASPProgram& program)
     str = programStream.str();
   }
 
-  pimpl->myclingo.solve(str);
-
-  /*
-
-  // handle maxint
-      program.maxint;
-
-
-
-  // this was the input
-  */
-}
-
-namespace
-{
-  class ClingoResults:
-    public ASPSolverManager::Results
-  {
-  public:
-    typedef std::list<AnswerSet::Ptr> Storage;
-    Storage answersets;
-    bool resetCurrent;
-    Storage::const_iterator current;
-
-    ClingoResults():
-      resetCurrent(true),
-      current() {}
-    virtual ~ClingoResults() {}
-
-    void add(AnswerSet::Ptr as)
-    {
-      answersets.push_back(as);
-
-      // we do this because I'm not sure if a begin()==end() iterator
-      // becomes begin() or end() after insertion of the first element
-      // (this is the failsafe version)
-      if( resetCurrent )
-      {
-	current = answersets.begin();
-	resetCurrent = false;
-      }
-    }
-
-    virtual AnswerSet::Ptr getNextAnswerSet()
-    {
-      // if no answer set was ever added, or we reached the end
-      if( (resetCurrent == true) ||
-	  (current == answersets.end()) )
-      {
-	return AnswerSet::Ptr();
-      }
-      else
-      {
-	Storage::const_iterator ret = current;
-	current++;
-	return *ret;
-      }
-    }
-  };
+  pimpl->myclingo.solve(str, program.registry);
 }
 
 ASPSolverManager::ResultsPtr 
 ClingoSoftware::Delegate::getResults()
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware::Delegate::getResults");
-
-  try
-  {
-    // for now, we parse all results and store them into the result container
-    // later we should do kind of an online processing here
-
-    boost::shared_ptr<ClingoResults> ret(new ClingoResults);
-
-    /*
-    // parse result
-    DLVResultParser parser(pimpl->reg);
-    // TODO HO stuff
-    // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(pimpl->proc.getInput(), boost::bind(&DLVResults::add, ret.get(), _1));
-
-    */
-
-    ASPSolverManager::ResultsPtr baseret(ret);
-    return baseret;
-  }
-  catch(const std::exception& e)
-  {
-    throw e;
-  }
+  return pimpl->myclingo.results;
 }
+#endif // HAVE_LIBCLINGO
 
 } // namespace ASPSolver
 

@@ -703,9 +703,18 @@ int main(int argn, char** argv)
     return -1;
     #endif // HAVE_LIBDLV
   }
+  else if( backend == "libclingo" )
+  {
+    #ifdef HAVE_LIBCLINGO
+    externalEvalConfig.reset(new ASPSolver::ClingoSoftware::Configuration);
+    #else
+    std::cerr << "sorry, libclingo not compiled in" << std::endl;
+    return -1;
+    #endif // HAVE_LIBCLINGO
+  }
   else
   {
-    std::cerr << "usage: <backend> must be one of 'dlv','libdlv'" << std::endl;
+    std::cerr << "usage: <backend> must be one of 'dlv','libdlv','libclingo'" << std::endl;
     return -1;
   }
 

@@ -16,6 +16,18 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
+GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/potassco-sf/trunk/gringo
+CLINGOLDADD = \
+  -L$(GRINGO_TRUNK_DIR)/build/release/lib/ \
+  -lappclingo -lclasp -lappgringo -lgringo -llua -lluasql -lprogram_opts -lsqlite3 \
+  $(BOOST_FILESYSTEM_LDFLAGS) $(BOOST_FILESYSTEM_LIBS) $(BOOST_SYSTEM_LDFLAGS) $(BOOST_SYSTEM_LIBS) 
+CLINGOCPPFLAGS= \
+  -DHAVE_LIBCLINGO \
+  -I$(GRINGO_TRUNK_DIR)/libprogram_opts/ \
+  -I$(GRINGO_TRUNK_DIR)/libgringo/ \
+  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
+  -I$(GRINGO_TRUNK_DIR)/app/
+
 TESTS = \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
@@ -97,8 +109,8 @@ TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/in
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
   $(PLAINHEXSOURCES)
-TestPlainHEX_LDADD = @LIBLTDL@ @LIBADD_DL@
-TestPlainHEX_CPPFLAGS = $(AM_CPPFLAGS)
+TestPlainHEX_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
+TestPlainHEX_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
@@ -143,18 +155,8 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-
-GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/potassco-sf/trunk/gringo
-
-TestASPSolver_LDADD = \
-  -L$(GRINGO_TRUNK_DIR)/build/release/lib/ \
-  -lappclingo -lclasp -lappgringo -lgringo -llua -lluasql -lprogram_opts -lsqlite3 \
-  @LIBLTDL@ @LIBADD_DL@ $(BOOST_FILESYSTEM_LDFLAGS) $(BOOST_FILESYSTEM_LIBS) $(BOOST_SYSTEM_LDFLAGS) $(BOOST_SYSTEM_LIBS) 
-TestASPSolver_CPPFLAGS = $(AM_CPPFLAGS) \
-  -I$(GRINGO_TRUNK_DIR)/libprogram_opts/ \
-  -I$(GRINGO_TRUNK_DIR)/libgringo/ \
-  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
-  -I$(GRINGO_TRUNK_DIR)/app/
+TestASPSolver_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
+TestASPSolver_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS) 
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
@@ -253,7 +255,7 @@ TestEvalEndToEndND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestASPSolverND_SOURCES = $(TestASPSolver_SOURCES)
 TestASPSolverND_LDADD = $(TestASPSolver_LDADD)
-TestASPSolverND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestASPSolverND_CPPFLAGS = $(TestASPSolver_CPPFLAGS) -DNDEBUG
 
 TestEvalHeuristicND_SOURCES = $(TestEvalHeuristic_SOURCES)
 TestEvalHeuristicND_LDADD = $(TestEvalHeuristic_LDADD)
