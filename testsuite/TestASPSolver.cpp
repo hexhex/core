@@ -50,7 +50,8 @@
 
 DLVHEX_NAMESPACE_USE
 
-BOOST_AUTO_TEST_CASE(testASPSolverSimple) 
+#if 0
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
 {
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
@@ -68,13 +69,12 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimple)
   // now starts the real test
   //
 
-  ASPSolver::DLVSoftware::Configuration dlvConfiguration;
+  ASPSolver::DLVSoftware::Configuration config;
   ASPProgram program(ctx.registry, ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
   LOG("calling solve");
-  ASPSolverManager::ResultsPtr res =
-    mgr.solve(dlvConfiguration, program);
+  ASPSolverManager::ResultsPtr res = mgr.solve(config, program);
   BOOST_REQUIRE(res != 0);
   LOG("solve returned results!");
 
@@ -89,4 +89,44 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimple)
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);
 }
+#endif
+ 
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
 
+  std::stringstream ss;
+  ss <<
+    "a. c(d,e). g(a)." << std::endl <<
+    "f(X) v b :- g(X), not h(X,X)." << std::endl;
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
+	LOG_REGISTRY_PROGRAM(ctx);
+
+  //
+  // now starts the real test
+  //
+
+  ASPSolver::ClingoSoftware::Configuration config;
+  ASPProgram program(ctx.registry, ctx.idb, ctx.edb, 0);
+
+  ASPSolverManager mgr;
+  LOG("calling solve");
+  ASPSolverManager::ResultsPtr res = mgr.solve(config, program);
+  BOOST_REQUIRE(res != 0);
+  LOG("solve returned results!");
+
+  AnswerSet::Ptr int0 = res->getNextAnswerSet();
+  BOOST_REQUIRE(int0 != 0);
+  LOG("got answer set " << *int0);
+
+  AnswerSet::Ptr int1 = res->getNextAnswerSet();
+  BOOST_REQUIRE(int1 != 0);
+  LOG("got answer set " << *int1);
+
+  AnswerSet::Ptr int2 = res->getNextAnswerSet();
+  BOOST_REQUIRE(int2 == 0);
+}
+ 

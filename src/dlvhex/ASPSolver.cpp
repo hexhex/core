@@ -52,6 +52,12 @@
 # include "dlv.h"
 #endif
 
+#define HAVE_LIBCLINGO
+
+#ifdef HAVE_LIBCLINGO
+#include <clingo/clingo_app.h>
+#endif
+
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
 #include <list>
@@ -77,6 +83,10 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace ASPSolver
 {
+
+//
+// DLVSoftware
+//
 
 DLVSoftware::Options::Options():
   ASPSolverManager::GenericOptions(),
@@ -593,6 +603,262 @@ void DLVDBSoftware::Delegate::setupProcess()
 
 #endif // defined(HAVE_DLVDB)
 #endif
+
+//
+// ClingoSoftware
+//
+
+ClingoSoftware::Options::Options():
+  ASPSolverManager::GenericOptions()
+{
+}
+
+ClingoSoftware::Options::~Options()
+{
+}
+
+namespace
+{
+
+class GringoPrinter:
+  public RawPrinter
+{
+public:
+  typedef RawPrinter Base;
+  GringoPrinter(std::ostream& out, RegistryPtr registry):
+    RawPrinter(out, registry) {}
+  virtual void print(ID id)
+  {
+    if( id.isRule() && id.isRegularRule() )
+    {
+      const Rule& r = registry->rules.getByID(id);
+      printmany(r.head, " | ");
+      if( !r.body.empty() )
+      {
+	out << " :- ";
+	printmany(r.body, ", ");
+      }
+      out << ".";
+    }
+    else
+      Base::print(id);
+  }
+};
+
+class MyClingoApp: public ClingoApp<CLINGO>
+{
+public:
+  typedef ClingoApp<CLINGO> Base;
+
+  MyClingoApp():
+    Base()
+  {
+    LOG("MyClingoApp()");
+  }
+  
+  ~MyClingoApp()
+  {
+    LOG("~MyClingoApp()");
+  }
+
+  void solve(std::string& program)
+  {
+    try
+    {
+
+      // configure like a binary
+      {
+	char execname[] = "clingo_within_dlvhex";
+	char shiftopt[] = "--shift";
+	char allmodelsopt[] = "-n 0";
+	char noverboseopt[] = "--verbose=0";
+	char* argv[] = {
+	  execname,
+	  shiftopt,
+	  allmodelsopt,
+	  noverboseopt,
+	  NULL
+	};
+	int argc = 0;
+	while(argv[argc] != NULL)
+	  argc++;
+	LOG("passing " << argc << " arguments to gringo:" <<
+	    printrange(std::vector<const char*>(&argv[0], &argv[argc])));
+	if(!parse(argc, argv))
+	    throw std::runtime_error( messages.error.c_str() );
+	#ifndef NDEBUG
+	printWarnings();
+	#endif
+      }
+
+      // configure in out
+      Streams s;
+      s.appendStream(
+	  Streams::StreamPtr(new std::istringstream(program)),
+	  "dlvhex_to_clingo");
+      in_.reset(new FromGringo<CLINGO>(*this, s));
+      out_.reset(new Clasp::AspOutput(cmdOpts_.basic.asp09));
+
+      Clasp::ClaspFacade clasp;
+      facade_ = &clasp;
+      clingo.iStats = false;
+      clasp.solve(*in_, config_, this);
+      LOG("after clasp.solve");
+      printResult(reason_end);
+    }
+    catch(const std::exception& e)
+    {
+      std::cerr << "got clingo exception " << e.what() << std::endl;
+      throw;
+    }
+    catch(...)
+    {
+      std::cerr << "got very strange clingo exception!" << std::endl;
+      throw;
+    }
+  }
+};
+ 
+}
+
+struct ClingoSoftware::Delegate::Impl
+{
+  Options options;
+  MyClingoApp myclingo;
+
+  Impl(const Options& options):
+    options(options),
+    myclingo()
+  {
+  }
+
+  ~Impl()
+  {
+  }
+};
+
+ClingoSoftware::Delegate::Delegate(const Options& options):
+  pimpl(new Impl(options))
+{
+}
+
+ClingoSoftware::Delegate::~Delegate()
+{
+}
+
+void
+ClingoSoftware::Delegate::useASTInput(const ASPProgram& program)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware::Delegate::useASTInput");
+
+  // output program to stream
+  std::string str;
+  {
+    std::ostringstream programStream;
+    GringoPrinter printer(programStream, program.registry);
+
+    if( program.edb != 0 )
+    {
+      // print edb interpretation as facts
+      program.edb->printAsFacts(programStream);
+      programStream << "\n";
+    }
+
+    printer.printmany(program.idb, "\n");
+    programStream << std::endl;
+    str = programStream.str();
+  }
+
+  pimpl->myclingo.solve(str);
+
+  /*
+
+  // handle maxint
+      program.maxint;
+
+
+
+  // this was the input
+  */
+}
+
+namespace
+{
+  class ClingoResults:
+    public ASPSolverManager::Results
+  {
+  public:
+    typedef std::list<AnswerSet::Ptr> Storage;
+    Storage answersets;
+    bool resetCurrent;
+    Storage::const_iterator current;
+
+    ClingoResults():
+      resetCurrent(true),
+      current() {}
+    virtual ~ClingoResults() {}
+
+    void add(AnswerSet::Ptr as)
+    {
+      answersets.push_back(as);
+
+      // we do this because I'm not sure if a begin()==end() iterator
+      // becomes begin() or end() after insertion of the first element
+      // (this is the failsafe version)
+      if( resetCurrent )
+      {
+	current = answersets.begin();
+	resetCurrent = false;
+      }
+    }
+
+    virtual AnswerSet::Ptr getNextAnswerSet()
+    {
+      // if no answer set was ever added, or we reached the end
+      if( (resetCurrent == true) ||
+	  (current == answersets.end()) )
+      {
+	return AnswerSet::Ptr();
+      }
+      else
+      {
+	Storage::const_iterator ret = current;
+	current++;
+	return *ret;
+      }
+    }
+  };
+}
+
+ASPSolverManager::ResultsPtr 
+ClingoSoftware::Delegate::getResults()
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware::Delegate::getResults");
+
+  try
+  {
+    // for now, we parse all results and store them into the result container
+    // later we should do kind of an online processing here
+
+    boost::shared_ptr<ClingoResults> ret(new ClingoResults);
+
+    /*
+    // parse result
+    DLVResultParser parser(pimpl->reg);
+    // TODO HO stuff
+    // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
+    parser.parse(pimpl->proc.getInput(), boost::bind(&DLVResults::add, ret.get(), _1));
+
+    */
+
+    ASPSolverManager::ResultsPtr baseret(ret);
+    return baseret;
+  }
+  catch(const std::exception& e)
+  {
+    throw e;
+  }
+}
 
 } // namespace ASPSolver
 
