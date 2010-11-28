@@ -120,9 +120,26 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   std::cout << "test 2" <<std::endl;
 
   std::stringstream ss;
-  ss << "#module(mymod,[p/0,q/1,r/2])." << std::endl <<
+  ss << 
+  "#module(p1,[q/1])." << std::endl <<
+  "q(a)." << std::endl <<
+  "q(b)." << std::endl <<
+  "ok :- @p2[q]::even(c)." << std::endl <<
+
+  "#module(p2,[q2/1])." << std::endl <<
+  "q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y." << std::endl <<
+  "skip2   :- q2(X), not q2i(X)." << std::endl <<
+  "even(c) :- not skip2." << std::endl <<
+  "even(c) :- skip2, @p3[q2i]::odd(d)." << std::endl <<
+
+  "#module(p3,[q3/1])." << std::endl <<
+  "q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y." << std::endl <<
+  "skip3  :- q3(X), not q3i(X)." << std::endl <<
+  "odd(d) :- skip3, @p2[q3i]::even(c).";
+
+/*  ss << "#module(mymod,[p/0,q/1,r/2])." << std::endl <<
         "a :- b,c." << std::endl <<
-        ":- @mymod[p,q]::r(b,c).";
+        ":- @mymod[p,q]::r(b,c).";*/
 //  ss << ":- &mymod[p,q](r,b,c).";
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
@@ -131,12 +148,12 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
 	LOG_REGISTRY_PROGRAM(ctx);
   std::cout << "test 4" <<std::endl;
 
-  ID idp = ctx.registry->terms.getIDByString("p");
-  ID idq = ctx.registry->terms.getIDByString("q");
-  ID idr = ctx.registry->terms.getIDByString("r");
-  ID idb = ctx.registry->terms.getIDByString("b");
-  ID idc = ctx.registry->terms.getIDByString("c");
-  ID idmymod = ctx.registry->terms.getIDByString("mymod");
+  ID idp = ctx.registry->terms.getIDByString("q");
+  ID idq = ctx.registry->terms.getIDByString("q2");
+  ID idr = ctx.registry->terms.getIDByString("q3");
+  ID idb = ctx.registry->terms.getIDByString("ok");
+  ID idc = ctx.registry->terms.getIDByString("even");
+  ID idmymod = ctx.registry->terms.getIDByString("p2");
   std::cout << "test 5" <<std::endl;
 
   BOOST_REQUIRE((idp) != ID_FAIL);
@@ -145,14 +162,14 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   BOOST_REQUIRE((idb) != ID_FAIL);
   BOOST_REQUIRE((idc) != ID_FAIL);
   BOOST_REQUIRE((idmymod) != ID_FAIL);
-
-  BOOST_REQUIRE(ctx.idb.size() == 2);
+  BOOST_REQUIRE(ctx.edb != 0);
+  BOOST_REQUIRE(ctx.idb.size() == 8);
   {
-    const Rule& r = ctx.registry->rules.getByID(ctx.idb[1]);
-    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_MODATOMS));
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
-    BOOST_CHECK(r.head.size() == 0);
+    BOOST_CHECK(r.head.size() == 1);
     BOOST_REQUIRE(r.body.size() == 1);
     {
       ID idlit = r.body[0];

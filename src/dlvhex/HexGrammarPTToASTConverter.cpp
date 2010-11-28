@@ -51,6 +51,7 @@ void HexGrammarPTToASTConverter::convertPTToAST(
 {
   // node is from "root" rule
   assert(node.value.id() == HexGrammar::Root);
+  // adding syntax checker for module here:
   for(node_t::tree_iterator it = node.children.begin();it != node.children.end(); ++it){
     if( it->value.id() == HexGrammar::Clause ) createASTFromClause(*it);
     if( it->value.id() == HexGrammar::ModHeader ) doModuleHeader(*it);
