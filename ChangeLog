@@ -4,6 +4,9 @@
 	* include/dlvhex/HexGrammar.h: adding tag to pred_decl and pred_list
 	* Committed revision 2502.
 
+	* src/dlvhex/ModuleSyntaxChecker.cpp: handle the syntactic checking of modular logic programs
+	* Makefile.am: including ModuleSyntaxChecker.cpp
+
 2010-11-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestHexParserModule.cpp: add a test case for the 'even' program which consists of 3 module 
