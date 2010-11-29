@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 
 struct Config
 {
-  unsigned tracks, papers, ureferees, sreferees, uconflicts, sconflicts, noext;
+  unsigned tracks, papers, ureferees, sreferees, uconflicts, sconflicts, noext, globalnoext;
 };
 
 class RandomNumbers
@@ -132,11 +132,13 @@ int main(int ac,char** av)
     ("sreferees,s", po::value<unsigned>(&config.sreferees)->required(),
       "number of shared referees")
     ("uconflicts,a", po::value<unsigned>(&config.uconflicts)->required(),
-      "percentage of unique reviewers with less conflicts")
+      "percentage of tracks where unique reviewers have less conflicts")
     ("sconflicts,b", po::value<unsigned>(&config.sconflicts)->required(),
       "percentage of shared reviewers with less conflicts")
-    ("noext,n", po::value<unsigned>(&config.noext)->default_value(0),
-      "percentage of non-external atoms for conflicts")
+    ("noext,n", po::value<unsigned>(&config.noext)->required(),
+      "number of external conflicts for local referees")
+    ("globalnoext,g", po::value<unsigned>(&config.globalnoext)->default_value(0),
+      "number of external conflicts for global referees")
   ;
   po::variables_map vm;
   po::store(po::parse_command_line(ac, av, desc), vm);
@@ -199,6 +201,9 @@ int main(int ac,char** av)
     // create track-local conflicts
     for(unsigned t = 0; t < config.tracks; ++t)
     {
+      // only a small amount of external conflicts for local referees per track
+      unsigned u = 0;
+
       // build conflicts for one referee
       for(unsigned r = 0; r < config.ureferees; ++r)
       {
@@ -211,7 +216,7 @@ int main(int ac,char** av)
         }
 
         // remove some conflicts
-        if( (r*100/config.ureferees) < config.uconflicts )
+        if( (t*100/config.tracks) < config.uconflicts )
         {
           while(true)
           {
@@ -227,12 +232,21 @@ int main(int ac,char** av)
 
         BOOST_FOREACH(unsigned pap, conflict)
         {
-          o << "conflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
+          if( u < config.noext )
+          {
+            o << "conflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
+          }
+          else
+          {
+            o << "iconflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
+          }
+          u++;
         }
       }
     }
 
     // create global conflicts
+    unsigned u = 0;
     for(unsigned r = 0; r < config.sreferees; ++r)
     {
       std::set<unsigned> conflict;
@@ -242,26 +256,39 @@ int main(int ac,char** av)
         conflict.insert(c);
       }
 
-      // remove three conflicts (this way we really require global constraint checks!)
+      // remove one conflict for each track
+      // to get global models we remove for the first sreferee the largest conflict, ...
       if( (r*100/config.sreferees) < config.sconflicts )
       {
-        unsigned removed = 0;
-        unsigned timeout = 100;
-        while( removed < 3  && (timeout-- != 0) )
+        for(unsigned t = 0; t < config.tracks; ++t)
         {
-          unsigned remove = random.getInRange(0, config.tracks*config.papers-1);
-          if( conflict.count(remove) > 0 )
+          unsigned remove = t*config.papers + config.papers - 1 - r;
+          while(true)
           {
-            conflict.erase(remove);
-            removed++;
+            if( conflict.count(remove) > 0 )
+            {
+              conflict.erase(remove);
+              break;
+            }
+            // if this is not possible (e.g. if not enough papers are there), do a real guessing
+            remove = t*config.papers + random.getInRange(0, config.papers-1);
           }
         }
       }
       LOG("conflicts for global referee " << r << ": " << printrange(conflict));
 
+      // only external global conflicts
       BOOST_FOREACH(unsigned pap, conflict)
       {
-        o << "conflict(" << papersyms[pap] << "," << srefereesyms[r] << ")." << std::endl;
+        if( u < config.globalnoext )
+        {
+          o << "conflict(" << papersyms[pap] << "," << srefereesyms[r] << ")." << std::endl;
+        }
+        else
+        {
+          o << "iconflict(" << papersyms[pap] << "," << srefereesyms[r] << ")." << std::endl;
+        }
+        u++;
       }
     }
   }
@@ -282,30 +309,18 @@ int main(int ac,char** av)
       o << ":- assign(" << tracksyms[t] << ",P1,R), assign(" << tracksyms[t] << ",P2,R), assign(" << tracksyms[t] << ",P3,R), P1 != P2, P1 != P3, P2 != P3." << std::endl;
 
       // conflicts (local)
-      if( random.getInRange(0,100) < config.noext )
-      {
-        o << ":- assign(" << tracksyms[t] << ",P,R), conflict(P,R)." << std::endl;
-      }
-      else
-      {
-        o << ":- assign(" << tracksyms[t] << ",P,R), conflict(P,R). % REMOVEFORHEX" << std::endl;
-        o << ":- assign(" << tracksyms[t] << ",P,R), &gen2[conflict,P,R](). % ONLYFORHEX" << std::endl;
-      }
+      o << ":- assign(" << tracksyms[t] << ",P,R), iconflict(P,R)." << std::endl;
+      o << ":- assign(" << tracksyms[t] << ",P,R), conflict(P,R). % REMOVEFORHEX" << std::endl;
+      o << ":- assign(" << tracksyms[t] << ",P,R), &gen2[conflict,P,R](). % ONLYFORHEX" << std::endl;
     }
 
     // no more than 2 assignments per reviewer (global)
     o << ":- assign(T,P1,R), assign(T,P2,R), assign(T,P3,R), P1 != P2, P1 != P3, P2 != P3." << std::endl;
 
     // conflicts (global)
-    if( random.getInRange(0,100) < config.noext )
-    {
-      o << ":- assign(T,P,R), conflict(P,R)." << std::endl;
-    }
-    else
-    {
-      o << ":- assign(T,P,R), conflict(P,R). % REMOVEFORHEX" << std::endl;
-      o << ":- assign(T,P,R), &gen2[conflict,P,R](). % ONLYFORHEX" << std::endl;
-    }
+    o << ":- assign(T,P,R), iconflict(P,R)." << std::endl;
+    o << ":- assign(T,P,R), conflict(P,R). % REMOVEFORHEX" << std::endl;
+    o << ":- assign(T,P,R), &gen2[conflict,P,R](). % ONLYFORHEX" << std::endl;
   }
 
   return 0;
