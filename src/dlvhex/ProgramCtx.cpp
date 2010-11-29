@@ -128,13 +128,25 @@ void RawPrinter::print(ID id)
 			{
 				const BuiltinAtom& atom = registry->batoms.getByID(id);
 				assert(atom.tuple.size() > 1);
-				//TODO prettier printing of builtins (infix vs prefix)
-				print(atom.tuple[0]);
-				out << "(";
-				//TODO make the following more efficient
-				std::vector<ID> tail(atom.tuple.begin() + 1, atom.tuple.end());
-				printmany(tail,",");
-				out << ")";
+				assert(atom.tuple[0].isBuiltinTerm());
+				//TODO prettier printing of builtins (infix vs prefix) (this is only a quick hack fixing only !=)
+        if( atom.tuple[0].address == ID::TERM_BUILTIN_NE )
+        {
+          print(atom.tuple[1]);
+          out << " ";
+          print(atom.tuple[0]);
+          out << " ";
+          print(atom.tuple[2]);
+        }
+        else
+        {
+          print(atom.tuple[0]);
+          out << "(";
+          //TODO make the following more efficient
+          std::vector<ID> tail(atom.tuple.begin() + 1, atom.tuple.end());
+          printmany(tail,",");
+          out << ")";
+        }
 			}
 			break;
 		case ID::SUBKIND_ATOM_AGGREGATE:

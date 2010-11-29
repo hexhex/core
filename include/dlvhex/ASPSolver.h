@@ -157,6 +157,40 @@ struct DLVDBSoftware:
   };
 };
 
+// clingo=clasp+gringo software (very basic integration, involves parsing)
+struct ClingoSoftware:
+  public ASPSolverManager::SoftwareBase
+{
+  typedef ASPSolverManager::SoftwareConfiguration<ClingoSoftware> Configuration;
+
+  // specific options for clingo
+  struct Options:
+    public ASPSolverManager::GenericOptions
+  {
+    Options();
+    virtual ~Options();
+
+    // nothing there yet
+  };
+
+  // the delegate for ClingoSoftware
+  class Delegate:
+    public ASPSolverManager::DelegateInterface
+  {
+  public:
+    typedef ClingoSoftware::Options Options;
+
+    Delegate(const Options& options);
+    virtual ~Delegate();
+    virtual void useASTInput(const ASPProgram& program);
+    virtual ASPSolverManager::ResultsPtr getResults();
+
+  protected:
+    struct Impl;
+    boost::scoped_ptr<Impl> pimpl;
+  };
+};
+
 } // namespace ASPSolver
 
 DLVHEX_NAMESPACE_END

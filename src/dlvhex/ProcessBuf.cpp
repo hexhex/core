@@ -224,6 +224,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
 	::close(inpipes[1]);
 	
 	// execute command, should not return
+        #warning TODO handle signals to parent process (pass on to children s.t. child process is not reparented to init)
 	::execvp(*argv, argv);
 	
 	// just in case we couldn't execute the command
