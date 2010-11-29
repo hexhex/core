@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   "ok :- @p2[q]::even(c)." << std::endl <<
 
   "#module(p2,[q2/1])." << std::endl <<
-  "q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y." << std::endl <<
+  "q2i(X) v q2i(Y) :- q2(X), q2(Y,X), X!=Y." << std::endl <<
   "skip2   :- q2(X), not q2i(X)." << std::endl <<
   "even(c) :- not skip2." << std::endl <<
   "even(c) :- skip2, @p3[q2i]::odd(d)." << std::endl <<

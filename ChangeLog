@@ -1,6 +1,12 @@
+2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* HexGrammarPTToASTConverter.cpp: identifying the elements of module header
+	* HexGrammar.h: adding tag to pred_decl and pred_list
+
 2010-11-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestHexParserModule.cpp: add a test case for the 'even' program which consists of 3 module 
+	* Committed revision 2497.
 
 2010-11-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	

@@ -49,7 +49,7 @@ struct HexGrammar:
   enum RuleTags {
     None = 0, Root, Clause, Maxint, Namespace,
     Rule, Constraint, WeakConstraint, Body, Disj,
-    Number, Ident, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
+    Number, Ident, PredDecl, PredList, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
     UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
     Aggregate, AggregatePred, AggregateRel, AggregateRange,
     ExtAtom, ModHeader, ModInputs, ModOutput, ModAtom, ExtInputs, ExtOutputs,
@@ -71,8 +71,8 @@ struct HexGrammar:
 
     boost::spirit::rule<S, c, tag<Ident> >               ident;
     boost::spirit::rule<S>                               idents;
-    boost::spirit::rule<S>                               pred_decl;
-    boost::spirit::rule<S>                               pred_list;
+    boost::spirit::rule<S, c, tag<PredDecl> >            pred_decl;
+    boost::spirit::rule<S, c, tag<PredList> >            pred_list;
     boost::spirit::rule<S>                               var;
     boost::spirit::rule<S, c, tag<Number> >              number;
     boost::spirit::rule<S, c, tag<IdentVar> >            ident_or_var;
