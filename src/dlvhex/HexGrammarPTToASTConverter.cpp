@@ -164,29 +164,31 @@ namespace
 void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
 {
   // node is from "mod_header" rule
-  assert(node.children.size() == 9);
+  assert((node.children.size() == 9)||(node.children.size() == 8));
   LOG("Got module header: " << std::endl);
   // retrieve module name
   std::string modName = createStringFromNode(node.children[2], HexGrammar::Ident);
   LOG(" - Module name : '" << modName << "'");
   assert(mSC.announceModuleHeader(modName)==true);
-
-  // retrieve module inputs
   LOG(" - Module inputs : ");
-  node_t& predList = node.children[5];
-  assert(predList.value.id() == HexGrammar::PredList);
-//  Tuple t;
-  std::string predName;
-  int predArity;
-  for(node_t::tree_iterator it = predList.children.begin();it != predList.children.end(); ++it){
-    node_t& predDecl = *it;
-    predName = createStringFromNode(predDecl.children[0]);
-    predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
-    LOG("'" << predName << "/" << predArity << "', ");
-    mSC.announcePredInputModuleHeader(predName, predArity);
+  if (node.children.size() == 9) {
+    // retrieve module inputs
+    node_t& predList = node.children[5];
+    assert(predList.value.id() == HexGrammar::PredList);
+    std::string predName;
+    int predArity;
+    for(node_t::tree_iterator it = predList.children.begin();it != predList.children.end(); ++it){
+      node_t& predDecl = *it;
+      predName = createStringFromNode(predDecl.children[0]);
+      predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
+      LOG("'" << predName << "/" << predArity << "', ");
+      mSC.announcePredInputModuleHeader(predName, predArity);
+    }
+    LOG(std::endl);
+  } else 
+  if (node.children.size() == 8) {
+    LOG(" - no module input  ");
   }
-  LOG(std::endl);
-  
 }
 
 void HexGrammarPTToASTConverter::createASTFromClause(

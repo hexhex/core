@@ -7,6 +7,11 @@
 	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
 	* Committed revision 2507
 
+	* include/dlvhex/ModuleSyntaxChecker.h: updating: retrieve predSet by sequenced
+	* src/dlvhex/ModuleSyntaxChecker.cpp: updating: retrieve predSet by sequenced
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing bug in detecting module header
+	* testsuite/TestHexParserModule.cpp: updating test case for the syntax checker
+
 2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: identifying the elements of module header

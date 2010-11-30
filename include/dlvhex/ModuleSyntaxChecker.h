@@ -16,7 +16,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
-//#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <iostream>
 #include <iterator>
@@ -44,8 +44,8 @@ struct predStruct
 typedef boost::multi_index_container<
   predStruct,
   boost::multi_index::indexed_by<
-//    boost::multi_index::sequenced<boost::multi_index::tag<bySequenced> >,
-    boost::multi_index::ordered_non_unique<boost::multi_index::tag<bySequenced>, boost::multi_index::identity<predStruct> >,
+    boost::multi_index::sequenced<boost::multi_index::tag<bySequenced> >,
+    //boost::multi_index::ordered_non_unique<boost::multi_index::tag<bySequenced>, boost::multi_index::identity<predStruct> >,
     // sort by less<string> on name
     boost::multi_index::ordered_unique<boost::multi_index::tag<byName>, boost::multi_index::member<predStruct,std::string,&predStruct::predName> >
   > 

@@ -83,8 +83,8 @@ bool ModuleSyntaxChecker::insertCompleteModule(){
   // iteration over module calls
   while (it != currentModCalls_index.end()){ 
     modCallsStruct myModCalls = *it;
-    predSet::index<byName>::type& pred_index=myModCalls.predInputs.get<byName>();
-    predSet::index<byName>::type::iterator itPIn = pred_index.begin();
+    predSet::index<bySequenced>::type& pred_index=myModCalls.predInputs.get<bySequenced>();
+    predSet::index<bySequenced>::type::iterator itPIn = pred_index.begin();
     predSet newPredSet;
     // iteration over predicate inputs on the module calls
     while (itPIn != pred_index.end()){ 
@@ -149,6 +149,15 @@ void ModuleSyntaxChecker::announceModuleCallsModName(std::string modName){
 // insert predName with arity 0 into callsPredInputs
 void ModuleSyntaxChecker::announceModuleCallsPredInput(std::string predName){
   currentCallsPredInputs.get<byName>().insert(predStruct(predName, 0));
+  predSet::index<bySequenced>::type& predCI_index=currentCallsPredInputs.get<bySequenced>();
+  predSet::index<bySequenced>::type::iterator itCPI = predCI_index.begin();
+  std::cout << std::endl;
+  while (itCPI!=predCI_index.end()){
+    predStruct p = *itCPI;
+    std::cout << ";" << p.predName << "/" << p.predArity << ";"; 
+    itCPI++;
+  }
+  std::cout << std::endl;
 }
 
 // insert predName/predArity into callsPredOutput
@@ -192,6 +201,11 @@ bool ModuleSyntaxChecker::validateAllModuleCalls(){
     predSet::index<bySequenced>::type::iterator itMPI = predMI_index.begin();
     
     while (itCPI != predCI_index.end()){ 
+      if (itMPI==predMI_index.end()){
+        std::cout << std::endl << "--- Error: Too many input predicate(s) in module call '@" << myModCalls.modName << "' in module '" 
+        << myModCalls.modParentName << "' " << std::endl; 
+        return false;
+      }
       predStruct cPred = *itCPI;
       predStruct mPred = *itMPI;
       if (cPred.predArity!=mPred.predArity)  {
@@ -199,11 +213,18 @@ bool ModuleSyntaxChecker::validateAllModuleCalls(){
         << myModCalls.modName << "' in module '" << myModCalls.modParentName<< "' does not match with the arity of predicate '" 
         << mPred.predName << "' in module '" << myModule.modName << "' "<< std::endl;
         return false;
+      } else {
+        std::cout << std::endl << "--- Comparing " << cPred.predName << "/" << cPred.predArity 
+        << " against " << mPred.predName << "/" << mPred.predArity << std::endl;
       }
       itCPI++;
       itMPI++;
     }
-
+    if (itMPI!=predMI_index.end()){
+      std::cout << std::endl << "--- Error: Module call '@" << myModCalls.modName << "' in module '" << myModCalls.modParentName 
+      << "' needs more input predicate(s)" << std::endl; 
+      return false;
+    }
     // verify the predOutput
     // pred output from the module call
     predSet::index<bySequenced>::type& predCT_index=myModCalls.predOutput.get<bySequenced>();
@@ -223,7 +244,7 @@ bool ModuleSyntaxChecker::validateAllModuleCalls(){
         << myModCalls.modName << "' in module '" << myModCalls.modParentName<< "' does not match with the arity of predicate '" 
         << mPred.predName << "' in module '" << myModule.modName << "' "<< std::endl;
         return false;
-      }
+      } 
       itCPT++;
     }
 
@@ -231,7 +252,7 @@ bool ModuleSyntaxChecker::validateAllModuleCalls(){
     << "' has been verified" << std::endl;
     it++;
   }
-  std::cout << std::endl << "-- Verify all module calls is succeeded" << std::endl;
+  std::cout << std::endl << "--- Verify all module calls is succeeded" << std::endl;
   return true;
 }
 
