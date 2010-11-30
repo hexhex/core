@@ -5,6 +5,7 @@
 	* src/dlvhex/ModuleSyntaxChecker.cpp: class implementation for syntactic checking of modular logic programs
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: incorporate syntactic checking of modular logic programs
 	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
+	* Committed revision 2507
 
 2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	

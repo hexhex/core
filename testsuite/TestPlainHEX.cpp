@@ -847,7 +847,7 @@ int main(int argn, char** argv)
     DLVHEX_BENCHMARK_STOP(sidoverall);
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
       evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
-    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << std::endl;
   }
   else if( mbmode == "offline" )
   {
