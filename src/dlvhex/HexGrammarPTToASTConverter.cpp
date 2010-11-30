@@ -52,11 +52,19 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   // node is from "root" rule
   assert(node.value.id() == HexGrammar::Root);
   // adding syntax checker for module here:
+  int countModule = 0;
   for(node_t::tree_iterator it = node.children.begin();it != node.children.end(); ++it){
     if( it->value.id() == HexGrammar::Clause ) createASTFromClause(*it);
-    if( it->value.id() == HexGrammar::ModHeader ) doModuleHeader(*it);
+    if( it->value.id() == HexGrammar::ModHeader ) {
+      if (countModule>0) {
+        assert(mSC.insertCompleteModule()==true);
+      }
+      doModuleHeader(*it);
+      countModule++;
+    }
   }
-
+  assert(mSC.insertCompleteModule()==true);
+  assert(mSC.validateAllModuleCalls()==true);
 }
 
 // optionally assert whether node comes from certain rule
@@ -157,9 +165,12 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
 {
   // node is from "mod_header" rule
   assert(node.children.size() == 9);
-  LOG("Got module header: '" << std::endl);
+  LOG("Got module header: " << std::endl);
   // retrieve module name
-  LOG(" - Module name : '" << createStringFromNode(node.children[2], HexGrammar::Ident) << "'");
+  std::string modName = createStringFromNode(node.children[2], HexGrammar::Ident);
+  LOG(" - Module name : '" << modName << "'");
+  assert(mSC.announceModuleHeader(modName)==true);
+
   // retrieve module inputs
   LOG(" - Module inputs : ");
   node_t& predList = node.children[5];
@@ -172,6 +183,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
     predName = createStringFromNode(predDecl.children[0]);
     predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
     LOG("'" << predName << "/" << predArity << "', ");
+    mSC.announcePredInputModuleHeader(predName, predArity);
   }
   LOG(std::endl);
   
@@ -412,7 +424,8 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   	Tuple::const_iterator it = atom.tuple.begin();
   	printer.print(*it);
 	std::stringstream myss;
-	myss << "-- myss: atom name: " << ss.str();
+        std::string predInsideName = ss.str();
+	myss << "-- myss: atom name: " << predInsideName;
   	it++;
 	int countTuple = 0; 
   	if( it != atom.tuple.end() )
@@ -433,6 +446,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   	atom.text = ss.str();
 	myss << ", with " << countTuple << " parameter";
 	LOG(myss.str());
+        assert(mSC.announcePredInside(predInsideName, countTuple)==true);
       LOG("-- found in tbl, atom text '" << atom.text << "'");
       return id;
     }
@@ -454,7 +468,8 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   Tuple::const_iterator it = atom.tuple.begin();
   printer.print(*it);
   std::stringstream myss;
-  myss << "-- myss: atom name: " << ss.str();
+  std::string predInsideName = ss.str();
+  myss << "-- myss: atom name: " << predInsideName;
   it++;
   int countTuple = 0; 
   if( it != atom.tuple.end() )
@@ -475,6 +490,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   atom.text = ss.str();
   myss << ", with " << countTuple << " parameter";
   LOG(myss.str());
+  assert(mSC.announcePredInside(predInsideName, countTuple) == true);  
   LOG("-- got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);
   LOG("stored atom " << atom << " which got id " << id);
@@ -591,7 +607,10 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 
 ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
 {
-  std::cout << "-- found module atom: " << createStringFromNode(node.children[1], HexGrammar::Ident) <<std::endl;
+  std::string modName = createStringFromNode(node.children[1], HexGrammar::Ident);
+  std::cout << "-- found module atom: " << modName <<std::endl;
+  mSC.announceModuleCallsModName(modName);
+
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ModAtom);
   ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
@@ -610,14 +629,23 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
       {
         // there is at least one term
         //printSpiritPT(std::cerr, node.children[2].children[1], ">>ii");
+
+        node_t& nodeChild = node.children[2].children[1];
+        for(node_t::tree_iterator it = nodeChild.children.begin(); it != nodeChild.children.end(); ++it){
+          std::string predInput = createStringFromNode(*it);
+          mSC.announceModuleCallsPredInput(predInput);
+          std::cout << std::endl << "pred Input detected: " << predInput << std::endl;
+        }
         inputs = createTupleFromTerms(node.children[2].children[1]);
       }
     }
     offset = offset + 1;
     assert(node.children[2+offset].value.id() == HexGrammar::Ident);
     atom.outputpredicate = createTerm_Helper(node.children[2+offset], HexGrammar::Ident);
+    std::string predOutputName = createStringFromNode(node.children[2+offset]);
     offset = offset + 1;
-    // check for output
+    int countTuple = 0;
+    // check for output parameter
     if( node.children.size() > (2+offset) )
     {
       if( node.children[2+offset].value.id() == HexGrammar::ModOutput )
@@ -628,10 +656,20 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
           // there is at least one term
           //printSpiritPT(std::cerr, node.children[2+offset].children[1], ">>oo");
           outputs = createTupleFromTerms(node.children[2+offset].children[1]);
+
+          Tuple::const_iterator it = outputs.begin();
+	  while(it != outputs.end())
+  	  {
+            countTuple++;
+  	    it++;
+  	  }
+
         }
       }
     }
+    mSC.announceModuleCallsPredOutput(predOutputName, countTuple);
   }
+  mSC.insertCompleteModuleCalls();
 
   LOG("storing module atom " << atom);
   ID id = ctx.registry->matoms.storeAndGetID(atom);

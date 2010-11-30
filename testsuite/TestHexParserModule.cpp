@@ -48,7 +48,7 @@
 	LOG("idb end");
 
 DLVHEX_NAMESPACE_USE
-
+/*
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms) 
 {
   std::cout << "test 1" <<std::endl;
@@ -108,10 +108,11 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
       BOOST_CHECK(at.tuple[1] == idX);
       BOOST_CHECK(at.tuple[2] == id4);
 */
+/*
     }
   }
 }
-
+*/
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany) 
 {
   std::cout << "test 1" <<std::endl;
@@ -127,15 +128,15 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   "ok :- @p2[q]::even(c)." << std::endl <<
 
   "#module(p2,[q2/1])." << std::endl <<
-  "q2i(X) v q2i(Y) :- q2(X), q2(Y,X), X!=Y." << std::endl <<
+  "q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y." << std::endl <<
   "skip2   :- q2(X), not q2i(X)." << std::endl <<
   "even(c) :- not skip2." << std::endl <<
-  "even(c) :- skip2, @p3[q2i]::odd(d)." << std::endl <<
+  "even(c) :- skip2, @p3[q2i]::odd." << std::endl <<
 
   "#module(p3,[q3/1])." << std::endl <<
   "q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y." << std::endl <<
   "skip3  :- q3(X), not q3i(X)." << std::endl <<
-  "odd(d) :- skip3, @p2[q3i]::even(c).";
+  "odd :- skip3, @p2[q3i]::even(c).";
 
 /*  ss << "#module(mymod,[p/0,q/1,r/2])." << std::endl <<
         "a :- b,c." << std::endl <<

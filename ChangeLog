@@ -1,3 +1,11 @@
+2010-11-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.h: class for syntactic checking of modular logic programs
+	* include/dlvhex/HexGrammarPTToASTConverter.h: incorporate syntactic checking of modular logic programs
+	* src/dlvhex/ModuleSyntaxChecker.cpp: class implementation for syntactic checking of modular logic programs
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: incorporate syntactic checking of modular logic programs
+	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
+
 2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: identifying the elements of module header
@@ -6,6 +14,7 @@
 
 	* src/dlvhex/ModuleSyntaxChecker.cpp: handle the syntactic checking of modular logic programs
 	* Makefile.am: including ModuleSyntaxChecker.cpp
+	* Committed revision 2504.
 
 2010-11-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

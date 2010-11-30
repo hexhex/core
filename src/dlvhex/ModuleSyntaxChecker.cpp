@@ -6,12 +6,12 @@
  * @brief  Testing for the data structures for syntax checking of a modular logic programs
  */
 
-
+/*
 #if !defined(NDEBUG)
 #define BOOST_MULTI_INDEX_ENABLE_INVARIANT_CHECKING
 #define BOOST_MULTI_INDEX_ENABLE_SAFE_MODE
 #endif
-
+*/
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -19,178 +19,156 @@
 #include <iostream>
 #include <iterator>
 #include <string>
+#include "dlvhex/ModuleSyntaxChecker.h"
 
-using boost::multi_index_container;
-using namespace boost::multi_index;
 
-struct byName{};
-struct bySequenced{};
 
-// structure for the predicate
-struct predStruct
-{
-  std::string predName;
-  int         predArity;
 
-  predStruct(const std::string& name, int arity):predName(name), predArity(arity){}
-  bool operator<(const predStruct& p)const{return predArity<p.predArity;}
-  friend std::ostream& operator<<(std::ostream& os,const predStruct& p)
-  {
-    os << p.predName << "/" << p.predArity << ", ";
-    return os;
+ModuleSyntaxChecker::ModuleSyntaxChecker(){
+  moduleSet.clear();
+  moduleCalls.clear();
+  currentModName = "";
+  currentPredInputs.clear();
+  currentPredInside.clear();
+  currentModCalls.clear();
+  currentCallsModName="";
+  currentCallsPredInputs.clear();
+  currentCallsPredOutput.clear();
+}
+
+// check the modName should be unique
+bool ModuleSyntaxChecker::announceModuleHeader(std::string modName){
+  modSet::index_iterator<byName>::type it=moduleSet.get<byName>().find(modName);
+  if (it == moduleSet.get<byName>().end()){ // not found
+    currentModName = modName;
+    currentPredInputs.clear();
+    std::cout << std::endl << "--- Adding module [Module Header]: '" << modName << "' " << std::endl;
+    return true;
+  } else { // found, the module name has been declared before
+    std::cout << std::endl << "--- Error: Duplicating module name '" << modName << "' " << std::endl;
+    return false;
   }
-};
+}
 
-// container for the predicate list
-typedef multi_index_container<
-  predStruct,
-  indexed_by<
-    sequenced<tag<bySequenced> >,
-    // sort by less<string> on name
-    ordered_unique<tag<byName>, member<predStruct,std::string,&predStruct::predName> >
-  > 
-> predSet;
+// insert into currentPredInputs
+void ModuleSyntaxChecker::announcePredInputModuleHeader(std::string predName, int predArity){
+  currentPredInputs.get<byName>().insert(predStruct(predName, predArity));
+  // std::cout << std::endl << "--- Adding predicate [predInput module header]: '" << predName << "/" << predArity << "'" << std::endl;
+}
 
-// structure for a module
-struct modStruct{
-  std::string modName;
-  predSet predInputs;
-  predSet predInside;
-
-  modStruct(const std::string& name, predSet inputs, predSet inside):modName(name), predInputs(inputs), predInside(inside){}
-
-  friend std::ostream& operator<<(std::ostream& os,const modStruct& m)
-  {
-
-    os << "Module name: " << m.modName << "; Pred inputs: " ;
-    const predSet::index<byName>::type& name_index=m.predInputs.get<byName>();
-    std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<predStruct>(os));
-
-    os << "; Pred inside: ";
-    const predSet::index<byName>::type& name_inside=m.predInside.get<byName>();
-    std::copy(name_inside.begin(),name_inside.end(),std::ostream_iterator<predStruct>(os));
-    os << "; ";
-    return os;
-  }
-
-};
-
-// container for the module
-typedef multi_index_container<
-  modStruct,
-  indexed_by<
-    // sort by less<string> on name
-    ordered_unique<tag<byName>, member<modStruct,std::string,&modStruct::modName> >
-  > 
-> modSet;
-
-// structure for an atom module call
-struct modCallsStruct{
-  std::string modName;
-  predSet predInputs;
-  predSet predOutput;
-  std::string modParentName;
-
-  modCallsStruct(const std::string& name, predSet inputs, predSet output, const std::string& parentName):modName(name), predInputs(inputs), predOutput(output), modParentName(parentName){}
-
-  friend std::ostream& operator<<(std::ostream& os,const modCallsStruct& m)
-  {
-
-    os << "Module name: " << m.modName << "; Pred inputs: " ;
-    const predSet::index<byName>::type& name_index=m.predInputs.get<byName>();
-    std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<predStruct>(os));
-
-    os << "; Pred output: ";
-    const predSet::index<byName>::type& name_output=m.predOutput.get<byName>();
-    std::copy(name_output.begin(),name_output.end(),std::ostream_iterator<predStruct>(os));
-    os << "; Module parent: " << m.modParentName;
-    return os;
-  }
-
-};
-
-// container for all (atom) module call
-typedef multi_index_container<
-  modCallsStruct,
-  indexed_by<
-    // sort by less<string> on name
-    ordered_non_unique<tag<byName>, member<modCallsStruct,std::string,&modCallsStruct::modName> >
-  > 
-> modCallsSet;
-
-
-bool insertPredInside(std::string predName, int predArity, predSet& myPreds){
-  predSet::index_iterator<byName>::type itPI=myPreds.get<byName>().find(predName);
-  if (itPI == myPreds.get<byName>().end()){ // not found
-    myPreds.get<byName>().insert(predStruct(predName, predArity));
+// insert into currentPredInside, check uniqueness
+bool ModuleSyntaxChecker::announcePredInside(std::string predName, int predArity){
+  predSet::index_iterator<byName>::type itPI=currentPredInside.get<byName>().find(predName);
+  if (itPI == currentPredInside.get<byName>().end()){ // not found
+    currentPredInside.get<byName>().insert(predStruct(predName, predArity));
+    // std::cout << std::endl << "--- Adding predicate [predInside]: '" << predName << "/" << predArity << "'" << std::endl;
     return true;
   } else { // found, check the arity
     predStruct thePred = *itPI;
     if (thePred.predArity==predArity){
       return true;
     } else {
+      std::cout << std::endl << "--- Error: predicate '" << predName << "' in module '"<< currentModName << "' has different arity" << std::endl;
+      std::cout << "--- Error: syntax error in module '" << currentModName << "'" << std::endl;
       return false;
     }
   }
 }
 
-void printPreds(predSet myPreds){
-  const predSet::index<bySequenced>::type& name_index=myPreds.get<bySequenced>();
-  std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<predStruct>(std::cout));
-}
-
-void printMods(modSet myMods){
-  const modSet::index<byName>::type& name_index=myMods.get<byName>();
-  std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<modStruct>(std::cout));
-}
-
-void printCallsMods(modCallsSet myMods){
-  const modCallsSet::index<byName>::type& name_index=myMods.get<byName>();
-  std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<modCallsStruct>(std::cout));
-}
-
-// the complete class to perform syntactic checking on the modular logic programs
-class ModuleSyntaxChecker{
-  private:
-    modSet moduleSet;
-    modCallsSet moduleCalls;
-    modCallsSet currentModCalls;
-    std::string currentModName;
-    predSet currentPredInputs;
-    predSet currentPredInside;
-  public:
-    std::string getCurrentModName(){
-      return currentModName;
+// insert modName, predInputs, predInside into moduleSet, clear predInputs and predInside
+bool ModuleSyntaxChecker::insertCompleteModule(){
+  // 1. add all element from currentModCalls into moduleCalls (after insert the arity for the predInputs)
+  const modCallsSet::index<byName>::type& currentModCalls_index=currentModCalls.get<byName>();
+  modCallsSet::index<byName>::type::iterator it = currentModCalls_index.begin();
+  // iteration over module calls
+  while (it != currentModCalls_index.end()){ 
+    modCallsStruct myModCalls = *it;
+    predSet::index<byName>::type& pred_index=myModCalls.predInputs.get<byName>();
+    predSet::index<byName>::type::iterator itPIn = pred_index.begin();
+    predSet newPredSet;
+    // iteration over predicate inputs on the module calls
+    while (itPIn != pred_index.end()){ 
+      predStruct callsPredInput = *itPIn;
+      predSet::index_iterator<byName>::type itP=currentPredInside.get<byName>().find(callsPredInput.predName);
+      if (itP == currentPredInside.get<byName>().end()){ // not found
+        std::cout << std::endl << "--- Error: predicate input '" << callsPredInput.predName << "' in module calls '@" 
+        << myModCalls.modName << "' in module '" << currentModName << "' is not found in the respective module " << std::endl;
+        std::cout << "--- Error: syntax error in module '" << currentModName << "'" << std::endl;
+        return false;
+      } else { // found, check the arity
+        predStruct thePredFound = *itP;
+        callsPredInput.predArity = thePredFound.predArity;
+        newPredSet.get<byName>().insert(predStruct(callsPredInput.predName, callsPredInput.predArity));
+        //std::cout << "3: " << callsPredInput.predName << "/" << callsPredInput.predArity << std::endl;
+      }
+      itPIn++;
     }
-    void printCurrentPredInputs(){
-      printPreds(currentPredInputs);
+    moduleCalls.insert(modCallsStruct(myModCalls.modName, newPredSet , myModCalls.predOutput, currentModName));
+    it++;
+  }  
+
+  // 2. verify pred arity in the module header against pred inside
+  predSet::index<byName>::type& predInputs_index=currentPredInputs.get<byName>();
+  predSet::index<byName>::type::iterator itPInputs = predInputs_index.begin();
+  while (itPInputs != predInputs_index.end()){ 
+    predStruct thePredInputs = *itPInputs;
+    predSet::index_iterator<byName>::type itPInside=currentPredInside.get<byName>().find(thePredInputs.predName);
+    if (itPInside == currentPredInside.get<byName>().end()){
+      std::cout << std::endl << "--- Error: predicate '" << thePredInputs.predName << "' in the module header '"
+      << currentModName << "' is not found in the module body " << std::endl;
+      std::cout << "--- Error: syntax error in module '" << currentModName << "'" << std::endl;
+      return false;
     }
-    ModuleSyntaxChecker(){
-      currentModName = "";
-      currentModCalls.clear();
-      currentPredInputs.clear();
-      currentPredInside.clear();
-      moduleCalls.clear();
-      moduleSet.clear();
-    };
-    // insert into currentModName and currentPredInputs
-    bool announceModuleHeader(std::string modName, predSet predInputs);
-    // insert into currentPredInside, check uniqueness
-    bool announcePredInside(std::string predName, int predArity);
-    // insert modName, predInputs, predInside into moduleSet, clear predInputs and predInside
-    // insert arity for all currentModCalls, insert all of them into moduleCalls
-    bool insertCompleteModule();    
-    // insert into moduleCalls, parentName=currentModName
-    void announceModuleCalls(std::string modName, predSet predInputs, predSet predOutput);
-    // 1. loop over moduleCalls, over all predInputs. 2. go to the respective moduleSet-modParentName. 3. matched with the predInputs
-    bool validateModuleCalls();
-};
+    predStruct thePredInside = *itPInside;
+    if (thePredInputs.predArity != thePredInside.predArity) {
+      std::cout << std::endl << "--- Error: the arity of predicate '" << thePredInputs.predName << "' in the module header '"
+      << currentModName << "' is mismatch with the one in the module body " << std::endl;
+      std::cout << "--- In the module header: " << thePredInputs.predName << "/" << thePredInputs.predArity << std::endl;
+      std::cout << "--- In the module body: " << thePredInside.predName << "/" << thePredInside.predArity << std::endl;
+      std::cout << "--- Error: syntax error in module '" << currentModName << "'" << std::endl;
+      return false;
+    }
+    itPInputs++;
+  }
+  moduleSet.insert(modStruct(currentModName, currentPredInputs, currentPredInside));
+  std::cout << std::endl << "--- Inserting module '" << currentModName << "' is done" << std::endl;
+  currentPredInputs.clear();
+  currentPredInside.clear();
+  currentModCalls.clear();
+  currentModName="";
+  return true;
+}
 
+// insert modName into currentCallsModName, clear callsPredInputs and callsPredOutput
+void ModuleSyntaxChecker::announceModuleCallsModName(std::string modName){
+  currentCallsPredInputs.clear();
+  currentCallsPredOutput.clear();
+  currentCallsModName = modName;
+}
 
-bool ModuleSyntaxChecker::validateModuleCalls(){
-  // 1. loop over moduleCalls, over all predInputs
-  // 2. go to the respective moduleSet-modParentName
-  // 3. matched with the predInputs
+// insert predName with arity 0 into callsPredInputs
+void ModuleSyntaxChecker::announceModuleCallsPredInput(std::string predName){
+  currentCallsPredInputs.get<byName>().insert(predStruct(predName, 0));
+}
+
+// insert predName/predArity into callsPredOutput
+void ModuleSyntaxChecker::announceModuleCallsPredOutput(std::string predName, int predArity){
+  currentCallsPredOutput.get<byName>().insert(predStruct(predName, predArity));
+}
+
+// insert modCallsStruct(currentCallsModName, currentCallsPredInputs, currentCalssPredOutput, currentModName) into currentModCalls
+// clear currentCallsModName, currentCallsPredInputs, currentCallsPredOutput 
+void ModuleSyntaxChecker::insertCompleteModuleCalls(){
+  currentModCalls.insert(modCallsStruct(currentCallsModName, currentCallsPredInputs, currentCallsPredOutput, currentModName));
+  currentCallsModName = "";
+  currentCallsPredInputs.clear();
+  currentCallsPredOutput.clear();
+}
+
+// 1. loop over moduleCalls, over all predInputs
+// 2. go to the respective moduleSet-modParentName
+// 3. matched with the predInputs
+bool ModuleSyntaxChecker::validateAllModuleCalls(){
   const modCallsSet::index<byName>::type& modCalls_index=moduleCalls.get<byName>();
   modCallsSet::index<byName>::type::iterator it = modCalls_index.begin();
   while (it != modCalls_index.end()){ 
@@ -198,7 +176,8 @@ bool ModuleSyntaxChecker::validateModuleCalls(){
     
     modSet::index_iterator<byName>::type itM=moduleSet.get<byName>().find(myModCalls.modName);
     if (itM == moduleSet.get<byName>().end()){ 
-      std::cout << std::endl << "Module call '" << myModCalls.modName << "' is invalid because the module is not found in the program" << std::endl;
+      std::cout << std::endl << "--- Error: Module call '@" << myModCalls.modName << "' is invalid because module '"
+      << myModCalls.modName <<"' is not found in the program" << std::endl;
       return false;
     }
     modStruct myModule = *itM;
@@ -216,7 +195,7 @@ bool ModuleSyntaxChecker::validateModuleCalls(){
       predStruct cPred = *itCPI;
       predStruct mPred = *itMPI;
       if (cPred.predArity!=mPred.predArity)  {
-        std::cout << std::endl << "The arity of predicate input '" << cPred.predName << "' in module call '@" 
+        std::cout << std::endl << "--- Error: The arity of predicate input '" << cPred.predName << "' in module call '@" 
         << myModCalls.modName << "' in module '" << myModCalls.modParentName<< "' does not match with the arity of predicate '" 
         << mPred.predName << "' in module '" << myModule.modName << "' "<< std::endl;
         return false;
@@ -234,191 +213,116 @@ bool ModuleSyntaxChecker::validateModuleCalls(){
       // pred inside from the respective module set
       predSet::index_iterator<byName>::type itMPT=myModule.predInside.get<byName>().find(cPred.predName);
       if (itMPT == myModule.predInside.get<byName>().end()) { // pred not found
-        std::cout << std::endl << "Predicate output '" << cPred.predName << "' in module call '@" << myModCalls.modName 
+        std::cout << std::endl << "--- Error: Predicate output '" << cPred.predName << "' in module call '@" << myModCalls.modName 
         << "' in module '" << myModCalls.modParentName << "' is not found in module '" << myModule.modName << "' " << std::endl;
 	return false; 
       }
       predStruct mPred = *itMPT;
       if (cPred.predArity!=mPred.predArity)  {// different arity
-        std::cout << std::endl << "The arity of predicate output '" << cPred.predName << "' in module call '@" 
+        std::cout << std::endl << "--- Error: The arity of predicate output '" << cPred.predName << "' in module call '@" 
         << myModCalls.modName << "' in module '" << myModCalls.modParentName<< "' does not match with the arity of predicate '" 
         << mPred.predName << "' in module '" << myModule.modName << "' "<< std::endl;
         return false;
       }
       itCPT++;
-      std::cout<<"Hiii:" << myModCalls.modName << ";" << cPred.predName << "--";
     }
 
+    std::cout << std::endl << "--- Module calls: '@" << myModCalls.modName << "' in module '" << myModCalls.modParentName 
+    << "' has been verified" << std::endl;
     it++;
   }
-  return true;
-}
-
-// check the modName should be unique
-bool ModuleSyntaxChecker::announceModuleHeader(std::string modName, predSet predInputs){
-  modSet::index_iterator<byName>::type it=moduleSet.get<byName>().find(modName);
-  if (it == moduleSet.get<byName>().end()){ // not found
-    currentModName = modName;
-    currentPredInputs = predInputs;
-    return true;
-  } else { // found, the module name has been declared before
-    return false;
-  }
-}
-
-// insert into currentPredInside, check uniqueness
-bool ModuleSyntaxChecker::announcePredInside(std::string predName, int predArity){
-  predSet::index_iterator<byName>::type itPI=currentPredInside.get<byName>().find(predName);
-  if (itPI == currentPredInside.get<byName>().end()){ // not found
-    currentPredInside.get<byName>().insert(predStruct(predName, predArity));
-    return true;
-  } else { // found, check the arity
-    predStruct thePred = *itPI;
-    if (thePred.predArity==predArity){
-      return true;
-    } else {
-      return false;
-    }
-  }
-}
-
-// insert into moduleCalls, parentName=currentModName
-void ModuleSyntaxChecker::announceModuleCalls(std::string modName, predSet predInputs, predSet predOutput){
-  currentModCalls.insert(modCallsStruct(modName, predInputs, predOutput, currentModName));
-}
-
-// insert modName, predInputs, predInside into moduleSet, clear predInputs and predInside
-bool ModuleSyntaxChecker::insertCompleteModule(){
-  // add all element from currentModCalls into moduleCalls (after insert the arity for the predInputs)
-  const modCallsSet::index<byName>::type& currentModCalls_index=currentModCalls.get<byName>();
-  modCallsSet::index<byName>::type::iterator it = currentModCalls_index.begin();
-  while (it != currentModCalls_index.end()){ 
-    modCallsStruct myModCalls = *it;
-    predSet newPredSet;
-    predSet::index<byName>::type& pred_index=myModCalls.predInputs.get<byName>();
-    predSet::index<byName>::type::iterator itPIn = pred_index.begin();
-    while (itPIn != pred_index.end()){ 
-      predStruct callsPredInput = *itPIn;
-      predSet::index_iterator<byName>::type itP=currentPredInside.get<byName>().find(callsPredInput.predName);
-      if (itP == currentPredInside.get<byName>().end()){ // not found
-        return false;
-      } else { // found, check the arity
-        predStruct thePredFound = *itP;
-        callsPredInput.predArity = thePredFound.predArity;
-        newPredSet.get<byName>().insert(predStruct(callsPredInput.predName, callsPredInput.predArity));
-        std::cout << "3: " << callsPredInput.predName << "/" << callsPredInput.predArity << std::endl;
-      }
-      itPIn++;
-    }
-    moduleCalls.insert(modCallsStruct(myModCalls.modName, newPredSet , myModCalls.predOutput, currentModName));
-    it++;
-  }  
-  moduleSet.insert(modStruct(currentModName, currentPredInputs, currentPredInside));
-  currentPredInputs.clear();
-  currentPredInside.clear();
-  currentModCalls.clear();
-  currentModName="";
-
-  // test pred inside module calls
-  const modCallsSet::index<byName>::type& mod_index=moduleCalls.get<byName>();
-  modCallsSet::index<byName>::type::const_iterator itmc = mod_index.begin();
-  modCallsStruct mc = *itmc;
-  printPreds(mc.predInputs);
-  itmc++;
-  mc = *itmc;
-  printPreds(mc.predInputs);
+  std::cout << std::endl << "-- Verify all module calls is succeeded" << std::endl;
   return true;
 }
 
 /*
+
 int main(){
   
-  modSet modDetails;
-  modCallsSet modCalls;
-
   std::string modName;
   std::string modCallsName;
   std::string modParentName;
   std::string predName;
   int predArity;
-  predSet myPredInputs;
-  predSet myPredInside;
-  predSet callsPredInputs;
-  predSet callsPredOutput;
+  ModuleSyntaxChecker mSC;
 
-  // recognize the module name
-  modName = "p1";
+  // insert module p1
+  mSC.announceModuleHeader("p1");
+  mSC.announcePredInputModuleHeader("q", 1);
 
-  // recognize the module inputs
-  predName = "p";
-  predArity = 1;
-  predSet::index_iterator<byName>::type itPI=myPredInputs.get<byName>().find(predName);
-  if (itPI == myPredInputs.get<byName>().end()){
-    myPredInputs.get<byName>().insert(predStruct(predName, predArity));
-  } else {
-    std::cout << "error: duplicate predicate name '"<< predName << "' in the predicate input list of the module: '" << modName << "'" << std::endl;
+  mSC.announcePredInside("q", 1);
+  mSC.announcePredInside("q", 1);
+  mSC.announcePredInside("ok", 0);
+
+  mSC.announceModuleCallsModName("p2");
+  mSC.announceModuleCallsPredInput("q");
+  mSC.announceModuleCallsPredOutput("even", 1);
+  mSC.insertCompleteModuleCalls();
+  if (mSC.insertCompleteModule()==false) {
+    std::cout << std::endl << "something wrong with completing a module" << std::endl;
+    return 0;
+  }
+  // insert module p2
+  mSC.announceModuleHeader("p2");
+  mSC.announcePredInputModuleHeader("q2", 1);
+
+  mSC.announcePredInside("q2i", 1);
+  mSC.announcePredInside("q2i", 1);
+  mSC.announcePredInside("q2", 1);
+  mSC.announcePredInside("q2", 1);
+  mSC.announcePredInside("skip2", 0);
+  mSC.announcePredInside("q2", 1);
+  mSC.announcePredInside("q2i", 1);
+  mSC.announcePredInside("even", 1);
+  mSC.announcePredInside("skip2", 0);
+  mSC.announcePredInside("even", 1);
+  mSC.announcePredInside("skip2", 0);
+
+  mSC.announceModuleCallsModName("p3");
+  mSC.announceModuleCallsPredInput("q2i");
+  mSC.announceModuleCallsPredOutput("odd", 1);
+  mSC.insertCompleteModuleCalls();
+
+  if (mSC.insertCompleteModule()==false) {
+    std::cout << std::endl << "something wrong with completing a module" << std::endl;
+    return 0;
+  }
+  // insert module p3
+  mSC.announceModuleHeader("p3");
+  mSC.announcePredInputModuleHeader("q3", 1);
+  mSC.announcePredInside("q3i", 1);
+  mSC.announcePredInside("q3i", 1);
+  mSC.announcePredInside("q3", 1);
+  mSC.announcePredInside("q3", 1);
+  mSC.announcePredInside("skip3", 0);
+  mSC.announcePredInside("q3", 1);
+  mSC.announcePredInside("q3i", 1);
+  mSC.announcePredInside("odd", 1);
+  mSC.announcePredInside("skip3", 0);
+
+  mSC.announceModuleCallsModName("p2");
+  mSC.announceModuleCallsPredInput("q3i");
+  mSC.announceModuleCallsPredOutput("even", 1);
+  mSC.insertCompleteModuleCalls();
+
+  if (mSC.insertCompleteModule()==false) {
+    std::cout << std::endl << "something wrong with completing a module" << std::endl;
     return 0;
   }
 
-  // recognize pred inside
-  predName = "q";
-  predArity = 1;
-  if (insertPredInside(predName, predArity, myPredInside)==false){
-    std::cout << "error: predicates '"<< predName <<"' in module: '" << modName << "' have different arity" <<std::endl;
+  if (mSC.validateAllModuleCalls()==false) {
+    std::cout << std::endl << "something wrong with completing module calls" << std::endl;
     return 0;
-  };
+  }
+  std::cout << std::endl << "ending module experiment, no error detected" << std::endl;
 
-  predName = "q";
-  predArity = 1;
-  if (insertPredInside(predName, predArity, myPredInside)==false){
-    std::cout << "error: predicates '"<< predName <<"' in module: '" << modName << "' have different arity" <<std::endl;
-    return 0;
-  };
-
-  predName = "ok";
-  predArity = 0;
-  if (insertPredInside(predName, predArity, myPredInside)==false){
-    std::cout << "error: predicates '"<< predName <<"' in module: '" << modName << "' have different arity" <<std::endl;
-    return 0;
-  };
-
-  // insert module atom because of module calls: @p2[q].even(c)
-  // recognize module name
-  modCallsName = "p2";
-  // recognize module inputs
-  predName = "q";
-  predArity = 0;
-  insertPredInside(predName, predArity, callsPredInputs);
   
-  // recognize module output predicate
-  predName = "even";
-  predArity = 1;
-  insertPredInside(predName, predArity, callsPredOutput);
-
-  modParentName = "p1";
-
-  // create one module 
-  modCalls.insert(modCallsStruct(modCallsName, callsPredInputs, callsPredOutput, modParentName));
-  modDetails.insert(modStruct(modName, myPredInputs, myPredInside));
-  
-  // print 
-  std::cout << "Mod calls: ";
-  printCallsMods(modCalls);
-  std::cout << std::endl;
-
-  std::cout << "Mod details: ";
-  printMods(modDetails);
-  std::cout << std::endl;
-
-  std::cout << "Pred Inputs: ";
-  printPreds(myPredInputs);
-  std::cout << std::endl;
-  
-  std::cout << "Pred Inside: ";
-  printPreds(myPredInside);
-  std::cout << std::endl;
+  return 0;
+}
+*/
 
   // try iterating predInside
+/*
   const predSet::index<byName>::type& pred_index=myPredInside.get<byName>();
   predSet::index<byName>::type::const_iterator itPIn = pred_index.begin();
   int count=0;
@@ -430,62 +334,4 @@ int main(){
     itPIn ++;
   }
   std::cout << "count: " << count << std::endl;
-
-  // clear predInside
-  myPredInside.clear();
-  std::cout << "Pred Inside after clearing: ";
-  printPreds(myPredInside);
-  std::cout << std::endl;
-
-  std::cout << "ending module experiment" << std::endl;
-
-  ModuleSyntaxChecker mSC;
-  mSC.announceModuleHeader(modName, myPredInputs);
-  std::cout << "Module Name: " << mSC.getCurrentModName() <<"; ";
-  mSC.printCurrentPredInputs();
-  std::cout << std::endl; 
-  if (mSC.announcePredInside("p", 2) == false) std::cout<< "predicate inside error";
-  if (mSC.announcePredInside("q", 1) == false) std::cout<< "predicate inside error";
-  mSC.announceModuleCalls(modCallsName, callsPredInputs, callsPredOutput);
-  mSC.announceModuleCalls(modCallsName, callsPredInputs, callsPredOutput);
-  mSC.insertCompleteModule();
-  predSet newPredSet;
-  newPredSet.get<byName>().insert(predStruct("q", 1));
-  mSC.announceModuleHeader("p2", newPredSet);
-  if (mSC.announcePredInside("even", 1) == false) std::cout<< "predicate inside error";
-  mSC.insertCompleteModule();
-  if (mSC.validateModuleCalls()==false) std::cout << "Module calls not match";
-
-  std::cout << "ending ModuleSyntaxChecker class experiment" << std::endl;
-
-  predSet ps;
-  ps.get<byName>().insert(predStruct("d", 2));
-  ps.get<byName>().insert(predStruct("c", 3));
-  ps.get<byName>().insert(predStruct("b", 4));
-
-  const predSet::index<bySequenced>::type& name_index=ps.get<bySequenced>();
-  std::copy(name_index.begin(),name_index.end(),std::ostream_iterator<predStruct>(std::cout));
-
-  predSet::index_iterator<byName>::type it=ps.get<byName>().find("q");
-  if (it == ps.get<byName>().end()){
-    std::cout<< "not found";
-  } else {
-    predStruct mypred = *it;
-    std::cout<<"pred name: "<<mypred.predName<<std::endl;
-    std::cout<<"pred arity: "<<mypred.predArity<<std::endl;
-
-
-typedef index<predSet,byName>::type employee_set_by_name;
-employee_set_by_name& name_index2=ps.get<byName>();
-
-employee_set_by_name::iterator it3=name_index2.find("q");
-predStruct anna=*it3;
-anna.predArity=100;      // she just got married to Calvin Smith
-name_index2.replace(it3,anna); // update her record
-printPreds(ps);
-
-  }
-  return 0;
-}
 */
-
