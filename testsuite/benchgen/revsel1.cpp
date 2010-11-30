@@ -198,12 +198,13 @@ int main(int ac,char** av)
 
   // create conflicts
   {
+    // only a small amount of external conflicts for local referees per track
+    assert(config.noext < config.tracks);
+    unsigned u = 0;
+
     // create track-local conflicts
     for(unsigned t = 0; t < config.tracks; ++t)
     {
-      // only a small amount of external conflicts for local referees per track
-      unsigned u = 0;
-
       // build conflicts for one referee
       for(unsigned r = 0; r < config.ureferees; ++r)
       {
@@ -230,23 +231,25 @@ int main(int ac,char** av)
         }
         LOG("conflicts in track " << tracksyms[t] << " for referee " << r << ": " << printrange(conflict));
 
+        bool first = true;
         BOOST_FOREACH(unsigned pap, conflict)
         {
-          if( u < config.noext )
+          if( u < config.noext && first )
           {
             o << "conflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
+            u++;
+            first = false;
           }
           else
           {
             o << "iconflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
           }
-          u++;
         }
       }
     }
 
     // create global conflicts
-    unsigned u = 0;
+    u = 0;
     for(unsigned r = 0; r < config.sreferees; ++r)
     {
       std::set<unsigned> conflict;

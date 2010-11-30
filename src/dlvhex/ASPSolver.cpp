@@ -52,8 +52,6 @@
 # include "dlv.h"
 #endif
 
-#define HAVE_LIBCLINGO
-
 #ifdef HAVE_LIBCLINGO
 #include <clingo/clingo_app.h>
 #include <boost/tokenizer.hpp>

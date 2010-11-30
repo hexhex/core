@@ -16,6 +16,7 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
+
 GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/potassco-sf/trunk/gringo
 CLINGOLDADD = \
   -L$(GRINGO_TRUNK_DIR)/build/release/lib/ \
@@ -27,6 +28,9 @@ CLINGOCPPFLAGS= \
   -I$(GRINGO_TRUNK_DIR)/libgringo/ \
   -I$(GRINGO_TRUNK_DIR)/libclasp/ \
   -I$(GRINGO_TRUNK_DIR)/app/
+
+CLINGOLDADD= 
+CLINGOCPPFLAGS= 
 
 TESTS = \
   TestEvalEndToEnd TestEvalEndToEndND \
