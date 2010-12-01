@@ -34,10 +34,15 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+// activate benchmarking if activated by configure option --enable-debug
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/globals.h"
 #include "dlvhex/EvaluateExtatom.h"
+#include "dlvhex/Benchmarking.h"
 
 #include <sstream>
 #include <algorithm>
@@ -154,6 +159,8 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
       //
       // extract input set from i according to the input parameters
       //
+      {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xatomreplacement,"EvaluateExtatom::extractInp");
       for (std::vector<PluginAtom::InputType>::const_iterator typeit = inputtypes.begin();
 	   termit != inputi->end() && typeit != inputtypes.end(); ++termit, ++typeit)
 	{
@@ -195,6 +202,7 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	      break;
 	    }
 	}
+      }
 
       //
       // build a query object:
@@ -211,9 +219,15 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
       try
 	{
           if( 1 == Globals::Instance()->getOption("UseExtAtomCache") )
+          {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xatomrc,"pluginAtom->retrieveCached");
             pluginAtom->retrieveCached(query, answer);
+          }
           else
+          {
+            DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xatomr,"pluginAtom->retrieve");
             pluginAtom->retrieve(query, answer);
+          }
 	}
       catch (PluginError& e)
 	{
@@ -237,6 +251,8 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 
       boost::shared_ptr<std::vector<Tuple> > answers = answer.getTuples();
 
+      {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(xatomreplacement,"EvaluateExtatom::buildReplAtoms");
       for (std::vector<Tuple>::const_iterator s = answers->begin(); s != answers->end(); ++s)
 	{
 	  if (s->size() != externalAtom->getArguments().size())
@@ -272,6 +288,7 @@ EvaluateExtatom::evaluate(const AtomSet& i, AtomSet& result) const
 	      // found a mismatch, ignore this answer tuple
 	    }
 	}
+      }
     }
 }
 
