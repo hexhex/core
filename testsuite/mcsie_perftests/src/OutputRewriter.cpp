@@ -432,7 +432,7 @@ void EQOutputBuilder::printEQ(
   for(unsigned u = 0; u < maxctx; ++u)
   {
     std::stringstream s;
-    s << "a" << (u+1);
+    s << "ma" << (u+1);
     ID idpred = registry->terms.getIDByString(s.str());
     for(Interpretation::Storage::enumerator en = bits.first();
         en != bits.end(); ++en)

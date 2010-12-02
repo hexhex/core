@@ -79,17 +79,17 @@ namespace dlvhex {
        if ((Global::getInstance())->isSet()) {
        // Only print equilibria
          // output diagnosis disjunction
-         o << "normal(" << ruleid << ") v d1(" << ruleid << ") v d2(" << ruleid << ")." << std::endl;
+         o << "normal(" << ruleid << ") v md1(" << ruleid << ") v md2(" << ruleid << ")." << std::endl;
          // output d2 rule
-         o << "b" << head << " :- d2(" << ruleid << ")." << std::endl;
+         o << "mb" << head << " :- md2(" << ruleid << ")." << std::endl;
          // output d1 rule
-         o << "b" << head << " :- not d1(" << ruleid << ")";
+         o << "mb" << head << " :- not md1(" << ruleid << ")";
          if (fact)
            o << "." << std::endl;
          else
            o << ", ";
        } else {
-         o << "b" << head;
+         o << "mb" << head;
          if (fact)
            o << "." << std::endl;
          else
@@ -105,11 +105,11 @@ namespace dlvhex {
        if ((Global::getInstance())->isSet())
        {
          // diagnosis guessing
-         o << "normal(" << ruleid << ") v d1(" << ruleid << ") v d2(" << ruleid << ") :- ok(all)." << std::endl;
+         o << "normal(" << ruleid << ") v md1(" << ruleid << ") v md2(" << ruleid << ") :- ok(all)." << std::endl;
          // d2 rule
-         o << "c" << head << " :- d2(" << ruleid << "), ok(all)." << std::endl;
+         o << "mc" << head << " :- md2(" << ruleid << "), ok(all)." << std::endl;
          // d1 rule
-         o << "c" << head << " :- not d1(" << ruleid << "), ok(all)";
+         o << "mc" << head << " :- not md1(" << ruleid << "), ok(all)";
          if (fact)
            o << "." << std::endl;
          else
@@ -118,7 +118,7 @@ namespace dlvhex {
        else
        {
          // else only print equilibria
-         o << "c" << head;
+         o << "mc" << head;
          if (fact)
            o << "." << std::endl;
          else
@@ -131,7 +131,7 @@ namespace dlvhex {
        const BridgeRuleEntry& elem = *it;
        if (elem.Neg())
          o << "n";
-       o << "a" << elem;
+       o << "ma" << elem;
        if (it+1 != body.end())
          o << ", ";
        else
