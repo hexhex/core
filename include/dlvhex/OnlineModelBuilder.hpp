@@ -239,14 +239,16 @@ protected:
   MyModelGraph mg;
   EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
   boost::shared_ptr<EvalGraphObserver> ego;
+  bool redundancyElimination;
 
   // methods
 public:
-  OnlineModelBuilder(EvalGraphT& eg):
+  OnlineModelBuilder(EvalGraphT& eg, bool redundancyElimination=true):
     eg(eg), mg(eg), mbp(),
     // setup observer to do the things below in case EvalGraph is changed
     // after the creation of this OnlineModelBuilder
-    ego(new EvalGraphObserver(*this))
+    ego(new EvalGraphObserver(*this)),
+    redundancyElimination(redundancyElimination)
   {
     // allocate full mbp (plus one unit, as we will likely get an additional vertex)
     EvalUnitModelBuildingProperties& mbproptemp = mbp[eg.countEvalUnits()];
@@ -426,15 +428,17 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
 		deps.push_back(predmodel);
 	}
 
-  // check if there is an existing model created from these predecessors
-  #if 1
-  OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
-  if( !!oexisting )
+  if( redundancyElimination )
   {
-    LOG("found and will return existing successor imodel " << oexisting.get());
-    return oexisting.get();
+    // check if there is an existing model created from these predecessors
+    // if yes, just return this model
+    OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
+    if( !!oexisting )
+    {
+      LOG("found and will return existing successor imodel " << oexisting.get());
+      return oexisting.get();
+    }
   }
-  #endif
   
   // create interpretation
   InterpretationPtr pjoin;
