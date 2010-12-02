@@ -22,8 +22,8 @@
  */
 
 /**
- * @file   TestHexParser.cpp
- * @author Peter Schueller <ps@kr.tuwien.ac.at>
+ * @file   TestHexParserModule.cpp
+ * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Test HEX parser for Module atoms
  */

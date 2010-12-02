@@ -107,23 +107,23 @@ typedef boost::multi_index_container<
     // insert into currentModName and clear currentPredInputs
     bool announceModuleHeader(std::string modName);
     // insert into currentPredInputs
-    void announcePredInputModuleHeader(std::string predName, int predArity);
+    bool announcePredInputModuleHeader(std::string predName, int predArity);
 
-    // insert into currentPredInside, check uniqueness
+    // insert into currentPredInside, check uniqueness of pred with arity
     bool announcePredInside(std::string predName, int predArity);
     // insert modName, predInputs, predInside into moduleSet, clear predInputs and predInside
     // insert arity for all currentModCalls, insert all of them into moduleCalls
     bool insertCompleteModule();    
 
     // insert modName into currentCallsModName, clear callsPredInputs and callsPredOutput
-    void announceModuleCallsModName(std::string modName);
+    bool announceModuleCallsModName(std::string modName);
     // insert predName with arity 0 into callsPredInputs
-    void announceModuleCallsPredInput(std::string predName);
+    bool announceModuleCallsPredInput(std::string predName);
     // insert predName/predArity into callsPredOutput
     void announceModuleCallsPredOutput(std::string predName, int predArity);
     // insert modCallsStruct(currentCallsModName, currentCallsPredInputs, currentCalssPredOutput, currentModName) into currentModCalls
     // clear currentCallsModName, currentCallsPredInputs, currentCallsPredOutput 
-    void insertCompleteModuleCalls();
+    bool insertCompleteModuleCalls();
 
     // 1. loop over moduleCalls, over all predInputs. 2. go to the respective moduleSet-modParentName. 3. matched with the predInputs
     bool validateAllModuleCalls();

@@ -38,6 +38,10 @@ ModuleSyntaxChecker::ModuleSyntaxChecker(){
 
 // check the modName should be unique
 bool ModuleSyntaxChecker::announceModuleHeader(std::string modName){
+  if (modName=="") {
+    std::cout << std::endl << "--- Error: Module name could not be empty" << std::endl;
+    return false;
+  }
   modSet::index_iterator<byName>::type it=moduleSet.get<byName>().find(modName);
   if (it == moduleSet.get<byName>().end()){ // not found
     currentModName = modName;
@@ -51,9 +55,15 @@ bool ModuleSyntaxChecker::announceModuleHeader(std::string modName){
 }
 
 // insert into currentPredInputs
-void ModuleSyntaxChecker::announcePredInputModuleHeader(std::string predName, int predArity){
-  currentPredInputs.get<byName>().insert(predStruct(predName, predArity));
-  // std::cout << std::endl << "--- Adding predicate [predInput module header]: '" << predName << "/" << predArity << "'" << std::endl;
+bool ModuleSyntaxChecker::announcePredInputModuleHeader(std::string predName, int predArity){
+  predSet::index_iterator<byName>::type itPI=currentPredInputs.get<byName>().find(predName);
+  if (itPI==currentPredInputs.get<byName>().end()){
+    currentPredInputs.get<byName>().insert(predStruct(predName, predArity));
+    return true;
+  } else {
+    std::cout << std::endl << "--- Error: Duplicating predicate input name '" << predName << "' in module '" << currentModName << "'" << std::endl;
+    return false;
+  }
 }
 
 // insert into currentPredInside, check uniqueness
@@ -125,7 +135,7 @@ bool ModuleSyntaxChecker::insertCompleteModule(){
       << currentModName << "' is mismatch with the one in the module body " << std::endl;
       std::cout << "--- In the module header: " << thePredInputs.predName << "/" << thePredInputs.predArity << std::endl;
       std::cout << "--- In the module body: " << thePredInside.predName << "/" << thePredInside.predArity << std::endl;
-      std::cout << "--- Error: syntax error in module '" << currentModName << "'" << std::endl;
+      std::cout << "--- Solution: Both of them should have the same arity" << std::endl;
       return false;
     }
     itPInputs++;
@@ -140,15 +150,31 @@ bool ModuleSyntaxChecker::insertCompleteModule(){
 }
 
 // insert modName into currentCallsModName, clear callsPredInputs and callsPredOutput
-void ModuleSyntaxChecker::announceModuleCallsModName(std::string modName){
+bool ModuleSyntaxChecker::announceModuleCallsModName(std::string modName){
+  if (modName=="") {
+    std::cout << std::endl << "--- Error: Module name could not be empty" << std::endl;
+    return false;
+  }
   currentCallsPredInputs.clear();
   currentCallsPredOutput.clear();
   currentCallsModName = modName;
+  return true;
 }
 
 // insert predName with arity 0 into callsPredInputs
-void ModuleSyntaxChecker::announceModuleCallsPredInput(std::string predName){
-  currentCallsPredInputs.get<byName>().insert(predStruct(predName, 0));
+bool ModuleSyntaxChecker::announceModuleCallsPredInput(std::string predName){
+  predSet::index_iterator<byName>::type it=currentCallsPredInputs.get<byName>().find(predName);
+  if (it==currentCallsPredInputs.get<byName>().end()){
+    currentCallsPredInputs.get<byName>().insert(predStruct(predName, 0));
+    return true;  
+  } else {
+    std::cout << std::endl << "--- Error: Duplicating predicate input name '" << predName << "' in module call '@" 
+    << currentCallsModName << "' in module '" << currentModName << "'" << std::endl;
+    return false;
+  }
+  
+  
+/*
   predSet::index<bySequenced>::type& predCI_index=currentCallsPredInputs.get<bySequenced>();
   predSet::index<bySequenced>::type::iterator itCPI = predCI_index.begin();
   std::cout << std::endl;
@@ -158,6 +184,7 @@ void ModuleSyntaxChecker::announceModuleCallsPredInput(std::string predName){
     itCPI++;
   }
   std::cout << std::endl;
+*/
 }
 
 // insert predName/predArity into callsPredOutput
@@ -167,11 +194,16 @@ void ModuleSyntaxChecker::announceModuleCallsPredOutput(std::string predName, in
 
 // insert modCallsStruct(currentCallsModName, currentCallsPredInputs, currentCalssPredOutput, currentModName) into currentModCalls
 // clear currentCallsModName, currentCallsPredInputs, currentCallsPredOutput 
-void ModuleSyntaxChecker::insertCompleteModuleCalls(){
+bool ModuleSyntaxChecker::insertCompleteModuleCalls(){
+  if (currentCallsModName=="") {
+     std::cout << std::endl << "--- Error: The name of module calls in module '" << currentModName << "' could not be empty" << std::endl;
+     return false;
+  }
   currentModCalls.insert(modCallsStruct(currentCallsModName, currentCallsPredInputs, currentCallsPredOutput, currentModName));
   currentCallsModName = "";
   currentCallsPredInputs.clear();
   currentCallsPredOutput.clear();
+  return true;
 }
 
 // 1. loop over moduleCalls, over all predInputs
@@ -214,8 +246,10 @@ bool ModuleSyntaxChecker::validateAllModuleCalls(){
         << mPred.predName << "' in module '" << myModule.modName << "' "<< std::endl;
         return false;
       } else {
+/*
         std::cout << std::endl << "--- Comparing " << cPred.predName << "/" << cPred.predArity 
         << " against " << mPred.predName << "/" << mPred.predArity << std::endl;
+*/
       }
       itCPI++;
       itMPI++;
