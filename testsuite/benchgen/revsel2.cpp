@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 
 struct Config
 {
-  unsigned tracks, papers, ureferees, sreferees, uconflicts, sconflicts, noext, globalnoconf;
+  unsigned tracks, papers, referees;
 };
 
 class RandomNumbers
@@ -126,19 +126,7 @@ int main(int ac,char** av)
     ("tracks,t", po::value<unsigned>(&config.tracks)->required(),
       "number of conference tracks")
     ("papers,p", po::value<unsigned>(&config.papers)->required(),
-      "number of papers per track")
-    ("ureferees,u", po::value<unsigned>(&config.ureferees)->required(),
-      "number of track-unique referees")
-    ("sreferees,s", po::value<unsigned>(&config.sreferees)->required(),
-      "number of shared referees")
-    ("uconflicts,a", po::value<unsigned>(&config.uconflicts)->required(),
-      "percentage of tracks where unique reviewers have less conflicts")
-    ("sconflicts,b", po::value<unsigned>(&config.sconflicts)->required(),
-      "percentage of shared reviewers with less conflicts")
-    ("noext,n", po::value<unsigned>(&config.noext)->required(),
-      "number of external conflicts for local referees")
-    ("globalnoconf,g", po::value<unsigned>(&config.globalnoconf)->default_value(0),
-      "number of non-conflicts for global referees")
+      "number of papers=referees per track")
   ;
   po::variables_map vm;
   po::store(po::parse_command_line(ac, av, desc), vm);
@@ -151,32 +139,28 @@ int main(int ac,char** av)
 
   po::notify(vm);
 
+  config.referees = config.papers;
+
   RandomNumbers random;
 
   std::ostream& o = std::cout;
 
   StringVector tracksyms;
   StringVector papersyms;
-  StringVector urefereesyms;
-  StringVector srefereesyms;
+  StringVector refereesyms;
   {
     // create symbols (shared across strata)
     genSyms("track", config.tracks, tracksyms);
     genSyms("paper", config.tracks*config.papers, papersyms);
-    genSyms("ref", config.tracks*config.ureferees, urefereesyms);
-    genSyms("sref", config.sreferees, srefereesyms);
+    genSyms("ref", config.tracks*config.referees, refereesyms);
 
     for(unsigned p = 0; p < config.tracks*config.papers; ++p)
     {
       o << "paper(" << papersyms[p] << ")." << std::endl;
     }
-    for(unsigned r = 0; r < config.tracks*config.ureferees; ++r)
+    for(unsigned r = 0; r < config.tracks*config.referees; ++r)
     {
-      o << "referee(" << urefereesyms[r] << ")." << std::endl;
-    }
-    for(unsigned r = 0; r < config.sreferees; ++r)
-    {
-      o << "referee(" << srefereesyms[r] << ")." << std::endl;
+      o << "referee(" << refereesyms[r] << ")." << std::endl;
     }
     for(unsigned t = 0; t < config.tracks; ++t)
     {
@@ -185,131 +169,46 @@ int main(int ac,char** av)
       {
         o << "track_paper(" << tracksyms[t] << "," << papersyms[t*config.papers+p] << ")." << std::endl;
       }
-      for(unsigned r = 0; r < config.ureferees; ++r)
+      for(unsigned r = 0; r < config.referees; ++r)
       {
-        o << "track_referee(" << tracksyms[t] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
-      }
-      for(unsigned r = 0; r < config.sreferees; ++r)
-      {
-        o << "track_referee(" << tracksyms[t] << "," << srefereesyms[r] << ")." << std::endl;
+        o << "track_referee(" << tracksyms[t] << "," << refereesyms[t*config.referees+r] << ")." << std::endl;
       }
     }
   }
 
   // create conflicts
   {
-    // only a small amount of external conflicts for local referees per track
-    /*
-    if( config.noext > config.tracks )
-    {
-      std::cerr << "reduced config.noext to config.tracks" << std::endl;
-      config.noext = config.tracks;
-    }
-    unsigned u = 0;
-    */
-
-    // create track-local conflicts
     for(unsigned t = 0; t < config.tracks; ++t)
     {
       // build conflicts for one referee
-      unsigned count = 0;
-      for(unsigned r = 0; r < config.ureferees; ++r)
+      // a referee conflicts with all papers except
+      // * the paper with the same number as the referee
+      // * the paper with the next higher number as the referee (modulo number of papers)
+      //
+      // the following conflicts are special (external)
+      // * for referee 1: paper 0 (this does not give more solutions yet)
+      // * for the last referee: paper 2 (this conflict permits one additional solution)
+      // (this way we have exactly two solutions)
+      for(unsigned r = 0; r < config.referees; ++r)
       {
         std::set<unsigned> conflict;
         // create all conflicts except for two papers
-        // do not create conflicts for the last referee in the track (this is automatically)
-        if( (r+1) != config.ureferees )
+        for(unsigned c = 0; c < config.papers; ++c)
         {
-          for(unsigned c = 0; c < config.papers; ++c)
+          if( c != r && c != ((r+1)%config.papers) )
           {
-            //if( c != r && c != ((r+1)%config.papers) )
-            if( c != r && c != (r+1) )
-              conflict.insert(t*config.papers+c);
-          }
-        }
-
-        // remove some conflicts
-        if( (t*100/config.tracks) < config.uconflicts )
-        {
-          while(true)
-          {
-            unsigned remove = random.getInRange(t*config.papers, (t+1)*config.papers-1);
-            if( conflict.count(remove) > 0 )
+            if( (r == 1 && c == 0) ||
+                (r == (config.referees-1) && c == 2) )
             {
-              conflict.erase(remove);
-              break;
+              // this is an external conflict
+              o << "conflict(" << papersyms[t*config.papers+c] << "," << refereesyms[t*config.referees+r] << ")." << std::endl;
+            }
+            else
+            {
+              // this is an internal conflict
+              o << "iconflict(" << papersyms[t*config.papers+c] << "," << refereesyms[t*config.referees+r] << ")." << std::endl;
             }
           }
-        }
-        LOG("conflicts in track " << tracksyms[t] << " for referee " << r << ": " << printrange(conflict));
-
-        // for referee r, conflict number r may be external
-        BOOST_FOREACH(unsigned pap, conflict)
-        {
-          if( (r > count) && (count < config.noext) )
-          {
-            o << "conflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
-            //u++;
-            count++;
-          }
-          else
-          {
-            o << "iconflict(" << papersyms[pap] << "," << urefereesyms[t*config.ureferees+r] << ")." << std::endl;
-          }
-        }
-      }
-    }
-
-    // create global conflicts
-    for(unsigned r = 0; r < config.sreferees; ++r)
-    {
-      std::set<unsigned> conflict;
-      // create all conflicts
-      for(unsigned c = 0; c < config.tracks*config.papers; ++c)
-      {
-        conflict.insert(c);
-      }
-
-      // remove one conflict for each track
-      // to get global models we remove for the first sreferee the largest conflict in the first track,
-      // for the second sreferee the largest conflict in the second track, ...
-      if( (r*100/config.sreferees) < config.sconflicts )
-      {
-        if( config.globalnoconf > config.tracks )
-        {
-          std::cerr << "reduced config.globalnoconf to config.tracks" << std::endl;
-          config.globalnoconf = config.tracks;
-        }
-        for(unsigned t = 0; t < config.tracks && t < config.globalnoconf; ++t)
-        {
-          unsigned remove = t*config.papers + config.papers - 1 - r;
-          while(true)
-          {
-            if( conflict.count(remove) > 0 )
-            {
-              conflict.erase(remove);
-              break;
-            }
-            // if this is not possible (e.g. if not enough papers are there), do a real guessing
-            remove = t*config.papers + random.getInRange(0, config.papers-1);
-          }
-        }
-      }
-      LOG("conflicts for global referee " << r << ": " << printrange(conflict));
-
-      // only internal global conflicts
-      //bool first = true;
-      BOOST_FOREACH(unsigned pap, conflict)
-      {
-        if( true ) //first )
-        {
-          // first conflict is external
-          o << "conflict(" << papersyms[pap] << "," << srefereesyms[r] << ")." << std::endl;
-        }
-        else
-        {
-          o << "iconflict(" << papersyms[pap] << "," << srefereesyms[r] << ")." << std::endl;
-          //first = false;
         }
       }
     }
