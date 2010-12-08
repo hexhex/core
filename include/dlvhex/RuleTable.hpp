@@ -74,6 +74,7 @@ public:
 
 	// store rule (no duplicate check is done/required)
 	inline ID storeAndGetID(const Rule& rule) throw();
+	inline void clear();
 };
 
 // retrieve by ID
@@ -113,6 +114,10 @@ ID RuleTable::storeAndGetID(
 			rule.kind, // kind
 			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
+}
+
+void RuleTable::clear(){
+  container.clear();
 }
 
 DLVHEX_NAMESPACE_END

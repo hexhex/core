@@ -25,7 +25,7 @@
  * @file   Atoms.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Storage classes for atoms: Atom, OrdinaryAtom, BuiltinAtom, AggregateAtom, ExternalAtom.
+ * @brief  Storage classes for atoms: Atom, OrdinaryAtom, BuiltinAtom, AggregateAtom, ExternalAtom, ModuleAtom.
  */
 
 #ifndef ATOMS_HPP_INCLUDED__14102010
@@ -304,7 +304,7 @@ public:
     predicateInputPredicates(),
     predicateInputMask(),
     predicateInputMaskKnownOGAtoms(0)
-    { assert(ID(kind,0).isModuleAtom()); }
+    { assert(ID(kind,0).isModuleAtom()); LOG("call ModuleAtom in Atoms.hpp ");}
 
   std::ostream& print(std::ostream& o) const;
 

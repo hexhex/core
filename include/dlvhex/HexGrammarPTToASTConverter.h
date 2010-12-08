@@ -41,7 +41,7 @@
 // boost::spirit parsing
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/SpiritFilePositionNode.h"
-#include "dlvhex/ModuleSyntaxChecker.h"
+#include "dlvhex/ModuleHeaderTable.h"
 #include <boost/spirit/iterator/position_iterator.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -68,7 +68,8 @@ public:
   void convertPTToAST(node_t& node);
 
 private:
-  ModuleSyntaxChecker mSC;
+  //ModuleSyntaxChecker mSC;
+  ModuleHeaderTable mHT;
   ProgramCtx& ctx;
   //
   // general helpers

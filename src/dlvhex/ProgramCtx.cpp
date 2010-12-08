@@ -273,7 +273,6 @@ ProgramCtx::~ProgramCtx()
   //  std::vector<PluginInterface*> plugins;
 }
   
-
 void
 ProgramCtx::changeState(const boost::shared_ptr<State>& s)
 {

@@ -120,12 +120,13 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   ctx.registry = RegistryPtr(new Registry);
   std::cout << "test 2" <<std::endl;
 
+  //.. put into different files
   std::stringstream ss;
   ss << 
-  "#module(p1,[q/1])." << std::endl <<
-  "q(a)." << std::endl <<
-  "q(b)." << std::endl <<
-  "ok :- @p2[q]::even(c)." << std::endl <<
+  "#module(p1,[q1/1])." << std::endl <<
+  "q1(a)." << std::endl <<
+  "q1(b)." << std::endl <<
+  "ok :- @p2[q1]::even(c)." << std::endl <<
 
   "#module(p2,[q2/1])." << std::endl <<
   "q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y." << std::endl <<
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
 	LOG_REGISTRY_PROGRAM(ctx);
   std::cout << "test 4" <<std::endl;
 
-  ID idp = ctx.registry->terms.getIDByString("q");
+  ID idp = ctx.registry->terms.getIDByString("q1");
   ID idq = ctx.registry->terms.getIDByString("q2");
   ID idr = ctx.registry->terms.getIDByString("q3");
   ID idb = ctx.registry->terms.getIDByString("ok");
@@ -164,16 +165,16 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtomsMany)
   BOOST_REQUIRE((idc) != ID_FAIL);
   BOOST_REQUIRE((idmymod) != ID_FAIL);
   BOOST_REQUIRE(ctx.edb != 0);
-  BOOST_REQUIRE(ctx.idb.size() == 8);
+  BOOST_REQUIRE(ctx.idb.size() == 3);
   {
-    const Rule& r = ctx.registry->rules.getByID(ctx.idb[0]);
+    const Rule& r = ctx.registry->rules.getByID(ctx.idb[2]);
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_CHECK(r.head.size() == 1);
-    BOOST_REQUIRE(r.body.size() == 1);
+    BOOST_REQUIRE(r.body.size() == 2);
     {
-      ID idlit = r.body[0];
+      ID idlit = r.body[1];
       BOOST_CHECK(idlit.isLiteral());
       BOOST_CHECK(idlit.isModuleAtom());
 /*

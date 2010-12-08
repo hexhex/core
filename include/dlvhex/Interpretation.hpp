@@ -34,9 +34,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/ID.hpp"
-
 #include <bm/bm.h>
-
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN

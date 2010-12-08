@@ -215,7 +215,6 @@ public:
   virtual
   ~ProgramCtx();
 
-
   void
   setPluginContainer(PluginContainer*);
 

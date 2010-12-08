@@ -136,6 +136,8 @@ BOOST_AUTO_TEST_CASE(testNoInputPredInTheBody){
   ModuleSyntaxChecker mSC;
 
   // insert #module(p1,[q/1]).
+  //.. allowed
+  //.. put more space and handle {}
   BOOST_REQUIRE(mSC.announceModuleHeader("p1")==true);
   mSC.announcePredInputModuleHeader("q", 1);
   mSC.announcePredInside("k", 1);
@@ -144,20 +146,24 @@ BOOST_AUTO_TEST_CASE(testNoInputPredInTheBody){
 
 }
 
-BOOST_AUTO_TEST_CASE(testDifferentArityPredInputvsBody){
+
+BOOST_AUTO_TEST_CASE(testDifferentArityPredInputvsBody)
+{
 
   ModuleSyntaxChecker mSC;
 
   // insert #module(p1,[q/1]).
-  BOOST_REQUIRE(mSC.announceModuleHeader("p1")==true);
+  BOOST_REQUIRE(mSC.announceModuleHeader("p1") == true);
   mSC.announcePredInputModuleHeader("q", 1);
   mSC.announcePredInside("q", 3);
   mSC.announcePredInside("ok", 0);
-  BOOST_REQUIRE(mSC.insertCompleteModule()==false);
+  BOOST_REQUIRE(mSC.insertCompleteModule() == false);
 
 }
 
-BOOST_AUTO_TEST_CASE(testNoPredInput){
+
+BOOST_AUTO_TEST_CASE(testNoPredInput)
+{
 
   ModuleSyntaxChecker mSC;
 
@@ -165,7 +171,7 @@ BOOST_AUTO_TEST_CASE(testNoPredInput){
   mSC.announceModuleHeader("p1");
   mSC.announcePredInside("q", 3);
   mSC.announcePredInside("ok", 0);
-  BOOST_REQUIRE(mSC.insertCompleteModule()==true);
+  BOOST_REQUIRE(mSC.insertCompleteModule() == true);
 
 }
 

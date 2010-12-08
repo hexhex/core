@@ -25,7 +25,7 @@
  * @file   ModuleAtomTable.hpp
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
- * @brief  Table for storing Module Atoms
+ * @brief  Table for storing Module Atoms (module calls --> @p[q1,q2]::r(a,b,c) )
  */
 
 #ifndef MODULEATOMTABLE_HPP_INCLUDED__27112010

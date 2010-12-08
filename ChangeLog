@@ -1,9 +1,18 @@
+2010-12-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/ModuleHeaderTable.cpp: implementing data structures for module
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: storing module header, edb, and idb for each module
+	* include/dlvhex/ModuleHeaderTable.h: implementing data structures for module
+	* include/dlvhex/HexGrammarPTToASTConverter.h: storing module header, edb, and idb for each module
+	* testsuite/Makefile.am: adapting TestHexParserModule to ModuleHeaderTable
+
 2010-12-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleSyntaxChecker.h: add some syntax checking rule for duplicating predicate input
 	* src/dlvhex/ModuleSyntaxChecker.cpp: add some syntax checking rule for duplicating predicate input
 	* testsuite/TestModuleSyntaxChecker.cpp: new file, test case exclusively for the ModuleSyntaxChecker.cpp
 	* testsuite/Makefile.am: adding TestModuleSyntaxChecker.cpp
+	* Committed revision 2514.
 
 2010-11-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
