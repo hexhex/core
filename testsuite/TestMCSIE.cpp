@@ -445,6 +445,15 @@ int main(int argn, char** argv)
     return -1;
     #endif // HAVE_LIBDLV
   }
+  else if( backend == "libclingo" )
+  {
+    #ifdef HAVE_LIBCLINGO
+    externalEvalConfig.reset(new ASPSolver::ClingoSoftware::Configuration);
+    #else
+    std::cerr << "sorry, libclingo not compiled in" << std::endl;
+    return -1;
+    #endif // HAVE_LIBCLINGO
+  }
   else
   {
     std::cerr << "usage: <backend> must be one of 'dlv','libdlv'" << std::endl;
@@ -473,7 +482,7 @@ int main(int argn, char** argv)
     EvalHeuristicTrivial heuristic(egbuilder);
     heuristic.build();
   }
-  else if( heurimode == "easy" )
+  else if( heurimode == "easy" || heurimode == "easy_nore" )
   {
     // easy heuristic: just make some easy adjustments to improve on the trivial heuristics
     LOG("building eval graph with easy heuristics");
@@ -482,7 +491,7 @@ int main(int argn, char** argv)
   }
   else
   {
-    std::cerr << "usage: <heurimode> must be one of 'old','trivial','easy'" << std::endl;
+    std::cerr << "usage: <heurimode> must be one of 'old','trivial','easy','easy_nore'" << std::endl;
     return -1;
   }
   DLVHEX_BENCHMARK_STOP(sidevalgraph);
@@ -523,17 +532,18 @@ int main(int argn, char** argv)
     typedef FinalOnlineModelBuilder::Model Model;
     typedef FinalOnlineModelBuilder::OptionalModel OptionalModel;
     typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
+    bool redundancyElimination = true;
+    if( heurimode == "easy_nore" )
+      redundancyElimination = false;
     LOG("creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidonlinemb, "create online mb");
-    FinalOnlineModelBuilder mb(evalgraph);
+    FinalOnlineModelBuilder mb(evalgraph, redundancyElimination);
     DLVHEX_BENCHMARK_STOP(sidonlinemb);
 
     // get and print all models
     OptionalModel m;
     DLVHEX_BENCHMARK_REGISTER(sidgetnextonlinemodel, "get next online model");
-    #ifndef NDEBUG
     unsigned mcount = 0;
-    #endif
     do
     {
       LOG("requesting model");
@@ -553,8 +563,8 @@ int main(int argn, char** argv)
         std::stringstream smodel;
         smodel << fname << "MCSIEOnlineModel" << mcount;
         writeGraphVizFunctors(func, func, smodel.str());
-        mcount++;
         #endif
+        mcount++;
 
         // output model
         {
@@ -581,9 +591,8 @@ int main(int argn, char** argv)
 
     DLVHEX_BENCHMARK_STOP(sidoverall);
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
-      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps ";
-    benchmark::BenchmarkController::Instance().printCount(std::cerr, sidgetnextonlinemodel) << " models ";
-    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
+      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << std::endl;
   }
   else if( mbmode == "offline" )
   {
@@ -608,10 +617,8 @@ int main(int argn, char** argv)
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidprintoffmodels, "print offline models");
     MyModelGraph& mg = mb.getModelGraph();
     const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
-    #ifndef NDEBUG
-    unsigned mcount = 0;
-    #endif
 
+    unsigned mcount = 0;
     BOOST_FOREACH(Model m, models)
     {
       InterpretationConstPtr interpretation =
@@ -625,8 +632,8 @@ int main(int argn, char** argv)
       std::stringstream smodel;
       smodel << fname << "MCSIEOfflineModel" << mcount;
       writeGraphVizFunctors(func, func, smodel.str());
-      mcount++;
       #endif
+      mcount++;
 
       // output model
       {
@@ -640,6 +647,11 @@ int main(int argn, char** argv)
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
 		writeGraphVizFunctors(func, func, fname+"MCSIEOfflineEgMg");
     #endif
+
+    DLVHEX_BENCHMARK_STOP(sidoverall);
+    std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
+      evalgraph.countEvalUnits() << " evalunits " << evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << "s" << std::endl;
   }
   else
   {

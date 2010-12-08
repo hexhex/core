@@ -17,10 +17,10 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 
-GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/potassco-sf/trunk/gringo
+GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/trunk/gringo
 CLINGOLDADD = \
   -L$(GRINGO_TRUNK_DIR)/build/release/lib/ \
-  -lappclingo -lclasp -lappgringo -lgringo -llua -lluasql -lprogram_opts -lsqlite3 \
+  -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3 \
   $(BOOST_FILESYSTEM_LDFLAGS) $(BOOST_FILESYSTEM_LIBS) $(BOOST_SYSTEM_LDFLAGS) $(BOOST_SYSTEM_LIBS) 
 CLINGOCPPFLAGS= \
   -DHAVE_LIBCLINGO \
@@ -29,8 +29,8 @@ CLINGOCPPFLAGS= \
   -I$(GRINGO_TRUNK_DIR)/libclasp/ \
   -I$(GRINGO_TRUNK_DIR)/app/
 
-CLINGOLDADD= 
-CLINGOCPPFLAGS= 
+#CLINGOLDADD= 
+#CLINGOCPPFLAGS= 
 
 TESTS = \
   TestEvalEndToEnd TestEvalEndToEndND \
@@ -111,8 +111,8 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
   $(PLAINHEXSOURCES)
-TestMCSIE_LDADD = @LIBLTDL@ @LIBADD_DL@
-TestMCSIE_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
+TestMCSIE_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
+TestMCSIE_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
 
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \

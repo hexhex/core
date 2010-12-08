@@ -5,6 +5,7 @@
 	* include/dlvhex/ModuleHeaderTable.h: implementing data structures for module
 	* include/dlvhex/HexGrammarPTToASTConverter.h: storing module header, edb, and idb for each module
 	* testsuite/Makefile.am: adapting TestHexParserModule to ModuleHeaderTable
+	* Committed revision 2517.
 
 2010-12-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

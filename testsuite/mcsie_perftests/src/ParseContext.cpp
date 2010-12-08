@@ -56,11 +56,11 @@ namespace dlvhex {
      if( Global::getInstance()->isKR2010rewriting() )
      {
        // guess outputs
-       out << "a" << cn << "(X) v na" << cn << "(X) :- o" << cn << "(X)." << std::endl;
+       out << "ma" << cn << "(X) v nma" << cn << "(X) :- o" << cn << "(X)." << std::endl;
 
        // check context with constraint
        out << ":- not &" << context.ExtAtom()
-           << "[" << cn << ",a" << cn << ",b" << cn << ",o" << cn << ","
+           << "[" << cn << ",ma" << cn << ",mb" << cn << ",o" << cn << ","
            << "\"" << context.Param() << "\"]()." << std::endl; 
 
        // mark context as existing
@@ -71,20 +71,20 @@ namespace dlvhex {
        // guess input and output beliefs (after previous context has been finished)
 
        // inputs
-       out << "b" << cn << "(X) v nb" << cn << "(X) :- i" << cn << "(X)";
+       out << "mb" << cn << "(X) v nmb" << cn << "(X) :- i" << cn << "(X)";
        out << ", ok(" << (cn-1) << ")";
        out << "." << std::endl;
 
        // outputs
-       out << "a" << cn << "(X) v na" << cn << "(X) :- o" << cn << "(X)";
+       out << "ma" << cn << "(X) v nma" << cn << "(X) :- o" << cn << "(X)";
        out << ", ok(" << (cn-1) << ")";
        out << "." << std::endl;
 
        // context check
        out << "ok(" << cn << ") :- &" << context.ExtAtom() 
          << "[" << context.ContextNum()
-         << ",a" << context.ContextNum()
-         << ",b" << context.ContextNum() 
+         << ",ma" << context.ContextNum()
+         << ",mb" << context.ContextNum() 
          << ",o" << context.ContextNum()
          << ",\"" << context.Param() << "\"]()";
        out << ", ok(" << (cn-1) << ")";
@@ -94,8 +94,8 @@ namespace dlvhex {
        out << ":- not ok(" << cn << ")." << std::endl;
 
        // verify guessed output with output calculated via bridge rules (if all contexts are ok)
-       out << ":- c" << cn << "(X), not b" << cn << "(X), ok(all)." << std::endl;
-       out << ":- not c" << cn << "(X), b" << cn << "(X), ok(all)." << std::endl;
+       out << ":- mc" << cn << "(X), not mb" << cn << "(X), ok(all)." << std::endl;
+       out << ":- not mc" << cn << "(X), mb" << cn << "(X), ok(all)." << std::endl;
 
        // mark context as existing
        out << "ctx(" << cn << ")." << std::endl;

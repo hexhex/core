@@ -73,7 +73,7 @@ EquilibriumPrintVisitor::visit(const AtomSet* const as)
   //stream << '(';
   if (!as->empty()) {
     for (AtomSet::atomset_t::const_iterator a = as->atoms.begin(); a != as->atoms.end(); ++a) {
-	// get predicate (we are interested in o<i> a<i> d1 d2)
+	// get predicate (we are interested in o<i> ma<i> md1 md2)
 	std::string pred;
 	{
 		std::stringstream s; s << (*a)->getPredicate();
@@ -91,13 +91,13 @@ EquilibriumPrintVisitor::visit(const AtomSet* const as)
 	}
 
 	// process pred
-	if( pred[0] == 'a' or pred[0] == 'b') {
+	if( pred[0] == 'm' && (pred[1] == 'a' or pred[1] == 'b')) {
           std::stringstream s;
-          s << pred.substr(1,std::string::npos);
+          s << pred.substr(2,std::string::npos);
           s >> id;
 
-          // if "a<i>", add belief to output container
-          if( pred[0] == 'a' && id > 0 )
+          // if "ma<i>", add belief to output container
+          if( pred[1] == 'a' && id > 0 )
           {
                   outlist.insert(std::make_pair(id,arg));
                   cmap.insert(std::make_pair(id,""));
