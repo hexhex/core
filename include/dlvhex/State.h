@@ -68,7 +68,7 @@ class DLVHEX_EXPORT State
   parse(ProgramCtx*);
 
   virtual void
-  syntaxCheck(ProgramCtx*);
+  moduleSyntaxCheck(ProgramCtx*);
 
   virtual void
   rewrite(ProgramCtx*);
@@ -125,11 +125,11 @@ class DLVHEX_EXPORT ParseState : public State
   parse(ProgramCtx*);
 };
 
-class DLVHEX_EXPORT SyntaxCheckState : public State
+class DLVHEX_EXPORT ModuleSyntaxCheckState : public State
 {
  public:
   virtual void
-  syntaxCheck(ProgramCtx*);
+  moduleSyntaxCheck(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT RewriteState : public State

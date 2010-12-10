@@ -133,9 +133,7 @@ std::ostream& ModuleAtom::print(std::ostream& o) const
 {
   return o <<
     "ModuleAtom(&" << predicate << "[" << printvector(inputs) <<
-    "]::" << outputpredicate << "(" << printvector(Atom::tuple) << ")" <<
-    " pluginModuleAtom=" << (pluginAtom.expired()?"expired":"set") <<
-    " auxInputPredicate=" << auxInputPredicate;
+    "]::" << outputAtom;
 }
 
 void ExternalAtom::updatePredicateInputMask() const

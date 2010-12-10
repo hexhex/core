@@ -31,7 +31,7 @@
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
-#include "dlvhex/SyntaxChecker.h"
+#include "dlvhex/ModuleSyntaxChecker.h"
 #include "dlvhex/Interpretation.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
     }
   }
 
-  SyntaxChecker sC(ctx);
+  ModuleSyntaxChecker sC(ctx);
   sC.printModuleHeaderTable();
   BOOST_REQUIRE( sC.verifyPredInputsAllModuleHeader() == true );
   BOOST_REQUIRE( sC.verifyAllModuleCall() == true );

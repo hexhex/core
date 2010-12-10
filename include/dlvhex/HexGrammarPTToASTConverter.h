@@ -85,7 +85,7 @@ private:
 
   // use createStringFromNode to get data
   // create correct term type and return id (anonymous vs numeric vs string)
-  ID createTerm_Helper(node_t& node, HexGrammar::RuleTags verify);
+  ID createTerm_Helper(bool namespaced, node_t& node, HexGrammar::RuleTags verify);
 
   //
   // converters for specific rules
@@ -120,11 +120,12 @@ private:
 
   // rule "terms"
   // TODO: do not return but create result in ref arg
-  Tuple createTupleFromTerms(node_t& node);
+  // put namespaced = true if we want the tuple to be namespaced by the module name
+  Tuple createTupleFromTerms(bool namespaced, node_t& node);
   // rule "ident_or_var_or_number"
   ID createTermFromIdentVarNumber(node_t& node);
   // rule "ident_or_var"
-  ID createTermFromIdentVar(node_t& node);
+  ID createTermFromIdentVar(bool namespaced, node_t& node);
   // rule "term"
   ID createTermFromTerm(node_t& node);
 };

@@ -1,9 +1,25 @@
 2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ProgramCtx.h: move mHT outside registry
-	* src/dlvhex/ProgramCtx.cpp: move mHT outside registry
 	* include/dlvhex/State.h: adding SyntaxCheckState inside
-	* src/dlvhex/State.cpp: adding SyntaxCheckState insideo 
+	* src/dlvhex/ProgramCtx.cpp: move mHT outside registry
+	* src/dlvhex/State.cpp: adding SyntaxCheckState inside 
+	* Committed revision 2521.
+
+	* include/dlvhex/SyntaxChecker.h: deleted
+	* include/dlvhex/ModuleSyntaxChecker.h: update from SyntaxChecker.h, verifying output predicate module call using outputAtom
+	* include/dlvhex/State.cpp: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
+	* include/dlvhex/HexGrammarPTToASTConverter.cpp: fixing: namepace only for predicate, change module output into atom
+	* include/dlvhex/HexGrammar.tcc: change ModOutput into atom
+	* include/dlvhex/HexGrammar.h: change ModOutput into atom
+	* src/dlvhex/SyntaxChecker.cpp: deleted
+	* src/dlvhex/ModuleSyntaxChecker.cpp: update from SyntaxChecker.cpp, verifying output predicate module call using outputAtom
+	* src/dlvhex/State.h: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing: namepace only for predicate, change module output into atom
+	* src/dlvhex/Atoms.cpp: change the way module atom printed
+	* src/dlvhex/ProgramCtx.cpp: change the way module atom printed
+	* src/dlvhex/ModuleHeaderTable.cpp: change outputpredicate in ModuleAtom into outputAtom
+	* TestHexParserModule.cpp: change SyntaxChecker into ModuleSyntaxChecker
 
 2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

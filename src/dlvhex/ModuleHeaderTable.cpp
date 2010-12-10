@@ -21,7 +21,7 @@ ModuleHeaderTable::ModuleHeaderTable(){
 bool ModuleHeaderTable::insertModuleHeader(std::string modName){
   if (modName=="") 
     {
-      std::cout << std::endl << "--- Error: Module name could not be empty" << std::endl;
+      LOG("--- Error: Module name could not be empty" << std::endl);
       return false;
     }
   modSet::index_iterator<byName>::type it=moduleSet.get<byName>().find(modName);
@@ -29,12 +29,12 @@ bool ModuleHeaderTable::insertModuleHeader(std::string modName){
     { 
       currentModName = modName;
       currentPredInputs.clear();
-      std::cout << std::endl << "--- Adding module [Module Header]: '" << modName << "' " << std::endl;
+      LOG("--- Adding module [Module Header]: '" << modName << "' " << std::endl);
       return true;
     } 
   else 
     { // found, the module name has been declared before
-      std::cout << std::endl << "--- Error: Duplicating module name '" << modName << "' " << std::endl;
+      LOG("--- Error: Duplicating module name '" << modName << "' " << std::endl);
       return false;
     }
 }
@@ -50,7 +50,7 @@ bool ModuleHeaderTable::insertPredInputModuleHeader(std::string predName, int pr
     } 
   else 
     {
-      std::cout << std::endl << "--- Error: Duplicating predicate input name '" << predName << "' in module '" << currentModName << "'" << std::endl;
+      LOG("--- Error: Duplicating predicate input name '" << predName << "' in module '" << currentModName << "'" << std::endl);
       return false;
     }
 }
@@ -67,7 +67,7 @@ bool ModuleHeaderTable::insertCompleteModule(Interpretation::Ptr edb1, std::vect
     }
   else 
     {
-      std::cout << std::endl << "--- Error: Module name is empty" << std::endl;
+      LOG("--- Error: Module name is empty" << std::endl);
       return false;
     }
 }
@@ -81,7 +81,7 @@ void ModuleHeaderTable::predSetPrint(predSet pS)
   while (it != predSetIndex.end())
     {
       predStruct pred = *it;
-      std::cout << pred.predName << "/" << pred.predArity << ", "; 
+      LOG(pred.predName << "/" << pred.predArity << ", "); 
       it++;	
     }
 }
@@ -91,7 +91,7 @@ bool ModuleHeaderTable::getModule(std::string modName, modStruct &result)
   modSet::index_iterator<byName>::type itM=moduleSet.get<byName>().find(modName);
   if (itM == moduleSet.get<byName>().end())
     { 
-      std::cout << std::endl << "--- [ModuleHeaderTable::getModuleModule]: Module: '" << modName << "' not found '" << std::endl;
+      LOG("--- [ModuleHeaderTable::getModuleModule]: Module: '" << modName << "' not found '" << std::endl);
       return false;
     } 
   else

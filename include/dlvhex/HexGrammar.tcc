@@ -95,10 +95,11 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
     = '&' >> ident >> !external_inputs >> !external_outputs;
   module_inputs
     = '[' >> !terms >> ']';
-  module_output
-    = '(' >> !terms >> ')';
+//  module_output
+//    = '(' >> !terms >> ')';
   module_atom
-    = '@' >> ident >> !module_inputs >> str_p("::") >> ident >> !module_output ;
+    = '@' >> ident >> !module_inputs >> str_p("::") >> user_pred ;
+//    = '@' >> ident >> !module_inputs >> str_p("::") >> ident >> !module_output ;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';

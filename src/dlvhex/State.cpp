@@ -400,11 +400,11 @@ ParseState::parse(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-void SyntaxCheckState::syntaxCheck(ProgramCtx* ctx)
+// ModuleSyntaxChecker ..
+void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Syntax Check");
-  SyntaxChecker sC(*ctx);
-  sC.printModuleHeaderTable();
+  ModuleSyntaxChecker sC(*ctx);
 
   sC.verifyPredInputsAllModuleHeader(); // should be == true
   sC.verifyAllModuleCall(); // should be == true

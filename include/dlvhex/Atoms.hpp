@@ -242,79 +242,27 @@ struct ModuleAtom:
   // input terms
   Tuple inputs;
   // module output predicate
-  ID outputpredicate;
+  ID outputAtom;
 
   // Atom::tuple is used for output terms
 
-	// weak pointer to plugin atom
-	PluginAtomWeakPtr pluginAtom;
-
-  // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here
-  ID auxInputPredicate;
-  // this mapping stores for each argument of auxInputPredicate
-  // a list of positions in the input tuple where this argument applies
-  // e.g., for &foo[a,C,d,X,C]() we have aux(C,X) and inputs <a,C,d,X,C>
-  // then we have mapping < [1,4], [3] >:
-  // for index 0 = argument C we have to set index 1 and 4 in inputs
-  // for index 1 = argument X we have to set index 3 in inputs
-  typedef std::vector<std::list<unsigned> > AuxInputMapping;
-  AuxInputMapping auxInputMapping;
-
-  // auxiliary replacement predicate name is stored in pluginAtom!
-
-  // kind of a cache: interpretation with all ground atoms set that must be passed to
-  // the pluginAtom for subsequent calls this must be extended (new values may have
-  // been invented), but this extension need only look to the bits not yet covered by
-  // predicateInputMask
-  //
-  // updatePredicateInputMask may update this while this object is stored in an
-  // ExternalAtomTable (where only const refs can be retrieved) we should be fine "as
-  // long as we don't use predicateInputMask in an index of the
-  // multi_index_container"
-  //
 public:
-  // this stores the addresses of IDs of all relevant input predicates for this eatom
-  std::set<IDAddress> predicateInputPredicates;
-protected:
-  // this stores the bitset interpretation for masking inputs
-  // this is managed by updatePredicateInputMask -> protected
-  mutable InterpretationPtr predicateInputMask;
-  // this stores the address of the last ogatom already inspected for predicateInputMask
-  mutable IDAddress predicateInputMaskKnownOGAtoms;
-
-public:
-  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputpredicate, const Tuple& outputs):
-    Atom(kind, outputs),
+  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputAtom):
+    Atom(kind),
     predicate(predicate),
     inputs(inputs),
-    outputpredicate(outputpredicate),
-    pluginAtom(),
-    auxInputPredicate(ID_FAIL),
-    predicateInputPredicates(),
-    predicateInputMask(),
-    predicateInputMaskKnownOGAtoms(0)
-    { assert(ID(kind,0).isModuleAtom()); assert(predicate.isConstantTerm()); }
+    outputAtom(outputAtom)
+  { }
+
   ModuleAtom(IDKind kind):
     Atom(kind),
     predicate(ID_FAIL),
     inputs(),
-    outputpredicate(ID_FAIL),
-    pluginAtom(),
-    auxInputPredicate(ID_FAIL),
-    predicateInputPredicates(),
-    predicateInputMask(),
-    predicateInputMaskKnownOGAtoms(0)
-    { assert(ID(kind,0).isModuleAtom()); LOG("call ModuleAtom in Atoms.hpp ");}
+    outputAtom(ID_FAIL)
+  { }
 
   std::ostream& print(std::ostream& o) const;
 
-  // updates predicateInputMask
-  // needs a non-expired pluginAtom pointer (this is only asserted)
-  // uses pluginAtom pointer to get the registry
-  // we make this const so that we can call it on eatoms in ExternalAtomTable
-  void updatePredicateInputMask() const;
-  InterpretationConstPtr getPredicateInputMask() const
-    { return predicateInputMask; }
 };
 DLVHEX_NAMESPACE_END
 

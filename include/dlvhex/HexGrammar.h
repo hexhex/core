@@ -52,7 +52,7 @@ struct HexGrammar:
     Number, Ident, PredDecl, PredList, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
     UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
     Aggregate, AggregatePred, AggregateRel, AggregateRange,
-    ExtAtom, ModHeader, ModInputs, ModOutput, ModAtom, ExtInputs, ExtOutputs,
+    ExtAtom, ModHeader, ModInputs, /*ModOutput,*/ ModAtom, ExtInputs, ExtOutputs,
     BuiltinPred, BuiltinOther,
     BuiltinTertopPrefix, BuiltinTertopInfix,
     BuiltinBinopPrefix, BuiltinBinopInfix,
@@ -89,7 +89,7 @@ struct HexGrammar:
     boost::spirit::rule<S, c, tag<ExtOutputs> >          external_outputs;
     boost::spirit::rule<S, c, tag<ExtAtom> >             external_atom;
     boost::spirit::rule<S, c, tag<ModInputs> >           module_inputs;
-    boost::spirit::rule<S, c, tag<ModOutput> >           module_output;
+    //boost::spirit::rule<S, c, tag<ModOutput> >           module_output;
     boost::spirit::rule<S, c, tag<ModAtom> >             module_atom;
     boost::spirit::rule<S, c, tag<Aggregate> >           aggregate;
     boost::spirit::rule<S, c, tag<AggregatePred> >       aggregate_pred;
