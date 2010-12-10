@@ -59,13 +59,13 @@ void HexGrammarPTToASTConverter::convertPTToAST(
     if( it->value.id() == HexGrammar::ModHeader ) {
       if (countModule>0) {
 	//assert(mSC.insertCompleteModule()==true);
-	ctx.registry->mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+	ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
       }
       doModuleHeader(*it);
       countModule++;
     }
   }
-  ctx.registry->mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+  ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
 //  assert(mSC.insertCompleteModule()==true);
 //  assert(mSC.validateAllModuleCalls()==true);
 }
@@ -175,7 +175,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
   LOG(" - Module name : '" << modName << "'");
   //assert(mSC.announceModuleHeader(modName)==true);
   currentModuleName = modName;
-  if (ctx.registry->mHT.insertModuleHeader(modName)==false)
+  if (ctx.mHT.insertModuleHeader(modName)==false)
     {
       LOG(" - Something wrong with inserting module header");
     };
@@ -193,7 +193,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
         predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
         LOG("'" << predName << "/" << predArity << "', ");
         //mSC.announcePredInputModuleHeader(predName, predArity);
-        ctx.registry->mHT.insertPredInputModuleHeader(predName, predArity);
+        ctx.mHT.insertPredInputModuleHeader(predName, predArity);
       }
       LOG(std::endl);
     } 

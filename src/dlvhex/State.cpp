@@ -94,6 +94,10 @@ State::parse(ProgramCtx*)
 { }
 
 void
+State::syntaxCheck(ProgramCtx*)
+{ }
+
+void
 State::rewrite(ProgramCtx*)
 { }
 
@@ -392,6 +396,19 @@ ParseState::parse(ProgramCtx* ctx)
 // 	  unlink(tempfile);
 // 	}
 
+  boost::shared_ptr<State> next(new SyntaxCheckState);
+  changeState(ctx, next);
+}
+
+void SyntaxCheckState::syntaxCheck(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Syntax Check");
+  SyntaxChecker sC(*ctx);
+  sC.printModuleHeaderTable();
+
+  sC.verifyPredInputsAllModuleHeader(); // should be == true
+  sC.verifyAllModuleCall(); // should be == true
+ 
   boost::shared_ptr<State> next(new RewriteState);
   changeState(ctx, next);
 }

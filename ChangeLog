@@ -1,3 +1,10 @@
+2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ProgramCtx.h: move mHT outside registry
+	* src/dlvhex/ProgramCtx.cpp: move mHT outside registry
+	* include/dlvhex/State.h: adding SyntaxCheckState inside
+	* src/dlvhex/State.cpp: adding SyntaxCheckState insideo 
+
 2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/SyntaxChecker.h (new addition): syntax checking mechanism for mlp 
@@ -10,6 +17,7 @@
 	* src/dlvhex/ModuleHeaderTable.cpp: adding method getPredInputs and getModuleSet
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding namespacing in createTerm_Helper
 	* src/dlvhex/TestHexParserModule.cpp: adding SyntaxChecker
+	* Committed revision 2520.
 
 2010-12-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

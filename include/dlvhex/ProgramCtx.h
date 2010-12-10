@@ -91,7 +91,6 @@ struct Registry:
   ExternalAtomTable eatoms;
   ModuleAtomTable matoms;
   RuleTable rules;
-  ModuleHeaderTable mHT;
   NamespaceTable namespaces;
 
 	#if 0
@@ -163,6 +162,7 @@ public:
   // (this is a shared ptr because we might want
   // to have multiple program contexts sharing the same registry)
   RegistryPtr registry;
+  ModuleHeaderTable mHT;
 
   // idb
   std::vector<ID> idb;

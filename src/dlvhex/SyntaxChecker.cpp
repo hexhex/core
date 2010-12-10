@@ -20,7 +20,7 @@ SyntaxChecker::SyntaxChecker(ProgramCtx& ctx1)
 
 void SyntaxChecker::printModuleHeaderTable()
 {
-  ModuleHeaderTable::modSet moduleSet = ctx.registry->mHT.getModuleSet();
+  ModuleHeaderTable::modSet moduleSet = ctx.mHT.getModuleSet();
   ModuleHeaderTable::ModSetIndexByName& modSetIndex = moduleSet.get<ModuleHeaderTable::byName>();
   ModuleHeaderTable::ModSetIndexByName::iterator it = modSetIndex.begin();
   std::cout << std::endl;
@@ -29,7 +29,7 @@ void SyntaxChecker::printModuleHeaderTable()
     {
       ModuleHeaderTable::modStruct mS = *it;
       std::cout << std::endl << "Module name: " << mS.modName << " with predInputs: ";
-      ctx.registry->mHT.predSetPrint(mS.predInputs);
+      ctx.mHT.predSetPrint(mS.predInputs);
       std::cerr << "edb = " << *mS.edb << std::endl; \
 	LOG("idb:"); \
 	printer.printmany(mS.idb,"\n"); \
@@ -93,7 +93,7 @@ bool SyntaxChecker::verifyPredInputsModuleHeader(ModuleHeaderTable::modStruct mo
 
 bool SyntaxChecker::verifyPredInputsAllModuleHeader()
 {
-  ModuleHeaderTable::modSet moduleSet = ctx.registry->mHT.getModuleSet();  
+  ModuleHeaderTable::modSet moduleSet = ctx.mHT.getModuleSet();  
   ModuleHeaderTable::ModSetIndexByName& modSetIndex = moduleSet.get<ModuleHeaderTable::byName>();
   ModuleHeaderTable::ModSetIndexByName::iterator it = modSetIndex.begin();
   while (it!=modSetIndex.end())
@@ -133,7 +133,7 @@ bool SyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple)
   std::string moduleToCall = getStringAfterDot(moduleFullName);
 
   ModuleHeaderTable::predSet predInputs; 
-  if ( ctx.registry->mHT.getPredInputs(moduleToCall, predInputs) == false )
+  if ( ctx.mHT.getPredInputs(moduleToCall, predInputs) == false )
     {
       LOG("[SyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleFullName << "' not found");
       return false;
