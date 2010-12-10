@@ -67,8 +67,9 @@ class ModuleAtomTable:
 	// types
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
+  typedef AddressIndex::iterator AddressIterator;
   typedef Container::index<impl::PredicateTag>::type PredicateIndex;
-	typedef PredicateIndex::iterator PredicateIterator;
+  typedef PredicateIndex::iterator PredicateIterator;
 
 	// methods
 public:
@@ -77,9 +78,15 @@ public:
   // assert that ID exists in table
 	inline const ModuleAtom& getByID(ID id) const throw ();
 
+	inline int getSize();
+
   // get all module atoms with certain predicate id
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
+
+// get range over all atoms sorted by address
+        inline std::pair<AddressIterator, AddressIterator>
+        getAllByAddress() const throw();
 
 	// store atom, assuming it does not exist
 	inline ID storeAndGetID(const ModuleAtom& atom) throw();
@@ -90,6 +97,10 @@ public:
 			const ModuleAtom& oldStorage, ModuleAtom& newStorage) throw();
 };
 
+int ModuleAtomTable::getSize()
+{
+  return container.size();
+}
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
@@ -111,6 +122,14 @@ ModuleAtomTable::getRangeByPredicateID(ID id) const throw()
 	assert(id.isTerm() && id.isConstantTerm());
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
+}
+
+// get range over all atoms sorted by address
+std::pair<ModuleAtomTable::AddressIterator, ModuleAtomTable::AddressIterator>
+ModuleAtomTable::getAllByAddress() const throw()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
 }
 
 // store symbol, assuming it does not exist (this is only asserted)

@@ -8,16 +8,6 @@
 
 
 #include "dlvhex/ModuleHeaderTable.h"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <iostream>
-#include <iterator>
-#include <string>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -94,32 +84,84 @@ void ModuleHeaderTable::predSetPrint(predSet pS)
       std::cout << pred.predName << "/" << pred.predArity << ", "; 
       it++;	
     }
-  
 }
 
-void ModuleHeaderTable::print(ProgramCtx& ctx)
+bool ModuleHeaderTable::getModule(std::string modName, modStruct &result)
 {
-  typedef modSet::index<byName>::type ModuleSetIndex;
-  ModuleSetIndex& modSetIndex=moduleSet.get<byName>();
-  ModuleSetIndex::iterator it = modSetIndex.begin();
-  std::cout << std::endl;
-  RawPrinter printer(std::cerr, ctx.registry);
-  while (it!=modSetIndex.end())
+  modSet::index_iterator<byName>::type itM=moduleSet.get<byName>().find(modName);
+  if (itM == moduleSet.get<byName>().end())
+    { 
+      std::cout << std::endl << "--- [ModuleHeaderTable::getModuleModule]: Module: '" << modName << "' not found '" << std::endl;
+      return false;
+    } 
+  else
     {
-      modStruct mS = *it;
-      std::cout << std::endl << "Module name: " << mS.modName << " with predInputs: ";
-      predSetPrint(mS.predInputs);
-      std::cerr << "edb = " << *mS.edb << std::endl; \
-	LOG("idb:"); \
-	printer.printmany(mS.idb,"\n"); \
-	std::cerr << std::endl; \
-	LOG("idb end");
-
-      std::cout << std::endl;
-      it++;
+      result = *itM;
+      return true;
     }
-  std::cout << std::endl;
 }
 
+bool ModuleHeaderTable::getPredInputs(std::string modName, predSet& predResult)
+{
+  modStruct module;
+  if ( getModule(modName, module) == true )
+    {
+      predResult = module.predInputs;
+      return true;
+    }
+  else 
+    {
+      LOG ("[ModuleHeaderTable::getPredInputs] Module name: '" << modName << "' not found");
+      return false;
+    }
+}
+/*
+bool ModuleHeaderTable::getPredicate(modStruct module, std::string predName, predStruct& predResult)
+{
+  predSet::index_iterator<byName>::type it=module.predInputs.get<byName>().find(predName);
+  if ( it != module.predInputs.get<byName>().end() )
+    {
+      predResult = *it;
+      return true;
+    }
+  else
+    {
+      LOG ("[ModuleHeaderTable::getPredicate] Predicate: '" << predName << "' is not found in module: '" << module.modName << "' not found");
+      return false;
+    }
+}
+
+int ModuleHeaderTable::getArity(std::string modName, std::string predName)
+{
+  modStruct module;
+  if ( getModule(modName, module) == true )
+  {
+    predStruct predResult;
+    if ( getPredicate(module, predName, predResult) == true)
+      {
+        return predResult.predArity;
+      }
+    else 
+      {
+        LOG ("[ModuleHeaderTable::getArity] Predicate: '" << predName << "' is not found in module: '" << modName << "' not found");
+        return -1;
+      }
+  }
+  else 
+    {
+      LOG ("[ModuleHeaderTable::getArity] Module name: '" << modName << "' not found");
+      return -1;
+    }
+}
+*/
 DLVHEX_NAMESPACE_END
+
+
+
+
+
+
+
+
+
 

@@ -49,6 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
 void HexGrammarPTToASTConverter::convertPTToAST(
     node_t& node)
 {
+  currentModuleName = "";
   // node is from "root" rule
   assert(node.value.id() == HexGrammar::Root);
   // adding syntax checker for module here:
@@ -58,14 +59,13 @@ void HexGrammarPTToASTConverter::convertPTToAST(
     if( it->value.id() == HexGrammar::ModHeader ) {
       if (countModule>0) {
 	//assert(mSC.insertCompleteModule()==true);
-	mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+	ctx.registry->mHT.insertCompleteModule(ctx.edb, ctx.idb);        
       }
       doModuleHeader(*it);
       countModule++;
     }
   }
-  mHT.insertCompleteModule(ctx.edb, ctx.idb);        
-  mHT.print(ctx);
+  ctx.registry->mHT.insertCompleteModule(ctx.edb, ctx.idb);        
 //  assert(mSC.insertCompleteModule()==true);
 //  assert(mSC.validateAllModuleCalls()==true);
 }
@@ -129,7 +129,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
     // string, variable, or constant term
     if( s[0] == '"' )
       LOG("warning: we should expand the namespace of s='" << s << "' here!");
-    ID id = ctx.registry->terms.getIDByString(s);
+    ID id = ctx.registry->terms.getIDByString(currentModuleName + "." + s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
@@ -137,6 +137,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
         term.kind |= ID::SUBKIND_TERM_CONSTANT;
       else
         term.kind |= ID::SUBKIND_TERM_VARIABLE;
+      term.symbol = currentModuleName + "." + term.symbol;
       id = ctx.registry->terms.storeAndGetID(term);
     }
     return id;
@@ -156,7 +157,8 @@ namespace
             return;
           } 
         else if( itt->isModuleAtom() )
-          {             r.kind |= ID::PROPERTY_RULE_MODATOMS;
+          {             
+            r.kind |= ID::PROPERTY_RULE_MODATOMS;
             return;
           }
       }
@@ -172,7 +174,8 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
   std::string modName = createStringFromNode(node.children[2], HexGrammar::Ident);
   LOG(" - Module name : '" << modName << "'");
   //assert(mSC.announceModuleHeader(modName)==true);
-  if (mHT.insertModuleHeader(modName)==false)
+  currentModuleName = modName;
+  if (ctx.registry->mHT.insertModuleHeader(modName)==false)
     {
       LOG(" - Something wrong with inserting module header");
     };
@@ -190,7 +193,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
         predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
         LOG("'" << predName << "/" << predArity << "', ");
         //mSC.announcePredInputModuleHeader(predName, predArity);
-        mHT.insertPredInputModuleHeader(predName, predArity);
+        ctx.registry->mHT.insertPredInputModuleHeader(predName, predArity);
       }
       LOG(std::endl);
     } 

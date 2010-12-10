@@ -73,8 +73,8 @@ class OrdinaryAtomTable:
 				boost::multi_index::tag<impl::PredicateTag>,
         // we cannot use BOOST_MULTI_INDEX_CONST_MEM_FUN here, it required MemberFunName to be in Class
 				//BOOST_MULTI_INDEX_CONST_MEM_FUN(OrdinaryAtom,ID,front)
-        boost::multi_index::const_mem_fun_explicit<OrdinaryAtom,ID,
-           ID (Atom::*)() const,&Atom::front>
+        			boost::multi_index::const_mem_fun_explicit<OrdinaryAtom,ID,
+           			ID (Atom::*)() const,&Atom::front>
 			>
 		>
 	>

@@ -244,6 +244,7 @@ TestHexParserModule_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/ModuleHeaderTable.cpp \
+	$(top_srcdir)/src/dlvhex/SyntaxChecker.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \

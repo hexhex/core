@@ -1,3 +1,16 @@
+2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/SyntaxChecker.h (new addition): syntax checking mechanism for mlp 
+	* src/dlvhex/SyntaxChecker.cpp (new addition): syntax checking mechanism for mlp
+	* include/dlvhex/ModuleAtomTable.h: adding getSize() and getAllByAddress()
+	* src/dlvhex/ModuleAtomTable.cpp: adding getSize() and getAllByAddress()
+	* include/dlvhex/ProgramCtx.h: adding ModuleHeaderTable mHT in registry
+	* src/dlvhex/ProgramCtx.cpp: adding ModuleHeaderTable mHT in registry
+	* include/dlvhex/ModuleHeaderTable.h: adding typedef, adding method getPredInputs and getModuleSet
+	* src/dlvhex/ModuleHeaderTable.cpp: adding method getPredInputs and getModuleSet
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding namespacing in createTerm_Helper
+	* src/dlvhex/TestHexParserModule.cpp: adding SyntaxChecker
+
 2010-12-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/ModuleHeaderTable.cpp: implementing data structures for module

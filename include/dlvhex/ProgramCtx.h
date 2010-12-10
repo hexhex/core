@@ -46,6 +46,7 @@
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
+#include "dlvhex/ModuleHeaderTable.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap/bimap.hpp>
@@ -90,7 +91,7 @@ struct Registry:
   ExternalAtomTable eatoms;
   ModuleAtomTable matoms;
   RuleTable rules;
-
+  ModuleHeaderTable mHT;
   NamespaceTable namespaces;
 
 	#if 0
