@@ -54,17 +54,21 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   assert(node.value.id() == HexGrammar::Root);
   // adding syntax checker for module here:
   int countModule = 0;
-  for(node_t::tree_iterator it = node.children.begin();it != node.children.end(); ++it){
-    if( it->value.id() == HexGrammar::Clause ) createASTFromClause(*it);
-    if( it->value.id() == HexGrammar::ModHeader ) {
-      if (countModule>0) {
-	//assert(mSC.insertCompleteModule()==true);
-	ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
-      }
-      doModuleHeader(*it);
-      countModule++;
+  for(node_t::tree_iterator it = node.children.begin();it != node.children.end(); ++it)
+    {
+      if( it->value.id() == HexGrammar::Clause ) 
+        createASTFromClause(*it);
+      if( it->value.id() == HexGrammar::ModHeader ) 
+        {
+          if (countModule>0) 
+            {
+	      //assert(mSC.insertCompleteModule()==true);
+	      ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+            }
+          doModuleHeader(*it);
+          countModule++;
+        }
     }
-  }
   ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
 //  assert(mSC.insertCompleteModule()==true);
 //  assert(mSC.validateAllModuleCalls()==true);
@@ -178,7 +182,7 @@ namespace
   }
 }
 
-void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
+void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError)
 {
   // node is from "mod_header" rule
   assert((node.children.size() == 9)||(node.children.size() == 8));
@@ -190,7 +194,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node)
   currentModuleName = modName;
   if (ctx.mHT.insertModuleHeader(modName)==false)
     {
-      LOG(" - Something wrong with inserting module header");
+      throw SyntaxError("Error in inserting module header '" + modName);
     };
   LOG(" - Module inputs : ");
   if (node.children.size() == 9) 

@@ -46,6 +46,10 @@ int ModuleSyntaxChecker::getArity(std::string predName)
 
 int ModuleSyntaxChecker::getArity(ID idp)
 {
+  if (idp.isTerm()==false) 
+  {
+    return -2;
+  }
   // search on ogatoms
   OrdinaryAtomTable::PredicateIterator it, it_end;
   boost::tie(it, it_end) = ctx.registry->ogatoms.getRangeByPredicateID(idp); 
@@ -72,11 +76,18 @@ bool ModuleSyntaxChecker::verifyPredInputsModuleHeader(ModuleHeaderTable::modStr
 {
   ModuleHeaderTable::PredSetIndexByName& predSetIndex=module.predInputs.get<ModuleHeaderTable::byName>();
   ModuleHeaderTable::PredSetIndexByName::iterator it = predSetIndex.begin();
+  int arity; 
   while ( it != predSetIndex.end() ) 
     {
       ModuleHeaderTable::predStruct pred = *it;
       std::string completePredName = module.modName + "." + pred.predName;
-      if ( pred.predArity != getArity(completePredName) )
+      arity = getArity(completePredName);
+      if ( arity == -2 )
+        { // pred inputs not found in the module body
+          LOG("[ModuleSyntaxChecker::verifyPredInputsModuleHeader] Error: Predicate input '" << completePredName << "'  is not found in the module body" << std::endl );   
+          return false;
+        }
+      else if ( pred.predArity != arity )
         {
           LOG("[ModuleSyntaxChecker::verifyPredInputsModuleHeader] Error: Verifying predicate arity for module header '" << module.modName << "' fail in predicate '" << pred.predName << "'" << std::endl);
           return false;
@@ -97,7 +108,7 @@ bool ModuleSyntaxChecker::verifyPredInputsAllModuleHeader()
       ModuleHeaderTable::modStruct module = *it;
       if (verifyPredInputsModuleHeader(module) == false) 
       {
-        LOG("[ModuleSyntaxChecker::verifyPredInputsAllModuleHeader] Verifying predicate inputs in all module header failed in module header '" << module.modName << std::endl);
+        LOG("[ModuleSyntaxChecker::verifyPredInputsAllModuleHeader] Verifying predicate inputs in all module header failed in module header '" << module.modName << "'" << std::endl);
         return false;
       }  
       it++;
@@ -235,6 +246,16 @@ void ModuleSyntaxChecker::printAllModuleCalls()
       LOG (std::endl << ma << std::endl);
       it++;
     }
+}
+
+bool ModuleSyntaxChecker::verifySyntax()
+{
+  bool result = verifyPredInputsAllModuleHeader();
+  if (result == true)
+  {
+    result = verifyAllModuleCall();
+  }
+  return result;
 }
 
 DLVHEX_NAMESPACE_END

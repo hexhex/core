@@ -61,9 +61,10 @@ bool ModuleHeaderTable::insertCompleteModule(Interpretation::Ptr edb1, std::vect
   if (currentModName!="") 
     {
       moduleSet.insert(modStruct(currentModName, currentPredInputs, edb1, idb1));
-      return true;
+      LOG("[ModuleHeaderTable::insertCompleteModule] Inserting module '" << currentModName << "' succeeded" << std::endl);
       currentModName="";
       currentPredInputs.clear();
+      return true;
     }
   else 
     {

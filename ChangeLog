@@ -1,3 +1,19 @@
+2010-12-14  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestHexParserModule.cpp: adding various test cases for module syntax check
+	* examples/module1.hex: m1 as in the paper
+	* examples/module2.hex: m2 as in the paper
+	* examples/module3.hex: m3 as in the paper
+	* examples/module1-DiffArity.hex: m1, arity of the predicate input in module header is different with the one in the program
+	* examples/module1-NotExist.hex: m1, predicate input in the module header is not exist in the program
+	* examples/module2-DiffArity.hex: m2, predicate input in the module call has different arity with the one specified in the module header
+ 	* examples/module2-TooFew.hex: m2, too few predicate input in the module call
+ 	* examples/module2-TooMany.hex: m2, too many predicate input in the module call
+	* examples/module3-DiffArity.hex: m3, predicate output in the module call has different arity with the one in the program of the module that is being called
+	* examples/module3-NotExist.hex: m3, predicate output in the module call does not exist in the program in the module that is being called
+	* examples/module2-SwapArity.hex: (together with module3-SwapArity.hex) m2, arity of the predicate inputs in the module call are swapped between predicates
+	* examples/module3-SwapArity.hex: (together with module2-SwapArity.hex) m3, arity of the predicate inputs in the module call are swapped between predicates
+
 2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ProgramCtx.h: move mHT outside registry
@@ -19,7 +35,8 @@
 	* src/dlvhex/Atoms.cpp: change the way module atom printed
 	* src/dlvhex/ProgramCtx.cpp: change the way module atom printed
 	* src/dlvhex/ModuleHeaderTable.cpp: change outputpredicate in ModuleAtom into outputAtom
-	* TestHexParserModule.cpp: change SyntaxChecker into ModuleSyntaxChecker
+	* testsuite/TestHexParserModule.cpp: change SyntaxChecker into ModuleSyntaxChecker
+	* Committed revision 2522.
 
 2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

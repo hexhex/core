@@ -34,7 +34,7 @@
 #define DLVHEX_HEX_GRAMMAR_PT_TO_AST_CONVERTER_H_INCLUDED
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/Error.h"
 // AST
 #include "dlvhex/ID.hpp"
 
@@ -43,6 +43,7 @@
 #include "dlvhex/SpiritFilePositionNode.h"
 
 #include <boost/spirit/iterator/position_iterator.hpp>
+
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -92,7 +93,7 @@ private:
   //
 
   // rule "mod_header"
-  void doModuleHeader(node_t& node);
+  void doModuleHeader(node_t& node) throw (SyntaxError);
   // rule "clause", put result into ctx.edb and ctx.idb
   void createASTFromClause(node_t& node);
   // rule "disj"

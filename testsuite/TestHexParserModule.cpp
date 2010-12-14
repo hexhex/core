@@ -38,6 +38,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(*ctx.registry); \
@@ -50,16 +51,37 @@
 
 DLVHEX_NAMESPACE_USE
 
+
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms) 
 {
-  std::cout << "test 1" <<std::endl;
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
-  std::cout << "test 2" <<std::endl;
 
   //.. put into different files
+  std::string filename1 = "../../examples/module1.hex";
+  std::string filename2 = "../../examples/module2.hex";
+  std::string filename3 = "../../examples/module3.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename2.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename3.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
   std::stringstream ss;
-  ss << 
+  ss << buf.str();
+/*
   "#module(p1,[q1/1])." << std::endl <<
   "q1(a)." << std::endl <<
   "q1(b)." << std::endl <<
@@ -75,22 +97,21 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   "q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y." << std::endl <<
   "skip3  :- q3(X), not q3i(X)." << std::endl <<
   "odd :- skip3, @p2[q3i]::even(c).";
-
+*/
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-  std::cout << "test 3" <<std::endl;
-
-	LOG_REGISTRY_PROGRAM(ctx);
-  std::cout << "test 4" <<std::endl;
-
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+  
+  // check some atoms (got the idea from TestHexParser.cpp)
   ID idp = ctx.registry->terms.getIDByString("p1.q1");
   ID idq = ctx.registry->terms.getIDByString("p2.q2");
   ID idr = ctx.registry->terms.getIDByString("p3.q3");
   ID idb = ctx.registry->terms.getIDByString("p1.ok");
   ID idc = ctx.registry->terms.getIDByString("p2.even");
   ID idmymod = ctx.registry->terms.getIDByString("p3.p2");
-  std::cout << "test 5" <<std::endl;
-
+  
+  // the id should not fail
   BOOST_REQUIRE((idp) != ID_FAIL);
   BOOST_REQUIRE((idq) != ID_FAIL);
   BOOST_REQUIRE((idr) != ID_FAIL);
@@ -110,25 +131,325 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
       ID idlit = r.body[1];
       BOOST_CHECK(idlit.isLiteral());
       BOOST_CHECK(idlit.isModuleAtom());
-/*
-      const ExternalAtom& at = ctx.registry->eatoms.getByID(idlit);
-      BOOST_CHECK(ID(at.kind,0).isModuleAtom());
-      BOOST_CHECK(at.predicate == idmymod);
-      BOOST_REQUIRE(at.inputs.size() == 2);
-      BOOST_CHECK(at.inputs[0] == idp);
-      BOOST_CHECK(at.inputs[1] == idq);
-      BOOST_REQUIRE(at.tuple.size() == 3);
-      BOOST_CHECK(at.tuple[0] == idb);
-      BOOST_CHECK(at.tuple[1] == idX);
-      BOOST_CHECK(at.tuple[2] == id4);
-*/
     }
   }
 
+  // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
-  sC.printModuleHeaderTable();
-  BOOST_REQUIRE( sC.verifyPredInputsAllModuleHeader() == true );
-  BOOST_REQUIRE( sC.verifyAllModuleCall() == true );
-  // sC.printAllModuleCalls();
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+}
+
+// test case if we call a module that is not exist
+BOOST_AUTO_TEST_CASE(testCallNotExistModule)
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  //.. put into different files
+  std::string filename1 = "../../examples/module1.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  std::string input1 = buf.str();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << input1;
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
 
 }
+
+// test case if the predicate inputs specified in the module header have a different arity
+// with the one in the module body
+BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::string filename1 = "../../examples/module1-DiffArity.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if there is a predicate input in module header
+// that is not exist in module body
+BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::string filename1 = "../../examples/module1-NotExist.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if there are too many predicate inputs in module calls 
+// for example: call p2[p,q,r]::q(a) but actually module p2 need only 2 predicate inputs
+BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module2-TooMany.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module3.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if there are too few predicate inputs in module calls 
+// for example: call p2[p]::q(a) but actually module p2 need 2 predicate inputs
+BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module2-TooFew.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module3.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if the arity of predicate inputs in module calls are different 
+// from the one specified in the module header
+// for example: p2[p]::q(a,c) where p is a predicate with arity 2
+//              but actually we have #module(p2, p/1).
+BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module2-DiffArity.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module3.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if the predicate output in the module call
+// not exist in the module that being called
+BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module3-NotExist.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module2.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case if predicate output in the module call have a different arity
+// with the one inside the module that being called
+BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module3-DiffArity.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module2.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+// test case for module call with different order of arity
+// for example: @p3[q, r]::even, where q is predicate with arity 1 and r is a predicate with arity 0
+// but we have #module(p3, [s/0, t/1]).
+BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::ifstream ifs;
+  std::ostringstream buf;
+  std::string filename = "../../examples/module3-SwapArity.hex";
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  filename = "../../examples/module2-SwapArity.hex";
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+
+/*
+BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::string filename1 = "../../examples/module1.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_CHECK_THROW(parser.parse(ss), SyntaxError);
+}
+
+BOOST_AUTO_TEST_CASE(EndMessage) 
+{
+  std::cout << "[TestHexParserModule::BOOST_AUTO_TEST_CASE(EndMessage)] *** 1 failure ( from BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) ) is expected *** " <<std::endl; 
+}
+*/
+
+
