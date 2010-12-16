@@ -1,5 +1,12 @@
+2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
+
 2010-12-14  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/ModuleSyntaxChecker.h: adding method verifySyntax that take care all of the process of module syntax check
+	* src/dlvhex/ModuleSyntaxChecker.cpp: adding method verifySyntax that take care all of the process of module syntax check 
 	* testsuite/TestHexParserModule.cpp: adding various test cases for module syntax check
 	* examples/module1.hex: m1 as in the paper
 	* examples/module2.hex: m2 as in the paper
@@ -13,6 +20,7 @@
 	* examples/module3-NotExist.hex: m3, predicate output in the module call does not exist in the program in the module that is being called
 	* examples/module2-SwapArity.hex: (together with module3-SwapArity.hex) m2, arity of the predicate inputs in the module call are swapped between predicates
 	* examples/module3-SwapArity.hex: (together with module2-SwapArity.hex) m3, arity of the predicate inputs in the module call are swapped between predicates
+	* Committed revision 2523.
 
 2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

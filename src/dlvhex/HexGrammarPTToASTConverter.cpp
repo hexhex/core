@@ -101,7 +101,7 @@ std::string HexGrammarPTToASTConverter::createStringFromNode(
   assert(false && "found multiple value children in createStringFromNode");
 }
 
-ID HexGrammarPTToASTConverter::createTerm_Helper(bool namespaced,
+ID HexGrammarPTToASTConverter::createTerm_Helper(
     node_t& node, HexGrammar::RuleTags verify)
 {
   assert(node.value.id() == verify);
@@ -136,10 +136,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(bool namespaced,
     // check if this is predicate, therefore need to be namespaced by the module name
 
     ID id;
-    if (namespaced == true) 
-      id = ctx.registry->terms.getIDByString(currentModuleName + "." + s);
-    else 
-      id = ctx.registry->terms.getIDByString(s);
+    id = ctx.registry->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
@@ -151,8 +148,6 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(bool namespaced,
       {
         term.kind |= ID::SUBKIND_TERM_VARIABLE;
       }
-      if (namespaced == true )
-        term.symbol = currentModuleName + "." + term.symbol;
       //LOG("[HexGrammarPTToASTConverter::createTerm_Helper] Got term.symbol = " << term.symbol);
       //LOG("terms: " << ctx.registry->terms);
       id = ctx.registry->terms.storeAndGetID(term);
@@ -405,19 +400,19 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   case HexGrammar::UserPredClassical:
     {
       // <foo> ( <bar>, <baz>, ... )
-      atom.tuple.push_back(createTermFromIdentVar(true, prednode.children[0+offset]));
+      atom.tuple.push_back(createTermFromIdentVarNamespaced(prednode.children[0+offset]));
       // =append
-      Tuple t = createTupleFromTerms(false, prednode.children[2+offset]);
+      Tuple t = createTupleFromTerms(prednode.children[2+offset]);
       atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
     }
     break;
   case HexGrammar::UserPredTuple:
     // ( <foo>, <bar>, <baz>, ... )
-    atom.tuple = createTupleFromTerms(false, prednode.children[1]);
+    atom.tuple = createTupleFromTerms(prednode.children[1]);
     break;
   case HexGrammar::UserPredAtom:
     // <foo>
-    atom.tuple.push_back(createTermFromIdentVar(true, prednode.children[0+offset]));
+    atom.tuple.push_back(createTermFromIdentVarNamespaced(prednode.children[0+offset]));
     break;
   default:
     assert(false && "encountered unknown node in createAtomFromUserPred!");
@@ -598,7 +593,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ExtAtom);
   ExternalAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
-  atom.predicate = createTerm_Helper(true, node.children[1], HexGrammar::Ident);
+  atom.predicate = createTerm_Helper(node.children[1], HexGrammar::Ident);
   Tuple& inputs = atom.inputs;
   Tuple& outputs = atom.tuple;
   if( node.children.size() > 2 )
@@ -613,7 +608,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
       {
         // there is at least one term
         //printSpiritPT(std::cerr, node.children[2].children[1], ">>ii");
-        inputs = createTupleFromTerms(false, node.children[2].children[1]);
+        inputs = createTupleFromTerms(node.children[2].children[1]);
       }
     }
     // check for output
@@ -626,7 +621,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
         {
           // there is at least one term
           //printSpiritPT(std::cerr, node.children[2+offset].children[1], ">>oo");
-          outputs = createTupleFromTerms(false, node.children[2+offset].children[1]);
+          outputs = createTupleFromTerms(node.children[2+offset].children[1]);
         }
       }
     }
@@ -647,7 +642,7 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ModAtom);
   ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
-  atom.predicate = createTerm_Helper(true, node.children[1], HexGrammar::Ident);
+  atom.predicate = createTermFromIdentVarNamespaced(node.children[1]);
   Tuple& inputs = atom.inputs;
   if( node.children.size() > 2 )
   {
@@ -668,43 +663,13 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
          // mSC.announceModuleCallsPredInput(predInput);
           std::cout << std::endl << "pred Input detected: " << predInput << std::endl;
         }
-        inputs = createTupleFromTerms(true, node.children[2].children[1]);
+        inputs = createTupleFromTermsNamespaced(node.children[2].children[1]);
 	
       }
     }
     offset = offset + 1;
     // this one: for output atom
     atom.outputAtom = createAtomFromUserPred(node.children[2+offset]);
-/*
-    assert(node.children[2+offset].value.id() == HexGrammar::Ident);
-    atom.outputpredicate = createTerm_Helper(true, node.children[2+offset], HexGrammar::Ident);
-    std::string predOutputName = createStringFromNode(node.children[2+offset]);
-    offset = offset + 1;
-    int countTuple = 0;
-    // check for output parameter
-    if( node.children.size() > (2+offset) )
-    {
-      if( node.children[2+offset].value.id() == HexGrammar::ModOutput )
-      {
-        // output
-        if( node.children[2+offset].children.size() > 2 )
-        {
-          // there is at least one term
-          //printSpiritPT(std::cerr, node.children[2+offset].children[1], ">>oo");
-          outputs = createTupleFromTerms(false, node.children[2+offset].children[1]);
-
-          Tuple::const_iterator it = outputs.begin();
-	  while(it != outputs.end())
-  	  {
-            countTuple++;
-  	    it++;
-  	  }
-
-        }
-      }
-    }
-    //mSC.announceModuleCallsPredOutput(predOutputName, countTuple);
-*/
   }
   //mSC.insertCompleteModuleCalls();
 
@@ -774,30 +739,56 @@ ID HexGrammarPTToASTConverter::createAggregateFromAggregatePred(
   #endif
 }
 
-Tuple HexGrammarPTToASTConverter::createTupleFromTerms(bool namespaced, node_t& node)
+Tuple HexGrammarPTToASTConverter::createTupleFromTerms(node_t& node)
 {
   assert(node.value.id() == HexGrammar::Terms);
   Tuple t;
   for(node_t::tree_iterator it = node.children.begin();
       it != node.children.end(); ++it)
-    t.push_back(createTerm_Helper(namespaced, *it, HexGrammar::Term));
+    t.push_back(createTerm_Helper(*it, HexGrammar::Term));
 //    t.push_back(createTermFromTerm(namespaced, *it));
   return t;
 }
 
-ID HexGrammarPTToASTConverter::createTermFromIdentVar(bool namespaced, node_t& node)
+Tuple HexGrammarPTToASTConverter::createTupleFromTermsNamespaced(node_t& node)
 {
-  return createTerm_Helper(namespaced, node, HexGrammar::IdentVar);
+  assert(node.value.id() == HexGrammar::Terms);
+  Tuple t;
+  for(node_t::tree_iterator it = node.children.begin(); it != node.children.end(); ++it){
+    t.push_back(createTermFromIdentVarNamespaced(*it));
+  }
+  return t;
+}
+
+ID HexGrammarPTToASTConverter::createTermFromIdentVar(node_t& node)
+{
+  return createTerm_Helper(node, HexGrammar::IdentVar);
+}
+
+ID HexGrammarPTToASTConverter::createTermFromIdentVarNamespaced(node_t& node)
+{
+  //assert(node.value.id() == HexGrammar::IdentVar);
+  std::string s = createStringFromNode(node);
+  assert(!s.empty());
+  s = currentModuleName + "." + s;
+  ID id = ctx.registry->terms.getIDByString(s);
+  if( id == ID_FAIL )
+  {
+    Term term(ID::MAINKIND_TERM, s);
+    term.kind |= ID::SUBKIND_TERM_CONSTANT;
+    id = ctx.registry->terms.storeAndGetID(term);
+  }
+  return id;
 }
 
 ID HexGrammarPTToASTConverter::createTermFromIdentVarNumber(node_t& node)
 {
-  return createTerm_Helper(false, node, HexGrammar::IdentVarNumber);
+  return createTerm_Helper(node, HexGrammar::IdentVarNumber);
 }
 
 ID HexGrammarPTToASTConverter::createTermFromTerm(node_t& node)
 {
-  return createTerm_Helper(false, node, HexGrammar::Term);
+  return createTerm_Helper(node, HexGrammar::Term);
 }
 
 DLVHEX_NAMESPACE_END
