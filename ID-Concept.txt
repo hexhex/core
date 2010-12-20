@@ -80,6 +80,8 @@ An ID of ~0x0 indicates an error (not found ...).
         mask 0x1: non-anonymous (0) vs anonymous (1)
    * 0x3 Builtin
      Address = builtin code of term, e.g., =, !=, <, <=, #sum, #int
+   * 0x4 Predicate
+     Address points into Predicate-Table
 
 ** 0x2 Literal
    Subkinds inherited from Atom

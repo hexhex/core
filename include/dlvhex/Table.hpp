@@ -47,6 +47,7 @@ namespace impl
 
 	// these tags are special
 	struct TermTag {}; // Term
+	struct PredicateTag {}; // Term
 	struct TextTag {}; // OrdinaryGroundAtom
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
 	struct PredicateTag {}; // ExternalAtom

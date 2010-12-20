@@ -1,7 +1,14 @@
+2010-12-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ID.hpp: add subkind predicate inside mainkind term
+	* include/dlvhex/Predicate.hpp: separating predicate from term
+	* include/dlvhex/PredicateTable.hpp: separating predicate from term table
+
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
+	* Committed revision 2524.
 
 2010-12-14  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

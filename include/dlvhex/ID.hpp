@@ -69,6 +69,7 @@ struct ID:
 	static const IDKind SUBKIND_TERM_INTEGER =   0x01000000;
 	static const IDKind SUBKIND_TERM_VARIABLE =  0x02000000;
 	static const IDKind SUBKIND_TERM_BUILTIN =   0x03000000;
+	static const IDKind SUBKIND_TERM_PREDICATE = 0x04000000;
 
 	static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
@@ -129,6 +130,7 @@ struct ID:
 	inline bool isIntegerTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
 	inline bool isVariableTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
 	inline bool isBuiltinTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
+	inline bool isPredicateTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_PREDICATE; }
 
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // true for ground or nonground ordinary atoms

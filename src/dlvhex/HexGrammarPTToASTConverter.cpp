@@ -767,7 +767,6 @@ ID HexGrammarPTToASTConverter::createTermFromIdentVar(node_t& node)
 
 ID HexGrammarPTToASTConverter::createTermFromIdentVarNamespaced(node_t& node)
 {
-  //assert(node.value.id() == HexGrammar::IdentVar);
   std::string s = createStringFromNode(node);
   assert(!s.empty());
   s = currentModuleName + "." + s;
