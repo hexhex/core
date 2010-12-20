@@ -7,6 +7,16 @@
 
 	* include/dlvhex/ID.hpp: adding PredicateList besides term tuple
 	* include/dlvhex/ProgramCtx.h: adding edbList, idbList, and inputList (that contain Predicate List)
+	* Committed revision 2530.
+
+	* include/dlvhex/TermTable.hpp: add struct PredicateNameTag, for tag in PredicateTable
+	* include/dlvhex/HexGrammarPTToASTConverter.h: adapting term table to the separation of term and predicate table
+	* include/dlvhex/ProgramCtx.h: add predicate table
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adapting term table to the separation of term and predicate table
+	* src/dlvhex/TestHexParserModule.cpp: adapting term table to the separation of term and predicate table
+	* src/dlvhex/ModuleSyntaxChecker.cpp: adapting term table to the separation of term and predicate table
+	* src/dlvhex/ID.cpp: adding term.predicate in print()
+	* src/dlvhex/ProgramCtx.cpp: add predicate table
 
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

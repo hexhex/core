@@ -123,16 +123,16 @@ private:
   // TODO: do not return but create result in ref arg
   // put namespaced = true if we want the tuple to be namespaced by the module name
   Tuple createTupleFromTerms(node_t& node);
-  // for namespaced terms
-  Tuple createTupleFromTermsNamespaced(node_t& node);
-  // for namespaced predicate
-  ID createTermFromIdentVarNamespaced(node_t& node);
   // rule "ident_or_var_or_number"
   ID createTermFromIdentVarNumber(node_t& node);
   // rule "ident_or_var"
   ID createTermFromIdentVar(node_t& node);
   // rule "term"
   ID createTermFromTerm(node_t& node);
+  // create/insert predicate from one identifier 
+  ID createPredFromIdent(node_t& node, int arity);
+  // create/insert predicate from terms tuple
+  Tuple createPredTupleFromTermsTuple(node_t& node);
 };
 
 DLVHEX_NAMESPACE_END

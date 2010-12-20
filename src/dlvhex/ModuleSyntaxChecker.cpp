@@ -40,7 +40,7 @@ void ModuleSyntaxChecker::printModuleHeaderTable()
 
 int ModuleSyntaxChecker::getArity(std::string predName)
 {
-  ID idp = ctx.registry->terms.getIDByString(predName);
+  ID idp = ctx.registry->preds.getIDByString(predName);
   return getArity(idp);
 }
 
@@ -136,7 +136,7 @@ std::string ModuleSyntaxChecker::getStringAfterDot(std::string s)
 // moduleToCall = p2
 bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple)
 {
-  std::string moduleFullName = ctx.registry->terms.getByID(module).symbol;
+  std::string moduleFullName = ctx.registry->preds.getByID(module).symbol;
   std::string moduleToCall = getStringAfterDot(moduleFullName);
 
   ModuleHeaderTable::predSet predInputs; 
@@ -187,16 +187,16 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
 
 bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAtom) 
 {
-  std::string moduleFullName = ctx.registry->terms.getByID(module).symbol;
+  std::string moduleFullName = ctx.registry->preds.getByID(module).symbol;
   std::string moduleToCall = getStringAfterDot(moduleFullName);
   
   OrdinaryAtom oa = ctx.registry->lookupOrdinaryAtom(outputAtom);
   int arity1 = oa.tuple.size()-1;
 
-  std::string predFullName = ctx.registry->terms.getByID(oa.tuple.front()).symbol;
+  std::string predFullName = ctx.registry->preds.getByID(oa.tuple.front()).symbol;
   std::string predName = getStringAfterDot(predFullName);
   std::string predNewName = moduleToCall + "." + predName;
-  int arity2 = getArity(ctx.registry->terms.getIDByString(predNewName));
+  int arity2 = getArity(ctx.registry->preds.getIDByString(predNewName));
 
   if (arity1 == arity2) 
     {

@@ -47,10 +47,10 @@ namespace impl
 
 	// these tags are special
 	struct TermTag {}; // Term
-	struct PredicateTermTag {}; // Term
+        struct PredicateNameTag {}; // Predicate
 	struct TextTag {}; // OrdinaryGroundAtom
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
-	struct PredicateTag {}; // ExternalAtom
+	struct PredicateTag {}; // ExternalAtom 
 }
 
 template<typename ValueT, typename IndexT>

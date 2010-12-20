@@ -60,16 +60,24 @@ void HexGrammarPTToASTConverter::convertPTToAST(
         createASTFromClause(*it);
       if( it->value.id() == HexGrammar::ModHeader ) 
         {
+          // if at least we have already inserted one module
           if (countModule>0) 
             {
-	      //assert(mSC.insertCompleteModule()==true);
-	      ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+	      ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);    
+	      ctx.edbList.push_back(ctx.edb);
+              ctx.idbList.push_back(ctx.idb);	    
             }
           doModuleHeader(*it);
           countModule++;
         }
     }
+  // insert for the last time
   ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+  ctx.edbList.push_back(ctx.edb);
+  ctx.idbList.push_back(ctx.idb);
+  // clean the idb and edb
+  ctx.idb.clear();
+  ctx.edb.reset(new Interpretation(ctx.registry));
 //  assert(mSC.insertCompleteModule()==true);
 //  assert(mSC.validateAllModuleCalls()==true);
 }
@@ -110,12 +118,12 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   if( s == "_" )
   {
     // anonymous variable
-    ID id = ctx.registry->terms.getIDByString("_");
+    ID id = ctx.registry->termz.getIDByString("_");
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE |
         ID::PROPERTY_VAR_ANONYMOUS, "_");
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry->termz.storeAndGetID(term);
     }
     return id;
   }
@@ -136,7 +144,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
     // check if this is predicate, therefore need to be namespaced by the module name
 
     ID id;
-    id = ctx.registry->terms.getIDByString(s);
+    id = ctx.registry->termz.getIDByString(s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
@@ -150,7 +158,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
       }
       //LOG("[HexGrammarPTToASTConverter::createTerm_Helper] Got term.symbol = " << term.symbol);
       //LOG("terms: " << ctx.registry->terms);
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry->termz.storeAndGetID(term);
     }
     return id;
   }
@@ -213,6 +221,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
     {
       LOG(" - no module input  ");
     }
+
   ctx.idb.clear();
   ctx.edb.reset(new Interpretation(ctx.registry));
 }
@@ -400,19 +409,36 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   case HexGrammar::UserPredClassical:
     {
       // <foo> ( <bar>, <baz>, ... )
-      atom.tuple.push_back(createTermFromIdentVarNamespaced(prednode.children[0+offset]));
+      atom.tuple.push_back(createPredFromIdent(prednode.children[0+offset], prednode.children.size()-3-offset)); // -3 for pred, (, and )
       // =append
       Tuple t = createTupleFromTerms(prednode.children[2+offset]);
       atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
     }
     break;
   case HexGrammar::UserPredTuple:
-    // ( <foo>, <bar>, <baz>, ... )
-    atom.tuple = createTupleFromTerms(prednode.children[1]);
+    {
+      // ( <foo>, <bar>, <baz>, ... )
+      node_t userPredTuple = prednode.children[1];
+      // test whether the first symbol is predicate...
+      if (islower(createStringFromNode(userPredTuple.children[0])[0]) ) 
+        { 
+          // namespaced the variable
+          atom.tuple.push_back(createPredFromIdent(userPredTuple.children[0], userPredTuple.children.size()-1));
+          // do the rest
+          for(node_t::tree_iterator it = userPredTuple.children.begin()+1; it != userPredTuple.children.end(); ++it)
+            {
+              atom.tuple.push_back(createTermFromIdentVar(*it));
+            }
+        }
+      else // if all are variables...
+        {
+          atom.tuple = createTupleFromTerms(userPredTuple);
+        }
+    }
     break;
   case HexGrammar::UserPredAtom:
     // <foo>
-    atom.tuple.push_back(createTermFromIdentVarNamespaced(prednode.children[0+offset]));
+    atom.tuple.push_back(createPredFromIdent(prednode.children[0+offset], 0));
     break;
   default:
     assert(false && "encountered unknown node in createAtomFromUserPred!");
@@ -642,8 +668,8 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ModAtom);
   ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
-  atom.predicate = createTermFromIdentVarNamespaced(node.children[1]);
   Tuple& inputs = atom.inputs;
+  atom.predicate = createPredFromIdent(node.children[1],-1);
   if( node.children.size() > 2 )
   {
     // either input or output
@@ -663,7 +689,7 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
          // mSC.announceModuleCallsPredInput(predInput);
           std::cout << std::endl << "pred Input detected: " << predInput << std::endl;
         }
-        inputs = createTupleFromTermsNamespaced(node.children[2].children[1]);
+        inputs = createPredTupleFromTermsTuple(node.children[2].children[1]);
 	
       }
     }
@@ -750,34 +776,9 @@ Tuple HexGrammarPTToASTConverter::createTupleFromTerms(node_t& node)
   return t;
 }
 
-Tuple HexGrammarPTToASTConverter::createTupleFromTermsNamespaced(node_t& node)
-{
-  assert(node.value.id() == HexGrammar::Terms);
-  Tuple t;
-  for(node_t::tree_iterator it = node.children.begin(); it != node.children.end(); ++it){
-    t.push_back(createTermFromIdentVarNamespaced(*it));
-  }
-  return t;
-}
-
 ID HexGrammarPTToASTConverter::createTermFromIdentVar(node_t& node)
 {
   return createTerm_Helper(node, HexGrammar::IdentVar);
-}
-
-ID HexGrammarPTToASTConverter::createTermFromIdentVarNamespaced(node_t& node)
-{
-  std::string s = createStringFromNode(node);
-  assert(!s.empty());
-  s = currentModuleName + "." + s;
-  ID id = ctx.registry->terms.getIDByString(s);
-  if( id == ID_FAIL )
-  {
-    Term term(ID::MAINKIND_TERM, s);
-    term.kind |= ID::SUBKIND_TERM_CONSTANT;
-    id = ctx.registry->terms.storeAndGetID(term);
-  }
-  return id;
 }
 
 ID HexGrammarPTToASTConverter::createTermFromIdentVarNumber(node_t& node)
@@ -790,6 +791,32 @@ ID HexGrammarPTToASTConverter::createTermFromTerm(node_t& node)
   return createTerm_Helper(node, HexGrammar::Term);
 }
 
+Tuple HexGrammarPTToASTConverter::createPredTupleFromTermsTuple(node_t& node)
+{
+  assert(node.value.id() == HexGrammar::Terms);
+  Tuple t;
+  for(node_t::tree_iterator it = node.children.begin(); it != node.children.end(); ++it){
+    // do not know the arity, give -1
+    t.push_back(createPredFromIdent(*it, -1));
+  }
+  return t;
+}
+
+ID HexGrammarPTToASTConverter::createPredFromIdent(node_t& node, int arity)
+{
+  std::string s = createStringFromNode(node);
+  assert(!s.empty());
+  s = currentModuleName + "." + s;
+  ID id = ctx.registry->preds.getIDByString(s);
+  if( id == ID_FAIL )
+  {
+    Predicate predicate(ID::MAINKIND_TERM, s, arity);
+    predicate.kind |= ID::SUBKIND_TERM_PREDICATE;
+    id = ctx.registry->preds.storeAndGetID(predicate);
+    LOG("Preds saved " << s << std::endl);
+  }
+  return id;
+}
 DLVHEX_NAMESPACE_END
 
 // vim: set expandtab:

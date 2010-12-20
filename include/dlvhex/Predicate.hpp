@@ -54,7 +54,7 @@ struct Predicate:
   std::string symbol;
   int arity;
 
-  Term(IDKind kind, const std::string& symbol, const int& arity):
+  Predicate(IDKind kind, const std::string& symbol, const int& arity):
     kind(kind), symbol(symbol), arity(arity)
 		{ assert(ID(kind,0).isTerm()); }
   std::ostream& print(std::ostream& o) const

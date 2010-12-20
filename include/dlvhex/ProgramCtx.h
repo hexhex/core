@@ -38,6 +38,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/TermTable.hpp"
+#include "dlvhex/PredicateTable.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 #include "dlvhex/BuiltinAtomTable.hpp"
 #include "dlvhex/AggregateAtomTable.hpp"
@@ -81,7 +82,8 @@ typedef boost::bimaps::bimap<
 struct Registry:
   public ostream_printable<Registry>
 {
-  TermTable terms;
+  TermTable termz;
+  PredicateTable preds;
   // ordinary ground atoms
   OrdinaryAtomTable ogatoms;
   // ordinary nonground atoms
@@ -173,9 +175,9 @@ public:
   // edb
   typedef Interpretation::Ptr edbType;
   edbType edb;
-  std::vector<edbType> EdbList;
+  std::vector<edbType> edbList;
 
-  std::vector<PredicateList> InputList;
+  std::vector<Tuple> InputList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
