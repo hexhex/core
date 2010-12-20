@@ -166,10 +166,16 @@ public:
   ModuleHeaderTable mHT;
 
   // idb
-  std::vector<ID> idb;
+  typedef std::vector<ID> idbType;
+  idbType idb;
+  std::vector<idbType> idbList;
 
   // edb
-  Interpretation::Ptr edb;
+  typedef Interpretation::Ptr edbType;
+  edbType edb;
+  std::vector<edbType> EdbList;
+
+  std::vector<PredicateList> InputList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

@@ -62,7 +62,7 @@ class PredicateTable:
       #endif
 			// unique IDs for unique symbol strings
 			boost::multi_index::hashed_unique<
-				boost::multi_index::tag<impl::PredicateTag>,
+				boost::multi_index::tag<impl::PredicateTermTag>,
 				BOOST_MULTI_INDEX_MEMBER(Term,std::string,symbol)
 			>
 		>
@@ -112,8 +112,8 @@ PredicateTable::getByID(
 ID PredicateTable::getIDByString(
 		const std::string& str) const throw()
 {
-	typedef Container::index<impl::PredicateTag>::type PredicateIndex;
-	const PredicateIndex& sidx = container.get<impl::PredicateTag>();
+	typedef Container::index<impl::PredicateTermTag>::type PredicateIndex;
+	const PredicateIndex& sidx = container.get<impl::PredicateTermTag>();
 	PredicateIndex::const_iterator it = sidx.find(str);
 	if( it == sidx.end() )
 		return ID_FAIL;

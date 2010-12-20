@@ -3,6 +3,10 @@
 	* include/dlvhex/ID.hpp: add subkind predicate inside mainkind term
 	* include/dlvhex/Predicate.hpp: separating predicate from term
 	* include/dlvhex/PredicateTable.hpp: separating predicate from term table
+	* Committed revision 2529.
+
+	* include/dlvhex/ID.hpp: adding PredicateList besides term tuple
+	* include/dlvhex/ProgramCtx.h: adding edbList, idbList, and inputList (that contain Predicate List)
 
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
