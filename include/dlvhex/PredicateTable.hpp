@@ -53,13 +53,6 @@ class PredicateTable:
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
 			>,
-      #if 0
-			// kind TODO perhaps we do not need this index?
-			boost::multi_index::ordered_non_unique<
-				boost::multi_index::tag<impl::KindTag>,
-				BOOST_MULTI_INDEX_MEMBER(Term,IDKind,kind)
-			>,
-      #endif
 			// unique IDs for unique symbol strings
 			boost::multi_index::hashed_unique<
 				boost::multi_index::tag<impl::PredicateNameTag>,
@@ -68,39 +61,38 @@ class PredicateTable:
 		>
 	>
 {
-	// types
 public:
+  // types
   typedef Container::index<impl::AddressTag>::type AddressIndex;
   typedef Container::index<impl::PredicateNameTag>::type PredicateNameIndex;
 
 // methods
 public:
   // retrieve by ID
-  // assert that id.kind is correct for Term
+  // assert that id.kind is correct for Term.Predicate
   // assert that ID exists
-	inline const Predicate& getByID(ID id) const throw ();
+  inline const Predicate& getByID(ID id) const throw ();
 
-	// given string, look if already stored
-	// if no, return ID_FAIL, otherwise return ID
-	inline ID getIDByString(const std::string& str) const throw();
+  // given string, look if already stored
+  // if no, return ID_FAIL, otherwise return ID
+  inline ID getIDByString(const std::string& str) const throw();
 
-	// store symbol, assuming it does not exist
+  // get the Predicate by predicate name
+  inline const Predicate& getByString(const std::string& str) const throw();
+
+  // store symbol, assuming it does not exist
   // assert that symbol did not exist
-	inline ID storeAndGetID(const Predicate& symb) throw();
+  inline ID storeAndGetID(const Predicate& symb) throw();
 
-  // retrieve range by kind (return lower/upper bound iterators, +provide method to get ID from iterator)
 };
 
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
-const Predicate&
-PredicateTable::getByID(
-  ID id) const throw ()
+const Predicate& PredicateTable::getByID(ID id) const throw ()
 {
-	assert(id.isTerm());
-	// integers are not allowed in this table!
-	assert(id.isPredicateTerm() );
+  assert(id.isTerm());
+  assert(id.isPredicateTerm() );
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -109,46 +101,52 @@ PredicateTable::getByID(
 
 // given string, look if already stored
 // if no, return ID_FAIL, otherwise return ID
-ID PredicateTable::getIDByString(
-		const std::string& str) const throw()
+ID PredicateTable::getIDByString(const std::string& str) const throw()
 {
-	//typedef Container::index<impl::PredicateTermTag>::type PredicateIndex;
-	const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
-	PredicateNameIndex::const_iterator it = sidx.find(str);
-	if( it == sidx.end() )
-		return ID_FAIL;
-	else
-  {
-    const AddressIndex& aidx = container.get<impl::AddressTag>();
-		return ID(
-				it->kind, // kind
-				container.project<impl::AddressTag>(it) - aidx.begin() // address
-				);
-  }
+  const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
+  PredicateNameIndex::const_iterator it = sidx.find(str);
+  if( it == sidx.end() )
+    return ID_FAIL;
+  else
+    {
+      const AddressIndex& aidx = container.get<impl::AddressTag>();
+      return ID(it->kind, // kind
+	        container.project<impl::AddressTag>(it) - aidx.begin() // address
+	       );
+    }
 }
+
+const Predicate& PredicateTable::getByString(const std::string& str) const throw()
+{
+  const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
+  PredicateNameIndex::const_iterator it = sidx.find(str);
+  if( it == sidx.end() )
+    return PREDICATE_FAIL;
+  else
+    {
+      return *it;
+    }
+}
+
 
 // store symbol, assuming it does not exist
 // assert that symbol did not exist
-ID PredicateTable::storeAndGetID(
-		const Predicate& symb) throw()
+ID PredicateTable::storeAndGetID(const Predicate& symb) throw()
 {
-	assert(ID(symb.kind,0).isTerm());
-	// integers are not allowed in this table!
-	assert(ID(symb.kind,0).isPredicateTerm() );
-	assert(!symb.symbol.empty());
+  assert(ID(symb.kind,0).isTerm());
+  assert(ID(symb.kind,0).isPredicateTerm() );
+  assert(!symb.symbol.empty());
+  AddressIndex& idx = container.get<impl::AddressTag>();
+  
+  AddressIndex::const_iterator it;
+  bool success;
+  boost::tie(it, success) = idx.push_back(symb);
+  (void)success;
+  assert(success);
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
-	AddressIndex::const_iterator it;
-	bool success;
-	boost::tie(it, success) = idx.push_back(symb);
-	(void)success;
-	assert(success);
-
-	return ID(
-			symb.kind, // kind
-			container.project<impl::AddressTag>(it) - idx.begin() // address
-			);
+  return ID(symb.kind, // kind
+	    container.project<impl::AddressTag>(it) - idx.begin() // address
+	   );
 }
 
 DLVHEX_NAMESPACE_END

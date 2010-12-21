@@ -1,3 +1,8 @@
+2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* Module.hpp: module structure
+	* ModuleTable.hpp: module table that handle module structure
+
 2010-12-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ID.hpp: add subkind predicate inside mainkind term
@@ -17,6 +22,7 @@
 	* src/dlvhex/ModuleSyntaxChecker.cpp: adapting term table to the separation of term and predicate table
 	* src/dlvhex/ID.cpp: adding term.predicate in print()
 	* src/dlvhex/ProgramCtx.cpp: add predicate table
+	* Committed revision 2531.
 
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

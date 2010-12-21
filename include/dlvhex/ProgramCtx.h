@@ -48,6 +48,7 @@
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ModuleHeaderTable.h"
+#include "dlvhex/ModuleTable.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap/bimap.hpp>
@@ -94,6 +95,7 @@ struct Registry:
   ModuleAtomTable matoms;
   RuleTable rules;
   NamespaceTable namespaces;
+  ModuleTable moduleTable;
 
 	#if 0
 	
@@ -177,7 +179,8 @@ public:
   edbType edb;
   std::vector<edbType> edbList;
 
-  std::vector<Tuple> InputList;
+  typedef std::vector<int> intList;
+  std::vector<intList> inputList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

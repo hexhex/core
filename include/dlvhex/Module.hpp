@@ -22,15 +22,15 @@
  */
 
 /**
- * @file   Predicate.hpp
+ * @file   Module.hpp
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
- * @brief  Predicate structure: stores predicate and its arity.
+ * @brief  Module structure: stores module name, the associated input list, edb and idb
  *
- */
+ */ 
 
-#ifndef PREDICATE_HPP_INCLUDED__20122010
-#define PREDICATE_HPP_INCLUDED__20122010
+#ifndef MODULE_HPP_INCLUDED__20122010
+#define MODULE_HPP_INCLUDED__20122010
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ID.hpp"
@@ -38,23 +38,29 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// Predicate structure, used in PredicateTable.hpp
-struct Predicate:
-  private ostream_printable<Predicate>
+// Module structure, used in ModuleTable.hpp
+struct Module:
+  private ostream_printable<Module>
 {
   // the kind part of the ID of this symbol
-  IDKind kind;
-  std::string symbol;
-  int arity;
+  IDKind kind; // not used in module
+  std::string moduleName;
+  int inputList;
+  int edb;
+  int idb;
 
-  Predicate(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
-		{ assert(ID(kind,0).isTerm()); }
+//  Module(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
+//		{ assert(ID(kind,0).isTerm()); }
+
+  Module(const std::string& moduleName, const int& inputList, const int& edb, const int& idb): 
+                moduleName(moduleName), inputList(inputList), edb(edb), idb(idb)
+		{  }
   std::ostream& print(std::ostream& o) const
-    { return o << "Predicate(" << symbol << " / " << arity << ")"; }
+    { return o << "Module(" << moduleName << ", inputList: " << inputList << ", edb: " << edb << ", idb: " << idb << ")"; }
 };
 
-const Predicate PREDICATE_FAIL(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, "", -1);
+const Module MODULE_FAIL("", -1, -1, -1);
 
 DLVHEX_NAMESPACE_END
 
-#endif // PREDICATE_HPP_INCLUDED__20122010
+#endif // MODULE_HPP_INCLUDED__20122010
