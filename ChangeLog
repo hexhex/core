@@ -1,3 +1,9 @@
+2010-12-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change termz to terms
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+
 2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Module.hpp: adding module structure and module table 

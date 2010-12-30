@@ -83,7 +83,7 @@ typedef boost::bimaps::bimap<
 struct Registry:
   public ostream_printable<Registry>
 {
-  TermTable termz;
+  TermTable terms;
   PredicateTable preds;
   // ordinary ground atoms
   OrdinaryAtomTable ogatoms;
@@ -169,18 +169,17 @@ public:
 
   ModuleHeaderTable mHT;
 
-  // idb
-  typedef std::vector<ID> idbType;
-  idbType idb;
-  std::vector<idbType> idbList;
+  // idb 
+  Tuple idb; // should be without this one
+  std::vector<Tuple> idbList;
 
-  // edb
+  // edb 
   typedef Interpretation::Ptr edbType;
-  edbType edb;
-  std::vector<edbType> edbList;
+  edbType edb; // should be without this one
+  std::vector<Interpretation::Ptr> edbList;
 
   typedef std::vector<int> intList;
-  std::vector<intList> inputList;
+  // should be: std::vector<Tuple> inputList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

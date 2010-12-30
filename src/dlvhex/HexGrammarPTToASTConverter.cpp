@@ -118,12 +118,12 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   if( s == "_" )
   {
     // anonymous variable
-    ID id = ctx.registry->termz.getIDByString("_");
+    ID id = ctx.registry->terms.getIDByString("_");
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE |
         ID::PROPERTY_VAR_ANONYMOUS, "_");
-      id = ctx.registry->termz.storeAndGetID(term);
+      id = ctx.registry->terms.storeAndGetID(term);
     }
     return id;
   }
@@ -144,7 +144,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
     // check if this is predicate, therefore need to be namespaced by the module name
 
     ID id;
-    id = ctx.registry->termz.getIDByString(s);
+    id = ctx.registry->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
@@ -158,7 +158,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
       }
       //LOG("[HexGrammarPTToASTConverter::createTerm_Helper] Got term.symbol = " << term.symbol);
       //LOG("terms: " << ctx.registry->terms);
-      id = ctx.registry->termz.storeAndGetID(term);
+      id = ctx.registry->terms.storeAndGetID(term);
     }
     return id;
   }

@@ -63,7 +63,7 @@ std::ostream& Registry::print(std::ostream& o) const
     o <<
       "REGISTRY BEGIN" << std::endl <<
       "terms:" << std::endl <<
-      termz <<
+      terms <<
       "preds:" << std::endl <<
       preds <<
       "ogatoms:" << std::endl <<
@@ -189,7 +189,7 @@ void RawPrinter::print(ID id)
 		{
 		case ID::SUBKIND_TERM_CONSTANT:
 		case ID::SUBKIND_TERM_VARIABLE:
-			out << registry->termz.getByID(id).symbol;
+			out << registry->terms.getByID(id).symbol;
 			break;
 		case ID::SUBKIND_TERM_PREDICATE:
 			out << registry->preds.getByID(id).symbol;
