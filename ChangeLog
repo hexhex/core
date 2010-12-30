@@ -1,148 +1,131 @@
 2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* Module.hpp: module structure
-	* ModuleTable.hpp: module table that handle module structure
+	* include/dlvhex/Module.hpp: adding module structure and module table 
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/Predicate.hpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
 
 2010-12-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/ID.hpp: add subkind predicate inside mainkind term
-	* include/dlvhex/Predicate.hpp: separating predicate from term
-	* include/dlvhex/PredicateTable.hpp: separating predicate from term table
-	* Committed revision 2529.
+	* include/dlvhex/TermTable.hpp: separated term table and pred table 
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/TestHexParserModule.cpp: Likewise.
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* src/dlvhex/ID.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
 
-	* include/dlvhex/ID.hpp: adding PredicateList besides term tuple
-	* include/dlvhex/ProgramCtx.h: adding edbList, idbList, and inputList (that contain Predicate List)
-	* Committed revision 2530.
+	* include/dlvhex/ID.hpp: adding idb list, edb list, and predicate list 
+	* include/dlvhex/ProgramCtx.h: Likewise.
 
-	* include/dlvhex/TermTable.hpp: add struct PredicateNameTag, for tag in PredicateTable
-	* include/dlvhex/HexGrammarPTToASTConverter.h: adapting term table to the separation of term and predicate table
-	* include/dlvhex/ProgramCtx.h: add predicate table
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adapting term table to the separation of term and predicate table
-	* src/dlvhex/TestHexParserModule.cpp: adapting term table to the separation of term and predicate table
-	* src/dlvhex/ModuleSyntaxChecker.cpp: adapting term table to the separation of term and predicate table
-	* src/dlvhex/ID.cpp: adding term.predicate in print()
-	* src/dlvhex/ProgramCtx.cpp: add predicate table
-	* Committed revision 2531.
+	* include/dlvhex/ID.hpp: Separating predicate from term table 
+	* include/dlvhex/Predicate.hpp: Likewise.
+	* include/dlvhex/PredicateTable.hpp: Likewise.
 
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
-	* Committed revision 2524.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
 
 2010-12-14  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleSyntaxChecker.h: adding method verifySyntax that take care all of the process of module syntax check
 	* src/dlvhex/ModuleSyntaxChecker.cpp: adding method verifySyntax that take care all of the process of module syntax check 
-	* testsuite/TestHexParserModule.cpp: adding various test cases for module syntax check
-	* examples/module1.hex: m1 as in the paper
-	* examples/module2.hex: m2 as in the paper
-	* examples/module3.hex: m3 as in the paper
-	* examples/module1-DiffArity.hex: m1, arity of the predicate input in module header is different with the one in the program
-	* examples/module1-NotExist.hex: m1, predicate input in the module header is not exist in the program
-	* examples/module2-DiffArity.hex: m2, predicate input in the module call has different arity with the one specified in the module header
- 	* examples/module2-TooFew.hex: m2, too few predicate input in the module call
- 	* examples/module2-TooMany.hex: m2, too many predicate input in the module call
-	* examples/module3-DiffArity.hex: m3, predicate output in the module call has different arity with the one in the program of the module that is being called
-	* examples/module3-NotExist.hex: m3, predicate output in the module call does not exist in the program in the module that is being called
-	* examples/module2-SwapArity.hex: (together with module3-SwapArity.hex) m2, arity of the predicate inputs in the module call are swapped between predicates
-	* examples/module3-SwapArity.hex: (together with module2-SwapArity.hex) m3, arity of the predicate inputs in the module call are swapped between predicates
-	* Committed revision 2523.
+	* testsuite/TestHexParserModule.cpp: Adding testcases and supported example files 
+	* examples/module1.hex: Likewise.
+	* examples/module2.hex: Likewise.
+	* examples/module3.hex: Likewise.
+	* examples/module1-DiffArity.hex: Likewise.
+	* examples/module1-NotExist.hex: Likewise.
+	* examples/module2-DiffArity.hex: Likewise.
+ 	* examples/module2-TooFew.hex: Likewise.
+ 	* examples/module2-TooMany.hex: Likewise.
+	* examples/module3-DiffArity.hex: Likewise.
+	* examples/module3-NotExist.hex: Likewise.
+	* examples/module2-SwapArity.hex: Likewise.
+	* examples/module3-SwapArity.hex: Likewise.
 
 2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/ProgramCtx.h: move mHT outside registry
-	* include/dlvhex/State.h: adding SyntaxCheckState inside
-	* src/dlvhex/ProgramCtx.cpp: move mHT outside registry
-	* src/dlvhex/State.cpp: adding SyntaxCheckState inside 
-	* Committed revision 2521.
-
 	* include/dlvhex/SyntaxChecker.h: deleted
-	* include/dlvhex/ModuleSyntaxChecker.h: update from SyntaxChecker.h, verifying output predicate module call using outputAtom
-	* include/dlvhex/State.cpp: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
-	* include/dlvhex/HexGrammarPTToASTConverter.cpp: fixing: namepace only for predicate, change module output into atom
-	* include/dlvhex/HexGrammar.tcc: change ModOutput into atom
-	* include/dlvhex/HexGrammar.h: change ModOutput into atom
 	* src/dlvhex/SyntaxChecker.cpp: deleted
-	* src/dlvhex/ModuleSyntaxChecker.cpp: update from SyntaxChecker.cpp, verifying output predicate module call using outputAtom
-	* src/dlvhex/State.h: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing: namepace only for predicate, change module output into atom
-	* src/dlvhex/Atoms.cpp: change the way module atom printed
-	* src/dlvhex/ProgramCtx.cpp: change the way module atom printed
+	* include/dlvhex/ModuleSyntaxChecker.h: update from SyntaxChecker.h, verifying output predicate module call using outputAtom
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
 	* src/dlvhex/ModuleHeaderTable.cpp: change outputpredicate in ModuleAtom into outputAtom
+	* include/dlvhex/State.h: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
+	* src/dlvhex/State.cpp: Likewise.
+	* include/dlvhex/HexGrammarPTToASTConverter.h: fixing: namepace only for predicate, change module output into atom
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: change ModOutput into atom
+	* include/dlvhex/HexGrammar.h: Likewise.
+	* src/dlvhex/Atoms.cpp: change the way module atom printed
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
 	* testsuite/TestHexParserModule.cpp: change SyntaxChecker into ModuleSyntaxChecker
-	* Committed revision 2522.
+
+	* include/dlvhex/ProgramCtx.h: move mHT out of Registry, add SyntaxCheckState into State 
+	* include/dlvhex/State.h: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
 
 2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/SyntaxChecker.h (new addition): syntax checking mechanism for mlp 
-	* src/dlvhex/SyntaxChecker.cpp (new addition): syntax checking mechanism for mlp
+	* src/dlvhex/SyntaxChecker.cpp (new addition): Likewise.
 	* include/dlvhex/ModuleAtomTable.h: adding getSize() and getAllByAddress()
-	* src/dlvhex/ModuleAtomTable.cpp: adding getSize() and getAllByAddress()
+	* src/dlvhex/ModuleAtomTable.cpp: Likewise.
 	* include/dlvhex/ProgramCtx.h: adding ModuleHeaderTable mHT in registry
-	* src/dlvhex/ProgramCtx.cpp: adding ModuleHeaderTable mHT in registry
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
 	* include/dlvhex/ModuleHeaderTable.h: adding typedef, adding method getPredInputs and getModuleSet
 	* src/dlvhex/ModuleHeaderTable.cpp: adding method getPredInputs and getModuleSet
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding namespacing in createTerm_Helper
 	* src/dlvhex/TestHexParserModule.cpp: adding SyntaxChecker
-	* Committed revision 2520.
 
 2010-12-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/ModuleHeaderTable.cpp: implementing data structures for module
+	* include/dlvhex/ModuleHeaderTable.h: Likewise.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: storing module header, edb, and idb for each module
-	* include/dlvhex/ModuleHeaderTable.h: implementing data structures for module
-	* include/dlvhex/HexGrammarPTToASTConverter.h: storing module header, edb, and idb for each module
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
 	* testsuite/Makefile.am: adapting TestHexParserModule to ModuleHeaderTable
-	* Committed revision 2517.
 
 2010-12-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/ModuleSyntaxChecker.h: add some syntax checking rule for duplicating predicate input
-	* src/dlvhex/ModuleSyntaxChecker.cpp: add some syntax checking rule for duplicating predicate input
-	* testsuite/TestModuleSyntaxChecker.cpp: new file, test case exclusively for the ModuleSyntaxChecker.cpp
-	* testsuite/Makefile.am: adding TestModuleSyntaxChecker.cpp
-	* Committed revision 2514.
+	* include/dlvhex/ModuleSyntaxChecker.h: adding syntax checking for duplicating predicate input 
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* testsuite/TestModuleSyntaxChecker.cpp: Likewise.
+	* testsuite/Makefile.am: Likewise.
 
 2010-11-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/ModuleSyntaxChecker.h: class for syntactic checking of modular logic programs
-	* include/dlvhex/HexGrammarPTToASTConverter.h: incorporate syntactic checking of modular logic programs
-	* src/dlvhex/ModuleSyntaxChecker.cpp: class implementation for syntactic checking of modular logic programs
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: incorporate syntactic checking of modular logic programs
-	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
-	* Committed revision 2507
-
 	* include/dlvhex/ModuleSyntaxChecker.h: updating: retrieve predSet by sequenced
-	* src/dlvhex/ModuleSyntaxChecker.cpp: updating: retrieve predSet by sequenced
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing bug in detecting module header
 	* testsuite/TestHexParserModule.cpp: updating test case for the syntax checker
-	* Committed revision 2509.
+
+	* include/dlvhex/ModuleSyntaxChecker.h: class for syntactic checking of modular logic programs
+	* src/dlvhex/ModuleSyntaxChecker.cpp: class implementation for syntactic checking of modular logic programs
+	* include/dlvhex/HexGrammarPTToASTConverter.h: incorporate syntactic checking of modular logic programs
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
 
 2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: identifying the elements of module header
-	* include/dlvhex/HexGrammar.h: adding tag to pred_decl and pred_list
-	* Committed revision 2502.
-
 	* src/dlvhex/ModuleSyntaxChecker.cpp: handle the syntactic checking of modular logic programs
 	* Makefile.am: including ModuleSyntaxChecker.cpp
-	* Committed revision 2504.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: identifying the elements of module header
+	* include/dlvhex/HexGrammar.h: adding tag to pred_decl and pred_list
 
 2010-11-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestHexParserModule.cpp: add a test case for the 'even' program which consists of 3 module 
-	* Committed revision 2497.
 
 2010-11-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
-	* testsuite/TestHexParserModule.cpp: testing whether the module atom is registered
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
-	* include/dlvhex/HexGrammarPTToASTConverter.h: likewise
-	* include/dlvhex/ProgramCtx.h: registering module atoms
-	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
-	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
-	* Committed revision 2490 and 2491
+	* src/dlvhex/TestHexParserModule.cpp: add module header test
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: add method if module header is found (doModuleHeader)
+	* include/dlvhex/HexGrammarPTToASTConverter.h: add method if module header is found (doModuleHeader)
 
 	* include/dlvhex/HexGrammar.tcc: allowing empty module inputs and module output with 0 arity
 	* include/dlvhex/Atoms.hpp: fixing struct ModuleAtom
@@ -150,19 +133,19 @@
 	* src/dlvhex/ProgramCtx.cpp: fixing print output ModuleAtom
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: updating createModAtomFromModAtom
 	* testsuite/TestHexParserModule.cpp: updating test cases for module output
-	* Committed revision 2494
 
-	* TestHexParserModule.cpp: add module header test
-	* HexGrammarPTToASTConverter.cpp: add method if module header is found (doModuleHeader)
-	* HexGrammarPTToASTConverter.h: add method if module header is found (doModuleHeader)
-	* Committed revision 2496.
+	* testsuite/TestHexParserModule.cpp: testing whether the module atom is registered
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: registering module atoms
+	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
+	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
 
 2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* ID-Concept.txt: adding definition for module atom
-	* include/dlvhex/ID.hpp: adding definition for module atom
-	* src/dlvhex/ID.hpp: adding definition for module atom
-	* Comitted at revision 2477.
+	* include/dlvhex/ID.hpp: Likewise.
+	* src/dlvhex/ID.hpp: Likewise.
 
 	* include/dlvhex/HexGrammar.tcc: put Module atom in literal
 	* testsuite/TestHexParserModule.cpp: test case for Module atom
@@ -170,12 +153,11 @@
 	* Committed revision 2478.
 
 	* testsuite/TestHexParserModule.cpp: adding test to parse module header
-	* Committed revision 2480.
 
 2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/HexGrammar.h: adding grammar for module atom
-	* include/dlvhex/HexGrammar.tcc: adding grammar for module atom
+	* include/dlvhex/HexGrammar.tcc: Likewise.
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
