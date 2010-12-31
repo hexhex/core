@@ -1,4 +1,9 @@
-2010-12-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/Makefile.am: remove declaration of ModuleHeaderTable (old version)
+	* include/dlvhex/ProgramCtx.h: Likewise.
+
+	* src/dlvhex/ID.cpp: fixing how term predicate is printed
 
 	* include/dlvhex/ModuleTable.hpp: new way of module syntax checking using new version of module table
 	* include/dlvhex/ProgramCtx.h: Likewise.

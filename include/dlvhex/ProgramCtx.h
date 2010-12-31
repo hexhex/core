@@ -47,7 +47,6 @@
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ModuleHeaderTable.h"
 #include "dlvhex/ModuleTable.hpp"
 
 #include <boost/shared_ptr.hpp>
