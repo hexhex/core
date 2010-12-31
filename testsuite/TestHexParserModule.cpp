@@ -43,11 +43,21 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(*ctx.registry); \
 	RawPrinter printer(std::cerr, ctx.registry); \
-	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
-	printer.printmany(ctx.idb,"\n"); \
+	std::cerr << "first edb = " << *ctx.edbList.front() << std::endl; \
+	LOG("first idb"); \
+	printer.printmany(ctx.idbList.front(),"\n"); \
 	std::cerr << std::endl; \
 	LOG("idb end");
+
+/*
+#define LOG_REGISTRY_PROGRAM(ctx) \
+  LOG(*ctx.registry); \
+	RawPrinter printer(std::cerr, ctx.registry); \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
+	LOG("idb"); \
+	printer.printmany(ctx.idb,"\n"); \ 
+	std::cerr << std::endl; \
+	LOG("idb end");*/
 
 DLVHEX_NAMESPACE_USE
 
@@ -121,7 +131,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
 //  BOOST_REQUIRE(ctx.edb != 0);
 //  BOOST_REQUIRE(ctx.idb.size() == 3);
   {
-    const Rule& r = ctx.registry->rules.getByID(ctx.idb[2]);
+    const Rule& r = ctx.registry->rules.getByID(ctx.idbList.back()[2]);
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);

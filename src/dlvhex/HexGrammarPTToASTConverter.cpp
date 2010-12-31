@@ -64,8 +64,8 @@ void HexGrammarPTToASTConverter::convertPTToAST(
           if (countModule>0) 
             {
 	      // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);    
-	      ctx.edbList.push_back(ctx.edb);
-              ctx.idbList.push_back(ctx.idb);	    
+	      // ctx.edbList.push_back(ctx.edb);
+              // ctx.idbList.push_back(ctx.idb);	    
 	      Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
 	      int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
 	      LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
@@ -76,14 +76,14 @@ void HexGrammarPTToASTConverter::convertPTToAST(
     }
   // insert for the last time
   // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
-  ctx.edbList.push_back(ctx.edb);
-  ctx.idbList.push_back(ctx.idb);
+  // ctx.edbList.push_back(ctx.edb);
+  // ctx.idbList.push_back(ctx.idb);
   Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
   int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
   LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
   // clean the idb and edb
-  ctx.idb.clear();
-  ctx.edb.reset(new Interpretation(ctx.registry));
+  // ctx.idb.clear();
+  // ctx.edb.reset(new Interpretation(ctx.registry));
 //  assert(mSC.insertCompleteModule()==true);
 //  assert(mSC.validateAllModuleCalls()==true);
 }
@@ -207,6 +207,11 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
       throw SyntaxError("Error in inserting module header '" + modName);
     };
 */
+  // expand edb and idb
+  ctx.edbList.resize(ctx.edbList.size()+1);
+  ctx.edbList.back().reset(new Interpretation(ctx.registry));
+  ctx.idbList.resize(ctx.idbList.size()+1);
+
   LOG(" - Module inputs : ");
   ctx.inputList.resize(ctx.inputList.size()+1);
   if (node.children.size() == 9) 
@@ -233,8 +238,8 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
       LOG(" - no module input  ");
     }
 
-  ctx.idb.clear();
-  ctx.edb.reset(new Interpretation(ctx.registry));
+  // ctx.idb.clear();
+  // ctx.edb.reset(new Interpretation(ctx.registry));
 }
 
 void HexGrammarPTToASTConverter::createASTFromClause(
@@ -284,7 +289,9 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         ID id = *head.begin();
         if( !id.isOrdinaryGroundAtom() )
           throw SyntaxError("fact '"+ctx.registry->ogatoms.getByID(id).text+"' not safe!");
-        ctx.edb->setFact(id.address);
+	
+	//ctx.edb->setFact(id.address);
+	ctx.edbList.back()->setFact(id.address);        
         LOG("added fact with id " << id << " to edb");
       }
       else
@@ -296,7 +303,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
         markExternalPropertyIfExternalBody(r);
         ID id = ctx.registry->rules.storeAndGetID(r);
-        ctx.idb.push_back(id);
+        // ctx.idb.push_back(id);
+	ctx.idbList.back().push_back(id);
         LOG("added rule " << r << " with id " << id << " to idb");
       }
     }
@@ -310,7 +318,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
-      ctx.idb.push_back(id);
+      // ctx.idb.push_back(id);
+      ctx.idbList.back().push_back(id);
       LOG("added constraint " << r << " with id " << id << " to idb");
     }
     break;
@@ -343,7 +352,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
-      ctx.idb.push_back(id);
+      // ctx.idb.push_back(id);
+      ctx.idbList.back().push_back(id);
       LOG("added weakconstraint " << r << " with id " << id << " to idb");
     }
     break;

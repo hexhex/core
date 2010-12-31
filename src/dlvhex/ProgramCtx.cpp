@@ -253,9 +253,9 @@ void RawPrinter::print(ID id)
 ProgramCtx::ProgramCtx()
   :
 		registry(),
-		idb(),
+		// idb(),
     		idbList(), 
-		edb(),
+		// edb(),
     		edbList(),
     		inputList(),
 		maxint(0),

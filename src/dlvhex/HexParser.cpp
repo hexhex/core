@@ -45,11 +45,13 @@ HexParser::HexParser(ProgramCtx& ctx):
 {
   // prepare ctx: we need an edb and a registry
   assert(ctx.registry != 0);
+/*
   if( ctx.edb == 0 )
   {
     // create empty interpretation using this context's registry
     ctx.edb.reset(new Interpretation(ctx.registry));
   }
+*/
 }
   
 HexParser::~HexParser()

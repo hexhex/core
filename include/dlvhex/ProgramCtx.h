@@ -169,11 +169,11 @@ public:
   // ModuleHeaderTable mHT;
 
   // idb 
-  Tuple idb; // should be without this one
+  // Tuple idb; // should be without this one
   std::vector<Tuple> idbList;
 
   // edb 
-  Interpretation::Ptr edb; // should be without this one
+  // Interpretation::Ptr edb; // should be without this one
   std::vector<Interpretation::Ptr> edbList;
 
   // typedef std::vector<int> intList;

@@ -1,5 +1,11 @@
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/ProgramCtx.h: substitute edb and idb by edbList and idbList
+	* src/dlvhex/HexParser.cpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+
 	* testsuite/Makefile.am: remove declaration of ModuleHeaderTable (old version)
 	* include/dlvhex/ProgramCtx.h: Likewise.
 
