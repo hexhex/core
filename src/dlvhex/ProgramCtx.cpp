@@ -80,6 +80,8 @@ std::ostream& Registry::print(std::ostream& o) const
       matoms <<
       "rules:" << std::endl <<
       rules <<
+      "module table:" << std::endl <<
+      moduleTable <<
       "REGISTRY END" << std::endl;
 }
 
@@ -252,7 +254,10 @@ ProgramCtx::ProgramCtx()
   :
 		registry(),
 		idb(),
+    		idbList(), 
 		edb(),
+    		edbList(),
+    		inputList(),
 		maxint(0),
 		options(new std::vector<std::string>),
     container(0),

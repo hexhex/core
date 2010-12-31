@@ -1,5 +1,14 @@
 2010-12-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/ModuleTable.hpp: new way of module syntax checking using new version of module table
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+
+2010-12-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change termz to terms
 	* src/dlvhex/ProgramCtx.cpp: Likewise.
 	* include/dlvhex/ProgramCtx.h: Likewise.

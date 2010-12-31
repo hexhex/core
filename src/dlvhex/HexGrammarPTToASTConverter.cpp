@@ -63,18 +63,24 @@ void HexGrammarPTToASTConverter::convertPTToAST(
           // if at least we have already inserted one module
           if (countModule>0) 
             {
-	      ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);    
+	      // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);    
 	      ctx.edbList.push_back(ctx.edb);
               ctx.idbList.push_back(ctx.idb);	    
+	      Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
+	      int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
+	      LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
             }
           doModuleHeader(*it);
           countModule++;
         }
     }
   // insert for the last time
-  ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
+  // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
   ctx.edbList.push_back(ctx.edb);
   ctx.idbList.push_back(ctx.idb);
+  Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
+  int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
+  LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
   // clean the idb and edb
   ctx.idb.clear();
   ctx.edb.reset(new Interpretation(ctx.registry));
@@ -195,11 +201,14 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
   LOG(" - Module name : '" << modName << "'");
   //assert(mSC.announceModuleHeader(modName)==true);
   currentModuleName = modName;
+/*
   if (ctx.mHT.insertModuleHeader(modName)==false)
     {
       throw SyntaxError("Error in inserting module header '" + modName);
     };
+*/
   LOG(" - Module inputs : ");
+  ctx.inputList.resize(ctx.inputList.size()+1);
   if (node.children.size() == 9) 
     {
       // retrieve module inputs
@@ -213,7 +222,9 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
         predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
         LOG("'" << predName << "/" << predArity << "', ");
         //mSC.announcePredInputModuleHeader(predName, predArity);
-        ctx.mHT.insertPredInputModuleHeader(predName, predArity);
+        // ctx.mHT.insertPredInputModuleHeader(predName, predArity);
+	Tuple& el = ctx.inputList.back();
+	el.push_back(createPredFromIdent(predDecl.children[0], predArity));
       }
       LOG(std::endl);
     } 
@@ -809,12 +820,17 @@ ID HexGrammarPTToASTConverter::createPredFromIdent(node_t& node, int arity)
   s = currentModuleName + "." + s;
   ID id = ctx.registry->preds.getIDByString(s);
   if( id == ID_FAIL )
-  {
-    Predicate predicate(ID::MAINKIND_TERM, s, arity);
-    predicate.kind |= ID::SUBKIND_TERM_PREDICATE;
-    id = ctx.registry->preds.storeAndGetID(predicate);
-    LOG("Preds saved " << s << std::endl);
-  }
+    {
+      Predicate predicate(ID::MAINKIND_TERM, s, arity);
+      predicate.kind |= ID::SUBKIND_TERM_PREDICATE;
+      id = ctx.registry->preds.storeAndGetID(predicate);
+      LOG("Preds saved " << s << std::endl);
+    } 
+  else 
+    {
+       //TODO should check if the pred arity is different from the one that is created before
+       // except for arity = -1 ? 
+    }
   return id;
 }
 DLVHEX_NAMESPACE_END

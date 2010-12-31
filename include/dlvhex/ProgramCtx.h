@@ -167,19 +167,19 @@ public:
   // to have multiple program contexts sharing the same registry)
   RegistryPtr registry;
 
-  ModuleHeaderTable mHT;
+  // ModuleHeaderTable mHT;
 
   // idb 
   Tuple idb; // should be without this one
   std::vector<Tuple> idbList;
 
   // edb 
-  typedef Interpretation::Ptr edbType;
-  edbType edb; // should be without this one
+  Interpretation::Ptr edb; // should be without this one
   std::vector<Interpretation::Ptr> edbList;
 
-  typedef std::vector<int> intList;
-  // should be: std::vector<Tuple> inputList;
+  // typedef std::vector<int> intList;
+  // std::vector<intList> inputList;
+  std::vector<Tuple> inputList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

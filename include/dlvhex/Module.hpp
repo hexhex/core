@@ -52,9 +52,14 @@ struct Module:
 //  Module(IDKind kind, const std::string& symbol, const int& arity): kind(kind), symbol(symbol), arity(arity)
 //		{ assert(ID(kind,0).isTerm()); }
 
+  Module(): moduleName(""), inputList(-1), edb(-1), idb(-1) { }
   Module(const std::string& moduleName, const int& inputList, const int& edb, const int& idb): 
                 moduleName(moduleName), inputList(inputList), edb(edb), idb(idb)
 		{  }
+  inline bool operator==(const Module& mod2) const 
+         { return moduleName == mod2.moduleName && inputList == mod2.inputList && edb == mod2.edb && idb == mod2.idb; }
+  inline bool operator!=(const Module& mod2) const 
+         { return moduleName != mod2.moduleName && inputList != mod2.inputList && edb != mod2.edb && idb != mod2.idb; }
   std::ostream& print(std::ostream& o) const
     { return o << "Module(" << moduleName << ", inputList: " << inputList << ", edb: " << edb << ", idb: " << idb << ")"; }
 };

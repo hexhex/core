@@ -78,9 +78,24 @@ public:
   // store symbol, assuming it does not exist
   // assert that symbol did not exist
   inline int storeAndGetAddress(const Module& mod) throw();
-  inline virtual std::ostream& print(std::ostream& o) const { return o << "a"; }
+  inline virtual std::ostream& print(std::ostream& o) const;
 
 };
+
+std::ostream& ModuleTable::print(std::ostream& o) const 
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+  AddressIndex::const_iterator it = idx.begin();
+  int address = 0;
+  while ( it != idx.end() )
+    {
+      o << "[" << address << "]" << ": " << *it << std::endl;
+      it++;
+      address++;
+    }
+  return o;
+}
+
 
 // retrieve by address
 const Module& ModuleTable::getByAddress(const int& address) const throw ()
@@ -98,8 +113,10 @@ const Module& ModuleTable::getModuleByName(const std::string& moduleName) const 
 {
   const ModuleNameIndex& sidx = container.get<impl::ModuleNameTag>();
   ModuleNameIndex::const_iterator it = sidx.find(moduleName);
-  if( it == sidx.end() )
-    return MODULE_FAIL;
+  if( it == sidx.end() ) 
+    {
+      return MODULE_FAIL;
+    }
   else
     {
       return *it;
