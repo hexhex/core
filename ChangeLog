@@ -1,3 +1,7 @@
+2011-01-06  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/BoostComponentFinder.cpp: Fix for clang compatibility (merged).
+
 2010-12-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* examples/comments.hex: Add testcase for comment parsing.

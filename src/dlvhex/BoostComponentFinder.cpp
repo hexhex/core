@@ -258,7 +258,9 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
 	    //
 	    // create a label table for the graphviz output
 	    //
-	    std::string nms[3 * nodes.size()];
+	    const int nnames = 3*nodes.size();
+	    std::vector<std::string> nms(nnames);
+	    const char* nmsc[nnames];
 
 	    std::ostringstream oss;
 	    RawPrintVisitor rpv(oss);
@@ -274,12 +276,13 @@ BoostComponentFinder::findStrongComponents(const std::vector<AtomNodePtr>& nodes
 		boost::algorithm::replace_all(at, "\"", "\\\"");
 
 		nms[y] = at;
+		nmsc[y] = nms[y].c_str();
 	      }
 
 	    std::ofstream out;
 			
 	    out.open(Globals::Instance()->lpfilename.c_str());
-	    write_graphviz(out, G, make_label_writer(nms));
+	    write_graphviz(out, G, make_label_writer(nmsc));
 	    out.close();
 	    
 	    Globals::Instance()->getVerboseStream() << "Graph written to "
