@@ -23,17 +23,16 @@
 
 
 /**
- * @file   globals.h
- * @author Roman Schindlauer
+ * @file   Configuration.hpp
+ * @author Roman Schindlauer, Peter Schueller
  * @date   Sat Nov  5 15:26:18 CET 2005
  * 
- * @brief  Global variable declarations.
- * 
+ * @brief  configuration container (previously global variables)
  */
 
 
-#if !defined(_DLVHEX_GLOBALS_H)
-#define _DLVHEX_GLOBALS_H
+#if !defined(_DLVHEX_CONFIGURATION_HPP)
+#define _DLVHEX_CONFIGURATION_HPP
 
 #include "dlvhex/PlatformDefinitions.h"
 
@@ -46,10 +45,10 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * @brief Definition of global variables.
  */
-class DLVHEX_EXPORT Globals
+class DLVHEX_EXPORT Configuration
 {
 protected:
-	Globals();
+	Configuration();
 
 public:
 
@@ -68,12 +67,6 @@ public:
 	               GRAPH_PROCESSOR,
 	               PROFILING,
 	               DUMP_OUTPUT } verboseAction_t;
-
-	/**
-	 * Singleton instance.
-	 */
-	static Globals*
-	Instance();
 
 	/**
 	 * Return the value of the specified option identifier.
@@ -118,28 +111,12 @@ public:
 	std::ostream&
 	getVerboseStream() const;
 
-	/**
-	 * temporary hack
-	 */
-	std::string maxint;
-
-	/**
-	 * Filename of the (first, if more than one were specified) logic program
-	 * dlvhex was called with.
-	 */
-	std::string lpfilename;
-
 private:
 
 	/**
 	 * @brief Associates a verbose action with a verbose level.
 	 */
 	std::map<verboseAction_t, unsigned> verboseLevel;
-
-	/**
-	 * Singleton instance.
-	 */
-	static Globals* _instance;
 
 	/**
 	 * @brief Associates option names with values.
@@ -161,7 +138,7 @@ private:
 
 DLVHEX_NAMESPACE_END
 
-#endif // _DLVHEX_GLOBALS_H
+#endif // _DLVHEX_CONFIGURATION_HPP
 
 // vim: noet ts=8 sw=4 tw=80
 

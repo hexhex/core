@@ -66,4 +66,4 @@ LIBDLVHEXBASE = \
 
 
 # install libaspsolver and libdlvhexbase headers
-pkginclude_HEADERS = $(LIBASPSOLVER) $(LIBDLVHEXBASE)
+#pkginclude_HEADERS = $(LIBASPSOLVER) $(LIBDLVHEXBASE)

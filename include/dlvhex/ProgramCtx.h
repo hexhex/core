@@ -36,6 +36,7 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/Configuration.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/TermTable.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
@@ -156,6 +157,10 @@ public:
 class DLVHEX_EXPORT ProgramCtx
 {
 public:
+	// previously globals
+	// TODO unify configuration
+	Configuration config;
+
   // symbol storage of this program context
   // (this is a shared ptr because we might want
   // to have multiple program contexts sharing the same registry)
@@ -171,8 +176,6 @@ public:
   uint32_t maxint;
 
   // TODO: add visibility policy (as in clasp)
-
-  // TODO: selected solver software
 
   // TODO: loaded external atoms
 
@@ -198,7 +201,6 @@ public:
   OutputBuilder* outputbuilder;
 
   boost::shared_ptr<State> state;
-
 
  protected:
   friend class State;
@@ -264,7 +266,7 @@ public:
 
   void
   setDependencyGraph(DependencyGraph*);
-
+	#endif
 
   ASPSolverManager::SoftwareConfigurationPtr
   getASPSoftware() const;
@@ -272,7 +274,7 @@ public:
   void
   setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr);
 
-
+	#if 0
   ResultContainer*
   getResultContainer() const;
 

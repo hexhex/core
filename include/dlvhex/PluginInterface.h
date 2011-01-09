@@ -1025,6 +1025,7 @@ public:
 	? std::vector<PluginConverter*>(1, pc) 
 	: std::vector<PluginConverter*>();
 			#endif
+			return std::vector<PluginConverter*>();
     }
 
     /**

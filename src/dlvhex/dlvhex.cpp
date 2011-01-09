@@ -59,8 +59,7 @@
 #include "dlvhex/PluginContainer.h"
 //#include "dlvhex/Program.h"
 //#include "dlvhex/AtomNode.h"
-#include "dlvhex/NodeGraph.h"
-#include "dlvhex/globals.h"
+//#include "dlvhex/NodeGraph.h"
 #include "dlvhex/Error.h"
 //#include "dlvhex/RuleMLOutputBuilder.h"
 //#include "dlvhex/PrintVisitor.h"
@@ -144,7 +143,7 @@ printUsage(std::ostream &out, bool full)
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
       << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+//      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
@@ -215,6 +214,8 @@ struct NotNCNameChar : public std::unary_function<char, bool>
 };
 
 
+// TODO implement namespaces
+#if 0
 void
 insertNamespaces()
 {
@@ -286,8 +287,6 @@ insertNamespaces()
     }
 }
 
-
-
 void
 removeNamespaces()
 {
@@ -329,6 +328,7 @@ removeNamespaces()
 	}
     }
 }
+#endif
 
 int
 main (int argc, char *argv[])
@@ -346,23 +346,18 @@ main (int argc, char *argv[])
   /////////////////////////////////////////////////////////////////
 
   // global defaults:
-  ///@todo clean up!!
-  Globals::Instance()->setOption("Silent", 0);
-  Globals::Instance()->setOption("Verbose", 0);
-  Globals::Instance()->setOption("StrongSafety", 1);
-  Globals::Instance()->setOption("AllModels", 0);
-  Globals::Instance()->setOption("ReverseAllModels", 0);
-  Globals::Instance()->setOption("UseExtAtomCache",1);
+  ///@todo clean up, allow per program options!!
+  pctx.config.setOption("Silent", 0);
+  pctx.config.setOption("Verbose", 0);
+  pctx.config.setOption("StrongSafety", 1);
+  pctx.config.setOption("AllModels", 0);
+  pctx.config.setOption("ReverseAllModels", 0);
+  pctx.config.setOption("UseExtAtomCache",1);
 
   // per default use DLV as ASP solver software
-  ASPSolverManager::SoftwareConfigurationPtr dlvSoftware(
-    new DLVSoftware::Configuration);
-  pctx.setASPSoftware(dlvSoftware);
-
-#if defined(HAVE_DLVDB)
-  // allow to use dlvdbSoftware (we need this here to handle .typ file arguments)
-  boost::shared_ptr<DLVDBSoftware::Configuration> dlvdbSoftware;
-#endif
+  // TODO make this more generic
+  pctx.setASPSoftware(
+	ASPSolverManager::SoftwareConfigurationPtr(new DLVSoftware::Configuration));
 
   // options only used here in main():
   bool optionPipe = false;
@@ -402,9 +397,9 @@ main (int argc, char *argv[])
       { "plugindir", required_argument, 0, 'p' },
       { "allmodels", no_argument, 0, 'a' },
       { "reverse", no_argument, 0, 'r' },
-      { "firstorder", no_argument, &longid, 1 },
+      //{ "firstorder", no_argument, &longid, 1 },
       { "weaksafety", no_argument, &longid, 2 },
-      { "ruleml",     no_argument, &longid, 3 },
+      //{ "ruleml",     no_argument, &longid, 3 },
       { "dlt",        no_argument, &longid, 4 },
       { "noeval",     no_argument, &longid, 5 },
       { "keepnsprefix", no_argument, &longid, 6 },
@@ -423,14 +418,14 @@ main (int argc, char *argv[])
 	  break;
 
 	case 's':
-	  Globals::Instance()->setOption("Silent", 1);
+	  pctx.config.setOption("Silent", 1);
 	  break;
 
 	case 'v':
 	  if (optarg)
-	    Globals::Instance()->setOption("Verbose", atoi(optarg));
+	    pctx.config.setOption("Verbose", atoi(optarg));
 	  else
-	    Globals::Instance()->setOption("Verbose", 1);
+	    pctx.config.setOption("Verbose", 1);
 	  break;
 
 	case 'f':
@@ -442,7 +437,7 @@ main (int argc, char *argv[])
 	    for (boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
 		 f != tok.end(); ++f)
 	      {
-		Globals::Instance()->addFilter(*f);
+		pctx.config.addFilter(*f);
 	      }
 	  }
 	  break;
@@ -452,29 +447,25 @@ main (int argc, char *argv[])
 	  break;
 
 	case 'a':
-	  Globals::Instance()->setOption("AllModels", 1);
+	  pctx.config.setOption("AllModels", 1);
 	  break;
 
 	case 'r':
-	  Globals::Instance()->setOption("ReverseOrder", 1);
+	  pctx.config.setOption("ReverseOrder", 1);
 	  break;
 
 	case 0:
 	  switch (longid)
 	    {
-	    case 1:
-	      std::cerr << "warning: --firstorder is deprecated (autodetect)" << std::endl;
-	      break;
-
 	    case 2:
-	      Globals::Instance()->setOption("StrongSafety", 0);
+	      pctx.config.setOption("StrongSafety", 0);
 	      break;
 
-	    case 3:
-	      pctx.setOutputBuilder(new RuleMLOutputBuilder);
+	    //case 3:
+	     // pctx.setOutputBuilder(new RuleMLOutputBuilder);
 	      // XML output makes only sense with silent:
-	      Globals::Instance()->setOption("Silent", 1);
-	      break;
+	     // pctx.config.setOption("Silent", 1);
+	     // break;
 
 	    case 4:
 	      optiondlt = true;
@@ -495,11 +486,8 @@ main (int argc, char *argv[])
 		{
 #if defined(HAVE_DLVDB)
 		  // use DLVDB as ASP solver software
-		  dlvSoftware.reset();
-		  dlvdbSoftware =
-	            boost::shared_ptr<DLVDBSoftware::Configuration>(
-		      new DLVDBSoftware::Configuration);
-		  pctx.setASPSoftware(dlvdbSoftware);
+		  pctx.setASPSoftware(
+			ASPSolverManager::SoftwareConfigurationPtr(new DLVDBSoftware::Configuration));
 #else
 		  printLogo();
 		  std::cerr << "The command line option ``--solver=dlvdb´´ "
@@ -511,13 +499,14 @@ main (int argc, char *argv[])
 		}
 	      else
 		{
+		  // TODO add clingo support
 	  	  // nothing todo as default is DLV
 		}
 	      }
 	      break;
 
 	    case 8:
-	      Globals::Instance()->setOption("UseExtAtomCache",0);
+	      pctx.config.setOption("UseExtAtomCache",0);
 	      break;
 
 	    case 9:
@@ -536,7 +525,7 @@ main (int argc, char *argv[])
   // before anything else we dump the logo
   //
 
-  if (!Globals::Instance()->getOption("Silent"))
+  if (!pctx.config.getOption("Silent"))
     {
       printLogo();
     }
@@ -558,9 +547,9 @@ main (int argc, char *argv[])
 
   benchmark::BenchmarkController& ctr =
     benchmark::BenchmarkController::Instance();
-  if( Globals::Instance()->doVerbose(Globals::PROFILING) )
+  if( pctx.config.doVerbose(Configuration::PROFILING) )
   {
-    ctr.setOutput(&Globals::Instance()->getVerboseStream());
+    ctr.setOutput(&pctx.config.getVerboseStream());
     // for continuous statistics output, display every 1000'th output
     ctr.setPrintInterval(999);
   }
@@ -595,11 +584,6 @@ main (int argc, char *argv[])
       // no files and no stdin - error
       inputIsWrong = true;
     }
-  else if (optind == argc && optionPipe)
-    {
-      // no files and stdin: set the lpfilename to a dummy value
-      Globals::Instance()->lpfilename = "lpgraph.dot";
-    }
   else
     {
       //
@@ -612,19 +596,22 @@ main (int argc, char *argv[])
       for (int i = optind; i < argc; ++i)
 	{
 	  std::string arg(argv[i]);
-          #if defined(HAVE_DLVDB)
-	  if( dlvdbSoftware != 0 && arg.substr(arg.size()-4) == ".typ" )
+	  if( arg.substr(arg.size()-4) == ".typ" )
 	  {
+		  #if defined(HAVE_DLVDB)
+		  boost::shared_ptr<ASPSolver::DLVDBSoftware::Configuration> ptr =
+			  boost::dynamic_pointer_cast<ASPSolver::DLVDBSoftware::Configuration>(pctx.getASPSoftware());
+		  if( ptr == 0 )
+			  throw GeneralError(".typ files can only be used if dlvdb backend is used");
+
 		  if( foundTyp )
-		  {
-			  std::cerr << "cannot use more than one .typ file with dlvdb!" << std::endl;
-			  exit(-1);
-		  }
+			  throw GeneralError("cannot use more than one .typ file with dlvdb");
+		  
 		  foundTyp = true;
-		  dlvdbSoftware->options.typFile = arg;
+		  ptr->options.typFile = arg;
+		  #endif
 	  }
 	  else
-	  #endif
 	  {
 		  pctx.addInputSource(arg);
 	  }
@@ -650,7 +637,7 @@ main (int argc, char *argv[])
       /////////////////////////////////////////////////////////////////
   
       ///@todo this could be better
-      Globals::Instance()->setOption("HelpRequested", helpRequested);
+      pctx.config.setOption("HelpRequested", helpRequested);
 
       if (helpRequested)
 	{
@@ -702,7 +689,7 @@ main (int argc, char *argv[])
       
       pctx.convert();
       
-      if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM))
+      if (pctx.config.doVerbose(Configuration::DUMP_CONVERTED_PROGRAM))
 	{
 	  //
 	  // we need to read the input-istream now - use a stringstream
@@ -711,9 +698,9 @@ main (int argc, char *argv[])
 	  //
 	  std::stringstream ss;
 	  ss << pctx.getInput().rdbuf();
-	  Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
-	  Globals::Instance()->getVerboseStream() << ss.str();
-	  Globals::Instance()->getVerboseStream() << std::endl;
+	  pctx.config.getVerboseStream() << "Converted input:" << std::endl;
+	  pctx.config.getVerboseStream() << ss.str();
+	  pctx.config.getVerboseStream() << std::endl;
 	  delete pctx.getInput().rdbuf(); 
 	  pctx.getInput().rdbuf(new std::stringbuf(ss.str()));
 	}
@@ -733,14 +720,16 @@ main (int argc, char *argv[])
       #warning TODO implement namespaces!
       //insertNamespaces();
       
-      if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
+      if (pctx.config.doVerbose(Configuration::DUMP_PARSED_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
-	  RawPrinter rp(Globals::Instance()->getVerboseStream(), pctx);
-	  rp.print(pctx.getIDB());
-	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
-	  rp.print(pctx.getEDB());
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	  pctx.config.getVerboseStream() <<
+		  "Parsed Rules: " << std::endl;
+	  RawPrinter rp(pctx.config.getVerboseStream(), pctx.registry);
+	  rp.printmany(pctx.idb, "\n");
+	  pctx.config.getVerboseStream() <<
+		  std::endl <<
+		  "Parsed EDB: " << std::endl <<
+		  *pctx.edb << std::endl;
 	}
       
       
@@ -754,14 +743,14 @@ main (int argc, char *argv[])
       /*
       pctx.rewrite();
       
-      if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
+      if (pctx.config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  pctx.config.getVerboseStream() << "Rewritten rules:" << std::endl;
+	  RawPrintVisitor rpv(pctx.config.getVerboseStream());
 	  pctx.getIDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
+	  pctx.config.getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
 	  pctx.getEDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	  pctx.config.getVerboseStream() << std::endl << std::endl;
 	}
 	*/
       
@@ -773,21 +762,24 @@ main (int argc, char *argv[])
       
       pctx.createNodeGraph();
       
-      if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
+      // TODO integrate new graphs
+      #if 0
+      if (pctx.config.doVerbose(Configuration::DUMP_DEPENDENCY_GRAPH))
 	{
 	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
+	  pctx.config.getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
 
 	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
 	       node != nodegraph->getNodes().end();
 	       ++node)
 	    {
-	      Globals::Instance()->getVerboseStream() << **node << std::endl;
+	      pctx.config.getVerboseStream() << **node << std::endl;
 	    }
 	  
-	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
+	  pctx.config.getVerboseStream() << "Dependency graph end" << std::endl;
 	}
+      #endif
       
       /////////////////////////////////////////////////////////////////
       //
@@ -799,27 +791,27 @@ main (int argc, char *argv[])
       /*
       pctx.optimize();
       
-      if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM))
+      if (pctx.config.doVerbose(Configuration::DUMP_OPTIMIZED_PROGRAM))
 	{
-	  Globals::Instance()->getVerboseStream() << "Optimized graph:" << std::endl;
+	  pctx.config.getVerboseStream() << "Optimized graph:" << std::endl;
 
 	  const NodeGraph* nodegraph = pctx.getNodeGraph();
 
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
+	  pctx.config.getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
 
 	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
 	       node != nodegraph->getNodes().end();
 	       ++node)
 	    {
-	      Globals::Instance()->getVerboseStream() << **node << std::endl;
+	      pctx.config.getVerboseStream() << **node << std::endl;
 	    }
 	  
-	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
+	  pctx.config.getVerboseStream() << "Dependency graph end" << std::endl;
 
-	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+	  pctx.config.getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
+	  RawPrintVisitor rpv(pctx.config.getVerboseStream());
 	  pctx.getEDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
+	  pctx.config.getVerboseStream() << std::endl << std::endl;
 	}
 	*/
       

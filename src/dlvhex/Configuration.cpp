@@ -23,25 +23,22 @@
 
 
 /**
- * @file   globals.cpp
- * @author Roman Schindlauer
+ * @file   Configuration.cpp
+ * @author Roman Schindlauer, Peter Schueller
  * @date   Sat Nov  5 15:26:18 CET 2005
  * 
- * @brief  Global variable definitions.
+ * @brief  configuration container (previously global variables)
  * 
  */
 
-#include "dlvhex/globals.h"
+#include <dlvhex/Configuration.hpp>
 
 #include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-Globals*
-Globals::_instance = 0;
 
-
-Globals::Globals()
+Configuration::Configuration()
 {
 	//
 	// program analysis
@@ -72,24 +69,15 @@ Globals::Globals()
     verboseLevel[PROFILING] = 8;
 }
 
-Globals*
-Globals::Instance()
-{
-    if (_instance == 0)
-        _instance = new Globals;
-
-    return _instance;
-}
-
 
 unsigned
-Globals::getOption(const std::string& option)
+Configuration::getOption(const std::string& option)
 {
     return optionMap[option];
 }
 
 bool
-Globals::doVerbose(verboseAction_t va)
+Configuration::doVerbose(verboseAction_t va)
 {
 	//
 	// bitwise and
@@ -99,28 +87,28 @@ Globals::doVerbose(verboseAction_t va)
 
 
 void
-Globals::setOption(const std::string& option, unsigned value)
+Configuration::setOption(const std::string& option, unsigned value)
 {
     optionMap[option] = value;
 }
 
 
 void
-Globals::addFilter(const std::string& f)
+Configuration::addFilter(const std::string& f)
 {
     optionFilter.push_back(f);
 }
 
 
 const std::vector<std::string>&
-Globals::getFilters() const
+Configuration::getFilters() const
 {
     return optionFilter;
 }
 
 
 std::ostream&
-Globals::getVerboseStream() const
+Configuration::getVerboseStream() const
 {
     return std::cerr;
 }

@@ -4,6 +4,8 @@ AM_CPPFLAGS = \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
     $(BOOST_CPPFLAGS) \
+    $(BM_CPPFLAGS) \
+    $(DLVHEX_CFLAGS) \
     @INCLTDL@ \
     @LIBCURL_CPPFLAGS@
 
@@ -16,8 +18,10 @@ lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
-    dlvhex.cpp \
-    RuleMLOutputBuilder.cpp 
+    Configuration.cpp \
+    dlvhex.cpp
+
+#    RuleMLOutputBuilder.cpp 
 
 #
 # -static: statically link libdlvhexbase
@@ -46,7 +50,6 @@ libdlvhexbase_la_SOURCES = \
     ExternalAtom.cpp \
     Error.cpp \
     FixpointModelGenerator.cpp \
-    globals.cpp \
     GraphBuilder.cpp \
     GraphProcessor.cpp \
     GuessCheckModelGenerator.cpp \
