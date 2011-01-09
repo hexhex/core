@@ -39,6 +39,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 
 #include <map>
+#include <cstddef> // size_t
 
 DLVHEX_NAMESPACE_BEGIN
 

@@ -1,3 +1,7 @@
+2011-01-09  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/NamesTable.h: Fix for g++-snapshot compatibility.
+
 2011-01-06  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/BoostComponentFinder.cpp: Fix for clang compatibility (merged).
