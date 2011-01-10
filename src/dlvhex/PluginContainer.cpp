@@ -212,6 +212,15 @@ PluginContainer::importPlugins()
 		}
 	    }
 	}
+      else
+        {
+          if (Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING))
+          {
+            Globals::Instance()->getVerboseStream() <<
+              "Found no symbol \"" << PLUGINIMPORTFUNCTIONSTRING << "\" "
+              "in Library: \"" << *it << "\"" << std::endl;
+          }
+	}
     }
 
   return plugins;

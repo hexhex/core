@@ -1,3 +1,7 @@
+2011-01-10  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/PluginContainer.cpp: More verbose plugin loading.
+
 2011-01-09  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/NamesTable.h: Fix for g++-snapshot compatibility.
