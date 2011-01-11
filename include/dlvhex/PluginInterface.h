@@ -235,7 +235,7 @@
  * 
  * \code
  *         virtual void
- *         getAtoms(AtomFunctionMap& a)
+ *         getAtoms(PluginAtomMap& a)
  *         {
  *             boost::shared_ptr<PluginAtom> rdf(new RDFatom);
  *             a["rdf"] = rdf;
@@ -902,6 +902,11 @@ protected:
 std::size_t hash_value(const PluginAtom::Query& q);
 
 /**
+ * \brief Associates atom names with PluginAtom instances implementing them.
+ */
+typedef std::map<std::string, boost::shared_ptr<PluginAtom> > PluginAtomMap;
+
+/**
  * \brief Factory base class for representing plugins and creating necessary objects.
  *
  * \ingroup pluginframework
@@ -980,11 +985,6 @@ public:
     virtual
     ~PluginInterface()
     { }
-
-    /**
-     * \brief Associates atom names with function pointers.
-     */
-    typedef std::map<std::string, boost::shared_ptr<PluginAtom> > AtomFunctionMap;
 
     /**
      * \brief Converter.
@@ -1082,7 +1082,7 @@ public:
      *
      * \code
      * void
-     * getAtoms(AtomFunctionMap& a)
+     * getAtoms(PluginAtomMap& a)
      * {
      *     boost::shared_ptr<PluginAtom> newatom(new MyAtom);
      *     a["newatom"] = newatom;
@@ -1105,7 +1105,7 @@ public:
      * \endcode
      */
     virtual void
-    getAtoms(AtomFunctionMap&)
+    getAtoms(PluginAtomMap&)
     { }
 
     /**
@@ -1175,6 +1175,8 @@ public:
       return this->versionMicro;
     }
 };
+
+typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
 
 DLVHEX_NAMESPACE_END
 

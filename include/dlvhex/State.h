@@ -58,44 +58,20 @@ class DLVHEX_EXPORT State
   ~State()
   {}
 
-  virtual void
-  openPlugins(ProgramCtx*);
-
-  virtual void
-  convert(ProgramCtx*);
-
-  virtual void
-  parse(ProgramCtx*);
-
-  virtual void
-  rewrite(ProgramCtx*);
-
-  virtual void
-  createNodeGraph(ProgramCtx*);
-
-  virtual void
-  optimize(ProgramCtx*);
-
-  virtual void
-  safetyCheck(ProgramCtx*);
-
-  virtual void
-  strongSafetyCheck(ProgramCtx*);
-
-  virtual void
-  createDependencyGraph(ProgramCtx*);
-
-  virtual void
-  setupProgramCtx(ProgramCtx*);
-
-  virtual void
-  evaluate(ProgramCtx*);
-
-  virtual void
-  postProcess(ProgramCtx*);
-
-  virtual void
-  output(ProgramCtx*);
+  virtual void openPlugins(ProgramCtx*);
+  virtual void convert(ProgramCtx*);
+  virtual void parse(ProgramCtx*);
+	virtual void rewriteEDBIDB(ProgramCtx*);
+	virtual void associatePluginAtomsWithExtAtoms(ProgramCtx*);
+	virtual void optimizeEDBDependencyGraph(ProgramCtx*);
+	virtual void createComponentGraph(ProgramCtx*);
+	virtual void createEvalGraph(ProgramCtx*);
+  virtual void safetyCheck(ProgramCtx*);
+  virtual void strongSafetyCheck(ProgramCtx*);
+  virtual void configureModelBuilder(ProgramCtx*);
+  virtual void createDependencyGraph(ProgramCtx*);
+  virtual void evaluate(ProgramCtx*);
+  virtual void postProcess(ProgramCtx*);
 };
 
 

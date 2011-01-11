@@ -349,6 +349,24 @@ ConvertState::convert(ProgramCtx* ctx)
 // 	    }
     }
 
+
+	// debug output (if requested)
+	if (pctx.config.doVerbose(Configuration::DUMP_CONVERTED_PROGRAM))
+	{
+	  //
+	  // we need to read the input-istream now - use a stringstream
+	  // for output and initialize the input-istream to its
+	  // content again
+	  //
+	  std::stringstream ss;
+	  ss << pctx.getInput().rdbuf();
+	  pctx.config.getVerboseStream() << "Converted input:" << std::endl;
+	  pctx.config.getVerboseStream() << ss.str();
+	  pctx.config.getVerboseStream() << std::endl;
+	  delete pctx.getInput().rdbuf(); 
+	  pctx.getInput().rdbuf(new std::stringbuf(ss.str()));
+	}
+
   boost::shared_ptr<State> next(new ParseState);
   changeState(ctx, next);
 }
@@ -370,27 +388,28 @@ ParseState::parse(ProgramCtx* ctx)
   // run the parser
   driver.parse(ctx->getInput(), *ctx->getIDB(), *ctx->getEDB());
 
-  ///@todo move dlt code outside
-//       if (optiondlt)
-// 	{
-// 	  int dltret = pclose(fp);
-
-// 	  if (dltret != 0)
-// 	    {
-// 	      throw GeneralError("Preparser dlt returned error");
-// 	    }
-// 	}
-
   //
   // wherever the input-buffer was created before - now we don't
   // need it anymore
   //
   delete ctx->getInput().rdbuf();
 
-//      if (optiondlt)
-// 	{
-// 	  unlink(tempfile);
-// 	}
+	#warning TODO implement namespaces somewhere around here!
+
+      
+	// be verbose if requested
+	if (ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM))
+	{
+	  ctx->config.getVerboseStream() <<
+		  "Parsed Rules: " << std::endl;
+	  RawPrinter rp(pctx.config.getVerboseStream(), pctx.registry);
+	  rp.printmany(pctx.idb, "\n");
+	  pctx.config.getVerboseStream() <<
+		  std::endl <<
+		  "Parsed EDB: " << std::endl <<
+		  *pctx.edb << std::endl;
+	}
+
 
   boost::shared_ptr<State> next(new RewriteState);
   changeState(ctx, next);
@@ -428,6 +447,19 @@ RewriteState::rewrite(ProgramCtx* ctx)
     {
       next = boost::shared_ptr<State>(new CreateNodeGraph);
     }
+
+      
+	// be verbose if requested
+	if (pctx.config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM))
+	{
+	  pctx.config.getVerboseStream() << "Rewritten rules:" << std::endl;
+	  RawPrintVisitor rpv(pctx.config.getVerboseStream());
+	  pctx.getIDB()->accept(rpv);
+	  pctx.config.getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
+	  pctx.getEDB()->accept(rpv);
+	  pctx.config.getVerboseStream() << std::endl << std::endl;
+	}
+	*/
 
   changeState(ctx, next);
 }

@@ -46,6 +46,7 @@
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
+#include "dlvhex/PluginContainer.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap/bimap.hpp>
@@ -59,8 +60,6 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class PluginContainer;
-class PluginInterface;
 class Program;
 class AtomSet;
 class NodeGraph;
@@ -149,6 +148,19 @@ public:
   virtual void print(ID id);
 };
 
+class InputProvider
+{
+public:
+	void addStreamInput(std::istream& i, const std::string& contentname);
+	void addStringInput(const std::string& content, const std::string& contentname);
+	void addFileInput(const std::string& filename);
+	void addURLInput(const std::string& url);
+
+public:
+	bool hasContent() const;
+	std::ostream& getAsOutputStream();
+};
+
 /**
  * @brief Program context class.
  *
@@ -158,8 +170,14 @@ class DLVHEX_EXPORT ProgramCtx
 {
 public:
 	// previously globals
-	// TODO unify configuration
 	Configuration config;
+
+	// plugin container
+	PluginContainer pluginContainer;
+
+	// program input provider (if a converter is used, the converter consumes this
+	// input and replaces it by another input)
+	InputProvider inputProvider;
 
   // symbol storage of this program context
   // (this is a shared ptr because we might want
@@ -175,20 +193,13 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
+
   // TODO: add visibility policy (as in clasp)
 
   // TODO: loaded external atoms
 
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
-  std::vector<std::string>* options;
-
-  std::vector<std::string> inputsources;
-
-  PluginContainer* container;
-  std::vector<PluginInterface*>* plugins;
-
-  std::istream* programstream;
 
 
 //  NodeGraph* nodegraph;
@@ -198,7 +209,7 @@ public:
 
   ResultContainer* result;
 
-  OutputBuilder* outputbuilder;
+  //OutputBuilder* outputbuilder;
 
   boost::shared_ptr<State> state;
 
@@ -294,45 +305,21 @@ public:
   // state processing
   //
 
-  void
-  openPlugins();
-
-  void
-  convert();
-
-  void
-  parse();
-
-  void
-  rewrite();
-
-  void
-  createNodeGraph();
-
-  void
-  optimize();
-
-  void
-  createDependencyGraph();
-
-  void
-  safetyCheck();
-
-  void
-  strongSafetyCheck();
-
-  void
-  setupProgramCtx();
-
-  void
-  evaluate();
-
-  void
-  postProcess();
-
-  void
-  output();
-
+  void openPlugins();
+  void convert();
+  void parse();
+  void rewriteEDBIDB();
+  void optimize();
+	void associatePluginAtomsWithExtAtoms();
+	void optimizeEDBDependencyGraph();
+	void createComponentGraph();
+	void createEvalGraph();
+  void configureModelBuilder();
+  void createDependencyGraph();
+  void safetyCheck();
+  void strongSafetyCheck();
+  void evaluate();
+  void postProcess();
 };
 
 DLVHEX_NAMESPACE_END

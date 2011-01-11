@@ -1,3 +1,13 @@
+2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
+	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
+	* removed --reverse option as it was not implemented and not documented
+	* removed --dlt option as it should be done as a plugin
+	* renaming globals to config and removing singleton status (each ProgramCtx may have its own config if dlvhex is used as a library)
+	* encapsulating input sources in InputProvider
+	* removing singleton status of PluginContainer as API users might have different programs with different plugin containers
+
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Set error-limit to 5 for clang.

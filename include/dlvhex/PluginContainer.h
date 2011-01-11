@@ -53,10 +53,9 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT PluginContainer
 {
- protected:
+public:
   /// ctor
-  explicit
-  PluginContainer(const std::string& path);
+  PluginContainer();
 
   /// copy ctor
   PluginContainer(const PluginContainer&);
@@ -65,16 +64,21 @@ class DLVHEX_EXPORT PluginContainer
   ~PluginContainer();
 
 public:
+	// search for plugins in searchpath and open those that are plugins
+	// may be called multiple times with different paths
+	// paths may be separated by ":" just like LD_LIBRARY_PATH
+	void openPlugins(const std::string& searchpath="");
 
-  /// get the PluginContainer singleton instance
-  static PluginContainer*
-  instance(const std::string&);
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o);
 
-  /**
-   * @brief Loads a library and accesses its plugin-interface.
-   */
+	// call processOptions for each loaded plugin
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processOptions(std::list<const char*>& pluginOptions);
+
   std::vector<PluginInterface*>
   importPlugins();
+  const std::vector<std::string>& pluginList;
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.
@@ -84,18 +88,16 @@ public:
 
 
 private:
+	/// current search path
+	std::string searchPath;
 
-  /// singleton instance
-  static PluginContainer* theContainer;
-
-  /// list of plugins
-  std::vector<std::string> pluginList;
+	// loaded plugins
+  std::vector<PluginInterfacePtr> plugins;
 
   /**
    * @brief Associative map of external atoms provided by plugins.
    */
-  PluginInterface::AtomFunctionMap pluginAtoms;
-
+  PluginAtomMap pluginAtoms;
 };
 
 
