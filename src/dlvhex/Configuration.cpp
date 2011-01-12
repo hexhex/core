@@ -107,12 +107,6 @@ Configuration::getFilters() const
 }
 
 
-std::ostream&
-Configuration::getVerboseStream() const
-{
-    return std::cerr;
-}
-
 DLVHEX_NAMESPACE_END
 
 // Local Variables:

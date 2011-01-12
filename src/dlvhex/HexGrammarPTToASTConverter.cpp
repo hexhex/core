@@ -115,7 +115,8 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   {
     // string, variable, or constant term
     if( s[0] == '"' )
-      LOG("warning: we should expand the namespace of s='" << s << "' here!");
+      DBGLOG(DBG,"warning: we should expand the namespace of s='" << s << "' here!");
+    #warning namespaces should be implemented around here
     ID id = ctx.registry->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
@@ -194,7 +195,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         if( !id.isOrdinaryGroundAtom() )
           throw SyntaxError("fact '"+ctx.registry->ogatoms.getByID(id).text+"' not safe!");
         ctx.edb->setFact(id.address);
-        LOG("added fact with id " << id << " to edb");
+        DBGLOG(DBG,"added fact with id " << id << " to edb");
       }
       else
       {
@@ -206,7 +207,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         markExternalPropertyIfExternalBody(r);
         ID id = ctx.registry->rules.storeAndGetID(r);
         ctx.idb.push_back(id);
-        LOG("added rule " << r << " with id " << id << " to idb");
+        DBGLOG(DBG,"added rule " << r << " with id " << id << " to idb");
       }
     }
     break;
@@ -220,7 +221,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
-      LOG("added constraint " << r << " with id " << id << " to idb");
+      DBGLOG(DBG,"added constraint " << r << " with id " << id << " to idb");
     }
     break;
   case HexGrammar::WeakConstraint:
@@ -253,7 +254,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       markExternalPropertyIfExternalBody(r);
       ID id = ctx.registry->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
-      LOG("added weakconstraint " << r << " with id " << id << " to idb");
+      DBGLOG(DBG,"added weakconstraint " << r << " with id " << id << " to idb");
     }
     break;
   default:
@@ -346,7 +347,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // groundness
-  LOG("checking groundness of tuple " << printrange(atom.tuple));
+  DBGLOG(DBG,"checking groundness of tuple " << printrange(atom.tuple));
   IDKind kind = 0;
   BOOST_FOREACH(const ID& id, atom.tuple)
   {
@@ -368,8 +369,8 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // lookup if we already know this one
-  //LOG("looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
-  LOG("looking up tuple " << printvector(atom.tuple));
+  //DBGLOG(DBG,"looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
+  DBGLOG(DBG,"looking up tuple " << printvector(atom.tuple));
   // TODO perhaps pass only ref to atom and let the key extractor do its magic
   {
     ID id = tbl->getIDByTuple(atom.tuple);
@@ -408,9 +409,9 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
   atom.text = ss.str();
 
-  LOG("got atom text '" << atom.text << "'");
+  DBGLOG(DBG,"got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);
-  LOG("stored atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"stored atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -471,9 +472,9 @@ ID HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& node)
     return ID_FAIL; // keep the compiler happy
   }
 
-  LOG("storing builtin atom " << atom);
+  DBGLOG(DBG,"storing builtin atom " << atom);
   ID id = ctx.registry->batoms.storeAndGetID(atom);
-  LOG("stored builtin atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"stored builtin atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -516,9 +517,9 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
     }
   }
 
-  LOG("storing external atom " << atom);
+  DBGLOG(DBG,"storing external atom " << atom);
   ID id = ctx.registry->eatoms.storeAndGetID(atom);
-  LOG("stored external atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"stored external atom " << atom << " which got id " << id);
   return id;
 }
 

@@ -86,7 +86,7 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
-	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -131,7 +131,7 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
-	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -150,7 +150,7 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
-	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -178,7 +178,7 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
-	$(top_srcdir)/src/dlvhex/globals.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \

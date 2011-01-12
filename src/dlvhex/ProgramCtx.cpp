@@ -230,31 +230,13 @@ void RawPrinter::print(ID id)
 	}
 }
 	
-ProgramCtx::ProgramCtx()
-  :
-		registry(),
-		idb(),
-		edb(),
-		maxint(0),
-		options(new std::vector<std::string>),
-    container(0),
-    plugins(new std::vector<PluginInterface*>),
-    programstream(new std::istream(new std::stringbuf)),
- //   nodegraph(new NodeGraph),
-    depgraph(0),
-    result(0),
-    outputbuilder(0),
-    state()//boost::shared_ptr<State>(new OpenPluginsState))  // start in the OpenPlugin state
+ProgramCtx::ProgramCtx():
+		maxint(0)
 { }
 
 
 ProgramCtx::~ProgramCtx()
 {
-  delete outputbuilder;
-  delete result;
-  delete depgraph;
-  //delete nodegraph;
-  //  std::vector<PluginInterface*> plugins;
 }
   
 
@@ -264,20 +246,7 @@ ProgramCtx::changeState(const boost::shared_ptr<State>& s)
   state = s;
 }
 
-
-void
-ProgramCtx::addOption(const std::string& o)
-{
-  options->push_back(o);
-}
-
-
-std::vector<std::string>*
-ProgramCtx::getOptions() const
-{
-  return this->options;
-}
-
+#if 0
 
 void
 ProgramCtx::setPluginContainer(PluginContainer* c)
@@ -310,28 +279,6 @@ ProgramCtx::addPlugins(const std::vector<PluginInterface*>& p)
 }
 
 
-void
-ProgramCtx::addInputSource(const std::string& s)
-{
-  inputsources.push_back(s);
-}
-
-
-const std::vector<std::string>&
-ProgramCtx::getInputSources() const
-{
-  return inputsources;
-}
-
-
-std::istream&
-ProgramCtx::getInput()
-{
-  return *programstream;
-}
-
-
-#if 0
 Program*
 ProgramCtx::getIDB() const
 {
@@ -432,96 +379,20 @@ ProgramCtx::setOutputBuilder(OutputBuilder* o)
 #endif
 
 
-void
-ProgramCtx::openPlugins()
-{
-  state->openPlugins(this);
-}
-
-
-void
-ProgramCtx::convert()
-{
-  state->convert(this);
-}
-
-
-void
-ProgramCtx::parse()
-{
-  state->parse(this);
-}
-
-
-void
-ProgramCtx::rewrite()
-{
-  state->rewrite(this);
-}
-
-
-void
-ProgramCtx::createNodeGraph()
-{
-  state->createNodeGraph(this);
-}
-
-
-void
-ProgramCtx::optimize()
-{
-  state->optimize(this);
-}
-
-
-void
-ProgramCtx::createDependencyGraph()
-{
-  state->createDependencyGraph(this);
-}
-
-
-void
-ProgramCtx::safetyCheck()
-{
-  state->safetyCheck(this);
-}
-
-
-void
-ProgramCtx::strongSafetyCheck()
-{
-  state->strongSafetyCheck(this);
-}
-
-
-void
-ProgramCtx::setupProgramCtx()
-{
-  state->setupProgramCtx(this);
-}
-
-
-void
-ProgramCtx::evaluate()
-{
-  state->evaluate(this);
-}
-
-
-void
-ProgramCtx::postProcess()
-{
-  state->postProcess(this);
-}
-
-
-void
-ProgramCtx::output()
-{
-  state->output(this);
-}
-
+void ProgramCtx::openPlugins() { state->openPlugins(this); }
+void ProgramCtx::convert() { state->convert(this); }
+void ProgramCtx::parse() { state->parse(this); }
+void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
+void ProgramCtx::associatePluginAtomsWithExtAtoms() { state->associatePluginAtomsWithExtAtoms(this); }
+void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
+void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
+void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
+void ProgramCtx::configureModelBuilder() { state->configureModelBuilder(this); }
+void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
+void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
+void ProgramCtx::strongSafetyCheck() { state->strongSafetyCheck(this); }
+void ProgramCtx::evaluate() { state->evaluate(this); }
+void ProgramCtx::postProcess() { state->postProcess(this); }
 
 DLVHEX_NAMESPACE_END
 

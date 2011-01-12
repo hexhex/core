@@ -62,12 +62,18 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class Program;
 class AtomSet;
-class NodeGraph;
+
 class DependencyGraph;
-class Process;
-class ResultContainer;
-class OutputBuilder;
+typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
+
+class ComponentGraph;
+typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
+
+//class Process;
+//class ResultContainer;
+//class OutputBuilder;
 class State;
+typedef boost::shared_ptr<State> StatePtr;
 
 typedef boost::bimaps::bimap<
   boost::bimaps::set_of<std::string>,
@@ -160,6 +166,7 @@ public:
 	bool hasContent() const;
 	std::ostream& getAsOutputStream();
 };
+typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 
 /**
  * @brief Program context class.
@@ -175,9 +182,11 @@ public:
 	// plugin container
 	PluginContainer pluginContainer;
 
+  ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
+
 	// program input provider (if a converter is used, the converter consumes this
 	// input and replaces it by another input)
-	InputProvider inputProvider;
+	InputProviderPtr inputProvider;
 
   // symbol storage of this program context
   // (this is a shared ptr because we might want
@@ -200,18 +209,15 @@ public:
 
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
+  DependencyGraphPtr depgraph;
+  // ComponentGraphPtr compgraph;
+  // EvalGraphPtr evalgraph;
+  // ModelGraphPtr modelgraph;
+  // ModelBuilderPtr modelbuilder;
+  // ModelCallbackPtr modelcallback;
+  // FinalizeCallbackPtr finalizecallback;
 
-
-//  NodeGraph* nodegraph;
-  DependencyGraph* depgraph;
-
-  ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
-
-  ResultContainer* result;
-
-  //OutputBuilder* outputbuilder;
-
-  boost::shared_ptr<State> state;
+  StatePtr state;
 
  protected:
   friend class State;
@@ -226,6 +232,7 @@ public:
   virtual
   ~ProgramCtx();
 
+  #if 0
 
   void
   setPluginContainer(PluginContainer*);
@@ -240,25 +247,7 @@ public:
   std::vector<PluginInterface*>*
   getPlugins() const;
 
-  void
-  addOption(const std::string&);
 
-  std::vector<std::string>*
-  getOptions() const;
-
-  void
-  addInputSource(const std::string&);
-
-  const std::vector<std::string>&
-  getInputSources() const;
-
-
-  // the program's input stream
-  std::istream&
-  getInput();
-
-
-	#if 0
   Program*
   getIDB() const;
 

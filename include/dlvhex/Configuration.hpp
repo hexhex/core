@@ -47,10 +47,8 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT Configuration
 {
-protected:
-	Configuration();
-
 public:
+	Configuration();
 
 	/**
 	 * @brief List of possible verbose actions.
@@ -105,12 +103,6 @@ public:
 	const std::vector<std::string>&
 	getFilters() const;
 
-	/**
-	 * Get the stream for verbose output.
-	 */
-	std::ostream&
-	getVerboseStream() const;
-
 private:
 
 	/**
@@ -127,12 +119,6 @@ private:
 	 * @brief List of filter-predicates.
 	 */
 	std::vector<std::string> optionFilter;
-
-	/**
-	 * Messages returned from external computation sources, which do not necessarily
-	 * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
-	 */
-	//std::vector<std::string> Messages;
 
 };
 
