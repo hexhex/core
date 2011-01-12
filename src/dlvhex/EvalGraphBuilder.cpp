@@ -131,12 +131,12 @@ EvalGraphBuilder::EvalUnit
 EvalGraphBuilder::createEvalUnit(
     Component comp)
 {
-  LOG_SCOPE("cEU", false);
-  LOG("= EvalGraphBuilder::createEvalUnit(" << comp << ")");
+  LOG_SCOPE(ANALYZE,"cEU",true);
+  DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" << comp << ")");
 
   // create eval unit
   EvalUnit u = eg.addUnit(eup_empty);
-  LOG("created unit " << u);
+  LOG(DBG,"created unit " << u);
 
   // associate with component
   typedef ComponentEvalUnitMapping::value_type MappedPair;
@@ -160,7 +160,7 @@ EvalGraphBuilder::createEvalUnit(
       it != it_end; ++it)
   {
     Component dcomp = cg.targetOf(*it);
-    LOG("found dependency to component " << dcomp);
+    DBGLOG(DBG,"found dependency to component " << dcomp);
     ComponentEvalUnitMapping::left_const_iterator itu =
       mapping.left.find(dcomp);
     if( itu == mapping.left.end() )
@@ -168,7 +168,7 @@ EvalGraphBuilder::createEvalUnit(
           "tried to create an eval unit, "
           "where not all predecessors have previously been created!");
     EvalUnit du = itu->second;
-    LOG("adding dependency to unit " << du << " with joinOrder " << joinOrder);
+    DBGLOG(DBG,"adding dependency to unit " << du << " with joinOrder " << joinOrder);
     eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
     joinOrder++;
   }

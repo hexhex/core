@@ -57,14 +57,14 @@ void printSet (std::string s) {
 void
 DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginError)
 {
-  LOG_SCOPE("DACA::r",false);
-  LOG("= DLV_ASP_ContextAtom::retrieve");
+  LOG_SCOPE(PLUGIN,"DACA::r",true);
+  DBGLOG(DBG,"= DLV_ASP_ContextAtom::retrieve");
 
   // query.input is tuple [context_id,belief_pred,input_pred,outputs_pred,program]
   // get name of context program
   const std::string& programStr = registry->terms.getByID(query.input[4]).symbol;
   std::string program = programStr.substr(1, programStr.size()-2);
-  LOG("retrieving context for program '" << program << "'");
+  LOG(PLUGIN,"retrieving context for program '" << program << "'");
 
   // we use an extra registry for this external program
   ProgramCtx kbctx;
@@ -93,9 +93,9 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       // lookup
       const OrdinaryAtom& oa = registry->ogatoms.getByID(oaid);
       assert(oa.tuple.size() == 2);
-      LOG("got term " << oa.tuple[1]);
+      DBGLOG(DBG,"got term " << oa.tuple[1]);
       const Term& term = registry->terms.getByID(oa.tuple[1]);
-      LOG("this is symbol " << term.symbol);
+      DBGLOG(DBG,"this is symbol " << term.symbol);
 
       if( oa.tuple[0] == apredid )
       {
@@ -111,9 +111,9 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       }
     }
   }
-  LOG("got output beliefs: " << printrange(oset));
-  LOG("got present output beliefs: " << printrange(aset));
-  LOG("got bridge rule inputs: " << printrange(bset));
+  DBGLOG(DBG,"got output beliefs: " << printrange(oset));
+  DBGLOG(DBG,"got present output beliefs: " << printrange(aset));
+  DBGLOG(DBG,"got bridge rule inputs: " << printrange(bset));
 
   // add inputs (= bridge rule heads) to program
   {
@@ -126,7 +126,7 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       ID kbInputTermID = kbctx.registry->terms.getIDByString(inputTerm.symbol);
       if( kbInputTermID == ID_FAIL )
         kbInputTermID = kbctx.registry->terms.storeAndGetID(inputTerm);
-      LOG("in kbctx this term has id " << kbInputTermID);
+      DBGLOG(DBG,"in kbctx this term has id " << kbInputTermID);
 
       // create unary fact (this is now another registry!)
       OrdinaryAtom kboatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
@@ -135,12 +135,12 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
       ID kbInputFactID = kbctx.registry->ogatoms.getIDByTuple(kboatom.tuple);
       if( kbInputFactID == ID_FAIL )
         kbInputFactID = kbctx.registry->ogatoms.storeAndGetID(kboatom);
-      LOG("in kbctx this fact has id " << kbInputFactID);
+      DBGLOG(DBG,"in kbctx this fact has id " << kbInputFactID);
 
       // add to edb
       kbctx.edb->setFact(kbInputFactID.address);
     }
-    LOG("after adding inputs: kbctx.edb is " << *kbctx.edb);
+    DBGLOG(DBG,"after adding inputs: kbctx.edb is " << *kbctx.edb);
   }
 
   // calculate set differences and add constraints
@@ -158,7 +158,7 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
 
     // add O - A as Constraint ":- x."
     // => enforce that beliefs not in A are not there
-    LOG("enforcing the following beliefs to be absent: " << printrange(ominusaset));
+    DBGLOG(PLUGIN,"enforcing the following beliefs to be absent: " << printrange(ominusaset));
     for(StringSet::const_iterator it = ominusaset.begin();
         it != ominusaset.end(); ++it)
     {
@@ -185,7 +185,7 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
 
     // add A - O as Constraint ":- not x."
     // => enforce that beliefs in A are there
-    LOG("enforcing the following beliefs to be present: " << printrange(ainoset));
+    DBGLOG(PLUGIN,"enforcing the following beliefs to be present: " << printrange(ainoset));
     for(StringSet::const_iterator it = ainoset.begin();
         it != ainoset.end(); ++it)
     {
@@ -218,24 +218,24 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     //dlv.options.includeFacts = true;
     ASPProgram program(kbctx.registry, kbctx.idb, kbctx.edb, kbctx.maxint);
     #ifndef NDEBUG
-    LOG("BEGIN context program ===");
+    DBGLOG(DBG,"BEGIN context program ===");
     RawPrinter printer(std::cerr, kbctx.registry);
     printer.printmany(kbctx.idb, "\n");
     std::cerr << std::endl << *kbctx.edb << std::endl;
-    LOG("END context program ===");
+    DBGLOG(DBG,"END context program ===");
     #endif
     ASPSolverManager mgr;
     ASPSolverManager::ResultsPtr res = mgr.solve(dlv, program);
     AnswerSet::Ptr firstAnswerSet = res->getNextAnswerSet();
     if( firstAnswerSet != 0 )
     {
-      LOG("got answer set " << *firstAnswerSet->interpretation);
+      LOG(PLUGIN,"got answer set " << *firstAnswerSet->interpretation);
       Tuple t;
       answer.get().push_back(t);
     }
     else
     {
-      LOG("got no answer set!");
+      LOG(PLUGIN,"got no answer set!");
     }
   }
 

@@ -71,8 +71,8 @@ ComponentGraph::~ComponentGraph()
 
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 {
-  LOG_SCOPE("cCs", false);
-  LOG("=calculateComponents");
+  LOG_SCOPE(ANALYZE,"cCs",true);
+  DBGLOG(ANALYZE,"=calculateComponents");
 
   typedef DependencyGraph::Node Node;
 
@@ -85,7 +85,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   scc.resize(dg.countNodes());
   // do it with boost
   unsigned scccount = boost::strong_components(dg.getInternalGraph(), &scc[0]);
-  LOG("boost::strong_components created " << scccount << " components");
+  LOG(ANALYZE,"boost::strong_components created " << scccount << " components");
 
   //
   // calculate set of nodes for each SCC: sccMembers
@@ -111,7 +111,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     //createComponentFromDepgraphSCC(dg, scc, *itc);
     const NodeSet& nodes = sccMembers[s];
     Component c = boost::add_vertex(cg);
-    LOG("created component node " << c << " for scc " << s <<
+    DBGLOG(DBG,"created component node " << c << " for scc " << s <<
 				" with depgraph nodes " << printrange(nodes));
 		bool multimember = nodes.size() > 1;
     sccToComponent[s] = c;
@@ -155,10 +155,10 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				assert(false);
 			}
     }
-    LOG("-> outerEatoms " << printrange(ci.outerEatoms));
-    LOG("-> innerRules " << printrange(ci.innerRules));
-    LOG("-> innerConstraints " << printrange(ci.innerConstraints));
-    LOG("-> innerEatoms " << printrange(ci.innerEatoms));
+    DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
+    DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
+    DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
+    DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
 
 		assert( ci.outerEatoms.empty() ||
 				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
@@ -194,7 +194,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 
 				Component targetc = sccToComponent[targetscc];
 				// dependency to other SCC -> store
-				LOG("found dependency from SCC " << s << " to SCC " << targetscc);
+				DBGLOG(DBG,"found dependency from SCC " << s << " to SCC " << targetscc);
 
 				// create/update dependency
 				Dependency newdep;
@@ -226,8 +226,8 @@ ComponentGraph::Component
 ComponentGraph::collapseComponents(
 		const ComponentSet& originals)
 {
-	LOG_SCOPE("cC", false);
-	LOG("= collapseComponents(" << printrange(originals) << ")");
+	DBGLOG_SCOPE(DBG,"cC", false);
+	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
 
 	typedef std::map<Component, DependencyInfo> DepMap;
 
@@ -240,8 +240,8 @@ ComponentGraph::collapseComponents(
 	ComponentSet::const_iterator ito;
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
-		LOG("original " << *ito << ":");
-		LOG_INDENT();
+		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG_INDENT(DBG);
 
 		PredecessorIterator itpred, itpred_end;
 		for(boost::tie(itpred, itpred_end) = getDependencies(*ito);
@@ -252,7 +252,7 @@ ComponentGraph::collapseComponents(
 			if( originals.count(target) == 0 )
 			{
 				// do not count dependencies within the new collapsed component
-				LOG("outgoing dependency to " << target);
+				DBGLOG(DBG,"outgoing dependency to " << target);
 				outgoing[target] |= propsOf(outgoing_dep);
 			}
 		} // iterate over predecessors
@@ -261,8 +261,8 @@ ComponentGraph::collapseComponents(
 	// do again, but for outgoing, now also check for duplicate violations
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
-		LOG("original " << *ito << ":");
-		LOG_INDENT();
+		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG_INDENT(DBG);
 
 		SuccessorIterator itsucc, itsucc_end;
 		for(boost::tie(itsucc, itsucc_end) = getProvides(*ito);
@@ -273,7 +273,7 @@ ComponentGraph::collapseComponents(
 			if( originals.count(source) == 0 )
 			{
 				// do not count dependencies within the new collapsed component
-				LOG("incoming dependency from " << source);
+				DBGLOG(DBG,"incoming dependency from " << source);
 				incoming[source] |= propsOf(incoming_dep);
 				// ensure that we do not create cycles
         // (this check is not too costly, so this is no assertion but a real runtime check)
@@ -294,7 +294,7 @@ ComponentGraph::collapseComponents(
 	//
 
 	Component c = boost::add_vertex(cg);
-	LOG("created component node " << c << " for collapsed component");
+	LOG(DBG,"created component node " << c << " for collapsed component");
 
 	// build combined component info
 	ComponentInfo& ci = propsOf(c);
@@ -321,7 +321,7 @@ ComponentGraph::collapseComponents(
 	{
 		Dependency newdep;
 		bool success;
-		LOG("adding edge " << itd->first << " -> " << c);
+		DBGLOG(DBG,"adding edge " << itd->first << " -> " << c);
 		boost::tie(newdep, success) = boost::add_edge(itd->first, c, itd->second, cg);
 		assert(success); // we only add new edges here, and each only once
 	}
@@ -332,7 +332,7 @@ ComponentGraph::collapseComponents(
 	{
 		Dependency newdep;
 		bool success;
-		LOG("adding edge " << c << " -> " << itd->first);
+		DBGLOG(DBG,"adding edge " << c << " -> " << itd->first);
 		boost::tie(newdep, success) = boost::add_edge(c, itd->first, itd->second, cg);
 		assert(success); // we only add new edges here, and each only once
 	}

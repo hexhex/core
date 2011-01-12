@@ -80,13 +80,13 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
       std::ostringstream s;
       RawPrinter printer(s,ctx.registry);
       printer.printmany(idb," ");
-      LOG("FinalModelGeneratorFactory got idb " << s.str());
+      DBGLOG(DBG,"FinalModelGeneratorFactory got idb " << s.str());
     }
     {
       std::ostringstream s;
       RawPrinter printer(s,ctx.registry);
       printer.printmany(xidb," ");
-      LOG("FinalModelGeneratorFactory got xidb " << s.str());
+      DBGLOG(DBG,"FinalModelGeneratorFactory got xidb " << s.str());
     }
   }
   #endif
@@ -107,7 +107,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     std::stringstream s;
     RawPrinter printer(s, ctx.registry);
     printer.print(ruleid);
-    LOG("rewriting rule " << s.str() << " from " << rule << " with id " << ruleid << " to auxiliary predicates");
+    DBGLOG(DBG,"rewriting rule " << s.str() << " from " << rule << " with id " << ruleid << " to auxiliary predicates");
   }
   #endif
 
@@ -122,7 +122,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     bool naf = itlit->isNaf();
     const ExternalAtom& eatom = ctx.registry->eatoms.getByID(
         ID::atomFromLiteral(*itlit));
-    LOG("rewriting external atom " << eatom << " literal with id " << *itlit);
+    DBGLOG(DBG,"rewriting external atom " << eatom << " literal with id " << *itlit);
 
     // lock weak pointer
     assert(!eatom.pluginAtom.expired());
@@ -168,9 +168,9 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
       replacement.text = s.str();
 
       idreplacement = oat->storeAndGetID(replacement);
-      LOG("created new replacement " << replacement << " which got " << idreplacement);
+      LOG(PLUGIN,"created new replacement " << replacement << " which got " << idreplacement);
     }
-    LOG(" => storing replacement " << idreplacement);
+    DBGLOG(DBG," => storing replacement " << idreplacement);
     *itlit = ID::literalFromAtom(idreplacement, naf);
   }
 
@@ -180,7 +180,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     std::stringstream s;
     RawPrinter printer(s, ctx.registry);
     printer.print(newruleid);
-    LOG("rewritten rule " << s.str() << " from " << newrule << " got id " << newruleid);
+    DBGLOG(DBG,"rewritten rule " << s.str() << " from " << newrule << " got id " << newruleid);
   }
   #endif
   return newruleid;
@@ -274,8 +274,8 @@ FinalModelGenerator::generateNextModel()
 
 void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 {
-  LOG_SCOPE("eEA",false);
-  LOG("= evaluateExternalAtoms with interpretation " << *i);
+  LOG_SCOPE(PLUGIN,"eEA",true);
+  DBGLOG(DBG,"= evaluateExternalAtoms with interpretation " << *i);
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atoms");
 	DLVHEX_BENCHMARK_REGISTER(sidier,"integrate external results");
 
@@ -298,15 +298,15 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
     // project interpretation for predicate inputs
     InterpretationConstPtr eatominp =
       projectEAtomInputInterpretation(eatom, i);
-    LOG("projected eatom input interpretation = " << *eatominp);
+    LOG(DBG,"projected eatom input interpretation = " << *eatominp);
 
     // build input tuples
     std::list<Tuple> inputs;
     buildEAtomInputTuples(eatom, i, inputs);
     #ifndef NDEBUG
     {
-      LOG("eatom input tuples:");
-      LOG_INDENT();
+      DBGLOG(DBG,"eatom input tuples:");
+      DBGLOG_INDENT(DBG);
       BOOST_FOREACH(const Tuple& t, inputs)
       {
         std::stringstream s;
@@ -314,7 +314,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
         s << "[";
         printer.printmany(t,",");
         s << "]";
-        LOG(s.str());
+        DBGLOG(DBG,s.str());
       }
     }
     #endif
@@ -325,9 +325,8 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
       // query
       PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
       PluginAtom::Answer answer;
-      LOG("querying external atom &" << eatom.predicate << " with input tuple " << printrange(inputtuple));
       pluginAtom->retrieveCached(query, answer);
-      LOG("got " << answer.get().size() << " answer tuples!");
+      LOG(PLUGIN,"got " << answer.get().size() << " answer tuples from querying " << eatom.predicate << " with input tuple " << printrange(inputtuple));
 
 			DLVHEX_BENCHMARK_START(sidier);
       // integrate result into interpretation
@@ -346,7 +345,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
         replacement.tuple.insert(replacement.tuple.end(), t.begin(), t.end());
 
         // this replacement might already exists
-        LOG("integrating external answer tuple " << printrange(t));
+        LOG(DBG,"integrating external answer tuple " << printrange(t));
         ID idreplacement = factory.ctx.registry->ogatoms.getIDByTuple(replacement.tuple);
         if( idreplacement == ID_FAIL )
         {
@@ -363,19 +362,19 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
           s << ")";
           replacement.text = s.str();
 
-          LOG("integrating " << replacement);
+          DBGLOG(DBG,"integrating " << replacement);
           idreplacement = factory.ctx.registry->ogatoms.storeAndGetID(replacement);
-          LOG("got ID " << idreplacement);
+          DBGLOG(DBG,"got ID " << idreplacement);
         }
         i->setFact(idreplacement.address);
       }
 			DLVHEX_BENCHMARK_STOP(sidier);
 
-      LOG("interpretation is now " << *i);
+      DBGLOG(DBG,"interpretation is now " << *i);
     } // go over all input tuples of this eatom
-    LOG("interpretation after all input tuples is " << *i);
+    DBGLOG(DBG,"interpretation after all input tuples is " << *i);
   } // go over all eatoms
-  LOG("interpretation after all eatoms is " << *i);
+  DBGLOG(DBG,"interpretation after all eatoms is " << *i);
 }
 
 InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
@@ -398,13 +397,13 @@ void FinalModelGenerator::buildEAtomInputTuples(
   std::list<Tuple>& inputs) const
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGen::buildEAIT");
-  LOG_SCOPE("bEAIT", false);
-  LOG("= buildEAtomInputTuples " << eatom);
+  LOG_SCOPE(PLUGIN,"bEAIT",false);
+  DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
 
   // if there are no variables, there is no aux input predicate and only one input tuple
   if( eatom.auxInputPredicate == ID_FAIL )
   {
-    LOG("no auxiliary input predicate -> "
+    DBGLOG(DBG,"no auxiliary input predicate -> "
         " returning single unchanged eatom.inputs " <<
         printrange(eatom.inputs));
     inputs.push_back(eatom.inputs);
@@ -412,7 +411,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
   }
 
   // otherwise we have to calculate a bit, using the aux input predicate
-  LOG("matching aux input predicate " << eatom.auxInputPredicate << ", original eatom.inputs = " << printrange(eatom.inputs));
+  DBGLOG(DBG,"matching aux input predicate " << eatom.auxInputPredicate << ", original eatom.inputs = " << printrange(eatom.inputs));
   dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
   assert(factory.ctx.registry != 0);
   for(boost::tie(it, it_end) =
@@ -445,7 +444,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
           inp[*it] = replaceBy;
         }
       }
-      LOG("after inserting auxiliary predicate inputs: input = " << printrange(inp));
+      DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printrange(inp));
     }
   }
 }

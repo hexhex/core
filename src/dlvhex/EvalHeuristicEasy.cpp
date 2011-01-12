@@ -127,7 +127,7 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
       from, 
       dfs_vis,
       CompColorMap(ccHashMap));
-  LOG("predecessors of " << from << " are " << printrange(preds));
+  DBGLOG(DBG,"predecessors of " << from << " are " << printrange(preds));
 }
 
 }
@@ -157,7 +157,7 @@ void EvalHeuristicEasy::build()
       if( compgraph.propsOf(comp).outerEatoms.empty() )
         continue;
 
-      LOG("checking whether to collapse external component " << comp << " with successors");
+      LOG(ANALYZE,"checking whether to collapse external component " << comp << " with successors");
 
       // get predecessors
       ComponentSet preds;
@@ -187,7 +187,7 @@ void EvalHeuristicEasy::build()
           if( collapse.find(succ) != collapse.end() )
             continue;
 
-          LOG("found successor " << succ);
+          DBGLOG(DBG,"found successor " << succ);
 
           ComponentGraph::PredecessorIterator pit, pit_end;
           bool good = true;
@@ -197,7 +197,7 @@ void EvalHeuristicEasy::build()
             Component dependson = compgraph.targetOf(*pit);
             if( preds.find(dependson) == preds.end() )
             {
-              LOG("successor bad as it depends on other node " << dependson);
+              LOG(DBG,"successor bad as it depends on other node " << dependson);
               good = false;
               break;
             }
@@ -218,7 +218,7 @@ void EvalHeuristicEasy::build()
       {
         collapse.insert(comp);
         Component c = compgraph.collapseComponents(collapse);
-        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
+        LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
         cit = compgraph.getComponents().first;
@@ -315,7 +315,7 @@ void EvalHeuristicEasy::build()
         continue;
       }
 
-      LOG("checking whether to collapse internal-only component " << comp << " with children");
+      LOG(ANALYZE,"checking whether to collapse internal-only component " << comp << " with children");
 
       // get successors
       ComponentSet collapse;
@@ -330,7 +330,7 @@ void EvalHeuristicEasy::build()
         if( !compgraph.propsOf(succ).outerEatoms.empty() )
           continue;
 
-        LOG("found successor " << succ);
+        DBGLOG(DBG,"found successor " << succ);
 
         ComponentGraph::PredecessorIterator pit, pit_end;
         boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
@@ -338,14 +338,14 @@ void EvalHeuristicEasy::build()
         assert(pit != pit_end);
         if( compgraph.targetOf(*pit) != comp )
         {
-          LOG("successor bad as it depends on other node " << compgraph.targetOf(*pit));
+          LOG(DBG,"successor bad as it depends on other node " << compgraph.targetOf(*pit));
           good = false;
         }
         pit++;
         if( pit != pit_end )
         {
           good = false;
-          LOG("successor bad as it depends on more nodes");
+          LOG(DBG,"successor bad as it depends on more nodes");
         }
         if( good )
           collapse.insert(succ);
@@ -357,7 +357,7 @@ void EvalHeuristicEasy::build()
         collapse.insert(comp);
         assert(collapse.size() > 1);
         Component c = compgraph.collapseComponents(collapse);
-        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
+        LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
         cit = compgraph.getComponents().first;
@@ -387,7 +387,7 @@ void EvalHeuristicEasy::build()
         continue;
       }
 
-      LOG("checking whether to collapse internal-only component " << comp << " with others");
+      LOG(ANALYZE,"checking whether to collapse internal-only component " << comp << " with others");
       ComponentSet collapse;
 
       // get direct predecessors
@@ -413,7 +413,7 @@ void EvalHeuristicEasy::build()
       while( cit2 != compgraph.getComponents().second )
       {
         Component comp2 = *cit2;
-        LOG("checking other component " << comp2);
+        DBGLOG(DBG,"checking other component " << comp2);
         ComponentSet preds2;
         {
           ComponentGraph::PredecessorIterator pit, pit_end;
@@ -436,7 +436,7 @@ void EvalHeuristicEasy::build()
         collapse.insert(comp);
         assert(collapse.size() > 1);
         Component c = compgraph.collapseComponents(collapse);
-        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
+        LOG(ANALYZE,"collapse of " << printrange(collapse) << " yielded new component " << c);
 
         // restart loop after collapse
         cit = compgraph.getComponents().first;
@@ -471,7 +471,7 @@ void EvalHeuristicEasy::build()
     if( !collapse.empty() )
     {
       // collapse! (decreases graph size)
-      LOG("collapsing constraint-only nodes " << printrange(collapse));
+      LOG(ANALYZE,"collapsing constraint-only nodes " << printrange(collapse));
       Component c = compgraph.collapseComponents(collapse);
       didSomething = true;
     }
@@ -489,7 +489,7 @@ void EvalHeuristicEasy::build()
       it != sortedcomps.end(); ++it)
   {
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-    LOG("component " << *it << " became eval unit " << u);
+    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }
 

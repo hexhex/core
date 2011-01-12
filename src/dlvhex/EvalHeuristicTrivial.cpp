@@ -88,7 +88,7 @@ void EvalHeuristicTrivial::build()
       it != comps.end(); ++it)
   {
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-    LOG("component " << *it << " became eval unit " << u);
+    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }
 

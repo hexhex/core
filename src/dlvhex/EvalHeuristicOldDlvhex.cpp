@@ -107,9 +107,9 @@ void EvalHeuristicOldDlvhex::build()
 
   do
   {
-		LOG("creating new eval unit:");
-    LOG("open =     " << printrange(opencomps));
-    LOG("finished = " << printrange(finishedcomps));
+		DBGLOG(DBG,"creating new eval unit:");
+    DBGLOG(DBG,"open =     " << printrange(opencomps));
+    DBGLOG(DBG,"finished = " << printrange(finishedcomps));
 
     ComponentSet markedcomps;
     for(ComponentList::const_iterator it = opencomps.begin();
@@ -117,7 +117,7 @@ void EvalHeuristicOldDlvhex::build()
     {
       Component comp = *it;
       bool extcomp = !compgraph.propsOf(comp).outerEatoms.empty();
-      LOG("comp " << comp << " is " << (extcomp?"":"not ") << "external");
+      DBGLOG(DBG,"comp " << comp << " is " << (extcomp?"":"not ") << "external");
 
       // check dependencies
       bool mark = true;
@@ -146,17 +146,17 @@ void EvalHeuristicOldDlvhex::build()
           }
         }
       } // go through dependencies of each component
-      LOG("comp " << comp << " is " << (mark?"":"not ") << "marked for this eval unit");
+      DBGLOG(DBG,"comp " << comp << " is " << (mark?"":"not ") << "marked for this eval unit");
 
       if( mark )
         markedcomps.insert(comp);
     } // go through all components in order and determine marking for each of them
 
-    LOG("marked = " << printrange(markedcomps));
+    LOG(ANALYZE,"marked = " << printrange(markedcomps));
 
     // collapse marked into new component
 		Component newcomp = compgraph.collapseComponents(markedcomps);
-    LOG("collapsing marked yielded component " << newcomp);
+    LOG(ANALYZE,"collapsing marked yielded component " << newcomp);
 
     // remove marked from opencomps
     for(ComponentList::iterator it = opencomps.begin();
@@ -184,7 +184,7 @@ void EvalHeuristicOldDlvhex::build()
   {
     // build eval unit
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-    LOG("component " << *it << " became eval unit " << u);
+    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }
 
