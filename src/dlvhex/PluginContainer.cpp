@@ -35,7 +35,7 @@
  */
 
 #include "dlvhex/PluginContainer.h"
-#include "dlvhex/Configuration.h"
+#include "dlvhex/Configuration.hpp"
 #include "dlvhex/Error.h"
 #include "dlvhex/PluginInterface.h"
 

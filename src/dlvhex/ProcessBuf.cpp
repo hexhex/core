@@ -33,7 +33,8 @@
  */
 
 #include "dlvhex/ProcessBuf.h"
-#include "dlvhex/globals.h"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <boost/foreach.hpp>
 #include <sstream>
@@ -119,25 +120,20 @@ collect2: ld returned 1 exit status
 clang: error: linker (via gcc) command failed with exit code 1 (use -v to see invocation)
  */
 
+#warning maybe still clang bug?
+/*
 namespace{
   const std::vector<std::string> foo;
   int bar() {
     return foo.size();
   }
 }
+*/
 
 pid_t
 ProcessBuf::open(const std::vector<std::string>& av)
 {
-  if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
-  {
-    Globals::Instance()->getVerboseStream() << "ProcessBuf open:";
-    BOOST_FOREACH(const std::string& arg, av)
-    {
-      Globals::Instance()->getVerboseStream() << " " << arg;
-    }
-    Globals::Instance()->getVerboseStream() << std::endl;
-  }
+  LOG(DBG,"ProcessBuf::open" << printvector(av));
 
   // close before re-open it
   if (process != -1)

@@ -79,6 +79,7 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/OutputBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/PluginContainer.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
 	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
