@@ -26,6 +26,7 @@
  * @file   PluginContainer.cpp
  * @author Roman Schindlauer
  * @author Thomas Krennwallner
+ * @author Peter Schueller
  * @date   Thu Sep 1 17:25:55 2005
  * 
  * @brief  Container class for plugins.
@@ -33,10 +34,10 @@
  * 
  */
 
-#include "dlvhex/globals.h"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/Configuration.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/PluginInterface.h"
-#include "dlvhex/PluginContainer.h"
 
 #include <ltdl.h>
 
@@ -51,21 +52,6 @@
 DLVHEX_NAMESPACE_BEGIN
 
 typedef PluginInterface* (*t_import)();
-
-PluginContainer* PluginContainer::theContainer = 0;
-
-
-PluginContainer*
-PluginContainer::instance(const std::string& optionPath)
-{
-  if (PluginContainer::theContainer == 0)
-    {
-      PluginContainer::theContainer = new PluginContainer(optionPath);
-    }
-
-  return PluginContainer::theContainer;
-}
-
 
 int
 findplugins(const char* filename, lt_ptr data)
@@ -89,13 +75,25 @@ findplugins(const char* filename, lt_ptr data)
 }
 
 
-PluginContainer::PluginContainer(const PluginContainer& pc)
-  : pluginList(pc.pluginList),
-    pluginAtoms(pc.pluginAtoms)
-{ }
+PluginContainer::PluginContainer(const PluginContainer& pc):
+  searchPath(pc.searchPath),
+  plugins(pc.plugins),
+  pluginAtoms(pc.pluginAtoms)
+{
+}
 
 
-PluginContainer::PluginContainer(const std::string& optionPath)
+PluginContainer::PluginContainer():
+  searchPath(),
+  plugins(),
+  pluginAtoms()
+{
+}
+
+// search for plugins in searchpath and open those that are plugins
+// may be called multiple times with different paths
+// paths may be separated by ":" just like LD_LIBRARY_PATH
+void PluginContainer::openPlugins(const std::string& searchpath)
 {
   if (lt_dlinit())
     {
@@ -105,18 +103,11 @@ PluginContainer::PluginContainer(const std::string& optionPath)
   //
   // now look into the user's home, and into the global plugin directory
   //
-  std::stringstream searchpath;
-  
-  const char* homedir = ::getpwuid(::geteuid())->pw_dir;
-  
-  searchpath << optionPath << ':'
-	     << homedir << "/" USER_PLUGIN_DIR << ':'
-	     << SYS_PLUGIN_DIR;
   
   if (Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING))
     {
       Globals::Instance()->getVerboseStream() << "Plugin Search Path: \"" 
-					      << searchpath.str() << "\"" 
+					      << searchpath << "\"" 
 					      << std::endl;
     }
   

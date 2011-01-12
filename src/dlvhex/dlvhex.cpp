@@ -72,9 +72,6 @@
 
 DLVHEX_NAMESPACE_USE
 
-using namespace ASPSolver;
-
-
 /**
  * @brief Print logo.
  */
@@ -182,144 +179,6 @@ InternalError (const char *msg)
 	    << "Please contact <" PACKAGE_BUGREPORT ">." << std::endl;
   exit (99);
 }
-
-
-#if 0
-
-///@brief predicate returns true iff argument is not alpha-numeric and
-///is not one of {_,-,.} characters, i.e., it returns true if
-///characater does not belong to XML's NCNameChar character class.
-struct NotNCNameChar : public std::unary_function<char, bool>
-{
-  bool
-  operator() (char c)
-  {
-    c = std::toupper(c);
-    return
-      (c < 'A' || c > 'Z') &&
-      (c < '0' || c > '9') &&
-      c != '-' &&
-      c != '_' &&
-      c != '.';
-  }
-};
-#endif
-
-// TODO implement namespaces
-#if 0
-void
-insertNamespaces()
-{
-  ///@todo move this stuff to Term, this has nothing to do here!
-
-  if (Term::getNameSpaces().empty())
-    return;
-
-  std::string prefix;
-
-  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
-       nm != Term::getNames().end();
-       ++nm)
-    {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
-	   ns != Term::getNameSpaces().end();
-	   ++ns)
-	{
-	  prefix = ns->second + ':';
-
-	  //
-	  // prefix must occur either at beginning or right after quote
-	  //
-	  unsigned start = 0;
-	  unsigned end = (*nm).length();
-
-	  if ((*nm)[0] == '"')
-	    {
-	      ++start;
-	      --end;
-	    }
-
-	    
-	  //
-	  // accourding to http://www.w3.org/TR/REC-xml-names/ QNames
-	  // consist of a prefix followed by ':' and a LocalPart, or
-	  // just a LocalPart. In case of a single LocalPart, we would
-	  // not find prefix and leave that Term alone. If we find a
-	  // prefix in the Term, we must disallow non-NCNames in
-	  // LocalPart, otw. we get in serious troubles when replacing
-	  // proper Terms:
-	  // NameChar ::= Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender  
-	  //
-
-	  std::string::size_type colon = (*nm).find(":", start);
-					  
-	  if (colon != std::string::npos) // Prefix:LocalPart
-	    {
-	      std::string::const_iterator it =
-		std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
-
-	      // prefix starts with ns->second, LocalPart does not
-	      // contain non-NCNameChars, hence we can replace that
-	      // Term
-	      if ((*nm).find(prefix, start) == start &&
-		  (it == (*nm).begin() + end - 1)
-		  )
-		{
-		  std::string r(*nm);
-	      
-		  r.replace(start, prefix.length(), ns->first); // replace ns->first from start to prefix + 1
-		  r.replace(0, 1, "\"<");
-		  r.replace(r.length() - 1, 1, ">\"");
-	      
-		  Term::getNames().modify(nm, r);
-		}
-	    }
-	}
-    }
-}
-
-void
-removeNamespaces()
-{
-  ///@todo move this stuff to Term, this has nothing to do here!
-
-  if (Term::getNameSpaces().empty())
-    return;
-
-  std::string prefix;
-  std::string fullns;
-
-  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
-       nm != Term::getNames().end();
-       ++nm)
-    {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
-	   ns != Term::getNameSpaces().end();
-	   ++ns)
-	{
-	  fullns = ns->first;
-
-	  prefix = ns->second + ":";
-
-	  //
-	  // original ns must occur either at beginning or right after quote
-	  //
-	  unsigned start = 0;
-	  if ((*nm)[0] == '"')
-	    start = 1;
-
-	  if ((*nm).find(fullns, start) == start)
-	    {
-	      std::string r(*nm);
-
-	      r.replace(start, fullns.length(), prefix);
-
-	      Term::getNames().modify(nm, r);
-	    }
-	}
-    }
-}
-#endif
 
 // thrown to give error message including help message
 class UsageError: public FatalError
@@ -517,6 +376,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+void configurePluginPath(std::string& userPlugindir);
+
 // process whole commandline:
 // * recognized arguments are stored into some config
 // * non-option arguments are interpreted as input files
@@ -670,6 +531,9 @@ void processOptionsPrePlugin(
 		}
 	}
 
+	// configure plugin path
+	configurePluginPath(config.optionPlugindir);
+
 	// check input files (stdin, file, or URI)
 
 	// stdin requested, append it first
@@ -704,6 +568,17 @@ void processOptionsPrePlugin(
 			pctx.inputProvider.addFileInput(arg);
 		}
 	}
+}
+
+void configurePluginPath(std::string& userPlugindir)
+{
+  std::stringstream searchpath;
+  
+  const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+	if( !userPlugindir.empty() )
+		searchpath << userPlugindir << ':';
+	searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+	userPlugindir = searchpath.str();
 }
 
 /* vim: set noet sw=2 ts=2 tw=80: */

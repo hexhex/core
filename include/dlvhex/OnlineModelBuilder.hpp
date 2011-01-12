@@ -163,7 +163,7 @@ public:
       // log warning if we unset the imodel if currentmg is not null
       if( !m && imodel != m && currentmg != 0 )
       {
-        LOG("WARNING: unsetting imodel while currentmg is null -> unsetting currentmg too");
+        LOG(WARNING,"WARNING: unsetting imodel while currentmg is null -> unsetting currentmg too");
         currentmg.reset();
       }
       imodel = m;
@@ -216,14 +216,14 @@ private:
     virtual ~EvalGraphObserver() {}
     virtual void addUnit(EvalUnit u)
     {
-      LOG("observing addUnit(" << u << ")");
+      DBGLOG(DBG,"observing addUnit(" << u << ")");
       EvalUnitModelBuildingProperties& mbprops =
         omb.mbp[u];
       mbprops.needInput = false;
     }
     virtual void addDependency(EvalUnitDep d)
     {
-      LOG("observing addDependency(" << omb.eg.sourceOf(d) << " -> " << omb.eg.targetOf(d) << ")");
+      DBGLOG(DBG,"observing addDependency(" << omb.eg.sourceOf(d) << " -> " << omb.eg.targetOf(d) << ")");
       EvalUnitModelBuildingProperties& mbprops =
         omb.mbp[omb.eg.sourceOf(d)];
       mbprops.needInput = true;
@@ -259,7 +259,7 @@ public:
     for(boost::tie(it, end) = eg.getEvalUnits(); it != end; ++it)
     {
       EvalUnit u = *it;
-      LOG("initializing mbp for unit " << u);
+      DBGLOG(DBG,"initializing mbp for unit " << u);
       EvalUnitModelBuildingProperties& mbprops = mbp[u];
       EvalUnitPredecessorIterator it, end;
       boost::tie(it, end) = eg.getPredecessors(u);
@@ -412,8 +412,8 @@ typename OnlineModelBuilder<EvalGraphT>::Model
 OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
     EvalUnit u)
 {
-  LOG_FUNCTION("cIMfPOM"); // only called from within object -> do not log this ptr
-  LOG("=OnlineModelBuilder<...>::createIModelFromPredecessorOModels(" << u << ")");
+  LOG_SCOPE(MODELB,"cIMfPOM",true); // only called from within object -> do not log this ptr
+  DBGLOG(DBG,"=OnlineModelBuilder<...>::createIModelFromPredecessorOModels(" << u << ")");
 
 	// create vector of dependencies
 	std::vector<Model> deps;
@@ -423,7 +423,7 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
 	{
 		EvalUnit pred = eg.targetOf(*pit);
 		EvalUnitModelBuildingProperties& predmbprops = mbp[pred];
-		LOG("found predecessor unit " << pred << " with current omodel mbprops: " << printEUMBP(predmbprops));
+		LOG(MODELB,"found predecessor unit " << pred << " with current omodel mbprops: " << printEUMBP(predmbprops));
 		Model predmodel = getOModel(predmbprops);
 		deps.push_back(predmodel);
 	}
@@ -435,7 +435,7 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
     OptionalModel oexisting = mg.getSuccessorIntersection(u, deps);
     if( !!oexisting )
     {
-      LOG("found and will return existing successor imodel " << oexisting.get());
+      LOG(MODELB,"found and will return existing successor imodel " << oexisting.get());
       return oexisting.get();
     }
   }
@@ -445,19 +445,19 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
   if( deps.size() == 1 )
   {
     // only link
-    LOG("only one predecessor -> linking to omodel");
+    LOG(MODELB,"only one predecessor -> linking to omodel");
 		pjoin = mg.propsOf(deps.front()).interpretation;
 		assert(pjoin != 0);
   }
   else
   {
     // create joined interpretation
-    LOG("more than one predecessor -> joining omodels");
+    LOG(MODELB,"more than one predecessor -> joining omodels");
     typename std::vector<Model>::const_iterator it;
     for(it = deps.begin(); it != deps.end(); ++it)
     {
       InterpretationPtr predinterpretation = mg.propsOf(*it).interpretation;
-      LOG("predecessor omodel " << *it <<
+      DBGLOG(DBG,"predecessor omodel " << *it <<
           " has interpretation " << printptr(predinterpretation) <<
           " with contents " << *predinterpretation);
       assert(predinterpretation != 0);
@@ -471,13 +471,13 @@ OnlineModelBuilder<EvalGraphT>::createIModelFromPredecessorOModels(
         // merge interpretation
         pjoin->add(*predinterpretation);
       }
-      LOG("pjoin now has contents " << *pjoin);
+      DBGLOG(DBG,"pjoin now has contents " << *pjoin);
     }
   }
 
 	// create model
 	Model m = mg.addModel(u, MT_IN, deps);
-	LOG("returning new MT_IN model " << m);
+	LOG(MODELB,"returning new MT_IN model " << m);
   mg.propsOf(m).interpretation = pjoin;
 	return m;
 }
@@ -489,13 +489,14 @@ boost::optional<typename OnlineModelBuilder<EvalGraphT>::EvalUnitPredecessorIter
 OnlineModelBuilder<EvalGraphT>::ensureModelIncrement(
     EvalUnit u, typename OnlineModelBuilder<EvalGraphT>::EvalUnitPredecessorIterator cursor)
 {
+  LOG_VSCOPE(MODELB,"eMI",u,true);
   #ifndef NDEBUG
   typename EvalGraphT::EvalUnit ucursor1 =
     eg.targetOf(*cursor);
   std::ostringstream dbgstr;
   dbgstr << "eMI[" << u << "," << ucursor1 << "]";
-  LOG_FUNCTION(dbgstr.str()); // only called from within object -> do not log this ptr
-  LOG("=OnlineModelBuilder<...>::ensureModelIncrement(" << u << "," << ucursor1 << ")");
+  DBGLOG_SCOPE(MODELB,dbgstr.str(),true);
+  DBGLOG(DBG,"=OnlineModelBuilder<...>::ensureModelIncrement(" << u << "," << ucursor1 << ")");
   #endif
 
   EvalUnitPredecessorIterator pbegin, pend;
@@ -508,7 +509,7 @@ OnlineModelBuilder<EvalGraphT>::ensureModelIncrement(
     #ifndef NDEBUG
     EvalUnitModelBuildingProperties& ucursor_mbprops =
       mbp[ucursor];
-    LOG("ucursor = " << ucursor << " with mbprops = {" << printEUMBP(ucursor_mbprops) << "}");
+    DBGLOG(DBG,"ucursor = " << ucursor << " with mbprops = {" << printEUMBP(ucursor_mbprops) << "}");
     assert(ucursor_mbprops.hasOModel());
     assert(ucursor_mbprops.orefcount >= 1);
     #endif
@@ -516,15 +517,14 @@ OnlineModelBuilder<EvalGraphT>::ensureModelIncrement(
     OptionalModel om = getNextOModel(ucursor);
     if( !om )
     {
-      LOG("advancing failed");
       if( cursor == pbegin )
       {
-        LOG("cannot advance previous, returning null cursor");
+        LOG(MODELB,"cannot advance previous, returning null cursor");
         return boost::none;
       }
       else
       {
-        LOG("trying to advance previous");
+        LOG(MODELB,"trying to advance previous");
         cursor--;
       }
     }
@@ -538,7 +538,7 @@ OnlineModelBuilder<EvalGraphT>::ensureModelIncrement(
     eg.targetOf(*cursor);
   EvalUnitModelBuildingProperties& ucursor2_mbprops =
     mbp[ucursor2];
-  LOG("returning cursor: unit = " << ucursor2 << " with mbprops = {" << printEUMBP(ucursor2_mbprops) << "}");
+  DBGLOG(DBG,"returning cursor: unit = " << ucursor2 << " with mbprops = {" << printEUMBP(ucursor2_mbprops) << "}");
   assert(ucursor2_mbprops.hasOModel());
   #endif
   return cursor;
@@ -552,19 +552,17 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::getNextIModel(
     EvalUnit u)
 {
-  #ifndef NDEBUG
-  std::ostringstream dbgstr;
-  dbgstr << "gnIM[" << u << "]";
-  LOG_METHOD(dbgstr.str(),this);
-  LOG("=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
-  printModelBuildingPropertyMap(std::cerr);
+  LOG_VSCOPE(MODELB,"gnIM",u,true);
+  DBGLOG(DBG,"=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
 
+  #ifndef NDEBUG
+  printModelBuildingPropertyMap(std::cerr);
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  LOG("uprops: " << uprops);
+  DBGLOG(DBG,"uprops: " << uprops);
   #endif
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  LOG("mbprops: " << printEUMBP(mbprops));
+  DBGLOG(DBG,"mbprops: " << printEUMBP(mbprops));
 
   // did we have an imodel upon function entry?
   bool hadIModel = !!mbprops.getIModel();
@@ -572,11 +570,11 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   // dummy handling for units without input
   if( !mbprops.needInput )
   {
-    LOG("unit needs no input");
+    DBGLOG(DBG,"unit needs no input");
     OptionalModel odummy;
     if( hadIModel )
     {
-      LOG("removing dummy model and failing");
+      LOG(MODELB,"removing dummy model and failing");
       odummy = boost::none;
     }
     else
@@ -586,25 +584,25 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       {
         dummy = mg.addModel(u, MT_IN);
         mg.propsOf(dummy).dummy = true;
-        LOG("setting new dummy model " << dummy);
+        LOG(MODELB,"setting new dummy model " << dummy);
       }
       else
       {
         dummy = mg.modelsAt(u, MT_IN).front();
-        LOG("setting existing dummy model " << dummy);
+        LOG(MODELB,"setting existing dummy model " << dummy);
         assert(mg.propsOf(dummy).dummy);
       }
       odummy = dummy;
     }
     mbprops.setIModel(odummy);
-    LOG("returning model " << printopt(odummy));
+    LOG(MODELB,"returning model " << printopt(odummy));
     #ifndef NDEBUG
     printModelBuildingPropertyMap(std::cerr);
     #endif
     return odummy;
   }
 
-  LOG("unit needs input");
+  LOG(MODELB,"unit needs input");
 
   // prepare cursor handling
   typename EvalGraphT::PredecessorIterator pbegin, pend;
@@ -613,12 +611,12 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
 
   if( hadIModel )
   {
-    LOG("have imodel -> phase 1");
+    LOG(MODELB,"have imodel -> phase 1");
     boost::optional<EvalUnitPredecessorIterator> ncursor =
       ensureModelIncrement(u, pend - 1);
     if( !ncursor )
     {
-      LOG("got null cursor, returning no imodel");
+      LOG(MODELB,"got null cursor, returning no imodel");
       mbprops.setIModel(boost::none);
       #ifndef NDEBUG
       printModelBuildingPropertyMap(std::cerr);
@@ -627,7 +625,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     }
     else
     {
-      LOG("got some increment");
+      LOG(MODELB,"got some increment");
       cursor = ncursor.get();
     }
     // if( cursor == (pend - 1) )
@@ -642,7 +640,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   }
   
   // now, cursor is index of first unit where we do not hold a refcount 
-  LOG("phase 2");
+  LOG(MODELB,"phase 2");
 
   while(cursor != pend)
   {
@@ -652,21 +650,21 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       mbp[ucursor];
     if( ucursor_mbprops.hasOModel() )
     {
-      LOG("predecessor " << ucursor <<
+      LOG(MODELB,"predecessor " << ucursor <<
           " has omodel " << mg.sourceOf(*ucursor_mbprops.currentisuccessor.get()) <<
           " with refcount " << ucursor_mbprops.orefcount);
       ucursor_mbprops.orefcount++;
     }
     else
     {
-      LOG("predecessor " << ucursor << " has no omodel");
+      LOG(MODELB,"predecessor " << ucursor << " has no omodel");
       OptionalModel om = getNextOModel(ucursor);
-      LOG("got next omodel " << printopt(om) << " at unit " << ucursor);
+      LOG(MODELB,"got next omodel " << printopt(om) << " at unit " << ucursor);
       if( !om )
       {
         if( cursor == pbegin )
         {
-          LOG("backtracking impossible, returning no imodel");
+          LOG(MODELB,"backtracking impossible, returning no imodel");
           mbprops.setIModel(boost::none);
           #ifndef NDEBUG
           printModelBuildingPropertyMap(std::cerr);
@@ -675,12 +673,12 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
         }
         else
         {
-          LOG("backtracking");
+          LOG(MODELB,"backtracking possible");
           boost::optional<EvalUnitPredecessorIterator> ncursor =
             ensureModelIncrement(u, cursor - 1);
           if( !ncursor )
           {
-            LOG("got null cursor, returning no imodel");
+            LOG(MODELB,"got null cursor, returning no imodel");
             mbprops.setIModel(boost::none);
             #ifndef NDEBUG
             printModelBuildingPropertyMap(std::cerr);
@@ -689,7 +687,7 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
           }
           else
           {
-            LOG("backtracking was successful");
+            LOG(MODELB,"backtracking was successful");
             cursor = ncursor.get();
           }
         }
@@ -698,9 +696,9 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     cursor++;
   } // while(cursor != pend)
 
-  LOG("found full input model!");
+  LOG(MODELB,"found full input model, creating imodel!");
   Model im = createIModelFromPredecessorOModels(u);
-  LOG("returning newly created imodel " << im);
+  LOG(MODELB,"returning newly created imodel " << im);
   mbprops.setIModel(im);
   #ifndef NDEBUG
   printModelBuildingPropertyMap(std::cerr);
@@ -725,14 +723,8 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::createNextModel(
     EvalUnit u)
 {
-  #ifndef NDEBUG
-  std::ostringstream dbgstr;
-  dbgstr << "cNM[" << u << "]";
-  LOG_FUNCTION(dbgstr.str()); // only called from within object -> do not log this ptr
-  LOG("=createNextModel(" << u << ")");
-
-  const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  #endif
+  LOG_VSCOPE(MODELB,"cNM",u,true);
+  DBGLOG(DBG,"=createNextModel(" << u << ")");
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
 
@@ -746,7 +738,7 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
 
   if( !mbprops.currentmg )
   {
-    LOG("no model generator running");
+    LOG(MODELB,"no model generator running");
 
     // determine input
     typename Interpretation::ConstPtr input;
@@ -755,13 +747,13 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
     input = mg.propsOf(mbprops.getIModel().get()).interpretation;
 
     // mgf is of type ModelGeneratorFactory::Ptr
-    LOG("creating model generator");
+    LOG(MODELB,"creating model generator");
     mbprops.currentmg =
       eg.propsOf(u).mgf->createModelGenerator(input);
   }
 
   // use model generator to create new model
-  LOG("generating next model");
+  DBGLOG(MODELB,"generating next model");
   assert(mbprops.currentmg);
   InterpretationPtr intp =
     mbprops.currentmg->generateNextModel();
@@ -773,16 +765,19 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
     deps.push_back(mbprops.getIModel().get());
     Model m = mg.addModel(u, MT_OUT, deps);
     // we got a new model
-    LOG("stored new model " << m);
+    LOG(MODELB,"stored new model " << m);
 
     // configure model
     mg.propsOf(m).interpretation = intp;
 
     // TODO: handle projection here?
+    #ifndef NDEBUG
+    const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
+    #endif
     assert(uprops.iproject == false);
     assert(uprops.oproject == false);
 
-    LOG("setting currentisuccessor iterator");
+    LOG(MODELB,"setting currentisuccessor iterator");
     ModelSuccessorIterator sbegin, send;
     boost::tie(sbegin, send) = mg.getSuccessors(mbprops.getIModel().get());
     /*{
@@ -796,15 +791,15 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
     assert(mg.sourceOf(*sit) == m);
     mbprops.currentisuccessor = sit;
 
-    LOG("setting refcount to 1");
+    LOG(MODELB,"setting refcount to 1");
     mbprops.orefcount = 1;
-    LOG("returning model " << m);
+    LOG(MODELB,"returning model " << m);
     return m;
   }
   else
   {
     // no further models for this model generator
-    LOG("no further model");
+    LOG(MODELB,"no further model");
 
     // mark this input model as finished for creating models
     ModelPropertyBundle& imodelprops = mg.propsOf(mbprops.getIModel().get());
@@ -812,7 +807,7 @@ OnlineModelBuilder<EvalGraphT>::createNextModel(
 
     // free model generator
     mbprops.currentmg.reset();
-    LOG("returning no model");
+    LOG(MODELB,"returning no model");
     return boost::none;
   }
 }
@@ -840,12 +835,8 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
     EvalUnit u)
 {
-  #ifndef NDEBUG
-  std::ostringstream dbgstr;
-  dbgstr << "aOMfIM[" << u << "]";
-  LOG_FUNCTION(dbgstr.str()); // only called from within object -> do not log this ptr
-  LOG("=OnlineModelBuilder<...>::advanceOModelForIModel(" << u << ")");
-  #endif
+  LOG_VSCOPE(MODELB,"aOMfIM",u,true);
+  DBGLOG(DBG,"=OnlineModelBuilder<...>::advanceOModelForIModel(" << u << ")");
 
   // prepare
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
@@ -855,18 +846,19 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
   // get imodel + properties
   Model imodel = mbprops.getIModel().get(); // Model == void* -> no ref!
   ModelPropertyBundle& imodelprops = mg.propsOf(imodel);
-  LOG("have imodel " << imodel << ": " << print_method(imodelprops));
+  LOG(MODELB,"have imodel " << imodel);
+  DBGLOG(DBG,"imodel has properties " << print_method(imodelprops));
 
   // get successor list of imodel
   ModelSuccessorIterator sbegin, send;
   boost::tie(sbegin, send) = mg.getSuccessors(imodel);
   if( sbegin != send )
-    LOG("imodel has at least one successor");
+    LOG(MODELB,"imodel has at least one successor");
 
-  LOG("trying to advance on model graph");
+  LOG(MODELB,"trying to advance on model graph");
   if( !!mbprops.currentisuccessor )
   {
-    LOG("currentisuccessor is set");
+    LOG(MODELB,"currentisuccessor is set");
     assert(mbprops.orefcount == 1);
 
     ModelSuccessorIterator& currentisuccessor = mbprops.currentisuccessor.get();
@@ -875,12 +867,12 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
     if( currentisuccessor != send )
     {
       Model m = mg.sourceOf(*currentisuccessor);
-      LOG("advance successful, returning model " << m);
+      LOG(MODELB,"advance successful, returning model " << m);
       return m;
     }
     else
     {
-      LOG("resetting iterator");
+      LOG(MODELB,"resetting iterator");
       // reset iterator here because we cannot be sure that it can
       // point to a "current" model anymore, and we need to set it anew
       // anyways in case we create a new model below
@@ -890,29 +882,29 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
   }
   else
   {
-    LOG("currentisuccessor not set");
+    LOG(MODELB,"currentisuccessor not set");
     assert(mbprops.orefcount == 0);
 
     if( sbegin != send )
     {
-      LOG("there are successors -> using them");
+      LOG(MODELB,"there are successors -> using them");
       mbprops.currentisuccessor = sbegin;
       mbprops.orefcount++;
       assert(mbprops.orefcount == 1);
       Model m = mg.sourceOf(*sbegin);
-      LOG("returning first successor model " << m);
+      LOG(MODELB,"returning first successor model " << m);
       return m;
     }
   }
 
   // here we know: we cannot advance on the model graph 
-  LOG("advancing on model graph failed");
+  LOG(MODELB,"advancing on model graph failed");
   assert(!mbprops.currentisuccessor);
   assert(mbprops.orefcount == 0);
 
   if( imodelprops.childModelsGenerated )
   {
-    LOG("all successors created -> returning no model");
+    LOG(MODELB,"all successors created -> returning no model");
     return boost::none;
   }
 
@@ -920,9 +912,9 @@ OnlineModelBuilder<EvalGraphT>::advanceOModelForIModel(
   // -> create model generator if not existing
   // -> use model generator
 
-  LOG("attempting to create new model");
+  DBGLOG(MODELB,"attempting to create new model");
   OptionalModel m = createNextModel(u);
-  LOG("returning model " << printopt(m));
+  LOG(MODELB,"returning model " << printopt(m));
   return m;
 }
 
@@ -932,24 +924,22 @@ typename OnlineModelBuilder<EvalGraphT>::OptionalModel
 OnlineModelBuilder<EvalGraphT>::getNextOModel(
     EvalUnit u)
 {
-  #ifndef NDEBUG
-  std::ostringstream dbgstr;
-  dbgstr << "gnOM[" << u << "]";
-  LOG_METHOD(dbgstr.str(), this);
-  LOG("=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
+  LOG_VSCOPE(MODELB,"gnOM",u,true);
+  DBGLOG(DBG,"=OnlineModelBuilder<...>::getNextOModel(" << u << "):");
 
+  #ifndef NDEBUG
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   printModelBuildingPropertyMap(std::cerr);
-  LOG("uprops = " << uprops);
+  DBGLOG(DBG,"uprops = " << uprops);
   #endif
 
   EvalUnitModelBuildingProperties& mbprops = mbp[u];
-  LOG("mbprops = " << printEUMBP(mbprops));
+  DBGLOG(DBG,"mbprops = " << printEUMBP(mbprops));
 
   // are we allowed to go to the next model here?
   if( mbprops.orefcount > 1 )
   {
-    LOG("not allowed to continue because of orefcount > 1");
+    LOG(MODELB,"not allowed to continue because of orefcount > 1");
     // no -> give up our model refcount and return no model at all
     mbprops.orefcount--;
     #ifndef NDEBUG
@@ -961,7 +951,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   // initialization?
   if( !mbprops.getIModel() )
   {
-    LOG("getting next imodel (none present and we need one)");
+    LOG(MODELB,"getting next imodel (none present and we need one)");
     assert(mbprops.orefcount == 0);
     // get next input for this unit (stores into mprops.imodel)
     getNextIModel(u);
@@ -974,7 +964,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     // fail if there is no input at this point
     if( !mbprops.getIModel() )
     {
-      LOG("failing with no input");
+      LOG(MODELB,"failing with no input");
       assert(mbprops.orefcount == 0);
       #ifndef NDEBUG
       printModelBuildingPropertyMap(std::cerr);
@@ -982,13 +972,13 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
 			return boost::none;
     }
 
-    LOG("advancing omodel");
+    LOG(MODELB,"advancing omodel");
     // advance omodel, maybe advance to null model
     // advancing is only allowed if orefcount <= 1
     omodel = advanceOModelForIModel(u);
     if( !omodel )
     {
-      LOG("no omodel and have input models -> advancing imodel");
+      LOG(MODELB,"no omodel and have input models -> advancing imodel");
       // no next omodel found
       // -> advance imodel (stores into mbprops.imodel)
       getNextIModel(u);
@@ -996,7 +986,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   }
   while( !omodel );
   assert(mbprops.orefcount == 1);
-  LOG("returning omodel " << printopt(omodel));
+  LOG(MODELB,"returning omodel " << printopt(omodel));
   #ifndef NDEBUG
   printModelBuildingPropertyMap(std::cerr);
   #endif

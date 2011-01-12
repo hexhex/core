@@ -7,6 +7,8 @@
 	* renaming globals to config and removing singleton status (each ProgramCtx may have its own config if dlvhex is used as a library)
 	* encapsulating input sources in InputProvider
 	* removing singleton status of PluginContainer as API users might have different programs with different plugin containers
+	* Logger component with log-levels, hierarchical indentation and NDEBUG-dependant logging
+	* Printhelpers.hpp utilities for comfortable printing of various boost and STL containers
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

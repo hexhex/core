@@ -78,13 +78,13 @@
 
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
+  DBGLOG(DBG,*ctx.registry); \
 	RawPrinter printer(std::cerr, ctx.registry); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
+	DBGLOG(DBG,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	DBGLOG(DBG,"idb end");
 #else
 # define LOG_REGISTRY_PROGRAM(ctx) \
   do {} while(false);
@@ -96,14 +96,14 @@ inline void writeGraphVizFunctors(GraphVizFunc vfunc, GraphVizFunc tfunc, const 
 {
   std::string fnamev(fnamestart);
   fnamev += "Verbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
+  LOG(INFO,"dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev.c_str());
 	vfunc(filev);
   makeGraphVizPdf(fnamev.c_str());
 
   std::string fnamet(fnamestart);
   fnamet += "Terse.dot";
-  LOG("dumping terse graph to " << fnamet);
+  LOG(INFO,"dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet.c_str());
   tfunc(filet);
   makeGraphVizPdf(fnamet.c_str());
@@ -197,7 +197,7 @@ void writeEgMgGraphViz(
     for(typename ModelSet::const_iterator it = onlyForModels.get().begin();
         it != onlyForModels.get().end(); ++it)
     {
-      //LOG("doing dfs visit for " << *it);
+      //LOG(DBG,"doing dfs visit for " << *it);
       boost::depth_first_visit(
           mg.getInternalGraph(),
           *it, 
@@ -209,11 +209,11 @@ void writeEgMgGraphViz(
     {
       if( myHashMap[*mit] == boost::white_color )
       {
-        //LOG("model " << *mit << " still white");
+        //LOG(DBG,"model " << *mit << " still white");
       }
       else
       {
-        //LOG("model " << *mit << " not white -> printing");
+        //LOG(DBG,"model " << *mit << " not white -> printing");
         printModels.insert(*mit);
       }
     }
@@ -310,7 +310,7 @@ void writeEgMgGraphViz(
     boost::tie(pbegin, pend) = eg.getPredecessors(u);
     for(pit = pbegin; pit != pend; ++pit)
     {
-      LOG("-> depends on unit " << eg.targetOf(*pit) << "/join order " << eg.propsOf(*pit).joinOrder);
+      LOG(DBG,"-> depends on unit " << eg.targetOf(*pit) << "/join order " << eg.propsOf(*pit).joinOrder);
     }
 		*/
 
@@ -388,7 +388,7 @@ int main(int argn, char** argv)
   ID idpa = pa->getPredicateID();
 
   // parse HEX program
-  LOG("parsing HEX program");
+  LOG(INFO,"parsing HEX program");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
   HexParser parser(ctx);
   parser.parse(rewrittenfile);
@@ -411,7 +411,7 @@ int main(int argn, char** argv)
   //LOG_REGISTRY_PROGRAM(ctx);
 
   // create dependency graph
-  LOG("creating dependency graph");
+  LOG(INFO,"creating dependency graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
   std::vector<dlvhex::ID> auxRules;
   dlvhex::DependencyGraph depgraph(ctx.registry);
@@ -422,7 +422,7 @@ int main(int argn, char** argv)
   #endif
 
   // create component graph
-  LOG("creating component graph");
+  LOG(INFO,"creating component graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidcompgraph, "create componentgraph");
   dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
@@ -461,7 +461,7 @@ int main(int argn, char** argv)
   }
 
   // create eval graph
-  LOG("creating eval graph");
+  LOG(INFO,"creating eval graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidevalgraph, "create evalgraph");
   FinalEvalGraph evalgraph;
   EvalGraphBuilder egbuilder(ctx, compgraph, evalgraph, externalEvalConfig);
@@ -470,7 +470,7 @@ int main(int argn, char** argv)
   if( heurimode == "old" )
   {
     // old DLVHEX heuristic
-    LOG("building eval graph with old heuristics");
+    LOG(INFO,"building eval graph with old heuristics");
     EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
     heuristicOldDlvhex.build();
   }
@@ -478,14 +478,14 @@ int main(int argn, char** argv)
   {
     // trivial heuristic: just take component graph
     // (maximum number of eval units, probably large overhead)
-    LOG("building eval graph with trivial heuristics");
+    LOG(INFO,"building eval graph with trivial heuristics");
     EvalHeuristicTrivial heuristic(egbuilder);
     heuristic.build();
   }
   else if( heurimode == "easy" || heurimode == "easy_nore" )
   {
     // easy heuristic: just make some easy adjustments to improve on the trivial heuristics
-    LOG("building eval graph with easy heuristics");
+    LOG(INFO,"building eval graph with easy heuristics");
     EvalHeuristicEasy heuristic(egbuilder);
     heuristic.build();
   }
@@ -501,18 +501,18 @@ int main(int argn, char** argv)
   #endif
 
   // setup final unit
-  LOG("setting up final unit");
+  LOG(INFO,"setting up final unit");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidfinalunit, "creating final unit");
   EvalUnit ufinal;
   {
     ufinal = evalgraph.addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
-    LOG("ufinal = " << ufinal);
+    LOG(INFO,"ufinal = " << ufinal);
 
     FinalEvalGraph::EvalUnitIterator it, itend;
     boost::tie(it, itend) = evalgraph.getEvalUnits();
     for(; it != itend && *it != ufinal; ++it)
     {
-      LOG("adding dependency from ufinal to unit " << *it << " join order " << *it);
+      LOG(INFO,"adding dependency from ufinal to unit " << *it << " join order " << *it);
       // we can do this because we know that eval units (= vertices of a vecS adjacency list) are unsigned integers
       evalgraph.addDependency(ufinal, *it, FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
     }
@@ -525,7 +525,7 @@ int main(int argn, char** argv)
   //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
 
   // evaluate
-  LOG("evaluating");
+  LOG(INFO,"evaluating");
   DLVHEX_BENCHMARK_REGISTER(sidoutputmodel, "output model");
   if( mbmode == "online" )
   {
@@ -535,7 +535,7 @@ int main(int argn, char** argv)
     bool redundancyElimination = true;
     if( heurimode == "easy_nore" )
       redundancyElimination = false;
-    LOG("creating model builder");
+    LOG(INFO,"creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidonlinemb, "create online mb");
     FinalOnlineModelBuilder mb(evalgraph, redundancyElimination);
     DLVHEX_BENCHMARK_STOP(sidonlinemb);
@@ -546,7 +546,7 @@ int main(int argn, char** argv)
     unsigned mcount = 0;
     do
     {
-      LOG("requesting model");
+      LOG(INFO,"requesting model");
       DLVHEX_BENCHMARK_START(sidgetnextonlinemodel);
       m = mb.getNextIModel(ufinal);
       DLVHEX_BENCHMARK_STOP(sidgetnextonlinemodel);
@@ -555,7 +555,7 @@ int main(int argn, char** argv)
         InterpretationConstPtr interpretation =
           mb.getModelGraph().propsOf(m.get()).interpretation;
         #ifndef NDEBUG
-        LOG("got model#" << mcount << ":" << *interpretation);
+        LOG(INFO,"got model#" << mcount << ":" << *interpretation);
         std::set<Model> onlyFor;
         onlyFor.insert(m.get());
         GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
@@ -600,12 +600,12 @@ int main(int argn, char** argv)
     typedef FinalOfflineModelBuilder::OptionalModel OptionalModel;
     typedef FinalOfflineModelBuilder::MyModelGraph MyModelGraph;
 
-    LOG("creating model builder");
+    LOG(INFO,"creating model builder");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemb, "create offline mb");
     FinalOfflineModelBuilder mb(evalgraph);
     DLVHEX_BENCHMARK_STOP(sidofflinemb);
 
-    LOG("creating all final imodels");
+    LOG(INFO,"creating all final imodels");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidofflinemodels, "create offline models");
     mb.buildIModelsRecursively(ufinal);
     DLVHEX_BENCHMARK_STOP(sidofflinemodels);
@@ -613,7 +613,7 @@ int main(int argn, char** argv)
     mb.printEvalGraphModelGraph(std::cerr);
     #endif
 
-    LOG("printing models");
+    LOG(INFO,"printing models");
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidprintoffmodels, "print offline models");
     MyModelGraph& mg = mb.getModelGraph();
     const MyModelGraph::ModelList& models = mg.modelsAt(ufinal, MT_IN);
@@ -624,7 +624,7 @@ int main(int argn, char** argv)
       InterpretationConstPtr interpretation =
         mg.propsOf(m).interpretation;
       #ifndef NDEBUG
-      LOG("got model#" << mcount << ":" << *interpretation);
+      LOG(INFO,"got model#" << mcount << ":" << *interpretation);
       std::set<Model> onlyFor;
       onlyFor.insert(m);
       GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,

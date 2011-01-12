@@ -31,34 +31,53 @@
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
 
-#include <boost/range/iterator_range.hpp>
 #include <boost/preprocessor/cat.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
 #include <boost/optional.hpp>
+#include <boost/cstdint.hpp>
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
-#include <set>
-#include <vector>
 
 // singleton logger class
 class Logger
 {
+public:
+  // levels are specified and can be activated via bitmasks
+  // (all 32 bits may be used)
+  // logger itself logs on DBG
+  typedef uint32_t Levels;
+  static const Levels DBG =     0x01;
+  static const Levels INFO =    0x02;
+  static const Levels WARNING = 0x04;
+  static const Levels ERROR =   0x08;
+
+  // this is now very dlvhex-specific
+  static const Levels PLUGIN =  0x10; // plugin related things
+  static const Levels ANALYZE = 0x20; // program analysis
+  static const Levels MODELB =  0x40; // model building
+
 private:
   std::ostream& out;
   std::string indent;
+  Levels printlevels;
+  // width of field for level printing, if 0, level is not printed
+  int levelwidth;
 
 private:
-  // @todo: make this depend on some global config/options (early initialization!)
+  // default output is std::cerr, change this later with stream() = ...
+  // default output is all output levels, change this later with printlevels() = ...
+  // default output is i hex character of level printed, change this later with levelwidth() = ...
   Logger():
-    out(std::cerr), indent() {}
+    out(std::cerr), indent(), printlevels(~static_cast<Levels>(0)), levelwidth(1) {}
 
   ~Logger()
     {
       stream() << std::endl;
-      startline();
+      startline(DBG);
+      #ifndef NDEBUG
       stream() << "clean exit!" << std::endl;
+      #endif
     }
 
 public:
@@ -66,14 +85,25 @@ public:
 
   inline std::ostream& stream()
     { return out; }
-  inline void startline()
-    { out << indent; }
+
+  // this method does not ask shallPrint!
+  inline void startline(Levels forlevel)
+    {
+      if( levelwidth == 0 )
+        out << indent;
+      else
+        out << std::hex << std::setw(levelwidth) << forlevel << indent;
+    }
+
+  inline bool shallPrint(Levels forlevel)
+    { return (printlevels & forlevel) != 0; }
 
   friend class Closure;
   class Closure
   {
   private:
     Logger& l;
+    Levels level;
     unsigned cutoff;
     bool message;
 
@@ -82,7 +112,7 @@ public:
       // hello message
       if( message )
       {
-        l.startline();
+        l.startline(level);
         l.stream() << "ENTRY" << std::endl;
       }
     }
@@ -92,232 +122,69 @@ public:
       // goodbye message
       if( message )
       {
-        l.startline();
+        l.startline(level);
         l.stream() << "EXIT" << std::endl;
       }
     }
 
   public:
     // generic
-    Closure(Logger& l, const std::string& str, bool message):
-      l(l), cutoff(l.indent.size()), message(message)
+    Closure(Logger& l, Levels level, const std::string& str, bool message):
+      l(l), level(level), cutoff(l.indent.size()), message(message)
     {
-      l.indent += str + " ";
-      sayHello();
+      if( l.shallPrint(level) )
+      {
+        l.indent += str + " ";
+        sayHello();
+      }
     }
 
-    // with object
-    Closure(Logger& l, const std::string& str, const void* const ptr, bool message):
-      l(l), cutoff(l.indent.size()), message(message)
+    // with value (converted/reinterpret-casted to const void* const)
+    Closure(Logger& l, Levels level, const std::string& str, const void* const val, bool message):
+      l(l), level(level), cutoff(l.indent.size()), message(message)
     {
-      std::stringstream ss;
-      ss << str << "@" << ptr << " ";
-      l.indent += ss.str();
-      sayHello();
+      if( l.shallPrint(level) )
+      {
+        std::stringstream ss;
+        ss << str << "/" << val << " ";
+        l.indent += ss.str();
+        sayHello();
+      }
     }
 
     ~Closure()
     {
-      sayGoodbye();
-      // restore indentation level
-      l.indent.erase(cutoff);
+      if( l.shallPrint(level) )
+      {
+        sayGoodbye();
+        // restore indentation level
+        l.indent.erase(cutoff);
+      }
     }
   };
 };
 
-#ifndef NDEBUG
-#  define LOG(streamout) do { \
-       Logger::Instance().startline(); \
+// the following will always be realized
+#  define LOG(level,streamout) do { if( Logger::Instance().shallPrint(Logger:: level) ) { \
+       Logger::Instance().startline(Logger:: level); \
        Logger::Instance().stream() << streamout << std::endl; \
-     } while(false);
+     } } while(false);
 #    define LOG_CLOSURE_ID BOOST_PP_CAT(log_closure_,__LINE__)
-#  define LOG_INDENT()             Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), "  ", false)
-#  define LOG_SCOPE(name,msg)      Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), name, msg)
-#  define LOG_PSCOPE(name,ptr,msg) Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), name, static_cast<const void* const>(ptr), msg)
+#  define LOG_INDENT(level)              Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, "  ", false)
+#  define LOG_SCOPE(level,name,msg)      Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, msg)
+#  define LOG_VSCOPE(level,name,val,msg) Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, reinterpret_cast<const void* const>(val), msg)
+
+// the following are debug-flag dependant
+#ifndef NDEBUG
+#  define DBGLOG(level,streamout)           LOG(level,streamout)
+#  define DBGLOG_INDENT(level)              LOG_INDENT(level)
+#  define DBGLOG_SCOPE(level,name,msg)      LOG_SCOPE(level,name,msg)
+#  define DBGLOG_VSCOPE(level,name,val,msg) LOG_VSCOPE(level,name,val,msg)
 #else
-#  define LOG(streamout)           do { } while(false)
-#  define LOG_INDENT()             do { } while(false)
-#  define LOG_SCOPE(name,msg)      do { } while(false)
-#  define LOG_PSCOPE(name,ptr,msg) do { } while(false)
+#  define DBGLOG(level,streamout)           do { } while(false)
+#  define DBGLOG_INDENT(level)              do { } while(false)
+#  define DBGLOG_SCOPE(level,name,msg)      do { } while(false)
+#  define DBGLOG_VSCOPE(level,name,val,msg) do { } while(false)
 #endif
-#define LOG_FUNCTION(func)        LOG_SCOPE(func,true)
-#define LOG_METHOD(method,object) LOG_PSCOPE(method,object,true)
-
-
-
-// 'print<foo>' usage:
-// if some class has a method "std::ostream& print(std::ostream&) const"
-// and you have an object o of this type
-// then you can simply do "std::cerr << ... << print_method(o) << ... " to print it
-
-struct print_container
-{
-  virtual ~print_container() {}
-  virtual std::ostream& print(std::ostream& o) const = 0;
-};
-
-inline std::ostream& operator<<(std::ostream& o, print_container* c)
-{
-  std::ostream& ret = c->print(o);
-  delete c;
-  return ret;
-}
-
-template<typename T>
-struct print_stream_container:
-  public print_container
-{
-  T t;
-  print_stream_container(const T& t): t(t) {}
-  virtual ~print_stream_container() {}
-  virtual std::ostream& print(std::ostream& o) const
-    { return o << t; }
-};
-
-struct print_method_container:
-  public print_container
-{
-  typedef boost::function<std::ostream& (std::ostream&)>
-    PrintFn;
-  PrintFn fn;
-  print_method_container(const PrintFn& fn): fn(fn) {}
-  virtual ~print_method_container() {}
-  virtual std::ostream& print(std::ostream& o) const
-    { return fn(o); }
-};
-
-// this can be used if T contains a method "ostream& print(ostream&) const"
-template<typename T>
-inline print_container* print_method(const T& t)
-{
-  return new print_method_container(
-      boost::bind(&T::print, &t, _1));
-}
-
-// this can be used if some third party method is used to print T
-// e.g. std::ostream& BAR::printFOO(std::ostream& o, const FOO& p) const
-// is printed as
-// ... << print_function(boost::bind(&BAR::printFOO, &bar, _1, foo)) << ...
-inline print_container* print_function(
-    const print_method_container::PrintFn& fn)
-{
-  return new print_method_container(fn);
-}
-
-template<typename T1, typename T2>
-inline print_container* printalt(bool condition, const T1& alt1, const T2& alt2)
-{
-  if( condition )
-    return new print_stream_container<const T1&>(alt1);
-  else
-    return new print_stream_container<const T2&>(alt2);
-}
-
-template<typename T>
-inline print_container* printopt(const boost::optional<T>& t)
-{
-  if( !!t )
-    return new print_stream_container<const T&>(t.get());
-  else
-    return new print_stream_container<const char*>("unset");
-}
-
-template<typename T>
-inline print_container* printptr(const boost::shared_ptr<T>& t)
-{
-  if( !!t )
-    return new print_stream_container<const void*>(
-        reinterpret_cast<const void*>(t.get()));
-  else
-    return new print_stream_container<const char*>("null");
-}
-
-template<typename T>
-inline print_container* printptr(const boost::shared_ptr<const T>& t)
-{
-  if( t != 0 )
-    return new print_stream_container<const void*>(
-        reinterpret_cast<const void*>(t.get()));
-  else
-    return new print_stream_container<const char*>("null");
-}
-
-template<typename T>
-inline print_container* printptr(const T* const t)
-{
-  if( t != 0 )
-    return new print_stream_container<const void*>(
-        reinterpret_cast<const void* const>(t));
-  else
-    return new print_stream_container<const char*>("null");
-}
-
-template<typename Range>
-inline print_container* printrange(Range r,
-		const char* open="<", const char* sep=",", const char* close=">")
-{
-  std::ostringstream o;
-  o << open;
-  typename Range::const_iterator it = boost::begin(r);
-  typename Range::const_iterator itend = boost::end(r);
-  if( it != itend )
-  {
-    o << *it;
-    it++;
-  }
-  for(; it != itend; ++it)
-    o << sep << *it;
-  o << close;
-  return new print_stream_container<std::string>(o.str());
-}
-
-template<typename T>
-inline print_container* printset(const std::set<T>& t,
-		const char* open="{", const char* sep=",", const char* close="}")
-{
-  std::ostringstream o;
-  o << open;
-  typename std::set<T>::const_iterator it = t.begin();
-  if( it != t.end() )
-  {
-    o << *it;
-    it++;
-  }
-  for(; it != t.end(); ++it)
-    o << sep << *it;
-  o << close;
-  return new print_stream_container<std::string>(o.str());
-}
-
-template<typename T>
-inline print_container* printvector(const std::vector<T>& t)
-{
-  std::ostringstream o;
-  o << "<";
-  typename std::vector<T>::const_iterator it = t.begin();
-  if( it != t.end() )
-  {
-    o << *it;
-    it++;
-  }
-  for(; it != t.end(); ++it)
-    o << "," << *it;
-  o << ">";
-  return new print_stream_container<std::string>(o.str());
-}
-
-// usage:
-//   derive YourType from ostream_printable<YourType>
-//   implement std::ostream& YourType::print(std::ostream& o) const;
-//   now you can << YourType << and it will use the print() function
-// see http://en.wikipedia.org/wiki/Barton–Nackman_trick
-template<typename T>
-class ostream_printable
-{
-  friend std::ostream& operator<<(std::ostream& o, const T& t)
-    { return t.print(o); }
-  // to be defined in derived class
-  //std::ostream& print(std::ostream& o) const;
-};
 
 #endif // LOGGER_HPP_INCLUDED__17092010

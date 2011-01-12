@@ -32,6 +32,7 @@
 #define CAUALGORITHMS_HPP_INCLUDED__28092010
 
 #include "Logger.hpp"
+#include "Printhelpers.hpp"
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
@@ -127,7 +128,7 @@ public:
 
     // join order is stored in an internal property
     unsigned joinOrder = g[e].joinOrder;
-    LOG("examine edge " << from << " -> " << to << " joinOrder " << joinOrder);
+    DBGLOG(DBG,"examine edge " << from << " -> " << to << " joinOrder " << joinOrder);
 
     Ancestry& afrom = apm[from];
     Ancestry& ato = apm[to];
@@ -159,7 +160,7 @@ public:
           std::insert_iterator<Ancestry>(newancestry, newancestry.begin()));
       if( !newancestry.empty() )
       {
-        LOG("found new ancestry: " << printset(newancestry));
+        LOG(MODELB,"found new ancestry: " << printset(newancestry));
         caus.insert(to);
       }
       ato.insert(afrom.begin(), afrom.end());
@@ -182,9 +183,7 @@ findCAUs(
     typename EvalGraphT::EvalUnit u,
     AncestryPropertyMap& apm)
 {
-  std::stringstream dbgstr;
-  dbgstr << "findCAUs[" << u << "]";
-  LOG_FUNCTION(dbgstr.str());
+  LOG_VSCOPE(MODELB,"findCAUs",u,true);
 
   typedef EvalGraphT EvalGraph;
   typedef typename EvalGraphT::EvalUnit EvalUnit;
@@ -276,7 +275,7 @@ void markJoinRelevance(
   typename std::set<EvalUnit>::const_iterator cau;
   for(cau = caus.begin(); cau != caus.end(); ++cau)
   {
-    LOG("marking relevance from cau " << *cau);
+    DBGLOG(DBG,"marking relevance from cau " << *cau);
     RelevanceMarkingVisitor<typename EvalGraphT::EvalGraphInt>
       visitor(apm, jr, *cau);
     boost::two_bit_color_map<boost::identity_property_map>

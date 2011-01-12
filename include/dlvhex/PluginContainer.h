@@ -25,6 +25,7 @@
 /**
  * @file   PluginContainer.h
  * @author Roman Schindlauer
+ * @author Peter Schueller
  * @date   Thu Sep 1 17:21:53 2005
  * 
  * @brief  Container class for plugins.
@@ -63,7 +64,6 @@ public:
   /// dtor
   ~PluginContainer();
 
-public:
 	// search for plugins in searchpath and open those that are plugins
 	// may be called multiple times with different paths
 	// paths may be separated by ":" just like LD_LIBRARY_PATH
@@ -76,16 +76,13 @@ public:
 	// (this is supposed to remove "recognized" options from pluginOptions)
 	void processOptions(std::list<const char*>& pluginOptions);
 
-  std::vector<PluginInterface*>
-  importPlugins();
-  const std::vector<std::string>& pluginList;
+  // get container with plugins loaded so far
+  const std::vector<PluginInterfacePtr>& getPlugins() const;
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.
    */
-  boost::shared_ptr<PluginAtom>
-  getAtom(const std::string& name) const;
-
+  PluginAtomPtr getAtom(const std::string& name) const;
 
 private:
 	/// current search path

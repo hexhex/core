@@ -19,6 +19,7 @@
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -31,6 +32,8 @@
 #include <sys/time.h>
 
 namespace po = boost::program_options;
+
+const Logger::Levels DBG = 0x2;
 
 struct Config
 {
@@ -184,7 +187,7 @@ int main(int ac,char** av)
   for(unsigned atStratum = 0; atStratum < config.n; ++atStratum)
   {
     // build stratum
-    LOG("building stratum " << atStratum);
+    LOG(DBG,"building stratum " << atStratum);
     std::stringstream stratumpreds;
     stratumpreds << stratumprefix << atStratum;
     const std::string& stratumpred = stratumpreds.str();
@@ -197,10 +200,10 @@ int main(int ac,char** av)
       guessSymsHere.push_back(provider.getNextSymbol("gv_"));
     // store
     guessSymbols[atStratum] = guessSymsHere;
-    LOG("guessSymsHere  " << printrange(guessSymsHere));
+    LOG(DBG,"guessSymsHere  " << printrange(guessSymsHere));
     // randomize and build guesses
     randomizeRange(random, guessSymsHere);
-    LOG("guessSymsHere* " << printrange(guessSymsHere));
+    LOG(DBG,"guessSymsHere* " << printrange(guessSymsHere));
     for(StringVector::iterator it = guessSymsHere.begin();
         it != guessSymsHere.end(); ++it)
     {
@@ -218,7 +221,7 @@ int main(int ac,char** av)
     StringVector calcSymsHere;
     for(unsigned var = 0; var < config.s; ++var)
       calcSymsHere.push_back(provider.getNextSymbol("cv_"));
-    LOG("calcSymsHere " << printrange(calcSymsHere));
+    LOG(DBG,"calcSymsHere " << printrange(calcSymsHere));
     calcSymbols[atStratum] = calcSymsHere;
 
     // derive stratum from guesses
