@@ -47,24 +47,19 @@
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/GraphBuilder.h"
-#include "dlvhex/ComponentFinder.h"
-#include "dlvhex/BoostComponentFinder.h"
-#include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/TextOutputBuilder.h"
-#include "dlvhex/SafetyChecker.h"
-#include "dlvhex/HexParserDriver.h"
-#include "dlvhex/PrintVisitor.h"
+//#include "dlvhex/ResultContainer.h"
+//#include "dlvhex/OutputBuilder.h"
+//#include "dlvhex/TextOutputBuilder.h"
+//#include "dlvhex/SafetyChecker.h"
+//#include "dlvhex/HexParserDriver.h"
+//#include "dlvhex/PrintVisitor.h"
 #include "dlvhex/PluginContainer.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/Component.h"
+//#include "dlvhex/DependencyGraph.h"
 #include "dlvhex/URLBuf.h"
 #include "dlvhex/Benchmarking.h"
+
+#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -81,109 +76,40 @@ State::changeState(ProgramCtx* ctx, const boost::shared_ptr<State>& s)
   ctx->changeState(s);
 }
 
-void
-State::openPlugins(ProgramCtx*)
-{ }
+void State::showPlugins(ProgramCtx*) { }
+void State::convert(ProgramCtx*) { }
+void State::parse(ProgramCtx*) { }
+void State::rewriteEDBIDB(ProgramCtx*) { }
+void State::associatePluginAtomsWithExtAtoms(ProgramCtx*) {}
+void State::optimizeEDBDependencyGraph(ProgramCtx*) {}
+void State::createComponentGraph(ProgramCtx*) {}
+void State::createEvalGraph(ProgramCtx*) {}
+void State::configureModelBuilder(ProgramCtx*) {}
+void State::createDependencyGraph(ProgramCtx*) { }
+void State::safetyCheck(ProgramCtx*) { }
+void State::strongSafetyCheck(ProgramCtx*) { }
+void State::evaluate(ProgramCtx*) { }
+void State::postProcess(ProgramCtx*) { } 
 
-void
-State::convert(ProgramCtx*)
-{ }
-
-void
-State::parse(ProgramCtx*)
-{ }
-
-void
-State::rewrite(ProgramCtx*)
-{ }
-
-void
-State::createNodeGraph(ProgramCtx*)
-{ }
-
-void
-State::optimize(ProgramCtx*)
-{ }
-
-
-void
-State::createDependencyGraph(ProgramCtx*)
-{ }
-
-void
-State::safetyCheck(ProgramCtx*)
-{ }
-
-void
-State::strongSafetyCheck(ProgramCtx*)
-{ }
-
-void
-State::setupProgramCtx(ProgramCtx*)
-{ }
-
-void
-State::evaluate(ProgramCtx*)
-{ }
-
-void
-State::postProcess(ProgramCtx*)
-{ }
-
-void
-State::output(ProgramCtx*)
-{ }
-
-
-void
-OpenPluginsState::openPlugins(ProgramCtx* ctx)
+void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Importing plugins");
-
-  PluginContainer* container = ctx->getPluginContainer();
-
-  std::vector<PluginInterface*> plugins = container->importPlugins();
-  ctx->addPlugins(plugins);
-
-  //
-  // set options in the found plugins
-  //
-  for (std::vector<PluginInterface*>::const_iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end(); ++pi)
+  if( !ctx->config.getOption("Silent") )
+  {
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer.getPlugins())
     {
-      PluginInterface* plugin = *pi;
-
-      if (plugin != 0)
-	{
-	  // print plugin's version information
-	  if (!Globals::Instance()->getOption("Silent"))
-	    {
-	      Globals::Instance()->getVerboseStream() << "opening "
-						      << plugin->getPluginName()
-						      << " version "
-						      << plugin->getVersionMajor() << "."
-						      << plugin->getVersionMinor() << "."
-						      << plugin->getVersionMicro() << std::endl;
-	    }
-
-	  std::stringstream pluginhelp;
-
-	  plugin->setOptions(Globals::Instance()->getOption("HelpRequested"), *ctx->getOptions(), pluginhelp);
-
-	  if (!pluginhelp.str().empty())
-	    {
-	      Globals::Instance()->getVerboseStream() << std::endl << pluginhelp.str();
-	    }
-	}
+      LOG(INFO,"opening plugin " << plugin->getPluginName() <<
+               " version " <<
+               plugin->getVersionMajor() << "." <<
+               plugin->getVersionMinor() << "." <<
+               plugin->getVersionMicro());
     }
+  }
 
   boost::shared_ptr<State> next(new ConvertState);
   changeState(ctx, next);
 }
 
-
-void
-ConvertState::convert(ProgramCtx* ctx)
+void ConvertState::convert(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin converters");
 

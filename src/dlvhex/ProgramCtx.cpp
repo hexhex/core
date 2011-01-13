@@ -231,8 +231,10 @@ void RawPrinter::print(ID id)
 }
 	
 ProgramCtx::ProgramCtx():
-		maxint(0)
-{ }
+		maxint(0),
+    state(new ShowPluginsState)
+{
+}
 
 
 ProgramCtx::~ProgramCtx()
@@ -379,7 +381,7 @@ ProgramCtx::setOutputBuilder(OutputBuilder* o)
 #endif
 
 
-void ProgramCtx::openPlugins() { state->openPlugins(this); }
+void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }

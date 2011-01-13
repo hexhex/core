@@ -95,7 +95,7 @@ struct Registry:
   ExternalAtomTable eatoms;
   RuleTable rules;
 
-  NamespaceTable namespaces;
+  //NamespaceTable namespaces;
 
 	#if 0
 	
@@ -294,11 +294,10 @@ public:
   // state processing
   //
 
-  void openPlugins();
+  void showPlugins();
   void convert();
   void parse();
   void rewriteEDBIDB();
-  void optimize();
 	void associatePluginAtomsWithExtAtoms();
 	void optimizeEDBDependencyGraph();
 	void createComponentGraph();

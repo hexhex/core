@@ -967,18 +967,25 @@ class DLVHEX_EXPORT PluginInterface
  protected:
   
   /// Ctor.
-  PluginInterface()
-    : pluginName(""),
+  PluginInterface():
+    pluginName(),
     versionMajor(0),
     versionMinor(0),
     versionMicro(0)
   { }
 
   std::string pluginName;
-
   unsigned versionMajor;
   unsigned versionMinor;
   unsigned versionMicro;
+
+  void setNameVersion(const std::string& name, unsigned major, unsigned minor, unsigned micro)
+  {
+    pluginName = name;
+    versionMajor = major;
+    versionMinor = minor;
+    versionMicro = micro;
+  }
 
 public:
     /// Dtor.
@@ -1108,72 +1115,22 @@ public:
     getAtoms(PluginAtomMap&)
     { }
 
-    /**
-     * \brief Propagates dlvhex program options to the plugin.
-     *
-     * Each option known to the plugin must be deleted from the vector. dlvhex
-     * will exit with an error if unknown options are left in the vector after
-     * all plugins have been processed.
-     * If the first parameter is true, then help was requested. The plugin must
-     * write its help output into the given stream;
-     */
-    virtual void
-    setOptions(bool, std::vector<std::string>&, std::ostream&)
-    { }
 
-    /**
-     * \brief Set plugin name.
-     *
-     * The plugin name will be displayed when dlvhex loads the
-     * plugin. This method is not supposed to be overridden, but only
-     * called in the PLUGINIMPORTFUNCTION() (see Section \ref
-     * importing).
-     */
-    void
-    setPluginName(const std::string& name)
-    {
-      this->pluginName = name;
-    }
+  const std::string& getPluginName() const
+    { return this->pluginName; }
+  unsigned getVersionMajor() const
+    { return this->versionMajor; }
+  unsigned getVersionMinor() const
+    { return this->versionMinor; }
+  unsigned getVersionMicro() const
+    { return this->versionMicro; }
 
-    /**
-     * \brief Set plugin version.
-     *
-     * The version number will be displayed when dlvhex loads the plugin. It can
-     * be used to check whether the right version is loaded. This method is not
-     * supposed to be overridden, but only called in the PLUGINIMPORTFUNCTION()
-     * (see Section \ref importing).
-     */
-    void
-    setVersion(unsigned major, unsigned minor, unsigned micro)
-    {
-      this->versionMajor = major;
-      this->versionMinor = minor;
-      this->versionMicro = micro;
-    }
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o) const;
 
-    const std::string&
-    getPluginName() const
-    {
-      return this->pluginName;
-    }
-
-    unsigned
-    getVersionMajor() const
-    {
-      return this->versionMajor;
-    }
-
-    unsigned
-    getVersionMinor() const
-    {
-      return this->versionMinor;
-    }
-
-    unsigned
-    getVersionMicro() const
-    {
-      return this->versionMicro;
-    }
+	// call processOptions for each loaded plugin
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processOptions(std::list<const char*>& pluginOptions);
 };
 
 typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;

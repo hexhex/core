@@ -180,15 +180,6 @@ InternalError (const char *msg)
   exit (99);
 }
 
-// thrown to give error message including help message
-class UsageError: public FatalError
-{
-	public:
-		UsageError(const std::string& msg):
-			FatalError(msg) {}
-		virtual ~UsageError() throw() {}
-};
-
 // config and defaults of dlvhex main
 struct Config
 {
@@ -278,7 +269,11 @@ int main(int argc, char *argv[])
 			throw UsageError("no input specified!");
 
 		// load plugins
-		pctx.pluginContainer.openPlugins(config.optionPlugindir);
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"loading plugins");
+			pctx.pluginContainer.loadPlugins(config.optionPlugindir);
+			pctx.showPlugins();
+		}
 
 		// now we may offer help, including plugin help
     if( config.helpRequested )

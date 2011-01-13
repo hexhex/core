@@ -58,7 +58,7 @@ class DLVHEX_EXPORT State
   ~State()
   {}
 
-  virtual void openPlugins(ProgramCtx*);
+  virtual void showPlugins(ProgramCtx*);
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
 	virtual void rewriteEDBIDB(ProgramCtx*);
@@ -75,11 +75,10 @@ class DLVHEX_EXPORT State
 };
 
 
-class DLVHEX_EXPORT OpenPluginsState : public State
+class DLVHEX_EXPORT ShowPluginsState : public State
 {
- public:
-  virtual void
-  openPlugins(ProgramCtx*);
+public:
+  virtual void showPlugins(ProgramCtx*);
 };
 
 

@@ -275,6 +275,31 @@ PluginContainer::getAtom(const std::string& name) const
   return pa->second;
 }
 
+// call printUsage for each loaded plugin
+void PluginContainer::printUsage(
+    std::ostream& o)
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  {
+    o << "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
+	  plugin->printUsage(o);
+  }
+}
+
+// call processOptions for each loaded plugin
+// (this is supposed to remove "recognized" options from pluginOptions)
+void PluginContainer::processOptions(
+    std::list<const char*>& pluginOptions)
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  {
+    LOG(DBG,"processing options for plugin " << plugin->getPluginName());
+    LOG(DBG,"currently have " << printrange(pluginOptions));
+	  plugin->processOptions(pluginOptions);
+  }
+}
+
+
 DLVHEX_NAMESPACE_END
 
 // Local Variables:
