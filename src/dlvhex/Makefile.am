@@ -41,28 +41,13 @@ libdlvhexbase_la_SOURCES = \
     AtomNode.cpp \
     AtomSet.cpp \
     Benchmarking.cpp \
-    BoostComponentFinder.cpp \
-    Component.cpp \
-    ComponentFinder.cpp \
-    Dependency.cpp \
     DependencyGraph.cpp \
-    EvaluateExtatom.cpp \
-    ExternalAtom.cpp \
     Error.cpp \
-    FixpointModelGenerator.cpp \
-    GraphBuilder.cpp \
-    GraphProcessor.cpp \
-    GuessCheckModelGenerator.cpp \
     Literal.cpp \
-    NodeGraph.cpp \
-    OrdinaryModelGenerator.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
-    PrintVisitor.cpp \
     Program.cpp \
     ProgramCtx.cpp \
-    Repository.cpp \
-    Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \

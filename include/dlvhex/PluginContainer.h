@@ -64,17 +64,14 @@ public:
   /// dtor
   ~PluginContainer();
 
+  //
+  // loading and accessing
+  //
+
 	// search for plugins in searchpath and open those that are plugins
 	// may be called multiple times with different paths
 	// paths may be separated by ":" just like LD_LIBRARY_PATH
-	void openPlugins(const std::string& searchpath="");
-
-	// call printUsage for each loaded plugin
-	void printUsage(std::ostream& o);
-
-	// call processOptions for each loaded plugin
-	// (this is supposed to remove "recognized" options from pluginOptions)
-	void processOptions(std::list<const char*>& pluginOptions);
+	void loadPlugins(const std::string& searchpath="");
 
   // get container with plugins loaded so far
   const std::vector<PluginInterfacePtr>& getPlugins() const;
@@ -84,11 +81,22 @@ public:
    */
   PluginAtomPtr getAtom(const std::string& name) const;
 
+  //
+  // batch operations on all plugins
+  //
+
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o);
+
+	// call processOptions for each loaded plugin
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processOptions(std::list<const char*>& pluginOptions);
+
 private:
 	/// current search path
 	std::string searchPath;
 
-	// loaded plugins
+  // loaded plugins
   std::vector<PluginInterfacePtr> plugins;
 
   /**

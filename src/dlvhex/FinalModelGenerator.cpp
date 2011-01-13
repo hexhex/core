@@ -334,6 +334,79 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
       {
         // check answer tuple, if it corresponds to pattern
         #warning TODO verify answer tuple! (as done in dlvhex trunk using std::mismatch)
+        #if 0
+        this is the respective code
+
+
+        /**
+         * @brief Check the answers returned from the external atom, and
+         * remove ill-formed tuples.
+         *
+         * Check whether the answers in the output list are
+         * (1) ground
+         * (2) conform to the output pattern, i.e.,
+         *     &rdf[uri](S,rdf:subClassOf,O) shall only return tuples of form
+         *     <s, rdf:subClassOf, o>, and not for instance <s,
+         *     rdf:subPropertyOf, o>, we have to filter them out (do we?)
+         */
+        struct CheckOutput
+          : public std::binary_function<const Term, const Term, bool>
+        {
+          bool
+          operator() (const Term& t1, const Term& t2) const
+          {
+            // answers must be ground, otw. programming error in the plugin
+            assert(t1.isInt() || t1.isString() || t1.isSymbol());
+
+            // pattern tuple values must coincide
+            if (t2.isInt() || t2.isString() || t2.isSymbol())
+              {
+          return t1 == t2;
+              }
+            else // t2.isVariable() -> t1 is a variable binding for t2
+              {
+          return true;
+              }
+          }
+        };
+
+
+        for (std::vector<Tuple>::const_iterator s = answers->begin(); s != answers->end(); ++s)
+        {
+          if (s->size() != externalAtom->getArguments().size())
+            {
+              throw PluginError("External atom " + externalAtom->getFunctionName() + " returned tuple of incompatible size.");
+            }
+
+          // check if this answer from pluginatom conforms to the external atom's arguments
+          std::pair<Tuple::const_iterator,Tuple::const_iterator> mismatched =
+            std::mismatch(s->begin(),
+              s->end(),
+              externalAtom->getArguments().begin(),
+              CheckOutput()
+              );
+
+          if (mismatched.first == s->end()) // no mismatch found -> add this tuple to the result
+            {
+              // the replacement atom contains both the input and the output list!
+              // (*inputi must be ground here, since it comes from
+              // groundInputList(i, inputArguments))
+              Tuple resultTuple(*inputi);
+
+              // add output list
+              resultTuple.insert(resultTuple.end(), s->begin(), s->end());
+
+              // setup new atom with appropriate replacement name
+              AtomPtr ap(new Atom(externalAtom->getReplacementName(), resultTuple));
+
+              result.insert(ap);
+            }
+          else
+            {
+              // found a mismatch, ignore this answer tuple
+            }
+        }
+        #endif
 
         // create replacement atom for each tuple
         OrdinaryAtom replacement(
