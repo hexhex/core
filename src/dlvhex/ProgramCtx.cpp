@@ -59,8 +59,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 	
 ProgramCtx::ProgramCtx():
-		maxint(0),
-    state(new ShowPluginsState)
+		maxint(0)
 {
 }
 
@@ -74,6 +73,18 @@ void
 ProgramCtx::changeState(const boost::shared_ptr<State>& s)
 {
   state = s;
+}
+
+// must be setup together
+// pluginContainer must be associated to registry
+void ProgramCtx::setupRegistryPluginContainer(
+    RegistryPtr registry, PluginContainerPtr pluginContainer)
+{
+  assert(!pluginContainer ||
+      (pluginContainer->getRegistry() == registry &&
+      "PluginContainer in ProgramCtx must be associated to registry of programCtx"));
+  _registry = registry;
+  _pluginContainer = pluginContainer;
 }
 
 #if 0
@@ -213,7 +224,6 @@ void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
-void ProgramCtx::associatePluginAtomsWithExtAtoms() { state->associatePluginAtomsWithExtAtoms(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
 void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }

@@ -44,6 +44,8 @@
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/EvalGraphBuilder.hpp"
@@ -71,8 +73,8 @@
 
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
-  DBGLOG(DBG,*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  DBGLOG(DBG,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	DBGLOG(DBG,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
@@ -612,31 +614,17 @@ int main(int argn, char** argv)
 
   // prepare program context
   ProgramCtx ctx;
-  ctx.registry.reset(new Registry);
+  {
+    RegistryPtr registry(new Registry);
+    PluginContainerPtr pluginContainer(new PluginContainer(registry));
+    ctx.setupRegistryPluginContainer(registry,pluginContainer);
+  }
 
   // create all testing plugin atoms
-  typedef std::list<PluginAtomPtr> PluginList;
-  PluginList patoms;
-  {
-    PluginAtomPtr pa(new AbovePluginAtom);
-    pa->setRegistry(ctx.registry);
-    patoms.push_back(pa);
-  }
-  {
-    PluginAtomPtr pa(new SenseNotArmed1PluginAtom);
-    pa->setRegistry(ctx.registry);
-    patoms.push_back(pa);
-  }
-  {
-    PluginAtomPtr pa(new SenseNotArmed2PluginAtom);
-    pa->setRegistry(ctx.registry);
-    patoms.push_back(pa);
-  }
-  {
-    PluginAtomPtr pa(new GenPluginAtom2("gen2",2));
-    pa->setRegistry(ctx.registry);
-    patoms.push_back(pa);
-  }
+  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new AbovePluginAtom));
+  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new SenseNotArmed1PluginAtom));
+  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new SenseNotArmed2PluginAtom));
+  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new GenPluginAtom2("gen2",2)));
 
   // parse HEX program
   LOG(INFO,"parsing HEX program");
@@ -645,26 +633,7 @@ int main(int argn, char** argv)
   parser.parse(infile);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
-  // link parsed external atoms to plugin atoms
-  //TODO this should become a common functionality using some pluginAtom registry
-  //TODO we should make the ExternalAtom::pluginAtom member mutable
-	{
-    for(PluginList::iterator itpa = patoms.begin();
-        itpa != patoms.end(); ++itpa)
-    {
-      PluginAtomPtr pa_ptr = *itpa;
-      ID pa_id = pa_ptr->getPredicateID();
-
-      ExternalAtomTable::PredicateIterator it, it_end;
-      for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(pa_id);
-          it != it_end; ++it)
-      {
-        ExternalAtom ea(*it);
-        ea.pluginAtom = pa_ptr;
-        ctx.registry->eatoms.update(*it, ea);
-      }
-    }
-	}
+  ctx.pluginContainer()->associateExtAtomsWithPluginAtoms(ctx.idb,true);
 
   //LOG_REGISTRY_PROGRAM(ctx);
 
@@ -672,7 +641,7 @@ int main(int argn, char** argv)
   LOG(INFO,"creating dependency graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
   std::vector<dlvhex::ID> auxRules;
-  dlvhex::DependencyGraph depgraph(ctx.registry);
+  dlvhex::DependencyGraph depgraph(ctx.registry());
   depgraph.createDependencies(ctx.idb, auxRules);
   DLVHEX_BENCHMARK_STOP(siddepgraph);
   #ifndef NDEBUG
@@ -682,7 +651,7 @@ int main(int argn, char** argv)
   // create component graph
   LOG(INFO,"creating component graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidcompgraph, "create componentgraph");
-  dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
+  dlvhex::ComponentGraph compgraph(depgraph, ctx.registry());
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
   #ifndef NDEBUG
   writeGraphViz(compgraph, fname+"PlainHEXCompGraph");
@@ -781,7 +750,7 @@ int main(int argn, char** argv)
   //GenericOutputBuilder ob;
   #warning reactivate and redesign outputbuilder
 
-  //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+  //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
   // evaluate
   LOG(INFO,"evaluating");
@@ -826,7 +795,7 @@ int main(int argn, char** argv)
         {
           std::cout << *interpretation << std::endl;
         }
-        //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+        //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
         #ifndef NDEBUG
         mb.printEvalGraphModelGraph(std::cerr);
@@ -842,7 +811,7 @@ int main(int argn, char** argv)
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
 		writeGraphVizFunctors(func, func, fname+"PlainHEXOnlineEgMg");
     #endif
-    //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+    //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
     DLVHEX_BENCHMARK_STOP(sidoverall);
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<

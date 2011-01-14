@@ -37,7 +37,7 @@
 #define _DLVHEX_PLUGINCONTAINER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/PluginInterface.h"
 
 #include <string>
@@ -45,9 +45,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-
 DLVHEX_NAMESPACE_BEGIN
-
 
 /**
  * @brief Collects and administrates all available plugins.
@@ -56,7 +54,7 @@ class DLVHEX_EXPORT PluginContainer
 {
 public:
   /// ctor
-  PluginContainer();
+  PluginContainer(RegistryPtr registry);
 
   /// copy ctor
   PluginContainer(const PluginContainer&);
@@ -73,6 +71,12 @@ public:
 	// paths may be separated by ":" just like LD_LIBRARY_PATH
 	void loadPlugins(const std::string& searchpath="");
 
+  // add a PluginInterface to the container
+  void addInternalPlugin(PluginInterfacePtr plugin);
+
+  // add a PluginAtom to the container
+  void addInternalPluginAtom(PluginAtomPtr atom);
+
   // get container with plugins loaded so far
   const std::vector<PluginInterfacePtr>& getPlugins() const;
 
@@ -80,6 +84,9 @@ public:
    * @brief returns a plugin-atom object corresponding to a name.
    */
   PluginAtomPtr getAtom(const std::string& name) const;
+
+  RegistryPtr getRegistry() const
+    { return registry; }
 
   //
   // batch operations on all plugins
@@ -92,7 +99,15 @@ public:
 	// (this is supposed to remove "recognized" options from pluginOptions)
 	void processOptions(std::list<const char*>& pluginOptions);
 
+  // associate plugins in container to external atoms in given rules
+  void associateExtAtomsWithPluginAtoms(
+      const std::vector<ID>& idb, bool failOnUnknownAtom=true);
+
 private:
+  // one plugincontainer can only be used with one registry,
+  // as all the plugin atoms have an association with a registry
+  RegistryPtr registry;
+
 	/// current search path
 	std::string searchPath;
 
@@ -104,7 +119,7 @@ private:
    */
   PluginAtomMap pluginAtoms;
 };
-
+typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 DLVHEX_NAMESPACE_END
 

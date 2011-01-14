@@ -270,10 +270,13 @@ int main(int argc, char *argv[])
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
 			throw UsageError("no input specified!");
 
+		// startup statemachine
+		pctx.changeState(StatePtr(new ShowPluginsState));
+
 		// load plugins
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"loading plugins");
-			pctx.pluginContainer.loadPlugins(config.optionPlugindir);
+			pctx.pluginContainer()->loadPlugins(config.optionPlugindir);
 			pctx.showPlugins();
 		}
 
@@ -281,14 +284,14 @@ int main(int argc, char *argv[])
     if( config.helpRequested )
 		{
 			printUsage(std::cerr, whoAmI, true);
-			pctx.pluginContainer.printUsage(std::cerr);
+			pctx.pluginContainer()->printUsage(std::cerr);
 			return 1;
 		}
 
 		// process plugin options using plugins
 		// (this deletes processed options from config.pluginOptions)
 		// TODO use boost::program_options
-		pctx.pluginContainer.processOptions(config.pluginOptions);
+		pctx.pluginContainer()->processOptions(config.pluginOptions);
       
 		// handle options not recognized by dlvhex and not by plugins
 		if( !config.pluginOptions.empty() )
@@ -314,9 +317,9 @@ int main(int argc, char *argv[])
 		// check weak safety
 		pctx.safetyCheck();
 
-		// associate PluginAtom instances (coming from pctx.pluginContainer) with
+		// associate PluginAtom instances (coming from pctx.pluginContainer()) with
 		// ExternalAtom instances (in the IDB)
-		pctx.associatePluginAtomsWithExtAtoms();
+		pctx.pluginContainer()->associateExtAtomsWithPluginAtoms(pctx.idb, true);
 
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();
@@ -355,7 +358,7 @@ int main(int argc, char *argv[])
 	{
 		std::cerr << "GeneralError: " << ue.getErrorMsg() << std::endl;
 		printUsage(std::cerr, whoAmI, true);
-		pctx.pluginContainer.printUsage(std::cerr);
+		pctx.pluginContainer()->printUsage(std::cerr);
 		return 1;
 	}
   catch(const GeneralError &ge)

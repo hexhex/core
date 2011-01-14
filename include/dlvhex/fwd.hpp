@@ -45,6 +45,17 @@ DLVHEX_NAMESPACE_BEGIN
 class InputProvider;
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 
+class Interpretation;
+typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
+typedef boost::shared_ptr<Interpretation> InterpretationPtr;
+
+class PluginAtom;
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
+typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
+
+class PluginContainer;
+typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
+
 class PluginConverter;
 typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 

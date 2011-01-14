@@ -32,6 +32,8 @@
 
 #include "dlvhex/FinalModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
@@ -78,13 +80,13 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
   {
     {
       std::ostringstream s;
-      RawPrinter printer(s,ctx.registry);
+      RawPrinter printer(s,ctx.registry());
       printer.printmany(idb," ");
       DBGLOG(DBG,"FinalModelGeneratorFactory got idb " << s.str());
     }
     {
       std::ostringstream s;
-      RawPrinter printer(s,ctx.registry);
+      RawPrinter printer(s,ctx.registry());
       printer.printmany(xidb," ");
       DBGLOG(DBG,"FinalModelGeneratorFactory got xidb " << s.str());
     }
@@ -101,11 +103,11 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     return ruleid;
 
   // we need to rewrite
-  const Rule& rule = ctx.registry->rules.getByID(ruleid);
+  const Rule& rule = ctx.registry()->rules.getByID(ruleid);
   #ifndef NDEBUG
   {
     std::stringstream s;
-    RawPrinter printer(s, ctx.registry);
+    RawPrinter printer(s, ctx.registry());
     printer.print(ruleid);
     DBGLOG(DBG,"rewriting rule " << s.str() << " from " << rule << " with id " << ruleid << " to auxiliary predicates");
   }
@@ -120,7 +122,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
       continue;
 
     bool naf = itlit->isNaf();
-    const ExternalAtom& eatom = ctx.registry->eatoms.getByID(
+    const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(
         ID::atomFromLiteral(*itlit));
     DBGLOG(DBG,"rewriting external atom " << eatom << " literal with id " << *itlit);
 
@@ -146,9 +148,9 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
 
     OrdinaryAtomTable* oat;
     if( ground )
-      oat = &ctx.registry->ogatoms;
+      oat = &ctx.registry()->ogatoms;
     else
-      oat = &ctx.registry->onatoms;
+      oat = &ctx.registry()->onatoms;
 
     // this replacement might already exists
     ID idreplacement = oat->getIDByTuple(replacement.tuple);
@@ -157,7 +159,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
       // text
       #warning cache this partially site 1?
       std::stringstream s;
-      RawPrinter printer(s, ctx.registry);
+      RawPrinter printer(s, ctx.registry());
       s << pluginAtom->getReplacementPredicate();
       s << "(";
       printer.printmany(eatom.inputs,",");
@@ -174,11 +176,11 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
     *itlit = ID::literalFromAtom(idreplacement, naf);
   }
 
-  ID newruleid = ctx.registry->rules.storeAndGetID(newrule);
+  ID newruleid = ctx.registry()->rules.storeAndGetID(newrule);
   #ifndef NDEBUG
   {
     std::stringstream s;
-    RawPrinter printer(s, ctx.registry);
+    RawPrinter printer(s, ctx.registry());
     printer.print(newruleid);
     DBGLOG(DBG,"rewritten rule " << s.str() << " from " << newrule << " got id " << newruleid);
   }
@@ -189,7 +191,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
 std::ostream& FinalModelGeneratorFactory::print(
     std::ostream& o) const
 {
-  RawPrinter printer(o, ctx.registry);
+  RawPrinter printer(o, ctx.registry());
   if( !eatoms.empty() )
   {
     printer.printmany(eatoms,",");
@@ -221,7 +223,7 @@ FinalModelGenerator::generateNextModel()
     if( input == 0 )
     {
       // empty construction
-      newint.reset(new Interpretation(factory.ctx.registry));
+      newint.reset(new Interpretation(factory.ctx.registry()));
     }
     else
     {
@@ -251,7 +253,7 @@ FinalModelGenerator::generateNextModel()
     postprocessedInput = newint;
 
     DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,"initiating external solver");
-    ASPProgram program(factory.ctx.registry, factory.xidb, postprocessedInput, factory.ctx.maxint);
+    ASPProgram program(factory.ctx.registry(), factory.xidb, postprocessedInput, factory.ctx.maxint);
     ASPSolverManager mgr;
     currentResults = mgr.solve(*factory.externalEvalConfig, program);
     DLVHEX_BENCHMARK_STOP(sidaspsolve);
@@ -289,7 +291,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
   for(std::vector<ID>::const_iterator ite = factory.eatoms.begin();
       ite != factory.eatoms.end(); ++ite)
   {
-    const ExternalAtom& eatom = factory.ctx.registry->eatoms.getByID(*ite);
+    const ExternalAtom& eatom = factory.ctx.registry()->eatoms.getByID(*ite);
 
     // lock weak pointer
     assert(!eatom.pluginAtom.expired());
@@ -310,7 +312,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
       BOOST_FOREACH(const Tuple& t, inputs)
       {
         std::stringstream s;
-        RawPrinter printer(s, factory.ctx.registry);
+        RawPrinter printer(s, factory.ctx.registry());
         s << "[";
         printer.printmany(t,",");
         s << "]";
@@ -419,13 +421,13 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 
         // this replacement might already exists
         LOG(DBG,"integrating external answer tuple " << printrange(t));
-        ID idreplacement = factory.ctx.registry->ogatoms.getIDByTuple(replacement.tuple);
+        ID idreplacement = factory.ctx.registry()->ogatoms.getIDByTuple(replacement.tuple);
         if( idreplacement == ID_FAIL )
         {
           // text
           #warning cache this partially site 2 ?
           std::stringstream s;
-          RawPrinter printer(s, factory.ctx.registry);
+          RawPrinter printer(s, factory.ctx.registry());
           s << pluginAtom->getReplacementPredicate();
           s << "(";
           printer.printmany(inputtuple,",");
@@ -436,7 +438,7 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
           replacement.text = s.str();
 
           DBGLOG(DBG,"integrating " << replacement);
-          idreplacement = factory.ctx.registry->ogatoms.storeAndGetID(replacement);
+          idreplacement = factory.ctx.registry()->ogatoms.storeAndGetID(replacement);
           DBGLOG(DBG,"got ID " << idreplacement);
         }
         i->setFact(idreplacement.address);
@@ -457,7 +459,7 @@ InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
   eatom.updatePredicateInputMask();
   InterpretationPtr ret;
   if( full == 0 )
-    ret.reset(new Interpretation(factory.ctx.registry));
+    ret.reset(new Interpretation(factory.ctx.registry()));
   else
     ret.reset(new Interpretation(*full));
   ret->getStorage() &= eatom.getPredicateInputMask()->getStorage();
@@ -486,14 +488,14 @@ void FinalModelGenerator::buildEAtomInputTuples(
   // otherwise we have to calculate a bit, using the aux input predicate
   DBGLOG(DBG,"matching aux input predicate " << eatom.auxInputPredicate << ", original eatom.inputs = " << printrange(eatom.inputs));
   dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-  assert(factory.ctx.registry != 0);
+  assert(factory.ctx.registry() != 0);
   for(boost::tie(it, it_end) =
-      factory.ctx.registry->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
+      factory.ctx.registry()->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
       it != it_end; ++it)
   {
     const dlvhex::OrdinaryAtom& oatom = *it;
     #warning perhaps this could be made more efficient by storing back the id into oatom or by creating ogatoms.getIDRangeByPredicateID with some projecting adapter to PredicateIterator
-    ID idoatom = factory.ctx.registry->ogatoms.getIDByStorage(oatom);
+    ID idoatom = factory.ctx.registry()->ogatoms.getIDByStorage(oatom);
     if( i->getFact(idoatom.address) )
     {
       // add copy of original input tuple

@@ -60,7 +60,6 @@ class DLVHEX_EXPORT State
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
 	virtual void rewriteEDBIDB(ProgramCtx*);
-	virtual void associatePluginAtomsWithExtAtoms(ProgramCtx*);
 	virtual void optimizeEDBDependencyGraph(ProgramCtx*);
 	virtual void createComponentGraph(ProgramCtx*);
 	virtual void createEvalGraph(ProgramCtx*);
@@ -101,14 +100,6 @@ class DLVHEX_EXPORT RewriteState : public State
  public:
   virtual void
   rewrite(ProgramCtx*);
-};
-
-
-class DLVHEX_EXPORT CreateNodeGraph : public State
-{
- public:
-  virtual void
-  createNodeGraph(ProgramCtx*);
 };
 
 

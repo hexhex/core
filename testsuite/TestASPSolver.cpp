@@ -31,6 +31,8 @@
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/AnswerSet.hpp"
 
@@ -40,13 +42,13 @@
 #include <iostream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  LOG(INFO,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
+	LOG(INFO,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(INFO,"idb end");
 
 DLVHEX_NAMESPACE_USE
 
@@ -70,21 +72,21 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
   //
 
   ASPSolver::DLVSoftware::Configuration config;
-  ASPProgram program(ctx.registry, ctx.idb, ctx.edb, 0);
+  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
-  LOG("calling solve");
+  LOG(INFO,"calling solve");
   ASPSolverManager::ResultsPtr res = mgr.solve(config, program);
   BOOST_REQUIRE(res != 0);
-  LOG("solve returned results!");
+  LOG(INFO,"solve returned results!");
 
   AnswerSet::Ptr int0 = res->getNextAnswerSet();
   BOOST_REQUIRE(int0 != 0);
-  LOG("got answer set " << *int0);
+  LOG(INFO,"got answer set " << *int0);
 
   AnswerSet::Ptr int1 = res->getNextAnswerSet();
   BOOST_REQUIRE(int1 != 0);
-  LOG("got answer set " << *int1);
+  LOG(INFO,"got answer set " << *int1);
 
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);
@@ -94,7 +96,7 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry), PluginContainerPtr());
 
   std::stringstream ss;
   ss <<
@@ -110,21 +112,21 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo)
   //
 
   ASPSolver::ClingoSoftware::Configuration config;
-  ASPProgram program(ctx.registry, ctx.idb, ctx.edb, 0);
+  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
-  LOG("calling solve");
+  LOG(INFO,"calling solve");
   ASPSolverManager::ResultsPtr res = mgr.solve(config, program);
   BOOST_REQUIRE(res != 0);
-  LOG("solve returned results!");
+  LOG(INFO,"solve returned results!");
 
   AnswerSet::Ptr int0 = res->getNextAnswerSet();
   BOOST_REQUIRE(int0 != 0);
-  LOG("got answer set " << *int0);
+  LOG(INFO,"got answer set " << *int0);
 
   AnswerSet::Ptr int1 = res->getNextAnswerSet();
   BOOST_REQUIRE(int1 != 0);
-  LOG("got answer set " << *int1);
+  LOG(INFO,"got answer set " << *int1);
 
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);

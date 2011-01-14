@@ -30,12 +30,11 @@
  * @brief  Converter: parse tree from HexGrammar to HEX AST
  */
 
-#include "dlvhex/PlatformDefinitions.h"
-
 #include "dlvhex/HexGrammarPTToASTConverter.h"
-
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
-//#include "dlvhex/globals.h"
+#include "dlvhex/Printer.hpp"
+
 #include "dlvhex/SpiritDebugging.h"
 
 #include <boost/algorithm/string/trim.hpp>
@@ -93,12 +92,12 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   if( s == "_" )
   {
     // anonymous variable
-    ID id = ctx.registry->terms.getIDByString("_");
+    ID id = ctx.registry()->terms.getIDByString("_");
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE |
         ID::PROPERTY_VAR_ANONYMOUS, "_");
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry()->terms.storeAndGetID(term);
     }
     return id;
   }
@@ -117,7 +116,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
     if( s[0] == '"' )
       DBGLOG(DBG,"warning: we should expand the namespace of s='" << s << "' here!");
     #warning namespaces should be implemented around here
-    ID id = ctx.registry->terms.getIDByString(s);
+    ID id = ctx.registry()->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
@@ -125,7 +124,7 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
         term.kind |= ID::SUBKIND_TERM_CONSTANT;
       else
         term.kind |= ID::SUBKIND_TERM_VARIABLE;
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry()->terms.storeAndGetID(term);
     }
     return id;
   }
@@ -164,6 +163,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       //printSpiritPT(std::cerr, child, "maxint>>");
     }
     break;
+      #warning namespaces were here
+    #if 0
   case HexGrammar::Namespace:
     {
       std::string prefix = createStringFromNode(child.children[2]);
@@ -171,12 +172,13 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       std::string ns = createStringFromNode(child.children[4]);
       if( ns[0] == '"' ) ns = ns.substr(1, ns.length()-2);
       bool success;
-      success = (ctx.registry->namespaces.insert(
+      success = (ctx.registry()->namespaces.insert(
              NamespaceTable::value_type(ns, prefix) )).second;
       if( !success )
         throw SyntaxError("error adding namespace '"+ns+"'/'"+prefix+"'");
     }
     break;
+    #endif
   case HexGrammar::Rule:
     {
       //printSpiritPT(std::cerr, child, "rule>>");
@@ -193,7 +195,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // TODO: this case should not go here, but be made faster by already detecting it in the grammar
         ID id = *head.begin();
         if( !id.isOrdinaryGroundAtom() )
-          throw SyntaxError("fact '"+ctx.registry->ogatoms.getByID(id).text+"' not safe!");
+          throw SyntaxError("fact '"+ctx.registry()->ogatoms.getByID(id).text+"' not safe!");
         ctx.edb->setFact(id.address);
         DBGLOG(DBG,"added fact with id " << id << " to edb");
       }
@@ -205,7 +207,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
         markExternalPropertyIfExternalBody(r);
-        ID id = ctx.registry->rules.storeAndGetID(r);
+        ID id = ctx.registry()->rules.storeAndGetID(r);
         ctx.idb.push_back(id);
         DBGLOG(DBG,"added rule " << r << " with id " << id << " to idb");
       }
@@ -219,7 +221,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
-      ID id = ctx.registry->rules.storeAndGetID(r);
+      ID id = ctx.registry()->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       DBGLOG(DBG,"added constraint " << r << " with id " << id << " to idb");
     }
@@ -252,7 +254,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
-      ID id = ctx.registry->rules.storeAndGetID(r);
+      ID id = ctx.registry()->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       DBGLOG(DBG,"added weakconstraint " << r << " with id " << id << " to idb");
     }
@@ -360,12 +362,12 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   if( ground )
   {
     atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
-    tbl = &ctx.registry->ogatoms;
+    tbl = &ctx.registry()->ogatoms;
   }
   else
   {
     atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-    tbl = &ctx.registry->onatoms;
+    tbl = &ctx.registry()->onatoms;
   }
 
   // lookup if we already know this one
@@ -390,7 +392,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   // print it from the IDs in atom.tuple
 
   std::stringstream ss;
-  RawPrinter printer(ss, ctx.registry);
+  RawPrinter printer(ss, ctx.registry());
   Tuple::const_iterator it = atom.tuple.begin();
   printer.print(*it);
   it++;
@@ -473,7 +475,7 @@ ID HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& node)
   }
 
   DBGLOG(DBG,"storing builtin atom " << atom);
-  ID id = ctx.registry->batoms.storeAndGetID(atom);
+  ID id = ctx.registry()->batoms.storeAndGetID(atom);
   DBGLOG(DBG,"stored builtin atom " << atom << " which got id " << id);
   return id;
 }
@@ -518,7 +520,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
   }
 
   DBGLOG(DBG,"storing external atom " << atom);
-  ID id = ctx.registry->eatoms.storeAndGetID(atom);
+  ID id = ctx.registry()->eatoms.storeAndGetID(atom);
   DBGLOG(DBG,"stored external atom " << atom << " which got id " << id);
   return id;
 }

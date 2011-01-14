@@ -39,6 +39,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/Registry.hpp"
 
 #include <ltdl.h>
 
@@ -187,32 +188,10 @@ void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateV
   while(it != candidates.end());
 }
 
-void getPluginAtoms(CandidateVector& candidates, PluginAtomMap& pluginAtoms)
-{
-  BOOST_FOREACH(PluginCandidate& cand, candidates)
-  {
-    PluginAtomMap pa;
-    cand.plugin->getAtoms(pa);
-	  
-    for(PluginAtomMap::const_iterator it = pa.begin();
-        it != pa.end(); ++it)
-		{
-		  // first come, first serve
-		  if (pluginAtoms.find(it->first) == pluginAtoms.end())
-      {
-        pluginAtoms[it->first] = it->second;
-      }
-		  else
-      {
-        LOG(WARNING,"External atom " << it->first << " is already loaded (skipping)");
-      }
-		}
-  }
-}
-
 } // anonymous namespace
 
 PluginContainer::PluginContainer(const PluginContainer& pc):
+  registry(pc.registry),
   searchPath(pc.searchPath),
   plugins(pc.plugins),
   pluginAtoms(pc.pluginAtoms)
@@ -220,8 +199,10 @@ PluginContainer::PluginContainer(const PluginContainer& pc):
 }
 
 
-PluginContainer::PluginContainer()
+PluginContainer::PluginContainer(RegistryPtr registry):
+  registry(registry)
 {
+  assert(registry && "PluginContainer needs registry!");
 }
 
 PluginContainer::~PluginContainer()
@@ -248,13 +229,11 @@ void PluginContainer::loadPlugins(const std::string& search)
   // TODO probably select/unload using PluginInterface and already loaded plugins
   selectPluginCandidates(plugins, plugincandidates);
 
-  // add atoms from new plugins
-  getPluginAtoms(plugincandidates, pluginAtoms);
-
   // add new plugins to list of loaded plugins
   BOOST_FOREACH(const PluginCandidate& cand, plugincandidates)
   {
-    plugins.push_back(cand.plugin);
+    addInternalPlugin(cand.plugin);
+    // (automatically adds atoms)
     // discard cand.handle
   }
 
@@ -262,6 +241,42 @@ void PluginContainer::loadPlugins(const std::string& search)
   if( !searchPath.empty() )
     searchPath += ":";
   searchPath += search;
+}
+
+// add a PluginInterface to the container
+void PluginContainer::addInternalPlugin(PluginInterfacePtr plugin)
+{
+  LOG(PLUGIN,"adding PluginInterface '" << plugin->getPluginName() << "'");
+
+  PluginAtomMap pa;
+  plugin->getAtoms(pa);
+  
+  for(PluginAtomMap::const_iterator it = pa.begin();
+      it != pa.end(); ++it)
+  {
+    // simply use "addInternal" method
+    addInternalPluginAtom(it->second);
+  }
+
+  plugins.push_back(plugin);
+}
+
+// add a PluginAtom statically linked into this program to the container
+// (for testsuite and statically linked applications using dlvhex lib API)
+void PluginContainer::addInternalPluginAtom(PluginAtomPtr atom)
+{
+  assert(!!atom);
+  const std::string& predicate = atom->getPredicate();
+  LOG(PLUGIN,"adding PluginAtom '" << predicate << "'");
+  if( pluginAtoms.find(predicate) == pluginAtoms.end() )
+  {
+    atom->setRegistry(registry);
+    pluginAtoms[predicate] = atom;
+  }
+  else
+  {
+    LOG(WARNING,"External atom " << predicate << " is already loaded (skipping)");
+  }
 }
 
 PluginAtomPtr
@@ -299,6 +314,50 @@ void PluginContainer::processOptions(
   }
 }
 
+// associate plugins in container to external atoms in registry
+void PluginContainer::associateExtAtomsWithPluginAtoms(
+    const std::vector<ID>& idb, bool failOnUnknownAtom)
+{
+  // associate all rules
+  for(std::vector<ID>::const_iterator it = idb.begin();
+      it != idb.end(); ++it)
+  {
+    assert(it->isRule());
+    // skip those without external atoms
+    if( !it->doesRuleContainExtatoms() )
+      continue;
+
+    // associate all literals in rule body
+    const Rule& rule = registry->rules.getByID(*it);
+    for(Tuple::const_iterator itl = rule.body.begin();
+        itl != rule.body.end(); ++itl)
+    {
+      assert(itl->isLiteral());
+      // skip literals that are not external atoms
+      #warning aggregates may have external atoms inside!
+      if( !itl->isExternalAtom() )
+        continue;
+
+      const ExternalAtom& eatom = registry->eatoms.getByID(*itl);
+      const std::string& predicate = registry->getTermStringByID(eatom.predicate);
+      // lookup pluginAtom to this eatom predicate
+      PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
+      if( itpa != pluginAtoms.end() )
+      {
+        eatom.pluginAtom = itpa->second;
+      }
+      else
+      {
+        DBGLOG(DBG,"did not find plugin atom for predicate '" << predicate << "'");
+        if( failOnUnknownAtom )
+        {
+          throw FatalError("did not find plugin atom "
+              " for predicate '" + predicate + "'");
+        }
+      }
+    }
+  }
+}
 
 DLVHEX_NAMESPACE_END
 

@@ -34,7 +34,8 @@
 #endif /* HAVE_CONFIG_H */
 
 #include "OutputRewriter.h"
-#include <dlvhex/ProgramCtx.h>
+#include <dlvhex/Printer.hpp>
+#include <dlvhex/Registry.hpp>
 /*
 #include "dlvhex/globals.h"
 #include "dlvhex/ResultContainer.h"

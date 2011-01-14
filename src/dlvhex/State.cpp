@@ -44,19 +44,21 @@
 #  endif
 #endif
 
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Error.h"
+#include "dlvhex/Benchmarking.h"
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/ASPSolver.h"
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/PluginContainer.h"
 //#include "dlvhex/ResultContainer.h"
 //#include "dlvhex/OutputBuilder.h"
 //#include "dlvhex/TextOutputBuilder.h"
 //#include "dlvhex/SafetyChecker.h"
-//#include "dlvhex/HexParserDriver.h"
 //#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/PluginContainer.h"
 //#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/Benchmarking.h"
 
 #include <boost/foreach.hpp>
 
@@ -209,24 +211,14 @@ ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
-  HexParserDriver driver;
+  HexParser parser(*ctx);
+  parser.parse(ctx->inputProvider->getAsStream());
 
-  //
-  // tell the parser driver where the rules are actually coming
-  // from (needed for error-messages)
-  //
-  driver.setOrigin(*ctx->getInputSources().begin());
+  // free input provider memory
+  assert(ctx->inputProvider.use_count() == 1);
+  ctx->inputProvider.reset();
 
-  // run the parser
-  driver.parse(ctx->getInput(), *ctx->getIDB(), *ctx->getEDB());
-
-  //
-  // wherever the input-buffer was created before - now we don't
-  // need it anymore
-  //
-  delete ctx->getInput().rdbuf();
-
-	#warning TODO implement namespaces somewhere around here!
+	#warning namespaces were here!
 #if 0
 
 ///@brief predicate returns true iff argument is not alpha-numeric and
@@ -364,26 +356,23 @@ removeNamespaces()
 }
 #endif
 
-      
 	// be verbose if requested
-	if (ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM))
+	if( ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM) )
 	{
-	  ctx->config.getVerboseStream() <<
-		  "Parsed Rules: " << std::endl;
-	  RawPrinter rp(pctx.config.getVerboseStream(), pctx.registry);
-	  rp.printmany(pctx.idb, "\n");
-	  pctx.config.getVerboseStream() <<
-		  std::endl <<
-		  "Parsed EDB: " << std::endl <<
-		  *pctx.edb << std::endl;
+    LOG(INFO,"parsed IDB:");
+    RawPrinter rp(Logger::Instance().stream(), ctx->registry);
+	  rp.printmany(ctx->idb, "\n");
+    LOG(INFO,"parsed EDB:");
+    Logger::Instance().stream() << *(ctx->edb) << std::endl;
 	}
 
-
-  boost::shared_ptr<State> next(new RewriteState);
+  boost::shared_ptr<State> next(new CreateDependencyGraphState);
+  //boost::shared_ptr<State> next(new RewriteState);
   changeState(ctx, next);
 }
 
 
+#if 0
 void
 RewriteState::rewrite(ProgramCtx* ctx)
 {
@@ -406,14 +395,14 @@ RewriteState::rewrite(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next;
 
-  if (ctx->getNodeGraph() == 0)
+  if (ctx->getDependencyGraph() == 0)
     {
-      // no NodeGraph: continue with the SafetyCheck
+      // no DependencyGraph: continue with the SafetyCheck
       next = boost::shared_ptr<State>(new SafetyCheckState);
     }
   else
     {
-      next = boost::shared_ptr<State>(new CreateNodeGraph);
+      next = boost::shared_ptr<State>(new CreateDependencyGraph);
     }
 
       
@@ -431,10 +420,9 @@ RewriteState::rewrite(ProgramCtx* ctx)
 
   changeState(ctx, next);
 }
+#endif
 
-
-void
-CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
+void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building node graph");
 
@@ -443,7 +431,7 @@ CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
   //
   GraphBuilder gb;
 
-  gb.run(*ctx->getIDB(), *ctx->getNodeGraph(), *ctx->getPluginContainer());
+  gb.run(*ctx->getIDB(), *ctx->getDependencyGraph(), *ctx->getPluginContainer());
 
   boost::shared_ptr<State> next(new OptimizeState);
   changeState(ctx, next);
@@ -466,7 +454,7 @@ OptimizeState::optimize(ProgramCtx* ctx)
 
       if (po != 0)
 	{
-	  po->optimize(*ctx->getNodeGraph(), *ctx->getEDB());
+	  po->optimize(*ctx->getDependencyGraph(), *ctx->getEDB());
 	}
     }
 

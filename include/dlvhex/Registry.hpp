@@ -105,6 +105,8 @@ struct Registry:
   virtual std::ostream& print(std::ostream& o) const;
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
+  inline const std::string& getTermStringByID(ID termid) const
+    { return terms.getByID(termid).symbol; }
 };
 
 typedef boost::shared_ptr<Registry> RegistryPtr;

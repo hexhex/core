@@ -45,6 +45,8 @@
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
@@ -78,8 +80,8 @@
 
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
-  DBGLOG(DBG,*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  DBGLOG(DBG,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	DBGLOG(DBG,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
@@ -380,12 +382,14 @@ int main(int argn, char** argv)
 
   // prepare program context
   ProgramCtx ctx;
-  ctx.registry.reset(new Registry);
+  {
+    RegistryPtr registry(new Registry);
+    PluginContainerPtr pluginContainer(new PluginContainer(registry));
+    ctx.setupRegistryPluginContainer(registry,pluginContainer);
+  }
 
   // create dlv ctx plugin atom
-  PluginAtomPtr pa(new mcsdiagexpl::DLV_ASP_ContextAtom);
-  pa->setRegistry(ctx.registry);
-  ID idpa = pa->getPredicateID();
+  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new mcsdiagexpl::DLV_ASP_ContextAtom));
 
   // parse HEX program
   LOG(INFO,"parsing HEX program");
@@ -394,19 +398,7 @@ int main(int argn, char** argv)
   parser.parse(rewrittenfile);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
-  // link parsed external atoms to plugin atoms
-  //TODO this should become a common functionality using some pluginAtom registry
-  //TODO we should make the ExternalAtom::pluginAtom member mutable
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idpa);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = pa;
-			ctx.registry->eatoms.update(*it, ea);
-		}
-	}
+  ctx.pluginContainer()->associateExtAtomsWithPluginAtoms(ctx.idb,true);
 
   //LOG_REGISTRY_PROGRAM(ctx);
 
@@ -414,7 +406,7 @@ int main(int argn, char** argv)
   LOG(INFO,"creating dependency graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(siddepgraph, "create dependencygraph");
   std::vector<dlvhex::ID> auxRules;
-  dlvhex::DependencyGraph depgraph(ctx.registry);
+  dlvhex::DependencyGraph depgraph(ctx.registry());
   depgraph.createDependencies(ctx.idb, auxRules);
   DLVHEX_BENCHMARK_STOP(siddepgraph);
   #ifndef NDEBUG
@@ -424,7 +416,7 @@ int main(int argn, char** argv)
   // create component graph
   LOG(INFO,"creating component graph");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidcompgraph, "create componentgraph");
-  dlvhex::ComponentGraph compgraph(depgraph, ctx.registry);
+  dlvhex::ComponentGraph compgraph(depgraph, ctx.registry());
   DLVHEX_BENCHMARK_STOP(sidcompgraph);
   #ifndef NDEBUG
   writeGraphViz(compgraph, fname+"MCSIECompGraph");
@@ -522,7 +514,7 @@ int main(int argn, char** argv)
   // prepare for output
   mcsdiagexpl::EQOutputBuilder ob;
 
-  //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+  //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
   // evaluate
   LOG(INFO,"evaluating");
@@ -571,7 +563,7 @@ int main(int argn, char** argv)
           DLVHEX_BENCHMARK_SCOPE(sidoutputmodel);
           ob.printEQ(std::cout, interpretation);
         }
-        //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+        //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
         #ifndef NDEBUG
         mb.printEvalGraphModelGraph(std::cerr);
@@ -587,7 +579,7 @@ int main(int argn, char** argv)
 				true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
 		writeGraphVizFunctors(func, func, fname+"MCSIEOnlineEgMg");
     #endif
-    //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry << std::endl;
+    //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
 
     DLVHEX_BENCHMARK_STOP(sidoverall);
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<

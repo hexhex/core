@@ -32,7 +32,8 @@
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 

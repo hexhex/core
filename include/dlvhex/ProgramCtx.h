@@ -83,19 +83,21 @@ public:
 	// previously globals
 	Configuration config;
 
-	// plugin container
-	PluginContainer pluginContainer;
+  RegistryPtr registry() const
+    { return _registry; }
+	PluginContainerPtr pluginContainer() const
+    { return _pluginContainer; }
+
+  // must be setup together
+  // pluginContainer must be associated to registry
+  void setupRegistryPluginContainer(
+      RegistryPtr registry, PluginContainerPtr pluginContainer);
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
 	// program input provider (if a converter is used, the converter consumes this
 	// input and replaces it by another input)
 	InputProviderPtr inputProvider;
-
-  // symbol storage of this program context
-  // (this is a shared ptr because we might want
-  // to have multiple program contexts sharing the same registry)
-  RegistryPtr registry;
 
   // idb
   std::vector<ID> idb;
@@ -123,8 +125,8 @@ public:
 
   StatePtr state;
 
- protected:
-  friend class State;
+// protected:
+//  friend class State;
 
   void
   changeState(const boost::shared_ptr<State>&);
@@ -202,7 +204,6 @@ public:
   void convert();
   void parse();
   void rewriteEDBIDB();
-	void associatePluginAtomsWithExtAtoms();
 	void optimizeEDBDependencyGraph();
 	void createComponentGraph();
 	void createEvalGraph();
@@ -212,6 +213,15 @@ public:
   void strongSafetyCheck();
   void evaluate();
   void postProcess();
+
+protected:
+  // symbol storage of this program context
+  // (this is a shared ptr because we might want
+  // to have multiple program contexts sharing the same registry)
+  RegistryPtr _registry;
+
+	// plugin container (this must be initialized with above registry!)
+	PluginContainerPtr _pluginContainer;
 };
 
 DLVHEX_NAMESPACE_END

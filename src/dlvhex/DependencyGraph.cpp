@@ -32,7 +32,9 @@
 
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/PluginInterface.h"

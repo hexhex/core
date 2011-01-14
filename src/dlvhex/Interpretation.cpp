@@ -30,7 +30,7 @@
 
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

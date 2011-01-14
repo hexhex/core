@@ -30,6 +30,7 @@
 
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 
 #include <boost/range/iterator_range.hpp>

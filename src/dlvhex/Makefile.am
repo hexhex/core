@@ -45,7 +45,7 @@ libdlvhexbase_la_SOURCES = \
     DependencyGraph.cpp \
     Error.cpp \
     HexGrammarPTToASTConverter.cpp \
-    HexParserDriver.cpp \
+    HexParser.cpp \
     InputProvider.cpp \
     Literal.cpp \
     PluginContainer.cpp \
@@ -57,9 +57,10 @@ libdlvhexbase_la_SOURCES = \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    ResultContainer.cpp \
-    TextOutputBuilder.cpp \
     URLBuf.cpp
+
+    #ResultContainer.cpp
+    #TextOutputBuilder.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \

@@ -95,6 +95,8 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 
 TestMCSIE_SOURCES = \
@@ -159,6 +161,9 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestASPSolver_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
 TestASPSolver_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS) 

@@ -470,7 +470,7 @@
 #define _DLVHEX_PLUGININTERFACE_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
@@ -492,16 +492,9 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class NodeGraph;
 class OutputBuilder;
-class ProgramCtx;
 
 class PluginRewriter;
 class PluginOptimizer;
-
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
-class Interpretation;
-typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
-
 
 /**
  * \brief Converter class.
@@ -905,7 +898,7 @@ std::size_t hash_value(const PluginAtom::Query& q);
 /**
  * \brief Associates atom names with PluginAtom instances implementing them.
  */
-typedef std::map<std::string, boost::shared_ptr<PluginAtom> > PluginAtomMap;
+typedef std::map<std::string, PluginAtomPtr > PluginAtomMap;
 
 /**
  * \brief Factory base class for representing plugins and creating necessary objects.

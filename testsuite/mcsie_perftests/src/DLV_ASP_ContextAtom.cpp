@@ -41,6 +41,8 @@
 #include <dlvhex/DLVProcess.h>
 #include <dlvhex/HexParser.hpp>
 #include <dlvhex/ProgramCtx.h>
+#include <dlvhex/Registry.hpp>
+#include <dlvhex/Printer.hpp>
 #include <dlvhex/ASPSolver.h>
 #include <dlvhex/ASPSolverManager.h>
 #include <dlvhex/Logger.hpp>
@@ -68,7 +70,7 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
 
   // we use an extra registry for this external program
   ProgramCtx kbctx;
-  kbctx.registry.reset(new Registry());
+  kbctx.setupRegistryPluginContainer(RegistryPtr(new Registry()), PluginContainerPtr());
 
   // parse program
   HexParser parser(kbctx);
@@ -123,18 +125,18 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
 			Term inputTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *inp);
 
       // create term symbol (this is now another registry!) and add
-      ID kbInputTermID = kbctx.registry->terms.getIDByString(inputTerm.symbol);
+      ID kbInputTermID = kbctx.registry()->terms.getIDByString(inputTerm.symbol);
       if( kbInputTermID == ID_FAIL )
-        kbInputTermID = kbctx.registry->terms.storeAndGetID(inputTerm);
+        kbInputTermID = kbctx.registry()->terms.storeAndGetID(inputTerm);
       DBGLOG(DBG,"in kbctx this term has id " << kbInputTermID);
 
       // create unary fact (this is now another registry!)
       OrdinaryAtom kboatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
       kboatom.tuple.push_back(kbInputTermID);
       kboatom.text = inputTerm.symbol;
-      ID kbInputFactID = kbctx.registry->ogatoms.getIDByTuple(kboatom.tuple);
+      ID kbInputFactID = kbctx.registry()->ogatoms.getIDByTuple(kboatom.tuple);
       if( kbInputFactID == ID_FAIL )
-        kbInputFactID = kbctx.registry->ogatoms.storeAndGetID(kboatom);
+        kbInputFactID = kbctx.registry()->ogatoms.storeAndGetID(kboatom);
       DBGLOG(DBG,"in kbctx this fact has id " << kbInputFactID);
 
       // add to edb
@@ -164,22 +166,22 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     {
       // term
       Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *it);
-      ID kbidt = kbctx.registry->terms.getIDByString(t.symbol);
+      ID kbidt = kbctx.registry()->terms.getIDByString(t.symbol);
       if( kbidt == ID_FAIL )
-        kbidt = kbctx.registry->terms.storeAndGetID(t);
+        kbidt = kbctx.registry()->terms.storeAndGetID(t);
 
       // ordinary atom
       OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
       oa.tuple.push_back(kbidt);
       oa.text = *it;
-      ID kbidoa = kbctx.registry->ogatoms.getIDByTuple(oa.tuple);
+      ID kbidoa = kbctx.registry()->ogatoms.getIDByTuple(oa.tuple);
       if( kbidoa == ID_FAIL )
-        kbidoa = kbctx.registry->ogatoms.storeAndGetID(oa);
+        kbidoa = kbctx.registry()->ogatoms.storeAndGetID(oa);
 
       // constraint :- *it.
       Rule constraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       constraint.body.push_back(ID::posLiteralFromAtom(kbidoa));
-      ID kbidconstraint = kbctx.registry->rules.storeAndGetID(constraint);
+      ID kbidconstraint = kbctx.registry()->rules.storeAndGetID(constraint);
       kbctx.idb.push_back(kbidconstraint);
     }
 
@@ -191,22 +193,22 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     {
       // term
       Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, *it);
-      ID kbidt = kbctx.registry->terms.getIDByString(t.symbol);
+      ID kbidt = kbctx.registry()->terms.getIDByString(t.symbol);
       if( kbidt == ID_FAIL )
-        kbidt = kbctx.registry->terms.storeAndGetID(t);
+        kbidt = kbctx.registry()->terms.storeAndGetID(t);
 
       // ordinary atom
       OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
       oa.tuple.push_back(kbidt);
       oa.text = *it;
-      ID kbidoa = kbctx.registry->ogatoms.getIDByTuple(oa.tuple);
+      ID kbidoa = kbctx.registry()->ogatoms.getIDByTuple(oa.tuple);
       if( kbidoa == ID_FAIL )
-        kbidoa = kbctx.registry->ogatoms.storeAndGetID(oa);
+        kbidoa = kbctx.registry()->ogatoms.storeAndGetID(oa);
 
       // constraint :- not *it.
       Rule constraint(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       constraint.body.push_back(ID::nafLiteralFromAtom(kbidoa));
-      ID kbidconstraint = kbctx.registry->rules.storeAndGetID(constraint);
+      ID kbidconstraint = kbctx.registry()->rules.storeAndGetID(constraint);
       kbctx.idb.push_back(kbidconstraint);
     }
   }
@@ -216,10 +218,10 @@ DLV_ASP_ContextAtom::retrieve(const Query& query, Answer& answer) throw (PluginE
     typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
     DLVConfiguration dlv;
     //dlv.options.includeFacts = true;
-    ASPProgram program(kbctx.registry, kbctx.idb, kbctx.edb, kbctx.maxint);
+    ASPProgram program(kbctx.registry(), kbctx.idb, kbctx.edb, kbctx.maxint);
     #ifndef NDEBUG
     DBGLOG(DBG,"BEGIN context program ===");
-    RawPrinter printer(std::cerr, kbctx.registry);
+    RawPrinter printer(std::cerr, kbctx.registry());
     printer.printmany(kbctx.idb, "\n");
     std::cerr << std::endl << *kbctx.edb << std::endl;
     DBGLOG(DBG,"END context program ===");

@@ -45,6 +45,7 @@
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/DLVProcess.h"
 #include "dlvhex/DLVresultParserDriver.h"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/AnswerSet.hpp"
 

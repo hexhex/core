@@ -161,7 +161,8 @@ struct ExternalAtom:
   // Atom::tuple is used for output terms
 
 	// weak pointer to plugin atom
-	PluginAtomWeakPtr pluginAtom;
+  // (cannot be indexed in multi_index_container as it is mutable)
+	mutable PluginAtomWeakPtr pluginAtom;
 
   // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here
   ID auxInputPredicate;

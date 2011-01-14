@@ -63,6 +63,8 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/Atoms.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 
 #include <boost/optional.hpp>
