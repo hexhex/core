@@ -42,6 +42,7 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/InputProvider.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
 
 #include <boost/shared_ptr.hpp>
 //#include <boost/bimap/bimap.hpp>
@@ -58,19 +59,11 @@ DLVHEX_NAMESPACE_BEGIN
 class Program;
 class AtomSet;
 
-class DependencyGraph;
-typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
-
-class ComponentGraph;
-typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
-
 //class Process;
 //class ResultContainer;
 //class OutputBuilder;
 class State;
 typedef boost::shared_ptr<State> StatePtr;
-
-
 
 /**
  * @brief Program context class.
@@ -91,7 +84,7 @@ public:
   // must be setup together
   // pluginContainer must be associated to registry
   void setupRegistryPluginContainer(
-      RegistryPtr registry, PluginContainerPtr pluginContainer);
+      RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr());
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
@@ -116,8 +109,8 @@ public:
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
   DependencyGraphPtr depgraph;
-  // ComponentGraphPtr compgraph;
-  // EvalGraphPtr evalgraph;
+  ComponentGraphPtr compgraph;
+  FinalEvalGraphPtr evalgraph;
   // ModelGraphPtr modelgraph;
   // ModelBuilderPtr modelbuilder;
   // ModelCallbackPtr modelcallback;

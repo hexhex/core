@@ -142,6 +142,8 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestEvalEndToEnd_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -192,6 +194,8 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestEvalHeuristic_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -208,6 +212,9 @@ TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -224,6 +231,9 @@ TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestDependencyGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -236,6 +246,9 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestHexParser_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 

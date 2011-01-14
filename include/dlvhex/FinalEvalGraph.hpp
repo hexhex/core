@@ -37,6 +37,8 @@
 #include "dlvhex/EvalGraph.hpp"
 //#include "dlvhex/ComponentGraph.hpp"
 
+#include <boost/shared_ptr.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 struct FinalEvalUnitPropertyBase:
@@ -55,6 +57,7 @@ struct FinalEvalUnitPropertyBase:
 };
 
 typedef EvalGraph<FinalEvalUnitPropertyBase> FinalEvalGraph;
+typedef boost::shared_ptr<FinalEvalGraph> FinalEvalGraphPtr;
 
 DLVHEX_NAMESPACE_END
 

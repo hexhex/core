@@ -42,6 +42,14 @@ DLVHEX_NAMESPACE_BEGIN
 
 // sorted alphabetically, to easily verify/extend the list
 
+class ComponentGraph;
+typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
+
+class DependencyGraph;
+typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
+
+// FinalEvalGraph is a typedef and must not be forward-declared!
+
 class InputProvider;
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 

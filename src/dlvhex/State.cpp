@@ -53,12 +53,15 @@
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginContainer.h"
+#include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
+#include "dlvhex/EvalGraphBuilder.hpp"
 //#include "dlvhex/ResultContainer.h"
 //#include "dlvhex/OutputBuilder.h"
 //#include "dlvhex/TextOutputBuilder.h"
 //#include "dlvhex/SafetyChecker.h"
 //#include "dlvhex/PrintVisitor.h"
-//#include "dlvhex/DependencyGraph.h"
 
 #include <boost/foreach.hpp>
 
@@ -81,7 +84,6 @@ void State::showPlugins(ProgramCtx*) { }
 void State::convert(ProgramCtx*) { }
 void State::parse(ProgramCtx*) { }
 void State::rewriteEDBIDB(ProgramCtx*) { }
-void State::associatePluginAtomsWithExtAtoms(ProgramCtx*) {}
 void State::optimizeEDBDependencyGraph(ProgramCtx*) {}
 void State::createComponentGraph(ProgramCtx*) {}
 void State::createEvalGraph(ProgramCtx*) {}
@@ -96,7 +98,7 @@ void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 {
   if( !ctx->config.getOption("Silent") )
   {
-    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer.getPlugins())
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
     {
       LOG(INFO,"opening plugin " << plugin->getPluginName() <<
                " version " <<
@@ -130,7 +132,7 @@ void ConvertState::convert(ProgramCtx* ctx)
   LOG(DBG,"debugFilePrefix='" << ctx->config.debugFilePrefix() << "'");
 
   std::vector<PluginConverterPtr> converters;
-  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer.getPlugins())
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
   {
     BOOST_FOREACH(PluginConverter* pc, plugin->createConverters())
     {
@@ -360,12 +362,13 @@ removeNamespaces()
 	if( ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM) )
 	{
     LOG(INFO,"parsed IDB:");
-    RawPrinter rp(Logger::Instance().stream(), ctx->registry);
+    RawPrinter rp(Logger::Instance().stream(), ctx->registry());
 	  rp.printmany(ctx->idb, "\n");
     LOG(INFO,"parsed EDB:");
     Logger::Instance().stream() << *(ctx->edb) << std::endl;
 	}
 
+# warning implement rewrite -> goto rewritestate here
   boost::shared_ptr<State> next(new CreateDependencyGraphState);
   //boost::shared_ptr<State> next(new RewriteState);
   changeState(ctx, next);
@@ -424,20 +427,23 @@ RewriteState::rewrite(ProgramCtx* ctx)
 
 void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building node graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building dependency graph");
 
-  //
-  // The GraphBuilder creates nodes and dependency edges from the raw program.
-  //
-  GraphBuilder gb;
+  DependencyGraphPtr depgraph(new DependencyGraph(ctx->registry()));
+  std::vector<dlvhex::ID> auxRules;
+  depgraph->createDependencies(ctx->idb, auxRules);
+  #warning TODO output depgraph as graphviz
 
-  gb.run(*ctx->getIDB(), *ctx->getDependencyGraph(), *ctx->getPluginContainer());
+  ctx->depgraph = depgraph;
 
-  boost::shared_ptr<State> next(new OptimizeState);
+  #warning implement optimize -> use optimizeedbdepgraph here
+  //boost::shared_ptr<State> next(new OptimizeEDBDependencyGraphState);
+  boost::shared_ptr<State> next(new CreateComponentGraphState);
   changeState(ctx, next);
 }
 
 
+#if 0
 void
 OptimizeState::optimize(ProgramCtx* ctx)
 {
@@ -461,36 +467,25 @@ OptimizeState::optimize(ProgramCtx* ctx)
   boost::shared_ptr<State> next(new CreateDependencyGraphState);
   changeState(ctx, next);
 }
+#endif
 
-
-
-void
-CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
+void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building dependency graph");
+  assert(!!ctx->depgraph && "need depgraph for building component graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building component graph");
 
-  //
-  // The ComponentFinder provides functions for finding SCCs and WCCs from a
-  // set of nodes.
-  //
-  ComponentFinder* cf = new BoostComponentFinder;
+  ComponentGraphPtr compgraph(new ComponentGraph(*ctx->depgraph, ctx->registry()));
+  #warning TODO output componentgraph as graphviz
 
-  //
-  // The DependencyGraph identifies and creates the graph components that will
-  // be processed by the GraphProcessor.
-  //
-  // Initializing the DependencyGraph. Its constructor uses the
-  // ComponentFinder to find relevant graph
-  // properties for the subsequent processing stage.
-  //
-  DependencyGraph* dg = new DependencyGraph(cf, *ctx);
-  ctx->setDependencyGraph(dg);
+  ctx->compgraph = compgraph;
 
-  boost::shared_ptr<State> next(new SafetyCheckState);
+  #warning implement safety check -> use safetycheck state here
+  //boost::shared_ptr<State> next(new SafetyCheckState);
+  boost::shared_ptr<State> next(new CreateEvaluationGraphState);
   changeState(ctx, next);
 }
 
-
+#if 0
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 {
@@ -517,10 +512,7 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-
-
-void
-StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
+void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Strong safety checking");
 
@@ -530,8 +522,24 @@ StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
   boost::shared_ptr<State> next(new SetupProgramCtxState);
   changeState(ctx, next);
 }
+#endif
 
 
+void CreateEvaluationGraphState::createEvaluationGraph(ProgramCtx* ctx)
+{
+  assert(!!ctx->compgraph && "need component graph for creating evaluation graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
+
+  FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
+  EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *ctx->evalgraph, ctx->aspsoftware);
+
+  ctx->evalgraph = evalgraph;
+
+  boost::shared_ptr<State> next(new EvaluateState);
+  changeState(ctx, next);
+}
+
+#if 0
 void
 SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
@@ -691,12 +699,12 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
   boost::shared_ptr<State> next(new PostProcessState);
   changeState(ctx, next);
 }
+#endif
 
 
-void
-PostProcessState::postProcess(ProgramCtx* ctx)
+void PostProcessState::postProcess(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Postproc GraphProcessor res");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"postProcess");
 
   ///@todo filtering the atoms here is maybe to costly, how about
   ///ignoring the aux names when building the output, since the custom
@@ -706,29 +714,28 @@ PostProcessState::postProcess(ProgramCtx* ctx)
   //
   // remove auxiliary atoms
   //
-  ctx->getResultContainer()->filterOut(Term::getAuxiliaryNames());
+  #warning TODO do filtering in output hook for individual models
+  //ctx->getResultContainer()->filterOut(Term::getAuxiliaryNames());
 
   ///@todo quick hack for dlt
-//   if (optiondlt)
-//     {
-//       ctx->getResultContainer()->filterOutDLT();
-//     }
-
+  //   if (optiondlt)
+  //     {
+  //       ctx->getResultContainer()->filterOutDLT();
+  //     }
 
   //
   // apply filter
   //
   //if (optionFilter.size() > 0)
-  ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
+  //ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
 
-  boost::shared_ptr<State> next(new OutputState);
+  ///@todo explicit endstate which does nothing?
+  boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
 }
 
 
-void
-OutputState::output(ProgramCtx* ctx)
-{
+#if 0
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building output");
 
   //
@@ -763,11 +770,7 @@ OutputState::output(ProgramCtx* ctx)
   ctx->setOutputBuilder(outputbuilder);
 
   ctx->getResultContainer()->print(std::cout, ctx->getOutputBuilder());
-
-  ///@todo explicit endstate which does nothing?
-  boost::shared_ptr<State> next(new State);
-  changeState(ctx, next);
-}
+#endif
 
 
 DLVHEX_NAMESPACE_END

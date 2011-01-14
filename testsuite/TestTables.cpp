@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(testTermTable)
 		BOOST_CHECK_EQUAL(ida, stab.getIDByString(stra));
 		BOOST_CHECK_EQUAL(ida.address, 0);
 
-    LOG("TermTable" << stab);
+    LOG(INFO,"TermTable" << stab);
 	}
 
 	{
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(testTermTable)
 		const Term& giterm_hello = stab.getByID(idhello);
 		BOOST_CHECK_EQUAL(term_hello.symbol, giterm_hello.symbol);
 
-    LOG("TermTable" << stab);
+    LOG(INFO,"TermTable" << stab);
 	}
 }
 
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable)
   ID idb = stab.storeAndGetID(term_b);
   ID idY = stab.storeAndGetID(term_Y);
   ID idhello = stab.storeAndGetID(term_hello);
-  LOG("TermTable" << stab);
+  LOG(INFO,"TermTable" << stab);
 
   Tuple tupb; tupb.push_back(idb);
   OrdinaryAtom atb(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, "b", tupb);
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(testOrdinaryAtomTable)
     ID idataX = oatab.storeAndGetID(ataX);
     ID idatYhello = oatab.storeAndGetID(atYhello);
 
-    LOG("OrdinaryAtomTable" << oatab);
+    LOG(INFO,"OrdinaryAtomTable" << oatab);
 	}
 }
 
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(testBuiltinAtomTable)
   ID ida = ttab.storeAndGetID(term_a);
   ID idX = ttab.storeAndGetID(term_X);
   ID idY = ttab.storeAndGetID(term_Y);
-  LOG("TermTable" << ttab);
+  LOG(INFO,"TermTable" << ttab);
 
   // #int(X)
   Tuple tupintX; tupintX.push_back(idint); tupintX.push_back(idX);
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(testBuiltinAtomTable)
 
 		ID idmulaXY = batab.storeAndGetID(atmulaXY);
 
-    LOG("BuiltinAtomTable" << batab);
+    LOG(INFO,"BuiltinAtomTable" << batab);
 	}
 }
 
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
   ID ida = ttab.storeAndGetID(term_a);
   ID idX = ttab.storeAndGetID(term_X);
   ID idY = ttab.storeAndGetID(term_Y);
-  LOG("TermTable" << ttab);
+  LOG(INFO,"TermTable" << ttab);
 
   // ordinary atoms
   Tuple tupaXY; tupaXY.push_back(ida); tupaXY.push_back(idX); tupaXY.push_back(idY);
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
 
   OrdinaryAtomTable oatab;
   ID idaXY = oatab.storeAndGetID(ataXY);
-  LOG("OrdinaryAtomTable" << oatab);
+  LOG(INFO,"OrdinaryAtomTable" << oatab);
 
   // a <= #sum{ X, Y: a(X,Y) }
   Tuple tupext;
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
 		BOOST_CHECK(aatab.getByID(id).variables == tupvars);
 		BOOST_CHECK(aatab.getByID(id).atoms == tupatoms);
 
-    LOG("AggregateAtomTable" << aatab);
+    LOG(INFO,"AggregateAtomTable" << aatab);
 	}
 }
 
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
   ID idb = stab.storeAndGetID(term_b);
   ID idY = stab.storeAndGetID(term_Y);
   ID idhello = stab.storeAndGetID(term_hello);
-  LOG("TermTable" << stab);
+  LOG(INFO,"TermTable" << stab);
 
   // ordinary atoms
   Tuple tupb; tupb.push_back(idb);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
   ID idatab = oatab.storeAndGetID(atab);
   ID idataX = oatab.storeAndGetID(ataX);
   ID idatYhello = oatab.storeAndGetID(atYhello);
-  LOG("OrdinaryAtomTable" << oatab);
+  LOG(INFO,"OrdinaryAtomTable" << oatab);
 
   // rules
   Tuple empty;
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
 		BOOST_CHECK(rtab.getByID(id4).weight.address == 3);
 		BOOST_CHECK(rtab.getByID(id4).level == idX);
 
-    LOG("RuleTable" << rtab);
+    LOG(INFO,"RuleTable" << rtab);
 	}
 }
 

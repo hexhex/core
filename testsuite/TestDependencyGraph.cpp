@@ -33,6 +33,8 @@
 #include "dlvhex/DependencyGraphFull.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/Interpretation.hpp"
 
@@ -47,20 +49,20 @@
 #include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  LOG(INFO,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
+	LOG(INFO,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(INFO,"idb end");
 
 DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.registry() = RegistryPtr(new Registry);
 
   std::stringstream ss;
   ss <<
@@ -83,20 +85,20 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
-  ID ida = ctx.registry->ogatoms.getIDByString("a");
-  ID idb = ctx.registry->ogatoms.getIDByString("b");
-  ID idfb = ctx.registry->ogatoms.getIDByString("f(b)");
-  ID idfa = ctx.registry->ogatoms.getIDByString("f(a)");
+  ID ida = ctx.registry()->ogatoms.getIDByString("a");
+  ID idb = ctx.registry()->ogatoms.getIDByString("b");
+  ID idfb = ctx.registry()->ogatoms.getIDByString("f(b)");
+  ID idfa = ctx.registry()->ogatoms.getIDByString("f(a)");
   BOOST_REQUIRE((ida | idb | idfb | idfa) != ID_FAIL);
 
-  ID idfX = ctx.registry->onatoms.getIDByString("f(X)");
-  ID idXa = ctx.registry->onatoms.getIDByString("X(a)");
-  ID idXb = ctx.registry->onatoms.getIDByString("X(b)");
+  ID idfX = ctx.registry()->onatoms.getIDByString("f(X)");
+  ID idXa = ctx.registry()->onatoms.getIDByString("X(a)");
+  ID idXb = ctx.registry()->onatoms.getIDByString("X(b)");
   BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
 
   // full dependency graph
   {
-    DependencyGraphFull depgraph(ctx.registry);
+    DependencyGraphFull depgraph(ctx.registry());
     depgraph.createNodesAndBasicDependencies(ctx.idb);
     depgraph.createUnifyingDependencies();
 
@@ -104,13 +106,13 @@ BOOST_AUTO_TEST_CASE(testNonext)
     BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
 
     const char* fnamev = "testDependencyGraphNonextFullVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphNonextFullTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -118,7 +120,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry);
+    DependencyGraph depgraph(ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -129,13 +131,13 @@ BOOST_AUTO_TEST_CASE(testNonext)
     // TODO test dependencies (will do manually with graphviz at the moment)
 
     const char* fnamev = "testDependencyGraphNonextVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphNonextTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -149,7 +151,7 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
   // full dependency graph
   {
     // clone registry, because full depgraph will modify it for auxiliary rules
-    RegistryPtr cloneRegistry(new Registry(*ctx.registry));
+    RegistryPtr cloneRegistry(new Registry(*ctx.registry()));
     DependencyGraphFull depgraph(cloneRegistry);
     depgraph.createNodesAndBasicDependencies(ctx.idb);
     depgraph.createUnifyingDependencies();
@@ -161,13 +163,13 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
     BOOST_CHECK_EQUAL(depgraph.countDependencies(), 12+3); // 3 aux dependencies
 
     const char* fnamev = "testDependencyGraphExtCountReachFullVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphExtCountReachFullTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -175,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry);
+    DependencyGraph depgraph(ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -186,13 +188,13 @@ BOOST_FIXTURE_TEST_CASE(testExtCountReach,ProgramExt1ProgramCtxFixture)
     // TODO test dependencies (will do manually with graphviz at the moment)
 
     const char* fnamev = "testDependencyGraphExtCountReachVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphExtCountReachTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -207,7 +209,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
 	// full dependency graph
   {
     // clone registry, because full depgraph will modify it for auxiliary rules
-    RegistryPtr cloneRegistry(new Registry(*ctx.registry));
+    RegistryPtr cloneRegistry(new Registry(*ctx.registry()));
     DependencyGraphFull depgraph(cloneRegistry);
     depgraph.createNodesAndBasicDependencies(ctx.idb);
     depgraph.createUnifyingDependencies();
@@ -215,13 +217,13 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
     depgraph.createExternalDependencies(auxRules);
 
     const char* fnamev = "testDependencyGraphMCSMedEqFullVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphMCSMedEqFullTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -229,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
 
   // smaller more efficient dependency graph
   {
-    DependencyGraph depgraph(ctx.registry);
+    DependencyGraph depgraph(ctx.registry());
     std::vector<ID> auxRules;
     depgraph.createDependencies(ctx.idb, auxRules);
 
@@ -240,13 +242,13 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxFixture)
     // TODO test dependencies (will do manually with graphviz at the moment)
 
     const char* fnamev = "testDependencyGraphMCSMedEqVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     depgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testDependencyGraphMCSMedEqTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     depgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);

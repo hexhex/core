@@ -42,6 +42,7 @@
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Interpretation.hpp"
@@ -68,8 +69,8 @@ public:
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
 	{
-    LOG_SCOPE("TPEAC::r",false);
-    LOG("= TestPluginAtomCount::retrieve");
+    LOG_SCOPE(INFO,"TPEAC::r",false);
+    LOG(INFO,"= TestPluginAtomCount::retrieve");
 
     // calculate count of matches with single predicate input parameter
     // if pattern is variable, return tuple with count
@@ -80,14 +81,14 @@ public:
     // calculate count
     assert(q.input.size() == 1);
     const ID pred = q.input.front();
-    LOG("input predicate is " << pred);
+    LOG(INFO,"input predicate is " << pred);
 
     // we know that we only have one predicate input
     // -> count bits in interpretation
     assert(q.interpretation != 0);
     const dlvhex::Interpretation::Storage& bits = q.interpretation->getStorage();
     unsigned count = bits.count();
-    LOG("found " << count << " bits in interpretation " << *q.interpretation);
+    LOG(INFO,"found " << count << " bits in interpretation " << *q.interpretation);
 
     // assert that we only get good bits by iterating through all
     // ground atoms matching given predicate
@@ -108,7 +109,7 @@ public:
       // now all bits that are possibly be allowed to be on in
       // "bits" are on in "controlbits"
       unsigned shouldbecount = controlbits.count();
-      LOG("control interpretation has " << shouldbecount << " bits: " << *controlint);
+      LOG(INFO,"control interpretation has " << shouldbecount << " bits: " << *controlint);
       // so this must not increase the count
       controlbits |= bits;
       // assert this!
@@ -158,7 +159,7 @@ public:
     assert(q.input.size() == 2);
     ID start = q.input[0];
     ID pred = q.input[1];
-    LOG("calculating reach fake extatom for start " << start << " and predicate " << pred);
+    LOG(INFO,"calculating reach fake extatom for start " << start << " and predicate " << pred);
 
     // build set of found targets
     std::set<ID> targets;
@@ -179,7 +180,7 @@ public:
       if( oatom.tuple[1] == start )
         targets.insert(oatom.tuple[2]);
     }
-    LOG("found targets " << printrange(targets));
+    LOG(INFO,"found targets " << printrange(targets));
 
     assert(q.pattern.size() == 1);
     ID out = q.pattern.front();
@@ -232,15 +233,15 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   papReach(new TestPluginAtomReach)
 {
   using namespace dlvhex;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  papCount->setRegistry(ctx.registry);
-  papReach->setRegistry(ctx.registry);
+  papCount->setRegistry(ctx.registry());
+  papReach->setRegistry(ctx.registry());
   ID idreach = papReach->getPredicateID();
   ID idcount = papCount->getPredicateID();
   BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
-  LOG("got ID: reach = " << idreach);
-  LOG("got ID: count = " << idcount);
+  LOG(INFO,"got ID: reach = " << idreach);
+  LOG(INFO,"got ID: count = " << idcount);
 
   std::stringstream ss;
   ss <<
@@ -257,22 +258,22 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idreach);
+		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idreach);
 				it != it_end; ++it)
 		{
 			ExternalAtom ea(*it);
 			ea.pluginAtom = papReach;
-			ctx.registry->eatoms.update(*it, ea);
+			ctx.registry()->eatoms.update(*it, ea);
 		}
 	}
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idcount);
+		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idcount);
 				it != it_end; ++it)
 		{
 			ExternalAtom ea(*it);
 			ea.pluginAtom = papCount;
-			ctx.registry->eatoms.update(*it, ea);
+			ctx.registry()->eatoms.update(*it, ea);
 		}
 	}
 }

@@ -47,20 +47,20 @@
 #include <cstdlib>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  LOG(INFO,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
+	LOG(INFO,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(INFO,"idb end");
 
 DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -72,22 +72,22 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
 	//LOG_REGISTRY_PROGRAM(ctx);
 
-  DependencyGraph depgraph(ctx.registry);
+  DependencyGraph depgraph(ctx.registry());
 	std::vector<ID> auxRules;
 	depgraph.createDependencies(ctx.idb, auxRules);
 
-	ComponentGraph compgraph(depgraph, ctx.registry);
+	ComponentGraph compgraph(depgraph, ctx.registry());
 
   // TODO test dependencies (will do manually with graphviz at the moment)
 
   const char* fnamev = "testComponentGraphNonextVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
+  LOG(INFO,"dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   compgraph.writeGraphViz(filev, true);
   makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testComponentGraphNonextTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
+  LOG(INFO,"dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
@@ -95,19 +95,19 @@ BOOST_AUTO_TEST_CASE(testNonext)
 
 BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture) 
 {
-  LOG("createing compgraph");
-  ComponentGraph compgraph(depgraph, ctx.registry);
+  LOG(INFO,"createing compgraph");
+  ComponentGraph compgraph(depgraph, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
   const char* fnamev = "testComponentGraphExt1Verbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
+  LOG(INFO,"dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   compgraph.writeGraphViz(filev, true);
   makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testComponentGraphExt1Terse.dot";
-  LOG("dumping terse graph to " << fnamet);
+  LOG(INFO,"dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
@@ -115,7 +115,7 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 	// test collapsing (poor (wo)man's way)
 	// [we trust on the order of components to stay the same!]
 	{
-		LOG("components are ordered as follows:" << printrange(
+		LOG(INFO,"components are ordered as follows:" << printrange(
 					boost::make_iterator_range(compgraph.getComponents())));
 		typedef ComponentGraph::Component Component;
 		ComponentGraph::ComponentIterator it, itend, itc0, itc1, itc2, itc3, itc4, itc5, itc6;
@@ -143,23 +143,23 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 		coll2.insert(*itc6);
 
 		Component comp0 = compgraph.collapseComponents(coll0);
-		LOG("collapsing 0 yielded component " << comp0);
+		LOG(INFO,"collapsing 0 yielded component " << comp0);
 		Component comp1 = compgraph.collapseComponents(coll1);
-		LOG("collapsing 1 yielded component " << comp1);
+		LOG(INFO,"collapsing 1 yielded component " << comp1);
 		Component comp2 = compgraph.collapseComponents(coll2);
-		LOG("collapsing 2 yielded component " << comp2);
+		LOG(INFO,"collapsing 2 yielded component " << comp2);
 	}
 
 	// print final result
 	{
 		const char* fnamev = "testComponentGraphExt1CollapsedVerbose.dot";
-		LOG("dumping verbose graph to " << fnamev);
+		LOG(INFO,"dumping verbose graph to " << fnamev);
 		std::ofstream filev(fnamev);
 		compgraph.writeGraphViz(filev, true);
 		makeGraphVizPdf(fnamev);
 
 		const char* fnamet = "testComponentGraphExt1Collapsederse.dot";
-		LOG("dumping terse graph to " << fnamet);
+		LOG(INFO,"dumping terse graph to " << fnamet);
 		std::ofstream filet(fnamet);
 		compgraph.writeGraphViz(filet, false);
 		makeGraphVizPdf(fnamet);
@@ -169,18 +169,18 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 // example using MCS-IE encoding from KR 2010 for calculation of equilibria in medical example
 BOOST_FIXTURE_TEST_CASE(testMCSMedEQ,ProgramMCSMedEQProgramCtxDependencyGraphFixture) 
 {
-	ComponentGraph compgraph(depgraph, ctx.registry);
+	ComponentGraph compgraph(depgraph, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
   const char* fnamev = "testComponentGraphMCSMedEqVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
+  LOG(INFO,"dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   compgraph.writeGraphViz(filev, true);
   makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testComponentGraphMCSMedEqTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
+  LOG(INFO,"dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
@@ -191,18 +191,18 @@ BOOST_FIXTURE_TEST_CASE(testMCSMedD,ProgramMCSMedEQProgramCtxDependencyGraphFixt
 {
 	//LOG_REGISTRY_PROGRAM(ctx);
 
-	ComponentGraph compgraph(depgraph, ctx.registry);
+	ComponentGraph compgraph(depgraph, ctx.registry());
 
   // TODO test scc infos (will do manually with graphviz at the moment)
 
   const char* fnamev = "testComponentGraphMCSMedDVerbose.dot";
-  LOG("dumping verbose graph to " << fnamev);
+  LOG(INFO,"dumping verbose graph to " << fnamev);
   std::ofstream filev(fnamev);
   compgraph.writeGraphViz(filev, true);
   makeGraphVizPdf(fnamev);
 
   const char* fnamet = "testComponentGraphMCSMedDTerse.dot";
-  LOG("dumping terse graph to " << fnamet);
+  LOG(INFO,"dumping terse graph to " << fnamet);
   std::ofstream filet(fnamet);
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);

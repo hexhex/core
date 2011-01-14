@@ -34,28 +34,28 @@
 
 EvalGraphE2Fixture::EvalGraphE2Fixture(bool mirrored)
 {
-  LOG_SCOPE("EvalGraphE2Fixture", true);
+  LOG_SCOPE(INFO,"EvalGraphE2Fixture", true);
   typedef TestEvalUnitPropertyBase UnitCfg;
   typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 
   BOOST_TEST_MESSAGE("adding u1");
   u1 = eg.addUnit(UnitCfg("plan(a) v plan(b)."));
-  LOG("u1 = " << u1);
+  LOG(INFO,"u1 = " << u1);
   BOOST_TEST_MESSAGE("adding u2");
   u2 = eg.addUnit(UnitCfg("need(p,C) :- &cost[plan](C). :- need(_,money).")); 
-  LOG("u2 = " << u2);
+  LOG(INFO,"u2 = " << u2);
   BOOST_TEST_MESSAGE("adding u3");
   // u3: EDB will NOT be part of this in the real system, but here it is useful to know what's going on
   u3 = eg.addUnit(UnitCfg("use(X) v use(Y) :- plan(P), choose(P,X,Y). choose(a,c,d). choose(b,e,f)."));
-  LOG("u3 = " << u3);
+  LOG(INFO,"u3 = " << u3);
   BOOST_TEST_MESSAGE("adding u4");
   u4 = eg.addUnit(UnitCfg("need(u,C) :- &cost[use](C). :- need(_,money)."));
-  LOG("u4 = " << u4);
+  LOG(INFO,"u4 = " << u4);
   BOOST_TEST_MESSAGE("adding e21");
   e21 = eg.addDependency(u2, u1, UnitDepCfg(0));
   BOOST_TEST_MESSAGE("adding e31");
   e31 = eg.addDependency(u3, u1, UnitDepCfg(0));
-  LOG("mirrored = " << mirrored);
+  LOG(INFO,"mirrored = " << mirrored);
   if( mirrored )
   {
     BOOST_TEST_MESSAGE("adding e43");

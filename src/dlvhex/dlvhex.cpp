@@ -60,6 +60,7 @@
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/State.h"
 
 #include <getopt.h>
 #include <sys/types.h>

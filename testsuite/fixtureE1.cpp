@@ -34,7 +34,7 @@
 
 EvalGraphE1Fixture::EvalGraphE1Fixture()
 {
-  LOG_SCOPE("EvalGraphE1Fixture", true);
+  LOG_SCOPE(INFO,"EvalGraphE1Fixture",true);
   typedef TestEvalUnitPropertyBase UnitCfg;
   typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 
@@ -44,16 +44,16 @@ EvalGraphE1Fixture::EvalGraphE1Fixture()
     "plan(a) v plan(b)."
     "use(X) v use(Y) :- plan(P), choose(P,X,Y)."
     "choose(a,c,d). choose(b,e,f)."));
-  LOG("u1 = " << u1);
+  LOG(INFO,"u1 = " << u1);
   BOOST_TEST_MESSAGE("adding u2");
   u2 = eg.addUnit(UnitCfg(
     "need(p,C) :- &cost[plan](C)."
     "need(u,C) :- &cost[use](C).")); 
-  LOG("u2 = " << u2);
+  LOG(INFO,"u2 = " << u2);
   BOOST_TEST_MESSAGE("adding u3");
   u3 = eg.addUnit(UnitCfg(
     ":- need(X,money)."));
-  LOG("u3 = " << u3);
+  LOG(INFO,"u3 = " << u3);
   BOOST_TEST_MESSAGE("adding e21");
   e21 = eg.addDependency(u2, u1, UnitDepCfg(0));
   BOOST_TEST_MESSAGE("adding e32");
