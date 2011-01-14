@@ -61,14 +61,16 @@
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
 
+#include <getopt.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <cstring>
-
-#include <getopt.h>
 
 DLVHEX_NAMESPACE_USE
 
@@ -216,7 +218,7 @@ int main(int argc, char *argv[])
 
   // defaults of dlvhex API
   pctx.setASPSoftware(
-		ASPSolverManager::SoftwareConfigurationPtr(new DLVSoftware::Configuration));
+		ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -248,7 +250,7 @@ int main(int argc, char *argv[])
     benchmark::BenchmarkController::Instance();
   if( pctx.config.doVerbose(Configuration::PROFILING) )
   {
-    ctr.setOutput(&pctx.config.getVerboseStream());
+    ctr.setOutput(&Logger::Instance().stream());
     // for continuous statistics output, display every 1000'th output
     ctr.setPrintInterval(999);
   }
@@ -265,7 +267,7 @@ int main(int argc, char *argv[])
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
-		if( !pctx.inputProvider.hasContent() )
+		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
 			throw UsageError("no input specified!");
 
 		// load plugins
@@ -493,7 +495,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_DLVDB)
 							// use DLVDB as ASP solver software
 							pctx.setASPSoftware(
-							ASPSolverManager::SoftwareConfigurationPtr(new DLVDBSoftware::Configuration));
+							ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
 							#else
 							printLogo();
 							std::cerr << "The command line option ``--solver=dlvdb´´ "
@@ -521,7 +523,7 @@ void processOptionsPrePlugin(
 			break;
 
 		case '?':
-			pctx.addOption(argv[optind - 1]);
+			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
 		}
 	}
@@ -531,9 +533,12 @@ void processOptionsPrePlugin(
 
 	// check input files (stdin, file, or URI)
 
+	// start with new input provider
+	pctx.inputProvider.reset(new InputProvider);
+
 	// stdin requested, append it first
 	if( std::string(argv[optind - 1]) == "--" )
-		pctx.inputProvider.addStreamInput(std::cin, "<stdin>");
+		pctx.inputProvider->addStreamInput(std::cin, "<stdin>");
 
 	// collect further filenames/URIs
 	// if we use dlvdb, manage .typ files
@@ -556,11 +561,11 @@ void processOptionsPrePlugin(
 		}
 		else if( arg.find("http://") == 0 )
 		{
-			pctx.inputProvider.addURLInput(arg);
+			pctx.inputProvider->addURLInput(arg);
 		}
 		else
 		{
-			pctx.inputProvider.addFileInput(arg);
+			pctx.inputProvider->addFileInput(arg);
 		}
 	}
 }

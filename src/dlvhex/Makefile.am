@@ -38,32 +38,35 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
     AggregateAtom.cpp \
+    AnswerSet.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
     Benchmarking.cpp \
     DependencyGraph.cpp \
     Error.cpp \
+    HexGrammarPTToASTConverter.cpp \
+    HexParserDriver.cpp \
+    InputProvider.cpp \
     Literal.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
+    Printer.cpp \
     Program.cpp \
     ProgramCtx.cpp \
+    Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
     ResultContainer.cpp \
     TextOutputBuilder.cpp \
-    HexGrammarPTToASTConverter.cpp \
-    HexParserDriver.cpp \
-    AnswerSet.cpp \
     URLBuf.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
-    DLVresultParserDriver.cpp \
-    ASPSolverManager.cpp \
     ASPSolver.cpp \
+    ASPSolverManager.cpp \
     DLVProcess.cpp \
+    DLVresultParserDriver.cpp \
     ProcessBuf.cpp
 
 

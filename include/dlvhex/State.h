@@ -36,13 +36,11 @@
 #define _DLVHEX_STATE_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
-
-// forward declarations
-class ProgramCtx;
 
 /**
  * @brief State base class.

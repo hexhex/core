@@ -56,7 +56,6 @@
 //#include "dlvhex/PrintVisitor.h"
 #include "dlvhex/PluginContainer.h"
 //#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/URLBuf.h"
 #include "dlvhex/Benchmarking.h"
 
 #include <boost/foreach.hpp>
@@ -111,128 +110,54 @@ void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 
 void ConvertState::convert(ProgramCtx* ctx)
 {
+  assert(!!ctx->inputProvider && ctx->inputProvider->hasContent() && "need input provider with content for converting");
+
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin converters");
 
-  ///@todo move file/uri opening into its own state
+  // get combination of input filenames for creating debug output files and for naming converted input
+  std::string inputName;
+  BOOST_FOREACH(const std::string& name, ctx->inputProvider->contentNames())
+  {
+    // only use part after last / here
+    inputName += "_" + name.substr(name.find_last_of("/") + 1);
+  }
+  LOG(INFO,"inputName='" << inputName << "'");
 
-  const std::vector<std::string>& allFiles = ctx->getInputSources();
-  assert(allFiles.size() > 0);
+  // store it
+  ctx->config.debugFilePrefix() = "dlvhex_debug" + inputName;
+  LOG(DBG,"debugFilePrefix='" << ctx->config.debugFilePrefix() << "'");
 
-  //
-  // store filename of (first) logic program, we might use this somewhere
-  // else (e.g., when writing the graphviz file in the boost-part
-  //
-  const std::string& lpfile = *allFiles.begin();
-  Globals::Instance()->lpfilename = lpfile.substr(lpfile.find_last_of("/") + 1) + ".dot";
-
-  ///@todo hm, maybe boost::iostream::chain helps???
-  for (std::vector<std::string>::const_iterator f = allFiles.begin(); f != allFiles.end(); ++f)
+  std::vector<PluginConverterPtr> converters;
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer.getPlugins())
+  {
+    BOOST_FOREACH(PluginConverter* pc, plugin->createConverters())
     {
-      //
-      // stream to store the url/file/stdin content
-      //
-      std::stringstream tmpin;
+      LOG(PLUGIN,"got plugin converter from plugin " << plugin->getPluginName());
+      converters.push_back(PluginConverterPtr(pc));
+    }
+  }
 
-      // URL
-      if (f->find("http://") == 0)
-	{
-	  URLBuf ubuf;
-	  ubuf.open(*f);
-	  std::istream is(&ubuf);
+  if( converters.size() > 1 )
+    LOG(WARNING,"got more than one plugin converter, using arbitrary order!");
 
-	  tmpin << is.rdbuf();
+  BOOST_FOREACH(PluginConverterPtr converter, converters)
+  {
+    DBGLOG(DBG,"calling input converter");
+    std::stringstream out;
+    converter->convert(ctx->inputProvider->getAsStream(), out);
 
-	  if (ubuf.responsecode() == 404)
-	    {
-	      throw GeneralError("Requested URL " + *f + " was not found");
-	    }
-	}
-      else if (*f == "--") // stdin requested
-	{
-	  // copy stdin
-	  tmpin << std::cin.rdbuf();
-	}
-      else // file
-	{
-	  std::ifstream ifs;
+    // debug output (if requested)
+    if( ctx->config.doVerbose(Configuration::DUMP_CONVERTED_PROGRAM) )
+    {
+      LOG(DBG,"input conversion result:" << std::endl << out.str() << std::endl);
+    }
 
-	  ifs.open(f->c_str());
-
-	  if (!ifs.is_open())
-	    {
-	      throw GeneralError("File " + *f + " not found");
-	    }
-
-	  tmpin << ifs.rdbuf();
-	  ifs.close();
+    // replace input provider with converted input provider
+    ctx->inputProvider.reset(new InputProvider);
+    ctx->inputProvider->addStringInput(out.str(), "converted" + inputName);
 	}
 
-      //
-      // create a stringbuffer on the heap (will be deleted later) to
-      // hold the file-content. put it into the context input
-      //
-      ctx->getInput().rdbuf(new std::stringbuf(tmpin.str()));
-
-      //
-      // new output stream with stringbuffer on the heap
-      //
-      std::ostream converterResult(new std::stringbuf);
-
-      for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-	   pi != ctx->getPlugins()->end();
-	   ++pi)
-	{
-	  std::vector<PluginConverter*> pcs = (*pi)->createConverters();
-
-	  if (pcs.size() > 0)
-	    {
-	      //
-	      // go through all converters and rewrite input to converterResult
-	      //
-	      for (std::vector<PluginConverter*>::iterator it = pcs.begin();
-		   it != pcs.end(); ++it)
-		{
-		  (*it)->convert(ctx->getInput(), converterResult);
-
-		  //
-		  // old input buffer can be deleted now
-		  //
-		  delete ctx->getInput().rdbuf();
-
-		  //
-		  // store the current output buffer
-		  //
-		  std::streambuf* tmp = converterResult.rdbuf();
-
-		  //
-		  // make a new buffer for the output (=reset the output)
-		  //
-		  converterResult.rdbuf(new std::stringbuf);
-
-		  //
-		  // set the input buffer to be the output of the last
-		  // rewriting. now, after each loop, the converted
-		  // program is in input.
-		  //
-		  ctx->getInput().rdbuf(tmp);
-		}
-	    }
-	}
-
-      // result of last converter can be removed now
-      delete converterResult.rdbuf();
-
-
-      //
-      // at this point, the whole program is in the context input stream - either
-      // directly read from the file or as a result of some previous
-      // rewriting!
-      //
-
-      ///@todo move dlt code outside!
-
-// 	  FILE* fp = 0;
-
+#warning TODO realize dlt as a plugin
 // 	  //
 // 	  // now call dlt if needed
 // 	  //
@@ -273,25 +198,6 @@ void ConvertState::convert(ProgramCtx* ctx)
 // 	      delete input.rdbuf();
 // 	      input.rdbuf(fb);
 // 	    }
-    }
-
-
-	// debug output (if requested)
-	if (pctx.config.doVerbose(Configuration::DUMP_CONVERTED_PROGRAM))
-	{
-	  //
-	  // we need to read the input-istream now - use a stringstream
-	  // for output and initialize the input-istream to its
-	  // content again
-	  //
-	  std::stringstream ss;
-	  ss << pctx.getInput().rdbuf();
-	  pctx.config.getVerboseStream() << "Converted input:" << std::endl;
-	  pctx.config.getVerboseStream() << ss.str();
-	  pctx.config.getVerboseStream() << std::endl;
-	  delete pctx.getInput().rdbuf(); 
-	  pctx.getInput().rdbuf(new std::stringbuf(ss.str()));
-	}
 
   boost::shared_ptr<State> next(new ParseState);
   changeState(ctx, next);

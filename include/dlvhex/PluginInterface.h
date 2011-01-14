@@ -538,6 +538,7 @@ class DLVHEX_EXPORT PluginConverter
   virtual void
   convert(std::istream& i, std::ostream& o) = 0;
 };
+typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 
 #if 0
 

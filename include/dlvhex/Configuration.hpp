@@ -103,6 +103,9 @@ public:
 	const std::vector<std::string>&
 	getFilters() const;
 
+	const std::string& debugFilePrefix() const { return _debugFilePrefix; }
+	      std::string& debugFilePrefix()       { return _debugFilePrefix; }
+
 private:
 
 	/**
@@ -120,6 +123,8 @@ private:
 	 */
 	std::vector<std::string> optionFilter;
 
+	// prefix for files created for debugging (e.g., .dot files)
+	std::string _debugFilePrefix;
 };
 
 DLVHEX_NAMESPACE_END
