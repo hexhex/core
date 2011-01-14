@@ -176,16 +176,17 @@ m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 PKG_PROG_PKG_CONFIG
 
 #
-# Check for external libraries
+# use libclingo if found (user has to take care that it can be found by setting LDFLAGS, CPPFLAGS)
 #
+AC_ARG_WITH([libclingo],[AS_HELP_STRING(
+  [--with-libclingo],
+  [use clingo as external solver])],
+  [],
+  [AC_DEFINE([WITH_LIBCLINGO], [1], [Defined if we have --with-libclingo.])])
+# TODO search for lib, test lib, set lib variables from these checks
+# (at the moment we rely on the user to correctly give CPPFLAGS and LDFLAGS)
 
-# cppunit is optional -> give warning in ACTION-IF-NOT-FOUND
-PKG_CHECK_MODULES([CPPUNIT], [cppunit >= 1.12.0], [have_cppunit=true], [have_cppunit=false])
-if test x$have_cppunit = xfalse; then
-   AC_MSG_WARN([could not find cppunit >= 1.12.0, `make check' will fail. Please download it from http://cppunit.sourceforge.net/ and setup PKG_CONFIG_PATH appropriately.])
-fi
 
-AM_CONDITIONAL([HAVE_CPPUNIT], [test x$have_cppunit = xtrue])
 
 # checking for boost libs
 BOOST_REQUIRE([1.41.0])
