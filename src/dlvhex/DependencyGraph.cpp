@@ -23,7 +23,8 @@
 
 /**
  * @file DependencyGraph.cpp
- * @author Roman Schindlauer, Peter Schüller
+ * @author Roman Schindlauer
+ * @author Peter Schüller
  * @date Mon Sep 19 12:19:38 CEST 2005
  *
  * @brief Classes for the dependency graph class and its subparts.
@@ -31,7 +32,9 @@
 
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/PluginInterface.h"
@@ -106,8 +109,8 @@ void DependencyGraph::createNodesAndIntraRuleDependencies(
     std::vector<ID>& createdAuxRules, HeadBodyHelper& hbh)
 {
   // TODO: faster allocation of dep graph? use custom storage with pre-reserved memory? (we know the exact number of nodes from the registry!)
-  LOG_SCOPE("cNaIRD", false);
-  LOG("=createNodesAndIntraRuleDependencies");
+  LOG_SCOPE(ANALYZE,"cNaIRD", false);
+  DBGLOG(DBG,"=createNodesAndIntraRuleDependencies");
 
 	// create nodes and register them in node mapping table
 	BOOST_FOREACH(ID idrule, idb)
@@ -119,10 +122,8 @@ void DependencyGraph::createNodesAndIntraRuleDependencies(
 void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
     ID idrule, std::vector<ID>& createdAuxRules, HeadBodyHelper& hbh)
 {
-  std::ostringstream os;
-  os << "rule" << idrule.address;
-  LOG_SCOPE(os.str(), false);
-  LOG("adding rule " << idrule);
+  LOG_VSCOPE(DBG,"cNaIRDfR", idrule.address,true);
+  DBGLOG(DBG,"=createNodesAndIntraRuleDependenciesForRule for rule " << idrule);
   assert(idrule.isRule());
 
   const NodeIDIndex& idx = nm.get<IDTag>();
@@ -136,7 +137,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
   // add head atoms to hbh
   BOOST_FOREACH(ID idat, rule.head)
   {
-    LOG("adding head item " << idat);
+    DBGLOG(DBG,"adding head item " << idat);
     assert(idat.isAtom());
     assert(idat.isOrdinaryAtom());
 
@@ -173,7 +174,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
   // add body atoms to hbh
   BOOST_FOREACH(ID idlit, rule.body)
   {
-    LOG("adding body literal " << idlit);
+    DBGLOG(DBG,"adding body literal " << idlit);
     assert(idlit.isLiteral());
     bool naf = idlit.isNaf();
     ID idat = ID::atomFromLiteral(idlit);
@@ -227,7 +228,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
     {
       // retrieve eatom from registry
       const ExternalAtom& eatom = registry->eatoms.getByID(idat);
-      LOG("adding external atom " << eatom << " with id " << idat);
+      DBGLOG(DBG,"adding external atom " << eatom << " with id " << idat);
 
       // new node for eatom
       Node neatom = createNode(idat);
@@ -246,7 +247,7 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
       bool monotonic = pluginAtom->isMonotonic();
 
       // store dependency
-      LOG("storing dependency: " << idrule << " -> " << idat <<
+      DBGLOG(DBG,"storing dependency: " << idrule << " -> " << idat <<
           " with monotonic=" << monotonic << ", naf=" << naf);
 
       DependencyInfo diExternal;
@@ -277,8 +278,8 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     std::vector<ID>& createdAuxRules,
     HeadBodyHelper& hbh)
 {
-  LOG_SCOPE("cARiR", false);
-  LOG("=createAuxiliaryRuleIfRequired");
+  LOG_SCOPE(DBG,"cARiR",false);
+  DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for " << idrule);
 
   // collect variables at constant inputs of this external atom
   std::list<ID> inputVariables;
@@ -291,7 +292,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
         (eatom.inputs[at].isVariableTerm()) )
     {
       ID varID = eatom.inputs[at];
-      LOG("at index " << at << ": found constant input that is a variable: " << varID);
+      LOG(DBG,"at index " << at << ": found constant input that is a variable: " << varID);
       inputVariables.push_back(varID);
       inputVariableSet.insert(varID);
     }
@@ -314,7 +315,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
       if( eatom.inputs[at] == *ituiv )
         replaceWhere.push_back(at);
     }
-    LOG("auxInputMapping: aux argument " << auxInputMapping.size() <<
+    LOG(DBG,"auxInputMapping: aux argument " << auxInputMapping.size() <<
         " replaced at positions " << printrange(replaceWhere));
     auxInputMapping.push_back(replaceWhere);
   }
@@ -358,18 +359,18 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     else */
     if( itat->isOrdinaryNongroundAtom() )
     {
-      LOG("checking if we depend on ordinary nonground atom " << *itat);
+      LOG(DBG,"checking if we depend on ordinary nonground atom " << *itat);
 
       const OrdinaryAtom& oatom =
         registry->onatoms.getByID(*itat);
-      LOG("checking oatom " << oatom);
+      LOG(DBG,"checking oatom " << oatom);
 
       for(Tuple::const_iterator itvar = oatom.tuple.begin();
           itvar != oatom.tuple.end(); ++itvar)
       {
         if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
         {
-          LOG("will ground variable " << *itvar << " by atom " << oatom << " in auxiliary rule");
+          LOG(ANALYZE,"will ground variable " << *itvar << " by atom " << oatom << " in auxiliary rule");
           auxBody.push_back(*itat);
           // done with this ordinary atom
           break;
@@ -477,8 +478,8 @@ ID DependencyGraph::createAuxiliaryRule(
 void DependencyGraph::createExternalPredicateInputDependencies(
     const HeadBodyHelper& hbh)
 {
-  LOG_SCOPE("cEPID", false);
-  LOG("=createExternalPredicateInputDependencies");
+  LOG_SCOPE(ANALYZE,"cEPID", false);
+  DBGLOG(DBG,"=createExternalPredicateInputDependencies");
 
 	// for all external atoms:
 	//   for all predicate inputs:
@@ -497,12 +498,12 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 		#ifndef NDEBUG
     std::ostringstream os;
     os << "itext" << itext->id.address;
-    LOG_SCOPE(os.str(), false);
-		LOG("=" << itext->id);
+    DBGLOG_SCOPE(DBG,os.str(), false);
+		DBGLOG(DBG,"=" << itext->id);
 		#endif
 
     const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
-		LOG("checking external atom " << eatom);
+		LOG(DBG,"checking external atom " << eatom);
 
 		// lock weak pointer
 		assert(!eatom.pluginAtom.expired());
@@ -526,8 +527,8 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 			#ifndef NDEBUG
 			std::ostringstream os;
 			os << "at" << at;
-			LOG_SCOPE(os.str(), false);
-			LOG("= checking predicate input " << idpred << " at position " << at);
+			DBGLOG_SCOPE(DBG,os.str(), false);
+			DBGLOG(DBG,"= checking predicate input " << idpred << " at position " << at);
 			#endif
 
 			// this input must be a constant term, nothing else allowed
@@ -548,7 +549,9 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 void DependencyGraph::createExternalPredicateInputDependenciesForInput(
     const NodeMappingInfo& ni_eatom, ID predicate, const HeadBodyHelper& hbh)
 {
-  LOG("finding all rules with heads that use predicate " << predicate);
+  LOG_SCOPE(DBG,"cEPIDfI",false);
+  LOG(DBG,"=createExternalPredicateInputDependenciesForInput "
+      "(finding all rules with heads that use predicate " << predicate << ")");
 
   DependencyInfo diExternalPredicateInput;
   diExternalPredicateInput.externalPredicateInput = true;
@@ -562,11 +565,11 @@ void DependencyGraph::createExternalPredicateInputDependenciesForInput(
     // (those that match and are only in body should have ID_FAIL stored in headPredicate)
     assert(it->inHead);
 
-    LOG("found matchin ordinary atom: " << it->id);
+    LOG(DBG,"found matchin ordinary atom: " << it->id);
     for(NodeList::const_iterator itn = it->inHeadOfRules.begin();
         itn != it->inHeadOfRules.end(); ++itn)
     {
-      LOG("adding external dependency " << ni_eatom.id << " -> " << propsOf(*itn).id);
+      LOG(DBG,"adding external dependency " << ni_eatom.id << " -> " << propsOf(*itn).id);
 
       Dependency dep;
       bool success;
@@ -590,8 +593,8 @@ void DependencyGraph::createUnifyingDependencies(
 void DependencyGraph::createHeadHeadUnifyingDependencies(
     const HeadBodyHelper& hbh)
 {
-  LOG_SCOPE("cHHUD", false);
-  LOG("=createHeadHeadUnifyingDependencies");
+  LOG_SCOPE(ANALYZE,"cHHUD",true);
+  DBGLOG(DBG,"=createHeadHeadUnifyingDependencies");
 
 	DependencyInfo diUnifyingHead;
   diUnifyingHead.unifyingHead = true;
@@ -611,29 +614,29 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
     #ifndef NDEBUG
     std::ostringstream os;
     os << "it1:" << it1->id;
-    LOG_SCOPE(os.str(), false);
+    DBGLOG_SCOPE(DBG,os.str(), false);
     #endif
 
     assert(it1->id.isAtom());
     assert(it1->id.isOrdinaryAtom());
     const OrdinaryAtom& oa1 = registry->lookupOrdinaryAtom(it1->id);
-    LOG("= " << oa1);
+    DBGLOG(DBG,"= " << oa1);
 
     // inner loop with it2
     it2 = it1;
     it2++;
     for(;it2 != itend; ++it2)
     {
-      LOG("it2:" << it2->id);
+      DBGLOG(DBG,"it2:" << it2->id);
       assert(it2->id.isAtom());
       assert(it2->id.isOrdinaryAtom());
       const OrdinaryAtom& oa2 = registry->lookupOrdinaryAtom(it2->id);
-      LOG("checking against " << oa2);
+      DBGLOG(DBG,"checking against " << oa2);
 
       if( !oa1.unifiesWith(oa2) )
         continue;
 
-      LOG("adding unifying head-head dependency between " <<
+      LOG(DBG,"adding unifying head-head dependency between " <<
           oa1 << " in head of rules " << printvector(it1->inHeadOfRules) << " and " <<
           oa2 << " in head of rules " << printvector(it2->inHeadOfRules));
 
@@ -663,8 +666,8 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
 void DependencyGraph::createHeadBodyUnifyingDependencies(
     const HeadBodyHelper& hbh)
 {
-  LOG_SCOPE("cHBUD", false);
-  LOG("=createHeadBodyUnifyingDependencies");
+  LOG_SCOPE(ANALYZE,"cHBUD",true);
+  DBGLOG(DBG,"=createHeadBodyUnifyingDependencies");
 
 	DependencyInfo diPositiveRegularRule;
   diPositiveRegularRule.positiveRegularRule = true;
@@ -690,28 +693,28 @@ void DependencyGraph::createHeadBodyUnifyingDependencies(
     #ifndef NDEBUG
     std::ostringstream os;
     os << "ith:" << ith->id;
-    LOG_SCOPE(os.str(), false);
+    DBGLOG_SCOPE(DBG,os.str(), false);
     #endif
 
     assert(ith->id.isAtom());
     assert(ith->id.isOrdinaryAtom());
     const OrdinaryAtom& oah = registry->lookupOrdinaryAtom(ith->id);
-    LOG("= " << oah);
+    DBGLOG(DBG,"= " << oah);
 
     // inner loop with itb on bodies
     for(itb = itbbegin; itb != itbend; ++itb)
     {
       // do not check for *itb == *ith! we need those dependencies
-      LOG("itb:" << itb->id);
+      DBGLOG(DBG,"itb:" << itb->id);
       assert(itb->id.isAtom());
       assert(itb->id.isOrdinaryAtom());
       const OrdinaryAtom& oab = registry->lookupOrdinaryAtom(itb->id);
-      LOG("checking against " << oab);
+      DBGLOG(DBG,"checking against " << oab);
 
       if( !oah.unifiesWith(oab) )
         continue;
 
-      LOG("adding head-body dependency between " <<
+      LOG(DBG,"adding head-body dependency between " <<
           oah << " in head of rules " << printvector(ith->inHeadOfRules) << " and " <<
           oab << " in posR/posC/neg bodies " <<
           printvector(itb->inPosBodyOfRegularRules) << "/" <<

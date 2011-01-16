@@ -25,7 +25,8 @@
 
 /**
  * @file   DLVResultParser.cpp
- * @author Roman Schindlauer, Peter Schüller
+ * @author Roman Schindlauer
+ * @author Peter Schüller
  * @date   Wed Mar 22 14:38:53 CET 2006
  * 
  * @brief  DLV result parser using boost::spirit
@@ -56,12 +57,14 @@
 #    define DLVHEX_BENCHMARK
 #  endif
 #endif
+#warning the DLVHEX_BENCHMARK configuration with HAVE_CONFIG_H looks fishy!
 
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/globals.h"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/Atoms.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 
 #include <boost/optional.hpp>
@@ -275,11 +278,11 @@ struct handle_fact
         }
         atom.text = ss.str();
       }
-      LOG("storing atom " << atom);
+      DBGLOG(DBG,"storing atom " << atom);
       id = state.registry->ogatoms.storeAndGetID(atom);
     }
     //TODO make more efficient (cache pointer to interpretation or even function object)
-    LOG("setting fact " << id);
+    DBGLOG(DBG,"setting fact " << id);
     state.current->interpretation->setFact(id.address);
   }
 
@@ -363,21 +366,12 @@ DLVResultParser::parse(
 	std::ostringstream buf;
 	buf << is.rdbuf();
 	const std::string& input = buf.str();
-  LOG("parsing input '" << input << "'");
+  LOG(DBG,"parsing input '" << input << "'");
 
 	typedef std::string::const_iterator forward_iterator_type;
 	// convert input iterator to forward iterator, usable by spirit parser
 	forward_iterator_type fwd_begin = input.begin();
 	forward_iterator_type fwd_end = input.end();
-
-	// @todo dump linewise before each line parse (see above todo)
-  #ifndef NDEBUG
-  if( true || Globals::Instance()->doVerbose(Globals::DUMP_OUTPUT) )
-  {
-    Globals::Instance()->getVerboseStream() <<
-      "Got Result:\n===\n" << input << "\n===" << std::endl;
-  }
-  #endif
 
 	bool dropPredicates =
 		(pMode == DLVResultParser::HO);

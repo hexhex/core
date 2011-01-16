@@ -23,17 +23,16 @@
 
 
 /**
- * @file   globals.h
- * @author Roman Schindlauer
+ * @file   Configuration.hpp
+ * @author Roman Schindlauer, Peter Schueller
  * @date   Sat Nov  5 15:26:18 CET 2005
  * 
- * @brief  Global variable declarations.
- * 
+ * @brief  configuration container (previously global variables)
  */
 
 
-#if !defined(_DLVHEX_GLOBALS_H)
-#define _DLVHEX_GLOBALS_H
+#if !defined(_DLVHEX_CONFIGURATION_HPP)
+#define _DLVHEX_CONFIGURATION_HPP
 
 #include "dlvhex/PlatformDefinitions.h"
 
@@ -46,12 +45,10 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * @brief Definition of global variables.
  */
-class DLVHEX_EXPORT Globals
+class DLVHEX_EXPORT Configuration
 {
-protected:
-	Globals();
-
 public:
+	Configuration();
 
 	/**
 	 * @brief List of possible verbose actions.
@@ -68,12 +65,6 @@ public:
 	               GRAPH_PROCESSOR,
 	               PROFILING,
 	               DUMP_OUTPUT } verboseAction_t;
-
-	/**
-	 * Singleton instance.
-	 */
-	static Globals*
-	Instance();
 
 	/**
 	 * Return the value of the specified option identifier.
@@ -112,22 +103,8 @@ public:
 	const std::vector<std::string>&
 	getFilters() const;
 
-	/**
-	 * Get the stream for verbose output.
-	 */
-	std::ostream&
-	getVerboseStream() const;
-
-	/**
-	 * temporary hack
-	 */
-	std::string maxint;
-
-	/**
-	 * Filename of the (first, if more than one were specified) logic program
-	 * dlvhex was called with.
-	 */
-	std::string lpfilename;
+	const std::string& debugFilePrefix() const { return _debugFilePrefix; }
+	      std::string& debugFilePrefix()       { return _debugFilePrefix; }
 
 private:
 
@@ -135,11 +112,6 @@ private:
 	 * @brief Associates a verbose action with a verbose level.
 	 */
 	std::map<verboseAction_t, unsigned> verboseLevel;
-
-	/**
-	 * Singleton instance.
-	 */
-	static Globals* _instance;
 
 	/**
 	 * @brief Associates option names with values.
@@ -151,17 +123,13 @@ private:
 	 */
 	std::vector<std::string> optionFilter;
 
-	/**
-	 * Messages returned from external computation sources, which do not necessarily
-	 * lead to an abortion of the evaluation (i.e., which can be treated as warnings).
-	 */
-	//std::vector<std::string> Messages;
-
+	// prefix for files created for debugging (e.g., .dot files)
+	std::string _debugFilePrefix;
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif // _DLVHEX_GLOBALS_H
+#endif // _DLVHEX_CONFIGURATION_HPP
 
 // vim: noet ts=8 sw=4 tw=80
 

@@ -41,6 +41,7 @@
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "fixturesDepgraphCompgraphGeneric.hpp"
 
@@ -109,12 +110,12 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   papAspCtxAcc(new TestPluginAspCtxAcc)
 {
   using namespace dlvhex;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  papAspCtxAcc->setRegistry(ctx.registry);
+  papAspCtxAcc->setRegistry(ctx.registry());
   ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
   BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-  LOG("got ID: dlv_asp_context_acc = " << idAspCtxAcc);
+  LOG(INFO,"got ID: dlv_asp_context_acc = " << idAspCtxAcc);
 
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
   std::stringstream ss;
@@ -149,12 +150,12 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
+		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idAspCtxAcc);
 				it != it_end; ++it)
 		{
 			ExternalAtom ea(*it);
 			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry->eatoms.update(*it, ea);
+			ctx.registry()->eatoms.update(*it, ea);
 		}
 	}
 }
@@ -163,12 +164,12 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
   papAspCtxAcc(new TestPluginAspCtxAcc)
 {
   using namespace dlvhex;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  papAspCtxAcc->setRegistry(ctx.registry);
+  papAspCtxAcc->setRegistry(ctx.registry());
   ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
   BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-  LOG("got ID: dlv_asp_context_acc = " << idAspCtxAcc);
+  LOG(INFO,"got ID: dlv_asp_context_acc = " << idAspCtxAcc);
 
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting --ieexplain=D'
   std::stringstream ss;
@@ -212,12 +213,12 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
   //TODO this should become a common functionality using some pluginAtom registry
 	{
 		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry->eatoms.getRangeByPredicateID(idAspCtxAcc);
+		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idAspCtxAcc);
 				it != it_end; ++it)
 		{
 			ExternalAtom ea(*it);
 			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry->eatoms.update(*it, ea);
+			ctx.registry()->eatoms.update(*it, ea);
 		}
 	}
 }

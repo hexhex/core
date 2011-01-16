@@ -25,6 +25,7 @@
 /**
  * @file   PluginContainer.h
  * @author Roman Schindlauer
+ * @author Peter Schueller
  * @date   Thu Sep 1 17:21:53 2005
  * 
  * @brief  Container class for plugins.
@@ -36,7 +37,7 @@
 #define _DLVHEX_PLUGINCONTAINER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/PluginInterface.h"
 
 #include <string>
@@ -44,19 +45,16 @@
 
 #include <boost/shared_ptr.hpp>
 
-
 DLVHEX_NAMESPACE_BEGIN
-
 
 /**
  * @brief Collects and administrates all available plugins.
  */
 class DLVHEX_EXPORT PluginContainer
 {
- protected:
+public:
   /// ctor
-  explicit
-  PluginContainer(const std::string& path);
+  PluginContainer(RegistryPtr registry);
 
   /// copy ctor
   PluginContainer(const PluginContainer&);
@@ -64,40 +62,64 @@ class DLVHEX_EXPORT PluginContainer
   /// dtor
   ~PluginContainer();
 
-public:
+  //
+  // loading and accessing
+  //
 
-  /// get the PluginContainer singleton instance
-  static PluginContainer*
-  instance(const std::string&);
+	// search for plugins in searchpath and open those that are plugins
+	// may be called multiple times with different paths
+	// paths may be separated by ":" just like LD_LIBRARY_PATH
+	void loadPlugins(const std::string& searchpath="");
 
-  /**
-   * @brief Loads a library and accesses its plugin-interface.
-   */
-  std::vector<PluginInterface*>
-  importPlugins();
+  // add a PluginInterface to the container
+  void addInternalPlugin(PluginInterfacePtr plugin);
+
+  // add a PluginAtom to the container
+  void addInternalPluginAtom(PluginAtomPtr atom);
+
+  // get container with plugins loaded so far
+  const std::vector<PluginInterfacePtr>& getPlugins() const;
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.
    */
-  boost::shared_ptr<PluginAtom>
-  getAtom(const std::string& name) const;
+  PluginAtomPtr getAtom(const std::string& name) const;
 
+  RegistryPtr getRegistry() const
+    { return registry; }
+
+  //
+  // batch operations on all plugins
+  //
+
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o);
+
+	// call processOptions for each loaded plugin
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processOptions(std::list<const char*>& pluginOptions);
+
+  // associate plugins in container to external atoms in given rules
+  void associateExtAtomsWithPluginAtoms(
+      const std::vector<ID>& idb, bool failOnUnknownAtom=true);
 
 private:
+  // one plugincontainer can only be used with one registry,
+  // as all the plugin atoms have an association with a registry
+  RegistryPtr registry;
 
-  /// singleton instance
-  static PluginContainer* theContainer;
+	/// current search path
+	std::string searchPath;
 
-  /// list of plugins
-  std::vector<std::string> pluginList;
+  // loaded plugins
+  std::vector<PluginInterfacePtr> plugins;
 
   /**
    * @brief Associative map of external atoms provided by plugins.
    */
-  PluginInterface::AtomFunctionMap pluginAtoms;
-
+  PluginAtomMap pluginAtoms;
 };
-
+typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 DLVHEX_NAMESPACE_END
 

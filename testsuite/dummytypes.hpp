@@ -144,25 +144,25 @@ public:
 
     virtual ~ModelGenerator()
     {
-      LOG_METHOD("~ModelGenerator()", this);
+      LOG_VSCOPE(INFO,"~ModelGenerator()",this,true);
     }
 
     virtual InterpretationPtr generateNextModel()
     {
 			const std::string& rules = factory.ctx.rules;
-      LOG_METHOD("generateNextModel()",this);
+      LOG_VSCOPE(INFO,"generateNextModel()",this,true);
       factory.generateNextModelCount++;
-      LOG("returning next model for rules '" << rules << "':");
+      LOG(INFO,"returning next model for rules '" << rules << "':");
       if( mit == models.end() )
       {
-        LOG("null");
+        LOG(INFO,"null");
         return InterpretationPtr();
       }
       else
       {
         InterpretationPtr ret = *mit;
         mit++;
-        LOG(*ret);
+        LOG(INFO,*ret);
         return ret;
       }
     }
@@ -190,22 +190,22 @@ public:
     ctx(ctx),
     generateNextModelCount(0)
   {
-    LOG_METHOD("TestModelGeneratorFactory()", this);
-    LOG("rules='" << ctx.rules << "'");
+    LOG_VSCOPE(INFO,"TestModelGeneratorFactory()",this,true);
+    LOG(INFO,"rules='" << ctx.rules << "'");
   }
 
   virtual ~TestModelGeneratorFactory()
   {
-    LOG_METHOD("~TestModelGeneratorFactory()", this);
-    LOG("generateNextModelCount=" << generateNextModelCount);
+    LOG_VSCOPE(INFO,"~TestModelGeneratorFactory()",this,true);
+    LOG(INFO,"generateNextModelCount=" << generateNextModelCount);
   }
 
   virtual ModelGeneratorPtr createModelGenerator(
       TestInterpretation::ConstPtr input)
       //InterpretationConstPtr input)
   {
-    LOG_METHOD("createModelGenerator()", this);
-    LOG("input=" << printptr(input));
+    LOG_VSCOPE(INFO,"createModelGenerator()",this,true);
+    LOG(INFO,"input=" << printptr(input));
     return ModelGeneratorPtr(new ModelGenerator(input, *this));
   }
 
@@ -279,9 +279,9 @@ public:
   {
     assert(iteration <= counters.size());
 
-    LOG_SCOPE("CounterVerification", false);
+    LOG_SCOPE(INFO,"CounterVerification", false);
 
-    LOG("recording iteration " << iteration);
+    LOG(INFO,"recording iteration " << iteration);
     typename EvalGraphT::EvalUnitIterator unit, unitsbegin, unitsend;
     boost::tie(unitsbegin, unitsend) = eg.getEvalUnits();
     for(unit = unitsbegin; unit != unitsend; ++unit)
@@ -291,12 +291,12 @@ public:
           eg.propsOf(*unit).mgf);
       if( !mgf )
       {
-        LOG("could not downcast mgf of unit " << *unit << "!");
+        LOG(INFO,"could not downcast mgf of unit " << *unit << "!");
       }
       else
       {
         counters[iteration][*unit] = mgf->generateNextModelCount;
-        LOG("initial counter of mgf of unit " << *unit << " = " << counters[iteration][*unit]);
+        LOG(INFO,"initial counter of mgf of unit " << *unit << " = " << counters[iteration][*unit]);
       }
     }
   }
@@ -307,11 +307,11 @@ public:
     boost::tie(unitsbegin, unitsend) = eg.getEvalUnits();
     for(unsigned counteridx = 0; counteridx != counters.size(); ++counteridx)
     {
-      LOG("model generation counter for iteration " << counteridx << ":");
-      LOG_INDENT();
+      LOG(INFO,"model generation counter for iteration " << counteridx << ":");
+      LOG_INDENT(INFO);
       for(unit = unitsbegin; unit != unitsend; ++unit)
       {
-        LOG("u" << *unit << " -> " << counters[counteridx][*unit]);
+        LOG(INFO,"u" << *unit << " -> " << counters[counteridx][*unit]);
       }
     }
   }

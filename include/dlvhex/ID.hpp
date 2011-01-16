@@ -32,7 +32,7 @@
 #define ID_HPP_INCLUDED__08102010
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

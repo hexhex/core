@@ -67,11 +67,11 @@ void verifyModels(
     TestInterpretation& ti = *(mg.propsOf(*itm).interpretation);
     ints.insert(ti.getAtoms());
   }
-  LOG("checking equality of set of models:");
+  LOG(INFO,"checking equality of set of models:");
   BOOST_FOREACH(const std::set<std::string>& pset, refints)
-    { LOG("reference " << printset(pset)); }
+    { LOG(INFO,"reference " << printset(pset)); }
   BOOST_FOREACH(const std::set<std::string>& pset, ints)
-    { LOG("returned  " << printset(pset)); }
+    { LOG(INFO,"returned  " << printset(pset)); }
   BOOST_CHECK(ints == refints);
 }
 

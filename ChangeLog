@@ -10,6 +10,7 @@
 	* removing singleton status of PluginContainer as API users might have different programs with different plugin containers
 	* Logger component with log-levels, hierarchical indentation and NDEBUG-dependant logging
 	* Printhelpers.hpp utilities for comfortable printing of various boost and STL containers
+	* removed dependency on cppunit, now using the boost UTF
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

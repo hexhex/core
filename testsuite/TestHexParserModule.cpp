@@ -31,6 +31,8 @@
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ModuleSyntaxChecker.hpp"
 #include "dlvhex/Interpretation.hpp"
 
@@ -41,13 +43,13 @@
 #include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  LOG(INFO, *ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "first edb = " << *ctx.edbList.front() << std::endl; \
-	LOG("first idb"); \
+	LOG(DBG, "first idb"); \
 	printer.printmany(ctx.idbList.front(),"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(DBG, "idb end");
 
 /*
 #define LOG_REGISTRY_PROGRAM(ctx) \
@@ -65,8 +67,8 @@ DLVHEX_NAMESPACE_USE
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
-
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  
   //.. put into different files
   std::string filename1 = "../../examples/module1.hex";
   std::string filename2 = "../../examples/module2.hex";
@@ -114,12 +116,12 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   LOG_REGISTRY_PROGRAM(ctx);
   
   // check some atoms (got the idea from TestHexParser.cpp)
-  ID idp = ctx.registry->preds.getIDByString("p1.q1");
-  ID idq = ctx.registry->preds.getIDByString("p2.q2");
-  ID idr = ctx.registry->preds.getIDByString("p3.q3");
-  ID idb = ctx.registry->preds.getIDByString("p1.ok");
-  ID idc = ctx.registry->preds.getIDByString("p2.even");
-  ID idmymod = ctx.registry->preds.getIDByString("p3.p2");
+  ID idp = ctx.registry()->preds.getIDByString("p1.q1");
+  ID idq = ctx.registry()->preds.getIDByString("p2.q2");
+  ID idr = ctx.registry()->preds.getIDByString("p3.q3");
+  ID idb = ctx.registry()->preds.getIDByString("p1.ok");
+  ID idc = ctx.registry()->preds.getIDByString("p2.even");
+  ID idmymod = ctx.registry()->preds.getIDByString("p3.p2");
   
   // the id should not fail
   BOOST_REQUIRE((idp) != ID_FAIL);
@@ -131,7 +133,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
 //  BOOST_REQUIRE(ctx.edb != 0);
 //  BOOST_REQUIRE(ctx.idb.size() == 3);
   {
-    const Rule& r = ctx.registry->rules.getByID(ctx.idbList.back()[2]);
+    const Rule& r = ctx.registry()->rules.getByID(ctx.idbList.back()[2]);
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
@@ -154,7 +156,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
 BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   //.. put into different files
   std::string filename1 = "../../examples/module1.hex";
@@ -214,7 +216,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader)
 BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::string filename1 = "../../examples/module1-NotExist.hex";
   std::ifstream ifs;
@@ -243,7 +245,7 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
 BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -277,7 +279,7 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -313,7 +315,7 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -347,7 +349,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -381,7 +383,7 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
 BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -416,7 +418,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -449,7 +451,7 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::string filename1 = "../../examples/module1.hex";
   std::ifstream ifs;

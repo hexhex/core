@@ -32,6 +32,8 @@
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
@@ -50,16 +52,16 @@
 #include <cstdlib>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  ctx.registry->logContents(); \
-	RawPrinter printer(std::cerr, ctx.registry); \
-	LOG("edb"); \
+  ctx.registry()->logContents(); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
+	LOG(INFO,"edb"); \
 	printer.printmany(ctx.edb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("edb end"); \
-	LOG("idb"); \
+	LOG(INFO,"edb end"); \
+	LOG(INFO,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(INFO,"idb end");
 
 DLVHEX_NAMESPACE_USE
 
@@ -71,13 +73,13 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   // write to dotfile and create pdf
   {
     const char* fnamev = "testEvalHeurExt1CGVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     compgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testEvalHeurExt1CGTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     compgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -89,7 +91,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
 
   // create "final" (for a lack of a better name) eval graph
   {
-    LOG("starting to build eval graph");
+    LOG(INFO,"starting to build eval graph");
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
@@ -99,26 +101,26 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
       // create heuristic, which sends commands to egbuilder
       EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
       heuristicOldDlvhex.build();
-      LOG("building eval graph finished");
+      LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
       {
         const char* fnamev = "testEvalHeurExt1Verbose.dot";
-        LOG("dumping verbose graph to " << fnamev);
+        LOG(INFO,"dumping verbose graph to " << fnamev);
         std::ofstream filev(fnamev);
         compgraph.writeGraphViz(filev, true);
         makeGraphVizPdf(fnamev);
 
         const char* fnamet = "testEvalHeurExt1Terse.dot";
-        LOG("dumping terse graph to " << fnamet);
+        LOG(INFO,"dumping terse graph to " << fnamet);
         std::ofstream filet(fnamet);
         compgraph.writeGraphViz(filet, false);
         makeGraphVizPdf(fnamet);
       }
 
-      LOG("eval heuristic going out of scope");
+      LOG(INFO,"eval heuristic going out of scope");
     }
-    LOG("eval graph builder going out of scope");
+    LOG(INFO,"eval graph builder going out of scope");
   }
 
   // TODO check eval graph
@@ -133,13 +135,13 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
   // write ComponentGraph to dotfile and create pdf
   {
     const char* fnamev = "testEvalHeurMCSMedEqCGVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     compgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testEvalHeurMCSMedEqCGTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     compgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -151,7 +153,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
 
   // create "final" (for a lack of a better name) eval graph
   {
-    LOG("starting to build eval graph");
+    LOG(INFO,"starting to build eval graph");
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
@@ -161,26 +163,26 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
       // create heuristic, which sends commands to egbuilder
       EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
       heuristicOldDlvhex.build();
-      LOG("building eval graph finished");
+      LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
       {
         const char* fnamev = "testEvalHeurMCSMedEqVerbose.dot";
-        LOG("dumping verbose graph to " << fnamev);
+        LOG(INFO,"dumping verbose graph to " << fnamev);
         std::ofstream filev(fnamev);
         compgraph.writeGraphViz(filev, true);
         makeGraphVizPdf(fnamev);
 
         const char* fnamet = "testEvalHeurMCSMedEqTerse.dot";
-        LOG("dumping terse graph to " << fnamet);
+        LOG(INFO,"dumping terse graph to " << fnamet);
         std::ofstream filet(fnamet);
         compgraph.writeGraphViz(filet, false);
         makeGraphVizPdf(fnamet);
       }
 
-      LOG("eval heuristic going out of scope");
+      LOG(INFO,"eval heuristic going out of scope");
     }
-    LOG("eval graph builder going out of scope");
+    LOG(INFO,"eval graph builder going out of scope");
   }
 
   // TODO check eval graph
@@ -195,13 +197,13 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
   // write ComponentGraph to dotfile and create pdf
   {
     const char* fnamev = "testEvalHeurMCSMedDCGVerbose.dot";
-    LOG("dumping verbose graph to " << fnamev);
+    LOG(INFO,"dumping verbose graph to " << fnamev);
     std::ofstream filev(fnamev);
     compgraph.writeGraphViz(filev, true);
     makeGraphVizPdf(fnamev);
 
     const char* fnamet = "testEvalHeurMCSMedDCGTerse.dot";
-    LOG("dumping terse graph to " << fnamet);
+    LOG(INFO,"dumping terse graph to " << fnamet);
     std::ofstream filet(fnamet);
     compgraph.writeGraphViz(filet, false);
     makeGraphVizPdf(fnamet);
@@ -213,7 +215,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
 
   // create "final" (for a lack of a better name) eval graph
   {
-    LOG("starting to build eval graph");
+    LOG(INFO,"starting to build eval graph");
 
     // create builder that supervises the construction of eg
     ASPSolverManager::SoftwareConfigurationPtr extEvalConfig;
@@ -223,26 +225,26 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
       // create heuristic, which sends commands to egbuilder
       EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
       heuristicOldDlvhex.build();
-      LOG("building eval graph finished");
+      LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
       {
         const char* fnamev = "testEvalHeurMCSMedDVerbose.dot";
-        LOG("dumping verbose graph to " << fnamev);
+        LOG(INFO,"dumping verbose graph to " << fnamev);
         std::ofstream filev(fnamev);
         compgraph.writeGraphViz(filev, true);
         makeGraphVizPdf(fnamev);
 
         const char* fnamet = "testEvalHeurMCSMedDTerse.dot";
-        LOG("dumping terse graph to " << fnamet);
+        LOG(INFO,"dumping terse graph to " << fnamet);
         std::ofstream filet(fnamet);
         compgraph.writeGraphViz(filet, false);
         makeGraphVizPdf(fnamet);
       }
 
-      LOG("eval heuristic going out of scope");
+      LOG(INFO,"eval heuristic going out of scope");
     }
-    LOG("eval graph builder going out of scope");
+    LOG(INFO,"eval graph builder going out of scope");
   }
 
   // TODO check eval graph
@@ -271,11 +273,11 @@ while( !egbuilder.getRestLeaves().empty() )
       itl != egbuilder.getRestLeaves().end(); ++itl)
   {
     const std::set<Node>& thisSCC = sccMembers[scc[*itl]];
-    LOG("for leaf " << *itl << " adding nodes " << printset(thisSCC));
+    LOG(INFO,"for leaf " << *itl << " adding nodes " << printset(thisSCC));
     leaves.insert(leaves.end(), thisSCC.begin(), thisSCC.end());
   }
 
-  LOG("got leaves to add: " << printvector(std::vector<Node>(leaves.begin(), leaves.end())));
+  LOG(INFO,"got leaves to add: " << printvector(std::vector<Node>(leaves.begin(), leaves.end())));
 
   // enrich set of leaves by taking all nodes in the same component
 

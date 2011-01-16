@@ -30,8 +30,10 @@
 
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 
@@ -45,20 +47,20 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   if( tuple.size() != a.tuple.size() )
     return false;
 
-  LOG_SCOPE("unifiesWith", false);
+  DBGLOG_SCOPE(DBG,"unifiesWith",true);
   // unify from left to right
   Tuple result1(this->tuple);
   Tuple result2(a.tuple);
   // if both tuples have a variable, assign result1 variable to result2 for all occurences to the end
   // if one tuple has constant, assign this constant into the other tuple for all occurences to the end
   Tuple::iterator it1, it2;
-  LOG("starting with result1 tuple " << printvector(result1));
-  LOG("starting with result2 tuple " << printvector(result2));
+  DBGLOG(DBG,"starting with result1 tuple " << printvector(result1));
+  DBGLOG(DBG,"starting with result2 tuple " << printvector(result2));
   for(it1 = result1.begin(), it2 = result2.begin();
       it1 != result1.end();
       ++it1, ++it2)
   {
-    LOG("at position " << static_cast<unsigned>(it1 - result1.begin()) <<
+    DBGLOG(DBG,"at position " << static_cast<unsigned>(it1 - result1.begin()) <<
         ": checking " << *it1 << " vs " << *it2);
     if( *it1 != *it2 )
     {
@@ -112,9 +114,9 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
           return false;
         }
       }
-      LOG("after propagation of difference (look only after current position!):");
-      LOG("result1 tuple " << printvector(result1));
-      LOG("result2 tuple " << printvector(result2));
+      DBGLOG(DBG,"after propagation of difference (look only after current position!):");
+      DBGLOG(DBG,"result1 tuple " << printvector(result1));
+      DBGLOG(DBG,"result2 tuple " << printvector(result2));
     }
   }
   return true;
@@ -138,19 +140,19 @@ std::ostream& ModuleAtom::print(std::ostream& o) const
 
 void ExternalAtom::updatePredicateInputMask() const
 {
-  LOG_SCOPE("uPIM",false);
+  DBGLOG_VSCOPE(DBG,"uPIM",this,true);
 
   // lock ptr
   PluginAtomPtr pa(pluginAtom);
   RegistryPtr registry = pa->getRegistry();
 
-  LOG("= updatePredicateInputMask for predicate " <<
+  DBGLOG(DBG,"= updatePredicateInputMask for predicate " <<
       pa->getPredicate() << " = " << predicate);
 
   // ensure we have some mask
   if( predicateInputMask == 0 )
   {
-    LOG("allocating new interpretation");
+    DBGLOG(DBG,"allocating new interpretation");
     predicateInputMask.reset(new Interpretation(registry));
   }
   assert(predicateInputMask != 0);
@@ -162,7 +164,7 @@ void ExternalAtom::updatePredicateInputMask() const
   boost::tie(it_begin, it_end) = registry->ogatoms.getAllByAddress();
 
   // check if we have unknown atoms
-  LOG("already inspected ogatoms with address < " << predicateInputMaskKnownOGAtoms <<
+  DBGLOG(DBG,"already inspected ogatoms with address < " << predicateInputMaskKnownOGAtoms <<
       ", iterator range has size " << (it_end - it_begin));
   if( (it_end - it_begin) == predicateInputMaskKnownOGAtoms )
     return;
@@ -174,7 +176,7 @@ void ExternalAtom::updatePredicateInputMask() const
   it += predicateInputMaskKnownOGAtoms;
 
   unsigned missingBits = it_end - it;
-  LOG("need to inspect " << missingBits << " missing bits");
+  DBGLOG(DBG,"need to inspect " << missingBits << " missing bits");
 
   // check all new ogatoms till the end
   #ifndef NDEBUG
@@ -189,14 +191,14 @@ void ExternalAtom::updatePredicateInputMask() const
       printer.print(id);
       s << " ";
     }
-    LOG(s.str());
+    DBGLOG(DBG,s.str());
   }
   #endif
   assert(predicateInputMaskKnownOGAtoms == (it - it_begin));
   for(;it != it_end; ++it)
   {
     const OrdinaryAtom& oatom = *it;
-    //LOG("checking " << oatom.tuple.front());
+    //DBGLOG(DBG,"checking " << oatom.tuple.front());
     IDAddress addr = oatom.tuple.front().address;
     if( predicateInputPredicates.find(addr)
         != predicateInputPredicates.end() )
@@ -204,7 +206,7 @@ void ExternalAtom::updatePredicateInputMask() const
       bits.set(it - it_begin);
     }
   }
-  LOG("updatePredicateInputMask created new set of relevant ogatoms: " << *predicateInputMask);
+  DBGLOG(DBG,"updatePredicateInputMask created new set of relevant ogatoms: " << *predicateInputMask);
 }
 
 DLVHEX_NAMESPACE_END

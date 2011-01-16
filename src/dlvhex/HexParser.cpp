@@ -44,12 +44,12 @@ HexParser::HexParser(ProgramCtx& ctx):
   ctx(ctx)
 {
   // prepare ctx: we need an edb and a registry
-  assert(ctx.registry != 0);
+  assert(!!ctx.registry());
 /*
   if( ctx.edb == 0 )
   {
     // create empty interpretation using this context's registry
-    ctx.edb.reset(new Interpretation(ctx.registry));
+    ctx.edb.reset(new Interpretation(ctx.registry()));
   }
 */
 }
@@ -92,6 +92,8 @@ HexParser::parse(std::istream& is) throw (SyntaxError)
   Converter converter(ctx);
   converter.convertPTToAST(*info.trees.begin());
 }
+
+#warning we should do one function parse(InputProviderPtr)
 
 // parse from file into ctx, using registry in ctx
 void

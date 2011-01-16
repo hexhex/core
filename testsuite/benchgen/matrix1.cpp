@@ -19,6 +19,7 @@
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <sstream>
 #include <iostream>
@@ -31,6 +32,8 @@
 #include <sys/time.h>
 
 namespace po = boost::program_options;
+
+const Logger::Levels DBG = 0x2;
 
 struct Config
 {
@@ -189,7 +192,7 @@ int main(int ac,char** av)
   {
     for(unsigned strat = 0; strat < config.s; ++strat)
     {
-      LOG("guesses for cluster[stratum " << strat << " in tower " << tow << "]");
+      LOG(DBG,"guesses for cluster[stratum " << strat << " in tower " << tow << "]");
       StringVector guessSyms(symbols);
       randomizeRange(random, guessSyms);
       for(unsigned g = 0; g < config.g; ++g)
@@ -198,7 +201,7 @@ int main(int ac,char** av)
         o << in(tow,strat,guessSyms[2*g+1]) << " :- not " << in(tow,strat,guessSyms[2*g]) << "." << std::endl;
       }
 
-      LOG("constraints for cluster[stratum " << strat << " in tower " << tow << "]");
+      LOG(DBG,"constraints for cluster[stratum " << strat << " in tower " << tow << "]");
       // choose c distinct constrints
       // (without distinct we may not kill enough,
       // this way we have more fine-grained control over the number of models)
@@ -252,7 +255,7 @@ int main(int ac,char** av)
     for(unsigned strat = 1; strat < config.s; ++strat)
     {
       // above
-      LOG("above connections for cluster[stratum " << strat << " in tower " << tow << "]");
+      LOG(DBG,"above connections for cluster[stratum " << strat << " in tower " << tow << "]");
       for(unsigned u = 0; u < config.ea; ++u)
       {
         std::string naf1;
@@ -269,7 +272,7 @@ int main(int ac,char** av)
       }
 
       // sideways
-      LOG("sideways connections for cluster[stratum " << strat << " in tower " << tow << "]");
+      LOG(DBG,"sideways connections for cluster[stratum " << strat << " in tower " << tow << "]");
       for(unsigned u = 0; u < config.es; ++u)
       {
         unsigned tower1 = tow;

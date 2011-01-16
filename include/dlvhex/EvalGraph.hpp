@@ -33,6 +33,7 @@
 
 //TODO this is required only for ostream_printable, we should make this independent from logger
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <cassert>
 

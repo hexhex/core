@@ -34,6 +34,8 @@
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
@@ -54,13 +56,13 @@
 #include <cstdlib>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(*ctx.registry); \
-	RawPrinter printer(std::cerr, ctx.registry); \
+  LOG(INFO,*ctx.registry()); \
+	RawPrinter printer(std::cerr, ctx.registry()); \
 	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG("idb"); \
+	LOG(INFO,"idb"); \
 	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
-	LOG("idb end");
+	LOG(INFO,"idb end");
 
 DLVHEX_NAMESPACE_USE
 
@@ -86,18 +88,18 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
       // create heuristic, which sends commands to egbuilder
       EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
       heuristicOldDlvhex.build();
-      LOG("building eval graph finished");
+      LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
       {
         const char* fnamev = "testEvalEndToEndExt1Verbose.dot";
-        LOG("dumping verbose graph to " << fnamev);
+        LOG(INFO,"dumping verbose graph to " << fnamev);
         std::ofstream filev(fnamev);
         compgraph.writeGraphViz(filev, true);
         makeGraphVizPdf(fnamev);
 
         const char* fnamet = "testEvalEndToEndExt1Terse.dot";
-        LOG("dumping terse graph to " << fnamet);
+        LOG(INFO,"dumping terse graph to " << fnamet);
         std::ofstream filet(fnamet);
         compgraph.writeGraphViz(filet, false);
         makeGraphVizPdf(fnamet);
@@ -115,20 +117,20 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   // setup final unit
   {
     BOOST_TEST_MESSAGE("adding ufinal");
-    LOG("ufinal = " << ufinal);
+    LOG(INFO,"ufinal = " << ufinal);
     ufinal = eg.addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
 
     FinalEvalGraph::EvalUnitIterator it, itend;
     boost::tie(it, itend) = eg.getEvalUnits();
     for(; it != itend && *it != ufinal; ++it)
     {
-      LOG("adding dependency from ufinal to unit " << *it << " join order " << *it);
+      LOG(INFO,"adding dependency from ufinal to unit " << *it << " join order " << *it);
       // we can do this because we know that eval units (= vertices of a vecS adjacency list) are unsigned integers
       eg.addDependency(ufinal, *it, FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
     }
   }
 
-  LOG("initial eval/model graph:");
+  LOG(INFO,"initial eval/model graph:");
   omb.printEvalGraphModelGraph(std::cerr);
 
   // evaluate
@@ -137,7 +139,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   BOOST_REQUIRE(!!m1);
   InterpretationConstPtr int1 = omb.getModelGraph().propsOf(m1.get()).interpretation;
   BOOST_REQUIRE(int1 != 0);
-  LOG("model #1 is " << *int1);
+  LOG(INFO,"model #1 is " << *int1);
   omb.printEvalGraphModelGraph(std::cerr);
 
   BOOST_MESSAGE("requesting model #2");

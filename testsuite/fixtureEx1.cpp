@@ -34,7 +34,7 @@
 
 EvalGraphEx1Fixture::EvalGraphEx1Fixture()
 {
-  LOG_SCOPE("EvalGraphEx1Fixture", true);
+  LOG_SCOPE(INFO,"EvalGraphEx1Fixture", true);
   typedef TestEvalUnitPropertyBase UnitCfg;
   typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
 

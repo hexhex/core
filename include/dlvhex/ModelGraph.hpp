@@ -24,6 +24,7 @@
 
 #include "EvalGraph.hpp"
 #include "Logger.hpp"
+#include "Printhelpers.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -182,11 +183,11 @@ public:
     boost::shared_ptr< std::vector<ModelList> > models;
   public:
     EvalUnitModels(): models(new std::vector<ModelList>(4, ModelList()))
-      { LOG("EvalUnitModels()@" << this); }
+      { DBGLOG(DBG, "EvalUnitModels()@" << this); }
     EvalUnitModels(const EvalUnitModels& eum): models(eum.models)
-      { LOG("EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
+      { DBGLOG(DBG, "EvalUnitModels(const EvalUnitModels&)@" << this << " from " << &eum); }
 		~EvalUnitModels()
-      { LOG("~EvalUnitModels()@" << this); }
+      { DBGLOG(DBG, "~EvalUnitModels()@" << this); }
     inline ModelList& getModels(ModelType t)
       { assert(0 <= t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
     inline const ModelList& getModels(ModelType t) const
@@ -354,10 +355,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   typedef typename EvalGraphT::PredecessorIterator PredecessorIterator;
   typedef typename EvalGraphT::EvalUnitDepPropertyBundle EvalUnitDepPropertyBundle;
   typedef typename EvalGraphT::EvalUnitPropertyBundle EvalUnitPropertyBundle;
-  LOG_METHOD("MG::addModel", this);
+  LOG_VSCOPE(MODELB,"MG::addModel",this,true);
 
   #ifndef NDEBUG
-  LOG("running debug checks");
+  DBGLOG(DBG, "running debug checks");
   switch(type)
   {
   case MT_IN:
@@ -465,7 +466,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   prop.location = location;
   prop.type = type;
   Model m = boost::add_vertex(prop, mg);
-  LOG("add_vertex returned " << m);
+  LOG(MODELB, "add_vertex returned " << m);
 
   // add model dependencies
   for(unsigned i = 0; i < deps.size(); ++i)
@@ -488,7 +489,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
   }
 
   // update modelsAt property map (models at each eval unit are registered there)
-  LOG("updating mau");
+  LOG(MODELB, "updating mau");
   mau[location].getModels(type).push_back(m);
 
   return m;
@@ -509,8 +510,8 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
 {
   const unsigned predecessors = mm.size();
 
-  LOG_SCOPE("gSI", false);
-  LOG("=getSuccessorIntersection(" << location << "," << predecessors << ")");
+  DBGLOG_SCOPE(DBG, "gSI", false);
+  DBGLOG(DBG, "=getSuccessorIntersection(" << location << "," << predecessors << ")");
 
   #ifndef NDEBUG
   BOOST_FOREACH(Model m, mm)
@@ -529,21 +530,21 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   // shortcut if only one dependency
   if( predecessors == 1 )
   {
-    LOG("one-dependency shortcut: simply finding corresponding model");
+    DBGLOG(DBG, "one-dependency shortcut: simply finding corresponding model");
     typename ModelPropertyBundle::SuccessorModelMap::const_iterator itsucc =
       propsOf(mm.front()).successors.find(location);
     if( itsucc != propsOf(mm.front()).successors.end() )
     {
       // found successor set -> good (take first, which should be the only one)
       const std::set<Model>& succs = itsucc->second;
-      LOG("found successor (" << succs.size() << ")");
+      DBGLOG(DBG, "found successor (" << succs.size() << ")");
       assert(succs.size() == 1);
       return *succs.begin();
     }
     else
     {
       // did not find successor set
-      LOG("no successors");
+      DBGLOG(DBG, "no successors");
       return boost::none;
     }
   }
@@ -565,19 +566,19 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       iters.push_back(succs.begin());
       ends.push_back(succs.end());
       #ifndef NDEBUG
-      LOG("model " << m << " at cursor index " <<
+      DBGLOG(DBG, "model " << m << " at cursor index " <<
           static_cast<unsigned>(iters.size()-1) << " has successors:");
-      LOG_INDENT();
+      DBGLOG_INDENT(DBG);
       for(SuccIter sit = succs.begin(); sit != succs.end(); ++sit)
       {
-        LOG(*sit);
+        DBGLOG(DBG, *sit);
       }
       #endif
     }
     else
     {
       // if one dependency has no successors, we can find no join
-      LOG("model " << m << " at cursor index " <<
+      DBGLOG(DBG, "model " << m << " at cursor index " <<
           static_cast<unsigned>(iters.size()) << " has no successors -> failing");
       return boost::none;
     }
@@ -601,17 +602,17 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   do
   {
     #ifndef NDEBUG
-    LOG("at loop begin with cursor at " << at << ", models:");
+    DBGLOG(DBG, "at loop begin with cursor at " << at << ", models:");
     for(unsigned u = 0; u < predecessors; ++u)
     {
-      LOG("  iterator " << u << " pointing to model " << *iters[u]);
+      DBGLOG(DBG, "  iterator " << u << " pointing to model " << *iters[u]);
     }
     #endif
     // success condition
     if( at == (predecessors-1) )
     {
       Model m = *iters[0];
-      LOG("found common successor model " << m << " -> returning");
+      DBGLOG(DBG, "found common successor model " << m << " -> returning");
       return m;
     }
 
@@ -623,21 +624,21 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       iters[at+1]++;
       if( iters[at+1] == ends[at+1] )
       {
-        LOG("no suitable model at " << at << " -> returning none");
+        DBGLOG(DBG, "no suitable model at " << at << " -> returning none");
         return boost::none;
       }
-      LOG("advancing " << (at+1) << " to model " << *iters[at+1]);
+      DBGLOG(DBG, "advancing " << (at+1) << " to model " << *iters[at+1]);
     }
 
     // check if same or greater
     if( *iters[at+1] == *iters[at] )
     {
-      LOG("model at " << (at+1) << " equal to model at " << at << " -> next position");
+      DBGLOG(DBG, "model at " << (at+1) << " equal to model at " << at << " -> next position");
       at++;
     }
     else
     {
-      LOG("model at " << (at+1) << " bigger than model at " << at << " -> backtracking");
+      DBGLOG(DBG, "model at " << (at+1) << " bigger than model at " << at << " -> backtracking");
       for(unsigned u = 0; u <= at; ++u)
       {
         while( *iters[u] < *iters[at+1] )
@@ -645,10 +646,10 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
           iters[u]++;
           if( iters[u] == ends[u] )
           {
-            LOG("no suitable model at " << u << " -> returning none");
+            DBGLOG(DBG, "no suitable model at " << u << " -> returning none");
             return boost::none;
           }
-          LOG("advancing " << (u) << " to model " << *iters[u]);
+          DBGLOG(DBG, "advancing " << (u) << " to model " << *iters[u]);
         }
       }
       // restart loop

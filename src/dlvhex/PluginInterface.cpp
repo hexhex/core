@@ -35,6 +35,7 @@
 
 #define DLVHEX_BENCHMARK
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/ID.hpp"
@@ -289,6 +290,19 @@ ID PluginAtom::getReplacementPredicateID()
   }
   assert(replacementPredicateID != ID_FAIL);
   return replacementPredicateID;
+}
+
+// call printUsage for each loaded plugin
+void PluginInterface::printUsage(std::ostream& o) const
+{
+  // don't fail if no usage message has been defined, simply do not give one
+}
+
+// call processOptions for each loaded plugin
+// (this is supposed to remove "recognized" options from pluginOptions)
+void PluginInterface::processOptions(std::list<const char*>& pluginOptions)
+{
+  // don't fail if no option processing has been defined, simply do not process
 }
 
 DLVHEX_NAMESPACE_END

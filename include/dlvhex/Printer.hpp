@@ -23,57 +23,49 @@
 
 
 /**
- * @file Repository.cpp
- * @author Roman Schindlauer
- * @date Tue Mar  7 17:06:12 CET 2006
+ * @file Printer.hpp
+ * @author Peter Schueller
+ * @date
  *
- * @brief Singleton class for storing all kinds of objects created from the
- * input program.
- *
- *
+ * @brief Printer classes for printing objects stored in registry given registry and ID.
  */
 
+#ifndef PRINTER_HPP_INCLUDED_14012011
+#define PRINTER_HPP_INCLUDED_14012011
 
-#include "dlvhex/Repository.h"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/ID.hpp"
+
+#include <vector>
+#include <string>
+#include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
 
-// virtual dtor
-ProgramObject::~ProgramObject()
-{ }
-
-//
-// initialize static variable:
-//
-Repository* Repository::_instance = 0;
-
-
-Repository::~Repository()
+class Printer
 {
-}
+protected:
+  std::ostream& out;
+  RegistryPtr registry;
 
+public:
+  Printer(std::ostream& out, RegistryPtr registry):
+    out(out), registry(registry) {}
+  virtual ~Printer() {}
+  void printmany(const std::vector<ID>& ids, const std::string& separator);
+  virtual void print(ID id) = 0;
+};
 
-Repository*
-Repository::Instance()
+class RawPrinter:
+  public Printer
 {
-    if (_instance == 0)
-    {
-        _instance = new Repository;
-    }
-
-    return _instance;
-}
-
-
-void
-Repository::insert(ProgramObjectPtr po)
-{
-    objects.push_back(po);
-}
-
+public:
+  RawPrinter(std::ostream& out, RegistryPtr registry):
+    Printer(out, registry) {}
+  virtual void print(ID id);
+};
 
 DLVHEX_NAMESPACE_END
 
-// Local Variables:
-// mode: C++
-// End:
+#endif // PRINTER_HPP_INCLUDED_14012011

@@ -36,28 +36,28 @@ namespace CAUAlgorithms
 void logAPM(
     const AncestryPropertyMap& apm)
 {
-  LOG_SCOPE("apm", false);
-  LOG("logging AncestryPropertyMap:");
+  DBGLOG_SCOPE(DBG,"apm",false);
+  DBGLOG(DBG,"logging AncestryPropertyMap:");
   std::vector<Ancestry>::const_iterator it;
   unsigned u = 0;
   for(it = apm.storage_begin();
       it != apm.storage_end(); ++it, ++u)
   {
     const Ancestry& anc = *it;
-    LOG("unit " << u << ": " << printset(anc));
+    DBGLOG(DBG,"unit " << u << ": " << printset(anc));
   }
 }
 
 void logJRPM(const JoinRelevancePropertyMap& jr)
 {
-  LOG_SCOPE("jrpm", false);
-  LOG("logging JoinRelevancePropertyMap:");
+  DBGLOG_SCOPE(DBG,"jrpm",false);
+  DBGLOG(DBG,"logging JoinRelevancePropertyMap:");
   std::vector<bool>::const_iterator it;
   unsigned u = 0;
   for(it = jr.storage_begin();
       it != jr.storage_end(); ++it, ++u)
   {
-    LOG("unit " << u << ": " << ((*it == true) ?
+    DBGLOG(DBG,"unit " << u << ": " << ((*it == true) ?
         std::string("relevant") : std::string("irrelevant")) );
   }
 }

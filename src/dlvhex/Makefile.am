@@ -4,6 +4,8 @@ AM_CPPFLAGS = \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
     $(BOOST_CPPFLAGS) \
+    $(BM_CPPFLAGS) \
+    $(DLVHEX_CFLAGS) \
     @INCLTDL@ \
     @LIBCURL_CPPFLAGS@
 
@@ -16,8 +18,10 @@ lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = \
-    dlvhex.cpp \
-    RuleMLOutputBuilder.cpp 
+    Configuration.cpp \
+    dlvhex.cpp
+
+#    RuleMLOutputBuilder.cpp 
 
 #
 # -static: statically link libdlvhexbase
@@ -34,48 +38,36 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
     AggregateAtom.cpp \
+    AnswerSet.cpp \
     AtomNode.cpp \
     AtomSet.cpp \
     Benchmarking.cpp \
-    BoostComponentFinder.cpp \
-    Component.cpp \
-    ComponentFinder.cpp \
-    Dependency.cpp \
     DependencyGraph.cpp \
-    EvaluateExtatom.cpp \
-    ExternalAtom.cpp \
     Error.cpp \
-    FixpointModelGenerator.cpp \
-    globals.cpp \
-    GraphBuilder.cpp \
-    GraphProcessor.cpp \
-    GuessCheckModelGenerator.cpp \
+    HexGrammarPTToASTConverter.cpp \
+    HexParser.cpp \
+    InputProvider.cpp \
     Literal.cpp \
-    NodeGraph.cpp \
-    OrdinaryModelGenerator.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
-    PrintVisitor.cpp \
+    Printer.cpp \
     Program.cpp \
     ProgramCtx.cpp \
-    Repository.cpp \
     Registry.cpp \
     Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    ResultContainer.cpp \
-    TextOutputBuilder.cpp \
-    HexGrammarPTToASTConverter.cpp \
-    HexParserDriver.cpp \
-    AnswerSet.cpp \
     URLBuf.cpp
+
+    #ResultContainer.cpp
+    #TextOutputBuilder.cpp
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
-    DLVresultParserDriver.cpp \
-    ASPSolverManager.cpp \
     ASPSolver.cpp \
+    ASPSolverManager.cpp \
     DLVProcess.cpp \
+    DLVresultParserDriver.cpp \
     ProcessBuf.cpp
 
 

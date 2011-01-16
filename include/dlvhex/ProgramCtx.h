@@ -36,23 +36,18 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/TermTable.hpp"
-#include "dlvhex/PredicateTable.hpp"
-#include "dlvhex/OrdinaryAtomTable.hpp"
-#include "dlvhex/BuiltinAtomTable.hpp"
-#include "dlvhex/AggregateAtomTable.hpp"
-#include "dlvhex/ExternalAtomTable.hpp"
-#include "dlvhex/ModuleAtomTable.hpp"
-#include "dlvhex/RuleTable.hpp"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/Configuration.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ModuleTable.hpp"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/InputProvider.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
 
 #include <boost/shared_ptr.hpp>
-#include <boost/bimap/bimap.hpp>
-#include <boost/bimap/set_of.hpp>
-#include <boost/bind.hpp>
+//#include <boost/bimap/bimap.hpp>
+//#include <boost/bimap/set_of.hpp>
+//#include <boost/bind.hpp>
 
 #include <vector>
 #include <string>
@@ -61,97 +56,16 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declarations
-class PluginContainer;
-class PluginInterface;
+// class PluginContainer;
+// class Configuration;
 class Program;
 class AtomSet;
-class NodeGraph;
-class DependencyGraph;
-class Process;
-class ResultContainer;
-class OutputBuilder;
+
+//class Process;
+//class ResultContainer;
+//class OutputBuilder;
 class State;
-
-typedef boost::bimaps::bimap<
-  boost::bimaps::set_of<std::string>,
-  boost::bimaps::set_of<std::string> > NamespaceTable;
-
-/**
- * @brief Registry for entities used in programs as IDs (collection of symbol tables)
- */
-struct Registry:
-  public ostream_printable<Registry>
-{
-  TermTable terms;
-  PredicateTable preds;
-  // ordinary ground atoms
-  OrdinaryAtomTable ogatoms;
-  // ordinary nonground atoms
-  OrdinaryAtomTable onatoms;
-  BuiltinAtomTable batoms;
-  AggregateAtomTable aatoms;
-  ExternalAtomTable eatoms;
-  ModuleAtomTable matoms;
-  RuleTable rules;
-  NamespaceTable namespaces;
-  ModuleTable moduleTable;
-
-	#if 0
-	
-	// this can be done later, for now we can use hashtables and forget this more efficient method
-
-	//
-	// "address range" concept
-	//
-	// from IDKind we obtain integers starting at zero,
-	// for each distinct table a separate integer
-	// this way we can create efficient mappings from IDs of various kinds to use mapKindToAddressRange() method
-	// e.g., for looking up vertices in dependency graph by ID
-	//   -> first lookup O(1) by IDKind, then lookup vertex in O(1) by address in vector
-	//   -> vector storage with no useless storage allocation (one vector for each address range)
-	enum AddressRange
-	{
-		ARTERM = 0,
-		AROATOM,
-		ARONATOM,
-		ARBATOM,
-		ARAATOM,
-		AREATOM,
-		ARRULE,
-		AR_COUNT // this must stay the last entry
-	};
-	static inline AddressRange mapKindToAddressRange(IDKind kind);
-	static inline AddressRange maxAddressRange() { return AR_COUNT; }
-	#endif
-
-  virtual std::ostream& print(std::ostream& o) const;
-  // lookup ground or nonground ordinary atoms (ID specifies this)
-  const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
-};
-
-typedef boost::shared_ptr<Registry> RegistryPtr;
-
-class Printer
-{
-protected:
-  std::ostream& out;
-  RegistryPtr registry;
-
-public:
-  Printer(std::ostream& out, RegistryPtr registry):
-    out(out), registry(registry) {}
-  virtual ~Printer() {}
-  void printmany(const std::vector<ID>& ids, const std::string& separator);
-  virtual void print(ID id) = 0;
-};
-
-class RawPrinter:
-  public Printer
-{
-public:
-  RawPrinter(std::ostream& out, RegistryPtr registry): Printer(out, registry) {}
-  virtual void print(ID id);
-};
+typedef boost::shared_ptr<State> StatePtr;
 
 /**
  * @brief Program context class.
@@ -161,10 +75,24 @@ public:
 class DLVHEX_EXPORT ProgramCtx
 {
 public:
-  // symbol storage of this program context
-  // (this is a shared ptr because we might want
-  // to have multiple program contexts sharing the same registry)
-  RegistryPtr registry;
+	// previously globals
+	Configuration config;
+
+  RegistryPtr registry() const
+    { return _registry; }
+	PluginContainerPtr pluginContainer() const
+    { return _pluginContainer; }
+
+  // must be setup together
+  // pluginContainer must be associated to registry
+  void setupRegistryPluginContainer(
+      RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr());
+
+  ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
+
+	// program input provider (if a converter is used, the converter consumes this
+	// input and replaces it by another input)
+	InputProviderPtr inputProvider;
 
   // ModuleHeaderTable mHT;
 
@@ -183,38 +111,25 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
-  // TODO: add visibility policy (as in clasp)
 
-  // TODO: selected solver software
+  // TODO: add visibility policy (as in clasp)
 
   // TODO: loaded external atoms
 
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
-  std::vector<std::string>* options;
+  DependencyGraphPtr depgraph;
+  ComponentGraphPtr compgraph;
+  FinalEvalGraphPtr evalgraph;
+  // ModelGraphPtr modelgraph;
+  // ModelBuilderPtr modelbuilder;
+  // ModelCallbackPtr modelcallback;
+  // FinalizeCallbackPtr finalizecallback;
 
-  std::vector<std::string> inputsources;
+  StatePtr state;
 
-  PluginContainer* container;
-  std::vector<PluginInterface*>* plugins;
-
-  std::istream* programstream;
-
-
-//  NodeGraph* nodegraph;
-  DependencyGraph* depgraph;
-
-  ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
-
-  ResultContainer* result;
-
-  OutputBuilder* outputbuilder;
-
-  boost::shared_ptr<State> state;
-
-
- protected:
-  friend class State;
+// protected:
+//  friend class State;
 
   void
   changeState(const boost::shared_ptr<State>&);
@@ -225,6 +140,8 @@ public:
 
   virtual
   ~ProgramCtx();
+
+#if 0  
 
   void
   setPluginContainer(PluginContainer*);
@@ -239,25 +156,7 @@ public:
   std::vector<PluginInterface*>*
   getPlugins() const;
 
-  void
-  addOption(const std::string&);
 
-  std::vector<std::string>*
-  getOptions() const;
-
-  void
-  addInputSource(const std::string&);
-
-  const std::vector<std::string>&
-  getInputSources() const;
-
-
-  // the program's input stream
-  std::istream&
-  getInput();
-
-
-	#if 0
   Program*
   getIDB() const;
 
@@ -276,7 +175,7 @@ public:
 
   void
   setDependencyGraph(DependencyGraph*);
-
+	#endif
 
   ASPSolverManager::SoftwareConfigurationPtr
   getASPSoftware() const;
@@ -284,7 +183,7 @@ public:
   void
   setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr);
 
-
+	#if 0
   ResultContainer*
   getResultContainer() const;
 
@@ -304,45 +203,28 @@ public:
   // state processing
   //
 
-  void
-  openPlugins();
+  void showPlugins();
+  void convert();
+  void parse();
+  void rewriteEDBIDB();
+	void optimizeEDBDependencyGraph();
+	void createComponentGraph();
+	void createEvalGraph();
+  void configureModelBuilder();
+  void createDependencyGraph();
+  void safetyCheck();
+  void strongSafetyCheck();
+  void evaluate();
+  void postProcess();
 
-  void
-  convert();
+protected:
+  // symbol storage of this program context
+  // (this is a shared ptr because we might want
+  // to have multiple program contexts sharing the same registry)
+  RegistryPtr _registry;
 
-  void
-  parse();
-
-  void
-  rewrite();
-
-  void
-  createNodeGraph();
-
-  void
-  optimize();
-
-  void
-  createDependencyGraph();
-
-  void
-  safetyCheck();
-
-  void
-  strongSafetyCheck();
-
-  void
-  setupProgramCtx();
-
-  void
-  evaluate();
-
-  void
-  postProcess();
-
-  void
-  output();
-
+	// plugin container (this must be initialized with above registry!)
+	PluginContainerPtr _pluginContainer;
 };
 
 DLVHEX_NAMESPACE_END

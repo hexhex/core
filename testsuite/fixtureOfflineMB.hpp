@@ -55,25 +55,25 @@ struct OfflineModelBuilderTFixture:
     EvalGraphBaseFixtureT(),
     omb(Base::eg)
   {
-    LOG_SCOPE("OfflineModelBuilderTFixture<...>", true);
+    LOG_SCOPE(INFO,"OfflineModelBuilderTFixture<...>", true);
     typedef TestEvalUnitPropertyBase UnitCfg;
     typedef TestEvalGraph::EvalUnitDepPropertyBundle UnitDepCfg;
     TestEvalGraph& eg = Base::eg;
 
     // setup final unit
     BOOST_TEST_MESSAGE("adding ufinal");
-    LOG("ufinal = " << ufinal);
+    LOG(INFO,"ufinal = " << ufinal);
     ufinal = eg.addUnit(UnitCfg());
 
     TestEvalGraph::EvalUnitIterator it, itend;
     boost::tie(it, itend) = eg.getEvalUnits();
     for(; it != itend && *it != ufinal; ++it)
     {
-      LOG("setting up TestModelGeneratorFactory on unit " << *it);
+      LOG(INFO,"setting up TestModelGeneratorFactory on unit " << *it);
       eg.propsOf(*it).mgf.reset( 
         new TestModelGeneratorFactory(eg.propsOf(*it).ctx));
 
-      LOG("adding dependency from ufinal to unit " << *it << " join order " << *it);
+      LOG(INFO,"adding dependency from ufinal to unit " << *it << " join order " << *it);
       // we can do this because we know that eval units (= vertices of a vecS adjacency list) are unsigned integers
       eg.addDependency(ufinal, *it, UnitDepCfg(*it));
     }

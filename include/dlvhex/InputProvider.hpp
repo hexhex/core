@@ -21,53 +21,51 @@
  * 02110-1301 USA.
  */
 
+
 /**
- * @file Registry.cpp
+ * @file InputProvider.hpp
  * @author Peter Schueller
- * @date 
+ * @date
  *
- * @brief Registry for program objects, addressed by IDs, organized in individual tables.
+ * @brief Input stream provider (collects input sources)
  */
 
-#include "dlvhex/Registry.hpp"
+#ifndef INPUT_PROVIDER_HPP_INCLUDED_14012011
+#define INPUT_PROVIDER_HPP_INCLUDED_14012011
+
+#include "dlvhex/PlatformDefinitions.h"
+
+#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include <vector>
+#include <string>
+#include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
 
-std::ostream& Registry::print(std::ostream& o) const
+class InputProvider
 {
-  return
-    o <<
-      "REGISTRY BEGIN" << std::endl <<
-      "terms:" << std::endl <<
-      terms <<
-      "preds:" << std::endl <<
-      preds <<
-      "ogatoms:" << std::endl <<
-      ogatoms <<
-      "onatoms:" << std::endl <<
-      onatoms <<
-      "batoms:" << std::endl <<
-      batoms <<
-      "aatoms:" << std::endl <<
-      aatoms <<
-      "eatoms:" << std::endl <<
-      eatoms <<
-      "rules:" << std::endl <<
-      rules <<
-      "module table:" << std::endl <<
-      moduleTable <<
-      "REGISTRY END" << std::endl;
-}
+public:
+  InputProvider();
+  ~InputProvider();
 
-// lookup ground or nonground ordinary atoms (ID specifies this)
-const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
-{
-  assert(id.isOrdinaryAtom());
-  if( id.isOrdinaryGroundAtom() )
-    return ogatoms.getByID(id);
-  else
-    return onatoms.getByID(id);
-}
+	void addStreamInput(std::istream& i, const std::string& contentname);
+	void addStringInput(const std::string& content, const std::string& contentname);
+	void addFileInput(const std::string& filename);
+	void addURLInput(const std::string& url);
+
+	bool hasContent() const;
+	const std::vector<std::string>& contentNames() const;
+
+	std::istream& getAsStream();
+
+private:
+  class Impl;
+  boost::scoped_ptr<Impl> pimpl;
+};
+typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 
 DLVHEX_NAMESPACE_END
 
+#endif // INPUT_PROVIDER_HPP_INCLUDED_14012011

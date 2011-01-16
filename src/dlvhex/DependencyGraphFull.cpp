@@ -31,7 +31,8 @@
 
 #include "dlvhex/DependencyGraphFull.hpp"
 #include "dlvhex/Logger.hpp"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/PluginInterface.h"
 
@@ -76,8 +77,8 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 		const std::vector<ID>& idb)
 {
   // TODO: faster allocation of dep graph? use vecS?
-  LOG_SCOPE("cNaBD", false);
-  LOG("=createNodesAndBasicDependencies");
+  LOG_SCOPE(DBG,"cNaBD",true);
+  DBGLOG(DBG,"=createNodesAndBasicDependencies");
 
   const NodeIDIndex& idx = nm.get<IDTag>();
 
@@ -112,10 +113,8 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 
 	BOOST_FOREACH(ID id, idb)
 	{
-    std::ostringstream os;
-    os << "rule " << id;
-    LOG_SCOPE(os.str(), false);
-    LOG("adding rule " << id);
+    LOG_VSCOPE(DBG,"rule",id.address,false);
+    DBGLOG(DBG,"adding rule " << id);
 
 		// add node for each rule
 		assert(id.isRule());
@@ -133,7 +132,7 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 
 		BOOST_FOREACH(ID idat, rule.head)
 		{
-			LOG("adding head item " << idat);
+			DBGLOG(DBG,"adding head item " << idat);
 			assert(idat.isAtom());
 			NodeIDIndex::const_iterator it = idx.find(idat);
 			Node nat;
@@ -167,7 +166,7 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 			it2++;
 			for(; it2 != heads.end(); ++it2)
 			{
-        LOG("adding head/head dependency " << *it1 << " <-> " << *it2);
+        DBGLOG(DBG,"adding head/head dependency " << *it1 << " <-> " << *it2);
 
 				Dependency dep;
 				bool success;
@@ -206,7 +205,7 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 
 		BOOST_FOREACH(ID idlit, rule.body)
 		{
-      LOG("adding body literal " << idlit);
+      DBGLOG(DBG,"adding body literal " << idlit);
 
 			assert(idlit.isLiteral());
 			bool naf = idlit.isNaf();
@@ -245,8 +244,8 @@ void DependencyGraphFull::createNodesAndBasicDependencies(
 
 void DependencyGraphFull::createUnifyingDependencies()
 {
-  LOG_SCOPE("cUD", false);
-  LOG("=createUnifyingDependencies");
+  LOG_SCOPE(DBG,"cUD",true);
+  DBGLOG(DBG,"=createUnifyingDependencies");
 
 	DependencyInfo di_unifying;
 	di_unifying.positive = true;
@@ -265,9 +264,7 @@ void DependencyGraphFull::createUnifyingDependencies()
   NodeIDIndex::const_iterator it1;
   for(it1 = idx.begin(); it1 != idx.end(); ++it1)
   {
-    std::ostringstream os;
-    os << "it1:" << it1->id;
-    LOG_SCOPE(os.str(), false);
+    DBGLOG_VSCOPE(DBG,"it1",it1->id.address,false);
 
     if( it1->id.isRule() || it1->id.isAggregateAtom() || it1->id.isExternalAtom() )
       continue;
@@ -282,7 +279,7 @@ void DependencyGraphFull::createUnifyingDependencies()
     it2++;
     for(; it2 != idx.end(); ++it2)
     {
-      LOG("it2:" << it2->id);
+      DBGLOG(DBG,"it2:" << it2->id);
       if( it2->id.isRule() || it2->id.isAggregateAtom() || it2->id.isExternalAtom() )
         continue;
 
@@ -299,7 +296,7 @@ void DependencyGraphFull::createUnifyingDependencies()
 
       if( oa1.unifiesWith(oa2) )
       {
-        LOG("adding unifying dependency between " <<
+        DBGLOG(DBG,"adding unifying dependency between " <<
             oa1 << " with inHead=" << ni1.inHead << "/inBody=" << ni1.inBody << " and " <<
             oa2 << " with inHead=" << ni2.inHead << "/inBody=" << ni2.inBody);
 
@@ -363,8 +360,8 @@ void DependencyGraphFull::createExternalDependencies(
 // external predicate input dependencies
 void DependencyGraphFull::createExternalPredicateInputDependencies()
 {
-  LOG_SCOPE("cEPID", false);
-  LOG("=createExternalPredicateInputDependencies");
+  LOG_SCOPE(DBG,"cEPID",true);
+  DBGLOG(DBG,"=createExternalPredicateInputDependencies");
 
   const NodeIDIndex& idx = nm.get<IDTag>();
 
@@ -389,15 +386,11 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
     if( !itext->id.isAtom() || !itext->id.isExternalAtom() )
       continue;
 
-		#ifndef NDEBUG
-    std::ostringstream os;
-    os << "itext:" << itext->id.address;
-    LOG_SCOPE(os.str(), false);
-		LOG("=" << itext->id);
-		#endif
+    DBGLOG_VSCOPE(DBG,"itext",itext->id.address,false);
+		DBGLOG(DBG,"=" << itext->id);
 
     const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
-		LOG("checking external atom " << eatom);
+		DBGLOG(DBG,"checking external atom " << eatom);
 
 		// lock weak pointer
 		assert(!eatom.pluginAtom.expired());
@@ -417,10 +410,8 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 			ID idpred = eatom.inputs[at];
 
 			#ifndef NDEBUG
-			std::ostringstream os;
-			os << "at" << at;
-			LOG_SCOPE(os.str(), false);
-			LOG("= checking predicate input " << idpred << " at position " << at);
+			DBGLOG_VSCOPE(DBG,"at",at,false);
+			DBGLOG(DBG,"= checking predicate input " << idpred << " at position " << at);
 			#endif
 
 			// this input must be a constant term, nothing else allowed
@@ -430,7 +421,7 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 			Matching::const_iterator itm = matching.find(idpred);
 			if( itm == matching.end() )
 			{
-				LOG("calculating dependencies: finding all rule heads that use predicate " << idpred);
+				DBGLOG(DBG,"calculating dependencies: finding all rule heads that use predicate " << idpred);
 
 				// create empty node list in matching and set iterator to it
 				std::list<NodeMappingInfo>& nodelist = matching[idpred];
@@ -455,10 +446,8 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 
 					const OrdinaryAtom& oa = registry->lookupOrdinaryAtom(ithead->id);
 
-					std::ostringstream os;
-					os << "ithead:" << ithead->id.address;
-					LOG_SCOPE(os.str(), false);
-					LOG("= " << ithead->id << " = ordinary atom " << oa);
+					DBGLOG_VSCOPE(DBG,"ithead",ithead->id.address,false);
+					DBGLOG(DBG,"= " << ithead->id << " = ordinary atom " << oa);
 
 					assert(!oa.tuple.empty());
 					// if we have higher order, external dependencies are complicated
@@ -476,7 +465,7 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 			for(std::list<NodeMappingInfo>::const_iterator itl = itm->second.begin();
 					itl != itm->second.end(); ++itl)
 			{
-				LOG("storing external dependency " << itext->id << " -> " << itl->id);
+				DBGLOG(DBG,"storing external dependency " << itext->id << " -> " << itl->id);
 
 				Dependency dep;
 				bool success;
@@ -503,8 +492,8 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
 void DependencyGraphFull::createExternalConstantInputDependencies(
 		std::vector<ID>& createdAuxRules)
 {
-  LOG_SCOPE("cECID", false);
-  LOG("=createExternalConstantInputDependencies");
+  LOG_SCOPE(DBG,"cECID",true);
+  DBGLOG(DBG,"=createExternalConstantInputDependencies");
 
   const NodeIDIndex& idx = nm.get<IDTag>();
 
@@ -538,31 +527,23 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
     if( !itrule->id.isRule() || !itrule->id.doesRuleContainExtatoms() )
       continue;
 
-		#ifndef NDEBUG
-    std::ostringstream os;
-    os << "itrule:" << itrule->id.address;
-    LOG_SCOPE(os.str(), false);
-		LOG("=" << itrule->id);
-		#endif
+    DBGLOG_VSCOPE(DBG,"itrule",itrule->id.address,false);
+		DBGLOG(DBG,"=" << itrule->id);
 
     const Rule& rule = registry->rules.getByID(itrule->id);
-		LOG("found rule with external atoms: " << rule);
+		DBGLOG(DBG,"found rule with external atoms: " << rule);
 		Tuple::const_iterator itext;
 		for(itext = rule.body.begin(); itext != rule.body.end(); ++itext)
 		{
 			if( itext->isExternalAtom() )
 			{
-				#ifndef NDEBUG
-				std::ostringstream os;
-				os << "itext:" << itext->address;
-				LOG_SCOPE(os.str(), false);
-				LOG("=" << *itext);
-				#endif
+				DBGLOG_VSCOPE(DBG,"itext",itext->address,false);
+				DBGLOG(DBG,"=" << *itext);
 
 				// retrieve from registry
 				const ExternalAtom& eatom =
 					registry->eatoms.getByID(*itext);
-				LOG("processing external atom " << eatom);
+				DBGLOG(DBG,"processing external atom " << eatom);
 
 				// lock weak pointer
 				assert(!eatom.pluginAtom.expired());
@@ -579,7 +560,7 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 				// add negative dependency if nonmonotonic
 				if( !pluginAtom->isMonotonic() )
 				{
-					LOG("storing nonmonotonic dependency " << itrule->id << " -> " << *itext);
+					DBGLOG(DBG,"storing nonmonotonic dependency " << itrule->id << " -> " << *itext);
 
 					// find existing positive edge and update
 					Dependency dep;
@@ -604,7 +585,7 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 					if( (pluginAtom->getInputType(at) == PluginAtom::CONSTANT) &&
 							(eatom.inputs[at].isVariableTerm()) )
 					{
-						LOG("at index " << at << ": found constant input that is a variable: " << eatom.inputs[at]);
+						DBGLOG(DBG,"at index " << at << ": found constant input that is a variable: " << eatom.inputs[at]);
 						inputVariables.push_back(eatom.inputs[at]);
 
 						// find all other body atoms of that rule containing that variable
@@ -623,18 +604,18 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 
 							if( itat->isExternalAtom() )
 							{
-								LOG("checking if we depend on output list of external atom " << *itat);
+								DBGLOG(DBG,"checking if we depend on output list of external atom " << *itat);
 
 								const ExternalAtom& eatom =
 									registry->eatoms.getByID(*itat);
-								LOG("checking eatom " << eatom);
+								DBGLOG(DBG,"checking eatom " << eatom);
 
 								for(Tuple::const_iterator itvar = eatom.tuple.begin();
 										itvar != eatom.tuple.end(); ++itvar)
 								{
 									if( *itvar == eatom.inputs[at] )
 									{
-										LOG("adding body/body external dependency " << *itext << " <-> " << *itat);
+										DBGLOG(DBG,"adding body/body external dependency " << *itext << " <-> " << *itat);
 
 										assert(!itat->isNaf());
 										ID atomid = ID::atomFromLiteral(*itat);
@@ -653,18 +634,18 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 							}
 							else if( itat->isOrdinaryNongroundAtom() )
 							{
-								LOG("checking if we depend on ordinary nonground atom " << *itat);
+								DBGLOG(DBG,"checking if we depend on ordinary nonground atom " << *itat);
 
 								const OrdinaryAtom& oatom =
 									registry->onatoms.getByID(*itat);
-								LOG("checking oatom " << oatom);
+								DBGLOG(DBG,"checking oatom " << oatom);
 
 								for(Tuple::const_iterator itvar = oatom.tuple.begin();
 										itvar != oatom.tuple.end(); ++itvar)
 								{
 									if( *itvar == eatom.inputs[at] )
 									{
-										LOG("adding body/body external dependency " << *itext << " <-> " << *itat);
+										DBGLOG(DBG,"adding body/body external dependency " << *itext << " <-> " << *itat);
 
 										assert(!itat->isNaf());
 										ID atomid = ID::atomFromLiteral(*itat);

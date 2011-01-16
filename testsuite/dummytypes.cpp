@@ -38,11 +38,11 @@ TestModelGeneratorFactory::ModelGenerator::ModelGenerator(
   models(),
   mit(models.begin())
 {
-  LOG_METHOD("ModelGenerator()", this);
+  LOG_VSCOPE(INFO,"ModelGenerator()",this,true);
   const std::string& rules = factory.ctx.rules;
-  LOG("rules '" << rules << "'");
+  LOG(INFO,"rules '" << rules << "'");
   if( input )
-    LOG("input '" << *input << "'");
+    LOG(INFO,"input '" << *input << "'");
 
   // hardcode models of given programs with given inputs
   if( rules == "plan(a) v plan(b)." )
@@ -365,7 +365,7 @@ TestModelGeneratorFactory::ModelGenerator::ModelGenerator(
     throw std::runtime_error("not implemented!");
   }
 
-  LOG_INDENT();
+  LOG_INDENT(INFO);
   BOOST_FOREACH(TestInterpretation::Ptr intp, models)
-    LOG("model " << *intp);
+    LOG(INFO,"model " << *intp);
 }

@@ -30,12 +30,11 @@
  * @brief  Converter: parse tree from HexGrammar to HEX AST
  */
 
-#include "dlvhex/PlatformDefinitions.h"
-
 #include "dlvhex/HexGrammarPTToASTConverter.h"
-
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
-//#include "dlvhex/globals.h"
+#include "dlvhex/Printer.hpp"
+
 #include "dlvhex/SpiritDebugging.h"
 
 #include <boost/algorithm/string/trim.hpp>
@@ -67,8 +66,8 @@ void HexGrammarPTToASTConverter::convertPTToAST(
 	      // ctx.edbList.push_back(ctx.edb);
               // ctx.idbList.push_back(ctx.idb);	    
 	      Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
-	      int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
-	      LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+	      int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
+	      DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
             }
           doModuleHeader(*it);
           countModule++;
@@ -79,8 +78,8 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   // ctx.edbList.push_back(ctx.edb);
   // ctx.idbList.push_back(ctx.idb);
   Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
-  int address = ctx.registry->moduleTable.storeAndGetAddress(module);	
-  LOG("Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+  int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
+  DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
   // clean the idb and edb
   // ctx.idb.clear();
   // ctx.edb.reset(new Interpretation(ctx.registry));
@@ -124,12 +123,12 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   if( s == "_" )
   {
     // anonymous variable
-    ID id = ctx.registry->terms.getIDByString("_");
+    ID id = ctx.registry()->terms.getIDByString("_");
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE |
         ID::PROPERTY_VAR_ANONYMOUS, "_");
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry()->terms.storeAndGetID(term);
     }
     return id;
   }
@@ -146,25 +145,17 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
   {
     // string, variable, or constant term
     if( s[0] == '"' )
-      LOG("warning: we should expand the namespace of s='" << s << "' here!");
-    // check if this is predicate, therefore need to be namespaced by the module name
-
-    ID id;
-    id = ctx.registry->terms.getIDByString(s);
+      DBGLOG(DBG,"warning: we should expand the namespace of s='" << s << "' here!");
+    #warning namespaces should be implemented around here
+    ID id = ctx.registry()->terms.getIDByString(s);
     if( id == ID_FAIL )
     {
       Term term(ID::MAINKIND_TERM, s);
       if( s[0] == '"' || islower(s[0]) )
-      {
         term.kind |= ID::SUBKIND_TERM_CONSTANT;
-      } 
       else
-      {
         term.kind |= ID::SUBKIND_TERM_VARIABLE;
-      }
-      //LOG("[HexGrammarPTToASTConverter::createTerm_Helper] Got term.symbol = " << term.symbol);
-      //LOG("terms: " << ctx.registry->terms);
-      id = ctx.registry->terms.storeAndGetID(term);
+      id = ctx.registry()->terms.storeAndGetID(term);
     }
     return id;
   }
@@ -195,10 +186,10 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
 {
   // node is from "mod_header" rule
   assert((node.children.size() == 9)||(node.children.size() == 8));
-  LOG("Got module header: " << std::endl);
+  DBGLOG(DBG, "Got module header: " << std::endl);
   // retrieve module name
   std::string modName = createStringFromNode(node.children[2], HexGrammar::Ident);
-  LOG(" - Module name : '" << modName << "'");
+  DBGLOG(DBG, " - Module name : '" << modName << "'");
   //assert(mSC.announceModuleHeader(modName)==true);
   currentModuleName = modName;
 /*
@@ -209,10 +200,10 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
 */
   // expand edb and idb
   ctx.edbList.resize(ctx.edbList.size()+1);
-  ctx.edbList.back().reset(new Interpretation(ctx.registry));
+  ctx.edbList.back().reset(new Interpretation(ctx.registry()));
   ctx.idbList.resize(ctx.idbList.size()+1);
 
-  LOG(" - Module inputs : ");
+  DBGLOG(DBG, " - Module inputs : ");
   ctx.inputList.resize(ctx.inputList.size()+1);
   if (node.children.size() == 9) 
     {
@@ -225,17 +216,17 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
         node_t& predDecl = *it;
         predName = createStringFromNode(predDecl.children[0]);
         predArity = atoi(createStringFromNode(predDecl.children[2]).c_str());
-        LOG("'" << predName << "/" << predArity << "', ");
+        DBGLOG(DBG, "'" << predName << "/" << predArity << "', ");
         //mSC.announcePredInputModuleHeader(predName, predArity);
         // ctx.mHT.insertPredInputModuleHeader(predName, predArity);
 	Tuple& el = ctx.inputList.back();
 	el.push_back(createPredFromIdent(predDecl.children[0], predArity));
       }
-      LOG(std::endl);
+      DBGLOG(DBG, std::endl);
     } 
   else if (node.children.size() == 8) 
     {
-      LOG(" - no module input  ");
+      DBGLOG(DBG, " - no module input  ");
     }
 
   // ctx.idb.clear();
@@ -259,6 +250,8 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       //printSpiritPT(std::cerr, child, "maxint>>");
     }
     break;
+      #warning namespaces were here
+    #if 0
   case HexGrammar::Namespace:
     {
       std::string prefix = createStringFromNode(child.children[2]);
@@ -266,12 +259,13 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       std::string ns = createStringFromNode(child.children[4]);
       if( ns[0] == '"' ) ns = ns.substr(1, ns.length()-2);
       bool success;
-      success = (ctx.registry->namespaces.insert(
+      success = (ctx.registry()->namespaces.insert(
              NamespaceTable::value_type(ns, prefix) )).second;
       if( !success )
         throw SyntaxError("error adding namespace '"+ns+"'/'"+prefix+"'");
     }
     break;
+    #endif
   case HexGrammar::Rule:
     {
       //printSpiritPT(std::cerr, child, "rule>>");
@@ -288,11 +282,11 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // TODO: this case should not go here, but be made faster by already detecting it in the grammar
         ID id = *head.begin();
         if( !id.isOrdinaryGroundAtom() )
-          throw SyntaxError("fact '"+ctx.registry->ogatoms.getByID(id).text+"' not safe!");
+          throw SyntaxError("fact '"+ctx.registry()->ogatoms.getByID(id).text+"' not safe!");
 	
 	//ctx.edb->setFact(id.address);
 	ctx.edbList.back()->setFact(id.address);        
-        LOG("added fact with id " << id << " to edb");
+        DBGLOG(DBG,"added fact with id " << id << " to edb");
       }
       else
       {
@@ -302,10 +296,10 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
         markExternalPropertyIfExternalBody(r);
-        ID id = ctx.registry->rules.storeAndGetID(r);
+        ID id = ctx.registry()->rules.storeAndGetID(r);
         // ctx.idb.push_back(id);
 	ctx.idbList.back().push_back(id);
-        LOG("added rule " << r << " with id " << id << " to idb");
+        DBGLOG(DBG,"added rule " << r << " with id " << id << " to idb");
       }
     }
     break;
@@ -317,10 +311,10 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
-      ID id = ctx.registry->rules.storeAndGetID(r);
+      ID id = ctx.registry()->rules.storeAndGetID(r);
       // ctx.idb.push_back(id);
       ctx.idbList.back().push_back(id);
-      LOG("added constraint " << r << " with id " << id << " to idb");
+      DBGLOG(DBG,"added constraint " << r << " with id " << id << " to idb");
     }
     break;
   case HexGrammar::WeakConstraint:
@@ -351,10 +345,10 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(r);
-      ID id = ctx.registry->rules.storeAndGetID(r);
+      ID id = ctx.registry()->rules.storeAndGetID(r);
       // ctx.idb.push_back(id);
       ctx.idbList.back().push_back(id);
-      LOG("added weakconstraint " << r << " with id " << id << " to idb");
+      DBGLOG(DBG,"added weakconstraint " << r << " with id " << id << " to idb");
     }
     break;
   default:
@@ -466,7 +460,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
 
   // groundness
-  LOG("checking groundness of tuple " << printrange(atom.tuple));
+  DBGLOG(DBG,"checking groundness of tuple " << printrange(atom.tuple));
   IDKind kind = 0;
   BOOST_FOREACH(const ID& id, atom.tuple)
   {
@@ -479,23 +473,23 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   if( ground )
   {
     atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
-    tbl = &ctx.registry->ogatoms;
+    tbl = &ctx.registry()->ogatoms;
   }
   else
   {
     atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-    tbl = &ctx.registry->onatoms;
+    tbl = &ctx.registry()->onatoms;
   }
   
   // lookup if we already know this one
-  //LOG("looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
-  LOG("looking up tuple " << printvector(atom.tuple));
+  //DBGLOG(DBG,"looking up neg " << atom.neg << " tuple " << printvector(atom.tuple));
+  DBGLOG(DBG,"looking up tuple " << printvector(atom.tuple));
   // TODO perhaps pass only ref to atom and let the key extractor do its magic
   {
     ID id = tbl->getIDByTuple(atom.tuple);
     if( id != ID_FAIL ) {
 	std::stringstream ss;
-  	RawPrinter printer(ss, ctx.registry);
+  	RawPrinter printer(ss, ctx.registry());
   	Tuple::const_iterator it = atom.tuple.begin();
   	printer.print(*it);
 	std::stringstream myss;
@@ -520,9 +514,9 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   	}
   	atom.text = ss.str();
 	myss << ", with " << countTuple << " parameter";
-	LOG(myss.str());
+	DBGLOG(DBG, myss.str());
         //assert(mSC.announcePredInside(predInsideName, countTuple)==true);
-      LOG("-- found in tbl, atom text '" << atom.text << "'");
+      DBGLOG(DBG, "-- found in tbl, atom text '" << atom.text << "'");
       return id;
     }
   }
@@ -539,7 +533,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   // print it from the IDs in atom.tuple
 
   std::stringstream ss;
-  RawPrinter printer(ss, ctx.registry);
+  RawPrinter printer(ss, ctx.registry());
   Tuple::const_iterator it = atom.tuple.begin();
   printer.print(*it);
   std::stringstream myss;
@@ -564,11 +558,11 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   }
   atom.text = ss.str();
   myss << ", with " << countTuple << " parameter";
-  LOG(myss.str());
+  DBGLOG(DBG,myss.str());
   //assert(mSC.announcePredInside(predInsideName, countTuple) == true);  
-  LOG("-- got atom text '" << atom.text << "'");
+  DBGLOG(DBG,"got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);
-  LOG("stored atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"stored atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -629,9 +623,9 @@ ID HexGrammarPTToASTConverter::createBuiltinPredFromBuiltinPred(node_t& node)
     return ID_FAIL; // keep the compiler happy
   }
 
-  LOG("storing builtin atom " << atom);
-  ID id = ctx.registry->batoms.storeAndGetID(atom);
-  LOG("stored builtin atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"storing builtin atom " << atom);
+  ID id = ctx.registry()->batoms.storeAndGetID(atom);
+  DBGLOG(DBG,"stored builtin atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -674,9 +668,9 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
     }
   }
 
-  LOG("storing external atom " << atom);
-  ID id = ctx.registry->eatoms.storeAndGetID(atom);
-  LOG("stored external atom " << atom << " which got id " << id);
+  DBGLOG(DBG,"storing external atom " << atom);
+  ID id = ctx.registry()->eatoms.storeAndGetID(atom);
+  DBGLOG(DBG,"stored external atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -720,9 +714,9 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
   }
   //mSC.insertCompleteModuleCalls();
 
-  LOG("storing module atom " << atom);
-  ID id = ctx.registry->matoms.storeAndGetID(atom);
-  LOG("stored module atom " << atom << " which got id " << id);
+  DBGLOG(DBG, "storing module atom " << atom);
+  ID id = ctx.registry()->matoms.storeAndGetID(atom);
+  DBGLOG(DBG, "stored module atom " << atom << " which got id " << id);
   return id;
 }
 
@@ -828,13 +822,13 @@ ID HexGrammarPTToASTConverter::createPredFromIdent(node_t& node, int arity)
   std::string s = createStringFromNode(node);
   assert(!s.empty());
   s = currentModuleName + "." + s;
-  ID id = ctx.registry->preds.getIDByString(s);
+  ID id = ctx.registry()->preds.getIDByString(s);
   if( id == ID_FAIL )
     {
       Predicate predicate(ID::MAINKIND_TERM, s, arity);
       predicate.kind |= ID::SUBKIND_TERM_PREDICATE;
-      id = ctx.registry->preds.storeAndGetID(predicate);
-      LOG("Preds saved " << s << std::endl);
+      id = ctx.registry()->preds.storeAndGetID(predicate);
+      DBGLOG(DBG, "Preds saved " << s << std::endl);
     } 
   else 
     {

@@ -235,7 +235,7 @@
  * 
  * \code
  *         virtual void
- *         getAtoms(AtomFunctionMap& a)
+ *         getAtoms(PluginAtomMap& a)
  *         {
  *             boost::shared_ptr<PluginAtom> rdf(new RDFatom);
  *             a["rdf"] = rdf;
@@ -470,7 +470,7 @@
 #define _DLVHEX_PLUGININTERFACE_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
@@ -492,16 +492,9 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declarations
 class NodeGraph;
 class OutputBuilder;
-class ProgramCtx;
 
 class PluginRewriter;
 class PluginOptimizer;
-
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
-class Interpretation;
-typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
-
 
 /**
  * \brief Converter class.
@@ -538,6 +531,7 @@ class DLVHEX_EXPORT PluginConverter
   virtual void
   convert(std::istream& i, std::ostream& o) = 0;
 };
+typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 
 #if 0
 
@@ -902,6 +896,11 @@ protected:
 std::size_t hash_value(const PluginAtom::Query& q);
 
 /**
+ * \brief Associates atom names with PluginAtom instances implementing them.
+ */
+typedef std::map<std::string, PluginAtomPtr > PluginAtomMap;
+
+/**
  * \brief Factory base class for representing plugins and creating necessary objects.
  *
  * \ingroup pluginframework
@@ -962,29 +961,31 @@ class DLVHEX_EXPORT PluginInterface
  protected:
   
   /// Ctor.
-  PluginInterface()
-    : pluginName(""),
+  PluginInterface():
+    pluginName(),
     versionMajor(0),
     versionMinor(0),
     versionMicro(0)
   { }
 
   std::string pluginName;
-
   unsigned versionMajor;
   unsigned versionMinor;
   unsigned versionMicro;
+
+  void setNameVersion(const std::string& name, unsigned major, unsigned minor, unsigned micro)
+  {
+    pluginName = name;
+    versionMajor = major;
+    versionMinor = minor;
+    versionMicro = micro;
+  }
 
 public:
     /// Dtor.
     virtual
     ~PluginInterface()
     { }
-
-    /**
-     * \brief Associates atom names with function pointers.
-     */
-    typedef std::map<std::string, boost::shared_ptr<PluginAtom> > AtomFunctionMap;
 
     /**
      * \brief Converter.
@@ -1025,6 +1026,7 @@ public:
 	? std::vector<PluginConverter*>(1, pc) 
 	: std::vector<PluginConverter*>();
 			#endif
+			return std::vector<PluginConverter*>();
     }
 
     /**
@@ -1081,7 +1083,7 @@ public:
      *
      * \code
      * void
-     * getAtoms(AtomFunctionMap& a)
+     * getAtoms(PluginAtomMap& a)
      * {
      *     boost::shared_ptr<PluginAtom> newatom(new MyAtom);
      *     a["newatom"] = newatom;
@@ -1104,76 +1106,28 @@ public:
      * \endcode
      */
     virtual void
-    getAtoms(AtomFunctionMap&)
+    getAtoms(PluginAtomMap&)
     { }
 
-    /**
-     * \brief Propagates dlvhex program options to the plugin.
-     *
-     * Each option known to the plugin must be deleted from the vector. dlvhex
-     * will exit with an error if unknown options are left in the vector after
-     * all plugins have been processed.
-     * If the first parameter is true, then help was requested. The plugin must
-     * write its help output into the given stream;
-     */
-    virtual void
-    setOptions(bool, std::vector<std::string>&, std::ostream&)
-    { }
 
-    /**
-     * \brief Set plugin name.
-     *
-     * The plugin name will be displayed when dlvhex loads the
-     * plugin. This method is not supposed to be overridden, but only
-     * called in the PLUGINIMPORTFUNCTION() (see Section \ref
-     * importing).
-     */
-    void
-    setPluginName(const std::string& name)
-    {
-      this->pluginName = name;
-    }
+  const std::string& getPluginName() const
+    { return this->pluginName; }
+  unsigned getVersionMajor() const
+    { return this->versionMajor; }
+  unsigned getVersionMinor() const
+    { return this->versionMinor; }
+  unsigned getVersionMicro() const
+    { return this->versionMicro; }
 
-    /**
-     * \brief Set plugin version.
-     *
-     * The version number will be displayed when dlvhex loads the plugin. It can
-     * be used to check whether the right version is loaded. This method is not
-     * supposed to be overridden, but only called in the PLUGINIMPORTFUNCTION()
-     * (see Section \ref importing).
-     */
-    void
-    setVersion(unsigned major, unsigned minor, unsigned micro)
-    {
-      this->versionMajor = major;
-      this->versionMinor = minor;
-      this->versionMicro = micro;
-    }
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o) const;
 
-    const std::string&
-    getPluginName() const
-    {
-      return this->pluginName;
-    }
-
-    unsigned
-    getVersionMajor() const
-    {
-      return this->versionMajor;
-    }
-
-    unsigned
-    getVersionMinor() const
-    {
-      return this->versionMinor;
-    }
-
-    unsigned
-    getVersionMicro() const
-    {
-      return this->versionMicro;
-    }
+	// call processOptions for each loaded plugin
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processOptions(std::list<const char*>& pluginOptions);
 };
+
+typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
 
 DLVHEX_NAMESPACE_END
 

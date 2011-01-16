@@ -4,6 +4,7 @@
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -18,6 +19,8 @@
 #include <sys/time.h>
 
 namespace po = boost::program_options;
+
+const Logger::Levels DBG = 0x2;
 
 struct Config
 {
@@ -241,7 +244,7 @@ int main(int ac,char** av)
             }
           }
         }
-        LOG("conflicts in track " << tracksyms[t] << " for referee " << r << ": " << printrange(conflict));
+        LOG(DBG,"conflicts in track " << tracksyms[t] << " for referee " << r << ": " << printrange(conflict));
 
         // for referee r, conflict number r may be external
         BOOST_FOREACH(unsigned pap, conflict)
@@ -295,7 +298,7 @@ int main(int ac,char** av)
           }
         }
       }
-      LOG("conflicts for global referee " << r << ": " << printrange(conflict));
+      LOG(DBG,"conflicts for global referee " << r << ": " << printrange(conflict));
 
       // only internal global conflicts
       //bool first = true;
