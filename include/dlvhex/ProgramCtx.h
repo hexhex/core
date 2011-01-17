@@ -82,9 +82,9 @@ public:
 	// previously globals
 	Configuration config;
 
-  RegistryPtr registry() const
+  const RegistryPtr& registry() const
     { return _registry; }
-	PluginContainerPtr pluginContainer() const
+	const PluginContainerPtr& pluginContainer() const
     { return _pluginContainer; }
 
   // must be setup together

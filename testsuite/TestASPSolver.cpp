@@ -28,6 +28,10 @@
  * @brief  Test ASPSolver manager and concrete implementation classes
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ProgramCtx.h"
@@ -52,8 +56,8 @@
 
 DLVHEX_NAMESPACE_USE
 
-#if 1
-BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
+template<typename SolverSoftwareConfiguration>
+void testSimple()
 {
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
@@ -71,7 +75,7 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
   // now starts the real test
   //
 
-  ASPSolver::DLVSoftware::Configuration config;
+  SolverSoftwareConfiguration config;
   ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
@@ -90,47 +94,33 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
 
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);
+}
+
+#ifdef HAVE_DLV
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
+{
+  testSimple<ASPSolver::DLVSoftware::Configuration>();
 }
 #endif
  
-#ifdef WITH_LIBCLINGO
+#ifdef HAVE_DLVDB
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVDB) 
+{
+  testSimple<ASPSolver::DLVDBSoftware::Configuration>();
+}
+#endif
+ 
+#ifdef HAVE_LIBDLV
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVLib) 
+{
+  testSimple<ASPSolver::DLVLibSoftware::Configuration>();
+}
+#endif
+ 
+#ifdef HAVE_LIBCLINGO
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
 {
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::stringstream ss;
-  ss <<
-    "a. c(d,e). g(a)." << std::endl <<
-    "f(X) v b :- g(X), not h(X,X)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-
-	LOG_REGISTRY_PROGRAM(ctx);
-
-  //
-  // now starts the real test
-  //
-
-  ASPSolver::ClingoSoftware::Configuration config;
-  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
-
-  ASPSolverManager mgr;
-  LOG(INFO,"calling solve");
-  ASPSolverManager::ResultsPtr res = mgr.solve(config, program);
-  BOOST_REQUIRE(res != 0);
-  LOG(INFO,"solve returned results!");
-
-  AnswerSet::Ptr int0 = res->getNextAnswerSet();
-  BOOST_REQUIRE(int0 != 0);
-  LOG(INFO,"got answer set " << *int0);
-
-  AnswerSet::Ptr int1 = res->getNextAnswerSet();
-  BOOST_REQUIRE(int1 != 0);
-  LOG(INFO,"got answer set " << *int1);
-
-  AnswerSet::Ptr int2 = res->getNextAnswerSet();
-  BOOST_REQUIRE(int2 == 0);
+  testSimple<ASPSolver::ClingoSoftware::Configuration>();
 }
-#endif // WITH_LIBCLINGO
+#endif
  

@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
 	}
   catch(const UsageError &ue)
 	{
-		std::cerr << "UsageError: " << ue.getErrorMsg() << std::endl;
+		std::cerr << "UsageError: " << ue.getErrorMsg() << std::endl << std::endl;
 		printUsage(std::cerr, whoAmI, true);
 		if( !!pctx.pluginContainer() )
 			pctx.pluginContainer()->printUsage(std::cerr);
