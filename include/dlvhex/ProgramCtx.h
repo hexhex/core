@@ -43,8 +43,11 @@
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/InputProvider.hpp"
 #include "dlvhex/FinalEvalGraph.hpp"
+#include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalGraphBuilder.hpp"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/functional/factory.hpp>
 //#include <boost/bimap/bimap.hpp>
 //#include <boost/bimap/set_of.hpp>
 //#include <boost/bind.hpp>
@@ -64,6 +67,9 @@ class AtomSet;
 //class OutputBuilder;
 class State;
 typedef boost::shared_ptr<State> StatePtr;
+
+typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
+  EvalHeuristicFactory;
 
 /**
  * @brief Program context class.
@@ -85,6 +91,9 @@ public:
   // pluginContainer must be associated to registry
   void setupRegistryPluginContainer(
       RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr());
+
+  // factory for eval heuristics
+  EvalHeuristicFactory evalHeuristicFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 

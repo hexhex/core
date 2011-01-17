@@ -78,7 +78,8 @@ public:
   void addInternalPluginAtom(PluginAtomPtr atom);
 
   // get container with plugins loaded so far
-  const std::vector<PluginInterfacePtr>& getPlugins() const;
+  const std::vector<PluginInterfacePtr>& getPlugins() const
+    { return plugins; }
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.

@@ -37,28 +37,37 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
-    AggregateAtom.cpp \
     AnswerSet.cpp \
-    AtomNode.cpp \
-    AtomSet.cpp \
+    Atoms.cpp \
     Benchmarking.cpp \
+    ComponentGraph.cpp \
     DependencyGraph.cpp \
     Error.cpp \
+    EvalGraphBuilder.cpp \
+    EvalHeuristicOldDlvhex.cpp \
+    EvalHeuristicTrivial.cpp \
+    EvalHeuristicEasy.cpp \
+    FinalModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \
     HexParser.cpp \
+    ID.cpp \
     InputProvider.cpp \
-    Literal.cpp \
+    Interpretation.cpp \
+    Logger.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
-    Program.cpp \
     ProgramCtx.cpp \
     Registry.cpp \
-    Rule.cpp \
-    SafetyChecker.cpp \
     State.cpp \
     URLBuf.cpp
 
+    #Rule.cpp
+    #Literal.cpp
+    #AtomSet.cpp
+    #AtomNode.cpp
+    #AggregateAtom.cpp
+    #SafetyChecker.cpp
     #ResultContainer.cpp
     #TextOutputBuilder.cpp
 

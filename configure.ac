@@ -130,6 +130,8 @@ EXTSOLVER_LIBS=
 EXTSOLVER_LDFLAGS=
 EXTSOLVER_CPPFLAGS=
 
+extsolver_found=false
+
 #
 # the user didn't supply a path for dlv
 #
@@ -146,13 +148,12 @@ else
 fi
 
 if test "$DLVPATH" = notfound; then
-    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com/])
+  AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
+else
+  extsolver_found=true
+  AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
+  AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 fi
-
-#
-# put the dlv path into config.h
-#
-AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
 
 
 #
@@ -164,8 +165,9 @@ if test "$DLVLIB" = ""; then
 else
   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
   EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
+  extsolver_found=true
 fi
-# and check if it exists
+# TODO and check if it exists
 dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
 dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
 dnl   LIBS="-l${DLVLIB} $LIBS"
@@ -193,6 +195,7 @@ else
     # put the dlvdb path into config.h
     AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
     AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
+  extsolver_found=true
 fi
 
 #
@@ -203,14 +206,14 @@ AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as extern
   [with_libclingo_support=true],
   [with_libclingo_support=false])
 # conditions in makefiles
-AM_CONDITIONAL([WITH_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
+AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
 if test "x${with_libclingo_support}" = xtrue; then
 	# #define in config.h <- config.h.in
-	AC_DEFINE([WITH_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
+	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -DWITH_LIBCLINGO"
+  extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
 # (at the moment we rely on the user to correctly give CPPFLAGS and LDFLAGS)
@@ -225,10 +228,11 @@ fi
 #  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
 #  -I$(GRINGO_TRUNK_DIR)/app/
 
+if test "x${extsolver_found}" = xfalse; then
+  AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
+fi
+
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
-
-
-
 
 # debug
 AC_ARG_ENABLE(debug,
