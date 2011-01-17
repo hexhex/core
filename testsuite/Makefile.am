@@ -16,22 +16,6 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
-
-GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/trunk/gringo
-CLINGOLDADD = \
-  -L$(GRINGO_TRUNK_DIR)/build/release/lib/ \
-  -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3 \
-  $(BOOST_FILESYSTEM_LDFLAGS) $(BOOST_FILESYSTEM_LIBS) $(BOOST_SYSTEM_LDFLAGS) $(BOOST_SYSTEM_LIBS) 
-CLINGOCPPFLAGS= \
-  -DHAVE_LIBCLINGO \
-  -I$(GRINGO_TRUNK_DIR)/libprogram_opts/ \
-  -I$(GRINGO_TRUNK_DIR)/libgringo/ \
-  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
-  -I$(GRINGO_TRUNK_DIR)/app/
-
-CLINGOLDADD= 
-CLINGOCPPFLAGS= 
-
 TESTS = \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
@@ -110,14 +94,14 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
   $(PLAINHEXSOURCES)
-TestMCSIE_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
-TestMCSIE_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
+TestMCSIE_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
+TestMCSIE_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
 
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
   $(PLAINHEXSOURCES)
-TestPlainHEX_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
-TestPlainHEX_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS)
+TestPlainHEX_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
+TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
@@ -145,7 +129,8 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestEvalEndToEnd_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestEvalEndToEnd_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestEvalEndToEnd_CPPFLAGS = $(AM_CPPFLAGS) $(EXTSOLVER_CPPFLAGS) 
 
 TestASPSolver_SOURCES = \
 	$(top_srcdir)/testsuite/TestASPSolver.cpp \
@@ -167,8 +152,8 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestASPSolver_LDADD = $(CLINGOLDADD) @LIBLTDL@ @LIBADD_DL@
-TestASPSolver_CPPFLAGS = $(CLINGOCPPFLAGS) $(AM_CPPFLAGS) 
+TestASPSolver_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
+TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)$(AM_CPPFLAGS) 
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \

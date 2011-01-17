@@ -21,110 +21,6 @@ case $host in
 esac
 AC_SUBST([HAVE_WIN32])
 
-#
-# the default system-wide plugin dir ${pkglibdir}/plugins can be
-# overridden by setting SYS_PLUGIN_DIR=... at configure-time
-#
-if test "$SYS_PLUGIN_DIR" = ""; then
-    sysplugindir="\${pkglibdir}/plugins"
-else
-    sysplugindir="$SYS_PLUGIN_DIR"
-fi
-
-# this goes into dlvhex.pc
-AC_SUBST(sysplugindir)
-
-# ${pkglibdir} can only be evaluated in the Makefiles, so no way to
-# put it in config.h
-CPPFLAGS="$CPPFLAGS -DSYS_PLUGIN_DIR='\"$sysplugindir\"'"
-
-
-#
-# the user plugin dir consists of the user home concatenated with
-# and USER_PLUGIN_DIR, which is .dlvhex/plugins by default and can be
-# overridden by setting USER_PLUGIN_DIR=... at configure-time
-#
-if test "$USER_PLUGIN_DIR" = ""; then
-    userplugindir=".dlvhex/plugins"
-else
-    userplugindir="$USER_PLUGIN_DIR"
-fi
-
-# this goes into dlvhex.pc
-AC_SUBST(userplugindir)
-
-# this can only be evaluated in the Makefiles
-CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
-
-
-#
-# the user didn't supply a path for dlv
-#
-if test "$DLV" = ""; then
-    # we assume "dlv"
-    DLV=dlv
-    # and check if it exists
-    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound)
-else
-    # the user supplied a 'DLV=...'
-    # check if it exists (with search path=/, since the user supplied
-    # an entire path!) and set DLVPATH to it!
-    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound, [/])
-fi
-
-if test "$DLVPATH" = notfound; then
-    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com/])
-fi
-
-#
-# put the dlv path into config.h
-#
-AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
-
-
-#
-# the user didn't supply a path for dlv-lib
-#
-if test "$DLVLIB" = ""; then
-    # we assume we don't have LIBDLV
-    foo=$foo;
-else
-  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
-  LIBS="-l${DLVLIB} -ldl -lpthread $LIBS"
-fi
-# and check if it exists
-dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
-dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
-dnl   LIBS="-l${DLVLIB} $LIBS"
-dnl   ], [], [-ldl -lpthread])
-
-
-#
-# the user didn't supply a path for dlvdb
-#
-if test "$DLVDB" = ""; then
-    # we assume "dlvdb"
-    DLVDB=dlvdb
-    # and check if it exists
-    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound)
-else
-    # the user supplied a 'DLVDB=...'
-    # check if it exists (with search path=/, since the user supplied
-    # an entire path!) and set DLVPATH to it!
-    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound, [/])
-fi
-
-if test "$DLVDBPATH" = notfound; then
-    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
-else
-    # put the dlvdb path into config.h
-    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
-    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
-fi
-
-
-
-
 # Check for C/C++ compiler
 AC_PROG_CC
 AC_PROG_CXX
@@ -175,19 +71,6 @@ m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 # pkg-config support
 PKG_PROG_PKG_CONFIG
 
-#
-# use libclingo if found (user has to take care that it can be found by setting LDFLAGS, CPPFLAGS)
-#
-AC_ARG_WITH([libclingo],[AS_HELP_STRING(
-  [--with-libclingo],
-  [use clingo as external solver])],
-  [],
-  [AC_DEFINE([WITH_LIBCLINGO], [1], [Defined if we have --with-libclingo.])])
-# TODO search for lib, test lib, set lib variables from these checks
-# (at the moment we rely on the user to correctly give CPPFLAGS and LDFLAGS)
-
-
-
 # checking for boost libs
 BOOST_REQUIRE([1.41.0])
 BOOST_SMART_PTR
@@ -199,6 +82,152 @@ BOOST_PROGRAM_OPTIONS
 BOOST_TEST
 BOOST_SYSTEM
 BOOST_FILESYSTEM
+
+#
+# the default system-wide plugin dir ${pkglibdir}/plugins can be
+# overridden by setting SYS_PLUGIN_DIR=... at configure-time
+#
+if test "$SYS_PLUGIN_DIR" = ""; then
+    sysplugindir="\${pkglibdir}/plugins"
+else
+    sysplugindir="$SYS_PLUGIN_DIR"
+fi
+
+# this goes into dlvhex.pc
+AC_SUBST(sysplugindir)
+
+# ${pkglibdir} can only be evaluated in the Makefiles, so no way to
+# put it in config.h
+CPPFLAGS="$CPPFLAGS -DSYS_PLUGIN_DIR='\"$sysplugindir\"'"
+
+
+#
+# the user plugin dir consists of the user home concatenated with
+# and USER_PLUGIN_DIR, which is .dlvhex/plugins by default and can be
+# overridden by setting USER_PLUGIN_DIR=... at configure-time
+#
+if test "$USER_PLUGIN_DIR" = ""; then
+    userplugindir=".dlvhex/plugins"
+else
+    userplugindir="$USER_PLUGIN_DIR"
+fi
+
+# this goes into dlvhex.pc
+AC_SUBST(userplugindir)
+
+# this can only be evaluated in the Makefiles
+CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
+
+
+#
+# third-party solver integration
+# * dlv as executable
+# * dlv as shared library (libdlv)
+# * clingo as shared library (preliminary)
+#
+
+EXTSOLVER_LIBS=
+EXTSOLVER_LDFLAGS=
+EXTSOLVER_CPPFLAGS=
+
+#
+# the user didn't supply a path for dlv
+#
+if test "$DLV" = ""; then
+    # we assume "dlv"
+    DLV=dlv
+    # and check if it exists
+    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound)
+else
+    # the user supplied a 'DLV=...'
+    # check if it exists (with search path=/, since the user supplied
+    # an entire path!) and set DLVPATH to it!
+    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound, [/])
+fi
+
+if test "$DLVPATH" = notfound; then
+    AC_MSG_ERROR([dlv not found. Download it at http://www.dlvsystem.com/])
+fi
+
+#
+# put the dlv path into config.h
+#
+AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
+
+
+#
+# the user didn't supply a path for dlv-lib
+#
+if test "$DLVLIB" = ""; then
+    # we assume we don't have LIBDLV
+    foo=$foo;
+else
+  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+  EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
+fi
+# and check if it exists
+dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
+dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+dnl   LIBS="-l${DLVLIB} $LIBS"
+dnl   ], [], [-ldl -lpthread])
+
+
+#
+# the user didn't supply a path for dlvdb
+#
+if test "$DLVDB" = ""; then
+    # we assume "dlvdb"
+    DLVDB=dlvdb
+    # and check if it exists
+    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound)
+else
+    # the user supplied a 'DLVDB=...'
+    # check if it exists (with search path=/, since the user supplied
+    # an entire path!) and set DLVPATH to it!
+    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound, [/])
+fi
+
+if test "$DLVDBPATH" = notfound; then
+    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
+else
+    # put the dlvdb path into config.h
+    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
+    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
+fi
+
+#
+# libclingo
+# (try to use if specified, user has to take care that it can be found by setting LDFLAGS, CPPFLAGS)
+#
+AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
+  [with_libclingo_support=true],
+  [with_libclingo_support=false])
+# conditions in makefiles
+AM_CONDITIONAL([WITH_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
+if test "x${with_libclingo_support}" = xtrue; then
+	# #define in config.h <- config.h.in
+	AC_DEFINE([WITH_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -DWITH_LIBCLINGO"
+fi
+# TODO libclingo search for lib, test lib, set lib variables from these checks
+# (at the moment we rely on the user to correctly give CPPFLAGS and LDFLAGS)
+#
+#libclingo env (currently must be provided by the user!):
+#	GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/trunk/gringo
+# LDFLAGS= 
+#  -L$(GRINGO_TRUNK_DIR)/build/release/lib/
+# CPPFLAGS=
+#	 -I$(GRINGO_TRUNK_DIR)/libprogram_opts/ \
+#  -I$(GRINGO_TRUNK_DIR)/libgringo/ \
+#  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
+#  -I$(GRINGO_TRUNK_DIR)/app/
+
+CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
+
+
 
 
 # debug

@@ -52,11 +52,11 @@
 
 DLVHEX_NAMESPACE_USE
 
-#if 0
+#if 1
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
 {
   ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -93,10 +93,11 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
 }
 #endif
  
+#ifdef WITH_LIBCLINGO
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry), PluginContainerPtr());
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -131,4 +132,5 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo)
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);
 }
+#endif // WITH_LIBCLINGO
  
