@@ -13,6 +13,7 @@
 	* removed dependency on cppunit, now using the boost UTF
 	* no longer enforcing dlv to be present as backend, it is now sufficient that one of the possible backends is present
 	* evaluation heuristics selectable with --heuristics=...
+	* state machine now features states that may be implicitly skipped (= optional states)
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
