@@ -523,7 +523,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   DBGLOG(DBG,"=OnlineModelBuilder<...>::getNextIModel(" << u << ")");
 
   #ifndef NDEBUG
-  printModelBuildingPropertyMap(std::cerr);
+  if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+    printModelBuildingPropertyMap(std::cerr);
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
   DBGLOG(DBG,"uprops: " << uprops);
   #endif
@@ -564,7 +565,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
     mbprops.setIModel(odummy);
     LOG(MODELB,"returning model " << printopt(odummy));
     #ifndef NDEBUG
-    printModelBuildingPropertyMap(std::cerr);
+    if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+      printModelBuildingPropertyMap(std::cerr);
     #endif
     return odummy;
   }
@@ -586,7 +588,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
       LOG(MODELB,"got null cursor, returning no imodel");
       mbprops.setIModel(boost::none);
       #ifndef NDEBUG
-      printModelBuildingPropertyMap(std::cerr);
+      if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+        printModelBuildingPropertyMap(std::cerr);
       #endif
       return boost::none;
     }
@@ -634,7 +637,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
           LOG(MODELB,"backtracking impossible, returning no imodel");
           mbprops.setIModel(boost::none);
           #ifndef NDEBUG
-          printModelBuildingPropertyMap(std::cerr);
+          if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+            printModelBuildingPropertyMap(std::cerr);
           #endif
           return boost::none;
         }
@@ -648,7 +652,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
             LOG(MODELB,"got null cursor, returning no imodel");
             mbprops.setIModel(boost::none);
             #ifndef NDEBUG
-            printModelBuildingPropertyMap(std::cerr);
+            if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+              printModelBuildingPropertyMap(std::cerr);
             #endif
             return boost::none;
           }
@@ -668,7 +673,8 @@ OnlineModelBuilder<EvalGraphT>::getNextIModel(
   LOG(MODELB,"returning newly created imodel " << im);
   mbprops.setIModel(im);
   #ifndef NDEBUG
-  printModelBuildingPropertyMap(std::cerr);
+  if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+    printModelBuildingPropertyMap(std::cerr);
   #endif
   return im;
 }
@@ -896,7 +902,8 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
 
   #ifndef NDEBUG
   const EvalUnitPropertyBundle& uprops = eg.propsOf(u);
-  printModelBuildingPropertyMap(std::cerr);
+  if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+    printModelBuildingPropertyMap(std::cerr);
   DBGLOG(DBG,"uprops = " << uprops);
   #endif
 
@@ -910,7 +917,8 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
     // no -> give up our model refcount and return no model at all
     mbprops.orefcount--;
     #ifndef NDEBUG
-    printModelBuildingPropertyMap(std::cerr);
+    if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+      printModelBuildingPropertyMap(std::cerr);
     #endif
     return OptionalModel();
   }
@@ -934,7 +942,8 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
       LOG(MODELB,"failing with no input");
       assert(mbprops.orefcount == 0);
       #ifndef NDEBUG
-      printModelBuildingPropertyMap(std::cerr);
+      if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+        printModelBuildingPropertyMap(std::cerr);
       #endif
 			return boost::none;
     }
@@ -955,7 +964,8 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   assert(mbprops.orefcount == 1);
   LOG(MODELB,"returning omodel " << printopt(omodel));
   #ifndef NDEBUG
-  printModelBuildingPropertyMap(std::cerr);
+  if( Logger::Instance().shallPrint(Logger::MODELB) && Logger::Instance().shallPrint(Logger::DBG) )
+    printModelBuildingPropertyMap(std::cerr);
   #endif
   return omodel;
 }

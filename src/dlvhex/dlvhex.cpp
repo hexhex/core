@@ -277,6 +277,9 @@ int main(int argc, char *argv[])
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
+		// default logging priority = errors + warnings
+		Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+
 		// manage options we can already manage
 		// TODO use boost::program_options
 		processOptionsPrePlugin(argc, argv, config, pctx);
@@ -477,9 +480,15 @@ void processOptionsPrePlugin(
 
 		case 'v':
 			if (optarg)
+			{
 				pctx.config.setOption("Verbose", atoi(optarg));
+				Logger::Instance().setPrintLevels(atoi(optarg));
+			}
 			else
+			{
 				pctx.config.setOption("Verbose", 1);
+				Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING | Logger::INFO);
+			}
 			break;
 
 		case 'f':
