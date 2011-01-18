@@ -155,9 +155,10 @@ void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateV
     names.insert(plugin->getPluginName());
   }
   DBGLOG(DBG,"selectPluginCandidates: already loaded: " << printset(names));
+  DBGLOG(DBG,"foo");
 
   CandidateVector::iterator it = candidates.begin();
-  do
+  while(it != candidates.end())
   {
     const std::string& pname = it->plugin->getPluginName();
     if( names.find(pname) != names.end() )
@@ -185,7 +186,6 @@ void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateV
       ++it;
     }
   }
-  while(it != candidates.end());
 }
 
 } // anonymous namespace
@@ -356,6 +356,16 @@ void PluginContainer::associateExtAtomsWithPluginAtoms(
         }
       }
     }
+  }
+}
+
+// call all setupProgramCtx methods of all plugins
+void PluginContainer::setupProgramCtx(ProgramCtx& ctx)
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  {
+    LOG(DBG,"setting up program ctx for plugin " << plugin->getPluginName());
+	  plugin->setupProgramCtx(ctx);
   }
 }
 

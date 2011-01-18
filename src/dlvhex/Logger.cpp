@@ -42,3 +42,16 @@ Logger& Logger::Instance()
   return *instance;
 }
 
+void Logger::setPrintLevels(Levels levels)
+{
+  if( levels & ERROR != ERROR )
+    out << "Logger warning: deactivated ERROR level" << std::endl;
+  printlevels = levels;
+}
+
+void Logger::setPrintLevelWidth(int width)
+{
+  assert(width >= 0 );
+  levelwidth = width;
+}
+

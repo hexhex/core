@@ -58,16 +58,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
-class Program;
-class AtomSet;
-
-//class Process;
-//class ResultContainer;
-//class OutputBuilder;
-class State;
-typedef boost::shared_ptr<State> StatePtr;
-
 typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
   EvalHeuristicFactory;
 
@@ -120,10 +110,11 @@ public:
   DependencyGraphPtr depgraph;
   ComponentGraphPtr compgraph;
   FinalEvalGraphPtr evalgraph;
+  FinalEvalGraph::EvalUnit ufinal;
+  std::list<ModelCallbackPtr> modelCallbacks;
+  std::list<FinalCallbackPtr> finalCallback;;
   // ModelGraphPtr modelgraph;
   // ModelBuilderPtr modelbuilder;
-  // ModelCallbackPtr modelcallback;
-  // FinalizeCallbackPtr finalizecallback;
 
   StatePtr state;
 
@@ -200,19 +191,21 @@ public:
 
   //
   // state processing
+  // the following functions are given in intended order of calling
+  // optional functions may be omitted
   //
 
-  void showPlugins();
-  void convert();
+  void showPlugins();                // optional
+  void convert();                    // optional
   void parse();
-  void rewriteEDBIDB();
-	void optimizeEDBDependencyGraph();
-	void createComponentGraph();
-	void createEvalGraph();
-  void configureModelBuilder();
+  void rewriteEDBIDB();              // optional
+  void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();
-  void safetyCheck();
-  void strongSafetyCheck();
+	void optimizeEDBDependencyGraph(); // optional
+	void createComponentGraph();
+  void strongSafetyCheck();          // optional (if you know that your program is safe!)
+	void createEvalGraph();
+  void setupProgramCtx();
   void evaluate();
   void postProcess();
 

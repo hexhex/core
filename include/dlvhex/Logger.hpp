@@ -86,13 +86,16 @@ public:
   inline std::ostream& stream()
     { return out; }
 
+  void setPrintLevels(Levels levels);
+  void setPrintLevelWidth(int width);
+
   // this method does not ask shallPrint!
   inline void startline(Levels forlevel)
     {
       if( levelwidth == 0 )
         out << indent;
       else
-        out << std::hex << std::setw(levelwidth) << forlevel << indent;
+        out << std::hex << std::setw(levelwidth) << forlevel << " " << indent;
     }
 
   inline bool shallPrint(Levels forlevel)

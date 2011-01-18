@@ -72,6 +72,9 @@ class ProgramCtx;
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
+class State;
+typedef boost::shared_ptr<State> StatePtr;
+
 DLVHEX_NAMESPACE_END
 
 #endif // FWD_HPP_INCLUDED_14012011

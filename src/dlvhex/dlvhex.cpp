@@ -57,6 +57,7 @@
 #include "dlvhex/Error.h"
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
@@ -220,8 +221,17 @@ int main(int argc, char *argv[])
 {
   const char* whoAmI = argv[0];
 
+	// pre-init logger
+	// (we use more than 4 bits -> two digit loglevel)
+	Logger::Instance().setPrintLevelWidth(2);
+
 	// program context
   ProgramCtx pctx;
+	{
+		RegistryPtr registry(new Registry);
+		PluginContainerPtr pcp(new PluginContainer(registry));
+		pctx.setupRegistryPluginContainer(registry, pcp);
+	}
 
   // default external asp solver to first one that has been configured
 	#if HAVE_DLV
@@ -366,8 +376,7 @@ int main(int argc, char *argv[])
 			return 0;
 
 		// setup model builder and configure plugin/dlvhex model processing hooks
-		// allow plugins to setup pctx
-		pctx.configureModelBuilder();
+		pctx.setupProgramCtx();
 			
 		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
 		// (individual model output should happen here)

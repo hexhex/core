@@ -42,107 +42,128 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class State;
+typedef boost::shared_ptr<State> StatePtr;
+
 /**
  * @brief State base class.
  */
 class DLVHEX_EXPORT State
 {
 protected:
-  void changeState(ProgramCtx*, const boost::shared_ptr<State>&);
+  void changeState(ProgramCtx*, StatePtr);
 
 public:
-  virtual ~State() {}
+  // initialize with state to execute if not implemented function is called
+  State(StatePtr failureState=StatePtr());
+  virtual ~State();
 
   virtual void showPlugins(ProgramCtx*);
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
 	virtual void rewriteEDBIDB(ProgramCtx*);
+  virtual void safetyCheck(ProgramCtx*);
+  virtual void createDependencyGraph(ProgramCtx*);
 	virtual void optimizeEDBDependencyGraph(ProgramCtx*);
 	virtual void createComponentGraph(ProgramCtx*);
-	virtual void createEvalGraph(ProgramCtx*);
-  virtual void safetyCheck(ProgramCtx*);
   virtual void strongSafetyCheck(ProgramCtx*);
-  virtual void configureModelBuilder(ProgramCtx*);
-  virtual void createDependencyGraph(ProgramCtx*);
+	virtual void createEvalGraph(ProgramCtx*);
+  virtual void setupProgramCtx(ProgramCtx*);
   virtual void evaluate(ProgramCtx*);
   virtual void postProcess(ProgramCtx*);
+
+protected:
+  StatePtr failureState;
 };
 
 class DLVHEX_EXPORT ShowPluginsState : public State
 {
 public:
+  ShowPluginsState();
   virtual void showPlugins(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT ConvertState : public State
 {
 public:
+  ConvertState();
   virtual void convert(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT ParseState : public State
 {
 public:
+  ParseState();
   virtual void parse(ProgramCtx*);
 };
 
-class DLVHEX_EXPORT RewriteState : public State
+class DLVHEX_EXPORT RewriteEDBIDBState : public State
 {
 public:
-  virtual void rewrite(ProgramCtx*);
+  RewriteEDBIDBState();
+  virtual void rewriteEDBIDB(ProgramCtx*);
+};
+
+class DLVHEX_EXPORT SafetyCheckState : public State
+{
+public:
+  SafetyCheckState();
+  virtual void safetyCheck(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT CreateDependencyGraphState : public State
 {
 public:
+  CreateDependencyGraphState();
   virtual void createDependencyGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT OptimizeEDBDependencyGraphState : public State
 {
 public:
+  OptimizeEDBDependencyGraphState();
   virtual void optimizeEDBDependencyGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT CreateComponentGraphState : public State
 {
 public:
+  CreateComponentGraphState();
   virtual void createComponentGraph(ProgramCtx*);
-};
-
-class DLVHEX_EXPORT CreateEvaluationGraphState : public State
-{
-public:
-  virtual void createEvaluationGraph(ProgramCtx*);
-};
-
-class DLVHEX_EXPORT SafetyCheckState : public State
-{
-public:
-  virtual void safetyCheck(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT StrongSafetyCheckState : public State
 {
 public:
+  StrongSafetyCheckState();
   virtual void strongSafetyCheck(ProgramCtx*);
+};
+
+class DLVHEX_EXPORT CreateEvalGraphState : public State
+{
+public:
+  CreateEvalGraphState();
+  virtual void createEvalGraph(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT SetupProgramCtxState : public State
 {
 public:
+  SetupProgramCtxState();
   virtual void setupProgramCtx(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT EvaluateState : public State
 {
 public:
+  EvaluateState();
   virtual void evaluate(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT PostProcessState : public State
 {
 public:
+  PostProcessState();
   virtual void postProcess(ProgramCtx*);
 };
 

@@ -73,26 +73,62 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+State::State(StatePtr failureState):
+  failureState(failureState)
+{
+}
 
-void
-State::changeState(ProgramCtx* ctx, const boost::shared_ptr<State>& s)
+State::~State()
+{
+}
+
+void State::changeState(ProgramCtx* ctx, StatePtr s)
 {
   ctx->changeState(s);
 }
 
-void State::showPlugins(ProgramCtx*) { }
-void State::convert(ProgramCtx*) { }
-void State::parse(ProgramCtx*) { }
-void State::rewriteEDBIDB(ProgramCtx*) { }
-void State::optimizeEDBDependencyGraph(ProgramCtx*) {}
-void State::createComponentGraph(ProgramCtx*) {}
-void State::createEvalGraph(ProgramCtx*) {}
-void State::configureModelBuilder(ProgramCtx*) {}
-void State::createDependencyGraph(ProgramCtx*) { }
-void State::safetyCheck(ProgramCtx*) { }
-void State::strongSafetyCheck(ProgramCtx*) { }
-void State::evaluate(ProgramCtx*) { }
-void State::postProcess(ProgramCtx*) { } 
+// each of these functions skips to the "failureState" and executes the executed function on it
+// this is useful for having optional states
+// if no failureState is given, an exception is raised
+// this is useful for non-optional states
+#define STATE_FUNC_DEFAULT_IMPL(function) \
+  void State:: function (ProgramCtx* ctx) \
+  { \
+    if( !!failureState ) \
+    { \
+      changeState(ctx, failureState); \
+      failureState-> function (ctx); \
+    } \
+    else \
+    { \
+      throw std::runtime_error("tried to skip execution of '" #function "' in State!"); \
+    } \
+  }
+
+// all state methods get skipping possibility
+// derived classes will decide whether to set the failureState or not
+// if it is set, the state is skippable, if not, execution of this state is mandatory
+STATE_FUNC_DEFAULT_IMPL(showPlugins);
+STATE_FUNC_DEFAULT_IMPL(convert);
+STATE_FUNC_DEFAULT_IMPL(parse);
+STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
+STATE_FUNC_DEFAULT_IMPL(safetyCheck);
+STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
+STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
+STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
+STATE_FUNC_DEFAULT_IMPL(strongSafetyCheck);
+STATE_FUNC_DEFAULT_IMPL(createEvalGraph);
+STATE_FUNC_DEFAULT_IMPL(setupProgramCtx);
+STATE_FUNC_DEFAULT_IMPL(evaluate);
+STATE_FUNC_DEFAULT_IMPL(postProcess);
+
+#define MANDATORY_STATE_CONSTRUCTOR(state) \
+  state :: state (): State() {}
+
+#define OPTIONAL_STATE_CONSTRUCTOR(state,skiptostate) \
+  state :: state (): State(StatePtr(new skiptostate)) {}
+
+OPTIONAL_STATE_CONSTRUCTOR(ShowPluginsState,ConvertState);
 
 void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 {
@@ -111,6 +147,8 @@ void ShowPluginsState::showPlugins(ProgramCtx* ctx)
   boost::shared_ptr<State> next(new ConvertState);
   changeState(ctx, next);
 }
+
+OPTIONAL_STATE_CONSTRUCTOR(ConvertState,ParseState);
 
 void ConvertState::convert(ProgramCtx* ctx)
 {
@@ -207,9 +245,9 @@ void ConvertState::convert(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(ParseState);
 
-void
-ParseState::parse(ProgramCtx* ctx)
+void ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
@@ -364,6 +402,8 @@ removeNamespaces()
     LOG(INFO,"parsed IDB:");
     RawPrinter rp(Logger::Instance().stream(), ctx->registry());
 	  rp.printmany(ctx->idb, "\n");
+    Logger::Instance().stream() << std::endl;
+
     LOG(INFO,"parsed EDB:");
     Logger::Instance().stream() << *(ctx->edb) << std::endl;
 	}
@@ -374,12 +414,13 @@ removeNamespaces()
   changeState(ctx, next);
 }
 
+OPTIONAL_STATE_CONSTRUCTOR(RewriteEDBIDBState,SafetyCheckState);
 
-#if 0
 void
-RewriteState::rewrite(ProgramCtx* ctx)
+RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
+#if 0
 
   //
   // now call rewriters
@@ -395,19 +436,6 @@ RewriteState::rewrite(ProgramCtx* ctx)
 	  pr->rewrite(*ctx->getIDB(), *ctx->getEDB());
 	}
     }
-
-  boost::shared_ptr<State> next;
-
-  if (ctx->getDependencyGraph() == 0)
-    {
-      // no DependencyGraph: continue with the SafetyCheck
-      next = boost::shared_ptr<State>(new SafetyCheckState);
-    }
-  else
-    {
-      next = boost::shared_ptr<State>(new CreateDependencyGraph);
-    }
-
       
 	// be verbose if requested
 	if (pctx.config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM))
@@ -420,10 +448,32 @@ RewriteState::rewrite(ProgramCtx* ctx)
 	  pctx.config.getVerboseStream() << std::endl << std::endl;
 	}
 	*/
+#endif
 
+  StatePtr next(new SafetyCheckState);
   changeState(ctx, next);
 }
+
+OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
+
+void
+SafetyCheckState::safetyCheck(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
+#if 0
+
+  //
+  // Performing the safety check
+  //
+  SafetyChecker schecker(*ctx->getIDB());
+  schecker();
+
 #endif
+  StatePtr next(new CreateDependencyGraphState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(CreateDependencyGraphState);
 
 void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 {
@@ -442,12 +492,13 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
+OPTIONAL_STATE_CONSTRUCTOR(OptimizeEDBDependencyGraphState,CreateComponentGraphState);
 
-#if 0
 void
-OptimizeState::optimize(ProgramCtx* ctx)
+OptimizeEDBDependencyGraphState::optimizeEDBDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin optimizers");
+#if 0
 
   //
   // now call optimizers
@@ -464,10 +515,13 @@ OptimizeState::optimize(ProgramCtx* ctx)
 	}
     }
 
-  boost::shared_ptr<State> next(new CreateDependencyGraphState);
+#endif
+
+  StatePtr next(new CreateComponentGraphState);
   changeState(ctx, next);
 }
-#endif
+
+MANDATORY_STATE_CONSTRUCTOR(CreateComponentGraphState);
 
 void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
 {
@@ -480,52 +534,29 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
   ctx->compgraph = compgraph;
 
   #warning implement safety check -> use safetycheck state here
-  //boost::shared_ptr<State> next(new SafetyCheckState);
-  boost::shared_ptr<State> next(new CreateEvaluationGraphState);
+  //boost::shared_ptr<State> next(new StrongSafetyCheckState);
+  boost::shared_ptr<State> next(new CreateEvalGraphState);
   changeState(ctx, next);
 }
 
-#if 0
-void
-SafetyCheckState::safetyCheck(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
-
-  //
-  // Performing the safety check
-  //
-  SafetyChecker schecker(*ctx->getIDB());
-  schecker();
-
-  boost::shared_ptr<State> next;
-
-  if (ctx->getDependencyGraph() == 0)
-    {
-      // no dependency graph: continue with the evaluation of the IDB/EDB
-      next = boost::shared_ptr<State>(new SetupProgramCtxState);
-    }
-  else
-    {
-      next = boost::shared_ptr<State>(new StrongSafetyCheckState);
-    }
-
-  changeState(ctx, next);
-}
+OPTIONAL_STATE_CONSTRUCTOR(StrongSafetyCheckState,CreateEvalGraphState);
 
 void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Strong safety checking");
 
+#if 0
   StrongSafetyChecker sschecker(*ctx->getDependencyGraph());
   sschecker();
 
-  boost::shared_ptr<State> next(new SetupProgramCtxState);
+#endif
+  StatePtr next(new CreateEvalGraphState);
   changeState(ctx, next);
 }
-#endif
 
+MANDATORY_STATE_CONSTRUCTOR(CreateEvalGraphState);
 
-void CreateEvaluationGraphState::createEvaluationGraph(ProgramCtx* ctx)
+void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 {
   assert(!!ctx->compgraph &&
       "need component graph for creating evaluation graph");
@@ -545,28 +576,44 @@ void CreateEvaluationGraphState::createEvaluationGraph(ProgramCtx* ctx)
     // destruct heuristics
   }
 
+  // setup final unit used to get full models
+  #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!
+  ctx->ufinal = evalgraph->addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
+  LOG(DBG,"added virtual final unit ufinal = " << ctx->ufinal);
+
+  FinalEvalGraph::EvalUnitIterator it, itend;
+  boost::tie(it, itend) = evalgraph->getEvalUnits();
+  for(; it != itend && *it != ctx->ufinal; ++it)
+  {
+    DBGLOG(DBG,"adding dependency from ufinal to unit " << *it <<
+        " join order " << *it);
+    // we can do this because we know that eval units
+    // (= vertices of a vecS adjacency list) are unsigned integers
+    evalgraph->addDependency(
+        ctx->ufinal, *it,
+        FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
+  }
+
   ctx->evalgraph = evalgraph;
 
-  boost::shared_ptr<State> next(new EvaluateState);
+  StatePtr next(new SetupProgramCtxState);
   changeState(ctx, next);
 }
 
-#if 0
-void
-SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
+MANDATORY_STATE_CONSTRUCTOR(SetupProgramCtxState);
+
+void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Setting up ProgramCtx");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
-  //
-  // now let the plugins setup the ProgramCtx
-  //
-  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end();
-       ++pi)
-    {
-      (*pi)->setupProgramCtx(*ctx);
-    }
+  #warning TODO implement queries as a plugin with two hooks
+  // setup default model outputting callback
+  #warning implement output hook
 
+  // let plugins setup the program ctx (removing the default hooks is permitted)
+  ctx->pluginContainer()->setupProgramCtx(*ctx);
+
+  /*
   // if we solve using DLV, automagically set higher order mode
   // (this has to be done globally for the global solver configuration,
   // it can be done locally for other usages of ASPSolver(Manager))
@@ -582,23 +629,13 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
       dlvconfiguration->options.dropPredicates = true;
     }
   }
+  */
 
-  boost::shared_ptr<State> next;
-
-  if (ctx->getDependencyGraph() == 0)
-    {
-      // no dependency graph: continue with the evaluation of the IDB/EDB
-      next = boost::shared_ptr<State>(new EvaluateProgramState);
-    }
-  else
-    {
-      next = boost::shared_ptr<State>(new EvaluateDepGraphState);
-    }
-
+  StatePtr next(new EvaluateState);
   changeState(ctx, next);
 }
-#endif
 
+MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
 void
 EvaluateState::evaluate(ProgramCtx* ctx)
@@ -719,6 +756,7 @@ EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
 }
 #endif
 
+MANDATORY_STATE_CONSTRUCTOR(PostProcessState);
 
 void PostProcessState::postProcess(ProgramCtx* ctx)
 {
@@ -747,11 +785,10 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   //if (optionFilter.size() > 0)
   //ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
 
-  ///@todo explicit endstate which does nothing?
+  // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
 }
-
 
 #if 0
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building output");

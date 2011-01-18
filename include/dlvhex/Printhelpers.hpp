@@ -84,6 +84,7 @@ struct print_container
 
 inline std::ostream& operator<<(std::ostream& o, print_container* c)
 {
+  assert(c);
   std::ostream& ret = c->print(o);
   delete c;
   return ret;
