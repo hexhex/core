@@ -61,6 +61,11 @@
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/State.h"
+#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex/EvalHeuristicTrivial.hpp"
+#include "dlvhex/EvalHeuristicEasy.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -138,6 +143,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of (old,trivial,easy)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
       << "                      1  - program analysis information (including dot-file)" << std::endl
@@ -217,9 +223,32 @@ int main(int argc, char *argv[])
 	// program context
   ProgramCtx pctx;
 
-  // defaults of dlvhex API
+  // default external asp solver to first one that has been configured
+	#if HAVE_DLV
   pctx.setASPSoftware(
 		ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+	#else
+		#if HAVE_DLVDB
+		pctx.setASPSoftware(
+			ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+		#else
+			#if HAVE_LIBDLV
+			pctx.setASPSoftware(
+				ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+			#else
+				#if HAVE_LIBCLINGO
+				pctx.setASPSoftware(
+					ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+				#else
+					#error no asp software configured! configure.ac should not allow this to happen!
+				#endif
+			#endif
+		#endif
+	#endif
+
+	// default eval heuristic = "easy" heuristic
+	pctx.evalHeuristicFactory = boost::factory<EvalHeuristicEasy*>();
+
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -230,44 +259,37 @@ int main(int argc, char *argv[])
 	// defaults of main
 	Config config;
 
-	// manage options we can already manage
-	// TODO use boost::program_options
-	processOptionsPrePlugin(argc, argv, config, pctx);
-
-  // before anything else we dump the logo
-  if (!pctx.config.getOption("Silent"))
-		printLogo();
-
-  // no arguments at all: shorthelp with no specific error message
-  if (argc == 1)
-	{
-		printUsage(std::cerr, whoAmI, false);
-		return 1;
-	}
-
-  // initialize benchmarking (--verbose=8) with scope exit
-	// (this cannot be outsourced due to the scope)
-  benchmark::BenchmarkController& ctr =
-    benchmark::BenchmarkController::Instance();
-  if( pctx.config.doVerbose(Configuration::PROFILING) )
-  {
-    ctr.setOutput(&Logger::Instance().stream());
-    // for continuous statistics output, display every 1000'th output
-    ctr.setPrintInterval(999);
-  }
-  else
-    ctr.setOutput(0);
-  // deconstruct benchmarking (= output results) at scope exit 
-  int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
-  BOOST_SCOPE_EXIT( (dummy) ) {
-	  (void)dummy;
-	  benchmark::BenchmarkController::finish();
-  }
-  BOOST_SCOPE_EXIT_END
-
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
+		// manage options we can already manage
+		// TODO use boost::program_options
+		processOptionsPrePlugin(argc, argv, config, pctx);
+
+		// before anything else we dump the logo
+		if( !pctx.config.getOption("Silent") )
+			printLogo();
+
+		// initialize benchmarking (--verbose=8) with scope exit
+		// (this cannot be outsourced due to the scope)
+		benchmark::BenchmarkController& ctr =
+			benchmark::BenchmarkController::Instance();
+		if( pctx.config.doVerbose(Configuration::PROFILING) )
+		{
+			ctr.setOutput(&Logger::Instance().stream());
+			// for continuous statistics output, display every 1000'th output
+			ctr.setPrintInterval(999);
+		}
+		else
+			ctr.setOutput(0);
+		// deconstruct benchmarking (= output results) at scope exit 
+		int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+		BOOST_SCOPE_EXIT( (dummy) ) {
+			(void)dummy;
+			benchmark::BenchmarkController::finish();
+		}
+		BOOST_SCOPE_EXIT_END
+
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
 			throw UsageError("no input specified!");
 
@@ -282,7 +304,7 @@ int main(int argc, char *argv[])
 		}
 
 		// now we may offer help, including plugin help
-    if( config.helpRequested )
+		if( config.helpRequested )
 		{
 			printUsage(std::cerr, whoAmI, true);
 			pctx.pluginContainer()->printUsage(std::cerr);
@@ -293,7 +315,7 @@ int main(int argc, char *argv[])
 		// (this deletes processed options from config.pluginOptions)
 		// TODO use boost::program_options
 		pctx.pluginContainer()->processOptions(config.pluginOptions);
-      
+			
 		// handle options not recognized by dlvhex and not by plugins
 		if( !config.pluginOptions.empty() )
 		{
@@ -305,16 +327,16 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-      
+			
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
-      
+			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
 		pctx.parse();
-      
+			
 		// rewrite program
 		pctx.rewriteEDBIDB();
-      
+			
 		// check weak safety
 		pctx.safetyCheck();
 
@@ -329,7 +351,7 @@ int main(int argc, char *argv[])
 		pctx.optimizeEDBDependencyGraph();
 		// everything in the following will be done using the dependency graph and EDB
 		#warning IDB and dependencygraph could get out of sync!
-      
+			
 		// create graph of strongly connected components of dependency graph
 		pctx.createComponentGraph();
 
@@ -346,7 +368,7 @@ int main(int argc, char *argv[])
 		// setup model builder and configure plugin/dlvhex model processing hooks
 		// allow plugins to setup pctx
 		pctx.configureModelBuilder();
-      
+			
 		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
 		// (individual model output should happen here)
 		pctx.evaluate();
@@ -357,9 +379,10 @@ int main(int argc, char *argv[])
 	}
   catch(const UsageError &ue)
 	{
-		std::cerr << "GeneralError: " << ue.getErrorMsg() << std::endl;
+		std::cerr << "UsageError: " << ue.getErrorMsg() << std::endl << std::endl;
 		printUsage(std::cerr, whoAmI, true);
-		pctx.pluginContainer()->printUsage(std::cerr);
+		if( !!pctx.pluginContainer() )
+			pctx.pluginContainer()->printUsage(std::cerr);
 		return 1;
 	}
   catch(const GeneralError &ge)
@@ -401,7 +424,7 @@ void processOptionsPrePlugin(
   int ch;
   int longid;
   
-  static const char* shortopts = "f:hsvp:ar";
+  static const char* shortopts = "f:hsvp:are:";
   static struct option longopts[] =
 	{
 		{ "help", no_argument, 0, 'h' },
@@ -411,6 +434,7 @@ void processOptionsPrePlugin(
 		{ "plugindir", required_argument, 0, 'p' },
 		{ "allmodels", no_argument, 0, 'a' },
 		{ "reverse", no_argument, 0, 'r' },
+		{ "heuristics", required_argument, 0, 'e' },
 		//{ "firstorder", no_argument, &longid, 1 },
 		{ "weaksafety", no_argument, &longid, 2 },
 		//{ "ruleml",     no_argument, &longid, 3 },
@@ -466,6 +490,33 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("ReverseOrder", 1);
 			break;
 
+		case 'e':
+			// heuristics={old,trivial,easy}
+			{
+				std::string heuri(optarg);
+				if( heuri == "old" )
+				{
+					pctx.evalHeuristicFactory =
+						boost::factory<EvalHeuristicOldDlvhex*>();
+				}
+				else if( heuri == "trivial" )
+				{
+					pctx.evalHeuristicFactory =
+						boost::factory<EvalHeuristicTrivial*>();
+				}
+				else if( heuri == "easy" )
+				{
+					pctx.evalHeuristicFactory =
+						boost::factory<EvalHeuristicEasy*>();
+				}
+				else
+				{
+					throw UsageError("unknown evaluation heuristic '" + heuri +"' specified!");
+				}
+				LOG(INFO,"selected '" << heuri << "' evaluation heuristics");
+			}
+			break;
+
 		case 0:
 			switch (longid)
 				{
@@ -494,25 +545,47 @@ void processOptionsPrePlugin(
 				case 7:
 					{
 						std::string solver(optarg);
-						if (solver == "dlvdb")
+						if( solver == "dlv" )
+						{
+							#if defined(HAVE_DLV)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "dlvdb" )
 						{
 							#if defined(HAVE_DLVDB)
-							// use DLVDB as ASP solver software
 							pctx.setASPSoftware(
-							ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
 							#else
-							printLogo();
-							std::cerr << "The command line option ``--solver=dlvdb´´ "
-									<< "requires that dlvhex has compiled-in dlvdb support. "
-									<< "Please reconfigure the dlvhex source." 
-									<< std::endl;
-							exit(1);
-							#endif // HAVE_DLVDB
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "libdlv" )
+						{
+							#if defined(HAVE_LIBDLV)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "libclingo" )
+						{
+							#if defined(WITH_LIBCLINGO)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
 						}
 						else
 						{
-							#warning add clingo support
+							throw UsageError("unknown solver backend '" + solver +"' specified!");
 						}
+						LOG(INFO,"selected '" << solver << "' solver backend");
 					}
 					break;
 

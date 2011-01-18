@@ -2,10 +2,6 @@ CLEANFILES = libdlvhextest.so
 
 EXTRA_DIST = run-dlvhex-tests.sh
 
-TESTS = dlvhexTS run-dlvhex-tests.sh
-TESTS_ENVIRONMENT = TESTDIR=$(top_srcdir)/examples/tests LD_LIBRARY_PATH=$(top_builddir)/src/dlvhex/.libs/ DLVHEX=$(top_builddir)/src/dlvhex/dlvhex PARAMETERS="-s --plugindir=."
-check_PROGRAMS = dlvhexTS
-
 ##
 ## this is a bit of a hack
 ## automake does not allow shared libraries in noinst_LTLIBRARIES and
@@ -21,28 +17,6 @@ install-exec-am:
 
 all-local:
 	$(RM) libdlvhextest.so; $(LN_S) .libs/libdlvhextest.so .
-
-dlvhexTS_SOURCES = \
-    TestSuite.cpp \
-    TypeTest.cpp \
-    TestGraphProcessor.cpp \
-    ASPsolverTest.cpp 
-
-AM_CPPFLAGS = \
-    -I$(top_srcdir)/include \
-    -I$(top_srcdir)/src \
-    $(BOOST_CPPFLAGS) \
-    $(DLVHEX_CFLAGS)
-
-dlvexTS_CXXFLAGS = $(CPPUNIT_CFLAGS)
-
-dlvhexTS_LDFLAGS = $(CPPUNIT_LIBS) $(DLVHEX_LIBS) @LIBCURL@
-
-dlvhexTS_LDADD = \
-    @LIBLTDL@ @LIBADD_DL@ \
-    $(top_builddir)/src/dlvhex/libdlvhexbase.la \
-    $(top_builddir)/src/dlvhex/libaspsolver.la
-
 
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 

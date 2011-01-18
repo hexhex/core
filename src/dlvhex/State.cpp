@@ -537,11 +537,23 @@ void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 
 void CreateEvaluationGraphState::createEvaluationGraph(ProgramCtx* ctx)
 {
-  assert(!!ctx->compgraph && "need component graph for creating evaluation graph");
+  assert(!!ctx->compgraph &&
+      "need component graph for creating evaluation graph");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
   EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *ctx->evalgraph, ctx->aspsoftware);
+
+  // use configured eval heuristics
+  {
+    DBGLOG(DBG,"invoking eval heuristic factory");
+    boost::scoped_ptr<EvalHeuristicBase<EvalGraphBuilder> > heur(
+        ctx->evalHeuristicFactory(egbuilder));
+    assert(!!heur && "need heuristic factory to return heuristic");
+    DBGLOG(DBG,"invoking build() on eval heuristic");
+    heur->build();
+    // destruct heuristics
+  }
 
   ctx->evalgraph = evalgraph;
 
@@ -595,11 +607,14 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 
   changeState(ctx, next);
 }
+#endif
 
 
 void
-EvaluateProgramState::evaluate(ProgramCtx* ctx)
+EvaluateState::evaluate(ProgramCtx* ctx)
 {
+  #warning TODO implement
+  #if 0
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating Program");
 
   //
@@ -652,7 +667,10 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
 
   boost::shared_ptr<State> next(new PostProcessState);
   changeState(ctx, next);
+  #endif
 }
+
+#if 0
 
 
 void

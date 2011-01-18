@@ -31,9 +31,7 @@
 #ifndef EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
 #define EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
 
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/PlatformDefinitions.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

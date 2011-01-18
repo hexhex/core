@@ -11,6 +11,8 @@
 	* Logger component with log-levels, hierarchical indentation and NDEBUG-dependant logging
 	* Printhelpers.hpp utilities for comfortable printing of various boost and STL containers
 	* removed dependency on cppunit, now using the boost UTF
+	* no longer enforcing dlv to be present as backend, it is now sufficient that one of the possible backends is present
+	* evaluation heuristics selectable with --heuristics=...
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
