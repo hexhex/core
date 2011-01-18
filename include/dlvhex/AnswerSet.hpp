@@ -32,31 +32,32 @@
 #define ANSWER_SET_HPP_INCLUDED__09112010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Logger.hpp"
 
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
-
 // this is kind of a program context for pure (=non-HEX) ASPs
-struct AnswerSet:
+class AnswerSet:
   public ostream_printable<AnswerSet>
 {
+public:
   // types
   typedef boost::shared_ptr<AnswerSet> Ptr;
   typedef boost::shared_ptr<const AnswerSet> ConstPtr;
 
   // storage
-  Interpretation::Ptr interpretation;
+  InterpretationPtr interpretation;
   int costWeight;
   int costLevel;
 
   AnswerSet(RegistryPtr registry):
     interpretation(new Interpretation(registry)), costWeight(-1), costLevel(-1) {}
+  AnswerSet(InterpretationPtr interpretation):
+    interpretation(interpretation), costWeight(-1), costLevel(-1) {}
   virtual ~AnswerSet() {}
 
   virtual std::ostream& print(std::ostream& o) const;

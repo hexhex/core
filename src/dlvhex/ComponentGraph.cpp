@@ -48,7 +48,8 @@ const ComponentGraph::DependencyInfo&
 ComponentGraph::DependencyInfo::operator|=(
 		const ComponentGraph::DependencyInfo& other)
 {
-	return DependencyGraph::DependencyInfo::operator|=(other);
+	DependencyGraph::DependencyInfo::operator|=(other);
+  return *this;
 }
 
 std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const

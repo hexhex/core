@@ -32,83 +32,56 @@
 #define ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 
 #include "Logger.hpp"
-#include "EvalGraph.hpp"
-#include "ModelGraph.hpp"
 #include "ModelGenerator.hpp"
+#include "ModelBuilder.hpp"
 
 #include <iomanip>
 
+#warning dlvhex namespace
+
 template<typename EvalGraphT>
-class OnlineModelBuilder
+class OnlineModelBuilder:
+  public ModelBuilder<EvalGraphT>
 {
   // types
 public:
+  typedef ModelBuilder<EvalGraphT>
+    Base;
   typedef OnlineModelBuilder<EvalGraphT>
     Self;
 
-  // concept check: EvalGraphT must be an eval graph
-  BOOST_CONCEPT_ASSERT((boost::Convertible<
-      EvalGraphT,
-      EvalGraph<
-        typename EvalGraphT::EvalUnitPropertyBase,
-        typename EvalGraphT::EvalUnitDepPropertyBase> >));
-  typedef typename EvalGraphT::EvalUnit
+  // import typedefs from base class
+  typedef typename Base::MyEvalGraph
+    MyEvalGraph;
+  typedef typename Base::EvalUnit
     EvalUnit;
-  typedef typename EvalGraphT::EvalUnitDep
-    EvalUnitDep;
-
-  // concept check: eval graph must store model generator factory properties for units
-  BOOST_CONCEPT_ASSERT((boost::Convertible<
-      typename EvalGraphT::EvalUnitPropertyBundle,
-      EvalUnitModelGeneratorFactoryProperties<
-        typename EvalGraphT::EvalUnitPropertyBundle::Interpretation> >));
-  typedef typename EvalGraphT::EvalUnitPropertyBundle
+  typedef typename Base::EvalUnitPropertyBundle
 		EvalUnitPropertyBundle;
-  // from eval unit properties we get the interpretation type
-  typedef typename EvalUnitPropertyBundle::Interpretation
+  typedef typename Base::Interpretation
     Interpretation;
-  typedef typename EvalUnitPropertyBundle::Interpretation::Ptr
+  typedef typename Base::InterpretationPtr
     InterpretationPtr;
-  typedef typename EvalGraphT::PredecessorIterator
+  typedef typename Base::MyModelGraph
+    MyModelGraph;
+  typedef typename Base::Model
+    Model;
+  typedef typename Base::OptionalModel
+    OptionalModel;
+
+  // import members from base class
+  using Base::eg;
+  using Base::mg;
+
+  // our own typedefs
+  typedef typename MyEvalGraph::EvalUnitDep
+    EvalUnitDep;
+  typedef typename MyEvalGraph::PredecessorIterator
     EvalUnitPredecessorIterator;
 
-  // we need special properties
-  struct ModelProperties
-  {
-    // the interpretation data of this model
-    InterpretationPtr interpretation;
-
-    // for input models only:
-
-    // whether this model is an input dummy for a root eval unit
-    bool dummy;
-    // whether we already tried to create all output models for this (MT_IN/MT_INPROJ) model
-    bool childModelsGenerated;
-
-    ModelProperties():
-      interpretation(), dummy(false), childModelsGenerated(false) {}
-    std::ostream& print(std::ostream& o) const
-    {
-      if( dummy )
-        o << "dummy ";
-      if( childModelsGenerated )
-        o << "childModelsGenerated ";
-      o <<
-        "interpretation=" << printptr(interpretation);
-      if( interpretation )
-        o << *interpretation;
-      return o;
-    }
-  };
-
-  typedef ModelGraph<EvalGraphT, ModelProperties>
-    MyModelGraph;
-  typedef typename MyModelGraph::Model
-    Model;
+  typedef typename MyModelGraph::ModelDep
+    ModelDep;
   typedef typename MyModelGraph::ModelPropertyBundle
     ModelPropertyBundle;
-  typedef boost::optional<Model>
-    OptionalModel;
   typedef typename MyModelGraph::ModelList
     ModelList;
   typedef boost::optional<typename MyModelGraph::ModelList::const_iterator>
@@ -119,8 +92,6 @@ public:
     ModelSuccessorIterator;
   typedef boost::optional<typename MyModelGraph::SuccessorIterator>
 		OptionalModelSuccessorIterator;
-  typedef typename MyModelGraph::ModelDep
-    ModelDep;
 
   // properties required at each eval unit for model building:
   // model generator factory
@@ -235,8 +206,6 @@ private:
 
   // members
 protected:
-  EvalGraphT& eg;
-  MyModelGraph mg;
   EvalUnitModelBuildingPropertyMap mbp; // aka. model building properties
   boost::shared_ptr<EvalGraphObserver> ego;
   bool redundancyElimination;
@@ -244,7 +213,8 @@ protected:
   // methods
 public:
   OnlineModelBuilder(EvalGraphT& eg, bool redundancyElimination=true):
-    eg(eg), mg(eg), mbp(),
+    Base(eg),
+    mbp(),
     // setup observer to do the things below in case EvalGraph is changed
     // after the creation of this OnlineModelBuilder
     ego(new EvalGraphObserver(*this)),
@@ -276,9 +246,6 @@ public:
 
   virtual ~OnlineModelBuilder() { }
 
-  inline EvalGraphT& getEvalGraph() { return eg; }
-  inline MyModelGraph& getModelGraph() { return mg; }
-
 protected:
 	// helper for getNextIModel
 	Model createIModelFromPredecessorOModels(EvalUnit u);
@@ -302,8 +269,8 @@ public:
 
   // debugging methods
 public:
-  void printEvalGraphModelGraph(std::ostream&);
-  void printModelBuildingPropertyMap(std::ostream&);
+  virtual void printEvalGraphModelGraph(std::ostream&);
+  virtual void printModelBuildingPropertyMap(std::ostream&);
 };
 
 template<typename EvalGraphT>

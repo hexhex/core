@@ -189,9 +189,9 @@ public:
 		~EvalUnitModels()
       { DBGLOG(DBG, "~EvalUnitModels()@" << this); }
     inline ModelList& getModels(ModelType t)
-      { assert(0 <= t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
+      { assert(0 <= t && t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
     inline const ModelList& getModels(ModelType t) const
-      { assert(0 <= t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
+      { assert(0 <= t && t <= 4); assert(models.use_count() == 1); return (*models)[t]; }
     void reallocate()
       { models.reset(new std::vector<ModelList>(models->begin(), models->end())); }
   };

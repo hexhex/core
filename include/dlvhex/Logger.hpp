@@ -95,7 +95,7 @@ public:
       if( levelwidth == 0 )
         out << indent;
       else
-        out << std::hex << std::setw(levelwidth) << forlevel << " " << indent;
+        out << std::hex << std::setw(levelwidth) << forlevel << std::dec << " " << indent;
     }
 
   inline bool shallPrint(Levels forlevel)

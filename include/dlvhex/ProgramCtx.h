@@ -45,12 +45,10 @@
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/ModelBuilder.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>
-//#include <boost/bimap/bimap.hpp>
-//#include <boost/bimap/set_of.hpp>
-//#include <boost/bind.hpp>
 
 #include <vector>
 #include <string>
@@ -60,6 +58,12 @@ DLVHEX_NAMESPACE_BEGIN
 
 typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
   EvalHeuristicFactory;
+
+typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
+  ModelBuilderPtr;
+
+typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
+  ModelBuilderFactory;
 
 /**
  * @brief Program context class.
@@ -84,6 +88,8 @@ public:
 
   // factory for eval heuristics
   EvalHeuristicFactory evalHeuristicFactory;
+  // factory for model builders
+  ModelBuilderFactory modelBuilderFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
@@ -113,8 +119,9 @@ public:
   FinalEvalGraph::EvalUnit ufinal;
   std::list<ModelCallbackPtr> modelCallbacks;
   std::list<FinalCallbackPtr> finalCallback;;
-  // ModelGraphPtr modelgraph;
-  // ModelBuilderPtr modelbuilder;
+  ModelBuilderPtr modelBuilder;
+  // model graph is only accessible via modelbuilder->getModelGraph()!
+  // (model graph is part of the model builder) TODO think about that
 
   StatePtr state;
 

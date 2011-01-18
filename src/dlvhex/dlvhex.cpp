@@ -67,6 +67,8 @@
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/EvalHeuristicEasy.hpp"
+#include "dlvhex/OnlineModelBuilder.hpp"
+#include "dlvhex/OfflineModelBuilder.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -145,6 +147,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of (old,trivial,easy)" << std::endl
+      << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
       << "                      1  - program analysis information (including dot-file)" << std::endl
@@ -258,6 +261,8 @@ int main(int argc, char *argv[])
 
 	// default eval heuristic = "easy" heuristic
 	pctx.evalHeuristicFactory = boost::factory<EvalHeuristicEasy*>();
+	// default model builder = "online" model builder
+	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
@@ -286,6 +291,7 @@ int main(int argc, char *argv[])
 			benchmark::BenchmarkController::Instance();
 		if( pctx.config.doVerbose(Configuration::PROFILING) )
 		{
+			LOG(INFO,"initializing benchmarking output");
 			ctr.setOutput(&Logger::Instance().stream());
 			// for continuous statistics output, display every 1000'th output
 			ctr.setPrintInterval(999);
@@ -433,7 +439,7 @@ void processOptionsPrePlugin(
   int ch;
   int longid;
   
-  static const char* shortopts = "f:hsvp:are:";
+  static const char* shortopts = "f:hsvp:are:m:";
   static struct option longopts[] =
 	{
 		{ "help", no_argument, 0, 'h' },
@@ -444,6 +450,7 @@ void processOptionsPrePlugin(
 		{ "allmodels", no_argument, 0, 'a' },
 		{ "reverse", no_argument, 0, 'r' },
 		{ "heuristics", required_argument, 0, 'e' },
+		{ "modelbuilder", required_argument, 0, 'm' },
 		//{ "firstorder", no_argument, &longid, 1 },
 		{ "weaksafety", no_argument, &longid, 2 },
 		//{ "ruleml",     no_argument, &longid, 3 },
@@ -523,6 +530,28 @@ void processOptionsPrePlugin(
 					throw UsageError("unknown evaluation heuristic '" + heuri +"' specified!");
 				}
 				LOG(INFO,"selected '" << heuri << "' evaluation heuristics");
+			}
+			break;
+
+		case 'm':
+			// modelbuilder={offline,online}
+			{
+				std::string modelbuilder(optarg);
+				if( modelbuilder == "offline" )
+				{
+					pctx.modelBuilderFactory =
+						boost::factory<OfflineModelBuilder<FinalEvalGraph>*>();
+				}
+				else if( modelbuilder == "online" )
+				{
+					pctx.modelBuilderFactory =
+						boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
+				}
+				else
+				{
+					throw UsageError("unknown model builder '" + modelbuilder +"' specified!");
+				}
+				LOG(INFO,"selected '" << modelbuilder << "' model builder");
 			}
 			break;
 
