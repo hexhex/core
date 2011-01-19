@@ -104,6 +104,9 @@ public:
   void associateExtAtomsWithPluginAtoms(
       const std::vector<ID>& idb, bool failOnUnknownAtom=true);
 
+  // call all setupProgramCtx methods of all plugins
+  void setupProgramCtx(ProgramCtx& ctx);
+
 private:
   // one plugincontainer can only be used with one registry,
   // as all the plugin atoms have an association with a registry

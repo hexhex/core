@@ -1,6 +1,7 @@
 
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* src/dlvhex/gdbdlvhex.sh: Shellscript to use gdb with libtool-built uninstalled binary.
 	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
 	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
 	* removed --reverse option as it was not implemented and not documented
@@ -13,6 +14,7 @@
 	* removed dependency on cppunit, now using the boost UTF
 	* no longer enforcing dlv to be present as backend, it is now sufficient that one of the possible backends is present
 	* evaluation heuristics selectable with --heuristics=...
+	* state machine now features states that may be implicitly skipped (= optional states)
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

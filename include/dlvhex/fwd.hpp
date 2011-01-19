@@ -42,6 +42,9 @@ DLVHEX_NAMESPACE_BEGIN
 
 // sorted alphabetically, to easily verify/extend the list
 
+class AnswerSet;
+typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
+
 class ComponentGraph;
 typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 
@@ -71,6 +74,9 @@ class ProgramCtx;
 
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
+
+class State;
+typedef boost::shared_ptr<State> StatePtr;
 
 DLVHEX_NAMESPACE_END
 

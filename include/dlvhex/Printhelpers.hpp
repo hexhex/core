@@ -61,10 +61,13 @@ class ostream_printable
 // and you have an object o of this type
 // then you can do "std::cerr << ... << print_method(o) << ... " to print it
 
-// if some other method is used to print T
+// if some other method is used to print T foo
 // e.g. std::ostream& BAR::printFOO(std::ostream& o, const FOO& p) const
 // then you can do 
 // std::cerr << ... << print_function(boost::bind(&BAR::printFOO, &bar, _1, foo)) << ...
+// e.g. std::ostream& printFOO(std::ostream& o, const FOO& p) const
+// then you can do 
+// std::cerr << ... << print_function(boost::bind(&printFoo, _1, foo)) << ...
 
 // std::cerr << ... << printopt(boost::optional<T>) << ...
 // gives "unset" or prints T's contents
@@ -84,6 +87,7 @@ struct print_container
 
 inline std::ostream& operator<<(std::ostream& o, print_container* c)
 {
+  assert(c);
   std::ostream& ret = c->print(o);
   delete c;
   return ret;

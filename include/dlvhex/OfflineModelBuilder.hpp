@@ -31,16 +31,12 @@
 #ifndef OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 #define OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/ModelGraph.hpp"
-#include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/CAUAlgorithms.hpp"
 
 template<typename EvalGraphT>
 class OfflineModelBuilder:
-  protected OnlineModelBuilder<EvalGraphT>
+  public OnlineModelBuilder<EvalGraphT>
 {
   // types
 protected:

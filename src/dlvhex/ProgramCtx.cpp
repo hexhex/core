@@ -223,13 +223,13 @@ void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
+void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
+void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
 void ProgramCtx::optimizeEDBDependencyGraph() { state->optimizeEDBDependencyGraph(this); }
 void ProgramCtx::createComponentGraph() { state->createComponentGraph(this); }
-void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
-void ProgramCtx::configureModelBuilder() { state->configureModelBuilder(this); }
-void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }
-void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
 void ProgramCtx::strongSafetyCheck() { state->strongSafetyCheck(this); }
+void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
+void ProgramCtx::setupProgramCtx() { state->setupProgramCtx(this); }
 void ProgramCtx::evaluate() { state->evaluate(this); }
 void ProgramCtx::postProcess() { state->postProcess(this); }
 

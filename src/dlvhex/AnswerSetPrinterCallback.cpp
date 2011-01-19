@@ -22,36 +22,35 @@
  */
 
 /**
- * @file   Logger.cpp
+ * @file   AnswerSetPrinterCallback.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Implementation of logging facility.
  */
 
-#include "dlvhex/Logger.hpp"
+#include "dlvhex/AnswerSetPrinterCallback.hpp"
 
-namespace
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#  ifdef DLVHEX_DEBUG
+#    define DLVHEX_BENCHMARK
+#  endif
+#endif
+
+#include "dlvhex/Benchmarking.h"
+#include "dlvhex/AnswerSet.hpp"
+
+DLVHEX_NAMESPACE_BEGIN
+
+bool AnswerSetPrinterCallback::operator()(
+    AnswerSetPtr as)
 {
-  Logger* instance = 0;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
+  std::cout << *as << std::endl;
+  // never abort
+  return true;
 }
 
-Logger& Logger::Instance()
-{
-  if( instance == 0 )
-    instance = new Logger();
-  return *instance;
-}
-
-void Logger::setPrintLevels(Levels levels)
-{
-  if( levels & ERROR != ERROR )
-    out << "Logger warning: deactivated ERROR level" << std::endl;
-  printlevels = levels;
-}
-
-void Logger::setPrintLevelWidth(int width)
-{
-  assert(width >= 0 );
-  levelwidth = width;
-}
+DLVHEX_NAMESPACE_END
 

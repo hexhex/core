@@ -38,8 +38,10 @@ dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
     AnswerSet.cpp \
+    AnswerSetPrinterCallback.cpp \
     Atoms.cpp \
     Benchmarking.cpp \
+    CAUAlgorithms.cpp \
     ComponentGraph.cpp \
     DependencyGraph.cpp \
     Error.cpp \

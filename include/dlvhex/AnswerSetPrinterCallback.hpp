@@ -22,36 +22,28 @@
  */
 
 /**
- * @file   Logger.cpp
+ * @file   AnswerSetPrinterCallback.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Implementation of logging facility.
+ * @brief  Helpers for printing objects to streams.
  */
 
-#include "dlvhex/Logger.hpp"
+#ifndef ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
+#define ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
 
-namespace
-{
-  Logger* instance = 0;
-}
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/PluginInterface.h"
 
-Logger& Logger::Instance()
-{
-  if( instance == 0 )
-    instance = new Logger();
-  return *instance;
-}
+DLVHEX_NAMESPACE_BEGIN
 
-void Logger::setPrintLevels(Levels levels)
+class AnswerSetPrinterCallback:
+  public ModelCallback
 {
-  if( levels & ERROR != ERROR )
-    out << "Logger warning: deactivated ERROR level" << std::endl;
-  printlevels = levels;
-}
+public:
+  virtual bool operator()(AnswerSetPtr model);
+};
 
-void Logger::setPrintLevelWidth(int width)
-{
-  assert(width >= 0 );
-  levelwidth = width;
-}
+DLVHEX_NAMESPACE_END
+
+#endif // ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
 

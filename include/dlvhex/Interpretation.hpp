@@ -32,15 +32,13 @@
 #define INTERPRETATION_HPP_INCLUDED__08112010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/ID.hpp"
 #include <bm/bm.h>
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
-
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
 
 class Interpretation:
   public InterpretationBase,

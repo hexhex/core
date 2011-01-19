@@ -45,12 +45,10 @@
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/ModelBuilder.hpp"
 
 #include <boost/shared_ptr.hpp>
 //#include <boost/functional/factory.hpp>
-//#include <boost/bimap/bimap.hpp>
-//#include <boost/bimap/set_of.hpp>
-//#include <boost/bind.hpp>
 
 #include <vector>
 #include <string>
@@ -58,20 +56,14 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
-// class PluginContainer;
-// class Configuration;
-class Program;
-class AtomSet;
-
-//class Process;
-//class ResultContainer;
-//class OutputBuilder;
-class State;
-typedef boost::shared_ptr<State> StatePtr;
-
 typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
   EvalHeuristicFactory;
+
+typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
+  ModelBuilderPtr;
+
+typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
+  ModelBuilderFactory;
 
 /**
  * @brief Program context class.
@@ -96,6 +88,8 @@ public:
 
   // factory for eval heuristics
   EvalHeuristicFactory evalHeuristicFactory;
+  // factory for model builders
+  ModelBuilderFactory modelBuilderFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
@@ -130,10 +124,12 @@ public:
   DependencyGraphPtr depgraph;
   ComponentGraphPtr compgraph;
   FinalEvalGraphPtr evalgraph;
-  // ModelGraphPtr modelgraph;
-  // ModelBuilderPtr modelbuilder;
-  // ModelCallbackPtr modelcallback;
-  // FinalizeCallbackPtr finalizecallback;
+  FinalEvalGraph::EvalUnit ufinal;
+  std::list<ModelCallbackPtr> modelCallbacks;
+  std::list<FinalCallbackPtr> finalCallback;;
+  ModelBuilderPtr modelBuilder;
+  // model graph is only accessible via modelbuilder->getModelGraph()!
+  // (model graph is part of the model builder) TODO think about that
 
   StatePtr state;
 
@@ -210,19 +206,21 @@ public:
 
   //
   // state processing
+  // the following functions are given in intended order of calling
+  // optional functions may be omitted
   //
 
-  void showPlugins();
-  void convert();
+  void showPlugins();                // optional
+  void convert();                    // optional
   void parse();
-  void rewriteEDBIDB();
-	void optimizeEDBDependencyGraph();
-	void createComponentGraph();
-	void createEvalGraph();
-  void configureModelBuilder();
+  void rewriteEDBIDB();              // optional
+  void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();
-  void safetyCheck();
-  void strongSafetyCheck();
+	void optimizeEDBDependencyGraph(); // optional
+	void createComponentGraph();
+  void strongSafetyCheck();          // optional (if you know that your program is safe!)
+	void createEvalGraph();
+  void setupProgramCtx();
   void evaluate();
   void postProcess();
 
