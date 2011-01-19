@@ -32,15 +32,17 @@
  *
  */
 
-#define __STDC_LIMIT_MACROS
-#include <boost/cstdint.hpp>
 #include "dlvhex/ASPSolver.h"
+
+#warning perhaps we need to reactivate this
+//#define __STDC_LIMIT_MACROS
+//#include <boost/cstdint.hpp>
+
+#include "dlvhex/PlatformDefinitions.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
-
-#define DLVHEX_BENCHMARK
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/DLVProcess.h"

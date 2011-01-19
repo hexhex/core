@@ -33,8 +33,12 @@
  *      
  */     
 
-#define DLVHEX_BENCHMARK
 #include "dlvhex/PluginInterface.h"
+
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Term.hpp"
@@ -233,13 +237,6 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (Plugi
     }
     answer = ans;
   }
-}
-
-
-const std::vector<PluginAtom::InputType>&
-PluginAtom::getInputTypes() const
-{
-  return inputType;
 }
 
 PluginAtom::InputType

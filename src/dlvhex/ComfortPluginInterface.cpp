@@ -21,33 +21,26 @@
  * 02110-1301 USA.
  */
 
+
 /**
- * @file   AnswerSetPrinterCallback.cpp
- * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
- * @brief  Implementation of logging facility.
+ * @file ComfortPpuginInterface.cpp
+ * @author Peter Schueller
+ * @date Tue Jun 16 14:34:00 CEST 2009
+ *
+ * @brief comfortable plugin interface implementation
  */
 
-#include "dlvhex/AnswerSetPrinterCallback.hpp"
+#include "dlvhex/ComfortPluginInterface.hpp"
 
-// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/AnswerSet.hpp"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
-
-bool AnswerSetPrinterCallback::operator()(
-    AnswerSetPtr as)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
-  std::cout << *as << std::endl;
-  // never abort
-  return true;
-}
 
 DLVHEX_NAMESPACE_END
 

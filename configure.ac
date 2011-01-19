@@ -237,12 +237,12 @@ CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 # debug
 AC_ARG_ENABLE(debug,
               [  --enable-debug          switch on debug and benchmarking routines (timers, ...)],
-              [AC_DEFINE(DLVHEX_DEBUG, [], [Turns on timer routines for profiling])
+              [AC_DEFINE(DLVHEX_BENCHMARKING, [], [Turns on benchmarking routines for profiling])
                debug_support=true],
-	      [debug_support=false]
+              [debug_support=false]
               )
 
-AM_CONDITIONAL([BENCHMARKING], [test x$debug_support = xtrue])
+#AM_CONDITIONAL([DLVHEX_DEBUG], [test x$debug_support = xtrue])
 
 # for debug, we need the boost_date_time library
 if test "$debug_support" = "true"; then
@@ -322,8 +322,6 @@ AC_CONFIG_FILES([
            include/testsuite/dlvhex/Makefile
            src/Makefile
            src/dlvhex/Makefile
-           src/testsuite/Makefile
-           src/testsuite/dlvhex/Makefile
            testsuite/Makefile
            testsuite/benchgen/Makefile
            testsuite/olddlvhex_perfplugins/Makefile

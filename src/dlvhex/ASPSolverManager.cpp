@@ -34,19 +34,15 @@
 
 #include "dlvhex/ASPSolverManager.h"
 
-#if 0
-// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
 #endif
 
+#if 0
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Program.h"
-#include "dlvhex/globals.h"
+#include "dlvhex/Configuration.h"
 #include "dlvhex/AtomSet.h"
 
 #include <boost/scope_exit.hpp>

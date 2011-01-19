@@ -25,6 +25,7 @@
 /**
  * @file TestPlugin.cpp
  * @author Roman Schindlauer
+ * @author Peter Schueller
  * @date Tue Mar 27 17:28:33 CEST 2007
  *
  * @brief Test-plugin for the dlvhex-testsuite.

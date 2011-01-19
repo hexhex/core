@@ -33,7 +33,8 @@
 #ifndef DLVHEX_H_BENCHMARKING_INCLUDED_1555
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
-#include <dlvhex/PlatformDefinitions.h>
+#include "dlvhex/PlatformDefinitions.h"
+
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
 #include <boost/date_time/posix_time/posix_time.hpp>

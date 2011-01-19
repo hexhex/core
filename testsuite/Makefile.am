@@ -1,5 +1,7 @@
 SUBDIRS = benchgen olddlvhex_perfplugins
 
+EXTRA_DIST = run-dlvhex-tests.sh
+
 # global preprocessor flags
 AM_CPPFLAGS = \
     -I$(top_srcdir)/include \
@@ -15,6 +17,8 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
+
+check_LTLIBRARIES = libdlvhextest.la
 
 TESTS = \
   TestEvalEndToEnd TestEvalEndToEndND \
@@ -49,6 +53,9 @@ noinst_PROGRAMS = \
   TestMCSIE TestMCSIEND \
   TestPlainHEX TestPlainHEXND
 
+libdlvhextest_la_SOURCES = TestPlugin.cpp
+# this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
+libdlvhextest_la_LDFLAGS = -avoid-version -module -rpath /
 
 # full debugging output
 
