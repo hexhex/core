@@ -49,8 +49,11 @@ DLVHEX_NAMESPACE_BEGIN
 // use FinalCallback from PluginInterface.h
 // use PluginConverter from PluginInterface.h
 // TODO rewriter, optimizer?
+// use the original PluginInterface, and simply register ComfortPluginAtoms instead of PluginAtoms
 
-struct ComfortTerm
+// you can stream out ComfortTerm objects, e.g., for debugging
+struct ComfortTerm:
+  public ostream_printable<ComfortTerm>
 {
   enum Type { STR, INT };
 
@@ -73,6 +76,16 @@ struct ComfortTerm
   static ComfortTerm createInteger(int i)
     { return ComfortTerm(INT, "", i); }
 
+  // comparability (for putting ComfortTerm into sets)
+  bool operator<(const ComfortTerm& other) const
+    { return
+        (type < other.type) ||
+        (type == STR && other.type == STR && strval < other.strval) ||
+        (type == INT && other.type == INT && intval < other.intval); }
+
+  // non-virtual (see Printhelpers.hpp)
+  std::ostream& print(std::ostream& o) const;
+
 protected:
   // stupid constructor, use "create..." functions
   ComfortTerm(Type type, const std::string& strval, int intval):
@@ -81,20 +94,71 @@ protected:
 
 typedef std::vector<ComfortTerm> ComfortTuple;
 
-struct ComfortGroundAtom
+// you can stream out ComfortAtom objects, e.g., for debugging
+struct ComfortAtom:
+  public ostream_printable<ComfortAtom>
 {
-  #warning TODO strong negation
+  #warning TODO strong negation as prefix of first constant!
   ComfortTuple tuple;
 
   inline const std::string& toString() const
     { if( strval.empty() ) calculateStrVal(); return strval; }
+
+  // comparability (for putting ComfortAtom into sets)
+  bool operator<(const ComfortAtom& other) const
+    { return tuple < other.tuple; }
+
+  // non-virtual (see Printhelpers.hpp)
+  std::ostream& print(std::ostream& o) const;
+
 protected:
   mutable std::string strval;
   void calculateStrVal() const;
 };
 
-typedef std::set<ComfortGroundAtom> ComfortInterpretation;
-//typedef boost::shared_ptr<ComfortInterpretation> ComfortInterpretationPtr;
+// this mimicks the old AtomSet
+// you can stream out ComfortInterpretation objects, e.g., for debugging
+struct ComfortInterpretation;
+struct ComfortInterpretation:
+  public std::set<ComfortAtom>,
+  public ostream_printable<ComfortInterpretation>
+{
+  // adders
+
+  // insert one atom
+  void insert(const ComfortAtom&);
+
+  // insert all atoms from other interpretation
+  void insert(const ComfortInterpretation&);
+
+  // removers
+
+  // remove atoms whose predicate matches a string in the given set
+  void remove(const std::set<std::string>& predicates);
+
+  // remove atoms whose predicate does not match any string in the given set
+  void keep(const std::set<std::string>& predicates);
+
+  // remove negative atoms
+  #warning todo strong negation
+  void keepPos();
+
+  // accessors/helpers
+
+  bool isConsistent() const;
+
+  // copy all atoms that match the specified predicate into destination interpretation
+  void matchPredicate(const std::string& predicate, ComfortInterpretation& destination) const;
+
+  // copy all atoms that unify with the specified predicate into destination interpretation
+  void matchAtom(const ComfortAtom& atom, ComfortInterpretation& destination) const;
+
+  // return set difference *this \ subtractThis
+  ComfortInterpretation difference(const ComfortInterpretation& subtractThis) const;
+
+  // non-virtual (see Printhelpers.hpp)
+  std::ostream& print(std::ostream& o) const;
+};
 
 class ComfortPluginAtom:
   public PluginAtom
@@ -112,20 +176,18 @@ public:
 
   // as in PluginAtom, your constructor must use addInput...() methods to
   // define inputs and must use setOutputArity().
-  ComfortPluginAtom(const std::string& predicate, bool monotonic):
+  ComfortPluginAtom(const std::string& predicate, bool monotonic=false):
     PluginAtom(predicate, monotonic) {}
 
   virtual ~ComfortPluginAtom() {}
 
   // you have to implement this method
-  virtual void retrieve(const ComfortQuery&, Comfort Answer&) = 0;
+  virtual void retrieve(const ComfortQuery&, ComfortAnswer&) = 0;
 
 protected:
   // we implemented the original retrieve here, so you don't have to take care of this anymore
   virtual void retrieve(const Query&, Answer&);
 };
-
-// use the original PluginInterface, and simply register ComfortPluginAtoms instead of PluginAtoms
 
 DLVHEX_NAMESPACE_END
 

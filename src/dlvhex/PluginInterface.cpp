@@ -170,7 +170,7 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 }
 
 
-void PluginAtom::retrieveCached(const Query& query, Answer& answer) throw (PluginError)
+void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
   // Cache answer for queries which were already done once:

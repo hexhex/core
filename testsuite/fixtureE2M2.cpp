@@ -32,6 +32,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+using namespace dlvhex;
+
 ModelGraphE2M2Fixture::ModelGraphE2M2Fixture():
   EvalGraphE2Fixture(),
   mg(eg)

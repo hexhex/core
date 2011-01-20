@@ -65,7 +65,6 @@
 #include <fstream>
 #include <vector>
 
-
 DLVHEX_NAMESPACE_BEGIN
 
 State::State(StatePtr failureState):
@@ -183,10 +182,10 @@ void ConvertState::convert(ProgramCtx* ctx)
   std::vector<PluginConverterPtr> converters;
   BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
   {
-    BOOST_FOREACH(PluginConverter* pc, plugin->createConverters())
+    BOOST_FOREACH(PluginConverterPtr pc, plugin->createConverters())
     {
       LOG(PLUGIN,"got plugin converter from plugin " << plugin->getPluginName());
-      converters.push_back(PluginConverterPtr(pc));
+      converters.push_back(pc);
     }
   }
 

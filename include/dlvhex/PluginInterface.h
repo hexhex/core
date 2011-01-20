@@ -1081,7 +1081,12 @@ public:
    * a["substr"] = substr;
    * \endcode
    */
-  virtual void getAtoms(PluginAtomMap&) { }
+  virtual std::vector<PluginAtomPtr> createAtoms() const
+    { return std::vector<PluginAtomPtr>(); }
+
+  // this method gets atoms into a map,
+  // these atoms are always freshly created using createAtoms
+  virtual void getAtoms(PluginAtomMap&) const;
 
   const std::string& getPluginName() const
     { return this->pluginName; }

@@ -23,9 +23,8 @@
 
 
 /**
- * @file ComfortPpuginInterface.cpp
+ * @file ComfortPluginInterface.cpp
  * @author Peter Schueller
- * @date Tue Jun 16 14:34:00 CEST 2009
  *
  * @brief comfortable plugin interface implementation
  */
@@ -40,7 +39,49 @@
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 
+#include <sstream>
+
 DLVHEX_NAMESPACE_BEGIN
+
+std::ostream& ComfortTerm::print(std::ostream& o) const
+{
+  if( isInteger() )
+    return o << intval;
+  else
+    return o << strval;
+}
+
+void ComfortAtom::calculateStrVal() const
+{
+  ComfortTuple::const_iterator it = tuple.begin();
+  assert(it != tuple.end());
+
+  std::ostringstream os;
+  os << *it;
+  it++;
+  if( it != tuple.end() )
+  {
+    os << "(" << *it;
+    it++;
+    while(it != tuple.end())
+    {
+      os << "," << *it;
+      it++;
+    }
+    os << ")";
+  }
+  strval = os.str();
+}
+
+std::ostream& ComfortAtom::print(std::ostream& o) const
+{
+  return o << toString();
+}
+
+std::ostream& ComfortInterpretation::print(std::ostream& o) const
+{
+  return o << printrange(*this, "{", "}", ",");
+}
 
 DLVHEX_NAMESPACE_END
 

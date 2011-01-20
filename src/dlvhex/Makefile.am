@@ -42,6 +42,7 @@ libdlvhexbase_la_SOURCES = \
     Atoms.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
+    ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     DependencyGraph.cpp \
     Error.cpp \

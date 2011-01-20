@@ -37,7 +37,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex/ComfortPluginInterface.hpp"
+
+#include <boost/foreach.hpp>
 
 #include <string>
 #include <sstream>
@@ -48,286 +50,251 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class TestAAtom : public PluginAtom
+class TestAAtom:
+  public ComfortPluginAtom
 {
 public:
-	TestAAtom()
+	TestAAtom():
+    ComfortPluginAtom("TestA")
 	{
 		addInputPredicate();
 		setOutputArity(1);
 	}
 
-	virtual void
-	retrieve(const Query& query, Answer& answer) throw(PluginError)
+	virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
 	{
-		std::vector<Tuple> out;
+		ComfortTuple tu;
+		if( query.interpretation.empty() )
+    {
+			tu.push_back(ComfortTerm::createConstant("foo"));
+    }
+    else
+    {
+			tu.push_back(ComfortTerm::createConstant("bar"));
+    }
 
-		Term t1("foo");
-		Term t2("bar");
-		Tuple tu1;
-
-		if (query.getInterpretation().size() == 0)
-			tu1.push_back(t1);
-
-		if (query.getInterpretation().size() > 0)
-			tu1.push_back(t2);
-
-		out.push_back(tu1);
-
-		answer.addTuples(out);
+		answer.insert(tu);
 	}
 };
 
-
-class TestBAtom : public PluginAtom
+class TestBAtom: 
+  public ComfortPluginAtom
 {
 public:
-	TestBAtom()
+	TestBAtom():
+    ComfortPluginAtom("testB")
 	{
 		addInputPredicate();
 		addInputPredicate();
 		setOutputArity(1);
 	}
 
-	virtual void
-	retrieve(const Query& query, Answer& answer) throw(PluginError)
+	virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
 	{
-		std::vector<Tuple> out;
-
-		Term t1("bar");
-		Term t2("foo");
-		Tuple tu1;
-
-		if (query.getInterpretation().size() <= 1)
+		if( query.interpretation.size() <= 1 )
 		{
-			tu1.push_back(t1);
-			out.push_back(tu1);
+      ComfortTuple tu;
+      tu.push_back(ComfortTerm::createConstant("bar"));
+      answer.insert(tu);
 		}
-
-		if (query.getInterpretation().size() > 1)
+    else if( query.interpretation.size() > 1 )
 		{
-			tu1.push_back(t2);
-			out.push_back(tu1);
+      ComfortTuple tu;
+      tu.push_back(ComfortTerm::createConstant("foo"));
+      answer.insert(tu);
 		}
-
-		answer.addTuples(out);
 	}
 };
 
-
-
-
-class TestCAtom : public PluginAtom
+class TestCAtom:
+  public ComfortPluginAtom
 {
 public:
-  TestCAtom()
+  TestCAtom():
+    ComfortPluginAtom("testC")
   {
     addInputPredicate();
     setOutputArity(1);
   }
   
-  virtual void
-  retrieve(const Query& query, Answer& answer) throw(PluginError)
+  virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
   {
-    std::vector<Tuple> out;
-    
-    const Tuple& in = query.getInputTuple();
-    
-    std::string t = "-" + in[0].getUnquotedString();
-    
-    AtomSet negm;
-    query.getInterpretation().matchPredicate(t, negm);
+    assert(query.input.size() > 0);
+    assert(query.input[0].isConstant());
 
-    for (AtomSet::const_iterator it = negm.begin();
-	 it != negm.end(); ++it)
-      {
-	out.push_back(it->getArguments());
-      }
+    std::string t = "-" + query.input[0].strval;
     
-    answer.addTuples(out);
+    ComfortInterpretation negProj;
+    query.interpretation.matchPredicate(t, negProj);
+
+    for(ComfortInterpretation::const_iterator it = negProj.begin();
+        it != negProj.end(); ++it)
+    {
+      const ComfortAtom& at = *it;
+      ComfortTuple::const_iterator itt = at.tuple.begin();
+      assert(itt != at.tuple.end());
+      // skip predicate
+      itt++;
+      while( itt != at.tuple.end() )
+      {
+        // add each constant of the atom as separate output tuple
+        // so -foo(a,b,c) will end up as three tuples [a], [b], and [c]
+        ComfortTuple tu;
+        tu.push_back(*itt);
+        answer.insert(tu);
+        itt++;
+      }
+    }
   }
 };
 
-
-
-class TestZeroArityAtom : public PluginAtom
+// this is no comfortplugin atom as we don't need comfort here
+class TestZeroArityAtom:
+  public PluginAtom
 {
 protected:
 	bool succeed;
 public:
-  TestZeroArityAtom(bool succeed): succeed(succeed)
+  TestZeroArityAtom(const std::string& name, bool succeed):
+    PluginAtom(name, true),
+    succeed(succeed)
   {
+    // no inputs
     setOutputArity(0);
   }
   
-  virtual void
-  retrieve(const Query&, Answer& answer) throw(PluginError)
+  virtual void retrieve(const Query&, Answer& answer)
   {
 		if( succeed )
 		{
 			// succeed by returning an empty tuple
-			answer.addTuple(Tuple());
+			answer.get().push_back(Tuple());
 		}
 		else
 		{
-			// fail by returning no tuple
+			// fail by returning no tuple (but mark answer as set)
+			answer.use();
 		}
   }
 };
 
-
-
-class TestConcatAtom : public PluginAtom
+class TestConcatAtom:
+  public ComfortPluginAtom
 {
 public:
+  TestConcatAtom():
+    ComfortPluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputTuple();
+    setOutputArity(1);
+  }
 
-    TestConcatAtom()
+  virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
+  {
+    std::stringstream s;
+
+    BOOST_FOREACH(const ComfortTerm& t, query.input)
     {
-        addInputConstant();
-        addInputConstant();
-        setOutputArity(1);
+      if( t.isInteger() )
+        s << t.intval;
+      else if( t.isConstant() )
+        s << t.strval;
+      else
+        throw PluginError("encountered unknown term type!");
     }
-
-    virtual void
-    retrieve(const Query& query, Answer& answer) throw (PluginError)
-    {
-
-        std::stringstream in1, in2;
-
-        Term s1 = query.getInputTuple()[0];
-        Term s2 = query.getInputTuple()[1];
-
-        if (s1.isInt())
-            in1 << s1.getInt();
-        else if (s1.isString())
-            in1 << s1.getUnquotedString();
-        else
-            throw PluginError("Wrong input argument type");
-        
-        if (s2.isInt())
-            in2 << s2.getInt();
-        else if (s2.isString())
-            in2 << s2.getUnquotedString();
-        else
-            throw PluginError("Wrong input argument type");
-        
-        Tuple out;
-
-        //
-        // call Term::Term with second argument true to get a quoted string!
-        //
-        out.push_back(Term(std::string(in1.str() + in2.str()), 1));
-
-        answer.addTuple(out);
-    }
+    
+    ComfortTuple tu;
+    tu.push_back(ComfortTerm::createConstant(s.str()));
+    answer.insert(tu);
+  }
 };
 
-class TestSetMinusAtom : public PluginAtom
+class TestSetMinusAtom:
+  public ComfortPluginAtom
 {
 public:
+  TestSetMinusAtom():
+    // this nonmonotonicity is very important,
+    // because this atom is definitively nonmonotonic
+    // and there are testcases that fail if this is set to true!
+    ComfortPluginAtom("testSetMinus", false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(1);
+  }
 
-    TestSetMinusAtom():
-      PluginAtom(false)
+  virtual void retrieve(const ComfortQuery& query, ComfortAnswer& answer)
+  {
+    assert(query.input.size() == 2);
+    if( !query.input[0].isConstant() || !query.input[1].isConstant() )
+      throw PluginError("need constant predicates as input to testSetMinus!");
+
+    // extract predicates from input
+    std::vector<ComfortInterpretation> psets;
+    psets.resize(2); // allocate exactly two sets
+    query.interpretation.matchPredicate(query.input[0].strval, psets[0]);
+    query.interpretation.matchPredicate(query.input[1].strval, psets[1]);
+    
+    // extract terms from predicate sets
+    std::vector<std::set<ComfortTerm> > tsets;
+    BOOST_FOREACH(const ComfortInterpretation& pset, psets)
     {
-        addInputPredicate();
-        addInputPredicate();
-        setOutputArity(1);
+      // put result into termsets
+      tsets.push_back(std::set<ComfortTerm>());
+      std::set<ComfortTerm>& tset = tsets.back();
+
+      // extract (assume unary predicates)
+      BOOST_FOREACH(const ComfortAtom& pred, pset)
+      {
+        if( !pred.tuple.size() != 2 )
+          throw PluginError("can only process atoms of arity 2 in input sets with testSetMinus!");
+        // simply insert the argument into the set
+        tset.insert(pred.tuple[1]);
+      }
     }
 
-    virtual void
-    retrieve(const Query& query, Answer& answer) throw (PluginError)
+    // do set difference between tsets
+    std::set<ComfortTerm> result;
+    std::insert_iterator<std::set<ComfortTerm> > 
+      iit(result, result.begin());
+    std::set_difference(
+        tsets[0].begin(), tsets[0].end(),
+        tsets[1].begin(), tsets[1].end(),
+        iit);
+    BOOST_FOREACH(const ComfortTerm& t, result)
     {
-      const Tuple& in = query.getInputTuple();
-    
-      const std::string& s1 = in[0].getUnquotedString();
-      const std::string& s2 = in[1].getUnquotedString();
-      
-      AtomSet set1;
-      AtomSet set2;
-
-      query.getInterpretation().matchPredicate(s1, set1);
-      query.getInterpretation().matchPredicate(s2, set2);
-
-      std::set<std::string> terms1;
-      for(AtomSet::const_iterator it = set1.begin();
-          it != set1.end(); ++it)
-      {
-        const Tuple& args = it->getArguments();
-        assert(args.size() == 1);
-        assert(args[0].isSymbol());
-        terms1.insert(args[0].getString());
-        //std::cerr << "inset1 " << args[0].getString() << std::endl;
-      }
-
-      std::set<std::string> terms2;
-      for(AtomSet::const_iterator it = set2.begin();
-          it != set2.end(); ++it)
-      {
-        const Tuple& args = it->getArguments();
-        assert(args.size() == 1);
-        assert(args[0].isSymbol());
-        terms2.insert(args[0].getString());
-        //std::cerr << "inset2 " << args[0].getString() << std::endl;
-      }
-
-      std::vector<Tuple> out;
-      std::set<std::string> result;
-      std::insert_iterator<std::set<std::string> > 
-        iit(result, result.begin());
-      std::set_difference(
-          terms1.begin(), terms1.end(),
-          terms2.begin(), terms2.end(),
-          iit);
-      for(std::set<std::string>::const_iterator it = result.begin();
-          it != result.end(); ++it)
-      {
-        Tuple t;
-        t.push_back(Term(*it));
-        out.push_back(t);
-        //std::cerr << "inresult " << *it << std::endl;
-      }
-    
-      answer.addTuples(out);
+      ComfortTuple tu;
+      tu.push_back(t);
+      answer.insert(tu);
     }
+  }
 };
 
-
-class TestPlugin : public PluginInterface
+class TestPlugin:
+  public PluginInterface
 {
 public:
-	/*
-		virtual PluginRewriter*
-		createRewriter(istream& i, ostream& o)
-		{ return new MyRewriter(i,o); }
-		*/
+  TestPlugin():
+    PluginInterface()
+  {
+    setNameVersion("dlvhex-testplugin", 0, 0, 1);
+  }
 
-	virtual void
-	getAtoms(AtomFunctionMap& a)
-	{
-	  boost::shared_ptr<PluginAtom> testA(new TestAAtom);
-	  boost::shared_ptr<PluginAtom> testB(new TestBAtom);
-	  boost::shared_ptr<PluginAtom> testC(new TestCAtom);
-	  boost::shared_ptr<PluginAtom> testZeroArity0(new TestZeroArityAtom(false));
-	  boost::shared_ptr<PluginAtom> testZeroArity1(new TestZeroArityAtom(true));
-	  boost::shared_ptr<PluginAtom> testConcat(new TestConcatAtom);
-	  boost::shared_ptr<PluginAtom> testSetMinus(new TestSetMinusAtom);
+  virtual std::vector<PluginAtomPtr> createAtoms() const
+  {
+    std::vector<PluginAtomPtr> ret;
 
-	  a["testA"] = testA;
-	  a["testB"] = testB;
-	  a["testC"] = testC;
-	  a["testZeroArity0"] = testZeroArity0;
-	  a["testZeroArity1"] = testZeroArity1;
-	  a["testConcat"] = testConcat;
-	  a["testSetMinus"] = testSetMinus;
-	}
+    ret.push_back(PluginAtomPtr(new TestAAtom));
+	  ret.push_back(PluginAtomPtr(new TestBAtom));
+	  ret.push_back(PluginAtomPtr(new TestCAtom));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false)));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true)));
+	  ret.push_back(PluginAtomPtr(new TestConcatAtom));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom));
 
-	virtual void
-	setOptions(bool /* doHelp */, std::vector<std::string>& /* argv */, std::ostream& /* out */)
-	{
-		//
-		// no options yet
-		//
-		return;
+    return ret;
 	}
 };
 
@@ -335,17 +302,14 @@ TestPlugin theTestPlugin;
 
 DLVHEX_NAMESPACE_END
 
+// return plain C type s.t. all compilers and linkers will like this code
 extern "C"
-DLVHEX_NAMESPACE TestPlugin*
-PLUGINIMPORTFUNCTION()
+void * PLUGINIMPORTFUNCTION()
 {
-	DLVHEX_NAMESPACE theTestPlugin.setPluginName("dlvhex-testplugin");
-	DLVHEX_NAMESPACE theTestPlugin.setVersion(0,0,1);
-	return & DLVHEX_NAMESPACE theTestPlugin;
+	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theTestPlugin);
 }
 
 /* vim: set noet sw=4 ts=4 tw=80: */
-
 
 // Local Variables:
 // mode: C++

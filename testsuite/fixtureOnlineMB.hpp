@@ -35,7 +35,9 @@
 #include "fixtureE2.hpp"
 #include "fixtureEx1.hpp"
 
+#include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/Logger.hpp"
+
 #include <boost/test/unit_test.hpp>
 
 
@@ -47,7 +49,7 @@ struct OnlineModelBuilderTFixture:
   public EvalGraphBaseFixtureT
 {
   typedef EvalGraphBaseFixtureT Base;
-  typedef OnlineModelBuilder<TestEvalGraph> ModelBuilder;
+  typedef dlvhex::OnlineModelBuilder<TestEvalGraph> ModelBuilder;
   typedef ModelBuilder::OptionalModel OptionalModel;
 
   ModelBuilder omb;

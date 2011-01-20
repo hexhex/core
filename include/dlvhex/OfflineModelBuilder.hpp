@@ -31,8 +31,11 @@
 #ifndef OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 #define OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/CAUAlgorithms.hpp"
+
+DLVHEX_NAMESPACE_BEGIN
 
 template<typename EvalGraphT>
 class OfflineModelBuilder:
@@ -353,5 +356,7 @@ OfflineModelBuilder<EvalGraphT>::getNextIModel(
     }
   }
 }
+
+DLVHEX_NAMESPACE_END
 
 #endif // OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010

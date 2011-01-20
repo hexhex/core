@@ -22,9 +22,10 @@
 #ifndef MODEL_GRAPH_HPP_INCLUDED__29082010
 #define MODEL_GRAPH_HPP_INCLUDED__29082010
 
-#include "EvalGraph.hpp"
-#include "Logger.hpp"
-#include "Printhelpers.hpp"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/EvalGraph.hpp"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -35,6 +36,8 @@
 
 #include <cassert>
 #include <iomanip>
+
+DLVHEX_NAMESPACE_BEGIN
 
 // this is used as index into an array by struct EvalUnitModels
 enum ModelType
@@ -658,5 +661,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   }
   while(true);
 } // ModelGraph<...>::getSuccessorIntersection(...) implementation
+
+DLVHEX_NAMESPACE_END
 
 #endif // MODEL_GRAPH_HPP_INCLUDED__29082010

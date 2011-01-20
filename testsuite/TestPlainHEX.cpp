@@ -85,6 +85,9 @@
   do {} while(false);
 #endif
 
+using dlvhex::MT_IN;
+using dlvhex::MT_OUT;
+
 typedef boost::function<void (std::ostream&)> GraphVizFunc;
 
 inline void writeGraphVizFunctors(GraphVizFunc vfunc, GraphVizFunc tfunc, const std::string& fnamestart)
@@ -326,10 +329,9 @@ public:
 	AbovePluginAtom():
     dlvhex::PluginAtom("above", true)
 	{
-		inputSize = 2;
+    addInputPredicate();
+    addInputConstant();
 		outputSize = 1;
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
@@ -382,12 +384,11 @@ public:
 	SenseNotArmed1PluginAtom():
     dlvhex::PluginAtom("senseNotArmed1", false)
 	{
-		inputSize = 4;
+    addInputPredicate();
+    addInputPredicate();
+    addInputConstant();
+    addInputConstant();
 		outputSize = 0;
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
-		inputType.push_back(CONSTANT);
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
@@ -443,11 +444,10 @@ public:
 	SenseNotArmed2PluginAtom():
     dlvhex::PluginAtom("senseNotArmed2", false)
 	{
-		inputSize = 3;
 		outputSize = 0;
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
+    addInputPredicate();
+    addInputPredicate();
+    addInputConstant();
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
@@ -498,9 +498,8 @@ public:
 	GenPluginAtom1(const std::string& name, unsigned arity):
     dlvhex::PluginAtom(name, false)
 	{
-		inputSize = 1;
+    addInputPredicate();
 		outputSize = arity;
-		inputType.push_back(PREDICATE);
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
@@ -541,20 +540,17 @@ public:
 	GenPluginAtom2(const std::string& name, unsigned arity):
     dlvhex::PluginAtom(name, false)
 	{
-		inputSize = 1+arity;
 		outputSize = 0;
-		inputType.push_back(PREDICATE);
+    addInputPredicate();
     for(unsigned u = 0; u < arity; ++u)
-      inputType.push_back(CONSTANT);
+      addInputPredicate();
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
   {
     // get input
-    assert(q.input.size() == inputSize);
-
-    // get outputs
-    assert(q.pattern.size() == 0);
+    assert(checkInputArity(q.input.size()));
+    assert(checkOutputArity(q.pattern.size()));
 
     ID idoutput = registry->ogatoms.getIDByTuple(q.input);
     // no ogatom -> cannot be in interpretation

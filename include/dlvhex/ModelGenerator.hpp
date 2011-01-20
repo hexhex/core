@@ -31,6 +31,7 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printhelpers.hpp"
 
@@ -39,6 +40,8 @@
 #include <boost/concept_check.hpp>
 
 #include <ostream>
+
+DLVHEX_NAMESPACE_BEGIN
 
 class InterpretationBase:
   public ostream_printable<InterpretationBase>
@@ -143,5 +146,7 @@ public:
       else
           return o << "0"; }
 };
+
+DLVHEX_NAMESPACE_END
 
 #endif //MODEL_GENERATOR_HPP_INCLUDED__30082010

@@ -35,7 +35,9 @@
 #include "fixtureE2.hpp"
 #include "fixtureEx1.hpp"
 
+#include "dlvhex/OfflineModelBuilder.hpp"
 #include "dlvhex/Logger.hpp"
+
 #include <boost/test/unit_test.hpp>
 
 // fixture for testing offline model building with various graphs
@@ -45,7 +47,7 @@ struct OfflineModelBuilderTFixture:
   public EvalGraphBaseFixtureT
 {
   typedef EvalGraphBaseFixtureT Base;
-  typedef OfflineModelBuilder<TestEvalGraph> ModelBuilder;
+  typedef dlvhex::OfflineModelBuilder<TestEvalGraph> ModelBuilder;
   typedef ModelBuilder::OptionalModel OptionalModel;
 
   ModelBuilder omb;

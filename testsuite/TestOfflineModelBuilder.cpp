@@ -53,6 +53,9 @@
 
 #include "fixtureOfflineMB.hpp"
 
+using dlvhex::MT_IN;
+using dlvhex::MT_OUT;
+
 template<typename ModelGraphT>
 void verifyModels(
     const ModelGraphT& mg,
