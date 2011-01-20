@@ -149,6 +149,7 @@ EvalGraphBuilder::createEvalUnit(
   // TODO configure model generator factory depending on type of component
   // TODO configure model generator factory depending on compiletime/runtime configuration
   // TODO the above matters require a refactoring, the line below is for initial tests only
+  #warning continue here
   uprops.mgf.reset(new FinalModelGeneratorFactory(ctx, cg.propsOf(comp), externalEvalConfig));
 
   // create dependencies

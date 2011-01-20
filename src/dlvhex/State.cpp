@@ -490,7 +490,19 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
   DependencyGraphPtr depgraph(new DependencyGraph(ctx->registry()));
   std::vector<dlvhex::ID> auxRules;
   depgraph->createDependencies(ctx->idb, auxRules);
-  #warning TODO output depgraph as graphviz
+
+  if( ctx->config.getOption("DumpDepGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_DepGraphVerbose.dot";
+    LOG(INFO,"dumping verbose dependency graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    depgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_DepGraphTerse.dot";
+    LOG(INFO,"dumping terse dependency graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    depgraph->writeGraphViz(filet, false);
+  }
 
   ctx->depgraph = depgraph;
 
@@ -535,7 +547,19 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building component graph");
 
   ComponentGraphPtr compgraph(new ComponentGraph(*ctx->depgraph, ctx->registry()));
-  #warning TODO output componentgraph as graphviz
+
+  if( ctx->config.getOption("DumpCompGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_CompGraphVerbose.dot";
+    LOG(INFO,"dumping verbose component graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    compgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_CompGraphTerse.dot";
+    LOG(INFO,"dumping terse component graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    compgraph->writeGraphViz(filet, false);
+  }
 
   ctx->compgraph = compgraph;
 
@@ -600,6 +624,19 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
     evalgraph->addDependency(
         ufinal, *it,
         FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
+  }
+
+  if( ctx->config.getOption("DumpEvalGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    evalgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse evaluation graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    evalgraph->writeGraphViz(filet, false);
   }
 
   ctx->ufinal = ufinal;
@@ -685,10 +722,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       Model m = om.get();
       InterpretationConstPtr interpretation =
         mb.getModelGraph().propsOf(m).interpretation;
+      if( ctx->config.getOption("DumpIModelGraph") )
+      {
+        throw "DumpIModelGraph  not implemented!";
+        #warning TODO individual eval/model graphviz output
+      }
       #ifndef NDEBUG
       DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
       /*
-      #warning TODO graphviz output
       std::set<Model> onlyFor;
       onlyFor.insert(m.get());
       GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
@@ -728,6 +769,12 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   else
   {
     LOG(INFO,"model building finished after enumerating all models");
+  }
+
+  if( ctx->config.getOption("DumpModelGraph") )
+  {
+    throw "DumpModelGraph  not implemented!";
+    #warning TODO overall eval/model graphviz output
   }
 
   #if 0

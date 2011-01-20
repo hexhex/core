@@ -55,7 +55,7 @@ class TestAAtom:
 {
 public:
 	TestAAtom():
-    ComfortPluginAtom("TestA")
+    ComfortPluginAtom("testA")
 	{
 		addInputPredicate();
 		setOutputArity(1);
