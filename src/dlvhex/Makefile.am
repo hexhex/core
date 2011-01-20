@@ -17,9 +17,7 @@ bin_PROGRAMS = dlvhex
 lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
-dlvhex_SOURCES = \
-    Configuration.cpp \
-    dlvhex.cpp
+dlvhex_SOURCES = dlvhex.cpp
 
 #    RuleMLOutputBuilder.cpp 
 
@@ -44,6 +42,7 @@ libdlvhexbase_la_SOURCES = \
     CAUAlgorithms.cpp \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
+    Configuration.cpp \
     DependencyGraph.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
@@ -65,15 +64,6 @@ libdlvhexbase_la_SOURCES = \
     State.cpp \
     URLBuf.cpp
 
-    #Rule.cpp
-    #Literal.cpp
-    #AtomSet.cpp
-    #AtomNode.cpp
-    #AggregateAtom.cpp
-    #SafetyChecker.cpp
-    #ResultContainer.cpp
-    #TextOutputBuilder.cpp
-
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
     ASPSolver.cpp \
@@ -81,7 +71,6 @@ libaspsolver_la_SOURCES = \
     DLVProcess.cpp \
     DLVresultParserDriver.cpp \
     ProcessBuf.cpp
-
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,

@@ -21,7 +21,6 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file ComfortPluginInterface.cpp
  * @author Peter Schueller
@@ -78,9 +77,76 @@ std::ostream& ComfortAtom::print(std::ostream& o) const
   return o << toString();
 }
 
+// insert one atom
+void ComfortInterpretation::insert(const ComfortAtom&)
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// insert all atoms from other interpretation
+void ComfortInterpretation::insert(const ComfortInterpretation&)
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// remove atoms whose predicate matches a string in the given set
+void ComfortInterpretation::remove(const std::set<std::string>& predicates)
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// remove atoms whose predicate does not match any string in the given set
+void ComfortInterpretation::keep(const std::set<std::string>& predicates)
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// remove negative atoms
+void ComfortInterpretation::keepPos()
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+bool ComfortInterpretation::isConsistent() const
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// copy all atoms that match the specified predicate into destination interpretation
+void ComfortInterpretation::matchPredicate(const std::string& predicate, ComfortInterpretation& destination) const
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// copy all atoms that unify with the specified predicate into destination interpretation
+void ComfortInterpretation::matchAtom(const ComfortAtom& atom, ComfortInterpretation& destination) const
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
+// return set difference *this \ subtractThis
+ComfortInterpretation ComfortInterpretation::difference(const ComfortInterpretation& subtractThis) const
+{
+  throw "not implemented";
+  #warning todo implement
+}
+
 std::ostream& ComfortInterpretation::print(std::ostream& o) const
 {
   return o << printrange(*this, "{", "}", ",");
+}
+
+void ComfortPluginAtom::retrieve(const Query&, Answer&)
+{
+  #warning TODO convert and all the stuff
 }
 
 DLVHEX_NAMESPACE_END

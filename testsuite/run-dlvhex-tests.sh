@@ -33,7 +33,10 @@ ntests=0
 
 echo ============ dlvhex tests start ============
 
-for t in $(find $TESTDIR -name '*.test' -type f)
+DLVHEX="${TOPBUILDDIR}/src/dlvhex/dlvhex -s --plugindir=${TOPBUILDDIR}/testsuite/"
+TESTDIR="${TOPSRCDIR}/examples/tests/"
+
+for t in $(find ${TESTDIR} -name '*.test' -type f)
 do
     while read HEXPROGRAM ANSWERSETS ADDPARM
     do
@@ -50,7 +53,7 @@ do
 	fi
 
 	# run dlvhex with specified parameters and program
-	$DLVHEX  $PARAMETERS $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
+	$DLVHEX $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
 
 	if cmp -s $TMPFILE $ANSWERSETS
 	then
@@ -95,10 +98,10 @@ s2 = set(a2)
 sys.exit(len(s1.symmetric_difference(s2)))
 EOF
 			then
-				echo "WARN: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas has different ordering)"
+				echo "WARN: $DLVHEX $ADDPARM $HEXPROGRAM (answerset $nas has different ordering)"
 				let warned++
 			else
-				echo "FAIL: $DLVHEX $PARAMETERS $ADDPARM $HEXPROGRAM (answerset $nas differs)"
+				echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answerset $nas differs)"
         let failed++
 			fi
 

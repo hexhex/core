@@ -289,6 +289,28 @@ ID PluginAtom::getReplacementPredicateID()
   return replacementPredicateID;
 }
 
+// this method gets atoms into a map,
+// these atoms are always freshly created using createAtoms
+void PluginInterface::getAtoms(PluginAtomMap& pam) const
+{
+  // always freshly create! (pluginatoms are linked to a registry,
+  // so when using multiple registries, you have to create multiple pluginatoms)
+  std::vector<PluginAtomPtr> palist = createAtoms();
+  BOOST_FOREACH(PluginAtomPtr pap, palist)
+  {
+    assert(!!pap);
+    const std::string& pred = pap->getPredicate();
+    if( pam.count(pred) != 0 )
+    {
+      LOG(WARNING,"warning: predicate '" << pred << "' already present in PluginAtomMap (skipping)");
+    }
+    else
+    {
+      pam[pred] = pap;
+    }
+  }
+}
+
 // call printUsage for each loaded plugin
 void PluginInterface::printUsage(std::ostream& o) const
 {

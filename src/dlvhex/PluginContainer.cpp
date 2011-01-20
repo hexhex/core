@@ -155,7 +155,6 @@ void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateV
     names.insert(plugin->getPluginName());
   }
   DBGLOG(DBG,"selectPluginCandidates: already loaded: " << printset(names));
-  DBGLOG(DBG,"foo");
 
   CandidateVector::iterator it = candidates.begin();
   while(it != candidates.end())

@@ -18,9 +18,10 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
-check_LTLIBRARIES = libdlvhextest.la
+lib_LTLIBRARIES = libdlvhextest.la
 
 TESTS = \
+  run-dlvhex-tests.sh \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
   TestComponentGraph TestComponentGraphND \
@@ -32,11 +33,12 @@ TESTS = \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
-TESTS_ENVIRONMENT = EXAMPLESDIR=$(top_srcdir)/examples BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
+TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
 
 #TEST_SUITE_LOG = testsuite.log
 
 check_PROGRAMS = \
+  TestTestPluginStatic \
   TestASPSolver TestASPSolverND \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
@@ -55,7 +57,17 @@ noinst_PROGRAMS = \
 
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
-libdlvhextest_la_LDFLAGS = -avoid-version -module -rpath /
+libdlvhextest_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
+libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
+
+#this is just to verify that TestPlugin can link to the rest of the code
+#if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
+TestTestPluginStatic_SOURCES = TestPlugin.cpp $(top_srcdir)/src/dlvhex/dlvhex.cpp 
+TestTestPluginStatic_LDADD = \
+  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
+  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ \
+  $(top_builddir)/src/dlvhex/libdlvhexbase.la $(top_builddir)/src/dlvhex/libaspsolver.la
+TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 
 # full debugging output
 
