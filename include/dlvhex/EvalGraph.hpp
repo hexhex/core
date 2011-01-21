@@ -31,8 +31,7 @@
 #ifndef EVAL_GRAPH_HPP_INCLUDED__29082010
 #define EVAL_GRAPH_HPP_INCLUDED__29082010
 
-//TODO this is required only for ostream_printable, we should make this independent from logger
-#include "dlvhex/Logger.hpp"
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Printhelpers.hpp"
 
 #include <cassert>
@@ -43,6 +42,8 @@
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
+
+DLVHEX_NAMESPACE_BEGIN
 
 struct none_t
 {
@@ -274,5 +275,7 @@ struct EvalUnitProjectionProperties
     bool oproject = false):
       iproject(iproject), oproject(oproject) {}
 };
+
+DLVHEX_NAMESPACE_END
 
 #endif // EVAL_GRAPH_HPP_INCLUDED__29082010

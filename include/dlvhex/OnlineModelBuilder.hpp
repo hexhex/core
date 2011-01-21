@@ -31,13 +31,14 @@
 #ifndef ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 #define ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 
-#include "Logger.hpp"
-#include "ModelGenerator.hpp"
-#include "ModelBuilder.hpp"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/ModelGenerator.hpp"
+#include "dlvhex/ModelBuilder.hpp"
 
 #include <iomanip>
 
-#warning dlvhex namespace
+DLVHEX_NAMESPACE_BEGIN
 
 template<typename EvalGraphT>
 class OnlineModelBuilder:
@@ -969,5 +970,7 @@ OnlineModelBuilder<EvalGraphT>::getNextOModel(
   #endif
   return omodel;
 }
+
+DLVHEX_NAMESPACE_END
 
 #endif // ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010

@@ -60,7 +60,7 @@ struct TestProgramCtx
 typedef std::set<std::string> TestAtomSet;
 
 class TestInterpretation:
-  public InterpretationBase
+  public dlvhex::InterpretationBase
 {
 public:
   typedef boost::shared_ptr<TestInterpretation> Ptr;
@@ -114,17 +114,17 @@ inline std::ostream& operator<<(std::ostream& o, const TestInterpretation& i)
 }
 
 class TestModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<TestInterpretation>
+  public dlvhex::ModelGeneratorFactoryBase<TestInterpretation>
 {
   //
   // types
   //
 public:
-  typedef ModelGeneratorFactoryBase<TestInterpretation>
+  typedef dlvhex::ModelGeneratorFactoryBase<TestInterpretation>
 		Base;
 
   class ModelGenerator:
-    public ModelGeneratorBase<TestInterpretation>
+    public dlvhex::ModelGeneratorBase<TestInterpretation>
   {
   public:
     typedef std::list<TestInterpretation::Ptr>
@@ -218,8 +218,8 @@ public:
 
 // TestEvalGraph
 struct TestEvalUnitPropertyBase:
-  public EvalUnitProjectionProperties,
-  public EvalUnitModelGeneratorFactoryProperties<TestInterpretation>
+  public dlvhex::EvalUnitProjectionProperties,
+  public dlvhex::EvalUnitModelGeneratorFactoryProperties<TestInterpretation>
 {
 	TestProgramCtx ctx;
 
@@ -235,7 +235,7 @@ struct TestEvalUnitPropertyBase:
 	{ }
 };
 
-typedef EvalGraph<TestEvalUnitPropertyBase>
+typedef dlvhex::EvalGraph<TestEvalUnitPropertyBase>
   TestEvalGraph;
 typedef TestEvalGraph::EvalUnit EvalUnit; 
 typedef TestEvalGraph::EvalUnitDep EvalUnitDep; 
@@ -251,7 +251,7 @@ struct TestModelPropertyBase
     interpretation(interpretation) {}
 };
 
-typedef ModelGraph<TestEvalGraph, TestModelPropertyBase, none_t>
+typedef dlvhex::ModelGraph<TestEvalGraph, TestModelPropertyBase>
   TestModelGraph;
 typedef TestModelGraph::Model Model;
 typedef TestModelGraph::ModelPropertyBundle ModelProp;

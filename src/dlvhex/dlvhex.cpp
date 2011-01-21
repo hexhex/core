@@ -156,6 +156,14 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      8  - timing information (only if configured with" << std::endl
       << "                                               --enable-debug)" << std::endl
       << "                      add values for multiple categories." << std::endl
+      << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
+      << "                      Default is none, graph types are:" << std::endl
+      << "                      dep    - Dependency Graph (once per program)" << std::endl
+      << "                      comp   - Component Graph (once per program)" << std::endl
+      << "                      eval   - Evaluation Graph (once per program)" << std::endl
+      << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
+      << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "                      1  - program analysis information (including dot-file)" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -270,6 +278,11 @@ int main(int argc, char *argv[])
   // TODO was/is not implemented: pctx.config.setOption("WeakReverseAllModels", 0);
   pctx.config.setOption("UseExtAtomCache",1);
   pctx.config.setOption("KeepNamespacePrefix",0);
+  pctx.config.setOption("DumpDepGraph",0);
+  pctx.config.setOption("DumpCompGraph",0);
+  pctx.config.setOption("DumpEvalGraph",0);
+  pctx.config.setOption("DumpModelGraph",0);
+  pctx.config.setOption("DumpIModelGraph",0);
 
 	// defaults of main
 	Config config;
@@ -463,6 +476,7 @@ void processOptionsPrePlugin(
 		{ "solver", required_argument, &longid, 7 },
 		{ "nocache",    no_argument, &longid, 8 },
 		{ "version",    no_argument, &longid, 9 },
+		{ "graphviz", required_argument, &longid, 10 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -642,6 +656,42 @@ void processOptionsPrePlugin(
 
 				case 9:
 					printVersion();
+					break;
+
+				case 10:
+					{
+						boost::char_separator<char> sep(",");
+						std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+						boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+						
+						for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+								f != tok.end(); ++f)
+						{
+							const std::string& token = *f;
+							if( token == "dep" )
+							{
+								pctx.config.setOption("DumpDepGraph",1);
+							}
+							else if( token == "comp" )
+							{
+								pctx.config.setOption("DumpCompGraph",1);
+							}
+							else if( token == "eval" )
+							{
+								pctx.config.setOption("DumpEvalGraph",1);
+							}
+							else if( token == "model" )
+							{
+								pctx.config.setOption("DumpModelGraph",1);
+							}
+							else if( token == "imodel" )
+							{
+								pctx.config.setOption("DumpIModelGraph",1);
+							}
+							else
+								throw UsageError("unknown graphviz graph type '"+token+"'");
+						}
+					}
 					break;
 				}
 			break;

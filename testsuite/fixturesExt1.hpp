@@ -62,9 +62,8 @@ public:
 	TestPluginAtomCount():
     dlvhex::PluginAtom("count", false)
 	{
-		inputSize = 1;
+    addInputPredicate();
 		outputSize = 1;
-		inputType.push_back(PREDICATE);
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)
@@ -135,10 +134,9 @@ public:
 	TestPluginAtomReach():
     dlvhex::PluginAtom("reach", true)
 	{
-		inputSize = 2;
+    addInputConstant();
+    addInputPredicate();
 		outputSize = 1;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
 	}
 
 	virtual void retrieve(const Query& q, Answer& a) throw (dlvhex::PluginError)

@@ -35,7 +35,7 @@
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 
-#warning dlvhex namespace
+DLVHEX_NAMESPACE_BEGIN
 
 template<typename EvalGraphT>
 class ModelBuilder
@@ -140,5 +140,7 @@ ModelBuilder<EvalGraphT>::ModelProperties::print(std::ostream& o) const
     o << *interpretation;
   return o;
 }
+
+DLVHEX_NAMESPACE_END
 
 #endif // MODEL_BUILDER_HPP_INCLUDED__18012011

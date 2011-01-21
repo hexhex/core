@@ -35,13 +35,9 @@
 
 #include "dlvhex/ModelGenerator.h"
 
-// activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
-#endif // HAVE_CONFIG_H
+#endif
 
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"

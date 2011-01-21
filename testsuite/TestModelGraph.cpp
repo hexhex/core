@@ -51,6 +51,9 @@
 
 #include "fixtureE2M2.hpp"
 
+using dlvhex::MT_OUT;
+using dlvhex::MT_IN;
+
 BOOST_AUTO_TEST_SUITE(root_TestModelGraph)
 
 BOOST_FIXTURE_TEST_CASE(setup_model_graph_m2, ModelGraphE2M2Fixture)

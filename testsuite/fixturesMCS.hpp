@@ -52,13 +52,12 @@ public:
 	TestPluginAspCtxAcc():
     dlvhex::PluginAtom("dlv_asp_context_acc", false)
 	{
-		inputSize = 5;
+    addInputConstant();
+    addInputPredicate();
+    addInputPredicate();
+    addInputPredicate();
+    addInputConstant();
 		outputSize = 0;
-		inputType.push_back(CONSTANT);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(PREDICATE);
-		inputType.push_back(CONSTANT);
 	}
 
 	// won't be used

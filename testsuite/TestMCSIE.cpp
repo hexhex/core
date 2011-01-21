@@ -326,6 +326,9 @@ void writeEgMgGraphViz(
 typedef OnlineModelBuilder<FinalEvalGraph> FinalOnlineModelBuilder;
 typedef OfflineModelBuilder<FinalEvalGraph> FinalOfflineModelBuilder;
 
+using dlvhex::MT_IN;
+using dlvhex::MT_OUT;
+
 int main(int argn, char** argv)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidoverall, "overall timing");

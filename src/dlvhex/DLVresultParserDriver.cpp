@@ -53,11 +53,7 @@
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
 #endif
-#warning the DLVHEX_BENCHMARK configuration with HAVE_CONFIG_H looks fishy!
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/ID.hpp"
