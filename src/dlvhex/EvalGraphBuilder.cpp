@@ -29,7 +29,9 @@
  */
 
 #include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/FinalModelGenerator.hpp"
+#include "dlvhex/PlainModelGenerator.hpp"
+#include "dlvhex/WellfoundedModelGenerator.hpp"
+#include "dlvhex/GuessAndCheckModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 
 #include <boost/range/iterator_range.hpp>
@@ -146,11 +148,34 @@ EvalGraphBuilder::createEvalUnit(
   // configure unit
   EvalUnitProperties& uprops = eg.propsOf(u);
 
-  // TODO configure model generator factory depending on type of component
-  // TODO configure model generator factory depending on compiletime/runtime configuration
-  // TODO the above matters require a refactoring, the line below is for initial tests only
-  #warning continue here
-  uprops.mgf.reset(new FinalModelGeneratorFactory(ctx, cg.propsOf(comp), externalEvalConfig));
+  // configure model generator factory, depending on type of component
+  {
+    const ComponentGraph::ComponentInfo& ci = cg.propsOf(comp);
+    if( ci.innerEatoms.empty() )
+    {
+      // no inner external atoms -> plain model generator factory
+      LOG(DBG,"configuring plain model generator factory for eval unit " << u);
+      uprops.mgf.reset(new PlainModelGeneratorFactory(
+            ctx, ci, externalEvalConfig));
+    }
+    else
+    {
+      if( ci.innerEatomsMonotonicAndOnlyInPositiveCycles )
+      {
+        // inner external atoms and only in positive cycles and monotonic -> wellfounded/fixpoint model generator factory
+        LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
+        uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
+      else
+      {
+        // everything else -> guess and check model generator factory
+        LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
+        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
+    }
+  }
 
   // create dependencies
 

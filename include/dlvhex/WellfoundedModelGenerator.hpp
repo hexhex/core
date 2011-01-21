@@ -22,14 +22,14 @@
  */
 
 /**
- * @file   FinalModelGenerator.hpp
+ * @file   WellfoundedModelGenerator.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Concrete model generator used for prototype. (TODO refactor, this should be AcycliModelGenerator, perhaps even a template parameterized by solver software)
  */
 
-#ifndef FINAL_MODEL_GENERATOR_HPP_INCLUDED__09112010
-#define FINAL_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#ifndef WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#define WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010
 
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/Interpretation.hpp"
@@ -39,10 +39,12 @@
 
 #include <boost/shared_ptr.hpp>
 
+#warning TODO rewrite whole file (still only a copy)
+
 DLVHEX_NAMESPACE_BEGIN
 
 class ProgramCtx;
-class FinalModelGeneratorFactory;
+class WellfoundedModelGeneratorFactory;
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
@@ -55,13 +57,13 @@ typedef boost::shared_ptr<Registry> RegistryPtr;
 // * this evaluation can be performed online
 // * evaluation yields a (probably empty) set of output interpretations
 //
-class FinalModelGenerator:
+class WellfoundedModelGenerator:
   public ModelGeneratorBase<Interpretation>,
-  public ostream_printable<FinalModelGenerator>
+  public ostream_printable<WellfoundedModelGenerator>
 {
   // types
 public:
-  typedef FinalModelGeneratorFactory Factory;
+  typedef WellfoundedModelGeneratorFactory Factory;
 
 protected:
   struct EmptyResults:
@@ -93,8 +95,8 @@ protected:
 
   // members
 public:
-  FinalModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~FinalModelGenerator() {}
+  WellfoundedModelGenerator(Factory& factory, InterpretationConstPtr input);
+  virtual ~WellfoundedModelGenerator() {}
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
@@ -114,13 +116,13 @@ protected:
 // a model generator factory provides model generators
 // for a certain types of interpretations
 //
-class FinalModelGeneratorFactory:
+class WellfoundedModelGeneratorFactory:
   public ModelGeneratorFactoryBase<Interpretation>,
-  public ostream_printable<FinalModelGeneratorFactory>
+  public ostream_printable<WellfoundedModelGeneratorFactory>
 {
   // types
 public:
-  friend class FinalModelGenerator;
+  friend class WellfoundedModelGenerator;
   typedef ComponentGraph::ComponentInfo ComponentInfo;
 
   // storage
@@ -136,14 +138,14 @@ protected:
 
   // methods
 public:
-  FinalModelGeneratorFactory(
+  WellfoundedModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~FinalModelGeneratorFactory() {}
+  virtual ~WellfoundedModelGeneratorFactory() {}
 
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new FinalModelGenerator(*this, input)); }
+    { return ModelGeneratorPtr(new WellfoundedModelGenerator(*this, input)); }
 
   // get rule
   // rewrite all eatoms in body to auxiliary replacement atoms
@@ -155,4 +157,4 @@ public:
 
 DLVHEX_NAMESPACE_END
 
-#endif // FINAL_MODEL_GENERATOR_HPP_INCLUDED__09112010
+#endif // WELLFOUNDED_MODEL_GENERATOR_HPP_INCLUDED__09112010

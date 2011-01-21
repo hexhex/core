@@ -82,14 +82,12 @@ public:
     std::vector<ID> innerEatoms;
     std::vector<ID> innerConstraints;
 
-    // TODO:
-    // whether it contains a positive cycle of dependencies over a monotonic external atom (-> fixedpoint)
-    // whether it contains a negative cycle of dependencies over a monotonic external atom (-> guess and check)
-    // whether it contains any cycle of dependencies over a nonmonotonic external atom (-> guess and check)
-		//bool posCycleMonotonicAtom;
-    // ...
+    // this is determined by calculateComponents
+    // and used for selecting model generator factories
+    bool innerEatomsMonotonicAndOnlyInPositiveCycles;
 
-		ComponentInfo() {}
+		ComponentInfo():
+      innerEatomsMonotonicAndOnlyInPositiveCycles(true) {}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -102,7 +100,8 @@ public:
     #endif
 
 		DependencyInfo() {}
-		DependencyInfo(const DependencyGraph::DependencyInfo& other): DependencyGraph::DependencyInfo(other) {}
+		DependencyInfo(const DependencyGraph::DependencyInfo& other):
+      DependencyGraph::DependencyInfo(other) {}
 		const DependencyInfo& operator|=(const DependencyInfo& other);
     std::ostream& print(std::ostream& o) const;
   };

@@ -49,7 +49,9 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
     EvalHeuristicEasy.cpp \
-    FinalModelGenerator.cpp \
+    PlainModelGenerator.cpp \
+    WellfoundedModelGenerator.cpp \
+    GuessAndCheckModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \
     HexParser.cpp \
     ID.cpp \

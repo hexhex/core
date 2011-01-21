@@ -22,15 +22,15 @@
  */
 
 /**
- * @file FinalModelGenerator.cpp
+ * @file WellfoundedModelGenerator.cpp
  * @author Peter Schüller
  *
- * @brief Implementation of the final model generator (preliminary).
+ * @brief Implementation of the model generator for "Wellfounded" components.
  */
 
 #define DLVHEX_BENCHMARK
 
-#include "dlvhex/FinalModelGenerator.hpp"
+#include "dlvhex/WellfoundedModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
@@ -43,7 +43,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-FinalModelGeneratorFactory::FinalModelGeneratorFactory(
+#if 0
+WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
     ProgramCtx& ctx,
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
@@ -72,9 +73,9 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(&FinalModelGeneratorFactory::convertRule, this, _1));
+      inserter, boost::bind(&WellfoundedModelGeneratorFactory::convertRule, this, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-      inserter, boost::bind(&FinalModelGeneratorFactory::convertRule, this, _1));
+      inserter, boost::bind(&WellfoundedModelGeneratorFactory::convertRule, this, _1));
 
   #ifndef NDEBUG
   {
@@ -82,13 +83,13 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
       std::ostringstream s;
       RawPrinter printer(s,ctx.registry());
       printer.printmany(idb," ");
-      DBGLOG(DBG,"FinalModelGeneratorFactory got idb " << s.str());
+      DBGLOG(DBG,"WellfoundedModelGeneratorFactory got idb " << s.str());
     }
     {
       std::ostringstream s;
       RawPrinter printer(s,ctx.registry());
       printer.printmany(xidb," ");
-      DBGLOG(DBG,"FinalModelGeneratorFactory got xidb " << s.str());
+      DBGLOG(DBG,"WellfoundedModelGeneratorFactory got xidb " << s.str());
     }
   }
   #endif
@@ -97,7 +98,7 @@ FinalModelGeneratorFactory::FinalModelGeneratorFactory(
 // get rule
 // rewrite all eatoms in body to auxiliary replacement atoms
 // store and return id
-ID FinalModelGeneratorFactory::convertRule(ID ruleid)
+ID WellfoundedModelGeneratorFactory::convertRule(ID ruleid)
 {
   if( !ruleid.doesRuleContainExtatoms() )
     return ruleid;
@@ -188,7 +189,7 @@ ID FinalModelGeneratorFactory::convertRule(ID ruleid)
   return newruleid;
 }
 
-std::ostream& FinalModelGeneratorFactory::print(
+std::ostream& WellfoundedModelGeneratorFactory::print(
     std::ostream& o) const
 {
   RawPrinter printer(o, ctx.registry());
@@ -203,7 +204,7 @@ std::ostream& FinalModelGeneratorFactory::print(
   return o;
 }
 
-FinalModelGenerator::FinalModelGenerator(
+WellfoundedModelGenerator::WellfoundedModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
   ModelGeneratorBase<Interpretation>(input),
@@ -211,8 +212,8 @@ FinalModelGenerator::FinalModelGenerator(
 {
 }
 
-FinalModelGenerator::InterpretationPtr
-FinalModelGenerator::generateNextModel()
+WellfoundedModelGenerator::InterpretationPtr
+WellfoundedModelGenerator::generateNextModel()
 {
   if( currentResults == 0 )
   {
@@ -274,7 +275,7 @@ FinalModelGenerator::generateNextModel()
   return ret->interpretation;
 }
 
-void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
+void WellfoundedModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
 {
   LOG_SCOPE(PLUGIN,"eEA",true);
   DBGLOG(DBG,"= evaluateExternalAtoms with interpretation " << *i);
@@ -452,10 +453,10 @@ void FinalModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
   DBGLOG(DBG,"interpretation after all eatoms is " << *i);
 }
 
-InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
+InterpretationPtr WellfoundedModelGenerator::projectEAtomInputInterpretation(
   const ExternalAtom& eatom, InterpretationConstPtr full) const
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGen::projectEAII");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"WellfoundedModelGen::projectEAII");
   eatom.updatePredicateInputMask();
   InterpretationPtr ret;
   if( full == 0 )
@@ -466,12 +467,12 @@ InterpretationPtr FinalModelGenerator::projectEAtomInputInterpretation(
   return ret;
 }
 
-void FinalModelGenerator::buildEAtomInputTuples(
+void WellfoundedModelGenerator::buildEAtomInputTuples(
   const ExternalAtom& eatom,
   InterpretationConstPtr i,
   std::list<Tuple>& inputs) const
 {
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"FinalModelGen::buildEAIT");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"WellfoundedModelGen::buildEAIT");
   LOG_SCOPE(PLUGIN,"bEAIT",false);
   DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
 
@@ -523,5 +524,7 @@ void FinalModelGenerator::buildEAtomInputTuples(
     }
   }
 }
+
+#endif
 
 DLVHEX_NAMESPACE_END

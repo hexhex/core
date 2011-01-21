@@ -71,6 +71,30 @@ ComponentGraph::~ComponentGraph()
 {
 }
 
+namespace
+{
+  /*
+   * strategy for calculation:
+   * first check if eatom is monotonic, if not, immediately exit with false
+   * do a DFS search starting at given node
+   * color nodes either pos or neg, depending on dependencies
+   * if we would color starting node with neg at any time, return false
+   * return true
+   */
+  #warning this check could possibly be done in a more efficient way (one-pass for all eatoms)
+  bool checkEatomMonotonicAndOnlyInPositiveCycles(
+      RegistryPtr reg,
+      const DependencyGraph& dg,
+      DependencyGraph::Node eatomnode)
+  {
+    ID eatomid = dg.propsOf(eatomnode).id;
+    LOG(DBG,"checking whether eatom " << eatomid << " is monotonic and only in positive cycles");
+    
+    #warning TODO implement! continue here
+    return true;
+  }
+}
+
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 {
   LOG_SCOPE(ANALYZE,"cCs",true);
@@ -143,9 +167,18 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
       }
       else if( id.isExternalAtom() )
       {
+        // if the SCC contains more than one node, and it contains external atoms,
+        // then they are inner external atoms (there must be some loop)
 				if( multimember )
 				{
 					ci.innerEatoms.push_back(id);
+          // only if we still think that we can use wellfounded model building
+          if( ci.innerEatomsMonotonicAndOnlyInPositiveCycles )
+          {
+            // check, if we can, given the new inner eatom
+            ci.innerEatomsMonotonicAndOnlyInPositiveCycles &=
+              checkEatomMonotonicAndOnlyInPositiveCycles(reg, dg, *itn);
+          }
 				}
 				else
 				{
@@ -161,11 +194,10 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
+    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyInPositiveCycles " << ci.innerEatomsMonotonicAndOnlyInPositiveCycles);
 
 		assert( ci.outerEatoms.empty() ||
 				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
-
-    // TODO: find more component properties (for complex model building) (perhaps we can cover this in the loop below?)
   }
 
   //

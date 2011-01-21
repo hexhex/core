@@ -628,6 +628,8 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
+    throw "DumpEvalGraph not yet implemented!";
+    #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
@@ -637,6 +639,7 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
     LOG(INFO,"dumping terse evaluation graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
     evalgraph->writeGraphViz(filet, false);
+    #endif
   }
 
   ctx->ufinal = ufinal;

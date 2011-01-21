@@ -21,7 +21,9 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 lib_LTLIBRARIES = libdlvhextest.la
 
 TESTS = \
-  run-dlvhex-tests.sh \
+  run-dlvhex-tests.sh 
+
+foo = \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
   TestComponentGraph TestComponentGraphND \
@@ -73,7 +75,9 @@ TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 
 PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
-	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
@@ -124,7 +128,9 @@ TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
-	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
@@ -177,7 +183,9 @@ TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)$(AM_CPPFLAGS)
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
-	$(top_srcdir)/src/dlvhex/FinalModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
