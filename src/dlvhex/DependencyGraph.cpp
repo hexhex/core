@@ -288,7 +288,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   // find variables for constant inputs
   for(unsigned at = 0; at != eatom.inputs.size(); ++at)
   {
-    if( (pluginAtom->getInputType(at) == PluginAtom::CONSTANT) &&
+    if( ((pluginAtom->getInputType(at) == PluginAtom::CONSTANT) ||
+         (pluginAtom->getInputType(at) == PluginAtom::TUPLE)
+        ) &&
         (eatom.inputs[at].isVariableTerm()) )
     {
       ID varID = eatom.inputs[at];
