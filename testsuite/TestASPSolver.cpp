@@ -48,9 +48,9 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(INFO,*ctx.registry()); \
 	RawPrinter printer(std::cerr, ctx.registry()); \
-	std::cerr << "edb = " << *ctx.edb << std::endl; \
+	std::cerr << "edb = " << *ctx.edbList.front() << std::endl; \
 	LOG(INFO,"idb"); \
-	printer.printmany(ctx.idb,"\n"); \
+	printer.printmany(ctx.idbList.front(),"\n"); \
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
@@ -64,7 +64,8 @@ void testSimple()
 
   std::stringstream ss;
   ss <<
-    "a. c(d,e). g(a)." << std::endl <<
+    "#module(mp,[])." << std::endl <<
+    "c(d,e). g(a)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
   HexParser parser(ctx);
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
@@ -76,7 +77,7 @@ void testSimple()
   //
 
   SolverSoftwareConfiguration config;
-  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
+  ASPProgram program(ctx.registry(), ctx.idbList.front(), ctx.edbList.front(), 0);
 
   ASPSolverManager mgr;
   LOG(INFO,"calling solve");
@@ -95,6 +96,7 @@ void testSimple()
   AnswerSet::Ptr int2 = res->getNextAnswerSet();
   BOOST_REQUIRE(int2 == 0);
 }
+
 
 #ifdef HAVE_DLV
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 

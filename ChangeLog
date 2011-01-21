@@ -1,3 +1,10 @@
+2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ProgramCtx.h: include boost/functional/factory.hpp compiled
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: extend DLVresultParserDriver to support terms and preds table
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise
+	* testsuite/TestASPSolver.cpp: Likewise
 
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
 
