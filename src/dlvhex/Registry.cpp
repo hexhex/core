@@ -112,5 +112,16 @@ ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
   return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
+ID Registry::storeConstantTerm(Term& term)
+{
+  ID ret = terms.getIDByString(term.symbol);
+  if( ret == ID_FAIL )
+  {
+    ret = terms.storeAndGetID(term);
+    DBGLOG(DBG,"stored term " << term << " which got " << ret);
+  }
+  return ret;
+}
+
 DLVHEX_NAMESPACE_END
 

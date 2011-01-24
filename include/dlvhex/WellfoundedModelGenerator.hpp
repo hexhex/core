@@ -56,8 +56,6 @@ public:
 protected:
   Factory& factory;
 
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
-  InterpretationConstPtr postprocessedInput;
   // result handle for asp solver evaluation, using externallyAugmentedInput
   ASPSolverManager::ResultsPtr currentResults;
 

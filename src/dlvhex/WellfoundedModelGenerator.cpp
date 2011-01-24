@@ -104,18 +104,21 @@ std::ostream& WellfoundedModelGeneratorFactory::print(
   RawPrinter printer(o, ctx.registry());
   if( !outerEatoms.empty() )
   {
-    o << " outer Eatoms=";
+    o << " outer Eatoms={";
     printer.printmany(outerEatoms,",");
+    o << "}";
   }
   if( !innerEatoms.empty() )
   {
-    o << " inner Eatoms=";
+    o << " inner Eatoms={";
     printer.printmany(innerEatoms,",");
+    o << "}";
   }
   if( !xidb.empty() )
   {
-    o << " xidb=";
-    printer.printmany(xidb,",");
+    o << " xidb={";
+    printer.printmany(xidb," ");
+    o << "}";
   }
   return o;
 }
@@ -131,52 +134,130 @@ WellfoundedModelGenerator::WellfoundedModelGenerator(
 WellfoundedModelGenerator::InterpretationPtr
 WellfoundedModelGenerator::generateNextModel()
 {
-  throw std::runtime_error("todo implement");
-  #warning TODO implement
-  #if 0
+  RegistryPtr reg = factory.ctx.registry();
+
   if( currentResults == 0 )
   {
     // we need to create currentResults
 
     // create new interpretation as copy
-    Interpretation::Ptr newint;
+    Interpretation::Ptr postprocessedInput;
     if( input == 0 )
     {
       // empty construction
-      newint.reset(new Interpretation(factory.ctx.registry()));
+      postprocessedInput.reset(new Interpretation(reg));
     }
     else
     {
       // copy construction
-      newint.reset(new Interpretation(*input));
+      postprocessedInput.reset(new Interpretation(*input));
     }
 
     // augment input with edb
-    newint->add(*factory.ctx.edb);
+    postprocessedInput->add(*factory.ctx.edb);
 
     // manage outer external atoms
-    if( !factory.eatoms.empty() )
+    if( !factory.outerEatoms.empty() )
     {
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
-      evaluateExternalAtoms(newint);
+      evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, postprocessedInput);
+      DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
+          "outer external atom computations");
+      DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
-      if( factory.xidb.empty() )
-      {
-        // we only have eatoms -> return singular result
-        currentResults = ASPSolverManager::ResultsPtr(new EmptyResults());
-        return newint;
-      }
+      assert(!factory.xidb.empty() && "the wellfounded model generator is not required for non-idb components! (use plain)");
     }
 
-    // store in model generator and store as const
-    postprocessedInput = newint;
+    // now we have postprocessed input in postprocessedInput
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidwfsolve, "wellfounded solver loop");
 
-    DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,"initiating external solver");
-    ASPProgram program(factory.ctx.registry(), factory.xidb, postprocessedInput, factory.ctx.maxint);
-    ASPSolverManager mgr;
-    currentResults = mgr.solve(*factory.externalEvalConfig, program);
-    DLVHEX_BENCHMARK_STOP(sidaspsolve);
+    #warning make wellfounded iteration limit configurable
+    unsigned limit = 1000;
+    bool inconsistent = false;
+
+    // we store two interpretations "ints" and
+    // one "src" integer for the current source interpretation
+    //
+    // the loop below uses ints[current] as source and stores into ints[1-current]
+    // then current = 1 - current
+    std::vector<InterpretationPtr> ints(2);
+    unsigned current = 0;
+    ints[0] = postprocessedInput;
+    // the following creates a copy!
+    ints[1] = InterpretationPtr(new Interpretation(*ints[0]));
+    do
+    {
+      InterpretationPtr src = ints[current];
+      InterpretationPtr dst = ints[1-current];
+      DBGLOG(DBG,"starting loop with source" << *src);
+      DBGLOG(DBG,"starting loop with dst" << *dst);
+
+      // evaluate inner external atoms
+      evaluateExternalAtoms(reg, factory.innerEatoms, src, dst);
+      DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
+
+      // solve program
+      {
+        ASPProgram program(reg,
+            factory.xidb, dst, factory.ctx.maxint);
+        ASPSolverManager mgr;
+        ASPSolverManager::ResultsPtr thisres =
+          mgr.solve(*factory.externalEvalConfig, program);
+
+        // get answer sets
+        AnswerSet::Ptr thisret1 = thisres->getNextAnswerSet();
+        if( !thisret1 )
+        {
+          LOG(DBG,"got no answer set -> inconsistent");
+          inconsistent = true;
+          break;
+        }
+        AnswerSet::Ptr thisret2 = thisres->getNextAnswerSet();
+        if( thisret2 )
+          throw FatalError("got more than one model in Wellfounded model generator -> use other model generator!");
+
+        // merge in results of received interpretation
+        dst->getStorage() |= thisret1->interpretation->getStorage();
+        DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
+      }
+
+      // check whether new interpretation is superset of old one
+      // break if they are equal (i.e., if the fixpoint is reached)
+      // error if new one is smaller (i.e., fixpoint is not allowed)
+      // (TODO do this error check, and do it only in debug mode)
+      int cmpresult = dst->getStorage().compare(src->getStorage());
+      if( cmpresult == 0 )
+      {
+        DBGLOG(DBG,"reached fixpoint");
+        break;
+      }
+
+      // switch interpretations
+      current = 1 - current;
+      limit--;
+      // loop if limit is not reached
+    }
+    while( limit != 0 && !inconsistent );
+
+    if( limit == 0 )
+      throw FatalError("reached wellfounded limit!");
+
+    if( inconsistent )
+    {
+      DBGLOG(DBG,"leaving loop with result 'inconsistent'");
+      currentResults.reset(new EmptyResults());
+    }
+    else
+    {
+      // does not matter which one we take, they are equal
+      InterpretationPtr result = ints[0];
+      DBGLOG(DBG,"leaving loop with result" << *result);
+
+      // store as single answer set (there can only be one)
+      AnswerSetPtr as(new AnswerSet(result));
+      currentResults.reset(new SingularResults(as));
+    }
   }
 
   assert(currentResults != 0);
@@ -184,15 +265,13 @@ WellfoundedModelGenerator::generateNextModel()
   if( ret == 0 )
   {
     currentResults.reset();
-    // the following is just for freeing memory early
-    postprocessedInput.reset();
     return InterpretationPtr();
   }
-  DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,"external answersets");
-  DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
+  DLVHEX_BENCHMARK_REGISTER(sidcountwfanswersets,
+      "WellFoundedMG answer sets");
+  DLVHEX_BENCHMARK_COUNT(sidcountwfanswersets,1);
 
   return ret->interpretation;
-  #endif
 }
 
 DLVHEX_NAMESPACE_END

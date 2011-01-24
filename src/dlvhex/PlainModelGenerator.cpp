@@ -186,8 +186,7 @@ PlainModelGenerator::generateNextModel()
     postprocessedInput.reset();
     return InterpretationPtr();
   }
-  DLVHEX_BENCHMARK_REGISTER(sidcountplainanswersets,
-      "PlainMG answer sets returned");
+  DLVHEX_BENCHMARK_REGISTER(sidcountplainanswersets, "PlainMG answer sets");
   DLVHEX_BENCHMARK_COUNT(sidcountplainanswersets,1);
 
   return ret->interpretation;

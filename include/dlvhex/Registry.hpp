@@ -116,6 +116,10 @@ struct Registry:
   // nonground version
   ID storeOrdinaryNAtom(OrdinaryAtom& onatom);
 
+  // lookup by symbol, if it does not exist create it in term table
+  // assume term is fully initialized
+  ID storeConstantTerm(Term& term);
+
   //
   // accessors
   //
