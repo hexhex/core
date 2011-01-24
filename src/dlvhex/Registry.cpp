@@ -30,6 +30,7 @@
  */
 
 #include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -63,6 +64,52 @@ const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
     return ogatoms.getByID(id);
   else
     return onatoms.getByID(id);
+}
+
+namespace
+{
+  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.text is not initialized!
+  // oatom.text will be modified
+  ID storeOrdinaryAtomHelper(
+      Registry* reg,
+      OrdinaryAtom& oatom,
+      OrdinaryAtomTable& oat)
+  {
+    ID ret = oat.getIDByTuple(oatom.tuple);
+    if( ret == ID_FAIL )
+    {
+      // text
+      std::stringstream s;
+      RawPrinter printer(s, reg);
+      // predicate
+      printer.print(oatom.tuple.front());
+      if( oatom.tuple.size() > 1 )
+      {
+        Tuple t(oatom.tuple.begin()+1, oatom.tuple.end());
+        s << "(";
+        printer.printmany(t,",");
+        s << ")";
+      }
+      oatom.text = s.str();
+
+      ret = oat.storeAndGetID(oatom);
+      DBGLOG(DBG,"stored oatom " << oatom << " which got " << ret);
+    }
+    return ret;
+  }
+}
+
+// ground version
+ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
+{
+  return storeOrdinaryAtomHelper(this, ogatom, ogatoms);
+}
+
+// nonground version
+ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
+{
+  return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
 DLVHEX_NAMESPACE_END

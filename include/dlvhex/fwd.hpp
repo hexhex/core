@@ -51,6 +51,8 @@ typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 class DependencyGraph;
 typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
 
+struct ExternalAtom;
+
 // FinalEvalGraph is a typedef and must not be forward-declared!
 
 class InputProvider;

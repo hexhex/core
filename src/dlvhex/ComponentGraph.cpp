@@ -80,7 +80,12 @@ namespace
   typedef DependencyGraph::Node Node;
   typedef std::set<Node> NodeSet;
   typedef std::vector<Node> NodeVector;
+}
 
+#warning fixed point: eatoms only in positive cycles is misleading, we demand only positive cycles for all atoms! (no negative or disjunctive edge at all)
+#if 0
+namespace
+{
   typedef unsigned Polarity;
   static const Polarity PUNSET = 0x00;
   static const Polarity PPOS =   0x01;
@@ -231,6 +236,47 @@ namespace
     return true;
   }
 
+} // namespace {}
+#endif
+
+namespace
+{
+  /*
+   * strategy for calculation:
+   * * iterate through all nodes in nodesToCheck
+   *   * iterate through outgoing edges
+   *   * if negative and leading to node in nodesToCheck return false
+	 * * return true
+   */
+  bool checkNoNegativeEdgesInComponent(
+      const DependencyGraph& dg,
+			const NodeSet& nodesToCheck)
+  {
+    DBGLOG_SCOPE(DBG,"cNNEiC",false);
+    BOOST_FOREACH(Node n, nodesToCheck)
+    {
+      DBGLOG(DBG,"checking predecessor edges of node " << n);
+      DependencyGraph::PredecessorIterator it, it_end;
+      for(boost::tie(it, it_end) = dg.getDependencies(n);
+          it != it_end; ++it)
+      {
+        const DependencyGraph::DependencyInfo& di = dg.propsOf(*it);
+        if( di.negativeRule | di.negativeExternal | di.unifyingHead )
+        {
+          // found neg dependency, check if it is within SCC
+          Node pnode = dg.targetOf(*it);
+          if( nodesToCheck.find(pnode) != nodesToCheck.end() )
+          {
+            DBGLOG(DBG,"found negative dependency to node " << pnode << " -> not wellfounded");
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
   bool checkEatomMonotonic(
       RegistryPtr reg,
       const DependencyGraph& dg,
@@ -335,10 +381,10 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 					ci.innerEatoms.push_back(id);
           innerEatomNodes.push_back(*itn);
           // only if we still think that we can use wellfounded model building
-          if( ci.innerEatomsMonotonicAndOnlyInPositiveCycles )
+          if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
           {
             // check, if we can, given the new inner eatom
-            ci.innerEatomsMonotonicAndOnlyInPositiveCycles &=
+            ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
               checkEatomMonotonic(reg, dg, *itn);
           }
 				}
@@ -352,22 +398,22 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				assert(false);
 			}
     }
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyInPositiveCycles " << ci.innerEatomsMonotonicAndOnlyInPositiveCycles);
+    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
 
 		// do positive cycle check if all eatoms monotonic
 		// (i.e., only if we still think that we can use wellfounded model building)
-		if( ci.innerEatomsMonotonicAndOnlyInPositiveCycles )
+		if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
 		{
 			// check, if we can, given the new inner eatom
-			ci.innerEatomsMonotonicAndOnlyInPositiveCycles &=
-				checkEatomsOnlyInPositiveCycles(dg, nodes, innerEatomNodes);
+			ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
+        checkNoNegativeEdgesInComponent(dg, nodes);
 		}
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyInPositiveCycles " << ci.innerEatomsMonotonicAndOnlyInPositiveCycles);
+    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
 
 		assert( ci.outerEatoms.empty() ||
 				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
@@ -520,6 +566,10 @@ ComponentGraph::collapseComponents(
 				cio.innerEatoms.begin(), cio.innerEatoms.end());
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    if( cio.innerEatomsMonotonicAndOnlyPositiveCycles != true )
+      throw std::runtime_error("todo: handle collapsing of components where one is not monotonic");
+    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
+    // TODO create testcase for this (how about wellfounded2.hex?)
 	}
 
 	// build incoming dependencies
@@ -613,6 +663,15 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+    {
+      o << "{fixpoint?|";
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+        o << "true";
+      else
+        o << "false";
+      o << "}|";
+    }
 		o << "}";
   }
   else
@@ -622,6 +681,15 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+    {
+      o << "{fixpoint?|";
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+        o << "true";
+      else
+        o << "false";
+      o << "}|";
+    }
 		o << "}";
   }
 }

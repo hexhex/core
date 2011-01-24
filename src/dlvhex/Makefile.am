@@ -38,6 +38,7 @@ libdlvhexbase_la_SOURCES = \
     AnswerSet.cpp \
     AnswerSetPrinterCallback.cpp \
     Atoms.cpp \
+    BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
     ComfortPluginInterface.cpp \

@@ -43,25 +43,26 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#if 0
 WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
     ProgramCtx& ctx,
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
+  BaseModelGeneratorFactory(),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
-  eatoms(ci.outerEatoms),
+  outerEatoms(ci.outerEatoms),
+  innerEatoms(ci.innerEatoms),
   idb(),
   xidb()
 {
+  RegistryPtr reg = ctx.registry();
+
   // this model generator can handle:
   // components with outer eatoms
+  // components with inner eatoms
   // components with inner rules
   // components with inner constraints
-  // this model generator CANNOT handle:
-  // components with inner eatoms
-
-  assert(ci.innerEatoms.empty());
+  // iff all inner eatoms are monotonic and there are no negative dependencies within idb
 
   // copy rules and constraints to idb
   // TODO we do not need this except for debugging
@@ -73,9 +74,11 @@ WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(&WellfoundedModelGeneratorFactory::convertRule, this, _1));
+      inserter, boost::bind(
+        &WellfoundedModelGeneratorFactory::convertRule, this, reg, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-      inserter, boost::bind(&WellfoundedModelGeneratorFactory::convertRule, this, _1));
+      inserter, boost::bind(
+        &WellfoundedModelGeneratorFactory::convertRule, this, reg, _1));
 
   #ifndef NDEBUG
   {
@@ -95,110 +98,23 @@ WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
   #endif
 }
 
-// get rule
-// rewrite all eatoms in body to auxiliary replacement atoms
-// store and return id
-ID WellfoundedModelGeneratorFactory::convertRule(ID ruleid)
-{
-  if( !ruleid.doesRuleContainExtatoms() )
-    return ruleid;
-
-  // we need to rewrite
-  const Rule& rule = ctx.registry()->rules.getByID(ruleid);
-  #ifndef NDEBUG
-  {
-    std::stringstream s;
-    RawPrinter printer(s, ctx.registry());
-    printer.print(ruleid);
-    DBGLOG(DBG,"rewriting rule " << s.str() << " from " << rule << " with id " << ruleid << " to auxiliary predicates");
-  }
-  #endif
-
-  // copy it
-  Rule newrule(rule);
-  for(Tuple::iterator itlit = newrule.body.begin();
-      itlit != newrule.body.end(); ++itlit)
-  {
-    if( !itlit->isExternalAtom() )
-      continue;
-
-    bool naf = itlit->isNaf();
-    const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(
-        ID::atomFromLiteral(*itlit));
-    DBGLOG(DBG,"rewriting external atom " << eatom << " literal with id " << *itlit);
-
-    // lock weak pointer
-    assert(!eatom.pluginAtom.expired());
-    PluginAtomPtr pluginAtom(eatom.pluginAtom);
-
-    // create replacement atom
-    OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
-    replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
-    replacement.tuple.insert(replacement.tuple.end(), eatom.inputs.begin(), eatom.inputs.end());
-    replacement.tuple.insert(replacement.tuple.end(), eatom.tuple.begin(), eatom.tuple.end());
-
-    // bit trick: replacement is ground so far, by setting one bit we make it nonground
-    bool ground = true;
-    BOOST_FOREACH(ID term, replacement.tuple)
-    {
-      if( term.isVariableTerm() )
-        ground = false;
-    }
-    if( !ground )
-      replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-
-    OrdinaryAtomTable* oat;
-    if( ground )
-      oat = &ctx.registry()->ogatoms;
-    else
-      oat = &ctx.registry()->onatoms;
-
-    // this replacement might already exists
-    ID idreplacement = oat->getIDByTuple(replacement.tuple);
-    if( idreplacement == ID_FAIL )
-    {
-      // text
-      #warning cache this partially site 1?
-      std::stringstream s;
-      RawPrinter printer(s, ctx.registry());
-      s << pluginAtom->getReplacementPredicate();
-      s << "(";
-      printer.printmany(eatom.inputs,",");
-      if( !eatom.inputs.empty() && !eatom.tuple.empty() )
-        s << ",";
-      printer.printmany(eatom.tuple,",");
-      s << ")";
-      replacement.text = s.str();
-
-      idreplacement = oat->storeAndGetID(replacement);
-      LOG(PLUGIN,"created new replacement " << replacement << " which got " << idreplacement);
-    }
-    DBGLOG(DBG," => storing replacement " << idreplacement);
-    *itlit = ID::literalFromAtom(idreplacement, naf);
-  }
-
-  ID newruleid = ctx.registry()->rules.storeAndGetID(newrule);
-  #ifndef NDEBUG
-  {
-    std::stringstream s;
-    RawPrinter printer(s, ctx.registry());
-    printer.print(newruleid);
-    DBGLOG(DBG,"rewritten rule " << s.str() << " from " << newrule << " got id " << newruleid);
-  }
-  #endif
-  return newruleid;
-}
-
 std::ostream& WellfoundedModelGeneratorFactory::print(
     std::ostream& o) const
 {
   RawPrinter printer(o, ctx.registry());
-  if( !eatoms.empty() )
+  if( !outerEatoms.empty() )
   {
-    printer.printmany(eatoms,",");
+    o << " outer Eatoms=";
+    printer.printmany(outerEatoms,",");
+  }
+  if( !innerEatoms.empty() )
+  {
+    o << " inner Eatoms=";
+    printer.printmany(innerEatoms,",");
   }
   if( !xidb.empty() )
   {
+    o << " xidb=";
     printer.printmany(xidb,",");
   }
   return o;
@@ -207,7 +123,7 @@ std::ostream& WellfoundedModelGeneratorFactory::print(
 WellfoundedModelGenerator::WellfoundedModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
-  ModelGeneratorBase<Interpretation>(input),
+  BaseModelGenerator(input),
   factory(factory)
 {
 }
@@ -215,6 +131,9 @@ WellfoundedModelGenerator::WellfoundedModelGenerator(
 WellfoundedModelGenerator::InterpretationPtr
 WellfoundedModelGenerator::generateNextModel()
 {
+  throw std::runtime_error("todo implement");
+  #warning TODO implement
+  #if 0
   if( currentResults == 0 )
   {
     // we need to create currentResults
@@ -273,258 +192,7 @@ WellfoundedModelGenerator::generateNextModel()
   DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 
   return ret->interpretation;
+  #endif
 }
-
-void WellfoundedModelGenerator::evaluateExternalAtoms(InterpretationPtr i) const
-{
-  LOG_SCOPE(PLUGIN,"eEA",true);
-  DBGLOG(DBG,"= evaluateExternalAtoms with interpretation " << *i);
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atoms");
-	DLVHEX_BENCHMARK_REGISTER(sidier,"integrate external results");
-
-  // for each external atom in factory.eatoms:
-  //   build input interpretation
-  //   for each input tuple (multiple auxiliary inputs possible)
-  //     build query
-  //     call retrieve
-  //     integrate answer into interpretation i as additional facts
-
-  for(std::vector<ID>::const_iterator ite = factory.eatoms.begin();
-      ite != factory.eatoms.end(); ++ite)
-  {
-    const ExternalAtom& eatom = factory.ctx.registry()->eatoms.getByID(*ite);
-
-    // lock weak pointer
-    assert(!eatom.pluginAtom.expired());
-    PluginAtomPtr pluginAtom(eatom.pluginAtom);
-
-    // project interpretation for predicate inputs
-    InterpretationConstPtr eatominp =
-      projectEAtomInputInterpretation(eatom, i);
-    LOG(DBG,"projected eatom input interpretation = " << *eatominp);
-
-    // build input tuples
-    std::list<Tuple> inputs;
-    buildEAtomInputTuples(eatom, i, inputs);
-    #ifndef NDEBUG
-    {
-      DBGLOG(DBG,"eatom input tuples:");
-      DBGLOG_INDENT(DBG);
-      BOOST_FOREACH(const Tuple& t, inputs)
-      {
-        std::stringstream s;
-        RawPrinter printer(s, factory.ctx.registry());
-        s << "[";
-        printer.printmany(t,",");
-        s << "]";
-        DBGLOG(DBG,s.str());
-      }
-    }
-    #endif
-
-    // go over all ground input tuples as grounded by auxiliary inputs rule
-    BOOST_FOREACH(const Tuple& inputtuple, inputs)
-    {
-      // query
-      PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
-      PluginAtom::Answer answer;
-      pluginAtom->retrieveCached(query, answer);
-      LOG(PLUGIN,"got " << answer.get().size() << " answer tuples from querying " << eatom.predicate << " with input tuple " << printrange(inputtuple));
-
-			DLVHEX_BENCHMARK_START(sidier);
-      // integrate result into interpretation
-      BOOST_FOREACH(const Tuple& t, answer.get())
-      {
-        // check answer tuple, if it corresponds to pattern
-        #warning TODO verify answer tuple! (as done in dlvhex trunk using std::mismatch)
-        #if 0
-        this is the respective code
-
-
-        /**
-         * @brief Check the answers returned from the external atom, and
-         * remove ill-formed tuples.
-         *
-         * Check whether the answers in the output list are
-         * (1) ground
-         * (2) conform to the output pattern, i.e.,
-         *     &rdf[uri](S,rdf:subClassOf,O) shall only return tuples of form
-         *     <s, rdf:subClassOf, o>, and not for instance <s,
-         *     rdf:subPropertyOf, o>, we have to filter them out (do we?)
-         */
-        struct CheckOutput
-          : public std::binary_function<const Term, const Term, bool>
-        {
-          bool
-          operator() (const Term& t1, const Term& t2) const
-          {
-            // answers must be ground, otw. programming error in the plugin
-            assert(t1.isInt() || t1.isString() || t1.isSymbol());
-
-            // pattern tuple values must coincide
-            if (t2.isInt() || t2.isString() || t2.isSymbol())
-              {
-          return t1 == t2;
-              }
-            else // t2.isVariable() -> t1 is a variable binding for t2
-              {
-          return true;
-              }
-          }
-        };
-
-
-        for (std::vector<Tuple>::const_iterator s = answers->begin(); s != answers->end(); ++s)
-        {
-          if (s->size() != externalAtom->getArguments().size())
-            {
-              throw PluginError("External atom " + externalAtom->getFunctionName() + " returned tuple of incompatible size.");
-            }
-
-          // check if this answer from pluginatom conforms to the external atom's arguments
-          std::pair<Tuple::const_iterator,Tuple::const_iterator> mismatched =
-            std::mismatch(s->begin(),
-              s->end(),
-              externalAtom->getArguments().begin(),
-              CheckOutput()
-              );
-
-          if (mismatched.first == s->end()) // no mismatch found -> add this tuple to the result
-            {
-              // the replacement atom contains both the input and the output list!
-              // (*inputi must be ground here, since it comes from
-              // groundInputList(i, inputArguments))
-              Tuple resultTuple(*inputi);
-
-              // add output list
-              resultTuple.insert(resultTuple.end(), s->begin(), s->end());
-
-              // setup new atom with appropriate replacement name
-              AtomPtr ap(new Atom(externalAtom->getReplacementName(), resultTuple));
-
-              result.insert(ap);
-            }
-          else
-            {
-              // found a mismatch, ignore this answer tuple
-            }
-        }
-        #endif
-
-        // create replacement atom for each tuple
-        OrdinaryAtom replacement(
-            ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
-
-        // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
-        replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
-        replacement.tuple.insert(replacement.tuple.end(), inputtuple.begin(), inputtuple.end());
-        replacement.tuple.insert(replacement.tuple.end(), t.begin(), t.end());
-
-        // this replacement might already exists
-        LOG(DBG,"integrating external answer tuple " << printrange(t));
-        ID idreplacement = factory.ctx.registry()->ogatoms.getIDByTuple(replacement.tuple);
-        if( idreplacement == ID_FAIL )
-        {
-          // text
-          #warning cache this partially site 2 ?
-          std::stringstream s;
-          RawPrinter printer(s, factory.ctx.registry());
-          s << pluginAtom->getReplacementPredicate();
-          s << "(";
-          printer.printmany(inputtuple,",");
-          if( !inputtuple.empty() && !t.empty() )
-            s << ",";
-          printer.printmany(t,",");
-          s << ")";
-          replacement.text = s.str();
-
-          DBGLOG(DBG,"integrating " << replacement);
-          idreplacement = factory.ctx.registry()->ogatoms.storeAndGetID(replacement);
-          DBGLOG(DBG,"got ID " << idreplacement);
-        }
-        i->setFact(idreplacement.address);
-      }
-			DLVHEX_BENCHMARK_STOP(sidier);
-
-      DBGLOG(DBG,"interpretation is now " << *i);
-    } // go over all input tuples of this eatom
-    DBGLOG(DBG,"interpretation after all input tuples is " << *i);
-  } // go over all eatoms
-  DBGLOG(DBG,"interpretation after all eatoms is " << *i);
-}
-
-InterpretationPtr WellfoundedModelGenerator::projectEAtomInputInterpretation(
-  const ExternalAtom& eatom, InterpretationConstPtr full) const
-{
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"WellfoundedModelGen::projectEAII");
-  eatom.updatePredicateInputMask();
-  InterpretationPtr ret;
-  if( full == 0 )
-    ret.reset(new Interpretation(factory.ctx.registry()));
-  else
-    ret.reset(new Interpretation(*full));
-  ret->getStorage() &= eatom.getPredicateInputMask()->getStorage();
-  return ret;
-}
-
-void WellfoundedModelGenerator::buildEAtomInputTuples(
-  const ExternalAtom& eatom,
-  InterpretationConstPtr i,
-  std::list<Tuple>& inputs) const
-{
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"WellfoundedModelGen::buildEAIT");
-  LOG_SCOPE(PLUGIN,"bEAIT",false);
-  DBGLOG(DBG,"= buildEAtomInputTuples " << eatom);
-
-  // if there are no variables, there is no aux input predicate and only one input tuple
-  if( eatom.auxInputPredicate == ID_FAIL )
-  {
-    DBGLOG(DBG,"no auxiliary input predicate -> "
-        " returning single unchanged eatom.inputs " <<
-        printrange(eatom.inputs));
-    inputs.push_back(eatom.inputs);
-    return;
-  }
-
-  // otherwise we have to calculate a bit, using the aux input predicate
-  DBGLOG(DBG,"matching aux input predicate " << eatom.auxInputPredicate << ", original eatom.inputs = " << printrange(eatom.inputs));
-  dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-  assert(factory.ctx.registry() != 0);
-  for(boost::tie(it, it_end) =
-      factory.ctx.registry()->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate);
-      it != it_end; ++it)
-  {
-    const dlvhex::OrdinaryAtom& oatom = *it;
-    #warning perhaps this could be made more efficient by storing back the id into oatom or by creating ogatoms.getIDRangeByPredicateID with some projecting adapter to PredicateIterator
-    ID idoatom = factory.ctx.registry()->ogatoms.getIDByStorage(oatom);
-    if( i->getFact(idoatom.address) )
-    {
-      // add copy of original input tuple
-      inputs.push_back(eatom.inputs);
-
-      // modify this copy
-      Tuple& inp = inputs.back();
-
-      // replace all occurances of variables with the corresponding predicates in auxinput
-      for(unsigned idx = 0; idx < eatom.auxInputMapping.size(); ++idx)
-      {
-        // idx is the index of the argument to the auxiliary predicate
-        // at 0 there is the auxiliary predicate
-        ID replaceBy = oatom.tuple[idx+1];
-        // replaceBy is the ground term we will use instead of the input constant variable
-        for(std::list<unsigned>::const_iterator it = eatom.auxInputMapping[idx].begin();
-            it != eatom.auxInputMapping[idx].end(); ++it)
-        {
-          // *it is the index of the input term that is a variable
-          assert(inp[*it].isTerm() && inp[*it].isVariableTerm());
-          inp[*it] = replaceBy;
-        }
-      }
-      DBGLOG(DBG,"after inserting auxiliary predicate inputs: input = " << printrange(inp));
-    }
-  }
-}
-
-#endif
 
 DLVHEX_NAMESPACE_END

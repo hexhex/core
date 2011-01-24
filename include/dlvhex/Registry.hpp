@@ -102,7 +102,25 @@ struct Registry:
 	static inline AddressRange maxAddressRange() { return AR_COUNT; }
 	#endif
 
-  virtual std::ostream& print(std::ostream& o) const;
+  //
+  // modifiers
+  //
+
+  // lookup by tuple, if does not exist create text and store as new atom
+  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.text is not initialized!
+  // oatom.text will be modified
+  //
+  // ground version
+  ID storeOrdinaryGAtom(OrdinaryAtom& ogatom);
+  // nonground version
+  ID storeOrdinaryNAtom(OrdinaryAtom& onatom);
+
+  //
+  // accessors
+  //
+
+  std::ostream& print(std::ostream& o) const;
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const

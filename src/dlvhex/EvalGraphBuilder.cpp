@@ -160,7 +160,7 @@ EvalGraphBuilder::createEvalUnit(
     }
     else
     {
-      if( ci.innerEatomsMonotonicAndOnlyInPositiveCycles )
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
       {
         // inner external atoms and only in positive cycles and monotonic -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
@@ -171,8 +171,9 @@ EvalGraphBuilder::createEvalUnit(
       {
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+        throw std::runtime_error("need G&C Model Generator!");
+        //uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+        //      ctx, ci, externalEvalConfig));
       }
     }
   }

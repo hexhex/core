@@ -84,10 +84,10 @@ public:
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
-    bool innerEatomsMonotonicAndOnlyInPositiveCycles;
+    bool innerEatomsMonotonicAndOnlyPositiveCycles;
 
 		ComponentInfo():
-      innerEatomsMonotonicAndOnlyInPositiveCycles(true) {}
+      innerEatomsMonotonicAndOnlyPositiveCycles(true) {}
     std::ostream& print(std::ostream& o) const;
   };
 

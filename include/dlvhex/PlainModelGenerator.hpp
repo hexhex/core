@@ -31,20 +31,15 @@
 #ifndef PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
 #define PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
 
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ASPSolverManager.h"
-
-#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-class ProgramCtx;
 class PlainModelGeneratorFactory;
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
 
 //
 // A model generator does the following:
@@ -56,31 +51,12 @@ typedef boost::shared_ptr<Registry> RegistryPtr;
 // * evaluation yields a (probably empty) set of output interpretations
 //
 class PlainModelGenerator:
-  public ModelGeneratorBase<Interpretation>,
+  public BaseModelGenerator,
   public ostream_printable<PlainModelGenerator>
 {
   // types
 public:
   typedef PlainModelGeneratorFactory Factory;
-
-protected:
-  struct EmptyResults:
-    public ASPSolverManager::Results
-  {
-    EmptyResults() {}
-    virtual ~EmptyResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet() { return AnswerSet::Ptr(); }
-  };
-
-  struct SingularResults:
-    public ASPSolverManager::Results
-  {
-    SingularResults(AnswerSet::Ptr as): ASPSolverManager::Results(), ret(as) {}
-    virtual ~SingularResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet()
-      { AnswerSet::Ptr p = ret; ret.reset(); return p; };
-    AnswerSet::Ptr ret;
-  };
 
   // storage
 protected:
@@ -99,15 +75,9 @@ public:
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
 
-  // debug output
+  // TODO debug output?
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorBase::print() not overloaded"; }
-protected:
-  virtual void evaluateExternalAtoms(InterpretationPtr i) const;
-  virtual InterpretationPtr projectEAtomInputInterpretation(
-    const ExternalAtom& eatom, InterpretationConstPtr full) const;
-  virtual void buildEAtomInputTuples(
-    const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
 };
 
 //
@@ -115,7 +85,7 @@ protected:
 // for a certain types of interpretations
 //
 class PlainModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<Interpretation>,
+  public BaseModelGeneratorFactory,
   public ostream_printable<PlainModelGeneratorFactory>
 {
   // types
@@ -129,10 +99,12 @@ protected:
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
   std::vector<ID> eatoms;
-  // original idb (containing eatoms, but already including auxiliary input rules)
+  // original idb (containing eatoms where all inputs are known
+  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
   std::vector<ID> idb;
-  // rewritten idb (containing replacements for eatoms) TODO we could remove the auxiliary input rules for xidb
-  std::vector<ID> xidb; // x stands for transformed
+  // rewritten idb (containing replacements for eatoms)
+  // (x stands for transformed)
+  std::vector<ID> xidb;
 
   // methods
 public:
@@ -144,11 +116,6 @@ public:
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
     { return ModelGeneratorPtr(new PlainModelGenerator(*this, input)); }
-
-  // get rule
-  // rewrite all eatoms in body to auxiliary replacement atoms
-  // store and return id
-  ID convertRule(ID ruleid);
 
   virtual std::ostream& print(std::ostream& o) const;
 };
