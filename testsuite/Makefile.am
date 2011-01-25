@@ -39,7 +39,9 @@ TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TE
 
 #TEST_SUITE_LOG = testsuite.log
 
-check_PROGRAMS = \
+#check_PROGRAMS = 
+
+foo2 = \
   TestTestPluginStatic \
   TestASPSolver TestASPSolverND \
   TestEvalEndToEnd TestEvalEndToEndND \
@@ -53,9 +55,9 @@ check_PROGRAMS = \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
-noinst_PROGRAMS = \
-  TestMCSIE TestMCSIEND \
-  TestPlainHEX TestPlainHEXND
+#noinst_PROGRAMS = \
+#  TestMCSIE TestMCSIEND \
+#  TestPlainHEX TestPlainHEXND
 
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY

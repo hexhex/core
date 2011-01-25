@@ -1,5 +1,4 @@
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
-
 	* src/dlvhex/gdbdlvhex.sh: Shellscript to use gdb with libtool-built uninstalled binary.
 	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
 	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
@@ -24,6 +23,21 @@
 
 	* configure.ac: Set error-limit to 5 for clang.
 	* testsuite/Makefile.am: Likewise.
+
+2010-11-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am (EXTRA_DIST): Add minimality and
+	builtin_safety{1,2} test cases.
+
+2010-10-21  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am: Add builtin_safety2.hex for new DLV
+	release 2010-10-14.
+	* examples/builtin_safety1.hex: Likewise.
+	* examples/builtin_safety2.hex: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/builtin_safety1.out: Likewise.
+	* examples/tests/builtin_safety2.out: Likewise.
 
 2010-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 

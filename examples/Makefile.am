@@ -3,7 +3,8 @@ EXTRA_DIST = \
     3col.hex \
     agg1.hex \
     agg2.hex \
-    builtin_safety.hex \
+    builtin_safety1.hex \
+    builtin_safety2.hex \
     empty.hex \
     equality.hex \
     extatom1.hex \
@@ -13,6 +14,7 @@ EXTRA_DIST = \
     extatom5.hex \
     extatom6.hex \
     extatom9.hex \
+    minimality.hex \
     msp.hex \
     namespace1.hex \
     namespace2.hex \
@@ -30,7 +32,8 @@ EXTRA_DIST = \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
-    tests/builtin_safety.out \
+    tests/builtin_safety1.out \
+    tests/builtin_safety2.out \
     tests/empty.out \
     tests/equality.out \
     tests/extatom1.out \
@@ -39,6 +42,7 @@ EXTRA_DIST = \
     tests/extatom5.out \
     tests/extatom6.out \
     tests/extatom9.out \
+    tests/minimality.out \
     tests/msp.out \
     tests/namespace1.out \
     tests/namespace2.out \
