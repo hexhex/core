@@ -750,6 +750,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
       // copy interpretation! (callbacks can modify it)
       answerset->interpretation->getStorage() = interpretation->getStorage();
+
+      // add EDB if configured that way
+      if( !ctx->config.getOption("NoFacts") )
+      {
+        answerset->interpretation->getStorage() |=
+          ctx->edb->getStorage();
+      }
+
       BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
       {
         bool aborthere = !(*mcb)(answerset);

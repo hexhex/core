@@ -17,6 +17,7 @@
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
 	* added static linking test for testsuite TestPlugin
 	* added option for keeping auxiliary predicates in output
+	* added option for omitting EDB facts from output
 	* added option for configuring graphviz output (eval/model graph not yet implemented, but partially exists in testsuite)
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>

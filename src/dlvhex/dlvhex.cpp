@@ -146,6 +146,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << "     --nofacts        Do not output EDB facts" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of (old,trivial,easy)" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
@@ -285,6 +286,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpModelGraph",0);
   pctx.config.setOption("DumpIModelGraph",0);
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
+  pctx.config.setOption("NoFacts",0);
 
 	// defaults of main
 	Config config;
@@ -480,6 +482,7 @@ void processOptionsPrePlugin(
 		{ "version",    no_argument, &longid, 9 },
 		{ "graphviz", required_argument, &longid, 10 },
 		{ "keepauxpreds", no_argument, &longid, 11 },
+		{ "nofacts", no_argument, &longid, 12 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -698,6 +701,9 @@ void processOptionsPrePlugin(
 					break;
 				case 11:
 					pctx.config.setOption("KeepAuxiliaryPredicates",1);
+					break;
+				case 12:
+					pctx.config.setOption("NoFacts",1);
 					break;
 				}
 			break;
