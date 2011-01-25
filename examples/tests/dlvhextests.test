@@ -6,6 +6,7 @@
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
 ../notwellfounded1.hex notwellfounded1.out --nofacts
+../notwellfounded2.hex notwellfounded2.out --nofacts
 ../maxint.hex maxint.out
 ../tertop.hex tertop.out
 ../namespace1.hex namespace1.out
