@@ -49,6 +49,12 @@ DLVHEX_NAMESPACE_BEGIN
 
 /**
  * @brief Collects and administrates all available plugins.
+ *
+ * Important: memory allocation policy:
+ * * PluginInterface objects are only passed by pointer, they must be
+ *   allocated/deallocated by the caller or by the library.
+ * * PluginAtom objects are created by PluginInterface::getAtoms and
+ *   then owned by a smart pointer in the PluginContainer.
  */
 class DLVHEX_EXPORT PluginContainer
 {
@@ -72,13 +78,13 @@ public:
 	void loadPlugins(const std::string& searchpath="");
 
   // add a PluginInterface to the container
-  void addInternalPlugin(PluginInterfacePtr plugin);
+  void addInternalPlugin(PluginInterface* plugin);
 
   // add a PluginAtom to the container
   void addInternalPluginAtom(PluginAtomPtr atom);
 
   // get container with plugins loaded so far
-  const std::vector<PluginInterfacePtr>& getPlugins() const
+  const std::vector<PluginInterface*>& getPlugins() const
     { return plugins; }
 
   /**
@@ -116,7 +122,7 @@ private:
 	std::string searchPath;
 
   // loaded plugins
-  std::vector<PluginInterfacePtr> plugins;
+  std::vector<PluginInterface*> plugins;
 
   /**
    * @brief Associative map of external atoms provided by plugins.

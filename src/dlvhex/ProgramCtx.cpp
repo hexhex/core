@@ -66,6 +66,8 @@ ProgramCtx::ProgramCtx():
 
 ProgramCtx::~ProgramCtx()
 {
+  _pluginContainer.reset();
+  DBGLOG(DBG,"usage count for registry is " << _registry.use_count() << " (it should be 1)");
 }
   
 

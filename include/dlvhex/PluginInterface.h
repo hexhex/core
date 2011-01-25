@@ -1104,7 +1104,10 @@ public:
   // (do not free the pointers, the const char* directly come from argv)
 	void processOptions(std::list<const char*>& pluginOptions);
 };
-typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+// we do not have a PluginInterfacePtr!
+// (PluginInterfaces are usually owned and free'd by their respective plugin libraries)
+// (for "internal" plugin interfaces the caller has to take care of allocating and freeing the plugin interface)
+//typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
 
 DLVHEX_NAMESPACE_END
 

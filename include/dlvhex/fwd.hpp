@@ -72,6 +72,12 @@ typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 class PluginConverter;
 typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 
+class PluginInterface;
+// we do not have a PluginInterfacePtr!
+// (PluginInterfaces are usually owned and free'd by their respective plugin libraries)
+// (for "internal" plugin interfaces the caller has to take care of allocating and freeing the plugin interface)
+//typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+
 class ProgramCtx;
 
 struct Registry;

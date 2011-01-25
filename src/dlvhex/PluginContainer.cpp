@@ -61,9 +61,9 @@ namespace
 struct PluginCandidate
 {
   lt_dlhandle handle;
-  PluginInterfacePtr plugin;
+  PluginInterface* plugin;
   
-  PluginCandidate(lt_dlhandle handle, PluginInterfacePtr plugin):
+  PluginCandidate(lt_dlhandle handle, PluginInterface* plugin):
     handle(handle), plugin(plugin) {}
 };
 typedef std::vector<PluginCandidate> CandidateVector;
@@ -137,7 +137,7 @@ void loadCandidates(const std::vector<std::string>& libnames, CandidateVector& p
 
       // get it!
       DBGLOG(DBG,"now calling plugin import function for " << lib);
-      PluginInterfacePtr plugin(getplugin());
+      PluginInterface* plugin(getplugin());
       DBGLOG(DBG,"plugin import function returned " << printptr(plugin));
 
       plugins.push_back(PluginCandidate(dlHandle, plugin));
@@ -146,11 +146,11 @@ void loadCandidates(const std::vector<std::string>& libnames, CandidateVector& p
   }
 }
 
-void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateVector& candidates)
+void selectPluginCandidates(std::vector<PluginInterface*>& plugins, CandidateVector& candidates)
 {
   // remove those with duplicate names
   std::set<std::string> names;
-  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  BOOST_FOREACH(PluginInterface* plugin, plugins)
   {
     names.insert(plugin->getPluginName());
   }
@@ -166,9 +166,6 @@ void selectPluginCandidates(std::vector<PluginInterfacePtr>& plugins, CandidateV
 
       // warn
       LOG(WARNING,"already loaded a plugin with name " << pname << " (skipping)");
-      // free plugininterface
-      assert(it->plugin.use_count() == 1);
-      it->plugin.reset();
       // unload lib
       if( 0 != lt_dlclose(it->handle) )
       {
@@ -243,7 +240,7 @@ void PluginContainer::loadPlugins(const std::string& search)
 }
 
 // add a PluginInterface to the container
-void PluginContainer::addInternalPlugin(PluginInterfacePtr plugin)
+void PluginContainer::addInternalPlugin(PluginInterface* plugin)
 {
   LOG(PLUGIN,"adding PluginInterface '" << plugin->getPluginName() << "'");
 
@@ -293,7 +290,7 @@ PluginContainer::getAtom(const std::string& name) const
 void PluginContainer::printUsage(
     std::ostream& o)
 {
-  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  BOOST_FOREACH(PluginInterface* plugin, plugins)
   {
     o << "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
 	  plugin->printUsage(o);
@@ -305,7 +302,7 @@ void PluginContainer::printUsage(
 void PluginContainer::processOptions(
     std::list<const char*>& pluginOptions)
 {
-  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  BOOST_FOREACH(PluginInterface* plugin, plugins)
   {
     LOG(DBG,"processing options for plugin " << plugin->getPluginName());
     LOG(DBG,"currently have " << printrange(pluginOptions));
@@ -361,7 +358,7 @@ void PluginContainer::associateExtAtomsWithPluginAtoms(
 // call all setupProgramCtx methods of all plugins
 void PluginContainer::setupProgramCtx(ProgramCtx& ctx)
 {
-  BOOST_FOREACH(PluginInterfacePtr plugin, plugins)
+  BOOST_FOREACH(PluginInterface* plugin, plugins)
   {
     LOG(DBG,"setting up program ctx for plugin " << plugin->getPluginName());
 	  plugin->setupProgramCtx(ctx);

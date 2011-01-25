@@ -144,7 +144,7 @@ void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 {
   if( !ctx->config.getOption("Silent") )
   {
-    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+    BOOST_FOREACH(PluginInterface* plugin, ctx->pluginContainer()->getPlugins())
     {
       LOG(INFO,"opening plugin " << plugin->getPluginName() <<
                " version " <<
@@ -180,7 +180,7 @@ void ConvertState::convert(ProgramCtx* ctx)
   LOG(DBG,"debugFilePrefix='" << ctx->config.debugFilePrefix() << "'");
 
   std::vector<PluginConverterPtr> converters;
-  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  BOOST_FOREACH(PluginInterface* plugin, ctx->pluginContainer()->getPlugins())
   {
     BOOST_FOREACH(PluginConverterPtr pc, plugin->createConverters())
     {
