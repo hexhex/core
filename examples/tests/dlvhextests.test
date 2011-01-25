@@ -3,6 +3,9 @@
 ../weak1.hex weak1.out -a
 ../weak1.hex weak1r.out -ra
 ../weak2.hex weak2.out -a
+../wellfounded1.hex wellfounded1.out --nofacts
+../wellfounded2.hex wellfounded2.out --nofacts
+../notwellfounded1.hex notwellfounded1.out --nofacts
 ../maxint.hex maxint.out
 ../tertop.hex tertop.out
 ../namespace1.hex namespace1.out

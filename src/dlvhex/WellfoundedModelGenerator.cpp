@@ -183,9 +183,10 @@ WellfoundedModelGenerator::generateNextModel()
     // then current = 1 - current
     std::vector<InterpretationPtr> ints(2);
     unsigned current = 0;
-    ints[0] = postprocessedInput;
+    // the following creates a copy! (we need the postprocessedInput later)
+    ints[0] = InterpretationPtr(new Interpretation(*postprocessedInput));
     // the following creates a copy!
-    ints[1] = InterpretationPtr(new Interpretation(*ints[0]));
+    ints[1] = InterpretationPtr(new Interpretation(*postprocessedInput));
     do
     {
       InterpretationPtr src = ints[current];
@@ -252,7 +253,11 @@ WellfoundedModelGenerator::generateNextModel()
     {
       // does not matter which one we take, they are equal
       InterpretationPtr result = ints[0];
-      DBGLOG(DBG,"leaving loop with result" << *result);
+      DBGLOG(DBG,"leaving loop with result " << *result);
+
+      // remove postprocessedInput from result!
+      result->getStorage() -= postprocessedInput->getStorage();
+      DBGLOG(DBG,"after removing input facts: result is " << *result);
 
       // store as single answer set (there can only be one)
       AnswerSetPtr as(new AnswerSet(result));

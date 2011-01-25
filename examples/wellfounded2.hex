@@ -2,12 +2,11 @@ dom(x).
 dom(xx).
 dom(xxx).
 dom(xxxx).
-blah(ux).
-strings(ux).
+blah(xxx).
 strings(xx).
 out(X) :- &testConcat[A,x](X), strings(A), dom(X), not &testConcat[B,x](X), blah(B).
 strings(X) :- out(X).
-% result should be {out(xxx),out(xxxx),out(xxxxx)}
+% result should be {strings(xxx), out(xxx)}
 % this can be evaluated wellfounded, testConcat is monotonic
 % beware: the negation of &testConcat[B,x](X) should be an outer eatom of the
 %   wellfounded component and therefore not destroy the wellfoundedness
