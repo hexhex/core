@@ -51,7 +51,9 @@ namespace
 {
   struct FilterCallback
   {
+    // ordinary ground atoms
     OrdinaryAtomTable& ogat;
+
     FilterCallback(RegistryPtr reg):
       ogat(reg->ogatoms)
     {
@@ -65,7 +67,12 @@ namespace
         return false;
       }
       else
+      {
+        // assert term aux bit
+        assert((oa.tuple.front().kind & ID::PROPERTY_TERM_AUX) == 0 &&
+            "if ordinary ground atom is not auxiliary, predicate term must not be auxiliary");
         return true;
+      }
     }
   };
 }
@@ -74,6 +81,8 @@ bool AnswerSetPrinterCallback::operator()(
     AnswerSetPtr as)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
+
+  // filter by aux bits
   FilterCallback cb(as->interpretation->getRegistry());
   unsigned rejected = as->interpretation->filter(cb);
   DBGLOG(DBG,"ASPrinterCB filtered " << rejected << " auxiliaries from interpretation");

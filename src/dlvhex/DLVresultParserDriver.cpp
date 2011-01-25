@@ -184,15 +184,10 @@ namespace
 {
   inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
   {
-    ID id = registry->terms.getIDByString(s);
-    if( id == ID_FAIL )
-    {
-      Term term(ID::MAINKIND_TERM, s);
-      // we can only get strings or constants
-      assert(s[0] == '"' || islower(s[0]));
-      id = registry->terms.storeAndGetID(term);
-    }
-    return id;
+    Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s);
+    assert((s[0] == '"' || islower(s[0])) && "in this parser we can only get strings or constants!");
+    // retrieve or store
+    return registry->storeTerm(term);
   }
 }
 
@@ -244,6 +239,11 @@ struct handle_fact
     ID predid = getOrRegisterTerm(state.registry, predicate);
     OrdinaryAtom atom(ID::MAINKIND_ATOM);
     atom.tuple.push_back(predid);
+
+    // aux predicates create aux atoms
+    if( (predid & ID::PROPERTY_TERM_AUX) != 0 )
+      atom.kind |= ID::PROPERTY_ATOM_AUX;
+
     boost::optional<Tuple>& tup = fusion::at_c<2>(attr);
     if( !!tup )
       atom.tuple.insert(atom.tuple.end(), tup.get().begin(), tup.get().end());

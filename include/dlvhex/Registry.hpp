@@ -118,7 +118,7 @@ struct Registry:
 
   // lookup by symbol, if it does not exist create it in term table
   // assume term is fully initialized
-  ID storeConstantTerm(Term& term);
+  ID storeTerm(Term& term);
 
   //
   // accessors

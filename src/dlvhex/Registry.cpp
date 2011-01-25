@@ -112,7 +112,7 @@ ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
   return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
-ID Registry::storeConstantTerm(Term& term)
+ID Registry::storeTerm(Term& term)
 {
   ID ret = terms.getIDByString(term.symbol);
   if( ret == ID_FAIL )

@@ -246,7 +246,7 @@ public:
     
 		Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s.str());
     Tuple tu;
-    tu.push_back(registry->storeConstantTerm(resultterm));
+    tu.push_back(registry->storeTerm(resultterm));
     answer.get().push_back(tu);
   }
 };
