@@ -661,7 +661,9 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   #warning TODO weak model output hook with filter
 
   // setup default model outputting callback
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
+
+  bool keepAuxiliaryPredicates = (1 == ctx->config.getOption("KeepAuxiliaryPredicates"));
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(keepAuxiliaryPredicates));
   ctx->modelCallbacks.push_back(asprinter);
 
   // let plugins setup the program ctx (removing the default hooks is permitted)

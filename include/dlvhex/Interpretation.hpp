@@ -38,6 +38,7 @@
 
 #include <bm/bm.h>
 
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -51,6 +52,7 @@ public:
   typedef boost::shared_ptr<Interpretation> Ptr;
   typedef boost::shared_ptr<const Interpretation> ConstPtr;
   typedef bm::bvector<> Storage;
+  typedef boost::function<bool (IDAddress)> FilterCallback;
 
   // storage
 protected:
@@ -63,13 +65,19 @@ public:
   virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
 
+  // go through 1-bits and set to zero if callback returns false
+  virtual unsigned filter(FilterCallback callback);
+
   virtual std::ostream& print(std::ostream& o, const char* first, const char* sep, const char* last) const;
   virtual std::ostream& print(std::ostream& o) const;
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
   void add(const Interpretation& other);
+  #warning todo we may want to name this "add" "remove" and "has" (...Fact)
   inline void setFact(IDAddress id)
     { bits.set(id); }
+  inline void clearFact(IDAddress id)
+    { bits.clear_bit(id); }
   inline bool getFact(IDAddress id) const
     { return bits.get_bit(id); }
 

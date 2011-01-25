@@ -44,6 +44,34 @@ Interpretation::~Interpretation()
 {
 }
 
+unsigned Interpretation::filter(FilterCallback cb)
+{
+  // simply enumerating and clearing bits does not work,
+  // as modifying bits invalidates iterators (even the end iterator)
+  // so we collect all things to filter out in a separate bitset
+
+  Storage resetThose;
+
+  // go through one-bits
+  for(Storage::enumerator it = bits.first();
+      it != bits.end(); ++it)
+  {
+    if( !cb(*it) )
+    {
+      resetThose.set(*it);
+    }
+  }
+
+  for(Storage::enumerator it = resetThose.first();
+      it != resetThose.end(); ++it)
+  {
+    // now clear bits
+    clearFact(*it);
+  }
+
+  return resetThose.count();
+}
+
 std::ostream& Interpretation::print(std::ostream& o) const
 {
   return print(o, "{", ",", "}");

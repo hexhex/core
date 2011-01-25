@@ -164,6 +164,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
       << "                      1  - program analysis information (including dot-file)" << std::endl
+      << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -283,6 +284,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpEvalGraph",0);
   pctx.config.setOption("DumpModelGraph",0);
   pctx.config.setOption("DumpIModelGraph",0);
+  pctx.config.setOption("KeepAuxiliaryPredicates",0);
 
 	// defaults of main
 	Config config;
@@ -477,6 +479,7 @@ void processOptionsPrePlugin(
 		{ "nocache",    no_argument, &longid, 8 },
 		{ "version",    no_argument, &longid, 9 },
 		{ "graphviz", required_argument, &longid, 10 },
+		{ "keepauxpreds", no_argument, &longid, 11 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -692,6 +695,9 @@ void processOptionsPrePlugin(
 								throw UsageError("unknown graphviz graph type '"+token+"'");
 						}
 					}
+					break;
+				case 11:
+					pctx.config.setOption("KeepAuxiliaryPredicates",1);
 					break;
 				}
 			break;
