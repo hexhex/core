@@ -55,19 +55,22 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+struct PluginContainer::LoadedPlugin
+{
+  // handle is NULL for statically linked plugins
+  lt_dlhandle handle;
+  PluginInterfacePtr plugin;
+  
+  LoadedPlugin(lt_dlhandle handle, PluginInterfacePtr plugin):
+    handle(handle), plugin(plugin) {}
+};
+
 namespace
 {
 
-struct PluginCandidate
-{
-  lt_dlhandle handle;
-  PluginInterface* plugin;
-  
-  PluginCandidate(lt_dlhandle handle, PluginInterface* plugin):
-    handle(handle), plugin(plugin) {}
-};
-typedef std::vector<PluginCandidate> CandidateVector;
-
+typedef PluginContainer::LoadedPlugin LoadedPlugin;
+typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
+typedef PluginContainer::LoadedPluginVector LoadedPluginVector;
 typedef PluginInterface* (*t_import)();
 
 int
@@ -112,7 +115,7 @@ void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std:
   lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
 }
 
-void loadCandidates(const std::vector<std::string>& libnames, CandidateVector& plugins)
+void loadCandidates(const std::vector<std::string>& libnames, LoadedPluginVector& plugins)
 {
   BOOST_FOREACH(const std::string& lib, libnames)
   {
@@ -140,36 +143,43 @@ void loadCandidates(const std::vector<std::string>& libnames, CandidateVector& p
       PluginInterface* plugin(getplugin());
       DBGLOG(DBG,"plugin import function returned " << printptr(plugin));
 
-      plugins.push_back(PluginCandidate(dlHandle, plugin));
+      // now wrap in non-deleting shared_ptr
+      PluginInterfacePtr nopDeletingPluginPtr(plugin, PluginPtrNOPDeleter<PluginInterface>());
+
+      plugins.push_back(LoadedPluginPtr(new LoadedPlugin(dlHandle, nopDeletingPluginPtr)));
     }
     while(false);
   }
 }
 
-void selectPluginCandidates(std::vector<PluginInterface*>& plugins, CandidateVector& candidates)
+void selectLoadedPlugins(LoadedPluginVector& plugins, LoadedPluginVector& candidates)
 {
   // remove those with duplicate names
   std::set<std::string> names;
-  BOOST_FOREACH(PluginInterface* plugin, plugins)
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
   {
-    names.insert(plugin->getPluginName());
+    names.insert(lplugin->plugin->getPluginName());
   }
-  DBGLOG(DBG,"selectPluginCandidates: already loaded: " << printset(names));
+  DBGLOG(DBG,"selectLoadedPlugins: already loaded: " << printset(names));
 
-  CandidateVector::iterator it = candidates.begin();
+  LoadedPluginVector::iterator it = candidates.begin();
   while(it != candidates.end())
   {
-    const std::string& pname = it->plugin->getPluginName();
+    const std::string& pname = (*it)->plugin->getPluginName();
     if( names.find(pname) != names.end() )
     {
       // warn, unload, remove, restart loop
 
       // warn
       LOG(WARNING,"already loaded a plugin with name " << pname << " (skipping)");
+
+      #warning TODO check if any pointer is used?
+      DBGLOG(DBG,"usage count on interface ptr is " << (*it)->plugin.use_count() << " (should be 1)");
+
       // unload lib
-      if( 0 != lt_dlclose(it->handle) )
+      if( 0 != lt_dlclose((*it)->handle) )
       {
-        LOG(WARNING,"failed unloading plugin library " << pname);
+        LOG(WARNING,"failed unloading plugin library " << pname << ":" << lt_dlerror());
       }
       // remove
       candidates.erase(it);
@@ -203,6 +213,44 @@ PluginContainer::PluginContainer(RegistryPtr registry):
 
 PluginContainer::~PluginContainer()
 {
+  DBGLOG(DBG,"unregistering plugin atoms");
+  for(PluginAtomMap::const_iterator it = pluginAtoms.begin();
+      it != pluginAtoms.end(); ++it)
+  {
+    unsigned use = it->second.use_count();
+    if( use != 1 )
+      LOG(WARNING,"usage count on plugin atom '" << it->first << "' is " << use << " (should be 1)");
+  }
+  // free them
+  pluginAtoms.clear();
+
+  DBGLOG(DBG,"unloading plugins");
+  // unload all plugins in reverse order
+  for(LoadedPluginVector::reverse_iterator it = plugins.rbegin();
+      it != plugins.rend(); ++it)
+  {
+    LoadedPluginPtr lp = *it;
+    const std::string& pname = lp->plugin->getPluginName();
+    if( lp->handle == 0 )
+    {
+      DBGLOG(DBG,"unloading plugin '" << pname << "' not necessary (NULL handle)");
+      continue;
+    }
+
+    LOG(DBG,"about to unload loaded plugin '" << pname << "'");
+
+    #warning TODO check if any pointer is used?
+    unsigned use = lp->plugin.use_count();
+    if( use != 1 )
+      LOG(WARNING,"usage count on PluginInterfacePtr is " << use << " (should be 1)");
+
+    // unload lib
+    if( 0 != lt_dlclose(lp->handle) )
+    {
+      LOG(WARNING,"failed unloading plugin library '" << pname << "':" << lt_dlerror());
+    }
+  }
+  DBGLOG(DBG,"done unloading");
 }
 
 // search for plugins in searchpath and open those that are plugins
@@ -219,18 +267,17 @@ void PluginContainer::loadPlugins(const std::string& search)
   // TODO probably preselect using library names and already loaded plugins
 
   // load candidates
-  CandidateVector plugincandidates;
+  LoadedPluginVector plugincandidates;
   loadCandidates(libcandidates, plugincandidates);
 
   // TODO probably select/unload using PluginInterface and already loaded plugins
-  selectPluginCandidates(plugins, plugincandidates);
+  selectLoadedPlugins(plugins, plugincandidates);
 
   // add new plugins to list of loaded plugins
-  BOOST_FOREACH(const PluginCandidate& cand, plugincandidates)
+  BOOST_FOREACH(LoadedPluginPtr cand, plugincandidates)
   {
-    addInternalPlugin(cand.plugin);
     // (automatically adds atoms)
-    // discard cand.handle
+    addInternalPlugin(cand);
   }
 
   // add to existing search path
@@ -239,13 +286,13 @@ void PluginContainer::loadPlugins(const std::string& search)
   searchPath += search;
 }
 
-// add a PluginInterface to the container
-void PluginContainer::addInternalPlugin(PluginInterface* plugin)
+// add dlhandle and plugin interface to the container
+void PluginContainer::addInternalPlugin(LoadedPluginPtr lplugin)
 {
-  LOG(PLUGIN,"adding PluginInterface '" << plugin->getPluginName() << "'");
+  LOG(PLUGIN,"adding PluginInterface '" << lplugin->plugin->getPluginName() << "' with dlhandle " << lplugin->handle);
 
   PluginAtomMap pa;
-  plugin->getAtoms(pa);
+  lplugin->plugin->getAtoms(pa);
   
   for(PluginAtomMap::const_iterator it = pa.begin();
       it != pa.end(); ++it)
@@ -254,7 +301,14 @@ void PluginContainer::addInternalPlugin(PluginInterface* plugin)
     addInternalPluginAtom(it->second);
   }
 
-  plugins.push_back(plugin);
+  // add with NULL dlhandle pointer
+  plugins.push_back(lplugin);
+}
+
+// add a PluginInterface to the container
+void PluginContainer::addInternalPlugin(PluginInterfacePtr plugin)
+{
+  addInternalPlugin(LoadedPluginPtr(new LoadedPlugin(0, plugin)));
 }
 
 // add a PluginAtom statically linked into this program to the container
@@ -275,6 +329,18 @@ void PluginContainer::addInternalPluginAtom(PluginAtomPtr atom)
   }
 }
 
+std::vector<PluginInterfacePtr>
+PluginContainer::getPlugins() const
+{
+  std::vector<PluginInterfacePtr> ret;
+  ret.reserve(plugins.size());
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
+  {
+    ret.push_back(lplugin->plugin);
+  }
+  return ret;
+}
+
 PluginAtomPtr
 PluginContainer::getAtom(const std::string& name) const
 {
@@ -290,8 +356,9 @@ PluginContainer::getAtom(const std::string& name) const
 void PluginContainer::printUsage(
     std::ostream& o)
 {
-  BOOST_FOREACH(PluginInterface* plugin, plugins)
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
   {
+    PluginInterfacePtr plugin = lplugin->plugin;
     o << "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
 	  plugin->printUsage(o);
   }
@@ -302,8 +369,9 @@ void PluginContainer::printUsage(
 void PluginContainer::processOptions(
     std::list<const char*>& pluginOptions)
 {
-  BOOST_FOREACH(PluginInterface* plugin, plugins)
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
   {
+    PluginInterfacePtr plugin = lplugin->plugin;
     LOG(DBG,"processing options for plugin " << plugin->getPluginName());
     LOG(DBG,"currently have " << printrange(pluginOptions));
 	  plugin->processOptions(pluginOptions);
@@ -358,8 +426,9 @@ void PluginContainer::associateExtAtomsWithPluginAtoms(
 // call all setupProgramCtx methods of all plugins
 void PluginContainer::setupProgramCtx(ProgramCtx& ctx)
 {
-  BOOST_FOREACH(PluginInterface* plugin, plugins)
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
   {
+    PluginInterfacePtr plugin = lplugin->plugin;
     LOG(DBG,"setting up program ctx for plugin " << plugin->getPluginName());
 	  plugin->setupProgramCtx(ctx);
   }

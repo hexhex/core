@@ -51,10 +51,12 @@ DLVHEX_NAMESPACE_BEGIN
  * @brief Collects and administrates all available plugins.
  *
  * Important: memory allocation policy:
- * * PluginInterface objects are only passed by pointer, they must be
- *   allocated/deallocated by the caller or by the library.
+ * * PluginInterface objects are passed by pointer from the extern "C" plugin
+ *   import function, they are wrapped in a non-deleting smart pointer by the
+ *   PluginContainer and must be deallocated by the library itself.
  * * PluginAtom objects are created by PluginInterface::getAtoms and
- *   then owned by a smart pointer in the PluginContainer.
+ *   then owned by a smart pointer in the PluginContainer. These smart pointers
+ *   must contain a "deleter" compiled into the library.
  */
 class DLVHEX_EXPORT PluginContainer
 {
@@ -78,14 +80,17 @@ public:
 	void loadPlugins(const std::string& searchpath="");
 
   // add a PluginInterface to the container
-  void addInternalPlugin(PluginInterface* plugin);
+  // the smart pointer will not be reconfigured, so if you need to use a
+  // custom "deleter", do it before you call this method
+  void addInternalPlugin(PluginInterfacePtr plugin);
 
   // add a PluginAtom to the container
+  // the smart pointer will not be reconfigured, so if you need to use a
+  // custom "deleter", do it before you call this method
   void addInternalPluginAtom(PluginAtomPtr atom);
 
   // get container with plugins loaded so far
-  const std::vector<PluginInterface*>& getPlugins() const
-    { return plugins; }
+  std::vector<PluginInterfacePtr> getPlugins() const;
 
   /**
    * @brief returns a plugin-atom object corresponding to a name.
@@ -113,7 +118,15 @@ public:
   // call all setupProgramCtx methods of all plugins
   void setupProgramCtx(ProgramCtx& ctx);
 
+public:
+  struct LoadedPlugin;
+  typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
+  typedef std::vector<LoadedPluginPtr> LoadedPluginVector;
+  
 private:
+  // add loaded plugin, extract plugin atoms
+  void addInternalPlugin(LoadedPluginPtr lplugin);
+
   // one plugincontainer can only be used with one registry,
   // as all the plugin atoms have an association with a registry
   RegistryPtr registry;
@@ -122,7 +135,7 @@ private:
 	std::string searchPath;
 
   // loaded plugins
-  std::vector<PluginInterface*> plugins;
+  LoadedPluginVector plugins;
 
   /**
    * @brief Associative map of external atoms provided by plugins.

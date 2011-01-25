@@ -1104,10 +1104,39 @@ public:
   // (do not free the pointers, the const char* directly come from argv)
 	void processOptions(std::list<const char*>& pluginOptions);
 };
-// we do not have a PluginInterfacePtr!
-// (PluginInterfaces are usually owned and free'd by their respective plugin libraries)
-// (for "internal" plugin interfaces the caller has to take care of allocating and freeing the plugin interface)
-//typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
+typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+
+//
+// deleters
+//
+
+// this class should be used as a "deleter" for boost::shared_ptr if the library
+// returning the pointer wants to return an object allocated with "new"
+// this must stay inline! (the correct delete operator must be used by the library)
+template<typename AllocatedT>
+struct PluginPtrDeleter
+{
+  PluginPtrDeleter() {}
+  inline void operator()(const AllocatedT* ptr) const
+  {
+    delete ptr;
+  }
+};
+
+// this class should be used as a "deleter" for boost::shared_ptr if the library
+// returning the pointer wants to return a statically linked object (i.e., do not free)
+// [this is used for all PluginInterface pointers, as this pointer is returned as a
+// POD type via an extern "C" function]
+template<typename AllocatedT>
+struct PluginPtrNOPDeleter
+{
+  PluginPtrNOPDeleter() {}
+  inline void operator()(const AllocatedT* ptr) const
+  {
+    // NOP = do not delete
+  }
+};
 
 DLVHEX_NAMESPACE_END
 

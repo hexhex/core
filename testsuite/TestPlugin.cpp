@@ -328,13 +328,14 @@ public:
   {
     std::vector<PluginAtomPtr> ret;
 
-    ret.push_back(PluginAtomPtr(new TestAAtom));
-	  ret.push_back(PluginAtomPtr(new TestBAtom));
-	  ret.push_back(PluginAtomPtr(new TestCAtom));
-	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false)));
-	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true)));
-	  ret.push_back(PluginAtomPtr(new TestConcatAtom));
-	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom));
+		// return smart pointer with deleter (i.e., delete code compiled into this plugin)
+    ret.push_back(PluginAtomPtr(new TestAAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestBAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
