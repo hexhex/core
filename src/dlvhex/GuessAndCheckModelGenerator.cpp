@@ -276,13 +276,117 @@ void createEatomGuessingRules(
   }
 }
 
+/**
+ * for each rule in xidb
+ * * keep constraints: copy ID to xidbflphead and xidbflpbody
+ * * for all others:
+ * * collect all variables in the body (which means also all variables in the head)
+ * * create ground or nonground flp replacement atom containing all variables
+ * * create rule <flpreplacement>(<allvariables>) :- <body> and store in xidbflphead
+ * * create rule <head> :- <flpreplacement>(<allvariables>), <body> and store in xidbflpbody
+ */
 void createFLPRules(
     RegistryPtr reg,
     const std::vector<ID>& xidb,
     std::vector<ID>& xidbflphead,
     std::vector<ID>& xidbflpbody)
 {
-  #warning TODO
+  DBGLOG_SCOPE(DBG,"cFLPR",false);
+  BOOST_FOREACH(ID rid, xidb)
+  {
+    if( rid.isConstraint() )
+    {
+      // keep constraints as they are, they cannot hurt minimality
+      xidbflphead.push_back(rid);
+      xidbflpbody.push_back(rid);
+    }
+    else if( rid.isRegularRule() )
+    {
+      const Rule& r = reg->rules.getByID(rid);
+      DBGLOG(DBG,"processing rule " << rid << " " << r);
+
+      // collect all variables
+      std::set<ID> variables;
+      BOOST_FOREACH(ID lit, r.body)
+      {
+        assert(!lit.isExternalAtom() && "in xidb there must not be external atoms left");
+        #warning TODO factorize "get all (free) variables from entity"
+        // from ground literals we don't need variables
+        if( lit.isOrdinaryGroundAtom() )
+          continue;
+
+        if( lit.isOrdinaryNongroundAtom() )
+        {
+          const OrdinaryAtom& onatom = reg->onatoms.getByID(lit);
+          BOOST_FOREACH(ID idt, onatom.tuple)
+          {
+            if( idt.isVariableTerm() )
+              variables.insert(idt);
+          }
+        }
+        else
+        {
+          throw FatalError("TODO: think about how to treat other types of atoms in FLP check");
+        }
+      }
+      DBGLOG(DBG,"collected variables " << printset(variables));
+
+      // prepare replacement atom
+      OrdinaryAtom replacement(
+          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+
+      // tuple: (replacement_predicate, variables*)
+      ID flppredicate = reg->getAuxiliaryConstantSymbol('f', rid);
+      replacement.tuple.push_back(flppredicate);
+
+      // groundness of replacement predicate
+      ID fid;
+      if( variables.empty() )
+      {
+        replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+        fid = reg->storeOrdinaryGAtom(replacement);
+      }
+      else
+      {
+        replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+        replacement.tuple.insert(replacement.tuple.end(),
+            variables.begin(), variables.end());
+        fid = reg->storeOrdinaryNAtom(replacement);
+      }
+      DBGLOG(DBG,"registered flp replacement " << replacement <<
+          " with fid " << fid);
+
+      // create rules
+      Rule rflphead(
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+      rflphead.head.push_back(fid);
+      rflphead.body = r.body;
+
+      Rule rflpbody(
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+      rflpbody.head = r.head;
+      rflpbody.body = r.body;
+      rflpbody.body.push_back(fid);
+
+      // store rules
+      ID fheadrid = reg->rules.storeAndGetID(rflphead);
+      xidbflphead.push_back(fheadrid);
+      ID fbodyrid = reg->rules.storeAndGetID(rflpbody);
+      xidbflpbody.push_back(fbodyrid);
+
+      #ifndef NDEBUG
+      RawPrinter p(Logger::Instance().stream(), reg);
+      DBGLOG(DBG,"stored flphead rule " << rflphead << " which got id " << fheadrid);
+      p.print(fheadrid);
+      DBGLOG(DBG,"stored flpbody rule " << rflpbody << " which got id " << fbodyrid);
+      p.print(fbodyrid);
+      #endif
+    }
+    else
+    {
+      throw FatalError("TODO: think about weak rules in G&C MG");
+    }
+  }
 }
 
 }
