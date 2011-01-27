@@ -171,9 +171,8 @@ EvalGraphBuilder::createEvalUnit(
       {
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-        throw std::runtime_error("need G&C Model Generator!");
-        //uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-        //      ctx, ci, externalEvalConfig));
+        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
       }
     }
   }

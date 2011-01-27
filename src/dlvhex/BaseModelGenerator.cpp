@@ -116,7 +116,9 @@ void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
           ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
 
       // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
-      replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
+      replacement.tuple.push_back(
+          reg->getAuxiliaryConstantSymbol('r',
+            pluginAtom->getPredicateID()));
       replacement.tuple.insert(replacement.tuple.end(),
           inputtuple.begin(), inputtuple.end());
       replacement.tuple.insert(replacement.tuple.end(),
@@ -344,7 +346,9 @@ ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
 
     // create replacement atom
     OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
-    replacement.tuple.push_back(pluginAtom->getReplacementPredicateID());
+    replacement.tuple.push_back(
+        reg->getAuxiliaryConstantSymbol('r',
+          pluginAtom->getPredicateID()));
     replacement.tuple.insert(replacement.tuple.end(),
         eatom.inputs.begin(), eatom.inputs.end());
     replacement.tuple.insert(replacement.tuple.end(),

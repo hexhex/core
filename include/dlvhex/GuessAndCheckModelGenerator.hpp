@@ -25,64 +25,33 @@
  * @file   GuessAndCheckModelGenerator.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Concrete model generator used for prototype. (TODO refactor, this should be AcycliModelGenerator, perhaps even a template parameterized by solver software)
+ * @brief  Model generator for eval units that do not allow a fixpoint calculation.
+ *
+ * Those units may be of any form.
  */
 
 #ifndef GUESSANDCHECK_MODEL_GENERATOR_HPP_INCLUDED__09112010
 #define GUESSANDCHECK_MODEL_GENERATOR_HPP_INCLUDED__09112010
 
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ASPSolverManager.h"
 
 #include <boost/shared_ptr.hpp>
 
-#warning TODO rewrite whole file (still only a copy)
-
 DLVHEX_NAMESPACE_BEGIN
 
-class ProgramCtx;
 class GuessAndCheckModelGeneratorFactory;
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
 
-//
-// A model generator does the following:
-// * it is constructed by a ModelGeneratorFactory which knows the program
-//   (and can precompute information for evaluation,
-//    and may also provide this to the model generator)
-// * it is evaluated on a (probably empty) input interpretation
-// * this evaluation can be performed online
-// * evaluation yields a (probably empty) set of output interpretations
-//
 class GuessAndCheckModelGenerator:
-  public ModelGeneratorBase<Interpretation>,
+  public BaseModelGenerator,
   public ostream_printable<GuessAndCheckModelGenerator>
 {
   // types
 public:
   typedef GuessAndCheckModelGeneratorFactory Factory;
-
-protected:
-  struct EmptyResults:
-    public ASPSolverManager::Results
-  {
-    EmptyResults() {}
-    virtual ~EmptyResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet() { return AnswerSet::Ptr(); }
-  };
-
-  struct SingularResults:
-    public ASPSolverManager::Results
-  {
-    SingularResults(AnswerSet::Ptr as): ASPSolverManager::Results(), ret(as) {}
-    virtual ~SingularResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet()
-      { AnswerSet::Ptr p = ret; ret.reset(); return p; };
-    AnswerSet::Ptr ret;
-  };
 
   // storage
 protected:
@@ -90,7 +59,7 @@ protected:
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationConstPtr postprocessedInput;
-  // result handle for asp solver evaluation, using externallyAugmentedInput
+  // result handle for retrieving set of minimal models of this eval unit
   ASPSolverManager::ResultsPtr currentResults;
 
   // members
@@ -101,23 +70,13 @@ public:
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
 
-  // debug output
+  // TODO debug output?
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorBase::print() not overloaded"; }
-protected:
-  virtual void evaluateExternalAtoms(InterpretationPtr i) const;
-  virtual InterpretationPtr projectEAtomInputInterpretation(
-    const ExternalAtom& eatom, InterpretationConstPtr full) const;
-  virtual void buildEAtomInputTuples(
-    const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
 };
 
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
 class GuessAndCheckModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<Interpretation>,
+  public BaseModelGeneratorFactory,
   public ostream_printable<GuessAndCheckModelGeneratorFactory>
 {
   // types
@@ -130,11 +89,28 @@ protected:
   // which solver shall be used for external evaluation?
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
-  std::vector<ID> eatoms;
-  // original idb (containing eatoms, but already including auxiliary input rules)
+
+  //
+  // see also comments in GuessAndCheckModelGenerator.cpp
+  //
+
+  // outer external atoms
+  std::vector<ID> outerEatoms;
+
+  // inner external atoms
+  std::vector<ID> innerEatoms;
+  // one guessing rule for each inner eatom
+  // (if one rule contains two inner eatoms, two guessing rules are created)
+  std::vector<ID> gidb;
+
+  // original idb (containing eatoms where all inputs are known
+  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
   std::vector<ID> idb;
-  // rewritten idb (containing replacements for eatoms) TODO we could remove the auxiliary input rules for xidb
-  std::vector<ID> xidb; // x stands for transformed
+  // idb rewritten with eatom replacement atoms
+  std::vector<ID> xidb;
+  // xidb rewritten for FLP calculation
+  std::vector<ID> xidbflphead;
+  std::vector<ID> xidbflpbody;
 
   // methods
 public:
@@ -147,12 +123,8 @@ public:
     InterpretationConstPtr input)
     { return ModelGeneratorPtr(new GuessAndCheckModelGenerator(*this, input)); }
 
-  // get rule
-  // rewrite all eatoms in body to auxiliary replacement atoms
-  // store and return id
-  ID convertRule(ID ruleid);
-
   virtual std::ostream& print(std::ostream& o) const;
+  virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
 DLVHEX_NAMESPACE_END

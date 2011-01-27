@@ -267,28 +267,6 @@ void PluginAtom::setRegistry(RegistryPtr reg)
   assert(predicateID != ID_FAIL);
 }
 
-// fail if registry does not exists
-// calculate and register replacementPredicateID if not existing
-// return replacementPredicateID
-ID PluginAtom::getReplacementPredicateID()
-{
-  if( replacementPredicateID == ID_FAIL )
-  {
-    assert(registry != 0);
-    std::stringstream s;
-    s << "aux_ext_" << predicate;
-    replacementPredicate = s.str();
-    ID tmp = registry->terms.getIDByString(replacementPredicate);
-    // we do not want this to exist!
-    assert(tmp == ID_FAIL);
-    Term t(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
-        replacementPredicate);
-    replacementPredicateID = registry->terms.storeAndGetID(t);
-  }
-  assert(replacementPredicateID != ID_FAIL);
-  return replacementPredicateID;
-}
-
 // this method gets atoms into a map,
 // these atoms are always freshly created using createAtoms
 void PluginInterface::getAtoms(PluginAtomMap& pam) const

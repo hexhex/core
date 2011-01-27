@@ -21,6 +21,7 @@
 	* added option for configuring graphviz output (eval/model graph not yet implemented, but partially exists in testsuite)
 	* plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use a "deleter" compiled into the respective plugin (see PluginInterface.h)
 	* added new test notwellfounded2.hex for guess and check model builder (should test minimality of disjunctions) [this test crashes dlvhex trunk/]
+	* added central auxiliary constant management method getAuxiliaryConstantSymbol() to Registry, PluginAtom no longer manages its own auxiliaries
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

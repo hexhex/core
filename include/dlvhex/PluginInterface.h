@@ -831,17 +831,6 @@ public:
   const std::string& getPredicate() const
     { return predicate; }
   
-  /// \brief (if necessary calculate and) get replacement predicate id
-  //
-  // fail if registry does not exists
-  // calculate and register replacementPredicateID if not existing
-  // return replacementPredicateID
-  ID getReplacementPredicateID();
-
-  /// \brief get replacement predicate name
-  const std::string& getReplacementPredicate() const
-    { return replacementPredicate; }
-
 protected:
   // the predicate of the atom as it appears in HEX programs
   // (without leading &)
@@ -854,12 +843,6 @@ protected:
 
   // the id of the predicate name, ID_FAIL if no registry is set
   ID predicateID;
-
-  // the string of the replacement predicate (this can be seen as a cache)
-  std::string replacementPredicate;
-
-  // the id of the predicate replacement name, ID_FAIL if not yet known
-  ID replacementPredicateID;
 
   /// \brief whether the function is monotonic or nonmonotonic
   bool monotonic;

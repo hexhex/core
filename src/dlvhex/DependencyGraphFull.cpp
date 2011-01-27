@@ -719,15 +719,8 @@ ID DependencyGraphFull::createAuxiliaryRuleHead(
 		ID forEAtom,
 		const std::list<ID>& variables)
 {
-	std::ostringstream os;
-	os << "aux_inp_r" << forRule.address << "ea" << forEAtom.address;
-	const std::string& pred = os.str();
-	// this aux predicate name must not exist so far!
-	assert(registry->terms.getIDByString(pred) == ID_FAIL);
-
-	// register predicate name
-	Term pterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, pred);
-	ID idpred = registry->terms.storeAndGetID(pterm);
+	// get aux predicate name
+	ID idpred = registry->getAuxiliaryConstantSymbol('i', forEAtom);
 
 	// create ordinary nonground atom
 	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);

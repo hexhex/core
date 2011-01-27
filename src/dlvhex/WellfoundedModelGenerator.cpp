@@ -65,7 +65,7 @@ WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
   // iff all inner eatoms are monotonic and there are no negative dependencies within idb
 
   // copy rules and constraints to idb
-  // TODO we do not need this except for debugging
+  // TODO we do not really need this except for debugging (tiny optimization possibility)
   idb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   idb.insert(idb.end(), ci.innerRules.begin(), ci.innerRules.end());
   idb.insert(idb.end(), ci.innerConstraints.begin(), ci.innerConstraints.end());
@@ -80,22 +80,8 @@ WellfoundedModelGeneratorFactory::WellfoundedModelGeneratorFactory(
       inserter, boost::bind(
         &WellfoundedModelGeneratorFactory::convertRule, this, reg, _1));
 
-  #ifndef NDEBUG
-  {
-    {
-      std::ostringstream s;
-      RawPrinter printer(s,ctx.registry());
-      printer.printmany(idb," ");
-      DBGLOG(DBG,"WellfoundedModelGeneratorFactory got idb " << s.str());
-    }
-    {
-      std::ostringstream s;
-      RawPrinter printer(s,ctx.registry());
-      printer.printmany(xidb," ");
-      DBGLOG(DBG,"WellfoundedModelGeneratorFactory got xidb " << s.str());
-    }
-  }
-  #endif
+  // this calls print()
+  DBGLOG(DBG,"WellfoundedModelGeneratorFactory(): " << *this);
 }
 
 std::ostream& WellfoundedModelGeneratorFactory::print(
@@ -112,6 +98,12 @@ std::ostream& WellfoundedModelGeneratorFactory::print(
   {
     o << " inner Eatoms={";
     printer.printmany(innerEatoms,",");
+    o << "}";
+  }
+  if( !idb.empty() )
+  {
+    o << " idb={";
+    printer.printmany(idb," ");
     o << "}";
   }
   if( !xidb.empty() )

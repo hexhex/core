@@ -43,6 +43,7 @@
 #include "dlvhex/ExternalAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -60,6 +61,9 @@ typedef boost::bimaps::bimap<
 struct Registry:
   public ostream_printable<Registry>
 {
+  Registry();
+  ~Registry();
+
   TermTable terms;
   // ordinary ground atoms
   OrdinaryAtomTable ogatoms;
@@ -120,6 +124,14 @@ struct Registry:
   // assume term is fully initialized
   ID storeTerm(Term& term);
 
+  // auxiliary entities:
+  // create or lookup auxiliary constant symbol of type <type> for ID <id>
+  // with multiple calls, for one <type>/<id> pair the same symbol/ID will be returned
+  // we limit ourselves to types of one letter, this should be sufficient
+  // see Registry.cpp for documentation of types used internally in dlvhex
+  // (plugins may also want to use this method for their own auxiliaries)
+  ID getAuxiliaryConstantSymbol(char type, ID id);
+
   //
   // accessors
   //
@@ -129,8 +141,11 @@ struct Registry:
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const
     { return terms.getByID(termid).symbol; }
-};
 
+protected:
+  struct Impl;
+  boost::scoped_ptr<Impl> pimpl;
+};
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
 DLVHEX_NAMESPACE_END

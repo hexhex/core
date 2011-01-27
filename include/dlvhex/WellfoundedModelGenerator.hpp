@@ -67,7 +67,7 @@ public:
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
 
-  // TOD debug output?
+  // TODO debug output?
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorBase::print() not overloaded"; }
 };

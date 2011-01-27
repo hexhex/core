@@ -416,15 +416,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
 // create auxiliary rule head predicate (in registry) and return ID
 ID DependencyGraph::createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom)
 {
-	std::ostringstream os;
-	os << "aux_inp_r" << forRule.address << "ea" << forEAtom.address;
-	const std::string& pred = os.str();
-	// this aux predicate name must not exist so far!
-	assert(registry->terms.getIDByString(pred) == ID_FAIL);
-
-	// register predicate name
-	Term pterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, pred);
-	return registry->terms.storeAndGetID(pterm);
+	return registry->getAuxiliaryConstantSymbol('i', forEAtom);
 }
 
 ID DependencyGraph::createAuxiliaryRuleHead(
