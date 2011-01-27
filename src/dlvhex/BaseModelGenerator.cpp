@@ -65,6 +65,9 @@ void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   assert(!eatom.pluginAtom.expired());
   PluginAtomPtr pluginAtom(eatom.pluginAtom);
 
+  // if this is wrong, we might have mixed up registries between plugin and program
+  assert(eatom.predicate == pluginAtom->getPredicateID());
+
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(reg, eatom, inputi);
@@ -117,8 +120,7 @@ void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 
       // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
       replacement.tuple.push_back(
-          reg->getAuxiliaryConstantSymbol('r',
-            pluginAtom->getPredicateID()));
+          reg->getAuxiliaryConstantSymbol('r', eatom.predicate));
       replacement.tuple.insert(replacement.tuple.end(),
           inputtuple.begin(), inputtuple.end());
       replacement.tuple.insert(replacement.tuple.end(),

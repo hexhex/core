@@ -379,6 +379,11 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
         }
       } // iterate over other body atom's arguments
     }
+    else
+    {
+      LOG(WARNING,"TODO think about whether we need to consider "
+          "builtin or aggregate atoms here");
+    }
   } // iterate over body of rule to find matches
 
   // TODO: check if each input variable hit at least once by auxbody

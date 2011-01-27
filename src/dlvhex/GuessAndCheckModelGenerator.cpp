@@ -153,7 +153,127 @@ void createEatomGuessingRules(
     const std::vector<ID>& innerEatoms,
     std::vector<ID>& gidb)
 {
-  #warning TODO
+  DBGLOG_SCOPE(DBG,"cEAGR",false);
+  BOOST_FOREACH(ID rid, idb)
+  {
+    // skip rules without external atoms
+    if( !rid.doesRuleContainExtatoms() )
+      continue;
+
+    const Rule& r = reg->rules.getByID(rid);
+    DBGLOG(DBG,"processing rule with external atoms: " << rid << " " << r);
+
+    BOOST_FOREACH(ID lit, r.body)
+    {
+      // skip atoms that are not external atoms
+      if( !lit.isExternalAtom() )
+        continue;
+
+      const ExternalAtom& eatom = reg->eatoms.getByID(lit);
+      DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
+      DBGLOG_INDENT(DBG);
+
+      // prepare replacement atom
+      OrdinaryAtom replacement(
+          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+
+      // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
+      // (build up incrementally)
+      ID pospredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+      ID negpredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+      replacement.tuple.push_back(pospredicate);
+
+      // build (nonground) replacement and harvest all variables
+      std::set<ID> variables;
+      BOOST_FOREACH(ID inp, eatom.inputs)
+      {
+        replacement.tuple.push_back(inp);
+        if( inp.isVariableTerm() )
+          variables.insert(inp);
+      }
+      BOOST_FOREACH(ID outp, eatom.tuple)
+      {
+        replacement.tuple.push_back(outp);
+        if( outp.isVariableTerm() )
+          variables.insert(outp);
+      }
+      DBGLOG(DBG,"found set of variables: " << printset(variables));
+
+      // groundness of replacement predicate
+      ID posreplacement;
+      ID negreplacement;
+      if( variables.empty() )
+      {
+        replacement.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+        posreplacement = reg->storeOrdinaryGAtom(replacement);
+        replacement.tuple[0] = negpredicate;
+        negreplacement = reg->storeOrdinaryGAtom(replacement);
+      }
+      else
+      {
+        replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+        posreplacement = reg->storeOrdinaryNAtom(replacement);
+        replacement.tuple[0] = negpredicate;
+        negreplacement = reg->storeOrdinaryNAtom(replacement);
+      }
+      DBGLOG(DBG,"registered posreplacement " << posreplacement <<
+          " and negreplacement " << negreplacement);
+
+      // create rule head
+      Rule guessingrule(ID::MAINKIND_RULE |
+          ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+      guessingrule.head.push_back(posreplacement);
+      guessingrule.head.push_back(negreplacement);
+
+      // create rule body (if there are variables that need to be grounded)
+      if( !variables.empty() )
+      {
+        // harvest all positive ordinary nonground atoms
+        // "grounding the variables" (i.e., those that contain them)
+        BOOST_FOREACH(ID lit, r.body)
+        {
+          if( lit.isNaf() ||
+              lit.isExternalAtom() )
+            continue;
+
+          bool use = false;
+          if( lit.isOrdinaryNongroundAtom() )
+          {
+            const OrdinaryAtom& oatom = reg->onatoms.getByID(lit);
+            // look if this atom grounds any variables we need
+            BOOST_FOREACH(ID term, oatom.tuple)
+            {
+              if( term.isVariableTerm() &&
+                  (variables.find(term) != variables.end()) )
+              {
+                use = true;
+                break;
+              }
+            }
+          }
+          else
+          {
+            LOG(WARNING,"TODO think about whether we need to consider "
+                "builtin or aggregate atoms here");
+          }
+
+          if( use )
+          {
+            guessingrule.body.push_back(lit);
+          }
+        }
+      }
+
+      // store rule
+      ID gid = reg->rules.storeAndGetID(guessingrule);
+      DBGLOG(DBG,"stored guessingrule " << guessingrule << " which got id " << gid);
+      #ifndef NDEBUG
+      RawPrinter p(Logger::Instance().stream(), reg);
+      p.print(gid);
+      #endif
+      gidb.push_back(gid);
+    }
+  }
 }
 
 void createFLPRules(
