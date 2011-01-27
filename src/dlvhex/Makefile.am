@@ -51,6 +51,7 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicTrivial.cpp \
     EvalHeuristicEasy.cpp \
     PlainModelGenerator.cpp \
+    PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \

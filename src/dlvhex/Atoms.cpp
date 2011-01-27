@@ -133,73 +133,19 @@ std::ostream& ExternalAtom::print(std::ostream& o) const
 
 void ExternalAtom::updatePredicateInputMask() const
 {
-  DBGLOG_VSCOPE(DBG,"uPIM",this,true);
+  DBGLOG_VSCOPE(DBG,"EA::uIM",this,true);
 
-  // lock ptr
-  PluginAtomPtr pa(pluginAtom);
-  RegistryPtr registry = pa->getRegistry();
-
-  DBGLOG(DBG,"= updatePredicateInputMask for predicate " <<
-      pa->getPredicate() << " = " << predicate);
-
-  // ensure we have some mask
-  if( predicateInputMask == 0 )
+  if( !inputMask.mask() )
   {
-    DBGLOG(DBG,"allocating new interpretation");
-    predicateInputMask.reset(new Interpretation(registry));
+    // initially configure mask
+
+    // lock ptr to get registry
+    PluginAtomPtr pa(pluginAtom);
+    RegistryPtr reg = pa->getRegistry();
+
+    inputMask.setRegistry(reg);
   }
-  assert(predicateInputMask != 0);
-
-  Interpretation::Storage& bits = predicateInputMask->getStorage();
-
-  // get range over all ogatoms
-  OrdinaryAtomTable::AddressIterator it_begin, it, it_end;
-  boost::tie(it_begin, it_end) = registry->ogatoms.getAllByAddress();
-
-  // check if we have unknown atoms
-  DBGLOG(DBG,"already inspected ogatoms with address < " << predicateInputMaskKnownOGAtoms <<
-      ", iterator range has size " << (it_end - it_begin));
-  if( (it_end - it_begin) == predicateInputMaskKnownOGAtoms )
-    return;
-  // if not equal, it must be larger -> we must inspect
-  assert((it_end - it_begin) > predicateInputMaskKnownOGAtoms);
-
-  // advance iterator to first ogatom unknown to predicateInputMask
-  it = it_begin;
-  it += predicateInputMaskKnownOGAtoms;
-
-  unsigned missingBits = it_end - it;
-  DBGLOG(DBG,"need to inspect " << missingBits << " missing bits");
-
-  // check all new ogatoms till the end
-  #ifndef NDEBUG
-  {
-    std::stringstream s;
-    s << "relevant predicate constants are ";
-    RawPrinter printer(s, registry);
-    BOOST_FOREACH(IDAddress addr, predicateInputPredicates)
-    {
-      ID id(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, addr);
-      s << id << "<=>";
-      printer.print(id);
-      s << " ";
-    }
-    DBGLOG(DBG,s.str());
-  }
-  #endif
-  assert(predicateInputMaskKnownOGAtoms == (it - it_begin));
-  for(;it != it_end; ++it)
-  {
-    const OrdinaryAtom& oatom = *it;
-    //DBGLOG(DBG,"checking " << oatom.tuple.front());
-    IDAddress addr = oatom.tuple.front().address;
-    if( predicateInputPredicates.find(addr)
-        != predicateInputPredicates.end() )
-    {
-      bits.set(it - it_begin);
-    }
-  }
-  DBGLOG(DBG,"updatePredicateInputMask created new set of relevant ogatoms: " << *predicateInputMask);
+  inputMask.updateMask();
 }
 
 DLVHEX_NAMESPACE_END

@@ -52,11 +52,11 @@ DLVHEX_NAMESPACE_BEGIN
  *   eatoms
  *   -> "gidb"
  * * create for each rule in xidb a rule with same body and individual
- *   "aux_flp_" head containing all variables in the rule
+ *   flp auxiliary head containing all variables in the rule
  *   (constraints can stay untouched)
  *   -> "xidbflphead"
  * * create for each rule in xidb a rule with body extended by respective
- *   "aux_flp_" predicate containing all variables
+ *   flp auxiliary predicate containing all variables
  *   -> "xidbflpbody"
  *
  * evaluation works as follows:
@@ -75,6 +75,8 @@ DLVHEX_NAMESPACE_BEGIN
  *       -> store as candidate
  * * drop non-subset-minimal candidates
  * * return remaining candidates as minimal models
+ *   (this means, that for one input, all models have to be calculated
+ *    before the first one can be returned due to the minimality check)
  */
 
 namespace
@@ -84,13 +86,15 @@ void createEatomGuessingRules(
     RegistryPtr reg,
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
-    std::vector<ID>& gidb);
+    std::vector<ID>& gidb,
+    PredicateMask& gmask);
 
 void createFLPRules(
     RegistryPtr reg,
     const std::vector<ID>& xidb,
     std::vector<ID>& xidbflphead,
-    std::vector<ID>& xidbflpbody);
+    std::vector<ID>& xidbflpbody,
+    PredicateMask& fmask);
 
 }
 
@@ -105,6 +109,8 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // (and there is quite some room for more optimization)
 
   RegistryPtr reg = ctx.registry();
+  gMask.setRegistry(reg);
+  fMask.setRegistry(reg);
 
   outerEatoms = ci.outerEatoms;
 
@@ -116,7 +122,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules(reg, idb, innerEatoms, gidb);
+  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gMask);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
@@ -126,8 +132,12 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
       inserter, boost::bind(&GuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
 
+  // create cache
+  xgidb.insert(xgidb.end(), xidb.begin(), xidb.end());
+  xgidb.insert(xgidb.end(), gidb.begin(), gidb.end());
+
   // transform xidb for flp calculation
-  createFLPRules(reg, xidb, xidbflphead, xidbflpbody);
+  createFLPRules(reg, xidb, xidbflphead, xidbflpbody, fMask);
 
   DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():")
   #ifndef NDEBUG
@@ -151,7 +161,8 @@ void createEatomGuessingRules(
     RegistryPtr reg,
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
-    std::vector<ID>& gidb)
+    std::vector<ID>& gidb,
+    PredicateMask& gmask)
 {
   DBGLOG_SCOPE(DBG,"cEAGR",false);
   BOOST_FOREACH(ID rid, idb)
@@ -169,6 +180,8 @@ void createEatomGuessingRules(
       if( !lit.isExternalAtom() )
         continue;
 
+      #warning TODO skip eatoms that are not internal ones
+
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
       DBGLOG_INDENT(DBG);
@@ -182,6 +195,7 @@ void createEatomGuessingRules(
       ID pospredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
       ID negpredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
       replacement.tuple.push_back(pospredicate);
+      gmask.addPredicate(pospredicate);
 
       // build (nonground) replacement and harvest all variables
       std::set<ID> variables;
@@ -289,7 +303,8 @@ void createFLPRules(
     RegistryPtr reg,
     const std::vector<ID>& xidb,
     std::vector<ID>& xidbflphead,
-    std::vector<ID>& xidbflpbody)
+    std::vector<ID>& xidbflpbody,
+    PredicateMask& fmask)
 {
   DBGLOG_SCOPE(DBG,"cFLPR",false);
   BOOST_FOREACH(ID rid, xidb)
@@ -338,6 +353,7 @@ void createFLPRules(
       // tuple: (replacement_predicate, variables*)
       ID flppredicate = reg->getAuxiliaryConstantSymbol('f', rid);
       replacement.tuple.push_back(flppredicate);
+      fmask.addPredicate(flppredicate);
 
       // groundness of replacement predicate
       ID fid;
@@ -464,9 +480,108 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
 }
 
 // generate and return next model, return null after last model
+// see description of algorithm on top of this file
 InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 {
-  #warning TODO implement
+  RegistryPtr reg = factory.ctx.registry();
+
+  if( currentResults == 0 )
+  {
+    // we need to create currentResults
+
+    // create new interpretation as copy
+    Interpretation::Ptr postprocessedInput;
+    if( input == 0 )
+    {
+      // empty construction
+      postprocessedInput.reset(new Interpretation(reg));
+    }
+    else
+    {
+      // copy construction
+      postprocessedInput.reset(new Interpretation(*input));
+    }
+
+    // augment input with edb
+    postprocessedInput->add(*factory.ctx.edb);
+
+    // manage outer external atoms
+    if( !factory.outerEatoms.empty() )
+    {
+      // augment input with result of external atom evaluation
+      // use newint as input and as output interpretation
+      evaluateExternalAtoms(reg,
+          factory.outerEatoms, postprocessedInput, postprocessedInput);
+      DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
+          "outer external atom computations");
+      DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
+
+      assert(!factory.xidb.empty() &&
+          "the guess and check model generator is not required for "
+          "non-idb components! (use plain)");
+    }
+
+    // now we have postprocessed input in postprocessedInput
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "guess and check loop");
+
+    // evaluate edb+xidb+gidb
+    ASPSolverManager::ResultsPtr guessres;
+    {
+      DBGLOG(DBG,"evaluating guessing program");
+      ASPProgram program(reg,
+          factory.xgidb, postprocessedInput, factory.ctx.maxint);
+      ASPSolverManager mgr;
+      guessres = mgr.solve(*factory.externalEvalConfig, program);
+    }
+
+    do
+    {
+      AnswerSetPtr guessas = guessres->getNextAnswerSet();
+      if( !guessas )
+        break;
+      InterpretationPtr guessint = guessas->interpretation;
+      DBGLOG(DBG,"got guess model " << *guessint);
+
+      // project to eatoms for validation
+      factory.gMask.updateMask();
+      InterpretationPtr projint(new Interpretation(reg));
+      projint->getStorage() =
+        guessint->getStorage() & factory.gMask.mask()->getStorage();
+      DBGLOG(DBG,"projected guess: " << *projint);
+
+      // verify whether correct eatoms where guessed true
+      InterpretationPtr validateint(new Interpretation(reg));
+      evaluateExternalAtoms(
+          reg, factory.innerEatoms, guessint, validateint);
+      DBGLOG(DBG,"validation interpretation: " << *validateint);
+
+      if( !(*projint == *validateint) )
+      {
+        DBGLOG(DBG,"discarding guess " << *projint);
+        continue;
+      }
+
+      LOG(MODELB,"external atom guess " << *projint << " successfully validated, will now check FLP model property");
+
+
+      #warning TODO here
+
+    }
+    while(true);
+  }
+
+  assert(currentResults != 0);
+  AnswerSet::Ptr ret = currentResults->getNextAnswerSet();
+  if( ret == 0 )
+  {
+    currentResults.reset();
+    return InterpretationPtr();
+  }
+  DLVHEX_BENCHMARK_REGISTER(sidcountgcanswersets,
+      "GuessAndCheckMG answer sets");
+  DLVHEX_BENCHMARK_COUNT(sidcountgcanswersets,1);
+
+  return ret->interpretation;
 }
 
 DLVHEX_NAMESPACE_END

@@ -70,8 +70,9 @@ public:
   virtual ~BaseModelGenerator() {}
 
 protected:
-  // projects input interpretation
-  // calls eatom function
+  // projects input interpretation for predicate inputs
+  // calculates constant input tuples from auxiliary input predicates and from given constants
+  // calls eatom function with each input tuple
   // reintegrates output tuples as auxiliary atoms into outputi
   // (inputi and outputi may point to the same interpretation)
   virtual void evaluateExternalAtom(RegistryPtr reg,

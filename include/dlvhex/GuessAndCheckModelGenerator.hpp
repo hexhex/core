@@ -38,6 +38,7 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/PredicateMask.hpp"
 
 #include <boost/shared_ptr.hpp>
 
@@ -111,6 +112,14 @@ protected:
   // xidb rewritten for FLP calculation
   std::vector<ID> xidbflphead;
   std::vector<ID> xidbflpbody;
+
+  // cache: xidb+gidb
+  std::vector<ID> xgidb;
+
+  // bitmask for filtering out (positive) guessed eatom replacement predicates
+  PredicateMask gMask;
+  // bitmask for filtering out FLP predicates
+  PredicateMask fMask;
 
   // methods
 public:
