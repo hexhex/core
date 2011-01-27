@@ -32,13 +32,17 @@
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
 
-#include <boost/range/iterator_range.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/two_bit_color_map.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/graph/subgraph.hpp>
 #include <boost/property_map/property_map.hpp>
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/foreach.hpp>
 
 #include <sstream>
 
@@ -71,6 +75,233 @@ ComponentGraph::~ComponentGraph()
 {
 }
 
+namespace
+{
+  typedef DependencyGraph::Node Node;
+  typedef std::set<Node> NodeSet;
+  typedef std::vector<Node> NodeVector;
+}
+
+#warning fixed point: eatoms only in positive cycles is misleading, we demand only positive cycles for all atoms! (no negative or disjunctive edge at all)
+#if 0
+namespace
+{
+  typedef unsigned Polarity;
+  static const Polarity PUNSET = 0x00;
+  static const Polarity PPOS =   0x01;
+  static const Polarity PNEG =   0x10;
+  static const Polarity PBOTH =  0x11;
+  typedef boost::vector_property_map<Polarity> PolarityPropertyMap;
+
+	template<typename Graph>
+	class PolarityMarkingVisitor:
+		public boost::default_bfs_visitor
+	{
+	public:
+		typedef typename Graph::vertex_descriptor Vertex;
+		typedef typename Graph::edge_descriptor Edge;
+
+	public:
+		PolarityMarkingVisitor(PolarityPropertyMap& ppm):
+			ppm(ppm) {}
+
+    /**
+     * * for each discovered edge (u,v):
+     *   mark v like u if edge positive (add mark)
+     *   mark v different from u if edge negative (add mark)
+     *   if initial node contain both marks -> return false
+     */
+		void examine_edge(Edge e, const Graph& g) const
+		{
+			Vertex from = boost::source(e, g);
+			Vertex to = boost::target(e, g);
+      DBGLOG(DBG,"examining edge from " << from << " to " << to);
+
+      const DependencyGraph::DependencyInfo& di = g[e];
+      #warning TODO review this decision criteria (not sure if "defensive" stuff is necessary)
+      bool negative =
+        di.negativeRule |
+        di.negativeExternal |
+        di.unifyingHead; //defensive reasoning
+      bool positive =
+        di.positiveRegularRule |
+        di.positiveConstraint |
+        di.unifyingHead | //defensive reasoning
+        di.positiveExternal |
+        di.externalConstantInput | //defensive reasoning
+        di.externalPredicateInput; //defensive reasoning
+      Polarity p = ppm[from];
+      assert(((p == PPOS) || (p == PNEG)) &&
+          "PUNSET means we did not correctly set the last vertex, "
+          "PBOTH means we did not abort but we should have");
+      Polarity pto = ppm[to];
+      DBGLOG(DBG,"  edge is " <<
+          (positive?"positive":"") << (negative?"negative":"") << 
+          " with frompolarity " << p << " and topolarity " << pto);
+      if( positive )
+        pto |= p;
+      if( negative )
+        pto |= (p ^ 0x11); // XOR 0x11 -> invert both bits
+      DBGLOG(DBG,"result polarity is " << pto);
+      if( pto == PBOTH )
+      {
+        throw std::string("negcycle");
+      }
+      ppm[to] = pto;
+		}
+
+	protected:
+		PolarityPropertyMap& ppm;
+	};
+
+  /*
+   * strategy for calculation:
+	 * * initialize a property map
+	 * * for each inner eatom with ID "id"
+   *   * init nodesToCheck with PUNSET
+   *   * do a bfs visit, never leaving nodesToCheck:
+	 *     * for initial vertex: mark as POS
+	 *     * for each discovered edge (u,v):
+	 *       mark v like u if edge positive (add mark)
+	 *       mark v different from u if edge negative (add mark)
+	 *       if initial node contain both marks -> return false
+	 * * return true
+   */
+  bool checkEatomsOnlyInPositiveCycles(
+      const DependencyGraph& dg,
+			const NodeSet& nodesToCheck,
+			const NodeVector& innerEatomNodes)
+  {
+    DBGLOG_SCOPE(DBG,"cEOiPC",false);
+    LOG(DBG,"checking whether eatoms in nodes " <<
+        printrange(innerEatomNodes) <<
+        " are only in positive cycles within SCC of nodes " <<
+        printrange(nodesToCheck));
+
+    // init polarity map with size
+    DBGLOG(DBG,"initializing property maps");
+		PolarityPropertyMap
+      ppm(dg.countNodes());
+    // init color map with size
+    boost::two_bit_color_map<boost::identity_property_map>
+      cmap(dg.countNodes());
+
+    // init black color (=do not touch) for nodes not in nodesToCheck
+    DependencyGraph::NodeIterator it, it_end;
+    for(boost::tie(it, it_end) = dg.getNodes();
+        it != it_end; ++it)
+    {
+      if( nodesToCheck.find(*it) == nodesToCheck.end() )
+      {
+        boost::put(cmap, *it, boost::two_bit_black);
+      }
+    }
+
+    try
+    {
+      BOOST_FOREACH(const Node eatomNode, innerEatomNodes)
+      {
+        DBGLOG(DBG,"checking for eatom node " << eatomNode);
+        // init color and polarity map for nodes in nodesToCheck
+        BOOST_FOREACH(const Node n, nodesToCheck)
+        {
+          boost::put(ppm, n, PUNSET);
+          boost::put(cmap, n, boost::two_bit_white);
+        }
+
+        // startnode is positive
+        ppm[eatomNode] = PPOS;
+
+        PolarityMarkingVisitor<DependencyGraph::Graph>
+          vis(ppm);
+
+        // the lousy named parameters simply won't compile and are not documented properly
+        boost::breadth_first_visit(
+            dg.getInternalGraph(), eatomNode,
+            visitor(vis).
+            color_map(cmap));
+      }
+    }
+    catch(const std::string& s)
+    {
+      if( s == "negcycle" )
+      {
+        LOG(DBG,"found negative cycle!");
+        return false;
+      }
+      else
+        throw;
+    }
+    
+    return true;
+  }
+
+} // namespace {}
+#endif
+
+namespace
+{
+  /*
+   * strategy for calculation:
+   * * iterate through all nodes in nodesToCheck
+   *   * iterate through outgoing edges
+   *   * if negative and leading to node in nodesToCheck return false
+	 * * return true
+   */
+  bool checkNoNegativeEdgesInComponent(
+      const DependencyGraph& dg,
+			const NodeSet& nodesToCheck)
+  {
+    DBGLOG_SCOPE(DBG,"cNNEiC",false);
+    BOOST_FOREACH(Node n, nodesToCheck)
+    {
+      DBGLOG(DBG,"checking predecessor edges of node " << n);
+      DependencyGraph::PredecessorIterator it, it_end;
+      for(boost::tie(it, it_end) = dg.getDependencies(n);
+          it != it_end; ++it)
+      {
+        const DependencyGraph::DependencyInfo& di = dg.propsOf(*it);
+        if( di.negativeRule | di.negativeExternal | di.unifyingHead )
+        {
+          // found neg dependency, check if it is within SCC
+          Node pnode = dg.targetOf(*it);
+          if( nodesToCheck.find(pnode) != nodesToCheck.end() )
+          {
+            DBGLOG(DBG,"found negative dependency to node " << pnode << " -> not wellfounded");
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool checkEatomMonotonic(
+      RegistryPtr reg,
+      const DependencyGraph& dg,
+      DependencyGraph::Node eatomnode)
+  {
+    ID eatomid = dg.propsOf(eatomnode).id;
+    LOG(DBG,"checking whether eatom " << eatomid << " is monotonic");
+
+		// check monotonicity
+		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
+		assert(!eatom.pluginAtom.expired());
+		PluginAtomPtr pa(eatom.pluginAtom);
+		if( pa->isMonotonic() )
+		{
+			LOG(DBG,"  eatom " << eatomid << " is monotonic");
+			return true;
+		}
+		else
+		{
+			LOG(DBG,"  eatom " << eatomid << " is nonmonotonic");
+			return false;
+		}
+  }
+}
+
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 {
   LOG_SCOPE(ANALYZE,"cCs",true);
@@ -92,7 +323,6 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   //
   // calculate set of nodes for each SCC: sccMembers
   //
-  typedef std::set<Node> NodeSet;
   typedef std::vector<NodeSet> SCCMap;
   SCCMap sccMembers;
   sccMembers.resize(scccount);
@@ -116,6 +346,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"created component node " << c << " for scc " << s <<
 				" with depgraph nodes " << printrange(nodes));
 		bool multimember = nodes.size() > 1;
+    NodeVector innerEatomNodes;
     sccToComponent[s] = c;
     ComponentInfo& ci = propsOf(c);
     // collect rule and eatom ids in scc
@@ -143,9 +374,19 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
       }
       else if( id.isExternalAtom() )
       {
+        // if the SCC contains more than one node, and it contains external atoms,
+        // then they are inner external atoms (there must be some loop)
 				if( multimember )
 				{
 					ci.innerEatoms.push_back(id);
+          innerEatomNodes.push_back(*itn);
+          // only if we still think that we can use wellfounded model building
+          if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+          {
+            // check, if we can, given the new inner eatom
+            ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
+              checkEatomMonotonic(reg, dg, *itn);
+          }
 				}
 				else
 				{
@@ -157,15 +398,25 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				assert(false);
 			}
     }
+    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
+
+		// do positive cycle check if all eatoms monotonic
+		// (i.e., only if we still think that we can use wellfounded model building)
+		if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+		{
+			// check, if we can, given the new inner eatom
+			ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
+        checkNoNegativeEdgesInComponent(dg, nodes);
+		}
+
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
+    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
 
 		assert( ci.outerEatoms.empty() ||
 				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
-
-    // TODO: find more component properties (for complex model building) (perhaps we can cover this in the loop below?)
   }
 
   //
@@ -315,6 +566,10 @@ ComponentGraph::collapseComponents(
 				cio.innerEatoms.begin(), cio.innerEatoms.end());
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    if( cio.innerEatomsMonotonicAndOnlyPositiveCycles != true )
+      throw std::runtime_error("todo: handle collapsing of components where one is not monotonic");
+    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
+    // TODO create testcase for this (how about wellfounded2.hex?)
 	}
 
 	// build incoming dependencies
@@ -408,6 +663,15 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+    {
+      o << "{fixpoint?|";
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+        o << "true";
+      else
+        o << "false";
+      o << "}|";
+    }
 		o << "}";
   }
   else
@@ -417,6 +681,15 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
 		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
 		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+    {
+      o << "{fixpoint?|";
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+        o << "true";
+      else
+        o << "false";
+      o << "}|";
+    }
 		o << "}";
   }
 }

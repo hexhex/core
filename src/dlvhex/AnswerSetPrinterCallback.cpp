@@ -37,13 +37,55 @@
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/AnswerSet.hpp"
+#include "dlvhex/Registry.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
+
+AnswerSetPrinterCallback::AnswerSetPrinterCallback(
+    bool keepAuxiliaryPredicates):
+  keepAuxiliaryPredicates(keepAuxiliaryPredicates)
+{
+}
+
+namespace
+{
+  struct FilterCallback
+  {
+    // ordinary ground atoms
+    OrdinaryAtomTable& ogat;
+
+    FilterCallback(RegistryPtr reg):
+      ogat(reg->ogatoms)
+    {
+    }
+
+    bool operator()(IDAddress addr)
+    {
+      const OrdinaryAtom& oa = ogat.getByAddress(addr);
+      if( (oa.kind & ID::PROPERTY_ATOM_AUX) != 0 )
+      {
+        return false;
+      }
+      else
+      {
+        // assert term aux bit
+        assert((oa.tuple.front().kind & ID::PROPERTY_TERM_AUX) == 0 &&
+            "if ordinary ground atom is not auxiliary, predicate term must not be auxiliary");
+        return true;
+      }
+    }
+  };
+}
 
 bool AnswerSetPrinterCallback::operator()(
     AnswerSetPtr as)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
+
+  // filter by aux bits
+  FilterCallback cb(as->interpretation->getRegistry());
+  unsigned rejected = as->interpretation->filter(cb);
+  DBGLOG(DBG,"ASPrinterCB filtered " << rejected << " auxiliaries from interpretation");
   std::cout << *as << std::endl;
   // never abort
   return true;

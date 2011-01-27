@@ -288,7 +288,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   // find variables for constant inputs
   for(unsigned at = 0; at != eatom.inputs.size(); ++at)
   {
-    if( (pluginAtom->getInputType(at) == PluginAtom::CONSTANT) &&
+    if( ((pluginAtom->getInputType(at) == PluginAtom::CONSTANT) ||
+         (pluginAtom->getInputType(at) == PluginAtom::TUPLE)
+        ) &&
         (eatom.inputs[at].isVariableTerm()) )
     {
       ID varID = eatom.inputs[at];
@@ -377,6 +379,11 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
         }
       } // iterate over other body atom's arguments
     }
+    else
+    {
+      LOG(WARNING,"TODO think about whether we need to consider "
+          "builtin or aggregate atoms here");
+    }
   } // iterate over body of rule to find matches
 
   // TODO: check if each input variable hit at least once by auxbody
@@ -414,15 +421,7 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
 // create auxiliary rule head predicate (in registry) and return ID
 ID DependencyGraph::createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom)
 {
-	std::ostringstream os;
-	os << "aux_inp_r" << forRule.address << "ea" << forEAtom.address;
-	const std::string& pred = os.str();
-	// this aux predicate name must not exist so far!
-	assert(registry->terms.getIDByString(pred) == ID_FAIL);
-
-	// register predicate name
-	Term pterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX, pred);
-	return registry->terms.storeAndGetID(pterm);
+	return registry->getAuxiliaryConstantSymbol('i', forEAtom);
 }
 
 ID DependencyGraph::createAuxiliaryRuleHead(
@@ -514,8 +513,7 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 		assert(pluginAtom->checkInputArity(eatom.inputs.size()));
 		assert(pluginAtom->checkOutputArity(eatom.tuple.size()));
 
-    // collect ID of all predicate constant terms (will store these back)
-    std::set<IDAddress> predicateInputPredicates;
+    // find ID of all predicate input constant terms
 		for(unsigned at = 0; at != eatom.inputs.size(); ++at)
 		{
 			// only consider predicate inputs
@@ -533,16 +531,13 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 
 			// this input must be a constant term, nothing else allowed
 			assert(idpred.isConstantTerm());
-      predicateInputPredicates.insert(idpred.address);
+      // inputMask is mutable so we may store it back this way (no index on it)
+      eatom.inputMask.addPredicate(idpred);
 
       // here: we found a predicate input for this eatom where we need to calculate all dependencies
       createExternalPredicateInputDependenciesForInput(*itext, idpred, hbh);
     }
 
-    // store predicateInputPredicates back into eatom
-    ExternalAtom eatomstoreback(eatom);
-    eatomstoreback.predicateInputPredicates.swap(predicateInputPredicates);
-    registry->eatoms.update(eatom, eatomstoreback);
   } // go through all external atom nodes
 }
 

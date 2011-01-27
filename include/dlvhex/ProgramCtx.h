@@ -143,7 +143,6 @@ public:
  public:
   ProgramCtx();
 
-  virtual
   ~ProgramCtx();
 
 #if 0  

@@ -222,6 +222,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
     }
 
     printer.printmany(program.idb, "\n");
+    programStream << "\n";
     programStream.flush();
 
     proc.endoffile();

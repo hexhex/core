@@ -96,6 +96,10 @@ public:
   // assert that ID exists in table
 	inline const OrdinaryAtom& getByID(ID id) const throw ();
 
+  // retrieve by address (ignore kind)
+  // assert that address exists in table
+	inline const OrdinaryAtom& getByAddress(IDAddress addr) const throw ();
+
 	// given string, look if already stored
 	// if no, return ID_FAIL, otherwise return ID
 	inline ID getIDByString(const std::string& text) const throw();
@@ -134,6 +138,18 @@ OrdinaryAtomTable::getByID(
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
   return idx.at(id.address);
+}
+
+// retrieve by address (ignore kind)
+// assert that address exists in table
+const OrdinaryAtom&
+OrdinaryAtomTable::getByAddress(
+    IDAddress addr) const throw ()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+  // the following check only works for random access indices, but here it is ok
+  assert( addr < idx.size() );
+  return idx.at(addr);
 }
 
 // given string, look if already stored
@@ -200,6 +216,10 @@ ID OrdinaryAtomTable::storeAndGetID(
 	assert(ID(atm.kind,0).isAtom());
 	assert(ID(atm.kind,0).isOrdinaryAtom());
 	assert(!atm.text.empty());
+  assert(!(
+      (atm.tuple.front().kind & ID::PROPERTY_TERM_AUX) != 0 &&
+      (atm.kind & ID::PROPERTY_ATOM_AUX) == 0 ) &&
+      "atom must be auxiliary if predicate term is auxiliary");
 
 	AddressIndex& idx = container.get<impl::AddressTag>();
 

@@ -659,6 +659,8 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
+    throw "DumpEvalGraph not yet implemented!";
+    #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
@@ -668,6 +670,7 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
     LOG(INFO,"dumping terse evaluation graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
     evalgraph->writeGraphViz(filet, false);
+    #endif
   }
 
   ctx->ufinal = ufinal;
@@ -689,7 +692,9 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   #warning TODO weak model output hook with filter
 
   // setup default model outputting callback
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
+
+  bool keepAuxiliaryPredicates = (1 == ctx->config.getOption("KeepAuxiliaryPredicates"));
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(keepAuxiliaryPredicates));
   ctx->modelCallbacks.push_back(asprinter);
 
   // let plugins setup the program ctx (removing the default hooks is permitted)
@@ -776,6 +781,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
       // copy interpretation! (callbacks can modify it)
       answerset->interpretation->getStorage() = interpretation->getStorage();
+
+      // add EDB if configured that way
+      if( !ctx->config.getOption("NoFacts") )
+      {
+        answerset->interpretation->getStorage() |=
+          ctx->edb->getStorage();
+      }
+
       BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
       {
         bool aborthere = !(*mcb)(answerset);

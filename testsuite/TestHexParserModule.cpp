@@ -35,6 +35,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ModuleSyntaxChecker.hpp"
 #include "dlvhex/Interpretation.hpp"
+//#include "dlvhex/MLPSolver.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
 #include <boost/test/unit_test.hpp>
@@ -444,6 +445,10 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == false );
+/*
+  MLPSolver m(ctx);
+  m.solve();
+*/
 }
 
 

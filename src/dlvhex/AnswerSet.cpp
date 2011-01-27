@@ -35,7 +35,8 @@ DLVHEX_NAMESPACE_BEGIN
 
 std::ostream& AnswerSet::print(std::ostream& o) const
 {
-  o << *interpretation;
+  // use ", " with space here! (compatibility)
+  interpretation->print(o, "{", ", ", "}");
   if( costWeight != -1 || costLevel != -1 )
     o << ",weight=" << costWeight << ",level=" << costLevel;
   return o;

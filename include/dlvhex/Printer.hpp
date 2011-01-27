@@ -47,11 +47,13 @@ class Printer
 {
 protected:
   std::ostream& out;
-  RegistryPtr registry;
+  Registry* registry;
 
 public:
-  Printer(std::ostream& out, RegistryPtr registry):
+  Printer(std::ostream& out, Registry* registry):
     out(out), registry(registry) {}
+  Printer(std::ostream& out, RegistryPtr registry):
+    out(out), registry(registry.get()) {}
   virtual ~Printer() {}
   void printmany(const std::vector<ID>& ids, const std::string& separator);
   virtual void print(ID id) = 0;
@@ -61,6 +63,8 @@ class RawPrinter:
   public Printer
 {
 public:
+  RawPrinter(std::ostream& out, Registry* registry):
+    Printer(out, registry) {}
   RawPrinter(std::ostream& out, RegistryPtr registry):
     Printer(out, registry) {}
   virtual void print(ID id);

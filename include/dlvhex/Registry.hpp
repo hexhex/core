@@ -45,6 +45,7 @@
 #include "dlvhex/ModuleAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
 #include "dlvhex/ModuleTable.hpp"
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -62,6 +63,9 @@ typedef boost::bimaps::bimap<
 struct Registry:
   public ostream_printable<Registry>
 {
+  Registry();
+  ~Registry();
+
   TermTable terms;
   PredicateTable preds;
   // ordinary ground atoms
@@ -107,13 +111,46 @@ struct Registry:
 	static inline AddressRange maxAddressRange() { return AR_COUNT; }
 	#endif
 
-  virtual std::ostream& print(std::ostream& o) const;
+  //
+  // modifiers
+  //
+
+  // lookup by tuple, if does not exist create text and store as new atom
+  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.text is not initialized!
+  // oatom.text will be modified
+  //
+  // ground version
+  ID storeOrdinaryGAtom(OrdinaryAtom& ogatom);
+  // nonground version
+  ID storeOrdinaryNAtom(OrdinaryAtom& onatom);
+
+  // lookup by symbol, if it does not exist create it in term table
+  // assume term is fully initialized
+  ID storeTerm(Term& term);
+
+  // auxiliary entities:
+  // create or lookup auxiliary constant symbol of type <type> for ID <id>
+  // with multiple calls, for one <type>/<id> pair the same symbol/ID will be returned
+  // we limit ourselves to types of one letter, this should be sufficient
+  // see Registry.cpp for documentation of types used internally in dlvhex
+  // (plugins may also want to use this method for their own auxiliaries)
+  ID getAuxiliaryConstantSymbol(char type, ID id);
+
+  //
+  // accessors
+  //
+
+  std::ostream& print(std::ostream& o) const;
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const
     { return terms.getByID(termid).symbol; }
-};
 
+protected:
+  struct Impl;
+  boost::scoped_ptr<Impl> pimpl;
+};
 typedef boost::shared_ptr<Registry> RegistryPtr;
 
 DLVHEX_NAMESPACE_END

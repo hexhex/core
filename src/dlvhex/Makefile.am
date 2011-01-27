@@ -38,6 +38,7 @@ libdlvhexbase_la_SOURCES = \
     AnswerSet.cpp \
     AnswerSetPrinterCallback.cpp \
     Atoms.cpp \
+    BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
     ComfortPluginInterface.cpp \
@@ -49,7 +50,10 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
     EvalHeuristicEasy.cpp \
-    FinalModelGenerator.cpp \
+    PlainModelGenerator.cpp \
+    PredicateMask.cpp \
+    WellfoundedModelGenerator.cpp \
+    GuessAndCheckModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \
     HexParser.cpp \
     ID.cpp \

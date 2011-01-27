@@ -831,17 +831,6 @@ public:
   const std::string& getPredicate() const
     { return predicate; }
   
-  /// \brief (if necessary calculate and) get replacement predicate id
-  //
-  // fail if registry does not exists
-  // calculate and register replacementPredicateID if not existing
-  // return replacementPredicateID
-  ID getReplacementPredicateID();
-
-  /// \brief get replacement predicate name
-  const std::string& getReplacementPredicate() const
-    { return replacementPredicate; }
-
 protected:
   // the predicate of the atom as it appears in HEX programs
   // (without leading &)
@@ -854,12 +843,6 @@ protected:
 
   // the id of the predicate name, ID_FAIL if no registry is set
   ID predicateID;
-
-  // the string of the replacement predicate (this can be seen as a cache)
-  std::string replacementPredicate;
-
-  // the id of the predicate replacement name, ID_FAIL if not yet known
-  ID replacementPredicateID;
 
   /// \brief whether the function is monotonic or nonmonotonic
   bool monotonic;
@@ -1104,7 +1087,39 @@ public:
   // (do not free the pointers, the const char* directly come from argv)
 	void processOptions(std::list<const char*>& pluginOptions);
 };
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+
+//
+// deleters
+//
+
+// this class should be used as a "deleter" for boost::shared_ptr if the library
+// returning the pointer wants to return an object allocated with "new"
+// this must stay inline! (the correct delete operator must be used by the library)
+template<typename AllocatedT>
+struct PluginPtrDeleter
+{
+  PluginPtrDeleter() {}
+  inline void operator()(const AllocatedT* ptr) const
+  {
+    delete ptr;
+  }
+};
+
+// this class should be used as a "deleter" for boost::shared_ptr if the library
+// returning the pointer wants to return a statically linked object (i.e., do not free)
+// [this is used for all PluginInterface pointers, as this pointer is returned as a
+// POD type via an extern "C" function]
+template<typename AllocatedT>
+struct PluginPtrNOPDeleter
+{
+  PluginPtrNOPDeleter() {}
+  inline void operator()(const AllocatedT* ptr) const
+  {
+    // NOP = do not delete
+  }
+};
 
 DLVHEX_NAMESPACE_END
 

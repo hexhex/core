@@ -38,6 +38,8 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/ComfortPluginInterface.hpp"
+#include "dlvhex/Term.hpp"
+#include "dlvhex/Registry.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -178,6 +180,8 @@ public:
   }
 };
 
+# if 0
+// comfort implementation
 class TestConcatAtom:
   public ComfortPluginAtom
 {
@@ -209,6 +213,44 @@ public:
     answer.insert(tu);
   }
 };
+#else
+// non-comfort implementation
+class TestConcatAtom:
+  public PluginAtom
+{
+public:
+  TestConcatAtom():
+    PluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputTuple();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+    std::stringstream s;
+
+    BOOST_FOREACH(ID tid, query.input)
+    {
+			assert(tid.isTerm());
+      if( tid.isIntegerTerm() )
+        s << tid.address;
+      else if( tid.isConstantTerm() )
+			{
+				s << registry->getTermStringByID(tid);
+			}
+      else
+        throw PluginError("encountered unknown term type!");
+    }
+    
+		Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s.str());
+    Tuple tu;
+    tu.push_back(registry->storeTerm(resultterm));
+    answer.get().push_back(tu);
+  }
+};
+#endif
 
 class TestSetMinusAtom:
   public ComfortPluginAtom
@@ -286,13 +328,14 @@ public:
   {
     std::vector<PluginAtomPtr> ret;
 
-    ret.push_back(PluginAtomPtr(new TestAAtom));
-	  ret.push_back(PluginAtomPtr(new TestBAtom));
-	  ret.push_back(PluginAtomPtr(new TestCAtom));
-	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false)));
-	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true)));
-	  ret.push_back(PluginAtomPtr(new TestConcatAtom));
-	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom));
+		// return smart pointer with deleter (i.e., delete code compiled into this plugin)
+    ret.push_back(PluginAtomPtr(new TestAAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestBAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity0", false), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
@@ -309,7 +352,7 @@ void * PLUGINIMPORTFUNCTION()
 	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theTestPlugin);
 }
 
-/* vim: set noet sw=4 ts=4 tw=80: */
+/* vim: set noet sw=2 ts=2 tw=80: */
 
 // Local Variables:
 // mode: C++

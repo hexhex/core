@@ -32,8 +32,10 @@
 #define ATOMS_HPP_INCLUDED__14102010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ID.hpp"
+#include "dlvhex/PredicateMask.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -42,13 +44,6 @@
 #include <list>
 
 DLVHEX_NAMESPACE_BEGIN
-
-class PluginAtom;
-typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
-typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
-class Interpretation;
-typedef boost::shared_ptr<Interpretation> InterpretationPtr;
-typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 
 struct Atom
 {
@@ -177,6 +172,8 @@ struct ExternalAtom:
 
   // auxiliary replacement predicate name is stored in pluginAtom!
 
+  // inputMask stores a bitmask to project interpretations to relevant predicate inputs
+  //
   // kind of a cache: interpretation with all ground atoms set that must be passed to
   // the pluginAtom for subsequent calls this must be extended (new values may have
   // been invented), but this extension need only look to the bits not yet covered by
@@ -187,15 +184,7 @@ struct ExternalAtom:
   // long as we don't use predicateInputMask in an index of the
   // multi_index_container"
   //
-public:
-  // this stores the addresses of IDs of all relevant input predicates for this eatom
-  std::set<IDAddress> predicateInputPredicates;
-protected:
-  // this stores the bitset interpretation for masking inputs
-  // this is managed by updatePredicateInputMask -> protected
-  mutable InterpretationPtr predicateInputMask;
-  // this stores the address of the last ogatom already inspected for predicateInputMask
-  mutable IDAddress predicateInputMaskKnownOGAtoms;
+  mutable PredicateMask inputMask;
 
 public:
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
@@ -204,9 +193,7 @@ public:
     inputs(inputs),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    predicateInputPredicates(),
-    predicateInputMask(),
-    predicateInputMaskKnownOGAtoms(0)
+    inputMask()
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
   ExternalAtom(IDKind kind):
     Atom(kind),
@@ -214,20 +201,18 @@ public:
     inputs(),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    predicateInputPredicates(),
-    predicateInputMask(),
-    predicateInputMaskKnownOGAtoms(0)
+    inputMask()
     { assert(ID(kind,0).isExternalAtom()); }
 
   std::ostream& print(std::ostream& o) const;
 
-  // updates predicateInputMask
+  // updates inputMask (creates mask with registry if it does not exist)
   // needs a non-expired pluginAtom pointer (this is only asserted)
   // uses pluginAtom pointer to get the registry
   // we make this const so that we can call it on eatoms in ExternalAtomTable
   void updatePredicateInputMask() const;
   InterpretationConstPtr getPredicateInputMask() const
-    { return predicateInputMask; }
+    { return inputMask.mask(); }
 };
 
 // this is one concrete atom in one rule

@@ -7,7 +7,6 @@
 	* testsuite/TestASPSolver.cpp: Likewise
 
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
-
 	* src/dlvhex/gdbdlvhex.sh: Shellscript to use gdb with libtool-built uninstalled binary.
 	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
 	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
@@ -25,6 +24,12 @@
 	* testsuite is now completely in testsuite/ and no longer in src/dlvhex/testsuite/
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
 	* added static linking test for testsuite TestPlugin
+	* added option for keeping auxiliary predicates in output
+	* added option for omitting EDB facts from output
+	* added option for configuring graphviz output (eval/model graph not yet implemented, but partially exists in testsuite)
+	* plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use a "deleter" compiled into the respective plugin (see PluginInterface.h)
+	* added new test notwellfounded2.hex for guess and check model builder (should test minimality of disjunctions) [this test crashes dlvhex trunk/]
+	* added central auxiliary constant management method getAuxiliaryConstantSymbol() to Registry, PluginAtom no longer manages its own auxiliaries
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
@@ -217,6 +222,11 @@
 
 	* configure.ac: Set error-limit to 5 for clang.
 	* testsuite/Makefile.am: Likewise.
+
+2010-11-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/Makefile.am (EXTRA_DIST): Add minimality and
+	builtin_safety{1,2} test cases.
 
 2010-10-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

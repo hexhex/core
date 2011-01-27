@@ -51,6 +51,8 @@ typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 class DependencyGraph;
 typedef boost::shared_ptr<DependencyGraph> DependencyGraphPtr;
 
+struct ExternalAtom;
+
 // FinalEvalGraph is a typedef and must not be forward-declared!
 
 class InputProvider;
@@ -69,6 +71,10 @@ typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 class PluginConverter;
 typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
+
+class PluginInterface;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
+typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
 
 class ProgramCtx;
 

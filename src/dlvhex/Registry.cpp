@@ -30,8 +30,80 @@
  */
 
 #include "dlvhex/Registry.hpp"
+#include "dlvhex/Error.h"
+#include "dlvhex/Printer.hpp"
+
+#include <boost/functional/hash.hpp>
+#include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
+
+/**
+ * auxiliary constant symbol type usage:
+ * 'i': auxiliary input grounding predicates for external atoms in rules
+ *      (source ID is an eatom)
+ * 'r': replacement predicates for external atoms
+ *      (source ID is a constant term)
+ * 'n': negated replacement predicates for external atoms (for guessing rules)
+ *      (source ID is a constant term)
+ * 'f': FLP-calculation auxiliary predicate
+ *      (source ID is a rule)
+ */
+
+namespace
+{
+
+struct AuxiliaryKey
+{
+  char type;
+  ID id;
+
+  AuxiliaryKey(char type, ID id):
+    type(type), id(id) {}
+	inline bool operator==(const AuxiliaryKey& k2) const
+    { return type == k2.type && id == k2.id; }
+};
+
+std::size_t hash_value(const AuxiliaryKey& key)
+{
+  std::size_t seed = 0;
+  boost::hash_combine(seed, key.type);
+  boost::hash_combine(seed, key.id.kind);
+  boost::hash_combine(seed, key.id.address);
+  return seed;
+}
+
+// we cannot use Term here because we want to store the
+// whole ID, not only the kind
+struct AuxiliaryValue
+{
+  std::string symbol;
+  ID id;
+  AuxiliaryValue(const std::string& symbol, ID id):
+    symbol(symbol), id(id) {}
+};
+
+typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
+  AuxiliaryStorage;
+
+} // namespace {
+
+struct Registry::Impl
+{
+  AuxiliaryStorage auxSymbols;
+};
+
+
+Registry::Registry():
+  pimpl(new Impl)
+{
+}
+
+// it is very important that this destructor is not in the .hpp file,
+// because only in the .cpp file it knows how to free pimpl
+Registry::~Registry()
+{
+}
 
 std::ostream& Registry::print(std::ostream& o) const
 {
@@ -52,6 +124,8 @@ std::ostream& Registry::print(std::ostream& o) const
       aatoms <<
       "eatoms:" << std::endl <<
       eatoms <<
+      "matoms:" << std::endl <<
+      matoms <<
       "rules:" << std::endl <<
       rules <<
       "module table:" << std::endl <<
@@ -67,6 +141,104 @@ const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
     return ogatoms.getByID(id);
   else
     return onatoms.getByID(id);
+}
+
+namespace
+{
+  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.text is not initialized!
+  // oatom.text will be modified
+  ID storeOrdinaryAtomHelper(
+      Registry* reg,
+      OrdinaryAtom& oatom,
+      OrdinaryAtomTable& oat)
+  {
+    ID ret = oat.getIDByTuple(oatom.tuple);
+    if( ret == ID_FAIL )
+    {
+      // text
+      std::stringstream s;
+      RawPrinter printer(s, reg);
+      // predicate
+      printer.print(oatom.tuple.front());
+      if( oatom.tuple.size() > 1 )
+      {
+        Tuple t(oatom.tuple.begin()+1, oatom.tuple.end());
+        s << "(";
+        printer.printmany(t,",");
+        s << ")";
+      }
+      oatom.text = s.str();
+
+      ret = oat.storeAndGetID(oatom);
+      DBGLOG(DBG,"stored oatom " << oatom << " which got " << ret);
+    }
+    return ret;
+  }
+}
+
+// ground version
+ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
+{
+  return storeOrdinaryAtomHelper(this, ogatom, ogatoms);
+}
+
+// nonground version
+ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
+{
+  return storeOrdinaryAtomHelper(this, onatom, onatoms);
+}
+
+ID Registry::storeTerm(Term& term)
+{
+  ID ret = terms.getIDByString(term.symbol);
+  if( ret == ID_FAIL )
+  {
+    ret = terms.storeAndGetID(term);
+    DBGLOG(DBG,"stored term " << term << " which got " << ret);
+  }
+  return ret;
+}
+
+ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
+{
+  DBGLOG_SCOPE(DBG,"gACS",false);
+  DBGLOG(DBG,"getAuxiliaryConstantSymbol for " << type << " " << id);
+
+  // lookup auxiliary
+  AuxiliaryKey key(type,id);
+  AuxiliaryStorage::const_iterator it =
+    pimpl->auxSymbols.find(key);
+  if( it != pimpl->auxSymbols.end() )
+  {
+    DBGLOG(DBG,"found " << it->second.id);
+    return it->second.id;
+  }
+
+  // not found
+
+  // create symbol
+  std::ostringstream s;
+  s << "aux_" << type << "_" << std::hex << id.kind << "_" << id.address;
+  AuxiliaryValue av(s.str(), ID_FAIL);
+  DBGLOG(DBG,"created symbol '" << av.symbol << "'");
+  Term term(
+      ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
+      av.symbol);
+
+  // register ID for symbol
+  av.id = terms.getIDByString(term.symbol);
+  if( av.id != ID_FAIL)
+    throw FatalError("auxiliary collision with symbol '" +
+        term.symbol + "' (or programming error)!");
+  av.id = terms.storeAndGetID(term);
+
+  // register auxiliary
+  pimpl->auxSymbols.insert(std::make_pair(key, av));
+
+  // return
+  DBGLOG(DBG,"returning id " << av.id << " for aux symbol " << av.symbol);
+  return av.id;
 }
 
 DLVHEX_NAMESPACE_END

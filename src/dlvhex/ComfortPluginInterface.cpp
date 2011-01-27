@@ -146,6 +146,7 @@ std::ostream& ComfortInterpretation::print(std::ostream& o) const
 
 void ComfortPluginAtom::retrieve(const Query&, Answer&)
 {
+  throw "not implemented";
   #warning TODO convert and all the stuff
 }
 
