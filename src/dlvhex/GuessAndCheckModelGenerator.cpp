@@ -87,7 +87,8 @@ void createEatomGuessingRules(
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
     std::vector<ID>& gidb,
-    PredicateMask& gmask);
+    PredicateMask& gpmask,
+    PredicateMask& gnmask);
 
 void createFLPRules(
     RegistryPtr reg,
@@ -109,7 +110,8 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // (and there is quite some room for more optimization)
 
   RegistryPtr reg = ctx.registry();
-  gMask.setRegistry(reg);
+  gpMask.setRegistry(reg);
+  gnMask.setRegistry(reg);
   fMask.setRegistry(reg);
 
   outerEatoms = ci.outerEatoms;
@@ -122,7 +124,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gMask);
+  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gpMask, gnMask);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
@@ -162,7 +164,8 @@ void createEatomGuessingRules(
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
     std::vector<ID>& gidb,
-    PredicateMask& gmask)
+    PredicateMask& gpmask,
+    PredicateMask& gnmask)
 {
   DBGLOG_SCOPE(DBG,"cEAGR",false);
   BOOST_FOREACH(ID rid, idb)
@@ -195,7 +198,8 @@ void createEatomGuessingRules(
       ID pospredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
       ID negpredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
       replacement.tuple.push_back(pospredicate);
-      gmask.addPredicate(pospredicate);
+      gpmask.addPredicate(pospredicate);
+      gnmask.addPredicate(negpredicate);
 
       // build (nonground) replacement and harvest all variables
       std::set<ID> variables;
@@ -479,6 +483,135 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
 {
 }
 
+namespace
+{
+
+// for usual model building where we want to collect all true answers
+// as replacement atoms in an interpretation
+struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
+  public BaseModelGenerator::ExternalAnswerTupleCallback
+{
+  VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+      InterpretationPtr guess_pos,
+      InterpretationPtr guess_neg);
+  virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
+  // remembers eatom and prepares replacement.tuple[0]
+  virtual bool eatom(const ExternalAtom& eatom);
+  // remembers input
+  virtual bool input(const Tuple& input);
+  // creates replacement ogatom and activates respective bit in output interpretation
+  virtual bool output(const Tuple& output);
+protected:
+  RegistryPtr reg;
+  InterpretationPtr guess_pos, guess_neg;
+  ID pospred, negpred;
+  OrdinaryAtom replacement;
+};
+
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+    InterpretationPtr guess_pos,
+    InterpretationPtr guess_neg):
+  guess_pos(guess_pos),
+  guess_neg(guess_neg),
+  reg(guess_pos->getRegistry()),
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+{
+  assert(guess_pos->getRegistry() == guess_neg->getRegistry());
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+eatom(const ExternalAtom& eatom)
+{
+  pospred = 
+    reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+  negpred =
+    reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+  replacement.tuple.resize(1);
+
+  // never abort
+  return true;
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+input(const Tuple& input)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // shorten
+  replacement.tuple.resize(1);
+
+  // add
+  replacement.tuple.insert(replacement.tuple.end(),
+      input.begin(), input.end());
+
+  // never abort
+  return true;
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+output(const Tuple& output)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // add, but remember size to reset it later
+  unsigned size = replacement.tuple.size();
+  replacement.tuple.insert(replacement.tuple.end(),
+      output.begin(), output.end());
+
+  // build pos replacement, register, and clear the corresponding bit in guess_pos
+  replacement.tuple[0] = pospred;
+  ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
+  DBGLOG(DBG,"positive replacement ID = " << idreplacement_pos);
+  if( !guess_pos->getFact(idreplacement_pos.address) )
+  {
+    // check whether neg is true, if yes we bailout
+    replacement.tuple[0] = negpred;
+    ID idreplacement_neg = reg->ogatoms.getIDByTuple(replacement.tuple);
+    if( idreplacement_neg == ID_FAIL )
+    {
+      // this is ok, the negative replacement does not exist so it cannot be true
+      DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+    }
+    else
+    {
+      // verify if it is true or not
+      if( guess_neg->getFact(idreplacement_neg.address) == true )
+      {
+        // this is bad, the guess was "false" but it is "true"
+        // -> abort
+
+        // (we now that we won't reuse replacement.tuple,
+        //  so we do not care about resizing it here)
+        return false;
+      }
+      else
+      {
+        // this is ok, the negative replacement exists but is not true
+        DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+      }
+    }
+  }
+  else
+  {
+    // remove this bit, so later we can check if all bits were cleared
+    // (i.e., if all positive guesses were confirmed)
+    guess_pos->clearFact(idreplacement_pos.address);
+    DBGLOG(DBG,"clearing replacement fact -> positive guess interpretation is now " << *guess_pos);
+  }
+
+  // shorten it, s.t. we can add the next one
+  replacement.tuple.resize(size);
+
+  // do not abort if we reach here
+  return true;
+}
+
+} // anonymous namespace
+
 // generate and return next model, return null after last model
 // see description of algorithm on top of this file
 InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
@@ -510,8 +643,9 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     {
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
+      IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
       evaluateExternalAtoms(reg,
-          factory.outerEatoms, postprocessedInput, postprocessedInput);
+          factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -540,29 +674,47 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       if( !guessas )
         break;
       InterpretationPtr guessint = guessas->interpretation;
-      DBGLOG(DBG,"got guess model " << *guessint);
 
-      // project to eatoms for validation
-      factory.gMask.updateMask();
-      InterpretationPtr projint(new Interpretation(reg));
-      projint->getStorage() =
-        guessint->getStorage() & factory.gMask.mask()->getStorage();
-      DBGLOG(DBG,"projected guess: " << *projint);
+      DBGLOG_SCOPE(DBG,"gM", false);
+      DBGLOG(DBG,"= got guess model " << *guessint);
+
+      // project to pos and neg eatom replacements for validation
+
+      factory.gpMask.updateMask();
+      InterpretationPtr projint_pos(new Interpretation(reg));
+      projint_pos->getStorage() =
+        guessint->getStorage() & factory.gpMask.mask()->getStorage();
+      DBGLOG(DBG,"projected positive guess: " << *projint_pos);
+
+      factory.gnMask.updateMask();
+      InterpretationPtr projint_neg(new Interpretation(reg));
+      projint_neg->getStorage() =
+        guessint->getStorage() & factory.gnMask.mask()->getStorage();
+      DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
       // verify whether correct eatoms where guessed true
-      InterpretationPtr validateint(new Interpretation(reg));
-      evaluateExternalAtoms(
-          reg, factory.innerEatoms, guessint, validateint);
-      DBGLOG(DBG,"validation interpretation: " << *validateint);
+      // this callback checks if a positive eatom result was guessed as negative
+      // -> in this case it aborts
+      // this callback resets all positive bits it encounters
+      // -> if the positive interpretation is all-zeroes at the end,
+      //    the guess was correct
+      VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
+          projint_pos, projint_neg);
+      bool aborted = !evaluateExternalAtoms(
+          reg, factory.innerEatoms, guessint, cb);
 
-      if( !(*projint == *validateint) )
+      if( aborted )
       {
-        DBGLOG(DBG,"discarding guess " << *projint);
+        DBGLOG(DBG,"discarding guess as verifier aborted for neg guess " << *projint_neg);
+        continue;
+      }
+      if( projint_pos->getStorage().count() != 0 )
+      {
+        DBGLOG(DBG,"discarding guess due to unconfirmed positive guesses " << *projint_pos);
         continue;
       }
 
-      LOG(MODELB,"external atom guess " << *projint << " successfully validated, will now check FLP model property");
-
+      LOG(MODELB,"external atom guess " << *guessint << " successfully validated, will now check FLP model property");
 
       #warning TODO here
 

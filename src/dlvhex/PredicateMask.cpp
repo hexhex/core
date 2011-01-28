@@ -69,7 +69,7 @@ void PredicateMask::addPredicate(ID pred)
 
 void PredicateMask::updateMask()
 {
-  DBGLOG_VSCOPE(DBG,"PM::uM",this,true);
+  DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
   DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
       printset(predicates));
 
@@ -121,7 +121,8 @@ void PredicateMask::updateMask()
       bits.set(it - it_begin);
     }
   }
-  DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski);
+  knownAddresses = (it_end - it_begin);
+  DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski << " and knownAddresses is " << knownAddresses);
 }
 
 DLVHEX_NAMESPACE_END
