@@ -161,7 +161,7 @@ PlainModelGenerator::generateNextModel()
       if( factory.xidb.empty() )
       {
         // we only have eatoms -> return singular result
-        currentResults = ASPSolverManager::ResultsPtr(new EmptyResults());
+        currentResults.reset(new PreparedResults);
         return newint;
       }
     }

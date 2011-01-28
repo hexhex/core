@@ -45,25 +45,6 @@ DLVHEX_NAMESPACE_BEGIN
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
-protected:
-  struct EmptyResults:
-    public ASPSolverManager::Results
-  {
-    EmptyResults() {}
-    virtual ~EmptyResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet() { return AnswerSet::Ptr(); }
-  };
-
-  struct SingularResults:
-    public ASPSolverManager::Results
-  {
-    SingularResults(AnswerSet::Ptr as): ASPSolverManager::Results(), ret(as) {}
-    virtual ~SingularResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet()
-      { AnswerSet::Ptr p = ret; ret.reset(); return p; };
-    AnswerSet::Ptr ret;
-  };
-
   // members
 public:
   BaseModelGenerator(InterpretationConstPtr input):

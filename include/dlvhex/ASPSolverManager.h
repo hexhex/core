@@ -43,6 +43,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include <list>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -176,6 +177,30 @@ public:
       const std::string& filename,
       std::vector<AtomSet>& result) throw (FatalError);
       */
+};
+
+// results that are not streamed but provided to be incrementally requested
+class PreparedResults:
+  public ASPSolverManager::Results
+{
+public:
+  typedef std::list<AnswerSet::Ptr> Storage;
+
+public:
+  PreparedResults(const Storage& storage);
+  PreparedResults();
+  virtual ~PreparedResults();
+
+  // add further result (this must be done before getNextAnswerSet()
+  // has been called the first time)
+  void add(AnswerSet::Ptr as);
+
+  virtual AnswerSet::Ptr getNextAnswerSet();
+
+protected:
+  Storage answersets;
+  bool resetCurrent;
+  Storage::const_iterator current;
 };
 
 DLVHEX_NAMESPACE_END

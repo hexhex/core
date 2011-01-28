@@ -266,54 +266,6 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
 }
 #endif
 
-namespace
-{
-  class DLVResults:
-    public ASPSolverManager::Results
-  {
-  public:
-    typedef std::list<AnswerSet::Ptr> Storage;
-    Storage answersets;
-    bool resetCurrent;
-    Storage::const_iterator current;
-
-    DLVResults():
-      resetCurrent(true),
-      current() {}
-    virtual ~DLVResults() {}
-
-    void add(AnswerSet::Ptr as)
-    {
-      answersets.push_back(as);
-
-      // we do this because I'm not sure if a begin()==end() iterator
-      // becomes begin() or end() after insertion of the first element
-      // (this is the failsafe version)
-      if( resetCurrent )
-      {
-	current = answersets.begin();
-	resetCurrent = false;
-      }
-    }
-
-    virtual AnswerSet::Ptr getNextAnswerSet()
-    {
-      // if no answer set was ever added, or we reached the end
-      if( (resetCurrent == true) ||
-	  (current == answersets.end()) )
-      {
-	return AnswerSet::Ptr();
-      }
-      else
-      {
-	Storage::const_iterator ret = current;
-	current++;
-	return *ret;
-      }
-    }
-  };
-}
-
 ASPSolverManager::ResultsPtr 
 DLVSoftware::Delegate::getResults()
 {
@@ -325,13 +277,13 @@ DLVSoftware::Delegate::getResults()
     // for now, we parse all results and store them into the result container
     // later we should do kind of an online processing here
 
-    boost::shared_ptr<DLVResults> ret(new DLVResults);
+    boost::shared_ptr<PreparedResults> ret(new PreparedResults);
 
     // parse result
     DLVResultParser parser(pimpl->reg);
     // TODO HO stuff
     // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(pimpl->proc.getInput(), boost::bind(&DLVResults::add, ret.get(), _1));
+    parser.parse(pimpl->proc.getInput(), boost::bind(&PreparedResults::add, ret.get(), _1));
 
     ASPSolverManager::ResultsPtr baseret(ret);
     return baseret;

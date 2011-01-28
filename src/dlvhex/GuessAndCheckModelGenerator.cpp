@@ -35,9 +35,12 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/Benchmarking.h"
+
+#include <bm/bmalgo.h>
 
 #include <boost/foreach.hpp>
 
@@ -143,8 +146,13 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
 
   DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():")
   #ifndef NDEBUG
-  // verbose output
-  print(Logger::Instance().stream(), true);
+  {
+    DBGLOG_INDENT(DBG);
+    // verbose output
+    std::stringstream s;
+    print(s, true);
+    DBGLOG(DBG,s.str());
+  }
   #endif
 }
 
@@ -286,8 +294,12 @@ void createEatomGuessingRules(
       ID gid = reg->rules.storeAndGetID(guessingrule);
       DBGLOG(DBG,"stored guessingrule " << guessingrule << " which got id " << gid);
       #ifndef NDEBUG
-      RawPrinter p(Logger::Instance().stream(), reg);
-      p.print(gid);
+      {
+        std::stringstream s;
+        RawPrinter p(s, reg);
+        p.print(gid);
+        DBGLOG(DBG,"  " << s.str());
+      }
       #endif
       gidb.push_back(gid);
     }
@@ -395,11 +407,16 @@ void createFLPRules(
       xidbflpbody.push_back(fbodyrid);
 
       #ifndef NDEBUG
-      RawPrinter p(Logger::Instance().stream(), reg);
-      DBGLOG(DBG,"stored flphead rule " << rflphead << " which got id " << fheadrid);
-      p.print(fheadrid);
-      DBGLOG(DBG,"stored flpbody rule " << rflpbody << " which got id " << fbodyrid);
-      p.print(fbodyrid);
+      {
+        std::stringstream s;
+        RawPrinter p(s, reg);
+        p.print(fheadrid);
+        s << " and ";
+        p.print(fbodyrid);
+        DBGLOG(DBG,"stored flphead rule " << rflphead << " which got id " << fheadrid);
+        DBGLOG(DBG,"stored flpbody rule " << rflpbody << " which got id " << fbodyrid);
+        DBGLOG(DBG,"rules are " << s.str());
+      }
       #endif
     }
     else
@@ -510,11 +527,11 @@ protected:
 
 VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
 VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
-    InterpretationPtr guess_pos,
-    InterpretationPtr guess_neg):
-  guess_pos(guess_pos),
-  guess_neg(guess_neg),
-  reg(guess_pos->getRegistry()),
+    InterpretationPtr _guess_pos,
+    InterpretationPtr _guess_neg):
+  reg(_guess_pos->getRegistry()),
+  guess_pos(_guess_pos),
+  guess_neg(_guess_neg),
   replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
 {
   assert(guess_pos->getRegistry() == guess_neg->getRegistry());
@@ -668,6 +685,10 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       guessres = mgr.solve(*factory.externalEvalConfig, program);
     }
 
+    // store good models here
+    // but we have to ensure minimality later
+    typedef std::list<InterpretationPtr> CandidateList;
+    CandidateList candidates;
     do
     {
       AnswerSetPtr guessas = guessres->getNextAnswerSet();
@@ -716,10 +737,140 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 
       LOG(MODELB,"external atom guess " << *guessint << " successfully validated, will now check FLP model property");
 
-      #warning TODO here
+      // remove negative guess bits
+      // (we don't need them, removing them speeds up
+      // communication with external solver)
+      guessint->getStorage() -= projint_neg->getStorage();
 
+      /*
+       * see documentation at top: FLP check
+       * * evaluate edb + xidbflphead + M
+       *   -> yields singleton answer set containing flp heads F for non-blocked rules
+       *   (if there is no result answer set, some constraint fired and M can be discarded)
+       * * evaluate edb + xidbflpbody + (M \cap pos_guess_auxiliaries) + F
+       *   -> yields singleton answer set M' (we ignore input facts)
+       *   (there must be an answer set, or something went wrong)
+       * * if M' == M (ignoring input facts "edb \cup pos_guess_auxiliaries \cup flpheads")
+       *   then M is a model of the FLP reduct
+       *   -> store as candidate
+       */
+
+      // evaluate edb+xidbflphead+guessint
+      ASPSolverManager::ResultsPtr flpheadres;
+      {
+        DBGLOG(DBG,"evaluating flp head program");
+
+        // build edb+guess
+        Interpretation::Ptr edbguess(new Interpretation(*factory.ctx.edb));
+        edbguess->getStorage() |= guessint->getStorage();
+
+        ASPProgram program(reg,
+            factory.xidbflphead, edbguess, factory.ctx.maxint);
+        ASPSolverManager mgr;
+        flpheadres = mgr.solve(*factory.externalEvalConfig, program);
+      }
+
+      AnswerSetPtr flpas = flpheadres->getNextAnswerSet();
+      if( !flpas )
+      {
+        LOG(MODELB,"FLP head program yielded no answer set");
+        continue;
+      }
+      InterpretationPtr flpint = flpas->interpretation;
+
+      DBGLOG(DBG,"got FLP head model " << *flpint);
+
+      // evaluate edb+xidbflpbody+flpint+eatomguessint
+      ASPSolverManager::ResultsPtr flpbodyres;
+      {
+        DBGLOG(DBG,"evaluating flp body program");
+
+        // build edb+flp+eatom guess
+        Interpretation::Ptr edbflpguess(new Interpretation(*factory.ctx.edb));
+        edbflpguess->getStorage() |= flpint->getStorage();
+        edbflpguess->getStorage() |= (guessint->getStorage() & factory.gpMask.mask()->getStorage());
+
+        ASPProgram program(reg,
+            factory.xidbflpbody, edbflpguess, factory.ctx.maxint);
+        ASPSolverManager mgr;
+        flpbodyres = mgr.solve(*factory.externalEvalConfig, program);
+      }
+
+      AnswerSetPtr flpbodyas = flpbodyres->getNextAnswerSet();
+
+      // some assumptions
+      #warning check if second step really always returns one answer set, what if it is a disjunctive program?
+      assert(flpbodyas);
+      AnswerSetPtr flpbodyas2 = flpbodyres->getNextAnswerSet();
+      assert(!flpbodyas2);
+
+      // now compare
+      // we again modify guessint
+      InterpretationPtr flpbodyint = flpbodyas->interpretation;
+      DBGLOG(DBG,"got FLP bodymodel " << *flpbodyint);
+      guessint->getStorage() -= factory.gpMask.mask()->getStorage();
+      // this was already done above (using projint_neg) so no need to do it again
+      // guessint->getStorage() -= factory.gnMask->getStorage();
+
+      if( flpbodyint->getStorage() == guessint->getStorage() )
+      {
+        candidates.push_back(guessint);
+        LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
+      }
     }
     while(true);
+
+    if( candidates.empty() )
+    {
+      LOG(MODELB,"found no guess+FLP models -> leaving with result 'inconsistent'");
+      currentResults.reset(new PreparedResults);
+    }
+    else
+    {
+      DBGLOG(DBG,"doing model minimality check");
+
+      std::set<InterpretationPtr> erase;
+      CandidateList::iterator it;
+      for(it = candidates.begin();
+          it != candidates.end(); ++it)
+      {
+        DBGLOG(DBG,"checking with " << **it);
+        for(CandidateList::iterator itv = candidates.begin();
+            itv != candidates.end(); ++itv)
+        {
+          // do not check against self
+          if( itv == it )
+            continue;
+
+          // (do not check against those already invalidated)
+          if( erase.find(*itv) != erase.end() )
+            continue;
+
+          DBGLOG(DBG,"  does it invalidate " << **itv << "?");
+
+          // any_sub(b1, b2) checks if there is any bit in the bitset obtained by 'b1 - b2'
+          // if this is not the case, we know that 'b1 \subseteq b2'
+          if( !bm::any_sub( (*it)->getStorage(), (*itv)->getStorage() ) )
+          {
+            DBGLOG(DBG,"  yes it invalidates!");
+            erase.insert(*itv);
+          }
+        }
+      }
+      // now all that must be erased are in set 'erase'
+
+      DBGLOG(DBG,"minimal models are:");
+      PreparedResults* pr = new PreparedResults;
+      currentResults.reset(pr);
+      BOOST_FOREACH(InterpretationPtr mdl, candidates)
+      {
+        if( erase.find(mdl) == erase.end() )
+        {
+          DBGLOG(DBG,"  " << *mdl);
+          pr->add(AnswerSetPtr(new AnswerSet(mdl)));
+        }
+      }
+    }
   }
 
   assert(currentResults != 0);

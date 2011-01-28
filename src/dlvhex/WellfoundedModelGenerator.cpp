@@ -241,7 +241,7 @@ WellfoundedModelGenerator::generateNextModel()
     if( inconsistent )
     {
       DBGLOG(DBG,"leaving loop with result 'inconsistent'");
-      currentResults.reset(new EmptyResults());
+      currentResults.reset(new PreparedResults);
     }
     else
     {
@@ -254,8 +254,9 @@ WellfoundedModelGenerator::generateNextModel()
       DBGLOG(DBG,"after removing input facts: result is " << *result);
 
       // store as single answer set (there can only be one)
-      AnswerSetPtr as(new AnswerSet(result));
-      currentResults.reset(new SingularResults(as));
+      PreparedResults* pr = new PreparedResults;
+      currentResults.reset(pr);
+      pr->add(AnswerSetPtr(new AnswerSet(result)));
     }
   }
 

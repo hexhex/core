@@ -101,6 +101,55 @@ void ASPSolverManager::solveFile(
 }
 #endif
 
+PreparedResults::PreparedResults():
+  resetCurrent(true),
+  current()
+{
+}
+
+PreparedResults::PreparedResults(const Storage& storage):
+  answersets(storage),
+  resetCurrent(storage.empty()),
+  current(answersets.begin())
+{
+}
+
+PreparedResults::~PreparedResults()
+{
+}
+
+// add further result (this must be done before getNextAnswerSet()
+// has been called the first time)
+void PreparedResults::add(AnswerSet::Ptr as)
+{
+  answersets.push_back(as);
+
+  // we do this because I'm not sure if a begin()==end() iterator
+  // becomes begin() or end() after insertion of the first element
+  // (this is the failsafe version)
+  if( resetCurrent )
+  {
+    current = answersets.begin();
+    resetCurrent = false;
+  }
+}
+
+AnswerSet::Ptr PreparedResults::getNextAnswerSet()
+{
+  // if no answer set was ever added, or we reached the end
+  if( (resetCurrent == true) ||
+      (current == answersets.end()) )
+  {
+    return AnswerSet::Ptr();
+  }
+  else
+  {
+    Storage::const_iterator ret = current;
+    current++;
+    return *ret;
+  }
+}
+
 DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=2 ts=8 tw=80: */
