@@ -26,6 +26,7 @@
 
 MKTEMP="mktemp -t tmp.XXXXXXXXXX"
 TMPFILE=$($MKTEMP) # global temp. file for answer sets
+ETMPFILE=$($MKTEMP) # global temp. file for errors
 
 failed=0
 warned=0
@@ -53,7 +54,9 @@ do
 	fi
 
 	# run dlvhex with specified parameters and program
-	$DLVHEX $ADDPARM $HEXPROGRAM | egrep -v "^$" > $TMPFILE
+  $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
+  RETVAL=$?
+  if [ $RETVAL -eq 0 ]; then
 
 	if cmp -s $TMPFILE $ANSWERSETS
 	then
@@ -112,11 +115,18 @@ EOF
 
 	    rm -f $pasted
 	fi
+
+  else
+    echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+    let failed++
+    grep -v "^$" $ETMPFILE
+  fi
     done < $t # redirect test file to the while loop
 done
 
 # cleanup
 rm -f $TMPFILE
+rm -f $ETMPFILE
 
 echo ========== dlvhex tests completed ==========
 

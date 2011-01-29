@@ -628,7 +628,7 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
-    throw "DumpEvalGraph not yet implemented!";
+    throw std::runtime_error("DumpEvalGraph not yet implemented!");
     #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
@@ -729,7 +729,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         mb.getModelGraph().propsOf(m).interpretation;
       if( ctx->config.getOption("DumpIModelGraph") )
       {
-        throw "DumpIModelGraph  not implemented!";
+        throw std::runtime_error("DumpIModelGraph  not implemented!");
         #warning TODO individual eval/model graphviz output
       }
       #ifndef NDEBUG
@@ -786,7 +786,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpModelGraph") )
   {
-    throw "DumpModelGraph  not implemented!";
+    throw std::runtime_error("DumpModelGraph  not implemented!");
     #warning TODO overall eval/model graphviz output
   }
 

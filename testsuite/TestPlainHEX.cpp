@@ -433,7 +433,7 @@ public:
       }
     }
     #endif
-    throw "todo implement SenseNotArmed1PluginAtom::retrieve";
+    throw std::runtime_error("todo implement SenseNotArmed1PluginAtom::retrieve");
   }
 };
 
