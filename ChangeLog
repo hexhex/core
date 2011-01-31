@@ -23,6 +23,13 @@
 	* added new test notwellfounded2.hex for guess and check model builder (should test minimality of disjunctions) [this test crashes dlvhex trunk/]
 	* added central auxiliary constant management method getAuxiliaryConstantSymbol() to Registry, PluginAtom no longer manages its own auxiliaries
 	* predicate inputs of external atoms no longer may be variables, this was possible in dlvhex 1.X but it was not correctly implemented (see variable_input_predicates.hex example in trunk/) and we need a new implementation strategy for doing that. this change causes the changes to extatom5.hex and extatom6.hex testcases
+	* deactivated weak testcases (weak constraints will be implemented differently and more efficiently)
+	../weak1.hex weak1.out -a
+	../weak1.hex weak1r.out -ra
+	../weak2.hex weak2.out -a
+	* deactivated namespace testcases (namespaces will be implemented as a plugin)
+	../namespace1.hex namespace1.out
+	../namespace2.hex namespace2.out
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 

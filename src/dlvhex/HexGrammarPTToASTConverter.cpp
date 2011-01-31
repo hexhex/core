@@ -33,6 +33,7 @@
 #include "dlvhex/HexGrammarPTToASTConverter.h"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Logger.hpp"
 #include "dlvhex/Printer.hpp"
 
 #include "dlvhex/SpiritDebugging.h"
@@ -152,6 +153,11 @@ void HexGrammarPTToASTConverter::createASTFromClause(
   // node is from "clause" rule
   assert(node.children.size() == 1);
   node_t& child = node.children[0];
+  if( Logger::Instance().shallPrint(Logger::DBG) )
+  {
+    LOG(DBG,"createASTFromClause cAFC:");
+    printSpiritPT(Logger::Instance().stream(), child, "cAFC");
+  }
   switch(child.value.id().to_long())
   {
   case HexGrammar::Maxint:
