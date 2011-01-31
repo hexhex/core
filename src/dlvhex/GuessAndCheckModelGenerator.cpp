@@ -309,6 +309,7 @@ void createEatomGuessingRules(
 /**
  * for each rule in xidb
  * * keep constraints: copy ID to xidbflphead and xidbflpbody
+ * * keep disjunctive facts: copy ID to xidbflphead and xidbflpbody
  * * for all others:
  * * collect all variables in the body (which means also all variables in the head)
  * * create ground or nonground flp replacement atom containing all variables
@@ -325,17 +326,17 @@ void createFLPRules(
   DBGLOG_SCOPE(DBG,"cFLPR",false);
   BOOST_FOREACH(ID rid, xidb)
   {
-    if( rid.isConstraint() )
+    const Rule& r = reg->rules.getByID(rid);
+    DBGLOG(DBG,"processing rule " << rid << " " << r);
+    if( rid.isConstraint() ||
+        r.body.empty() )
     {
-      // keep constraints as they are, they cannot hurt minimality
+      // keep constraints and disjunctive facts as they are
       xidbflphead.push_back(rid);
       xidbflpbody.push_back(rid);
     }
     else if( rid.isRegularRule() )
     {
-      const Rule& r = reg->rules.getByID(rid);
-      DBGLOG(DBG,"processing rule " << rid << " " << r);
-
       // collect all variables
       std::set<ID> variables;
       BOOST_FOREACH(ID lit, r.body)
