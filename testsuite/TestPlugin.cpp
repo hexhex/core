@@ -290,8 +290,13 @@ public:
       // extract (assume unary predicates)
       BOOST_FOREACH(const ComfortAtom& pred, pset)
       {
-        if( !pred.tuple.size() != 2 )
-          throw PluginError("can only process atoms of arity 2 in input sets with testSetMinus!");
+        if( pred.tuple.size() != 2 )
+				{
+					std::stringstream s;
+					s << "can only process atoms of arity 2 with testSetMinus" <<
+						"(got " << printrange(pred.tuple) << ")";
+          throw PluginError(s.str());
+				}
         // simply insert the argument into the set
         tset.insert(pred.tuple[1]);
       }

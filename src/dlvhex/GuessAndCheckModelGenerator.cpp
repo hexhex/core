@@ -713,6 +713,10 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
         guessint->getStorage() & factory.gnMask.mask()->getStorage();
       DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
+      // augment guessint with edb, as external atoms may depend on EDB facts
+      // and this is not modelled in the dependency graph
+      guessint->add(*factory.ctx.edb);
+
       // verify whether correct eatoms where guessed true
       // this callback checks if a positive eatom result was guessed as negative
       // -> in this case it aborts
@@ -760,12 +764,8 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       {
         DBGLOG(DBG,"evaluating flp head program");
 
-        // build edb+guess
-        Interpretation::Ptr edbguess(new Interpretation(*factory.ctx.edb));
-        edbguess->getStorage() |= guessint->getStorage();
-
         ASPProgram program(reg,
-            factory.xidbflphead, edbguess, factory.ctx.maxint);
+            factory.xidbflphead, guessint, factory.ctx.maxint);
         ASPSolverManager mgr;
         flpheadres = mgr.solve(*factory.externalEvalConfig, program);
       }
@@ -807,15 +807,21 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       // now compare
       // we again modify guessint
       InterpretationPtr flpbodyint = flpbodyas->interpretation;
-      DBGLOG(DBG,"got FLP bodymodel " << *flpbodyint);
       guessint->getStorage() -= factory.gpMask.mask()->getStorage();
+      guessint->getStorage() -= factory.ctx.edb->getStorage();
       // this was already done above (using projint_neg) so no need to do it again
       // guessint->getStorage() -= factory.gnMask->getStorage();
 
+      DBGLOG(DBG,"comparing FLP bodymodel   " << *flpbodyint);
+      DBGLOG(DBG,"with guess interpretation " << *guessint);
       if( flpbodyint->getStorage() == guessint->getStorage() )
       {
         candidates.push_back(guessint);
         LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
+      }
+      else
+      {
+        LOG(MODELB,"FLP body model not equal guess interpretation -> discarding");
       }
     }
     while(true);

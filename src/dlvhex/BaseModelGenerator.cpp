@@ -119,7 +119,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb) const
 {
-  LOG_SCOPE(PLUGIN,"eEA",true);
+  LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
       " with input interpretation " << *inputi);
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
@@ -141,26 +141,34 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(reg, eatom, inputi);
-  LOG(DBG,"projected eatom input interpretation = " << *eatominp);
 
   // build input tuples
   std::list<Tuple> inputs;
   buildEAtomInputTuples(reg, eatom, inputi, inputs);
-  #ifndef NDEBUG
+
+  if( Logger::Instance().shallPrint(Logger::PLUGIN) )
   {
-    DBGLOG(DBG,"eatom input tuples:");
-    DBGLOG_INDENT(DBG);
+    LOG(PLUGIN,"eatom input tuples = ");
+    LOG_INDENT(PLUGIN);
     BOOST_FOREACH(const Tuple& t, inputs)
     {
       std::stringstream s;
       RawPrinter printer(s, reg);
       s << "[";
       printer.printmany(t,",");
-      s << "]";
-      DBGLOG(DBG,s.str());
+      s << "] ";
+      LOG(PLUGIN,s.str());
     }
+    {
+      std::stringstream s;
+      RawPrinter printer(s, reg);
+      s << "(";
+      printer.printmany(eatom.tuple,",");
+      s << ")";
+      LOG(PLUGIN,"eatom output pattern = " << s.str());
+    }
+    LOG(PLUGIN,"projected eatom input interpretation = " << *eatominp);
   }
-  #endif
 
   // call callback and abort if requested
   if( !inputs.empty() )
@@ -192,9 +200,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
     PluginAtom::Answer answer;
     pluginAtom->retrieveCached(query, answer);
-    LOG(PLUGIN,"got " << answer.get().size() << " answer tuples" <<
-        " from querying " << eatom.predicate <<
-        " with input tuple " << printrange(inputtuple));
+    LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if( !answer.get().empty() )
     {
@@ -210,18 +216,15 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     // integrate result into interpretation
     BOOST_FOREACH(const Tuple& t, answer.get())
     {
-      #ifndef NDEBUG
-      std::string sfull;
+      if( Logger::Instance().shallPrint(Logger::PLUGIN) )
       {
         std::stringstream s;
         RawPrinter printer(s, reg);
         s << "(";
         printer.printmany(t,",");
         s << ")";
-        sfull = sinput + s.str();
+        LOG(PLUGIN,"got answer tuple " << s.str());
       }
-      DBGLOG(DBG,"processing full tuple " << sfull << " = answer + " << printrange(t));
-      #endif
       if( !verifyEAtomAnswerTuple(reg, eatom, t) )
       {
         LOG(WARNING,"external atom " << eatom << " returned tuple " <<
