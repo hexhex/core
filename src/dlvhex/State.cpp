@@ -727,6 +727,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       Model m = om.get();
       InterpretationConstPtr interpretation =
         mb.getModelGraph().propsOf(m).interpretation;
+
+      // if the program is empty, we may get a NULL interpretation
+      if( !interpretation )
+      {
+        assert(mb.getModelGraph().propsOf(m).dummy == true);
+        interpretation.reset(new Interpretation(ctx->registry()));
+      }
+
       if( ctx->config.getOption("DumpIModelGraph") )
       {
         throw std::runtime_error("DumpIModelGraph  not implemented!");

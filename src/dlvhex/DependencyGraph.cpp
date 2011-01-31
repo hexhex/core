@@ -530,6 +530,11 @@ void DependencyGraph::createExternalPredicateInputDependencies(
 			#endif
 
 			// this input must be a constant term, nothing else allowed
+      if( idpred.isVariableTerm() )
+        throw FatalError(
+            "external atom inputs of type 'predicate' must not be variables!"
+            " (got &" + pluginAtom->getPredicate() + " with variable input '" +
+            registry->getTermStringByID(idpred) + "')");
 			assert(idpred.isConstantTerm());
       // inputMask is mutable so we may store it back this way (no index on it)
       eatom.inputMask.addPredicate(idpred);
