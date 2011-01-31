@@ -5,7 +5,8 @@
 ../weak2.hex weak2.out -a
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
-../notwellfounded1.hex notwellfounded1.out --nofacts
+../notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
+../notwellfounded1.hex notwellfounded1_withfacts.out
 ../notwellfounded2.hex notwellfounded2.out --nofacts
 ../maxint.hex maxint.out
 ../tertop.hex tertop.out

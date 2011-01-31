@@ -716,6 +716,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 
       // augment guessint with edb, as external atoms may depend on EDB facts
       // and this is not modelled in the dependency graph
+      #warning do not rely on the existence and functionality of -nofact behavior of external solver!
       guessint->add(*factory.ctx.edb);
 
       // verify whether correct eatoms where guessed true
@@ -812,6 +813,11 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       guessint->getStorage() -= factory.ctx.edb->getStorage();
       // this was already done above (using projint_neg) so no need to do it again
       // guessint->getStorage() -= factory.gnMask->getStorage();
+
+      // now we make sure nothing from EDB is left in flpbodyint
+      // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+      // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+      flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
 
       DBGLOG(DBG,"comparing FLP bodymodel   " << *flpbodyint);
       DBGLOG(DBG,"with guess interpretation " << *guessint);
