@@ -1,6 +1,6 @@
 SUBDIRS = benchgen olddlvhex_perfplugins
 
-EXTRA_DIST = run-dlvhex-tests.sh
+EXTRA_DIST = run-dlvhex-tests.sh answerset_compare.py
 
 # global preprocessor flags
 AM_CPPFLAGS = \
@@ -21,9 +21,7 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 lib_LTLIBRARIES = libdlvhextest.la
 
 TESTS = \
-  run-dlvhex-tests.sh 
-
-foo = \
+  run-dlvhex-tests.sh \
   TestEvalEndToEnd TestEvalEndToEndND \
   TestEvalHeuristic TestEvalHeuristicND \
   TestComponentGraph TestComponentGraphND \
@@ -37,11 +35,7 @@ foo = \
 
 TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
 
-#TEST_SUITE_LOG = testsuite.log
-
-#check_PROGRAMS = 
-
-foo2 = \
+check_PROGRAMS =  \
   TestTestPluginStatic \
   TestASPSolver TestASPSolverND \
   TestEvalEndToEnd TestEvalEndToEndND \
@@ -55,9 +49,9 @@ foo2 = \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
-#noinst_PROGRAMS = \
-#  TestMCSIE TestMCSIEND \
-#  TestPlainHEX TestPlainHEXND
+noinst_PROGRAMS = \
+  TestMCSIE TestMCSIEND \
+  TestPlainHEX TestPlainHEXND
 
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
@@ -76,37 +70,39 @@ TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 # full debugging output
 
 PLAINHEXSOURCES = \
+	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/BaseModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
-	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
-	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
-	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
-	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
-	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
-	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
-	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
   $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
-	$(top_srcdir)/src/dlvhex/OutputBuilder.cpp \
-	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
-	$(top_srcdir)/src/dlvhex/PluginContainer.cpp \
-	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
-	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
-	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
-	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
-	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
-	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
-	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
-	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
-	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
+	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
+	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp \
+	$(top_srcdir)/src/dlvhex/EvalGraphBuilder.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicEasy.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
+	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
+	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/OutputBuilder.cpp \
+	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
+	$(top_srcdir)/src/dlvhex/PluginContainer.cpp \
+	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
-	$(top_srcdir)/src/dlvhex/Printer.cpp \
-	$(top_srcdir)/src/dlvhex/Error.cpp
+	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp
 
 TestMCSIE_SOURCES = \
 	$(top_srcdir)/testsuite/TestMCSIE.cpp \
@@ -130,6 +126,7 @@ TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
+	$(top_srcdir)/src/dlvhex/BaseModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
@@ -138,6 +135,7 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
 	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
@@ -168,6 +166,7 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -185,6 +184,7 @@ TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)$(AM_CPPFLAGS)
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalHeuristic.cpp \
+	$(top_srcdir)/src/dlvhex/BaseModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
@@ -193,6 +193,7 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
@@ -227,6 +228,7 @@ TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
@@ -238,6 +240,7 @@ TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
@@ -260,6 +263,7 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \

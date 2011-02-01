@@ -144,7 +144,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // transform xidb for flp calculation
   createFLPRules(reg, xidb, xidbflphead, xidbflpbody, fMask);
 
-  DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():")
+  DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():");
   #ifndef NDEBUG
   {
     DBGLOG_INDENT(DBG);

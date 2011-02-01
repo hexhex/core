@@ -99,6 +99,20 @@ Registry::Registry():
 {
 }
 
+// creates a real deep copy
+//explicit
+Registry::Registry(const Registry& other):
+  terms(other.terms),
+  ogatoms(other.ogatoms),
+  onatoms(other.onatoms),
+  batoms(other.batoms),
+  aatoms(other.aatoms),
+  eatoms(other.eatoms),
+  rules(other.rules),
+  pimpl(new Impl(*other.pimpl))
+{
+}
+
 // it is very important that this destructor is not in the .hpp file,
 // because only in the .cpp file it knows how to free pimpl
 Registry::~Registry()
