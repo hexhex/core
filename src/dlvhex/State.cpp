@@ -628,7 +628,17 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
-    throw std::runtime_error("DumpEvalGraph not yet implemented!");
+    #warning eval graph dumping currently implemented as modified compgraph dumping!
+    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose eval graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ctx->compgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse component graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    ctx->compgraph->writeGraphViz(filet, false);
+    LOG(WARNING,"DumpEvalGraph not fully implemented!");
     #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);

@@ -105,6 +105,7 @@ struct DLVSoftware::Delegate::Impl
   Options options;
   DLVProcess proc;
   RegistryPtr reg;
+  InterpretationConstPtr mask;
 
   Impl(const Options& options):
     options(options)
@@ -177,6 +178,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
   DLVProcess& proc = pimpl->proc;
   pimpl->reg = program.registry;
   assert(pimpl->reg);
+  pimpl->mask = program.mask;
 
   // TODO HO checks
   //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
@@ -266,6 +268,25 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
 }
 #endif
 
+namespace
+{
+
+struct MaskedResultAdder
+{
+  PreparedResultsPtr ret;
+  InterpretationConstPtr mask;
+
+  MaskedResultAdder(PreparedResultsPtr ret, InterpretationConstPtr mask):
+    ret(ret), mask(mask) {}
+  void operator()(AnswerSetPtr as)
+  {
+    as->interpretation->getStorage() -= mask->getStorage();
+    ret->add(as);
+  }
+};
+
+}
+
 ASPSolverManager::ResultsPtr 
 DLVSoftware::Delegate::getResults()
 {
@@ -283,7 +304,16 @@ DLVSoftware::Delegate::getResults()
     DLVResultParser parser(pimpl->reg);
     // TODO HO stuff
     // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(pimpl->proc.getInput(), boost::bind(&PreparedResults::add, ret.get(), _1));
+    if( pimpl->mask )
+    {
+      parser.parse(pimpl->proc.getInput(),
+	  MaskedResultAdder(ret, pimpl->mask));
+    }
+    else
+    {
+      parser.parse(pimpl->proc.getInput(),
+	  boost::bind(&PreparedResults::add, ret.get(), _1));
+    }
 
     ASPSolverManager::ResultsPtr baseret(ret);
     return baseret;

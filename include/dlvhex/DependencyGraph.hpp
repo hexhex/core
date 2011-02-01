@@ -169,6 +169,8 @@ public:
   typedef Traits::in_edge_iterator SuccessorIterator;
 
 protected:
+  // the node mapping maps IDs of external atoms and rules
+  // to nodes of the dependency graph
 	struct IDTag {};
 	struct NodeMappingInfo
 	{
@@ -377,11 +379,14 @@ protected:
 
 DependencyGraph::Node DependencyGraph::createNode(ID id)
 {
+  DBGLOG(DBG,"creating node for ID " << id);
   Node n = boost::add_vertex(NodeInfo(id), dg);
-  NodeIDIndex::const_iterator it;
-  bool success;
-  boost::tie(it, success) = nm.insert(NodeMappingInfo(id, n));
-  assert(success);
+  {
+    NodeIDIndex::const_iterator it;
+    bool success;
+    boost::tie(it, success) = nm.insert(NodeMappingInfo(id, n));
+    assert(success);
+  }
   return n;
 }
 

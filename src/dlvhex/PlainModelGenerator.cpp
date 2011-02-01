@@ -129,53 +129,67 @@ PlainModelGenerator::generateNextModel()
   RegistryPtr reg = factory.ctx.registry();
   if( currentResults == 0 )
   {
-    // we need to create currentResults
-
-    // create new interpretation as copy
-    Interpretation::Ptr newint;
-    if( input == 0 )
+    do // breakout possibility
     {
-      // empty construction
-      newint.reset(new Interpretation(reg));
-    }
-    else
-    {
-      // copy construction
-      newint.reset(new Interpretation(*input));
-    }
+      // we need to create currentResults
 
-    // augment input with edb
-    newint->add(*factory.ctx.edb);
-
-    // manage outer external atoms
-    if( !factory.eatoms.empty() )
-    {
-      // augment input with result of external atom evaluation
-      // use newint as input and as output interpretation
-      IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-      evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
-      DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-          "outer external atom computations");
-      DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
-
-      if( factory.xidb.empty() )
+      // create new interpretation as copy
+      Interpretation::Ptr newint;
+      if( input == 0 )
       {
-        // we only have eatoms -> return singular result
-        currentResults.reset(new PreparedResults);
-        return newint;
+        // empty construction
+        newint.reset(new Interpretation(reg));
       }
+      else
+      {
+        // copy construction
+        newint.reset(new Interpretation(*input));
+      }
+
+      // augment input with edb
+      newint->add(*factory.ctx.edb);
+
+      // remember facts so far (we have to remove these from any output)
+      InterpretationConstPtr mask(new Interpretation(*newint));
+
+      // manage outer external atoms
+      if( !factory.eatoms.empty() )
+      {
+        // augment input with result of external atom evaluation
+        // use newint as input and as output interpretation
+        IntegrateExternalAnswerIntoInterpretationCB cb(newint);
+        evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
+        DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
+            "outer external atom computations");
+        DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
+
+        if( factory.xidb.empty() )
+        {
+          // we only have eatoms -> return singular result
+
+          // remove EDB and direct input from newint
+          // (keep local models as small as possible)
+          newint->getStorage() -= mask->getStorage();
+
+          PreparedResults* pr = new PreparedResults;
+          currentResults.reset(pr);
+          pr->add(AnswerSetPtr(new AnswerSet(newint)));
+          break;
+        }
+      }
+
+      // store in model generator and store as const
+      postprocessedInput = newint;
+
+      DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,
+          "initiating external solver");
+      ASPProgram program(reg,
+          factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
+      ASPSolverManager mgr;
+      currentResults = mgr.solve(*factory.externalEvalConfig, program);
+      DLVHEX_BENCHMARK_STOP(sidaspsolve);
     }
-
-    // store in model generator and store as const
-    postprocessedInput = newint;
-
-    DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,
-        "initiating external solver");
-    ASPProgram program(reg,
-        factory.xidb, postprocessedInput, factory.ctx.maxint);
-    ASPSolverManager mgr;
-    currentResults = mgr.solve(*factory.externalEvalConfig, program);
-    DLVHEX_BENCHMARK_STOP(sidaspsolve);
+    while(false); // end of breakout possibility
   }
 
   assert(currentResults != 0);

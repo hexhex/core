@@ -54,7 +54,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 ASPSolverManager::GenericOptions::GenericOptions():
-  includeFacts(false)
+  includeFacts(true)
 {
 }
 

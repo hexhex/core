@@ -425,7 +425,10 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
 ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
 {
   if( !ruleid.doesRuleContainExtatoms() )
+  {
+    DBGLOG(DBG,"not converting rule " << ruleid << " (does not contain extatoms)");
     return ruleid;
+  }
 
   // we need to rewrite
   const Rule& rule = reg->rules.getByID(ruleid);

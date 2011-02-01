@@ -175,6 +175,11 @@ void createEatomGuessingRules(
     PredicateMask& gpmask,
     PredicateMask& gnmask)
 {
+  #warning TODO skip eatoms that are not internal ones?
+  #ifndef NDEBUG
+  std::set<ID> innerEatomsSet(innerEatoms.begin(), innerEatoms.end());
+  #endif
+
   DBGLOG_SCOPE(DBG,"cEAGR",false);
   BOOST_FOREACH(ID rid, idb)
   {
@@ -191,7 +196,12 @@ void createEatomGuessingRules(
       if( !lit.isExternalAtom() )
         continue;
 
-      #warning TODO skip eatoms that are not internal ones
+      #ifndef NDEBUG
+      if( innerEatomsSet.count(ID::atomFromLiteral(lit)) )
+      {
+        LOG(WARNING,"TODO processing external atom that is not an inner eatom for guessing!");
+      }
+      #endif
 
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
@@ -654,7 +664,11 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     }
 
     // augment input with edb
+    #warning perhaps we can pass multiple partially preprocessed input edb's to the external solver and save a lot of processing here
     postprocessedInput->add(*factory.ctx.edb);
+
+    // remember which facts we must remove
+    InterpretationConstPtr mask(new Interpretation(*postprocessedInput));
 
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
@@ -680,6 +694,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     ASPSolverManager::ResultsPtr guessres;
     {
       DBGLOG(DBG,"evaluating guessing program");
+      // no mask
       ASPProgram program(reg,
           factory.xgidb, postprocessedInput, factory.ctx.maxint);
       ASPSolverManager mgr;
@@ -714,11 +729,6 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
         guessint->getStorage() & factory.gnMask.mask()->getStorage();
       DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
-      // augment guessint with edb, as external atoms may depend on EDB facts
-      // and this is not modelled in the dependency graph
-      #warning do not rely on the existence and functionality of -nofact behavior of external solver!
-      guessint->add(*factory.ctx.edb);
-
       // verify whether correct eatoms where guessed true
       // this callback checks if a positive eatom result was guessed as negative
       // -> in this case it aborts
@@ -727,6 +737,9 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       //    the guess was correct
       VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
           projint_pos, projint_neg);
+      // we might need edb facts here
+      // (dependencies to edb are not modelled in the dependency graph)
+      // therefore we did not mask the guess program before
       bool aborted = !evaluateExternalAtoms(
           reg, factory.innerEatoms, guessint, cb);
 
@@ -741,7 +754,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
         continue;
       }
 
-      LOG(MODELB,"external atom guess " << *guessint << " successfully validated, will now check FLP model property");
+      LOG(MODELB,"external atom guess " << *projint_pos << " successfully validated, will now check FLP model property");
 
       // remove negative guess bits
       // (we don't need them, removing them speeds up
@@ -761,13 +774,14 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
        *   -> store as candidate
        */
 
-      // evaluate edb+xidbflphead+guessint
+      // evaluate xidbflphead+guessint(contains edb and preprocessed eatoms)
       ASPSolverManager::ResultsPtr flpheadres;
       {
         DBGLOG(DBG,"evaluating flp head program");
 
+        // here we can mask, we won't lose FLP heads
         ASPProgram program(reg,
-            factory.xidbflphead, guessint, factory.ctx.maxint);
+            factory.xidbflphead, guessint, factory.ctx.maxint, mask);
         ASPSolverManager mgr;
         flpheadres = mgr.solve(*factory.externalEvalConfig, program);
       }
@@ -782,53 +796,54 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 
       DBGLOG(DBG,"got FLP head model " << *flpint);
 
-      // evaluate edb+xidbflpbody+flpint+eatomguessint
+      // evaluate xidbflpbody+edb+flp+eatomguess
       ASPSolverManager::ResultsPtr flpbodyres;
       {
         DBGLOG(DBG,"evaluating flp body program");
 
-        // build edb+flp+eatom guess
-        Interpretation::Ptr edbflpguess(new Interpretation(*factory.ctx.edb));
-        edbflpguess->getStorage() |= flpint->getStorage();
-        edbflpguess->getStorage() |= (guessint->getStorage() & factory.gpMask.mask()->getStorage());
+        // build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
+        Interpretation::Ptr edbflpguess(new Interpretation(*guessint));
+        edbflpguess->getStorage() &=
+          (flpint->getStorage() | factory.gpMask.mask()->getStorage());
 
+        // here we can also mask, this eliminates many equal bits for comparisons later
         ASPProgram program(reg,
-            factory.xidbflpbody, edbflpguess, factory.ctx.maxint);
+            factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
         ASPSolverManager mgr;
         flpbodyres = mgr.solve(*factory.externalEvalConfig, program);
       }
 
+      // for comparing the flpbody answer sets we mask the guess interpretation
+      guessint->getStorage() -= mask->getStorage();
+                              //factory.gpMask.mask()->getStorage();
+                              //guessint->getStorage() -= factory.ctx.edb->getStorage();
+                              // this was already done above (using projint_neg) so no need to do it again
+                              // guessint->getStorage() -= factory.gnMask->getStorage();
+
+      DBGLOG(DBG,"comparing xidbflpbody answer sets with guess interpretation " << *guessint);
       AnswerSetPtr flpbodyas = flpbodyres->getNextAnswerSet();
-
-      // some assumptions
-      #warning check if second step really always returns one answer set, what if it is a disjunctive program?
-      assert(flpbodyas);
-      AnswerSetPtr flpbodyas2 = flpbodyres->getNextAnswerSet();
-      assert(!flpbodyas2);
-
-      // now compare
-      // we again modify guessint
-      InterpretationPtr flpbodyint = flpbodyas->interpretation;
-      guessint->getStorage() -= factory.gpMask.mask()->getStorage();
-      guessint->getStorage() -= factory.ctx.edb->getStorage();
-      // this was already done above (using projint_neg) so no need to do it again
-      // guessint->getStorage() -= factory.gnMask->getStorage();
-
-      // now we make sure nothing from EDB is left in flpbodyint
-      // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
-      // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
-      flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
-
-      DBGLOG(DBG,"comparing FLP bodymodel   " << *flpbodyint);
-      DBGLOG(DBG,"with guess interpretation " << *guessint);
-      if( flpbodyint->getStorage() == guessint->getStorage() )
+      while(flpbodyas)
       {
-        candidates.push_back(guessint);
-        LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
-      }
-      else
-      {
-        LOG(MODELB,"FLP body model not equal guess interpretation -> discarding");
+        InterpretationPtr flpbodyint = flpbodyas->interpretation;
+
+                      // now we make sure nothing from EDB is left in flpbodyint
+                      // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+                      // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+                      //flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+
+        DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyint);
+        if( flpbodyint->getStorage() == guessint->getStorage() )
+        {
+          candidates.push_back(guessint);
+          LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
+          // we found one -> no need to check for more
+          break;
+        }
+        else
+        {
+          LOG(MODELB,"this FLP body model is not equal to guess interpretation -> continuing check");
+        }
+        flpbodyas = flpbodyres->getNextAnswerSet();
       }
     }
     while(true);

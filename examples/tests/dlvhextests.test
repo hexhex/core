@@ -17,6 +17,7 @@
 ../extatom4.hex extatom4.out
 ../extatom5.hex extatom5.out
 ../extatom6.hex extatom6.out
+../extatom7.hex extatom7.out --nofacts
 ../extatom9.hex extatom9.out
 ../percentparser.hex percentparser.out
 ../empty.hex empty.out

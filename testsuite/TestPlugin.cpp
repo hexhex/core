@@ -231,6 +231,7 @@ public:
   {
     std::stringstream s;
 
+		bool hasStrings = false;
     BOOST_FOREACH(ID tid, query.input)
     {
 			assert(tid.isTerm());
@@ -238,13 +239,24 @@ public:
         s << tid.address;
       else if( tid.isConstantTerm() )
 			{
-				s << registry->getTermStringByID(tid);
+				const std::string& str = registry->getTermStringByID(tid);
+				if( str[0] == '"' )
+				{
+					hasStrings = true;
+					s << str.substr(1,str.size()-2);
+				}
+				else
+				{
+					s << str;
+				}
 			}
       else
         throw PluginError("encountered unknown term type!");
     }
     
 		Term resultterm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s.str());
+		if( hasStrings )
+			resultterm.symbol = "\"" + resultterm.symbol + "\"";
     Tuple tu;
     tu.push_back(registry->storeTerm(resultterm));
     answer.get().push_back(tu);

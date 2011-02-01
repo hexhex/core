@@ -57,13 +57,15 @@ struct ASPProgram
   const std::vector<ID>& idb;
   Interpretation::ConstPtr edb;
   uint32_t maxint;
+  Interpretation::ConstPtr mask;
 
   ASPProgram(
       RegistryPtr registry,
       const std::vector<ID>& idb,
       Interpretation::ConstPtr edb,
-      uint32_t maxint = 0):
-    registry(registry), idb(idb), edb(edb), maxint(maxint) {}
+      uint32_t maxint = 0,
+      Interpretation::ConstPtr mask = Interpretation::ConstPtr()):
+    registry(registry), idb(idb), edb(edb), maxint(maxint), mask(mask) {}
 };
 
 class ASPSolverManager
@@ -202,6 +204,7 @@ protected:
   bool resetCurrent;
   Storage::const_iterator current;
 };
+typedef boost::shared_ptr<PreparedResults> PreparedResultsPtr;
 
 DLVHEX_NAMESPACE_END
 
