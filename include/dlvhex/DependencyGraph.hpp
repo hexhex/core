@@ -106,6 +106,7 @@ public:
     //     unifies with one of B's head atoms -> "negativeRule"
     //   * one of A's head atoms unifies with one of B's head atoms
     //     -> "unifyingHead"
+    //     if A or B has a disjunctive head -> "disjunctive"
     // * dependency A -> B where A is a constraint and B is a regular rule:
     //   * one of A's positive body ordinary atom literals
     //     unifies with one of B's head atoms -> "positiveConstraint"
@@ -129,6 +130,7 @@ public:
     bool positiveConstraint;
     bool negativeRule;
     bool unifyingHead;
+    bool disjunctive;
     bool positiveExternal;
     bool negativeExternal;
     bool externalConstantInput;
@@ -139,6 +141,7 @@ public:
       positiveConstraint(false),
 			negativeRule(false),
 			unifyingHead(false),
+			disjunctive(false),
       positiveExternal(false),
       negativeExternal(false),
       externalConstantInput(false),
@@ -198,7 +201,8 @@ protected:
     ID id;
     bool inHead;
     bool inBody;
-    NodeList inHeadOfRules;
+    NodeList inHeadOfNondisjunctiveRules;
+    NodeList inHeadOfDisjunctiveRules;
     NodeList inPosBodyOfRegularRules; // only non-constraint rules
     NodeList inPosBodyOfConstraints;
     NodeList inNegBodyOfRules; // any rules

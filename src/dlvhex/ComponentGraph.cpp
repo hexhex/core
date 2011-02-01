@@ -261,13 +261,13 @@ namespace
           it != it_end; ++it)
       {
         const DependencyGraph::DependencyInfo& di = dg.propsOf(*it);
-        if( di.negativeRule | di.negativeExternal | di.unifyingHead )
+        if( di.negativeRule | di.negativeExternal | di.disjunctive )
         {
           // found neg dependency, check if it is within SCC
           Node pnode = dg.targetOf(*it);
           if( nodesToCheck.find(pnode) != nodesToCheck.end() )
           {
-            DBGLOG(DBG,"found negative dependency to node " << pnode << " -> not wellfounded");
+            DBGLOG(DBG,"found negative/disjunctive dependency to node " << pnode << " -> not wellfounded");
             return false;
           }
         }

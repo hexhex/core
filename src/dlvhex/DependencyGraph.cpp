@@ -42,6 +42,7 @@
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/range/join.hpp>
 
 #include <sstream>
 
@@ -55,6 +56,7 @@ DependencyGraph::DependencyInfo::operator|=(
 	positiveConstraint |= other.positiveConstraint;
 	negativeRule |= other.negativeRule;
 	unifyingHead |= other.unifyingHead;
+	disjunctive |= other.disjunctive;
 	positiveExternal |= other.positiveExternal;
 	negativeExternal |= other.negativeExternal;
 	externalConstantInput |= other.externalConstantInput;
@@ -74,6 +76,7 @@ std::ostream& DependencyGraph::DependencyInfo::print(std::ostream& o) const
     (positiveConstraint?" positiveConstraint":"") <<
     (negativeRule?" negativeRule":"") <<
     (unifyingHead?" unifyingHead":"") <<
+    (disjunctive?" disjunctive":"") <<
     (positiveExternal?" positiveExternal":"") <<
     (negativeExternal?" negativeExternal":"") <<
     (externalConstantInput?" externalConstantInput":"") <<
@@ -148,7 +151,14 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
       HeadBodyInfo hbi(&(registry->lookupOrdinaryAtom(idat)));
       hbi.id = idat;
       hbi.inHead = true;
-      hbi.inHeadOfRules.push_back(nrule);
+      if( rule.head.size() > 1 )
+      {
+        hbi.inHeadOfDisjunctiveRules.push_back(nrule);
+      }
+      else
+      {
+        hbi.inHeadOfNondisjunctiveRules.push_back(nrule);
+      }
       if( hbi.oatom->tuple[0].isConstantTerm() )
         hbi.headPredicate = hbi.oatom->tuple[0];
       hbh.infos.insert(hbi);
@@ -164,7 +174,14 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
           hbi.headPredicate = hbi.oatom->tuple[0];
       }
       hbi.inHead = true;
-      hbi.inHeadOfRules.push_back(nrule);
+      if( rule.head.size() > 1 )
+      {
+        hbi.inHeadOfDisjunctiveRules.push_back(nrule);
+      }
+      else
+      {
+        hbi.inHeadOfNondisjunctiveRules.push_back(nrule);
+      }
       bool success = hbh.infos.replace(it, hbi);
       assert(success);
     }
@@ -631,15 +648,14 @@ void DependencyGraph::createExternalPredicateInputDependenciesForInput(
     assert(it->inHead);
 
     LOG(DBG,"found matchin ordinary atom: " << it->id);
-    for(NodeList::const_iterator itn = it->inHeadOfRules.begin();
-        itn != it->inHeadOfRules.end(); ++itn)
+    BOOST_FOREACH( Node n, boost::join(it->inHeadOfNondisjunctiveRules, it->inHeadOfDisjunctiveRules) )
     {
-      LOG(DBG,"adding external dependency " << ni_eatom.id << " -> " << propsOf(*itn).id);
+      LOG(DBG,"adding external dependency " << ni_eatom.id << " -> " << propsOf(n).id);
 
       Dependency dep;
       bool success;
       boost::tie(dep, success) = boost::add_edge(
-          ni_eatom.node, *itn, diExternalPredicateInput, dg);
+          ni_eatom.node, n, diExternalPredicateInput, dg);
       assert(success);
     } // iterate over rules where this atom is head
   } // iterate over atoms with matching predicate
@@ -653,6 +669,41 @@ void DependencyGraph::createUnifyingDependencies(
   createHeadBodyUnifyingDependencies(hbh);
 }
 
+namespace
+{
+  template<typename IteratorT, typename GraphT>
+  void addMutualDependency(
+      IteratorT itv1, IteratorT itv2,
+      const DependencyGraph::DependencyInfo& di, GraphT& dg)
+  {
+    typename GraphT::edge_descriptor dep;
+    bool success;
+    boost::tie(dep, success) = boost::add_edge(*itv1, *itv2, di, dg);
+    assert(success);
+    boost::tie(dep, success) = boost::add_edge(*itv2, *itv1, di, dg);
+    assert(success);
+  }
+
+  template<typename RangeT, typename GraphT>
+  void addAllMutualDependencies(
+      const RangeT& range1, const RangeT& range2,
+      const DependencyGraph::DependencyInfo& di, GraphT& dg)
+  {
+    for(typename RangeT::const_iterator it1 = range1.begin();
+        it1 != range1.end(); ++it1)
+    {
+      for(typename RangeT::const_iterator it2 = range2.begin();
+          it2 != range2.end(); ++it2)
+      {
+        if( *it1 == *it2 )
+          continue;
+
+        addMutualDependency(it1, it2, di, dg);
+      }
+    }
+  }
+}
+
 // helpers
 // "unifyingHead" dependencies
 void DependencyGraph::createHeadHeadUnifyingDependencies(
@@ -663,6 +714,9 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
 
 	DependencyInfo diUnifyingHead;
   diUnifyingHead.unifyingHead = true;
+	DependencyInfo diUnifyingDisjunctiveHead;
+  diUnifyingDisjunctiveHead.unifyingHead = true;
+  diUnifyingDisjunctiveHead.disjunctive = true;
 
   // go through head body helper in two nested loops, matching inHead=true to inHead=true
   // iteration order does not matter
@@ -701,28 +755,37 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
       if( !oa1.unifiesWith(oa2) )
         continue;
 
+      // now create head-head dependencies:
+      // * disjunctive:
+      //   * inHeadOfDisjunctiveRules <-> inHeadOfNondisjunctiveRules
+      //   * inHeadOfDisjunctiveRules <-> inHeadOfDisjunctiveRules
+      //   * inHeadOfNondisjunctiveRules <-> inHeadOfDisjunctiveRules
+      // * nondisjunctive:
+      //   * inHeadOfNondisjunctiveRules <-> inHeadOfNondisjunctiveRules
+
       LOG(DBG,"adding unifying head-head dependency between " <<
-          oa1 << " in head of rules " << printvector(it1->inHeadOfRules) << " and " <<
-          oa2 << " in head of rules " << printvector(it2->inHeadOfRules));
+          oa1 << " in head of disjunctive rules " <<
+            printvector(it1->inHeadOfDisjunctiveRules) <<
+            " and in head of nondisjunctive rules " <<
+            printvector(it1->inHeadOfNondisjunctiveRules) <<
+          " and " <<
+          oa2 << " in head of disjunctive rules " <<
+            printvector(it2->inHeadOfDisjunctiveRules) <<
+            " and in head of nondisjunctive rules " <<
+            printvector(it2->inHeadOfNondisjunctiveRules));
 
-      for(NodeList::const_iterator itn1 = it1->inHeadOfRules.begin();
-          itn1 != it1->inHeadOfRules.end(); ++itn1)
-      {
-        for(NodeList::const_iterator itn2 = it2->inHeadOfRules.begin();
-            itn2 != it2->inHeadOfRules.end(); ++itn2)
-        {
-          // do not create self-loops
-          if( *itn1 == *itn2 )
-            continue;
-
-          Dependency dep;
-          bool success;
-          boost::tie(dep, success) = boost::add_edge(*itn1, *itn2, diUnifyingHead, dg);
-          assert(success);
-          boost::tie(dep, success) = boost::add_edge(*itn2, *itn1, diUnifyingHead, dg);
-          assert(success);
-        } // loop over second collection of rules
-      } // loop over first collection of rules
+      addAllMutualDependencies(
+          it1->inHeadOfNondisjunctiveRules, it2->inHeadOfNondisjunctiveRules,
+          diUnifyingHead, dg);
+      addAllMutualDependencies(
+          it1->inHeadOfDisjunctiveRules, it2->inHeadOfNondisjunctiveRules,
+          diUnifyingDisjunctiveHead, dg);
+      addAllMutualDependencies(
+          it1->inHeadOfNondisjunctiveRules, it2->inHeadOfDisjunctiveRules,
+          diUnifyingDisjunctiveHead, dg);
+      addAllMutualDependencies(
+          it1->inHeadOfDisjunctiveRules, it2->inHeadOfDisjunctiveRules,
+          diUnifyingDisjunctiveHead, dg);
     } // inner loop over atoms in heads
   } // outer loop over atoms in heads
 }
@@ -780,7 +843,9 @@ void DependencyGraph::createHeadBodyUnifyingDependencies(
         continue;
 
       LOG(DBG,"adding head-body dependency between " <<
-          oah << " in head of rules " << printvector(ith->inHeadOfRules) << " and " <<
+          oah << " in head of rules " << printrange(
+            boost::join(ith->inHeadOfNondisjunctiveRules,
+              ith->inHeadOfDisjunctiveRules)) << " and " <<
           oab << " in posR/posC/neg bodies " <<
           printvector(itb->inPosBodyOfRegularRules) << "/" <<
           printvector(itb->inPosBodyOfConstraints) << "/" <<
@@ -788,29 +853,29 @@ void DependencyGraph::createHeadBodyUnifyingDependencies(
 
       Dependency dep;
       bool success;
-      for(NodeList::const_iterator itnh = ith->inHeadOfRules.begin();
-          itnh != ith->inHeadOfRules.end(); ++itnh)
+      BOOST_FOREACH(Node nh, boost::join(
+            ith->inHeadOfNondisjunctiveRules, ith->inHeadOfDisjunctiveRules))
       {
         for(NodeList::const_iterator itnb = itb->inPosBodyOfRegularRules.begin();
             itnb != itb->inPosBodyOfRegularRules.end(); ++itnb)
         {
           // here we may remove self loops, but then we cannot check tightness (XXX can we?)
-          boost::tie(dep, success) = boost::add_edge(*itnb, *itnh, diPositiveRegularRule, dg);
+          boost::tie(dep, success) = boost::add_edge(*itnb, nh, diPositiveRegularRule, dg);
           assert(success);
         }
         for(NodeList::const_iterator itnb = itb->inPosBodyOfConstraints.begin();
             itnb != itb->inPosBodyOfConstraints.end(); ++itnb)
         {
           // no self loops possible
-          assert(*itnb != *itnh);
-          boost::tie(dep, success) = boost::add_edge(*itnb, *itnh, diPositiveConstraint, dg);
+          assert(*itnb != nh);
+          boost::tie(dep, success) = boost::add_edge(*itnb, nh, diPositiveConstraint, dg);
           assert(success);
         }
         for(NodeList::const_iterator itnb = itb->inNegBodyOfRules.begin();
             itnb != itb->inNegBodyOfRules.end(); ++itnb)
         {
           // here we must not remove self loops, we may need them
-          boost::tie(dep, success) = boost::add_edge(*itnb, *itnh, diNegativeRule, dg);
+          boost::tie(dep, success) = boost::add_edge(*itnb, nh, diNegativeRule, dg);
           assert(success);
         }
       } // loop over first collection of rules
