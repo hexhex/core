@@ -48,6 +48,7 @@
 #include "dlvhex/DLVProcess.h"
 #include "dlvhex/DLVresultParserDriver.h"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/AnswerSet.hpp"
 
@@ -105,6 +106,7 @@ struct DLVSoftware::Delegate::Impl
   Options options;
   DLVProcess proc;
   RegistryPtr reg;
+  InterpretationConstPtr mask;
 
   Impl(const Options& options):
     options(options)
@@ -177,6 +179,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
   DLVProcess& proc = pimpl->proc;
   pimpl->reg = program.registry;
   assert(pimpl->reg);
+  pimpl->mask = program.mask;
 
   // TODO HO checks
   //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
@@ -268,50 +271,21 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
 
 namespace
 {
-  class DLVResults:
-    public ASPSolverManager::Results
+
+struct MaskedResultAdder
+{
+  PreparedResultsPtr ret;
+  InterpretationConstPtr mask;
+
+  MaskedResultAdder(PreparedResultsPtr ret, InterpretationConstPtr mask):
+    ret(ret), mask(mask) {}
+  void operator()(AnswerSetPtr as)
   {
-  public:
-    typedef std::list<AnswerSet::Ptr> Storage;
-    Storage answersets;
-    bool resetCurrent;
-    Storage::const_iterator current;
+    as->interpretation->getStorage() -= mask->getStorage();
+    ret->add(as);
+  }
+};
 
-    DLVResults():
-      resetCurrent(true),
-      current() {}
-    virtual ~DLVResults() {}
-
-    void add(AnswerSet::Ptr as)
-    {
-      answersets.push_back(as);
-
-      // we do this because I'm not sure if a begin()==end() iterator
-      // becomes begin() or end() after insertion of the first element
-      // (this is the failsafe version)
-      if( resetCurrent )
-      {
-	current = answersets.begin();
-	resetCurrent = false;
-      }
-    }
-
-    virtual AnswerSet::Ptr getNextAnswerSet()
-    {
-      // if no answer set was ever added, or we reached the end
-      if( (resetCurrent == true) ||
-	  (current == answersets.end()) )
-      {
-	return AnswerSet::Ptr();
-      }
-      else
-      {
-	Storage::const_iterator ret = current;
-	current++;
-	return *ret;
-      }
-    }
-  };
 }
 
 ASPSolverManager::ResultsPtr 
@@ -319,19 +293,28 @@ DLVSoftware::Delegate::getResults()
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::getResults");
 
-  //LOG("getting results");
+  //DBGLOG(DBG,"getting results");
   try
   {
     // for now, we parse all results and store them into the result container
     // later we should do kind of an online processing here
 
-    boost::shared_ptr<DLVResults> ret(new DLVResults);
+    boost::shared_ptr<PreparedResults> ret(new PreparedResults);
 
     // parse result
     DLVResultParser parser(pimpl->reg);
     // TODO HO stuff
     // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
-    parser.parse(pimpl->proc.getInput(), boost::bind(&DLVResults::add, ret.get(), _1));
+    if( pimpl->mask )
+    {
+      parser.parse(pimpl->proc.getInput(),
+	  MaskedResultAdder(ret, pimpl->mask));
+    }
+    else
+    {
+      parser.parse(pimpl->proc.getInput(),
+	  boost::bind(&PreparedResults::add, ret.get(), _1));
+    }
 
     ASPSolverManager::ResultsPtr baseret(ret);
     return baseret;
@@ -416,15 +399,15 @@ DLVLibSoftware::Delegate::useASTInput(const ASPProgram& program)
     printer.printmany(program.idb, "\n");
     programStream.flush();
 
-    LOG("sending program to dlv-lib:===");
-    LOG(programStream.str());
-    LOG("==============================");
+    DBGLOG(DBG,"sending program to dlv-lib:===");
+    DBGLOG(DBG,programStream.str());
+    DBGLOG(DBG,"==============================");
     pimpl->ph->Parse(programStream);
     pimpl->ph->ResolveProgram(SYNCRONOUSLY);
   }
   catch(const std::exception& e)
   {
-    LOG("EXCEPTION: " << e.what());
+    LOG(ERROR,"EXCEPTION: " << e.what());
     throw;
   }
 }
@@ -436,7 +419,7 @@ DLVLibSoftware::Delegate::getResults()
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::getResults");
 
-  //LOG("getting results");
+  //DBGLOG(DBG,"getting results");
   try
   {
     // for now, we parse all results and store them into the result container
@@ -465,7 +448,7 @@ DLVLibSoftware::Delegate::getResults()
 
 	typedef std::list<const char*> ParmList;
 	ParmList parms;
-  	//LOG("creating predicate with first term '" << pname << "'");
+  	//DBGLOG(DBG,"creating predicate with first term '" << pname << "'");
 	parms.push_back(pname);
   
 	// TODO HO stuff
@@ -508,7 +491,7 @@ DLVLibSoftware::Delegate::getResults()
 	    id = pimpl->reg->terms.storeAndGetID(t);
 	  }
 	  assert(id != ID_FAIL);
-	  LOG("got term " << *itp << " with id " << id);
+	  DBGLOG(DBG,"got term " << *itp << " with id " << id);
 	  ptuple.push_back(id);
 	}
 
@@ -541,9 +524,9 @@ DLVLibSoftware::Delegate::getResults()
 	    a.text = ss.str();
 	  }
 	  fid = pimpl->reg->ogatoms.storeAndGetID(a);
-	  LOG("added fact " << a << " with id " << fid);
+	  DBGLOG(DBG,"added fact " << a << " with id " << fid);
 	}
-	LOG("got fact with id " << fid);
+	DBGLOG(DBG,"got fact with id " << fid);
 	assert(fid != ID_FAIL);
 	as->interpretation->setFact(fid.address);
       }
@@ -559,7 +542,7 @@ DLVLibSoftware::Delegate::getResults()
   }
   catch(const std::exception& e)
   {
-    LOG("EXCEPTION: " << e.what());
+    LOG(ERROR,"EXCEPTION: " << e.what());
     throw;
   }
 }
@@ -732,7 +715,7 @@ public:
   virtual void printModel(
       const Clasp::Solver& s, const Clasp::Enumerator&)
   {
-    LOG("getting model from clingo!");
+    DBGLOG(DBG,"getting model from clingo!");
 
     AnswerSet::Ptr as(new AnswerSet(registry));
 
@@ -748,7 +731,7 @@ public:
 	if( idga == ID_FAIL )
 	{
 	  // parse groundatom, register and store
-	  LOG("parsing clingo ground atom '" << groundatom << "'");
+	  DBGLOG(DBG,"parsing clingo ground atom '" << groundatom << "'");
 	  OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	  ogatom.text = groundatom;
 	  {
@@ -759,7 +742,7 @@ public:
 	    for(tokenizer::iterator it = tok.begin();
 		it != tok.end(); ++it)
 	    {
-	      LOG("got token '" << *it << "'");
+	      DBGLOG(DBG,"got token '" << *it << "'");
 	      ID id = getOrRegisterTerm(registry, *it);
 	      assert(id != ID_FAIL);
 	      ogatom.tuple.push_back(id);
@@ -772,7 +755,7 @@ public:
       }
     }
 
-    LOG("got model from clingo: " << *as);
+    LOG(INFO,"got model from clingo: " << *as);
     results->add(as);
   }
 
@@ -792,12 +775,12 @@ public:
     Base(),
     results(new ClingoResults())
   {
-    LOG("MyClingoApp()");
+    DBGLOG(DBG,"MyClingoApp()");
   }
   
   ~MyClingoApp()
   {
-    LOG("~MyClingoApp()");
+    DBGLOG(DBG,"~MyClingoApp()");
   }
 
   void solve(std::string& program, RegistryPtr registry)
@@ -821,7 +804,7 @@ public:
 	int argc = 0;
 	while(argv[argc] != NULL)
 	  argc++;
-	LOG("passing " << argc << " arguments to gringo:" <<
+	DBGLOG(DBG,"passing " << argc << " arguments to gringo:" <<
 	    printrange(std::vector<const char*>(&argv[0], &argv[argc])));
 	if(!parse(argc, argv))
 	    throw std::runtime_error( messages.error.c_str() );
@@ -832,7 +815,7 @@ public:
 
       // configure in out
       Streams s;
-      LOG("sending to clingo:" << std::endl << "===" << std::endl << program << std::endl << "===");
+      LOG(DBG,"sending to clingo:" << std::endl << "===" << std::endl << program << std::endl << "===");
       s.appendStream(
 	  Streams::StreamPtr(new std::istringstream(program)),
 	  "dlvhex_to_clingo");
@@ -843,7 +826,7 @@ public:
       facade_ = &clasp;
       clingo.iStats = false;
       clasp.solve(*in_, config_, this);
-      LOG("after clasp.solve: results contains " << results->answersets.size() << " answer sets");
+      DBGLOG(DBG,"after clasp.solve: results contains " << results->answersets.size() << " answer sets");
     }
     catch(const std::exception& e)
     {

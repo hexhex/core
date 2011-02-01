@@ -97,7 +97,7 @@ void testSimple()
   BOOST_REQUIRE(int2 == 0);
 }
 
-
+/*
 #ifdef HAVE_DLV
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
 {
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVLib)
   testSimple<ASPSolver::DLVLibSoftware::Configuration>();
 }
 #endif
- 
+ */
 #ifdef HAVE_LIBCLINGO
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
 {

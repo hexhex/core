@@ -177,7 +177,7 @@ void RawPrinter::print(ID id)
 				printmany(r.body, ", ");
 				out << ". [";
 				print(r.weight);
-				out << ",";
+				out << ":";
 				print(r.level);
 				out << "]";
 			}

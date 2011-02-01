@@ -36,20 +36,90 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/Benchmarking.h"
+#include "dlvhex/Atoms.hpp"
 
 #include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
+BaseModelGenerator::ExternalAnswerTupleCallback::
+~ExternalAnswerTupleCallback()
+{
+}
+
+BaseModelGenerator::
+IntegrateExternalAnswerIntoInterpretationCB::
+IntegrateExternalAnswerIntoInterpretationCB(
+    InterpretationPtr outputi):
+  outputi(outputi),
+  reg(outputi->getRegistry()),
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+{
+}
+
+bool
+BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB::
+eatom(const ExternalAtom& eatom)
+{
+  replacement.tuple.resize(1);
+  replacement.tuple[0] = 
+    reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+
+  // never abort
+  return true;
+}
+
+// remembers input
+bool
+BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB::
+input(const Tuple& input)
+{
+  assert(replacement.tuple.size() >= 1);
+  // shorten
+  replacement.tuple.resize(1);
+  // add
+  replacement.tuple.insert(replacement.tuple.end(),
+      input.begin(), input.end());
+
+  // never abort
+  return true;
+}
+
+// creates replacement ogatom and activates respective bit in output interpretation
+bool
+BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB::
+output(const Tuple& output)
+{
+  assert(replacement.tuple.size() >= 1);
+  // add, but remember size to reset it later
+  unsigned size = replacement.tuple.size();
+  replacement.tuple.insert(replacement.tuple.end(),
+      output.begin(), output.end());
+
+  // this replacement might already exists
+  LOG(DBG,"integrating eatom tuple " << printrange(replacement.tuple));
+  ID idreplacement = reg->storeOrdinaryGAtom(replacement);
+  DBGLOG(DBG,"got replacement ID " << idreplacement);
+  outputi->setFact(idreplacement.address);
+  DBGLOG(DBG,"output interpretation is now " << *outputi);
+
+  // shorten it, s.t. we can add the next one
+  replacement.tuple.resize(size);
+
+  // never abort
+  return true;
+}
+
 // projects input interpretation
 // calls eatom function
 // reintegrates output tuples as auxiliary atoms into outputi
 // (inputi and outputi may point to the same interpretation)
-void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
+bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   const ExternalAtom& eatom,
-  InterpretationConstPtr inputi, InterpretationPtr outputi) const
+  InterpretationConstPtr inputi,
+  ExternalAnswerTupleCallback& cb) const
 {
-  LOG_SCOPE(PLUGIN,"eEA",true);
+  LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
       " with input interpretation " << *inputi);
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
@@ -71,42 +141,90 @@ void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
     projectEAtomInputInterpretation(reg, eatom, inputi);
-  LOG(DBG,"projected eatom input interpretation = " << *eatominp);
 
   // build input tuples
   std::list<Tuple> inputs;
   buildEAtomInputTuples(reg, eatom, inputi, inputs);
-  #ifndef NDEBUG
+
+  if( Logger::Instance().shallPrint(Logger::PLUGIN) )
   {
-    DBGLOG(DBG,"eatom input tuples:");
-    DBGLOG_INDENT(DBG);
+    LOG(PLUGIN,"eatom input tuples = ");
+    LOG_INDENT(PLUGIN);
     BOOST_FOREACH(const Tuple& t, inputs)
     {
       std::stringstream s;
       RawPrinter printer(s, reg);
       s << "[";
       printer.printmany(t,",");
-      s << "]";
-      DBGLOG(DBG,s.str());
+      s << "] ";
+      LOG(PLUGIN,s.str());
+    }
+    {
+      std::stringstream s;
+      RawPrinter printer(s, reg);
+      s << "(";
+      printer.printmany(eatom.tuple,",");
+      s << ")";
+      LOG(PLUGIN,"eatom output pattern = " << s.str());
+    }
+    LOG(PLUGIN,"projected eatom input interpretation = " << *eatominp);
+  }
+
+  // call callback and abort if requested
+  if( !inputs.empty() )
+  {
+    if( !cb.eatom(eatom) )
+    {
+      LOG(DBG,"callback aborted for eatom " << eatom);
+      return false;
     }
   }
-  #endif
 
   // go over all ground input tuples as grounded by auxiliary inputs rule
   BOOST_FOREACH(const Tuple& inputtuple, inputs)
   {
+    #ifndef NDEBUG
+    std::string sinput;
+    {
+      std::stringstream s;
+      RawPrinter printer(s, reg);
+      s << "[";
+      printer.printmany(inputtuple,",");
+      s << "]";
+      sinput = s.str();
+    }
+    DBGLOG(DBG,"processing input tuple " << sinput << " = " << printrange(inputtuple));
+    #endif
+
     // query
     PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
     PluginAtom::Answer answer;
     pluginAtom->retrieveCached(query, answer);
-    LOG(PLUGIN,"got " << answer.get().size() << " answer tuples" <<
-        " from querying " << eatom.predicate <<
-        " with input tuple " << printrange(inputtuple));
+    LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
-    DLVHEX_BENCHMARK_START(sidier);
+    if( !answer.get().empty() )
+    {
+      if( !cb.input(inputtuple) )
+      {
+        LOG(DBG,"callback aborted for input tuple " << printrange(inputtuple));
+        return false;
+      }
+    }
+
+    DLVHEX_BENCHMARK_SCOPE(sidier);
+
     // integrate result into interpretation
     BOOST_FOREACH(const Tuple& t, answer.get())
     {
+      if( Logger::Instance().shallPrint(Logger::PLUGIN) )
+      {
+        std::stringstream s;
+        RawPrinter printer(s, reg);
+        s << "(";
+        printer.printmany(t,",");
+        s << ")";
+        LOG(PLUGIN,"got answer tuple " << s.str());
+      }
       if( !verifyEAtomAnswerTuple(reg, eatom, t) )
       {
         LOG(WARNING,"external atom " << eatom << " returned tuple " <<
@@ -114,41 +232,34 @@ void BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
         continue;
       }
 
-      // create replacement atom for each tuple
-      OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
-
-      // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
-      replacement.tuple.push_back(
-          reg->getAuxiliaryConstantSymbol('r', eatom.predicate));
-      replacement.tuple.insert(replacement.tuple.end(),
-          inputtuple.begin(), inputtuple.end());
-      replacement.tuple.insert(replacement.tuple.end(),
-          t.begin(), t.end());
-
-      // this replacement might already exists
-      LOG(DBG,"integrating external answer tuple " << printrange(t));
-      ID idreplacement = reg->storeOrdinaryGAtom(replacement);
-      DBGLOG(DBG,"got replacement ID " << idreplacement);
-      outputi->setFact(idreplacement.address);
+      // call callback and abort if requested
+      if( !cb.output(t) )
+      {
+        LOG(DBG,"callback aborted for output tuple " << printrange(t));
+        return false;
+      }
     }
-    DLVHEX_BENCHMARK_STOP(sidier);
-
-    DBGLOG(DBG,"output interpretation is now " << *outputi);
   } // go over all input tuples of this eatom
-  DBGLOG(DBG,"interpretation after all input tuples is " << *outputi);
+
+  return true;
 }
 
 // calls evaluateExternalAtom for each atom in eatoms
-void BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
+bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
   const std::vector<ID>& eatoms,
-  InterpretationConstPtr inputi, InterpretationPtr outputi) const
+  InterpretationConstPtr inputi,
+  ExternalAnswerTupleCallback& cb) const
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {
     const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-    evaluateExternalAtom(reg, eatom, inputi, outputi);
+    if( !evaluateExternalAtom(reg, eatom, inputi, cb) )
+    {
+      LOG(DBG,"callbacks aborted evaluateExternalAtoms");
+      return false;
+    }
   }
+  return true;
 }
 
 // returns false iff tuple does not unify with eatom output pattern
@@ -314,7 +425,10 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
 ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
 {
   if( !ruleid.doesRuleContainExtatoms() )
+  {
+    DBGLOG(DBG,"not converting rule " << ruleid << " (does not contain extatoms)");
     return ruleid;
+  }
 
   // we need to rewrite
   const Rule& rule = reg->rules.getByID(ruleid);

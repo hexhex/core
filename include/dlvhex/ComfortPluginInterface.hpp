@@ -76,8 +76,16 @@ struct ComfortTerm:
   static ComfortTerm createInteger(int i)
     { return ComfortTerm(INT, "", i); }
 
+  // equality
+  inline bool operator==(const ComfortTerm& other) const
+    { return
+        (type == other.type) &&
+        (type == STR || intval == other.intval) &&
+        (type == INT || strval == other.strval); }
+  inline bool operator!=(const ComfortTerm& other) const
+    { return !operator==(other); }
   // comparability (for putting ComfortTerm into sets)
-  bool operator<(const ComfortTerm& other) const
+  inline bool operator<(const ComfortTerm& other) const
     { return
         (type < other.type) ||
         (type == STR && other.type == STR && strval < other.strval) ||
@@ -110,6 +118,13 @@ struct ComfortAtom:
 
   // non-virtual (see Printhelpers.hpp)
   std::ostream& print(std::ostream& o) const;
+
+  inline const std::string& getPredicate() const
+    { assert(!tuple.empty() && !tuple.front().isInteger());
+      return tuple.front().strval; }
+  // TODO implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity, isStrongNegated
+
+  bool unifiesWith(const ComfortAtom& other) const;
 
 protected:
   mutable std::string strval;
@@ -186,7 +201,7 @@ public:
 
 protected:
   // we implemented the original retrieve here, so you don't have to take care of this anymore
-  virtual void retrieve(const Query&, Answer&);
+  virtual void retrieve(const Query& q, Answer& a);
 };
 
 DLVHEX_NAMESPACE_END

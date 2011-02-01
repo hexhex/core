@@ -35,9 +35,12 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/Benchmarking.h"
+
+#include <bm/bmalgo.h>
 
 #include <boost/foreach.hpp>
 
@@ -87,7 +90,8 @@ void createEatomGuessingRules(
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
     std::vector<ID>& gidb,
-    PredicateMask& gmask);
+    PredicateMask& gpmask,
+    PredicateMask& gnmask);
 
 void createFLPRules(
     RegistryPtr reg,
@@ -109,7 +113,8 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // (and there is quite some room for more optimization)
 
   RegistryPtr reg = ctx.registry();
-  gMask.setRegistry(reg);
+  gpMask.setRegistry(reg);
+  gnMask.setRegistry(reg);
   fMask.setRegistry(reg);
 
   outerEatoms = ci.outerEatoms;
@@ -122,7 +127,7 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gMask);
+  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gpMask, gnMask);
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
@@ -139,10 +144,15 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // transform xidb for flp calculation
   createFLPRules(reg, xidb, xidbflphead, xidbflpbody, fMask);
 
-  DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():")
+  DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():");
   #ifndef NDEBUG
-  // verbose output
-  print(Logger::Instance().stream(), true);
+  {
+    DBGLOG_INDENT(DBG);
+    // verbose output
+    std::stringstream s;
+    print(s, true);
+    DBGLOG(DBG,s.str());
+  }
   #endif
 }
 
@@ -162,8 +172,14 @@ void createEatomGuessingRules(
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
     std::vector<ID>& gidb,
-    PredicateMask& gmask)
+    PredicateMask& gpmask,
+    PredicateMask& gnmask)
 {
+  #warning TODO skip eatoms that are not internal ones?
+  #ifndef NDEBUG
+  std::set<ID> innerEatomsSet(innerEatoms.begin(), innerEatoms.end());
+  #endif
+
   DBGLOG_SCOPE(DBG,"cEAGR",false);
   BOOST_FOREACH(ID rid, idb)
   {
@@ -180,7 +196,12 @@ void createEatomGuessingRules(
       if( !lit.isExternalAtom() )
         continue;
 
-      #warning TODO skip eatoms that are not internal ones
+      #ifndef NDEBUG
+      if( innerEatomsSet.count(ID::atomFromLiteral(lit)) )
+      {
+        LOG(WARNING,"TODO processing external atom that is not an inner eatom for guessing!");
+      }
+      #endif
 
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
@@ -195,7 +216,8 @@ void createEatomGuessingRules(
       ID pospredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
       ID negpredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
       replacement.tuple.push_back(pospredicate);
-      gmask.addPredicate(pospredicate);
+      gpmask.addPredicate(pospredicate);
+      gnmask.addPredicate(negpredicate);
 
       // build (nonground) replacement and harvest all variables
       std::set<ID> variables;
@@ -282,8 +304,12 @@ void createEatomGuessingRules(
       ID gid = reg->rules.storeAndGetID(guessingrule);
       DBGLOG(DBG,"stored guessingrule " << guessingrule << " which got id " << gid);
       #ifndef NDEBUG
-      RawPrinter p(Logger::Instance().stream(), reg);
-      p.print(gid);
+      {
+        std::stringstream s;
+        RawPrinter p(s, reg);
+        p.print(gid);
+        DBGLOG(DBG,"  " << s.str());
+      }
       #endif
       gidb.push_back(gid);
     }
@@ -293,6 +319,7 @@ void createEatomGuessingRules(
 /**
  * for each rule in xidb
  * * keep constraints: copy ID to xidbflphead and xidbflpbody
+ * * keep disjunctive facts: copy ID to xidbflphead and xidbflpbody
  * * for all others:
  * * collect all variables in the body (which means also all variables in the head)
  * * create ground or nonground flp replacement atom containing all variables
@@ -309,17 +336,17 @@ void createFLPRules(
   DBGLOG_SCOPE(DBG,"cFLPR",false);
   BOOST_FOREACH(ID rid, xidb)
   {
-    if( rid.isConstraint() )
+    const Rule& r = reg->rules.getByID(rid);
+    DBGLOG(DBG,"processing rule " << rid << " " << r);
+    if( rid.isConstraint() ||
+        r.body.empty() )
     {
-      // keep constraints as they are, they cannot hurt minimality
+      // keep constraints and disjunctive facts as they are
       xidbflphead.push_back(rid);
       xidbflpbody.push_back(rid);
     }
     else if( rid.isRegularRule() )
     {
-      const Rule& r = reg->rules.getByID(rid);
-      DBGLOG(DBG,"processing rule " << rid << " " << r);
-
       // collect all variables
       std::set<ID> variables;
       BOOST_FOREACH(ID lit, r.body)
@@ -391,11 +418,16 @@ void createFLPRules(
       xidbflpbody.push_back(fbodyrid);
 
       #ifndef NDEBUG
-      RawPrinter p(Logger::Instance().stream(), reg);
-      DBGLOG(DBG,"stored flphead rule " << rflphead << " which got id " << fheadrid);
-      p.print(fheadrid);
-      DBGLOG(DBG,"stored flpbody rule " << rflpbody << " which got id " << fbodyrid);
-      p.print(fbodyrid);
+      {
+        std::stringstream s;
+        RawPrinter p(s, reg);
+        p.print(fheadrid);
+        s << " and ";
+        p.print(fbodyrid);
+        DBGLOG(DBG,"stored flphead rule " << rflphead << " which got id " << fheadrid);
+        DBGLOG(DBG,"stored flpbody rule " << rflpbody << " which got id " << fbodyrid);
+        DBGLOG(DBG,"rules are " << s.str());
+      }
       #endif
     }
     else
@@ -479,6 +511,135 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
 {
 }
 
+namespace
+{
+
+// for usual model building where we want to collect all true answers
+// as replacement atoms in an interpretation
+struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
+  public BaseModelGenerator::ExternalAnswerTupleCallback
+{
+  VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+      InterpretationPtr guess_pos,
+      InterpretationPtr guess_neg);
+  virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
+  // remembers eatom and prepares replacement.tuple[0]
+  virtual bool eatom(const ExternalAtom& eatom);
+  // remembers input
+  virtual bool input(const Tuple& input);
+  // creates replacement ogatom and activates respective bit in output interpretation
+  virtual bool output(const Tuple& output);
+protected:
+  RegistryPtr reg;
+  InterpretationPtr guess_pos, guess_neg;
+  ID pospred, negpred;
+  OrdinaryAtom replacement;
+};
+
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+    InterpretationPtr _guess_pos,
+    InterpretationPtr _guess_neg):
+  reg(_guess_pos->getRegistry()),
+  guess_pos(_guess_pos),
+  guess_neg(_guess_neg),
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+{
+  assert(guess_pos->getRegistry() == guess_neg->getRegistry());
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+eatom(const ExternalAtom& eatom)
+{
+  pospred = 
+    reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+  negpred =
+    reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+  replacement.tuple.resize(1);
+
+  // never abort
+  return true;
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+input(const Tuple& input)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // shorten
+  replacement.tuple.resize(1);
+
+  // add
+  replacement.tuple.insert(replacement.tuple.end(),
+      input.begin(), input.end());
+
+  // never abort
+  return true;
+}
+
+bool
+VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
+output(const Tuple& output)
+{
+  assert(replacement.tuple.size() >= 1);
+
+  // add, but remember size to reset it later
+  unsigned size = replacement.tuple.size();
+  replacement.tuple.insert(replacement.tuple.end(),
+      output.begin(), output.end());
+
+  // build pos replacement, register, and clear the corresponding bit in guess_pos
+  replacement.tuple[0] = pospred;
+  ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
+  DBGLOG(DBG,"positive replacement ID = " << idreplacement_pos);
+  if( !guess_pos->getFact(idreplacement_pos.address) )
+  {
+    // check whether neg is true, if yes we bailout
+    replacement.tuple[0] = negpred;
+    ID idreplacement_neg = reg->ogatoms.getIDByTuple(replacement.tuple);
+    if( idreplacement_neg == ID_FAIL )
+    {
+      // this is ok, the negative replacement does not exist so it cannot be true
+      DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+    }
+    else
+    {
+      // verify if it is true or not
+      if( guess_neg->getFact(idreplacement_neg.address) == true )
+      {
+        // this is bad, the guess was "false" but it is "true"
+        // -> abort
+
+        // (we now that we won't reuse replacement.tuple,
+        //  so we do not care about resizing it here)
+        return false;
+      }
+      else
+      {
+        // this is ok, the negative replacement exists but is not true
+        DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+      }
+    }
+  }
+  else
+  {
+    // remove this bit, so later we can check if all bits were cleared
+    // (i.e., if all positive guesses were confirmed)
+    guess_pos->clearFact(idreplacement_pos.address);
+    DBGLOG(DBG,"clearing replacement fact -> positive guess interpretation is now " << *guess_pos);
+  }
+
+  // shorten it, s.t. we can add the next one
+  replacement.tuple.resize(size);
+
+  // do not abort if we reach here
+  return true;
+}
+
+} // anonymous namespace
+
 // generate and return next model, return null after last model
 // see description of algorithm on top of this file
 InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
@@ -503,15 +664,20 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     }
 
     // augment input with edb
+    #warning perhaps we can pass multiple partially preprocessed input edb's to the external solver and save a lot of processing here
     postprocessedInput->add(*factory.ctx.edb);
+
+    // remember which facts we must remove
+    InterpretationConstPtr mask(new Interpretation(*postprocessedInput));
 
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
     {
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
+      IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
       evaluateExternalAtoms(reg,
-          factory.outerEatoms, postprocessedInput, postprocessedInput);
+          factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -528,46 +694,211 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     ASPSolverManager::ResultsPtr guessres;
     {
       DBGLOG(DBG,"evaluating guessing program");
+      // no mask
       ASPProgram program(reg,
           factory.xgidb, postprocessedInput, factory.ctx.maxint);
       ASPSolverManager mgr;
       guessres = mgr.solve(*factory.externalEvalConfig, program);
     }
 
+    // store good models here
+    // but we have to ensure minimality later
+    typedef std::list<InterpretationPtr> CandidateList;
+    CandidateList candidates;
     do
     {
       AnswerSetPtr guessas = guessres->getNextAnswerSet();
       if( !guessas )
         break;
       InterpretationPtr guessint = guessas->interpretation;
-      DBGLOG(DBG,"got guess model " << *guessint);
 
-      // project to eatoms for validation
-      factory.gMask.updateMask();
-      InterpretationPtr projint(new Interpretation(reg));
-      projint->getStorage() =
-        guessint->getStorage() & factory.gMask.mask()->getStorage();
-      DBGLOG(DBG,"projected guess: " << *projint);
+      DBGLOG_SCOPE(DBG,"gM", false);
+      DBGLOG(DBG,"= got guess model " << *guessint);
+
+      // project to pos and neg eatom replacements for validation
+
+      factory.gpMask.updateMask();
+      InterpretationPtr projint_pos(new Interpretation(reg));
+      projint_pos->getStorage() =
+        guessint->getStorage() & factory.gpMask.mask()->getStorage();
+      DBGLOG(DBG,"projected positive guess: " << *projint_pos);
+
+      factory.gnMask.updateMask();
+      InterpretationPtr projint_neg(new Interpretation(reg));
+      projint_neg->getStorage() =
+        guessint->getStorage() & factory.gnMask.mask()->getStorage();
+      DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
       // verify whether correct eatoms where guessed true
-      InterpretationPtr validateint(new Interpretation(reg));
-      evaluateExternalAtoms(
-          reg, factory.innerEatoms, guessint, validateint);
-      DBGLOG(DBG,"validation interpretation: " << *validateint);
+      // this callback checks if a positive eatom result was guessed as negative
+      // -> in this case it aborts
+      // this callback resets all positive bits it encounters
+      // -> if the positive interpretation is all-zeroes at the end,
+      //    the guess was correct
+      VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
+          projint_pos, projint_neg);
+      // we might need edb facts here
+      // (dependencies to edb are not modelled in the dependency graph)
+      // therefore we did not mask the guess program before
+      bool aborted = !evaluateExternalAtoms(
+          reg, factory.innerEatoms, guessint, cb);
 
-      if( !(*projint == *validateint) )
+      if( aborted )
       {
-        DBGLOG(DBG,"discarding guess " << *projint);
+        DBGLOG(DBG,"discarding guess as verifier aborted for neg guess " << *projint_neg);
+        continue;
+      }
+      if( projint_pos->getStorage().count() != 0 )
+      {
+        DBGLOG(DBG,"discarding guess due to unconfirmed positive guesses " << *projint_pos);
         continue;
       }
 
-      LOG(MODELB,"external atom guess " << *projint << " successfully validated, will now check FLP model property");
+      LOG(MODELB,"external atom guess " << *projint_pos << " successfully validated, will now check FLP model property");
 
+      // remove negative guess bits
+      // (we don't need them, removing them speeds up
+      // communication with external solver)
+      guessint->getStorage() -= projint_neg->getStorage();
 
-      #warning TODO here
+      /*
+       * see documentation at top: FLP check
+       * * evaluate edb + xidbflphead + M
+       *   -> yields singleton answer set containing flp heads F for non-blocked rules
+       *   (if there is no result answer set, some constraint fired and M can be discarded)
+       * * evaluate edb + xidbflpbody + (M \cap pos_guess_auxiliaries) + F
+       *   -> yields singleton answer set M' (we ignore input facts)
+       *   (there must be an answer set, or something went wrong)
+       * * if M' == M (ignoring input facts "edb \cup pos_guess_auxiliaries \cup flpheads")
+       *   then M is a model of the FLP reduct
+       *   -> store as candidate
+       */
 
+      // evaluate xidbflphead+guessint(contains edb and preprocessed eatoms)
+      ASPSolverManager::ResultsPtr flpheadres;
+      {
+        DBGLOG(DBG,"evaluating flp head program");
+
+        // here we can mask, we won't lose FLP heads
+        ASPProgram program(reg,
+            factory.xidbflphead, guessint, factory.ctx.maxint, mask);
+        ASPSolverManager mgr;
+        flpheadres = mgr.solve(*factory.externalEvalConfig, program);
+      }
+
+      AnswerSetPtr flpas = flpheadres->getNextAnswerSet();
+      if( !flpas )
+      {
+        LOG(MODELB,"FLP head program yielded no answer set");
+        continue;
+      }
+      InterpretationPtr flpint = flpas->interpretation;
+
+      DBGLOG(DBG,"got FLP head model " << *flpint);
+
+      // evaluate xidbflpbody+edb+flp+eatomguess
+      ASPSolverManager::ResultsPtr flpbodyres;
+      {
+        DBGLOG(DBG,"evaluating flp body program");
+
+        // build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
+        Interpretation::Ptr edbflpguess(new Interpretation(*guessint));
+        edbflpguess->getStorage() &=
+          (flpint->getStorage() | factory.gpMask.mask()->getStorage());
+
+        // here we can also mask, this eliminates many equal bits for comparisons later
+        ASPProgram program(reg,
+            factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
+        ASPSolverManager mgr;
+        flpbodyres = mgr.solve(*factory.externalEvalConfig, program);
+      }
+
+      // for comparing the flpbody answer sets we mask the guess interpretation
+      guessint->getStorage() -= mask->getStorage();
+                              //factory.gpMask.mask()->getStorage();
+                              //guessint->getStorage() -= factory.ctx.edb->getStorage();
+                              // this was already done above (using projint_neg) so no need to do it again
+                              // guessint->getStorage() -= factory.gnMask->getStorage();
+
+      DBGLOG(DBG,"comparing xidbflpbody answer sets with guess interpretation " << *guessint);
+      AnswerSetPtr flpbodyas = flpbodyres->getNextAnswerSet();
+      while(flpbodyas)
+      {
+        InterpretationPtr flpbodyint = flpbodyas->interpretation;
+
+                      // now we make sure nothing from EDB is left in flpbodyint
+                      // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+                      // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+                      //flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+
+        DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyint);
+        if( flpbodyint->getStorage() == guessint->getStorage() )
+        {
+          candidates.push_back(guessint);
+          LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
+          // we found one -> no need to check for more
+          break;
+        }
+        else
+        {
+          LOG(MODELB,"this FLP body model is not equal to guess interpretation -> continuing check");
+        }
+        flpbodyas = flpbodyres->getNextAnswerSet();
+      }
     }
     while(true);
+
+    if( candidates.empty() )
+    {
+      LOG(MODELB,"found no guess+FLP models -> leaving with result 'inconsistent'");
+      currentResults.reset(new PreparedResults);
+    }
+    else
+    {
+      DBGLOG(DBG,"doing model minimality check");
+
+      std::set<InterpretationPtr> erase;
+      CandidateList::iterator it;
+      for(it = candidates.begin();
+          it != candidates.end(); ++it)
+      {
+        DBGLOG(DBG,"checking with " << **it);
+        for(CandidateList::iterator itv = candidates.begin();
+            itv != candidates.end(); ++itv)
+        {
+          // do not check against self
+          if( itv == it )
+            continue;
+
+          // (do not check against those already invalidated)
+          if( erase.find(*itv) != erase.end() )
+            continue;
+
+          DBGLOG(DBG,"  does it invalidate " << **itv << "?");
+
+          // any_sub(b1, b2) checks if there is any bit in the bitset obtained by 'b1 - b2'
+          // if this is not the case, we know that 'b1 \subseteq b2'
+          if( !bm::any_sub( (*it)->getStorage(), (*itv)->getStorage() ) )
+          {
+            DBGLOG(DBG,"  yes it invalidates!");
+            erase.insert(*itv);
+          }
+        }
+      }
+      // now all that must be erased are in set 'erase'
+
+      DBGLOG(DBG,"minimal models are:");
+      PreparedResults* pr = new PreparedResults;
+      currentResults.reset(pr);
+      BOOST_FOREACH(InterpretationPtr mdl, candidates)
+      {
+        if( erase.find(mdl) == erase.end() )
+        {
+          DBGLOG(DBG,"  " << *mdl);
+          pr->add(AnswerSetPtr(new AnswerSet(mdl)));
+        }
+      }
+    }
   }
 
   assert(currentResults != 0);

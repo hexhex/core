@@ -106,6 +106,7 @@ public:
     //     unifies with one of B's head atoms -> "negativeRule"
     //   * one of A's head atoms unifies with one of B's head atoms
     //     -> "unifyingHead"
+    //     if A or B has a disjunctive head -> "disjunctive"
     // * dependency A -> B where A is a constraint and B is a regular rule:
     //   * one of A's positive body ordinary atom literals
     //     unifies with one of B's head atoms -> "positiveConstraint"
@@ -129,6 +130,7 @@ public:
     bool positiveConstraint;
     bool negativeRule;
     bool unifyingHead;
+    bool disjunctive;
     bool positiveExternal;
     bool negativeExternal;
     bool externalConstantInput;
@@ -139,6 +141,7 @@ public:
       positiveConstraint(false),
 			negativeRule(false),
 			unifyingHead(false),
+			disjunctive(false),
       positiveExternal(false),
       negativeExternal(false),
       externalConstantInput(false),
@@ -169,6 +172,8 @@ public:
   typedef Traits::in_edge_iterator SuccessorIterator;
 
 protected:
+  // the node mapping maps IDs of external atoms and rules
+  // to nodes of the dependency graph
 	struct IDTag {};
 	struct NodeMappingInfo
 	{
@@ -196,7 +201,8 @@ protected:
     ID id;
     bool inHead;
     bool inBody;
-    NodeList inHeadOfRules;
+    NodeList inHeadOfNondisjunctiveRules;
+    NodeList inHeadOfDisjunctiveRules;
     NodeList inPosBodyOfRegularRules; // only non-constraint rules
     NodeList inPosBodyOfConstraints;
     NodeList inNegBodyOfRules; // any rules
@@ -377,11 +383,14 @@ protected:
 
 DependencyGraph::Node DependencyGraph::createNode(ID id)
 {
+  DBGLOG(DBG,"creating node for ID " << id);
   Node n = boost::add_vertex(NodeInfo(id), dg);
-  NodeIDIndex::const_iterator it;
-  bool success;
-  boost::tie(it, success) = nm.insert(NodeMappingInfo(id, n));
-  assert(success);
+  {
+    NodeIDIndex::const_iterator it;
+    bool success;
+    boost::tie(it, success) = nm.insert(NodeMappingInfo(id, n));
+    assert(success);
+  }
   return n;
 }
 

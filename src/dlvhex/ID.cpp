@@ -65,7 +65,11 @@ ID ID::termFromBuiltinString(const std::string& op)
     default: assert(false); return ID_FAIL;
     }
   case 2:
-    if( op == "!=" || op == "<>" )
+    if( op == "==" )
+    {
+      return ID::termFromBuiltin(ID::TERM_BUILTIN_EQ);
+    }
+    else if( op == "!=" || op == "<>" )
     {
       return ID::termFromBuiltin(ID::TERM_BUILTIN_NE);
     }

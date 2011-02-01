@@ -36,6 +36,7 @@
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/Atoms.hpp"
 
 #include <list>
 
@@ -44,45 +45,69 @@ DLVHEX_NAMESPACE_BEGIN
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
-protected:
-  struct EmptyResults:
-    public ASPSolverManager::Results
-  {
-    EmptyResults() {}
-    virtual ~EmptyResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet() { return AnswerSet::Ptr(); }
-  };
-
-  struct SingularResults:
-    public ASPSolverManager::Results
-  {
-    SingularResults(AnswerSet::Ptr as): ASPSolverManager::Results(), ret(as) {}
-    virtual ~SingularResults() {}
-    virtual AnswerSet::Ptr getNextAnswerSet()
-      { AnswerSet::Ptr p = ret; ret.reset(); return p; };
-    AnswerSet::Ptr ret;
-  };
-
   // members
 public:
   BaseModelGenerator(InterpretationConstPtr input):
     ModelGeneratorBase<Interpretation>(input) {}
   virtual ~BaseModelGenerator() {}
 
+  // callback function object for handling external atom answer tuples
+  struct ExternalAnswerTupleCallback
+  {
+    virtual ~ExternalAnswerTupleCallback();
+    // boolean return values specifies whether to continue the process
+    // (true = continue, false = abort)
+
+    // encountering next eatom
+    virtual bool eatom(const ExternalAtom& eatom) = 0;
+    // encountering next input tuple
+    // (preceded by eatom(...))
+    virtual bool input(const Tuple& input) = 0;
+    // encountering next output tuple
+    // (preceded by input(...) even for empty input tuples)
+    virtual bool output(const Tuple& output) = 0;
+  };
+
 protected:
+  // for usual model building where we want to collect all true answers
+  // as replacement atoms in an interpretation
+  struct IntegrateExternalAnswerIntoInterpretationCB:
+    public ExternalAnswerTupleCallback
+  {
+    IntegrateExternalAnswerIntoInterpretationCB(
+        InterpretationPtr outputi);
+    virtual ~IntegrateExternalAnswerIntoInterpretationCB() {}
+    // remembers eatom and prepares replacement.tuple[0]
+    virtual bool eatom(const ExternalAtom& eatom);
+    // remembers input
+    virtual bool input(const Tuple& input);
+    // creates replacement ogatom and activates respective bit in output interpretation
+    virtual bool output(const Tuple& output);
+  protected:
+    RegistryPtr reg;
+    InterpretationPtr outputi;
+    OrdinaryAtom replacement;
+  };
+
   // projects input interpretation for predicate inputs
   // calculates constant input tuples from auxiliary input predicates and from given constants
   // calls eatom function with each input tuple
   // reintegrates output tuples as auxiliary atoms into outputi
   // (inputi and outputi may point to the same interpretation)
-  virtual void evaluateExternalAtom(RegistryPtr reg,
+  //
+  // returns false if process was aborted by callback, true otherwise
+  virtual bool evaluateExternalAtom(RegistryPtr reg,
     const ExternalAtom& eatom,
-    InterpretationConstPtr inputi, InterpretationPtr outputi) const;
+    InterpretationConstPtr inputi,
+    ExternalAnswerTupleCallback& cb) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
-  virtual void evaluateExternalAtoms(RegistryPtr reg,
+  //
+  // returns false if process was aborted by callback, true otherwise
+  virtual bool evaluateExternalAtoms(RegistryPtr reg,
     const std::vector<ID>& eatoms,
-    InterpretationConstPtr inputi, InterpretationPtr outputi) const;
+    InterpretationConstPtr inputi,
+    ExternalAnswerTupleCallback& cb) const;
 
   //
   // helper methods used by evaluateExternalAtom

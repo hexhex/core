@@ -64,6 +64,8 @@ struct Registry:
   public ostream_printable<Registry>
 {
   Registry();
+  // creates a real deep copy
+  explicit Registry(const Registry& other);
   ~Registry();
 
   TermTable terms;

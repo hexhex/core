@@ -116,8 +116,9 @@ protected:
   // cache: xidb+gidb
   std::vector<ID> xgidb;
 
-  // bitmask for filtering out (positive) guessed eatom replacement predicates
-  PredicateMask gMask;
+  // bitmask for filtering out (positive and negative) guessed eatom replacement predicates
+  PredicateMask gpMask;
+  PredicateMask gnMask;
   // bitmask for filtering out FLP predicates
   PredicateMask fMask;
 

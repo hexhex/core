@@ -42,6 +42,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include <list>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -55,13 +56,15 @@ struct ASPProgram
   const std::vector<ID>& idb;
   Interpretation::ConstPtr edb;
   uint32_t maxint;
+  Interpretation::ConstPtr mask;
 
   ASPProgram(
       RegistryPtr registry,
       const std::vector<ID>& idb,
       Interpretation::ConstPtr edb,
-      uint32_t maxint = 0):
-    registry(registry), idb(idb), edb(edb), maxint(maxint) {}
+      uint32_t maxint = 0,
+      Interpretation::ConstPtr mask = Interpretation::ConstPtr()):
+    registry(registry), idb(idb), edb(edb), maxint(maxint), mask(mask) {}
 };
 
 class ASPSolverManager
@@ -176,6 +179,31 @@ public:
       std::vector<AtomSet>& result) throw (FatalError);
       */
 };
+
+// results that are not streamed but provided to be incrementally requested
+class PreparedResults:
+  public ASPSolverManager::Results
+{
+public:
+  typedef std::list<AnswerSet::Ptr> Storage;
+
+public:
+  PreparedResults(const Storage& storage);
+  PreparedResults();
+  virtual ~PreparedResults();
+
+  // add further result (this must be done before getNextAnswerSet()
+  // has been called the first time)
+  void add(AnswerSet::Ptr as);
+
+  virtual AnswerSet::Ptr getNextAnswerSet();
+
+protected:
+  Storage answersets;
+  bool resetCurrent;
+  Storage::const_iterator current;
+};
+typedef boost::shared_ptr<PreparedResults> PreparedResultsPtr;
 
 DLVHEX_NAMESPACE_END
 

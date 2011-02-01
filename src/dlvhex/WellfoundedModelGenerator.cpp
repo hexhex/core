@@ -148,12 +148,16 @@ WellfoundedModelGenerator::generateNextModel()
     // augment input with edb
     postprocessedInput->add(*factory.ctx.edb);
 
+    // remember which facts we have to remove from each output interpretation
+    InterpretationConstPtr mask(new Interpretation(*postprocessedInput));
+
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
     {
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
-      evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, postprocessedInput);
+      IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
+      evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -187,11 +191,14 @@ WellfoundedModelGenerator::generateNextModel()
       DBGLOG(DBG,"starting loop with dst" << *dst);
 
       // evaluate inner external atoms
-      evaluateExternalAtoms(reg, factory.innerEatoms, src, dst);
+      IntegrateExternalAnswerIntoInterpretationCB cb(dst);
+      evaluateExternalAtoms(reg, factory.innerEatoms, src, cb);
       DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
 
       // solve program
       {
+        // we don't use a mask here!
+        // -> we receive all facts
         ASPProgram program(reg,
             factory.xidb, dst, factory.ctx.maxint);
         ASPSolverManager mgr;
@@ -210,8 +217,8 @@ WellfoundedModelGenerator::generateNextModel()
         if( thisret2 )
           throw FatalError("got more than one model in Wellfounded model generator -> use other model generator!");
 
-        // merge in results of received interpretation
-        dst->getStorage() |= thisret1->interpretation->getStorage();
+        // cheap exchange -> thisret1 will then be free'd
+        dst->getStorage().swap(thisret1->interpretation->getStorage());
         DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
       }
 
@@ -239,7 +246,7 @@ WellfoundedModelGenerator::generateNextModel()
     if( inconsistent )
     {
       DBGLOG(DBG,"leaving loop with result 'inconsistent'");
-      currentResults.reset(new EmptyResults());
+      currentResults.reset(new PreparedResults);
     }
     else
     {
@@ -247,13 +254,14 @@ WellfoundedModelGenerator::generateNextModel()
       InterpretationPtr result = ints[0];
       DBGLOG(DBG,"leaving loop with result " << *result);
 
-      // remove postprocessedInput from result!
-      result->getStorage() -= postprocessedInput->getStorage();
+      // remove mask from result!
+      result->getStorage() -= mask->getStorage();
       DBGLOG(DBG,"after removing input facts: result is " << *result);
 
       // store as single answer set (there can only be one)
-      AnswerSetPtr as(new AnswerSet(result));
-      currentResults.reset(new SingularResults(as));
+      PreparedResults* pr = new PreparedResults;
+      currentResults.reset(pr);
+      pr->add(AnswerSetPtr(new AnswerSet(result)));
     }
   }
 

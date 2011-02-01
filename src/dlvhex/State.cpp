@@ -659,7 +659,17 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
-    throw "DumpEvalGraph not yet implemented!";
+    #warning eval graph dumping currently implemented as modified compgraph dumping!
+    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose eval graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ctx->compgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse component graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    ctx->compgraph->writeGraphViz(filet, false);
+    LOG(WARNING,"DumpEvalGraph not fully implemented!");
     #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
@@ -758,9 +768,17 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       Model m = om.get();
       InterpretationConstPtr interpretation =
         mb.getModelGraph().propsOf(m).interpretation;
+
+      // if the program is empty, we may get a NULL interpretation
+      if( !interpretation )
+      {
+        assert(mb.getModelGraph().propsOf(m).dummy == true);
+        interpretation.reset(new Interpretation(ctx->registry()));
+      }
+
       if( ctx->config.getOption("DumpIModelGraph") )
       {
-        throw "DumpIModelGraph  not implemented!";
+        throw std::runtime_error("DumpIModelGraph  not implemented!");
         #warning TODO individual eval/model graphviz output
       }
       #ifndef NDEBUG
@@ -817,7 +835,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpModelGraph") )
   {
-    throw "DumpModelGraph  not implemented!";
+    throw std::runtime_error("DumpModelGraph  not implemented!");
     #warning TODO overall eval/model graphviz output
   }
 

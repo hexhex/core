@@ -1,19 +1,14 @@
 ../builtin_safety2.hex builtin_safety2.out
 ../simple1.hex simple1.out
-../weak1.hex weak1.out -a
-../weak1.hex weak1r.out -ra
-../weak2.hex weak2.out -a
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
-../notwellfounded1.hex notwellfounded1.out --nofacts
+../notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
+../notwellfounded1.hex notwellfounded1_withfacts.out
 ../notwellfounded2.hex notwellfounded2.out --nofacts
 ../maxint.hex maxint.out
 ../tertop.hex tertop.out
-../namespace1.hex namespace1.out
-../namespace2.hex namespace2.out
 ../agg1.hex agg1.out
 ../agg2.hex agg2.out
-../msp.hex msp.out -a
 ../3col.hex 3col.out
 ../equality.hex equality.out
 ../extatom1.hex extatom1.out
@@ -21,6 +16,7 @@
 ../extatom4.hex extatom4.out
 ../extatom5.hex extatom5.out
 ../extatom6.hex extatom6.out
+../extatom7.hex extatom7.out --nofacts
 ../extatom9.hex extatom9.out
 ../percentparser.hex percentparser.out
 ../empty.hex empty.out
