@@ -210,27 +210,25 @@ AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
 if test "x${with_libclingo_support}" = xtrue; then
 	# #define in config.h <- config.h.in
 	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
+  if test "x${GRINGO_TRUNK_DIR}" = "x"; then
+    AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
+  fi
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
-# (at the moment we rely on the user to correctly give CPPFLAGS and LDFLAGS)
-#
-#libclingo env (currently must be provided by the user!):
-#	GRINGO_TRUNK_DIR=/home/staff/ps/Documents/clasp/trunk/gringo
-# LDFLAGS= 
-#  -L$(GRINGO_TRUNK_DIR)/build/release/lib/
-# CPPFLAGS=
-#	 -I$(GRINGO_TRUNK_DIR)/libprogram_opts/ \
-#  -I$(GRINGO_TRUNK_DIR)/libgringo/ \
-#  -I$(GRINGO_TRUNK_DIR)/libclasp/ \
-#  -I$(GRINGO_TRUNK_DIR)/app/
+# (at the moment we rely on the user to correctly give GRINGO_TRUNK_DIR)
 
 if test "x${extsolver_found}" = xfalse; then
   AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
 fi
+
+AC_SUBST(EXTSOLVER_CPPFLAGS)
+AC_SUBST(EXTSOLVER_LDFLAGS)
+AC_SUBST(EXTSOLVER_LIBS)
 
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 

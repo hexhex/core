@@ -6,6 +6,7 @@ AM_CPPFLAGS = \
     $(BOOST_CPPFLAGS) \
     $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
+    $(EXTSOLVER_CPPFLAGS) \
     @INCLTDL@ \
     @LIBCURL_CPPFLAGS@
 
@@ -31,7 +32,7 @@ dlvhex_LDFLAGS = -export-dynamic
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la
+dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
