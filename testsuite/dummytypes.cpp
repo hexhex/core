@@ -30,6 +30,8 @@
 
 #include "dummytypes.hpp"
 
+using namespace dlvhex;
+
 TestModelGeneratorFactory::ModelGenerator::ModelGenerator(
     InterpretationConstPtr input,
     TestModelGeneratorFactory& factory):
