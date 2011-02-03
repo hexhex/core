@@ -224,13 +224,13 @@ struct TestEvalUnitPropertyBase:
 	TestProgramCtx ctx;
 
   TestEvalUnitPropertyBase():
-		EvalUnitProjectionProperties(),
-		EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
+		dlvhex::EvalUnitProjectionProperties(),
+		dlvhex::EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
 		ctx("unset")
 	{ }
   TestEvalUnitPropertyBase(const std::string& rules):
-		EvalUnitProjectionProperties(),
-		EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
+		dlvhex::EvalUnitProjectionProperties(),
+		dlvhex::EvalUnitModelGeneratorFactoryProperties<TestInterpretation>(),
 		ctx(rules)
 	{ }
 };

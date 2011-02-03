@@ -200,7 +200,14 @@ fi
 
 #
 # libclingo
-# (try to use if specified, user has to take care that it can be found by setting LDFLAGS, CPPFLAGS)
+#
+# use GRINGO_TRUNK_DIR to specify the environment
+#
+# build the potassco/trunk/gringo/ repository without lua and without luasql
+# and with the same boost library as dlvhex
+#
+# you might need to hack CMakeLists.txt to accept your boost version
+# you need to hack Makefile to deactivate lua and luasql
 #
 AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
   [with_libclingo_support=true],
@@ -213,7 +220,7 @@ if test "x${with_libclingo_support}" = xtrue; then
   if test "x${GRINGO_TRUNK_DIR}" = "x"; then
     AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
   fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -llua -lprogram_opts -lsqlite3"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"

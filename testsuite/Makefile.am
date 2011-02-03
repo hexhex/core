@@ -3,7 +3,7 @@ SUBDIRS = benchgen olddlvhex_perfplugins
 EXTRA_DIST = run-dlvhex-tests.sh answerset_compare.py
 
 # global preprocessor flags
-AM_CPPFLAGS = \
+AM_CXXFLAGS = \
     -I$(top_srcdir)/include \
     $(BOOST_CPPFLAGS) \
     $(BM_CPPFLAGS) \
@@ -64,10 +64,10 @@ libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
 TestTestPluginStatic_SOURCES = TestPlugin.cpp $(top_srcdir)/src/dlvhex/dlvhex.cpp 
 TestTestPluginStatic_LDADD = \
+  $(top_builddir)/src/dlvhex/libdlvhexbase.la $(top_builddir)/src/dlvhex/libaspsolver.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
-  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ \
-  $(top_builddir)/src/dlvhex/libdlvhexbase.la $(top_builddir)/src/dlvhex/libaspsolver.la
-TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
+  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 # full debugging output
 
@@ -118,13 +118,13 @@ TestMCSIE_SOURCES = \
 	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
   $(PLAINHEXSOURCES)
 TestMCSIE_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
-TestMCSIE_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
+TestMCSIE_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
 
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
   $(PLAINHEXSOURCES)
 TestPlainHEX_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
-TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) $(AM_CPPFLAGS)
+TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/testsuite/TestEvalEndToEnd.cpp \
@@ -157,7 +157,7 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestEvalEndToEnd_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ 
-TestEvalEndToEnd_CPPFLAGS = $(AM_CPPFLAGS) $(EXTSOLVER_CPPFLAGS) 
+TestEvalEndToEnd_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestASPSolver_SOURCES = \
 	$(top_srcdir)/testsuite/TestASPSolver.cpp \
@@ -181,7 +181,7 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestASPSolver_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
-TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)$(AM_CPPFLAGS) 
+TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = \
@@ -214,7 +214,8 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestEvalHeuristic_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestEvalHeuristic_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestEvalHeuristic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ComponentGraph.cpp \
@@ -310,7 +311,7 @@ TestPlainHEXND_CPPFLAGS = $(TestPlainHEX_CPPFLAGS) -DNDEBUG
 
 TestEvalEndToEndND_SOURCES = $(TestEvalEndToEnd_SOURCES)
 TestEvalEndToEndND_LDADD = $(TestEvalEndToEnd_LDADD)
-TestEvalEndToEndND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestEvalEndToEndND_CPPFLAGS = $(TestEvalEndToEnd_CPPFLAGS) -DNDEBUG
 
 TestASPSolverND_SOURCES = $(TestASPSolver_SOURCES)
 TestASPSolverND_LDADD = $(TestASPSolver_LDADD)
@@ -318,19 +319,19 @@ TestASPSolverND_CPPFLAGS = $(TestASPSolver_CPPFLAGS) -DNDEBUG
 
 TestEvalHeuristicND_SOURCES = $(TestEvalHeuristic_SOURCES)
 TestEvalHeuristicND_LDADD = $(TestEvalHeuristic_LDADD)
-TestEvalHeuristicND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestEvalHeuristicND_CPPFLAGS = $(TestEvalHeuristic_CPPFLAGS) -DNDEBUG
 
 TestComponentGraphND_SOURCES = $(TestComponentGraph_SOURCES)
 TestComponentGraphND_LDADD = $(TestComponentGraph_LDADD)
-TestComponentGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestComponentGraphND_CPPFLAGS = $(TestComponentGraph_CPPFLAGS) -DNDEBUG
 
 TestDependencyGraphND_SOURCES = $(TestDependencyGraph_SOURCES)
 TestDependencyGraphND_LDADD = $(TestDependencyGraph_LDADD)
-TestDependencyGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestDependencyGraphND_CPPFLAGS = $(TestDependencyGraph_CPPFLAGS) -DNDEBUG
 
 TestHexParserND_SOURCES = $(TestHexParser_SOURCES)
 TestHexParserND_LDADD = $(TestHexParser_LDADD)
-TestHexParserND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestHexParserND_CPPFLAGS = $(TestHexParser_CPPFLAGS) -DNDEBUG
 
 TestHexParserModuleND_SOURCES = $(TestHexParserModule_SOURCES)
 TestHexParserModuleND_LDADD = $(TestHexParserModule_LDADD)
@@ -338,16 +339,16 @@ TestHexParserModuleND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestTablesND_SOURCES = $(TestTables_SOURCES)
 TestTablesND_LDADD = $(TestTables_LDADD)
-TestTablesND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestTablesND_CPPFLAGS = $(TestTables_CPPFLAGS) -DNDEBUG
 
 TestModelGraphND_SOURCES = $(TestModelGraph_SOURCES)
-TestModelGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestModelGraphND_CPPFLAGS = $(TestModelGraph_CPPFLAGS) -DNDEBUG
 
 TestEvalGraphND_SOURCES = $(TestEvalGraph_SOURCES)
-TestEvalGraphND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestEvalGraphND_CPPFLAGS = $(TestEvalGraph_CPPFLAGS) -DNDEBUG
 
 TestOnlineModelBuilderND_SOURCES = $(TestOnlineModelBuilder_SOURCES)
-TestOnlineModelBuilderND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestOnlineModelBuilderND_CPPFLAGS = $(TestOnlineModelBuilder_CPPFLAGS) -DNDEBUG
 
 TestOfflineModelBuilderND_SOURCES = $(TestOfflineModelBuilder_SOURCES)
-TestOfflineModelBuilderND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestOfflineModelBuilderND_CPPFLAGS = $(TestOfflineModelBuilder_CPPFLAGS) -DNDEBUG

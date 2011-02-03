@@ -117,12 +117,12 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   LOG_REGISTRY_PROGRAM(ctx);
   
   // check some atoms (got the idea from TestHexParser.cpp)
-  ID idp = ctx.registry()->preds.getIDByString("p1.q1");
-  ID idq = ctx.registry()->preds.getIDByString("p2.q2");
-  ID idr = ctx.registry()->preds.getIDByString("p3.q3");
-  ID idb = ctx.registry()->preds.getIDByString("p1.ok");
-  ID idc = ctx.registry()->preds.getIDByString("p2.even");
-  ID idmymod = ctx.registry()->preds.getIDByString("p3.p2");
+  ID idp = ctx.registry()->preds.getIDByString("p1__q1");
+  ID idq = ctx.registry()->preds.getIDByString("p2__q2");
+  ID idr = ctx.registry()->preds.getIDByString("p3__q3");
+  ID idb = ctx.registry()->preds.getIDByString("p1__ok");
+  ID idc = ctx.registry()->preds.getIDByString("p2__even");
+  ID idmymod = ctx.registry()->preds.getIDByString("p3__p2");
   
   // the id should not fail
   BOOST_REQUIRE((idp) != ID_FAIL);
@@ -151,7 +151,6 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 }
-
 
 // test case if we call a module that is not exist
 BOOST_AUTO_TEST_CASE(testCallNotExistModule)
@@ -182,34 +181,7 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 
 }
 
-/* TODO handle this?
-// test case if the predicate inputs specified in the module header have a different arity
-// with the one in the module body
-BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader) 
-{
-  ProgramCtx ctx;
-  ctx.registry = RegistryPtr(new Registry);
 
-  std::string filename1 = "../../examples/module1-DiffArity.hex";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename1.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
-  LOG_REGISTRY_PROGRAM(ctx);
-
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
-}
-*/
 
 
 // test case if there is a predicate input in module header (is okay)
@@ -445,12 +417,40 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == false );
-/*
-  MLPSolver m(ctx);
-  m.solve();
-*/
+
+//  MLPSolver m(ctx);
+//  m.solve();
+
 }
 
+/* TODO handle this?
+// test case if the predicate inputs specified in the module header have a different arity
+// with the one in the module body
+BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader) 
+{
+  ProgramCtx ctx;
+  ctx.registry = RegistryPtr(new Registry);
+
+  std::string filename1 = "../../examples/module1-DiffArity.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  HexParser parser(ctx);
+  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == false );
+}
+*/
 
 /*
 BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) 
