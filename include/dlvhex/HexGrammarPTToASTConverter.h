@@ -110,7 +110,8 @@ private:
   // rule "aggregate"
   ID createAggregateFromAggregate(node_t& node);
   // rule "aggregate_pred"
-  ID createAggregateFromAggregatePred(node_t& node);
+  void createAggregateFromAggregatePred(node_t& node,
+      ID& predid, Tuple& vars, Tuple& atoms);
 
   // rule "terms"
   // TODO: do not return but create result in ref arg

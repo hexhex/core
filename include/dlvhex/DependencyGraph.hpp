@@ -348,14 +348,21 @@ protected:
         ID idrule,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
+      void createNodesAndIntraRuleDependenciesForRuleAddHead(
+          ID idat, const Rule& rule, Node nrule, HeadBodyHelper& hbh);
+      void createNodesAndIntraRuleDependenciesForBody(
+          ID idlit, ID idrule, const Tuple& body, Node nrule,
+          HeadBodyHelper& hbh, std::vector<ID>& createdAuxRules);
+    // this method creates an auxiliary rule for the eatom wrt a rule body (not a rule!)
+    // this way we can use the method both for grounding aggregate bodies as well as rule bodies
     void createAuxiliaryRuleIfRequired(
-        ID idrule, Node nrule, const Rule& rule,
+        const Tuple& body,
         ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
         const PluginAtomPtr& pluginAtom,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
     // create auxiliary rule head predicate (in registry) and return ID
-    ID createAuxiliaryRuleHeadPredicate(ID forRule, ID forEAtom);
+    ID createAuxiliaryRuleHeadPredicate(ID forEAtom);
     // create auxiliary rule head (in registry) and return ID
     ID createAuxiliaryRuleHead(ID idauxpred, const std::list<ID>& variables);
     // create auxiliary rule (in registry) and return ID

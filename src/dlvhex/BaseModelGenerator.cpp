@@ -419,6 +419,87 @@ void BaseModelGenerator::buildEAtomInputTuples(RegistryPtr reg,
   }
 }
 
+// rewrite all eatoms in body tuple to auxiliary replacement atoms
+// store new body into convbody
+// (works recursively for aggregate atoms,
+// will create additional "auxiliary" aggregate atoms in registry)
+void BaseModelGeneratorFactory::convertRuleBody(
+    RegistryPtr reg, const Tuple& body, Tuple& convbody)
+{
+  assert(convbody.empty());
+  for(Tuple::const_iterator itlit = body.begin();
+      itlit != body.end(); ++itlit)
+  {
+    if( itlit->isAggregateAtom() )
+    {
+      // recursively treat aggregates
+      
+      // findout if aggregate contains external atoms
+      const AggregateAtom& aatom = reg->aatoms.getByID(*itlit);
+      AggregateAtom convaatom(aatom);
+      convaatom.atoms.clear();
+      convertRuleBody(reg, aatom.atoms, convaatom.atoms);
+      if( convaatom.atoms != aatom.atoms )
+      {
+        // really create new aggregate atom
+        convaatom.kind |= ID::PROPERTY_ATOM_AUX;
+        ID newaatomid = reg->aatoms.storeAndGetID(convaatom);
+        convbody.push_back(newaatomid);
+      }
+      else
+      {
+        // use original aggregate atom
+        convbody.push_back(*itlit);
+      }
+    }
+    else if( itlit->isExternalAtom() )
+    {
+      bool naf = itlit->isNaf();
+      const ExternalAtom& eatom = reg->eatoms.getByID(
+          ID::atomFromLiteral(*itlit));
+      DBGLOG(DBG,"rewriting external atom " << eatom <<
+          " literal with id " << *itlit);
+
+      // lock weak pointer
+      assert(!eatom.pluginAtom.expired());
+      PluginAtomPtr pluginAtom(eatom.pluginAtom);
+
+      // create replacement atom
+      OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+      replacement.tuple.push_back(
+          reg->getAuxiliaryConstantSymbol('r',
+            pluginAtom->getPredicateID()));
+      replacement.tuple.insert(replacement.tuple.end(),
+          eatom.inputs.begin(), eatom.inputs.end());
+      replacement.tuple.insert(replacement.tuple.end(),
+          eatom.tuple.begin(), eatom.tuple.end());
+
+      // bit trick: replacement is ground so far, by setting one bit we make it nonground
+      bool ground = true;
+      BOOST_FOREACH(ID term, replacement.tuple)
+      {
+        if( term.isVariableTerm() )
+          ground = false;
+      }
+      if( !ground )
+        replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+
+      ID idreplacement;
+      if( ground )
+        idreplacement = reg->storeOrdinaryGAtom(replacement);
+      else
+        idreplacement = reg->storeOrdinaryNAtom(replacement);
+      DBGLOG(DBG,"adding replacement atom " << idreplacement << " as literal");
+      convbody.push_back(ID::literalFromAtom(idreplacement, naf));
+    }
+    else
+    {
+      DBGLOG(DBG,"adding original literal " << *itlit);
+      convbody.push_back(*itlit);
+    }
+  }
+}
+
 // get rule
 // rewrite all eatoms in body to auxiliary replacement atoms
 // store and return id
@@ -444,51 +525,13 @@ ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
 
   // copy it
   Rule newrule(rule);
-  for(Tuple::iterator itlit = newrule.body.begin();
-      itlit != newrule.body.end(); ++itlit)
-  {
-    if( !itlit->isExternalAtom() )
-      continue;
+  newrule.kind |= ID::PROPERTY_RULE_AUX;
+  newrule.body.clear();
 
-    bool naf = itlit->isNaf();
-    const ExternalAtom& eatom = reg->eatoms.getByID(
-        ID::atomFromLiteral(*itlit));
-    DBGLOG(DBG,"rewriting external atom " << eatom <<
-        " literal with id " << *itlit);
+  // convert (recursively in aggregates)
+  convertRuleBody(reg, rule.body, newrule.body);
 
-    // lock weak pointer
-    assert(!eatom.pluginAtom.expired());
-    PluginAtomPtr pluginAtom(eatom.pluginAtom);
-
-    // create replacement atom
-    OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
-    replacement.tuple.push_back(
-        reg->getAuxiliaryConstantSymbol('r',
-          pluginAtom->getPredicateID()));
-    replacement.tuple.insert(replacement.tuple.end(),
-        eatom.inputs.begin(), eatom.inputs.end());
-    replacement.tuple.insert(replacement.tuple.end(),
-        eatom.tuple.begin(), eatom.tuple.end());
-
-    // bit trick: replacement is ground so far, by setting one bit we make it nonground
-    bool ground = true;
-    BOOST_FOREACH(ID term, replacement.tuple)
-    {
-      if( term.isVariableTerm() )
-        ground = false;
-    }
-    if( !ground )
-      replacement.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-
-    ID idreplacement;
-    if( ground )
-      idreplacement = reg->storeOrdinaryGAtom(replacement);
-    else
-      idreplacement = reg->storeOrdinaryNAtom(replacement);
-    DBGLOG(DBG,"storing replacement atom " << idreplacement << " as literal");
-    *itlit = ID::literalFromAtom(idreplacement, naf);
-  }
-
+  // store as rule
   ID newruleid = reg->rules.storeAndGetID(newrule);
   #ifndef NDEBUG
   {

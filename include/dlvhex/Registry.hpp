@@ -144,6 +144,10 @@ struct Registry:
   inline const std::string& getTermStringByID(ID termid) const
     { return terms.getByID(termid).symbol; }
 
+  // get all external atom IDs in tuple and recursively in aggregates in tuple
+  // append these ids to second given tuple
+  void getExternalAtomsInTuple(const Tuple& t, Tuple& out) const;
+
 protected:
   struct Impl;
   boost::scoped_ptr<Impl> pimpl;

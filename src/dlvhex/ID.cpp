@@ -87,13 +87,23 @@ ID ID::termFromBuiltinString(const std::string& op)
     }
   }
   if( op == "#succ" )
-  {
-    return ID::termFromBuiltin(ID::TERM_BUILTIN_SUCC);
-  }
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_SUCC); }
   else if( op == "#int" )
-  {
-    return ID::termFromBuiltin(ID::TERM_BUILTIN_INT);
-  }
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_INT); }
+  else if( op == "#count" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT); }
+  else if( op == "#min" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGMIN); }
+  else if( op == "#max" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGMAX); }
+  else if( op == "#sum" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGSUM); }
+  else if( op == "#times" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGTIMES); }
+  else if( op == "#avg" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG); }
+  else if( op == "#any" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGANY); }
   else
   {
     assert(false);
@@ -111,19 +121,23 @@ namespace
 		"<=",
 		">",
 		">=",
-		"#sum",
-		"#count",
-		"#min",
-		"#avg",
-		"#int",
-		"#succ",
 		"*",
 		"+",
+		"#count",
+		"#min",
+		"#max",
+		"#sum",
+		"#times",
+		"#avg",
+		"#any",
+		"#int",
+		"#succ",
 	};
 }
 
 const char* ID::stringFromBuiltinTerm(IDAddress addr)
 {
+  assert(addr < (sizeof(builtinTerms)/sizeof(const char*)));
 	return builtinTerms[addr];
 }
 

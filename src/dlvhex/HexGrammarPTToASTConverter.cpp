@@ -133,17 +133,32 @@ ID HexGrammarPTToASTConverter::createTerm_Helper(
 
 namespace
 {
-  void markExternalPropertyIfExternalBody(Rule& r)
+  inline bool bodyContainsExternalAtoms(RegistryPtr registry, const Tuple& body)
   {
     // determine external atom property
-    for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
+    for(Tuple::const_iterator itt = body.begin(); itt != body.end(); ++itt)
     {
       if( itt->isExternalAtom() )
       {
-        r.kind |= ID::PROPERTY_RULE_EXTATOMS;
-        return;
+        return true;
+      }
+      else if( itt->isAggregateAtom() )
+      {
+        // check recursively within!
+        const AggregateAtom& aatom = registry->aatoms.getByID(*itt);
+        if( bodyContainsExternalAtoms(registry, aatom.atoms) )
+          return true;
       }
     }
+    return false;
+  }
+
+  void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r)
+  {
+    Tuple eatoms;
+    registry->getExternalAtomsInTuple(r.body, eatoms);
+    if( !eatoms.empty() )
+      r.kind |= ID::PROPERTY_RULE_EXTATOMS;
   }
 }
 
@@ -212,7 +227,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         //TODO: store file position in rule (it was stored for diagnostics)
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
-        markExternalPropertyIfExternalBody(r);
+        markExternalPropertyIfExternalBody(ctx.registry(), r);
         ID id = ctx.registry()->rules.storeAndGetID(r);
         ctx.idb.push_back(id);
         DBGLOG(DBG,"added rule " << r << " with id " << id << " to idb");
@@ -226,7 +241,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       r.body = createRuleBodyFromBody(child.children[1]);
-      markExternalPropertyIfExternalBody(r);
+      markExternalPropertyIfExternalBody(ctx.registry(), r);
       ID id = ctx.registry()->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       DBGLOG(DBG,"added constraint " << r << " with id " << id << " to idb");
@@ -259,7 +274,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       }
 
       r.body = createRuleBodyFromBody(child.children[1]);
-      markExternalPropertyIfExternalBody(r);
+      markExternalPropertyIfExternalBody(ctx.registry(), r);
       ID id = ctx.registry()->rules.storeAndGetID(r);
       ctx.idb.push_back(id);
       DBGLOG(DBG,"added weakconstraint " << r << " with id " << id << " to idb");
@@ -533,62 +548,73 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 
 ID HexGrammarPTToASTConverter::createAggregateFromAggregate(node_t& node)
 {
-  assert(false);
-  #if 0
+  //printSpiritPT(std::cerr, node, "AGG>>");
   assert(node.value.id() == HexGrammar::Aggregate);
 
-  AggregateAtomPtr agg;
-  Term leftTerm;
-  std::string leftComp;
-  Term rightTerm;
-  std::string rightComp;
+  AggregateAtom aatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+  ID& leftTerm = aatom.tuple[0];
+  ID& leftComp = aatom.tuple[1];
+  // aggFunc is a builtin and does not cover the whole "aggregate_pred"
+  ID& aggFunc = aatom.tuple[2];
+  ID& rightComp = aatom.tuple[3];
+  ID& rightTerm = aatom.tuple[4];
 
   node_t& child = node.children[0];
   if( child.value.id() == HexGrammar::AggregateRel )
   {
-    // binary relation between aggregate and term
+    // binary relation between aggregate and term:
+    // aggregate_rel
+    //   = (term >> aggregate_binop >> aggregate_pred)
+    //   | (aggregate_pred >> aggregate_binop >> term);
     if( child.children[0].value.id() == HexGrammar::Term )
     {
       leftTerm = createTermFromTerm(child.children[0]);
-      leftComp = createStringFromNode(child.children[1]);
-      agg = createAggregateFromAggregatePred(child.children[2]);
+      leftComp = ID::termFromBuiltinString(
+          createStringFromNode(child.children[1]));
+      createAggregateFromAggregatePred(
+          child.children[2], aggFunc, aatom.variables, aatom.atoms);
     }
     else
     {
-      agg = createAggregateFromAggregatePred(child.children[0]);
-      rightComp = createStringFromNode(child.children[1]);
+      createAggregateFromAggregatePred(
+          child.children[0], aggFunc, aatom.variables, aatom.atoms);
+      rightComp = ID::termFromBuiltinString(
+          createStringFromNode(child.children[1]));
       rightTerm = createTermFromTerm(child.children[2]);
     }
   }
   else
   {
     // aggregate is in (ternary) range between terms
+    // aggregate_range
+    //   = (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
+    //   | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
     assert(child.value.id() == HexGrammar::AggregateRange);
     leftTerm = createTermFromTerm(child.children[0]);
-    leftComp = createStringFromNode(child.children[1]);
-    agg = createAggregateFromAggregatePred(child.children[2]);
-    rightComp = createStringFromNode(child.children[3]);
+    leftComp = ID::termFromBuiltinString(
+        createStringFromNode(child.children[1]));
+    createAggregateFromAggregatePred(
+        child.children[2], aggFunc, aatom.variables, aatom.atoms);
+    rightComp = ID::termFromBuiltinString(
+        createStringFromNode(child.children[3]));
     rightTerm = createTermFromTerm(child.children[4]);
   }
-  agg->setComp(leftComp, rightComp);
-  agg->setLeftTerm(leftTerm);
-  agg->setRightTerm(rightTerm);
-  return agg;
-  #endif
+  
+  DBGLOG(DBG,"storing aggregate atom " << aatom);
+  ID aggid = ctx.registry()->aatoms.storeAndGetID(aatom);
+  DBGLOG(DBG,"stored aggregate atom " << aatom << " which got id " << aggid);
+  return aggid;
 }
 
-ID HexGrammarPTToASTConverter::createAggregateFromAggregatePred(
-    node_t& node)
+void HexGrammarPTToASTConverter::createAggregateFromAggregatePred(
+    node_t& node,
+    ID& predid, Tuple& vars, Tuple& atoms)
 {
-  assert(false);
-  #if 0
   assert(node.value.id() == HexGrammar::AggregatePred);
-  AggregateAtomPtr agg(new AggregateAtom(
-        createStringFromNode(node.children[0]),
-        createTupleFromTerms(node.children[2]),
-        createRuleBodyFromBody(node.children[4])));
-  return agg;
-  #endif
+  predid = ID::termFromBuiltinString(
+        createStringFromNode(node.children[0]));
+  vars = createTupleFromTerms(node.children[2]);
+  atoms = createRuleBodyFromBody(node.children[4]);
 }
 
 Tuple HexGrammarPTToASTConverter::createTupleFromTerms(node_t& node)
