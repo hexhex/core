@@ -1,5 +1,3 @@
-SUBDIRS = benchgen olddlvhex_perfplugins
-
 EXTRA_DIST = run-dlvhex-tests.sh answerset_compare.py
 
 # global preprocessor flags
