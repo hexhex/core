@@ -40,6 +40,7 @@
 	* deactivated namespace testcases (namespaces will be implemented as a plugin)
 	../namespace1.hex namespace1.out
 	../namespace2.hex namespace2.out
+	* Correctly implemented external atom handling in aggregates (malfunctioning in dlvhex 1.x), see also testcase agg3.hex.
 	* testsuite/answerset_compare.py: New script for real set-comparison for
 	verifying answer-sets (previously the order of answer sets mattered).
 	* testsuite/run-dlvhex-tests.sh: Likewise.

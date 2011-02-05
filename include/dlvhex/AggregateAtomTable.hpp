@@ -81,7 +81,7 @@ const AggregateAtom&
 AggregateAtomTable::getByID(
   ID id) const throw ()
 {
-	assert(id.isAtom());
+	assert(id.isAtom() || id.isLiteral());
 	assert(id.isAggregateAtom());
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok

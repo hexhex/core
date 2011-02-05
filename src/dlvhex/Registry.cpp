@@ -157,6 +157,26 @@ const OrdinaryAtom& Registry::lookupOrdinaryAtom(ID id) const
     return onatoms.getByID(id);
 }
 
+// get all external atom IDs in tuple and recursively in aggregates in tuple
+// append these ids to second given tuple
+void Registry::getExternalAtomsInTuple(
+    const Tuple& t, Tuple& out) const
+{
+  for(Tuple::const_iterator itt = t.begin(); itt != t.end(); ++itt)
+  {
+    if( itt->isExternalAtom() )
+    {
+      out.push_back(*itt);
+    }
+    else if( itt->isAggregateAtom() )
+    {
+      // check recursively within!
+      const AggregateAtom& aatom = aatoms.getByID(*itt);
+      getExternalAtomsInTuple(aatom.atoms, out);
+    }
+  }
+}
+
 namespace
 {
   // assume, that oatom.id and oatom.tuple is initialized!

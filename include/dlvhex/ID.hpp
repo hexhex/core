@@ -91,22 +91,28 @@ struct ID:
 	static const IDKind PROPERTY_ATOM_AUX      = 0x00020000;
 
   // for builtin terms, this is the address part (no table)
+  // beware: must be synchronized with isInfixBuiltin() and builtinTerms[]
   enum TermBuiltinAddress
   {
+    // first we have the infix builtins (see isInfixBuiltin)
     TERM_BUILTIN_EQ,
     TERM_BUILTIN_NE,
     TERM_BUILTIN_LT,
     TERM_BUILTIN_LE,
     TERM_BUILTIN_GT,
     TERM_BUILTIN_GE,
-    TERM_BUILTIN_AGGSUM,
-    TERM_BUILTIN_AGGCOUNT,
-    TERM_BUILTIN_AGGMIN,
-    TERM_BUILTIN_AGGAVG,
-    TERM_BUILTIN_INT,
-    TERM_BUILTIN_SUCC,
     TERM_BUILTIN_MUL,
     TERM_BUILTIN_ADD,
+    // then the prefix builtins (see isInfixBuiltin)
+    TERM_BUILTIN_AGGCOUNT,
+    TERM_BUILTIN_AGGMIN,
+    TERM_BUILTIN_AGGMAX,
+    TERM_BUILTIN_AGGSUM,
+    TERM_BUILTIN_AGGTIMES,
+    TERM_BUILTIN_AGGAVG,
+    TERM_BUILTIN_AGGANY,
+    TERM_BUILTIN_INT,
+    TERM_BUILTIN_SUCC,
   };
   
   static inline ID termFromInteger(uint32_t i)

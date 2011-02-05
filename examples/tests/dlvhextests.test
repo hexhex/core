@@ -9,6 +9,7 @@
 ../tertop.hex tertop.out
 ../agg1.hex agg1.out
 ../agg2.hex agg2.out
+../agg3.hex agg3.out --nofacts
 ../3col.hex 3col.out
 ../equality.hex equality.out
 ../extatom1.hex extatom1.out

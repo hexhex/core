@@ -80,11 +80,11 @@ public:
 
 	inline int getSize();
 
-  // get all module atoms with certain predicate id
+        // get all module atoms with certain predicate id
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
-// get range over all atoms sorted by address
+        // get range over all atoms sorted by address
         inline std::pair<AddressIterator, AddressIterator>
         getAllByAddress() const throw();
 

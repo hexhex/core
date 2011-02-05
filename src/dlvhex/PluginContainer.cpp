@@ -380,10 +380,15 @@ void PluginContainer::processOptions(
 
 // associate plugins in container to external atoms in registry
 void PluginContainer::associateExtAtomsWithPluginAtoms(
-    const std::vector<ID>& idb, bool failOnUnknownAtom)
+    const Tuple& idb, bool failOnUnknownAtom)
 {
+  DBGLOG_SCOPE(DBG,"aEAwPA",false);
+  DBGLOG(DBG,"= associateExtAtomsWithPluginAtoms");
+
+  Tuple eatoms;
+
   // associate all rules
-  for(std::vector<ID>::const_iterator it = idb.begin();
+  for(Tuple::const_iterator it = idb.begin();
       it != idb.end(); ++it)
   {
     assert(it->isRule());
@@ -393,31 +398,32 @@ void PluginContainer::associateExtAtomsWithPluginAtoms(
 
     // associate all literals in rule body
     const Rule& rule = registry->rules.getByID(*it);
-    for(Tuple::const_iterator itl = rule.body.begin();
-        itl != rule.body.end(); ++itl)
-    {
-      assert(itl->isLiteral());
-      // skip literals that are not external atoms
-      #warning aggregates may have external atoms inside!
-      if( !itl->isExternalAtom() )
-        continue;
 
-      const ExternalAtom& eatom = registry->eatoms.getByID(*itl);
-      const std::string& predicate = registry->getTermStringByID(eatom.predicate);
-      // lookup pluginAtom to this eatom predicate
-      PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
-      if( itpa != pluginAtoms.end() )
+    // get external atoms (recursively)
+    registry->getExternalAtomsInTuple(rule.body, eatoms);
+  }
+
+  // now associate
+  for(Tuple::const_iterator it = eatoms.begin();
+      it != eatoms.end(); ++it)
+  {
+    assert(it->isExternalAtom());
+
+    const ExternalAtom& eatom = registry->eatoms.getByID(*it);
+    const std::string& predicate = registry->getTermStringByID(eatom.predicate);
+    // lookup pluginAtom to this eatom predicate
+    PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
+    if( itpa != pluginAtoms.end() )
+    {
+      eatom.pluginAtom = itpa->second;
+    }
+    else
+    {
+      DBGLOG(DBG,"did not find plugin atom for predicate '" << predicate << "'");
+      if( failOnUnknownAtom )
       {
-        eatom.pluginAtom = itpa->second;
-      }
-      else
-      {
-        DBGLOG(DBG,"did not find plugin atom for predicate '" << predicate << "'");
-        if( failOnUnknownAtom )
-        {
-          throw FatalError("did not find plugin atom "
-              " for predicate '" + predicate + "'");
-        }
+        throw FatalError("did not find plugin atom "
+            " for predicate '" + predicate + "'");
       }
     }
   }

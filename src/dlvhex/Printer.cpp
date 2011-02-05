@@ -52,6 +52,14 @@ void Printer::printmany(const std::vector<ID>& ids, const std::string& separator
 	}
 }
 
+namespace
+{
+  bool isInfixBuiltin(IDAddress id)
+  {
+    return id <= ID::TERM_BUILTIN_ADD;
+  }
+}
+
 void RawPrinter::print(ID id)
 {
 	switch(id.kind & ID::MAINKIND_MASK)
@@ -74,22 +82,44 @@ void RawPrinter::print(ID id)
 				const BuiltinAtom& atom = registry->batoms.getByID(id);
 				assert(atom.tuple.size() > 1);
 				assert(atom.tuple[0].isBuiltinTerm());
-				//TODO prettier printing of builtins (infix vs prefix) (this is only a quick hack fixing only !=)
-        if( atom.tuple[0].address == ID::TERM_BUILTIN_NE )
+        if( isInfixBuiltin(atom.tuple[0].address) )
         {
-          print(atom.tuple[1]);
-          out << " ";
-          print(atom.tuple[0]);
-          out << " ";
-          print(atom.tuple[2]);
+          if( atom.tuple.size() == 3 )
+          {
+            // things like A < B
+            print(atom.tuple[1]);
+            out << " ";
+            print(atom.tuple[0]);
+            out << " ";
+            print(atom.tuple[2]);
+          }
+          else
+          {
+            // things like A = B * C
+            assert(atom.tuple.size() == 4);
+            // for ternary builtins of the form (A = B * C) tuple contains
+            // in this order: <*, B, C, A>
+            print(atom.tuple[3]);
+            out << " = ";
+            print(atom.tuple[1]);
+            out << " ";
+            print(atom.tuple[0]);
+            out << " ";
+            print(atom.tuple[2]);
+          }
         }
         else
         {
           print(atom.tuple[0]);
           out << "(";
-          //TODO make the following more efficient
-          std::vector<ID> tail(atom.tuple.begin() + 1, atom.tuple.end());
-          printmany(tail,",");
+          Tuple::const_iterator it = atom.tuple.begin() + 1;
+          print(*it);
+          it++;
+          for(; it != atom.tuple.end(); ++it)
+          {
+            out << ",";
+            print(*it);
+          }
           out << ")";
         }
 			}
@@ -97,7 +127,47 @@ void RawPrinter::print(ID id)
 		case ID::SUBKIND_ATOM_AGGREGATE:
 			{
 				const AggregateAtom& atom = registry->aatoms.getByID(id);
-				out << "TODO(AggregateAtom)";
+        assert(atom.tuple.size() == 5);
+
+        // left operator (if any)
+        if( atom.tuple[0] != ID_FAIL )
+        {
+          assert(atom.tuple[1] != ID_FAIL);
+          print(atom.tuple[0]);
+          out << " ";
+          print(atom.tuple[1]);
+          out << " ";
+        }
+        else
+        {
+          assert(atom.tuple[1] == ID_FAIL);
+        }
+
+        // aggregate predicate
+        assert(atom.tuple[2] != ID_FAIL);
+        // aggregation function
+        print(atom.tuple[2]);
+        out << " { ";
+        // variables
+        printmany(atom.variables, ",");
+        out << " : ";
+        // body
+        printmany(atom.atoms, ",");
+        out << " }";
+
+        // right operator (if any)
+        if( atom.tuple[3] != ID_FAIL )
+        {
+          assert(atom.tuple[4] != ID_FAIL);
+          out << " ";
+          print(atom.tuple[3]);
+          out << " ";
+          print(atom.tuple[4]);
+        }
+        else
+        {
+          assert(atom.tuple[4] == ID_FAIL);
+        }
 			}
 			break;
 		case ID::SUBKIND_ATOM_EXTERNAL:

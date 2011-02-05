@@ -105,6 +105,8 @@ struct BuiltinAtom:
   public Atom,
   private ostream_printable<BuiltinAtom>
 {
+  // for ternary builtins of the form (A = B * C) tuple contains
+  // in this order: <*, B, C, A>
   BuiltinAtom(IDKind kind):
     Atom(kind)
     { assert(ID(kind,0).isBuiltinAtom()); }
@@ -131,9 +133,15 @@ struct AggregateAtom:
   // atoms in conjunction of the symbolic set
   Tuple atoms;
 
-  AggregateAtom(IDKind kind, const Tuple& tuple, const Tuple& variables, const Tuple& atoms):
+  AggregateAtom(IDKind kind):
+    Atom(kind, Tuple(5, ID_FAIL)), 
+    variables(), atoms()
+    { assert(ID(kind,0).isAggregateAtom()); }
+  AggregateAtom(IDKind kind,
+      const Tuple& tuple, const Tuple& variables, const Tuple& atoms):
     Atom(kind, tuple), variables(variables), atoms(atoms)
-    { assert(ID(kind,0).isAggregateAtom()); assert(tuple.size() == 5); assert(!variables.empty()); assert(!atoms.empty()); }
+    { assert(ID(kind,0).isAggregateAtom()); assert(tuple.size() == 5);
+      assert(!variables.empty()); assert(!atoms.empty()); }
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
         printvector(variables) << " and atoms " << printvector(atoms) << ")"; }

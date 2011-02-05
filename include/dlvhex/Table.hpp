@@ -52,7 +52,7 @@ namespace impl
 	struct TextTag {}; // OrdinaryGroundAtom
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
 	struct PredicateTag {}; // ExternalAtom 
-	struct ContentTag {}; // for MLPSolver
+	struct ElementTag {}; // for MLPSolver
 }
 
 template<typename ValueT, typename IndexT>

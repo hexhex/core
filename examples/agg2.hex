@@ -7,6 +7,7 @@ c(1).
 pred(c).
 pred(d).
 
-in(X) :- &testA[P](X), pred(P).
+in(X) :- &testA[c](X).
+in(X) :- &testA[d](X).
 
 num_in(N) :- #count{ X : in(X) } = N.
