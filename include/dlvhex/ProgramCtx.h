@@ -107,10 +107,6 @@ public:
   // Interpretation::Ptr edb; // should be without this one
   std::vector<Interpretation::Ptr> edbList;
 
-  // typedef std::vector<int> intList;
-  // std::vector<intList> inputList;
-  std::vector<Tuple> inputList;
-
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 

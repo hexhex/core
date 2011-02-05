@@ -114,7 +114,7 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
   // get the predicate inputs of the module that is being called
   // ModuleHeaderTable::PredSetIndexBySequenced& predSetIndex = predInputs.get<ModuleHeaderTable::bySequenced>();
   // ModuleHeaderTable::PredSetIteratorBySequenced itp = predSetIndex.begin();
-  Tuple inputList = ctx.inputList.at(moduleCalled.inputList);
+  Tuple inputList = ctx.registry()->inputList.at(moduleCalled.inputList);
   Tuple::const_iterator itp = inputList.begin();
 
   // predArity1 = for predicate arity in module call input

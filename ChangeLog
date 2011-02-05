@@ -1,3 +1,20 @@
+2010-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: adding MLPSolver
+	* include/dlvhex/ModuleTable.hpp: Likewise
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Likewise
+	* include/dlvhex/Registry.hpp: Likewise
+	* include/dlvhex/ProgramCtx.h: Likewise
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise
+	* src/dlvhex/Registry.cpp: Likewise
+
+	* example/module1.hex: modified example for mlp
+
+	* testsuite/Makefile.am: add test case for the MLP solver
+	* testsuite/TestHexParserModule.cpp: Likewise
+	* testsuite/TestMLPSolver.cpp: Likewise
+
+
 2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ProgramCtx.h: include boost/functional/factory.hpp compiled

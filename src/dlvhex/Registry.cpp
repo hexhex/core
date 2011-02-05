@@ -121,9 +121,7 @@ Registry::~Registry()
 
 std::ostream& Registry::print(std::ostream& o) const
 {
-  return
-    o <<
-      "REGISTRY BEGIN" << std::endl <<
+  o << "REGISTRY BEGIN" << std::endl <<
       "terms:" << std::endl <<
       terms <<
       "preds:" << std::endl <<
@@ -142,9 +140,18 @@ std::ostream& Registry::print(std::ostream& o) const
       matoms <<
       "rules:" << std::endl <<
       rules <<
-      "module table:" << std::endl <<
+      "moduleTable:" << std::endl <<
       moduleTable <<
-      "REGISTRY END" << std::endl;
+      "inputList:" << std::endl;
+
+  for (int i=0;i<inputList.size();i++)
+    {
+      o << printvector(inputList.at(i)) << std::endl;
+    }
+  o << "REGISTRY END" << std::endl;
+
+  return o;
+
 }
 
 // lookup ground or nonground ordinary atoms (ID specifies this)

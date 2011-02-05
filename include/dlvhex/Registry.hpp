@@ -80,6 +80,7 @@ struct Registry:
   ModuleAtomTable matoms;
   RuleTable rules;
   ModuleTable moduleTable;
+  std::vector<Tuple> inputList;
 
 #warning namespaces
   //NamespaceTable namespaces;

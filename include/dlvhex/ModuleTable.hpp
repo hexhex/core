@@ -64,12 +64,16 @@ class ModuleTable:
 public:
   // types
   typedef Container::index<impl::AddressTag>::type AddressIndex;
+  typedef AddressIndex::iterator AddressIterator;
   typedef Container::index<impl::ModuleNameTag>::type ModuleNameIndex;
 
 // methods
 public:
   // retrieve by address
   inline const Module& getByAddress(const int& address) const throw ();
+
+  // get range over all atoms sorted by address
+  inline std::pair<AddressIterator, AddressIterator> getAllByAddress() const throw();
 
   // given a module name, look if already stored
   // if no, return MODULE_FAIL, otherwise return the module struct
@@ -81,6 +85,14 @@ public:
   inline virtual std::ostream& print(std::ostream& o) const;
 
 };
+
+// get range over all atoms sorted by address
+std::pair<ModuleTable::AddressIterator, ModuleTable::AddressIterator>
+ModuleTable::getAllByAddress() const throw()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
+}
 
 std::ostream& ModuleTable::print(std::ostream& o) const 
 {

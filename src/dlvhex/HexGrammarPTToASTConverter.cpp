@@ -63,10 +63,7 @@ void HexGrammarPTToASTConverter::convertPTToAST(
           // if at least we have already inserted one module
           if (countModule>0) 
             {
-	      // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);    
-	      // ctx.edbList.push_back(ctx.edb);
-              // ctx.idbList.push_back(ctx.idb);	    
-	      Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
+	      Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
 	      int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
 	      DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
             }
@@ -75,17 +72,9 @@ void HexGrammarPTToASTConverter::convertPTToAST(
         }
     }
   // insert for the last time
-  // ctx.mHT.insertCompleteModule(ctx.edb, ctx.idb);        
-  // ctx.edbList.push_back(ctx.edb);
-  // ctx.idbList.push_back(ctx.idb);
-  Module module(currentModuleName, ctx.inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
+  Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
   int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
   DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
-  // clean the idb and edb
-  // ctx.idb.clear();
-  // ctx.edb.reset(new Interpretation(ctx.registry));
-//  assert(mSC.insertCompleteModule()==true);
-//  assert(mSC.validateAllModuleCalls()==true);
 }
 
 // optionally assert whether node comes from certain rule
@@ -237,7 +226,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
   ctx.idbList.resize(ctx.idbList.size()+1);
 
   DBGLOG(DBG, " - Module inputs : ");
-  ctx.inputList.resize(ctx.inputList.size()+1);
+  ctx.registry()->inputList.resize(ctx.registry()->inputList.size()+1);
   if (node.children.size() == 9) 
     {
       // retrieve module inputs
@@ -252,7 +241,7 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
         DBGLOG(DBG, "'" << predName << "/" << predArity << "', ");
         //mSC.announcePredInputModuleHeader(predName, predArity);
         // ctx.mHT.insertPredInputModuleHeader(predName, predArity);
-	Tuple& el = ctx.inputList.back();
+	Tuple& el = ctx.registry()->inputList.back();
 	el.push_back(createPredFromIdent(predDecl.children[0], predArity));
       }
       DBGLOG(DBG, std::endl);
