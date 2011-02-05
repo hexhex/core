@@ -26,6 +26,7 @@ TESTS = \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
   TestHexParserModule TestHexParserModuleND \
+  TestMLPSolver TestMLPSolverND \
   TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
@@ -43,6 +44,7 @@ check_PROGRAMS =  \
   TestDependencyGraph TestDependencyGraphND \
   TestHexParser TestHexParserND \
   TestHexParserModule TestHexParserModuleND \
+  TestMLPSolver TestMLPSolverND \
   TestTables TestTablesND \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
@@ -287,6 +289,22 @@ TestHexParserModule_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Error.cpp
 TestHexParserModule_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
+TestMLPSolver_SOURCES = \
+	$(top_srcdir)/testsuite/TestMLPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/Atoms.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
+	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/Logger.cpp \
+	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/Printer.cpp \
+	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/Error.cpp
+TestMLPSolver_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+
 TestTables_SOURCES = TestTables.cpp  $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp
 TestTables_LDADD = @LIBLTDL@ @LIBADD_DL@ 
 
@@ -334,6 +352,10 @@ TestHexParserND_CPPFLAGS = $(TestHexParser_CPPFLAGS) -DNDEBUG
 TestHexParserModuleND_SOURCES = $(TestHexParserModule_SOURCES)
 TestHexParserModuleND_LDADD = $(TestHexParserModule_LDADD)
 TestHexParserModuleND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+
+TestMLPSolverND_SOURCES = $(TestMLPSolver_SOURCES)
+TestMLPSolverND_LDADD = $(TestMLPSolver_LDADD)
+TestMLPSolverND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
 
 TestTablesND_SOURCES = $(TestTables_SOURCES)
 TestTablesND_LDADD = $(TestTables_LDADD)
