@@ -1,4 +1,4 @@
-#module(p1,[q1/1]).
+#module(p1,[]).
 q1(a).
 q1(b).
 ok :- @p2[q1]::even(c).
