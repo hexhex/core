@@ -173,33 +173,26 @@ namespace
     return false;
   }
 
+  void markModulePropertyIfModuleBody(RegistryPtr registry, Rule& r)
+  {
+    // determine module atom property
+    for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
+      {
+        if( itt->isModuleAtom() )
+          {             
+            r.kind |= ID::PROPERTY_RULE_MODATOMS;
+            return;
+          }
+      }
+  }
+
   void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r)
   {
     // determine external atom property
     Tuple eatoms;
     registry->getExternalAtomsInTuple(r.body, eatoms);
     if( !eatoms.empty() )
-      {
-        r.kind |= ID::PROPERTY_RULE_EXTATOMS;
-      }
-    else 
-      {
-        // determine module atom property
-        for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
-          {/*
-            if ( itt->isExternalAtom() )
-              {
-                r.kind |= ID::PROPERTY_RULE_EXTATOMS;
-                return;
-              } 
-            else */
-            if( itt->isModuleAtom() )
-              {             
-                r.kind |= ID::PROPERTY_RULE_MODATOMS;
-               return;
-              }
-          }
-      }
+      r.kind |= ID::PROPERTY_RULE_EXTATOMS;
   }
 
 }
@@ -323,6 +316,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
         markExternalPropertyIfExternalBody(ctx.registry(), r);
+        markModulePropertyIfModuleBody(ctx.registry(), r);
         ID id = ctx.registry()->rules.storeAndGetID(r);
         // ctx.idb.push_back(id);
 	ctx.idbList.back().push_back(id);
@@ -338,6 +332,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(ctx.registry(), r);
+      markModulePropertyIfModuleBody(ctx.registry(), r);
       ID id = ctx.registry()->rules.storeAndGetID(r);
       // ctx.idb.push_back(id);
       ctx.idbList.back().push_back(id);
@@ -372,6 +367,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 
       r.body = createRuleBodyFromBody(child.children[1]);
       markExternalPropertyIfExternalBody(ctx.registry(), r);
+      markModulePropertyIfModuleBody(ctx.registry(), r);
       ID id = ctx.registry()->rules.storeAndGetID(r);
       // ctx.idb.push_back(id);
       ctx.idbList.back().push_back(id);
