@@ -42,6 +42,10 @@
 	* configure.ac: Set error-limit to 5 for clang.
 	* testsuite/Makefile.am: Likewise.
 
+2010-12-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/comments.hex: Add testcase for comment parsing.
+
 2010-11-05  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* examples/Makefile.am (EXTRA_DIST): Add minimality and
