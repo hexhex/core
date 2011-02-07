@@ -331,6 +331,63 @@ public:
   }
 };
 
+class TestEvenAtom:
+	public ComfortPluginAtom
+{
+public:
+  TestEvenAtom():
+		ComfortPluginAtom("testEven", false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(0);
+  }
+ 
+  virtual void
+  retrieve(const ComfortQuery& query, ComfortAnswer& answer)
+  {
+    // Even is true, iff input predicates hold for even individuals
+ 
+    if (query.interpretation.size() % 2 == 0)
+		{
+			// succeed by returning an empty tuple
+			answer.insert(ComfortTuple());
+		}
+    else
+		{
+			// fail by returning no tuple
+		}
+  }
+};
+ 
+class TestOddAtom:
+	public ComfortPluginAtom
+{
+public:
+  TestOddAtom():
+		ComfortPluginAtom("testOdd", false)
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(0);
+  }
+
+  virtual void
+  retrieve(const ComfortQuery& query, ComfortAnswer& answer)
+  {
+    if (query.interpretation.size() % 2 != 0)
+		{
+			// succeed by returning an empty tuple
+			answer.insert(ComfortTuple());
+		}
+    else
+		{
+			// fail by returning no tuple
+		}
+  }
+};
+
+
 class TestPlugin:
   public PluginInterface
 {
@@ -353,6 +410,8 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

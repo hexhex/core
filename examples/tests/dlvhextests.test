@@ -26,3 +26,4 @@
 ../nonmon_noloop.hex nonmon_noloop.out
 ../nonmon_inc.hex nonmon_inc.out
 ../nonmon_guess.hex nonmon_guess.out
+../minimality.hex minimality.out
