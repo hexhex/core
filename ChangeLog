@@ -86,6 +86,14 @@
 	* examples/tests/builtin_safety1.out: Likewise.
 	* examples/tests/builtin_safety2.out: Likewise.
 
+2010-10-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	Release version 1.7.2.
+
+	* configure.ac: Bump version to 1.7.2.
+
+	* NEWS: Describe changes to 1.7.2.
+
 2010-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/BoostComponentFinder.cpp: Applied the nice part of the
