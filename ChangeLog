@@ -1,7 +1,7 @@
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
 	* src/dlvhex/gdbdlvhex.sh: Shellscript to use gdb with libtool-built uninstalled binary.
 	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
-	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
+	* removed RuleMLOutputBuilder as it most probably does not work correctly and could/should be done as a plugin (info by TK)
 	* removed --reverse option as it was not implemented and not documented
 	* removed --dlt option as it should be done as a plugin
 	* renaming globals to config and removing singleton status (each ProgramCtx may have its own config if dlvhex is used as a library)

@@ -58,7 +58,6 @@
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
-#include "dlvhex/OutputBuilder.h"
 
 // other
 
