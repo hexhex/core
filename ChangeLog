@@ -37,6 +37,14 @@
 	verifying answer-sets (previously the order of answer sets mattered).
 	* testsuite/run-dlvhex-tests.sh: Likewise.
 
+2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* examples/variable_predicate_inputs.hex: Added .hex file that demonstrates
+	a foundational dependency graph deficiency in dlvhex 1.x that prohibits
+	variables for predicate inputs in dlvhex 2.x.
+
+2011-01-10  Peter Schueller  <ps@kr.tuwien.ac.at>
+
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Set error-limit to 5 for clang.
