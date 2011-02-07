@@ -3,6 +3,7 @@ EXTRA_DIST = \
     3col.hex \
     agg1.hex \
     agg2.hex \
+    agg3.hex \
     builtin_safety1.hex \
     builtin_safety2.hex \
     empty.hex \
@@ -13,6 +14,7 @@ EXTRA_DIST = \
     extatom4.hex \
     extatom5.hex \
     extatom6.hex \
+    extatom7.hex \
     extatom9.hex \
     minimality.hex \
     msp.hex \
@@ -27,11 +29,16 @@ EXTRA_DIST = \
     nonmon_noloop.hex \
     nonmon_inc.hex \
     nonmon_guess.hex \
+    notwellfounded1.hex \
+    notwellfounded2.hex \
     operators.hex \
     tertop.hex \
+    wellfounded1.hex \
+    wellfounded2.hex \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
+    tests/agg3.out \
     tests/builtin_safety1.out \
     tests/builtin_safety2.out \
     tests/empty.out \
@@ -41,6 +48,7 @@ EXTRA_DIST = \
     tests/extatom4.out \
     tests/extatom5.out \
     tests/extatom6.out \
+    tests/extatom7.out \
     tests/extatom9.out \
     tests/minimality.out \
     tests/msp.out \
@@ -56,5 +64,10 @@ EXTRA_DIST = \
     tests/nonmon_noloop.out \
     tests/nonmon_inc.out \
     tests/nonmon_guess.out \
+    tests/notwellfounded1_nofacts.out \
+    tests/notwellfounded1_withfacts.out \
+    tests/notwellfounded2.out \
     tests/operators.out \
-    tests/tertop.out
+    tests/tertop.out \
+    tests/wellfounded1.out \
+    tests/wellfounded2.out
