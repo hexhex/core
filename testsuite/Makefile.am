@@ -50,6 +50,19 @@ check_PROGRAMS =  \
 noinst_PROGRAMS = \
   TestPlainHEX TestPlainHEXND
 
+noinst_HEADERS = \
+  dummytypes.hpp \
+  graphviz.hpp \
+  fixturesMCS.hpp \
+  fixtureE1.hpp \
+  fixtureE2.hpp \
+  fixtureE2M2.hpp \
+  fixtureEx1.hpp \
+  fixturesExt1.hpp \
+  fixturesDepgraphCompgraphGeneric.hpp \
+  fixtureOfflineMB.hpp \
+  fixtureOnlineMB.hpp
+
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
 libdlvhextest_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
