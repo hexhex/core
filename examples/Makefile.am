@@ -22,6 +22,7 @@ EXTRA_DIST = \
     namespace1.hex \
     namespace2.hex \
     percentparser.hex \
+    rec_agg_bug1.hex \
     simple1.hex \
     weak1.hex \
     weak2.hex \
@@ -56,6 +57,7 @@ EXTRA_DIST = \
     tests/namespace1.out \
     tests/namespace2.out \
     tests/percentparser.out \
+    tests/rec_agg_bug1.err \
     tests/simple1.out \
     tests/weak1.out \
     tests/weak1r.out \
