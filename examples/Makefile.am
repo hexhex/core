@@ -1,5 +1,6 @@
 EXTRA_DIST = \
     tests/dlvhextests.test \
+    tests/README.txt \
     3col.hex \
     agg1.hex \
     agg2.hex \

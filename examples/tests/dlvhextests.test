@@ -1,3 +1,4 @@
+../rec_agg_bug1.hex rec_agg_bug1.err
 ../builtin_safety2.hex builtin_safety2.out
 ../simple1.hex simple1.out
 ../wellfounded1.hex wellfounded1.out --nofacts

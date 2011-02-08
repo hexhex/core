@@ -36,6 +36,8 @@
 	* testsuite/answerset_compare.py: New script for real set-comparison for
 	verifying answer-sets (previously the order of answer sets mattered).
 	* testsuite/run-dlvhex-tests.sh: Likewise.
+	* testsuite/run-dlvhex-tests.sh: Added possibility for negative testcases.
+	(See comments in trunk/run-dlvhex-tests.sh for some documentation.)
 
 2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
 
