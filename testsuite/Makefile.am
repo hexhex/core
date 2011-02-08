@@ -50,6 +50,10 @@ check_PROGRAMS =  \
 noinst_PROGRAMS = \
   TestPlainHEX TestPlainHEXND
 
+# remove .dot files produced by running check_PROGRAMS
+clean-local:
+	-rm -rf test*{Verbose,Terse}.dot
+
 noinst_HEADERS = \
   dummytypes.hpp \
   graphviz.hpp \
