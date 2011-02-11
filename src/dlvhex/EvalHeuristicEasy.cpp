@@ -306,7 +306,7 @@ void EvalHeuristicEasy::build()
   //
   {
     ComponentIterator cit = compgraph.getComponents().first;
-    do
+    while(cit != compgraph.getComponents().second)
     {
       Component comp = *cit;
       if( !compgraph.propsOf(comp).outerEatoms.empty() )
@@ -369,7 +369,6 @@ void EvalHeuristicEasy::build()
         ++cit;
       }
     }
-    while(cit != compgraph.getComponents().second);
   }
 
   //
@@ -378,7 +377,7 @@ void EvalHeuristicEasy::build()
   //
   {
     ComponentIterator cit = compgraph.getComponents().first;
-    do
+    while(cit != compgraph.getComponents().second)
     {
       Component comp = *cit;
       if( !compgraph.propsOf(comp).outerEatoms.empty() )
@@ -448,7 +447,6 @@ void EvalHeuristicEasy::build()
         ++cit;
       }
     }
-    while(cit != compgraph.getComponents().second);
   }
 
   //

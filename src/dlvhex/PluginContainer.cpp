@@ -134,7 +134,8 @@ void loadCandidates(const std::vector<std::string>& libnames, LoadedPluginVector
       t_import getplugin = reinterpret_cast<t_import>(lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING));
       if( getplugin == NULL )
       {
-        LOG(INFO,"Library '" << lib << "' selected for opening but no import function '" << PLUGINIMPORTFUNCTIONSTRING << "' (skipping)");
+        LOG(INFO,"Library '" << lib << "' selected for opening, but found no "
+          "import function '" << PLUGINIMPORTFUNCTIONSTRING << "' (skipping)");
         break;
       }
 

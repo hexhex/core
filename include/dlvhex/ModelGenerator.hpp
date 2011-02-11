@@ -26,6 +26,9 @@
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Base classes for model generators.
+ *
+ * A model generator generates models for one evaluation unit, as opposed
+ * to model builders which generate models for evaluation graphs.
  */
 
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010

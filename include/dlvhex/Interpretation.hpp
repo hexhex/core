@@ -84,7 +84,13 @@ public:
 
   RegistryPtr getRegistry() const { return registry; }
 
+  inline bool isClear() const
+    {  return bits.none();  }
+
   bool operator==(const Interpretation& other) const;
+  bool operator<(const Interpretation& other) const;
+  
+
 };
 
 typedef Interpretation::Ptr InterpretationPtr;

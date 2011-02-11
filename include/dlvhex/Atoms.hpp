@@ -223,8 +223,7 @@ public:
     { return inputMask.mask(); }
 };
 
-// this is one concrete atom in one rule
-// the general external atom functionality provided by the user is "PluginAtom"
+// module Atom structure
 struct ModuleAtom:
   public Atom,
   private ostream_printable<ModuleAtom>

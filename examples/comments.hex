@@ -1,0 +1,20 @@
+% this should work
+
+a % fact
+.
+
+a % head
+  :-
+     % body
+     b, c, d
+% done
+.
+
+% in-between comments
+a :- b,
+     % c,
+     d.
+
+p(X, % some argument
+  Y, % another one
+  Z) :- q(X,Y,Z). 

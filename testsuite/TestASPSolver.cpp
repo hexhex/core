@@ -54,6 +54,15 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
+#define LOG_REGISTRY_PROGRAM2(ctx) \
+  LOG(INFO,*ctx.registry()); \
+	RawPrinter printer2(std::cerr, ctx.registry()); \
+	std::cerr << "edb = " << *ctx.edbList.front() << std::endl; \
+	LOG(INFO,"idb"); \
+	printer2.printmany(ctx.idbList.front(),"\n"); \
+	std::cerr << std::endl; \
+	LOG(INFO,"idb end");
+
 DLVHEX_NAMESPACE_USE
 
 template<typename SolverSoftwareConfiguration>
@@ -88,6 +97,7 @@ void testSimple()
   AnswerSet::Ptr int0 = res->getNextAnswerSet();
   BOOST_REQUIRE(int0 != 0);
   LOG(INFO,"got answer set " << *int0);
+	LOG_REGISTRY_PROGRAM2(ctx);
 
   AnswerSet::Ptr int1 = res->getNextAnswerSet();
   BOOST_REQUIRE(int1 != 0);
@@ -97,14 +107,13 @@ void testSimple()
   BOOST_REQUIRE(int2 == 0);
 }
 
-
 #ifdef HAVE_DLV
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
 {
   testSimple<ASPSolver::DLVSoftware::Configuration>();
 }
 #endif
- 
+ /*
 #ifdef HAVE_DLVDB
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVDB) 
 {
@@ -125,4 +134,4 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo)
   testSimple<ASPSolver::ClingoSoftware::Configuration>();
 }
 #endif
- 
+ */

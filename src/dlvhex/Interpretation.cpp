@@ -116,4 +116,9 @@ bool Interpretation::operator==(const Interpretation& other) const
   return bits == other.bits;
 }
 
+bool Interpretation::operator<(const Interpretation& other) const
+{
+  return bits < other.bits;
+}
+
 DLVHEX_NAMESPACE_END

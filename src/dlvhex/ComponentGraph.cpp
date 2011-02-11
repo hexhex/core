@@ -734,6 +734,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
       std::stringstream ss;
       writeGraphVizComponentLabel(ss, *it, verbose);
       // escape " into \"
+      #warning TODO escape HTML < and >
       boost::algorithm::replace_all_copy(
         std::ostream_iterator<char>(o),
         ss.str(),

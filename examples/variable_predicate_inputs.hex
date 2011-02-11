@@ -1,0 +1,13 @@
+% this demonstrates that current dlvhex is unable to cope with variable predicate inputs
+% (even though this generates no error)
+
+base(seta_indirect).
+seta(u). seta(v). seta(w).
+seta_indirect(X) :- &testConcat[Y,x](X), seta(Y).
+
+setc(X) :- &testSetMinus[B,setd](X), base(B), seta(X).
+setd(Y) :- &testSetMinus[B,setc](Y), base(B), seta(Y).
+
+% the output *should* be structurally the same as in the nonmon_guess.hex testcases
+% however, dlvhex cannot find the dependency from B to seta_indirect
+% therefore a variable is passed to the plugin as input parameter

@@ -1,3 +1,7 @@
+2010-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule
+
 2010-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: adding MLPSolver
@@ -14,6 +18,15 @@
 	* testsuite/TestHexParserModule.cpp: Likewise
 	* testsuite/TestMLPSolver.cpp: Likewise
 
+2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* examples/variable_predicate_inputs.hex: Added .hex file that demonstrates
+	a foundational dependency graph deficiency in dlvhex 1.x that prohibits
+	variables for predicate inputs in dlvhex 2.x.
+
+2011-01-10  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/PluginContainer.cpp: More verbose plugin loading.
 
 2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
@@ -24,43 +37,96 @@
 	* testsuite/TestASPSolver.cpp: Likewise
 
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
-	* src/dlvhex/gdbdlvhex.sh: Shellscript to use gdb with libtool-built uninstalled binary.
-	* TODO more details [rewrote model building according to [todo] paper: new dependency notion, evalgraph, evaluation heuristics, ...]
-	* removed ruleml output builder as it most probably does not work correctly and could/should be done as a plugin
-	* removed --reverse option as it was not implemented and not documented
-	* removed --dlt option as it should be done as a plugin
-	* renaming globals to config and removing singleton status (each ProgramCtx may have its own config if dlvhex is used as a library)
-	* encapsulating input sources in InputProvider
-	* removing singleton status of PluginContainer as API users might have different programs with different plugin containers
-	* Logger component with log-levels, hierarchical indentation and NDEBUG-dependant logging
-	* Printhelpers.hpp utilities for comfortable printing of various boost and STL containers
-	* removed dependency on cppunit, now using the boost UTF
-	* no longer enforcing dlv to be present as backend, it is now sufficient that one of the possible backends is present
+
+	Most important changes (i.e., the reason for the new version):
+
+	* TODO details [rewrote model building according to LPNMR2011 paper: new dependency notion, evalgraph, evaluation heuristics, ...]
 	* evaluation heuristics selectable with --heuristics=...
-	* state machine now features states that may be implicitly skipped (= optional states)
-	* testsuite is now completely in testsuite/ and no longer in src/dlvhex/testsuite/
+
+	Plugin API changes:
+
+	* Plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use
+	a "deleter" compiled into the respective plugin (see PluginInterface.h)
+	* New central auxiliary constant management method in Registry:
+	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
-	* added static linking test for testsuite TestPlugin
-	* added option for keeping auxiliary predicates in output
-	* added option for omitting EDB facts from output
-	* added option for configuring graphviz output (eval/model graph not yet implemented, but partially exists in testsuite)
-	* plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use a "deleter" compiled into the respective plugin (see PluginInterface.h)
-	* added new test notwellfounded2.hex for guess and check model builder (should test minimality of disjunctions) [this test crashes dlvhex trunk/]
-	* added central auxiliary constant management method getAuxiliaryConstantSymbol() to Registry, PluginAtom no longer manages its own auxiliaries
-	* predicate inputs of external atoms no longer may be variables, this was possible in dlvhex 1.X but it was not correctly implemented (see variable_input_predicates.hex example in trunk/) and we need a new implementation strategy for doing that. this change causes the changes to extatom5.hex and extatom6.hex testcases
-	* no longer using -nofact for external dlv solver because we sometimes need to keep facts and we never want derived facts that are present in edb to "reappear"
-	* deactivated weak testcases (weak constraints will be implemented differently and more efficiently)
+
+	Testing and debugging additions:
+
+	* New Logger component with log-levels, hierarchical indentation and
+	NDEBUG-dependent logging.
+	* Printhelpers.hpp utilities for comfortable printing of various boost
+	and STL containers.
+	* testsuite/run-dlvhex-tests.sh: Added possibility for negative testcases.
+	(See comments in trunk/run-dlvhex-tests.sh for some documentation.)
+	* testsuite/answerset_compare.py: New script for real set-comparison for
+	verifying answer-sets (previously the order of answer sets mattered).
+	* src/dlvhex/gdbdlvhex.sh: Added shellscript to use gdb with
+	libtool-built uninstalled binary.
+	* src/dlvhex/valgrinddlvhex.sh: Likewise for valgrind.
+	* New testcase notwellfounded2.hex for guess and check model builder
+	(should test minimality of disjunctions, this test crashes dlvhex trunk/)
+
+	Other (smaller) additions:
+
+	* Prototype support for clingo as backend ASP solver (aggregates and some
+	builtins probably do not work correctly yet - please file a Trac issue or
+	drop the maintainers an email if you need some feature).
+	* Added static linking test for testsuite TestPlugin.
+	* Added commandline option for keeping auxiliary predicates in output.
+	* Added commandline option for omitting EDB facts from output.
+	* Added commandline option for configuring graphviz output. (Eval/model
+	graph are not yet fully implemented but partially exists in testcases.)
+	* External atoms may now appear in aggregates (this was partially
+	forbidden and incorrectly implemented for the other cases in dlvhex
+	1.x), see also new testcase examples/agg3.hex.
+	* Added central auxiliary constant management method to Registry:
+	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
+	* State machine for dlvhex implementation now features states that may be
+	implicitly skipped (= optional states).
+
+	Temporarily removed functionality:
+
+	* removed RuleMLOutputBuilder as it was a hack, most probably no longer
+	works correctly, and can (and should) be realized as a plugin.
+	* removed --dlt option as it can (and should) be realized as a plugin.
+	* Predicate inputs of external atoms no longer may be variables, this was
+	possible in dlvhex 1.x but it was incorrectly implemented (see example
+	variable_input_predicates.hex example in trunk/) and we need a new
+	implementation strategy for doing that. This change causes the changes to
+	extatom5.hex and extatom6.hex testcases.
+	* Weak constraints are currenty not implemented, as there are plans to
+	implement them in a more efficient way than previously done. Therefore
+	weak testcases have been deactivated:
 	../weak1.hex weak1.out -a
 	../weak1.hex weak1r.out -ra
 	../weak2.hex weak2.out -a
 	../msp.hex msp.out -a
-	* deactivated namespace testcases (namespaces will be implemented as a plugin)
+	* Namespaces are currently not implemented, as they will be implemented
+	as a plugin. Therefore namespace testcases have been deactivated:
 	../namespace1.hex namespace1.out
 	../namespace2.hex namespace2.out
-	* Correctly implemented external atom handling in aggregates (malfunctioning in dlvhex 1.x), see also testcase agg3.hex.
-	* testsuite/answerset_compare.py: New script for real set-comparison for
-	verifying answer-sets (previously the order of answer sets mattered).
-	* testsuite/run-dlvhex-tests.sh: Likewise.
+	Removed functionality:
+
+	* removed --reverse option as it was not implemented and not documented.
+
+	Internal structural changes:
+
+	* Class Globals was renamed to Configuration and is no longer a
+	singleton (each ProgramCtx may have its own config if dlvhex is used as a
+	library).
+	* Input sources (including URL inputs) are now encapsulated in the
+	InputProvider objects.
+	* Class PluginContainer is no longer a singleton as API users might have
+	different programs with different plugin containers.
+	* The testsuite no longer uses CPPUnit, it now uses the boost
+	unit-testing framework (boost UTF).
+	* The testsuite was moved from src/dlvhex/testsuite/ to testsuite/.
+	* Plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use
+	a "deleter" compiled into the respective plugin (see PluginInterface.h)
+	* No longer using -nofact for external dlv solver because we sometimes
+	need to keep facts and we never want derived facts that are present in
+	the EDB to "reappear".
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
@@ -112,6 +178,10 @@
 	* include/dlvhex/ID.hpp: Separating predicate from term table 
 	* include/dlvhex/Predicate.hpp: Likewise.
 	* include/dlvhex/PredicateTable.hpp: Likewise.
+
+2010-12-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/comments.hex: Add testcase for comment parsing.
 
 2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 		compgraph.writeGraphViz(filev, true);
 		makeGraphVizPdf(fnamev);
 
-		const char* fnamet = "testComponentGraphExt1Collapsederse.dot";
+		const char* fnamet = "testComponentGraphExt1CollapsedTerse.dot";
 		LOG(INFO,"dumping terse graph to " << fnamet);
 		std::ofstream filet(fnamet);
 		compgraph.writeGraphViz(filet, false);

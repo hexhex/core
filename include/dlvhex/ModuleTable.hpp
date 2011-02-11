@@ -70,7 +70,7 @@ public:
 // methods
 public:
   // retrieve by address
-  inline const Module& getByAddress(const int& address) const throw ();
+  inline const Module& getByAddress(int address) const throw ();
 
   // get range over all atoms sorted by address
   inline std::pair<AddressIterator, AddressIterator> getAllByAddress() const throw();
@@ -110,7 +110,7 @@ std::ostream& ModuleTable::print(std::ostream& o) const
 
 
 // retrieve by address
-const Module& ModuleTable::getByAddress(const int& address) const throw ()
+const Module& ModuleTable::getByAddress(int address) const throw ()
 {
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok

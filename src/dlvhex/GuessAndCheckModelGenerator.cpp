@@ -178,6 +178,9 @@ void createEatomGuessingRules(
   #warning TODO skip eatoms that are not internal ones?
   #ifndef NDEBUG
   std::set<ID> innerEatomsSet(innerEatoms.begin(), innerEatoms.end());
+  // we don't want literals here, we want external atoms!
+  assert(innerEatomsSet.empty() ||
+      (!innerEatomsSet.begin()->isLiteral() && innerEatomsSet.begin()->isExternalAtom()));
   #endif
 
   DBGLOG_SCOPE(DBG,"cEAGR",false);
@@ -197,7 +200,7 @@ void createEatomGuessingRules(
         continue;
 
       #ifndef NDEBUG
-      if( innerEatomsSet.count(ID::atomFromLiteral(lit)) )
+      if( innerEatomsSet.count(ID::atomFromLiteral(lit)) == 0 )
       {
         LOG(WARNING,"TODO processing external atom that is not an inner eatom for guessing!");
       }
@@ -366,8 +369,19 @@ void createFLPRules(
               variables.insert(idt);
           }
         }
+        else if( lit.isBuiltinAtom() )
+        {
+          const BuiltinAtom& batom = reg->batoms.getByID(lit);
+          BOOST_FOREACH(ID idt, batom.tuple)
+          {
+            if( idt.isVariableTerm() )
+              variables.insert(idt);
+          }
+        }
+        #warning implement aggregates here
         else
         {
+          LOG(ERROR,"encountered literal " << lit << " in FLP check, don't know what to do about it");
           throw FatalError("TODO: think about how to treat other types of atoms in FLP check");
         }
       }
@@ -432,6 +446,7 @@ void createFLPRules(
     }
     else
     {
+      LOG(ERROR,"got weak rule " << r << " in guess and check model generator, don't know what to do about it");
       throw FatalError("TODO: think about weak rules in G&C MG");
     }
   }

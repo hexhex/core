@@ -1,6 +1,33 @@
 #!/bin/bash
 
 #
+# brief documentation of this script
+#
+# relevant environment variables:
+# TOP_BUILDDIR (as in automake)
+# TOP_SRCDIR (as in automake)
+#
+# derived values: 
+# TESTDIR="$TOP_SRCDIR/examples/tests"
+#
+# this script looks for files called "*.test" in $TESTDIR
+# each line in such a file is parsed:
+# * first word is location of input hex file (relative to $TESTDIR)
+# * second word is the filename of an existing file (relative to $TESTDIR)
+#   * if the extension is ".out" this is a positive testcase
+#     the file contains lines of answer sets
+#     successful termination of dlvhex is expected
+#   * if the extension is ".err" this is a negative testcase
+#     the file contains one line:
+#     * the first word is an integer (verifying the return value of dlvhex)
+#     * the remaining line is a command executed with the error output
+#       if this execution succeeds (= returns 0) the test is successful
+#       e.g.: [grep -q "rule.* is not strongly safe"] (without square brackets)
+# * the rest of the input line are parameters used for executing dlvhex
+#   e.g.: [--nofact -ra] (without square brackets)
+#
+
+#
 # dlvhex -- Answer-Set Programming with external interfaces.
 # Copyright (C) 2005, 2006, 2007 Roman Schindlauer
 # Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
@@ -39,35 +66,91 @@ TESTDIR="${TOPSRCDIR}/examples/tests/"
 
 for t in $(find ${TESTDIR} -name '*.test' -type f)
 do
-  while read HEXPROGRAM ANSWERSETS ADDPARM
+  # "read" assigns first word to first variable,
+  # second word to second variable,
+  # and all remaining words to the last variable
+  while read HEXPROGRAM VERIFICATIONFILE ADDPARM
   do
     let ntests++
 
+    # check if we have the input file
     HEXPROGRAM=$TESTDIR/$HEXPROGRAM
-      ANSWERSETS=$TESTDIR/$ANSWERSETS
-
-    if [ ! -f $HEXPROGRAM ] || [ ! -f $ANSWERSETS ]; then
-        test ! -f $HEXPROGRAM && echo FAIL: Could not find program file $HEXPROGRAM
-        test ! -f $ANSWERSETS && echo FAIL: Could not find answer sets file $ANSWERSETS
+    if [ ! -f $HEXPROGRAM ]; then
+        echo FAIL: Could not find program file $HEXPROGRAM
         let failed++
         continue
     fi
 
-    # run dlvhex with specified parameters and program
-    $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
-    RETVAL=$?
-    if [ $RETVAL -eq 0 ]; then
-      if $TOPSRCDIR/testsuite/answerset_compare.py $TMPFILE $ANSWERSETS; then
-          echo PASS: $HEXPROGRAM
-      else
-          echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answersets differ)"
+    VERIFICATIONEXT=${VERIFICATIONFILE: -4}
+    #echo "verificationext = ${VERIFICATIONEXT}"
+    if test "x$VERIFICATIONEXT" == "x.err"; then
+      #echo "negative testcase"
+
+      ERRORFILE=$TESTDIR/$VERIFICATIONFILE
+      if [ ! -f $ERRORFILE ]; then
+          echo "FAIL: $HEXPROGRAM: could not find error file $ERRORFILE"
           let failed++
+          continue
+      fi
+
+      # run dlvhex with specified parameters and program
+      $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
+      RETVAL=$?
+      if [ $RETVAL -eq 0 ]; then
+        # success where failure was expected
+        echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (should have failed, but got normal termination)"
+        cat $TMPFILE
+        let failed++
+      else
+        # expected failure, now check error code and output
+        read VRETVAL VCOMMAND <$ERRORFILE
+        #echo "verifying return value '$RETVAL'"
+        if [ $VRETVAL -eq $RETVAL ]; then
+          #echo "verifying with command '$VCOMMAND'"
+          if bash -c "$VCOMMAND $ETMPFILE"; then
+            echo "PASS: $HEXPROGRAM (negative testcase)"
+          else
+            echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (error output not verified by $VCOMMAND)"
+            cat $ETMPFILE
+            let failed++
+          fi
+        else
+          echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (error return value $RETVAL not equal reference value $VRETVAL)"
+          cat $ETMPFILE
+          let failed++
+        fi
+      fi
+    elif test "x$VERIFICATIONEXT" == "x.out"; then
+      #echo "positive testcase"
+
+      ANSWERSETSFILE=$TESTDIR/$VERIFICATIONFILE
+      if [ ! -f $ANSWERSETSFILE ]; then
+          echo "FAIL: $HEXPROGRAM: could not find answer set file $ANSWERSETSFILE"
+          let failed++
+          continue
+      fi
+
+      # run dlvhex with specified parameters and program
+      $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
+      RETVAL=$?
+      if [ $RETVAL -eq 0 ]; then
+        if $TOPSRCDIR/testsuite/answerset_compare.py $TMPFILE $ANSWERSETSFILE; then
+            echo "PASS: $HEXPROGRAM"
+        else
+            echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answersets differ)"
+            let failed++
+        fi
+      else
+        echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+        let failed++
+        grep -v "^$" $ETMPFILE
       fi
     else
-      echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+      echo "FAIL: $HEXPROGRAM: type of testcase must be '.out' or '.err', got '$VERIFCATIONEXT'"
       let failed++
-      grep -v "^$" $ETMPFILE
+      continue
     fi
+
   done < $t # redirect test file to the while loop
 done
 

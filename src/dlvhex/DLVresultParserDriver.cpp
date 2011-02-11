@@ -399,7 +399,8 @@ DLVResultParser::parse(
     // @todo: add better error message with position iterator 
     if (!r || fwd_begin != fwd_end)
       throw SyntaxError("Could not parse complete DLV output!");
-  } catch(const qi::expectation_failure<forward_iterator_type>& e)
+  }
+  catch(const qi::expectation_failure<forward_iterator_type>& e)
   {
     throw SyntaxError("Could not parse DLV output! (expectation failure): \n===\n" + input + "===\n");
   }

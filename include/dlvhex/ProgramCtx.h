@@ -105,7 +105,7 @@ public:
 
   // edb 
   // Interpretation::Ptr edb; // should be without this one
-  std::vector<Interpretation::Ptr> edbList;
+  std::vector<InterpretationPtr> edbList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;

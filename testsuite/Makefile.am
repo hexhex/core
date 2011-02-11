@@ -52,8 +52,24 @@ check_PROGRAMS =  \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
 noinst_PROGRAMS = \
-  TestMCSIE TestMCSIEND \
   TestPlainHEX TestPlainHEXND
+
+# remove .dot files produced by running check_PROGRAMS
+clean-local:
+	-rm -rf test*{Verbose,Terse}.dot
+
+noinst_HEADERS = \
+  dummytypes.hpp \
+  graphviz.hpp \
+  fixturesMCS.hpp \
+  fixtureE1.hpp \
+  fixtureE2.hpp \
+  fixtureE2M2.hpp \
+  fixtureEx1.hpp \
+  fixturesExt1.hpp \
+  fixturesDepgraphCompgraphGeneric.hpp \
+  fixtureOfflineMB.hpp \
+  fixtureOnlineMB.hpp
 
 libdlvhextest_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
@@ -95,7 +111,6 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
-	$(top_srcdir)/src/dlvhex/OutputBuilder.cpp \
 	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/PluginContainer.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
@@ -105,20 +120,6 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp
-
-TestMCSIE_SOURCES = \
-	$(top_srcdir)/testsuite/TestMCSIE.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/DLV_ASP_ContextAtom.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/InputConverter.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRule.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/BridgeRuleEntry.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/Global.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/Timing.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/ParseContext.cpp \
-	$(top_srcdir)/testsuite/mcsie_perftests/src/OutputRewriter.cpp \
-  $(PLAINHEXSOURCES)
-TestMCSIE_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
-TestMCSIE_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) -I$(top_srcdir)/testsuite/mcsie_perftests/include
 
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
@@ -317,10 +318,6 @@ TestOnlineModelBuilder_SOURCES = TestOnlineModelBuilder.cpp dummytypes.cpp fixtu
 TestOfflineModelBuilder_SOURCES = TestOfflineModelBuilder.cpp dummytypes.cpp fixtureE1.cpp fixtureE2.cpp fixtureEx1.cpp $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
 
 # test it with NDEBUG (the real situation)
-TestMCSIEND_SOURCES = $(TestMCSIE_SOURCES)
-TestMCSIEND_LDADD = $(TestMCSIE_LDADD)
-TestMCSIEND_CPPFLAGS = $(TestMCSIE_CPPFLAGS) -DNDEBUG
-
 TestPlainHEXND_SOURCES = $(TestPlainHEX_SOURCES)
 TestPlainHEXND_LDADD = $(TestPlainHEX_LDADD)
 TestPlainHEXND_CPPFLAGS = $(TestPlainHEX_CPPFLAGS) -DNDEBUG
