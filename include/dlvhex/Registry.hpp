@@ -146,7 +146,20 @@ struct Registry:
 
   // get all external atom IDs in tuple and recursively in aggregates in tuple
   // append these ids to second given tuple
+  // tuple t contains IDs of literals or atoms
   void getExternalAtomsInTuple(const Tuple& t, Tuple& out) const;
+
+  // get all IDs of variables in atom given by ID
+  // add these ids to out
+  // (returns even local variables for aggregates)
+  // id is a literal or atom
+  void getVariablesInID(ID id, std::set<ID>& out) const;
+
+  // get all IDs of variables in atoms in given tuple
+  // add these ids to out
+  // (returns even local variables for aggregates)
+  // tuple t contains IDs of literals or atoms
+  void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
 
 protected:
   struct Impl;
