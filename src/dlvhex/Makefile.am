@@ -66,6 +66,7 @@ libdlvhexbase_la_SOURCES = \
     Printer.cpp \
     ProgramCtx.cpp \
     Registry.cpp \
+    SafetyChecker.cpp \
     State.cpp \
     URLBuf.cpp
 

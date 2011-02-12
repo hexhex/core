@@ -1,0 +1,3 @@
+#maxint=10.
+
+boo(X) :- #int(X).

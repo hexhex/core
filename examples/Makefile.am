@@ -6,6 +6,10 @@ EXTRA_DIST = \
     agg2.hex \
     agg3.hex \
     builtin_safety1.hex \
+    builtin_safety1a.hex \
+    builtin_safety1b.hex \
+    builtin_safety1c.hex \
+    builtin_safety1d.hex \
     builtin_safety2.hex \
     empty.hex \
     equality.hex \
@@ -41,7 +45,11 @@ EXTRA_DIST = \
     tests/agg1.out \
     tests/agg2.out \
     tests/agg3.out \
-    tests/builtin_safety1.out \
+    tests/builtin_safety1.err \
+    tests/builtin_safety1a.err \
+    tests/builtin_safety1b.err \
+    tests/builtin_safety1c.err \
+    tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
     tests/empty.out \
     tests/equality.out \

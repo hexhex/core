@@ -25,280 +25,369 @@
 /**
  * @file SafetyChecker.cpp
  * @author Roman Schindlauer
+ * @author Peter Schüller
  * @date Mon Feb 27 15:08:46 CET 2006
  *
  * @brief Class for checking rule and program safety.
- *
- *
  */
 
 #include "dlvhex/SafetyChecker.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/AggregateAtom.h"
-
-#include <sstream>
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-namespace
+SafetyCheckerBase::SafetyCheckerBase(const ProgramCtx& ctx):
+  ctx(ctx)
 {
-  std::set<std::string> safeBuiltinPredicates;
-  struct Init {
-    Init() {
-      safeBuiltinPredicates.insert("#int");
-      safeBuiltinPredicates.insert("#succ");
-      safeBuiltinPredicates.insert("*");
-      safeBuiltinPredicates.insert("+");
-    }
-  };
-  Init init;
 }
 
 SafetyCheckerBase::~SafetyCheckerBase()
-{ }
-
-
-
-SafetyChecker::SafetyChecker(const Program& p)
-  : SafetyCheckerBase(),
-    program(p)
-{ }
-
-
-/**
- * @brief Unary functor, which checks if a given extatom has a safe
- * input list, and adds in this case the ouput list to the safe
- * variables.
- */
-struct InputListSafe
 {
-  std::set<Term>& safevars;
+}
 
-  InputListSafe(std::set<Term>& sv) : safevars(sv) { }
+namespace
+{
+	bool isSafeBuiltinPredicate(ID::TermBuiltinAddress pred)
+	{
+		switch(pred)
+		{
+		case ID::TERM_BUILTIN_MUL:
+		case ID::TERM_BUILTIN_ADD:
+		case ID::TERM_BUILTIN_INT:
+		case ID::TERM_BUILTIN_SUCC:
+			return true;
+		default:
+			return false;
+		}
+	}
+}
 
-  bool
-  operator() (ExternalAtom*& extatom)
+
+SafetyChecker::SafetyChecker(const ProgramCtx& ctx):
+  SafetyCheckerBase(ctx)
+{
+}
+
+SafetyChecker::~SafetyChecker()
+{
+}
+
+
+
+namespace
+{
+
+// 1) get all positive body literals of the tuple
+// 2) remove ordinary body atoms and put all their variables into the "safeset"
+// 3) for each remaining body atom:
+//   a) if it is an external atom and all inputs are in safeset:
+//      remove literal and put output variables into safeset
+//   b) if it is a builtin atom and certain inputs are in safeset:
+//      remove literal and put certain outputs into safeset
+// 4) while this decreases the set of literals: goto 3
+void determineSafeVariables(
+    RegistryPtr reg, Tuple& tuple, std::set<ID>& safevars)
+{
+  // steps 1 and 2
+  std::vector<Tuple::iterator> eraselist;
+  for(Tuple::iterator it = tuple.begin();
+      it != tuple.end(); ++it)
   {
-    //
-    // first check if the input list is still unsafe
-    //
-
-    const Tuple& inp = extatom->getInputTerms();
-
-    for (Tuple::const_iterator it = inp.begin(); it != inp.end(); ++it)
-      {
-	if (it->isVariable() && safevars.find(*it) == safevars.end())
-	  {
-	    return false;
-	  }
-      }
-
-    //
-    // this ext-atom is safe: we can add its arguments to the safe set
-    //
-
-    const Tuple& extarg = extatom->getArguments();
-	
-    for (Tuple::const_iterator it = extarg.begin(); it != extarg.end(); ++it)
-      {
-	if (it->isVariable())
-	  {
-	    safevars.insert(*it);
-	  }
-      }
-
-    return true;
+    assert(!it->isAtom() && it->isLiteral());
+    if( it->isNaf() )
+    {
+      DBGLOG(DBG,"literal " << *it << " removed for safe var calculation (naf)"); 
+      eraselist.push_back(it);
+    }
+    else if( it->isOrdinaryGroundAtom() )
+    {
+      DBGLOG(DBG,"literal " << *it << " removed for safe var calculation (ground)"); 
+      eraselist.push_back(it);
+    }
+    else if( it->isOrdinaryNongroundAtom() )
+    {
+      DBGLOG(DBG,"marking all variables of onatom " << *it << " as safe");
+			reg->getVariablesInID(*it, safevars);
+			eraselist.push_back(it);
+    }
   }
-};
+	// erasing something invalidates iterators after that thing
+	// -> erase from end to beginning
+	for(std::vector<Tuple::iterator>::reverse_iterator eraseit =
+			eraselist.rbegin(); eraseit != eraselist.rend(); ++eraseit)
+	{
+		tuple.erase(*eraseit);
+	}
+	DBGLOG(DBG,"after steps 1 and 2: safe variables=" <<
+			printManyToString<RawPrinter>(
+				Tuple(safevars.begin(), safevars.end()), ", ", reg) <<
+			" and literals still to process=" <<
+			printManyToString<RawPrinter>(tuple, ", ", reg));
 
+  // step 3
+  bool modified;
+  do
+  {
+		modified = false;
+
+		// go through all remaining in tuple
+		std::vector<Tuple::iterator> eraselist;
+		for(Tuple::iterator it = tuple.begin();
+				it != tuple.end(); ++it)
+		{
+			if( it->isBuiltinAtom() )
+			{
+				const BuiltinAtom& atom = reg->batoms.getByID(*it);
+
+				// bailout-do
+				do
+				{
+					// undocumented safety of dlv:
+					// equality is safe in both directions
+					// nothing else is safe in any direction for comparison builtins
+					if( atom.tuple.size() == 3 &&
+							atom.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					{
+						if( !atom.tuple[1].isVariableTerm() ||
+								safevars.find(atom.tuple[1]) != safevars.end() )
+						{
+							// first can make second safe
+							if( atom.tuple[2].isVariableTerm() )
+							{
+								// second is something that can be made safe
+								safevars.insert(atom.tuple[2]);
+								eraselist.push_back(it);
+								break;
+							}
+						}
+						if( !atom.tuple[2].isVariableTerm() ||
+								safevars.find(atom.tuple[2]) != safevars.end() )
+						{
+							// second can make first safe
+							if( atom.tuple[1].isVariableTerm() )
+							{
+								// first is something that can be made safe
+								safevars.insert(atom.tuple[1]);
+								eraselist.push_back(it);
+								break;
+							}
+						}
+					}
+				
+					// safe if occurs as last variable in builtin predicate and other variables are safe
+					// (see dlv manual)
+
+					if( isSafeBuiltinPredicate(static_cast<ID::TermBuiltinAddress>(atom.tuple[0].address)) )
+					{
+						Tuple::const_reverse_iterator itt = atom.tuple.rbegin();
+						// skip last one
+						if( itt != atom.tuple.rend() )
+							itt++;
+						bool good = true;
+						for(; itt != atom.tuple.rend(); ++itt)
+						{
+							if( itt->isVariableTerm() && safevars.find(*itt) == safevars.end() )
+							{
+								good = false;
+								break;
+							}
+						}
+
+						if( good )
+						{
+							if( atom.tuple.back().isVariableTerm() )
+								safevars.insert(atom.tuple.back());
+							eraselist.push_back(it);
+							break;
+						}
+					}
+				}
+				while(false); // bailout-do
+			}
+			else if( it->isAggregateAtom() )
+			{
+				// this is complicated if it is implemented properly:
+				// so we only do lightweight checking (the backend will complain anyways)
+				#warning this is a simplification, see dlv documentation for better aggregate safety checking
+				//
+				// a) get safe variables from aggregate body
+				// b) if aggregate is an assignment, make assigned variable safe
+
+				const AggregateAtom& atom = reg->aatoms.getByID(*it);
+
+				// a) get safe variables from aggregate body
+				// (if we cannot consume the body completely,
+				// we have to wait with checking this aggregate)
+
+				std::set<ID> tmpvars;
+				Tuple aggbody(atom.atoms);
+				determineSafeVariables(reg, aggbody, tmpvars); 
+				if( aggbody.empty() )
+				{
+					// fully consumed body
+					safevars.insert(tmpvars.begin(), tmpvars.end());
+
+					// b) if aggregate is an assignment, make assigned variable safe
+
+					if( atom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					{
+						assert(atom.tuple[0] != ID_FAIL);
+						if( atom.tuple[0].isVariableTerm() )
+							safevars.insert(atom.tuple[0]);
+					}
+
+					if( atom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					{
+						assert(atom.tuple[4] != ID_FAIL);
+						if( atom.tuple[4].isVariableTerm() )
+							safevars.insert(atom.tuple[4]);
+					}
+
+					// remove aggregate from to-be-processed
+					eraselist.push_back(it);
+				}
+			}
+			else if( it->isExternalAtom() )
+			{
+				const ExternalAtom& atom = reg->eatoms.getByID(*it);
+
+				bool good = true;
+				BOOST_FOREACH(ID idt, atom.inputs)
+				{
+					if( idt.isVariableTerm() && safevars.find(idt) == safevars.end() )
+					{
+						good = false;
+						break;
+					}
+				}
+
+				if( good )
+				{
+					BOOST_FOREACH(ID idt, atom.tuple)
+					{
+						if( idt.isVariableTerm() )
+							safevars.insert(idt);
+					}
+					eraselist.push_back(it);
+				}
+			}
+			else
+			{
+				assert("this should never happen, unknown atom type in safety checker");
+			}
+		}
+
+		// erasing something invalidates iterators after that thing
+		// -> erase from end to beginning
+		for(std::vector<Tuple::iterator>::reverse_iterator eraseit =
+				eraselist.rbegin(); eraseit != eraselist.rend(); ++eraseit)
+		{
+			tuple.erase(*eraseit);
+			modified = true;
+		}
+
+		DBGLOG(DBG,"safety checking loop ended with modified=" << modified <<
+				", safe variables = " <<
+				printManyToString<RawPrinter>(
+					Tuple(safevars.begin(), safevars.end()), ", ", reg) <<
+				" and literals still to process=" <<
+				printManyToString<RawPrinter>(tuple, ", ", reg));
+  }
+	while( modified && !tuple.empty() );
+}
+
+} // anonymous namespace
 
 void
 SafetyChecker::operator() () const throw (SyntaxError)
 {
-  if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
-    {
-      Globals::Instance()->getVerboseStream() << std::endl << "Checking for rule safety." << std::endl;
-    }
-  
+  LOG_SCOPE(ANALYZE,"safety",false);
+	LOG(ANALYZE,"=safety checker");
+
+  RegistryPtr reg = ctx.registry();
+  assert(!!reg);
 
   //
   // testing for simple rule safety:
-  // * Each variable occurs in a positive ordinary atom.
-  // * A variable occurs in the output list of an external atom and all
-  //   input variables occur in a positive ordinary atom.
+  // * a constant is safe
+  // * an anonymous variable is safe
+  #warning if we want compatibility with other solvers, we may not be able to assume that all anonymous variables are safe!
+  // * a variable is safe if it occurs in a positive ordinary atom
+  // * a variable is safe if it occurs as particular terms of a positive
+  //   builtin atom and particular other terms of that builtin atom are safe
+  //   (since 2010 dlv version the definition of "particular", below called
+  //   "certain", changed, and possibly will change again in the future)
+  // * a variable is safe if it occurs in the output list of a positive
+  //   external atom and all input variables of that atom are safe
+  // * a variable is safe if it occurs on one side of an assignment aggregate
+  // * a variable is safe if it occurs in the positive body of an aggregate atom
+  #warning the last line is a simplification
+  #warning see dlv documentation for better aggregate safety checking
   //
-  // -> 1) get all ordinary body atoms -> safeset
-  //    2) look at extatoms: each input var must be in safeset
-  //    3) if all is ok: add ext-atom arguments to safeset
-  //    4) test if all head vars are in safeset
+  // algorithm:
+  // 1) get all positive body literals of the rule
+  // 2) remove ordinary body atoms and put all their variables into the "safeset"
+  // 3) for each remaining body atom:
+  //   a) if it is an external atom and all inputs are in safeset:
+  //      remove literal and put output variables into safeset
+  //   b) if it is a builtin atom and certain inputs are in safeset:
+  //      remove literal and put certain outputs into safeset
+  //   c) if it is an aggregate atom and non-local variables 
+  // 4) while this decreases the set of literals: goto 3
+  // 5) test if all variables in the rule are in the safeset
+  //    if not, throw an exception containing rule and variables
   //
     
-  for (Program::const_iterator ruleit = program.begin();
-       ruleit != program.end();
-       ++ruleit)
+  BOOST_FOREACH(ID idrule, ctx.idb)
+  {
+		DBGLOG(ANALYZE,"= check safety of rule " <<
+				printToString<RawPrinter>(idrule, reg));
+
+    const Rule& rule = reg->rules.getByID(idrule);
+    std::set<ID> safevars;
+    Tuple body(rule.body);
+
+    // steps 1, 2, 3, 4
+    determineSafeVariables(reg, body, safevars);
+
+    // step 5
+    std::set<ID> allvars;
+    reg->getVariablesInTuple(rule.body, allvars);
+    reg->getVariablesInTuple(rule.head, allvars);
+
+    if( allvars.size() != safevars.size() )
     {
-      const RuleHead_t head = (*ruleit)->getHead();
-      const RuleBody_t body = (*ruleit)->getBody();
-
-      //
-      // set of all variables in non-ext body atoms
-      //
-      std::set<Term> safevars;
-
-      //
-      // 1)
-      // going through the rule body
-      //
-
-      for (RuleBody_t::const_iterator bit = body.begin();
-	   bit != body.end();
-	   ++bit)
-        {
-	  //
-	  // only look at ordinary atoms
-	  // and aggregate terms
-	  //
-	  const Atom& at = *(*bit)->getAtom();
-
-	  if (typeid(at) == typeid(Atom) ||
-	      typeid(at) == typeid(BuiltinPredicate) ||
-	      typeid(at) == typeid(AggregateAtom)
-	      )
-            {
-	      //
-	      // look at predicate
-	      //
-	      const Term& pred = at.getPredicate();
-
-	      //
-	      // look at arguments
-	      //
-	      const Tuple& bodyarg = at.getArguments();
-
-	      //
-	      // in case of BuiltinPredicate:
-	      // * purely arithmetic predicates are fully safe (#succ, #int, *, +)
-	      // * equality with only one variable is safe, just like in dlv
-	      //
-	      if (typeid(at) == typeid(BuiltinPredicate))
-		{
-		  if (pred == Term("="))
-		    {
-		      if (bodyarg[0].isVariable() && !bodyarg[1].isVariable())
-			{
-			  safevars.insert(bodyarg[0]);
-			}
-		      else if (!bodyarg[0].isVariable() && bodyarg[1].isVariable())
-			{
-			  safevars.insert(bodyarg[1]);
-			}
-		    }
-                  else if( safeBuiltinPredicates.count(pred.getString()) != 0 )
-                  {
-		    // -> all variables inside are safe
-                    for (Tuple::const_iterator ordit = bodyarg.begin(); ordit != bodyarg.end(); ++ordit)
-                      {
-                        if (ordit->isVariable())
-                          {
-                            safevars.insert(*ordit);
-                          }
-                      }
-                  }
-		}
-	      else // Atom or AggregateAtom?????
-		{
-		  if (pred.isVariable())
-		    {
-		      safevars.insert(pred);
-		    }
-		  
-		  for (Tuple::const_iterator ordit = bodyarg.begin(); ordit != bodyarg.end(); ++ordit)
-		    {
-		      if (ordit->isVariable())
-			{
-			  safevars.insert(*ordit);
-			}
-		    }
-		}
-            }
-	}
-	  
-
-      //
-      // 2)
-      // loop through the (by default unsafe) list of external atoms
-      //
-        
-      std::vector<ExternalAtom*> unsafeextatoms = (*ruleit)->getExternalAtoms();
-
-      while(!unsafeextatoms.empty())
-	{
-	  // 3) find safe extatoms, i.e., extatoms with safe input
-	  // list, and store their output vars in safevars
-	  std::vector<ExternalAtom*>::iterator newend =
-	    std::remove_if(unsafeextatoms.begin(), unsafeextatoms.end(),
-			   InputListSafe(safevars));
-
-	  // if we didn't remove any external atoms from the unsafety
-	  // list, we are unsafe
-	  if (unsafeextatoms.end() == newend)
-	    {
-	      throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
-	    }
-	  else
-	    {
-	      // remove all the safe extatoms
-	      unsafeextatoms.erase(newend, unsafeextatoms.end());
-	    }
-	}
-
-
-      //
-      // 4)
-      // going through the rule head
-      //
-      for (RuleHead_t::const_iterator hb = head.begin(); hb != head.end(); ++hb)
-	{
-	  const Tuple& headarg = (*hb)->getArguments();
-	  
-	  //
-	  // for each head atom: going through its arguments
-	  //
-	  for (Tuple::const_iterator headterm = headarg.begin(); headterm != headarg.end(); ++headterm)
-	    {
-	      // does this variable occur in any positive body atom?
-	      if (headterm->isVariable() && safevars.find(*headterm) == safevars.end())
-		{
-		  throw SyntaxError("rule not safe", (*ruleit)->getLine(), (*ruleit)->getFile());
-		}
-	    }
-	}
-
-      if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
-	{
-	  Globals::Instance()->getVerboseStream() << "Rule in ";
-	  
-	  if (!(*ruleit)->getFile().empty())
-	    {
-	      Globals::Instance()->getVerboseStream() << (*ruleit)->getFile() << ", ";
-	    }
-	  
-	  Globals::Instance()->getVerboseStream() << "line " << (*ruleit)->getLine() << " is safe." << std::endl;
-	}
+      Tuple unsafetuple;
+      std::back_insert_iterator<Tuple> inserter(unsafetuple);
+      std::set_difference(
+					allvars.begin(), allvars.end(),
+					safevars.begin(), safevars.end(),
+					inserter);
+      throw SyntaxError("Rule not safe: "
+					"'" + printToString<RawPrinter>(idrule, reg) + "': "
+					"variables not safe: " +
+					printManyToString<RawPrinter>(unsafetuple, ", ", reg));
     }
+    assert(allvars == safevars &&
+				"we assume that same set cardinality means same variables");
+  }
 }
 
 
+StrongSafetyChecker::StrongSafetyChecker(const ProgramCtx& ctx):
+  SafetyCheckerBase(ctx)
+{
+}
 
-StrongSafetyChecker::StrongSafetyChecker(const DependencyGraph& depgraph)
-  : SafetyCheckerBase(),
-    dg(depgraph)
-{ }
-
+StrongSafetyChecker::~StrongSafetyChecker()
+{
+}
 
 void
 StrongSafetyChecker::operator() () const throw (SyntaxError)
 {
+  #if 0
   if (Globals::Instance()->doVerbose(Globals::SAFETY_ANALYSIS))
     {
       Globals::Instance()->getVerboseStream() << std::endl << "Checking for strong rule safety." << std::endl;
@@ -436,12 +525,13 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
             } // rules-loop end
         }
     }
+  #endif
 }
 
 
 DLVHEX_NAMESPACE_END
 
-// vim:ts=8:noet:sw=2:
+// vim:ts=2:noet:sw=2:
 // Local Variables:
 // mode: C++
 // End:

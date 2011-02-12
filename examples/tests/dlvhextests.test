@@ -1,5 +1,12 @@
 ../rec_agg_bug1.hex rec_agg_bug1.err
+../builtin_safety1.hex builtin_safety1.err
+../builtin_safety1a.hex builtin_safety1a.err
+../builtin_safety1b.hex builtin_safety1b.err
+../builtin_safety1c.hex builtin_safety1c.err
+../builtin_safety1d.hex builtin_safety1d.out
 ../builtin_safety2.hex builtin_safety2.out
+../safety1.hex safety1.err
+../safety2.hex safety2.err
 ../simple1.hex simple1.out
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
