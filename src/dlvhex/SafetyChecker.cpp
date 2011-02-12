@@ -402,6 +402,16 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
   //   its output list occurs in a positive atom in the body, which does not
   //   belong to the cycle.
   //
+	// this is implemented as
+	// for each component c
+	// A) get all rule heads in c
+	// B) for each rule r in c
+	//   a) for each external atom e in the body of r
+	//     1) for each output variable of e
+	//        if e is part of a positive body atom of r
+	//        and this positive body atom of r does not unify with any rule head in c
+	//        then e is safe
+	//     2) if any output variable of e is not safe, rule r is not strongly safe
 
   //
   // go through all program components
