@@ -1,0 +1,2 @@
+% this rule is not safe
+foo(X) :- bar(Y).

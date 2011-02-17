@@ -35,6 +35,8 @@
 
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/range/join.hpp>
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -181,6 +183,76 @@ void Registry::getExternalAtomsInTuple(
       const AggregateAtom& aatom = aatoms.getByID(*itt);
       getExternalAtomsInTuple(aatom.atoms, out);
     }
+  }
+}
+
+// get all IDs of variables in atom given by ID
+// add these ids to out
+// (returns even local variables for aggregates)
+// id is a literal or atom
+void Registry::getVariablesInID(ID id, std::set<ID>& out) const
+{
+  assert(id.isLiteral() || id.isAtom());
+  if( id.isOrdinaryGroundAtom() )
+    return;
+  if( id.isOrdinaryNongroundAtom() )
+  {
+    const OrdinaryAtom& atom = onatoms.getByID(id);
+    BOOST_FOREACH(ID idt, atom.tuple)
+    {
+      if( idt.isVariableTerm() )
+        out.insert(idt);
+    }
+  }
+  else if( id.isBuiltinAtom() )
+  {
+    const BuiltinAtom& atom = batoms.getByID(id);
+    BOOST_FOREACH(ID idt, atom.tuple)
+    {
+      if( idt.isVariableTerm() )
+        out.insert(idt);
+    }
+  }
+  else if( id.isAggregateAtom() )
+  {
+    const AggregateAtom& atom = aatoms.getByID(id);
+    // body atoms
+    BOOST_FOREACH(ID idt, atom.atoms)
+    {
+      getVariablesInID(idt, out);
+    }
+    // local variables
+    BOOST_FOREACH(ID idv, atom.variables)
+    {
+      out.insert(idv);
+    }
+    // left and right term
+    assert(atom.tuple.size() == 5);
+    if( atom.tuple[0].isTerm() && atom.tuple[0].isVariableTerm() )
+      out.insert(atom.tuple[0]);
+    if( atom.tuple[4].isTerm() && atom.tuple[4].isVariableTerm() )
+      out.insert(atom.tuple[4]);
+  }
+  else if( id.isExternalAtom() )
+  {
+    const ExternalAtom& atom = eatoms.getByID(id);
+    BOOST_FOREACH(ID idt, boost::join(atom.tuple, atom.inputs))
+    {
+      if( idt.isVariableTerm() )
+        out.insert(idt);
+    }
+  }
+}
+
+// get all IDs of variables in atoms in given tuple
+// add these ids to out
+// (returns even local variables for aggregates)
+// tuple t contains IDs of literals or atoms
+void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
+{
+  BOOST_FOREACH(ID id, t)
+  {
+    getVariablesInID(id, out);
   }
 }
 

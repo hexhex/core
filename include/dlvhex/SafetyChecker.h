@@ -25,6 +25,7 @@
 /**
  * @file SafetyChecker.h
  * @author Roman Schindlauer
+ * @author Peter Schueller
  * @date Mon Feb 27 15:09:49 CET 2006
  *
  * @brief Class for checking rule and program safety.
@@ -37,9 +38,7 @@
 #define _DLVHEX_SAFETYCHECKER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
-#include "dlvhex/Rule.h"
-#include "dlvhex/DependencyGraph.h"
+#include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Error.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -49,18 +48,18 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT SafetyCheckerBase
 {
- protected:
+protected:
+  const ProgramCtx& ctx;
+  
+public:
+  SafetyCheckerBase(const ProgramCtx& ctx);
+  virtual ~SafetyCheckerBase();
 
-  /// dtor
-  virtual
-  ~SafetyCheckerBase();
-
- public:
+public:
   
   /// operator() does the safety check
   virtual void
   operator() () const throw (SyntaxError) = 0;
-  
 };
 
 
@@ -69,11 +68,9 @@ class DLVHEX_EXPORT SafetyCheckerBase
  */
 class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
 {
- protected:
-  const Program& program;
-  
- public:
-  SafetyChecker(const Program&);
+public:
+  SafetyChecker(const ProgramCtx& ctx);
+  virtual ~SafetyChecker();
   
   virtual void
   operator() () const throw (SyntaxError);
@@ -85,11 +82,9 @@ class DLVHEX_EXPORT SafetyChecker : public SafetyCheckerBase
  */
 class DLVHEX_EXPORT StrongSafetyChecker : public SafetyCheckerBase
 {
- protected:
-  const DependencyGraph& dg;
-
- public:
-  StrongSafetyChecker(const DependencyGraph&);
+public:
+  StrongSafetyChecker(const ProgramCtx& ctx);
+  virtual ~StrongSafetyChecker();
   
   virtual void
   operator() () const throw (SyntaxError);

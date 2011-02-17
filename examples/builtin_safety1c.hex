@@ -1,0 +1,4 @@
+#maxint=10.
+
+baz(X,Y) :- #succ(X,Y).
+% this file only works for dlv < 2010-10-14

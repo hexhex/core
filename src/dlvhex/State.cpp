@@ -56,7 +56,7 @@
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
-//#include "dlvhex/SafetyChecker.h"
+#include "dlvhex/SafetyChecker.h"
 
 #include <boost/foreach.hpp>
 
@@ -128,13 +128,15 @@ void State::postProcess(ProgramCtx*) { }
     } \
     else \
     { \
-      throw std::runtime_error("tried to skip execution of '" #function "' in State!"); \
+      throw std::runtime_error("tried to skip execution of '" \
+          #function "' in State!"); \
     } \
   }
 
 // all state methods get skipping possibility
 // derived classes will decide whether to set the failureState or not
-// if it is set, the state is skippable, if not, execution of this state is mandatory
+// if it is set, the state is skippable,
+// if not, execution of this state is mandatory
 STATE_FUNC_DEFAULT_IMPL(showPlugins);
 STATE_FUNC_DEFAULT_IMPL(convert);
 STATE_FUNC_DEFAULT_IMPL(parse);
@@ -279,6 +281,7 @@ void ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
+  #warning generalize HexParser and permit plugins to provide their own parser (e.g., for plugins that modify the original parser only a bit)
   HexParser parser(*ctx);
   parser.parse(ctx->inputProvider->getAsStream());
 
@@ -459,6 +462,7 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
 
+#warning TODO implement some edb/idb rewriter testcase, use them here
 #if 0
 
   //
@@ -499,15 +503,14 @@ void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
-#if 0
 
   //
   // Performing the safety check
   //
-  SafetyChecker schecker(*ctx->getIDB());
+  SafetyChecker schecker(*ctx);
+  // check by calling the object
   schecker();
 
-#endif
   StatePtr next(new CreateDependencyGraphState);
   changeState(ctx, next);
 }
@@ -547,6 +550,8 @@ void
 OptimizeEDBDependencyGraphState::optimizeEDBDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin optimizers");
+
+  #warning TODO call handle optimizers and implement a testcase
 #if 0
 
   //
@@ -577,7 +582,8 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
   assert(!!ctx->depgraph && "need depgraph for building component graph");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building component graph");
 
-  ComponentGraphPtr compgraph(new ComponentGraph(*ctx->depgraph, ctx->registry()));
+  ComponentGraphPtr compgraph(
+      new ComponentGraph(*ctx->depgraph, ctx->registry()));
 
   if( ctx->config.getOption("DumpCompGraph") )
   {
@@ -604,11 +610,10 @@ void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Strong safety checking");
 
-#if 0
-  StrongSafetyChecker sschecker(*ctx->getDependencyGraph());
+  StrongSafetyChecker sschecker(*ctx);
+  // check by calling the object
   sschecker();
 
-#endif
   StatePtr next(new CreateEvalGraphState);
   changeState(ctx, next);
 }
@@ -914,65 +919,6 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-#if 0
-
-
-void
-EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating dependency graph");
-
-  //
-  // The GraphProcessor provides the actual strategy of how to compute the
-  // hex-models of a given dependency graph.
-  //
-  GraphProcessor gp(*ctx);
-
-  //
-  // The GraphProcessor starts its computation with the program's ground
-  // facts as input.
-  // But only if the original EDB is consistent, otherwise, we can skip it
-  // anyway.
-  //
-  if (ctx->getEDB()->isConsistent())
-    {
-      gp.run(*ctx->getEDB());
-    }
-
-  ///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
-
-  //
-  // prepare result container
-  //
-  // if we had any weak constraints, we have to tell the result container the
-  // prefix in order to be able to compute each asnwer set's costs!
-  //
-  std::string wcprefix;
-
-  if (ctx->getIDB()->getWeakConstraints().size() > 0)
-    {
-      wcprefix = "wch__";
-    }
-
-  ResultContainer* result = new ResultContainer(wcprefix);
-  ctx->setResultContainer(result);
-
-  //
-  // put GraphProcessor result into ResultContainer
-  ///@todo we can do better, for sure
-  //
-  AtomSet* res;
-
-  while ((res = gp.getNextModel()) != 0)
-    {
-      ctx->getResultContainer()->addSet(*res);
-    }
-
-  boost::shared_ptr<State> next(new PostProcessState);
-  changeState(ctx, next);
-}
-#endif
-
 MANDATORY_STATE_CONSTRUCTOR(PostProcessState);
 
 void PostProcessState::postProcess(ProgramCtx* ctx)
@@ -1006,43 +952,6 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
 }
-
-#if 0
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building output");
-
-  //
-  // output format
-  //
-  OutputBuilder* outputbuilder = ctx->getOutputBuilder();
-
-  if (outputbuilder == 0)
-    {
-      OutputBuilder* tmpoutputbuilder = 0;
-
-      // first look if some plugin has an OutputBuilder
-      for (std::vector<PluginInterface*>::const_iterator pi = ctx->getPlugins()->begin();
-	   pi != ctx->getPlugins()->end(); ++pi)
-	{
-	  ///@todo this is very clumsy, what should we do if there
-	  ///are more than one output builders available from the
-	  ///atoms?
-	  tmpoutputbuilder = (*pi)->createOutputBuilder();
-	  outputbuilder = tmpoutputbuilder != 0 ? tmpoutputbuilder : outputbuilder;
-	}
-
-      // if no plugin provides an OutputBuilder, we use our own to output the models
-      if (outputbuilder == 0)
-	{
-	  outputbuilder = new TextOutputBuilder;
-	  ctx->setOutputBuilder(outputbuilder);
-	}
-    }
-
-
-  ctx->setOutputBuilder(outputbuilder);
-
-  ctx->getResultContainer()->print(std::cout, ctx->getOutputBuilder());
-#endif
 
 
 DLVHEX_NAMESPACE_END

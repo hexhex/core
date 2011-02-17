@@ -102,6 +102,7 @@ protected:
 public:
   ModelBuilder(EvalGraphT& eg):
     eg(eg), mg(eg) {}
+  virtual ~ModelBuilder() {}
   inline EvalGraphT& getEvalGraph() { return eg; }
   inline MyModelGraph& getModelGraph() { return mg; }
 

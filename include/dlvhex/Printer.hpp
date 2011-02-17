@@ -55,7 +55,7 @@ public:
   Printer(std::ostream& out, RegistryPtr registry):
     out(out), registry(registry.get()) {}
   virtual ~Printer() {}
-  void printmany(const std::vector<ID>& ids, const std::string& separator);
+  void printmany(const Tuple& ids, const std::string& separator);
   virtual void print(ID id) = 0;
 };
 
@@ -69,6 +69,25 @@ public:
     Printer(out, registry) {}
   virtual void print(ID id);
 };
+
+template<typename PrinterT>
+std::string printToString(ID id, RegistryPtr reg)
+{
+  std::stringstream s;
+  PrinterT p(s, reg);
+  p.print(id);
+  return s.str();
+}
+
+template<typename PrinterT>
+std::string printManyToString(
+    const Tuple& ids, const std::string& separator, RegistryPtr reg)
+{
+  std::stringstream s;
+  PrinterT p(s, reg);
+  p.printmany(ids, separator);
+  return s.str();
+}
 
 DLVHEX_NAMESPACE_END
 
