@@ -75,8 +75,9 @@ struct ID:
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
 	static const IDKind SUBKIND_ATOM_BUILTIN =   0x02000000;
 	static const IDKind SUBKIND_ATOM_AGGREGATE = 0x03000000;
+// 6 and A -> check -> because of method isOrdinaryAtom that masked ID with builtin != builtin
 	static const IDKind SUBKIND_ATOM_EXTERNAL =  0x06000000;
-	static const IDKind SUBKIND_ATOM_MODULE =    0x08000000;
+	static const IDKind SUBKIND_ATOM_MODULE =    0x0A000000;
 
 	static const IDKind SUBKIND_RULE_REGULAR =        0x00000000;
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;

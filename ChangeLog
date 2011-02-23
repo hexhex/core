@@ -1,3 +1,8 @@
+2010-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ID.hpp: modified the ID for module atom, adapted to isOrdinaryAtom() method
+	* src/dlvhex/ID.cpp: Likewise
+
 2010-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule
