@@ -66,8 +66,38 @@ ProgramCtx::ProgramCtx():
 
 ProgramCtx::~ProgramCtx()
 {
+  DBGLOG(DBG,"resetting state");
+  state.reset();
+
+  DBGLOG(DBG,"resetting callbacks");
+  modelCallbacks.clear();
+  finalCallbacks.clear();
+
+  DBGLOG(DBG,"resetting modelBuilder");
+  modelBuilder.reset();
+
+  DBGLOG(DBG,"resetting evalgraph");
+  evalgraph.reset();
+
+  DBGLOG(DBG,"resetting compgraph");
+  compgraph.reset();
+
+  DBGLOG(DBG,"resetting depgraph");
+  depgraph.reset();
+
+  DBGLOG(DBG,"resetting edb");
+  edb.reset();
+
+  DBGLOG(DBG,"resetting inputProvider");
+  inputProvider.reset();
+
+  DBGLOG(DBG,"resetting aspsoftware");
+  aspsoftware.reset();
+
+  DBGLOG(DBG,"resetting registry, usage count was " << _registry.use_count() << " (it should be 2)");
+  _registry.reset();
+  DBGLOG(DBG,"resetting pluginContainer, usage count was " << _pluginContainer.use_count() << " (it should be 1)");
   _pluginContainer.reset();
-  DBGLOG(DBG,"usage count for registry is " << _registry.use_count() << " (it should be 1)");
 }
   
 

@@ -118,7 +118,7 @@ public:
   FinalEvalGraphPtr evalgraph;
   FinalEvalGraph::EvalUnit ufinal;
   std::list<ModelCallbackPtr> modelCallbacks;
-  std::list<FinalCallbackPtr> finalCallback;;
+  std::list<FinalCallbackPtr> finalCallbacks;
   ModelBuilderPtr modelBuilder;
   // model graph is only accessible via modelbuilder->getModelGraph()!
   // (model graph is part of the model builder) TODO think about that

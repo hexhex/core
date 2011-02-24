@@ -255,6 +255,18 @@ if test "$debug_support" = "true"; then
 fi
 
 
+# extra-debug
+AC_ARG_ENABLE(extradebug,
+              [  --enable-extradebug     switch on GLIBCXX debug ging switches (e.g., safe iterators)],
+              [extradebug_support=true],
+              [extradebug_support=false]
+              )
+if test "$extradebug_support" = "true"; then
+   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
+   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
+fi
+
+
 #
 # check for libcurl
 #

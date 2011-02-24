@@ -122,6 +122,14 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
   return true;
 }
 
+ExternalAtom::~ExternalAtom()
+{
+  #warning reactivating this allows to reproduce the weak problem when unloading shared lib before destructing all weak_ptrs to pluginatoms (i.e., when destructing plugincontainer before destructing registry)
+  //DBGLOG(DBG,"destructing external atom " << *this << " expierd " << pluginAtom.expired());
+  //pluginAtom.reset();
+  //DBGLOG(DBG,"destructed external atom " << *this);
+}
+
 std::ostream& ExternalAtom::print(std::ostream& o) const
 {
   return o <<
