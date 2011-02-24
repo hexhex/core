@@ -263,9 +263,37 @@ void ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
-  #warning generalize HexParser and permit plugins to provide their own parser (e.g., for plugins that modify the original parser only a bit)
-  HexParser parser(*ctx);
-  parser.parse(ctx->inputProvider->getAsStream());
+  // use alternative parser from plugins, if applicable
+  assert(!ctx->parser);
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    HexParserPtr alternativeParser = plugin->createParser();
+    if( !!alternativeParser )
+    {
+      if( !!ctx->parser )
+      {
+        LOG(WARNING,"ignoring alternative parser provided by plugin " <<
+            plugin->getPluginName() << " because parser already initialized");
+      }
+      else
+      {
+        LOG(INFO,"using alternative parser provided by plugin " <<
+            plugin->getPluginName());
+        ctx->parser = alternativeParser;
+      }
+    }
+  }
+
+  // use default parser if no alternative parsers given
+  if( !ctx->parser )
+  {
+    LOG(INFO,"using default parser (no alternatives provided by plugins)");
+    ctx->parser.reset(new BasicHexParser);
+  }
+
+  // parse
+  assert(!!ctx->parser);
+  ctx->parser->parse(ctx->inputProvider, *ctx);
 
   // free input provider memory
   assert(ctx->inputProvider.use_count() == 1);

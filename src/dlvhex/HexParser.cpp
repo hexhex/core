@@ -40,31 +40,26 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-HexParser::HexParser(ProgramCtx& ctx):
-  ctx(ctx)
+HexParser::~HexParser()
 {
-  // prepare ctx: we need an edb and a registry
+}
+
+void BasicHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
+{
+  assert(!!in);
   assert(!!ctx.registry());
   if( ctx.edb == 0 )
   {
     // create empty interpretation using this context's registry
     ctx.edb.reset(new Interpretation(ctx.registry()));
   }
-}
-  
-HexParser::~HexParser()
-{
-}
 
-// parse from istream into ctx, using registry in ctx
-void
-HexParser::parse(std::istream& is) throw (SyntaxError)
-{
   // put whole input from stream into a string
   // (an alternative would be the boost::spirit::multi_pass iterator
   // but this can be done later when the parser is updated to Spirit V2)
+  #warning TODO incrementally read and parse this stream
   std::ostringstream buf;
-  buf << is.rdbuf();
+  buf << in->getAsStream().rdbuf();
   std::string input = buf.str();
 
   HexGrammar grammar;
@@ -89,32 +84,6 @@ HexParser::parse(std::istream& is) throw (SyntaxError)
   // create dlvhex AST from spirit parser tree
   Converter converter(ctx);
   converter.convertPTToAST(*info.trees.begin());
-}
-
-#warning we should do one function parse(InputProviderPtr)
-
-// parse from file into ctx, using registry in ctx
-void
-HexParser::parse(const std::string& filename) throw (SyntaxError)
-{
-  std::ifstream ifs;
-  ifs.open(filename.c_str());
-
-  if( !ifs.is_open() )
-  {
-    char* ch = getcwd(NULL, 0);
-    std::string cwd(ch);
-    free(ch);
-    throw SyntaxError("File '" + filename + "' could not be opened with cwd '" + cwd + "'");
-  }
-
-  BOOST_SCOPE_EXIT((&ifs))
-  {
-    ifs.close();
-  }
-  BOOST_SCOPE_EXIT_END
-
-  parse(ifs);
 }
 
 DLVHEX_NAMESPACE_END

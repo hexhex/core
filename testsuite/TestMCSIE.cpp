@@ -35,6 +35,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ID.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/Table.hpp"
 #include "dlvhex/TermTable.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
@@ -383,6 +384,9 @@ int main(int argn, char** argv)
     #endif
   }
 
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(rewrittenfile);
+
   // prepare program context
   ProgramCtx ctx;
   {
@@ -396,9 +400,9 @@ int main(int argn, char** argv)
 
   // parse HEX program
   LOG(INFO,"parsing HEX program");
-  DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
-  HexParser parser(ctx);
-  parser.parse(rewrittenfile);
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "BasicHexParser::parse");
+  BasicHexParser parser;
+  parser.parse(ip, ctx);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
   ctx.pluginContainer()->associateExtAtomsWithPluginAtoms(ctx.idb,true);

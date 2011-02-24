@@ -32,7 +32,6 @@
 
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"

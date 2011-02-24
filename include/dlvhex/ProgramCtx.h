@@ -97,6 +97,9 @@ public:
 	// input and replaces it by another input)
 	InputProviderPtr inputProvider;
 
+  // the input parser
+  HexParserPtr parser;
+
   // idb
   std::vector<ID> idb;
 

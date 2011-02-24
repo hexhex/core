@@ -30,6 +30,7 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
@@ -60,8 +61,10 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   ss <<
     "a. b. c(d,e)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -107,8 +110,10 @@ BOOST_AUTO_TEST_CASE(testHexParserConstraint)
   std::stringstream ss;
   ss <<
     ":- g(X), not h(X,X)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -140,8 +145,10 @@ BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint)
   ss <<
     ":~ g(X), not h(X,X)." << std::endl <<
     ":~ g(X). [X:4]";
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -188,8 +195,10 @@ BOOST_AUTO_TEST_CASE(testHexParserTrueNegation)
   std::stringstream ss;
   ss <<
     "a. -b. -b :- a, -b, not -b, not a." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -233,8 +242,10 @@ BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates)
   std::stringstream ss;
   ss <<
     ":- X != 4, X < Y, >=(X,Y), #int(X).";
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -309,8 +320,10 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
   std::stringstream ss;
   ss <<
     ":- &foo[a,b,X](b,X,4).";
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 

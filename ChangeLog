@@ -12,6 +12,7 @@
 	* New central auxiliary constant management method in Registry:
 	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
+	* Plugins may now provide an alternative HEX parser by overriding createParser()
 
 	Testing and debugging additions:
 

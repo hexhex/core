@@ -992,6 +992,15 @@ public:
     return ret;
   }
 
+  /**
+   * \brief Provide alternative parser
+   * 
+   * This method can be overwritten to provide an alternative HEX parser,
+   * e.g., for implementing slightly changed input syntax.
+   */
+  virtual HexParserPtr createParser()
+    { return HexParserPtr(); }
+
   #warning implement rewriter and optimizer
   #if 0
   /**

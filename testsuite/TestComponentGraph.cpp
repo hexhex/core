@@ -32,6 +32,7 @@
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 
@@ -67,8 +68,10 @@ BOOST_AUTO_TEST_CASE(testNonext)
     "a v f(X)." << std::endl <<
     "b :- X(a), not f(b)." << std::endl <<
     ":- X(b), not f(a)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	//LOG_REGISTRY_PROGRAM(ctx);
 

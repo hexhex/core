@@ -40,6 +40,7 @@
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginInterface.h"
@@ -142,9 +143,10 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
     "a4(X) v na4(X) :- o4(X)." << std::endl <<
     ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
     "ctx(4)." << std::endl;
-  program = ss.str();
-  HexParser parser(ctx);
-  parser.parse(ss);
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testcase");
+  BasicHexParser parser;
+  parser.parse(ip, ctx);
 
   //TODO this should become a common functionality using some pluginAtom registry
 	{
@@ -205,9 +207,10 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
     "a4(X) v na4(X) :- o4(X)." << std::endl <<
     ":- not &dlv_asp_context_acc[4,a4,b4,o4,\"./medExample/kb4.dlv\"]()." << std::endl <<
     "ctx(4)." << std::endl;
-  program = ss.str();
-  HexParser parser(ctx);
-  parser.parse(ss);
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testcase");
+  BasicHexParser parser;
+  parser.parse(ip, ctx);
 
   //TODO this should become a common functionality using some pluginAtom registry
 	{

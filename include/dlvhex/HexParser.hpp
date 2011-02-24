@@ -25,13 +25,14 @@
  * @file   HexParser.hpp
  * @author Peter Schüller
  * 
- * @brief  HEX parser interface
+ * @brief  HEX parser interface and the basic HEX parser
  */
 
 #ifndef HEXPARSER_HPP_INCLUDED__14102010
 #define HEXPARSER_HPP_INCLUDED__14102010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/Error.h"
 
 #include <iosfwd>
@@ -40,25 +41,22 @@ DLVHEX_NAMESPACE_BEGIN
 
 class ProgramCtx;
 
-/**
- * @brief Parses HEX-programs.
- */
 class DLVHEX_EXPORT HexParser
 {
 public:
-  HexParser(ProgramCtx& ctx);
-  ~HexParser();
+  virtual ~HexParser();
+  virtual void parse(InputProviderPtr in, ProgramCtx& out) = 0;
+};
+typedef boost::shared_ptr<HexParser> HexParserPtr;
 
-  // parse from istream into ctx, using registry in ctx
-  void
-  parse(std::istream& is) throw (SyntaxError);
-
-  // parse from file into ctx, using registry in ctx
-  void
-  parse(const std::string& filename) throw (SyntaxError);
-
-private:
-  ProgramCtx& ctx;
+/**
+ * @brief Parses HEX-programs.
+ */
+class DLVHEX_EXPORT BasicHexParser:
+  public HexParser
+{
+public:
+  virtual void parse(InputProviderPtr in, ProgramCtx& out);
 };
 
 DLVHEX_NAMESPACE_END

@@ -55,6 +55,9 @@ struct ExternalAtom;
 
 // FinalEvalGraph is a typedef and must not be forward-declared!
 
+class HexParser;
+typedef boost::shared_ptr<HexParser> HexParserPtr;
+
 class InputProvider;
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;
 

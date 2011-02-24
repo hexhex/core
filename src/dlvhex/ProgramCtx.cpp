@@ -76,6 +76,9 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting modelBuilder");
   modelBuilder.reset();
 
+  DBGLOG(DBG,"resetting parser");
+  parser.reset();
+
   DBGLOG(DBG,"resetting evalgraph");
   evalgraph.reset();
 
