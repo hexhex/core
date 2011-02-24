@@ -10,6 +10,7 @@
 ../simple1.hex simple1.out
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
+../notstronglysafe1.hex notstronglysafe1.err
 ../notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
 ../notwellfounded1.hex notwellfounded1_withfacts.out
 ../notwellfounded2.hex notwellfounded2.out --nofacts
