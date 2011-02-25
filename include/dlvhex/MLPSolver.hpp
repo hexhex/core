@@ -28,7 +28,6 @@
 DLVHEX_NAMESPACE_BEGIN
 
 
-
 class DLVHEX_EXPORT MLPSolver{
   private:
 
@@ -91,15 +90,19 @@ class DLVHEX_EXPORT MLPSolver{
    
     // vector of Tuple, the index of the i/S should match with the index in tableInst
     std::vector<Tuple> A;
+    std::vector<int> AFlag;
     
     // vector of Interpretation, the index of the i/S should match with the index in tableInst
     VectorOfInterpretation M;
+    std::vector<int> MFlag;
 
     std::vector<ValueCallsType> path;
 
     ProgramCtx ctx;
     ProgramCtx ctxSolver;
 
+    inline void printingProgram(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb);
+    inline void printingEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb);
     inline bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     inline int extractS(int PiS);
     inline int extractPi(int PiS);
@@ -107,16 +110,21 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool foundNotEmptyInst(ValueCallsType C);
     inline void unionCtoFront(ValueCallsType& C, const ValueCallsType& C2);
     inline std::string getAtomTextFromTuple(const Tuple& tuple);
-    inline const ID& rewriteAtom(const OrdinaryAtom& oldAtom, const std::string& prefix);
+    inline const ID& rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix);
+    inline const ID& rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix);
+    inline const ID& rewritePredicate(const Predicate& oldPred, const std::string& prefix);
     inline void rewriteTuple(Tuple& tuple, const std::string& prefix);
     inline void rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, Tuple& idbResult);
 
-    // inline bool isOrdinary(Tuple idb);
+    inline bool isOrdinary(const Tuple& idb);
     inline std::vector<int> foundMainModules();
     inline ValueCallsType createValueCallsMainModule(int idxModule);
     inline void assignFin(Tuple& t);
+    inline const Tuple& findAllModulesAtom(const Tuple& newRules);
+    inline bool defined(const Tuple& preds, const Tuple& ruleHead);
+    inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
+    inline ID smallestILL(const Tuple& newRules);
     inline void comp(ValueCallsType C);
-    inline ID smallestILL(const ProgramCtx& ctx);
 
   public:
     std::vector<VectorOfInterpretation> AS;
@@ -125,12 +133,36 @@ class DLVHEX_EXPORT MLPSolver{
 
 };
 
+
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   ctx = ctx1;
   ctxSolver.setupRegistryPluginContainer(ctx.registry());
 
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
+}
+
+
+void MLPSolver::printingProgram(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb)
+{
+  DBGLOG(DBG, *ctx1.registry()); 
+  RawPrinter printer(std::cerr, ctx1.registry());
+  std::cerr << "edb = " << *edb << std::endl;
+  DBGLOG(DBG, "idb begin"); 
+  printer.printmany(idb,"\n"); 
+  std::cerr << std::endl; 
+  DBGLOG(DBG, "idb end");
+}
+
+
+void MLPSolver::printingEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb)
+{
+  RawPrinter printer(std::cerr, ctx1.registry());
+  std::cerr << "edb = " << *edb << std::endl;
+  DBGLOG(DBG, "idb begin"); 
+  printer.printmany(idb,"\n"); 
+  std::cerr << std::endl; 
+  DBGLOG(DBG, "idb end");
 }
 
 
@@ -187,11 +219,13 @@ Tuple getIdbFromModule(int idxModule)
   
 }
 
+
 //TODO: should be const Interpretation& ?
 InterpretationPtr getEdbFromModule(int idxModule)
 {
 
 }
+
 
 bool MLPSolver::isEmptyInterpretation(int S)
 {
@@ -261,7 +295,7 @@ std::string MLPSolver::getAtomTextFromTuple(const Tuple& tuple)
 }
 
 
-const ID& MLPSolver::rewriteAtom(const OrdinaryAtom& oldAtom, const std::string& prefix)
+const ID& MLPSolver::rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix)
 {
   // create the new atom (so that we do not rewrite the original one
   OrdinaryAtom atomRnew = oldAtom;
@@ -270,29 +304,58 @@ const ID& MLPSolver::rewriteAtom(const OrdinaryAtom& oldAtom, const std::string&
   Predicate p = ctx.registry()->preds.getByID(predR);
   // rename the predicate name by <prefix> + <old name>
   p.symbol = prefix + p.symbol;
-  DBGLOG(DBG, "[MLPSolver::rewrite] " << p.symbol);
+  DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] " << p.symbol);
   // try to locate the new pred name
   ID predNew = ctxSolver.registry()->preds.getIDByString(p.symbol);
-  DBGLOG(DBG, "[MLPSolver::rewrite] ID predNew = " << predNew);
+  DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID predNew = " << predNew);
   if ( predNew == ID_FAIL )
     {
       predNew = ctxSolver.registry()->preds.storeAndGetID(p);      
-      DBGLOG(DBG, "[MLPSolver::rewrite] ID predNew after FAIL = " << predNew);
+      DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID predNew after FAIL = " << predNew);
     }
   // rewrite the predicate inside atomRnew	
   predR = predNew;
-  DBGLOG(DBG, "[MLPSolver::rewrite] new predR = " << predR);
+  DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] new predR = " << predR);
   // replace the atom text
   atomRnew.text = getAtomTextFromTuple(atomRnew.tuple);
   // try to locate the new atom (the rewritten one)
   ID atomFind = ctxSolver.registry()->ogatoms.getIDByString(atomRnew.text);
-  DBGLOG(DBG, "[MLPSolver::rewrite] ID atomFind = " << atomFind);
+  DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID atomFind = " << atomFind);
   if (atomFind == ID_FAIL)	
     {
       atomFind = ctxSolver.registry()->ogatoms.storeAndGetID(atomRnew);	
-      DBGLOG(DBG, "[MLPSolver::rewrite] ID atomFind after FAIL = " << atomFind);
+      DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID atomFind after FAIL = " << atomFind);
     }
   return atomFind;
+}
+
+
+// prefix only the input predicates (with PiS)
+const ID& MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix)
+{
+  // create the new atom (so that we do not rewrite the original one)
+  DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] To be rewritten = " << oldAtom);
+  ModuleAtom atomRnew = oldAtom;
+  rewriteTuple(atomRnew.inputs, prefix);
+  DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] After rewriting = " << atomRnew);
+  return ctxSolver.registry()->matoms.storeAndGetID(atomRnew);
+}
+
+
+const ID& MLPSolver::rewritePredicate(const Predicate& oldPred, const std::string& prefix)
+{
+  // create the new Predicate (so that we do not rewrite the original one)
+  Predicate predRnew = oldPred;
+  predRnew.symbol = prefix + predRnew.symbol;
+  ID predFind = ctxSolver.registry()->preds.getIDByString(predRnew.symbol);
+  DBGLOG(DBG, "[MLPSolver::rewritePredicate] ID predFind = " << predFind);
+  if (predFind == ID_FAIL)	
+    {
+      predFind = ctxSolver.registry()->preds.storeAndGetID(predRnew);	
+      DBGLOG(DBG, "[MLPSolver::rewritePredicate] ID predFind after FAIL = " << predFind);
+    }
+  return predFind;
+  
 }
 
 
@@ -301,14 +364,35 @@ void MLPSolver::rewriteTuple(Tuple& tuple, const std::string& prefix)
   Tuple::iterator it = tuple.begin();
   while ( it != tuple.end() )
     {
-      if ( (*it).isOrdinaryGroundAtom() )
+      DBGLOG(DBG, "[MLPSolver::rewriteTuple] ID = " << *it);
+      if ( (*it).isAtom() || (*it).isLiteral() )
         {
-	  *it = rewriteAtom(ctx.registry()->ogatoms.getByID(*it), prefix);
+          if ( (*it).isOrdinaryGroundAtom() )
+            {
+              DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary ground atom = " << *it);
+	      *it = rewriteOrdinaryAtom(ctx.registry()->ogatoms.getByID(*it), prefix);
+            }
+          else if ( (*it).isOrdinaryNongroundAtom() )
+            {
+              DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary non ground atom = " << *it);
+	      *it = rewriteOrdinaryAtom(ctx.registry()->onatoms.getByID(*it), prefix);
+            }
+
+          else if ( (*it).isModuleAtom() )
+            {
+              DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite module atom = " << *it);
+              *it = rewriteModuleAtom(ctx.registry()->matoms.getByID(*it), prefix);
+            }
         }
-      else if ( (*it).isOrdinaryNongroundAtom() )
+      else if ( (*it).isTerm() )
         {
-	  *it = rewriteAtom(ctx.registry()->onatoms.getByID(*it), prefix);
+          if ( (*it).isPredicateTerm() )
+            {
+              DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite predicate term = " << *it);
+              *it = rewritePredicate(ctx.registry()->preds.getByID(*it), prefix);
+            }
         }
+
       it++;
     }
 }
@@ -341,79 +425,57 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 	  // get the atom that is pointed by *it (element of the edb)
 	  const OrdinaryAtom& atomR = ctx.registry()->ogatoms.getByAddress(*it);
 	  // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
-	  const ID& atomRewrite = rewriteAtom(atomR, ss.str());
+	  const ID& atomRewrite = rewriteOrdinaryAtom(atomR, ss.str());
 	  edbResult->setFact(atomRewrite.address);
 	  it++;
-        }		
-      // looping over the edb
-      	// enter new name to the atom table ctxSolver
-      	// clear the old atom, set the new atom	       		
+        }			
 
       // rewrite the idb
       Tuple idbTemp;	
       idbTemp.insert(idbTemp.end(), ctx.idbList.at(m.idb).begin(), ctx.idbList.at(m.idb).end());
+      // loop over the rules
       Tuple::iterator itT = idbTemp.begin();
       while (itT != idbTemp.end())
 	{
 	  const Rule& r = ctx.registry()->rules.getByID(*itT);
 	  Rule rNew = r;
+	  // for each rule: body and head, rewrite it
 	  rewriteTuple(rNew.head, ss.str());	
 	  rewriteTuple(rNew.body, ss.str());
 	  ID rNewID = ctxSolver.registry()->rules.storeAndGetID(rNew);
+          // collect it in the idbResult
 	  idbResult.push_back(rNewID);
 	  itT++;
 	}	
-      // loop over std::vector<ID>
-	// each id is rule, get from the rule table
-	// loop over its head
-		// get the id of the atoms
-		// from the atoms table, get the tuple of id <term, constant>
-		// rename the predicate, change the id 
-	// loop over its body  	
-		// get the id of the atoms
-		// from the atoms table, get the tuple of id <term, constant>
-		// rename the predicate, change the id 
 
-      // put edb
-      // ctxNew.edbList.front()->add(*ctx.edbList.at(m.edb));  
-      // put idb   
-      // TODO: optimize here by storing ctxNew.idbList.front() and ctx.idbList.at(m.idb) into variables?
-      // ctxNew.idbList.front().insert(ctxNew.idbList.front().end(), ctx.idbList.at(m.idb).begin(), ctx.idbList.at(m.idb).end());
       // TODO: inpect module atoms, replace with o, remove module rule property
       itC++;
     }
   // printing result
   DBGLOG(DBG, "[MLPSolver::rewrite] in the end:");
-  DBGLOG(DBG, *ctxSolver.registry()); 
-  RawPrinter printer(std::cerr, ctxSolver.registry());
-  std::cerr << "edb = " << *edbResult << std::endl;
-  DBGLOG(DBG, "idb begin"); 
-  printer.printmany(idbResult,"\n"); 
-  std::cerr << std::endl; 
-  DBGLOG(DBG, "idb end");
-
+  printingProgram(ctxSolver, edbResult, idbResult);
+  DBGLOG(DBG, "[MLPSolver::rewrite] finished");
 }
 
+
+
 // TODO: OPEN THIS
-/*
 bool MLPSolver::isOrdinary(const Tuple& idb)
 { 
-  bool result = true;
   Tuple::const_iterator itT = idb.begin();
-  Tuple::const_iterator itTend = idb.end();
-  while ( itT != itTend && result == true )
+  while ( itT != idb.end() )
     {
-      assert( isRule(*itT) == true );
+      assert( itT->isRule() == true );
       // check if the rule contain at least a module atom
       if ( itT->doesRuleContainModatoms() == true ) 
         {
-          result = false;
+          return false;
         }
       itT++;
     }
-  return result;
+  return true;
 }
-*/
+
 
 void MLPSolver::assignFin(Tuple& t)
 { //TODO
@@ -421,9 +483,98 @@ void MLPSolver::assignFin(Tuple& t)
 }
 
 
-ID MLPSolver::smallestILL(const ProgramCtx& ctx)
+const Tuple& MLPSolver::findAllModulesAtom(const Tuple& newRules)
 {
+  Tuple result;
+  Tuple::const_iterator it = newRules.begin();
+  while ( it != newRules.end() )
+    { 
+      if ( it->doesRuleContainModatoms() == true )
+        { // get the rule only if it contains module atoms 
+          const Rule& r = ctx.registry()->rules.getByID(*it);
+          // iterate over body, assume that the module atom only exist in the body	
+          Tuple::const_iterator lit = r.body.begin(); 	
+          while ( lit != r.body.end() )	
+            {
+              if ( lit->isModuleAtom() )
+                {
+                  result.push_back(*lit);  
+                }
+              lit++;
+            }
+        }
+      it++;          
+    }
+  return result;
+}
 
+
+bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
+{
+  Tuple::const_iterator itPred = preds.begin();
+  while ( itPred != preds.end() )
+  {
+    // *itPred = the predicate name
+    Tuple::const_iterator itRH = ruleHead.begin();
+    while ( itRH != ruleHead.end() )
+      {
+        // *itRH = id of an ordinary atom
+        if ( (*itRH).isAtom() )
+          {
+            if ( (*itRH).isOrdinaryGroundAtom() )
+              {
+                const OrdinaryAtom& atom = ctxSolver.registry()->ogatoms.getByID(*itRH);
+                if ( *itPred == atom.tuple.front() ) return true;
+              }
+            else if ( (*itRH).isOrdinaryNongroundAtom() )
+              {
+                const OrdinaryAtom& atom = ctxSolver.registry()->onatoms.getByID(*itRH);
+                if ( *itPred == atom.tuple.front() ) return true;
+              }
+          }
+        itRH++;
+      }
+    itPred++;
+  }
+  return false;
+}
+
+
+bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
+{
+  const ModuleAtom& m = ctxSolver.registry()->matoms.getByID(moduleAtom);
+  Tuple inputs = m.inputs;   // contain ID = predicate term
+  Tuple::const_iterator it = rules.begin();
+  while ( it != rules.end() )
+    {
+      const Rule& r = ctxSolver.registry()->rules.getByID(*it);
+      // get the rule head
+      if ( defined(inputs, r.head) ) 
+        {
+          // if this rule contain a module atom   
+          if ( it->doesRuleContainModatoms() == true ) 
+          {
+            return false;
+          }
+        }
+      it++;
+    }
+  return true;
+}
+
+
+ID MLPSolver::smallestILL(const Tuple& newRules)
+{
+  const Tuple& modAtoms = findAllModulesAtom(newRules);
+  Tuple::const_iterator it = modAtoms.begin();
+  while ( it != modAtoms.end() )
+    {
+      if ( allPrepared(*it, newRules) )
+        {
+          return *it;
+        }
+      it++;
+    }
 }
 
 
@@ -472,13 +623,11 @@ void MLPSolver::comp(ValueCallsType C)
   Tuple idbRewrite;
   rewrite(C, edbRewrite, idbRewrite); 
   DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
-  DBGLOG(DBG, "[MLPSolver::comp] edb: " << *edbRewrite);
-  DBGLOG(DBG, "[MLPSolver::comp] idb: ");
+  printingEdbIdb(ctxSolver, edbRewrite, idbRewrite);
   
-/* TODO: OPEN THIS
   if ( isOrdinary(idbRewrite) )
     {
-
+/* TODO: OPEN THIS
       if ( path.size() == 0 ) 
         {
           //TODO: for all ans(newCtx) here
@@ -498,11 +647,11 @@ void MLPSolver::comp(ValueCallsType C)
           //TODO: for all ans(newCtx) here
           // push stack here: C, path, unionplus(M, mlpize(N,C)), A, AS
         }
-
+*/
     }
   else
     {
-
+/*
       ID id = smallestILL(idbRewrite);
       //TODO: create method smallestILL(ProgramCtx)
       const VCAddressIndex& idx = C.get<impl::AddressTag>();
@@ -516,10 +665,11 @@ void MLPSolver::comp(ValueCallsType C)
         } 
       // TODO: for all N in ans(bu(R))
       // push stack here: C, path, unionplus(M, mlpize(N,C)), A, AS
-    }
+*/ 
+   }
   // TODO: uncomment this:  } while (stack is not empty)
   DBGLOG(DBG, "[MLPSolver::comp] finished");
-*/ 
+ 
 }
 
 
@@ -569,11 +719,11 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
   moduleInstTable.get<impl::ElementTag>().insert( PiS );
   MLPSolver::MIElementIndex::iterator itM = moduleInstTable.get<impl::ElementTag>().find( boost::make_tuple(PiS.idxModule, PiS.idxS) );
-  int idxM = moduleInstTable.project<impl::AddressTag>( itM ) - moduleInstTable.get<impl::AddressTag>().begin();
-  DBGLOG( DBG, "[MLPSolver::createValueCallsMainModule] store PiS at index = " << idxM );
+  int idxMI = moduleInstTable.project<impl::AddressTag>( itM ) - moduleInstTable.get<impl::AddressTag>().begin();
+  DBGLOG( DBG, "[MLPSolver::createValueCallsMainModule] store PiS at index = " << idxMI );
 
   ValueCallsType C;
-  C.push_back(idxM);
+  C.push_back(idxMI);
   return C;
 }
 
