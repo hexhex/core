@@ -36,3 +36,11 @@
 ../nonmon_inc.hex nonmon_inc.out
 ../nonmon_guess.hex nonmon_guess.out
 ../minimality.hex minimality.out
+../query_asp_ground1.hex query_asp_ground1b.err --query-enable --query-brave
+../query_asp_ground1.hex query_asp_ground1c.err --query-enable --query-cautious
+../query_asp_ground2.hex query_brave_false.err --query-enable --query-brave
+../query_asp_ground2.hex query_asp_ground2c.err --query-enable --query-cautious
+../query_asp_ground3.hex query_asp_ground3b.err --query-enable --query-brave
+../query_asp_ground3.hex query_cautious_true.err --query-enable --query-cautious
+../query_asp_ground4.hex query_brave_false.err --query-enable --query-brave
+../query_asp_ground4.hex query_cautious_true.err --query-enable --query-cautious
