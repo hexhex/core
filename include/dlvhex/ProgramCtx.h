@@ -112,8 +112,6 @@ public:
 
   // TODO: add visibility policy (as in clasp)
 
-  // TODO: loaded external atoms
-
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
   DependencyGraphPtr depgraph;
