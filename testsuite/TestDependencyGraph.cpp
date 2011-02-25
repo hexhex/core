@@ -32,6 +32,7 @@
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/DependencyGraphFull.hpp"
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
@@ -80,8 +81,10 @@ BOOST_AUTO_TEST_CASE(testNonext)
     // rule -> body (pos_constraint)
     // rule -> nafbody (neg_constraint)
     ":- X(b), not f(a)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 

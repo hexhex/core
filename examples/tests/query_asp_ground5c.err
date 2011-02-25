@@ -1,0 +1,1 @@
+0 grep -q "not baz(a) is cautiously false, evidenced by .*baz(a)"

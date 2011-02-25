@@ -47,6 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#warning it would be nice if plugincontainer would be registry-unaware and if plugininterfaces could be applied to different programctxs/registries, spawning extra pluginatoms and extra rewriters, ... for each such usage. this also means that plugininterfaces must not have internal state, the state of each plugin instead must be stored generically in programctx. this architecture is something we postpone for now.
 /**
  * @brief Collects and administrates all available plugins.
  *

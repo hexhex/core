@@ -211,6 +211,7 @@ public:
     auxInputPredicate(ID_FAIL),
     inputMask()
     { assert(ID(kind,0).isExternalAtom()); }
+  ~ExternalAtom();
 
   std::ostream& print(std::ostream& o) const;
 

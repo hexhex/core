@@ -38,6 +38,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/AnswerSet.hpp"
 
 #define BOOST_TEST_MODULE "TestASPSolver"
@@ -76,8 +77,10 @@ void testSimple()
     "#module(mp,[])." << std::endl <<
     "c(d,e). g(a)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
 
@@ -113,7 +116,7 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV)
   testSimple<ASPSolver::DLVSoftware::Configuration>();
 }
 #endif
- /*
+ 
 #ifdef HAVE_DLVDB
 BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVDB) 
 {
@@ -134,4 +137,4 @@ BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo)
   testSimple<ASPSolver::ClingoSoftware::Configuration>();
 }
 #endif
- */
+ 

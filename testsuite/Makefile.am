@@ -110,6 +110,7 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/PlainModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/PluginContainer.cpp \
@@ -119,12 +120,13 @@ PLAINHEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp
 
 TestPlainHEX_SOURCES = \
 	$(top_srcdir)/testsuite/TestPlainHEX.cpp \
   $(PLAINHEXSOURCES)
-TestPlainHEX_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
+TestPlainHEX_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = \
@@ -143,21 +145,23 @@ TestEvalEndToEnd_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
 	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
+	$(top_srcdir)/src/dlvhex/HexParser.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/ProcessBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
-	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
-	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestEvalEndToEnd_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestEvalEndToEnd_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestEvalEndToEnd_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestASPSolver_SOURCES = \
@@ -166,6 +170,7 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
 	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
 	$(top_srcdir)/src/dlvhex/DLVProcess.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
@@ -180,8 +185,9 @@ TestASPSolver_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestASPSolver_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@
+TestASPSolver_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
@@ -199,6 +205,7 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/DLVresultParserDriver.cpp \
 	$(top_srcdir)/src/dlvhex/AnswerSet.cpp \
 	$(top_srcdir)/src/dlvhex/ASPSolverManager.cpp \
@@ -214,8 +221,9 @@ TestEvalHeuristic_SOURCES = \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestEvalHeuristic_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ 
+TestEvalHeuristic_LDADD = $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
 TestEvalHeuristic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 TestComponentGraph_SOURCES = \
@@ -230,19 +238,22 @@ TestComponentGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestComponentGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/DependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp \
 	$(top_srcdir)/testsuite/TestDependencyGraph.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/PluginInterface.cpp \
 	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Benchmarking.cpp \
@@ -255,8 +266,9 @@ TestDependencyGraph_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestDependencyGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestDependencyGraph_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestHexParser_SOURCES = \
 	$(top_srcdir)/testsuite/TestHexParser.cpp \
@@ -264,6 +276,7 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
@@ -271,40 +284,45 @@ TestHexParser_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestHexParser_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestHexParser_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestHexParserModule_SOURCES = \
 	$(top_srcdir)/testsuite/TestHexParserModule.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
-	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestHexParserModule_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestHexParserModule_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 
 TestMLPSolver_SOURCES = \
 	$(top_srcdir)/testsuite/TestMLPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/Atoms.cpp \
-	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
+	$(top_srcdir)/src/dlvhex/InputProvider.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/ProgramCtx.cpp \
+	$(top_srcdir)/src/dlvhex/PredicateMask.cpp \
 	$(top_srcdir)/src/dlvhex/Printer.cpp \
 	$(top_srcdir)/src/dlvhex/Configuration.cpp \
 	$(top_srcdir)/src/dlvhex/Registry.cpp \
+	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/Error.cpp
-TestMLPSolver_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestMLPSolver_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 
 TestTables_SOURCES = TestTables.cpp  $(top_srcdir)/src/dlvhex/Logger.cpp $(top_srcdir)/src/dlvhex/ID.cpp
 TestTables_LDADD = @LIBLTDL@ @LIBADD_DL@ 
@@ -348,11 +366,11 @@ TestHexParserND_CPPFLAGS = $(TestHexParser_CPPFLAGS) -DNDEBUG
 
 TestHexParserModuleND_SOURCES = $(TestHexParserModule_SOURCES)
 TestHexParserModuleND_LDADD = $(TestHexParserModule_LDADD)
-TestHexParserModuleND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestHexParserModuleND_CPPFLAGS = $(TestHexParserModule_CPPFLAGS) -DNDEBUG
 
 TestMLPSolverND_SOURCES = $(TestMLPSolver_SOURCES)
 TestMLPSolverND_LDADD = $(TestMLPSolver_LDADD)
-TestMLPSolverND_CPPFLAGS = $(AM_CPPFLAGS) -DNDEBUG
+TestMLPSolverND_CPPFLAGS = $(TestMLPSolver_CPPFLAGS) -DNDEBUG
 
 TestTablesND_SOURCES = $(TestTables_SOURCES)
 TestTablesND_LDADD = $(TestTables_LDADD)

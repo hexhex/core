@@ -30,11 +30,12 @@
 
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
-#include "dlvhex/ModuleSyntaxChecker.hpp"
 #include "dlvhex/Interpretation.hpp"
+#include "dlvhex/ModuleSyntaxChecker.hpp"
 //#include "dlvhex/MLPSolver.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
@@ -111,8 +112,14 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   "skip3  :- q3(X), not q3i(X)." << std::endl <<
   "odd :- skip3, @p2[q3i]::even(c).";
 */
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  
+//  HexParser parser(ctx);
+//  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
   
@@ -152,6 +159,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 }
 
+
 // test case if we call a module that is not exist
 BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 {
@@ -172,8 +180,11 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
   std::stringstream ss;
   ss << input1;
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -203,8 +214,11 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -238,8 +252,11 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -272,8 +289,11 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -308,8 +328,11 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -342,8 +365,11 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -376,8 +402,11 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
@@ -411,8 +440,11 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);

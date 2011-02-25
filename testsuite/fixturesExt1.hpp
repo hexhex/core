@@ -40,6 +40,7 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
@@ -249,9 +250,10 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
 		"edge(Y,Y) :- foo(Y)." << std::endl <<
     "num(N) :- &count[item](N)." << std::endl <<
     "reached(X) :- &reach[N,edge](X), startnode(N)." << std::endl;
-  program = ss.str();
-  HexParser parser(ctx);
-  parser.parse(ss);
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testcase");
+  BasicHexParser parser;
+  parser.parse(ip, ctx);
 
   //TODO this should become a common functionality using some pluginAtom registry
 	{

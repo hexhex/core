@@ -62,7 +62,7 @@ An ID of ~0x0 indicates an error (not found ...).
      Address points into AggregateAtom-Table
    * 0x6 External Atom
      Address points into ExternalAtom-Table
-   * 0x8 Module Atom
+   * 0xA Module Atom
      Address points into ModuleAtom-Table
 
 ** 0x1 Term
@@ -104,5 +104,3 @@ An ID of ~0x0 indicates an error (not found ...).
      mask 0x04: no aggregates atoms (0) vs contains aggregate atoms (1)
      mask 0x08: no external atoms (0) vs contains external atoms (1)
 		 mask 0x40: user-defined (0) vs dlvhex-defined/auxiliary (1)
-     mask 0x10: no module atoms (0) vs contains module atoms (1)
-

@@ -214,6 +214,15 @@ PluginContainer::PluginContainer(RegistryPtr registry):
 
 PluginContainer::~PluginContainer()
 {
+  if( registry.use_count() != 1 )
+  {
+    DBGLOG(DBG, "cannot really destruct plugin container " <<
+      "with registry not destructable from here (weak pointer problem)" <<
+      " -> not unloading libs");
+    return;
+  }
+
+  registry.reset();
   DBGLOG(DBG,"unregistering plugin atoms");
   for(PluginAtomMap::const_iterator it = pluginAtoms.begin();
       it != pluginAtoms.end(); ++it)
@@ -416,6 +425,7 @@ void PluginContainer::associateExtAtomsWithPluginAtoms(
     PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
     if( itpa != pluginAtoms.end() )
     {
+      assert(!!itpa->second);
       eatom.pluginAtom = itpa->second;
     }
     else

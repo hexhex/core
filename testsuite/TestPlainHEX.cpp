@@ -52,6 +52,7 @@
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/EvalHeuristicEasy.hpp"
+#include "dlvhex/InputProvider.hpp"
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/ModelGenerator.hpp"
@@ -603,7 +604,8 @@ int main(int argn, char** argv)
   const std::string fname(argv[4]);
 
   // get input
-  std::ifstream infile(fname.c_str());
+  InputProviderPtr ip(new InputProvider);
+  ip->addFileInput(fname);
 
   // don't rewrite
 
@@ -624,8 +626,8 @@ int main(int argn, char** argv)
   // parse HEX program
   LOG(INFO,"parsing HEX program");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
-  HexParser parser(ctx);
-  parser.parse(infile);
+  BasicHexParser parser;
+  parser.parse(ip, ctx);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
   ctx.pluginContainer()->associateExtAtomsWithPluginAtoms(ctx.idb,true);

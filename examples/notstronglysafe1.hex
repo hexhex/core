@@ -1,0 +1,8 @@
+dom(x).
+dom(xx).
+dom(xxx).
+dom(xxxx).
+strings(xx).
+% this rule is safe but not strongly safe
+out(X) :- &testConcat[A,x](X), strings(A), strings(X).
+strings(X) :- not out(X), dom(X).

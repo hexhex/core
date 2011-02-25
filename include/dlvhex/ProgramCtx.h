@@ -97,7 +97,8 @@ public:
 	// input and replaces it by another input)
 	InputProviderPtr inputProvider;
 
-  // ModuleHeaderTable mHT;
+  // the input parser
+  HexParserPtr parser;
 
   // idb 
   // Tuple idb; // should be without this one
@@ -113,8 +114,6 @@ public:
 
   // TODO: add visibility policy (as in clasp)
 
-  // TODO: loaded external atoms
-
   // TODO: everything required for executing plain HEX programs (no rewriting involved)
 
   DependencyGraphPtr depgraph;
@@ -122,7 +121,7 @@ public:
   FinalEvalGraphPtr evalgraph;
   FinalEvalGraph::EvalUnit ufinal;
   std::list<ModelCallbackPtr> modelCallbacks;
-  std::list<FinalCallbackPtr> finalCallback;;
+  std::list<FinalCallbackPtr> finalCallbacks;
   ModelBuilderPtr modelBuilder;
   // model graph is only accessible via modelbuilder->getModelGraph()!
   // (model graph is part of the model builder) TODO think about that

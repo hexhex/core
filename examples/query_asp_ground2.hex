@@ -1,0 +1,6 @@
+foo(a) v bar(b).
+c(X) :- foo(X).
+c(X) :- bar(X).
+
+% this is bravely and cautiously false
+baz(a) ?

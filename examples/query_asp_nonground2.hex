@@ -1,0 +1,7 @@
+foo(a) v bar(b).
+c(f,X) :- foo(X).
+c(g,X) :- bar(X).
+
+% this returns one result '{c(f,a),foo(a)}' in brave mode and no result in cautious mode
+c(X,Y), not bar(X), foo(Y)?
+

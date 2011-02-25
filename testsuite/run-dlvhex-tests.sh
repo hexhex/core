@@ -17,7 +17,7 @@
 #   * if the extension is ".out" this is a positive testcase
 #     the file contains lines of answer sets
 #     successful termination of dlvhex is expected
-#   * if the extension is ".err" this is a negative testcase
+#   * if the extension is ".special" this is a special testcase
 #     the file contains one line:
 #     * the first word is an integer (verifying the return value of dlvhex)
 #     * the remaining line is a command executed with the error output
@@ -96,32 +96,25 @@ do
       # run dlvhex with specified parameters and program
       $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
       RETVAL=$?
-      if [ $RETVAL -eq 0 ]; then
-        # success where failure was expected
-        echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (should have failed, but got normal termination)"
-        cat $TMPFILE
-        let failed++
-      else
-        # expected failure, now check error code and output
-        read VRETVAL VCOMMAND <$ERRORFILE
-        #echo "verifying return value '$RETVAL'"
-        if [ $VRETVAL -eq $RETVAL ]; then
-          #echo "verifying with command '$VCOMMAND'"
-          if bash -c "$VCOMMAND $ETMPFILE"; then
-            echo "PASS: $HEXPROGRAM (negative testcase)"
-          else
-            echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (error output not verified by $VCOMMAND)"
-            cat $ETMPFILE
-            let failed++
-          fi
+      # check error code and output
+      read VRETVAL VCOMMAND <$ERRORFILE
+      #echo "verifying return value '$RETVAL'"
+      if [ $VRETVAL -eq $RETVAL ]; then
+        #echo "verifying with command '$VCOMMAND'"
+        if bash -c "$VCOMMAND $ETMPFILE"; then
+          echo "PASS: $HEXPROGRAM (negative or special testcase)"
         else
-          echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (error return value $RETVAL not equal reference value $VRETVAL)"
+          echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (output not verified by $VCOMMAND)"
           cat $ETMPFILE
           let failed++
         fi
+      else
+        echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (return value $RETVAL not equal reference value $VRETVAL)"
+        cat $ETMPFILE
+        let failed++
       fi
     elif test "x$VERIFICATIONEXT" == "x.out"; then
-      #echo "positive testcase"
+      #echo "model-verifying testcase"
 
       ANSWERSETSFILE=$TESTDIR/$VERIFICATIONFILE
       if [ ! -f $ANSWERSETSFILE ]; then

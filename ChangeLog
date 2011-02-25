@@ -63,6 +63,7 @@
 	* New central auxiliary constant management method in Registry:
 	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
+	* Plugins may now provide an alternative HEX parser by overriding createParser()
 
 	Testing and debugging additions:
 
@@ -140,6 +141,7 @@
 	* No longer using -nofact for external dlv solver because we sometimes
 	need to keep facts and we never want derived facts that are present in
 	the EDB to "reappear".
+	* documentation moved to doc/ directory (TODO also move NEWS,... there)
 
 2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 

@@ -94,8 +94,10 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
 
@@ -138,8 +140,10 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   std::stringstream ss;
   ss << buf.str();
 
-  HexParser parser(ctx);
-  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
 
