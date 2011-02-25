@@ -22,10 +22,10 @@
  */
 
 /**
- * @file   TestHexParserModule.cpp
+ * @file   TestMLPSolver.cpp
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
- * @brief  Test HEX parser for Module atoms
+ * @brief  Test MLPSolver
  */
 
 #include <boost/cstdint.hpp>
@@ -37,7 +37,7 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/MLPSolver.hpp"
 
-#define BOOST_TEST_MODULE "TestHexParserModule"
+#define BOOST_TEST_MODULE "TestMLPSolver"
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
@@ -107,6 +107,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   m.solve();
 
 }
+
 
 BOOST_AUTO_TEST_CASE(testTwoMainModules) 
 {

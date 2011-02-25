@@ -1,3 +1,9 @@
+2010-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: updating comments
+
+	* include/dlvhex/MLPSolver.hpp: implement smallest ILL
+
 2010-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: implement rewrite
