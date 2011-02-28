@@ -732,8 +732,11 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
       }
     }
     offset = offset + 1;
-    // this one: for output atom
+    // this one: for output atom, change the currentModuleName temporarily to give the appropriate prefix
+    std::string tempcurrentModuleName = currentModuleName;
+    currentModuleName = modName;
     atom.outputAtom = createAtomFromUserPred(node.children[2+offset]);
+    currentModuleName = tempcurrentModuleName;
   }
   //mSC.insertCompleteModuleCalls();
 
