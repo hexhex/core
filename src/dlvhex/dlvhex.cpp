@@ -70,6 +70,9 @@
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
 
+// internal plugin
+#include "dlvhex/QueryPlugin.hpp"
+
 #include <getopt.h>
 #include <sys/types.h>
 #include <pwd.h>
@@ -290,6 +293,12 @@ int main(int argc, char *argv[])
 
 	// defaults of main
 	Config config;
+
+	// initialize internal plugins
+	{
+		PluginInterfacePtr queryPlugin(new QueryPlugin);
+		pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+	}
 
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try

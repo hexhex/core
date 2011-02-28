@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
+lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la libinternalplugins.la
 
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
@@ -32,7 +32,10 @@ dlvhex_LDFLAGS = -export-dynamic
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ libdlvhexbase.la libaspsolver.la $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
+dlvhex_LDADD = \
+  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ \
+  libdlvhexbase.la libaspsolver.la libinternalplugins.la \
+  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
@@ -77,6 +80,10 @@ libaspsolver_la_SOURCES = \
     DLVProcess.cpp \
     DLVresultParserDriver.cpp \
     ProcessBuf.cpp
+
+# dlvhex internal plugins
+libinternalplugins_la_SOURCES = \
+    QueryPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,
@@ -151,6 +158,7 @@ libaspsolver_la_SOURCES = \
 #
 libdlvhexbase_la_LDFLAGS = -version-info 6:0:0
 libaspsolver_la_LDFLAGS = -version-info 2:0:0
+libinternalplugins_la_LDFLAGS = -version-info 1:0:0
 
 libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 

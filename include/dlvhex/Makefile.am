@@ -56,6 +56,7 @@ noinst_HEADERS = \
   ProcessBuf.h \
   Process.h \
   ProgramCtx.h \
+  QueryPlugin.hpp \
   Registry.hpp \
   Rule.hpp \
   RuleTable.hpp \

@@ -76,7 +76,9 @@ libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
 TestTestPluginStatic_SOURCES = TestPlugin.cpp $(top_srcdir)/src/dlvhex/dlvhex.cpp 
 TestTestPluginStatic_LDADD = \
-  $(top_builddir)/src/dlvhex/libdlvhexbase.la $(top_builddir)/src/dlvhex/libaspsolver.la \
+  $(top_builddir)/src/dlvhex/libdlvhexbase.la \
+  $(top_builddir)/src/dlvhex/libaspsolver.la \
+  $(top_builddir)/src/dlvhex/libinternalplugins.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
