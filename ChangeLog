@@ -1,5 +1,7 @@
 2010-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: fixing bug in bottom
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing renaming for the output predicate in the module atom
 
 	* testsuite/Makefile.am: fixing the test case for MLPSolver

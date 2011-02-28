@@ -135,7 +135,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool defined(const Tuple& preds, const Tuple& ruleHead);
     inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
     inline ID smallestILL(const Tuple& newRules);
-    inline void collectBottom(const ID& id, const Tuple& rules, Tuple& result);
+    inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void comp(ValueCallsType C);
 
@@ -564,7 +564,7 @@ bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
   Tuple::const_iterator itPred = preds.begin();
   while ( itPred != preds.end() )
   {
-    // *itPred = the predicate name
+    // *itPred = the predicate names (yes the names only, the ID is belong to term predicate)
     if ( containsIDRuleHead(*itPred, ruleHead) == true ) return true;
     itPred++;
 
@@ -615,7 +615,7 @@ ID MLPSolver::smallestILL(const Tuple& newRules)
 }
 
 
-void MLPSolver::collectBottom(const ID& id, const Tuple& rules, Tuple& result)
+void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result)
 {
   result.clear();
   Tuple::const_iterator it = rules.begin();
@@ -623,7 +623,7 @@ void MLPSolver::collectBottom(const ID& id, const Tuple& rules, Tuple& result)
     {
       const Rule& r = ctxSolver.registry()->rules.getByID(*it);
       // get the rule head
-      if ( containsIDRuleHead(id, r.head) ) 
+      if ( defined(moduleAtom.inputs, r.head) ) 
         {
 	  result.push_back(*it);
         }
@@ -716,8 +716,9 @@ void MLPSolver::comp(ValueCallsType C)
   else
     {
       DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
-      ID id = smallestILL(idbRewrite);
-      DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << id);
+      ID idAlpha = smallestILL(idbRewrite);
+      const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID(idAlpha);
+      DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
       // check the size of A
       DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
       DBGLOG(DBG, "[MLPSolver::comp] A size: " << A.size());
@@ -728,7 +729,7 @@ void MLPSolver::comp(ValueCallsType C)
       VCAddressIndex::const_iterator it = idx.begin();
       while ( it != idx.end() )
         {
-	  A.at(*it).get<impl::ElementTag>().insert(id); 
+	  A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
           it++;  
         } 
       // print the size of A:
@@ -736,8 +737,8 @@ void MLPSolver::comp(ValueCallsType C)
         DBGLOG(DBG, "[MLPSolver::comp] A [" << i << "].size(): " << A.at(i).size() );
       }
       Tuple bottom;
-      collectBottom(id, idbRewrite, bottom);
-      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << id);
+      collectBottom(alpha, idbRewrite, bottom);
+      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
       printEdbIdb(ctxSolver, edbRewrite, bottom);
       
       // try to get the answer of the bottom:	
@@ -747,12 +748,14 @@ void MLPSolver::comp(ValueCallsType C)
       while (int0 !=0 )
         {
           DBGLOG(DBG,"got answer set " << *int0);
-	  // get the atom in the answer set
+	  // collect all of the atoms in the answer set
           Interpretation::Storage bits = int0->interpretation->getStorage();
           Interpretation::Storage::enumerator it = bits.first();
+	  std::vector<OrdinaryAtom> listAtom;
           while ( it!=bits.end() ) 
             {
 	      const OrdinaryAtom& atomR = ctx.registry()->ogatoms.getByAddress(*it);
+	      listAtom.push_back(atomR);
               DBGLOG(DBG,"atom in the answer set " << atomR);
 	      it++;
             }	
