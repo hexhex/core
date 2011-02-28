@@ -1090,11 +1090,11 @@ public:
     { return this->versionMicro; }
 
 	// output help message for this plugin
-	void printUsage(std::ostream& o) const;
+	virtual void printUsage(std::ostream& o) const;
 
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
-	void processOptions(std::list<const char*>& pluginOptions);
+	virtual void processOptions(std::list<const char*>& pluginOptions);
 };
 // beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
