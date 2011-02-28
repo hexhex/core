@@ -193,8 +193,6 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 }
 
 
-
-
 // test case if there is a predicate input in module header (is okay)
 // that is not exist in module body
 BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader) 
@@ -512,5 +510,4 @@ BOOST_AUTO_TEST_CASE(EndMessage)
   std::cout << "[TestHexParserModule::BOOST_AUTO_TEST_CASE(EndMessage)] *** 1 failure ( from BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) ) is expected *** " <<std::endl; 
 }
 */
-
 

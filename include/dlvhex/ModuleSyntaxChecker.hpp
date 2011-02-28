@@ -33,8 +33,8 @@ class DLVHEX_EXPORT ModuleSyntaxChecker{
     ProgramCtx ctx;
     inline int getArity(std::string predName);
     inline int getArity(ID idp);
-    inline std::string getStringBeforeDot(const std::string& s);
-    inline std::string getStringAfterDot(const std::string& s);
+    inline std::string getStringBeforeSeparator(const std::string& s);
+    inline std::string getStringAfterSeparator(const std::string& s);
     // bool verifyPredInputsModuleHeader(ModuleTable::modStruct module);
     // bool verifyPredInputsAllModuleHeader();
     inline bool verifyPredInputsArityModuleCall(ID module, Tuple tuple);
@@ -70,14 +70,14 @@ int ModuleSyntaxChecker::getArity(ID idp)
 }
 
 // s = "p1.p2" will return "p1"
-std::string ModuleSyntaxChecker::getStringBeforeDot(const std::string& s)
+std::string ModuleSyntaxChecker::getStringBeforeSeparator(const std::string& s)
 {
   int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(0, n);
 }
 
 // s = "p1.p2" will return "p2"
-std::string ModuleSyntaxChecker::getStringAfterDot(const std::string& s)
+std::string ModuleSyntaxChecker::getStringAfterSeparator(const std::string& s)
 {
   int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(n+2, s.length());
@@ -92,7 +92,7 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
 {
   // get the module to call
   std::string moduleFullName = ctx.registry()->preds.getByID(module).symbol;
-  std::string moduleToCall = getStringAfterDot(moduleFullName);
+  std::string moduleToCall = getStringAfterSeparator(moduleFullName);
 
 /*
   ModuleHeaderTable::predSet predInputs; 
@@ -156,16 +156,18 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
 {
   // get the module to call
   std::string moduleFullName = ctx.registry()->preds.getByID(module).symbol;
-  std::string moduleToCall = getStringAfterDot(moduleFullName);
+  std::string moduleToCall = getStringAfterSeparator(moduleFullName);
   
   // get the arity of the outputAtom in the module Call
   OrdinaryAtom oa = ctx.registry()->lookupOrdinaryAtom(outputAtom);
   int arity1 = oa.tuple.size()-1;
 
   std::string predFullName = ctx.registry()->preds.getByID(oa.tuple.front()).symbol;
-  std::string predName = getStringAfterDot(predFullName);
+  std::string predName = getStringAfterSeparator(predFullName);
   std::string predNewName = moduleToCall + MODULEPREFIXSEPARATOR + predName;
   int arity2 = getArity(ctx.registry()->preds.getIDByString(predNewName));
+//  std::string predName = ctx.registry()->preds.getByID(oa.tuple.front()).symbol;
+//  int arity2 = getArity(ctx.registry()->preds.getIDByString(predName));
 
   if (arity1 == arity2) 
     {
