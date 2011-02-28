@@ -1,45 +1,53 @@
 2010-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/MLPSolver.hpp: fixing bug in bottom
+	* include/dlvhex/ModuleSyntaxChecker.hpp: implementing restriction and renaming.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing renaming for the output predicate in the module atom
+	* include/dlvhex/MLPSolver.hpp: fixing bug in bottom.
 
-	* testsuite/Makefile.am: fixing the test case for MLPSolver
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing renaming for the output predicate in the module atom.
 
-	* include/dlvhex/MLPSolver.hpp: implement bottom and ans
+	* testsuite/Makefile.am: fixing the test case for MLPSolver.
+
+	* include/dlvhex/MLPSolver.hpp: implement bottom and ans.
 
 2010-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* testsuite/TestMLPSolver.cpp: updating comments
+	* testsuite/TestMLPSolver.cpp: updating comments.
 
-	* include/dlvhex/MLPSolver.hpp: implement smallest ILL
+	* include/dlvhex/MLPSolver.hpp: implement smallest ILL.
 
 2010-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/MLPSolver.hpp: implement rewrite
+	* include/dlvhex/MLPSolver.hpp: implement rewrite.
 
-	* include/dlvhex/ID.hpp: modified the ID for module atom, adapted to isOrdinaryAtom() method
-	* src/dlvhex/ID.cpp: Likewise
+	* include/dlvhex/ID.hpp: modified the ID for module atom, adapted to isOrdinaryAtom() method.
+	* src/dlvhex/ID.cpp: Likewise.
 
 2010-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule.
 
 2010-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/MLPSolver.hpp: adding MLPSolver
-	* include/dlvhex/ModuleTable.hpp: Likewise
-	* include/dlvhex/ModuleSyntaxChecker.hpp: Likewise
-	* include/dlvhex/Registry.hpp: Likewise
-	* include/dlvhex/ProgramCtx.h: Likewise
-	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise
-	* src/dlvhex/Registry.cpp: Likewise
+	* include/dlvhex/MLPSolver.hpp: adding MLPSolver.
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Likewise.
+	* include/dlvhex/Registry.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
 
-	* example/module1.hex: modified example for mlp
+	* example/module1.hex: modified example for mlp.
 
-	* testsuite/Makefile.am: add test case for the MLP solver
-	* testsuite/TestHexParserModule.cpp: Likewise
-	* testsuite/TestMLPSolver.cpp: Likewise
+	* testsuite/Makefile.am: add test case for the MLP solver.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
 2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
 

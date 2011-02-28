@@ -67,6 +67,9 @@ DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testOneMainModules) 
 {
+  LOG(DBG, " ");
+  LOG(DBG, "Test One Main Modules begin");
+
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
@@ -113,6 +116,8 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
 
 BOOST_AUTO_TEST_CASE(testTwoMainModules) 
 {
+  LOG(DBG, " ");
+  LOG(DBG, "Test Two Main Modules begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
@@ -155,7 +160,5 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   m.solve();
 
 }
-
-
 
 

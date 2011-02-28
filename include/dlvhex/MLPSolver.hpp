@@ -111,8 +111,8 @@ class DLVHEX_EXPORT MLPSolver{
     ProgramCtx ctxSolver;
 
     inline void dataReset();
-    inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb);
-    inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb);
+    inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
+    inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
     inline bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     inline int extractS(int PiS);
     inline int extractPi(int PiS);
@@ -120,9 +120,9 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool foundNotEmptyInst(ValueCallsType C);
     inline void unionCtoFront(ValueCallsType& C, const ValueCallsType& C2);
     inline std::string getAtomTextFromTuple(const Tuple& tuple);
-    inline const ID& rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix);
-    inline const ID& rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix);
-    inline const ID& rewritePredicate(const Predicate& oldPred, const std::string& prefix);
+    inline ID rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix);
+    inline ID rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix);
+    inline ID rewritePredicate(const Predicate& oldPred, const std::string& prefix);
     inline void rewriteTuple(Tuple& tuple, const std::string& prefix);
     inline void rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, Tuple& idbResult);
 
@@ -137,6 +137,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline ID smallestILL(const Tuple& newRules);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
+    inline void restrictionAndRenaming(const std::vector<OrdinaryAtom>& listAtom, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& result);
     inline void comp(ValueCallsType C);
 
   public:
@@ -168,10 +169,19 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
 }
 
 
-void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb)
+void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
 {
   DBGLOG(DBG, *ctx1.registry()); 
   RawPrinter printer(std::cerr, ctx1.registry());
+
+      Interpretation::Storage bits = edb->getStorage();
+      Interpretation::Storage::enumerator it = bits.first();
+      while ( it!=bits.end() ) 
+        {
+          DBGLOG(DBG, "[MLPSolver::printProgram] address: " << *it);
+	  it++;
+        }
+
   std::cerr << "edb = " << *edb << std::endl;
   DBGLOG(DBG, "idb begin"); 
   printer.printmany(idb,"\n"); 
@@ -180,7 +190,7 @@ void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr edb
 }
 
 
-void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr edb, const Tuple& idb)
+void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
 {
   RawPrinter printer(std::cerr, ctx1.registry());
   std::cerr << "edb = " << *edb << std::endl;
@@ -320,7 +330,7 @@ std::string MLPSolver::getAtomTextFromTuple(const Tuple& tuple)
 }
 
 
-const ID& MLPSolver::rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix)
+ID MLPSolver::rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std::string& prefix)
 {
   // create the new atom (so that we do not rewrite the original one
   OrdinaryAtom atomRnew = oldAtom;
@@ -356,7 +366,7 @@ const ID& MLPSolver::rewriteOrdinaryAtom(const OrdinaryAtom& oldAtom, const std:
 
 
 // prefix only the input predicates (with PiS)
-const ID& MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix)
+ID MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, const std::string& prefix)
 {
   // create the new atom (so that we do not rewrite the original one)
   DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] To be rewritten = " << oldAtom);
@@ -367,7 +377,7 @@ const ID& MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, const std::str
 }
 
 
-const ID& MLPSolver::rewritePredicate(const Predicate& oldPred, const std::string& prefix)
+ID MLPSolver::rewritePredicate(const Predicate& oldPred, const std::string& prefix)
 {
   // create the new Predicate (so that we do not rewrite the original one)
   Predicate predRnew = oldPred;
@@ -450,7 +460,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 	  // get the atom that is pointed by *it (element of the edb)
 	  const OrdinaryAtom& atomR = ctx.registry()->ogatoms.getByAddress(*it);
 	  // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
-	  const ID& atomRewrite = rewriteOrdinaryAtom(atomR, ss.str());
+	  ID atomRewrite = rewriteOrdinaryAtom(atomR, ss.str());
 	  edbResult->setFact(atomRewrite.address);
 	  it++;
         }			
@@ -478,6 +488,14 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
     }
   // printing result
   DBGLOG(DBG, "[MLPSolver::rewrite] in the end:");
+      Interpretation::Storage bits = edbResult->getStorage();
+      Interpretation::Storage::enumerator it = bits.first();
+      while ( it!=bits.end() ) 
+        {
+          DBGLOG(DBG, "[MLPSolver::rewrite] edb address: " << *it);
+	  it++;
+        }
+
   printProgram(ctxSolver, edbResult, idbResult);
   DBGLOG(DBG, "[MLPSolver::rewrite] finished");
 }
@@ -641,6 +659,47 @@ void MLPSolver::solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolv
 }
 
 
+// actualInputs: Tuple of predicate name (predicate term) in the module atom (caller)
+// formalInputs: Tuple of predicate name (predicate term) in the module list (module header)
+void MLPSolver::restrictionAndRenaming(const std::vector<OrdinaryAtom>& listAtom, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& result)
+{
+  result.clear();
+  std::vector<OrdinaryAtom>::const_iterator it = listAtom.begin();
+  while ( it != listAtom.end() )
+    {
+      OrdinaryAtom atomR = *it;
+      ID predName = atomR.tuple.front();  
+      Tuple::const_iterator itA = actualInputs.begin();
+      bool found = false; 
+      int ctr = 0;
+      while ( itA != actualInputs.end() && found == false)
+        {
+          if (*itA == predName) 
+            {
+	      OrdinaryAtom atomRnew = atomR; 
+      	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomR: " << atomR);
+      	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomRnew: " << atomRnew);
+              atomRnew.tuple.front() = formalInputs.at(ctr);
+	      atomRnew.text = getAtomTextFromTuple(atomRnew.tuple);
+      	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomRnew after renaming: " << atomRnew);
+              ID id = ctxSolver.registry()->ogatoms.getIDByTuple(atomRnew.tuple);
+      	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] id found: " << id);
+	      if ( id == ID_FAIL ) 
+		{
+		  id = ctxSolver.registry()->ogatoms.storeAndGetID(atomRnew);
+		  DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] id after storing: " << id);
+		  result.push_back(id);
+		}
+	      found = true;
+            }
+	  itA++;
+	  ctr++;
+        }
+      it++;
+    }
+}
+
+
 ///////////////////
 void MLPSolver::comp(ValueCallsType C)
 {
@@ -747,7 +806,7 @@ void MLPSolver::comp(ValueCallsType C)
       AnswerSet::Ptr int0 = res->getNextAnswerSet();
       while (int0 !=0 )
         {
-          DBGLOG(DBG,"got answer set " << *int0);
+          DBGLOG(DBG,"[MLPSolver::comp] got answer set " << *int0);
 	  // collect all of the atoms in the answer set
           Interpretation::Storage bits = int0->interpretation->getStorage();
           Interpretation::Storage::enumerator it = bits.first();
@@ -756,11 +815,29 @@ void MLPSolver::comp(ValueCallsType C)
             {
 	      const OrdinaryAtom& atomR = ctx.registry()->ogatoms.getByAddress(*it);
 	      listAtom.push_back(atomR);
-              DBGLOG(DBG,"atom in the answer set " << atomR);
+              DBGLOG(DBG,"[MLPSolver::comp] atom in the answer set " << atomR);
 	      it++;
             }	
-	  // translate it
-	  // ...
+	  // restriction and renaming
+	  // get the module name
+	  std::string modName = ctxSolver.registry()->preds.getByID(alpha.predicate).symbol;
+          modName = modName.substr(modName.find(MODULEPREFIXSEPARATOR)+2, modName.length());
+	  // get the module that will be called
+          const Module& alphaJ = ctxSolver.registry()->moduleTable.getModuleByName(modName);
+	  if (alphaJ.moduleName=="")
+	    {
+              DBGLOG(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
+	      return;	
+	    }
+	  DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
+	  // get the formal input paramater, tuple of predicate term
+          Tuple formalInputs = ctxSolver.registry()->inputList.at(alphaJ.inputList);
+	  Tuple newT;
+	  restrictionAndRenaming(listAtom, alpha.inputs, formalInputs, newT);
+	  DBGLOG(DBG,"[MLPSolver::comp] newT: " << printvector(newT));
+	  
+	  // next: defining new C and path
+
           int0 = res->getNextAnswerSet();
         }  
 

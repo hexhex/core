@@ -72,14 +72,14 @@ int ModuleSyntaxChecker::getArity(ID idp)
 // s = "p1.p2" will return "p1"
 std::string ModuleSyntaxChecker::getStringBeforeDot(const std::string& s)
 {
-  int n=s.find("__");
+  int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(0, n);
 }
 
 // s = "p1.p2" will return "p2"
 std::string ModuleSyntaxChecker::getStringAfterDot(const std::string& s)
 {
-  int n=s.find("__");
+  int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(n+2, s.length());
 }
 
@@ -164,7 +164,7 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
 
   std::string predFullName = ctx.registry()->preds.getByID(oa.tuple.front()).symbol;
   std::string predName = getStringAfterDot(predFullName);
-  std::string predNewName = moduleToCall + "__" + predName;
+  std::string predNewName = moduleToCall + MODULEPREFIXSEPARATOR + predName;
   int arity2 = getArity(ctx.registry()->preds.getIDByString(predNewName));
 
   if (arity1 == arity2) 

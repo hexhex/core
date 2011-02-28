@@ -231,7 +231,7 @@ struct ModuleAtom:
   {
   // @<predicate>[<inputs>]::<outputpredicate>(<outputs>)
 
-  // module atom name (constant term)
+  // module atom name (predicate term)
   ID predicate;
   // input terms
   Tuple inputs;

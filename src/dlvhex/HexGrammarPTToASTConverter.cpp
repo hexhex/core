@@ -858,7 +858,7 @@ ID HexGrammarPTToASTConverter::createPredFromIdent(node_t& node, int arity)
 {
   std::string s = createStringFromNode(node);
   assert(!s.empty());
-  s = currentModuleName + "__" + s;
+  s = currentModuleName + MODULEPREFIXSEPARATOR + s;
   ID id = ctx.registry()->preds.getIDByString(s);
   if( id == ID_FAIL )
     {

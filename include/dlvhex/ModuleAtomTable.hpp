@@ -50,7 +50,7 @@ class ModuleAtomTable:
 			boost::multi_index::random_access<
 				boost::multi_index::tag<impl::AddressTag>
 			>,
-			boost::multi_index::ordered_non_unique<
+			boost::multi_index::hashed_non_unique<
 				boost::multi_index::tag<impl::PredicateTag>,
 				BOOST_MULTI_INDEX_MEMBER(ModuleAtom,ID,predicate)
 			>
