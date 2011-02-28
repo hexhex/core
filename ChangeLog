@@ -1,3 +1,7 @@
+2010-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: implement bottom and ans
+
 2010-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: updating comments
