@@ -35,20 +35,10 @@
 
 
 #include "dlvhex/ProgramCtx.h"
-
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginContainer.h"
-
-#if 0
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomSet.h"
-#endif
-
-//#include "dlvhex/NodeGraph.h"
-//#include "dlvhex/DependencyGraph.h"
-//#include "dlvhex/ResultContainer.h"
-//#include "dlvhex/OutputBuilder.h"
 #include "dlvhex/State.h"
-#include "dlvhex/DLVProcess.h"
+//#include "dlvhex/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -103,8 +93,15 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting aspsoftware");
   aspsoftware.reset();
 
+  DBGLOG(DBG,"resetting pluginData");
+  pluginData.clear();
+
   DBGLOG(DBG,"resetting registry, usage count was " << _registry.use_count() << " (it should be 2)");
   _registry.reset();
+
+  DBGLOG(DBG,"resetting pluginAtoms");
+  pluginAtoms.clear();
+
   DBGLOG(DBG,"resetting pluginContainer, usage count was " << _pluginContainer.use_count() << " (it should be 1)");
   _pluginContainer.reset();
 }
@@ -115,8 +112,10 @@ ProgramCtx::changeState(const boost::shared_ptr<State>& s)
   state = s;
 }
 
+#if 0
 // must be setup together
 // pluginContainer must be associated to registry
+#warning deprecated
 void ProgramCtx::setupRegistryPluginContainer(
     RegistryPtr registry, PluginContainerPtr pluginContainer)
 {
@@ -125,6 +124,35 @@ void ProgramCtx::setupRegistryPluginContainer(
       "PluginContainer in ProgramCtx must be associated to registry of programCtx"));
   _registry = registry;
   _pluginContainer = pluginContainer;
+}
+#endif
+
+// cannot change registry if something is already stored here
+void ProgramCtx::setupRegistry(
+    RegistryPtr registry)
+{
+  assert(
+      (
+        !_registry || // allow to set from nothing
+        (idbList.size()==0 && edbList.size()==0 && pluginAtoms.empty()) // allow to change if empty
+      )
+      &&
+      "cannot change registry once idb or edb or pluginAtoms contains data");
+  _registry = registry;
+}
+
+void ProgramCtx::setupPluginContainer(
+    PluginContainerPtr pluginContainer)
+{
+  assert(
+      (
+        !_pluginContainer || // allow to set if unset
+        pluginAtoms.empty() // allow to change if no atoms stored
+      )
+      &&
+      "cannot change pluginContainer once pluginAtoms are used");
+  _pluginContainer = pluginContainer;
+  #warning here we could reset the pointers in all ExternalAtoms if we unset the pluginContainer
 }
 
 ASPSolverManager::SoftwareConfigurationPtr
@@ -139,127 +167,6 @@ void ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr softw
   aspsoftware = software;
 }
 
-#if 0
-
-void
-ProgramCtx::setPluginContainer(PluginContainer* c)
-{
-  if (this->container != c)
-    {
-      this->container = c;
-    }
-}
-
-
-PluginContainer*
-ProgramCtx::getPluginContainer() const
-{
-  return this->container;
-} 
-
-
-std::vector<PluginInterface*>*
-ProgramCtx::getPlugins() const
-{
-  return this->plugins;
-}
-
-
-void
-ProgramCtx::addPlugins(const std::vector<PluginInterface*>& p)
-{
-  plugins->insert(plugins->end(), p.begin(), p.end());
-}
-
-
-Program*
-ProgramCtx::getIDB() const
-{
-  return IDB;
-}
-
-
-AtomSet*
-ProgramCtx::getEDB() const
-{
-  return EDB;
-}
-
-
-NodeGraph*
-ProgramCtx::getNodeGraph() const
-{
-  return nodegraph;
-}
-
-
-void
-ProgramCtx::setNodeGraph(NodeGraph* ng)
-{
-  if (ng != this->nodegraph)
-    {
-      delete this->nodegraph;
-      this->nodegraph = ng;
-    }
-}
-
-
-DependencyGraph*
-ProgramCtx::getDependencyGraph() const
-{
-  return depgraph;
-}
-
-
-void
-ProgramCtx::setDependencyGraph(DependencyGraph* dg)
-{
-  if (dg != this->depgraph)
-    {
-      delete this->depgraph;
-      this->depgraph = dg;
-    }
-}
-
-
-
-ResultContainer*
-ProgramCtx::getResultContainer() const
-{
-  return result;
-}
-
-
-void
-ProgramCtx::setResultContainer(ResultContainer* c)
-{
-  if (this->result != c)
-    {
-      delete this->result;
-      this->result = c;
-    }
-}
-
-
-OutputBuilder*
-ProgramCtx::getOutputBuilder() const
-{
-  return outputbuilder;
-}
-
-
-void
-ProgramCtx::setOutputBuilder(OutputBuilder* o)
-{
-  if (this->outputbuilder != o)
-    {
-      delete this->outputbuilder;
-      this->outputbuilder = o;
-    }
-}
-#endif
-
-
 void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
@@ -273,6 +180,142 @@ void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
 void ProgramCtx::setupProgramCtx() { state->setupProgramCtx(this); }
 void ProgramCtx::evaluate() { state->evaluate(this); }
 void ProgramCtx::postProcess() { state->postProcess(this); }
+
+#if 0
+PluginAtomPtr
+PluginContainer::getAtom(const std::string& name) const
+{
+  PluginAtomMap::const_iterator pa = pluginAtoms.find(name);
+
+  if (pa == pluginAtoms.end())
+    return PluginAtomPtr();
+    
+  return pa->second;
+}
+
+#endif
+
+void ProgramCtx::addPluginAtom(PluginAtomPtr atom)
+{
+  assert(!!atom);
+  assert(!!_registry);
+  const std::string& predicate = atom->getPredicate();
+  LOG(PLUGIN,"adding PluginAtom '" << predicate << "'");
+  if( pluginAtoms.find(predicate) == pluginAtoms.end() )
+  {
+    atom->setRegistry(_registry);
+    pluginAtoms[predicate] = atom;
+  }
+  else
+  {
+    LOG(WARNING,"External atom " << predicate << " is already loaded (skipping)");
+  }
+}
+
+// call processOptions for each loaded plugin
+// (this is supposed to remove "recognized" options from pluginOptions)
+void ProgramCtx::processPluginOptions(
+    std::list<const char*>& pluginOptions)
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, pluginContainer()->getPlugins())
+  {
+    LOG(DBG,"processing options for plugin " << plugin->getPluginName());
+    LOG(DBG,"currently have " << printrange(pluginOptions));
+	  plugin->processOptions(pluginOptions, *this);
+  }
+}
+
+void ProgramCtx::addPluginAtomsFromPluginContainer()
+{
+  assert(!!pluginContainer());
+  assert(!!registry());
+
+  BOOST_FOREACH(PluginInterfacePtr plugin, pluginContainer()->getPlugins())
+  {
+    LOG(DBG,"adding plugin atoms from plugin " << plugin->getPluginName());
+    // always freshly create! (pluginatoms are linked to a registry,
+    // so when using multiple registries, you have to create multiple pluginatoms)
+    BOOST_FOREACH(PluginAtomPtr pap, plugin->createAtoms(*this))
+    {
+      assert(!!pap);
+      pap->setRegistry(registry());
+      const std::string& pred = pap->getPredicate();
+      LOG(DBG,"  got plugin atom " << pred);
+      if( pluginAtoms.count(pred) != 0 )
+      {
+        LOG(WARNING,"warning: predicate '" << pred << "' already present in PluginAtomMap (skipping)");
+      }
+      else
+      {
+        pluginAtoms[pred] = pap;
+      }
+    }
+  }
+}
+
+// associate plugins in container to external atoms in registry
+void ProgramCtx::associateExtAtomsWithPluginAtoms(
+    const Tuple& idb, bool failOnUnknownAtom)
+{
+  assert(!!_registry);
+  DBGLOG_SCOPE(DBG,"aEAwPA",false);
+  DBGLOG(DBG,"= associateExtAtomsWithPluginAtoms");
+
+  Tuple eatoms;
+
+  // associate all rules
+  for(Tuple::const_iterator it = idb.begin();
+      it != idb.end(); ++it)
+  {
+    assert(it->isRule());
+    // skip those without external atoms
+    if( !it->doesRuleContainExtatoms() )
+      continue;
+
+    // associate all literals in rule body
+    const Rule& rule = _registry->rules.getByID(*it);
+
+    // get external atoms (recursively)
+    _registry->getExternalAtomsInTuple(rule.body, eatoms);
+  }
+
+  // now associate
+  for(Tuple::const_iterator it = eatoms.begin();
+      it != eatoms.end(); ++it)
+  {
+    assert(it->isExternalAtom());
+
+    const ExternalAtom& eatom = _registry->eatoms.getByID(*it);
+    const std::string& predicate = _registry->getTermStringByID(eatom.predicate);
+    // lookup pluginAtom to this eatom predicate
+    PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
+    if( itpa != pluginAtoms.end() )
+    {
+      assert(!!itpa->second);
+      // we store this as a POD pointer!
+      eatom.pluginAtom = itpa->second.get();
+    }
+    else
+    {
+      DBGLOG(DBG,"did not find plugin atom for predicate '" << predicate << "'");
+      if( failOnUnknownAtom )
+      {
+        throw FatalError("did not find plugin atom "
+            " for predicate '" + predicate + "'");
+      }
+    }
+  }
+}
+
+// setup this ProgramCtx (using setupProgramCtx() for of all plugins)
+void ProgramCtx::setupByPlugins()
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, pluginContainer()->getPlugins())
+  {
+    LOG(DBG,"setting up program ctx for plugin " << plugin->getPluginName());
+	  plugin->setupProgramCtx(*this);
+  }
+}
 
 DLVHEX_NAMESPACE_END
 

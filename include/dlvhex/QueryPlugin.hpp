@@ -31,6 +31,7 @@
 #ifndef QUERY_PLUGIN__HPP_INCLUDED_1518
 #define QUERY_PLUGIN__HPP_INCLUDED_1518
 
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/PluginInterface.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -38,6 +39,31 @@ DLVHEX_NAMESPACE_BEGIN
 class QueryPlugin:
   public PluginInterface
 {
+public:
+  // stored in ProgramCtx, accessed using getPluginData<QueryPlugin>()
+  class CtxData:
+    public PluginData
+  {
+  public:
+    // whether plugin is enabled
+    bool enabled;
+
+    // reasoning mode (at the moment DEFAULT triggers an error,
+    // so the user _must_ choose a reasoning mode)
+    enum Mode { DEFAULT, BRAVE, CAUTIOUS };
+    Mode mode;
+
+    // true for ground queries, false for nonground
+    bool ground;
+
+    // the query (contains body literals)
+    // (this is not directly stored into IDB or EDB)
+    Tuple query;
+
+    CtxData();
+    virtual ~CtxData() {};
+  };
+
 public:
   QueryPlugin();
   virtual ~QueryPlugin();
@@ -49,11 +75,11 @@ public:
   //
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions);
+	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
   // create custom parser that extends and uses the basic hex parser for parsing queries
   // this parser also stores the query information into the plugin
-  virtual HexParserPtr createParser();
+  virtual HexParserPtr createParser(ProgramCtx&);
 
   // change model callback and register final callback
   virtual void setupProgramCtx(ProgramCtx&);

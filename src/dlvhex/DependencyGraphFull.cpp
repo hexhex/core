@@ -392,9 +392,8 @@ void DependencyGraphFull::createExternalPredicateInputDependencies()
     const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
 		DBGLOG(DBG,"checking external atom " << eatom);
 
-		// lock weak pointer
-		assert(!eatom.pluginAtom.expired());
-		PluginAtomPtr pluginAtom(eatom.pluginAtom);
+		assert(!!eatom.pluginAtom);
+		PluginAtom* pluginAtom = eatom.pluginAtom;
 
 		// make sure the meta information fits the external atom
 		// (only assert here, should be ensured by plugin loading or parsing)
@@ -545,9 +544,8 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 					registry->eatoms.getByID(*itext);
 				DBGLOG(DBG,"processing external atom " << eatom);
 
-				// lock weak pointer
-				assert(!eatom.pluginAtom.expired());
-				PluginAtomPtr pluginAtom(eatom.pluginAtom);
+				assert(!!eatom.pluginAtom);
+				PluginAtom* pluginAtom = eatom.pluginAtom;
 
 				// make sure the meta information fits the external atom
 				// (only assert here, should be ensured by plugin loading or parsing)

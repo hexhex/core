@@ -63,12 +63,14 @@ public:
 
 public:
   HexGrammarPTToASTConverter(ProgramCtx& ctx): ctx(ctx) { }
+  #warning virtualized methods to create specialized parsers, if we have some parser plugin infrastructure we can unvirtualize them again (this likely increases parsing performance) and forbid derivation from this class
+  virtual ~HexGrammarPTToASTConverter() {}
 
   // convert the root node of the spirit parse tree (from HexSpiritGrammar)
   // to an idb and idb in ProgramCtx, using registry of ProgramCtx
-  void convertPTToAST(node_t& node);
+  virtual void convertPTToAST(node_t& node);
 
-private:
+protected:
   ProgramCtx& ctx;
 
   std::string currentModuleName;
@@ -81,12 +83,12 @@ private:
   // follow tree until a single content node is found
   // return its content as a string
   // TODO: do not return but create result in ref arg
-  std::string createStringFromNode(node_t& node,
+  virtual std::string createStringFromNode(node_t& node,
       HexGrammar::RuleTags verifyRuleTag = HexGrammar::None);
 
   // use createStringFromNode to get data
   // create correct term type and return id (anonymous vs numeric vs string)
-  ID createTerm_Helper(node_t& node, HexGrammar::RuleTags verify);
+  virtual ID createTerm_Helper(node_t& node, HexGrammar::RuleTags verify);
 
   //
   // converters for specific rules
@@ -95,41 +97,40 @@ private:
   // rule "mod_header"
   void doModuleHeader(node_t& node) throw (SyntaxError);
   // rule "clause", put result into ctx.edb and ctx.idb
-  void createASTFromClause(node_t& node);
+  virtual void createASTFromClause(node_t& node);
   // rule "disj"
   // TODO: do not return but create result in ref arg
-  Tuple createRuleHeadFromDisj(node_t& node);
+  virtual Tuple createRuleHeadFromDisj(node_t& node);
   // rule "body"
   // TODO: do not return but create result in ref arg
-  Tuple createRuleBodyFromBody(node_t& node);
+  virtual Tuple createRuleBodyFromBody(node_t& node);
 
   // rule "literal"
-  ID createLiteralFromLiteral(node_t& node);
+  virtual ID createLiteralFromLiteral(node_t& node);
   // rule "user_pred"
-  ID createAtomFromUserPred(node_t& node);
+  virtual ID createAtomFromUserPred(node_t& node);
   // rule "builtin_pred"
-  ID createBuiltinPredFromBuiltinPred(node_t& node);
+  virtual ID createBuiltinPredFromBuiltinPred(node_t& node);
   // rule "external_atom"
-  ID createExtAtomFromExtAtom(node_t& node);
+  virtual ID createExtAtomFromExtAtom(node_t& node);
   // rule "module_atom"
   ID createModAtomFromModAtom(node_t& node);
 
   // rule "aggregate"
-  ID createAggregateFromAggregate(node_t& node);
+  virtual ID createAggregateFromAggregate(node_t& node);
   // rule "aggregate_pred"
-  void createAggregateFromAggregatePred(node_t& node,
+  virtual void createAggregateFromAggregatePred(node_t& node,
       ID& predid, Tuple& vars, Tuple& atoms);
 
   // rule "terms"
   // TODO: do not return but create result in ref arg
-  // put namespaced = true if we want the tuple to be namespaced by the module name
-  Tuple createTupleFromTerms(node_t& node);
+  virtual Tuple createTupleFromTerms(node_t& node);
   // rule "ident_or_var_or_number"
-  ID createTermFromIdentVarNumber(node_t& node);
+  virtual ID createTermFromIdentVarNumber(node_t& node);
   // rule "ident_or_var"
-  ID createTermFromIdentVar(node_t& node);
+  virtual ID createTermFromIdentVar(node_t& node);
   // rule "term"
-  ID createTermFromTerm(node_t& node);
+  virtual ID createTermFromTerm(node_t& node);
   // create/insert predicate from one identifier 
   ID createPredFromIdent(node_t& node, int arity);
   // create/insert predicate from terms tuple

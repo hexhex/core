@@ -237,9 +237,8 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // retrieve eatom from registry
     const ExternalAtom& eatom = registry->eatoms.getByID(idat);
 
-    // lock weak pointer
-    assert(!eatom.pluginAtom.expired());
-    PluginAtomPtr pluginAtom(eatom.pluginAtom);
+    assert(!!eatom.pluginAtom);
+    PluginAtom* pluginAtom = eatom.pluginAtom;
 
     // make sure the meta information fits the external atom
     // (only assert here, should be ensured by plugin loading or parsing)
@@ -354,12 +353,13 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
 void DependencyGraph::createAuxiliaryRuleIfRequired(
     const Tuple& body,
     ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
-    const PluginAtomPtr& pluginAtom,
+    const PluginAtom* pluginAtom,
     std::vector<ID>& createdAuxRules,
     HeadBodyHelper& hbh)
 {
   LOG_SCOPE(DBG,"cARiR",false);
   DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for body " << printvector(body));
+  assert(!!pluginAtom);
 
   // collect variables at constant inputs of this external atom
   std::list<ID> inputVariables;
@@ -645,9 +645,8 @@ void DependencyGraph::createExternalPredicateInputDependencies(
     const ExternalAtom& eatom = registry->eatoms.getByID(itext->id);
 		LOG(DBG,"checking external atom " << eatom);
 
-		// lock weak pointer
-		assert(!eatom.pluginAtom.expired());
-		PluginAtomPtr pluginAtom(eatom.pluginAtom);
+		assert(!!eatom.pluginAtom);
+		PluginAtom* pluginAtom = eatom.pluginAtom;
 
 		// make sure the meta information fits the external atom
 		// (only assert here, should be ensured by plugin loading or parsing)

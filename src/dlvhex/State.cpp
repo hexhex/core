@@ -202,7 +202,7 @@ void ConvertState::convert(ProgramCtx* ctx)
   std::vector<PluginConverterPtr> converters;
   BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
   {
-    BOOST_FOREACH(PluginConverterPtr pc, plugin->createConverters())
+    BOOST_FOREACH(PluginConverterPtr pc, plugin->createConverters(*ctx))
     {
       LOG(PLUGIN,"got plugin converter from plugin " << plugin->getPluginName());
       converters.push_back(pc);
@@ -285,7 +285,7 @@ void ParseState::parse(ProgramCtx* ctx)
   assert(!ctx->parser);
   BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
   {
-    HexParserPtr alternativeParser = plugin->createParser();
+    HexParserPtr alternativeParser = plugin->createParser(*ctx);
     if( !!alternativeParser )
     {
       if( !!ctx->parser )
@@ -654,11 +654,8 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
       "need component graph for creating evaluation graph");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
-  DBGLOG(DBG,"at line " << __LINE__);
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
-  DBGLOG(DBG,"at line " << __LINE__);
   EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware);
-  DBGLOG(DBG,"at line " << __LINE__);
 
   // use configured eval heuristics
   {
@@ -741,7 +738,7 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   ctx->modelCallbacks.push_back(asprinter);
 
   // let plugins setup the program ctx (removing the default hooks is permitted)
-  ctx->pluginContainer()->setupProgramCtx(*ctx);
+  ctx->setupByPlugins();
 
   /*
   // if we solve using DLV, automagically set higher order mode

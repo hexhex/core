@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la libinternalplugins.la
+lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp

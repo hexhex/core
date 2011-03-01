@@ -124,10 +124,6 @@ bool OrdinaryAtom::unifiesWith(const OrdinaryAtom& a) const
 
 ExternalAtom::~ExternalAtom()
 {
-  #warning reactivating this allows to reproduce the weak problem when unloading shared lib before destructing all weak_ptrs to pluginatoms (i.e., when destructing plugincontainer before destructing registry)
-  //DBGLOG(DBG,"destructing external atom " << *this << " expierd " << pluginAtom.expired());
-  //pluginAtom.reset();
-  //DBGLOG(DBG,"destructed external atom " << *this);
 }
 
 std::ostream& ExternalAtom::print(std::ostream& o) const
@@ -135,7 +131,7 @@ std::ostream& ExternalAtom::print(std::ostream& o) const
   return o <<
     "ExternalAtom(&" << predicate << "[" << printvector(inputs) <<
     "](" << printvector(Atom::tuple) << ")" <<
-    " pluginAtom=" << (pluginAtom.expired()?"expired":"set") <<
+    " pluginAtom=" << printptr(pluginAtom) <<
     " auxInputPredicate=" << auxInputPredicate;
 }
 
@@ -154,9 +150,8 @@ void ExternalAtom::updatePredicateInputMask() const
   {
     // initially configure mask
 
-    // lock ptr to get registry
-    PluginAtomPtr pa(pluginAtom);
-    RegistryPtr reg = pa->getRegistry();
+    assert(!!pluginAtom);
+    RegistryPtr reg = pluginAtom->getRegistry();
 
     inputMask.setRegistry(reg);
   }

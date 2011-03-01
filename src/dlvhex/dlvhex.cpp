@@ -245,8 +245,9 @@ int main(int argc, char *argv[])
   ProgramCtx pctx;
 	{
 		RegistryPtr registry(new Registry);
-		PluginContainerPtr pcp(new PluginContainer(registry));
-		pctx.setupRegistryPluginContainer(registry, pcp);
+		PluginContainerPtr pcp(new PluginContainer);
+		pctx.setupRegistry(registry);
+		pctx.setupPluginContainer(pcp);
 	}
 
   // default external asp solver to first one that has been configured
@@ -359,7 +360,7 @@ int main(int argc, char *argv[])
 		// process plugin options using plugins
 		// (this deletes processed options from config.pluginOptions)
 		// TODO use boost::program_options
-		pctx.pluginContainer()->processOptions(config.pluginOptions);
+		pctx.processPluginOptions(config.pluginOptions);
 			
 		// handle options not recognized by dlvhex and not by plugins
 		if( !config.pluginOptions.empty() )
@@ -372,7 +373,7 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-			
+
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
 			
@@ -385,9 +386,12 @@ int main(int argc, char *argv[])
 		// check weak safety
 		pctx.safetyCheck();
 
-		// associate PluginAtom instances (coming from pctx.pluginContainer()) with
+		// use configured plugins to obtain plugin atoms
+		pctx.addPluginAtomsFromPluginContainer();
+			
+		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
-		pctx.pluginContainer()->associateExtAtomsWithPluginAtoms(pctx.idb, true);
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
 
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();

@@ -131,9 +131,8 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   //   call retrieve
   //   integrate answer into interpretation i as additional facts
 
-  // lock weak pointer
-  assert(!eatom.pluginAtom.expired());
-  PluginAtomPtr pluginAtom(eatom.pluginAtom);
+  assert(!!eatom.pluginAtom);
+  PluginAtom* pluginAtom = eatom.pluginAtom;
 
   // if this is wrong, we might have mixed up registries between plugin and program
   assert(eatom.predicate == pluginAtom->getPredicateID());
@@ -460,9 +459,8 @@ void BaseModelGeneratorFactory::convertRuleBody(
       DBGLOG(DBG,"rewriting external atom " << eatom <<
           " literal with id " << *itlit);
 
-      // lock weak pointer
-      assert(!eatom.pluginAtom.expired());
-      PluginAtomPtr pluginAtom(eatom.pluginAtom);
+      assert(!!eatom.pluginAtom);
+      PluginAtom* pluginAtom = eatom.pluginAtom;
 
       // create replacement atom
       OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);

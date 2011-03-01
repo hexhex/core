@@ -613,15 +613,16 @@ int main(int argn, char** argv)
   ProgramCtx ctx;
   {
     RegistryPtr registry(new Registry);
-    PluginContainerPtr pluginContainer(new PluginContainer(registry));
-    ctx.setupRegistryPluginContainer(registry,pluginContainer);
+    ctx.setupRegistry(registry);
+    PluginContainerPtr pluginContainer(new PluginContainer);
+    ctx.setupPluginContainer(pluginContainer);
   }
 
   // create all testing plugin atoms
-  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new AbovePluginAtom));
-  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new SenseNotArmed1PluginAtom));
-  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new SenseNotArmed2PluginAtom));
-  ctx.pluginContainer()->addInternalPluginAtom(PluginAtomPtr(new GenPluginAtom2("gen2",2)));
+  ctx.addPluginAtom(PluginAtomPtr(new AbovePluginAtom));
+  ctx.addPluginAtom(PluginAtomPtr(new SenseNotArmed1PluginAtom));
+  ctx.addPluginAtom(PluginAtomPtr(new SenseNotArmed2PluginAtom));
+  ctx.addPluginAtom(PluginAtomPtr(new GenPluginAtom2("gen2",2)));
 
   // parse HEX program
   LOG(INFO,"parsing HEX program");
@@ -630,7 +631,7 @@ int main(int argn, char** argv)
   parser.parse(ip, ctx);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 
-  ctx.pluginContainer()->associateExtAtomsWithPluginAtoms(ctx.idb,true);
+  ctx.associateExtAtomsWithPluginAtoms(ctx.idb,true);
 
   //LOG_REGISTRY_PROGRAM(ctx);
 

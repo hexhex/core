@@ -47,9 +47,12 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning it would be nice if plugincontainer would be registry-unaware and if plugininterfaces could be applied to different programctxs/registries, spawning extra pluginatoms and extra rewriters, ... for each such usage. this also means that plugininterfaces must not have internal state, the state of each plugin instead must be stored generically in programctx. this architecture is something we postpone for now.
 /**
  * @brief Collects and administrates all available plugins.
+ *
+ * The PluginContainer loads and manages dynamically loaded and internal plugins.
+ * It is not aware of the configuration or usage of plugins or plugin atoms in a
+ * ProgramCtx.
  *
  * Important: memory allocation policy:
  * * PluginInterface objects are passed by pointer from the extern "C" plugin
@@ -61,14 +64,16 @@ DLVHEX_NAMESPACE_BEGIN
  */
 class DLVHEX_EXPORT PluginContainer
 {
-public:
-  /// ctor
-  PluginContainer(RegistryPtr registry);
-
-  /// copy ctor
+private:
+  /// copy ctor (must not be used, would duplicate library unloads)
   PluginContainer(const PluginContainer&);
 
+public:
+  /// ctor
+  PluginContainer();
+
   /// dtor
+  // unloads shared libraries (if shared_ptr reference counts are ok)
   ~PluginContainer();
 
   //
@@ -85,21 +90,9 @@ public:
   // custom "deleter", do it before you call this method
   void addInternalPlugin(PluginInterfacePtr plugin);
 
-  // add a PluginAtom to the container
-  // the smart pointer will not be reconfigured, so if you need to use a
-  // custom "deleter", do it before you call this method
-  void addInternalPluginAtom(PluginAtomPtr atom);
-
   // get container with plugins loaded so far
-  std::vector<PluginInterfacePtr> getPlugins() const;
-
-  /**
-   * @brief returns a plugin-atom object corresponding to a name.
-   */
-  PluginAtomPtr getAtom(const std::string& name) const;
-
-  RegistryPtr getRegistry() const
-    { return registry; }
+  const std::vector<PluginInterfacePtr>& getPlugins() const
+  { return pluginInterfaces; }
 
   //
   // batch operations on all plugins
@@ -108,29 +101,15 @@ public:
 	// call printUsage for each loaded plugin
 	void printUsage(std::ostream& o);
 
-	// call processOptions for each loaded plugin
-	// (this is supposed to remove "recognized" options from pluginOptions)
-	void processOptions(std::list<const char*>& pluginOptions);
-
-  // associate plugins in container to external atoms in given rules
-  void associateExtAtomsWithPluginAtoms(
-      const std::vector<ID>& idb, bool failOnUnknownAtom=true);
-
-  // call all setupProgramCtx methods of all plugins
-  void setupProgramCtx(ProgramCtx& ctx);
-
 public:
   struct LoadedPlugin;
   typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
   typedef std::vector<LoadedPluginPtr> LoadedPluginVector;
+  typedef std::vector<PluginInterfacePtr> PluginInterfaceVector;
   
 private:
-  // add loaded plugin, extract plugin atoms
+  // add loaded plugin (do not extract plugin atoms)
   void addInternalPlugin(LoadedPluginPtr lplugin);
-
-  // one plugincontainer can only be used with one registry,
-  // as all the plugin atoms have an association with a registry
-  RegistryPtr registry;
 
 	/// current search path
 	std::string searchPath;
@@ -138,10 +117,8 @@ private:
   // loaded plugins
   LoadedPluginVector plugins;
 
-  /**
-   * @brief Associative map of external atoms provided by plugins.
-   */
-  PluginAtomMap pluginAtoms;
+  // loaded plugins (interface ptrs)
+  PluginInterfaceVector pluginInterfaces;
 };
 typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 

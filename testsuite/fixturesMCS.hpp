@@ -110,12 +110,9 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   papAspCtxAcc(new TestPluginAspCtxAcc)
 {
   using namespace dlvhex;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
-  papAspCtxAcc->setRegistry(ctx.registry());
-  ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-  LOG(INFO,"got ID: dlv_asp_context_acc = " << idAspCtxAcc);
+  ctx.addPluginAtom(papAspCtxAcc);
 
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting'
   std::stringstream ss;
@@ -148,29 +145,16 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
   BasicHexParser parser;
   parser.parse(ip, ctx);
 
-  //TODO this should become a common functionality using some pluginAtom registry
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idAspCtxAcc);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry()->eatoms.update(*it, ea);
-		}
-	}
+  ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);
 }
 
 ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
   papAspCtxAcc(new TestPluginAspCtxAcc)
 {
   using namespace dlvhex;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
-  papAspCtxAcc->setRegistry(ctx.registry());
-  ID idAspCtxAcc = papAspCtxAcc->getPredicateID();
-  BOOST_REQUIRE(idAspCtxAcc != ID_FAIL);
-  LOG(INFO,"got ID: dlv_asp_context_acc = " << idAspCtxAcc);
+  ctx.addPluginAtom(papAspCtxAcc);
 
   // program was obtained from trunk of mcs-ie via 'dlvhex --verbose=15 --plugindir=`pwd`/../build/src medExample/master.hex --ieenable --ieuseKR2010rewriting --ieexplain=D'
   std::stringstream ss;
@@ -212,17 +196,7 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
   BasicHexParser parser;
   parser.parse(ip, ctx);
 
-  //TODO this should become a common functionality using some pluginAtom registry
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idAspCtxAcc);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papAspCtxAcc;
-			ctx.registry()->eatoms.update(*it, ea);
-		}
-	}
+  ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);
 }
 
 #endif // FIXTURES_MCS_HPP_INCLUDED__08112010
