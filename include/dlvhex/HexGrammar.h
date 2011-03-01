@@ -43,8 +43,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // the grammar of hex (see "The Grammar" in the boost::spirit docs)
-struct HexGrammar:
-  public boost::spirit::grammar<HexGrammar>
+struct HexGrammarBase
 {
   enum RuleTags {
     None = 0, Root, Clause, Maxint, Namespace,
@@ -56,6 +55,7 @@ struct HexGrammar:
     BuiltinPred, BuiltinOther,
     BuiltinTertopPrefix, BuiltinTertopInfix,
     BuiltinBinopPrefix, BuiltinBinopInfix,
+    MaxTag // this must stay last for extendability!
   };
 
   // S = ScannerT
@@ -66,7 +66,7 @@ struct HexGrammar:
     typedef boost::spirit::parser_context<> c;
     template<int Tag> struct tag: public boost::spirit::parser_tag<Tag> {};
 
-    definition(HexGrammar const& self);
+    definition(HexGrammarBase const& self);
     boost::spirit::rule< S, c, tag<Root> > const& start() const { return root; }
 
     boost::spirit::rule<S, c, tag<Ident> >               ident;
@@ -112,6 +112,12 @@ struct HexGrammar:
     boost::spirit::rule<S, c, tag<Clause> >              clause;
     boost::spirit::rule<S, c, tag<Root> >                root;
   };
+};
+
+struct HexGrammar:
+  public boost::spirit::grammar<HexGrammar>,
+  public HexGrammarBase
+{
 };
 
 // directly include the implementation in the namespace

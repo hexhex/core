@@ -37,11 +37,13 @@
 #include <boost/spirit/tree/parse_tree.hpp>
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/Printhelpers.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
 // data we want to store in the parse tree
-struct FilePositionNodeData
+struct FilePositionNodeData:
+  public ostream_printable<FilePositionNodeData>
 {
   // where was the match to this node?
 	boost::spirit::file_position pos;
@@ -49,6 +51,8 @@ struct FilePositionNodeData
   FilePositionNodeData(): pos() {}
   FilePositionNodeData& operator=(const FilePositionNodeData& n)
    { pos = n.pos; return *this; }
+  std::ostream& print(std::ostream& o) const
+    { return o << "pos.line=" << pos.line; }
 };
 
 // Factory which automatically sets the position (adapted from spirit sources)

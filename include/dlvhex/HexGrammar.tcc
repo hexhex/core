@@ -33,7 +33,7 @@
 // this .tcc file should only be included by HexGrammar.h -> no include guards, no namespaces
 
 template<typename ScannerT>
-HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
+HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
 {
   namespace sp = boost::spirit;
   using sp::str_p;
@@ -139,6 +139,51 @@ HexGrammar::definition<ScannerT>::definition(HexGrammar const&)
        // end_p enforces a "full" match (in case of success)
        // even with trailing newlines
        >> !sp::end_p;
+
+#   ifdef BOOST_SPIRIT_DEBUG
+    BOOST_SPIRIT_DEBUG_NODE(ident);
+    BOOST_SPIRIT_DEBUG_NODE(var);
+    BOOST_SPIRIT_DEBUG_NODE(number);
+    BOOST_SPIRIT_DEBUG_NODE(ident_or_var);
+    BOOST_SPIRIT_DEBUG_NODE(ident_or_var_or_number);
+    BOOST_SPIRIT_DEBUG_NODE(cons);
+    BOOST_SPIRIT_DEBUG_NODE(term);
+    BOOST_SPIRIT_DEBUG_NODE(terms);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_leq_binop);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_geq_binop);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_binop);
+    BOOST_SPIRIT_DEBUG_NODE(binop);
+    BOOST_SPIRIT_DEBUG_NODE(tertop);
+    BOOST_SPIRIT_DEBUG_NODE(external_inputs);
+    BOOST_SPIRIT_DEBUG_NODE(external_outputs);
+    BOOST_SPIRIT_DEBUG_NODE(external_atom);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_pred);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_rel);
+    BOOST_SPIRIT_DEBUG_NODE(aggregate_range);
+    BOOST_SPIRIT_DEBUG_NODE(naf);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_tertop_infix);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_tertop_prefix);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_binop_infix);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_binop_prefix);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_other);
+    BOOST_SPIRIT_DEBUG_NODE(builtin_pred);
+    BOOST_SPIRIT_DEBUG_NODE(literal);
+    BOOST_SPIRIT_DEBUG_NODE(disj);
+    BOOST_SPIRIT_DEBUG_NODE(neg);
+    BOOST_SPIRIT_DEBUG_NODE(user_pred_classical);
+    BOOST_SPIRIT_DEBUG_NODE(user_pred_tuple);
+    BOOST_SPIRIT_DEBUG_NODE(user_pred_atom);
+    BOOST_SPIRIT_DEBUG_NODE(user_pred);
+    BOOST_SPIRIT_DEBUG_NODE(body);
+    BOOST_SPIRIT_DEBUG_NODE(maxint);
+    BOOST_SPIRIT_DEBUG_NODE(namespace_);
+    BOOST_SPIRIT_DEBUG_NODE(rule_);
+    BOOST_SPIRIT_DEBUG_NODE(constraint);
+    BOOST_SPIRIT_DEBUG_NODE(wconstraint);
+    BOOST_SPIRIT_DEBUG_NODE(clause);
+    BOOST_SPIRIT_DEBUG_NODE(root);
+#   endif
 }
 
 // Local Variables:

@@ -624,11 +624,8 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
       "need component graph for creating evaluation graph");
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
-  DBGLOG(DBG,"at line " << __LINE__);
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
-  DBGLOG(DBG,"at line " << __LINE__);
   EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware);
-  DBGLOG(DBG,"at line " << __LINE__);
 
   // use configured eval heuristics
   {
