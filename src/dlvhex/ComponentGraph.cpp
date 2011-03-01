@@ -287,8 +287,8 @@ namespace
 
 		// check monotonicity
 		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-		assert(!eatom.pluginAtom.expired());
-		PluginAtomPtr pa(eatom.pluginAtom);
+		assert(!!eatom.pluginAtom);
+		PluginAtom* pa = eatom.pluginAtom;
 		if( pa->isMonotonic() )
 		{
 			LOG(DBG,"  eatom " << eatomid << " is monotonic");

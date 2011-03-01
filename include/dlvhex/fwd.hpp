@@ -42,6 +42,8 @@ DLVHEX_NAMESPACE_BEGIN
 
 // sorted alphabetically, to easily verify/extend the list
 
+struct AggregateAtom;
+
 class AnswerSet;
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 
@@ -65,6 +67,11 @@ class Interpretation;
 typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 typedef boost::shared_ptr<Interpretation> InterpretationPtr;
 
+struct OrdinaryAtom;
+
+class PluginData;
+typedef boost::shared_ptr<PluginData> PluginDataPtr;
+
 class PluginAtom;
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
@@ -83,6 +90,8 @@ class ProgramCtx;
 
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
+
+struct Rule;
 
 class State;
 typedef boost::shared_ptr<State> StatePtr;

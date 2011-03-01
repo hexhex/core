@@ -50,6 +50,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>
 
+#include <typeinfo>
 #include <vector>
 #include <string>
 #include <iosfwd>
@@ -81,10 +82,17 @@ public:
 	const PluginContainerPtr& pluginContainer() const
     { return _pluginContainer; }
 
+  // cannot change registry if something is already stored here
+  void setupRegistry(RegistryPtr registry);
+
+  void setupPluginContainer(PluginContainerPtr pluginContainer);
+
   // must be setup together
   // pluginContainer must be associated to registry
+  #warning deprecated
   void setupRegistryPluginContainer(
-      RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr());
+      RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr())
+    { setupRegistry(registry); setupPluginContainer(pluginContainer); }
 
   // factory for eval heuristics
   EvalHeuristicFactory evalHeuristicFactory;
@@ -109,6 +117,10 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
+  template<typename PluginT>
+  typename PluginT::CtxData& getPluginData();
 
   // TODO: add visibility policy (as in clasp)
 
@@ -126,53 +138,13 @@ public:
 
   StatePtr state;
 
-// protected:
-//  friend class State;
-
   void
   changeState(const boost::shared_ptr<State>&);
 
-
- public:
+public:
   ProgramCtx();
 
   ~ProgramCtx();
-
-  #if 0
-
-  void
-  setPluginContainer(PluginContainer*);
-
-  PluginContainer*
-  getPluginContainer() const;
-  
-
-  void
-  addPlugins(const std::vector<PluginInterface*>&);
-
-  std::vector<PluginInterface*>*
-  getPlugins() const;
-
-
-  Program*
-  getIDB() const;
-
-  AtomSet*
-  getEDB() const;
-
-
-  NodeGraph*
-  getNodeGraph() const;
-
-  void
-  setNodeGraph(NodeGraph*);
-
-  DependencyGraph*
-  getDependencyGraph() const;
-
-  void
-  setDependencyGraph(DependencyGraph*);
-	#endif
 
   ASPSolverManager::SoftwareConfigurationPtr
   getASPSoftware() const;
@@ -180,21 +152,28 @@ public:
   void
   setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr);
 
-	#if 0
-  ResultContainer*
-  getResultContainer() const;
+  //
+  // plugin helpers
+  //
 
-  void
-  setResultContainer(ResultContainer*);
+	// process options for each plugin loaded in this ProgramCtx
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processPluginOptions(std::list<const char*>& pluginOptions);
 
+  // use _pluginContainer to get plugin atoms
+  void addPluginAtomsFromPluginContainer();
 
-  OutputBuilder*
-  getOutputBuilder() const;
+  // add atom to this ProgramCtx and link it to registry of this ProgramCtx
+  void addPluginAtom(PluginAtomPtr atom);
 
-  void
-  setOutputBuilder(OutputBuilder*);
-	#endif
+  // associate external atoms in registry of this ProgramCtx
+  // with plugin atoms in given idb
+  //
+  // throws on unknown atom if configured that way
+  void associateExtAtomsWithPluginAtoms(const Tuple& idb, bool failOnUnknownAtom=true);
 
+  // setup this ProgramCtx (using setupProgramCtx() for of all plugins)
+  void setupByPlugins();
 
   //
   // state processing
@@ -224,7 +203,36 @@ protected:
 
 	// plugin container (this must be initialized with above registry!)
 	PluginContainerPtr _pluginContainer;
+
+  // data associated with one specific plugin
+  // externally we see this as a non-const reference, the shared_ptr is totally internal
+  typedef std::map<std::string, boost::shared_ptr<PluginData> > PluginDataContainer;
+  PluginDataContainer pluginData;
+
+  // atoms usable for evaluation (loaded from plugins or manually added)
+  PluginAtomMap pluginAtoms;
 };
+
+// used by plugins to store specific plugin data in ProgramCtx
+// default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
+template<typename PluginT>
+typename PluginT::CtxData& ProgramCtx::getPluginData()
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginDataContainer::const_iterator it =
+    pluginData.find(pluginTypeName);
+  if( it == pluginData.end() )
+  {
+    it = pluginData.insert(std::make_pair(
+          pluginTypeName,
+          boost::shared_ptr<PluginData>(new typename PluginT::CtxData))
+        ).first;
+  }
+  typename PluginT::CtxData* pret =
+    dynamic_cast<typename PluginT::CtxData*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
 
 DLVHEX_NAMESPACE_END
 

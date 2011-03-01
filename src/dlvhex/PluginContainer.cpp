@@ -115,7 +115,9 @@ void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std:
   lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
 }
 
-void loadCandidates(const std::vector<std::string>& libnames, LoadedPluginVector& plugins)
+void loadCandidates(
+    const std::vector<std::string>& libnames,
+    LoadedPluginVector& plugins)
 {
   BOOST_FOREACH(const std::string& lib, libnames)
   {
@@ -153,7 +155,9 @@ void loadCandidates(const std::vector<std::string>& libnames, LoadedPluginVector
   }
 }
 
-void selectLoadedPlugins(LoadedPluginVector& plugins, LoadedPluginVector& candidates)
+void selectLoadedPlugins(
+    LoadedPluginVector& plugins,
+    LoadedPluginVector& candidates)
 {
   // remove those with duplicate names
   std::set<std::string> names;
@@ -197,6 +201,7 @@ void selectLoadedPlugins(LoadedPluginVector& plugins, LoadedPluginVector& candid
 
 } // anonymous namespace
 
+#if 0
 PluginContainer::PluginContainer(const PluginContainer& pc):
   registry(pc.registry),
   searchPath(pc.searchPath),
@@ -204,35 +209,17 @@ PluginContainer::PluginContainer(const PluginContainer& pc):
   pluginAtoms(pc.pluginAtoms)
 {
 }
+#endif
 
 
-PluginContainer::PluginContainer(RegistryPtr registry):
-  registry(registry)
+PluginContainer::PluginContainer()
 {
-  assert(registry && "PluginContainer needs registry!");
 }
 
 PluginContainer::~PluginContainer()
 {
-  if( registry.use_count() != 1 )
-  {
-    DBGLOG(DBG, "cannot really destruct plugin container " <<
-      "with registry not destructable from here (weak pointer problem)" <<
-      " -> not unloading libs");
-    return;
-  }
-
-  registry.reset();
-  DBGLOG(DBG,"unregistering plugin atoms");
-  for(PluginAtomMap::const_iterator it = pluginAtoms.begin();
-      it != pluginAtoms.end(); ++it)
-  {
-    unsigned use = it->second.use_count();
-    if( use != 1 )
-      LOG(WARNING,"usage count on plugin atom '" << it->first << "' is " << use << " (should be 1)");
-  }
-  // free them
-  pluginAtoms.clear();
+  // these are pointers also existing in vector plugins -> destroy them first
+  pluginInterfaces.clear();
 
   DBGLOG(DBG,"unloading plugins");
   // unload all plugins in reverse order
@@ -301,18 +288,8 @@ void PluginContainer::addInternalPlugin(LoadedPluginPtr lplugin)
 {
   LOG(PLUGIN,"adding PluginInterface '" << lplugin->plugin->getPluginName() << "' with dlhandle " << lplugin->handle);
 
-  PluginAtomMap pa;
-  lplugin->plugin->getAtoms(pa);
-  
-  for(PluginAtomMap::const_iterator it = pa.begin();
-      it != pa.end(); ++it)
-  {
-    // simply use "addInternal" method
-    addInternalPluginAtom(it->second);
-  }
-
-  // add with NULL dlhandle pointer
   plugins.push_back(lplugin);
+  pluginInterfaces.push_back(lplugin->plugin);
 }
 
 // add a PluginInterface to the container
@@ -321,133 +298,15 @@ void PluginContainer::addInternalPlugin(PluginInterfacePtr plugin)
   addInternalPlugin(LoadedPluginPtr(new LoadedPlugin(0, plugin)));
 }
 
-// add a PluginAtom statically linked into this program to the container
-// (for testsuite and statically linked applications using dlvhex lib API)
-void PluginContainer::addInternalPluginAtom(PluginAtomPtr atom)
-{
-  assert(!!atom);
-  const std::string& predicate = atom->getPredicate();
-  LOG(PLUGIN,"adding PluginAtom '" << predicate << "'");
-  if( pluginAtoms.find(predicate) == pluginAtoms.end() )
-  {
-    atom->setRegistry(registry);
-    pluginAtoms[predicate] = atom;
-  }
-  else
-  {
-    LOG(WARNING,"External atom " << predicate << " is already loaded (skipping)");
-  }
-}
-
-std::vector<PluginInterfacePtr>
-PluginContainer::getPlugins() const
-{
-  std::vector<PluginInterfacePtr> ret;
-  ret.reserve(plugins.size());
-  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
-  {
-    ret.push_back(lplugin->plugin);
-  }
-  return ret;
-}
-
-PluginAtomPtr
-PluginContainer::getAtom(const std::string& name) const
-{
-  PluginAtomMap::const_iterator pa = pluginAtoms.find(name);
-
-  if (pa == pluginAtoms.end())
-    return PluginAtomPtr();
-    
-  return pa->second;
-}
-
 // call printUsage for each loaded plugin
 void PluginContainer::printUsage(
     std::ostream& o)
 {
-  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
+  BOOST_FOREACH(PluginInterfacePtr plugin, pluginInterfaces)
   {
-    PluginInterfacePtr plugin = lplugin->plugin;
-    o << "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
+    o << std::endl <<
+      "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
 	  plugin->printUsage(o);
-  }
-}
-
-// call processOptions for each loaded plugin
-// (this is supposed to remove "recognized" options from pluginOptions)
-void PluginContainer::processOptions(
-    std::list<const char*>& pluginOptions)
-{
-  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
-  {
-    PluginInterfacePtr plugin = lplugin->plugin;
-    LOG(DBG,"processing options for plugin " << plugin->getPluginName());
-    LOG(DBG,"currently have " << printrange(pluginOptions));
-	  plugin->processOptions(pluginOptions);
-  }
-}
-
-// associate plugins in container to external atoms in registry
-void PluginContainer::associateExtAtomsWithPluginAtoms(
-    const Tuple& idb, bool failOnUnknownAtom)
-{
-  DBGLOG_SCOPE(DBG,"aEAwPA",false);
-  DBGLOG(DBG,"= associateExtAtomsWithPluginAtoms");
-
-  Tuple eatoms;
-
-  // associate all rules
-  for(Tuple::const_iterator it = idb.begin();
-      it != idb.end(); ++it)
-  {
-    assert(it->isRule());
-    // skip those without external atoms
-    if( !it->doesRuleContainExtatoms() )
-      continue;
-
-    // associate all literals in rule body
-    const Rule& rule = registry->rules.getByID(*it);
-
-    // get external atoms (recursively)
-    registry->getExternalAtomsInTuple(rule.body, eatoms);
-  }
-
-  // now associate
-  for(Tuple::const_iterator it = eatoms.begin();
-      it != eatoms.end(); ++it)
-  {
-    assert(it->isExternalAtom());
-
-    const ExternalAtom& eatom = registry->eatoms.getByID(*it);
-    const std::string& predicate = registry->getTermStringByID(eatom.predicate);
-    // lookup pluginAtom to this eatom predicate
-    PluginAtomMap::iterator itpa = pluginAtoms.find(predicate);
-    if( itpa != pluginAtoms.end() )
-    {
-      assert(!!itpa->second);
-      eatom.pluginAtom = itpa->second;
-    }
-    else
-    {
-      DBGLOG(DBG,"did not find plugin atom for predicate '" << predicate << "'");
-      if( failOnUnknownAtom )
-      {
-        throw FatalError("did not find plugin atom "
-            " for predicate '" + predicate + "'");
-      }
-    }
-  }
-}
-
-// call all setupProgramCtx methods of all plugins
-void PluginContainer::setupProgramCtx(ProgramCtx& ctx)
-{
-  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
-  {
-    PluginInterfacePtr plugin = lplugin->plugin;
-    LOG(DBG,"setting up program ctx for plugin " << plugin->getPluginName());
-	  plugin->setupProgramCtx(ctx);
   }
 }
 

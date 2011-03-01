@@ -232,15 +232,10 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   papReach(new TestPluginAtomReach)
 {
   using namespace dlvhex;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
-  papCount->setRegistry(ctx.registry());
-  papReach->setRegistry(ctx.registry());
-  ID idreach = papReach->getPredicateID();
-  ID idcount = papCount->getPredicateID();
-  BOOST_REQUIRE((idreach | idcount) != ID_FAIL);
-  LOG(INFO,"got ID: reach = " << idreach);
-  LOG(INFO,"got ID: count = " << idcount);
+  ctx.addPluginAtom(papCount);
+  ctx.addPluginAtom(papReach);
 
   std::stringstream ss;
   ss <<
@@ -255,27 +250,7 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   BasicHexParser parser;
   parser.parse(ip, ctx);
 
-  //TODO this should become a common functionality using some pluginAtom registry
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idreach);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papReach;
-			ctx.registry()->eatoms.update(*it, ea);
-		}
-	}
-	{
-		ExternalAtomTable::PredicateIterator it, it_end;
-		for(boost::tie(it, it_end) = ctx.registry()->eatoms.getRangeByPredicateID(idcount);
-				it != it_end; ++it)
-		{
-			ExternalAtom ea(*it);
-			ea.pluginAtom = papCount;
-			ctx.registry()->eatoms.update(*it, ea);
-		}
-	}
+  ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);
 }
 
 #endif // FIXTURES_EXT1_HPP_INCLUDED__08112010

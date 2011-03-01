@@ -32,6 +32,7 @@
 #define DEPENDENCY_GRAPH_HPP_INCLUDED__18102010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ID.hpp"
 
@@ -65,15 +66,6 @@
  */
 
 DLVHEX_NAMESPACE_BEGIN
-
-// some forwards
-struct Rule;
-struct ExternalAtom;
-struct OrdinaryAtom;
-struct Registry;
-typedef boost::shared_ptr<Registry> RegistryPtr;
-class PluginAtom;
-typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 
 class DependencyGraph
 {
@@ -358,7 +350,7 @@ protected:
     void createAuxiliaryRuleIfRequired(
         const Tuple& body,
         ID idlit, ID idat, Node neatom, const ExternalAtom& eatom,
-        const PluginAtomPtr& pluginAtom,
+        const PluginAtom* pluginAtom,
         std::vector<ID>& createdAuxRules,
         HeadBodyHelper& hbh);
     // create auxiliary rule head predicate (in registry) and return ID

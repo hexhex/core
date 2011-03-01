@@ -429,7 +429,7 @@ public:
     setNameVersion("dlvhex-testplugin", 0, 0, 1);
   }
 
-  virtual std::vector<PluginAtomPtr> createAtoms() const
+  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const
   {
     std::vector<PluginAtomPtr> ret;
 
