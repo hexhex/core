@@ -79,6 +79,8 @@ public:
   // if no, return MODULE_FAIL, otherwise return the module struct
   inline const Module& getModuleByName(const std::string& moduleName) const throw();
 
+  inline int getAddressByName(const std::string& moduleName) const throw();
+
   // store symbol, assuming it does not exist
   // assert that symbol did not exist
   inline int storeAndGetAddress(const Module& mod) throw();
@@ -134,6 +136,24 @@ const Module& ModuleTable::getModuleByName(const std::string& moduleName) const 
       return *it;
     }
 }
+
+
+// given a module name, look if already stored
+// if no, return -1, otherwise return the address
+int ModuleTable::getAddressByName(const std::string& moduleName) const throw()
+{
+  const ModuleNameIndex& sidx = container.get<impl::ModuleNameTag>();
+  ModuleNameIndex::const_iterator it = sidx.find(moduleName);
+  if( it == sidx.end() ) 
+    {
+      return -1;
+    }
+  else
+    {
+      return container.project<impl::AddressTag>( it ) - container.get<impl::AddressTag>().begin();
+    }
+}
+
 
 // store module, assuming it does not exist
 // assert that symbol did not exist

@@ -1,10 +1,16 @@
+2010-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleTable.hpp: Implement some helper function for part c.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+
 2010-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/ModuleSyntaxChecker.hpp: fixing bug in the renaming output predicate module atom.
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Fixing bug in the renaming output predicate module atom.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
 	* testsuite/TestHexParserModule.cpp: Likewise.
 
-	* include/dlvhex/ModuleSyntaxChecker.hpp: implementing restriction and renaming.
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Implementing restriction and renaming.
 	* include/dlvhex/Atoms.hpp: Likewise.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
@@ -12,7 +18,7 @@
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-	* include/dlvhex/MLPSolver.hpp: fixing bug in bottom.
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in bottom.
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing renaming for the output predicate in the module atom.
 

@@ -96,6 +96,8 @@ class DLVHEX_EXPORT MLPSolver{
         boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<ID> >
       > 
     > IDSet; 
+    typedef IDSet::index<impl::AddressTag>::type IDSAddressIndex;
+    typedef IDSet::index<impl::ElementTag>::type IDSElementIndex;
     // vector of IDTable, the index of the i/S should match with the index in tableInst
     std::vector<IDSet> A;
     
@@ -138,6 +140,10 @@ class DLVHEX_EXPORT MLPSolver{
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void restrictionAndRenaming(const std::vector<OrdinaryAtom>& listAtom, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& result);
+    inline int addOrGetModuleIstantiation(const std::string& moduleName, const Tuple& tupleFact);
+    inline void resizeIfNeededMAndMFlag(int idxPjT);
+    inline void resizeIfNeededA(int idxPjT);
+    inline bool containFinA(int idxPjT);
     inline void comp(ValueCallsType C);
 
   public:
@@ -699,6 +705,78 @@ void MLPSolver::restrictionAndRenaming(const std::vector<OrdinaryAtom>& listAtom
     }
 }
 
+int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const Tuple& tupleFact)
+{
+  InterpretationType s(ctxSolver.registry());
+  // iterate over the tuple of fact
+  Tuple::const_iterator it = tupleFact.begin();
+  while ( it != tupleFact.end() )
+    {
+      s.setFact(*it);	
+      it++;
+    }
+  // look up for Stable
+  MLPSolver::ITElementIndex::iterator itIndex = sTable.get<impl::ElementTag>().find(s);
+  if ( itIndex == sTable.get<impl::ElementTag>().end() )
+    {
+      sTable.get<impl::ElementTag>().insert(s);
+      DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] insert into sTable: " << s);
+    }
+  MLPSolver::ITElementIndex::iterator itS = sTable.get<impl::ElementTag>().find(s);
+
+  // get the module index
+  int idxModule = ctx.registry()->moduleTable.getAddressByName(moduleName);
+  ModuleInst PiS(idxModule, sTable.project<impl::AddressTag>(itS) - sTable.get<impl::AddressTag>().begin() );
+
+  DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] PiS.idxModule = " << PiS.idxModule);
+  DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] PiS.idxS = " << PiS.idxS);
+  // try to locate
+  MLPSolver::MIElementIndex::iterator itMI = moduleInstTable.get<impl::ElementTag>().find( boost::make_tuple(PiS.idxModule, PiS.idxS) );
+  if ( itMI == moduleInstTable.get<impl::ElementTag>().end() )
+    { // if not found, insert
+      moduleInstTable.get<impl::ElementTag>().insert( PiS );
+    }
+  itMI = moduleInstTable.get<impl::ElementTag>().find( boost::make_tuple(PiS.idxModule, PiS.idxS) );
+  int idxMI = moduleInstTable.project<impl::AddressTag>( itMI ) - moduleInstTable.get<impl::AddressTag>().begin();
+  DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] return value idxMI = " << idxMI);
+  return idxMI;
+}
+
+// resize M and MFlag if the size <= idxPjT
+void MLPSolver::resizeIfNeededMAndMFlag(int idxPjT)
+{
+  int oldSize = MFlag.size();
+  if ( oldSize <= idxPjT )
+    {
+      MFlag.resize(idxPjT+1);
+      M.resize(idxPjT+1);
+    }
+  for (int i=oldSize; i<=idxPjT; i++)
+    {
+      MFlag.at(i) = 0;
+      // do not need to initialize M because access M only by access MFlag before
+    }
+}  
+
+
+// resize A if the size <= idxPjT
+void MLPSolver::resizeIfNeededA(int idxPjT)
+{
+  if (A.size() <= idxPjT)
+    {
+      A.resize(idxPjT+1);
+    } 
+}
+
+
+// we treat Fin as ID_FAIL
+bool MLPSolver::containFinA(int idxPjT)
+{
+  IDSet Ai = A.at(idxPjT);
+  MLPSolver::IDSElementIndex::iterator itAi = Ai.get<impl::ElementTag>().find( ID_FAIL );
+  if ( itAi == Ai.get<impl::ElementTag>().end() ) return false; 
+    else return true;
+}
 
 ///////////////////
 void MLPSolver::comp(ValueCallsType C)
@@ -836,8 +914,32 @@ void MLPSolver::comp(ValueCallsType C)
 	  restrictionAndRenaming(listAtom, alpha.inputs, formalInputs, newT);
 	  DBGLOG(DBG,"[MLPSolver::comp] newT: " << printvector(newT));
 	  
+	  // defining Pj T
+	  int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, newT);
 	  // next: defining new C and path
-
+	  resizeIfNeededMAndMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
+	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
+	  ValueCallsType C2; 
+	  std::vector<ValueCallsType> path2;	
+	  if ( MFlag.at(idxPjT) != 0 && containFinA(idxPjT) ) 
+	    {
+	      C2 = C;
+	      path2 = path;
+	    }
+	  else
+	    {
+	      C2.push_back(idxPjT);
+	      path2 = path;
+	      path2.push_back(C);		
+	    }
+	  // TODO: edit M here... 
+          VectorOfInterpretation M2 = M;
+	  std::vector<int> MFlag2 = MFlag;
+	  std::vector<IDSet> A2 = A;
+	  // TODO comp(C2);
+	  M = M2;
+	  MFlag = MFlag2;
+	  A = A2;
           int0 = res->getNextAnswerSet();
         }  
 
@@ -872,7 +974,7 @@ std::vector<int> MLPSolver::foundMainModules()
   return result;
 }
 
-
+// to be used only in the beginning
 MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 {
   //TODO: change ordered_unique to hashed_unique
@@ -916,12 +1018,12 @@ void MLPSolver::solve()
   int i = 0;
   while ( it != mainModules.end() )
     {
-      i++;
       dataReset();
       DBGLOG(DBG, " ");
       DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
       comp(createValueCallsMainModule(*it));
+      i++;
       it++;
     }
   DBGLOG(DBG, "[MLPSolver::solve] finished");

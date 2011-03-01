@@ -59,6 +59,7 @@ protected:
 
   // members
 public:
+  inline Interpretation(){};
   Interpretation(RegistryPtr registry);
   virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
