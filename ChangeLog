@@ -1,6 +1,6 @@
 2010-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/Interpretation.hpp: 
+	* include/dlvhex/Interpretation.hpp: adding setRegistry to Interpretation
 
 2010-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
