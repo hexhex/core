@@ -17,12 +17,14 @@
 #   * if the extension is ".out" this is a positive testcase
 #     the file contains lines of answer sets
 #     successful termination of dlvhex is expected
-#   * if the extension is ".special" this is a special testcase
+#   * if the extension is ".stderr" this is a special error testcase
 #     the file contains one line:
 #     * the first word is an integer (verifying the return value of dlvhex)
 #     * the remaining line is a command executed with the error output
 #       if this execution succeeds (= returns 0) the test is successful
 #       e.g.: [grep -q "rule.* is not strongly safe"] (without square brackets)
+#   * if the extension is ".stdout" this is a special output testcase
+#     (procedure as with ".stderr" only that standard output is verified
 # * the rest of the input line are parameters used for executing dlvhex
 #   e.g.: [--nofact -ra] (without square brackets)
 #
@@ -81,14 +83,14 @@ do
         continue
     fi
 
-    VERIFICATIONEXT=${VERIFICATIONFILE: -4}
+    VERIFICATIONEXT=${VERIFICATIONFILE: -7}
     #echo "verificationext = ${VERIFICATIONEXT}"
-    if test "x$VERIFICATIONEXT" == "x.err"; then
+    if test "x$VERIFICATIONEXT" == "x.stderr" -o "x$VERIFICATIONEXT" == "x.stdout"; then
       #echo "negative testcase"
 
       ERRORFILE=$TESTDIR/$VERIFICATIONFILE
       if [ ! -f $ERRORFILE ]; then
-          echo "FAIL: $HEXPROGRAM: could not find error file $ERRORFILE"
+          echo "FAIL: $HEXPROGRAM: could not find verification file $ERRORFILE"
           let failed++
           continue
       fi
@@ -101,11 +103,18 @@ do
       #echo "verifying return value '$RETVAL'"
       if [ $VRETVAL -eq $RETVAL ]; then
         #echo "verifying with command '$VCOMMAND'"
-        if bash -c "$VCOMMAND $ETMPFILE"; then
-          echo "PASS: $HEXPROGRAM (negative or special testcase)"
+        # select output to check
+        if test "x$VERIFICATIONEXT" == "x.stderr"; then
+          VTMPFILE=$ETMPFILE
+        else
+          VTMPFILE=$TMPFILE
+        fi
+        # check output
+        if bash -c "$VCOMMAND $VTMPFILE"; then
+          echo "PASS: $HEXPROGRAM (special testcase)"
         else
           echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (output not verified by $VCOMMAND)"
-          cat $ETMPFILE
+          cat $VTMPFILE
           let failed++
         fi
       else
@@ -113,35 +122,38 @@ do
         cat $ETMPFILE
         let failed++
       fi
-    elif test "x$VERIFICATIONEXT" == "x.out"; then
-      #echo "model-verifying testcase"
+    else
+      VERIFICATIONEXT=${VERIFICATIONFILE: -4}
+      if test "x$VERIFICATIONEXT" == "x.out"; then
+        #echo "model-verifying testcase"
 
-      ANSWERSETSFILE=$TESTDIR/$VERIFICATIONFILE
-      if [ ! -f $ANSWERSETSFILE ]; then
-          echo "FAIL: $HEXPROGRAM: could not find answer set file $ANSWERSETSFILE"
-          let failed++
-          continue
-      fi
-
-      # run dlvhex with specified parameters and program
-      $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
-      RETVAL=$?
-      if [ $RETVAL -eq 0 ]; then
-        if $TOPSRCDIR/testsuite/answerset_compare.py $TMPFILE $ANSWERSETSFILE; then
-            echo "PASS: $HEXPROGRAM"
-        else
-            echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answersets differ)"
+        ANSWERSETSFILE=$TESTDIR/$VERIFICATIONFILE
+        if [ ! -f $ANSWERSETSFILE ]; then
+            echo "FAIL: $HEXPROGRAM: could not find answer set file $ANSWERSETSFILE"
             let failed++
+            continue
+        fi
+
+        # run dlvhex with specified parameters and program
+        $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
+        RETVAL=$?
+        if [ $RETVAL -eq 0 ]; then
+          if $TOPSRCDIR/testsuite/answerset_compare.py $TMPFILE $ANSWERSETSFILE; then
+              echo "PASS: $HEXPROGRAM"
+          else
+              echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answersets differ)"
+              let failed++
+          fi
+        else
+          echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+          let failed++
+          grep -v "^$" $ETMPFILE
         fi
       else
-        echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+        echo "FAIL: $HEXPROGRAM: type of testcase must be '.out', '.stdout', or '.stderr', got '$VERIFCATIONEXT'"
         let failed++
-        grep -v "^$" $ETMPFILE
+        continue
       fi
-    else
-      echo "FAIL: $HEXPROGRAM: type of testcase must be '.out' or '.err', got '$VERIFCATIONEXT'"
-      let failed++
-      continue
     fi
 
   done < $t # redirect test file to the while loop

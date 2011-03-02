@@ -546,12 +546,12 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 			{
 			case CtxData::BRAVE:
 				msgs << "bravely ";
-				modelmsg = msgs.str() + "true, as witnessed by ";
+				modelmsg = msgs.str() + "true, evidenced by ";
 				finalmsg = msgs.str() + "false.";
 				break;
 			case CtxData::CAUTIOUS:
 				msgs << "cautiously ";
-				modelmsg = msgs.str() + "false, as witnessed by ";
+				modelmsg = msgs.str() + "false, evidenced by ";
 				finalmsg = msgs.str() + "true.";
 				break;
 			default:
