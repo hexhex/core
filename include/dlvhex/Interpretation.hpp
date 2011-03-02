@@ -85,6 +85,8 @@ public:
 
   RegistryPtr getRegistry() const { return registry; }
 
+  RegistryPtr setRegistry(RegistryPtr registry1) { registry = registry1; }
+
   inline bool isClear() const
     {  return bits.none();  }
 

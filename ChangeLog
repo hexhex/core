@@ -1,3 +1,7 @@
+2010-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Interpretation.hpp: 
+
 2010-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleTable.hpp: Implement some helper function for part c.
