@@ -548,7 +548,6 @@ public:
 };
 typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 
-#if 0
 
 /**
  * \brief Rewriter class.
@@ -564,34 +563,27 @@ typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
  */
 class DLVHEX_EXPORT PluginRewriter
 {
- protected:
-  
-  /**
-   * Constructor.
-   */
-  PluginRewriter()
-  { }
+protected:
+  PluginRewriter() {}
 
- public:
-
+public:
   /**
    * Destructor.
    */
-  virtual
-  ~PluginRewriter()
-  { }
+  virtual ~PluginRewriter() {}
 
   /**
    * Rewriting funcition.
    *
-   * The rewriting is applied to a ProgramCtx object. Also the set of initial
-   * facts, the EDB, is passed to the rewriter and can be considered/altered.
+   * The rewriting is applied to a ProgramCtx object.
+   *
+   * Especially ctx.edb and ctx.idb may be the subject of rewriting.
    */
-  virtual void
-  rewrite(ProgramCtx&) = 0;
+  virtual void rewrite(ProgramCtx& ctx) = 0;
 };
+typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
-
+#if 0
 /**
  * Optimizer class.
  *
@@ -1009,11 +1001,9 @@ public:
    * This method can be overwritten to provide an alternative HEX parser,
    * e.g., for implementing slightly changed input syntax.
    */
-  virtual HexParserPtr createParser(ProgramCtx& ctx)
+  virtual HexParserPtr createParser(ProgramCtx&)
     { return HexParserPtr(); }
 
-  #warning implement rewriter and optimizer
-  #if 0
   /**
    * \brief Rewriter for hex-programs.
    *
@@ -1023,11 +1013,11 @@ public:
    * syntactic sugar, e.g., providing a simplified syntax for the user which is
    * then transformed, depending probably on the entire rule body.
    */
-  virtual PluginRewriter* 
-  createRewriter()
-  {
-    return 0;
-  }
+  virtual PluginRewriterPtr createRewriter(ProgramCtx&)
+    { return PluginRewriterPtr(); }
+
+  #warning implement optimizer
+  #if 0
 
   /**
    * \todo doc.

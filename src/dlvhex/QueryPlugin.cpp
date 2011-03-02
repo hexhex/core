@@ -331,6 +331,88 @@ HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
 	return HexParserPtr(new HexQueryParser);
 }
 
+namespace
+{
+
+class QueryAdderRewriter:
+	public PluginRewriter
+{
+public:
+	QueryAdderRewriter() {}
+	virtual ~QueryAdderRewriter() {}
+
+  virtual void rewrite(ProgramCtx& ctx);
+};
+
+void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
+{
+	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	assert(ctxdata.enabled && "this rewriter should only be used "
+			"if the plugin is enabled");
+
+	// convert query
+	if( ctxdata.mode == CtxData::BRAVE && ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// create constraints
+		// :- not a_i. for 1 <= i <= j
+		// :- a_i. for j+1 <= i <= n
+		// then all answer sets are positive witnesses of the ground query
+
+		throw std::runtime_error("TODO qbg");
+	}
+	else if( ctxdata.mode == CtxData::CAUTIOUS && ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// create constraint
+		// :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// then all answer sets are negative witnesses of the ground query
+
+		throw std::runtime_error("TODO qcg");
+	}
+	else if( ctxdata.mode == CtxData::BRAVE && !ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// with variables X_1,...,X_k
+		// create rules
+		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// aux[q1] :- aux(Q)(X_1,...,X_k).
+		// create constraint
+		// :- not aux[q1].
+		// then all answer sets are positive witnesses of the nonground query
+		// and facts aux[q0] in the respective model gives all bravely true substitutions
+
+		throw std::runtime_error("TODO qbn");
+	}
+	else if( ctxdata.mode == CtxData::CAUTIOUS && !ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// with variables X_1,...,X_k
+		// create rules
+		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// then intersect all answer sets,
+		// facts aux[q0] in the resulting model gives all cautiously true substitutions
+
+		throw std::runtime_error("TODO qcn");
+	}
+	else
+	{
+		assert("this case should never happen");
+	}
+}
+
+} // anonymous namespace
+
+// rewrite program by adding auxiliary query rules
+PluginRewriterPtr QueryPlugin::createRewriter(ProgramCtx& ctx)
+{
+	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	if( !ctxdata.enabled )
+		return PluginRewriterPtr();
+
+	return PluginRewriterPtr(new QueryAdderRewriter);
+}
+
 // change model callback and register final callback
 void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
