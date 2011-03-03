@@ -83,13 +83,14 @@ struct ID:
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
-	static const IDKind PROPERTY_VAR_ANONYMOUS = 0x00010000;
-	static const IDKind PROPERTY_TERM_AUX      = 0x00020000;
+	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
+	static const IDKind PROPERTY_TERM_AUX        = 0x00020000;
 	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
-	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
-	static const IDKind PROPERTY_RULE_MODATOMS = 0x00100000;
-	static const IDKind PROPERTY_RULE_AUX =      0x00200000;
-	static const IDKind PROPERTY_ATOM_AUX      = 0x00020000;
+	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
+	static const IDKind PROPERTY_RULE_MODATOMS   = 0x00100000;
+	static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFEFFFFF;
+	static const IDKind PROPERTY_RULE_AUX        = 0x00200000;
+	static const IDKind PROPERTY_ATOM_AUX        = 0x00020000;
 
   // for builtin terms, this is the address part (no table)
   // beware: must be synchronized with isInfixBuiltin() and builtinTerms[]
