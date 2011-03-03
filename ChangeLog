@@ -1,3 +1,10 @@
+2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Finishing comp.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+
+
 2010-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Interpretation.hpp: adding setRegistry to Interpretation

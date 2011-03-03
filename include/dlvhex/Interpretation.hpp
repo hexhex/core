@@ -90,6 +90,9 @@ public:
   inline bool isClear() const
     {  return bits.none();  }
 
+  inline void clear() 
+    {  bits.clear();  }
+
   bool operator==(const Interpretation& other) const;
   bool operator<(const Interpretation& other) const;
   

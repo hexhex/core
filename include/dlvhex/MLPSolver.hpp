@@ -29,6 +29,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+const std::string MODULEINSTSEPARATOR="___";
 
 class DLVHEX_EXPORT MLPSolver{
   private:
@@ -104,11 +105,13 @@ class DLVHEX_EXPORT MLPSolver{
     // type for the Mi/S
     typedef std::vector<InterpretationType> VectorOfInterpretation;
     // vector of Interpretation, the index of the i/S should match with the index in tableInst
-    VectorOfInterpretation M;
-    std::vector<int> MFlag;
+    InterpretationPtr M;
+    VectorOfInterpretation MFlag;
+
 
     std::vector<ValueCallsType> path;
 
+    int lastSizeOgatoms;
     ProgramCtx ctx;
     ProgramCtx ctxSolver;
 
@@ -131,7 +134,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool isOrdinary(const Tuple& idb);
     inline std::vector<int> foundMainModules();
     inline ValueCallsType createValueCallsMainModule(int idxModule);
-    inline void assignFin(Tuple& t);
+    inline void assignFin(IDSet& t);
     inline void findAllModulesAtom(const Tuple& newRules, Tuple& result);
     inline bool containsIDRuleHead(const ID& id, const Tuple& ruleHead);
     inline bool defined(const Tuple& preds, const Tuple& ruleHead);
@@ -141,13 +144,14 @@ class DLVHEX_EXPORT MLPSolver{
     inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void restrictionAndRenaming(const std::vector<OrdinaryAtom>& listAtom, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Tuple& tupleFact);
-    inline void resizeIfNeededMAndMFlag(int idxPjT);
+    inline void resizeIfNeededMFlag(int idxPjT);
     inline void resizeIfNeededA(int idxPjT);
+    inline void inspectOgatomsSetMFlag();
     inline bool containFinA(int idxPjT);
     inline void comp(ValueCallsType C);
 
   public:
-    std::vector<VectorOfInterpretation> AS;
+    std::vector<InterpretationPtr> AS;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void solve();
 
@@ -160,16 +164,16 @@ void MLPSolver::dataReset()
   sTable.clear();
   moduleInstTable.clear();
   A.clear();
-  M.clear();
+  M.reset( new Interpretation( ctxSolver.registry() ));
   MFlag.clear();
   path.clear();
+  lastSizeOgatoms = ctxSolver.registry()->ogatoms.getSize();
 }
 
 
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   ctx = ctx1;
   ctxSolver.setupRegistryPluginContainer(ctx.registry());
-
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
 }
@@ -251,20 +255,6 @@ int MLPSolver::extractPi(int PiS)
   // PiS is an index to moduleInstTable
   ModuleInst m = moduleInstTable.get<impl::AddressTag>().at(PiS);
   return m.idxModule;
-}
-
-
-//TODO: should be const Tuple& ?
-Tuple getIdbFromModule(int idxModule)
-{
-  
-}
-
-
-//TODO: should be const Interpretation& ?
-InterpretationPtr getEdbFromModule(int idxModule)
-{
-
 }
 
 
@@ -453,10 +443,11 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
     { 
       // get the module idx and idx S
       int idxM = extractPi(*itC);
-      int idxS = extractS(*itC);
+      // int idxS = extractS(*itC);
       Module m = ctx.registry()->moduleTable.getByAddress(idxM);
       std::stringstream ss;
-      ss << "m" << idxM << "S" << idxS << "__";
+      // ss << "m" << idxM << "S" << idxS << MODULEINSTSEPARATOR;
+      ss << "m" << *itC << MODULEINSTSEPARATOR;
       // rewrite the edb
       // loop over edb pointed by m			
       Interpretation::Storage bits = ctx.edbList.at(m.edb)->getStorage();
@@ -526,9 +517,9 @@ bool MLPSolver::isOrdinary(const Tuple& idb)
 }
 
 
-void MLPSolver::assignFin(Tuple& t)
+void MLPSolver::assignFin(IDSet& t)
 { //TODO
-  
+  t.get<impl::ElementTag>().insert(ID_FAIL);
 }
 
 
@@ -743,18 +734,16 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const T
 }
 
 // resize M and MFlag if the size <= idxPjT
-void MLPSolver::resizeIfNeededMAndMFlag(int idxPjT)
+void MLPSolver::resizeIfNeededMFlag(int idxPjT)
 {
   int oldSize = MFlag.size();
   if ( oldSize <= idxPjT )
     {
       MFlag.resize(idxPjT+1);
-      M.resize(idxPjT+1);
     }
   for (int i=oldSize; i<=idxPjT; i++)
     {
-      MFlag.at(i) = 0;
-      // do not need to initialize M because access M only by access MFlag before
+      MFlag.at(i).clear();
     }
 }  
 
@@ -766,6 +755,31 @@ void MLPSolver::resizeIfNeededA(int idxPjT)
     {
       A.resize(idxPjT+1);
     } 
+}
+
+
+void MLPSolver::inspectOgatomsSetMFlag()
+{
+  if ( ctxSolver.registry()->ogatoms.getSize() > lastSizeOgatoms )
+    {
+      for (int i = lastSizeOgatoms-1; i < ctxSolver.registry()->ogatoms.getSize(); i++)
+	{
+	  const OrdinaryAtom& og = ctxSolver.registry()->ogatoms.getByAddress(i);
+	  std::string predName = ctxSolver.registry()->preds.getByID(og.tuple.front()).symbol;
+	  int n = predName.find( MODULEINSTSEPARATOR );
+	  if ( n == std::string::npos )
+	    { // not found, nothing happen
+	    }
+	  else
+	    { // MODULEINSTSEPARATOR found
+	      std::string pref = predName.substr(0, n);
+	      pref = pref.substr( 1, predName.length()-1 );
+	      int mi = atoi( pref.c_str() );
+	      MFlag.at(mi).setFact(i);	
+	    }
+	}
+      lastSizeOgatoms = ctxSolver.registry()->ogatoms.getSize();
+    }
 }
 
 
@@ -828,11 +842,22 @@ void MLPSolver::comp(ValueCallsType C)
   if ( isOrdinary(idbRewrite) )
     {
       DBGLOG(DBG, "[MLPSolver::comp] enter isOrdinary");
-/* TODO: OPEN THIS
       if ( path.size() == 0 ) 
         {
-          //TODO: for all ans(newCtx) here
-        } 
+          // try to get the answer set:	
+          ASPSolverManager::ResultsPtr res;
+          solveAns(edbRewrite, idbRewrite, res);
+          AnswerSet::Ptr int0 = res->getNextAnswerSet();
+          while (int0 !=0 )
+            {
+	      // integrate the answer
+	      M->add( *(int0->interpretation) );
+	      // collect the full answer set
+              AS.push_back(M);
+	      // get the next answer set 
+              int0 = res->getNextAnswerSet();
+            } 
+	}
       else
         {
           ValueCallsType C2 = path.back();
@@ -841,14 +866,42 @@ void MLPSolver::comp(ValueCallsType C)
           VCAddressIndex::const_iterator it = idx.begin();
           while ( it != idx.end() )
             {
-              Tuple t = A.at(*it);
+              IDSet t = A.at(*it);
               assignFin(t);
               it++;  
             } 
           //TODO: for all ans(newCtx) here
+          // try to get the answer set:	
+          ASPSolverManager::ResultsPtr res;
+          solveAns(edbRewrite, idbRewrite, res);
+          AnswerSet::Ptr int0 = res->getNextAnswerSet();
+          while (int0 !=0 )
+            {
+	      // save M, MFlag, and A
+              InterpretationPtr M2 = M;
+	      VectorOfInterpretation MFlag2 = MFlag;
+	      std::vector<IDSet> A2 = A;
+	  
+	      // union M and N
+	      M->add( *(int0->interpretation) );
+	      // set MFlag
+	      inspectOgatomsSetMFlag();
+	      // integrate the answer
+	      M->add( *(int0->interpretation) );
+
+	      // the recursion
+	      // comp(C2);
+
+	      // revert M, Flag, and A
+	      M = M2;
+	      MFlag = MFlag2;
+	      A = A2;
+
+	      // get the next answer set 
+              int0 = res->getNextAnswerSet();
+            } 
           // push stack here: C, path, unionplus(M, mlpize(N,C)), A, AS
         }
-*/
     }
   else
     {
@@ -899,6 +952,7 @@ void MLPSolver::comp(ValueCallsType C)
 	  // restriction and renaming
 	  // get the module name
 	  std::string modName = ctxSolver.registry()->preds.getByID(alpha.predicate).symbol;
+	  // for MODULEPREFIXSEPARATOR, see include/dlvhex/module.hpp
           modName = modName.substr(modName.find(MODULEPREFIXSEPARATOR)+2, modName.length());
 	  // get the module that will be called
           const Module& alphaJ = ctxSolver.registry()->moduleTable.getModuleByName(modName);
@@ -917,11 +971,11 @@ void MLPSolver::comp(ValueCallsType C)
 	  // defining Pj T
 	  int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, newT);
 	  // next: defining new C and path
-	  resizeIfNeededMAndMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
+	  resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
 	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 	  ValueCallsType C2; 
 	  std::vector<ValueCallsType> path2;	
-	  if ( MFlag.at(idxPjT) != 0 && containFinA(idxPjT) ) 
+	  if ( MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
 	    {
 	      C2 = C;
 	      path2 = path;
@@ -932,14 +986,25 @@ void MLPSolver::comp(ValueCallsType C)
 	      path2 = path;
 	      path2.push_back(C);		
 	    }
-	  // TODO: edit M here... 
-          VectorOfInterpretation M2 = M;
-	  std::vector<int> MFlag2 = MFlag;
+	  // save M, MFlag, and A
+          InterpretationPtr M2 = M;
+	  VectorOfInterpretation MFlag2 = MFlag;
 	  std::vector<IDSet> A2 = A;
-	  // TODO comp(C2);
+	  
+	  // union M and N
+	  M->add( *(int0->interpretation) );
+	  // set MFlag
+	  inspectOgatomsSetMFlag();
+
+	  // the recursion
+	  // comp(C2);
+
+	  // revert M, Flag, and A
 	  M = M2;
 	  MFlag = MFlag2;
 	  A = A2;
+
+	  // get the next answer set 
           int0 = res->getNextAnswerSet();
         }  
 
@@ -1027,6 +1092,21 @@ void MLPSolver::solve()
       it++;
     }
   DBGLOG(DBG, "[MLPSolver::solve] finished");
+/*
+  boost::shared_ptr<int> p(new int);
+  boost::shared_ptr<int> q(new int);
+  *p = 1;
+  *q = 2;
+  DBGLOG(DBG, "[MLPSolver::solve] p = "<< p << "; q = " << q);
+  q = p;
+  DBGLOG(DBG, "[MLPSolver::solve] p = "<< p << "; q = " << q);
+*/
+/*
+  std::string w = "halo";
+  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << w.find("h"));
+  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << w.find("x"));
+  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << std::string::npos );
+*/
 }
 
 

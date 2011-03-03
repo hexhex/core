@@ -91,6 +91,9 @@ public:
 
 	// methods
 public:
+
+	inline int getSize();
+
   // retrieve by ID
   // assert that id.kind is correct for OrdinaryGroundAtom
   // assert that ID exists in table
@@ -124,6 +127,11 @@ public:
 	inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 };
+
+int OrdinaryAtomTable::getSize()
+{
+  return container.size();
+}
 
 // retrieve by ID
 // assert that id.kind is correct for Term
