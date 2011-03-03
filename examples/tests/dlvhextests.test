@@ -1,16 +1,16 @@
-../rec_agg_bug1.hex rec_agg_bug1.err
-../builtin_safety1.hex builtin_safety1.err
-../builtin_safety1a.hex builtin_safety1a.err
-../builtin_safety1b.hex builtin_safety1b.err
-../builtin_safety1c.hex builtin_safety1c.err
+../rec_agg_bug1.hex rec_agg_bug1.stderr
+../builtin_safety1.hex builtin_safety1.stderr
+../builtin_safety1a.hex builtin_safety1a.stderr
+../builtin_safety1b.hex builtin_safety1b.stderr
+../builtin_safety1c.hex builtin_safety1c.stderr
 ../builtin_safety1d.hex builtin_safety1d.out
 ../builtin_safety2.hex builtin_safety2.out
-../safety1.hex safety1.err
-../safety2.hex safety2.err
+../safety1.hex safety1.stderr
+../safety2.hex safety2.stderr
 ../simple1.hex simple1.out
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
-../notstronglysafe1.hex notstronglysafe1.err
+../notstronglysafe1.hex notstronglysafe1.stderr
 ../notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
 ../notwellfounded1.hex notwellfounded1_withfacts.out
 ../notwellfounded2.hex notwellfounded2.out --nofacts
@@ -36,18 +36,18 @@
 ../nonmon_inc.hex nonmon_inc.out
 ../nonmon_guess.hex nonmon_guess.out
 ../minimality.hex minimality.out
-../query_asp_ground1.hex query_asp_ground1b.err --query-enable --query-brave
-../query_asp_ground1.hex query_asp_ground1c.err --query-enable --query-cautious
-../query_asp_ground2.hex query_brave_false.err --query-enable --query-brave
-../query_asp_ground2.hex query_asp_ground2c.err --query-enable --query-cautious
-../query_asp_ground3.hex query_asp_ground3b.err --query-enable --query-brave
-../query_asp_ground3.hex query_cautious_true.err --query-enable --query-cautious
-../query_asp_ground4.hex query_brave_false.err --query-enable --query-brave
-../query_asp_ground4.hex query_cautious_true.err --query-enable --query-cautious
-../query_asp_ground5.hex query_asp_ground5b.err --query-enable --query-brave
-../query_asp_ground5.hex query_asp_ground5c.err --query-enable --query-cautious
-../query_asp_ground6.hex query_asp_ground6b.err --query-enable --query-brave
-../query_asp_ground6.hex query_asp_ground6c.err --query-enable --query-cautious
+../query_asp_ground1.hex query_asp_ground1b.stdout --query-enable --query-brave
+../query_asp_ground1.hex query_asp_ground1c.stdout --query-enable --query-cautious
+../query_asp_ground2.hex query_brave_false.stdout --query-enable --query-brave
+../query_asp_ground2.hex query_asp_ground2c.stdout --query-enable --query-cautious
+../query_asp_ground3.hex query_asp_ground3b.stdout --query-enable --query-brave
+../query_asp_ground3.hex query_cautious_true.stdout --query-enable --query-cautious
+../query_asp_ground4.hex query_brave_false.stdout --query-enable --query-brave
+../query_asp_ground4.hex query_cautious_true.stdout --query-enable --query-cautious
+../query_asp_ground5.hex query_asp_ground5b.stdout --query-enable --query-brave
+../query_asp_ground5.hex query_asp_ground5c.stdout --query-enable --query-cautious
+../query_asp_ground6.hex query_asp_ground6b.stdout --query-enable --query-brave
+../query_asp_ground6.hex query_asp_ground6c.stdout --query-enable --query-cautious
 ../query_asp_nonground1.hex query_asp_nonground1b.out --query-enable --query-brave
 ../query_asp_nonground1.hex no_model.out --query-enable --query-cautious
 ../query_asp_nonground2.hex query_asp_nonground2b.out --query-enable --query-brave

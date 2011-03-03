@@ -73,18 +73,24 @@ class PluginData;
 typedef boost::shared_ptr<PluginData> PluginDataPtr;
 
 class PluginAtom;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
-typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
+// beware: as PluginAtomPtr objects are returned from shared libraries, we cannot use weak pointers
 
 class PluginContainer;
 typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 class PluginConverter;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginConverter> PluginConverterPtr;
 
 class PluginInterface;
 // beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
+
+class PluginRewriter;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
+typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
 class ProgramCtx;
 

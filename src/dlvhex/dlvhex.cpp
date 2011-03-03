@@ -295,12 +295,6 @@ int main(int argc, char *argv[])
 	// defaults of main
 	Config config;
 
-	// initialize internal plugins
-	{
-		PluginInterfacePtr queryPlugin(new QueryPlugin);
-		pctx.pluginContainer()->addInternalPlugin(queryPlugin);
-	}
-
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
@@ -310,6 +304,12 @@ int main(int argc, char *argv[])
 		// manage options we can already manage
 		// TODO use boost::program_options
 		processOptionsPrePlugin(argc, argv, config, pctx);
+
+		// initialize internal plugins
+		{
+			PluginInterfacePtr queryPlugin(new QueryPlugin);
+			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+		}
 
 		// before anything else we dump the logo
 		if( !pctx.config.getOption("Silent") )

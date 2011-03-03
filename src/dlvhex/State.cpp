@@ -489,38 +489,32 @@ void
 RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
+  DBGLOG_SCOPE(DBG,"rewrite",false);
 
-#warning TODO implement some edb/idb rewriter testcase, use them here
-#if 0
+  // get rewriter from each plugin
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    PluginRewriterPtr rewriter = plugin->createRewriter(*ctx);
+    if( !rewriter )
+      continue;
 
-  //
-  // now call rewriters
-  //
-  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end();
-       ++pi)
+    LOG(PLUGIN,"got plugin rewriter from plugin " << plugin->getPluginName());
+
+	  rewriter->rewrite(*ctx);
+
+    // be verbose if requested
+    if( ctx->config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM) )
     {
-      PluginRewriter* pr = (*pi)->createRewriter();
+      LOG(INFO,"rewritten IDB:");
+      RawPrinter rp(Logger::Instance().stream(), ctx->registry());
+      rp.printmany(ctx->idb, "\n");
+      Logger::Instance().stream() << std::endl;
 
-      if (pr != 0)
-	{
-	  pr->rewrite(*ctx->getIDB(), *ctx->getEDB());
-	}
+      LOG(INFO,"rewritten EDB:");
+      Logger::Instance().stream() << *(ctx->edb) << std::endl;
     }
+  }
       
-	// be verbose if requested
-	if (pctx.config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM))
-	{
-	  pctx.config.getVerboseStream() << "Rewritten rules:" << std::endl;
-	  RawPrintVisitor rpv(pctx.config.getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
-	  pctx.config.getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
-	  pctx.getEDB()->accept(rpv);
-	  pctx.config.getVerboseStream() << std::endl << std::endl;
-	}
-	*/
-#endif
-
   StatePtr next(new SafetyCheckState);
   changeState(ctx, next);
 }
@@ -725,8 +719,6 @@ MANDATORY_STATE_CONSTRUCTOR(SetupProgramCtxState);
 void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
-
-  #warning TODO implement queries as a plugin with two hooks
 
   #warning TODO configure output hook with filter
   #warning TODO weak model output hook with filter
@@ -949,6 +941,13 @@ MANDATORY_STATE_CONSTRUCTOR(PostProcessState);
 void PostProcessState::postProcess(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"postProcess");
+
+  // call final callbacks
+  BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
+  {
+    DBGLOG(DBG,"calling final callback " << printptr(fcb));
+    (*fcb)();
+  }
 
   ///@todo filtering the atoms here is maybe to costly, how about
   ///ignoring the aux names when building the output, since the custom

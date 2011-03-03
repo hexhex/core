@@ -81,6 +81,9 @@ public:
   // this parser also stores the query information into the plugin
   virtual HexParserPtr createParser(ProgramCtx&);
 
+  // rewrite program by adding auxiliary query rules
+  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+
   // change model callback and register final callback
   virtual void setupProgramCtx(ProgramCtx&);
 

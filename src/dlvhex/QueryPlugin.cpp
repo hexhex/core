@@ -37,6 +37,8 @@
 #include "dlvhex/QueryPlugin.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Logger.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/HexGrammarPTToASTConverter.h"
@@ -331,6 +333,196 @@ HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
 	return HexParserPtr(new HexQueryParser);
 }
 
+namespace
+{
+
+typedef QueryPlugin::CtxData CtxData;
+
+class QueryAdderRewriter:
+	public PluginRewriter
+{
+public:
+	QueryAdderRewriter() {}
+	virtual ~QueryAdderRewriter() {}
+
+  virtual void rewrite(ProgramCtx& ctx);
+};
+
+void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
+{
+	DBGLOG_SCOPE(DBG,"query_rewrite",false);
+	DBGLOG(DBG,"= QueryAdderRewriter::rewrite");
+
+	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	assert(ctxdata.enabled && "this rewriter should only be used "
+			"if the plugin is enabled");
+
+	RegistryPtr reg = ctx.registry();
+	assert(reg);
+
+	// convert query
+	if( ctxdata.mode == CtxData::BRAVE && ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// create constraints
+		// :- not a_i. for 1 <= i <= j
+		// :- a_i. for j+1 <= i <= n
+		// then all answer sets are positive witnesses of the ground query
+
+		assert(!ctxdata.query.empty());
+		BOOST_FOREACH(ID idl, ctxdata.query)
+		{
+			Rule r(
+					ID::MAINKIND_RULE |
+					ID::SUBKIND_RULE_CONSTRAINT |
+					ID::PROPERTY_RULE_AUX);
+			ID negated_idl(ID::literalFromAtom(
+						ID::atomFromLiteral(idl),
+						!idl.isNaf()));
+			r.body.push_back(negated_idl);
+
+			ID idcon = reg->rules.storeAndGetID(r);
+			ctx.idb.push_back(idcon);
+			DBGLOG(DBG,"created aux constraint '" <<
+					printToString<RawPrinter>(idcon, reg) << "'");
+		}
+	}
+	else if( ctxdata.mode == CtxData::CAUTIOUS && ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// create constraint
+		// :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// then all answer sets are negative witnesses of the ground query
+
+		assert(!ctxdata.query.empty());
+		Rule r(
+				ID::MAINKIND_RULE |
+				ID::SUBKIND_RULE_CONSTRAINT |
+				ID::PROPERTY_RULE_AUX);
+		r.body = ctxdata.query;
+
+		ID idcon = reg->rules.storeAndGetID(r);
+		ctx.idb.push_back(idcon);
+		DBGLOG(DBG,"created aux constraint '" <<
+				printToString<RawPrinter>(idcon, reg) << "'");
+	}
+	else if( ctxdata.mode == CtxData::BRAVE && !ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// with variables X_1,...,X_k
+		// create rules
+		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// aux[q1] :- aux(Q)(X_1,...,X_k).
+		// create constraint
+		// :- not aux[q1].
+		// then all answer sets are positive witnesses of the nonground query
+		// and facts aux[q0] in the respective model gives all bravely true substitutions
+
+		throw std::runtime_error("TODO qbn");
+	}
+	else if( ctxdata.mode == CtxData::CAUTIOUS && !ctxdata.ground )
+	{
+		// from query a_1,...,a_j,not a_{j+1},...,not a_n
+		// with variables X_1,...,X_k
+		// create rules
+		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
+		// then intersect all answer sets,
+		// facts aux[q0] in the resulting model gives all cautiously true substitutions
+
+		throw std::runtime_error("TODO qcn");
+	}
+	else
+	{
+		assert("this case should never happen");
+	}
+}
+
+} // anonymous namespace
+
+// rewrite program by adding auxiliary query rules
+PluginRewriterPtr QueryPlugin::createRewriter(ProgramCtx& ctx)
+{
+	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	if( !ctxdata.enabled )
+		return PluginRewriterPtr();
+
+	return PluginRewriterPtr(new QueryAdderRewriter);
+}
+
+namespace
+{
+
+class WitnessPrinterCallback:
+  public ModelCallback
+{
+public:
+  WitnessPrinterCallback(const std::string& message, bool abortAfterFirst=true);
+	virtual ~WitnessPrinterCallback() {}
+
+  virtual bool operator()(AnswerSetPtr model);
+	bool gotOne() const { return gotOneModel; }
+
+protected:
+	std::string message;
+  bool abortAfterFirst;
+	bool gotOneModel;
+};
+typedef boost::shared_ptr<WitnessPrinterCallback> WitnessPrinterCallbackPtr;
+
+WitnessPrinterCallback::WitnessPrinterCallback(
+		const std::string& message, bool abortAfterFirst):
+	message(message),
+	abortAfterFirst(abortAfterFirst),
+	gotOneModel(false)
+{
+}
+
+bool WitnessPrinterCallback::operator()(
+		AnswerSetPtr model)
+{
+	std::cout << message << *model << std::endl;
+	gotOneModel = true;
+	if( abortAfterFirst )
+		return false;
+	else
+		return true;
+}
+
+class VerdictPrinterCallback:
+	public FinalCallback
+{
+public:
+	VerdictPrinterCallback(
+			const std::string& message, WitnessPrinterCallbackPtr wprinter);
+	virtual ~VerdictPrinterCallback() {}
+
+  virtual void operator()();
+
+protected:
+	std::string message;
+	WitnessPrinterCallbackPtr wprinter;
+};
+
+VerdictPrinterCallback::VerdictPrinterCallback(
+		const std::string& message,
+		WitnessPrinterCallbackPtr wprinter):
+	message(message),
+	wprinter(wprinter)
+{
+}
+
+void VerdictPrinterCallback::operator()()
+{
+	assert(!!wprinter);
+	// if no model was returned, we have a message to emit
+	if( !wprinter->gotOne() )
+	{
+		std::cout << message << std::endl;
+	}
+}
+
+} // anonymous namespace
+
 // change model callback and register final callback
 void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
@@ -338,7 +530,48 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 	if( !ctxdata.enabled )
 		return;
 
-	throw std::runtime_error("TODO implement");
+	RegistryPtr reg = ctx.registry();
+	assert(!!reg);
+
+	if( ctxdata.ground )
+	{
+		// create messages
+		std::string modelmsg, finalmsg;
+		{
+			std::stringstream msgs;
+			RawPrinter pr(msgs, reg);
+			pr.printmany(ctxdata.query, ", ");
+			msgs << " is ";
+			switch(ctxdata.mode)
+			{
+			case CtxData::BRAVE:
+				msgs << "bravely ";
+				modelmsg = msgs.str() + "true, evidenced by ";
+				finalmsg = msgs.str() + "false.";
+				break;
+			case CtxData::CAUTIOUS:
+				msgs << "cautiously ";
+				modelmsg = msgs.str() + "false, evidenced by ";
+				finalmsg = msgs.str() + "true.";
+				break;
+			default:
+				assert("unknown querying mode!");
+			}
+		}
+		
+		WitnessPrinterCallbackPtr wprinter(
+				new WitnessPrinterCallback(modelmsg));
+		FinalCallbackPtr fprinter(
+				new VerdictPrinterCallback(finalmsg, wprinter));
+		#warning here we could try to only remove the default answer set printer
+		ctx.modelCallbacks.clear();
+		ctx.modelCallbacks.push_back(wprinter);
+		ctx.finalCallbacks.push_back(fprinter);
+	}
+	else
+	{
+		throw std::runtime_error("todo implement setupctx for nonground queries");
+	}
 }
 
 DLVHEX_NAMESPACE_END
