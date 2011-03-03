@@ -72,6 +72,7 @@ public:
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
   void add(const Interpretation& other);
+  void bit_and(const Interpretation& other);
   #warning todo we may want to name this "add" "remove" and "has" (...Fact)
   inline void setFact(IDAddress id)
     { bits.set(id); }
@@ -85,7 +86,7 @@ public:
 
   RegistryPtr getRegistry() const { return registry; }
 
-  RegistryPtr setRegistry(RegistryPtr registry1) { registry = registry1; }
+  void setRegistry(RegistryPtr registry1) { registry = registry1; }
 
   inline bool isClear() const
     {  return bits.none();  }

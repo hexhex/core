@@ -36,7 +36,9 @@
 #include "dlvhex/Table.hpp"
 
 #include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/random_access_index.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -53,6 +55,15 @@ class ModuleAtomTable:
 			boost::multi_index::hashed_non_unique<
 				boost::multi_index::tag<impl::PredicateTag>,
 				BOOST_MULTI_INDEX_MEMBER(ModuleAtom,ID,predicate)
+			>,
+			boost::multi_index::hashed_unique<
+				boost::multi_index::tag<impl::ElementTag>,
+				boost::multi_index::composite_key<
+				  ModuleAtom,
+				  BOOST_MULTI_INDEX_MEMBER(ModuleAtom,ID,predicate),
+				  BOOST_MULTI_INDEX_MEMBER(ModuleAtom,Tuple,inputs),
+				  BOOST_MULTI_INDEX_MEMBER(ModuleAtom,ID,outputAtom)
+				>
 			>
       #if 0
 			// kind TODO perhaps we do not need this index?
@@ -70,13 +81,16 @@ public:
   typedef AddressIndex::iterator AddressIterator;
   typedef Container::index<impl::PredicateTag>::type PredicateIndex;
   typedef PredicateIndex::iterator PredicateIterator;
+  typedef Container::index<impl::ElementTag>::type ElementIndex;
+  typedef ElementIndex::iterator ElementIterator;
 
 	// methods
 public:
-  // retrieve by ID
-  // assert that id.kind is correct
-  // assert that ID exists in table
+	// get the ModuleAtom by ID
 	inline const ModuleAtom& getByID(ID id) const throw ();
+
+        // get the ID of the module atom with predicate, inputs, and output atom specified
+	inline ID getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw();
 
 	inline int getSize();
 
@@ -97,10 +111,6 @@ public:
 			const ModuleAtom& oldStorage, ModuleAtom& newStorage) throw();
 };
 
-int ModuleAtomTable::getSize()
-{
-  return container.size();
-}
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
@@ -113,6 +123,32 @@ ModuleAtomTable::getByID(ID id) const throw ()
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
   return idx.at(id.address);
+}
+
+// @p2[q1,q2]::r(a)
+// predicate = p2
+// inputs = <q1, q2> = tuple
+// outputAtom = r(a) 
+ID ModuleAtomTable::getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw()
+{
+  const ElementIndex& sidx = container.get<impl::ElementTag>();
+  ElementIndex::const_iterator it = sidx.find( boost::make_tuple(predicate1, inputs1, outputAtom1) );
+  if( it == sidx.end() )
+    return ID_FAIL;
+  else
+    {
+      const AddressIndex& aidx = container.get<impl::AddressTag>();
+      return ID(
+		it->kind, // kind
+		container.project<impl::AddressTag>(it) - aidx.begin() // address
+		);
+    }
+}
+
+
+int ModuleAtomTable::getSize()
+{
+  return container.size();
 }
 
 // get all external atoms with certain predicate id

@@ -111,6 +111,11 @@ void Interpretation::add(const Interpretation& other)
   bits |= other.bits;
 }
 
+void Interpretation::bit_and(const Interpretation& other)
+{
+  bits &= other.bits;
+}
+
 bool Interpretation::operator==(const Interpretation& other) const
 {
   return bits == other.bits;

@@ -1,5 +1,10 @@
 2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Completing rewrite.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
 	* include/dlvhex/ID.hpp: Adding kind to take out property rule modatoms.
 
 	* include/dlvhex/MLPSolver.hpp: Finishing comp.
