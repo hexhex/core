@@ -1,4 +1,7 @@
-2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2010-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* examples/module1-MainModules.hex: Handling more than one main module.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
 
 	* include/dlvhex/MLPSolver.hpp: Fixing rewrite and completing the recursion.
 

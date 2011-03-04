@@ -1144,12 +1144,20 @@ void MLPSolver::comp(ValueCallsType C)
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
           while (int0 !=0 )
             {
+
+              InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	      *M2 = *M;
+
 	      // integrate the answer
-	      M->add( *(int0->interpretation) );
+	      M->add( *(int0->interpretation) );	      
+
 	      // collect the full answer set
 	      AS.resize(AS.size()+1); 	
 	      AS.back().reset(new Interpretation (ctxSolver.registry()) );
 	      *AS.back() = *M;	
+
+	      *M = *M2;
+
               DBGLOG(DBG, "[MLPSolver::comp] answer set M: " << *M);
               DBGLOG(DBG, "[MLPSolver::comp] answer set AS.back(): " << *AS.back());
 	      if ( debugAS == true )
@@ -1423,6 +1431,7 @@ void MLPSolver::solve()
 
   while ( it != mainModules.end() )
     {
+      A.clear();	
       DBGLOG(DBG, " ");
       DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
