@@ -1,5 +1,9 @@
 2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Fixing rewrite and completing the recursion.
+
+2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* include/dlvhex/MLPSolver.hpp: Completing rewrite.
 	* include/dlvhex/Interpretation.hpp: Likewise.
 	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
