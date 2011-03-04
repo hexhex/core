@@ -51,7 +51,7 @@ DLVHEX_NAMESPACE_BEGIN
  * 'f': FLP-calculation auxiliary predicate
  *      (source ID is a rule)
  * 'q': Query evaluation auxiliary (QueryPlugin)
- *      (source ID is ID(ALL_ONES,0) or ID(ALL_ONES,1) ... see QueryPlugin.cpp)
+ *      (source ID is ID(0,0) or ID(0,1) ... see QueryPlugin.cpp)
  */
 
 namespace

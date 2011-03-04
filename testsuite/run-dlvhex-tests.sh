@@ -111,7 +111,7 @@ do
         fi
         # check output
         if bash -c "$VCOMMAND $VTMPFILE"; then
-          echo "PASS: $HEXPROGRAM (special testcase)"
+          echo "PASS: $HEXPROGRAM $ADDPARM (special testcase)"
         else
           echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (output not verified by $VCOMMAND)"
           cat $VTMPFILE
@@ -139,18 +139,18 @@ do
         RETVAL=$?
         if [ $RETVAL -eq 0 ]; then
           if $TOPSRCDIR/testsuite/answerset_compare.py $TMPFILE $ANSWERSETSFILE; then
-              echo "PASS: $HEXPROGRAM"
+              echo "PASS: $HEXPROGRAM $ADDPARM"
           else
               echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (answersets differ)"
               let failed++
           fi
         else
-          echo "FAIL: $DLVHEX $ADDPARAM $HEXPROGRAM (abnormal termination)"
+          echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (abnormal termination)"
           let failed++
           grep -v "^$" $ETMPFILE
         fi
       else
-        echo "FAIL: $HEXPROGRAM: type of testcase must be '.out', '.stdout', or '.stderr', got '$VERIFCATIONEXT'"
+        echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM: type of testcase must be '.out', '.stdout', or '.stderr', got '$VERIFCATIONEXT'"
         let failed++
         continue
       fi

@@ -239,7 +239,9 @@ QueryPlugin::CtxData::CtxData():
 	enabled(false),
 	mode(DEFAULT),
 	ground(false),
-	query()
+	query(),
+	varAuxPred(ID_FAIL),
+	novarAuxPred(ID_FAIL)
 {
 }
 
@@ -406,30 +408,92 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		DBGLOG(DBG,"created aux constraint '" <<
 				printToString<RawPrinter>(idcon, reg) << "'");
 	}
-	else if( ctxdata.mode == CtxData::BRAVE && !ctxdata.ground )
+	else if( !ctxdata.ground )
 	{
 		// from query a_1,...,a_j,not a_{j+1},...,not a_n
 		// with variables X_1,...,X_k
 		// create rules
 		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
 		// aux[q1] :- aux(Q)(X_1,...,X_k).
-		// create constraint
-		// :- not aux[q1].
-		// then all answer sets are positive witnesses of the nonground query
-		// and facts aux[q0] in the respective model gives all bravely true substitutions
 
-		throw std::runtime_error("TODO qbn");
-	}
-	else if( ctxdata.mode == CtxData::CAUTIOUS && !ctxdata.ground )
-	{
-		// from query a_1,...,a_j,not a_{j+1},...,not a_n
-		// with variables X_1,...,X_k
-		// create rules
-		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
-		// then intersect all answer sets,
-		// facts aux[q0] in the resulting model gives all cautiously true substitutions
+		// create two auxiliaries
+		ctxdata.varAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,0));
+		ctxdata.novarAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,1));
 
-		throw std::runtime_error("TODO qcn");
+		// get variables
+		std::set<ID> vars;
+		reg->getVariablesInTuple(ctxdata.query, vars);
+		assert(!vars.empty() && "nonground queries contain at least one variable");
+
+		// register variables and build var aux predicate
+		OrdinaryAtom auxHead(ID::MAINKIND_ATOM |
+				ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+		auxHead.tuple.push_back(ctxdata.varAuxPred);
+		assert(ctxdata.variableIDs.empty());
+		BOOST_FOREACH(ID idvar, vars)
+		{
+			auxHead.tuple.push_back(idvar);
+			ctxdata.variableIDs.push_back(idvar);
+		}
+		ID varAuxHeadId = reg->storeOrdinaryNAtom(auxHead);
+		DBGLOG(DBG,"stored auxiliary query head " <<
+				printToString<RawPrinter>(varAuxHeadId, reg));
+
+		// build novar aux predicate
+		OrdinaryAtom nvauxHead(ID::MAINKIND_ATOM |
+				ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
+		nvauxHead.tuple.push_back(ctxdata.novarAuxPred);
+		ID novarAuxHeadId = reg->storeOrdinaryGAtom(nvauxHead);
+		DBGLOG(DBG,"stored auxiliary query head " <<
+				printToString<RawPrinter>(novarAuxHeadId, reg));
+
+		// add auxiliary rule with variables
+		Rule varAuxRule(ID::MAINKIND_RULE |
+				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+		#warning TODO extatom flag in rule
+		varAuxRule.head.push_back(varAuxHeadId);
+		varAuxRule.body = ctxdata.query;
+		ID varAuxRuleId = reg->rules.storeAndGetID(varAuxRule);
+		ctx.idb.push_back(varAuxRuleId);
+		LOG(DBG,"added auxiliary rule " <<
+				printToString<RawPrinter>(varAuxRuleId, reg));
+
+		// add auxiliary rule without variables
+		Rule novarAuxRule(ID::MAINKIND_RULE |
+				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+		novarAuxRule.head.push_back(novarAuxHeadId);
+		novarAuxRule.body.push_back(ID::literalFromAtom(varAuxHeadId, false));
+		ID novarAuxRuleId = reg->rules.storeAndGetID(novarAuxRule);
+		ctx.idb.push_back(novarAuxRuleId);
+		LOG(DBG,"added auxiliary rule " <<
+				printToString<RawPrinter>(novarAuxRuleId, reg));
+
+		if( ctxdata.mode == CtxData::BRAVE )
+		{
+			// create constraint
+			// :- not aux[q1].
+			// then all answer sets are positive witnesses of the nonground query
+			// and facts aux[q0] in the respective model gives all bravely true substitutions
+
+			// add auxiliary constraint
+			Rule auxConstraint(ID::MAINKIND_RULE |
+					ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_AUX);
+			auxConstraint.body.push_back(ID::literalFromAtom(novarAuxHeadId, true));
+			ID auxConstraintId = reg->rules.storeAndGetID(auxConstraint);
+			ctx.idb.push_back(auxConstraintId);
+			LOG(DBG,"added auxiliary constraint " <<
+					printToString<RawPrinter>(auxConstraintId, reg));
+		}
+		else if( ctxdata.mode == CtxData::CAUTIOUS )
+		{
+			// intersect all answer sets,
+			// facts aux[q0] in the resulting model gives all cautiously true substitutions
+			// as soon as fact aux[q1] vanishes we know we have no more substitutions and can stop
+		}
+		else
+		{
+			assert("this case should never happen");
+		}
 	}
 	else
 	{
@@ -521,6 +585,155 @@ void VerdictPrinterCallback::operator()()
 	}
 }
 
+// gets all auxiliary substitution atoms from the model
+// substitutes into the query
+// outputs the query (one line per substitution)
+// (this is used in brave mode and cautious mode derives from this)
+class QuerySubstitutionPrinterCallback:
+  public ModelCallback
+{
+public:
+  QuerySubstitutionPrinterCallback(
+			RegistryPtr reg, const CtxData& ctxdata);
+	virtual ~QuerySubstitutionPrinterCallback() {}
+
+  virtual bool operator()(AnswerSetPtr model);
+
+protected:
+	virtual void substituteIntoQueryAndPrint(
+			std::ostream& o, RegistryPtr reg, const Tuple& substitution) const;
+
+protected:
+	const CtxData& ctxdata;
+
+	// incrementally managed ground atom projection helper
+	PredicateMask mask;
+
+	// store already printed substitutions to avoid duplicate prints
+	std::set<Tuple> printedSubstitutions;
+
+	// "expanded query" cached 
+	std::vector<bool> querycacheNaf;
+	std::vector<OrdinaryAtom> querycache;
+};
+
+QuerySubstitutionPrinterCallback::QuerySubstitutionPrinterCallback(
+		RegistryPtr reg,
+		const CtxData& ctxdata):
+	ctxdata(ctxdata)
+{
+	mask.setRegistry(reg);
+	mask.addPredicate(ctxdata.varAuxPred);
+
+	// create query cache
+	BOOST_FOREACH(ID litid, ctxdata.query)
+	{
+		querycacheNaf.push_back(litid.isNaf());
+		querycache.push_back(reg->lookupOrdinaryAtom(litid));
+	}
+}
+
+bool QuerySubstitutionPrinterCallback::operator()(
+		AnswerSetPtr model)
+{
+	DBGLOG_SCOPE(DBG,"qspc",false);
+	DBGLOG(DBG,"= QuerySubstitutionPrinterCallback::operator()");
+
+	typedef Interpretation::Storage Storage;
+	Storage& bits = model->interpretation->getStorage();
+	RegistryPtr reg = model->interpretation->getRegistry();
+
+	// extract interesting atoms
+	mask.updateMask();
+	// project model (we destroy the original answer set in place!)
+	bits &= mask.mask()->getStorage();
+	DBGLOG(DBG,"projected model to " << *model->interpretation);
+
+	// iterate through interesting atoms
+	for(Storage::enumerator it = bits.first();
+			it != bits.end(); ++it)
+	{
+		// build substitution tuple
+		const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*it);
+		DBGLOG(DBG,"got auxiliary " << ogatom.text);
+		assert(ogatom.tuple.size() > 1);
+		Tuple subst(ogatom.tuple.begin()+1, ogatom.tuple.end());
+		assert(!subst.empty());
+
+		// discard duplicates
+		if( printedSubstitutions.find(subst) != printedSubstitutions.end() )
+		{
+			LOG(DBG,"discarded duplicate substitution from auxiliary atom " << ogatom.text);
+			continue;
+		}
+
+		// add and print substitution
+		printedSubstitutions.insert(subst);
+		substituteIntoQueryAndPrint(std::cout, reg, subst);
+		std::cout << std::endl;
+	}
+
+	// never abort
+	return true;
+}
+
+void QuerySubstitutionPrinterCallback::
+substituteIntoQueryAndPrint(
+		std::ostream& o, RegistryPtr reg, const Tuple& substitution) const
+{
+	// prepare substitution map
+	std::map<ID,ID> mapper;
+	assert(substitution.size() == ctxdata.variableIDs.size());
+	for(unsigned u = 0; u < substitution.size(); ++u)
+	{
+		mapper[ctxdata.variableIDs[u]] = substitution[u];
+	}
+
+	// substitute and print
+	RawPrinter p(o, reg);
+	assert(querycacheNaf.size() == querycache.size());
+	assert(!querycache.empty());
+	o << "{";
+	for(unsigned u = 0; u < querycache.size(); ++u)
+	{
+		if( querycacheNaf[u] )
+		{
+			// do not print naf literals in query
+			//o << "not ";
+			continue;
+		}
+		if( u != 0 )
+			o << ", ";
+		const Tuple& atom = querycache[u].tuple;
+		assert(!atom.empty());
+		assert(!atom.front().isVariableTerm());
+		p.print(atom.front());
+		if( atom.size() > 1 )
+		{
+			// copy body
+			Tuple atombody(atom.begin()+1, atom.end());
+
+			// substitute
+			for(Tuple::iterator it = atombody.begin();
+					it != atombody.end(); ++it)
+			{
+				if( it->isVariableTerm() )
+				{
+					assert(mapper.count(*it) == 1 &&
+							"variable in query must be substituted!");
+					*it = mapper[*it];
+				}
+			}
+
+			// print
+			o << "(";
+			p.printmany(atombody,",");
+			o << ")";
+		}
+	}
+	o << "}";
+}
+
 } // anonymous namespace
 
 // change model callback and register final callback
@@ -570,7 +783,22 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 	}
 	else
 	{
-		throw std::runtime_error("todo implement setupctx for nonground queries");
+		switch(ctxdata.mode)
+		{
+		case CtxData::BRAVE:
+			{
+				ModelCallbackPtr qsprinter(new QuerySubstitutionPrinterCallback(reg, ctxdata));
+				#warning here we could try to only remove the default answer set printer
+				ctx.modelCallbacks.clear();
+				ctx.modelCallbacks.push_back(qsprinter);
+			}
+			break;
+		case CtxData::CAUTIOUS:
+			throw std::runtime_error("todo implement setupctx for nonground queries");
+			break;
+		default:
+			assert("unknown querying mode!");
+		}
 	}
 }
 

@@ -60,6 +60,13 @@ public:
     // (this is not directly stored into IDB or EDB)
     Tuple query;
 
+    // auxiliary predicate symbols for nonground query evaluation
+    ID varAuxPred;
+    ID novarAuxPred;
+
+    // IDs of variables as they occur in auxiliary nonground predicate
+    Tuple variableIDs;
+
     CtxData();
     virtual ~CtxData() {};
   };
