@@ -65,104 +65,6 @@
 DLVHEX_NAMESPACE_USE
 
 
-BOOST_AUTO_TEST_CASE(testOneMainModules) 
-{
-  LOG(DBG, " ");
-  LOG(DBG, "Test One Main Modules begin");
-
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename1 = "../../examples/module1.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename1.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename2.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename3.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  m.solve();
-  BOOST_REQUIRE( m.AS.size() == 2 );
-}
-
-
-
-BOOST_AUTO_TEST_CASE(testTwoMainModules) 
-{
-  LOG(DBG, " ");
-  LOG(DBG, "Test Two Main Modules begin");
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename1 = "../../examples/module1-MainModules.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename1.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename2.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename3.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  m.solve();
-  BOOST_REQUIRE( m.AS.size() == 4 );
-}
-
-
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
   LOG(DBG, " ");
@@ -238,7 +140,105 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
   
 }
 
-/*
+
+BOOST_AUTO_TEST_CASE(testOneMainModules) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test One Main Modules begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename1 = "../../examples/module1.hex";
+  std::string filename2 = "../../examples/module2.hex";
+  std::string filename3 = "../../examples/module3.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename2.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename3.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  m.solve();
+  BOOST_REQUIRE( m.AS.size() == 2 );
+}
+
+
+BOOST_AUTO_TEST_CASE(testTwoMainModules) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Two Main Modules begin");
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename1 = "../../examples/module1-MainModules.hex";
+  std::string filename2 = "../../examples/module2.hex";
+  std::string filename3 = "../../examples/module3.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename2.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename3.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  m.solve();
+  BOOST_REQUIRE( m.AS.size() == 4 );
+}
+
+
+
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");
@@ -286,6 +286,6 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   m.solve();
 
 }
-*/
+
 
 

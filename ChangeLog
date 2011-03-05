@@ -1,5 +1,10 @@
 2010-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/Logger.hpp: Cleaning some printing Information.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* testsuite/TestMLPSolver.cpp: Adding more testcases.
 	* examples/module-Inconsistent.hex: Likewise.
 	* examples/module-Not-ic-Stratified.hex: Likewise.

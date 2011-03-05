@@ -257,7 +257,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
   if( Logger::Instance().shallPrint(Logger::DBG) )
   {
     LOG(DBG,"createASTFromClause cAFC:");
-    printSpiritPT(Logger::Instance().stream(), child, "cAFC");
+    //printSpiritPT(Logger::Instance().stream(), child, "cAFC");
   }
   switch(child.value.id().to_long())
   {
@@ -700,7 +700,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
 {
   std::string modName = createStringFromNode(node.children[1], HexGrammar::Ident);
-  std::cout << "-- found module atom: " << modName <<std::endl;
+  DBGLOG(DBG, "-- found module atom: " << modName );
   //mSC.announceModuleCallsModName(modName);
 
   //printSpiritPT(std::cerr, node, ">>");
@@ -725,7 +725,7 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
         for(node_t::tree_iterator it = nodeChild.children.begin(); it != nodeChild.children.end(); ++it){
           std::string predInput = createStringFromNode(*it);
          // mSC.announceModuleCallsPredInput(predInput);
-          std::cout << std::endl << "pred Input detected: " << predInput << std::endl;
+          DBGLOG(DBG, "pred Input detected: " << predInput);
         }
         inputs = createPredTupleFromTermsTuple(node.children[2].children[1]);
 	
