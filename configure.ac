@@ -72,7 +72,8 @@ m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 PKG_PROG_PKG_CONFIG
 
 # checking for boost libs
-BOOST_REQUIRE([1.41.0])
+# we need 1.43 for functional/factory
+BOOST_REQUIRE([1.43.0])
 BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER

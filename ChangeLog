@@ -1,5 +1,11 @@
 2010-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* src/dlvhex/Interpretation.cpp: print edb, one fact each line 
+
+	* include/dlvhex/MLPSolver.hpp: fixing bug on finding the answer sets (because A is not reverted)
+
+2010-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* examples/module1-MainModules.hex: Handling more than one main module.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 
