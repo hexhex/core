@@ -163,7 +163,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void inspectOgatomsSetMFlag();
     inline bool containFinA(int idxPjT);
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
-    inline void comp(ValueCallsType C);
+    inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     inline void printAS();
     std::ofstream ofs;
     bool debugAS;
@@ -172,7 +172,7 @@ class DLVHEX_EXPORT MLPSolver{
   public:
     std::vector<InterpretationPtr> AS;
     inline MLPSolver(ProgramCtx& ctx1);
-    inline void solve();
+    inline bool solve(); // return false if the program is not ic-stratified
 
 };
 
@@ -1089,7 +1089,7 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 
 
 ///////////////////
-void MLPSolver::comp(ValueCallsType C)
+bool MLPSolver::comp(ValueCallsType C)
 {
 //TODO: uncomment this:  do {
   //TODO: check the initialization
@@ -1105,8 +1105,8 @@ void MLPSolver::comp(ValueCallsType C)
         {
           //...DBGLOTRI(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
 	  //...DBGLOTRI(DBG, "[MLPSolver::comp] path: ");
-	  printPath(ctxSolver, path);
-          return;
+	  //...printPath(ctxSolver, path);
+          return false;
         }
       //...DBGLOTRI(DBG, "[MLPSolver::comp] ic-stratified test 1 passed");
       ValueCallsType C2;
@@ -1117,7 +1117,7 @@ void MLPSolver::comp(ValueCallsType C)
           if ( foundNotEmptyInst(C2) ) 
             {
               //...DBGLOTRI(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C2)");
-              return;
+              return false;
             }
           //...DBGLOTRI(DBG, "[MLPSolver::comp] ic-stratified test 2 passed");
           unionCtoFront(C, C2);
@@ -1165,6 +1165,7 @@ void MLPSolver::comp(ValueCallsType C)
 	      AS.back().reset(new Interpretation (ctxSolver.registry()) );
 	      *AS.back() = *M;	
 	      ctrAS++;
+	      ofs << "[MLPSolver::comp] Answer set, ctrAS: " << ctrAS << std::endl << *AS.back() << std::endl;
               //...DBGLOTRI(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 
 	      // *M = *M2;
@@ -1239,7 +1240,7 @@ void MLPSolver::comp(ValueCallsType C)
 	          int intcin;
 	          std::cin >> intcin;
 		}
-	      comp(C2);
+	      if (comp(C2) == false) return false;
 	
 	      // revert path, M, Flag, and A
 	      path = path2;
@@ -1286,7 +1287,7 @@ void MLPSolver::comp(ValueCallsType C)
       if (alphaJ.moduleName=="")
 	{
           //...DBGLOTRI(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
-	  return;	
+	  return false;	
 	}
       //...DBGLOTRI(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
 
@@ -1348,15 +1349,16 @@ void MLPSolver::comp(ValueCallsType C)
 
 	  // the recursion
           //...DBGLOTRI(DBG,"[MLPSolver::comp] Hit the recursion from part c with C: ");
-	  printValueCallsType(ctxSolver, C2);
+	  //...printValueCallsType(ctxSolver, C2);
           //...DBGLOTRI(DBG,"[MLPSolver::comp] path ");
-          printPath(ctxSolver, path);
+          //...printPath(ctxSolver, path);
 	  if (debugAS==true)
 	    {
 	      int intcin;
 	      std::cin >> intcin;
 	    }	
-	  comp(C2);
+
+	  if ( comp(C2) == false ) return false;
 
 	  // revert path, M, Flag, and A
 	  path = path2;
@@ -1373,7 +1375,7 @@ void MLPSolver::comp(ValueCallsType C)
    }
   // TODO: uncomment this:  } while (stack is not empty)
   //...DBGLOTRI(DBG, "[MLPSolver::comp] finished");
- 
+  return true;
 }
 
 
@@ -1445,7 +1447,7 @@ void MLPSolver::printAS()
 }
 
 
-void MLPSolver::solve()
+bool MLPSolver::solve()
 {
   debugAS = false;
   //...DBGLOTRI(DBG, "[MLPSolver::solve] started");
@@ -1462,13 +1464,15 @@ void MLPSolver::solve()
       //...DBGLOTRI(DBG, " ");
       //...DBGLOTRI(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       //...DBGLOTRI(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
-      comp(createValueCallsMainModule(*it));
-      printAS();	
+      if ( comp(createValueCallsMainModule(*it)) == false ) return false;
+      // printAS();	
       i++;
       it++;
     }
   //...DBGLOTRI(DBG, "[MLPSolver::solve] finished");
+  ofs << "Total answer set: " << ctrAS; 
   ofs.close();
+  return true;
 /*
   boost::shared_ptr<int> p(new int);
   boost::shared_ptr<int> q(new int);
