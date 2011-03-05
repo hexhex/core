@@ -1,0 +1,11 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+q1(c).
+q1(d).
+q1(e).
+q1(f).
+q1(g).
+q1(h).
+ok :- @p2[q1]::even(c).
+bad :- not ok.

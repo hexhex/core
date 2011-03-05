@@ -64,7 +64,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-/*
+
 BOOST_AUTO_TEST_CASE(testOneMainModules) 
 {
   LOG(DBG, " ");
@@ -110,8 +110,9 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
 
   MLPSolver m(ctx);
   m.solve();
-
+  BOOST_REQUIRE( m.AS.size() == 2 );
 }
+
 
 
 BOOST_AUTO_TEST_CASE(testTwoMainModules) 
@@ -158,14 +159,90 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 
   MLPSolver m(ctx);
   m.solve();
-
+  BOOST_REQUIRE( m.AS.size() == 4 );
 }
-*/
 
+
+BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Inconsistent Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Inconsistent.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  m.solve(); 
+  BOOST_REQUIRE ( m.AS.size() == 0 );
+  
+}
+
+
+BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Not ic Stratified Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Not-ic-Stratified.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == false );
+  BOOST_REQUIRE ( m.AS.size() == 0 );
+  
+}
+
+/*
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");
-  LOG(DBG, "Test One Main Modules begin");
+  LOG(DBG, "Test Big Program begin");
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
@@ -209,4 +286,6 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   m.solve();
 
 }
+*/
+
 

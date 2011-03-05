@@ -1,4 +1,11 @@
-2010-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2010-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: Adding more testcases.
+	* examples/module-Inconsistent.hex: Likewise.
+	* examples/module-Not-ic-Stratified.hex: Likewise.
+	* examples/module1-Big.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Giving return value whether ic-stratified or not.
 
 	* src/dlvhex/Interpretation.cpp: print edb, one fact each line 
 
