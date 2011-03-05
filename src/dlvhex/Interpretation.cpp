@@ -99,7 +99,7 @@ std::ostream& Interpretation::print(
     it++;
     for(; it != bits.end(); ++it)
     {
-      o << sep;
+      o << sep << std::endl;
       printer.print(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
     }
   }
