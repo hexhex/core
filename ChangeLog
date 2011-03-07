@@ -1,5 +1,8 @@
 2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Adding S in the instantiation, remove T from M (before call instatiation). 
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* testsuite/TestMLPSolver.cpp: Adding an example about reachability and test non-ground module atom.
 	* examples/module-Reachability.hex: Likewise.
 

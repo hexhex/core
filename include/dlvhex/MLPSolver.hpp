@@ -676,15 +676,19 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
     { 
       // get the module idx and idx S
       int idxM = extractPi(*itC);
-      // int idxS = extractS(*itC);
+      int idxS = extractS(*itC);
       Module m = ctx.registry()->moduleTable.getByAddress(idxM);
       std::stringstream ss;
       // ss << "m" << idxM << "S" << idxS << MODULEINSTSEPARATOR;
       ss << "m" << *itC << MODULEINSTSEPARATOR;
 
-      // rewrite the edb
-      // loop over edb pointed by m			
-      Interpretation::Storage bits = ctx.edbList.at(m.edb)->getStorage();
+      // rewrite the edb, get the idb pointed by m.edb
+      InterpretationPtr edbTemp( new Interpretation(ctxSolver.registry()) );
+      edbTemp->add(*ctx.edbList.at(m.edb));
+      // add S (from the instantiation) to the edb
+      edbTemp->add( sTable.get<impl::AddressTag>().at(idxS) );
+      // iterate over edb 
+      Interpretation::Storage bits = edbTemp->getStorage();
       Interpretation::Storage::enumerator it = bits.first();
       while ( it!=bits.end() ) 
         {
@@ -735,7 +739,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       itC++;
     }
   // printing result
-/*
+
   DBGLOG(DBG, "[MLPSolver::rewrite] in the end:");
       Interpretation::Storage bits = edbResult->getStorage();
       Interpretation::Storage::enumerator it = bits.first();
@@ -747,7 +751,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
   DBGLOG(DBG, "[MLPSolver::rewrite] idb: " << printvector(idbResult) );
   printProgram(ctxSolver, edbResult, idbResult);
   DBGLOG(DBG, "[MLPSolver::rewrite] finished");
-*/
+
 }
 
 
@@ -1059,8 +1063,8 @@ void MLPSolver::inspectOgatomsSetMFlag()
 	      pref = pref.substr( 1, predName.length()-1 );
 	      int mi = atoi( pref.c_str() );
 	      resizeIfNeededMFlag(mi);
-      	      DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] mi: " << mi);
-      	      DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] MFlag size: " << MFlag.size());
+      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] mi: " << mi);
+      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] MFlag size: " << MFlag.size());
 	      MFlag.at(mi).setFact(i);	
 	    }
 	}
@@ -1337,12 +1341,14 @@ bool MLPSolver::comp(ValueCallsType C)
 	  
 	  // union M and N
 	  M->add( *(int0->interpretation) );
+/*
 	  // additionally, add T that is prefixed by PjT
 	  std::stringstream ss;
 	  ss << "m" << idxPjT << MODULEINSTSEPARATOR;
 	  rewriteTuple(newT, ss.str());
 	  createInterpretationFromTuple(ctxSolver, newT, intrNewT);
 	  M->add( intrNewT );
+*/
           DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part c " << *M);
 
 	  // set MFlag
