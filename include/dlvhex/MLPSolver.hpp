@@ -164,6 +164,8 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool containFinA(int idxPjT);
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
+    inline void printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr);
+    // inline void clearPrefix(const PredicateTable& preds, PredicateTable& resultPreds);
     inline void printAS();
     std::ofstream ofs;
     bool debugAS;
@@ -1439,20 +1441,69 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
   return C;
 }
 
+
+void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr)
+{
+  Interpretation newIntr( reg );
+  Interpretation intrS;
+  int idxM;
+  int idxS;
+  for (int i=0; i<MFlag.size();i++)
+    {
+      newIntr.clear();
+      newIntr.add(intr);
+      newIntr.bit_and(MFlag.at(i));
+      if (!newIntr.isClear())	
+	{ // print
+	  idxM = extractPi(i);
+	  idxS = extractS(i);
+	  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
+	  intrS.setRegistry( reg );
+	  out << reg->moduleTable.getByAddress(idxM).moduleName << "/";
+	  out << intrS << " = " << newIntr << std::endl;
+	}	
+    }  
+}
+
+/*
+void MLPSolver::clearPrefix(const PredicateTable& preds, PredicateTable& resultPreds)
+{
+  resultPreds = preds;
+  PredicateTable::AddressIterator it_begin, it_end;
+  boost::tie(it_begin, it_end) = resultPreds.getAllByAddress();
+  while ( it_begin != it_end )
+    {
+      std::cerr << "[ MLPSolver::clearPrefix] pred.symbol before: " << (*it_begin).symbol << std::endl;
+      (*it_begin).symbol = (*it_begin).symbol.substr((*it_begin).symbol.find(MODULEPREFIXSEPARATOR)+2, (*it_begin).symbol.length());
+      (*it_begin).symbol = (*it_begin).symbol.substr((*it_begin).symbol.find(MODULEPREFIXSEPARATOR)+2, (*it_begin).symbol.length());
+      std::cerr << "[ MLPSolver::clearPrefix] pred.symbol after: " << (*it_begin).symbol << std::endl;
+      it_begin++;
+    }
+}
+*/
+
 void MLPSolver::printAS()
 {
   ofs << "AS size: " << AS.size() << std::endl;
   ofs << "ctrAS  : " << ctrAS << std::endl;
-  int ctr;
+  int ctr = 0;
   std::vector<InterpretationPtr>::iterator it = AS.begin();
+  // ProgramCtx newCtx; 
+  // newCtx.setupRegistryPluginContainer(ctxSolver.registry());
+  // clearPrefix(ctxSolver.registry()->preds, newCtx.registry()->preds);
   while ( it != AS.end() )
     {
       ctr++;
-      DBGLOG(DBG, "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl << **it << std::endl);
-      ofs << "[MLPSolver::printAS] answer set : " << **it << std::endl;
+      std::stringstream ss; 
+      ss << "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl;
+      printASinSlot(ctxSolver.registry(), ss, **it);
+      ss << std::endl;
+      ofs << ss.str();
+      // DBGLOG(DBG, "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl << **it << std::endl);
+      // ofs << "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl << **it << std::endl;
       it++;
     }
-}
+} 
 
 
 bool MLPSolver::solve()

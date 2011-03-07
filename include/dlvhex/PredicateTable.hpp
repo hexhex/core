@@ -63,7 +63,8 @@ class PredicateTable:
 {
 public:
   // types
-  typedef Container::index<impl::AddressTag>::type AddressIndex;
+  typedef Container::index<impl::AddressTag>::type AddressIndex;	
+  typedef AddressIndex::iterator AddressIterator;
   typedef Container::index<impl::PredicateNameTag>::type PredicateNameIndex;
 
 // methods
@@ -83,6 +84,11 @@ public:
   // store symbol, assuming it does not exist
   // assert that symbol did not exist
   inline ID storeAndGetID(const Predicate& symb) throw();
+
+  // get range over all atoms sorted by address
+  inline std::pair<AddressIterator, AddressIterator>
+	getAllByAddress() const throw();
+
 
 };
 
@@ -148,6 +154,16 @@ ID PredicateTable::storeAndGetID(const Predicate& symb) throw()
 	    container.project<impl::AddressTag>(it) - idx.begin() // address
 	   );
 }
+
+
+// get range over all atoms sorted by address
+std::pair<PredicateTable::AddressIterator, PredicateTable::AddressIterator>
+PredicateTable::getAllByAddress() const throw()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+	return std::make_pair(idx.begin(), idx.end());
+}
+
 
 DLVHEX_NAMESPACE_END
 

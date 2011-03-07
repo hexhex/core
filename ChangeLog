@@ -1,5 +1,10 @@
 2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/PredicateTable.hpp: Output the answer set in a new format.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Adding S in the instantiation, remove T from M (before call instatiation). 
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
