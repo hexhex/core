@@ -1,5 +1,7 @@
 2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fixing bug in storing predicate arity and user_pred_tuple.
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fixing bug in storing module atom.
 
 	* testsuite/TestMLPSolver.cpp: Adding test cases for more than one module call in one module.

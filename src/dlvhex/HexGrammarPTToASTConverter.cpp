@@ -77,6 +77,7 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
 }
 
+
 // optionally assert whether node comes from certain rule
 // descend into tree at node, until one child with value is found
 // return this as string
@@ -103,6 +104,7 @@ std::string HexGrammarPTToASTConverter::createStringFromNode(
   // if we find multiple children which have a value, this is an error
   assert(false && "found multiple value children in createStringFromNode");
 }
+
 
 ID HexGrammarPTToASTConverter::createTerm_Helper(
     node_t& node, HexGrammar::RuleTags verify)
@@ -257,7 +259,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
   if( Logger::Instance().shallPrint(Logger::DBG) )
   {
     LOG(DBG,"createASTFromClause cAFC:");
-    //printSpiritPT(Logger::Instance().stream(), child, "cAFC");
+    printSpiritPT(Logger::Instance().stream(), child, "cAFC");
   }
   switch(child.value.id().to_long())
   {
@@ -447,9 +449,11 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   case HexGrammar::UserPredClassical:
     {
       // <foo> ( <bar>, <baz>, ... )
-      atom.tuple.push_back(createPredFromIdent(prednode.children[0+offset], prednode.children.size()-3-offset)); // -3 for pred, (, and )
+      // push back the id for the predicate name	 
+      atom.tuple.push_back( createPredFromIdent(prednode.children[0+offset], prednode.children[2+offset].children.size()) ); // offset for naf, 1 for pred name, 1 for (
       // =append
       Tuple t = createTupleFromTerms(prednode.children[2+offset]);
+      // push back the id(s) for the term(s)	
       atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
     }
     break;
@@ -462,11 +466,14 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
         { 
           // namespaced the variable
           atom.tuple.push_back(createPredFromIdent(userPredTuple.children[0], userPredTuple.children.size()-1));
+	  //rmv. DBGLOG(DBG, "[HexGrammarPTToASTConverter::createAtomFromUserPred] predName: " << createStringFromNode(userPredTuple.children[0]));
+	  //rmv. DBGLOG(DBG, "[HexGrammarPTToASTConverter::createAtomFromUserPred] predArity: " << userPredTuple.children.size()-1);
           // do the rest
           for(node_t::tree_iterator it = userPredTuple.children.begin()+1; it != userPredTuple.children.end(); ++it)
             {
-              atom.tuple.push_back(createTermFromIdentVar(*it));
+              atom.tuple.push_back(createTermFromTerm(*it));
             }
+	  //rmv. DBGLOG(DBG, "[HexGrammarPTToASTConverter::createAtomFromUserPred] after for");
         }
       else // if all are variables...
         {
@@ -582,7 +589,6 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   atom.text = ss.str();
   myss << ", with " << countTuple << " parameter";
   DBGLOG(DBG,myss.str());
-  //assert(mSC.announcePredInside(predInsideName, countTuple) == true);  
   DBGLOG(DBG,"got atom text '" << atom.text << "'");
   ID id = tbl->storeAndGetID(atom);
   DBGLOG(DBG,"stored atom " << atom << " which got id " << id);
@@ -834,6 +840,7 @@ Tuple HexGrammarPTToASTConverter::createTupleFromTerms(node_t& node)
 
 ID HexGrammarPTToASTConverter::createTermFromIdentVar(node_t& node)
 {
+  // DBGLOG(DBG, "[HexGrammarPTToASTConverter::createTermFromIdentVar] calling createTerm_Helper");
   return createTerm_Helper(node, HexGrammar::IdentVar);
 }
 
