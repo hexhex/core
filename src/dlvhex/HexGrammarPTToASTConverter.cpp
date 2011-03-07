@@ -741,9 +741,13 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
   //mSC.insertCompleteModuleCalls();
 
   DBGLOG(DBG, "storing module atom " << atom);
-  ID id = ctx.registry()->matoms.storeAndGetID(atom);
-  DBGLOG(DBG, "stored module atom " << atom << " which got id " << id);
-  return id;
+  ID atomNewID = ctx.registry()->matoms.getIDByElement(atom.predicate, atom.inputs, atom.outputAtom);
+  if ( atomNewID == ID_FAIL )
+    {
+      atomNewID = ctx.registry()->matoms.storeAndGetID(atom);
+    }
+  DBGLOG(DBG, "stored module atom " << atom << " which got id " << atomNewID);
+  return atomNewID;
 }
 
 ID HexGrammarPTToASTConverter::createAggregateFromAggregate(node_t& node)

@@ -1,3 +1,11 @@
+2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fixing bug in storing module atom.
+
+	* testsuite/TestMLPSolver.cpp: Adding test cases for more than one module call in one module.
+	* examples/module1-Two.hex: Likewise.
+	* examples/module2-Two.hex: Likewise.
+
 2010-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Logger.hpp: Cleaning some printing Information.
