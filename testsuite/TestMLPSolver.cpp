@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
   MLPSolver m(ctx);
   m.solve(); 
   BOOST_REQUIRE ( m.AS.size() == 0 );
-  
+  LOG(DBG, "Test Inconsistent Program finish"); 
 }
 
 
@@ -137,7 +137,8 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == false );
   BOOST_REQUIRE ( m.AS.size() == 0 );
-  
+  LOG(DBG, "Test Not ic Stratified Program finish");
+
 }
 
 
@@ -187,6 +188,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   MLPSolver m(ctx);
   m.solve();
   BOOST_REQUIRE( m.AS.size() == 2 );
+  LOG(DBG, "Test One Main Modules finish");
 }
 
 
@@ -235,12 +237,14 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   MLPSolver m(ctx);
   m.solve();
   BOOST_REQUIRE( m.AS.size() == 4 );
+  LOG(DBG, "Test Two Main Modules finish");
 }
+
 
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
 {
   LOG(DBG, " ");
-  LOG(DBG, "Test Two Main Modules begin");
+  LOG(DBG, "Test Two Module Calls 1 begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
@@ -282,12 +286,14 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   MLPSolver m(ctx);
   m.solve();
   BOOST_REQUIRE( m.AS.size() == 2 );
+  LOG(DBG, "Test Two Module Calls 1 finish");
 }
+
 
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls2) 
 {
   LOG(DBG, " ");
-  LOG(DBG, "Test Two Main Modules begin");
+  LOG(DBG, "Test Two Module Call 2 begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
@@ -329,6 +335,46 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
   MLPSolver m(ctx);
   m.solve();
   BOOST_REQUIRE( m.AS.size() == 2 );
+  LOG(DBG, "Test Two Module Call 2 finish");
+}
+
+
+BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Reachability Non Ground Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Reachability.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  std::cerr << "size a: " << m.AS.size() << std::endl;
+//  BOOST_REQUIRE ( m.AS.size() == 0 );
+  LOG(DBG, "Test Reachability Non Ground Program finish");
 }
 
 
