@@ -1,7 +1,13 @@
-2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2010-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Converted comp from recursion into loop. 
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
 	* testsuite/TestMLPSolver.cpp: Adding an example about how to compare the cardinality between sets.
 	* examples/module-Cardinality.hex: Likewise.
+
+2010-03-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 
 	* include/dlvhex/PredicateTable.hpp: Output the answer set in a new format.
 	* include/dlvhex/MLPSolver.hpp: Likewise.

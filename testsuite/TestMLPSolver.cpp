@@ -241,6 +241,7 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 }
 
 
+
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
 {
   LOG(DBG, " ");
@@ -410,13 +411,12 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  std::cerr << "size a: " << m.AS.size() << std::endl;
   BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Cardinality Program finish");
 }
 
-
 /*
+
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");

@@ -165,7 +165,6 @@ class DLVHEX_EXPORT MLPSolver{
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     inline void printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr);
-    // inline void clearPrefix(const PredicateTable& preds, PredicateTable& resultPreds);
     inline void printAS();
     std::ofstream ofs;
     bool debugAS;
@@ -777,7 +776,7 @@ bool MLPSolver::isOrdinary(const Tuple& idb)
 
 
 void MLPSolver::assignFin(IDSet& t)
-{ //TODO
+{ 
   t.get<impl::ElementTag>().insert(ID_FAIL);
 }
 
@@ -982,16 +981,6 @@ void MLPSolver::createInterpretationFromTuple(const ProgramCtx& ctx1, const Tupl
 
 int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s)
 {
-/*
-  InterpretationType s(ctxSolver.registry());
-  // iterate over the tuple of fact, create a new interpretation s
-  Tuple::const_iterator it = tupleFact.begin();
-  while ( it != tupleFact.end() )
-    {
-      s.setFact((*it).address);	
-      it++;
-    }
-*/
   DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] got interpretation: " << s);
 
   // look up s in the sTable
@@ -1098,10 +1087,33 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 ///////////////////
 bool MLPSolver::comp(ValueCallsType C)
 {
-//TODO: uncomment this:  do {
-  //TODO: check the initialization
-  // open this to check loop
-  // path.push_back(C);
+  std::vector<ValueCallsType> stackC;
+  std::vector< std::vector<ValueCallsType> > stackPath;
+  std::vector<InterpretationPtr> stackM;
+  std::vector< std::vector<IDSet> > stackA;
+  
+  stackC.push_back(C);
+  stackPath.push_back(path);
+  InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+  *M2 = *M;
+  stackM.push_back(M2);
+  stackA.push_back(A);
+
+  while (stackC.size()>0) 
+    {
+
+      C = stackC.back();
+      stackC.erase(stackC.end()-1);
+
+      path = stackPath.back();
+      stackPath.erase(stackPath.end()-1);
+
+      *M = *stackM.back();
+      stackM.erase(stackM.end()-1);
+
+      A = stackA.back();
+      stackA.erase(stackA.end()-1);
+    
   ValueCallsType CPrev;
   int PiSResult;
   bool wasInLoop = false;
@@ -1161,9 +1173,6 @@ bool MLPSolver::comp(ValueCallsType C)
           while (int0 !=0 )
             {
 
-              // InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-	      // *M2 = *M;
-
 	      // integrate the answer
 	      M->add( *(int0->interpretation) );	      
 
@@ -1172,10 +1181,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	      AS.back().reset(new Interpretation (ctxSolver.registry()) );
 	      *AS.back() = *M;	
 	      ctrAS++;
-	      // ofs << "[MLPSolver::comp] Answer set, ctrAS: " << ctrAS << std::endl << *AS.back() << std::endl;
               DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 	      std::cerr << "ctrAS: " << ctrAS << std::endl;		
-	      // *M = *M2;
 
               DBGLOG(DBG, "[MLPSolver::comp] answer set M: " << *M);
               DBGLOG(DBG, "[MLPSolver::comp] answer set AS.back(): " << *AS.back());
@@ -1204,40 +1211,26 @@ bool MLPSolver::comp(ValueCallsType C)
               assignFin(t);
               it++;  
             } 
-	/*
-	  if (wasInLoop == true)
-	    {
-  	      ofs << std::endl << "in Loop: " << std::endl;
-	      RawPrinter printer(ofs, ctxSolver.registry());
-	      ofs << "edb = " << *edbRewrite << std::endl;
-	      ofs << "idb begin" << std::endl; 
-	      printer.printmany(idbRewrite,"\n"); 
-	      ofs << std::endl; 
-	      ofs << "idb end" << std::endl;
-	    }
-	*/
-          //for all ans(newCtx) here
+          // for all ans(newCtx) here
           // try to get the answer set:	
           ASPSolverManager::ResultsPtr res;
           solveAns(edbRewrite, idbRewrite, res);
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
           while (int0 !=0 )
             {
-	      // save path, M, MFlag, and A
-	      std::vector<ValueCallsType> path2 = path;	
-              InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-	      *M2 = *M;
-	      // VectorOfInterpretation MFlag2 = MFlag;
-	      std::vector<IDSet> A2 = A;
+
               DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
 	  
 	      // union M and N
-	      M->add( *(int0->interpretation) );
+              InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	      *M2 = *M;
+	      M2->add( *(int0->interpretation) );
+
 	      // set MFlag
 	      inspectOgatomsSetMFlag();
               DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part b " << *M);
 
-              // the recursion
+              // the recursion (in the paper)
               DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part b with C2 ");
 	      printValueCallsType(ctxSolver, C2);
               DBGLOG(DBG,"[MLPSolver::comp] path ");
@@ -1247,21 +1240,21 @@ bool MLPSolver::comp(ValueCallsType C)
 	          int intcin;
 	          std::cin >> intcin;
 		}
-	      if (comp(C2) == false) return false;
-	
-	      // revert path, M, Flag, and A
-	      path = path2;
-	      *M = *M2;
-	      // MFlag = MFlag2;
-	      A = A2;
 
+	      // converting from recursion to loop
+              stackC.push_back(C2);
+              stackPath.push_back(path);
+	      stackM.push_back(M2);
+	      stackA.push_back(A);
+
+//	      if (comp(C2) == false) return false;
+	
 	      // get the next answer set 
               int0 = res->getNextAnswerSet();
-            } 
-          // push stack here: C, path, unionplus(M, mlpize(N,C)), A, AS
-        }
-    }
-  else
+            }  // while answer set
+        } // if path size = 0, else 
+    } 
+  else // if not ordinary
     {
       DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
       ID idAlpha = smallestILL(idbRewrite);
@@ -1323,14 +1316,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	  resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
 	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
-	  // save path, M, MFlag, and A
-	  std::vector<ValueCallsType> path2 = path;	
-          InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-	  *M2 = *M;
-	  // VectorOfInterpretation MFlag2 = MFlag;
-	  std::vector<IDSet> A2 = A;
-
 	  ValueCallsType C2; 
+	  std::vector<ValueCallsType> path2;	
 	  if ( !MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
 	    {
 	      C2 = C;
@@ -1338,19 +1325,14 @@ bool MLPSolver::comp(ValueCallsType C)
 	  else
 	    {
 	      C2.push_back(idxPjT);
-	      path.push_back(C);		
+	      path2 = path;
+	      path2.push_back(C);		
 	    }
 	  
 	  // union M and N
-	  M->add( *(int0->interpretation) );
-/*
-	  // additionally, add T that is prefixed by PjT
-	  std::stringstream ss;
-	  ss << "m" << idxPjT << MODULEINSTSEPARATOR;
-	  rewriteTuple(newT, ss.str());
-	  createInterpretationFromTuple(ctxSolver, newT, intrNewT);
-	  M->add( intrNewT );
-*/
+          InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	  *M2 = *M;
+	  M2->add( *(int0->interpretation) );
           DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part c " << *M);
 
 	  // set MFlag
@@ -1367,22 +1349,19 @@ bool MLPSolver::comp(ValueCallsType C)
 	      std::cin >> intcin;
 	    }	
 
-	  if ( comp(C2) == false ) return false;
+          // push back for the conversion from recursion to loop
+   	  stackC.push_back(C2);
+ 	  stackPath.push_back(path2);
+	  stackM.push_back(M2);
+	  stackA.push_back(A);
 
-	  // revert path, M, Flag, and A
-	  path = path2;
-	  *M = *M2;
-	  // MFlag = MFlag2;
-	  A = A2;
+//	  if ( comp(C2) == false ) return false;
+
 	  // get the next answer set 
           int0 = res->getNextAnswerSet();
-        }  
-
-/*
-      // push stack here: C, path, unionplus(M, mlpize(N,C)), A, AS
-*/ 
-   }
-  // TODO: uncomment this:  } while (stack is not empty)
+        } // while   
+    } // else  (if ordinary ... else ...)
+  } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
   return true;
 }
@@ -1465,22 +1444,6 @@ void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const I
     }  
 }
 
-/*
-void MLPSolver::clearPrefix(const PredicateTable& preds, PredicateTable& resultPreds)
-{
-  resultPreds = preds;
-  PredicateTable::AddressIterator it_begin, it_end;
-  boost::tie(it_begin, it_end) = resultPreds.getAllByAddress();
-  while ( it_begin != it_end )
-    {
-      std::cerr << "[ MLPSolver::clearPrefix] pred.symbol before: " << (*it_begin).symbol << std::endl;
-      (*it_begin).symbol = (*it_begin).symbol.substr((*it_begin).symbol.find(MODULEPREFIXSEPARATOR)+2, (*it_begin).symbol.length());
-      (*it_begin).symbol = (*it_begin).symbol.substr((*it_begin).symbol.find(MODULEPREFIXSEPARATOR)+2, (*it_begin).symbol.length());
-      std::cerr << "[ MLPSolver::clearPrefix] pred.symbol after: " << (*it_begin).symbol << std::endl;
-      it_begin++;
-    }
-}
-*/
 
 void MLPSolver::printAS()
 {
@@ -1520,7 +1483,8 @@ bool MLPSolver::solve()
   ofs.open("MLPSolverOutput.txt");	
   while ( it != mainModules.end() )
     {
-      A.clear();	
+      A.clear();
+      M->clear();	
       DBGLOG(DBG, " ");
       DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
@@ -1533,21 +1497,6 @@ bool MLPSolver::solve()
   ofs.close();
   DBGLOG(DBG, "[MLPSolver::solve] finished");
   return true;
-/*
-  boost::shared_ptr<int> p(new int);
-  boost::shared_ptr<int> q(new int);
-  *p = 1;
-  *q = 2;
-  DBGLOG(DBG, "[MLPSolver::solve] p = "<< p << "; q = " << q);
-  q = p;
-  DBGLOG(DBG, "[MLPSolver::solve] p = "<< p << "; q = " << q);
-*/
-/*
-  std::string w = "halo";
-  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << w.find("h"));
-  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << w.find("x"));
-  DBGLOG(DBG, "[MLPSolver::solve] idx found = " << std::string::npos );
-*/
 }
 
 
