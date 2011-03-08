@@ -412,13 +412,11 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 	{
 		// from query a_1,...,a_j,not a_{j+1},...,not a_n
 		// with variables X_1,...,X_k
-		// create rules
+		// create rule
 		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
-		// aux[q1] :- aux(Q)(X_1,...,X_k).
 
-		// create two auxiliaries
+		// create auxiliary
 		ctxdata.varAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,0));
-		ctxdata.novarAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,1));
 
 		// get variables
 		std::set<ID> vars;
@@ -439,14 +437,6 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		DBGLOG(DBG,"stored auxiliary query head " <<
 				printToString<RawPrinter>(varAuxHeadId, reg));
 
-		// build novar aux predicate
-		OrdinaryAtom nvauxHead(ID::MAINKIND_ATOM |
-				ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
-		nvauxHead.tuple.push_back(ctxdata.novarAuxPred);
-		ID novarAuxHeadId = reg->storeOrdinaryGAtom(nvauxHead);
-		DBGLOG(DBG,"stored auxiliary query head " <<
-				printToString<RawPrinter>(novarAuxHeadId, reg));
-
 		// add auxiliary rule with variables
 		Rule varAuxRule(ID::MAINKIND_RULE |
 				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
@@ -458,22 +448,35 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		LOG(DBG,"added auxiliary rule " <<
 				printToString<RawPrinter>(varAuxRuleId, reg));
 
-		// add auxiliary rule without variables
-		Rule novarAuxRule(ID::MAINKIND_RULE |
-				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
-		novarAuxRule.head.push_back(novarAuxHeadId);
-		novarAuxRule.body.push_back(ID::literalFromAtom(varAuxHeadId, false));
-		ID novarAuxRuleId = reg->rules.storeAndGetID(novarAuxRule);
-		ctx.idb.push_back(novarAuxRuleId);
-		LOG(DBG,"added auxiliary rule " <<
-				printToString<RawPrinter>(novarAuxRuleId, reg));
-
 		if( ctxdata.mode == CtxData::BRAVE )
 		{
+			// create rule
+			// aux[q1] :- aux(Q)(X_1,...,X_k).
 			// create constraint
 			// :- not aux[q1].
 			// then all answer sets are positive witnesses of the nonground query
 			// and facts aux[q0] in the respective model gives all bravely true substitutions
+
+			// create auxiliary
+			ctxdata.novarAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,1));
+
+			// build novar aux predicate
+			OrdinaryAtom nvauxHead(ID::MAINKIND_ATOM |
+					ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
+			nvauxHead.tuple.push_back(ctxdata.novarAuxPred);
+			ID novarAuxHeadId = reg->storeOrdinaryGAtom(nvauxHead);
+			DBGLOG(DBG,"stored auxiliary query head " <<
+					printToString<RawPrinter>(novarAuxHeadId, reg));
+
+			// add auxiliary rule without variables
+			Rule novarAuxRule(ID::MAINKIND_RULE |
+					ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+			novarAuxRule.head.push_back(novarAuxHeadId);
+			novarAuxRule.body.push_back(ID::literalFromAtom(varAuxHeadId, false));
+			ID novarAuxRuleId = reg->rules.storeAndGetID(novarAuxRule);
+			ctx.idb.push_back(novarAuxRuleId);
+			LOG(DBG,"added auxiliary rule " <<
+					printToString<RawPrinter>(novarAuxRuleId, reg));
 
 			// add auxiliary constraint
 			Rule auxConstraint(ID::MAINKIND_RULE |
@@ -488,7 +491,6 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		{
 			// intersect all answer sets,
 			// facts aux[q0] in the resulting model gives all cautiously true substitutions
-			// as soon as fact aux[q1] vanishes we know we have no more substitutions and can stop
 		}
 		else
 		{
@@ -602,6 +604,8 @@ public:
 protected:
 	virtual void substituteIntoQueryAndPrint(
 			std::ostream& o, RegistryPtr reg, const Tuple& substitution) const;
+	virtual void printAllSubstitutions(
+		std::ostream& o, InterpretationPtr interpretation);
 
 protected:
 	const CtxData& ctxdata;
@@ -649,29 +653,7 @@ bool QuerySubstitutionPrinterCallback::operator()(
 	bits &= mask.mask()->getStorage();
 	DBGLOG(DBG,"projected model to " << *model->interpretation);
 
-	// iterate through interesting atoms
-	for(Storage::enumerator it = bits.first();
-			it != bits.end(); ++it)
-	{
-		// build substitution tuple
-		const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*it);
-		DBGLOG(DBG,"got auxiliary " << ogatom.text);
-		assert(ogatom.tuple.size() > 1);
-		Tuple subst(ogatom.tuple.begin()+1, ogatom.tuple.end());
-		assert(!subst.empty());
-
-		// discard duplicates
-		if( printedSubstitutions.find(subst) != printedSubstitutions.end() )
-		{
-			LOG(DBG,"discarded duplicate substitution from auxiliary atom " << ogatom.text);
-			continue;
-		}
-
-		// add and print substitution
-		printedSubstitutions.insert(subst);
-		substituteIntoQueryAndPrint(std::cout, reg, subst);
-		std::cout << std::endl;
-	}
+	printAllSubstitutions(std::cout, model->interpretation);
 
 	// never abort
 	return true;
@@ -694,6 +676,7 @@ substituteIntoQueryAndPrint(
 	assert(querycacheNaf.size() == querycache.size());
 	assert(!querycache.empty());
 	o << "{";
+	bool firstPrinted = true;
 	for(unsigned u = 0; u < querycache.size(); ++u)
 	{
 		if( querycacheNaf[u] )
@@ -702,8 +685,14 @@ substituteIntoQueryAndPrint(
 			//o << "not ";
 			continue;
 		}
-		if( u != 0 )
+		if( firstPrinted )
+		{
+			firstPrinted = false;
+		}
+		else
+		{
 			o << ", ";
+		}
 		const Tuple& atom = querycache[u].tuple;
 		assert(!atom.empty());
 		assert(!atom.front().isVariableTerm());
@@ -732,6 +721,186 @@ substituteIntoQueryAndPrint(
 		}
 	}
 	o << "}";
+}
+
+void QuerySubstitutionPrinterCallback::
+printAllSubstitutions(
+		std::ostream& o, InterpretationPtr interpretation)
+{
+	typedef Interpretation::Storage Storage;
+	RegistryPtr reg = interpretation->getRegistry();
+	Storage& bits = interpretation->getStorage();
+	for(Storage::enumerator it = bits.first();
+			it != bits.end(); ++it)
+	{
+		// build substitution tuple
+		const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*it);
+		DBGLOG(DBG,"got auxiliary " << ogatom.text);
+		assert(ogatom.tuple.size() > 1);
+		Tuple subst(ogatom.tuple.begin()+1, ogatom.tuple.end());
+		assert(!subst.empty());
+
+		// discard duplicates
+		if( printedSubstitutions.find(subst) != printedSubstitutions.end() )
+		{
+			LOG(DBG,"discarded duplicate substitution from auxiliary atom " << ogatom.text);
+			continue;
+		}
+
+		// add and print substitution
+		printedSubstitutions.insert(subst);
+		substituteIntoQueryAndPrint(o, reg, subst);
+		o << std::endl;
+	}
+}
+
+// first model: project auxiliary substitution atoms into cached interpretation
+// other models: intersect model with cached interpretation
+// prints substitutions in projected interpretation to STDERR
+// (this is used in cautious mode)
+class IntersectedQuerySubstitutionPrinterCallback:
+	public QuerySubstitutionPrinterCallback
+{
+public:
+  IntersectedQuerySubstitutionPrinterCallback(
+			RegistryPtr reg, const CtxData& ctxdata,
+			bool printPreliminaryModels);
+	virtual ~IntersectedQuerySubstitutionPrinterCallback() {}
+
+  virtual bool operator()(AnswerSetPtr model);
+
+	// print result after it is clear that no more models follow
+	virtual void printFinalAnswer();
+
+protected:
+	InterpretationPtr cachedInterpretation;
+	bool printPreliminaryModels;
+};
+typedef boost::shared_ptr<IntersectedQuerySubstitutionPrinterCallback>
+	IntersectedQuerySubstitutionPrinterCallbackPtr;
+
+IntersectedQuerySubstitutionPrinterCallback::IntersectedQuerySubstitutionPrinterCallback(
+		RegistryPtr reg,
+		const CtxData& ctxdata,
+		bool printPreliminaryModels):
+	QuerySubstitutionPrinterCallback(reg, ctxdata),
+	// do not create it here!
+	cachedInterpretation(),
+	printPreliminaryModels(printPreliminaryModels)
+{
+}
+
+bool IntersectedQuerySubstitutionPrinterCallback::operator()(
+		AnswerSetPtr model)
+{
+	DBGLOG_SCOPE(DBG,"iqspc",false);
+	DBGLOG(DBG,"= IntersectedQuerySubstitutionPrinterCallback::operator()");
+
+	typedef Interpretation::Storage Storage;
+	RegistryPtr reg = model->interpretation->getRegistry();
+
+	bool changed = false;
+	if( !cachedInterpretation )
+	{
+		// this is the first model
+		DBGLOG(DBG,"got initial model " << *model->interpretation);
+
+		// -> copy it
+		cachedInterpretation.reset(new Interpretation(*model->interpretation));
+		changed = true;
+
+		Storage& bits = cachedInterpretation->getStorage();
+
+		// extract interesting atoms
+		mask.updateMask();
+		// project model (we destroy the original answer set in place!)
+		bits &= mask.mask()->getStorage();
+		DBGLOG(DBG,"projected initial model to " << *cachedInterpretation);
+	}
+	else
+	{
+		// this is a subsequent model
+		DBGLOG(DBG,"got subsequent model " << *model->interpretation);
+
+		// intersect with new model
+		bm::id_t oldBits = cachedInterpretation->getStorage().count();
+		cachedInterpretation->getStorage() &= model->interpretation->getStorage();
+		bm::id_t newBits = cachedInterpretation->getStorage().count();
+		changed = (newBits != oldBits);
+		DBGLOG(DBG,"projected cached interpretation to " << *cachedInterpretation <<
+				(changed?"(changed)":"(unchanged)"));
+	}
+
+	assert(!!cachedInterpretation);
+
+	if( changed && printPreliminaryModels )
+	{
+		// display preliminary set of substitutions (on stderr)
+		std::cerr << "preliminary cautious query answers:" << std::endl;
+
+		// reset duplicate elimination set
+		printedSubstitutions.clear();
+
+		printAllSubstitutions(std::cerr, cachedInterpretation);
+	}
+
+	// abort iff cached interpretation contains no bits -> no more substitutions cautiously entailed
+	if( cachedInterpretation->getStorage().none() )
+	{
+		// abort
+		return false;
+	}
+	else
+	{
+		// do not abort
+		return true;
+	}
+}
+
+// print result after it is clear that no more models follow
+void IntersectedQuerySubstitutionPrinterCallback::
+	printFinalAnswer()
+{
+	if( !!cachedInterpretation )
+	{
+		// reset duplicate elimination set
+		printedSubstitutions.clear();
+
+		// print this to stderr s.t. stdout output contains only models
+		if( printPreliminaryModels )
+			std::cerr << "final cautious query answers:" << std::endl;
+
+		// print result
+		printAllSubstitutions(std::cout, cachedInterpretation);
+	}
+	// print nothing if final answer is "no cautiously entailed substitutions"
+}
+
+class CautiousVerdictPrinterCallback:
+	public FinalCallback
+{
+public:
+	CautiousVerdictPrinterCallback(
+			IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter);
+	virtual ~CautiousVerdictPrinterCallback() {}
+
+  virtual void operator()();
+
+protected:
+	IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter;
+};
+
+CautiousVerdictPrinterCallback::CautiousVerdictPrinterCallback(
+			IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter):
+	iqsprinter(iqsprinter)
+{
+}
+
+void CautiousVerdictPrinterCallback::operator()()
+{
+	assert(!!iqsprinter);
+	// fully delegate printing to iqsprinter
+	iqsprinter->printFinalAnswer();
 }
 
 } // anonymous namespace
@@ -794,7 +963,18 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 			}
 			break;
 		case CtxData::CAUTIOUS:
-			throw std::runtime_error("todo implement setupctx for nonground queries");
+			{
+				bool printPreliminaryModels = !ctx.config.getOption("Silent");
+				IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter(
+						new IntersectedQuerySubstitutionPrinterCallback(
+							reg, ctxdata, printPreliminaryModels));
+				#warning here we could try to only remove the default answer set printer
+				ctx.modelCallbacks.clear();
+				ctx.modelCallbacks.push_back(iqsprinter);
+				FinalCallbackPtr fprinter(
+						new CautiousVerdictPrinterCallback(iqsprinter));
+				ctx.finalCallbacks.push_back(fprinter);
+			}
 			break;
 		default:
 			assert("unknown querying mode!");
