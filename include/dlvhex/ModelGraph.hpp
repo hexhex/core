@@ -129,7 +129,11 @@ public:
     // successor models per successor eval unit, suitable for fast set intersection
     // (we also need the chronological ordering of adjacency_list,
     //  so we cannot replace that one by an ordered container)
-    typedef std::map<EvalUnit, std::set<Model> > SuccessorModelMap;
+
+    // (we must not use "Model" here because "Model" is defined using
+    // "ModelPropertyBundle" (i.e., this class))
+    //typedef std::map<EvalUnit, std::set<Model> > SuccessorModelMap;
+    typedef std::map<EvalUnit, std::set<void*> > SuccessorModelMap;
     SuccessorModelMap successors;
 
   public:
@@ -486,7 +490,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::addModel(
 
     // if index does not exist, empty set will be created
     // TODO see getSuccessorIntersection
-    std::set<Model>& successorsForThisEvalUnit =
+    std::set<void*>& successorsForThisEvalUnit =
       propsOf(deps[i]).successors[location];
     successorsForThisEvalUnit.insert(m);
   }
@@ -539,7 +543,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
     if( itsucc != propsOf(mm.front()).successors.end() )
     {
       // found successor set -> good (take first, which should be the only one)
-      const std::set<Model>& succs = itsucc->second;
+      const std::set<void*>& succs = itsucc->second;
       DBGLOG(DBG, "found successor (" << succs.size() << ")");
       assert(succs.size() == 1);
       return *succs.begin();
@@ -553,7 +557,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
   }
 
   // regular processing
-  typedef typename std::set<Model>::const_iterator SuccIter;
+  typedef typename std::set<void*>::const_iterator SuccIter;
   // for each predecessor model we have a begin and an end iterator of all of their successors
   typename std::vector<SuccIter> iters;
   typename std::vector<SuccIter> ends;
@@ -565,7 +569,7 @@ ModelGraph<EvalGraphT, ModelPropertiesT, ModelDepPropertiesT>::getSuccessorInter
       propsOf(m).successors.find(location);
     if( itsucc != propsOf(m).successors.end() )
     {
-      const typename std::set<Model>& succs = itsucc->second;
+      const std::set<void*>& succs = itsucc->second;
       iters.push_back(succs.begin());
       ends.push_back(succs.end());
       #ifndef NDEBUG
