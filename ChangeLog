@@ -1,5 +1,8 @@
 2010-03-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestMLPSolver.cpp: Adding an example about how to compare the cardinality between sets.
+	* examples/module-Cardinality.hex: Likewise.
+
 	* include/dlvhex/PredicateTable.hpp: Output the answer set in a new format.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.

@@ -377,6 +377,45 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
   LOG(DBG, "Test Reachability Non Ground Program finish");
 }
 
+BOOST_AUTO_TEST_CASE(testCardinalityProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Cardinality Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Cardinality.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  std::cerr << "size a: " << m.AS.size() << std::endl;
+  BOOST_REQUIRE ( m.AS.size() == 16 );
+  LOG(DBG, "Test Cardinality Program finish");
+}
+
+
 /*
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
