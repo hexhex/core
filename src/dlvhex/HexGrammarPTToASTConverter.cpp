@@ -228,6 +228,9 @@ void HexGrammarPTToASTConverter::createASTFromClause(
         // node.value.value().pos.file, node.value.value().pos.line);
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
         markExternalPropertyIfExternalBody(ctx.registry(), r);
+        if( r.head.size() > 1 )
+          // mark as disjunctive
+          r.kind |= ID::PROPERTY_RULE_DISJ;
         ID id = ctx.registry()->rules.storeAndGetID(r);
         ctx.idb.push_back(id);
         DBGLOG(DBG,"added rule " << r << " with id " << id << " to idb");

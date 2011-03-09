@@ -100,6 +100,8 @@ ID RuleTable::storeAndGetID(
     ID(rule.kind,0).isConstraint() ||
     ID(rule.kind,0).isWeakConstraint());
 	assert(!(rule.head.empty() && rule.body.empty()));
+	assert(!(rule.head.empty() && ID(rule.kind,0).isRegularRule()));
+	assert(!(rule.head.size() > 1 && !ID(rule.kind,0).isRuleDisjunctive()));
 
 	AddressIndex& idx = container.get<impl::AddressTag>();
 

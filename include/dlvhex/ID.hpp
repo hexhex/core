@@ -84,6 +84,7 @@ struct ID:
 	static const IDKind PROPERTY_TERM_AUX      = 0x00020000;
 	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
+	static const IDKind PROPERTY_RULE_DISJ =     0x00100000;
 	static const IDKind PROPERTY_RULE_AUX =      0x00200000;
 	static const IDKind PROPERTY_ATOM_AUX      = 0x00020000;
 
@@ -153,6 +154,7 @@ struct ID:
 	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
 
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
+	inline bool isRuleDisjunctive() const { assert(isRule()); return (kind & PROPERTY_RULE_DISJ) == PROPERTY_RULE_DISJ; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }

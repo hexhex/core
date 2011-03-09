@@ -259,8 +259,8 @@ void createEatomGuessingRules(
           " and negreplacement " << negreplacement);
 
       // create rule head
-      Rule guessingrule(ID::MAINKIND_RULE |
-          ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+      Rule guessingrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR |
+          ID::PROPERTY_RULE_AUX | ID::PROPERTY_RULE_DISJ);
       guessingrule.head.push_back(posreplacement);
       guessingrule.head.push_back(negreplacement);
 
@@ -422,6 +422,8 @@ void createFLPRules(
       Rule rflpbody(
           ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
       rflpbody.head = r.head;
+      if( rflpbody.head.size() > 1 )
+        rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
       rflpbody.body = r.body;
       rflpbody.body.push_back(fid);
 

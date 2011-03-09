@@ -90,8 +90,9 @@ An ID of ~0x0 indicates an error (not found ...).
    Subkinds:
    * 0x0 regular rule
      Properties:
+        mask 0x08: not containing external atoms(0) vs containing external atoms (1)
         mask 0x10: non-disjunctive (0) vs disjunctive (1)
-        mask 0x20: non-fact (0) vs fact (1) [facts should not be stored as rules but as EDB!?]
+        mask 0x20: non-auxiliary (0) vs auxiliary (1)
    * 0x1 constraint
    * 0x2 weak constraint
    Properties for all subkinds:

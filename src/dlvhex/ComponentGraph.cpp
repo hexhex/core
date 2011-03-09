@@ -279,11 +279,9 @@ namespace
 
   bool checkEatomMonotonic(
       RegistryPtr reg,
-      const DependencyGraph& dg,
-      DependencyGraph::Node eatomnode)
+      ID eatomid)
   {
-    ID eatomid = dg.propsOf(eatomnode).id;
-    LOG(DBG,"checking whether eatom " << eatomid << " is monotonic");
+    DBGLOG(DBG,"checking whether eatom " << eatomid << " is monotonic");
 
 		// check monotonicity
 		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
@@ -291,15 +289,24 @@ namespace
 		PluginAtom* pa = eatom.pluginAtom;
 		if( pa->isMonotonic() )
 		{
-			LOG(DBG,"  eatom " << eatomid << " is monotonic");
+			DBGLOG(DBG,"  eatom " << eatomid << " is monotonic");
 			return true;
 		}
 		else
 		{
-			LOG(DBG,"  eatom " << eatomid << " is nonmonotonic");
+			DBGLOG(DBG,"  eatom " << eatomid << " is nonmonotonic");
 			return false;
 		}
   }
+
+  bool checkEatomMonotonic(
+      RegistryPtr reg,
+      const DependencyGraph& dg,
+      DependencyGraph::Node eatomnode)
+  {
+    return checkEatomMonotonic(reg, dg.propsOf(eatomnode).id);
+  }
+
 }
 
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
@@ -362,6 +369,12 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				if( id.isRegularRule() )
 				{
 					ci.innerRules.push_back(id);
+          #warning innerEatomsMonotonicAndOnlyPositiveCycles should be called innerEatomsMonotonicAndInnerRulesFixpointCalculateable
+          if( id.isRuleDisjunctive() )
+          {
+            // if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles
+            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+          }
 				}
 				else if( id.isConstraint() || id.isWeakConstraint() )
 				{
@@ -383,7 +396,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
           // only if we still think that we can use wellfounded model building
           if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
           {
-            // check, if we can, given the new inner eatom
+            // check, if the newly added inner eatom is monotonic
             ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
               checkEatomMonotonic(reg, dg, *itn);
           }
@@ -404,7 +417,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		// (i.e., only if we still think that we can use wellfounded model building)
 		if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
 		{
-			// check, if we can, given the new inner eatom
+			// check, if the component contains only positive cycles
 			ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
         checkNoNegativeEdgesInComponent(dg, nodes);
 		}
@@ -484,12 +497,12 @@ ComponentGraph::collapseComponents(
 
 	typedef std::map<Component, DependencyInfo> DepMap;
 
-	// calculate set of dependencies incoming to the new component
-	DepMap incoming;
-	// calculate set of dependencies outgoing from the new component
+	// set of dependencies from the new component to other components
 	DepMap outgoing;
+  // set of original components that depend on original components
+  ComponentSet internallyDepends;
 
-	// do this by iterating over all originals and over all their incoming and outgoing dependencies
+	// iterate over all originals and over outgoing dependencies
 	ComponentSet::const_iterator ito;
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
@@ -504,14 +517,24 @@ ComponentGraph::collapseComponents(
 			Component target = targetOf(outgoing_dep);
 			if( originals.count(target) == 0 )
 			{
-				// do not count dependencies within the new collapsed component
+				// dependency not within the new collapsed component
 				DBGLOG(DBG,"outgoing dependency to " << target);
 				outgoing[target] |= propsOf(outgoing_dep);
 			}
+      else
+      {
+				// dependency within the new collapsed component
+				DBGLOG(DBG,"internal dependency (to " << target << ")");
+				internallyDepends.insert(*ito);
+      }
 		} // iterate over predecessors
 	} // iterate over originals
 
-	// do again, but for outgoing, now also check for duplicate violations
+	// dependencies of other components on the new component
+	DepMap incoming;
+
+	// iterate over all originals and over incoming dependencies
+  // now also check for duplicate violations
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
 		DBGLOG(DBG,"original " << *ito << ":");
@@ -533,6 +556,7 @@ ComponentGraph::collapseComponents(
 				DepMap::const_iterator itdm = outgoing.find(source);
 				// if we have an incoming dep and an outgoing dep,
 				// we create a cycle so this collapsing is invalid
+        // (this is a bug in the code calling collapseComponents!)
         if( itdm != outgoing.end() )
         {
           throw std::runtime_error(
@@ -551,6 +575,8 @@ ComponentGraph::collapseComponents(
 
 	// build combined component info
 	ComponentInfo& ci = propsOf(c);
+  assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
+      "ComponentInfo constructor should set this to true");
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
 		ComponentInfo& cio = propsOf(*ito);
@@ -558,16 +584,51 @@ ComponentGraph::collapseComponents(
 		ci.sources.insert(ci.sources.end(),
 				cio.sources.begin(), cio.sources.end());
 		#endif
-		ci.outerEatoms.insert(ci.outerEatoms.end(),
-				cio.outerEatoms.begin(), cio.outerEatoms.end());
+    // inner rules stay inner rules
 		ci.innerRules.insert(ci.innerRules.end(),
 				cio.innerRules.begin(), cio.innerRules.end());
+    // inner eatoms always stay inner eatoms, they cannot become outer eatoms
 		ci.innerEatoms.insert(ci.innerEatoms.end(),
 				cio.innerEatoms.begin(), cio.innerEatoms.end());
+    // inner constraints stay inner constraints
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
-    if( cio.innerEatomsMonotonicAndOnlyPositiveCycles != true )
-      throw std::runtime_error("todo: handle collapsing of components where one is not monotonic");
+
+    // innerEatomsMonotonicAndOnlyPositiveCycles
+    // is false if it is false for any component
+    ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
+      cio.innerEatomsMonotonicAndOnlyPositiveCycles;
+
+    // if *ito does not depend on any component in originals
+    // then outer eatoms stay outer eatoms
+    // otherwise they become inner eatoms
+    if( internallyDepends.find(*ito) == internallyDepends.end() )
+    {
+      // does not depend on other components
+      ci.outerEatoms.insert(ci.outerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+    }
+    else
+    {
+      // does depend on other components
+      // -> former outer eatoms now become inner eatoms
+      ci.innerEatoms.insert(ci.innerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+
+      // innerEatomsMonotonicAndOnlyPositiveCycles
+      // is false if any outer eatom that became an inner eatom is nonmonotonic
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+      {
+        BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
+        {
+          if( !checkEatomMonotonic(reg, innerEatomId) )
+          {
+            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+            break;
+          }
+        }
+      }
+    }
     // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
     // TODO create testcase for this (how about wellfounded2.hex?)
 	}
