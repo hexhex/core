@@ -1,0 +1,9 @@
+start(prefix).
+more(a).
+more(b).
+use(X) v nuse(X) :- more(X).
+:- use(X), use(Y), X != Y.
+complete(F) :- &testConcat[S,M](F), start(S), use(M).
+
+% should be cautiously false and bravely true
+complete(prefixa)?

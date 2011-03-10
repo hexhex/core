@@ -50,6 +50,8 @@ EXTRA_DIST = \
     query_asp_nonground1.hex \
     query_asp_nonground2.hex \
     query_asp_nonground3.hex \
+    query_hex_ground1.hex \
+    query_hex_nonground1.hex \
     tertop.hex \
     wellfounded1.hex \
     wellfounded2.hex \
@@ -108,6 +110,10 @@ EXTRA_DIST = \
     tests/query_asp_nonground3c.out \
     tests/query_brave_false.stdout \
     tests/query_cautious_true.stdout \
+    tests/query_hex_ground1c.stdout \
+    tests/query_hex_ground1b.stdout \
+    tests/query_hex_ground1ca.stdout \
+    tests/query_hex_nonground1b.out \
     tests/operators.out \
     tests/tertop.out \
     tests/wellfounded1.out \

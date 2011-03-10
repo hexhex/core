@@ -177,6 +177,11 @@ void HexQueryGrammarPTToASTConverter::createASTFromClause(node_t& node)
 		ctxdata.ground = vars.empty();
 		LOG(INFO,"got " << (ctxdata.ground?"ground":"nonground") << " query!");
 
+		if( ctxdata.allWitnesses && !ctxdata.ground )
+		{
+			LOG(WARNING,"--query-all is only useful for ground queries!");
+		}
+
 		// safety of the query is implicitly checked by checking safety
 		// of the transformed rules
 		#warning we should check query safety explicitly to get better error messages
