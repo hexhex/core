@@ -82,10 +82,13 @@ bool AnswerSetPrinterCallback::operator()(
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
 
-  // filter by aux bits
-  FilterCallback cb(as->interpretation->getRegistry());
-  unsigned rejected = as->interpretation->filter(cb);
-  DBGLOG(DBG,"ASPrinterCB filtered " << rejected << " auxiliaries from interpretation");
+  if( !keepAuxiliaryPredicates )
+  {
+    // filter by aux bits
+    FilterCallback cb(as->interpretation->getRegistry());
+    unsigned rejected = as->interpretation->filter(cb);
+    DBGLOG(DBG,"ASPrinterCB filtered " << rejected << " auxiliaries from interpretation");
+  }
   std::cout << *as << std::endl;
   // never abort
   return true;

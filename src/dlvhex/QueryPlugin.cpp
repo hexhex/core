@@ -50,6 +50,37 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// this is copied from AnswerSetPrinterCallback.cpp
+namespace
+{
+  struct FilterCallback
+  {
+    // ordinary ground atoms
+    OrdinaryAtomTable& ogat;
+
+    FilterCallback(RegistryPtr reg):
+      ogat(reg->ogatoms)
+    {
+    }
+
+    bool operator()(IDAddress addr)
+    {
+      const OrdinaryAtom& oa = ogat.getByAddress(addr);
+      if( (oa.kind & ID::PROPERTY_ATOM_AUX) != 0 )
+      {
+        return false;
+      }
+      else
+      {
+        // assert term aux bit
+        assert((oa.tuple.front().kind & ID::PROPERTY_TERM_AUX) == 0 &&
+            "if ordinary ground atom is not auxiliary, predicate term must not be auxiliary");
+        return true;
+      }
+    }
+  };
+}
+
 struct HexQueryGrammarBase:
 	public HexGrammarBase
 {
@@ -241,7 +272,8 @@ QueryPlugin::CtxData::CtxData():
 	ground(false),
 	query(),
 	varAuxPred(ID_FAIL),
-	novarAuxPred(ID_FAIL)
+	novarAuxPred(ID_FAIL),
+	allWitnesses(false)
 {
 }
 
@@ -261,6 +293,7 @@ void QueryPlugin::printUsage(std::ostream& o) const
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
 	o << "     --query-enable   Enable this (i.e., the querying) plugin." << std::endl <<
 		   "     --query-brave    Do brave reasoning." << std::endl <<
+		   "     --query-all      Give all witnesses when doing ground reasoning." << std::endl <<
 			 "     --query-cautious Do cautious reasoning." << std::endl;
 }
 
@@ -295,6 +328,11 @@ void QueryPlugin::processOptions(
 		else if( str == "--query-cautious" )
 		{
 			ctxdata.mode = CtxData::CAUTIOUS;
+			processed = true;
+		}
+		else if( str == "--query-all" )
+		{
+			ctxdata.allWitnesses = true;
 			processed = true;
 		}
 
@@ -522,7 +560,10 @@ class WitnessPrinterCallback:
   public ModelCallback
 {
 public:
-  WitnessPrinterCallback(const std::string& message, bool abortAfterFirst=true);
+  WitnessPrinterCallback(
+			const std::string& message,
+			bool abortAfterFirstWitness,
+			bool keepAuxiliaryPredicates);
 	virtual ~WitnessPrinterCallback() {}
 
   virtual bool operator()(AnswerSetPtr model);
@@ -531,21 +572,32 @@ public:
 protected:
 	std::string message;
   bool abortAfterFirst;
+	bool keepAuxiliaryPredicates;
 	bool gotOneModel;
 };
 typedef boost::shared_ptr<WitnessPrinterCallback> WitnessPrinterCallbackPtr;
 
 WitnessPrinterCallback::WitnessPrinterCallback(
-		const std::string& message, bool abortAfterFirst):
+		const std::string& message,
+		bool abortAfterFirstWitness,
+		bool keepAuxiliaryPredicates):
 	message(message),
-	abortAfterFirst(abortAfterFirst),
-	gotOneModel(false)
+	abortAfterFirst(abortAfterFirstWitness),
+	gotOneModel(false),
+	keepAuxiliaryPredicates(keepAuxiliaryPredicates)
 {
 }
 
 bool WitnessPrinterCallback::operator()(
 		AnswerSetPtr model)
 {
+  if( !keepAuxiliaryPredicates )
+  {
+    // filter by aux bits
+    FilterCallback cb(model->interpretation->getRegistry());
+    unsigned rejected = model->interpretation->filter(cb);
+    DBGLOG(DBG,"WitnessPrinterCB filtered " << rejected << " auxiliaries from interpretation");
+  }
 	std::cout << message << *model << std::endl;
 	gotOneModel = true;
 	if( abortAfterFirst )
@@ -941,8 +993,11 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 			}
 		}
 		
+		bool keepAuxiliaryPredicates =
+			(1 == ctx.config.getOption("KeepAuxiliaryPredicates"));
 		WitnessPrinterCallbackPtr wprinter(
-				new WitnessPrinterCallback(modelmsg));
+				new WitnessPrinterCallback(modelmsg,
+					!ctxdata.allWitnesses, keepAuxiliaryPredicates));
 		FinalCallbackPtr fprinter(
 				new VerdictPrinterCallback(finalmsg, wprinter));
 		#warning here we could try to only remove the default answer set printer
