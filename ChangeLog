@@ -1,5 +1,10 @@
 2010-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
+	* testsuite/TestMLPSolver.cpp: Adding more examples about disjunctive and naf
+	* examples/module-ABBA.hex: Likewise.
+	* examples/module-Disjunction.hex: Likewise.
+	* examples/module-Negation.hex: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Fixing bug about naf in replacedModuleAtoms
 
 2010-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

@@ -64,7 +64,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-
+/*
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
   LOG(DBG, " ");
@@ -451,9 +451,85 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE ( m.AS.size() == 2 );
-  LOG(DBG, "Test Cardinality Program finish");
+  LOG(DBG, "Test ABBA Program finish");
 }
 
+
+BOOST_AUTO_TEST_CASE(testDisjunctionProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Disjunction Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Disjunction.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.AS.size() == 2 );
+  LOG(DBG, "Test Disjunction Program finish");
+}
+*/
+
+
+BOOST_AUTO_TEST_CASE(testNegationProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Negation Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Negation.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.AS.size() == 0 );
+  LOG(DBG, "Test Negation Program finish");
+}
 
 
 /*
