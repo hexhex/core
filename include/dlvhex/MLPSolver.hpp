@@ -532,7 +532,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		  IDSElementIndex::iterator itE = A.at(instIdx).get<impl::ElementTag>().find(*itB);
 		  if ( itE !=  A.at(instIdx).get<impl::ElementTag>().end() )
 		    { // if found
-
+		      //rmv. bool naf = itB->isNaf();
 		      // create the PjT	
 		      // first, get the module atom
 		      ModuleAtom ma = ctx.registry()->matoms.getByID(*itB);
@@ -598,9 +598,9 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
                         }
                       
 		      // replace the module atom with this newOutputAtom
-		      *itB = atomFind;
-		      //TODO: check if not ordinary		
-
+		      // *itB = atomFind;
+                      *itB = ID::literalFromAtom( atomFind, itB->isNaf() );
+		      
 		      // put Mj/T as a facts if not nil
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] idxPjT = " << idxPjT);			
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MFlag size = " << MFlag.size());			

@@ -1,3 +1,7 @@
+2010-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* include/dlvhex/MLPSolver.hpp: Fixing bug about naf in replacedModuleAtoms
+
 2010-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Converted comp from recursion into loop. 
