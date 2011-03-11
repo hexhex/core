@@ -57,6 +57,7 @@
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
 #include "dlvhex/SafetyChecker.h"
+#include "dlvhex/ModuleSyntaxChecker.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -140,7 +141,7 @@ void State::postProcess(ProgramCtx*) { }
 STATE_FUNC_DEFAULT_IMPL(showPlugins);
 STATE_FUNC_DEFAULT_IMPL(convert);
 STATE_FUNC_DEFAULT_IMPL(parse);
-STATE_FUNC_DEFAULT_IMPL(syntaxCheck);
+STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
 STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
@@ -477,8 +478,7 @@ void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
   ModuleSyntaxChecker sC(*ctx);
-  sC.verifyPredInputsAllModuleHeader(); // should be == true
-  sC.verifyAllModuleCall(); // should be == true
+  sC.verifySyntax();
   StatePtr next(new RewriteEDBIDBState);
   changeState(ctx, next);
 }

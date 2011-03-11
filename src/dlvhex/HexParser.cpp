@@ -48,13 +48,16 @@ void BasicHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
 {
   assert(!!in);
   assert(!!ctx.registry());
-/*
+
   if( ctx.edb == 0 )
   {
     // create empty interpretation using this context's registry
     ctx.edb.reset(new Interpretation(ctx.registry()));
+    DBGLOG(DBG, " reset edb ");
+  } else {
+    DBGLOG(DBG, " not reset edb ");
   }
-*/
+
   // put whole input from stream into a string
   // (an alternative would be the boost::spirit::multi_pass iterator
   // but this can be done later when the parser is updated to Spirit V2)

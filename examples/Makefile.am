@@ -27,6 +27,8 @@ EXTRA_DIST = \
     namespace2.hex \
     percentparser.hex \
     rec_agg_bug1.hex \
+    safety1.hex \
+    safety2.hex \
     simple1.hex \
     weak1.hex \
     weak2.hex \
@@ -35,9 +37,21 @@ EXTRA_DIST = \
     nonmon_noloop.hex \
     nonmon_inc.hex \
     nonmon_guess.hex \
+    notstronglysafe1.hex \
     notwellfounded1.hex \
     notwellfounded2.hex \
     operators.hex \
+    query_asp_ground1.hex  \
+    query_asp_ground2.hex \
+    query_asp_ground3.hex \
+    query_asp_ground4.hex \
+    query_asp_ground5.hex \
+    query_asp_ground6.hex \
+    query_asp_nonground1.hex \
+    query_asp_nonground2.hex \
+    query_asp_nonground3.hex \
+    query_hex_ground1.hex \
+    query_hex_nonground1.hex \
     tertop.hex \
     wellfounded1.hex \
     wellfounded2.hex \
@@ -45,10 +59,10 @@ EXTRA_DIST = \
     tests/agg1.out \
     tests/agg2.out \
     tests/agg3.out \
-    tests/builtin_safety1.err \
-    tests/builtin_safety1a.err \
-    tests/builtin_safety1b.err \
-    tests/builtin_safety1c.err \
+    tests/builtin_safety1.stderr \
+    tests/builtin_safety1a.stderr \
+    tests/builtin_safety1b.stderr \
+    tests/builtin_safety1c.stderr \
     tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
     tests/empty.out \
@@ -65,19 +79,41 @@ EXTRA_DIST = \
     tests/namespace1.out \
     tests/namespace2.out \
     tests/percentparser.out \
-    tests/rec_agg_bug1.err \
+    tests/rec_agg_bug1.stderr \
+    tests/safety1.stderr \
+    tests/safety2.stderr \
     tests/simple1.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
     tests/maxint.out \
     tests/naftest.out \
+    tests/no_model.out \
     tests/nonmon_noloop.out \
     tests/nonmon_inc.out \
     tests/nonmon_guess.out \
+    tests/notstronglysafe1.stderr \
     tests/notwellfounded1_nofacts.out \
     tests/notwellfounded1_withfacts.out \
     tests/notwellfounded2.out \
+    tests/query_asp_ground1b.stdout \
+    tests/query_asp_ground1c.stdout \
+    tests/query_asp_ground2c.stdout \
+    tests/query_asp_ground3b.stdout \
+    tests/query_asp_ground5b.stdout \
+    tests/query_asp_ground5c.stdout \
+    tests/query_asp_ground6b.stdout \
+    tests/query_asp_ground6c.stdout \
+    tests/query_asp_nonground1b.out \
+    tests/query_asp_nonground2b.out \
+    tests/query_asp_nonground3b.out \
+    tests/query_asp_nonground3c.out \
+    tests/query_brave_false.stdout \
+    tests/query_cautious_true.stdout \
+    tests/query_hex_ground1c.stdout \
+    tests/query_hex_ground1b.stdout \
+    tests/query_hex_ground1ca.stdout \
+    tests/query_hex_nonground1b.out \
     tests/operators.out \
     tests/tertop.out \
     tests/wellfounded1.out \

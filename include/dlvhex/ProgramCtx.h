@@ -109,11 +109,11 @@ public:
   HexParserPtr parser;
 
   // idb 
-  // Tuple idb; // should be without this one
+  Tuple idb; 
   std::vector<Tuple> idbList;
 
   // edb 
-  // Interpretation::Ptr edb; // should be without this one
+  Interpretation::Ptr edb; 
   std::vector<InterpretationPtr> edbList;
 
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise

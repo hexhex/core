@@ -1176,6 +1176,9 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // integrate the answer
 	      M->add( *(int0->interpretation) );	      
 
+	      // set MFlag
+	      inspectOgatomsSetMFlag();
+
 	      // collect the full answer set
 	      AS.resize(AS.size()+1); 	
 	      AS.back().reset(new Interpretation (ctxSolver.registry()) );

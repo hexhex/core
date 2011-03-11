@@ -3,9 +3,11 @@ v(a).
 (e,a,b). 
 e(b,c). 
 e(c,d).
-rc(c) :- @p2[v,e]::reachable(c).
+rc(c) :- @p2[v,e]::reachable(c). 
 r(X) :- @p2[v,e]::reachable(X).
 
 #module(p2,[first/1, edge/2]).
+edge(a,c1).
+edge(c1,c2).
 reachable(X) :- first(X).
 reachable(Y) :- reachable(X), edge(X,Y).

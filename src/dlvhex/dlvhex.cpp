@@ -167,7 +167,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
-      << "                      1  - program analysis information (including dot-file)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
 }

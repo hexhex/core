@@ -98,6 +98,8 @@ do
       # run dlvhex with specified parameters and program
       $DLVHEX $ADDPARM $HEXPROGRAM 2>$ETMPFILE >$TMPFILE
       RETVAL=$?
+      #set -x
+      #set -v
       # check error code and output
       read VRETVAL VCOMMAND <$ERRORFILE
       #echo "verifying return value '$RETVAL'"
@@ -110,7 +112,7 @@ do
           VTMPFILE=$TMPFILE
         fi
         # check output
-        if bash -c "$VCOMMAND $VTMPFILE"; then
+        if bash -c "cat $VTMPFILE |$VCOMMAND"; then
           echo "PASS: $HEXPROGRAM $ADDPARM (special testcase)"
         else
           echo "FAIL: $DLVHEX $ADDPARM $HEXPROGRAM (output not verified by $VCOMMAND)"
@@ -122,6 +124,8 @@ do
         cat $ETMPFILE
         let failed++
       fi
+      #set +x
+      #set +v
     else
       VERIFICATIONEXT=${VERIFICATIONFILE: -4}
       if test "x$VERIFICATIONEXT" == "x.out"; then

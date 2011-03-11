@@ -26,6 +26,7 @@ uninstall-local:
 SUBDIRS = libltdl examples include src testsuite
 
 EXTRA_DIST = \
+    bm3.7.0 \
     COPYING.LESSER \
     dlvhex.pc.in \
     doxygen.am \

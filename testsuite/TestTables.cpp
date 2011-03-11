@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(testRuleTable)
   // disjunctive fact "b v a(b)"
   Tuple tupborab;
   tupborab.push_back(idatb); tupborab.push_back(idatab);
-  Rule rule1(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, tupborab, empty);
+  Rule rule1(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ, tupborab, empty);
 
   // regular rule "b :- a(X)"
   Tuple tupb2; tupb2.push_back(idatb);

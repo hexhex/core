@@ -156,6 +156,7 @@
 
 	* TODO details [rewrote model building according to LPNMR2011 paper: new dependency notion, evalgraph, evaluation heuristics, ...]
 	* evaluation heuristics selectable with --heuristics=...
+	* query support (ground and nonground queries, support for displaying all witnesses, incremental cautious nonground querying, external atoms currently not possible in queries)
 
 	Plugin API changes:
 

@@ -378,6 +378,7 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
   LOG(DBG, "Test Reachability Non Ground Program finish");
 }
 
+
 BOOST_AUTO_TEST_CASE(testCardinalityProgram) 
 {
   LOG(DBG, " ");
@@ -415,7 +416,84 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
   LOG(DBG, "Test Cardinality Program finish");
 }
 
+
+BOOST_AUTO_TEST_CASE(testABBAProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test ABBA Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-ABBA.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.AS.size() == 2 );
+  LOG(DBG, "Test Cardinality Program finish");
+}
+
+
+
 /*
+BOOST_AUTO_TEST_CASE(testHanoiProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Hanoi Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Hanoi.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+//  BOOST_REQUIRE ( m.AS.size() == 16 );
+  LOG(DBG, "Test Hanoi Program finish");
+}
+
 
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
@@ -464,5 +542,5 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   m.solve();
 
 }
-
 */
+

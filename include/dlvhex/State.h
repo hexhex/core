@@ -101,8 +101,8 @@ public:
 class DLVHEX_EXPORT ModuleSyntaxCheckState : public State
 {
  public:
-  virtual void
-  moduleSyntaxCheck(ProgramCtx*);
+  ModuleSyntaxCheckState();
+  virtual void moduleSyntaxCheck(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT RewriteEDBIDBState : public State

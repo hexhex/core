@@ -54,3 +54,8 @@
 ../query_asp_nonground2.hex no_model.out --query-enable --query-cautious
 ../query_asp_nonground3.hex query_asp_nonground3b.out --query-enable --query-brave
 ../query_asp_nonground3.hex query_asp_nonground3c.out --query-enable --query-cautious
+../query_hex_ground1.hex query_hex_ground1b.stdout --query-enable --query-brave
+../query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious
+../query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all
+../query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave
+../query_hex_nonground1.hex no_model.out --query-enable --query-cautious

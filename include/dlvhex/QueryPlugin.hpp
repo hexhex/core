@@ -67,6 +67,10 @@ public:
     // IDs of variables as they occur in auxiliary nonground predicate
     Tuple variableIDs;
 
+    // whether to display all witnesses for ground queries
+    // (positive witnesses for brave and negative for cautious reasoning)
+    bool allWitnesses;
+
     CtxData();
     virtual ~CtxData() {};
   };
