@@ -165,14 +165,14 @@ class DLVHEX_EXPORT MLPSolver{
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     inline void printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr);
-    inline void printAS();
+    //rmv. inline void printAS();
     std::ofstream ofs;
     bool debugAS;
     bool printingInformation;
-    int ctrAS;
 
   public:
-    std::vector<InterpretationPtr> AS;
+    // std::vector<InterpretationPtr> AS;
+    int ctrAS;
     inline MLPSolver(ProgramCtx& ctx1);
     inline bool solve(); // return false if the program is not ic-stratified
 
@@ -1180,17 +1180,20 @@ bool MLPSolver::comp(ValueCallsType C)
 	      inspectOgatomsSetMFlag();
 
 	      // collect the full answer set
-	      AS.resize(AS.size()+1); 	
-	      AS.back().reset(new Interpretation (ctxSolver.registry()) );
-	      *AS.back() = *M;	
+	      //rmv. AS.resize(AS.size()+1); 	
+	      //rmv. AS.back().reset(new Interpretation (ctxSolver.registry()) );
+	      //rmv. *AS.back() = *M;	
 	      ctrAS++;
-              DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
-	      std::cerr << "ctrAS: " << ctrAS << std::endl;		
+	      printASinSlot(ctxSolver.registry(), std::cout, *M);
 
-              DBGLOG(DBG, "[MLPSolver::comp] answer set M: " << *M);
-              DBGLOG(DBG, "[MLPSolver::comp] answer set AS.back(): " << *AS.back());
+              //rmv. DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
+	      //rmv. std::cerr << "ctrAS: " << ctrAS << std::endl;		
+
+              //rmv. DBGLOG(DBG, "[MLPSolver::comp] answer set M: " << *M);
+              //rmv. DBGLOG(DBG, "[MLPSolver::comp] answer set AS.back(): " << *AS.back());
 	      if ( debugAS == true )
 		{
+ 		  DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 	          int cinint;
 	          std::cin >> cinint;
  	        }	
@@ -1430,6 +1433,8 @@ void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const I
   Interpretation intrS;
   int idxM;
   int idxS;
+  out << std::endl << "(";
+  bool first = true;
   for (int i=0; i<MFlag.size();i++)
     {
       newIntr.clear();
@@ -1441,13 +1446,19 @@ void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const I
 	  idxS = extractS(i);
 	  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
 	  intrS.setRegistry( reg );
-	  out << reg->moduleTable.getByAddress(idxM).moduleName << "/";
-	  out << intrS << " = " << newIntr << std::endl;
+	  if (first == false) 
+	    {
+	      out << ", ";
+	    }
+	  out << reg->moduleTable.getByAddress(idxM).moduleName << "[";
+	  out << intrS << "]=" << newIntr;
+	  first = false;
 	}	
-    }  
+    } 
+  out << ")" << std::endl; 
 }
 
-
+/*rmv.
 void MLPSolver::printAS()
 {
   ofs << "AS size: " << AS.size() << std::endl;
@@ -1470,7 +1481,7 @@ void MLPSolver::printAS()
       it++;
     }
 } 
-
+*/
 
 bool MLPSolver::solve()
 {
@@ -1483,7 +1494,7 @@ bool MLPSolver::solve()
   int i = 0;
   dataReset();
   ctrAS = 0;	
-  ofs.open("MLPSolverOutput.txt");	
+  // ofs.open("MLPSolverOutput.txt");	
   while ( it != mainModules.end() )
     {
       A.clear();
@@ -1492,12 +1503,13 @@ bool MLPSolver::solve()
       DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
       if ( comp(createValueCallsMainModule(*it)) == false ) return false;
-      printAS();	
+      // printAS();	
       i++;
       it++;
     }
-  ofs << "Total answer set: " << ctrAS; 
-  ofs.close();
+  // ofs << "Total answer set: " << ctrAS; 
+  DBGLOG(DBG, "Total answer set: " << ctrAS); 
+  // ofs.close();
   DBGLOG(DBG, "[MLPSolver::solve] finished");
   return true;
 }
