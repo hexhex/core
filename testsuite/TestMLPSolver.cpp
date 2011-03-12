@@ -64,7 +64,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-/*
+
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
   LOG(DBG, " ");
@@ -98,7 +98,8 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
 
   MLPSolver m(ctx);
   m.solve(); 
-  BOOST_REQUIRE ( m.AS.size() == 0 );
+  //rmv. BOOST_REQUIRE ( m.AS.size() == 0 );
+  BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Inconsistent Program finish"); 
 }
 
@@ -136,7 +137,8 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == false );
-  BOOST_REQUIRE ( m.AS.size() == 0 );
+  //rmv.  BOOST_REQUIRE ( m.AS.size() == 0 );
+  BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Not ic Stratified Program finish");
 
 }
@@ -188,6 +190,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   MLPSolver m(ctx);
   m.solve();
 //  BOOST_REQUIRE( m.AS.size() == 2 );
+  BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test One Main Modules finish");
 }
 
@@ -236,10 +239,10 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 
   MLPSolver m(ctx);
   m.solve();
-  BOOST_REQUIRE( m.AS.size() == 4 );
+  //rmv. BOOST_REQUIRE( m.AS.size() == 4 );
+  BOOST_REQUIRE( m.ctrAS == 4 );
   LOG(DBG, "Test Two Main Modules finish");
 }
-
 
 
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
@@ -286,7 +289,8 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
 
   MLPSolver m(ctx);
   m.solve();
-  BOOST_REQUIRE( m.AS.size() == 2 );
+  //rmv. BOOST_REQUIRE( m.AS.size() == 2 );
+  BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Calls 1 finish");
 }
 
@@ -335,7 +339,8 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
 
   MLPSolver m(ctx);
   m.solve();
-  BOOST_REQUIRE( m.AS.size() == 2 );
+  //rmv. BOOST_REQUIRE( m.AS.size() == 2 );
+  BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Call 2 finish");
 }
 
@@ -374,7 +379,7 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
   // std::cerr << "size a: " << m.AS.size() << std::endl;
-  BOOST_REQUIRE ( m.AS.size() == 1 );
+  BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test Reachability Non Ground Program finish");
 }
 
@@ -412,7 +417,8 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  BOOST_REQUIRE ( m.AS.size() == 16 );
+  //rmv. BOOST_REQUIRE ( m.AS.size() == 16 );
+  BOOST_REQUIRE ( m.ctrAS == 16 );
   LOG(DBG, "Test Cardinality Program finish");
 }
 
@@ -450,7 +456,8 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  BOOST_REQUIRE ( m.AS.size() == 2 );
+  //rmv. BOOST_REQUIRE ( m.AS.size() == 2 );
+  BOOST_REQUIRE ( m.ctrAS == 2 );
   LOG(DBG, "Test ABBA Program finish");
 }
 
@@ -488,10 +495,11 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  BOOST_REQUIRE ( m.AS.size() == 2 );
+  //rmv. BOOST_REQUIRE ( m.AS.size() == 2 );
+  BOOST_REQUIRE ( m.ctrAS == 2 );
   LOG(DBG, "Test Disjunction Program finish");
 }
-*/
+
 
 
 BOOST_AUTO_TEST_CASE(testNegationProgram) 
@@ -527,7 +535,8 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  BOOST_REQUIRE ( m.AS.size() == 0 );
+  //rmv. BOOST_REQUIRE ( m.AS.size() == 0 );
+  BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Negation Program finish");
 }
 

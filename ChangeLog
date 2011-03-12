@@ -1,8 +1,11 @@
 2010-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestMLPSolver.cpp: Fixed some testcases.
+
 	* src/dlvhex/dlvhex.cpp: Adding option --mlp.
 
 	* include/dlvhex/MLPSolver.hpp: Fixed output formatting, minus eliminating prefix.
+
 2010-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* testsuite/TestMLPSolver.cpp: Adding more examples about disjunctive and naf
