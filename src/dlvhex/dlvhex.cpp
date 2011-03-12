@@ -136,6 +136,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
+      << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -290,6 +291,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpIModelGraph",0);
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
+  pctx.config.setOption("MLP", 0);
 
 	// defaults of main
 	Config config;
@@ -495,6 +497,7 @@ void processOptionsPrePlugin(
 		{ "graphviz", required_argument, &longid, 10 },
 		{ "keepauxpreds", no_argument, &longid, 11 },
 		{ "nofacts", no_argument, &longid, 12 },
+		{ "mlp", no_argument, &longid, 13 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -716,6 +719,9 @@ void processOptionsPrePlugin(
 					break;
 				case 12:
 					pctx.config.setOption("NoFacts",1);
+					break;
+				case 13:
+					pctx.config.setOption("MLP",1);
 					break;
 				}
 			break;
