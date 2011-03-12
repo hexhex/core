@@ -77,6 +77,11 @@ std::ostream& Interpretation::print(std::ostream& o) const
   return print(o, "{", ",", "}");
 }
 
+std::ostream& Interpretation::printWithoutPrefix(std::ostream& o) const
+{
+  return printWithoutPrefix(o, "{", ",", "}");
+}
+
 std::ostream& Interpretation::printAsFacts(std::ostream& o) const
 {
   print(o, "", ".", "");
@@ -105,6 +110,27 @@ std::ostream& Interpretation::print(
   }
   return o << last;
 }
+
+std::ostream& Interpretation::printWithoutPrefix(
+    std::ostream& o,
+    const char* first, const char* sep, const char* last) const
+{
+  Storage::enumerator it = bits.first();
+  o << first;
+  RawPrinter printer(o, registry);
+  if( it != bits.end() )
+  {
+    printer.printWithoutPrefix(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      o << sep;
+      printer.printWithoutPrefix(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    }
+  }
+  return o << last;
+}
+
 
 void Interpretation::add(const Interpretation& other)
 {

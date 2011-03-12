@@ -1,5 +1,14 @@
 2010-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Printing AS result without prefix.
+	* include/dlvhex/Printer.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* include/dlvhex/Logger.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+	* src/dlvhex/Printer.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* testsuite/TestMLPSolver.cpp: Fixed some testcases.
 
 	* src/dlvhex/dlvhex.cpp: Adding option --mlp.

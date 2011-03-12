@@ -261,5 +261,43 @@ void RawPrinter::print(ID id)
 	}
 }
 
+// remove the prefix
+// from m0___p1__q(a) to q(a)
+std::string RawPrinter::removeModulePrefix(const std::string& text)
+{
+  std::string result;
+  if (text.find(MODULEINSTSEPARATOR) == std::string::npos)
+    { 
+      result = text; 
+    }
+  else 
+    {
+      result = text.substr(text.find(MODULEINSTSEPARATOR)+3); 
+    } 
+  return result.substr(result.find(MODULEPREFIXSEPARATOR)+2); 
+}
+
+
+
+void RawPrinter::printWithoutPrefix(ID id)
+{
+	switch(id.kind & ID::MAINKIND_MASK)
+	{
+	case ID::MAINKIND_ATOM:
+		switch(id.kind & ID::SUBKIND_MASK)
+		{
+		case ID::SUBKIND_ATOM_ORDINARYG:
+			out << removeModulePrefix(registry->ogatoms.getByID(id).text);
+			break;
+		default:
+			assert(false);
+		}
+		break;
+	default:
+		assert(false);
+	}
+}
+
+
 DLVHEX_NAMESPACE_END
 

@@ -30,7 +30,7 @@
 
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
-//#define NDEBUG
+#define NDEBUG
 #include <boost/preprocessor/cat.hpp>
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>

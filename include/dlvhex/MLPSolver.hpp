@@ -39,8 +39,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-const std::string MODULEINSTSEPARATOR="___";
-
 class DLVHEX_EXPORT MLPSolver{
   private:
 
@@ -1084,7 +1082,7 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 }
 
 
-///////////////////
+// comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
   std::vector<ValueCallsType> stackC;
@@ -1305,7 +1303,7 @@ bool MLPSolver::comp(ValueCallsType C)
 
       while (int0 !=0 )
         {
-          DBGLOG(DBG,"[MLPSolver::comp] got answer set " << *int0);
+          DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << *int0);
 
 	  // restriction and renaming
 	  // get the formal input paramater, tuple of predicate term
@@ -1451,7 +1449,9 @@ void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const I
 	      out << ", ";
 	    }
 	  out << reg->moduleTable.getByAddress(idxM).moduleName << "[";
-	  out << intrS << "]=" << newIntr;
+	  intrS.printWithoutPrefix(out);
+          out << "]=";
+          newIntr.printWithoutPrefix(out);
 	  first = false;
 	}	
     } 
