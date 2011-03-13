@@ -1,5 +1,12 @@
 2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/Logger.hpp: Introducing MLPSolver state into dlvhex.
+	* include/dlvhex/State.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Throw an exception on not ic stratified program.
 
 	* include/dlvhex/ModuleSyntaxChecker.hpp: Throw an exception on syntax check error.

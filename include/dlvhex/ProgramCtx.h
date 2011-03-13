@@ -187,6 +187,7 @@ public:
   void convert();                    // optional
   void parse();
   void moduleSyntaxCheck();
+  void mlpSolver();
   void rewriteEDBIDB();              // optional
   void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();

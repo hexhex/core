@@ -93,7 +93,7 @@ void
 printLogo()
 {
 	std::cout
-		<< "DLVHEX Sun 13 Mar 2011 06:28:05 PM CET "
+		<< "DLVHEX  "
 #ifdef HAVE_CONFIG_H
 		<< VERSION << " "
 #endif // HAVE_CONFIG_H
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 	try
 	{
 		// default logging priority = errors + warnings
-		Logger::Instance().setPrintLevels(Logger::INFO | Logger::ERROR | Logger::WARNING);
+		Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
 
 		// manage options we can already manage
 		// TODO use boost::program_options
@@ -383,11 +383,24 @@ int main(int argc, char *argv[])
 		std::cout << "before parse" << std::endl;
 		pctx.parse();
 		std::cout << "after parse" << std::endl;
-			
-		// syntax check for mlp
-		std::cout << "before moduleSyntaxCheck" << std::endl;
-		pctx.moduleSyntaxCheck();
-		std::cout << "after moduleSyntaxCheck" << std::endl;
+		
+		// check if in mlp mode	
+		if( pctx.config.getOption("MLP") ) 
+		  {
+			// syntax check for mlp
+			std::cout << "before moduleSyntaxCheck" << std::endl;
+			pctx.moduleSyntaxCheck();
+			std::cout << "after moduleSyntaxCheck" << std::endl;
+
+			// solve mlp
+			std::cout << "before mlpSolver" << std::endl;
+			pctx.mlpSolver();
+			std::cout << "after mlpSolver" << std::endl;
+		  }
+
+		else 
+
+		  {	
 
 		// rewrite program
 		std::cout << "before rewriteEDBIDB" << std::endl;
@@ -441,6 +454,8 @@ int main(int argc, char *argv[])
 		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
 		// (individual model output should happen here)
 		pctx.evaluate();
+
+		} // end if (mlp) else ...
 
 		// finalization plugin/dlvhex hooks (for accumulating model processing)
 		// (accumulated model output/query answering should happen here)

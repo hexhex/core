@@ -62,6 +62,7 @@ public:
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
   	virtual void  moduleSyntaxCheck(ProgramCtx*);
+  	virtual void  mlpSolver(ProgramCtx*);
 	virtual void rewriteEDBIDB(ProgramCtx*);
   virtual void safetyCheck(ProgramCtx*);
   virtual void createDependencyGraph(ProgramCtx*);
@@ -103,6 +104,13 @@ class DLVHEX_EXPORT ModuleSyntaxCheckState : public State
  public:
   ModuleSyntaxCheckState();
   virtual void moduleSyntaxCheck(ProgramCtx*);
+};
+
+class DLVHEX_EXPORT MLPSolverState : public State
+{
+ public:
+  MLPSolverState();
+  virtual void mlpSolver(ProgramCtx*);
 };
 
 class DLVHEX_EXPORT RewriteEDBIDBState : public State

@@ -143,6 +143,7 @@ STATE_FUNC_DEFAULT_IMPL(showPlugins);
 STATE_FUNC_DEFAULT_IMPL(convert);
 STATE_FUNC_DEFAULT_IMPL(parse);
 STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
+STATE_FUNC_DEFAULT_IMPL(mlpSolver);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
 STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
@@ -468,9 +469,18 @@ removeNamespaces()
     LOG(INFO,"parsed EDB:");
     Logger::Instance().stream() << *(ctx->edb) << std::endl;
 	}
-
-  StatePtr next(new ModuleSyntaxCheckState);
-  changeState(ctx, next);
+  if( ctx->config.getOption("MLP") ) 
+    {
+      std::cout << "[State.cpp] got an MLP option" << std::endl;
+      StatePtr next(new ModuleSyntaxCheckState);
+      changeState(ctx, next);
+    }
+  else 
+    {
+      std::cout << "[State.cpp] have no MLP option" << std::endl;
+      StatePtr next(new RewriteEDBIDBState);
+      changeState(ctx, next);
+    }
 }
 
 MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
@@ -482,27 +492,30 @@ void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
   ModuleSyntaxChecker sC(*ctx);
   bool success = sC.verifySyntax();
   std::cout << "[State.cpp] after verifySyntax: " << success << std::endl;
-  if( ctx->config.getOption("MLP") ) 
+  if (success)
     {
-      std::cout << "[State.cpp] got an MLP option" << std::endl;
-      if (success)
-        {
-          MLPSolver m(*ctx);
-          m.solve();
-        }
-      else
-        {
-          std::cout << "Does not solve the MLP because of syntax error" << std::endl;
-        }
-    } 
-  else 
-    {
-      std::cout << "[State.cpp] have no MLP option" << std::endl;
+      StatePtr next(new MLPSolverState);
+      changeState(ctx, next);
     }
-  StatePtr next(new RewriteEDBIDBState);
-  changeState(ctx, next);
+  else
+    {
+      std::cout << "Does not solve the MLP because of syntax error" << std::endl;
+      StatePtr next(new PostProcessState);
+      changeState(ctx, next);
+    }
   std::cout << "[State.cpp] leaving ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
 }
+
+MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);
+void MLPSolverState::mlpSolver(ProgramCtx* ctx)
+{
+  MLPSolver m(*ctx);
+  m.solve();
+  StatePtr next(new PostProcessState);
+  changeState(ctx, next);
+}
+
+
 
 OPTIONAL_STATE_CONSTRUCTOR(RewriteEDBIDBState,SafetyCheckState);
 
