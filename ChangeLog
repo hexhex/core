@@ -1,5 +1,7 @@
 2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-	
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Throw an exception on syntax check error.
+
 	* include/dlvhex/ModuleSyntaxChecker.hpp: First approach to incorporate MLPSolver into dlvhex.
 	* include/dlvhex/State.h: Likewise.
 	* include/dlvhex/ProgramCtx.h: Likewise.

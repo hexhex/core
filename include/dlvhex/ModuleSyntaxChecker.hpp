@@ -209,6 +209,9 @@ bool ModuleSyntaxChecker::verifyAllModuleCall()
 bool ModuleSyntaxChecker::verifySyntax()
 {
   bool result = verifyAllModuleCall();
+  // successful verification?
+  if( result ==  false )
+    throw FatalError("MLP syntax error");
   return result;
 }
 
