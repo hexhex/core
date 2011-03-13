@@ -1,5 +1,7 @@
 2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Throw an exception on not ic stratified program.
+
 	* include/dlvhex/ModuleSyntaxChecker.hpp: Throw an exception on syntax check error.
 
 	* include/dlvhex/ModuleSyntaxChecker.hpp: First approach to incorporate MLPSolver into dlvhex.

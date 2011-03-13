@@ -1502,7 +1502,11 @@ bool MLPSolver::solve()
       DBGLOG(DBG, " ");
       DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
       DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
-      if ( comp(createValueCallsMainModule(*it)) == false ) return false;
+      if ( comp(createValueCallsMainModule(*it)) == false ) 
+	{
+  	  throw FatalError("MLP solve: comp() return false");
+	  return false;
+      	}
       // printAS();	
       i++;
       it++;
