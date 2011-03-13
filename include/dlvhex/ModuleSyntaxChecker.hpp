@@ -107,7 +107,7 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
   const Module& moduleCalled = ctx.registry()->moduleTable.getModuleByName(moduleToCall);
   if ( moduleCalled == MODULE_FAIL )
     {
-      DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleToCall << "' not found");
+      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleToCall << "' not found");
       return false;
     }
   
@@ -128,13 +128,13 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
       
       if (itp==inputList.end()) 
         {
-          DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << moduleFullName << "' " << std::endl);
+          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << moduleFullName << "' " << std::endl);
           return false;
         }
 
       if (predArity1 != ctx.registry()->preds.getByID(*itp).arity) 
        {
-          DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity when calling '@" << moduleFullName << "' " << std::endl);
+          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity when calling '@" << moduleFullName << "' " << std::endl);
           return false;
        }
 
@@ -143,11 +143,11 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
     }  
   if (itp!=inputList.end()) 
     {
-      DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << moduleFullName << "' " << std::endl);
+      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << moduleFullName << "' " << std::endl);
       return false;
     }
 
-  DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << moduleFullName << "' succeeded");
+  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << moduleFullName << "' succeeded");
   return true;
 
 }
@@ -171,12 +171,12 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
 
   if (arity1 == arity2) 
     {
-      DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << moduleFullName << "' succeeded");
+      DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << moduleFullName << "' succeeded");
       return true;
     }
   else 
     {
-      DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output of module call '@" << moduleFullName << "' failed" << std::endl);
+      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output of module call '@" << moduleFullName << "' failed" << std::endl);
       return false;
     }
 } 
@@ -191,18 +191,18 @@ bool ModuleSyntaxChecker::verifyAllModuleCall()
       // Verifying pred Inputs
       if (verifyPredInputsArityModuleCall(ma.predicate, ma.inputs) == false) 
         {
-          DBGLOG(DBG,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
+          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
           return false;
         }
       // Verifying pred Ouput
       if (verifyPredOutputArityModuleCall(ma.predicate, ma.outputAtom) == false) 
         {
-          DBGLOG(DBG,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
+          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
           return false;
         }
       it++;
     }
-  DBGLOG(DBG,"[ModuleSyntaxChecker::verifyAllModuleCall] Verifying predicates input and output for all module calls succeeded");
+  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyAllModuleCall] Verifying predicates input and output for all module calls succeeded");
   return true;
 }
 

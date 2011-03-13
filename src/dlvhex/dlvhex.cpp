@@ -93,7 +93,7 @@ void
 printLogo()
 {
 	std::cout
-		<< "DLVHEX "
+		<< "DLVHEX Sun 13 Mar 2011 06:28:05 PM CET "
 #ifdef HAVE_CONFIG_H
 		<< VERSION << " "
 #endif // HAVE_CONFIG_H
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 	try
 	{
 		// default logging priority = errors + warnings
-		Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+		Logger::Instance().setPrintLevels(Logger::INFO | Logger::ERROR | Logger::WARNING);
 
 		// manage options we can already manage
 		// TODO use boost::program_options
@@ -374,31 +374,51 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-
+		std::cout << "before convert" << std::endl;
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
+		std::cout << "after convert" << std::endl;
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
+		std::cout << "before parse" << std::endl;
 		pctx.parse();
+		std::cout << "after parse" << std::endl;
 			
+		// syntax check for mlp
+		std::cout << "before moduleSyntaxCheck" << std::endl;
+		pctx.moduleSyntaxCheck();
+		std::cout << "after moduleSyntaxCheck" << std::endl;
+
 		// rewrite program
+		std::cout << "before rewriteEDBIDB" << std::endl;
 		pctx.rewriteEDBIDB();
+		std::cout << "after rewriteEDBIDB" << std::endl;
 			
 		// check weak safety
+		std::cout << "before safetyCheck" << std::endl;
 		pctx.safetyCheck();
+		std::cout << "after safetyCheck" << std::endl;
 
 		// use configured plugins to obtain plugin atoms
+		std::cout << "before addPluginAtomsFromPluginContainer" << std::endl;
 		pctx.addPluginAtomsFromPluginContainer();
+		std::cout << "after addPluginAtomsFromPluginContainer" << std::endl;
 			
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
+		std::cout << "before associateExtAtomsWithPluginAtoms" << std::endl;
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+		std::cout << "after associateExtAtomsWithPluginAtoms" << std::endl;
 
 		// create dependency graph (we need the previous step for this)
+		std::cout << "before createDependencyGraph" << std::endl;
 		pctx.createDependencyGraph();
+		std::cout << "after createDependencyGraph" << std::endl;
 
 		// optimize dependency graph (some plugin might want to do this, e.g. partial grounding)
+		std::cout << "before optimizeEDBDependencyGraph" << std::endl;
 		pctx.optimizeEDBDependencyGraph();
+		std::cout << "after optimizeEDBDependencyGraph" << std::endl;
 		// everything in the following will be done using the dependency graph and EDB
 		#warning IDB and dependencygraph could get out of sync!
 			

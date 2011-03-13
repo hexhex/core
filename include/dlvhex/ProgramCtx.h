@@ -186,6 +186,7 @@ public:
   void showPlugins();                // optional
   void convert();                    // optional
   void parse();
+  void moduleSyntaxCheck();
   void rewriteEDBIDB();              // optional
   void safetyCheck();                // optional (if you know that your program is safe!)
   void createDependencyGraph();

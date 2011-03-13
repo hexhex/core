@@ -1,3 +1,12 @@
+2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* include/dlvhex/ModuleSyntaxChecker.hpp: First approach to incorporate MLPSolver into dlvhex.
+	* include/dlvhex/State.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
 2010-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Printing AS result without prefix.

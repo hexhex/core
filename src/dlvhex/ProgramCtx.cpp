@@ -170,6 +170,7 @@ void ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr softw
 void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
+void ProgramCtx::moduleSyntaxCheck() { state->moduleSyntaxCheck(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
 void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
 void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }

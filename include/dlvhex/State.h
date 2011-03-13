@@ -61,7 +61,7 @@ public:
   virtual void showPlugins(ProgramCtx*);
   virtual void convert(ProgramCtx*);
   virtual void parse(ProgramCtx*);
-  virtual void  moduleSyntaxCheck(ProgramCtx*);
+  	virtual void  moduleSyntaxCheck(ProgramCtx*);
 	virtual void rewriteEDBIDB(ProgramCtx*);
   virtual void safetyCheck(ProgramCtx*);
   virtual void createDependencyGraph(ProgramCtx*);

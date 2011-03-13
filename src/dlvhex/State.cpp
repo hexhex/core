@@ -58,6 +58,7 @@
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/ModuleSyntaxChecker.hpp"
+#include "dlvhex/MLPSolver.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -476,11 +477,31 @@ MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
 // ModuleSyntaxChecker ..
 void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
+  std::cout << "[State.cpp] entering ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
   ModuleSyntaxChecker sC(*ctx);
-  sC.verifySyntax();
+  bool success = sC.verifySyntax();
+  std::cout << "[State.cpp] after verifySyntax: " << success << std::endl;
+  if( ctx->config.getOption("MLP") ) 
+    {
+      std::cout << "[State.cpp] got an MLP option" << std::endl;
+      if (success)
+        {
+          MLPSolver m(*ctx);
+          m.solve();
+        }
+      else
+        {
+          std::cout << "Does not solve the MLP because of syntax error" << std::endl;
+        }
+    } 
+  else 
+    {
+      std::cout << "[State.cpp] have no MLP option" << std::endl;
+    }
   StatePtr next(new RewriteEDBIDBState);
   changeState(ctx, next);
+  std::cout << "[State.cpp] leaving ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
 }
 
 OPTIONAL_STATE_CONSTRUCTOR(RewriteEDBIDBState,SafetyCheckState);
