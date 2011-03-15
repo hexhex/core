@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve(); 
+  BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Inconsistent Program finish"); 
 }
@@ -126,10 +126,10 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == false );
+  //rmv. BOOST_REQUIRE ( m.solve() == false );
+  BOOST_REQUIRE_THROW( m.solve() , FatalError);
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Not ic Stratified Program finish");
-
 }
 
 
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve();
+  BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test One Main Modules finish");
 }
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve();
+  BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE( m.ctrAS == 4 );
   LOG(DBG, "Test Two Main Modules finish");
 }
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve();
+  BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Calls 1 finish");
 }
@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve();
+  BOOST_REQUIRE ( m.solve() == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Call 2 finish");
 }

@@ -1,5 +1,8 @@
 2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestHexParserModule.cpp: Completing the test cases with throw requirement.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in collecting Answer Set.
 
 2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

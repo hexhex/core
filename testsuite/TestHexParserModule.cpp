@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
-
+  // BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -258,7 +258,8 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -295,7 +296,8 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -334,7 +336,8 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -371,7 +374,8 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -408,7 +412,8 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 
@@ -446,11 +451,8 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
   LOG_REGISTRY_PROGRAM(ctx);
 
   ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == false );
-
-//  MLPSolver m(ctx);
-//  m.solve();
-
+  //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
+  BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
 
 /* TODO handle this?
