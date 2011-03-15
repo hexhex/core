@@ -264,7 +264,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
   node_t& child = node.children[0];
   if( Logger::Instance().shallPrint(Logger::DBG) )
   {
-    LOG(DBG,"createASTFromClause cAFC:");
+    DBGLOG(DBG,"createASTFromClause cAFC:");
     //printSpiritPT(Logger::Instance().stream(), child, "cAFC");
   }
   switch(child.value.id().to_long())

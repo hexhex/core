@@ -1,5 +1,8 @@
 2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
+	* include/dlvhex/Logger.hpp: Fixed some logging information
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+
 	* testsuite/TestMLPSolver.cpp: Add tower of hanoi examples.
 	* examples/module-Hanoi.hex: Likewise.
 
