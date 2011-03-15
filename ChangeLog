@@ -1,4 +1,7 @@
 2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* testsuite/TestMLPSolver.cpp: Add tower of hanoi examples.
+	* examples/module-Hanoi.hex: Likewise.
 
 	* include/dlvhex/MLPSolver.hpp: Producing call graph.
 

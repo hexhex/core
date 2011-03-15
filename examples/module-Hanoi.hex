@@ -1,0 +1,67 @@
+#module(mainProgram, []).
+succ(0,1).
+succ(1,2).
+succ(2,3).
+succ(3,4).
+succ(4,5).
+succ(5,6).
+succ(6,7).
+pathlength(7).
+ndisk(3).
+ok :- @solveHanoi[succ, ndisk, pathlength]::ok.
+
+
+#module(solveHanoi,[succ/2, ndisk/1, pathlength/1]).
+%---- Initial fact
+
+disk(1).
+disk(X1) :- disk(X), succ(X,X1), X1<=Y, ndisk(Y).
+
+peg(a).
+peg(b).
+peg(c).
+
+situation(0).
+situation(X1) :- situation(X), succ(X,X1), X1<=Y, pathlength(Y).
+
+transition(0).
+transition(X1):- transition(X), succ(X,X1), X1<Y, pathlength(Y).
+
+location(Peg) :- peg(Peg).
+location(Disk) :- disk(Disk).
+
+%---- Initial situation
+on(X,a,0) :- ndisk(X).
+on(X,X1,0) :- X<Y, disk(X), X1=X+1, ndisk(Y).
+
+%---- Inertial fluent: on(X,L,I) = disk X is on location L at time I
+on(X,L,T1) :- on(X,L,T), not otherloc(X,L,T1), location(L), transition(T), disk(X), T1=T+1. % inertia
+otherloc(X,L,I) :- on(X,L1,I), L1!=L, situation(I), location(L), location(L1), disk(X).
+:- on(X,L,I), on(X,L1,I), L!=L1, situation(I), location(L), location(L1), disk(X). % on unique location
+
+%---- Defined fluents
+% inpeg(L,P,I) = location L is in peg P at time I
+% top(P,X,I) = location L is the top of peg P. If empty, the top is P
+inpeg(P,P,I) :- situation(I), peg(P).
+inpeg(X,P,I) :- on(X,L,I), inpeg(L,P,I), situation(I), location(L), disk(X), peg(P).
+top(P,L,I) :- inpeg(L,P,I), not covered(L,I), situation(I), location(L), peg(P).
+covered(L,I) :- on(X,L,I), situation(I), location(L), disk(X).
+
+%---- Generating actions
+movement(P1,P2) :- P1 != P2, peg(P1), peg(P2). % valid movements
+move(a,b,T) v move(a,c,T) v move(b,c,T) v move(b,a,T) v move(c,b,T) v move(c,a,T) :- transition(T). % pick one at each transition T
+
+%---- Effect axiom
+on(X,L,T1) :- move(P1,P2,T), top(P1,X,T), top(P2,L,T), location(L), transition(T), disk(X), peg(P1), peg(P2), T1=T+1.
+
+%---- State constraint: no disk X on a smaller one
+:- on(X,Y,I), X>Y, situation(I), disk(X), disk(Y).
+
+%---- Executability constraint
+:- move(P1,P2,T), top(P1,P1,T), transition(T), peg(P1), peg(P2). % the source peg cannot be empty
+
+%---- Goal: at last situation, all disks in peg c
+onewrong :- not inpeg(X,c,Y), disk(X), pathlength(Y).
+:- onewrong.
+ok :- not onewrong.
+

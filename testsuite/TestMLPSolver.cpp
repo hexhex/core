@@ -521,7 +521,6 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
 }
 
 
-/*
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
   LOG(DBG, " ");
@@ -555,11 +554,12 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
+  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
 //  BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Hanoi Program finish");
 }
 
-
+/*
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");
