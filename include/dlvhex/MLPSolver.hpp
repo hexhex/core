@@ -1170,9 +1170,10 @@ bool MLPSolver::comp(ValueCallsType C)
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
           while (int0 !=0 )
             {
-
+	      InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	      *M2 = *M;
 	      // integrate the answer
-	      M->add( *(int0->interpretation) );	      
+	      M2->add( *(int0->interpretation) );	      
 
 	      // set MFlag
 	      inspectOgatomsSetMFlag();
@@ -1182,7 +1183,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      //rmv. AS.back().reset(new Interpretation (ctxSolver.registry()) );
 	      //rmv. *AS.back() = *M;	
 	      ctrAS++;
-	      printASinSlot(ctxSolver.registry(), std::cout, *M);
+	      printASinSlot(ctxSolver.registry(), std::cout, *M2);
 
               //rmv. DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 	      //rmv. std::cerr << "ctrAS: " << ctrAS << std::endl;		
