@@ -33,6 +33,11 @@
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/composite_key.hpp>
+
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graphviz.hpp>
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -116,6 +121,17 @@ class DLVHEX_EXPORT MLPSolver{
     InterpretationPtr M;
     VectorOfInterpretation MFlag;
 
+    // all about graph here:
+    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, int, int> Graph;
+    typedef boost::graph_traits<Graph> Traits;
+
+    typedef Graph::vertex_descriptor Vertex;
+    typedef Graph::edge_descriptor Edge;
+    typedef Traits::vertex_iterator VertexIterator;
+    typedef Traits::edge_iterator EdgeIterator;
+    typedef Traits::out_edge_iterator OutEdgeIterator;
+    typedef Traits::in_edge_iterator InEdgeIterator;
+    // ending graph
 
     std::vector<ValueCallsType> path;
 
@@ -162,12 +178,15 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool containFinA(int idxPjT);
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
-    inline void printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr);
+    inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
+    inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
+    inline void printCallGraph();
     //rmv. inline void printAS();
     std::ofstream ofs;
+    std::ofstream ofsGraph;
     bool debugAS;
     bool printingInformation;
-
+    Graph callGraph;
   public:
     // std::vector<InterpretationPtr> AS;
     int ctrAS;
@@ -1183,7 +1202,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      //rmv. AS.back().reset(new Interpretation (ctxSolver.registry()) );
 	      //rmv. *AS.back() = *M;	
 	      ctrAS++;
-	      printASinSlot(ctxSolver.registry(), std::cout, *M2);
+	      printASinSlot(std::cout, ctxSolver.registry(), *M2);
 
               //rmv. DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 	      //rmv. std::cerr << "ctrAS: " << ctrAS << std::endl;		
@@ -1317,6 +1336,15 @@ bool MLPSolver::comp(ValueCallsType C)
 	  InterpretationType intrNewT;
 	  createInterpretationFromTuple(ctxSolver, newT, intrNewT);
 	  int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
+	  
+	  // add the call graph here:
+	  const VCAddressIndex& idx = C.get<impl::AddressTag>();
+          VCAddressIndex::const_iterator it = idx.begin();
+          while ( it != idx.end() )
+          {
+	    boost::add_edge(*it, idxPjT, callGraph);
+            it++;  
+          } 
 	  // next: defining new C and path
 	  resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
 	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
@@ -1425,13 +1453,29 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
   return C;
 }
 
+// print the text of module instantiation, given the module index (index to the instantiation table)
+// example: p1[{q(a),q(b)}]
+void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx)
+{
+  // get the module index
+  int idxM = extractPi(moduleInstIdx);
+  out << reg->moduleTable.getByAddress(idxM).moduleName ;
 
-void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const Interpretation& intr)
+  // get the interpetretation index
+  int idxS = extractS(moduleInstIdx);
+  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
+  intrS.setRegistry( reg );
+  out << "[";
+  intrS.printWithoutPrefix(out);
+  out << "]";
+}
+
+void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr)
 {
   Interpretation newIntr( reg );
-  Interpretation intrS;
-  int idxM;
-  int idxS;
+  //rmv. Interpretation intrS;
+  //rmv. int idxM;
+  //rmv. int idxS;
   out << std::endl << "(";
   bool first = true;
   for (int i=0; i<MFlag.size();i++)
@@ -1441,17 +1485,19 @@ void MLPSolver::printASinSlot(const RegistryPtr& reg, std::ostream& out, const I
       newIntr.bit_and(MFlag.at(i));
       if (!newIntr.isClear())	
 	{ // print
-	  idxM = extractPi(i);
-	  idxS = extractS(i);
-	  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
-	  intrS.setRegistry( reg );
+	  //rmv. idxM = extractPi(i);
+	  //rmv. idxS = extractS(i);
+	  //rmv. Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
+	  //rmv. intrS.setRegistry( reg );
 	  if (first == false) 
 	    {
 	      out << ", ";
 	    }
-	  out << reg->moduleTable.getByAddress(idxM).moduleName << "[";
-	  intrS.printWithoutPrefix(out);
-          out << "]=";
+	  //rmv. out << reg->moduleTable.getByAddress(idxM).moduleName << "[";
+	  //rmv. intrS.printWithoutPrefix(out);
+          //rmv. out << "]=";
+          printModuleInst(out,reg,i);
+          out << "=";
           newIntr.printWithoutPrefix(out);
 	  first = false;
 	}	
@@ -1484,8 +1530,25 @@ void MLPSolver::printAS()
 } 
 */
 
+void MLPSolver::printCallGraph()
+{
+  ofs.open("callGraph.dot");
+  // produce all module instantiation table
+  std::ostringstream ss;
+  std::string vertexName[moduleInstTable.size()];
+  for (int i=0;i<moduleInstTable.size();i++)
+    {
+      ss.str("");
+      printModuleInst(ss, ctxSolver.registry(), i);
+      vertexName[i] = ss.str();
+    }
+  boost::write_graphviz(ofs, callGraph, boost::make_label_writer(vertexName));
+  ofs.close();
+}
+
 bool MLPSolver::solve()
 {
+
   debugAS = false;
   printingInformation = false;
   DBGLOG(DBG, "[MLPSolver::solve] started");
@@ -1515,7 +1578,45 @@ bool MLPSolver::solve()
   // ofs << "Total answer set: " << ctrAS; 
   DBGLOG(DBG, "Total answer set: " << ctrAS); 
   // ofs.close();
+  printCallGraph();
   DBGLOG(DBG, "[MLPSolver::solve] finished");
+
+/* for graph
+  std::string vertexName[] = { "p1[{}]", "p2[{q(a),q(b)}]", "p3[{q(a)}]", "zow.h", "foo.cpp",
+                       "libzigzag.a", "killerapp" };
+  std::string edgeName[] = { "0", "1", "2", "3", "4", "5", "6" };
+
+  int a = 1;
+  int b = 2;
+  int label=0;
+  boost::add_edge(a, b, label, g);
+  a=2;
+  b=3;
+  label = 1;
+  boost::add_edge(a, b, label, g);
+  a=4;
+  label = 2;
+  boost::add_edge(a, b, label, g);
+  VertexIterator itg, itg_end;
+  boost::tie(itg, itg_end) = boost::vertices(g);
+  int ig=0;
+  while (itg != itg_end ) 
+    {
+      DBGLOG(DBG, "[MLPSolver::solve] vertex [" << ig << "]: " << *itg);      
+      itg++;
+      ig++;
+    } 
+  EdgeIterator ite, ite_end;
+  boost::tie(ite, ite_end) = boost::edges(g);
+  int ie=0;
+  while (ite != ite_end ) 
+    {
+      DBGLOG(DBG, "[MLPSolver::solve] edge [" << ie << "]: " << *ite << ";" << g[*ite]);      
+      ite++;
+      ie++;
+    } 
+  boost::write_graphviz(std::cout, g, boost::make_label_writer(vertexName), boost::make_label_writer(edgeName));
+*/
   return true;
 }
 
