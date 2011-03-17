@@ -913,6 +913,26 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 {
   DBGLOG(DBG, "[MLPSolver::allPrepared] enter with module atom: " << moduleAtom);
   const ModuleAtom& m = ctxSolver.registry()->matoms.getByID(moduleAtom);
+
+  Tuple predsSearched;
+  Tuple result;
+  Tuple::const_iterator itPred = m.inputs.begin(); 
+  // iterate over the input preds 
+  while ( itPred != m.inputs.end() )
+  { // collect all rules that defined this input 
+    collectAllRulesDefined(*itPred, rules, predsSearched, result);
+    itPred++;
+  }
+  // iterate over the resulting rules
+  Tuple::iterator itRules = result.begin();
+  while ( itRules != result.end() )
+    {
+      if ( itRules->doesRuleContainModatoms() == true ) return false;
+      itRules++;
+    }
+  return true;
+
+/*
   Tuple inputs = m.inputs;   // contain ID = predicate term
   Tuple::const_iterator it = rules.begin();
   while ( it != rules.end() )
@@ -929,7 +949,7 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
         }
       it++;
     }
-  return true;
+*/
 }
 
 
@@ -1211,6 +1231,7 @@ bool MLPSolver::comp(ValueCallsType C)
           DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
 	  DBGLOG(DBG, "[MLPSolver::comp] path: ");
 	  printPath(ctxSolver, path);
+	  throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
           return false;
         }
       DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 1 passed");
@@ -1222,6 +1243,7 @@ bool MLPSolver::comp(ValueCallsType C)
           if ( foundNotEmptyInst(C2) ) 
             {
               DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C2)");
+	      throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
               return false;
             }
           DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 2 passed");
@@ -1351,6 +1373,11 @@ bool MLPSolver::comp(ValueCallsType C)
     {
       DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
       ID idAlpha = smallestILL(idbRewrite);
+      if ( idAlpha == ID_FAIL ) 
+	{  // not i-stratified
+	  throw FatalError("[MLPSolver::comp] Error: not i stratified program ");
+	  return false;
+	}
       const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID(idAlpha);
       DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
       // check the size of A
