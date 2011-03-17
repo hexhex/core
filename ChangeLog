@@ -1,5 +1,10 @@
 2010-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestMLPSolver.cpp: Adding a test case for indirect rule to collect the bottom.
+	* examples/module-Indirection.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in collecting bottom.
+
 	* include/dlvhex/ModuleSyntaxChecker.hpp: Allowing empty predicate inputs.
 
 2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

@@ -55,7 +55,8 @@
 
 DLVHEX_NAMESPACE_USE
 
-
+/*
+// 1
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
   LOG(DBG, " ");
@@ -94,6 +95,7 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
 }
 
 
+// 2
 BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram) 
 {
   LOG(DBG, " ");
@@ -133,6 +135,7 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
 }
 
 
+// 3
 BOOST_AUTO_TEST_CASE(testOneMainModules) 
 {
   LOG(DBG, " ");
@@ -183,6 +186,8 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
 }
 
 
+
+// 4
 BOOST_AUTO_TEST_CASE(testTwoMainModules) 
 {
   LOG(DBG, " ");
@@ -232,6 +237,7 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 }
 
 
+// 5
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
 {
   LOG(DBG, " ");
@@ -281,6 +287,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
 }
 
 
+// 6
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls2) 
 {
   LOG(DBG, " ");
@@ -330,6 +337,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
 }
 
 
+// 7
 BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram) 
 {
   LOG(DBG, " ");
@@ -368,6 +376,7 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
 }
 
 
+// 8
 BOOST_AUTO_TEST_CASE(testCardinalityProgram) 
 {
   LOG(DBG, " ");
@@ -406,6 +415,7 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 }
 
 
+// 9
 BOOST_AUTO_TEST_CASE(testABBAProgram) 
 {
   LOG(DBG, " ");
@@ -444,6 +454,7 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
 }
 
 
+// 10
 BOOST_AUTO_TEST_CASE(testDisjunctionProgram) 
 {
   LOG(DBG, " ");
@@ -482,7 +493,7 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
 }
 
 
-
+// 11
 BOOST_AUTO_TEST_CASE(testNegationProgram) 
 {
   LOG(DBG, " ");
@@ -519,8 +530,48 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Negation Program finish");
 }
+*/
 
+//12
+BOOST_AUTO_TEST_CASE(testIndirectionProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Indirection Program begin");
 
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Indirection.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+//  BOOST_REQUIRE ( m.AS.size() == 16 );
+  LOG(DBG, "Test Indirection Program finish");
+}
+
+/*
+// 13
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
   LOG(DBG, " ");
@@ -557,6 +608,44 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
   std::cerr << "ctrAS: " << m.ctrAS << std::endl;
 //  BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Hanoi Program finish");
+}
+/*
+// 14
+BOOST_AUTO_TEST_CASE(testHanoi3Program) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test Hanoi-3 Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Hanoi3.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+//  BOOST_REQUIRE ( m.AS.size() == 16 );
+  LOG(DBG, "Test Hanoi-3 Program finish");
 }
 
 /*
