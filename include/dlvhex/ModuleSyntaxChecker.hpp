@@ -125,21 +125,22 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
   while ( it != tuple.end() )
     {
       predArity1 = getArity(*it);
-      
-      if (itp==inputList.end()) 
-        {
-          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << moduleFullName << "' " << std::endl);
-          return false;
-        }
+      if ( predArity1 != -1 ) 
+	{
+          if (itp==inputList.end()) 
+            {
+              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << moduleFullName << "' " << std::endl);
+              return false;
+            }
 
-      if (predArity1 != ctx.registry()->preds.getByID(*itp).arity) 
-       {
-          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity when calling '@" << moduleFullName << "' " << std::endl);
-          return false;
-       }
-
-      it++;
-      itp++;
+          if (predArity1 != ctx.registry()->preds.getByID(*itp).arity) 
+           {
+              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity when calling '@" << moduleFullName << "' " << std::endl);
+              return false;
+           }
+	}
+        it++;
+        itp++;
     }  
   if (itp!=inputList.end()) 
     {

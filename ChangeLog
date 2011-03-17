@@ -1,3 +1,7 @@
+2010-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Allowing empty predicate inputs.
+
 2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* include/dlvhex/Logger.hpp: Fixed some logging information
