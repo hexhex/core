@@ -164,6 +164,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void findAllModulesAtom(const Tuple& newRules, Tuple& result);
     inline bool containsIDRuleHead(const ID& id, const Tuple& ruleHead);
     inline bool defined(const Tuple& preds, const Tuple& ruleHead);
+    inline void collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& predsSearched, Tuple& rulesResult);
     inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
     inline ID smallestILL(const Tuple& newRules);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
@@ -848,18 +849,63 @@ bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
   return false;
 }
 
-bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
-{
-  DBGLOG(DBG, "[MLPSolver::defined] enter");
-  Tuple::const_iterator itPred = preds.begin();
-  while ( itPred != preds.end() )
-  {
-    // *itPred = the predicate names (yes the names only, the ID is belong to term predicate)
-    if ( containsIDRuleHead(*itPred, ruleHead) == true ) return true;
-    itPred++;
 
-  }
-  return false;
+
+
+//////////////////////////////
+//TODO: here now
+// predicate: predicate to be searched for
+// rules: the base rule to inspect
+// predsSearched: list of predicate searched so far
+// rules result: ID of rule that has been the result so far
+void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& predsSearched, Tuple& rulesResult)
+{
+  DBGLOG(DBG, "[MLPSolver::collectAllRulesDefined] enter, to find pred: " << predicate);
+  Tuple::iterator location = std::find(predsSearched.begin(), predsSearched.end(), predicate);
+  // if not found, push_back this predicate; if found do nothing
+  if ( location == predsSearched.end() ) 
+    { 
+      predsSearched.push_back(predicate);
+      // look for rule in rules that defined this predicate	
+      Tuple::const_iterator it = rules.begin();
+      while ( it != rules.end() )
+        {
+          const Rule& r = ctxSolver.registry()->rules.getByID(*it);
+          if ( containsIDRuleHead(predicate, r.head) ) 
+            { // if this rule defined the predicate, 
+	      // look into the result, if not found, push it; 
+              location = std::find(rulesResult.begin(), rulesResult.end(), *it);
+	      if ( location == rulesResult.end() )
+		{
+		  rulesResult.push_back(*it);
+		}
+	      Tuple::const_iterator itB = r.body.begin();
+	      while ( itB != r.body.end() )
+		{ //  search for the predicate in the body
+		  OrdinaryAtomTable* tbl; 
+		  if ( itB->isOrdinaryAtom() ) 
+		    {
+		      if (itB->isOrdinaryGroundAtom() ) 
+		        {
+		          tbl = &ctxSolver.registry()->ogatoms;
+		        }
+		      else
+		        {
+		          tbl = &ctxSolver.registry()->onatoms;
+		        }
+		      const OrdinaryAtom& oa = tbl->getByID(*itB);
+		      collectAllRulesDefined(oa.tuple.front(), rules, predsSearched, rulesResult);
+		    }
+		  else
+		    {
+  			DBGLOG(DBG, "[MLPSolver::collectAllRulesDefined] found not an Ordinary atom: " << *itB);
+		    }
+  	          *itB++;
+		}
+            }
+          it++;
+        }
+    }
 }
 
 
@@ -904,10 +950,32 @@ ID MLPSolver::smallestILL(const Tuple& newRules)
   return ID_FAIL;
 }
 
+bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
+{
+  DBGLOG(DBG, "[MLPSolver::defined] enter");
+  Tuple::const_iterator itPred = preds.begin();
+  while ( itPred != preds.end() )
+  {
+    // *itPred = the predicate names (yes the names only, the ID is belong to term predicate)
+    if ( containsIDRuleHead(*itPred, ruleHead) == true ) return true;
+    itPred++;
+
+  }
+  return false;
+}
 
 void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result)
 {
+  DBGLOG(DBG, "[MLPSolver::collectBottom] enter");
   result.clear();
+  Tuple predsSearched;
+  Tuple::const_iterator itPred = moduleAtom.inputs.begin();
+  while ( itPred != moduleAtom.inputs.end() )
+  {
+    collectAllRulesDefined(*itPred, rules, predsSearched, result);
+    itPred++;
+  }
+/*
   Tuple::const_iterator it = rules.begin();
   while ( it != rules.end() )
     {
@@ -919,6 +987,7 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
         }
       it++;
     }
+*/
 }
 
 
