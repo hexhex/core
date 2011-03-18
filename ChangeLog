@@ -1,3 +1,7 @@
+2010-03-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in setting fin to A and print useful information into a log file.
+
 2010-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in smallest ILL.

@@ -44,6 +44,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#define printLog(streamout) if( writeLog == true ) ofsLog << streamout; 
+
 class DLVHEX_EXPORT MLPSolver{
   private:
 
@@ -131,6 +133,7 @@ class DLVHEX_EXPORT MLPSolver{
     typedef Traits::edge_iterator EdgeIterator;
     typedef Traits::out_edge_iterator OutEdgeIterator;
     typedef Traits::in_edge_iterator InEdgeIterator;
+    Graph callGraph;
     // ending graph
 
     std::vector<ValueCallsType> path;
@@ -138,8 +141,9 @@ class DLVHEX_EXPORT MLPSolver{
     int lastSizeOgatoms;
     ProgramCtx ctx;
     ProgramCtx ctxSolver;
-    inline void printValueCallsType(const ProgramCtx& ctx1, const ValueCallsType& C) const; 
-    inline void printPath(const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const; 
+    inline void printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const; 
+    inline void printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const;
+    inline void printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const;
     inline void dataReset();
     inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
     inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
@@ -181,48 +185,86 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
     inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
-    inline void printCallGraph();
+    inline void printCallGraph(const std::string& filename);
     //rmv. inline void printAS();
-    std::ofstream ofs;
     std::ofstream ofsGraph;
+    std::ofstream ofsLog;
     bool debugAS;
-    bool printingInformation;
-    Graph callGraph;
+    bool printProgramInformation;
+    bool writeLog;
   public:
     // std::vector<InterpretationPtr> AS;
     int ctrAS;
     inline MLPSolver(ProgramCtx& ctx1);
-    inline bool solve(); // return false if the program is not ic-stratified
+    inline bool solve(std::string fileName, int logFlag); // return false if the program is not ic-stratified
 
 };
 
 
-void MLPSolver::printValueCallsType(const ProgramCtx& ctx1, const ValueCallsType& C) const 
+void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const 
 {
+  oss << "{ ";
   const VCAddressIndex& idx = C.get<impl::AddressTag>();
   VCAddressIndex::const_iterator it = idx.begin();
+  bool first = true;
   while ( it != idx.end() )
     {
       ModuleInst mi = moduleInstTable.at(*it);
       std::string moduleName = ctx1.registry()->moduleTable.getByAddress(mi.idxModule).moduleName;
       Interpretation s = sTable.at(mi.idxS);
       s.setRegistry(ctx1.registry());
-      DBGLOG(DBG, "C InstIdx [" << *it << "]: " << moduleName << "[" << s << "]");
+      //rmv. oss << "C InstIdx [" << *it << "]: " << moduleName << "[" << s << "]" << std::endl;
+      if ( first == false ) oss << ", ";
+      oss << moduleName << "[" << s << "]";
       it++;
+      first = false;
     }
+  oss << " }";
 }
 
 
-void MLPSolver::printPath(const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const 
+void MLPSolver::printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const 
 {
   std::vector<ValueCallsType>::const_iterator it = path.begin();
   while ( it != path.end() )
     {
-      printValueCallsType(ctx1, *it);
+      printValueCallsType(oss, ctx1, *it);
+      oss << std::endl;
       it++;
     }
 }
 
+void MLPSolver::printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const
+{
+  RawPrinter printer(oss, ctx1.registry());
+
+  std::vector<IDSet>::const_iterator it = A.begin();
+  int i=0;
+  bool first;
+  while ( it != A.end() )
+    {
+      oss << "A[" << i << "]: "; 	
+      IDSAddressIndex::const_iterator itIDSet = (*it).begin();
+      first = true;
+      while ( itIDSet != (*it).end() )	
+	{
+	  // print here
+	  if (first == false) oss << ", ";
+	  if ( *itIDSet == ID_FAIL )
+		oss << "fin";
+	  else 
+	    {
+	      printer.print(*itIDSet);
+	    }		
+
+	  itIDSet++;
+	  first = false;
+	}
+      oss << std::endl;	
+      i++;			
+      it++;
+    }
+}
 
 void MLPSolver::dataReset()
 {
@@ -247,7 +289,7 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
 
 void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
 {
-  if ( printingInformation == true )
+  if ( printProgramInformation == true )
     {
   	DBGLOG(DBG, *ctx1.registry()); 
   	RawPrinter printer(std::cerr, ctx1.registry());
@@ -269,7 +311,7 @@ void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& ed
 
 void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
 {
-  if ( printingInformation == true ) 
+  if ( printProgramInformation == true ) 
     {
 	RawPrinter printer(std::cerr, ctx1.registry());
 	std::cerr << "edb = " << *edb << std::endl;
@@ -1193,6 +1235,8 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
+  std::ostringstream oss;
+
   std::vector<ValueCallsType> stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector<InterpretationPtr> stackM;
@@ -1219,7 +1263,33 @@ bool MLPSolver::comp(ValueCallsType C)
 
       A = stackA.back();
       stackA.erase(stackA.end()-1);
-    
+
+// print path and C here?    
+		// print the C:
+              DBGLOG(DBG,"[MLPSolver::comp] Enter comp with C: ");
+	      printLog(std::endl << "[MLPSolver::comp] Enter comp with C: " << std::endl);
+	      oss.str("");		
+	      printValueCallsType(oss, ctxSolver, C);
+              DBGLOG(DBG,oss.str());
+	      printLog(oss.str() << std::endl);
+		// print the path:
+              DBGLOG(DBG,"[MLPSolver::comp] with path: ");
+              printLog("[MLPSolver::comp] with path: " << std::endl);
+	      oss.str("");
+	      printPath(oss,ctxSolver, path);
+              DBGLOG(DBG,oss.str());
+	      printLog(oss.str());
+		// print the M:	
+              DBGLOG(DBG,"[MLPSolver::comp] with M: " << *M);
+              printLog("[MLPSolver::comp] with M: " << *M << std::endl);
+		// print the A:
+              DBGLOG(DBG,"[MLPSolver::comp] with A: ");
+              printLog("[MLPSolver::comp] with A: " << std::endl);
+	      oss.str("");
+	      printA(oss,ctxSolver, A);
+              DBGLOG(DBG,oss.str());
+	      printLog(oss.str());
+
   ValueCallsType CPrev;
   int PiSResult;
   bool wasInLoop = false;
@@ -1230,7 +1300,9 @@ bool MLPSolver::comp(ValueCallsType C)
         {
           DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
 	  DBGLOG(DBG, "[MLPSolver::comp] path: ");
-	  printPath(ctxSolver, path);
+	  oss.str("");
+	  printPath(oss,ctxSolver, path);
+	  DBGLOG(DBG, oss.str());
 	  throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
           return false;
         }
@@ -1289,20 +1361,15 @@ bool MLPSolver::comp(ValueCallsType C)
 	      inspectOgatomsSetMFlag();
 
 	      // collect the full answer set
-	      //rmv. AS.resize(AS.size()+1); 	
-	      //rmv. AS.back().reset(new Interpretation (ctxSolver.registry()) );
-	      //rmv. *AS.back() = *M;	
 	      ctrAS++;
-	      printASinSlot(std::cout, ctxSolver.registry(), *M2);
-
-              //rmv. DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
-	      //rmv. std::cerr << "ctrAS: " << ctrAS << std::endl;		
-
-              //rmv. DBGLOG(DBG, "[MLPSolver::comp] answer set M: " << *M);
-              //rmv. DBGLOG(DBG, "[MLPSolver::comp] answer set AS.back(): " << *AS.back());
+	      oss.str("");
+	      DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set: ");
+	      printASinSlot(oss, ctxSolver.registry(), *M2);
+	      std::cout << oss.str() << std::endl;
+	      printLog(std::endl << "[MLPSolver::comp] found the " << ctrAS << "th answer set: ");
+	      printLog(oss.str() << std::endl);
 	      if ( debugAS == true )
 		{
- 		  DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set");
 	          int cinint;
 	          std::cin >> cinint;
  	        }	
@@ -1314,15 +1381,19 @@ bool MLPSolver::comp(ValueCallsType C)
         {
           ValueCallsType C2 = path.back();
           DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
-	  printPath(ctxSolver, path);
+	  oss.str("");
+	  printPath(oss, ctxSolver, path);
+          DBGLOG(DBG,oss.str());
           path.erase(path.end()-1);
           DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
-	  printPath(ctxSolver, path);
+	  oss.str("");
+	  printPath(oss, ctxSolver, path);
+          DBGLOG(DBG,oss.str());
 	  const VCAddressIndex& idx = C.get<impl::AddressTag>();
           VCAddressIndex::const_iterator it = idx.begin();
           while ( it != idx.end() )
             {
-              IDSet t = A.at(*it);
+              IDSet& t = A.at(*it);
               assignFin(t);
               it++;  
             } 
@@ -1343,13 +1414,25 @@ bool MLPSolver::comp(ValueCallsType C)
 
 	      // set MFlag
 	      inspectOgatomsSetMFlag();
-              DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part b " << *M);
-
+/*rmv.
+              DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part b " << *M2);
+	      printLog("[MLPSolver::comp] last M before recursion in part b " << *M2);
               // the recursion (in the paper)
-              DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part b with C2 ");
-	      printValueCallsType(ctxSolver, C2);
-              DBGLOG(DBG,"[MLPSolver::comp] path ");
-	      printPath(ctxSolver, path);
+              DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part b with C': ");
+	      printLog("[MLPSolver::comp] Hit the recursion from part b with C': ");
+		// print the C2
+	      oss.str("");		
+	      printValueCallsType(oss, ctxSolver, C2);
+              DBGLOG(DBG,oss.str());
+	      printLog(oss.str());
+		// print the path
+              DBGLOG(DBG,"[MLPSolver::comp] path: ");
+              printLog("[MLPSolver::comp] path: ");
+	      oss.str("");
+	      printPath(oss,ctxSolver, path);
+              DBGLOG(DBG,oss.str());
+	      printLog(oss.str());
+*/		
 	      if ( debugAS == true )
 		{ 
 	          int intcin;
@@ -1433,20 +1516,12 @@ bool MLPSolver::comp(ValueCallsType C)
 	  createInterpretationFromTuple(ctxSolver, newT, intrNewT);
 	  int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
 	  
-	  // add the call graph here:
-	  const VCAddressIndex& idx = C.get<impl::AddressTag>();
-          VCAddressIndex::const_iterator it = idx.begin();
-          while ( it != idx.end() )
-          {
-	    boost::add_edge(*it, idxPjT, callGraph);
-            it++;  
-          } 
-	  // next: defining new C and path
+	  // next: defining the new C and path
 	  resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
 	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
 	  ValueCallsType C2; 
-	  std::vector<ValueCallsType> path2;	
+	  std::vector<ValueCallsType> path2 = path; /////// TODO: check this	
 	  if ( !MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
 	    {
 	      C2 = C;
@@ -1454,24 +1529,44 @@ bool MLPSolver::comp(ValueCallsType C)
 	  else
 	    {
 	      C2.push_back(idxPjT);
-	      path2 = path;
 	      path2.push_back(C);		
+	  	// add the call graph here:
+	  	const VCAddressIndex& idx = C.get<impl::AddressTag>();
+          	VCAddressIndex::const_iterator it = idx.begin();
+          	while ( it != idx.end() )
+          	{
+	  	  boost::add_edge(*it, idxPjT, callGraph);
+          	  it++;  
+          	} 
 	    }
 	  
 	  // union M and N
           InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
 	  *M2 = *M;
 	  M2->add( *(int0->interpretation) );
-          DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part c " << *M);
 
 	  // set MFlag
 	  inspectOgatomsSetMFlag();
+/* rmv.
+          printLog("[MLPSolver::comp] last M before recursion in part c: " << *M2);
+          DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part c: " << *M2);
+          DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part c with C': ");
+          printLog("[MLPSolver::comp] Hit the recursion from part c with C': ");
+	  // print the C
+	  oss.str("");
+	  printValueCallsType(oss, ctxSolver, C2);
+	  printLog(oss.str());
+          DBGLOG(DBG,oss.str());
+	  // print the path
+          DBGLOG(DBG,"[MLPSolver::comp] path: ");
+          printLog("[MLPSolver::comp] path: ");
+	  oss.str("");	
+          printPath(oss, ctxSolver, path2);
+          DBGLOG(DBG,oss.str());
+          printLog(oss.str());
+*/
 
 	  // the recursion
-          DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part c with C: ");
-	  printValueCallsType(ctxSolver, C2);
-          DBGLOG(DBG,"[MLPSolver::comp] path ");
-          printPath(ctxSolver, path);
 	  if (debugAS==true)
 	    {
 	      int intcin;
@@ -1569,9 +1664,6 @@ void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int m
 void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr)
 {
   Interpretation newIntr( reg );
-  //rmv. Interpretation intrS;
-  //rmv. int idxM;
-  //rmv. int idxS;
   out << std::endl << "(";
   bool first = true;
   for (int i=0; i<MFlag.size();i++)
@@ -1581,17 +1673,10 @@ void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const I
       newIntr.bit_and(MFlag.at(i));
       if (!newIntr.isClear())	
 	{ // print
-	  //rmv. idxM = extractPi(i);
-	  //rmv. idxS = extractS(i);
-	  //rmv. Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
-	  //rmv. intrS.setRegistry( reg );
 	  if (first == false) 
 	    {
 	      out << ", ";
 	    }
-	  //rmv. out << reg->moduleTable.getByAddress(idxM).moduleName << "[";
-	  //rmv. intrS.printWithoutPrefix(out);
-          //rmv. out << "]=";
           printModuleInst(out,reg,i);
           out << "=";
           newIntr.printWithoutPrefix(out);
@@ -1601,34 +1686,11 @@ void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const I
   out << ")" << std::endl; 
 }
 
-/*rmv.
-void MLPSolver::printAS()
-{
-  ofs << "AS size: " << AS.size() << std::endl;
-  ofs << "ctrAS  : " << ctrAS << std::endl;
-  int ctr = 0;
-  std::vector<InterpretationPtr>::iterator it = AS.begin();
-  // ProgramCtx newCtx; 
-  // newCtx.setupRegistryPluginContainer(ctxSolver.registry());
-  // clearPrefix(ctxSolver.registry()->preds, newCtx.registry()->preds);
-  while ( it != AS.end() )
-    {
-      ctr++;
-      std::stringstream ss; 
-      ss << "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl;
-      printASinSlot(ctxSolver.registry(), ss, **it);
-      ss << std::endl;
-      ofs << ss.str();
-      // DBGLOG(DBG, "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl << **it << std::endl);
-      // ofs << "[MLPSolver::printAS] Answer set, ctrAS: " << ctr << std::endl << **it << std::endl;
-      it++;
-    }
-} 
-*/
 
-void MLPSolver::printCallGraph()
+
+void MLPSolver::printCallGraph(const std::string& filename)
 {
-  ofs.open("callGraph.dot");
+  ofsGraph.open(filename.c_str());
   // produce all module instantiation table
   std::ostringstream ss;
   std::string vertexName[moduleInstTable.size()];
@@ -1638,15 +1700,23 @@ void MLPSolver::printCallGraph()
       printModuleInst(ss, ctxSolver.registry(), i);
       vertexName[i] = ss.str();
     }
-  boost::write_graphviz(ofs, callGraph, boost::make_label_writer(vertexName));
-  ofs.close();
+  boost::write_graphviz(ofsGraph, callGraph, boost::make_label_writer(vertexName));
+  ofsGraph.close();
 }
 
-bool MLPSolver::solve()
+bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
 {
+  std::string fileCallGraph = "";
+  std::string fileLog = "";
+  if ( logFlag & 0x1 == 0x1 ) 
+    fileCallGraph = fileName+".dot";
 
+  if ( logFlag & 0x2 == 0x2 ) {
+    writeLog = true;
+    fileLog = fileName + ".log";
+  }
   debugAS = false;
-  printingInformation = false;
+  printProgramInformation = true;
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
   std::vector<int> mainModules = foundMainModules(); 
@@ -1654,7 +1724,9 @@ bool MLPSolver::solve()
   int i = 0;
   dataReset();
   ctrAS = 0;	
-  // ofs.open("MLPSolverOutput.txt");	
+  if ( writeLog == true)
+    ofsLog.open((fileName + ".log").c_str());	
+
   while ( it != mainModules.end() )
     {
       A.clear();
@@ -1667,20 +1739,30 @@ bool MLPSolver::solve()
   	  throw FatalError("MLP solve: comp() return false");
 	  return false;
       	}
-      // printAS();	
       i++;
       it++;
     }
-  // ofs << "Total answer set: " << ctrAS; 
+  if ( writeLog == true )
+    {
+      ofsLog << "Total answer set: " << ctrAS << std::endl; 
+      ofsLog << "Instantiation information: " << std::endl; 
+      for (int i=0; i<moduleInstTable.size(); i++) 
+	{	
+	  ofsLog << "m" << i << ": ";
+	  printModuleInst(ofsLog, ctxSolver.registry(), i);
+	  ofsLog << std::endl;
+	}
+      ofsLog.close();
+    }
   DBGLOG(DBG, "Total answer set: " << ctrAS); 
-  // ofs.close();
-  printCallGraph();
+  if (fileCallGraph != "") printCallGraph(fileCallGraph);
   DBGLOG(DBG, "[MLPSolver::solve] finished");
 
-/* for graph
+/*
+  Graph g;
   std::string vertexName[] = { "p1[{}]", "p2[{q(a),q(b)}]", "p3[{q(a)}]", "zow.h", "foo.cpp",
                        "libzigzag.a", "killerapp" };
-  std::string edgeName[] = { "0", "1", "2", "3", "4", "5", "6" };
+  std::string edgeName[] = { "a", "b", "c"};
 
   int a = 1;
   int b = 2;
@@ -1715,6 +1797,7 @@ bool MLPSolver::solve()
 */
   return true;
 }
+
 
 
 DLVHEX_NAMESPACE_END
