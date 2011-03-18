@@ -55,7 +55,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-/*
+
 // 1
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("OneMainModule",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test One Main Modules finish");
 }
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("TwoModuleClass",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Calls 1 finish");
 }
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Negation Program finish");
 }
-*/
+
 
 //12
 BOOST_AUTO_TEST_CASE(testIndirectionProgram) 
@@ -570,8 +570,47 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
   LOG(DBG, "Test Indirection Program finish");
 }
 
-/*
-// 13
+
+//13
+BOOST_AUTO_TEST_CASE(testAFinProgram) 
+{
+  LOG(DBG, " ");
+  LOG(DBG, "Test AFin Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-AFin.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("AFin",3) == true );
+  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test AFin Program finish");
+}
+
+
+// 14
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
   LOG(DBG, " ");
@@ -609,8 +648,8 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
 //  BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Hanoi Program finish");
 }
-/*
-// 14
+
+// 15
 BOOST_AUTO_TEST_CASE(testHanoi3Program) 
 {
   LOG(DBG, " ");
@@ -649,6 +688,7 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
 }
 
 /*
+//16
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");
