@@ -71,9 +71,17 @@ void HexGrammarPTToASTConverter::convertPTToAST(
           // if at least we have already inserted one module
           if (countModule>0) 
             {
-	      Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
-	      int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
-	      DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+	      if ( ctx.registry()->moduleTable.getModuleByName(currentModuleName) == MODULE_FAIL ) 
+		{
+		  Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1);
+		  int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
+	          DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+		}	 
+	      else
+		{
+	          DBGLOG(ERROR, "Duplicate module name '" << currentModuleName << "'");	
+                  throw FatalError("MLP syntax error");
+		}
             }
           doModuleHeader(*it);
           countModule++;
@@ -82,9 +90,17 @@ void HexGrammarPTToASTConverter::convertPTToAST(
   if ( countModule>0 )
     { // at least there is one module atom
       // insert for the last time
-      Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
-      int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
-      DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+      if ( ctx.registry()->moduleTable.getModuleByName(currentModuleName) == MODULE_FAIL ) 
+	{
+          Module module(currentModuleName, ctx.registry()->inputList.size()-1, ctx.edbList.size()-1, ctx.idbList.size()-1); 
+          int address = ctx.registry()->moduleTable.storeAndGetAddress(module);	
+          DBGLOG(DBG, "Module stored address = " << address << " with module name = " << currentModuleName << std::endl);	
+	}	 
+      else
+	{
+	  DBGLOG(ERROR, "Duplicate module name '" << currentModuleName << "'");	
+          throw FatalError("MLP syntax error");
+	}
     }
 }
 
