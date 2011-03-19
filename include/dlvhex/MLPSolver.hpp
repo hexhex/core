@@ -1296,6 +1296,7 @@ bool MLPSolver::comp(ValueCallsType C)
   if ( foundCinPath(C, path, CPrev, PiSResult) )
     {
       DBGLOG(DBG, "[MLPSolver::comp] found value-call-loop in value calls");
+/*
       if ( foundNotEmptyInst(C) ) 
         {
           DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
@@ -1306,18 +1307,21 @@ bool MLPSolver::comp(ValueCallsType C)
 	  throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
           return false;
         }
+*/
       DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 1 passed");
       ValueCallsType C2;
       do 
         {
           C2 = path.back();
           path.erase(path.end()-1);
+/*
           if ( foundNotEmptyInst(C2) ) 
             {
               DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C2)");
 	      throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
               return false;
             }
+*/
           DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 2 passed");
           unionCtoFront(C, C2);
           DBGLOG(DBG, "[MLPSolver::comp] C size after union: " << C.size());
@@ -1414,25 +1418,7 @@ bool MLPSolver::comp(ValueCallsType C)
 
 	      // set MFlag
 	      inspectOgatomsSetMFlag();
-/*rmv.
-              DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part b " << *M2);
-	      printLog("[MLPSolver::comp] last M before recursion in part b " << *M2);
-              // the recursion (in the paper)
-              DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part b with C': ");
-	      printLog("[MLPSolver::comp] Hit the recursion from part b with C': ");
-		// print the C2
-	      oss.str("");		
-	      printValueCallsType(oss, ctxSolver, C2);
-              DBGLOG(DBG,oss.str());
-	      printLog(oss.str());
-		// print the path
-              DBGLOG(DBG,"[MLPSolver::comp] path: ");
-              printLog("[MLPSolver::comp] path: ");
-	      oss.str("");
-	      printPath(oss,ctxSolver, path);
-              DBGLOG(DBG,oss.str());
-	      printLog(oss.str());
-*/		
+		
 	      if ( debugAS == true )
 		{ 
 	          int intcin;
@@ -1547,24 +1533,6 @@ bool MLPSolver::comp(ValueCallsType C)
 
 	  // set MFlag
 	  inspectOgatomsSetMFlag();
-/* rmv.
-          printLog("[MLPSolver::comp] last M before recursion in part c: " << *M2);
-          DBGLOG(DBG,"[MLPSolver::comp] last M before recursion in part c: " << *M2);
-          DBGLOG(DBG,"[MLPSolver::comp] Hit the recursion from part c with C': ");
-          printLog("[MLPSolver::comp] Hit the recursion from part c with C': ");
-	  // print the C
-	  oss.str("");
-	  printValueCallsType(oss, ctxSolver, C2);
-	  printLog(oss.str());
-          DBGLOG(DBG,oss.str());
-	  // print the path
-          DBGLOG(DBG,"[MLPSolver::comp] path: ");
-          printLog("[MLPSolver::comp] path: ");
-	  oss.str("");	
-          printPath(oss, ctxSolver, path2);
-          DBGLOG(DBG,oss.str());
-          printLog(oss.str());
-*/
 
 	  // the recursion
 	  if (debugAS==true)

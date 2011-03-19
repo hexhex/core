@@ -1,5 +1,7 @@
 2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Modified the solver to solve an i-stratified program.
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Impose an exception for a duplicate module name.
 
 	* testsuite/TestMLPSolver.cpp: Adding a test case for C contains more than one element when enter comp().
