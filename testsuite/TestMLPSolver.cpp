@@ -28,6 +28,7 @@
  * @brief  Test MLPSolver
  */
 
+#define NDEBUG
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
@@ -43,15 +44,18 @@
 #include <iostream>
 #include <fstream>
 
-#define LOG_REGISTRY_PROGRAM(ctx) \
-  LOG(INFO, *ctx.registry()); \
-	RawPrinter printer(std::cerr, ctx.registry()); \
-	std::cerr << "first edb = " << *ctx.edbList.front() << std::endl; \
-	LOG(DBG, "first idb"); \
-	printer.printmany(ctx.idbList.front(),"\n"); \
-	std::cerr << std::endl; \
-	LOG(DBG, "idb end");
-
+#ifdef NDEBUG
+	#define LOG_REGISTRY_PROGRAM(ctx) {}
+#else
+	#define LOG_REGISTRY_PROGRAM(ctx) \
+	  LOG(INFO, *ctx.registry()); \
+		RawPrinter printer(std::cerr, ctx.registry()); \
+		std::cerr << "first edb = " << *ctx.edbList.front() << std::endl; \
+		LOG(DBG, "first idb"); \
+		printer.printmany(ctx.idbList.front(),"\n"); \
+		std::cerr << std::endl; \
+		LOG(DBG, "idb end");
+#endif
 
 DLVHEX_NAMESPACE_USE
 
@@ -59,6 +63,11 @@ DLVHEX_NAMESPACE_USE
 // 1
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Inconsistent Program begin");
 
@@ -82,14 +91,14 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("01-Inconsistent",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Inconsistent Program finish"); 
 }
@@ -98,6 +107,11 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
 // 2
 BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Not ic Stratified Program begin");
 
@@ -121,15 +135,14 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  //rmv. BOOST_REQUIRE ( m.solve() == false );
-  BOOST_REQUIRE_THROW( m.solve() , FatalError);
+  BOOST_REQUIRE_THROW( m.solve("02-Not-ic-Stratified",3) , FatalError);
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Not ic Stratified Program finish");
 }
@@ -138,6 +151,11 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
 // 3
 BOOST_AUTO_TEST_CASE(testOneMainModules) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test One Main Modules begin");
 
@@ -173,23 +191,27 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("OneMainModule",3) == true );
+  BOOST_REQUIRE ( m.solve("03-OneMainModule",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test One Main Modules finish");
 }
 
 
-
 // 4
 BOOST_AUTO_TEST_CASE(testTwoMainModules) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Two Main Modules begin");
   ProgramCtx ctx;
@@ -224,14 +246,14 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("04-TwoMainModules",3) == true );
   BOOST_REQUIRE( m.ctrAS == 4 );
   LOG(DBG, "Test Two Main Modules finish");
 }
@@ -240,6 +262,11 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 // 5
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Two Module Calls 1 begin");
   ProgramCtx ctx;
@@ -274,14 +301,14 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("TwoModuleClass",3) == true );
+  BOOST_REQUIRE ( m.solve("05-TwoModuleCalls1",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test Two Module Calls 1 finish");
 }
@@ -290,8 +317,13 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
 // 6
 BOOST_AUTO_TEST_CASE(testTwoModuleCalls2) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
-  LOG(DBG, "Test Two Module Call 2 begin");
+  LOG(DBG, "Test Two Module Calls 2 begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
@@ -324,22 +356,27 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("06-TwoModuleCalls2",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
-  LOG(DBG, "Test Two Module Call 2 finish");
+  LOG(DBG, "Test Two Module Calls 2 finish");
 }
 
 
 // 7
 BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Reachability Non Ground Program begin");
 
@@ -363,14 +400,14 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("07-Reachability",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test Reachability Non Ground Program finish");
 }
@@ -379,6 +416,11 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
 // 8
 BOOST_AUTO_TEST_CASE(testCardinalityProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Cardinality Program begin");
 
@@ -402,14 +444,14 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("08-Cardinality",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 16 );
   LOG(DBG, "Test Cardinality Program finish");
 }
@@ -418,6 +460,11 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 // 9
 BOOST_AUTO_TEST_CASE(testABBAProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test ABBA Program begin");
 
@@ -441,14 +488,14 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("09-ABBA",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 2 );
   LOG(DBG, "Test ABBA Program finish");
 }
@@ -457,6 +504,11 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
 // 10
 BOOST_AUTO_TEST_CASE(testDisjunctionProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Disjunction Program begin");
 
@@ -480,14 +532,14 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("10-Disjunction",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 2 );
   LOG(DBG, "Test Disjunction Program finish");
 }
@@ -496,6 +548,11 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
 // 11
 BOOST_AUTO_TEST_CASE(testNegationProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Negation Program begin");
 
@@ -519,14 +576,14 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
   BasicHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
+  LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("11-Negation",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 0 );
   LOG(DBG, "Test Negation Program finish");
 }
@@ -535,6 +592,11 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
 //12
 BOOST_AUTO_TEST_CASE(testIndirectionProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Indirection Program begin");
 
@@ -564,9 +626,8 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-//  BOOST_REQUIRE ( m.AS.size() == 16 );
+  BOOST_REQUIRE ( m.solve("12-Indirection",3) == true );
+  BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test Indirection Program finish");
 }
 
@@ -574,6 +635,11 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
 //13
 BOOST_AUTO_TEST_CASE(testAFinProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test AFin Program begin");
 
@@ -603,8 +669,7 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("AFin",3) == true );
-  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.solve("13-AFin",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test AFin Program finish");
 }
@@ -613,7 +678,10 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
 //14
 BOOST_AUTO_TEST_CASE(testCsProgram) 
 {
-  //Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
 
   LOG(DBG, " ");
   LOG(DBG, "Test C more than one begin");
@@ -644,13 +712,99 @@ BOOST_AUTO_TEST_CASE(testCsProgram)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("Cs",3) == true );
+  BOOST_REQUIRE ( m.solve("14-Cs",3) == true );
   BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test Cs Program finish");
 }
 
 
-// 15
+//15
+BOOST_AUTO_TEST_CASE(testIStratifiedProgram) 
+{
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test i Stratified begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-i-Stratified.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("15-i-Stratified",3) == true );
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test i stratified Program finish");
+}
+
+
+//16
+BOOST_AUTO_TEST_CASE(testIStratified2Program) 
+{
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test i stratified 2 begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-i-Stratified-2.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("16-i-Stratified-2",3) == true );
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test i stratified 2 Program finish");
+}
+
+
+// 17
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
   LOG(DBG, " ");
@@ -683,13 +837,14 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("17-Hanoi",3) == true );
   std::cerr << "ctrAS: " << m.ctrAS << std::endl;
 //  BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Hanoi Program finish");
 }
 
-// 16
+
+// 18
 BOOST_AUTO_TEST_CASE(testHanoi3Program) 
 {
   LOG(DBG, " ");
@@ -721,14 +876,14 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
+  BOOST_REQUIRE ( m.solve("18-Hanoi-3",3) == true );
   std::cerr << "ctrAS: " << m.ctrAS << std::endl;
 //  BOOST_REQUIRE ( m.AS.size() == 16 );
   LOG(DBG, "Test Hanoi-3 Program finish");
 }
 
 /*
-//17
+//19
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");

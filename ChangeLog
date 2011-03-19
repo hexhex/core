@@ -1,5 +1,9 @@
 2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestMLPSolver.cpp: Add test cases for i-stratified program and print, also print the log and graphviz output.
+	* examples/module-i-Stratified-2.mlp: Likewise.
+	* examples/module-i-Stratified.mlp: Likewise.
+
 	* examples/module-Not-ic-Stratified.hex: Modified to not-i-stratified.
 
 	* include/dlvhex/MLPSolver.hpp: Modified the solver to solve an i-stratified program.
