@@ -1,3 +1,7 @@
+2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Updating the answer set counter printing.
+
 2010-03-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: Adding a test case to add (and retrieve) fin from A.

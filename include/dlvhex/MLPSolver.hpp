@@ -1363,10 +1363,10 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // collect the full answer set
 	      ctrAS++;
 	      oss.str("");
-	      DBGLOG(DBG, "[MLPSolver::comp] found the " << ctrAS << "th answer set: ");
+	      DBGLOG(DBG, "[MLPSolver::comp] found answer set [" << ctrAS << "]: ");
 	      printASinSlot(oss, ctxSolver.registry(), *M2);
 	      std::cout << oss.str() << std::endl;
-	      printLog(std::endl << "[MLPSolver::comp] found the " << ctrAS << "th answer set: ");
+	      printLog(std::endl << "[MLPSolver::comp] found answer set [" << ctrAS << "]: ");
 	      printLog(oss.str() << std::endl);
 	      if ( debugAS == true )
 		{
