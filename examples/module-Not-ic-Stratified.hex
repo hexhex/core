@@ -1,7 +1,6 @@
 #module(p1,[]).
 q(a).
-r(a).
-s :- @p2[q]::r(a).
+q(b) :- @p2[q]::r(a).
 
 
 #module(p2,[q/1]).

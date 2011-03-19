@@ -1,5 +1,7 @@
 2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* examples/module-Not-ic-Stratified.hex: Modified to not-i-stratified.
+
 	* include/dlvhex/MLPSolver.hpp: Modified the solver to solve an i-stratified program.
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Impose an exception for a duplicate module name.
