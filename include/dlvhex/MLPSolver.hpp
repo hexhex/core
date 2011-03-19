@@ -1716,7 +1716,7 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
     fileLog = fileName + ".log";
   }
   debugAS = false;
-  printProgramInformation = true;
+  printProgramInformation = false;
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
   std::vector<int> mainModules = foundMainModules(); 

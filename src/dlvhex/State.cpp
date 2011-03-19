@@ -471,13 +471,13 @@ removeNamespaces()
 	}
   if( ctx->config.getOption("MLP") ) 
     {
-      std::cout << "[State.cpp] got an MLP option" << std::endl;
+      //rmv. std::cout << "[State.cpp] got an MLP option" << std::endl;
       StatePtr next(new ModuleSyntaxCheckState);
       changeState(ctx, next);
     }
   else 
     {
-      std::cout << "[State.cpp] have no MLP option" << std::endl;
+      //rmv. std::cout << "[State.cpp] have no MLP option" << std::endl;
       StatePtr next(new RewriteEDBIDBState);
       changeState(ctx, next);
     }
@@ -487,11 +487,11 @@ MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
 // ModuleSyntaxChecker ..
 void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
-  std::cout << "[State.cpp] entering ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
+  //rmv. std::cout << "[State.cpp] entering ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
   ModuleSyntaxChecker sC(*ctx);
   bool success = sC.verifySyntax();
-  std::cout << "[State.cpp] after verifySyntax: " << success << std::endl;
+  //rmv. std::cout << "[State.cpp] after verifySyntax: " << success << std::endl;
   if (success)
     {
       StatePtr next(new MLPSolverState);
@@ -503,7 +503,7 @@ void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
       StatePtr next(new PostProcessState);
       changeState(ctx, next);
     }
-  std::cout << "[State.cpp] leaving ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
+  //rmv. std::cout << "[State.cpp] leaving ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
 }
 
 MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);

@@ -374,28 +374,28 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-		std::cout << "before convert" << std::endl;
+		//rmv. std::cout << "before convert" << std::endl;
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
-		std::cout << "after convert" << std::endl;
+		//rmv. std::cout << "after convert" << std::endl;
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
-		std::cout << "before parse" << std::endl;
+		//rmv. std::cout << "before parse" << std::endl;
 		pctx.parse();
-		std::cout << "after parse" << std::endl;
+		//rmv. std::cout << "after parse" << std::endl;
 		
 		// check if in mlp mode	
 		if( pctx.config.getOption("MLP") ) 
 		  {
 			// syntax check for mlp
-			std::cout << "before moduleSyntaxCheck" << std::endl;
+			//rmv. std::cout << "before moduleSyntaxCheck" << std::endl;
 			pctx.moduleSyntaxCheck();
-			std::cout << "after moduleSyntaxCheck" << std::endl;
+			//rmv. std::cout << "after moduleSyntaxCheck" << std::endl;
 
 			// solve mlp
-			std::cout << "before mlpSolver" << std::endl;
+			//rmv. std::cout << "before mlpSolver" << std::endl;
 			pctx.mlpSolver();
-			std::cout << "after mlpSolver" << std::endl;
+			//rmv. std::cout << "after mlpSolver" << std::endl;
 		  }
 
 		else 
@@ -403,35 +403,35 @@ int main(int argc, char *argv[])
 		  {	
 
 		// rewrite program
-		std::cout << "before rewriteEDBIDB" << std::endl;
+		//rmv. std::cout << "before rewriteEDBIDB" << std::endl;
 		pctx.rewriteEDBIDB();
-		std::cout << "after rewriteEDBIDB" << std::endl;
+		//rmv. std::cout << "after rewriteEDBIDB" << std::endl;
 			
 		// check weak safety
-		std::cout << "before safetyCheck" << std::endl;
+		//rmv. std::cout << "before safetyCheck" << std::endl;
 		pctx.safetyCheck();
-		std::cout << "after safetyCheck" << std::endl;
+		//rmv. std::cout << "after safetyCheck" << std::endl;
 
 		// use configured plugins to obtain plugin atoms
-		std::cout << "before addPluginAtomsFromPluginContainer" << std::endl;
+		//rmv. std::cout << "before addPluginAtomsFromPluginContainer" << std::endl;
 		pctx.addPluginAtomsFromPluginContainer();
-		std::cout << "after addPluginAtomsFromPluginContainer" << std::endl;
+		//rmv. std::cout << "after addPluginAtomsFromPluginContainer" << std::endl;
 			
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
-		std::cout << "before associateExtAtomsWithPluginAtoms" << std::endl;
+		//rmv. std::cout << "before associateExtAtomsWithPluginAtoms" << std::endl;
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
-		std::cout << "after associateExtAtomsWithPluginAtoms" << std::endl;
+		//rmv. std::cout << "after associateExtAtomsWithPluginAtoms" << std::endl;
 
 		// create dependency graph (we need the previous step for this)
-		std::cout << "before createDependencyGraph" << std::endl;
+		//rmv. std::cout << "before createDependencyGraph" << std::endl;
 		pctx.createDependencyGraph();
-		std::cout << "after createDependencyGraph" << std::endl;
+		//rmv. std::cout << "after createDependencyGraph" << std::endl;
 
 		// optimize dependency graph (some plugin might want to do this, e.g. partial grounding)
-		std::cout << "before optimizeEDBDependencyGraph" << std::endl;
+		//rmv. std::cout << "before optimizeEDBDependencyGraph" << std::endl;
 		pctx.optimizeEDBDependencyGraph();
-		std::cout << "after optimizeEDBDependencyGraph" << std::endl;
+		//rmv. std::cout << "after optimizeEDBDependencyGraph" << std::endl;
 		// everything in the following will be done using the dependency graph and EDB
 		#warning IDB and dependencygraph could get out of sync!
 			
