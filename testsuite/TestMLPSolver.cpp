@@ -610,7 +610,47 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
 }
 
 
-// 14
+//14
+BOOST_AUTO_TEST_CASE(testCsProgram) 
+{
+  //Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test C more than one begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Cs.hex";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("Cs",3) == true );
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test Cs Program finish");
+}
+
+
+// 15
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
   LOG(DBG, " ");
@@ -649,7 +689,7 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
   LOG(DBG, "Test Hanoi Program finish");
 }
 
-// 15
+// 16
 BOOST_AUTO_TEST_CASE(testHanoi3Program) 
 {
   LOG(DBG, " ");
@@ -688,7 +728,7 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
 }
 
 /*
-//16
+//17
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");

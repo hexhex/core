@@ -1,0 +1,14 @@
+#module(main,[]).
+ok1 :- @p2[q1]::ok2.
+
+#module(p2, [q2/1]).
+ok2 :- @p3[q2]::ok3.
+
+
+#module(p3, [q3/1]).
+ok3 :- @p2[q3]::ok2.
+ok3 :- not q.
+q :- not @child[q3]::okChild.
+
+#module(child, [q4/1]).
+okChild.
