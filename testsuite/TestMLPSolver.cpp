@@ -838,13 +838,56 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve("17-Hanoi",3) == true );
-  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-//  BOOST_REQUIRE ( m.AS.size() == 16 );
+  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 1 );
   LOG(DBG, "Test Hanoi Program finish");
 }
 
+/*
+// 17
+BOOST_AUTO_TEST_CASE(testPowerProgram) 
+{
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+  LOG(DBG, " ");
+  LOG(DBG, "Test Power Program begin");
 
-// 18
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-power.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  //...LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("17-Power",3) == true );
+  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test Power Program finish");
+}
+
+
+// 19
 BOOST_AUTO_TEST_CASE(testHanoi3Program) 
 {
   LOG(DBG, " ");
@@ -876,14 +919,14 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("18-Hanoi-3",3) == true );
+  BOOST_REQUIRE ( m.solve("19-Hanoi-3",3) == true );
   std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-//  BOOST_REQUIRE ( m.AS.size() == 16 );
+//  BOOST_REQUIRE ( m.ctrAS == 16 );
   LOG(DBG, "Test Hanoi-3 Program finish");
 }
 
 /*
-//19
+//20
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
   LOG(DBG, " ");
@@ -928,8 +971,8 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  m.solve();
-
+  BOOST_REQUIRE ( m.solve("20-Big",3) == true );
+  LOG(DBG, "Test Big Program finish");
 }
 */
 

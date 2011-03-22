@@ -1,3 +1,8 @@
+2010-03-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding function to easily print idb.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: Add test cases for i-stratified program and print, also print the log and graphviz output.

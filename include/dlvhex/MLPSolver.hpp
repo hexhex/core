@@ -44,7 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#define printLog(streamout) if( writeLog == true ) ofsLog << streamout; 
+#define printLog(streamout) if( writeLog == true ) ofsLog << streamout; ofsLog.flush(); 
 
 class DLVHEX_EXPORT MLPSolver{
   private:
@@ -147,6 +147,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void dataReset();
     inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
     inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
+    inline void printIdb(const ProgramCtx& ctx1, const Tuple& idb);
     inline bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     inline int extractS(int PiS);
     inline int extractPi(int PiS);
@@ -322,6 +323,17 @@ void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb
     }
 }
 
+void MLPSolver::printIdb(const ProgramCtx& ctx1, const Tuple& idb)
+{
+  if ( printProgramInformation == true ) 
+    {
+	RawPrinter printer(std::cerr, ctx1.registry());
+ 	DBGLOG(DBG, "idb begin"); 
+  	printer.printmany(idb,"\n"); 
+  	std::cerr << std::endl; 
+  	DBGLOG(DBG, "idb end");
+    }
+}
 
 bool MLPSolver::foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult)
 { // method to found if there exist a PiS in C that also occur in some Cprev in path 
@@ -997,7 +1009,9 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 
 ID MLPSolver::smallestILL(const Tuple& newRules)
 {
-  DBGLOG(DBG, "[MLPSolver::smallestILL] enter");
+  DBGLOG(DBG, "[MLPSolver::smallestILL] enter to find the smallest ILL in: ");
+  printIdb(ctxSolver, newRules);
+
   Tuple modAtoms;
   findAllModulesAtom(newRules, modAtoms);
   Tuple::iterator it = modAtoms.begin();
@@ -1676,10 +1690,10 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
 {
   std::string fileCallGraph = "";
   std::string fileLog = "";
-  if ( logFlag & 0x1 == 0x1 ) 
+  if ( (logFlag & 0x1) == 0x1 ) 
     fileCallGraph = fileName+".dot";
 
-  if ( logFlag & 0x2 == 0x2 ) {
+  if ( (logFlag & 0x2) == 0x2 ) {
     writeLog = true;
     fileLog = fileName + ".log";
   }
