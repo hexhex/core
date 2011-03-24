@@ -1,2 +1,2 @@
-SUBDIRS = dlvhex testsuite
+SUBDIRS = dlvhex
 
