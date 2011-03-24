@@ -7,12 +7,14 @@
  */
 
 /** 
+ * update 2011.03.19: can solve i-stratified MLP
  * TODO
  * - filtering interpretation using and
  * - rewrite predicate in rewrite ordinary atom
  * - optimize in rewrite
  * - look at MFlag against M and bit_and
  * - MFlag operation (and initialization (inspection))
+ * - separate the structures into different class?
  */
 
 #if !defined(_DLVHEX_MLPSOLVER_H)
@@ -193,14 +195,24 @@ class DLVHEX_EXPORT MLPSolver{
     bool debugAS;
     bool printProgramInformation;
     bool writeLog;
+    int nASReturned;
+
   public:
     // std::vector<InterpretationPtr> AS;
     int ctrAS;
     inline MLPSolver(ProgramCtx& ctx1);
+    inline void setNASReturned(int n);
     inline bool solve(std::string fileName, int logFlag); // return false if the program is not ic-stratified
 
 };
 
+void MLPSolver::setNASReturned(int n)
+{
+  if ( n>=0 )
+   {
+     nASReturned = n;
+   }
+}
 
 void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const 
 {
@@ -281,6 +293,7 @@ void MLPSolver::dataReset()
 
 
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
+  nASReturned = 0;
   ctx = ctx1;
   ctxSolver.setupRegistryPluginContainer(ctx.registry());
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
@@ -1386,6 +1399,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      std::cout << oss.str() << std::endl;
 	      printLog(std::endl << "[MLPSolver::comp] found answer set [" << ctrAS << "]: ");
 	      printLog(oss.str() << std::endl);
+	      if ( nASReturned > 0 && ctrAS == nASReturned) return true;
 	      if ( debugAS == true )
 		{
 	          int cinint;

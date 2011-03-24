@@ -116,6 +116,8 @@ public:
   Interpretation::Ptr edb; 
   std::vector<InterpretationPtr> edbList;
 
+  // this refer to MLPSolver.nASReturned
+  int nASToBeReturned;
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 

@@ -510,6 +510,7 @@ MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);
 void MLPSolverState::mlpSolver(ProgramCtx* ctx)
 {
   MLPSolver m(*ctx);
+  m.setNASReturned(ctx->nASToBeReturned);
   m.solve();
   StatePtr next(new PostProcessState);
   changeState(ctx, next);

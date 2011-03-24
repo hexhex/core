@@ -1,3 +1,12 @@
+2010-03-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding option --n to restrict the number of answer sets returned.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2010-03-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Adding function to easily print idb.

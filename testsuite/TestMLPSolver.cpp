@@ -198,6 +198,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
+  m.setNASReturned(2);
   BOOST_REQUIRE ( m.solve("03-OneMainModule",3) == true );
   BOOST_REQUIRE( m.ctrAS == 2 );
   LOG(DBG, "Test One Main Modules finish");
@@ -807,6 +808,11 @@ BOOST_AUTO_TEST_CASE(testIStratified2Program)
 // 17
 BOOST_AUTO_TEST_CASE(testHanoiProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Hanoi Program begin");
 
@@ -843,20 +849,22 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
   LOG(DBG, "Test Hanoi Program finish");
 }
 
-/*
-// 17
-BOOST_AUTO_TEST_CASE(testPowerProgram) 
+
+//18
+BOOST_AUTO_TEST_CASE(testComplexProgram) 
 {
+
 #ifdef NDEBUG
   Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
 #endif
+
   LOG(DBG, " ");
-  LOG(DBG, "Test Power Program begin");
+  LOG(DBG, "Test Complex Program begin");
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-power.mlp";
+  std::string filename = "../../examples/module-Complex.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -880,16 +888,21 @@ BOOST_AUTO_TEST_CASE(testPowerProgram)
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve("17-Power",3) == true );
-  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-  BOOST_REQUIRE ( m.ctrAS == 1 );
-  LOG(DBG, "Test Power Program finish");
+  BOOST_REQUIRE ( m.solve("18-Complex",3) == true );
+  // std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 12 );
+  LOG(DBG, "Test Complex Program finish");
 }
 
-
+/*
 // 19
 BOOST_AUTO_TEST_CASE(testHanoi3Program) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Hanoi-3 Program begin");
 
@@ -925,10 +938,108 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
   LOG(DBG, "Test Hanoi-3 Program finish");
 }
 
+
+// 19
+BOOST_AUTO_TEST_CASE(testPower2Program) 
+{
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test Power2 Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Power2.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  //...LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("19-Power",3) == true );
+  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test Power2 Program finish");
+}
+
+
+/*
+// 18
+BOOST_AUTO_TEST_CASE(testPowerProgram) 
+{
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test Power Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename = "../../examples/module-Power.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  //...LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve("18-Power",3) == true );
+  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  BOOST_REQUIRE ( m.ctrAS == 1 );
+  LOG(DBG, "Test Power Program finish");
+}
+*/
+
+
 /*
 //20
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
   LOG(DBG, " ");
   LOG(DBG, "Test Big Program begin");
 
