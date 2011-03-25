@@ -49,7 +49,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-//#define printLog(streamout) if( writeLog == true ) ofsLog << streamout; ofsLog.flush(); 
 
 class DLVHEX_EXPORT MLPSolver{
   private:
@@ -152,13 +151,7 @@ class DLVHEX_EXPORT MLPSolver{
     int lastSizeOgatoms;
     ProgramCtx ctx;
     ProgramCtx ctxSolver;
-    inline void printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const; 
-    inline void printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const;
-    inline void printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const;
     inline void dataReset();
-    inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
-    inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
-    inline void printIdb(const ProgramCtx& ctx1, const Tuple& idb);
     inline bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     inline int extractS(int PiS);
     inline int extractPi(int PiS);
@@ -195,10 +188,6 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool containFinA(int idxPjT);
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
-    inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
-    inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
-    inline void printCallGraph(std::ostream& out, const Graph& graph, const std::string& graphLabel);
-    //rmv. inline void printAS();
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
     bool debugAS;
@@ -206,14 +195,25 @@ class DLVHEX_EXPORT MLPSolver{
     bool writeLog;
     int nASReturned;
 
+    inline void printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const; 
+    inline void printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const;
+    inline void printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const;
+    inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
+    inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
+    inline void printCallGraph(std::ostream& out, const Graph& graph, const std::string& graphLabel);
+    inline void printIdb(const ProgramCtx& ctx1, const Tuple& idb);
+    inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
+    inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
+
   public:
     // std::vector<InterpretationPtr> AS;
     int ctrAS;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
-    inline bool solve(std::string fileName, int logFlag); // return false if the program is not ic-stratified
+    inline bool solve(); // return false if the program is not ic-stratified
 
 };
+
 
 void MLPSolver::setNASReturned(int n)
 {
@@ -223,70 +223,6 @@ void MLPSolver::setNASReturned(int n)
    }
 }
 
-void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const 
-{
-  oss << "{ ";
-  const VCAddressIndex& idx = C.get<impl::AddressTag>();
-  VCAddressIndex::const_iterator it = idx.begin();
-  bool first = true;
-  while ( it != idx.end() )
-    {
-      ModuleInst mi = moduleInstTable.at(*it);
-      std::string moduleName = ctx1.registry()->moduleTable.getByAddress(mi.idxModule).moduleName;
-      Interpretation s = sTable.at(mi.idxS);
-      s.setRegistry(ctx1.registry());
-      //rmv. oss << "C InstIdx [" << *it << "]: " << moduleName << "[" << s << "]" << std::endl;
-      if ( first == false ) oss << ", ";
-      oss << moduleName << "[" << s << "]";
-      it++;
-      first = false;
-    }
-  oss << " }";
-}
-
-
-void MLPSolver::printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const 
-{
-  std::vector<ValueCallsType>::const_iterator it = path.begin();
-  while ( it != path.end() )
-    {
-      printValueCallsType(oss, ctx1, *it);
-      it++;
-      if (it != path.end() ) oss << std::endl;
-    }
-}
-
-void MLPSolver::printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const
-{
-  RawPrinter printer(oss, ctx1.registry());
-
-  std::vector<IDSet>::const_iterator it = A.begin();
-  int i=0;
-  bool first;
-  while ( it != A.end() )
-    {
-      oss << "A[" << i << "]: "; 	
-      IDSAddressIndex::const_iterator itIDSet = (*it).begin();
-      first = true;
-      while ( itIDSet != (*it).end() )	
-	{
-	  // print here
-	  if (first == false) oss << ", ";
-	  if ( *itIDSet == ID_FAIL )
-		oss << "fin";
-	  else 
-	    {
-	      printer.print(*itIDSet);
-	    }		
-
-	  itIDSet++;
-	  first = false;
-	}
-      oss << std::endl;	
-      i++;			
-      it++;
-    }
-}
 
 void MLPSolver::dataReset()
 {
@@ -309,53 +245,6 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
 }
 
-
-void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
-{
-  if ( printProgramInformation == true )
-    {
-  	DBGLOG(DBG, *ctx1.registry()); 
-  	RawPrinter printer(std::cerr, ctx1.registry());
-      	Interpretation::Storage bits = edb->getStorage();
-      	Interpretation::Storage::enumerator it = bits.first();
-      	while ( it!=bits.end() ) 
-          {
-            DBGLOG(DBG, "[MLPSolver::printProgram] address: " << *it);
-	    it++;
-          }
-  	std::cerr << "edb = " << *edb << std::endl;
-  	DBGLOG(DBG, "idb begin"); 
-  	printer.printmany(idb,"\n"); 
-  	std::cerr << std::endl; 
-  	DBGLOG(DBG, "idb end");
-    }
-}
-
-
-void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
-{
-  if ( printProgramInformation == true ) 
-    {
-	RawPrinter printer(std::cerr, ctx1.registry());
-	std::cerr << "edb = " << *edb << std::endl;
- 	DBGLOG(DBG, "idb begin"); 
-  	printer.printmany(idb,"\n"); 
-  	std::cerr << std::endl; 
-  	DBGLOG(DBG, "idb end");
-    }
-}
-
-void MLPSolver::printIdb(const ProgramCtx& ctx1, const Tuple& idb)
-{
-  if ( printProgramInformation == true ) 
-    {
-	RawPrinter printer(std::cerr, ctx1.registry());
- 	DBGLOG(DBG, "idb begin"); 
-  	printer.printmany(idb,"\n"); 
-  	std::cerr << std::endl; 
-  	DBGLOG(DBG, "idb end");
-    }
-}
 
 bool MLPSolver::foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult)
 { // method to found if there exist a PiS in C that also occur in some Cprev in path 
@@ -446,6 +335,7 @@ void MLPSolver::unionCtoFront(ValueCallsType& C, const ValueCallsType& C2)
       itC2++;
     }
 }
+
 
 std::string MLPSolver::getAtomTextFromTuple(const Tuple& tuple)
 {
@@ -626,7 +516,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		  IDSElementIndex::iterator itE = A.at(instIdx).get<impl::ElementTag>().find(*itB);
 		  if ( itE !=  A.at(instIdx).get<impl::ElementTag>().end() )
 		    { // if found
-		      //rmv. bool naf = itB->isNaf();
 		      // create the PjT	
 		      // first, get the module atom
 		      ModuleAtom ma = ctx.registry()->matoms.getByID(*itB);
@@ -851,7 +740,6 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 }
 
 
-
 // TODO: OPEN THIS
 bool MLPSolver::isOrdinary(const Tuple& idb)
 { 
@@ -902,6 +790,7 @@ void MLPSolver::findAllModulesAtom(const Tuple& newRules, Tuple& result)
     }
 }
 
+
 bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
 {
     Tuple::const_iterator itRH = ruleHead.begin();
@@ -925,8 +814,6 @@ bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
       }
   return false;
 }
-
-
 
 
 //////////////////////////////
@@ -1009,24 +896,6 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
     }
   return true;
 
-/*
-  Tuple inputs = m.inputs;   // contain ID = predicate term
-  Tuple::const_iterator it = rules.begin();
-  while ( it != rules.end() )
-    {
-      const Rule& r = ctxSolver.registry()->rules.getByID(*it);
-      // get the rule head
-      if ( defined(inputs, r.head) ) 
-        {
-          // if this rule contain a module atom   
-          if ( it->doesRuleContainModatoms() == true ) 
-          {
-            return false;
-          }
-        }
-      it++;
-    }
-*/
 }
 
 
@@ -1049,6 +918,7 @@ ID MLPSolver::smallestILL(const Tuple& newRules)
   return ID_FAIL;
 }
 
+
 bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
 {
   DBGLOG(DBG, "[MLPSolver::defined] enter");
@@ -1063,6 +933,7 @@ bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
   return false;
 }
 
+
 void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result)
 {
   DBGLOG(DBG, "[MLPSolver::collectBottom] enter");
@@ -1074,19 +945,7 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
     collectAllRulesDefined(*itPred, rules, predsSearched, result);
     itPred++;
   }
-/*
-  Tuple::const_iterator it = rules.begin();
-  while ( it != rules.end() )
-    {
-      const Rule& r = ctxSolver.registry()->rules.getByID(*it);
-      // get the rule head
-      if ( defined(moduleAtom.inputs, r.head) ) 
-        {
-	  result.push_back(*it);
-        }
-      it++;
-    }
-*/
+
 }
 
 
@@ -1153,6 +1012,7 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
     }	
 }
 
+
 void MLPSolver::createInterpretationFromTuple(const ProgramCtx& ctx1, const Tuple& tuple, Interpretation& result)
 {
   result.setRegistry(ctx1.registry());
@@ -1165,6 +1025,7 @@ void MLPSolver::createInterpretationFromTuple(const ProgramCtx& ctx1, const Tupl
       it++;
     }
 }
+
 
 int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s)
 {
@@ -1197,6 +1058,7 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const I
   DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] return value idxMI = " << idxMI);
   return idxMI;
 }
+
 
 // resize M and MFlag if the size <= idxPjT
 void MLPSolver::resizeIfNeededMFlag(int idxPjT)
@@ -1316,28 +1178,21 @@ bool MLPSolver::comp(ValueCallsType C)
 // print path and C here?    
 		// print the C:
               DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
-	      //rmv. printLog(std::endl << "[MLPSolver::comp] Enter comp with C: " << std::endl);
 	      oss.str("");		
 	      printValueCallsType(oss, ctxSolver, C);
               DBGLOG(INFO,oss.str());
-	      //rmv. printLog(oss.str() << std::endl);
 		// print the path:
               DBGLOG(INFO,"[MLPSolver::comp] with path: ");
-              //rmv. printLog("[MLPSolver::comp] with path: " << std::endl);
 	      oss.str("");
 	      printPath(oss,ctxSolver, path);
               DBGLOG(INFO,oss.str());
-	      //rmv. printLog(oss.str());
 		// print the M:	
               DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
-              //rmv. printLog("[MLPSolver::comp] with M: " << *M << std::endl);
 		// print the A:
               DBGLOG(INFO,"[MLPSolver::comp] with A: ");
-              //rmv. printLog("[MLPSolver::comp] with A: " << std::endl);
 	      oss.str("");
 	      printA(oss,ctxSolver, A);
               DBGLOG(INFO,oss.str());
-	      //rmv. printLog(oss.str());
 
   ValueCallsType CPrev;
   int PiSResult;
@@ -1420,9 +1275,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      printASinSlot(oss, ctxSolver.registry(), *M2);
 	      std::string asString = oss.str();
 	      std::cout << asString << std::endl;
-	      //rmv. printLog(std::endl << "[MLPSolver::comp] found answer set [" << ctrAS << "]: ");
-	      //rmv. printLog(oss.str() << std::endl);
-	      // print the call graph
+              // print the call graph
 	      oss.str("");		
 	      printCallGraph(oss, callGraph, asString);	
 	      DBGLOG(INFO, " ==== call graph [" << ctrAS << "] begin here ==== ");
@@ -1649,6 +1502,7 @@ std::vector<int> MLPSolver::foundMainModules()
   return result;
 }
 
+
 // to be used only in the beginning
 MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 {
@@ -1682,119 +1536,9 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
   return C;
 }
 
-// print the text of module instantiation, given the module index (index to the instantiation table)
-// example: p1[{q(a),q(b)}]
-void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx)
+
+bool MLPSolver::solve()
 {
-  // get the module index
-  int idxM = extractPi(moduleInstIdx);
-  out << reg->moduleTable.getByAddress(idxM).moduleName ;
-
-  // get the interpetretation index
-  int idxS = extractS(moduleInstIdx);
-  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
-  intrS.setRegistry( reg );
-  out << "[";
-  intrS.printWithoutPrefix(out);
-  out << "]";
-}
-
-void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr)
-{
-  Interpretation newIntr( reg );
-  out << "(";
-  bool first = true;
-  for (int i=0; i<MFlag.size();i++)
-    {
-      newIntr.clear();
-      newIntr.add(intr);
-      newIntr.bit_and(MFlag.at(i));
-      if (!newIntr.isClear())	
-	{ // print
-	  if (first == false) 
-	    {
-	      out << ", ";
-	    }
-          printModuleInst(out,reg,i);
-          out << "=";
-          newIntr.printWithoutPrefix(out);
-	  first = false;
-	}	
-    } 
-  out << ")"; 
-}
-
-
-void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std::string& graphLabel)
-{
-  //rmv. ofsGraph.open(filename.c_str());
-  // produce all module instantiation table
-  std::ostringstream ss;
-  std::string vertexName[moduleInstTable.size()];
-  for (int i=0;i<moduleInstTable.size();i++)
-    {
-      ss.str("");
-      printModuleInst(ss, ctxSolver.registry(), i);
-      vertexName[i] = ss.str();
-    }
-  // print the preliminary
-  oss << std::endl;
-  oss << "digraph G {" << std::endl;
-/*
-  // print the vertex
-  VertexIterator itg, itg_end;
-  boost::tie(itg, itg_end) = boost::vertices(callGraph);
-  int i=0;
-  while (itg != itg_end ) 
-    {
-      ofsGraph << *itg << "[label=\"" << vertexName[*itg] << "\"];" << std::endl;      
-      itg++;
-      i++;
-    } 
-  ofsGraph << i << "[label=\"" << "This is the \\n graph name" << "\", shape=box];" << std::endl;      
-*/
-  // get the maximum number of vertex
-  VertexIterator itg, itg_end;
-  boost::tie(itg, itg_end) = boost::vertices(callGraph);
-  oss << *itg_end << "[label=\"" << graphLabel << "\", shape=box];" << std::endl;      
-  
-  // print the edge
-  EdgeIterator ite, ite_end;
-  boost::tie(ite, ite_end) = boost::edges(callGraph);
-  int ie=0;
-  std::vector<std::string>::const_iterator itEN = edgeName.begin();
-  while (ite != ite_end ) 
-    {
-      if ( itEN == edgeName.end() ) 
-        {
- 	  DBGLOG(ERROR, "Not sync edge and edge name");
-	  return;
-        }
-      oss << boost::source(*ite,callGraph) << "->" << boost::target(*ite,callGraph) << "[label=\"" << *itEN << "\"];" << std::endl;      
-      oss << boost::source(*ite,callGraph) << "[label=\"" << vertexName[boost::source(*ite,callGraph)] << "\"];" << std::endl;      
-      oss << boost::target(*ite,callGraph) << "[label=\"" << vertexName[boost::target(*ite,callGraph)] << "\"];" << std::endl;      
-      itEN++;
-      ite++;
-      ie++;
-    }
-  oss << "}" << std::endl;
-  // boost::write_graphviz(ofsGraph, callGraph, boost::make_label_writer(vertexName));
-}
-
-bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
-{
-/*
-  std::string fileCallGraph = "";
-  if ( (logFlag & 0x1) == 0x1 ) 
-    fileCallGraph = fileName+".dot";
-*/
-/*
-  std::string fileLog = "";
-  if ( (logFlag & 0x2) == 0x2 ) {
-    writeLog = true;
-    fileLog = fileName + ".log";
-  }
-*/
   debugAS = false;
   printProgramInformation = false;
   DBGLOG(DBG, "[MLPSolver::solve] started");
@@ -1804,8 +1548,6 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
   int i = 0;
   dataReset();
   ctrAS = 0;	
-  if ( writeLog == true)
-    ofsLog.open((fileName + ".log").c_str());	
 
   while ( it != mainModules.end() )
     {
@@ -1822,20 +1564,6 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
       i++;
       it++;
     }
-/*
-  if ( writeLog == true )
-    {
-      ofsLog << "Total answer set: " << ctrAS << std::endl; 
-      ofsLog << "Instantiation information: " << std::endl; 
-      for (int i=0; i<moduleInstTable.size(); i++) 
-	{	
-	  ofsLog << "m" << i << ": ";
-	  printModuleInst(ofsLog, ctxSolver.registry(), i);
-	  ofsLog << std::endl;
-	}
-      ofsLog.close();
-    }
-*/
   DBGLOG(INFO, "Total answer set: " << ctrAS); 
   DBGLOG(INFO, "Instantiation information: "); 
   std::ostringstream oss;
@@ -1846,7 +1574,6 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
       printModuleInst(oss, ctxSolver.registry(), i);
       DBGLOG(INFO, oss.str());
     }
-//  if (fileCallGraph != "") printCallGraph(fileCallGraph);
   DBGLOG(INFO, "[MLPSolver::solve] finished");
 
 /*
@@ -1908,6 +1635,204 @@ bool MLPSolver::solve(std::string fileName="output", int logFlag=0)
   return true;
 }
 
+
+void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const 
+{
+  oss << "{ ";
+  const VCAddressIndex& idx = C.get<impl::AddressTag>();
+  VCAddressIndex::const_iterator it = idx.begin();
+  bool first = true;
+  while ( it != idx.end() )
+    {
+      ModuleInst mi = moduleInstTable.at(*it);
+      std::string moduleName = ctx1.registry()->moduleTable.getByAddress(mi.idxModule).moduleName;
+      Interpretation s = sTable.at(mi.idxS);
+      s.setRegistry(ctx1.registry());
+      if ( first == false ) oss << ", ";
+      oss << moduleName << "[" << s << "]";
+      it++;
+      first = false;
+    }
+  oss << " }";
+}
+
+
+void MLPSolver::printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const 
+{
+  std::vector<ValueCallsType>::const_iterator it = path.begin();
+  while ( it != path.end() )
+    {
+      printValueCallsType(oss, ctx1, *it);
+      it++;
+      if (it != path.end() ) oss << std::endl;
+    }
+}
+
+
+void MLPSolver::printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const
+{
+  RawPrinter printer(oss, ctx1.registry());
+
+  std::vector<IDSet>::const_iterator it = A.begin();
+  int i=0;
+  bool first;
+  while ( it != A.end() )
+    {
+      oss << "A[" << i << "]: "; 	
+      IDSAddressIndex::const_iterator itIDSet = (*it).begin();
+      first = true;
+      while ( itIDSet != (*it).end() )	
+	{
+	  // print here
+	  if (first == false) oss << ", ";
+	  if ( *itIDSet == ID_FAIL )
+		oss << "fin";
+	  else 
+	    {
+	      printer.print(*itIDSet);
+	    }		
+
+	  itIDSet++;
+	  first = false;
+	}
+      oss << std::endl;	
+      i++;			
+      it++;
+    }
+}
+
+// print the text of module instantiation, given the module index (index to the instantiation table)
+// example: p1[{q(a),q(b)}]
+void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx)
+{
+  // get the module index
+  int idxM = extractPi(moduleInstIdx);
+  out << reg->moduleTable.getByAddress(idxM).moduleName ;
+
+  // get the interpetretation index
+  int idxS = extractS(moduleInstIdx);
+  Interpretation intrS = sTable.get<impl::AddressTag>().at(idxS);
+  intrS.setRegistry( reg );
+  out << "[";
+  intrS.printWithoutPrefix(out);
+  out << "]";
+}
+
+
+void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr)
+{
+  Interpretation newIntr( reg );
+  out << "(";
+  bool first = true;
+  for (int i=0; i<MFlag.size();i++)
+    {
+      newIntr.clear();
+      newIntr.add(intr);
+      newIntr.bit_and(MFlag.at(i));
+      if (!newIntr.isClear())	
+	{ // print
+	  if (first == false) 
+	    {
+	      out << ", ";
+	    }
+          printModuleInst(out,reg,i);
+          out << "=";
+          newIntr.printWithoutPrefix(out);
+	  first = false;
+	}	
+    } 
+  out << ")"; 
+}
+
+
+void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std::string& graphLabel)
+{
+  // produce all module instantiation table
+  std::ostringstream ss;
+  std::string vertexName[moduleInstTable.size()];
+  for (int i=0;i<moduleInstTable.size();i++)
+    {
+      ss.str("");
+      printModuleInst(ss, ctxSolver.registry(), i);
+      vertexName[i] = ss.str();
+    }
+  // print the preliminary
+  oss << std::endl;
+  oss << "digraph G {" << std::endl;
+  // get the maximum number of vertex
+  VertexIterator itg, itg_end;
+  boost::tie(itg, itg_end) = boost::vertices(callGraph);
+  oss << *itg_end << "[label=\"" << graphLabel << "\", shape=box];" << std::endl;      
+  
+  // print the edge
+  EdgeIterator ite, ite_end;
+  boost::tie(ite, ite_end) = boost::edges(callGraph);
+  int ie=0;
+  std::vector<std::string>::const_iterator itEN = edgeName.begin();
+  while (ite != ite_end ) 
+    {
+      if ( itEN == edgeName.end() ) 
+        {
+ 	  DBGLOG(ERROR, "Not sync edge and edge name");
+	  return;
+        }
+      oss << boost::source(*ite,callGraph) << "->" << boost::target(*ite,callGraph) << "[label=\"" << *itEN << "\"];" << std::endl;      
+      oss << boost::source(*ite,callGraph) << "[label=\"" << vertexName[boost::source(*ite,callGraph)] << "\"];" << std::endl;      
+      oss << boost::target(*ite,callGraph) << "[label=\"" << vertexName[boost::target(*ite,callGraph)] << "\"];" << std::endl;      
+      itEN++;
+      ite++;
+      ie++;
+    }
+  oss << "}" << std::endl;
+  // boost::write_graphviz(ofsGraph, callGraph, boost::make_label_writer(vertexName));
+}
+
+
+void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
+{
+  if ( printProgramInformation == true )
+    {
+  	DBGLOG(DBG, *ctx1.registry()); 
+  	RawPrinter printer(std::cerr, ctx1.registry());
+      	Interpretation::Storage bits = edb->getStorage();
+      	Interpretation::Storage::enumerator it = bits.first();
+      	while ( it!=bits.end() ) 
+          {
+            DBGLOG(DBG, "[MLPSolver::printProgram] address: " << *it);
+	    it++;
+          }
+  	std::cerr << "edb = " << *edb << std::endl;
+  	DBGLOG(DBG, "idb begin"); 
+  	printer.printmany(idb,"\n"); 
+  	std::cerr << std::endl; 
+  	DBGLOG(DBG, "idb end");
+    }
+}
+
+void MLPSolver::printIdb(const ProgramCtx& ctx1, const Tuple& idb)
+{
+  if ( printProgramInformation == true ) 
+    {
+	RawPrinter printer(std::cerr, ctx1.registry());
+ 	DBGLOG(DBG, "idb begin"); 
+  	printer.printmany(idb,"\n"); 
+  	std::cerr << std::endl; 
+  	DBGLOG(DBG, "idb end");
+    }
+}
+
+void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
+{
+  if ( printProgramInformation == true ) 
+    {
+	std::cerr << "edb = " << *edb << std::endl;
+	RawPrinter printer(std::cerr, ctx1.registry());
+ 	DBGLOG(DBG, "idb begin"); 
+  	printer.printmany(idb,"\n"); 
+  	std::cerr << std::endl; 
+  	DBGLOG(DBG, "idb end");
+    }
+}
 
 
 DLVHEX_NAMESPACE_END
