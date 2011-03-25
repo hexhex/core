@@ -72,9 +72,9 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   
   //.. put into different files
-  std::string filename1 = "../../examples/module1.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1.mlp";
+  std::string filename2 = "../../examples/module2.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   //.. put into different files
-  std::string filename1 = "../../examples/module1.hex";
+  std::string filename1 = "../../examples/module1.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1-NotExist.hex";
+  std::string filename1 = "../../examples/module1-NotExist.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -234,14 +234,14 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-TooMany.hex";
+  std::string filename = "../../examples/module2-TooMany.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.hex";
+  filename = "../../examples/module3.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -272,14 +272,14 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-TooFew.hex";
+  std::string filename = "../../examples/module2-TooFew.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.hex";
+  filename = "../../examples/module3.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -312,14 +312,14 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-DiffArity.hex";
+  std::string filename = "../../examples/module2-DiffArity.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.hex";
+  filename = "../../examples/module3.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -350,14 +350,14 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-NotExist.hex";
+  std::string filename = "../../examples/module3-NotExist.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2.hex";
+  filename = "../../examples/module2.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -388,14 +388,14 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-DiffArity.hex";
+  std::string filename = "../../examples/module3-DiffArity.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2.hex";
+  filename = "../../examples/module2.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -427,14 +427,14 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-SwapArity.hex";
+  std::string filename = "../../examples/module3-SwapArity.mlp";
 
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2-SwapArity.hex";
+  filename = "../../examples/module2-SwapArity.mlp";
   ifs.open(filename.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader)
   ProgramCtx ctx;
   ctx.registry = RegistryPtr(new Registry);
 
-  std::string filename1 = "../../examples/module1-DiffArity.hex";
+  std::string filename1 = "../../examples/module1-DiffArity.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1.hex";
+  std::string filename1 = "../../examples/module1.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 

@@ -1,5 +1,8 @@
 2010-03-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* testsuite/TestHexParserModule.cpp: Change examples extension to *.mlp.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Remove parameter in solve(), remove deprecated code, move printing method in the end.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 

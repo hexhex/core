@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Inconsistent.hex";
+  std::string filename = "../../examples/module-Inconsistent.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Not-ic-Stratified.hex";
+  std::string filename = "../../examples/module-Not-ic-Stratified.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -162,9 +162,9 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1.mlp";
+  std::string filename2 = "../../examples/module2.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -218,9 +218,9 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1-MainModules.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1-MainModules.mlp";
+  std::string filename2 = "../../examples/module2.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -273,9 +273,9 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1-Two.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1-Two.mlp";
+  std::string filename2 = "../../examples/module2.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -328,9 +328,9 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1.hex";
-  std::string filename2 = "../../examples/module2-Two.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1.mlp";
+  std::string filename2 = "../../examples/module2-Two.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Reachability.hex";
+  std::string filename = "../../examples/module-Reachability.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Cardinality.hex";
+  std::string filename = "../../examples/module-Cardinality.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-ABBA.hex";
+  std::string filename = "../../examples/module-ABBA.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Disjunction.hex";
+  std::string filename = "../../examples/module-Disjunction.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Negation.hex";
+  std::string filename = "../../examples/module-Negation.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Indirection.hex";
+  std::string filename = "../../examples/module-Indirection.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-AFin.hex";
+  std::string filename = "../../examples/module-AFin.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -690,7 +690,7 @@ BOOST_AUTO_TEST_CASE(testCsProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Cs.hex";
+  std::string filename = "../../examples/module-Cs.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -819,7 +819,7 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Hanoi.hex";
+  std::string filename = "../../examples/module-Hanoi.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -909,7 +909,7 @@ BOOST_AUTO_TEST_CASE(testHanoi3Program)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename = "../../examples/module-Hanoi3.hex";
+  std::string filename = "../../examples/module-Hanoi3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -1046,9 +1046,9 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1-Big.hex";
-  std::string filename2 = "../../examples/module2.hex";
-  std::string filename3 = "../../examples/module3.hex";
+  std::string filename1 = "../../examples/module1-Big.mlp";
+  std::string filename2 = "../../examples/module2.mlp";
+  std::string filename3 = "../../examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
