@@ -336,8 +336,6 @@ AC_CONFIG_FILES([
            include/Makefile
            include/common.h
            include/dlvhex/Makefile
-           include/testsuite/Makefile
-           include/testsuite/dlvhex/Makefile
            src/Makefile
            src/dlvhex/Makefile
            testsuite/Makefile
