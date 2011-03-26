@@ -105,6 +105,8 @@ public:
 typedef Interpretation::Ptr InterpretationPtr;
 typedef Interpretation::ConstPtr InterpretationConstPtr;
 
+std::size_t hash_value(const Interpretation& intr);
+
 DLVHEX_NAMESPACE_END
 
 #endif // INTERPRETATION_HPP_INCLUDED__08112010

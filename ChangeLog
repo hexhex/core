@@ -1,5 +1,9 @@
 2010-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Hashing the Interpretation.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
 	* src/dlvhex/postpross.sh: Adding post-processing script for call-graph output and answer set.
 
 	* include/dlvhex/MLPSolver.hpp: Fixed some printing information for post-processing.

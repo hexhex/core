@@ -17,7 +17,6 @@
  * - MFlag operation (and initialization (inspection))
  * - separate the structures into different class?
  * - optimization in storing the edgeName
- * - separation for print routine
  */
 
 #if !defined(_DLVHEX_MLPSOLVER_H)
@@ -60,7 +59,7 @@ class DLVHEX_EXPORT MLPSolver{
       InterpretationType,
       boost::multi_index::indexed_by<
         boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
-        boost::multi_index::ordered_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<InterpretationType> >
+        boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<InterpretationType> >
       > 
     > InterpretationTable; 
     typedef InterpretationTable::index<impl::AddressTag>::type ITAddressIndex;

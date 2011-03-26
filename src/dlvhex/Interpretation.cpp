@@ -31,8 +31,23 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printer.hpp"
+#include <boost/functional/hash.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
+
+std::size_t hash_value(const Interpretation& intr)
+{
+  std::size_t seed = 0;
+  Interpretation::Storage bits= intr.getStorage();
+  Interpretation::Storage::enumerator it = bits.first();
+  while ( it != bits.end() )
+    {
+      boost::hash_combine(seed, *it);
+      it++;
+    }
+  return seed;
+}
+
 
 Interpretation::Interpretation(RegistryPtr registry):
   registry(registry),
