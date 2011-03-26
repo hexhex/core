@@ -1,3 +1,7 @@
+2010-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixed some printing information for post-processing.
+
 2010-03-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestHexParserModule.cpp: Change examples extension to *.mlp.

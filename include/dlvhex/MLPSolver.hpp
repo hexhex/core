@@ -1271,16 +1271,14 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // collect the full answer set
 	      ctrAS++;
 	      oss.str("");
-	      DBGLOG(INFO, "[MLPSolver::comp] found answer set [" << ctrAS << "]: ");
+	      DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
 	      printASinSlot(oss, ctxSolver.registry(), *M2);
 	      std::string asString = oss.str();
 	      std::cout << asString << std::endl;
               // print the call graph
 	      oss.str("");		
 	      printCallGraph(oss, callGraph, asString);	
-	      DBGLOG(INFO, " ==== call graph [" << ctrAS << "] begin here ==== ");
-	      DBGLOG(INFO, oss.str());	
-	      DBGLOG(INFO, " ==== call graph [" << ctrAS << "] end here ==== ");
+	      DBGLOG(INFO, std::endl << " ==== call graph begin here ==== " << std::endl << ctrAS << ".dot" << std::endl << oss.str() << std::endl << " ==== call graph end here ==== ");
 	      if ( nASReturned > 0 && ctrAS == nASReturned) return true;
 	      if ( debugAS == true )
 		{
