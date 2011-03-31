@@ -46,6 +46,7 @@
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/ModelBuilder.hpp"
+#include "dlvhex/Registry.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>
@@ -84,6 +85,9 @@ public:
 
   // cannot change registry if something is already stored here
   void setupRegistry(RegistryPtr registry);
+
+  // change registry 
+  void changeRegistry(RegistryPtr registry);
 
   void setupPluginContainer(PluginContainerPtr pluginContainer);
 

@@ -1,3 +1,13 @@
+2010-03-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in storing registry, now memory-wise optimized.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2010-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Hashing the Interpretation.

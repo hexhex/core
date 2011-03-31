@@ -141,6 +141,11 @@ void ProgramCtx::setupRegistry(
   _registry = registry;
 }
 
+void ProgramCtx::changeRegistry(RegistryPtr registry)
+{
+   _registry = registry;
+}
+
 void ProgramCtx::setupPluginContainer(
     PluginContainerPtr pluginContainer)
 {

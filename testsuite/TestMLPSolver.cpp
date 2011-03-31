@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(testComplexProgram)
 
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
-  // std::cerr << "ctrAS: " << m.ctrAS << std::endl;
+  //std::cerr << "ctrAS: " << m.ctrAS << std::endl;
   BOOST_REQUIRE ( m.ctrAS == 12 );
   LOG(DBG, "Test Complex Program finish");
 }
@@ -1085,5 +1085,5 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   BOOST_REQUIRE ( m.solve() == true );
   LOG(DBG, "Test Big Program finish");
 }
-*/
 
+*/

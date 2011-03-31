@@ -97,6 +97,11 @@ std::ostream& Interpretation::printWithoutPrefix(std::ostream& o) const
   return printWithoutPrefix(o, "{", ",", "}");
 }
 
+std::ostream& Interpretation::printAsNumber(std::ostream& o) const
+{
+  return printAsNumber(o, "{", ",", "}");
+}
+
 std::ostream& Interpretation::printAsFacts(std::ostream& o) const
 {
   print(o, "", ".", "");
@@ -146,6 +151,24 @@ std::ostream& Interpretation::printWithoutPrefix(
   return o << last;
 }
 
+std::ostream& Interpretation::printAsNumber(
+    std::ostream& o,
+    const char* first, const char* sep, const char* last) const
+{
+  Storage::enumerator it = bits.first();
+  o << first;
+  if( it != bits.end() )
+  {
+    o << *it;
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      o << sep;
+      o << *it; 
+    }
+  }
+  return o << last;
+}
 
 void Interpretation::add(const Interpretation& other)
 {

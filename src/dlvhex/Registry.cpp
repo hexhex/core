@@ -107,12 +107,16 @@ Registry::Registry():
 //explicit
 Registry::Registry(const Registry& other):
   terms(other.terms),
+  preds(other.preds),
   ogatoms(other.ogatoms),
   onatoms(other.onatoms),
   batoms(other.batoms),
   aatoms(other.aatoms),
   eatoms(other.eatoms),
+  matoms(other.matoms),
   rules(other.rules),
+  moduleTable(other.moduleTable),
+  inputList(other.inputList),
   pimpl(new Impl(*other.pimpl))
 {
 }
