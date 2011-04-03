@@ -264,7 +264,6 @@ void HexGrammarPTToASTConverter::doModuleHeader(node_t& node) throw (SyntaxError
 	Tuple& el = ctx.registry()->inputList.back();
 	el.push_back(createPredFromIdent(predDecl.children[0], predArity));
       }
-      DBGLOG(DBG, std::endl);
     } 
   else if (node.children.size() == 8) 
     {
@@ -280,7 +279,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
   node_t& child = node.children[0];
   if( Logger::Instance().shallPrint(Logger::DBG) )
   {
-    DBGLOG(DBG,"createASTFromClause cAFC:");
+    DBGLOG(DBG,"createASTFromClause cAFC");
     //printSpiritPT(Logger::Instance().stream(), child, "cAFC");
   }
   switch(child.value.id().to_long())
@@ -331,9 +330,7 @@ void HexGrammarPTToASTConverter::createASTFromClause(
 	DBGLOG(DBG,"before set fact for: " << id.address);
 	DBGLOG(DBG,"edb: " << *ctx.edb);
 	ctx.edb->setFact(id.address);
-	DBGLOG(DBG,"1111");
 	ctx.edbList.back()->setFact(id.address);        
-	DBGLOG(DBG,"2222");
         DBGLOG(DBG,"added fact with id " << id << " to edb");
       }
       else
@@ -550,7 +547,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   	printer.print(*it);
 	std::stringstream myss;
         std::string predInsideName = ss.str();
-	myss << "-- myss: atom name: " << predInsideName;
+	myss << "got atom name: " << predInsideName;
   	it++;
 	int countTuple = 0; 
   	if( it != atom.tuple.end() )
@@ -572,7 +569,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
 	myss << ", with " << countTuple << " parameter";
 	DBGLOG(DBG, myss.str());
         //assert(mSC.announcePredInside(predInsideName, countTuple)==true);
-      DBGLOG(DBG, "-- found in tbl, atom text '" << atom.text << "'");
+      DBGLOG(DBG, "found in tbl, atom text '" << atom.text << "'");
       return id;
     }
   }
@@ -594,7 +591,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   printer.print(*it);
   std::stringstream myss;
   std::string predInsideName = ss.str();
-  myss << "-- myss: atom name: " << predInsideName;
+  myss << "to be stored, atom name: " << predInsideName;
   it++;
   int countTuple = 0; 
   if( it != atom.tuple.end() )
@@ -732,7 +729,7 @@ ID HexGrammarPTToASTConverter::createExtAtomFromExtAtom(node_t& node)
 ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
 {
   std::string modName = createStringFromNode(node.children[1], HexGrammar::Ident);
-  DBGLOG(DBG, "-- found module atom: " << modName );
+  DBGLOG(DBG, "found module atom: " << modName );
   //mSC.announceModuleCallsModName(modName);
 
   //printSpiritPT(std::cerr, node, ">>");

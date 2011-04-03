@@ -1,3 +1,7 @@
+2010-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Clean up useless log information.
+
 2010-03-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in storing registry, now memory-wise optimized.
