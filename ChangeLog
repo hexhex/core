@@ -1,3 +1,7 @@
+2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Optimize setMFlag
+
 2010-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Clean up useless log information.
