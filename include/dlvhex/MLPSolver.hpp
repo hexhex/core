@@ -1228,6 +1228,7 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< std::vector<std::string> > stackEdgeName;
   std::vector< RegistryPtr > stackRegistry;
   std::vector< VectorOfInterpretation > stackMFlag;
+  std::vector< ModuleInstTable > stackMInst;
 
   stackC.push_back(C);
   stackPath.push_back(path);
@@ -1242,6 +1243,8 @@ bool MLPSolver::comp(ValueCallsType C)
   stackRegistry.push_back( R2 );  
  
   stackMFlag.push_back(MFlag);
+
+  stackMInst.push_back(moduleInstTable);
 
   while (stackC.size()>0) 
     {
@@ -1272,6 +1275,9 @@ bool MLPSolver::comp(ValueCallsType C)
 
       MFlag = stackMFlag.back();
       stackMFlag.erase(stackMFlag.end()-1);
+
+      moduleInstTable = stackMInst.back();
+      stackMInst.erase(stackMInst.end()-1);
 
 // print path and C here?    
 		// print the C:
@@ -1466,7 +1472,7 @@ bool MLPSolver::comp(ValueCallsType C)
               RegistryPtr R2(new Registry(*ctxSolver.registry()) );
 	      stackRegistry.push_back( R2 );  
 	      stackMFlag.push_back(MFlag);
-
+	      stackMInst.push_back(moduleInstTable);
 //	      if (comp(C2) == false) return false;
 	
 	      // get the next answer set 
@@ -1524,12 +1530,14 @@ bool MLPSolver::comp(ValueCallsType C)
       AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
       RegistryPtr initialRegistry(new Registry(*ctxSolver.registry()) );
-      // get the current MFlag
+      // get the current MFlag, and MInst
       VectorOfInterpretation currMFlag = MFlag;
-
+      ModuleInstTable currMInst = moduleInstTable;
       while (int0 !=0 )
         {
+	  // set MFlag and mInst back
 	  MFlag = currMFlag;
+	  moduleInstTable = currMInst;
 	  // first set the Registry as before
           RegistryPtr tempRegistry(new Registry(*initialRegistry) );
           ctxSolver.changeRegistry(tempRegistry);
@@ -1609,6 +1617,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  stackRegistry.push_back( R2 );  
 
 	  stackMFlag.push_back(MFlag);
+	  stackMInst.push_back(moduleInstTable);
 
 //	  if ( comp(C2) == false ) return false;
 

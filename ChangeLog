@@ -1,5 +1,7 @@
 2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Optimizing on how to store module instantiations.
+
 	* include/dlvhex/MLPSolver.hpp: Optimize setMFlag
 
 2010-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
