@@ -1383,8 +1383,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	      DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
 	      printASinSlot(oss, ctxSolver.registry(), *M2);
 	      std::string asString = oss.str();
-	      // std::cout << asString << std::endl;
-	      std::cout << ctrAS << std::endl;
+	      std::cout << asString << std::endl;
+	      //rmv. std::cout << ctrAS << std::endl;
 	      DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
               // print the call graph
 	      oss.str("");		

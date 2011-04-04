@@ -1,5 +1,31 @@
 2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Extend run-dlvhex-tests to work on mlp test suite.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+	* examples/module-EvenOddTwoCalls1.mlp: Likewise.
+	* examples/module-EvenOddTwoCalls2.mlp: Likewise.
+	* examples/module-EvenOdd.mlp: Likewise.
+	* examples/tests/module-Hanoi.out: Likewise.
+	* examples/tests/module-EvenOddTwoMain.out: Likewise.
+	* examples/tests/module-ABBA.out: Likewise.
+	* examples/tests/module-Disjunction.out: Likewise.
+	* examples/tests/module-Reachability.out: Likewise.
+	* examples/tests/module-Cardinality.out: Likewise.
+	* examples/tests/module-Negation.out: Likewise.
+	* examples/tests/module-Complex.out: Likewise.
+	* examples/tests/module-Indirection.out: Likewise.
+	* examples/tests/module-EvenOddTwoCalls1.out: Likewise.
+	* examples/tests/module-EvenOddTwoCalls2.out: Likewise.
+	* examples/tests/module-Not-ic-Stratified.stderr: Likewise.
+	* examples/tests/module-i-Stratified-2.out: Likewise.
+	* examples/tests/module-EvenOdd.out: Likewise.
+	* examples/tests/module-i-Stratified.out: Likewise.
+	* examples/tests/module-Cs.out: Likewise.
+	* examples/tests/module-AFin.out: Likewise.
+	* examples/tests/module-Inconsistent.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/module-EvenOddTwoMain.mlp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Optimizing on how to store module instantiations.
 
 	* include/dlvhex/MLPSolver.hpp: Optimize setMFlag

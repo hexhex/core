@@ -25,7 +25,7 @@
  * @file   TestMLPSolver.cpp
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
- * @brief  Test MLPSolver
+ * @brief  TestMLPSolver
  */
 
 #define NDEBUG
@@ -1030,7 +1030,6 @@ BOOST_AUTO_TEST_CASE(testPowerProgram)
 }
 */
 
-
 /*
 //20
 BOOST_AUTO_TEST_CASE(testBigProgram) 
@@ -1085,5 +1084,4 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   BOOST_REQUIRE ( m.solve() == true );
   LOG(DBG, "Test Big Program finish");
 }
-
 */
