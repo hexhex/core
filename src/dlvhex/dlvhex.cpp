@@ -139,7 +139,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
-      << "                      and $HOME/.dlvhex/plugins)." << std::endl
+      << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
+			<< "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
       << " -f, --filter=foo[,bar[,...]]" << std::endl
       << "                      Only display instances of the specified predicate(s)." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
@@ -770,12 +771,26 @@ void processOptionsPrePlugin(
 
 void configurePluginPath(std::string& userPlugindir)
 {
+	bool reset = false;
+	if( !userPlugindir.empty() && userPlugindir[0] == '!' )
+	{
+		reset = true;
+		if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
+			userPlugindir.erase(0,2);
+		else
+			userPlugindir.erase(0,1);
+	}
+
   std::stringstream searchpath;
-  
-  const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+
 	if( !userPlugindir.empty() )
 		searchpath << userPlugindir << ':';
-	searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+  
+	if( !reset )
+	{
+		const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+	}
 	userPlugindir = searchpath.str();
 }
 
