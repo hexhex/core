@@ -902,6 +902,10 @@ Tuple HexGrammarPTToASTConverter::createPredTupleFromTermsTuple(node_t& node)
 
 ID HexGrammarPTToASTConverter::createPredFromIdent(node_t& node, int arity)
 {
+  if (currentModuleName == "") 
+    {
+      return createTermFromIdentVar(node);
+    }
   std::string s = createStringFromNode(node);
   assert(!s.empty());
   if (currentModuleName != "") s = currentModuleName + MODULEPREFIXSEPARATOR + s;
