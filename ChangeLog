@@ -1,3 +1,7 @@
+2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/dlvhex.cpp: Modify --n to --num
+
 2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Extend run-dlvhex-tests to work on mlp test suite.

@@ -137,7 +137,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
-      << "     --n=<n>          To be used together with --mlp option to restrict the number of answer sets returned (n=0 return all)" << std::endl
+      << "     --num=<N>        Computes at most N answer sets (N=0 computes all)" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -537,7 +537,7 @@ void processOptionsPrePlugin(
 		{ "keepauxpreds", no_argument, &longid, 11 },
 		{ "nofacts", no_argument, &longid, 12 },
 		{ "mlp", no_argument, &longid, 13 },
-		{ "n", required_argument, &longid, 14 },
+		{ "num", required_argument, &longid, 14 },
 		{ NULL, 0, NULL, 0 }
 	};
 
