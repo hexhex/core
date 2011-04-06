@@ -1,5 +1,7 @@
 2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Put atom with second order variable in onatoms.
+
 	* include/dlvhex/MLPSolver.hpp: Refactoring stack, store only once for each answer set result.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 	* examples/tests/module-EvenOddTwoMain.out: Likewise.

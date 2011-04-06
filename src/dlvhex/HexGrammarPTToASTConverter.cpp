@@ -475,13 +475,25 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   case HexGrammar::UserPredClassical:
     {
       // <foo> ( <bar>, <baz>, ... )
-      // push back the id for the predicate name	 
-      atom.tuple.push_back( createPredFromIdent(prednode.children[0+offset], prednode.children[2+offset].children.size()) ); // offset for naf, 1 for pred name, 1 for (
-      // =append
-      Tuple t = createTupleFromTerms(prednode.children[2+offset]);
-      // push back the id(s) for the term(s)	
-      atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
-    }
+      node_t userPredTuple = prednode.children[0+offset];
+      // test whether the first symbol is predicate...
+      if (islower(createStringFromNode(userPredTuple.children[0])[0]) ) 
+        { 
+          // push back the id for the predicate name	 
+          atom.tuple.push_back( createPredFromIdent(prednode.children[0+offset], prednode.children[2+offset].children.size()) ); // offset for naf, 1 for pred name, 1 for (
+          // =append
+          Tuple t = createTupleFromTerms(prednode.children[2+offset]);
+          // push back the id(s) for the term(s)	
+          atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
+        }
+      else // if the first is variables...
+        {
+          atom.tuple.push_back(createTermFromIdentVar(prednode.children[0+offset]));
+          // =append
+          Tuple t = createTupleFromTerms(prednode.children[2+offset]);
+          atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
+        }
+    } 
     break;
   case HexGrammar::UserPredTuple:
     {
@@ -498,7 +510,7 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
               atom.tuple.push_back(createTermFromTerm(*it));
             }
         }
-      else // if all are variables...
+      else // if the first is variables...
         {
           atom.tuple = createTupleFromTerms(userPredTuple);
         }
