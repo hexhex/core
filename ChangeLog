@@ -1,5 +1,9 @@
 2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/ModuleStar.cpp: Generate examples of star topology.
+	* generator/makefile: Likewise.
+	* generator/gen.sh: Likewise.
+
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Adapting terms and preds to mlp or not mlp.
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Put atom with second order variable in onatoms.
