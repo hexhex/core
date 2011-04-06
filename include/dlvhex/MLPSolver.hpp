@@ -198,7 +198,6 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
-    bool debugAS;
     bool printProgramInformation;
     bool writeLog;
     int nASReturned;
@@ -1218,414 +1217,375 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
+
   std::ostringstream oss;
 
+  // declare the stack
+  std::vector< int > stackStatus;
+  std::vector< ASPSolverManager::ResultsPtr > stackAnsRes;
+  std::vector< Interpretation > stackAns;
   std::vector< ValueCallsType > stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector< InterpretationPtr > stackM;
+  std::vector< VectorOfInterpretation > stackMFlag;
   std::vector< std::vector<IDSet> > stackA;
+  std::vector< RegistryPtr > stackRegistry;
+  std::vector< ModuleInstTable > stackMInst;
+  std::vector< ID > stackModuleSrcAtom;
+
   std::vector< Graph > stackCallGraph;
   std::vector< std::vector<std::string> > stackEdgeName;
-  std::vector< RegistryPtr > stackRegistry;
-  std::vector< VectorOfInterpretation > stackMFlag;
-  std::vector< ModuleInstTable > stackMInst;
-
+  
+  // push back the first element, 
+  // TODO: actually for status=0, do not need to do this
+  stackStatus.push_back(0);
   stackC.push_back(C);
-  stackPath.push_back(path);
-  InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-  *M2 = *M;
-  stackM.push_back(M2);
-  stackA.push_back(A);
-  stackCallGraph.push_back(callGraph);
-  stackEdgeName.push_back(edgeName);  
-
-  RegistryPtr R2(new Registry(*ctxSolver.registry()) );
-  stackRegistry.push_back( R2 );  
- 
-  stackMFlag.push_back(MFlag);
-
-  stackMInst.push_back(moduleInstTable);
-
+  int status = 0;
+  ID idAlpha;
   while (stackC.size()>0) 
     {
-
       C = stackC.back();
-      stackC.erase(stackC.end()-1);
+      status = stackStatus.back();
+      if ( status == 1 || status == 2)	
+	{
+	  ctrASFromDLV++;
+	  path = stackPath.back();
+	  *M = *stackM.back();
+	  MFlag = stackMFlag.back();
+	  A = stackA.back();
+	  RegistryPtr R2(new Registry(*stackRegistry.back() ));
+	  ctxSolver.changeRegistry(R2);
+	  M->setRegistry(ctxSolver.registry());
+	  moduleInstTable = stackMInst.back();
+	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
+	  Interpretation currAns = stackAns.back();
+          DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
+          DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
+          // union M and N
+	  M->add( currAns );
 
-      path = stackPath.back();
-      stackPath.erase(stackPath.end()-1);
+	  callGraph = stackCallGraph.back();
+	  edgeName = stackEdgeName.back();
 
-      *M = *stackM.back();
-      stackM.erase(stackM.end()-1);
+	  stackAns.erase(stackAns.end()-1);
+	  AnswerSet::Ptr ansBack = stackAnsRes.back()->getNextAnswerSet();
+	  if ( ansBack != 0 )
+            {
+	      stackAns.push_back(*(ansBack->interpretation));	
+	    }
+	  else
+	   {
+	      stackStatus.erase(stackStatus.end()-1);	
+	      stackAnsRes.erase(stackAnsRes.end()-1);	
+	      stackC.erase(stackC.end()-1);
+	      stackPath.erase(stackPath.end()-1);
+	      stackM.erase(stackM.end()-1);
+	      stackMFlag.erase(stackMFlag.end()-1);
+	      stackA.erase(stackA.end()-1);
+	      stackRegistry.erase(stackRegistry.end()-1);
+	      stackMInst.erase(stackMInst.end()-1);
+	      stackCallGraph.erase(stackCallGraph.end()-1);
+	      stackEdgeName.erase(stackEdgeName.end()-1);
+	      if ( status == 2) stackModuleSrcAtom.erase(stackModuleSrcAtom.end()-1);
+	    }	
+	  if ( status == 1 )
+	    { // from: recursion from part b
+	    }
+          else if ( status == 2 )
+	    { // from: recursion from part c
+	      // restriction and renaming
+	      // get the formal input paramater, tuple of predicate term
+              const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID( idAlpha);
+	      const Module& alphaJ = getModuleFromModuleAtom(alpha);
+	      Tuple formalInputs = ctxSolver.registry()->inputList.at(alphaJ.inputList);
+	      Tuple restrictT;
+	      Tuple newT;
+	      restrictionAndRenaming( currAns, alpha.inputs, formalInputs, restrictT, newT);
+	      DBGLOG(DBG,"[MLPSolver::comp] newT: " << printvector(newT));
+	  
+	      // defining Pj T
+	      InterpretationType intrNewT;
+	      createInterpretationFromTuple(ctxSolver, newT, intrNewT);
+	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
+	  
+	      // next: defining the new C and path
+	      resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
+	      resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
-      A = stackA.back();
-      stackA.erase(stackA.end()-1);
+	      if ( !MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
+	        {
+	        }
+	      else
+	        {
+		  // add the call graph here:
+		  const VCAddressIndex& idx = C.get<impl::AddressTag>();
+        	  VCAddressIndex::const_iterator it = idx.begin();
+        	  while ( it != idx.end() )
+        	    {
+		      boost::add_edge(*it, idxPjT, callGraph);
+		      // add edge name T here
+		      InterpretationType intrRestrictT;
+		      createInterpretationFromTuple(ctxSolver, restrictT, intrRestrictT);
+		      oss.str("");
+		      intrRestrictT.printWithoutPrefix(oss);
+		      edgeName.push_back(oss.str());
+        	      it++;  
+        	    } 
+		  path.push_back(C);		
+	  	  C.clear();
+		  C.push_back(idxPjT);
+		}
+	    } // if status==2
+        } // if status == 1 || status == 2
+      else if ( status == 0 )
+	{ // from the beginnning
+          stackC.erase(stackC.end()-1);
+	}
 
-      callGraph = stackCallGraph.back();
-      stackCallGraph.erase(stackCallGraph.end()-1);
-
-      edgeName = stackEdgeName.back();
-      stackEdgeName.erase(stackEdgeName.end()-1);
-
-      RegistryPtr R2(new Registry(*stackRegistry.back() ));
-      ctxSolver.changeRegistry(R2);
-      stackRegistry.erase(stackRegistry.end()-1);
-
-      M->setRegistry(ctxSolver.registry());
-
-      MFlag = stackMFlag.back();
-      stackMFlag.erase(stackMFlag.end()-1);
-
-      moduleInstTable = stackMInst.back();
-      stackMInst.erase(stackMInst.end()-1);
-
-// print path and C here?    
-		// print the C:
-              DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
-	      oss.str("");		
-	      printValueCallsType(oss, ctxSolver, C);
-              DBGLOG(INFO,oss.str());
-		// print the path:
-              DBGLOG(INFO,"[MLPSolver::comp] with path: ");
+      // print the C:
+      DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
+      oss.str("");		
+      printValueCallsType(oss, ctxSolver, C);
+      DBGLOG(INFO,oss.str());
+      // print the path:
+      DBGLOG(INFO,"[MLPSolver::comp] with path: ");
+      oss.str("");
+      printPath(oss,ctxSolver, path);
+      DBGLOG(INFO,oss.str());
+      // print the M:	
+      DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
+      // print the A:
+      DBGLOG(INFO,"[MLPSolver::comp] with A: ");
+      oss.str("");
+      printA(oss,ctxSolver, A);
+      DBGLOG(INFO,oss.str());
+      // int cint;
+      // std::cin >> cint;
+      ValueCallsType CPrev;
+      int PiSResult;
+      bool wasInLoop = false;
+      if ( foundCinPath(C, path, CPrev, PiSResult) )
+        {
+          DBGLOG(DBG, "[MLPSolver::comp] found value-call-loop in value calls");
+          /* not needed for i-stratified
+          if ( foundNotEmptyInst(C) ) 
+            {
+              DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
+	      DBGLOG(DBG, "[MLPSolver::comp] path: ");
 	      oss.str("");
 	      printPath(oss,ctxSolver, path);
-              DBGLOG(INFO,oss.str());
-		// print the M:	
-              DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
-		// print the A:
-              DBGLOG(INFO,"[MLPSolver::comp] with A: ");
-	      oss.str("");
-	      printA(oss,ctxSolver, A);
-              DBGLOG(INFO,oss.str());
-
-  ValueCallsType CPrev;
-  int PiSResult;
-  bool wasInLoop = false;
-  if ( foundCinPath(C, path, CPrev, PiSResult) )
-    {
-      DBGLOG(DBG, "[MLPSolver::comp] found value-call-loop in value calls");
-/*
-      if ( foundNotEmptyInst(C) ) 
-        {
-          DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C)");
-	  DBGLOG(DBG, "[MLPSolver::comp] path: ");
-	  oss.str("");
-	  printPath(oss,ctxSolver, path);
-	  DBGLOG(DBG, oss.str());
-	  throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
-          return false;
-        }
-*/
-      DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 1 passed");
-      ValueCallsType C2;
-      do 
-        {
-          C2 = path.back();
-          path.erase(path.end()-1);
-/*
-          if ( foundNotEmptyInst(C2) ) 
-            {
-              DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C2)");
+	      DBGLOG(DBG, oss.str());
 	      throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
               return false;
             }
-*/
-          DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 2 passed");
-          unionCtoFront(C, C2);
-          DBGLOG(DBG, "[MLPSolver::comp] C size after union: " << C.size());
-        }
-      while ( C2 != CPrev );
-      wasInLoop = true;
-    }
-  else 
-    {
-      DBGLOG(DBG, "[MLPSolver::comp] found no value-call-loop in value calls");
-    }
-  // in the rewrite, I have to create a new ProgramCtx
-  // should be resulted in one edb and idb
-  // contain a grounding inside
-  InterpretationPtr edbRewrite;
-  Tuple idbRewrite;
-  rewrite(C, edbRewrite, idbRewrite); 
-
-  DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
-  printEdbIdb(ctxSolver, edbRewrite, idbRewrite);
-  
-  if ( isOrdinary(idbRewrite) )
-    {
-      DBGLOG(DBG, "[MLPSolver::comp] enter isOrdinary");
-      if ( path.size() == 0 ) 
-        {
-          //printProgram(ctxSolver,edbRewrite, idbRewrite);
-          DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
-          // try to get the answer set:	
-	  int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
-          ASPSolverManager::ResultsPtr res;
-          solveAns(edbRewrite, idbRewrite, res);
-          AnswerSet::Ptr int0 = res->getNextAnswerSet();
-	  // get the current MFlag
-	  VectorOfInterpretation currMFlag = MFlag;
-          while (int0 !=0 )
+          */
+          DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 1 passed");
+          ValueCallsType C2;
+          do 
             {
-              MFlag = currMFlag;
-	      InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-	      *M2 = *M;
-	      // integrate the answer
-	      M2->add( *(int0->interpretation) );	      
-		ctrASFromDLV++;
-	      // set MFlag
-	      checkOgatomsSetMFlag(lastOgatomsSize);
-	      //rmv. inspectOgatomsSetMFlag();
-
-	      // collect the full answer set
-	      ctrAS++;
-	      oss.str("");
-	      DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
-	      printASinSlot(oss, ctxSolver.registry(), *M2);
-	      std::string asString = oss.str();
-	      std::cout << asString << std::endl;
-	      //rmv. std::cout << ctrAS << std::endl;
-	      DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-              // print the call graph
-	      oss.str("");		
-	      printCallGraph(oss, callGraph, asString);	
-	      DBGLOG(INFO, std::endl << " ==== call graph begin here ==== " << std::endl << ctrAS << ".dot" << std::endl << oss.str() << std::endl << " ==== call graph end here ==== ");
-	      if ( nASReturned > 0 && ctrAS == nASReturned) return true;
-	      if ( debugAS == true )
-		{
-	          int cinint;
-	          std::cin >> cinint;
- 	        }	
-
-  DBGLOG(INFO, "Instantiation information: "); 
-  std::ostringstream oss;
-  for (int i=0; i<moduleInstTable.size(); i++) 
-    {	
-      oss.str("");
-      oss << "m" << i << ": ";
-      printModuleInst(oss, ctxSolver.registry(), i);
-      DBGLOG(INFO, oss.str());
-    }
-  DBGLOG(INFO, "Registry information: "); 
-  DBGLOG(INFO, *ctxSolver.registry()); 
-
-	      // get the next answer set 
-              int0 = res->getNextAnswerSet();
-            } 
-	}
-      else
+              C2 = path.back();
+              path.erase(path.end()-1);
+              /* not needed for i-stratified
+              if ( foundNotEmptyInst(C2) ) 
+                {
+                  DBGLOG(DBG, "[MLPSolver::comp] not ic-stratified program because foundNotEmptyInst(C2)");
+	          throw FatalError("[MLPSolver::comp] Error: not c stratified program ");
+                  return false;
+                }
+              */
+              DBGLOG(DBG, "[MLPSolver::comp] ic-stratified test 2 passed");
+              unionCtoFront(C, C2);
+              DBGLOG(DBG, "[MLPSolver::comp] C size after union: " << C.size());
+            }
+          while ( C2 != CPrev );
+          wasInLoop = true;
+        } // if ( foundCinPath....
+      else 
         {
-          ValueCallsType C2 = path.back();
-          DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
-	  oss.str("");
-	  printPath(oss, ctxSolver, path);
-          DBGLOG(DBG,oss.str());
-          path.erase(path.end()-1);
-          DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
-	  oss.str("");
-	  printPath(oss, ctxSolver, path);
-          DBGLOG(DBG,oss.str());
-	  const VCAddressIndex& idx = C.get<impl::AddressTag>();
+          DBGLOG(DBG, "[MLPSolver::comp] found no value-call-loop in value calls");
+        }
+      InterpretationPtr edbRewrite;
+      Tuple idbRewrite;
+      rewrite(C, edbRewrite, idbRewrite); 
+
+      DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
+      printEdbIdb(ctxSolver, edbRewrite, idbRewrite);
+  
+      if ( isOrdinary(idbRewrite) )
+        {
+          DBGLOG(DBG, "[MLPSolver::comp] enter isOrdinary");
+          if ( path.size() == 0 ) 
+            {
+              //printProgram(ctxSolver,edbRewrite, idbRewrite);
+              DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
+              // try to get the answer set:	
+	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+              ASPSolverManager::ResultsPtr res;
+              solveAns(edbRewrite, idbRewrite, res);
+              AnswerSet::Ptr int0 = res->getNextAnswerSet();
+	      // get the current MFlag
+	      VectorOfInterpretation currMFlag = MFlag;
+              while (int0 !=0 )
+                {
+		  ctrASFromDLV++;
+                  MFlag = currMFlag;
+	          InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	          *M2 = *M;
+	          // integrate the answer
+	          M2->add( *(int0->interpretation) );	      
+	          // set MFlag
+	          checkOgatomsSetMFlag(lastOgatomsSize);
+
+	          // collect the full answer set
+	          ctrAS++;
+	          oss.str("");
+	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
+	          printASinSlot(oss, ctxSolver.registry(), *M2);
+	          std::string asString = oss.str();
+	          std::cout << asString << std::endl;
+	          //std::cout << ctrAS << std::endl;
+	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
+                  // print the call graph
+	          oss.str("");		
+	          printCallGraph(oss, callGraph, asString);	
+	          DBGLOG(INFO, std::endl << " ==== call graph begin here ==== " << std::endl << ctrAS << ".dot" << std::endl << oss.str() << std::endl << " ==== call graph end here ==== ");
+	          if ( nASReturned > 0 && ctrAS == nASReturned) return true;
+	          DBGLOG(INFO, "Instantiation information: "); 
+	          std::ostringstream oss;
+	          for (int i=0; i<moduleInstTable.size(); i++) 
+	            {	
+	              oss.str("");
+	              oss << "m" << i << ": ";
+	              printModuleInst(oss, ctxSolver.registry(), i);
+	              DBGLOG(INFO, oss.str());
+	            }
+	          DBGLOG(INFO, "Registry information: "); 
+	          DBGLOG(INFO, *ctxSolver.registry()); 
+
+	          // get the next answer set 
+                  int0 = res->getNextAnswerSet();
+                } // while (int0...
+	    } // if path.size == 0 ...
+          else
+            {
+              ValueCallsType C2 = path.back();
+              DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
+	      oss.str("");
+	      printPath(oss, ctxSolver, path);
+              DBGLOG(DBG,oss.str());
+              path.erase(path.end()-1);
+              DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
+	      oss.str("");
+	      printPath(oss, ctxSolver, path);
+              DBGLOG(DBG,oss.str());
+	      const VCAddressIndex& idx = C.get<impl::AddressTag>();
+              VCAddressIndex::const_iterator it = idx.begin();
+              while ( it != idx.end() )
+                {
+                  IDSet& t = A.at(*it);
+                  assignFin(t);
+                  it++;  
+                } 
+              // for all ans(newCtx) here
+              // try to get the answer set:	
+	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+              ASPSolverManager::ResultsPtr res;
+              solveAns(edbRewrite, idbRewrite, res);
+              checkOgatomsSetMFlag(lastOgatomsSize);
+
+	      // for the recursion part b
+	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
+	      if ( int0!=0 ) 
+	        {
+	          stackAns.push_back(*(int0->interpretation));	
+          	  stackAnsRes.push_back(res);
+          	  stackStatus.push_back(1);
+          	  stackC.push_back(C2);
+          	  stackPath.push_back(path);
+                  InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	          *M2 = *M;
+ 	  	  stackM.push_back(M2);
+	  	  stackMFlag.push_back(MFlag);
+	  	  stackA.push_back(A);
+                  RegistryPtr R2(new Registry(*ctxSolver.registry()) );
+	          stackRegistry.push_back( R2 );  
+	  	  stackMInst.push_back(moduleInstTable);
+
+	  	  stackCallGraph.push_back(callGraph);
+	  	  stackEdgeName.push_back(edgeName);
+	    	}	
+            } // else if path size = 0, else 
+        } // if isOrdinary ( idb... 
+      else // if not ordinary
+        {
+          DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
+          ID idAlpha = smallestILL(idbRewrite);
+          if ( idAlpha == ID_FAIL ) 
+	    {  // not i-stratified
+	      throw FatalError("[MLPSolver::comp] Error: not i stratified program; cannot find an all-prepared-input module atom");
+	      return false;
+	    }
+          const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID(idAlpha);
+          DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
+          // check the size of A
+          DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
+          DBGLOG(DBG, "[MLPSolver::comp] A size: " << A.size());
+          if ( A.size() < moduleInstTable.size() )  A.resize( moduleInstTable.size() );
+      
+          // loop over PiS in C, insert id into AiS
+          const VCAddressIndex& idx = C.get<impl::AddressTag>();
           VCAddressIndex::const_iterator it = idx.begin();
           while ( it != idx.end() )
             {
-              IDSet& t = A.at(*it);
-              assignFin(t);
+	      A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
               it++;  
             } 
-          // for all ans(newCtx) here
-          // try to get the answer set:	
-	  int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
-          ASPSolverManager::ResultsPtr res;
-          solveAns(edbRewrite, idbRewrite, res);
-          AnswerSet::Ptr int0 = res->getNextAnswerSet();
-	  // get the current MFlag
-	  VectorOfInterpretation currMFlag = MFlag;
+          // print the size of A:
+          //rmv. for (int i = 0; i<A.size();i++){
+          //rmv.  DBGLOG(DBG, "[MLPSolver::comp] A [" << i << "].size(): " << A.at(i).size() );
+          //rmv. }
+          Tuple bottom;
+          collectBottom(alpha, idbRewrite, bottom);
+          DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+          printEdbIdb(ctxSolver, edbRewrite, bottom);
 
-          while (int0 !=0 )
+          // get the module name
+          const Module& alphaJ = getModuleFromModuleAtom(alpha);
+          if (alphaJ.moduleName=="")
+	    {
+              DBGLOG(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
+	      return false;	
+	    }
+          DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
+
+          int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();	
+          // for all N in ans(bu(R))
+          // try to get the answer of the bottom:
+          ASPSolverManager::ResultsPtr res;
+          solveAns(edbRewrite, bottom, res);
+          checkOgatomsSetMFlag(lastOgatomsSize);
+          AnswerSet::Ptr int0 = res->getNextAnswerSet();
+          if ( int0!=0 ) 
             {
-	      MFlag = currMFlag;
-              DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
-	  
-	      // union M and N
+	      stackAns.push_back(*(int0->interpretation));	
+              stackAnsRes.push_back(res);
+              stackStatus.push_back(2);
+              stackC.push_back(C);
+              stackPath.push_back(path);
               InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
 	      *M2 = *M;
-	      M2->add( *(int0->interpretation) );
-	      ctrASFromDLV++;
-	      // set MFlag
-	      checkOgatomsSetMFlag(lastOgatomsSize);
-	      //rmv. inspectOgatomsSetMFlag();
-		
-	      if ( debugAS == true )
-		{ 
-	          int intcin;
-	          std::cin >> intcin;
-		}
-
-	      // converting from recursion to loop
-              stackC.push_back(C2);
-              stackPath.push_back(path);
-	      stackM.push_back(M2);
+ 	      stackM.push_back(M2);
+	      stackMFlag.push_back(MFlag);
 	      stackA.push_back(A);
+	      RegistryPtr R2(new Registry(*ctxSolver.registry()) );
+	      stackRegistry.push_back( R2 );  
+	      stackMInst.push_back(moduleInstTable);
+	      stackModuleSrcAtom.push_back(idAlpha);
 	      stackCallGraph.push_back(callGraph);
 	      stackEdgeName.push_back(edgeName);
-              RegistryPtr R2(new Registry(*ctxSolver.registry()) );
-	      stackRegistry.push_back( R2 );  
-	      stackMFlag.push_back(MFlag);
-	      stackMInst.push_back(moduleInstTable);
-//	      if (comp(C2) == false) return false;
-	
-	      // get the next answer set 
-              int0 = res->getNextAnswerSet();
-            }  // while answer set
-        } // if path size = 0, else 
-    } 
-  else // if not ordinary
-    {
-      DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
-      ID idAlpha = smallestILL(idbRewrite);
-      if ( idAlpha == ID_FAIL ) 
-	{  // not i-stratified
-	  throw FatalError("[MLPSolver::comp] Error: not i stratified program ");
-	  return false;
-	}
-      const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID(idAlpha);
-      DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
-      // check the size of A
-      DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
-      DBGLOG(DBG, "[MLPSolver::comp] A size: " << A.size());
-      if ( A.size() < moduleInstTable.size() )  A.resize( moduleInstTable.size() );
-      
-      // loop over PiS in C, insert id into AiS
-      const VCAddressIndex& idx = C.get<impl::AddressTag>();
-      VCAddressIndex::const_iterator it = idx.begin();
-      while ( it != idx.end() )
-        {
-	  A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
-          it++;  
-        } 
-      // print the size of A:
-      for (int i = 0; i<A.size();i++){
-        DBGLOG(DBG, "[MLPSolver::comp] A [" << i << "].size(): " << A.at(i).size() );
-      }
-      Tuple bottom;
-      collectBottom(alpha, idbRewrite, bottom);
-      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-      printEdbIdb(ctxSolver, edbRewrite, bottom);
-
-      // get the module name
-      const Module& alphaJ = getModuleFromModuleAtom(alpha);
-      if (alphaJ.moduleName=="")
-	{
-          DBGLOG(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
-	  return false;	
-	}
-      DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
-
-      // for all N in ans(bu(R))
-      // try to get the answer of the bottom:
-      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();	
-      ASPSolverManager::ResultsPtr res;
-      solveAns(edbRewrite, bottom, res);
-      AnswerSet::Ptr int0 = res->getNextAnswerSet();
-
-      RegistryPtr initialRegistry(new Registry(*ctxSolver.registry()) );
-      // get the current MFlag, and MInst
-      VectorOfInterpretation currMFlag = MFlag;
-      ModuleInstTable currMInst = moduleInstTable;
-      while (int0 !=0 )
-        {
-	  // set MFlag and mInst back
-	  MFlag = currMFlag;
-	  moduleInstTable = currMInst;
-	  // first set the Registry as before
-          RegistryPtr tempRegistry(new Registry(*initialRegistry) );
-          ctxSolver.changeRegistry(tempRegistry);
-
-          DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << *int0);
-	
-	  // restriction and renaming
-	  // get the formal input paramater, tuple of predicate term
-          Tuple formalInputs = ctxSolver.registry()->inputList.at(alphaJ.inputList);
-	  Tuple restrictT;
-	  Tuple newT;
-	  restrictionAndRenaming( *(int0->interpretation), alpha.inputs, formalInputs, restrictT, newT);
-	  DBGLOG(DBG,"[MLPSolver::comp] newT: " << printvector(newT));
-	  
-	  // defining Pj T
-	  InterpretationType intrNewT;
-	  createInterpretationFromTuple(ctxSolver, newT, intrNewT);
-	  int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
-	  
-	  // next: defining the new C and path
-	  resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
-	  resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
-
-	  ValueCallsType C2; 
-	  std::vector<ValueCallsType> path2 = path; /////// TODO: check this	
-          std::vector<std::string> edgeName2 = edgeName;
-	  Graph callGraph2 = callGraph;
-	  if ( !MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
-	    {
-	      C2 = C;
-	    }
-	  else
-	    {
-	      C2.push_back(idxPjT);
-	      path2.push_back(C);		
-	  	// add the call graph here:
-	  	const VCAddressIndex& idx = C.get<impl::AddressTag>();
-          	VCAddressIndex::const_iterator it = idx.begin();
-          	while ( it != idx.end() )
-          	{
-	  	  boost::add_edge(*it, idxPjT, callGraph2);
-		  // add edge name T here
-		  InterpretationType intrRestrictT;
-		  createInterpretationFromTuple(ctxSolver, restrictT, intrRestrictT);
-		  oss.str("");
-		  intrRestrictT.printWithoutPrefix(oss);
-		  edgeName2.push_back(oss.str());
-          	  it++;  
-          	} 
-	    }
-	  
-	  // union M and N
-          InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
-	  *M2 = *M;
-	  M2->add( *(int0->interpretation) );
-	  ctrASFromDLV++;
-	  // set MFlag
-	  checkOgatomsSetMFlag(lastOgatomsSize);
-	  //rmv. inspectOgatomsSetMFlag();
-
-	  // the recursion
-	  if (debugAS==true)
-	    {
-	      int intcin;
-	      std::cin >> intcin;
-	    }	
-
-          // push back for the conversion from recursion to loop
-   	  stackC.push_back(C2);
- 	  stackPath.push_back(path2);
-	  stackM.push_back(M2);
-	  stackA.push_back(A);
-	  stackCallGraph.push_back(callGraph2);
-	  stackEdgeName.push_back(edgeName2);
-
-	  RegistryPtr R2(new Registry(*ctxSolver.registry()) );
-	  stackRegistry.push_back( R2 );  
-
-	  stackMFlag.push_back(MFlag);
-	  stackMInst.push_back(moduleInstTable);
-
-//	  if ( comp(C2) == false ) return false;
-
-	  // get the next answer set 
-          int0 = res->getNextAnswerSet();
-        } // while   
-    } // else  (if ordinary ... else ...)
-  } // while stack is not empty
+            }
+        } // else  (if ordinary ... else ...)
+    } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
   return true;
 }
@@ -1686,7 +1646,6 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
 bool MLPSolver::solve()
 {
-  debugAS = false;
   printProgramInformation = false;
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
@@ -1700,10 +1659,12 @@ bool MLPSolver::solve()
     {
       A.clear();
       M->clear();
-      ctxSolver.changeRegistry(ctx.registry());	
-      DBGLOG(DBG, " ");
-      DBGLOG(DBG, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
-      DBGLOG(DBG, "[MLPSolver::solve] main module id inspected: " << *it);
+      RegistryPtr R2(new Registry( *ctx.registry() ));
+      ctxSolver.changeRegistry(R2);
+      moduleInstTable.clear();
+      DBGLOG(INFO, " ");
+      DBGLOG(INFO, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
+      DBGLOG(INFO, "[MLPSolver::solve] main module id inspected: " << *it);
       if ( comp(createValueCallsMainModule(*it)) == false ) 
 	{
   	  throw FatalError("MLP solve: comp() return false");

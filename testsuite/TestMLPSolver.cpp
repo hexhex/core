@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
 {
 
 #ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+  Logger::Instance().setPrintLevels(Logger::INFO | Logger::ERROR | Logger::WARNING);
 #endif
 
   LOG(DBG, " ");

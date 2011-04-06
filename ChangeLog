@@ -1,5 +1,10 @@
 2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Refactoring stack, store only once for each answer set result.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+	* examples/tests/module-EvenOddTwoMain.out: Likewise.
+	* examples/tests/module-EvenOdd.out: Likewise.
+
 	* src/dlvhex/dlvhex.cpp: Modify --n to --num
 
 2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
