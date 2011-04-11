@@ -1,3 +1,7 @@
+2010-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* examples/module-Complex.mlp: Adding an example for a more complex module call.
+
 2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/ModuleStar.cpp: Generate examples of star topology.
