@@ -1,5 +1,9 @@
 2010-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Optimization on ASPSolver object and printing information.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
 	* examples/module-Complex.mlp: Adding an example for a more complex module call.
 
 2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

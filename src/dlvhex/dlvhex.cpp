@@ -398,7 +398,9 @@ int main(int argc, char *argv[])
 			//rmv. std::cout << "before mlpSolver" << std::endl;
 			pctx.nASToBeReturned = pctx.config.getOption("NMLP");
 			pctx.mlpSolver();
-			
+			// std::cout << pctx.config.getOption("Verbose");
+			// int cint;
+			// std::cin >> cint;
 			//rmv. std::cout << "after mlpSolver" << std::endl;
 		  }
 

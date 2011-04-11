@@ -183,7 +183,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
     inline ID smallestILL(const Tuple& newRules);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
-    inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
+    //rmv.inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
     inline void createInterpretationFromTuple(const ProgramCtx& ctx1, const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
@@ -199,6 +199,7 @@ class DLVHEX_EXPORT MLPSolver{
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
     bool printProgramInformation;
+    int printLevel;
     bool writeLog;
     int nASReturned;
 
@@ -218,6 +219,7 @@ class DLVHEX_EXPORT MLPSolver{
     int ctrASFromDLV;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
+    inline void setPrintLevel(int level);
     inline bool solve(); // return false if the program is not ic-stratified
 
 };
@@ -229,6 +231,12 @@ void MLPSolver::setNASReturned(int n)
    {
      nASReturned = n;
    }
+}
+
+
+void MLPSolver::setPrintLevel(int level)
+{
+  printLevel = level;
 }
 
 
@@ -246,6 +254,7 @@ void MLPSolver::dataReset()
 
 
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
+  printLevel = 0;
   nASReturned = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
@@ -988,7 +997,7 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
 
 }
 
-
+/* rmv.
 void MLPSolver::solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result)
 {
   ASPSolver::DLVSoftware::Configuration config;
@@ -996,7 +1005,7 @@ void MLPSolver::solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolv
   ASPSolverManager mgr;
   result = mgr.solve(config, program);
 }
-
+*/
 
 // actualInputs: Tuple of predicate name (predicate term) in the module atom (caller)
 // formalInputs: Tuple of predicate name (predicate term) in the module list (module header)
@@ -1217,6 +1226,9 @@ const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
+  // for ASPSolver
+  ASPSolver::DLVSoftware::Configuration config;
+  ASPSolverManager mgr;
 
   std::ostringstream oss;
 
@@ -1263,10 +1275,11 @@ bool MLPSolver::comp(ValueCallsType C)
           DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
           // union M and N
 	  M->add( currAns );
-
-	  callGraph = stackCallGraph.back();
-	  edgeName = stackEdgeName.back();
-
+	  if ( printLevel & Logger::INFO != 0 )
+	    {
+	      callGraph = stackCallGraph.back();
+	      edgeName = stackEdgeName.back();
+	    }
 	  stackAns.erase(stackAns.end()-1);
 	  AnswerSet::Ptr ansBack = stackAnsRes.back()->getNextAnswerSet();
 	  if ( ansBack != 0 )
@@ -1284,8 +1297,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackA.erase(stackA.end()-1);
 	      stackRegistry.erase(stackRegistry.end()-1);
 	      stackMInst.erase(stackMInst.end()-1);
-	      stackCallGraph.erase(stackCallGraph.end()-1);
-	      stackEdgeName.erase(stackEdgeName.end()-1);
+	      if ( printLevel & Logger::INFO != 0 )
+	        {
+		  stackCallGraph.erase(stackCallGraph.end()-1);
+	          stackEdgeName.erase(stackEdgeName.end()-1);
+		}
 	      if ( status == 2) stackModuleSrcAtom.erase(stackModuleSrcAtom.end()-1);
 	    }	
 	  if ( status == 1 )
@@ -1317,20 +1333,23 @@ bool MLPSolver::comp(ValueCallsType C)
 	        }
 	      else
 	        {
-		  // add the call graph here:
-		  const VCAddressIndex& idx = C.get<impl::AddressTag>();
-        	  VCAddressIndex::const_iterator it = idx.begin();
-        	  while ( it != idx.end() )
-        	    {
-		      boost::add_edge(*it, idxPjT, callGraph);
-		      // add edge name T here
-		      InterpretationType intrRestrictT;
-		      createInterpretationFromTuple(ctxSolver, restrictT, intrRestrictT);
-		      oss.str("");
-		      intrRestrictT.printWithoutPrefix(oss);
-		      edgeName.push_back(oss.str());
-        	      it++;  
-        	    } 
+		  if ( printLevel & Logger::INFO != 0 )
+	            {
+                      // add the call graph here:
+		      const VCAddressIndex& idx = C.get<impl::AddressTag>();
+        	      VCAddressIndex::const_iterator it = idx.begin();
+        	      while ( it != idx.end() )
+        	        {
+		          boost::add_edge(*it, idxPjT, callGraph);
+		          // add edge name T here
+		          InterpretationType intrRestrictT;
+		          createInterpretationFromTuple(ctxSolver, restrictT, intrRestrictT);
+		          oss.str("");
+		          intrRestrictT.printWithoutPrefix(oss);
+		          edgeName.push_back(oss.str());
+        	          it++;  
+        	        }
+		     } 
 		  path.push_back(C);		
 	  	  C.clear();
 		  C.push_back(idxPjT);
@@ -1420,9 +1439,13 @@ bool MLPSolver::comp(ValueCallsType C)
               DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
               // try to get the answer set:	
 	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+
               ASPSolverManager::ResultsPtr res;
-              solveAns(edbRewrite, idbRewrite, res);
+	      ASPProgram program(ctxSolver.registry(), idbRewrite, edbRewrite, 0);
+	      res = mgr.solve(config, program);
+              //rmv. solveAns(edbRewrite, idbRewrite, res);
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
+
 	      // get the current MFlag
 	      VectorOfInterpretation currMFlag = MFlag;
               while (int0 !=0 )
@@ -1443,24 +1466,27 @@ bool MLPSolver::comp(ValueCallsType C)
 	          printASinSlot(oss, ctxSolver.registry(), *M2);
 	          std::string asString = oss.str();
 	          std::cout << asString << std::endl;
-	          //std::cout << ctrAS << std::endl;
+	          //rmv. std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-                  // print the call graph
-	          oss.str("");		
-	          printCallGraph(oss, callGraph, asString);	
-	          DBGLOG(INFO, std::endl << " ==== call graph begin here ==== " << std::endl << ctrAS << ".dot" << std::endl << oss.str() << std::endl << " ==== call graph end here ==== ");
+		  if (printLevel & Logger::INFO != 0)
+		    {
+                      // print the call graph
+	              oss.str("");		
+	              printCallGraph(oss, callGraph, asString);	
+	              DBGLOG(INFO, std::endl << " ==== call graph begin here ==== " << std::endl << ctrAS << ".dot" << std::endl << oss.str() << std::endl << " ==== call graph end here ==== ");
+	              DBGLOG(INFO, "Instantiation information: "); 
+	              std::ostringstream oss;
+	              for (int i=0; i<moduleInstTable.size(); i++) 
+	                {	
+	                  oss.str("");
+	                  oss << "m" << i << ": ";
+	                  printModuleInst(oss, ctxSolver.registry(), i);
+	                  DBGLOG(INFO, oss.str());
+	                }
+	              DBGLOG(INFO, "Registry information: "); 
+	              DBGLOG(INFO, *ctxSolver.registry()); 
+		    }	
 	          if ( nASReturned > 0 && ctrAS == nASReturned) return true;
-	          DBGLOG(INFO, "Instantiation information: "); 
-	          std::ostringstream oss;
-	          for (int i=0; i<moduleInstTable.size(); i++) 
-	            {	
-	              oss.str("");
-	              oss << "m" << i << ": ";
-	              printModuleInst(oss, ctxSolver.registry(), i);
-	              DBGLOG(INFO, oss.str());
-	            }
-	          DBGLOG(INFO, "Registry information: "); 
-	          DBGLOG(INFO, *ctxSolver.registry()); 
 
 	          // get the next answer set 
                   int0 = res->getNextAnswerSet();
@@ -1489,8 +1515,11 @@ bool MLPSolver::comp(ValueCallsType C)
               // for all ans(newCtx) here
               // try to get the answer set:	
 	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+
               ASPSolverManager::ResultsPtr res;
-              solveAns(edbRewrite, idbRewrite, res);
+	      ASPProgram program(ctxSolver.registry(), idbRewrite, edbRewrite, 0);
+	      res = mgr.solve(config, program);
+              //rmv. solveAns(edbRewrite, idbRewrite, res);
               checkOgatomsSetMFlag(lastOgatomsSize);
 
 	      // for the recursion part b
@@ -1510,9 +1539,11 @@ bool MLPSolver::comp(ValueCallsType C)
                   RegistryPtr R2(new Registry(*ctxSolver.registry()) );
 	          stackRegistry.push_back( R2 );  
 	  	  stackMInst.push_back(moduleInstTable);
-
-	  	  stackCallGraph.push_back(callGraph);
-	  	  stackEdgeName.push_back(edgeName);
+		  if ( printLevel & Logger::INFO != 0 )
+		    { 
+	  	      stackCallGraph.push_back(callGraph);
+	  	      stackEdgeName.push_back(edgeName);
+		    }
 	    	}	
             } // else if path size = 0, else 
         } // if isOrdinary ( idb... 
@@ -1561,10 +1592,14 @@ bool MLPSolver::comp(ValueCallsType C)
           int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();	
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
+
           ASPSolverManager::ResultsPtr res;
-          solveAns(edbRewrite, bottom, res);
-          checkOgatomsSetMFlag(lastOgatomsSize);
+	  ASPProgram program(ctxSolver.registry(), bottom, edbRewrite, 0);
+	  res = mgr.solve(config, program);
+          //rmv. solveAns(edbRewrite, bottom, res);
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
+
+          checkOgatomsSetMFlag(lastOgatomsSize);
           if ( int0!=0 ) 
             {
 	      stackAns.push_back(*(int0->interpretation));	
@@ -1581,8 +1616,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackRegistry.push_back( R2 );  
 	      stackMInst.push_back(moduleInstTable);
 	      stackModuleSrcAtom.push_back(idAlpha);
-	      stackCallGraph.push_back(callGraph);
-	      stackEdgeName.push_back(edgeName);
+	      if ( printLevel & Logger::INFO != 0 )
+		{
+	          stackCallGraph.push_back(callGraph);
+	          stackEdgeName.push_back(edgeName);
+		}
             }
         } // else  (if ordinary ... else ...)
     } // while stack is not empty
