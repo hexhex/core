@@ -1,5 +1,5 @@
-all: ModuleStar
+all: Module
 
-ModuleStar:
-	g++ ModuleStar.cpp -o ModuleStar
+Module:
+	g++ Module.cpp -o Module
 

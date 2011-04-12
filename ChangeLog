@@ -1,3 +1,8 @@
+2010-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Module.cpp: Generate example for line, star, and ring topology.
+	* generator/makefile: Likewise.
+
 2010-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Optimization on ASPSolver object and printing information.
