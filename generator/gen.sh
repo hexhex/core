@@ -6,58 +6,29 @@ if [ "$1" = "" ];
 		DLVHEX="dlvhex --mlp"
 
 		# 1st param setting		
-		numConstant=5
-		numPred=2
-		numHead=1
-		numBody=3
-		notProb=10
-		numRules=5
-		numModules=4
-		dirName="$1-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+		numConstant=$3
+		numPred=$4
+		numHead=$5
+		numBody=$6
+		notProb=$7
+		numRules=$8
+		numModules=$9
+		dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
 		mkdir -p $dirName
 		cd $dirName
 		
 		echo "" > run.sh
-		for i in {1..5}
+		for i in {1..10}
 		do
-			execution="$1 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i-"
+			execution="$1 $2 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i-"
 			../$execution
-			echo "$DLVHEX $dirName-i$i-All.mlp" >> run.sh
+			echo "/usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp > as-$dirName-i$i.log" >> run.sh
+			msg1='echo "'
+			msg2="$i instances(s) processed"
+			msg3='"'
+			echo "$msg1$msg2$msg3" >> run.sh
 		done
 
 		cd ..
-
-
-		# 2nd param setting
-		numConstant=10
-		numPred=4
-		numHead=2
-		numBody=4
-		notProb=20
-		numRules=5
-		numModules=6
-		dirName="$1-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
-		mkdir -p $dirName
-		cd $dirName
-		execution="$1 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-"
-		../$execution
-		cd ..
-
-
-		# 3rd param setting
-		numConstant=10
-		numPred=4
-		numHead=2
-		numBody=4
-		notProb=20
-		numRules=5
-		numModules=8
-		dirName="$1-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
-		mkdir -p $dirName
-		cd $dirName
-		execution="$1 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-"
-		../$execution
-		cd ..
-
 
 fi

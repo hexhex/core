@@ -1,5 +1,7 @@
 2010-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/gen.sh: Implement a more general script to generate examples.
+
 	* generator/Module.cpp: Generate example for line, star, and ring topology.
 	* generator/makefile: Likewise.
 
