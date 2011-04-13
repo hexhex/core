@@ -13,14 +13,23 @@ if [ "$1" = "" ];
 		notProb=$7
 		numRules=$8
 		numModules=$9
-		dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+		density=${10}
+		if [ "$2" = "random" ]
+			then
+				if [ "$density" = "" ];
+					then dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+					else dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules-d$density"
+				fi
+			else
+				dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+		fi
 		mkdir -p $dirName
 		cd $dirName
 		
 		echo "" > run.sh
 		for i in {1..10}
 		do
-			execution="$1 $2 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i-"
+			execution="$1.o $2 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i- $density"
 			../$execution
 			echo "(ulimit -v 262144 ; /usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp) 2>stats-$dirName-i$i.log 1>as-$dirName-i$i.log" >> run.sh
 			msg1='echo "'

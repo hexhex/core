@@ -1,5 +1,9 @@
 2010-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/gen.sh: Adding diamond and random topology.
+	* generator/Module.cpp: Likewise.
+	* generator/makefile: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Use registry for solve() rather than ctx.
 
 	* include/dlvhex/Logger.hpp: Printing additional statistical information.
