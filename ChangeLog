@@ -1,5 +1,7 @@
 2010-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Use registry for solve() rather than ctx.
+
 	* include/dlvhex/Logger.hpp: Printing additional statistical information.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* generator/gen.sh: Likewise.

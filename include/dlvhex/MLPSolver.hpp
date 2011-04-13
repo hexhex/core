@@ -155,7 +155,7 @@ class DLVHEX_EXPORT MLPSolver{
 
     // int lastSizeOgatoms;
     ProgramCtx ctx;
-    ProgramCtx ctxSolver;
+    RegistryPtr registrySolver;
     inline void dataReset();
     inline bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     inline int extractS(int PiS);
@@ -185,7 +185,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     //rmv.inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
-    inline void createInterpretationFromTuple(const ProgramCtx& ctx1, const Tuple& tuple, Interpretation& result);
+    inline void createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
 
     inline void resizeIfNeededMFlag(int idxPjT);
@@ -203,15 +203,15 @@ class DLVHEX_EXPORT MLPSolver{
     bool writeLog;
     int nASReturned;
 
-    inline void printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const; 
-    inline void printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const;
-    inline void printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const;
+    inline void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const; 
+    inline void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
+    inline void printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const;
     inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
     inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
     inline void printCallGraph(std::ostream& out, const Graph& graph, const std::string& graphLabel);
-    inline void printIdb(const ProgramCtx& ctx1, const Tuple& idb);
-    inline void printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
-    inline void printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb);
+    inline void printIdb(const RegistryPtr& reg1, const Tuple& idb);
+    inline void printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
+    inline void printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
 
   public:
     // std::vector<InterpretationPtr> AS;
@@ -242,11 +242,13 @@ void MLPSolver::setPrintLevel(int level)
 
 void MLPSolver::dataReset()
 {
-  ctxSolver.setupRegistryPluginContainer(ctx.registry());
+  //rmv. ctxSolver.setupRegistryPluginContainer(ctx.registry());
+  RegistryPtr R2(new Registry(*ctx.registry() ));
+  registrySolver = R2;
   sTable.clear();
   moduleInstTable.clear();
   A.clear();
-  M.reset( new Interpretation( ctxSolver.registry() ));
+  M.reset( new Interpretation( registrySolver ));
   MFlag.clear();
   path.clear();
 }
@@ -257,7 +259,9 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
   nASReturned = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
-  ctxSolver.setupRegistryPluginContainer(R2);
+  registrySolver = R2;
+  //rmv. ctxSolver.setupRegistryPluginContainer(R2);
+  
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
 }
@@ -357,7 +361,7 @@ void MLPSolver::unionCtoFront(ValueCallsType& C, const ValueCallsType& C2)
 std::string MLPSolver::getAtomTextFromTuple(const Tuple& tuple)
 {
   std::stringstream ss;
-  RawPrinter printer(ss, ctxSolver.registry());
+  RawPrinter printer(ss, registrySolver);
   Tuple::const_iterator it = tuple.begin();
   printer.print(*it);
   std::string predInsideName = ss.str();
@@ -386,29 +390,29 @@ ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
   bool og = false;
   if ( oldAtomID.isOrdinaryGroundAtom() )
     {
-      tbl = &ctxSolver.registry()->ogatoms;
+      tbl = &registrySolver->ogatoms;
       og = true;
     }
   else
     {
-      tbl = &ctxSolver.registry()->onatoms;
+      tbl = &registrySolver->onatoms;
     }
   // create the new atom (so that we do not rewrite the original one
   OrdinaryAtom atomRnew = tbl->getByID(oldAtomID);
   // access the predicate name
   ID& predR = atomRnew.tuple.front();
-  Predicate p = ctxSolver.registry()->preds.getByID(predR);
+  Predicate p = registrySolver->preds.getByID(predR);
   // rename the predicate name by <prefix> + <old name>
   std::stringstream ss;
   ss << "m" << idxM << MODULEINSTSEPARATOR;
   p.symbol = ss.str() + p.symbol;
   DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] " << p.symbol);
   // try to locate the new pred name
-  ID predNew = ctxSolver.registry()->preds.getIDByString(p.symbol);
+  ID predNew = registrySolver->preds.getIDByString(p.symbol);
   DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID predNew = " << predNew);
   if ( predNew == ID_FAIL )
     {
-      predNew = ctxSolver.registry()->preds.storeAndGetID(p);      
+      predNew = registrySolver->preds.storeAndGetID(p);      
       DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID predNew after FAIL = " << predNew);
     }
   // rewrite the predicate inside atomRnew	
@@ -440,10 +444,10 @@ ID MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, int idxM)
   ModuleAtom atomRnew = oldAtom;
   rewriteTuple(atomRnew.inputs, idxM);
   DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] After rewriting = " << atomRnew);
-  ID atomRnewID = ctxSolver.registry()->matoms.getIDByElement(atomRnew.predicate, atomRnew.inputs, atomRnew.outputAtom);
+  ID atomRnewID = registrySolver->matoms.getIDByElement(atomRnew.predicate, atomRnew.inputs, atomRnew.outputAtom);
   if ( atomRnewID == ID_FAIL )
     {
-      return ctxSolver.registry()->matoms.storeAndGetID(atomRnew);
+      return registrySolver->matoms.storeAndGetID(atomRnew);
     }
   return atomRnewID;
 }
@@ -456,11 +460,11 @@ ID MLPSolver::rewritePredicate(const Predicate& oldPred, int idxM)
   std::stringstream ss;
   ss << "m" << idxM << MODULEINSTSEPARATOR;
   predRnew.symbol = ss.str() + predRnew.symbol;
-  ID predFind = ctxSolver.registry()->preds.getIDByString(predRnew.symbol);
+  ID predFind = registrySolver->preds.getIDByString(predRnew.symbol);
   DBGLOG(DBG, "[MLPSolver::rewritePredicate] ID predFind = " << predFind);
   if (predFind == ID_FAIL)	
     {
-      predFind = ctxSolver.registry()->preds.storeAndGetID(predRnew);	
+      predFind = registrySolver->preds.storeAndGetID(predRnew);	
       DBGLOG(DBG, "[MLPSolver::rewritePredicate] ID predFind after FAIL = " << predFind);
     }
   return predFind;
@@ -496,9 +500,9 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite module atom = " << *it);
 	      if ( it->isLiteral() )
-                *it = ID::literalFromAtom( rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), idxM), it->isNaf() );
+                *it = ID::literalFromAtom( rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxM), it->isNaf() );
 	      else 
-                *it = rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), idxM);
+                *it = rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxM);
             }
         }
       else if ( it->isTerm() )
@@ -506,7 +510,7 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
           if ( it->isPredicateTerm() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite predicate term = " << *it);
-              *it = rewritePredicate(ctxSolver.registry()->preds.getByID(*it), idxM);
+              *it = rewritePredicate(registrySolver->preds.getByID(*it), idxM);
             }
         }
 
@@ -530,7 +534,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
       // check if the rule contain at least a module atom
       if ( itR->doesRuleContainModatoms() == true ) 
         {
-	  const Rule& r = ctxSolver.registry()->rules.getByID(*itR);
+	  const Rule& r = registrySolver->rules.getByID(*itR);
 	  Rule rNew = r;
 	  // iterate over the body of rules
 	  Tuple::iterator itB = rNew.body.begin();
@@ -544,9 +548,9 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		    { // if found
 		      // create the PjT	
 		      // first, get the module atom
-		      ModuleAtom ma = ctxSolver.registry()->matoms.getByID(*itB);
+		      ModuleAtom ma = registrySolver->matoms.getByID(*itB);
 		      // create the interpretation Mi/S
-		      InterpretationPtr newM(new Interpretation( ctxSolver.registry() )); 
+		      InterpretationPtr newM(new Interpretation( registrySolver )); 
 		      if ( MFlag.size()>instIdx )
 			{
 			  *newM = *M;	
@@ -558,12 +562,12 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 			}
 		      // get the module Pj using the predicate from the module input, get the formal input
                       Module m = getModuleFromModuleAtom(ma);
-		      Tuple formalInputs = ctxSolver.registry()->inputList.at(m.inputList);
+		      Tuple formalInputs = registrySolver->inputList.at(m.inputList);
 		      Tuple restrictT;
 		      Tuple newT;
 	  	      restrictionAndRenaming( *(newM), ma.inputs, formalInputs, restrictT, newT);  //  Mi/S restrict by p rename to q
 		      Interpretation intrNewT;
-		      createInterpretationFromTuple(ctxSolver, newT, intrNewT);	      
+		      createInterpretationFromTuple(registrySolver, newT, intrNewT);	      
 		      int idxPjT = addOrGetModuleIstantiation(m.moduleName, intrNewT);
 
 		      // get the outputAtom 
@@ -572,16 +576,16 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      bool og = false;	
 		      if ( outputAtom.isOrdinaryGroundAtom() )
 			{
-			  tbl = &ctxSolver.registry()->ogatoms;
+			  tbl = &registrySolver->ogatoms;
 			  og = true;
 			}
 		      else
-			tbl = &ctxSolver.registry()->onatoms;
+			tbl = &registrySolver->onatoms;
 		      const OrdinaryAtom& atomR = tbl->getByID(outputAtom);
 		      // create the new one
 		      OrdinaryAtom newOutputAtom = atomR;     	
                       ID& predR = newOutputAtom.tuple.front();
-                      Predicate p = ctxSolver.registry()->preds.getByID(predR);
+                      Predicate p = registrySolver->preds.getByID(predR);
 		      // remove the p1__
 		      p.symbol = p.symbol.substr( p.symbol.find(MODULEPREFIXSEPARATOR) + 2);
 		      // prefix it with m PjT___ + p2__
@@ -590,11 +594,11 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      p.symbol = ss.str();	
                       DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] p.symbol new = " << p.symbol);
                       // try to locate the new pred name
-                      ID predNew = ctxSolver.registry()->preds.getIDByString(p.symbol);
+                      ID predNew = registrySolver->preds.getIDByString(p.symbol);
                       DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] ID predNew = " << predNew);
                       if ( predNew == ID_FAIL )
                         {
-                          predNew = ctxSolver.registry()->preds.storeAndGetID(p);      
+                          predNew = registrySolver->preds.storeAndGetID(p);      
                           DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] ID predNew after FAIL = " << predNew);
                         }
                       // rewrite the predicate inside atomRnew	
@@ -623,7 +627,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] idxPjT = " << idxPjT);			
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MFlag size = " << MFlag.size());			
 	              Interpretation MjT = MFlag.at(idxPjT);
-		      MjT.setRegistry(ctxSolver.registry());
+		      MjT.setRegistry(registrySolver);
 		      // look at all atoms registered in MjT		      		
 		      Interpretation::Storage MjTAtoms = MjT.getStorage();
 		      Interpretation::Storage::enumerator itMjTAtoms = MjTAtoms.first();
@@ -642,7 +646,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 			  // if the atoms is set 
 			  if ( M->getFact(*itMjTAtoms) ) 
 			    { // check if the predicate name is as the same as the output atom
-			      OrdinaryAtom atomGround = ctxSolver.registry()->ogatoms.getByAddress(*itMjTAtoms);
+			      OrdinaryAtom atomGround = registrySolver->ogatoms.getByAddress(*itMjTAtoms);
 			      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] atomGround inspected = " << atomGround);
 			      if (atomGround.tuple.front() == newOutputAtom.tuple.front() ) 
 				{ // if the predicate = newOutputAtom, if yes:  edb->setFact(*itMjTAtoms);	
@@ -674,7 +678,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 	    {
               rNew.kind &= ID::PROPERTY_RULE_UNMODATOMS;
 	    }
-          ID rNewID = ctxSolver.registry()->rules.storeAndGetID(rNew);
+          ID rNewID = registrySolver->rules.storeAndGetID(rNew);
           // collect it in the idbResult
 	  *itR = rNewID;	
         }
@@ -687,7 +691,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 { 
   DBGLOG(DBG, "[MLPSolver::rewrite] enter ");
   // prepare edbResult
-  edbResult.reset(new Interpretation( ctxSolver.registry() ) ); 
+  edbResult.reset(new Interpretation( registrySolver ) ); 
   // prepare idbResult
   idbResult.clear();
   // loop over C
@@ -698,12 +702,12 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       // get the module idx and idx S
       int idxM = extractPi(*itC);
       int idxS = extractS(*itC);
-      Module m = ctxSolver.registry()->moduleTable.getByAddress(idxM);
+      Module m = registrySolver->moduleTable.getByAddress(idxM);
       //rmv. std::stringstream ss;
       //rmv. ss << "m" << *itC << MODULEINSTSEPARATOR;
       // rewrite the edb, get the edb pointed by m.edb
       DBGLOG(DBG, "[MLPSolver::rewrite] rewrite edb ");
-      InterpretationPtr edbTemp( new Interpretation(ctxSolver.registry()) );
+      InterpretationPtr edbTemp( new Interpretation(registrySolver) );
       edbTemp->add(*ctx.edbList.at(m.edb));
       // add S (from the instantiation) to the edb
       edbTemp->add( sTable.get<impl::AddressTag>().at(idxS) );
@@ -713,8 +717,8 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       while ( it!=bits.end() ) 
         {
 	  // get the atom that is pointed by *it (element of the edb)
-	  const OrdinaryAtom& atomR = ctxSolver.registry()->ogatoms.getByAddress(*it);
-	  ID atomRID = ctxSolver.registry()->ogatoms.getIDByTuple(atomR.tuple);
+	  const OrdinaryAtom& atomR = registrySolver->ogatoms.getByAddress(*it);
+	  ID atomRID = registrySolver->ogatoms.getIDByTuple(atomR.tuple);
 	  // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
 	  //rmv. ID atomRewrite = rewriteOrdinaryAtom(atomRID, ss.str());
 	  ID atomRewrite = rewriteOrdinaryAtom(atomRID, *itC);
@@ -744,14 +748,14 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       Tuple::iterator itT = idbTemp.begin();
       while (itT != idbTemp.end())
 	{
-	  const Rule& r = ctxSolver.registry()->rules.getByID(*itT);
+	  const Rule& r = registrySolver->rules.getByID(*itT);
 	  Rule rNew = r;
 	  // for each rule: body and head, rewrite it
 	  //rmv. rewriteTuple(rNew.head, ss.str());	
 	  //rmv. rewriteTuple(rNew.body, ss.str());
 	  rewriteTuple(rNew.head, *itC);	
 	  rewriteTuple(rNew.body, *itC);
-	  ID rNewID = ctxSolver.registry()->rules.storeAndGetID(rNew);
+	  ID rNewID = registrySolver->rules.storeAndGetID(rNew);
           // collect it in the idbResult
 	  idbResult.push_back(rNewID);
 	  itT++;
@@ -814,7 +818,7 @@ void MLPSolver::findAllModulesAtom(const Tuple& newRules, Tuple& result)
     { 
       if ( it->doesRuleContainModatoms() == true )
         { // get the rule only if it contains module atoms 
-          const Rule& r = ctxSolver.registry()->rules.getByID(*it);
+          const Rule& r = registrySolver->rules.getByID(*it);
           // iterate over body, assume that the module atom only exist in the body	
           Tuple::const_iterator lit = r.body.begin(); 	
           while ( lit != r.body.end() )	
@@ -842,12 +846,12 @@ bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
           {
             if ( (*itRH).isOrdinaryGroundAtom() )
               {
-                const OrdinaryAtom& atom = ctxSolver.registry()->ogatoms.getByID(*itRH);
+                const OrdinaryAtom& atom = registrySolver->ogatoms.getByID(*itRH);
                 if ( id == atom.tuple.front() ) return true;
               }
             else if ( (*itRH).isOrdinaryNongroundAtom() )
               {
-                const OrdinaryAtom& atom = ctxSolver.registry()->onatoms.getByID(*itRH);
+                const OrdinaryAtom& atom = registrySolver->onatoms.getByID(*itRH);
                 if ( id == atom.tuple.front() ) return true;
               }
           }
@@ -875,7 +879,7 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
       Tuple::const_iterator it = rules.begin();
       while ( it != rules.end() )
         {
-          const Rule& r = ctxSolver.registry()->rules.getByID(*it);
+          const Rule& r = registrySolver->rules.getByID(*it);
           if ( containsIDRuleHead(predicate, r.head) ) 
             { // if this rule defined the predicate, 
 	      // look into the result, if not found, push it; 
@@ -892,11 +896,11 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
 		    {
 		      if (itB->isOrdinaryGroundAtom() ) 
 		        {
-		          tbl = &ctxSolver.registry()->ogatoms;
+		          tbl = &registrySolver->ogatoms;
 		        }
 		      else
 		        {
-		          tbl = &ctxSolver.registry()->onatoms;
+		          tbl = &registrySolver->onatoms;
 		        }
 		      const OrdinaryAtom& oa = tbl->getByID(*itB);
 		      collectAllRulesDefined(oa.tuple.front(), rules, predsSearched, rulesResult);
@@ -917,7 +921,7 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
 bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 {
   DBGLOG(DBG, "[MLPSolver::allPrepared] enter with module atom: " << moduleAtom);
-  const ModuleAtom& m = ctxSolver.registry()->matoms.getByID(moduleAtom);
+  const ModuleAtom& m = registrySolver->matoms.getByID(moduleAtom);
 
   Tuple predsSearched;
   Tuple result;
@@ -943,7 +947,7 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 ID MLPSolver::smallestILL(const Tuple& newRules)
 {
   DBGLOG(DBG, "[MLPSolver::smallestILL] enter to find the smallest ILL in: ");
-  printIdb(ctxSolver, newRules);
+  printIdb(registrySolver, newRules);
 
   Tuple modAtoms;
   findAllModulesAtom(newRules, modAtoms);
@@ -993,7 +997,7 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
 void MLPSolver::solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result)
 {
   ASPSolver::DLVSoftware::Configuration config;
-  ASPProgram program(ctxSolver.registry(), idb, edb, 0);
+  ASPProgram program(registrySolver, idb, edb, 0);
   ASPSolverManager mgr;
   result = mgr.solve(config, program);
 }
@@ -1015,7 +1019,7 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
   Interpretation::Storage::enumerator it = bits.first();
   while ( it!=bits.end() ) 
     {
-      const OrdinaryAtom& atomR = ctxSolver.registry()->ogatoms.getByAddress(*it);
+      const OrdinaryAtom& atomR = registrySolver->ogatoms.getByAddress(*it);
       DBGLOG(DBG,"[MLPSolver::restrictionAndRenaming] atom in the interpretation: " << atomR);
       // get the predicate name of the atom	
       ID predName = atomR.tuple.front();  
@@ -1027,7 +1031,7 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
         {
           if (*itA == predName) 
             { // if found in the actual input restriction
-	      resultRestriction.push_back(ctxSolver.registry()->ogatoms.getIDByString(atomR.text));
+	      resultRestriction.push_back(registrySolver->ogatoms.getIDByString(atomR.text));
 	      OrdinaryAtom atomRnew = atomR; 
       	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomR: " << atomR);
       	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomRnew: " << atomRnew);
@@ -1036,11 +1040,11 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
 	      atomRnew.text = getAtomTextFromTuple(atomRnew.tuple);
       	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] atomRnew after renaming: " << atomRnew);
 	      // store in the ogatoms
-              ID id = ctxSolver.registry()->ogatoms.getIDByTuple(atomRnew.tuple);
+              ID id = registrySolver->ogatoms.getIDByTuple(atomRnew.tuple);
       	      DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] id found: " << id);
 	      if ( id == ID_FAIL ) 
 		{
-		  id = ctxSolver.registry()->ogatoms.storeAndGetID(atomRnew);
+		  id = registrySolver->ogatoms.storeAndGetID(atomRnew);
 		  DBGLOG(DBG, "[MLPSolver::restrictionAndRenaming] id after storing: " << id);
 		}
 	      resultRenaming.push_back(id);
@@ -1054,9 +1058,9 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
 }
 
 
-void MLPSolver::createInterpretationFromTuple(const ProgramCtx& ctx1, const Tuple& tuple, Interpretation& result)
+void MLPSolver::createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result)
 {
-  result.setRegistry(ctx1.registry());
+  result.setRegistry(reg1);
   result.clear();
   // iterate over the tuple of fact, create a new interpretation s
   Tuple::const_iterator it = tuple.begin();
@@ -1082,7 +1086,7 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const I
   MLPSolver::ITElementIndex::iterator itS = sTable.get<impl::ElementTag>().find(s);
 
   // get the module index
-  int idxModule = ctxSolver.registry()->moduleTable.getAddressByName(moduleName);
+  int idxModule = registrySolver->moduleTable.getAddressByName(moduleName);
   ModuleInst PiS(idxModule, sTable.project<impl::AddressTag>(itS) - sTable.get<impl::AddressTag>().begin() );
 
   DBGLOG(DBG, "[MLPSolver::addOrGetModuleIstantiation] PiS.idxModule = " << PiS.idxModule);
@@ -1136,12 +1140,12 @@ void MLPSolver::resizeIfNeededA(int idxPjT)
 
 void MLPSolver::checkOgatomsSetMFlag(int lastIndex)
 {
-  if ( ctxSolver.registry()->ogatoms.getSize() > lastIndex )
+  if ( registrySolver->ogatoms.getSize() > lastIndex )
     {
-      for (int i = lastIndex-1; i < ctxSolver.registry()->ogatoms.getSize(); i++)
+      for (int i = lastIndex-1; i < registrySolver->ogatoms.getSize(); i++)
         {
-	  const OrdinaryAtom& og = ctxSolver.registry()->ogatoms.getByAddress(i);
-	  std::string predName = ctxSolver.registry()->preds.getByID(og.tuple.front()).symbol;
+	  const OrdinaryAtom& og = registrySolver->ogatoms.getByAddress(i);
+	  std::string predName = registrySolver->preds.getByID(og.tuple.front()).symbol;
 	  int n = predName.find( MODULEINSTSEPARATOR );
 	  if ( n == std::string::npos )
 	    { // not found, nothing happen
@@ -1163,13 +1167,13 @@ void MLPSolver::checkOgatomsSetMFlag(int lastIndex)
 /*
 void MLPSolver::inspectOgatomsSetMFlag()
 {
-//  if ( ctxSolver.registry()->ogatoms.getSize() > lastSizeOgatoms )
+//  if ( registrySolver->ogatoms.getSize() > lastSizeOgatoms )
   //  {
-    //  for (int i = lastSizeOgatoms-1; i < ctxSolver.registry()->ogatoms.getSize(); i++)
-      for (int i = 0; i < ctxSolver.registry()->ogatoms.getSize(); i++)
+    //  for (int i = lastSizeOgatoms-1; i < registrySolver->ogatoms.getSize(); i++)
+      for (int i = 0; i < registrySolver->ogatoms.getSize(); i++)
 	{
-	  const OrdinaryAtom& og = ctxSolver.registry()->ogatoms.getByAddress(i);
-	  std::string predName = ctxSolver.registry()->preds.getByID(og.tuple.front()).symbol;
+	  const OrdinaryAtom& og = registrySolver->ogatoms.getByAddress(i);
+	  std::string predName = registrySolver->preds.getByID(og.tuple.front()).symbol;
 	  int n = predName.find( MODULEINSTSEPARATOR );
 	  if ( n == std::string::npos )
 	    { // not found, nothing happen
@@ -1190,7 +1194,7 @@ void MLPSolver::inspectOgatomsSetMFlag()
 		}
 	    }
 	}
-//      lastSizeOgatoms = ctxSolver.registry()->ogatoms.getSize();
+//      lastSizeOgatoms = registrySolver->ogatoms.getSize();
 //    }
 }
 */
@@ -1207,11 +1211,11 @@ bool MLPSolver::containFinA(int idxPjT)
 
 const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 {
-  std::string modName = ctxSolver.registry()->preds.getByID(alpha.predicate).symbol;
+  std::string modName = registrySolver->preds.getByID(alpha.predicate).symbol;
   // for MODULEPREFIXSEPARATOR, see include/dlvhex/module.hpp
   modName = modName.substr( modName.find(MODULEPREFIXSEPARATOR) + 2);
   // get the module 
-  return ctxSolver.registry()->moduleTable.getModuleByName(modName);
+  return registrySolver->moduleTable.getModuleByName(modName);
 }
 
 
@@ -1258,8 +1262,9 @@ bool MLPSolver::comp(ValueCallsType C)
 	  MFlag = stackMFlag.back();
 	  A = stackA.back();
 	  RegistryPtr R2(new Registry(*stackRegistry.back() ));
-	  ctxSolver.changeRegistry(R2);
-	  M->setRegistry(ctxSolver.registry());
+	  //rmv. ctxSolver.changeRegistry(R2);
+	  registrySolver = R2;
+	  M->setRegistry(registrySolver);
 	  moduleInstTable = stackMInst.back();
 	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
 	  Interpretation currAns = stackAns.back();
@@ -1303,9 +1308,9 @@ bool MLPSolver::comp(ValueCallsType C)
 	    { // from: recursion from part c
 	      // restriction and renaming
 	      // get the formal input paramater, tuple of predicate term
-              const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID( idAlpha);
+              const ModuleAtom& alpha = registrySolver->matoms.getByID( idAlpha);
 	      const Module& alphaJ = getModuleFromModuleAtom(alpha);
-	      Tuple formalInputs = ctxSolver.registry()->inputList.at(alphaJ.inputList);
+	      Tuple formalInputs = registrySolver->inputList.at(alphaJ.inputList);
 	      Tuple restrictT;
 	      Tuple newT;
 	      restrictionAndRenaming( currAns, alpha.inputs, formalInputs, restrictT, newT);
@@ -1313,7 +1318,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  
 	      // defining Pj T
 	      InterpretationType intrNewT;
-	      createInterpretationFromTuple(ctxSolver, newT, intrNewT);
+	      createInterpretationFromTuple(registrySolver, newT, intrNewT);
 	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
 	  
 	      // next: defining the new C and path
@@ -1335,7 +1340,7 @@ bool MLPSolver::comp(ValueCallsType C)
 		          boost::add_edge(*it, idxPjT, callGraph);
 		          // add edge name T here
 		          InterpretationType intrRestrictT;
-		          createInterpretationFromTuple(ctxSolver, restrictT, intrRestrictT);
+		          createInterpretationFromTuple(registrySolver, restrictT, intrRestrictT);
 		          oss.str("");
 		          intrRestrictT.printWithoutPrefix(oss);
 		          edgeName.push_back(oss.str());
@@ -1356,19 +1361,19 @@ bool MLPSolver::comp(ValueCallsType C)
       // print the C:
       DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
       oss.str("");		
-      printValueCallsType(oss, ctxSolver, C);
+      printValueCallsType(oss, registrySolver, C);
       DBGLOG(INFO,oss.str());
       // print the path:
       DBGLOG(INFO,"[MLPSolver::comp] with path: ");
       oss.str("");
-      printPath(oss,ctxSolver, path);
+      printPath(oss,registrySolver, path);
       DBGLOG(INFO,oss.str());
       // print the M:	
       DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
       // print the A:
       DBGLOG(INFO,"[MLPSolver::comp] with A: ");
       oss.str("");
-      printA(oss,ctxSolver, A);
+      printA(oss,registrySolver, A);
       DBGLOG(INFO,oss.str());
       // int cint;
       // std::cin >> cint;
@@ -1420,7 +1425,7 @@ bool MLPSolver::comp(ValueCallsType C)
       rewrite(C, edbRewrite, idbRewrite); 
 
       DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
-      printEdbIdb(ctxSolver, edbRewrite, idbRewrite);
+      printEdbIdb(registrySolver, edbRewrite, idbRewrite);
   
       if ( isOrdinary(idbRewrite) )
         {
@@ -1430,10 +1435,10 @@ bool MLPSolver::comp(ValueCallsType C)
               //printProgram(ctxSolver,edbRewrite, idbRewrite);
               DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
               // try to get the answer set:	
-	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+	      int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
-	      ASPProgram program(ctxSolver.registry(), idbRewrite, edbRewrite, 0);
+	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
               //rmv. solveAns(edbRewrite, idbRewrite, res);
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
@@ -1444,7 +1449,7 @@ bool MLPSolver::comp(ValueCallsType C)
                 {
 		  ctrASFromDLV++;
                   MFlag = currMFlag;
-	          InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+	          InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
 	          // integrate the answer
 	          M2->add( *(int0->interpretation) );	      
@@ -1455,12 +1460,12 @@ bool MLPSolver::comp(ValueCallsType C)
 	          ctrAS++;
 	          oss.str("");
 	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
-	          printASinSlot(oss, ctxSolver.registry(), *M2);
+	          printASinSlot(oss, registrySolver, *M2);
 	          std::string asString = oss.str();
-	          std::cout << asString << std::endl;
-	          //rmv. std::cout << ctrAS << std::endl;
+	          //std::cout << asString << std::endl;
+	          std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-	          DBGLOG(STATS, std::endl << ctrAS << std::endl << ctxSolver.registry()->ogatoms.getSize() << std::endl << moduleInstTable.size());
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << registrySolver->ogatoms.getSize() << std::endl << moduleInstTable.size());
 		  if (printLevel & Logger::INFO != 0)
 		    {
                       // print the call graph
@@ -1473,11 +1478,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	                {	
 	                  oss.str("");
 	                  oss << "m" << i << ": ";
-	                  printModuleInst(oss, ctxSolver.registry(), i);
+	                  printModuleInst(oss, registrySolver, i);
 	                  DBGLOG(INFO, oss.str());
 	                }
 	              DBGLOG(INFO, "Registry information: "); 
-	              DBGLOG(INFO, *ctxSolver.registry()); 
+	              DBGLOG(INFO, *registrySolver); 
 		    }	
 	          if ( nASReturned > 0 && ctrAS == nASReturned) return true;
 
@@ -1490,12 +1495,12 @@ bool MLPSolver::comp(ValueCallsType C)
               ValueCallsType C2 = path.back();
               DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
 	      oss.str("");
-	      printPath(oss, ctxSolver, path);
+	      printPath(oss, registrySolver, path);
               DBGLOG(DBG,oss.str());
               path.erase(path.end()-1);
               DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
 	      oss.str("");
-	      printPath(oss, ctxSolver, path);
+	      printPath(oss, registrySolver, path);
               DBGLOG(DBG,oss.str());
 	      const VCAddressIndex& idx = C.get<impl::AddressTag>();
               VCAddressIndex::const_iterator it = idx.begin();
@@ -1507,10 +1512,10 @@ bool MLPSolver::comp(ValueCallsType C)
                 } 
               // for all ans(newCtx) here
               // try to get the answer set:	
-	      int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();
+	      int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
-	      ASPProgram program(ctxSolver.registry(), idbRewrite, edbRewrite, 0);
+	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
               //rmv. solveAns(edbRewrite, idbRewrite, res);
               checkOgatomsSetMFlag(lastOgatomsSize);
@@ -1524,12 +1529,12 @@ bool MLPSolver::comp(ValueCallsType C)
           	  stackStatus.push_back(1);
           	  stackC.push_back(C2);
           	  stackPath.push_back(path);
-                  InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+                  InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
  	  	  stackM.push_back(M2);
 	  	  stackMFlag.push_back(MFlag);
 	  	  stackA.push_back(A);
-                  RegistryPtr R2(new Registry(*ctxSolver.registry()) );
+                  RegistryPtr R2(new Registry(*registrySolver) );
 	          stackRegistry.push_back( R2 );  
 	  	  stackMInst.push_back(moduleInstTable);
 		  if ( printLevel & Logger::INFO != 0 )
@@ -1549,7 +1554,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      throw FatalError("[MLPSolver::comp] Error: not i stratified program; cannot find an all-prepared-input module atom");
 	      return false;
 	    }
-          const ModuleAtom& alpha = ctxSolver.registry()->matoms.getByID(idAlpha);
+          const ModuleAtom& alpha = registrySolver->matoms.getByID(idAlpha);
           DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
           // check the size of A
           DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
@@ -1571,7 +1576,7 @@ bool MLPSolver::comp(ValueCallsType C)
           Tuple bottom;
           collectBottom(alpha, idbRewrite, bottom);
           DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-          printEdbIdb(ctxSolver, edbRewrite, bottom);
+          printEdbIdb(registrySolver, edbRewrite, bottom);
 
           // get the module name
           const Module& alphaJ = getModuleFromModuleAtom(alpha);
@@ -1582,12 +1587,12 @@ bool MLPSolver::comp(ValueCallsType C)
 	    }
           DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
 
-          int lastOgatomsSize = ctxSolver.registry()->ogatoms.getSize();	
+          int lastOgatomsSize = registrySolver->ogatoms.getSize();	
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
 
           ASPSolverManager::ResultsPtr res;
-	  ASPProgram program(ctxSolver.registry(), bottom, edbRewrite, 0);
+	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
 	  res = mgr.solve(config, program);
           //rmv. solveAns(edbRewrite, bottom, res);
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
@@ -1600,12 +1605,12 @@ bool MLPSolver::comp(ValueCallsType C)
               stackStatus.push_back(2);
               stackC.push_back(C);
               stackPath.push_back(path);
-              InterpretationPtr M2(new Interpretation(ctxSolver.registry()));
+              InterpretationPtr M2(new Interpretation(registrySolver));
 	      *M2 = *M;
  	      stackM.push_back(M2);
 	      stackMFlag.push_back(MFlag);
 	      stackA.push_back(A);
-	      RegistryPtr R2(new Registry(*ctxSolver.registry()) );
+	      RegistryPtr R2(new Registry(*registrySolver) );
 	      stackRegistry.push_back( R2 );  
 	      stackMInst.push_back(moduleInstTable);
 	      stackModuleSrcAtom.push_back(idAlpha);
@@ -1626,12 +1631,12 @@ std::vector<int> MLPSolver::foundMainModules()
 { 
   std::vector<int> result;
   ModuleTable::AddressIterator itBegin, itEnd;
-  boost::tie(itBegin, itEnd) = ctxSolver.registry()->moduleTable.getAllByAddress();
+  boost::tie(itBegin, itEnd) = registrySolver->moduleTable.getAllByAddress();
   int ctr = 0;
   while ( itBegin != itEnd )
     {
       Module module = *itBegin;
-      if ( ctxSolver.registry()->inputList.at(module.inputList).size() == 0 )
+      if ( registrySolver->inputList.at(module.inputList).size() == 0 )
         {
           result.push_back(ctr);
         }
@@ -1647,7 +1652,7 @@ std::vector<int> MLPSolver::foundMainModules()
 MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 {
   // create a new, empty interpretation s
-  InterpretationType s(ctxSolver.registry());
+  InterpretationType s(registrySolver);
   // find [] in the sTable
   MLPSolver::ITElementIndex::iterator itIndex = sTable.get<impl::ElementTag>().find(s);
   // if it is not exist, insert [] into the sTable
@@ -1692,7 +1697,8 @@ bool MLPSolver::solve()
       A.clear();
       M->clear();
       RegistryPtr R2(new Registry( *ctx.registry() ));
-      ctxSolver.changeRegistry(R2);
+      //rmv. ctxSolver.changeRegistry(R2);
+      registrySolver = R2;
       moduleInstTable.clear();
       DBGLOG(INFO, " ");
       DBGLOG(INFO, "[MLPSolver::solve] ==================== main module solve ctr: ["<< i << "] ==================================");
@@ -1713,12 +1719,12 @@ bool MLPSolver::solve()
     {	
       oss.str("");
       oss << "m" << i << ": ";
-      printModuleInst(oss, ctxSolver.registry(), i);
+      printModuleInst(oss, registrySolver, i);
       DBGLOG(INFO, oss.str());
     }
 
   DBGLOG(INFO, "Registry information: "); 
-  DBGLOG(INFO, *ctxSolver.registry()); 
+  DBGLOG(INFO, *registrySolver); 
 */
   DBGLOG(INFO, "[MLPSolver::solve] finished");
   
@@ -1782,7 +1788,7 @@ bool MLPSolver::solve()
 }
 
 
-void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& ctx1, const ValueCallsType& C) const 
+void MLPSolver::printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const 
 {
   oss << "{ ";
   const VCAddressIndex& idx = C.get<impl::AddressTag>();
@@ -1791,9 +1797,9 @@ void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& c
   while ( it != idx.end() )
     {
       ModuleInst mi = moduleInstTable.at(*it);
-      std::string moduleName = ctx1.registry()->moduleTable.getByAddress(mi.idxModule).moduleName;
+      std::string moduleName = reg1->moduleTable.getByAddress(mi.idxModule).moduleName;
       Interpretation s = sTable.at(mi.idxS);
-      s.setRegistry(ctx1.registry());
+      s.setRegistry(reg1);
       if ( first == false ) oss << ", ";
       oss << moduleName << "[" << s << "]";
       it++;
@@ -1803,21 +1809,21 @@ void MLPSolver::printValueCallsType(std::ostringstream& oss, const ProgramCtx& c
 }
 
 
-void MLPSolver::printPath(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<ValueCallsType>& path) const 
+void MLPSolver::printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const 
 {
   std::vector<ValueCallsType>::const_iterator it = path.begin();
   while ( it != path.end() )
     {
-      printValueCallsType(oss, ctx1, *it);
+      printValueCallsType(oss, reg1, *it);
       it++;
       if (it != path.end() ) oss << std::endl;
     }
 }
 
 
-void MLPSolver::printA(std::ostringstream& oss, const ProgramCtx& ctx1, const std::vector<IDSet>& A) const
+void MLPSolver::printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const
 {
-  RawPrinter printer(oss, ctx1.registry());
+  RawPrinter printer(oss, reg1);
 
   std::vector<IDSet>::const_iterator it = A.begin();
   int i=0;
@@ -1899,7 +1905,7 @@ void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std:
   for (int i=0;i<moduleInstTable.size();i++)
     {
       ss.str("");
-      printModuleInst(ss, ctxSolver.registry(), i);
+      printModuleInst(ss, registrySolver, i);
       vertexName[i] = ss.str();
     }
   // print the preliminary
@@ -1934,12 +1940,12 @@ void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std:
 }
 
 
-void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
+void MLPSolver::printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb)
 {
   if ( printProgramInformation == true )
     {
-  	DBGLOG(DBG, *ctx1.registry()); 
-  	RawPrinter printer(std::cerr, ctx1.registry());
+  	DBGLOG(DBG, *reg1); 
+  	RawPrinter printer(std::cerr, reg1);
       	Interpretation::Storage bits = edb->getStorage();
       	Interpretation::Storage::enumerator it = bits.first();
       	while ( it!=bits.end() ) 
@@ -1956,11 +1962,11 @@ void MLPSolver::printProgram(const ProgramCtx& ctx1, const InterpretationPtr& ed
 }
 
 
-void MLPSolver::printIdb(const ProgramCtx& ctx1, const Tuple& idb)
+void MLPSolver::printIdb(const RegistryPtr& reg1, const Tuple& idb)
 {
   if ( printProgramInformation == true ) 
     {
-	RawPrinter printer(std::cerr, ctx1.registry());
+	RawPrinter printer(std::cerr, reg1);
  	DBGLOG(DBG, "idb begin"); 
   	printer.printmany(idb,"\n"); 
   	std::cerr << std::endl; 
@@ -1968,12 +1974,12 @@ void MLPSolver::printIdb(const ProgramCtx& ctx1, const Tuple& idb)
     }
 }
 
-void MLPSolver::printEdbIdb(const ProgramCtx& ctx1, const InterpretationPtr& edb, const Tuple& idb)
+void MLPSolver::printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb)
 {
   if ( printProgramInformation == true ) 
     {
 	std::cerr << "edb = " << *edb << std::endl;
-	RawPrinter printer(std::cerr, ctx1.registry());
+	RawPrinter printer(std::cerr, reg1);
  	DBGLOG(DBG, "idb begin"); 
   	printer.printmany(idb,"\n"); 
   	std::cerr << std::endl; 
