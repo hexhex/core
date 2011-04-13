@@ -1,3 +1,9 @@
+2010-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Logger.hpp: Printing additional statistical information.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* generator/gen.sh: Likewise.
+
 2010-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/gen.sh: Implement a more general script to generate examples.

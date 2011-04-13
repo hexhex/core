@@ -3,7 +3,7 @@
 if [ "$1" = "" ];
 	then	echo "usage: gen.sh <file name>"
 	else
-		DLVHEX="dlvhex --mlp"
+		DLVHEX="dlvhex --mlp --verbose=128"
 
 		# 1st param setting		
 		numConstant=$3
@@ -22,7 +22,7 @@ if [ "$1" = "" ];
 		do
 			execution="$1 $2 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i-"
 			../$execution
-			echo "/usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp > as-$dirName-i$i.log" >> run.sh
+			echo "(ulimit -v 262144 ; /usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp) 2>stats-$dirName-i$i.log 1>as-$dirName-i$i.log" >> run.sh
 			msg1='echo "'
 			msg2="$i instances(s) processed"
 			msg3='"'

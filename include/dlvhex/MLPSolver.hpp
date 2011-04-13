@@ -249,7 +249,6 @@ void MLPSolver::dataReset()
   M.reset( new Interpretation( ctxSolver.registry() ));
   MFlag.clear();
   path.clear();
-  //lastSizeOgatoms = ctxSolver.registry()->ogatoms.getSize();
 }
 
 
@@ -480,10 +479,8 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary ground atom = " << *it);
 	      if ( it->isLiteral() )
-	        //rmv. *it = ID::literalFromAtom(rewriteOrdinaryAtom(*it, prefix), it->isNaf() );
 	        *it = ID::literalFromAtom(rewriteOrdinaryAtom(*it, idxM), it->isNaf() );
               else 
-	        //rmv. *it = rewriteOrdinaryAtom(*it, prefix);
 	        *it = rewriteOrdinaryAtom(*it, idxM);
 
             }
@@ -491,20 +488,16 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary non ground atom = " << *it );
 	      if ( it->isLiteral() )
-		//rmv. *it = ID::literalFromAtom( rewriteOrdinaryAtom(*it, prefix), it->isNaf() );
 		*it = ID::literalFromAtom( rewriteOrdinaryAtom(*it, idxM), it->isNaf() );
 	      else 
-	        //rmv. *it = rewriteOrdinaryAtom(*it, prefix);
 	        *it = rewriteOrdinaryAtom(*it, idxM);
             }
           else if ( it->isModuleAtom() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite module atom = " << *it);
 	      if ( it->isLiteral() )
-                //rmv. *it = ID::literalFromAtom( rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), prefix), it->isNaf() );
                 *it = ID::literalFromAtom( rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), idxM), it->isNaf() );
 	      else 
-                //rmv. *it = rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), prefix);
                 *it = rewriteModuleAtom(ctxSolver.registry()->matoms.getByID(*it), idxM);
             }
         }
@@ -513,7 +506,6 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
           if ( it->isPredicateTerm() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite predicate term = " << *it);
-              //rmv. *it = rewritePredicate(ctxSolver.registry()->preds.getByID(*it), prefix);
               *it = rewritePredicate(ctxSolver.registry()->preds.getByID(*it), idxM);
             }
         }
@@ -1468,6 +1460,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	          std::cout << asString << std::endl;
 	          //rmv. std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << ctxSolver.registry()->ogatoms.getSize() << std::endl << moduleInstTable.size());
 		  if (printLevel & Logger::INFO != 0)
 		    {
                       // print the call graph
@@ -1685,6 +1678,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 bool MLPSolver::solve()
 {
   printProgramInformation = false;
+  DBGLOG(STATS, "1st row: '80'-> ignore this, 2nd row: ctr AS, 3rd row: # ordinary ground atoms, 4th row: # module instantiation");
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
   std::vector<int> mainModules = foundMainModules(); 

@@ -55,6 +55,7 @@ public:
   static const Levels PLUGIN =  0x10; // plugin related things
   static const Levels ANALYZE = 0x20; // program analysis
   static const Levels MODELB =  0x40; // model building
+  static const Levels STATS  =  0x80; // statistic information
 
 private:
   std::ostream& out;
