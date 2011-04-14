@@ -183,7 +183,6 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
     inline ID smallestILL(const Tuple& newRules);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
-    //rmv.inline void solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
     inline void createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
@@ -192,7 +191,6 @@ class DLVHEX_EXPORT MLPSolver{
     inline void setMFlag(int idxM, int idxOgatom);
     inline void resizeIfNeededA(int idxPjT);
     inline void checkOgatomsSetMFlag(int lastIndex);
-    //rmv. inline void inspectOgatomsSetMFlag();
     inline bool containFinA(int idxPjT);
     inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
@@ -242,7 +240,6 @@ void MLPSolver::setPrintLevel(int level)
 
 void MLPSolver::dataReset()
 {
-  //rmv. ctxSolver.setupRegistryPluginContainer(ctx.registry());
   RegistryPtr R2(new Registry(*ctx.registry() ));
   registrySolver = R2;
   sTable.clear();
@@ -260,7 +257,6 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
-  //rmv. ctxSolver.setupRegistryPluginContainer(R2);
   
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
@@ -628,9 +624,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MFlag size = " << MFlag.size());			
 	              Interpretation MjT = MFlag.at(idxPjT);
 		      MjT.setRegistry(registrySolver);
-		      // look at all atoms registered in MjT		      		
-		      Interpretation::Storage MjTAtoms = MjT.getStorage();
-		      Interpretation::Storage::enumerator itMjTAtoms = MjTAtoms.first();
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] M = " << *M);
 		      if ( MjT.isClear() ) 
 			{ 
@@ -638,9 +631,11 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 			}
 		      else 
 			{ 
-			  //rmv.DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MjT as Number = " << oss.str()); 
 			  DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MjT = " << MjT); 
 			}
+		      // look at all atoms registered in MjT (and with M)
+		      Interpretation::Storage MjTAtoms = MjT.getStorage();
+		      Interpretation::Storage::enumerator itMjTAtoms = MjTAtoms.first();
       		      while ( itMjTAtoms != MjTAtoms.end() )
 		        {
 			  // if the atoms is set 
@@ -678,7 +673,11 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 	    {
               rNew.kind &= ID::PROPERTY_RULE_UNMODATOMS;
 	    }
-          ID rNewID = registrySolver->rules.storeAndGetID(rNew);
+	  ID rNewID = registrySolver->rules.getIDByElement(rNew);
+	  if ( rNewID == ID_FAIL )
+	    {
+	      rNewID = registrySolver->rules.storeAndGetID(rNew);
+	    }
           // collect it in the idbResult
 	  *itR = rNewID;	
         }
@@ -703,8 +702,6 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       int idxM = extractPi(*itC);
       int idxS = extractS(*itC);
       Module m = registrySolver->moduleTable.getByAddress(idxM);
-      //rmv. std::stringstream ss;
-      //rmv. ss << "m" << *itC << MODULEINSTSEPARATOR;
       // rewrite the edb, get the edb pointed by m.edb
       DBGLOG(DBG, "[MLPSolver::rewrite] rewrite edb ");
       InterpretationPtr edbTemp( new Interpretation(registrySolver) );
@@ -717,10 +714,8 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       while ( it!=bits.end() ) 
         {
 	  // get the atom that is pointed by *it (element of the edb)
-	  const OrdinaryAtom& atomR = registrySolver->ogatoms.getByAddress(*it);
-	  ID atomRID = registrySolver->ogatoms.getIDByTuple(atomR.tuple);
+	  ID atomRID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it);
 	  // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
-	  //rmv. ID atomRewrite = rewriteOrdinaryAtom(atomRID, ss.str());
 	  ID atomRewrite = rewriteOrdinaryAtom(atomRID, *itC);
 	  edbResult->setFact(atomRewrite.address);
 	  it++;
@@ -731,6 +726,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       if ( MFlag.size()>(*itC) )
 	{
 	  Interpretation MiS = MFlag.at(*itC);	      		
+	  //MiS.bit_and(*M);
 	  Interpretation::Storage MiSAtoms = MiS.getStorage();
 	  Interpretation::Storage::enumerator itMiSAtoms = MiSAtoms.first();
           while ( itMiSAtoms != MiSAtoms.end() )
@@ -751,11 +747,14 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 	  const Rule& r = registrySolver->rules.getByID(*itT);
 	  Rule rNew = r;
 	  // for each rule: body and head, rewrite it
-	  //rmv. rewriteTuple(rNew.head, ss.str());	
-	  //rmv. rewriteTuple(rNew.body, ss.str());
 	  rewriteTuple(rNew.head, *itC);	
 	  rewriteTuple(rNew.body, *itC);
-	  ID rNewID = registrySolver->rules.storeAndGetID(rNew);
+
+	  ID rNewID = registrySolver->rules.getIDByElement(rNew);
+	  if ( rNewID == ID_FAIL ) 
+	    {
+	      rNewID = registrySolver->rules.storeAndGetID(rNew);
+	    }
           // collect it in the idbResult
 	  idbResult.push_back(rNewID);
 	  itT++;
@@ -1231,7 +1230,7 @@ bool MLPSolver::comp(ValueCallsType C)
   // declare the stack
   std::vector< int > stackStatus;
   std::vector< ASPSolverManager::ResultsPtr > stackAnsRes;
-  std::vector< Interpretation > stackAns;
+  std::vector< InterpretationPtr > stackAns;
   std::vector< ValueCallsType > stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector< InterpretationPtr > stackM;
@@ -1250,8 +1249,12 @@ bool MLPSolver::comp(ValueCallsType C)
   stackC.push_back(C);
   int status = 0;
   ID idAlpha;
+  int ctrPushBack = 0;
+  int maxStackSize = 0;
   while (stackC.size()>0) 
     {
+      if ( stackC.size() > maxStackSize ) maxStackSize = stackC.size();
+	
       C = stackC.back();
       status = stackStatus.back();
       if ( status == 1 || status == 2)	
@@ -1262,17 +1265,16 @@ bool MLPSolver::comp(ValueCallsType C)
 	  MFlag = stackMFlag.back();
 	  A = stackA.back();
 	  RegistryPtr R2(new Registry(*stackRegistry.back() ));
-	  //rmv. ctxSolver.changeRegistry(R2);
 	  registrySolver = R2;
 	  M->setRegistry(registrySolver);
 	  moduleInstTable = stackMInst.back();
 	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
-	  Interpretation currAns = stackAns.back();
+	  Interpretation currAns = *stackAns.back();
           DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
           DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
           // union M and N
 	  M->add( currAns );
-	  if ( printLevel & Logger::INFO != 0 )
+	  if ( (printLevel & Logger::INFO) != 0 )
 	    {
 	      callGraph = stackCallGraph.back();
 	      edgeName = stackEdgeName.back();
@@ -1281,7 +1283,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  AnswerSet::Ptr ansBack = stackAnsRes.back()->getNextAnswerSet();
 	  if ( ansBack != 0 )
             {
-	      stackAns.push_back(*(ansBack->interpretation));	
+	      stackAns.push_back((ansBack->interpretation));	
 	    }
 	  else
 	   {
@@ -1294,7 +1296,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackA.erase(stackA.end()-1);
 	      stackRegistry.erase(stackRegistry.end()-1);
 	      stackMInst.erase(stackMInst.end()-1);
-	      if ( printLevel & Logger::INFO != 0 )
+	      if ( (printLevel & Logger::INFO) != 0 )
 	        {
 		  stackCallGraph.erase(stackCallGraph.end()-1);
 	          stackEdgeName.erase(stackEdgeName.end()-1);
@@ -1330,7 +1332,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	        }
 	      else
 	        {
-		  if ( printLevel & Logger::INFO != 0 )
+		  if ( (printLevel & Logger::INFO) != 0 )
 	            {
                       // add the call graph here:
 		      const VCAddressIndex& idx = C.get<impl::AddressTag>();
@@ -1375,6 +1377,7 @@ bool MLPSolver::comp(ValueCallsType C)
       oss.str("");
       printA(oss,registrySolver, A);
       DBGLOG(INFO,oss.str());
+
       // int cint;
       // std::cin >> cint;
       ValueCallsType CPrev;
@@ -1440,7 +1443,6 @@ bool MLPSolver::comp(ValueCallsType C)
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
-              //rmv. solveAns(edbRewrite, idbRewrite, res);
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
 	      // get the current MFlag
@@ -1462,11 +1464,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
 	          printASinSlot(oss, registrySolver, *M2);
 	          std::string asString = oss.str();
-	          //std::cout << asString << std::endl;
-	          std::cout << ctrAS << std::endl;
+	          std::cout << asString << std::endl;
+	          //std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-	          DBGLOG(STATS, std::endl << ctrAS << std::endl << registrySolver->ogatoms.getSize() << std::endl << moduleInstTable.size());
-		  if (printLevel & Logger::INFO != 0)
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << registrySolver->ogatoms.getSize() << std::endl << registrySolver->rules.getSize() << std::endl << moduleInstTable.size());
+		  if ( (printLevel & Logger::INFO) != 0)
 		    {
                       // print the call graph
 	              oss.str("");		
@@ -1517,14 +1519,13 @@ bool MLPSolver::comp(ValueCallsType C)
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
-              //rmv. solveAns(edbRewrite, idbRewrite, res);
               checkOgatomsSetMFlag(lastOgatomsSize);
 
 	      // for the recursion part b
 	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
 	      if ( int0!=0 ) 
 	        {
-	          stackAns.push_back(*(int0->interpretation));	
+	          stackAns.push_back((int0->interpretation));	
           	  stackAnsRes.push_back(res);
           	  stackStatus.push_back(1);
           	  stackC.push_back(C2);
@@ -1537,11 +1538,12 @@ bool MLPSolver::comp(ValueCallsType C)
                   RegistryPtr R2(new Registry(*registrySolver) );
 	          stackRegistry.push_back( R2 );  
 	  	  stackMInst.push_back(moduleInstTable);
-		  if ( printLevel & Logger::INFO != 0 )
+		  if ( (printLevel & Logger::INFO) != 0 )
 		    { 
 	  	      stackCallGraph.push_back(callGraph);
 	  	      stackEdgeName.push_back(edgeName);
 		    }
+			ctrPushBack++;
 	    	}	
             } // else if path size = 0, else 
         } // if isOrdinary ( idb... 
@@ -1569,10 +1571,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	      A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
               it++;  
             } 
-          // print the size of A:
-          //rmv. for (int i = 0; i<A.size();i++){
-          //rmv.  DBGLOG(DBG, "[MLPSolver::comp] A [" << i << "].size(): " << A.at(i).size() );
-          //rmv. }
           Tuple bottom;
           collectBottom(alpha, idbRewrite, bottom);
           DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
@@ -1594,13 +1592,12 @@ bool MLPSolver::comp(ValueCallsType C)
           ASPSolverManager::ResultsPtr res;
 	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
 	  res = mgr.solve(config, program);
-          //rmv. solveAns(edbRewrite, bottom, res);
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
           checkOgatomsSetMFlag(lastOgatomsSize);
           if ( int0!=0 ) 
             {
-	      stackAns.push_back(*(int0->interpretation));	
+	      stackAns.push_back((int0->interpretation));	
               stackAnsRes.push_back(res);
               stackStatus.push_back(2);
               stackC.push_back(C);
@@ -1614,15 +1611,19 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackRegistry.push_back( R2 );  
 	      stackMInst.push_back(moduleInstTable);
 	      stackModuleSrcAtom.push_back(idAlpha);
-	      if ( printLevel & Logger::INFO != 0 )
+	      if ( (printLevel & Logger::INFO) != 0 )
 		{
 	          stackCallGraph.push_back(callGraph);
 	          stackEdgeName.push_back(edgeName);
 		}
+			ctrPushBack++;
+
             }
         } // else  (if ordinary ... else ...)
     } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
+  //. std::cout << "MaxStackSize: " << maxStackSize << std::endl;
+  //. std::cout << "CtrPushBack : " << ctrPushBack << std::endl;
   return true;
 }
 
@@ -1697,7 +1698,6 @@ bool MLPSolver::solve()
       A.clear();
       M->clear();
       RegistryPtr R2(new Registry( *ctx.registry() ));
-      //rmv. ctxSolver.changeRegistry(R2);
       registrySolver = R2;
       moduleInstTable.clear();
       DBGLOG(INFO, " ");

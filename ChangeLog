@@ -1,3 +1,9 @@
+2010-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Store the same rule only once.
+
+	* include/dlvhex/RuleTable.hpp: Adding hashed index to the RuleTable.
+
 2010-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/gen.sh: Adding diamond and random topology.
