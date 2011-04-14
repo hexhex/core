@@ -35,9 +35,11 @@
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Table.hpp"
 
+#include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -55,6 +57,18 @@ class RuleTable:
 			boost::multi_index::ordered_non_unique<
 				boost::multi_index::tag<impl::KindTag>,
 				BOOST_MULTI_INDEX_MEMBER(Rule,IDKind,kind)
+			>,
+			// element
+			boost::multi_index::hashed_unique<
+				boost::multi_index::tag<impl::ElementTag>,
+				boost::multi_index::composite_key<
+				  Rule,
+				  BOOST_MULTI_INDEX_MEMBER(Rule,IDKind,kind),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,head),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,Tuple,body),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,weight),
+				  BOOST_MULTI_INDEX_MEMBER(Rule,ID,level)
+				>
 			>
       // TODO more indices required?
 		>
@@ -64,18 +78,29 @@ class RuleTable:
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
   typedef Container::index<impl::KindTag>::type KindIndex;
-
+  typedef Container::index<impl::ElementTag>::type ElementIndex;
+  typedef ElementIndex::iterator ElementIterator;
 	// methods
 public:
+	inline int getSize();
   // retrieve by ID
   // assert that id.kind is correct for Rule
   // assert that ID exists in table
 	inline const Rule& getByID(ID id) const throw ();
 
+        // get the ID of the rule
+	inline ID getIDByElement(const Rule& rule) const throw();
+
 	// store rule (no duplicate check is done/required)
 	inline ID storeAndGetID(const Rule& rule) throw();
 	inline void clear();
 };
+
+
+int RuleTable::getSize()
+{
+  return container.size();
+}
 
 // retrieve by ID
 // assert that id.kind is correct for Rule
@@ -90,6 +115,24 @@ RuleTable::getByID(
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
   return idx.at(id.address);
+}
+
+
+// getID by rule
+ID RuleTable::getIDByElement(const Rule& rule) const throw()
+{
+  const ElementIndex& sidx = container.get<impl::ElementTag>();
+  ElementIndex::const_iterator it = sidx.find( boost::make_tuple(rule.kind, rule.head, rule.body, rule.weight, rule.level) );
+  if( it == sidx.end() )
+    return ID_FAIL;
+  else
+    {
+      const AddressIndex& aidx = container.get<impl::AddressTag>();
+      return ID(
+		it->kind, // kind
+		container.project<impl::AddressTag>(it) - aidx.begin() // address
+		);
+    }
 }
 
 // store rule (no duplicate check is done/required)
