@@ -1,5 +1,9 @@
 2010-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/Atoms.hpp: Store actual module name on the module atom.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Store the same rule only once.
 
 	* include/dlvhex/RuleTable.hpp: Adding hashed index to the RuleTable.

@@ -231,7 +231,7 @@ struct ModuleAtom:
   public Atom,
   private ostream_printable<ModuleAtom>
   {
-  // @<predicate>[<inputs>]::<outputpredicate>(<outputs>)
+  // @<predicate>[<inputs>]::<outputAtom>
 
   // module atom name (predicate term)
   ID predicate;
@@ -239,22 +239,26 @@ struct ModuleAtom:
   Tuple inputs;
   // module output predicate
   ID outputAtom;
-
+  // if the <predicate> is p1__p2 (because of prefixing) 
+  // then the actualModuleName should be p2
+  std::string actualModuleName;
   // Atom::tuple is used for output terms
 
 public:
-  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputAtom):
+  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputAtom, std::string actualModuleName):
     Atom(kind),
     predicate(predicate),
     inputs(inputs),
-    outputAtom(outputAtom)
+    outputAtom(outputAtom),
+    actualModuleName(actualModuleName)
   { }
 
   ModuleAtom(IDKind kind):
     Atom(kind),
     predicate(ID_FAIL),
     inputs(),
-    outputAtom(ID_FAIL)
+    outputAtom(ID_FAIL),
+    actualModuleName("")
   { }
 
   std::ostream& print(std::ostream& o) const;

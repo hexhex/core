@@ -215,6 +215,7 @@ class DLVHEX_EXPORT MLPSolver{
     // std::vector<InterpretationPtr> AS;
     int ctrAS;
     int ctrASFromDLV;
+    int ctrStringProcess;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
     inline void setPrintLevel(int level);
@@ -254,10 +255,10 @@ void MLPSolver::dataReset()
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   printLevel = 0;
   nASReturned = 0;
+  ctrStringProcess = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
-  
   //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
 }
@@ -584,6 +585,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
                       Predicate p = registrySolver->preds.getByID(predR);
 		      // remove the p1__
 		      p.symbol = p.symbol.substr( p.symbol.find(MODULEPREFIXSEPARATOR) + 2);
+			ctrStringProcess++;
 		      // prefix it with m PjT___ + p2__
 		      std::stringstream ss;
                       ss << "m" << idxPjT << MODULEINSTSEPARATOR << m.moduleName << MODULEPREFIXSEPARATOR << p.symbol;
@@ -1146,6 +1148,7 @@ void MLPSolver::checkOgatomsSetMFlag(int lastIndex)
 	  const OrdinaryAtom& og = registrySolver->ogatoms.getByAddress(i);
 	  std::string predName = registrySolver->preds.getByID(og.tuple.front()).symbol;
 	  int n = predName.find( MODULEINSTSEPARATOR );
+		ctrStringProcess++;
 	  if ( n == std::string::npos )
 	    { // not found, nothing happen
 	    }
@@ -1210,11 +1213,13 @@ bool MLPSolver::containFinA(int idxPjT)
 
 const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 {
-  std::string modName = registrySolver->preds.getByID(alpha.predicate).symbol;
+  //rmv.15.04 std::string modName = registrySolver->preds.getByID(alpha.predicate).symbol;
   // for MODULEPREFIXSEPARATOR, see include/dlvhex/module.hpp
-  modName = modName.substr( modName.find(MODULEPREFIXSEPARATOR) + 2);
+  //rmv.15.04 modName = modName.substr( modName.find(MODULEPREFIXSEPARATOR) + 2);
+	//rmv.15.04.ctrStringProcess++;
   // get the module 
-  return registrySolver->moduleTable.getModuleByName(modName);
+  //rmv.15.04 return registrySolver->moduleTable.getModuleByName(modName);
+  return registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
 }
 
 
@@ -1622,8 +1627,10 @@ bool MLPSolver::comp(ValueCallsType C)
         } // else  (if ordinary ... else ...)
     } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
-  //. std::cout << "MaxStackSize: " << maxStackSize << std::endl;
-  //. std::cout << "CtrPushBack : " << ctrPushBack << std::endl;
+  //rmv.std::cout << "MaxStackSize: " << maxStackSize << std::endl;
+  //rmv.std::cout << "CtrPushBack : " << ctrPushBack << std::endl;
+  //rmv.std::cout << "CtrStringProcess: " << ctrStringProcess << std::endl;
+
   return true;
 }
 

@@ -747,6 +747,7 @@ ID HexGrammarPTToASTConverter::createModAtomFromModAtom(node_t& node)
   //printSpiritPT(std::cerr, node, ">>");
   assert(node.value.id() == HexGrammar::ModAtom);
   ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
+  atom.actualModuleName = modName;
   Tuple& inputs = atom.inputs;
   atom.predicate = createPredFromIdent(node.children[1],-1);
   if( node.children.size() > 2 )
