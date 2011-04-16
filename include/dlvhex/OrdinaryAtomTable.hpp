@@ -70,6 +70,10 @@ class OrdinaryAtomTable:
 				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom::Atom,Tuple,tuple)
 			>,
 			boost::multi_index::hashed_non_unique<
+				boost::multi_index::tag<impl::InstTag>,
+				BOOST_MULTI_INDEX_MEMBER(OrdinaryAtom,int,instTag)
+			>,
+			boost::multi_index::hashed_non_unique<
 				boost::multi_index::tag<impl::PredicateTag>,
         // we cannot use BOOST_MULTI_INDEX_CONST_MEM_FUN here, it required MemberFunName to be in Class
 				//BOOST_MULTI_INDEX_CONST_MEM_FUN(OrdinaryAtom,ID,front)
@@ -83,11 +87,13 @@ class OrdinaryAtomTable:
 public:
   typedef Container::index<impl::AddressTag>::type AddressIndex;
   //typedef Container::index<impl::KindTag>::type KindIndex;
-	typedef Container::index<impl::TextTag>::type TextIndex;
-	typedef Container::index<impl::TupleTag>::type TupleIndex;
+  typedef Container::index<impl::TextTag>::type TextIndex;
+  typedef Container::index<impl::TupleTag>::type TupleIndex;
   typedef Container::index<impl::PredicateTag>::type PredicateIndex;
-	typedef AddressIndex::iterator AddressIterator;
-	typedef PredicateIndex::iterator PredicateIterator;
+  typedef AddressIndex::iterator AddressIterator;
+  typedef PredicateIndex::iterator PredicateIterator;
+  typedef Container::index<impl::InstTag>::type InstIndex;
+  typedef InstIndex::iterator InstIterator;
 
 	// methods
 public:
@@ -117,11 +123,18 @@ public:
 
 	// store atom, assuming it does not exist
   // assert that atom did not exist in table
-	inline ID storeAndGetID(const OrdinaryAtom& atom) throw();
+	inline ID storeAndGetID(OrdinaryAtom& atom) throw();
 
   // get all ordinary atoms with certain predicate id
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
+
+  // get all ordinary atoms with certain instTag
+	inline std::pair<InstIterator, InstIterator>
+	getRangeByInstTag(int instTag) const throw();
+
+  // get all IDs ordinary atom with certain instTag
+	inline void getTupleByInstTag(int instTag, Tuple& tuple) const throw();
 
   // get range over all atoms sorted by address
 	inline std::pair<AddressIterator, AddressIterator>
@@ -219,7 +232,7 @@ ID OrdinaryAtomTable::getIDByStorage(
 
 // store symbol, assuming it does not exist (this is only asserted)
 ID OrdinaryAtomTable::storeAndGetID(
-		const OrdinaryAtom& atm) throw()
+		OrdinaryAtom& atm) throw()
 {
 	assert(ID(atm.kind,0).isAtom());
 	assert(ID(atm.kind,0).isOrdinaryAtom());
@@ -228,6 +241,22 @@ ID OrdinaryAtomTable::storeAndGetID(
       (atm.tuple.front().kind & ID::PROPERTY_TERM_AUX) != 0 &&
       (atm.kind & ID::PROPERTY_ATOM_AUX) == 0 ) &&
       "atom must be auxiliary if predicate term is auxiliary");
+
+	// check if the atom is an ordinary ground atom
+	if ( ID(atm.kind,0).isOrdinaryGroundAtom() )
+	  { // check if it contain a module inst separator
+	    int n = atm.text.find( MODULEINSTSEPARATOR );
+	    if ( n == std::string::npos )
+	      { // not found, nothing happen
+		atm.instTag = -1;
+	      }
+	    else
+	      { // MODULEINSTSEPARATOR found
+	        std::string pref = atm.text.substr(0, n);
+	        pref = pref.substr( 1 );
+	        atm.instTag = atoi( pref.c_str() );  
+	      }
+	  }    
 
 	AddressIndex& idx = container.get<impl::AddressTag>();
 
@@ -251,6 +280,33 @@ OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
 }
+
+
+// get all ordinary atoms with instTag
+std::pair<OrdinaryAtomTable::InstIterator, OrdinaryAtomTable::InstIterator>
+OrdinaryAtomTable::getRangeByInstTag(int instTag) const throw()
+{
+  assert( instTag>=0 );
+  const InstIndex& idx = container.get<impl::InstTag>();
+  return idx.equal_range(instTag); 
+}
+
+
+// get all IDs ordinary atom with instTag
+void OrdinaryAtomTable::getTupleByInstTag(int instTag, Tuple& tuple) const throw()
+{  
+  tuple.clear();
+  OrdinaryAtomTable::InstIterator it, it_end;
+  boost::tie(it, it_end) = getRangeByInstTag(instTag);
+  const AddressIndex& aidx = container.get<impl::AddressTag>();
+  while ( it != it_end ) 
+    {
+	ID id ((*it).kind, container.project<impl::AddressTag>(it) - aidx.begin() );
+	tuple.push_back(id);
+	it++;
+    }
+}
+
 
 // get range over all atoms sorted by address
 std::pair<OrdinaryAtomTable::AddressIterator, OrdinaryAtomTable::AddressIterator>

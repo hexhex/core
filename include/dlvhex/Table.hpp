@@ -53,6 +53,7 @@ namespace impl
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
 	struct PredicateTag {}; // ExternalAtom 
 	struct ElementTag {}; // for MLPSolver
+	struct InstTag {}; // instantiation Tag, for ordinary ground atom (for MLP case)
 }
 
 template<typename ValueT, typename IndexT>

@@ -1,3 +1,12 @@
+2010-04-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Optimize instantiation information: store it on ogatoms, delete MFlag.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/ID.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* include/dlvhex/Table.hpp: Likewise.
+
 2010-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Atoms.hpp: Store actual module name on the module atom.

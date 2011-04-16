@@ -175,7 +175,7 @@ struct ID:
 
 std::size_t hash_value(const ID& id);
 
-const ID        ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
+const ID ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
 
 typedef std::vector<ID> Tuple;
 

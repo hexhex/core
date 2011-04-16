@@ -65,8 +65,6 @@ struct Module:
 };
 
 const Module MODULE_FAIL("", -1, -1, -1);
-const std::string MODULEPREFIXSEPARATOR="__";
-const std::string MODULEINSTSEPARATOR="___";
 
 DLVHEX_NAMESPACE_END
 

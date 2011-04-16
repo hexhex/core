@@ -19,8 +19,6 @@
  * - filtering interpretation using and
  * - rewrite predicate in rewrite ordinary atom
  * - optimize in rewrite
- * - look at MFlag against M and bit_and
- * - MFlag operation (and initialization (inspection))
  * - separate the structures into different class?
  * - optimization in storing the edgeName
  */
@@ -130,7 +128,6 @@ class DLVHEX_EXPORT MLPSolver{
     typedef std::vector<InterpretationType> VectorOfInterpretation;
     // vector of Interpretation, the index of the i/S should match with the index in tableInst
     InterpretationPtr M;
-    VectorOfInterpretation MFlag;
     
 
     // all about graph here:
@@ -169,6 +166,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline ID rewriteModuleAtom(const ModuleAtom& oldAtom, int idxM);
     inline ID rewritePredicate(const Predicate& oldPred, int idxM);
     inline void rewriteTuple(Tuple& tuple, int idxM);
+    inline void createMiS(int instIdx, const InterpretationPtr& intr, InterpretationPtr& intrResult);
     inline void replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& idb);
     inline void rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, Tuple& idbResult);
 
@@ -187,12 +185,9 @@ class DLVHEX_EXPORT MLPSolver{
     inline void createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
 
-    inline void resizeIfNeededMFlag(int idxPjT);
-    inline void setMFlag(int idxM, int idxOgatom);
     inline void resizeIfNeededA(int idxPjT);
-    inline void checkOgatomsSetMFlag(int lastIndex);
     inline bool containFinA(int idxPjT);
-    inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
+//rmv.16.04.    inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
@@ -205,17 +200,15 @@ class DLVHEX_EXPORT MLPSolver{
     inline void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
     inline void printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const;
     inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
-    inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr);
+    inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const InterpretationPtr& intr);
     inline void printCallGraph(std::ostream& out, const Graph& graph, const std::string& graphLabel);
     inline void printIdb(const RegistryPtr& reg1, const Tuple& idb);
     inline void printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
     inline void printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
 
   public:
-    // std::vector<InterpretationPtr> AS;
     int ctrAS;
     int ctrASFromDLV;
-    int ctrStringProcess;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
     inline void setPrintLevel(int level);
@@ -247,7 +240,6 @@ void MLPSolver::dataReset()
   moduleInstTable.clear();
   A.clear();
   M.reset( new Interpretation( registrySolver ));
-  MFlag.clear();
   path.clear();
 }
 
@@ -255,7 +247,6 @@ void MLPSolver::dataReset()
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   printLevel = 0;
   nASReturned = 0;
-  ctrStringProcess = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
@@ -384,11 +375,9 @@ ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
 {
   // find the correct table: og/on
   OrdinaryAtomTable* tbl;
-  bool og = false;
   if ( oldAtomID.isOrdinaryGroundAtom() )
     {
       tbl = &registrySolver->ogatoms;
-      og = true;
     }
   else
     {
@@ -423,10 +412,6 @@ ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
   if (atomFind == ID_FAIL)	
     {
       atomFind = tbl->storeAndGetID(atomRnew);
-      if ( og == true )	
-	{
-	  setMFlag(idxM, atomFind.address);
-	}
       DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] ID atomFind after FAIL = " << atomFind);
     }
   return atomFind;
@@ -516,6 +501,26 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
 }
 
 
+void MLPSolver::createMiS(int instIdx, const InterpretationPtr& intr, InterpretationPtr& intrResult)
+{
+  intrResult->clear();
+  Tuple tuple;
+  registrySolver->ogatoms.getTupleByInstTag(instIdx, tuple);
+  Tuple::const_iterator it = tuple.begin();
+  // std::cout << "instIdx: " << instIdx << ", tuple size: " << tuple.size() << std::endl;
+  // std::cout << "intr: " << *intr << std::endl;
+  while ( it != tuple.end() )
+    {
+      if ( intr->getFact((*it).address) )
+	{
+	  intrResult->setFact((*it).address);
+	}
+      it++;
+    }
+  // std::cout << "intrResult: " << *intrResult << std::endl;
+}
+
+
 // part of the rewrite method
 // look for a module atom in the body of the rules
 // if the module atom is exist in the A replace with the outputAtom (prefixed)
@@ -548,17 +553,10 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      ModuleAtom ma = registrySolver->matoms.getByID(*itB);
 		      // create the interpretation Mi/S
 		      InterpretationPtr newM(new Interpretation( registrySolver )); 
-		      if ( MFlag.size()>instIdx )
-			{
-			  *newM = *M;	
-			  newM->bit_and( MFlag.at(instIdx) );
-			}	
-		      else
-			{
-			  newM->clear();
-			}
+		      createMiS(instIdx, M, newM);
 		      // get the module Pj using the predicate from the module input, get the formal input
-                      Module m = getModuleFromModuleAtom(ma);
+//rmv.16.04                      Module m = getModuleFromModuleAtom(ma);
+                      const Module& m = registrySolver->moduleTable.getModuleByName(ma.actualModuleName);
 		      Tuple formalInputs = registrySolver->inputList.at(m.inputList);
 		      Tuple restrictT;
 		      Tuple newT;
@@ -570,11 +568,9 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      // get the outputAtom 
 		      ID outputAtom = ma.outputAtom;
 		      OrdinaryAtomTable* tbl;
-		      bool og = false;	
 		      if ( outputAtom.isOrdinaryGroundAtom() )
 			{
 			  tbl = &registrySolver->ogatoms;
-			  og = true;
 			}
 		      else
 			tbl = &registrySolver->onatoms;
@@ -585,7 +581,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
                       Predicate p = registrySolver->preds.getByID(predR);
 		      // remove the p1__
 		      p.symbol = p.symbol.substr( p.symbol.find(MODULEPREFIXSEPARATOR) + 2);
-			ctrStringProcess++;
 		      // prefix it with m PjT___ + p2__
 		      std::stringstream ss;
                       ss << "m" << idxPjT << MODULEINSTSEPARATOR << m.moduleName << MODULEPREFIXSEPARATOR << p.symbol;
@@ -610,10 +605,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
                       if (atomFind == ID_FAIL)	
                         {
                           atomFind = tbl->storeAndGetID(newOutputAtom);	
-			  if (og == true) 
-			    {
-			      setMFlag(idxPjT, atomFind.address);	
-			    }
                           DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] ID atomFind after FAIL = " << atomFind);
                         }
                       
@@ -622,27 +613,15 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
                       *itB = ID::literalFromAtom( atomFind, itB->isNaf() );
 		      
 		      // put Mj/T as a facts if not nil
-		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] idxPjT = " << idxPjT);			
-		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MFlag size = " << MFlag.size());			
-	              Interpretation MjT = MFlag.at(idxPjT);
-		      MjT.setRegistry(registrySolver);
+		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] idxPjT = " << idxPjT);
 		      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] M = " << *M);
-		      if ( MjT.isClear() ) 
-			{ 
-			  DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MjT = MjTClear"); 
-			}
-		      else 
-			{ 
-			  DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] MjT = " << MjT); 
-			}
-		      // look at all atoms registered in MjT (and with M)
-		      Interpretation::Storage MjTAtoms = MjT.getStorage();
+		      InterpretationPtr MjT(new Interpretation());
+		      createMiS(idxPjT, M, MjT);
+		      Interpretation::Storage MjTAtoms = MjT->getStorage();
 		      Interpretation::Storage::enumerator itMjTAtoms = MjTAtoms.first();
       		      while ( itMjTAtoms != MjTAtoms.end() )
 		        {
 			  // if the atoms is set 
-			  if ( M->getFact(*itMjTAtoms) ) 
-			    { // check if the predicate name is as the same as the output atom
 			      OrdinaryAtom atomGround = registrySolver->ogatoms.getByAddress(*itMjTAtoms);
 			      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] atomGround inspected = " << atomGround);
 			      if (atomGround.tuple.front() == newOutputAtom.tuple.front() ) 
@@ -651,7 +630,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 				  edb->setFact(*itMjTAtoms);
 				  DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] after set fact = " << *edb);
 				}
-			    }	
 			  itMjTAtoms++;
 			}				
 		    }
@@ -725,18 +703,15 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 
       // put Mi/S as a facts if not nil
       DBGLOG(DBG, "[MLPSolver::rewrite] Mi/S as a facts if not nil");
-      if ( MFlag.size()>(*itC) )
-	{
-	  Interpretation MiS = MFlag.at(*itC);	      		
-	  //MiS.bit_and(*M);
-	  Interpretation::Storage MiSAtoms = MiS.getStorage();
+      InterpretationPtr MiS(new Interpretation() );
+      createMiS(*itC, M, MiS);
+	  Interpretation::Storage MiSAtoms = MiS->getStorage();
 	  Interpretation::Storage::enumerator itMiSAtoms = MiSAtoms.first();
           while ( itMiSAtoms != MiSAtoms.end() )
 	    {
-	      if ( M->getFact(*itMiSAtoms) ) edbResult->setFact(*itMiSAtoms);
+	      edbResult->setFact(*itMiSAtoms);
 	      itMiSAtoms++;
 	    }
-	}
 
       // rewrite the idb
       DBGLOG(DBG, "[MLPSolver::rewrite] rewrite idb");
@@ -806,6 +781,7 @@ bool MLPSolver::isOrdinary(const Tuple& idb)
 
 void MLPSolver::assignFin(IDSet& t)
 { 
+  t.clear();
   t.get<impl::ElementTag>().insert(ID_FAIL);
 }
 
@@ -994,16 +970,6 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
 
 }
 
-/* rmv.
-void MLPSolver::solveAns(const InterpretationPtr& edb, const Tuple& idb, ASPSolverManager::ResultsPtr& result)
-{
-  ASPSolver::DLVSoftware::Configuration config;
-  ASPProgram program(registrySolver, idb, edb, 0);
-  ASPSolverManager mgr;
-  result = mgr.solve(config, program);
-}
-*/
-
 // actualInputs: Tuple of predicate name (predicate term) in the module atom (caller)
 // formalInputs: Tuple of predicate name (predicate term) in the module list (module header)
 void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming)
@@ -1106,29 +1072,6 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const I
 }
 
 
-// resize M and MFlag if the size <= idxPjT
-void MLPSolver::resizeIfNeededMFlag(int idxPjT)
-{
-  int oldSize = MFlag.size();
-  if ( oldSize <= idxPjT )
-    {
-      MFlag.resize(idxPjT+1);
-    }
-
-  for (int i=oldSize; i<=idxPjT; i++)
-    {
-      MFlag.at(i).clear();
-    }
-
-}  
-
-void MLPSolver::setMFlag(int idxM, int idxOgatom)
-{
-  resizeIfNeededMFlag(idxM);
-  MFlag.at(idxM).setFact(idxOgatom);  
-}
-
-
 // resize A if the size <= idxPjT
 void MLPSolver::resizeIfNeededA(int idxPjT)
 {
@@ -1139,68 +1082,6 @@ void MLPSolver::resizeIfNeededA(int idxPjT)
 }
 
 
-void MLPSolver::checkOgatomsSetMFlag(int lastIndex)
-{
-  if ( registrySolver->ogatoms.getSize() > lastIndex )
-    {
-      for (int i = lastIndex-1; i < registrySolver->ogatoms.getSize(); i++)
-        {
-	  const OrdinaryAtom& og = registrySolver->ogatoms.getByAddress(i);
-	  std::string predName = registrySolver->preds.getByID(og.tuple.front()).symbol;
-	  int n = predName.find( MODULEINSTSEPARATOR );
-		ctrStringProcess++;
-	  if ( n == std::string::npos )
-	    { // not found, nothing happen
-	    }
-	  else
-	    { // MODULEINSTSEPARATOR found
-	      std::string pref = predName.substr(0, n);
-	      pref = pref.substr( 1, predName.length()-1 );
-	      int mi = atoi( pref.c_str() );
-	      resizeIfNeededMFlag(mi);
-      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] mi: " << mi);
-      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] MFlag size: " << MFlag.size());
-   	      MFlag.at(mi).setFact(i);	
-	    }
-	}
-    }
-}
-
-/*
-void MLPSolver::inspectOgatomsSetMFlag()
-{
-//  if ( registrySolver->ogatoms.getSize() > lastSizeOgatoms )
-  //  {
-    //  for (int i = lastSizeOgatoms-1; i < registrySolver->ogatoms.getSize(); i++)
-      for (int i = 0; i < registrySolver->ogatoms.getSize(); i++)
-	{
-	  const OrdinaryAtom& og = registrySolver->ogatoms.getByAddress(i);
-	  std::string predName = registrySolver->preds.getByID(og.tuple.front()).symbol;
-	  int n = predName.find( MODULEINSTSEPARATOR );
-	  if ( n == std::string::npos )
-	    { // not found, nothing happen
-	    }
-	  else
-	    { // MODULEINSTSEPARATOR found
-	      std::string pref = predName.substr(0, n);
-	      pref = pref.substr( 1, predName.length()-1 );
-	      int mi = atoi( pref.c_str() );
-	      resizeIfNeededMFlag(mi);
-      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] mi: " << mi);
-      	      //...DBGLOG(DBG, "[MLPSolver::inspectOgatomsSetMFlag] MFlag size: " << MFlag.size());
-	      if (MFlag.at(mi).getFact(i) == false) 
-		{
-		  int cint;
-		  std::cin >> cint;
-		  MFlag.at(mi).setFact(i);	
-		}
-	    }
-	}
-//      lastSizeOgatoms = registrySolver->ogatoms.getSize();
-//    }
-}
-*/
-
 // we treat Fin as ID_FAIL
 bool MLPSolver::containFinA(int idxPjT)
 {
@@ -1210,18 +1091,13 @@ bool MLPSolver::containFinA(int idxPjT)
     else return true;
 }
 
-
+/*rmv.16.04
 const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
 {
-  //rmv.15.04 std::string modName = registrySolver->preds.getByID(alpha.predicate).symbol;
-  // for MODULEPREFIXSEPARATOR, see include/dlvhex/module.hpp
-  //rmv.15.04 modName = modName.substr( modName.find(MODULEPREFIXSEPARATOR) + 2);
-	//rmv.15.04.ctrStringProcess++;
   // get the module 
-  //rmv.15.04 return registrySolver->moduleTable.getModuleByName(modName);
   return registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
 }
-
+*/
 
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
@@ -1239,7 +1115,6 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< ValueCallsType > stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector< InterpretationPtr > stackM;
-  std::vector< VectorOfInterpretation > stackMFlag;
   std::vector< std::vector<IDSet> > stackA;
   std::vector< RegistryPtr > stackRegistry;
   std::vector< ModuleInstTable > stackMInst;
@@ -1267,7 +1142,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	  ctrASFromDLV++;
 	  path = stackPath.back();
 	  *M = *stackM.back();
-	  MFlag = stackMFlag.back();
 	  A = stackA.back();
 	  RegistryPtr R2(new Registry(*stackRegistry.back() ));
 	  registrySolver = R2;
@@ -1297,7 +1171,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackC.erase(stackC.end()-1);
 	      stackPath.erase(stackPath.end()-1);
 	      stackM.erase(stackM.end()-1);
-	      stackMFlag.erase(stackMFlag.end()-1);
 	      stackA.erase(stackA.end()-1);
 	      stackRegistry.erase(stackRegistry.end()-1);
 	      stackMInst.erase(stackMInst.end()-1);
@@ -1316,7 +1189,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // restriction and renaming
 	      // get the formal input paramater, tuple of predicate term
               const ModuleAtom& alpha = registrySolver->matoms.getByID( idAlpha);
-	      const Module& alphaJ = getModuleFromModuleAtom(alpha);
+//rmv.16.04	      const Module& alphaJ = getModuleFromModuleAtom(alpha);
+	      const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
 	      Tuple formalInputs = registrySolver->inputList.at(alphaJ.inputList);
 	      Tuple restrictT;
 	      Tuple newT;
@@ -1329,10 +1203,9 @@ bool MLPSolver::comp(ValueCallsType C)
 	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
 	  
 	      // next: defining the new C and path
-	      resizeIfNeededMFlag(idxPjT);  // resize if M and MFlag size <=idxPjT and take care MFlag
 	      resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
-	      if ( !MFlag.at(idxPjT).isClear() && containFinA(idxPjT) ) 
+	      if ( /*!MFlag.at(idxPjT).isClear() && */ containFinA(idxPjT) ) 
 	        {
 	        }
 	      else
@@ -1450,24 +1323,19 @@ bool MLPSolver::comp(ValueCallsType C)
 	      res = mgr.solve(config, program);
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
-	      // get the current MFlag
-	      VectorOfInterpretation currMFlag = MFlag;
               while (int0 !=0 )
                 {
 		  ctrASFromDLV++;
-                  MFlag = currMFlag;
 	          InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
 	          // integrate the answer
 	          M2->add( *(int0->interpretation) );	      
-	          // set MFlag
-	          checkOgatomsSetMFlag(lastOgatomsSize);
 
 	          // collect the full answer set
 	          ctrAS++;
 	          oss.str("");
 	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
-	          printASinSlot(oss, registrySolver, *M2);
+	          printASinSlot(oss, registrySolver, M2);
 	          std::string asString = oss.str();
 	          std::cout << asString << std::endl;
 	          //std::cout << ctrAS << std::endl;
@@ -1524,7 +1392,6 @@ bool MLPSolver::comp(ValueCallsType C)
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
-              checkOgatomsSetMFlag(lastOgatomsSize);
 
 	      // for the recursion part b
 	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
@@ -1538,7 +1405,6 @@ bool MLPSolver::comp(ValueCallsType C)
                   InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
  	  	  stackM.push_back(M2);
-	  	  stackMFlag.push_back(MFlag);
 	  	  stackA.push_back(A);
                   RegistryPtr R2(new Registry(*registrySolver) );
 	          stackRegistry.push_back( R2 );  
@@ -1582,7 +1448,8 @@ bool MLPSolver::comp(ValueCallsType C)
           printEdbIdb(registrySolver, edbRewrite, bottom);
 
           // get the module name
-          const Module& alphaJ = getModuleFromModuleAtom(alpha);
+//rmv.16.04          const Module& alphaJ = getModuleFromModuleAtom(alpha);
+          const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
 	    {
               DBGLOG(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
@@ -1599,7 +1466,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	  res = mgr.solve(config, program);
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
-          checkOgatomsSetMFlag(lastOgatomsSize);
           if ( int0!=0 ) 
             {
 	      stackAns.push_back((int0->interpretation));	
@@ -1610,7 +1476,6 @@ bool MLPSolver::comp(ValueCallsType C)
               InterpretationPtr M2(new Interpretation(registrySolver));
 	      *M2 = *M;
  	      stackM.push_back(M2);
-	      stackMFlag.push_back(MFlag);
 	      stackA.push_back(A);
 	      RegistryPtr R2(new Registry(*registrySolver) );
 	      stackRegistry.push_back( R2 );  
@@ -1629,7 +1494,6 @@ bool MLPSolver::comp(ValueCallsType C)
   DBGLOG(DBG, "[MLPSolver::comp] finished");
   //rmv.std::cout << "MaxStackSize: " << maxStackSize << std::endl;
   //rmv.std::cout << "CtrPushBack : " << ctrPushBack << std::endl;
-  //rmv.std::cout << "CtrStringProcess: " << ctrStringProcess << std::endl;
 
   return true;
 }
@@ -1878,15 +1742,30 @@ void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int m
 }
 
 
-void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const Interpretation& intr)
+void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const InterpretationPtr& intr)
 {
-  Interpretation newIntr( reg );
+//  Interpretation newIntr( reg );
+  InterpretationPtr newIntr (new Interpretation(reg) );
   out << "(";
   bool first = true;
+  for (int i=0; i<moduleInstTable.size();i++)
+    {
+      createMiS(i, intr, newIntr);
+      if ( !( newIntr->isClear() ) )
+        {
+	  if (first == false) out << ", ";
+          printModuleInst(out,reg,i);
+          out << "=";
+          newIntr->printWithoutPrefix(out);
+	  first = false;
+	  
+	}
+    }
+/*
   for (int i=0; i<MFlag.size();i++)
     {
       newIntr.clear();
-      newIntr.add(intr);
+      newIntr.add(*intr);
       newIntr.bit_and(MFlag.at(i));
       if (!newIntr.isClear())	
 	{ // print
@@ -1900,6 +1779,7 @@ void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const I
 	  first = false;
 	}	
     } 
+*/
   out << ")"; 
 }
 

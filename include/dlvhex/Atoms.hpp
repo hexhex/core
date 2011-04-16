@@ -85,16 +85,21 @@ struct OrdinaryAtom:
   // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
   std::string text;
 
+  // this is needed to optimze localize the module instantiation (MLP case)
+  // in other words, to identify this ground atom belong to which instantiation
+  // w.r.t. instantiation index
+  int instTag;
+
   bool unifiesWith(const OrdinaryAtom& a) const;
 
   OrdinaryAtom(IDKind kind):
-    Atom(kind), text()
+    Atom(kind), text(), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom()); }
   OrdinaryAtom(IDKind kind, const std::string& text):
-    Atom(kind), text(text)
+    Atom(kind), text(text), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom()); assert(!text.empty()); }
   OrdinaryAtom(IDKind kind, const std::string& text, const Tuple& tuple):
-    Atom(kind, tuple), text(text)
+    Atom(kind, tuple), text(text), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom());
       assert(!text.empty()); }
   std::ostream& print(std::ostream& o) const
@@ -264,6 +269,11 @@ public:
   std::ostream& print(std::ostream& o) const;
 
 };
+
+// to prefixed atom (predicate name of the atom)
+const std::string MODULEPREFIXSEPARATOR="__";
+const std::string MODULEINSTSEPARATOR="___";
+
 DLVHEX_NAMESPACE_END
 
 #endif // ATOMS_HPP_INCLUDED__14102010
