@@ -32,7 +32,6 @@
  */
 
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/globals.h"
 #include <boost/foreach.hpp>
 #include <iostream>
 
