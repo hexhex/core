@@ -1,3 +1,7 @@
+2010-04-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* include/dlvhex/MLPSolver.hpp: Fixed stats printing information.
+
 2010-04-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Optimize instantiation information: store it on ogatoms, delete MFlag.

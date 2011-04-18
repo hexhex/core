@@ -187,7 +187,6 @@ class DLVHEX_EXPORT MLPSolver{
 
     inline void resizeIfNeededA(int idxPjT);
     inline bool containFinA(int idxPjT);
-//rmv.16.04.    inline const Module& getModuleFromModuleAtom(const ModuleAtom& alpha);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
@@ -208,7 +207,6 @@ class DLVHEX_EXPORT MLPSolver{
 
   public:
     int ctrAS;
-    int ctrASFromDLV;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
     inline void setPrintLevel(int level);
@@ -555,7 +553,6 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		      InterpretationPtr newM(new Interpretation( registrySolver )); 
 		      createMiS(instIdx, M, newM);
 		      // get the module Pj using the predicate from the module input, get the formal input
-//rmv.16.04                      Module m = getModuleFromModuleAtom(ma);
                       const Module& m = registrySolver->moduleTable.getModuleByName(ma.actualModuleName);
 		      Tuple formalInputs = registrySolver->inputList.at(m.inputList);
 		      Tuple restrictT;
@@ -838,8 +835,6 @@ bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
 }
 
 
-//////////////////////////////
-//TODO: here now
 // predicate: predicate to be searched for
 // rules: the base rule to inspect
 // predsSearched: list of predicate searched so far
@@ -895,6 +890,7 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
 }
 
 
+// test if the input preds of this moduleAtom are all prepared
 bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 {
   DBGLOG(DBG, "[MLPSolver::allPrepared] enter with module atom: " << moduleAtom);
@@ -917,7 +913,6 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
       itRules++;
     }
   return true;
-
 }
 
 
@@ -1091,17 +1086,12 @@ bool MLPSolver::containFinA(int idxPjT)
     else return true;
 }
 
-/*rmv.16.04
-const Module& MLPSolver::getModuleFromModuleAtom(const ModuleAtom& alpha)
-{
-  // get the module 
-  return registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
-}
-*/
 
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
+
+  int ctrASFromDLV = 0;
   // for ASPSolver
   ASPSolver::DLVSoftware::Configuration config;
   ASPSolverManager mgr;
@@ -1123,11 +1113,9 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< Graph > stackCallGraph;
   std::vector< std::vector<std::string> > stackEdgeName;
   
-  // push back the first element, 
-  // TODO: actually for status=0, do not need to do this
   stackStatus.push_back(0);
   stackC.push_back(C);
-  int status = 0;
+  int status = 0; //status=0 for the first time
   ID idAlpha;
   int ctrPushBack = 0;
   int maxStackSize = 0;
@@ -1137,9 +1125,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	
       C = stackC.back();
       status = stackStatus.back();
-      if ( status == 1 || status == 2)	
+      if ( status == 1 || status == 2)	// 1 = from part b, 2 = from part c 
 	{
-	  ctrASFromDLV++;
 	  path = stackPath.back();
 	  *M = *stackM.back();
 	  A = stackA.back();
@@ -1153,6 +1140,7 @@ bool MLPSolver::comp(ValueCallsType C)
           DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
           // union M and N
 	  M->add( currAns );
+	  ctrASFromDLV++;
 	  if ( (printLevel & Logger::INFO) != 0 )
 	    {
 	      callGraph = stackCallGraph.back();
@@ -1189,7 +1177,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // restriction and renaming
 	      // get the formal input paramater, tuple of predicate term
               const ModuleAtom& alpha = registrySolver->matoms.getByID( idAlpha);
-//rmv.16.04	      const Module& alphaJ = getModuleFromModuleAtom(alpha);
 	      const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
 	      Tuple formalInputs = registrySolver->inputList.at(alphaJ.inputList);
 	      Tuple restrictT;
@@ -1340,7 +1327,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	          std::cout << asString << std::endl;
 	          //std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-	          DBGLOG(STATS, std::endl << ctrAS << std::endl << registrySolver->ogatoms.getSize() << std::endl << registrySolver->rules.getSize() << std::endl << moduleInstTable.size());
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV );
+		  ctrASFromDLV = 0;
 		  if ( (printLevel & Logger::INFO) != 0)
 		    {
                       // print the call graph
@@ -1448,7 +1436,6 @@ bool MLPSolver::comp(ValueCallsType C)
           printEdbIdb(registrySolver, edbRewrite, bottom);
 
           // get the module name
-//rmv.16.04          const Module& alphaJ = getModuleFromModuleAtom(alpha);
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
 	    {
@@ -1492,8 +1479,6 @@ bool MLPSolver::comp(ValueCallsType C)
         } // else  (if ordinary ... else ...)
     } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
-  //rmv.std::cout << "MaxStackSize: " << maxStackSize << std::endl;
-  //rmv.std::cout << "CtrPushBack : " << ctrPushBack << std::endl;
 
   return true;
 }
@@ -1555,7 +1540,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 bool MLPSolver::solve()
 {
   printProgramInformation = false;
-  DBGLOG(STATS, "1st row: '80'-> ignore this, 2nd row: ctr AS, 3rd row: # ordinary ground atoms, 4th row: # module instantiation");
+  DBGLOG(STATS, "1st row: '80'-> ignore this; 2nd row: ctrAS; 3rd row: #moduleInstantiation, 4th row: #ordinaryGroundAtoms, 5th row: #callToDLV");
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
   std::vector<int> mainModules = foundMainModules(); 
@@ -1563,7 +1548,6 @@ bool MLPSolver::solve()
   int i = 0;
   dataReset();
   ctrAS = 0;	
-  ctrASFromDLV = 0;
   while ( it != mainModules.end() )
     {
       A.clear();
