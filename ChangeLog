@@ -1,3 +1,8 @@
+2010-04-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Put data structure for A in a separate file.
+	* include/dlvhex/IDSetContainer.hpp: Likewise.
+
 2010-04-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* include/dlvhex/MLPSolver.hpp: Fixed stats printing information.

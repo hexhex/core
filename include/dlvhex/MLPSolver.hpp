@@ -33,6 +33,7 @@
 #include "dlvhex/ASPSolver.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/AnswerSet.hpp"
+#include "dlvhex/IDSetContainer.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
@@ -111,19 +112,6 @@ class DLVHEX_EXPORT MLPSolver{
     typedef ValueCallsType::index<impl::AddressTag>::type VCAddressIndex;
     typedef ValueCallsType::index<impl::ElementTag>::type VCElementIndex;
    
-    // to store/index ID
-    typedef boost::multi_index_container<
-      ID, 
-      boost::multi_index::indexed_by<
-        boost::multi_index::random_access<boost::multi_index::tag<impl::AddressTag> >,
-        boost::multi_index::hashed_unique<boost::multi_index::tag<impl::ElementTag>, boost::multi_index::identity<ID> >
-      > 
-    > IDSet; 
-    typedef IDSet::index<impl::AddressTag>::type IDSAddressIndex;
-    typedef IDSet::index<impl::ElementTag>::type IDSElementIndex;
-    // vector of IDTable, the index of the i/S should match with the index in tableInst
-    std::vector<IDSet> A;
-    
     // type for the Mi/S
     typedef std::vector<InterpretationType> VectorOfInterpretation;
     // vector of Interpretation, the index of the i/S should match with the index in tableInst
@@ -149,6 +137,7 @@ class DLVHEX_EXPORT MLPSolver{
     // ending graph
 
     std::vector<ValueCallsType> path;
+    IDSetContainer A;
 
     // int lastSizeOgatoms;
     ProgramCtx ctx;
@@ -173,7 +162,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline bool isOrdinary(const Tuple& idb);
     inline std::vector<int> foundMainModules();
     inline ValueCallsType createValueCallsMainModule(int idxModule);
-    inline void assignFin(IDSet& t);
+    //rmv.19.04 inline void assignFin(IDSet& t);
     inline void findAllModulesAtom(const Tuple& newRules, Tuple& result);
     inline bool containsIDRuleHead(const ID& id, const Tuple& ruleHead);
     inline bool defined(const Tuple& preds, const Tuple& ruleHead);
@@ -185,8 +174,8 @@ class DLVHEX_EXPORT MLPSolver{
     inline void createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
 
-    inline void resizeIfNeededA(int idxPjT);
-    inline bool containFinA(int idxPjT);
+    //rmv.19.04 inline void resizeIfNeededA(int idxPjT);
+    //rmv.19.04 inline bool containFinA(int idxPjT);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
@@ -197,7 +186,7 @@ class DLVHEX_EXPORT MLPSolver{
 
     inline void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const; 
     inline void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
-    inline void printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const;
+    //rmv.19.04 inline void printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const;
     inline void printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx);
     inline void printASinSlot(std::ostream& out, const RegistryPtr& reg, const InterpretationPtr& intr);
     inline void printCallGraph(std::ostream& out, const Graph& graph, const std::string& graphLabel);
@@ -540,12 +529,12 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 	  Tuple::iterator itB = rNew.body.begin();
 	  while ( itB != rNew.body.end() )
 	    {
-	      if ( (*itB).isModuleAtom() && A.size() > instIdx )
+	      if ( (*itB).isModuleAtom() && !A.isEmpty(instIdx) )
 		{ 
 		  // find the module atom in the AiS 
-		  IDSElementIndex::iterator itE = A.at(instIdx).get<impl::ElementTag>().find(*itB);
-		  if ( itE !=  A.at(instIdx).get<impl::ElementTag>().end() )
+		  if ( A.containID(instIdx, *itB) )
 		    { // if found
+
 		      // create the PjT	
 		      // first, get the module atom
 		      ModuleAtom ma = registrySolver->matoms.getByID(*itB);
@@ -776,11 +765,6 @@ bool MLPSolver::isOrdinary(const Tuple& idb)
 }
 
 
-void MLPSolver::assignFin(IDSet& t)
-{ 
-  t.clear();
-  t.get<impl::ElementTag>().insert(ID_FAIL);
-}
 
 
 void MLPSolver::findAllModulesAtom(const Tuple& newRules, Tuple& result)
@@ -1067,26 +1051,6 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const I
 }
 
 
-// resize A if the size <= idxPjT
-void MLPSolver::resizeIfNeededA(int idxPjT)
-{
-  if (A.size() <= idxPjT)
-    {
-      A.resize(idxPjT+1);
-    } 
-}
-
-
-// we treat Fin as ID_FAIL
-bool MLPSolver::containFinA(int idxPjT)
-{
-  IDSet Ai = A.at(idxPjT);
-  MLPSolver::IDSElementIndex::iterator itAi = Ai.get<impl::ElementTag>().find( ID_FAIL );
-  if ( itAi == Ai.get<impl::ElementTag>().end() ) return false; 
-    else return true;
-}
-
-
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
@@ -1105,9 +1069,9 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< ValueCallsType > stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector< InterpretationPtr > stackM;
-  std::vector< std::vector<IDSet> > stackA;
-  std::vector< RegistryPtr > stackRegistry;
-  std::vector< ModuleInstTable > stackMInst;
+  std::vector< IDSetContainer > stackA;// fixed this
+  std::vector< RegistryPtr > stackRegistry;// remove this
+  std::vector< ModuleInstTable > stackMInst;// remove this
   std::vector< ID > stackModuleSrcAtom;
 
   std::vector< Graph > stackCallGraph;
@@ -1190,9 +1154,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
 	  
 	      // next: defining the new C and path
-	      resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
-
-	      if ( /*!MFlag.at(idxPjT).isClear() && */ containFinA(idxPjT) ) 
+	      if ( /*!MFlag.at(idxPjT).isClear() && */  A.containFin(idxPjT) ) 
 	        {
 	        }
 	      else
@@ -1240,7 +1202,7 @@ bool MLPSolver::comp(ValueCallsType C)
       // print the A:
       DBGLOG(INFO,"[MLPSolver::comp] with A: ");
       oss.str("");
-      printA(oss,registrySolver, A);
+      A.print(oss,registrySolver);
       DBGLOG(INFO,oss.str());
 
       // int cint;
@@ -1324,8 +1286,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
 	          printASinSlot(oss, registrySolver, M2);
 	          std::string asString = oss.str();
-	          std::cout << asString << std::endl;
-	          //std::cout << ctrAS << std::endl;
+	          //std::cout << asString << std::endl;
+	          std::cout << ctrAS << std::endl;
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
 	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV );
 		  ctrASFromDLV = 0;
@@ -1369,8 +1331,7 @@ bool MLPSolver::comp(ValueCallsType C)
               VCAddressIndex::const_iterator it = idx.begin();
               while ( it != idx.end() )
                 {
-                  IDSet& t = A.at(*it);
-                  assignFin(t);
+                  A.assignFin(*it);
                   it++;  
                 } 
               // for all ans(newCtx) here
@@ -1419,15 +1380,13 @@ bool MLPSolver::comp(ValueCallsType C)
           DBGLOG(DBG, "[MLPSolver::comp] smallest ill by: " << idAlpha);
           // check the size of A
           DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
-          DBGLOG(DBG, "[MLPSolver::comp] A size: " << A.size());
-          if ( A.size() < moduleInstTable.size() )  A.resize( moduleInstTable.size() );
       
           // loop over PiS in C, insert id into AiS
           const VCAddressIndex& idx = C.get<impl::AddressTag>();
           VCAddressIndex::const_iterator it = idx.begin();
           while ( it != idx.end() )
             {
-	      A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
+	      A.add(*it, idAlpha);
               it++;  
             } 
           Tuple bottom;
@@ -1539,6 +1498,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
 bool MLPSolver::solve()
 {
+
   printProgramInformation = false;
   DBGLOG(STATS, "1st row: '80'-> ignore this; 2nd row: ctrAS; 3rd row: #moduleInstantiation, 4th row: #ordinaryGroundAtoms, 5th row: #callToDLV");
   DBGLOG(DBG, "[MLPSolver::solve] started");
@@ -1581,64 +1541,26 @@ bool MLPSolver::solve()
   DBGLOG(INFO, "Registry information: "); 
   DBGLOG(INFO, *registrySolver); 
 */
-  DBGLOG(INFO, "[MLPSolver::solve] finished");
-  
-/*
-  Graph g;
-  std::string vertexName[] = { "p1[{}]", "p2[{q(a),q(b)}]", "p3[{q(a)}]", "zow.h", "foo.cpp",
-                       "libzigzag.a", "killerapp" };
-
-  std::string edgeName[] = { "a", "b", "c", "d"};
-
-
-  int a = 1;
-  int b = 2;
-  int label=4;
-  boost::add_edge(a, b, label, g);
-  a=2;
-  b=3;
-  label = 4;
-  boost::add_edge(a, b, label, g);
-  a=1;
-  b=3;
-  label = 4;
-  boost::add_edge(a, b, label, g);
-/*
-  boost::property_map<Graph, boost::vertex_name_t>::type Vertex_name = get(boost::vertex_name, g);
-  boost::property_map<Graph, boost::edge_name_t>::type Edge_name = get(boost::edge_name, g);
-
-  Vertex u = boost::vertex(1, g);
-  Vertex v = boost::vertex(2, g);
-  Vertex_name[u] = "p1[{}]";
-  Vertex_name[v] = "p2[{q(a),q(b)}]";
-  Edge e1 = boost::add_edge(u, v, g).first;
-  Edge_name[e1] = "a";
-*/ 
-/*
-  VertexIterator itg, itg_end;
-  boost::tie(itg, itg_end) = boost::vertices(g);
-  int ig=0;
-  while (itg != itg_end ) 
-    {
-      DBGLOG(DBG, "[MLPSolver::solve] vertex [" << ig << "]: " << *itg);      
-      itg++;
-      ig++;
-    } 
-
-  EdgeIterator ite, ite_end;
-  boost::tie(ite, ite_end) = boost::edges(g);
-  int ie=0;
-  while (ite != ite_end ) 
-    {
-      DBGLOG(DBG, "[MLPSolver::solve] edge [" << ie << "]: " << *ite << ";" << g[*ite]);      
-      ite++;
-      ie++;
-    } 
-
-//  boost::write_graphviz(std::cout, g, boost::make_label_writer(vertexName), boost::make_label_writer(edgeName));
-
-  boost::write_graphviz(std::cout, g, boost::make_label_writer(vertexName));
+/*  
+  IDSetContainer A;
+  ID id2(0,2);
+  A.add(1,id2);
+  ID id3(0,3);
+  A.add(1,id3);
+  ID id6(0,6);
+  A.add(5,id6);
+  A.assignFin(3);
+  std::ostringstream oss;  
+  A.print(oss);
+  std::cout << oss.str();
+  std::cout << A.containFin(2) << std::endl;
+  std::cout << A.containFin(5) << std::endl;
+  std::cout << A.containFin(3) << std::endl;
+  std::cout << A.isEmpty(1) << std::endl;
+  std::cout << A.isEmpty(5) << std::endl;
+  std::cout << A.isEmpty(6) << std::endl;
 */
+  DBGLOG(INFO, "[MLPSolver::solve] finished");
   return true;
 }
 
@@ -1676,38 +1598,6 @@ void MLPSolver::printPath(std::ostringstream& oss, const RegistryPtr& reg1, cons
 }
 
 
-void MLPSolver::printA(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<IDSet>& A) const
-{
-  RawPrinter printer(oss, reg1);
-
-  std::vector<IDSet>::const_iterator it = A.begin();
-  int i=0;
-  bool first;
-  while ( it != A.end() )
-    {
-      oss << "A[" << i << "]: "; 	
-      IDSAddressIndex::const_iterator itIDSet = (*it).begin();
-      first = true;
-      while ( itIDSet != (*it).end() )	
-	{
-	  // print here
-	  if (first == false) oss << ", ";
-	  if ( *itIDSet == ID_FAIL )
-		oss << "fin";
-	  else 
-	    {
-	      printer.print(*itIDSet);
-	    }		
-
-	  itIDSet++;
-	  first = false;
-	}
-      oss << std::endl;	
-      i++;			
-      it++;
-    }
-}
-
 // print the text of module instantiation, given the module index (index to the instantiation table)
 // example: p1[{q(a),q(b)}]
 void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int moduleInstIdx)
@@ -1728,7 +1618,6 @@ void MLPSolver::printModuleInst(std::ostream& out, const RegistryPtr& reg, int m
 
 void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const InterpretationPtr& intr)
 {
-//  Interpretation newIntr( reg );
   InterpretationPtr newIntr (new Interpretation(reg) );
   out << "(";
   bool first = true;
@@ -1745,25 +1634,6 @@ void MLPSolver::printASinSlot(std::ostream& out, const RegistryPtr& reg, const I
 	  
 	}
     }
-/*
-  for (int i=0; i<MFlag.size();i++)
-    {
-      newIntr.clear();
-      newIntr.add(*intr);
-      newIntr.bit_and(MFlag.at(i));
-      if (!newIntr.isClear())	
-	{ // print
-	  if (first == false) 
-	    {
-	      out << ", ";
-	    }
-          printModuleInst(out,reg,i);
-          out << "=";
-          newIntr.printWithoutPrefix(out);
-	  first = false;
-	}	
-    } 
-*/
   out << ")"; 
 }
 
