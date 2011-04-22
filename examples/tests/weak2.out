@@ -1,6 +1,0 @@
-{f(z), f(y), a(z), a(y)}
-Cost ([Weight:Level]): <[2:1]>
-{g(y), f(z), a(z), a(y)}
-Cost ([Weight:Level]): <[3:1]>
-{g(z), g(y), a(z), a(y)}
-Cost ([Weight:Level]): <[4:1]>

@@ -1,7 +1,0 @@
-notactive.
-nonactive.
-active.
-% if 'notactive' is parsed as 'not active', we won't get notworks
-notworks :- notactive.
-% if 'nonactive' is parsed as 'not active', we won't get nonworks
-nonworks :- nonactive.

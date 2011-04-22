@@ -1,8 +1,0 @@
-% simple auxiliary input rule test
-
-input(a).
-input(b).
-
-intermediate(B) :- &testConcat[A,x](B), input(A).
-
-output(C) :- &testConcat[B,y](C), intermediate(B).

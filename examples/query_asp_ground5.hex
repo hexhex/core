@@ -1,8 +1,0 @@
-foo(a) v bar(b).
-c(X) :- foo(X).
-c(X) :- bar(X).
-baz(X) :- c(X), foo(X).
-
-% this is bravely true and cautiously false
-not baz(a)?
-

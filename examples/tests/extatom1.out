@@ -1,6 +1,0 @@
-{n(foo), m(foo), e(foo), guard(bar), guard(foo), c(bar), a(bar)}
-{n(bar), e(bar), guard(bar), guard(foo), c(bar), a(bar)}
-{m(bar), e(bar), guard(bar), guard(foo), c(bar), a(bar)}
-{result(foo), n(foo), m(foo), e(foo), b(foo), guard(bar), guard(foo), a(foo)}
-{n(bar), e(bar), b(foo), guard(bar), guard(foo), a(foo)}
-{m(bar), e(bar), b(foo), guard(bar), guard(foo), a(foo)}

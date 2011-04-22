@@ -1,6 +1,0 @@
-% this program tests the basic functionality of the
-% nonmonotonic external atom testSetMinus
-seta(u). seta(v). seta(w).
-setb(u).
-
-onlyInA(X) :- &testSetMinus[seta,setb](X).

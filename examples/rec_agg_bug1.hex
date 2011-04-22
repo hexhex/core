@@ -1,4 +1,0 @@
-% this should not be allowed (extatom in aggregate) but a model is generated
-#maxint=5.
-foo(3).
-foo(Z) :- #min{ V: &testMinusOne[X](V), foo(X) } = Z.

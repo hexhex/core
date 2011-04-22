@@ -1,5 +1,0 @@
-#context(1,"benchcontext3_context_acc1", "./benchmark1/dlvctx_ctx1.dlv").
-#context(2,"benchcontext3_context_acc2", "./benchmark1/dlvctx_ctx2.dlv").
-
-r1:(1:a) :- (1:a).
-r2:(2:b) :- (1:a).

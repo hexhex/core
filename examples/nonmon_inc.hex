@@ -1,6 +1,0 @@
-% this program creates an inconsistency via the
-% nonmonotonic external atom testSetMinus
-seta(u). seta(v). seta(w).
-setb(u).
-
-setb(X) :- &testSetMinus[seta,setb](X), seta(X).

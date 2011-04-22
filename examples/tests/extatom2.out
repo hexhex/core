@@ -1,1 +1,0 @@
-{complete("test: a b c"), more("a","b","c"), prefix("test:")}

@@ -1,9 +1,0 @@
-dom(x).
-dom(xx).
-dom(xxx).
-dom(xxxx).
-strings(xx).
-out(X) :- &testConcat[A,x](X), strings(A), dom(X).
-strings(X) :- out(X).
-% result should be {strings(xxx), strings(xxxx), out(xxx), out(xxxx)}
-% this can be evaluated wellfounded, testConcat is monotonic

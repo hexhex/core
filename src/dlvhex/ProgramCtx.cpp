@@ -190,6 +190,7 @@ PluginContainer::getAtom(const std::string& name) const
 
 #endif
 
+#if 0
 void ProgramCtx::addPluginAtom(PluginAtomPtr atom)
 {
   assert(!!atom);
@@ -311,6 +312,7 @@ void ProgramCtx::setupByPlugins()
 	  plugin->setupProgramCtx(*this);
   }
 }
+#endif
 
 DLVHEX_NAMESPACE_END
 

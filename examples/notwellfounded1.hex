@@ -1,8 +1,0 @@
-dom(x).
-dom(xx).
-dom(xxx).
-dom(xxxx).
-strings(xx).
-out(X) :- &testConcat[A,x](X), strings(A), dom(X).
-strings(X) :- not out(X), dom(X).
-% this cannot be evaluated wellfounded, testConcat is monotonic but the loop is odd

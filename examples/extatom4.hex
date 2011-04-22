@@ -1,7 +1,0 @@
-% -*- prolog -*-
-
-a(X) :- &testA[nil](X).
-b(X) :- &testA[nil](X).
-
-x(X, baz) :- a(X).
-x(X, fubar) :- b(X).

@@ -1,1 +1,0 @@
-{onlyInA(w), onlyInA(v), setb(u), seta(w), seta(v), seta(u)}

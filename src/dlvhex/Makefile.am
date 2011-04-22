@@ -15,7 +15,8 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
+#lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
+lib_LTLIBRARIES = libdlvhexbase.la
 
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
@@ -34,11 +35,18 @@ dlvhex_LDFLAGS = -export-dynamic
 #
 dlvhex_LDADD = \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ \
-  libdlvhexbase.la libaspsolver.la libinternalplugins.la \
+  libdlvhexbase.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
+    Error.cpp \
+    ProgramCtx.cpp \
+    SafetyChecker.cpp \
+    State.cpp
+
+foobar_var = \
+    Registry.cpp \
     AnswerSet.cpp \
     AnswerSetPrinterCallback.cpp \
     Atoms.cpp \
@@ -49,7 +57,6 @@ libdlvhexbase_la_SOURCES = \
     ComponentGraph.cpp \
     Configuration.cpp \
     DependencyGraph.cpp \
-    Error.cpp \
     EvalGraphBuilder.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
@@ -67,23 +74,19 @@ libdlvhexbase_la_SOURCES = \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
-    ProgramCtx.cpp \
-    Registry.cpp \
-    SafetyChecker.cpp \
-    State.cpp \
     URLBuf.cpp
 
-# dlvhex ASP component
-libaspsolver_la_SOURCES = \
-    ASPSolver.cpp \
-    ASPSolverManager.cpp \
-    DLVProcess.cpp \
-    DLVresultParserDriver.cpp \
-    ProcessBuf.cpp
-
-# dlvhex internal plugins
-libinternalplugins_la_SOURCES = \
-    QueryPlugin.cpp
+## dlvhex ASP component
+#libaspsolver_la_SOURCES = \
+#    ASPSolver.cpp \
+#    ASPSolverManager.cpp \
+#    DLVProcess.cpp \
+#    DLVresultParserDriver.cpp \
+#    ProcessBuf.cpp
+#
+## dlvhex internal plugins
+#libinternalplugins_la_SOURCES = \
+#    QueryPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,
