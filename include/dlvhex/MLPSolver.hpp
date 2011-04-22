@@ -50,6 +50,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sys/time.h>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -193,6 +194,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void printIdb(const RegistryPtr& reg1, const Tuple& idb);
     inline void printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
     inline void printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb);
+    double startTime; // in miliseconds
 
   public:
     int ctrAS;
@@ -1077,6 +1079,8 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< Graph > stackCallGraph;
   std::vector< std::vector<std::string> > stackEdgeName;
   
+  Interpretation currAns;
+
   stackStatus.push_back(0);
   stackC.push_back(C);
   int status = 0; //status=0 for the first time
@@ -1086,11 +1090,17 @@ bool MLPSolver::comp(ValueCallsType C)
   while (stackC.size()>0) 
     {
       if ( stackC.size() > maxStackSize ) maxStackSize = stackC.size();
-	
+//////// begin delete	
+
       C = stackC.back();
       status = stackStatus.back();
+
+//////// end delete
+
       if ( status == 1 || status == 2)	// 1 = from part b, 2 = from part c 
 	{
+//////// begin delete
+
 	  path = stackPath.back();
 	  *M = *stackM.back();
 	  A = stackA.back();
@@ -1098,8 +1108,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	  registrySolver = R2;
 	  M->setRegistry(registrySolver);
 	  moduleInstTable = stackMInst.back();
+
 	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
-	  Interpretation currAns = *stackAns.back();
+	  currAns = *stackAns.back();
+
+//////// end delete
           DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
           DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
           // union M and N
@@ -1210,6 +1223,8 @@ bool MLPSolver::comp(ValueCallsType C)
       ValueCallsType CPrev;
       int PiSResult;
       bool wasInLoop = false;
+
+      // check i(c) stratified?
       if ( foundCinPath(C, path, CPrev, PiSResult) )
         {
           DBGLOG(DBG, "[MLPSolver::comp] found value-call-loop in value calls");
@@ -1250,6 +1265,8 @@ bool MLPSolver::comp(ValueCallsType C)
         {
           DBGLOG(DBG, "[MLPSolver::comp] found no value-call-loop in value calls");
         }
+
+      // rewrite
       InterpretationPtr edbRewrite;
       Tuple idbRewrite;
       rewrite(C, edbRewrite, idbRewrite); 
@@ -1286,10 +1303,13 @@ bool MLPSolver::comp(ValueCallsType C)
 	          DBGLOG(INFO, "[MLPSolver::comp] Got an answer set" << std::endl << "ANSWER SET" << std::endl << ctrAS);
 	          printASinSlot(oss, registrySolver, M2);
 	          std::string asString = oss.str();
-	          //std::cout << asString << std::endl;
-	          std::cout << ctrAS << std::endl;
+	          std::cout << asString << std::endl;
+	          //std::cout << ctrAS << std::endl;
+		  struct timeval currentTimeStruct;
+                  gettimeofday(&currentTimeStruct, NULL);
+                  double currentTime = currentTimeStruct.tv_sec+(currentTimeStruct.tv_usec/1000000.0);
 	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV );
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV << std::endl << (currentTime - startTime));
 		  ctrASFromDLV = 0;
 		  if ( (printLevel & Logger::INFO) != 0)
 		    {
@@ -1314,6 +1334,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	          // get the next answer set 
                   int0 = res->getNextAnswerSet();
                 } // while (int0...
+///// begin insert
+///// end insert
 	    } // if path.size == 0 ...
           else
             {
@@ -1346,7 +1368,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
 	      if ( int0!=0 ) 
 	        {
-	          stackAns.push_back((int0->interpretation));	
+	          stackAns.push_back(int0->interpretation);	
           	  stackAnsRes.push_back(res);
           	  stackStatus.push_back(1);
           	  stackC.push_back(C2);
@@ -1414,7 +1436,7 @@ bool MLPSolver::comp(ValueCallsType C)
 
           if ( int0!=0 ) 
             {
-	      stackAns.push_back((int0->interpretation));	
+	      stackAns.push_back(int0->interpretation);	
               stackAnsRes.push_back(res);
               stackStatus.push_back(2);
               stackC.push_back(C);
@@ -1508,6 +1530,10 @@ bool MLPSolver::solve()
   int i = 0;
   dataReset();
   ctrAS = 0;	
+  // to record time
+  struct timeval startTimeStruct;
+  gettimeofday(&startTimeStruct, NULL);
+  startTime = startTimeStruct.tv_sec+(startTimeStruct.tv_usec/1000000.0);
   while ( it != mainModules.end() )
     {
       A.clear();
