@@ -34,6 +34,7 @@ TESTS = \
 TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
 
 check_PROGRAMS =  \
+  TestPlainHEX TestPlainHEXND \
   TestTestPluginStatic \
   TestASPSolver TestASPSolverND \
   TestEvalEndToEnd TestEvalEndToEndND \
@@ -47,8 +48,6 @@ check_PROGRAMS =  \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
   TestOfflineModelBuilder TestOfflineModelBuilderND
 
-noinst_PROGRAMS = \
-  TestPlainHEX TestPlainHEXND
 
 # remove .dot files produced by running check_PROGRAMS
 clean-local:

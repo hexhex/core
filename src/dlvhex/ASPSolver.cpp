@@ -32,6 +32,8 @@
  *
  */
 
+#define DLVPATH "foo"
+
 #include "dlvhex/ASPSolver.h"
 
 #warning perhaps we need to reactivate this

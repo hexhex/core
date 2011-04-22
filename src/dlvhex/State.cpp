@@ -494,6 +494,8 @@ OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 {
+		throw SyntaxError("Rule not safe: ");
+		/*
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
 
   //
@@ -505,6 +507,7 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 
   StatePtr next(new CreateDependencyGraphState);
   changeState(ctx, next);
+	*/
 }
 
 MANDATORY_STATE_CONSTRUCTOR(CreateDependencyGraphState);

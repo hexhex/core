@@ -120,123 +120,123 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
+##
+## third-party solver integration
+## * dlv as executable
+## * dlv as shared library (libdlv)
+## * clingo as shared library (preliminary)
+##
 #
-# third-party solver integration
-# * dlv as executable
-# * dlv as shared library (libdlv)
-# * clingo as shared library (preliminary)
+#EXTSOLVER_LIBS=
+#EXTSOLVER_LDFLAGS=
+#EXTSOLVER_CPPFLAGS=
 #
-
-EXTSOLVER_LIBS=
-EXTSOLVER_LDFLAGS=
-EXTSOLVER_CPPFLAGS=
-
-extsolver_found=false
-
+#extsolver_found=false
 #
-# the user didn't supply a path for dlv
+##
+## the user didn't supply a path for dlv
+##
+#if test "$DLV" = ""; then
+#    # we assume "dlv"
+#    DLV=dlv
+#    # and check if it exists
+#    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound)
+#else
+#    # the user supplied a 'DLV=...'
+#    # check if it exists (with search path=/, since the user supplied
+#    # an entire path!) and set DLVPATH to it!
+#    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound, [/])
+#fi
 #
-if test "$DLV" = ""; then
-    # we assume "dlv"
-    DLV=dlv
-    # and check if it exists
-    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound)
-else
-    # the user supplied a 'DLV=...'
-    # check if it exists (with search path=/, since the user supplied
-    # an entire path!) and set DLVPATH to it!
-    AC_CHECK_PROG(DLVPATH, $DLV, $DLV, notfound, [/])
-fi
-
-if test "$DLVPATH" = notfound; then
-  AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
-else
-  extsolver_found=true
-  AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
-  AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
-fi
-
-
+#if test "$DLVPATH" = notfound; then
+#  AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
+#else
+#  extsolver_found=true
+#  AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
+#  AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
+#fi
 #
-# the user didn't supply a path for dlv-lib
 #
-if test "$DLVLIB" = ""; then
-    # we assume we don't have LIBDLV
-    foo=$foo;
-else
-  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
-  EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
-  extsolver_found=true
-fi
-# TODO and check if it exists
-dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
-dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
-dnl   LIBS="-l${DLVLIB} $LIBS"
-dnl   ], [], [-ldl -lpthread])
-
-
+##
+## the user didn't supply a path for dlv-lib
+##
+#if test "$DLVLIB" = ""; then
+#    # we assume we don't have LIBDLV
+#    foo=$foo;
+#else
+#  AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+#  EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
+#  extsolver_found=true
+#fi
+## TODO and check if it exists
+#dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
+#dnl   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
+#dnl   LIBS="-l${DLVLIB} $LIBS"
+#dnl   ], [], [-ldl -lpthread])
 #
-# the user didn't supply a path for dlvdb
 #
-if test "$DLVDB" = ""; then
-    # we assume "dlvdb"
-    DLVDB=dlvdb
-    # and check if it exists
-    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound)
-else
-    # the user supplied a 'DLVDB=...'
-    # check if it exists (with search path=/, since the user supplied
-    # an entire path!) and set DLVPATH to it!
-    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound, [/])
-fi
-
-if test "$DLVDBPATH" = notfound; then
-    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
-else
-    # put the dlvdb path into config.h
-    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
-    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
-  extsolver_found=true
-fi
-
+##
+## the user didn't supply a path for dlvdb
+##
+#if test "$DLVDB" = ""; then
+#    # we assume "dlvdb"
+#    DLVDB=dlvdb
+#    # and check if it exists
+#    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound)
+#else
+#    # the user supplied a 'DLVDB=...'
+#    # check if it exists (with search path=/, since the user supplied
+#    # an entire path!) and set DLVPATH to it!
+#    AC_CHECK_PROG(DLVDBPATH, $DLVDB, $DLVDB, notfound, [/])
+#fi
 #
-# libclingo
+#if test "$DLVDBPATH" = notfound; then
+#    AC_MSG_WARN([Disabled support for dlvdb. Download it at http://www.mat.unical.it/terracina/dlvdb/])
+#else
+#    # put the dlvdb path into config.h
+#    AC_DEFINE_UNQUOTED(DLVDBPATH,"$DLVDBPATH",[Path of DLVDB executable])
+#    AC_DEFINE([HAVE_DLVDB], [1], [Defined if we found dlvdb.])
+#  extsolver_found=true
+#fi
 #
-# use GRINGO_TRUNK_DIR to specify the environment
+##
+## libclingo
+##
+## use GRINGO_TRUNK_DIR to specify the environment
+##
+## build the potassco/trunk/gringo/ repository without lua and without luasql
+## and with the same boost library as dlvhex
+##
+## you might need to hack CMakeLists.txt to accept your boost version
+## you need to hack Makefile to deactivate lua and luasql
+##
+#AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
+#  [with_libclingo_support=true],
+#  [with_libclingo_support=false])
+## conditions in makefiles
+#AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
+#if test "x${with_libclingo_support}" = xtrue; then
+#	# #define in config.h <- config.h.in
+#	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
+#  if test "x${GRINGO_TRUNK_DIR}" = "x"; then
+#    AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
+#  fi
+#	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
+#	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+#	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+#  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
+#  extsolver_found=true
+#fi
+## TODO libclingo search for lib, test lib, set lib variables from these checks
+## (at the moment we rely on the user to correctly give GRINGO_TRUNK_DIR)
 #
-# build the potassco/trunk/gringo/ repository without lua and without luasql
-# and with the same boost library as dlvhex
+#if test "x${extsolver_found}" = xfalse; then
+#  AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
+#fi
 #
-# you might need to hack CMakeLists.txt to accept your boost version
-# you need to hack Makefile to deactivate lua and luasql
-#
-AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
-  [with_libclingo_support=true],
-  [with_libclingo_support=false])
-# conditions in makefiles
-AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
-if test "x${with_libclingo_support}" = xtrue; then
-	# #define in config.h <- config.h.in
-	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
-  if test "x${GRINGO_TRUNK_DIR}" = "x"; then
-    AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
-  fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
-  extsolver_found=true
-fi
-# TODO libclingo search for lib, test lib, set lib variables from these checks
-# (at the moment we rely on the user to correctly give GRINGO_TRUNK_DIR)
-
-if test "x${extsolver_found}" = xfalse; then
-  AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
-fi
-
-AC_SUBST(EXTSOLVER_CPPFLAGS)
-AC_SUBST(EXTSOLVER_LDFLAGS)
-AC_SUBST(EXTSOLVER_LIBS)
+#AC_SUBST(EXTSOLVER_CPPFLAGS)
+#AC_SUBST(EXTSOLVER_LDFLAGS)
+#AC_SUBST(EXTSOLVER_LIBS)
 
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
