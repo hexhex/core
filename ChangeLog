@@ -1,3 +1,11 @@
+2010-04-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Module.cpp: Introducing at most instead of exactly for parameters + formal input more than one predicate.
+
+	* include/dlvhex/MLPSolver.hpp: Including time information in STATS.
+
+	* include/dlvhex/RuleTable.hpp: To not insert previously existed rule.
+
 2010-04-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Put data structure for A in a separate file.

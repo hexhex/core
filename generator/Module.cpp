@@ -28,7 +28,7 @@
  * @date   Tue 05 Apr 2011 06:37:56 PM CEST 
  * 
  * @brief  Generate a random program (with some parameter settings) for benchmarking
- *         For star, line, ring, and fully connected topology
+ *         For star, line, ring, diamond, and random topology
  */
 
 #include <iostream>
@@ -36,6 +36,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <sys/time.h>
 
 
@@ -43,23 +44,27 @@ class BaseExample
 {
   protected:
     std::string outputFilePrefix;
-    int numConstant; 
-    int numPredicate; 
-    int sizeOfHead; 
-    int sizeOfBody;
+    int numConstantMax; 
+    int numPredicateMax; 
+    int sizeOfHeadMax; 
+    int sizeOfBodyMax;
     int notProbability;
-    int numFacts;
-    int numRules;
+    int numRuleMax;
     int numModules;
-    void createModuleHeader(int idxModule, int numParam, std::ostream& oss);
+    std::vector<int> numConstantVector; // for each modules
+    std::vector<int> numPredicateVector; // for each modules
+    std::vector<int> numRuleVector; // for each modules
+    std::vector<int> numInputPredsVector; // number of input predicates for each modules
+
+    void createModuleHeader(int idxModule, std::ostream& oss);
     void generateFacts(int idxModule, std::ostream& oss);
     void generateRules(int idxModule, std::ostream& oss);
-    void generateModuleCall(int idxModuleSrc, int idxModuleDest, int numInputPreds, std::ostream& oss);
+    void generateModuleCall(int idxModuleSrc, int idxModuleDest, std::ostream& oss);
     virtual void createMainModule(std::ostream& oss){};
     virtual void createLibraryModule(int idxModule, std::ostream& oss){};
 
   public:
-    void setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix);
+    void setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRule, int NumModules, std::string& OutputFilePrefix);
     void generate();
 };
 
@@ -84,14 +89,6 @@ class RingExample: public BaseExample
   void createLibraryModule(int idxModule, std::ostream& oss);
 };
 
-/*
-class FullyConnectedExample: public BaseExample 
-{
-  void createMainModule(std::ostream& oss);
-  void createLibraryModule(int idxModule, std::ostream& oss);
-};
-*/
-
 class DiamondExample: public BaseExample 
 {
   private:
@@ -112,25 +109,48 @@ class RandomExample: public BaseExample
     void setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix, int Density=50);
 };
 
+
 // set all params
-void BaseExample::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix)
+void BaseExample::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRule, int NumModules, std::string& OutputFilePrefix)
 {
   outputFilePrefix = OutputFilePrefix;
-  numConstant = NumConstant;
-  numPredicate = NumPredicate;
-  sizeOfHead = SizeOfHead;
-  sizeOfBody = SizeOfBody;
+  numConstantMax = NumConstant;
+  numPredicateMax = NumPredicate;
+  sizeOfHeadMax = SizeOfHead;
+  sizeOfBodyMax = SizeOfBody;
   notProbability = NotProbability;
-  numRules = NumRules;
+  numRuleMax = NumRule;
   numModules = NumModules;
+  int maxInputPreds = numPredicateMax/3;
+  if ( maxInputPreds <= 1 && numPredicateMax > 1)
+    {
+      maxInputPreds = 2;
+    }
+  for (int i=0;i<numModules;i++)
+    {
+      numConstantVector.push_back( (rand()%numConstantMax) + 1);
+      numPredicateVector.push_back( (rand()%numPredicateMax) + 1);
+      numRuleVector.push_back( (rand()%numPredicateMax) + 1);
+      // for randomizing input preds for each module
+      if ( i==0 )
+	{ // for main module, input preds = 0
+	  numInputPredsVector.push_back(0);  
+	}
+      else
+	{ // for library module, input preds min = 1
+	  numInputPredsVector.push_back( (rand()% maxInputPreds ) + 1);
+	  if (numInputPredsVector.back() > numPredicateVector.back() ) 
+	    numInputPredsVector.back() = numPredicateVector.back();
+	}
+    }
 }
 
 
 // create module header: #module(..., [...]).
-void BaseExample::createModuleHeader(int idxModule, int numParam, std::ostream& oss)
+void BaseExample::createModuleHeader(int idxModule, std::ostream& oss)
 {
   oss << "#module(mod" << idxModule << ", [";
-  for (int i=0;i<numParam;i++)
+  for (int i=0;i<numInputPredsVector.at(idxModule);i++)
     {
       if (i>0) oss << ", ";
       oss << "p" << idxModule << "p" << i << "/1";
@@ -145,10 +165,11 @@ void BaseExample::generateFacts(int idxModule, std::ostream& oss)
 {
   int constant;
   int predicate;
+  int numFacts = numConstantVector.at(idxModule)*numPredicateVector.at(idxModule)*2/3;
   for (int i=0;i<numFacts;i++)
     {
-      predicate = rand() % numPredicate;
-      constant = rand() % numConstant;
+      predicate = rand() % numPredicateVector.at(idxModule);
+      constant = rand() % numConstantVector.at(idxModule);
       oss << "p" << idxModule << "p" << predicate << "(c" << constant << "). ";           
     }
 }
@@ -163,13 +184,15 @@ void BaseExample::generateRules(int idxModule, std::ostream& oss)
   int notProbs;
   char vars;
   // generate rules
-  for (int i=0;i<numRules;i++)
+  int numRule = rand() % numRuleMax;
+  for (int i=0;i<numRule;i++)
     {
       // generate head
+      int sizeOfHead = (rand() % sizeOfHeadMax) + 1;
       for (int j=0;j<sizeOfHead;j++)
 	{
-	  predicate = rand() % numPredicate;
-	  constant = rand() % numConstant;
+	  predicate = rand() % numPredicateVector.at(idxModule);
+	  constant = rand() % numConstantVector.at(idxModule);
 	  if ( j>0 ) oss << " v ";
           vars = j+65;  // generate variable
           oss << "p" << idxModule << "p" << predicate << "(" << vars << ")";           
@@ -178,15 +201,16 @@ void BaseExample::generateRules(int idxModule, std::ostream& oss)
       // generate body
       for (int j=0;j<sizeOfHead;j++)
 	{
-	  predicate = rand() % numPredicate;
+	  predicate = rand() % numPredicateVector.at(idxModule);
 	  vars = (j) + 65; // generate variables
 	  notProbs = rand() % 100;
 	  if ( j>0 ) oss << ", ";
           oss << "p" << idxModule <<"p" << predicate << "(" << vars << ")";           
 	} 
+      int sizeOfBody = (rand() % sizeOfBodyMax) + 1;
       for (int j=sizeOfHead;j<sizeOfBody;j++)
 	{
-	  predicate = rand() % numPredicate;
+	  predicate = rand() % numPredicateVector.at(idxModule);
 	  vars = (rand() % sizeOfHead) + 65; // generate variables
 	  notProbs = rand() % 100;
 	  if ( j>0 ) oss << ", ";
@@ -199,13 +223,13 @@ void BaseExample::generateRules(int idxModule, std::ostream& oss)
 
 
 // generate module call from idxModuleSrc to idxModuleDest with numPredicate to create a random input predicate p<idxModuleSrc>p<random 0-numPredicate>
-void BaseExample::generateModuleCall(int idxModuleSrc, int idxModuleDest, int numInputPreds, std::ostream& oss)
+void BaseExample::generateModuleCall(int idxModuleSrc, int idxModuleDest, std::ostream& oss)
 {
   oss << "out" << idxModuleSrc << " :- @mod" << idxModuleDest << "[";
-  for (int i=0;i<numInputPreds;i++) 
+  for (int i=0;i<numInputPredsVector.at(idxModuleDest);i++) 
     {
       if (i > 0) oss <<",";
-      oss << "p" << idxModuleSrc << "p" << rand()%numPredicate;
+      oss << "p" << idxModuleSrc << "p" << (rand()%numPredicateVector.at(idxModuleSrc));
     }
   oss << "]::out" << idxModuleDest << ".";
 }
@@ -219,12 +243,10 @@ void BaseExample::generate()
       oss.str("");
       oss << outputFilePrefix << 0 << ".mlp";		
       fileEach.open( oss.str().c_str() );
-
       // create a main module
       oss.str("");
       createMainModule(oss);
       oss << std::endl;
-
       // write to output files
       fileEach << oss.str();
       fileEach.close();
@@ -253,10 +275,9 @@ void BaseExample::generate()
 void StarExample::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
+  createModuleHeader(0, oss);
   oss << std::endl;
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(0, oss);
   oss << std::endl;
 
@@ -266,7 +287,7 @@ void StarExample::createMainModule(std::ostream& oss)
   // generate module calls 
   for (int i=1;i<numModules;i++)
     {
-      generateModuleCall(0, i, 1, oss);
+      generateModuleCall(0, i, oss);
       oss << std::endl;
     }
 } 
@@ -275,11 +296,10 @@ void StarExample::createMainModule(std::ostream& oss)
 void StarExample::createLibraryModule(int idxModule, std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
+  createModuleHeader(idxModule, oss);
   oss << std::endl;
 
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(idxModule, oss);
   oss << std::endl;
 
@@ -287,7 +307,8 @@ void StarExample::createLibraryModule(int idxModule, std::ostream& oss)
   generateRules(idxModule, oss);
 
   // generate module calls 
-  generateModuleCall(idxModule, idxModule, 1, oss);
+  // the number of input preds is according to numInputPredsVector
+  generateModuleCall(idxModule, idxModule, oss);
 }
 
 
@@ -295,31 +316,30 @@ void StarExample::createLibraryModule(int idxModule, std::ostream& oss)
 /******************* 
  * For Line topology
  *******************/
+
 void LineExample::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
+  createModuleHeader(0, oss);
   oss << std::endl;
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(0, oss);
   oss << std::endl;
 
   // generate rules
   generateRules(0, oss);
 
-  if ( numModules > 1 ) generateModuleCall(0, 1, 1, oss);
+  if ( numModules > 1 ) generateModuleCall(0, 1, oss);
 } 
 
 
 void LineExample::createLibraryModule(int idxModule, std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
+  createModuleHeader(idxModule, oss);
   oss << std::endl;
 
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(idxModule, oss);
   oss << std::endl;
 
@@ -328,9 +348,9 @@ void LineExample::createLibraryModule(int idxModule, std::ostream& oss)
 
   // generate module calls 
   if ( idxModule == numModules-1 )
-    generateModuleCall(idxModule, idxModule, 1, oss);
+    generateModuleCall(idxModule, idxModule, oss);
   else 
-    generateModuleCall(idxModule, idxModule+1, 1, oss);
+    generateModuleCall(idxModule, idxModule+1, oss);
 }
 
 
@@ -338,31 +358,30 @@ void LineExample::createLibraryModule(int idxModule, std::ostream& oss)
 /******************* 
  * For Ring topology
  *******************/
+
 void RingExample::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
+  createModuleHeader(0, oss);
   oss << std::endl;
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(0, oss);
   oss << std::endl;
 
   // generate rules
   generateRules(0, oss);
 
-  if ( numModules > 1 ) generateModuleCall(0, 1, 1, oss);
+  if ( numModules > 1 ) generateModuleCall(0, 1, oss);
 } 
 
 
 void RingExample::createLibraryModule(int idxModule, std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
+  createModuleHeader(idxModule, oss);
   oss << std::endl;
 
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(idxModule, oss);
   oss << std::endl;
 
@@ -371,68 +390,11 @@ void RingExample::createLibraryModule(int idxModule, std::ostream& oss)
 
   // generate module calls 
   if ( idxModule == numModules-1 )
-    generateModuleCall(idxModule, 0, 0, oss);
+    generateModuleCall(idxModule, 0, oss);
   else 
-    generateModuleCall(idxModule, idxModule+1, 1, oss);
+    generateModuleCall(idxModule, idxModule+1, oss);
 }
 
-
-
-/****************************** 
- * For Fully Connected topology
- ******************************/
-/*
-void FullyConnectedExample::createMainModule(std::ostream& oss)
-{
-  // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
-  oss << std::endl;
-  // generate facts
-  numFacts = numConstant*numPredicate*2/3;
-  generateFacts(0, oss);
-  oss << std::endl;
-
-  // generate rules
-  generateRules(0, oss);
- 
-  for (int i=1;i<numModules;i++)
-    {
-      generateModuleCall(0, i, 1, oss);
-      oss << std::endl;
-    }
-} 
-
-
-void FullyConnectedExample::createLibraryModule(int idxModule, std::ostream& oss)
-{
-  // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
-  oss << std::endl;
-
-  // generate facts
-  numFacts = numConstant*numPredicate*2/3;
-  generateFacts(idxModule, oss);
-  oss << std::endl;
-
-  // generate rules
-  generateRules(idxModule, oss);
-
-  // generate module calls 
-  if (idxModule != 0)
-    {
-      generateModuleCall(idxModule, 0, 0, oss);
-      oss << std::endl;
-    }
-  for (int i=1;i<numModules;i++)
-    {
-      if ( i!=idxModule ) 
-	{
-	  generateModuleCall(idxModule, i, 1, oss);
-      	  oss << std::endl;
-	}
-    }
-}
-*/
 
 
 /********************** 
@@ -441,23 +403,15 @@ void FullyConnectedExample::createLibraryModule(int idxModule, std::ostream& oss
 // set all params
 void DiamondExample::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix)
 {
-  outputFilePrefix = OutputFilePrefix;
-  numConstant = NumConstant;
-  numPredicate = NumPredicate;
-  sizeOfHead = SizeOfHead;
-  sizeOfBody = SizeOfBody;
-  notProbability = NotProbability;
-  numRules = NumRules;
-  numModules = NumModules*3+1;
+  BaseExample::setAll(NumConstant, NumPredicate, SizeOfHead, SizeOfBody, NotProbability, NumRules, NumModules*3+1, OutputFilePrefix);
 }
 
 void DiamondExample::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
+  createModuleHeader(0, oss);
   oss << std::endl;
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(0, oss);
   oss << std::endl;
 
@@ -466,9 +420,9 @@ void DiamondExample::createMainModule(std::ostream& oss)
 
   if ( numModules > 1 ) 
     {
-      generateModuleCall(0, 1, 1, oss);
+      generateModuleCall(0, 1, oss);
       oss << std::endl;
-      generateModuleCall(0, 2, 1, oss);
+      generateModuleCall(0, 2, oss);
       oss << std::endl;
     }
 } 
@@ -477,11 +431,10 @@ void DiamondExample::createMainModule(std::ostream& oss)
 void DiamondExample::createLibraryModule(int idxModule, std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
+  createModuleHeader(idxModule, oss);
   oss << std::endl;
 
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(idxModule, oss);
   oss << std::endl;
 
@@ -489,17 +442,16 @@ void DiamondExample::createLibraryModule(int idxModule, std::ostream& oss)
   generateRules(idxModule, oss);
 
   // generate module calls 
-  if ( idxModule == numModules-1) generateModuleCall(idxModule, idxModule, 1, oss);
-  else if ( (idxModule+1)%3 == 0 ) generateModuleCall(idxModule, idxModule+1, 1, oss);
-  else if ( (idxModule+2)%3 == 0 ) generateModuleCall(idxModule, idxModule+2, 1, oss);
+  if ( idxModule == numModules-1) generateModuleCall(idxModule, idxModule, oss);
+  else if ( (idxModule+1)%3 == 0 ) generateModuleCall(idxModule, idxModule+1, oss);
+  else if ( (idxModule+2)%3 == 0 ) generateModuleCall(idxModule, idxModule+2, oss);
   else if ( idxModule%3 == 0 )
     {
-      generateModuleCall(idxModule, idxModule+1, 1, oss);
+      generateModuleCall(idxModule, idxModule+1, oss);
       oss << std::endl;
-      generateModuleCall(idxModule, idxModule+2, 1, oss);
+      generateModuleCall(idxModule, idxModule+2, oss);
       oss << std::endl;
     }
-
 }
 
 
@@ -509,14 +461,7 @@ void DiamondExample::createLibraryModule(int idxModule, std::ostream& oss)
 // set all params
 void RandomExample::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix, int Density)
 {
-  outputFilePrefix = OutputFilePrefix;
-  numConstant = NumConstant;
-  numPredicate = NumPredicate;
-  sizeOfHead = SizeOfHead;
-  sizeOfBody = SizeOfBody;
-  notProbability = NotProbability;
-  numRules = NumRules;
-  numModules = NumModules;
+  BaseExample::setAll(NumConstant, NumPredicate, SizeOfHead, SizeOfBody, NotProbability, NumRules, NumModules, OutputFilePrefix);
   density = Density;
   //rmv. std::cerr << "density: " << density << std::endl;
 }
@@ -524,10 +469,9 @@ void RandomExample::setAll(int NumConstant, int NumPredicate, int SizeOfHead, in
 void RandomExample::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(0, 0, oss);
+  createModuleHeader(0, oss);
   oss << std::endl;
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(0, oss);
   oss << std::endl;
 
@@ -538,7 +482,7 @@ void RandomExample::createMainModule(std::ostream& oss)
     {
       if ( rand() % 100 < density ) 
         {
-          generateModuleCall(0, i, 1, oss);
+          generateModuleCall(0, i, oss);
           oss << std::endl;
 	  moduleCall = true;
         }
@@ -553,11 +497,10 @@ void RandomExample::createMainModule(std::ostream& oss)
 void RandomExample::createLibraryModule(int idxModule, std::ostream& oss)
 {
   // generate fact as many as the rules
-  createModuleHeader(idxModule, 1, oss);
+  createModuleHeader(idxModule, oss);
   oss << std::endl;
 
   // generate facts
-  numFacts = numConstant*numPredicate*2/3;
   generateFacts(idxModule, oss);
   oss << std::endl;
 
@@ -568,7 +511,7 @@ void RandomExample::createLibraryModule(int idxModule, std::ostream& oss)
   bool moduleCall = false;
   if ( rand() % 100 < density ) 
     {
-      generateModuleCall(idxModule, 0, 0, oss);
+      generateModuleCall(idxModule, 0, oss);
       oss << std::endl;
       moduleCall = true;
     }
@@ -576,7 +519,7 @@ void RandomExample::createLibraryModule(int idxModule, std::ostream& oss)
     {
       if ( rand() % 100 < density ) 
         {
-          generateModuleCall(idxModule, i, 1, oss);
+          generateModuleCall(idxModule, i, oss);
           oss << std::endl;
           moduleCall = true;
         }
@@ -586,6 +529,7 @@ void RandomExample::createLibraryModule(int idxModule, std::ostream& oss)
       oss << "out" << idxModule << ".";
     }
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -636,14 +580,6 @@ int main(int argc, char *argv[])
 	  example.setAll(param[0], param[1], param[2], param[3], param[4], param[5], param[6], outputFilePrefix);
 	  example.generate();
 	}
-/*
-      else if (topology == "fully")
-	{
-	  FullyConnectedExample example;
-	  example.setAll(param[0], param[1], param[2], param[3], param[4], param[5], param[6], outputFilePrefix);
-	  example.generate();
-	}
-*/
       else if (topology == "diamond")
 	{
 	  DiamondExample example;
@@ -666,10 +602,6 @@ int main(int argc, char *argv[])
 	  example.generate();
 	}
     }
-
-
 }
-
-
 
 
