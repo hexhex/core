@@ -23,6 +23,15 @@ if [ "$1" = "" ];
 			else
 				dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
 		fi
+		if [ "$2" = "tree" ]
+			then
+				if [ "$density" = "" ];
+					then dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+					else dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules-b$density"
+				fi
+			else
+				dirName="$1-$2-$numConstant-$numPred-$numHead-$numBody-$notProb-$numRules-$numModules"
+		fi
 		mkdir -p $dirName
 		cd $dirName
 		
@@ -31,7 +40,7 @@ if [ "$1" = "" ];
 		do
 			execution="$1.o $2 $numConstant $numPred $numHead $numBody $notProb $numRules $numModules $dirName-i$i- $density"
 			../$execution
-			echo "(ulimit -v 262144 ; /usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp) 2>stats-$dirName-i$i.log 1>as-$dirName-i$i.log" >> run.sh
+			echo "(ulimit -v 1048576 ; /usr/bin/time --verbose -o time-$dirName-i$i.log $DLVHEX $dirName-i$i-*.mlp) 2>stats-$dirName-i$i.log 1>as-$dirName-i$i.log" >> run.sh
 			msg1='echo "'
 			msg2="$i instances(s) processed"
 			msg3='"'

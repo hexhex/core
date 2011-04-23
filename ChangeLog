@@ -1,5 +1,8 @@
 2010-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/gen.sh: Adding Tree topology.
+	* generator/Module.cpp: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Adding #callToDLV and #ASFromDLV information.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
