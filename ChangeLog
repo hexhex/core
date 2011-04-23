@@ -1,3 +1,8 @@
+2010-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding #callToDLV and #ASFromDLV information.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2010-04-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Module.cpp: Introducing at most instead of exactly for parameters + formal input more than one predicate.

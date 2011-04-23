@@ -198,6 +198,8 @@ class DLVHEX_EXPORT MLPSolver{
 
   public:
     int ctrAS;
+    int ctrASFromDLV;
+    int ctrCallToDLV;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
     inline void setPrintLevel(int level);
@@ -1057,7 +1059,6 @@ int MLPSolver::addOrGetModuleIstantiation(const std::string& moduleName, const I
 bool MLPSolver::comp(ValueCallsType C)
 {
 
-  int ctrASFromDLV = 0;
   // for ASPSolver
   ASPSolver::DLVSoftware::Configuration config;
   ASPSolverManager mgr;
@@ -1287,15 +1288,16 @@ bool MLPSolver::comp(ValueCallsType C)
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
+	      ctrCallToDLV++;
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
               while (int0 !=0 )
                 {
-		  ctrASFromDLV++;
 	          InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
 	          // integrate the answer
 	          M2->add( *(int0->interpretation) );	      
+		  ctrASFromDLV++;
 
 	          // collect the full answer set
 	          ctrAS++;
@@ -1308,9 +1310,7 @@ bool MLPSolver::comp(ValueCallsType C)
 		  struct timeval currentTimeStruct;
                   gettimeofday(&currentTimeStruct, NULL);
                   double currentTime = currentTimeStruct.tv_sec+(currentTimeStruct.tv_usec/1000000.0);
-	          DBGLOG(INFO, "[MLPSolver::comp] ctrAS from DLV: " << ctrASFromDLV);
-	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV << std::endl << (currentTime - startTime));
-		  ctrASFromDLV = 0;
+	          DBGLOG(STATS, std::endl << ctrAS << std::endl << moduleInstTable.size() << std::endl << registrySolver->ogatoms.getSize() << std::endl << ctrASFromDLV << std::endl << ctrCallToDLV << std::endl << (currentTime - startTime));
 		  if ( (printLevel & Logger::INFO) != 0)
 		    {
                       // print the call graph
@@ -1363,7 +1363,7 @@ bool MLPSolver::comp(ValueCallsType C)
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 	      res = mgr.solve(config, program);
-
+	      ctrCallToDLV++;
 	      // for the recursion part b
 	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
 	      if ( int0!=0 ) 
@@ -1432,6 +1432,7 @@ bool MLPSolver::comp(ValueCallsType C)
           ASPSolverManager::ResultsPtr res;
 	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
 	  res = mgr.solve(config, program);
+	  ctrCallToDLV++;
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
           if ( int0!=0 ) 
@@ -1522,18 +1523,20 @@ bool MLPSolver::solve()
 {
 
   printProgramInformation = false;
-  DBGLOG(STATS, "1st row: '80'-> ignore this; 2nd row: ctrAS; 3rd row: #moduleInstantiation, 4th row: #ordinaryGroundAtoms, 5th row: #callToDLV");
+  DBGLOG(STATS, "1st row: '80'-> ignore this; 2nd row: ctrAS; 3rd row: #moduleInstantiation, 4th row: #ordinaryGroundAtoms, 5th row: #ASFromDLV, 6th row: #callToDLV, 7th row: TimeElapsed");
   DBGLOG(DBG, "[MLPSolver::solve] started");
   // find all main modules in the program
   std::vector<int> mainModules = foundMainModules(); 
   std::vector<int>::const_iterator it = mainModules.begin();
-  int i = 0;
   dataReset();
-  ctrAS = 0;	
   // to record time
   struct timeval startTimeStruct;
   gettimeofday(&startTimeStruct, NULL);
   startTime = startTimeStruct.tv_sec+(startTimeStruct.tv_usec/1000000.0);
+  ctrCallToDLV = 0;
+  ctrASFromDLV = 0;
+  ctrAS = 0;	
+  int i = 0;
   while ( it != mainModules.end() )
     {
       A.clear();

@@ -59,7 +59,7 @@
 
 DLVHEX_NAMESPACE_USE
 
-/*
+
 // 1
 BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
 {
@@ -1030,7 +1030,7 @@ BOOST_AUTO_TEST_CASE(testPowerProgram)
 }
 */
 
-
+/*
 //20
 BOOST_AUTO_TEST_CASE(testBigProgram) 
 {
@@ -1084,4 +1084,4 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   BOOST_REQUIRE ( m.solve() == true );
   LOG(DBG, "Test Big Program finish");
 }
-
+*/
