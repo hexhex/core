@@ -94,8 +94,6 @@ class DiamondTopology: public BaseTopology
   private:
     void createMainModule(std::ostream& oss);
     void createLibraryModule(int idxModule, std::ostream& oss);
-  public:
-    void setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix);
 };
 
 
@@ -132,10 +130,11 @@ void BaseTopology::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int
   numRuleMax = NumRule;
   numModules = NumModules;
   int maxInputPreds = numPredicateMax/3;
-  if ( maxInputPreds <= 1 && numPredicateMax > 1)
+  if ( maxInputPreds == 1 && numPredicateMax > 1)
     {
       maxInputPreds = 2;
     }
+  if (maxInputPreds == 0) maxInputPreds = 1;
   for (int i=0;i<numModules;i++)
     {
       numConstantVector.push_back( (rand()%numConstantMax) + 1);
@@ -410,12 +409,6 @@ void RingTopology::createLibraryModule(int idxModule, std::ostream& oss)
 /********************** 
  * For Diamond topology
  **********************/
-// set all params
-void DiamondTopology::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int SizeOfBody, int NotProbability, int NumRules, int NumModules, std::string& OutputFilePrefix)
-{
-  BaseTopology::setAll(NumConstant, NumPredicate, SizeOfHead, SizeOfBody, NotProbability, NumRules, NumModules*3+1, OutputFilePrefix);
-}
-
 void DiamondTopology::createMainModule(std::ostream& oss)
 {
   // generate fact as many as the rules
@@ -432,6 +425,9 @@ void DiamondTopology::createMainModule(std::ostream& oss)
     {
       generateModuleCall(0, 1, oss);
       oss << std::endl;
+    }
+  if ( numModules > 2 ) 
+    {
       generateModuleCall(0, 2, oss);
       oss << std::endl;
     }
@@ -454,14 +450,20 @@ void DiamondTopology::createLibraryModule(int idxModule, std::ostream& oss)
   // generate module calls 
   if ( idxModule == numModules-1) generateModuleCall(idxModule, idxModule, oss);
   else if ( (idxModule+1)%3 == 0 ) generateModuleCall(idxModule, idxModule+1, oss);
-  else if ( (idxModule+2)%3 == 0 ) generateModuleCall(idxModule, idxModule+2, oss);
-  else if ( idxModule%3 == 0 )
-    {
-      generateModuleCall(idxModule, idxModule+1, oss);
-      oss << std::endl;
-      generateModuleCall(idxModule, idxModule+2, oss);
-      oss << std::endl;
-    }
+  else 
+    if ( (idxModule+2)%3 == 0 ) 
+      {
+        if ( idxModule+2 < (numModules) ) generateModuleCall(idxModule, idxModule+2, oss);
+        else generateModuleCall(idxModule, idxModule, oss);
+      }
+  else 
+    if ( idxModule%3 == 0 )
+      {
+        generateModuleCall(idxModule, idxModule+1, oss);
+        oss << std::endl;
+        if (idxModule+2 < numModules) generateModuleCall(idxModule, idxModule+2, oss);
+        oss << std::endl;
+      }
 }
 
 
@@ -623,7 +625,7 @@ int main(int argc, char *argv[])
       std::cerr << "Module star <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix>" << std::endl;
       std::cerr << "Module line <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix>" << std::endl;
       std::cerr << "Module ring <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix>" << std::endl;
-      std::cerr << "Module diamond <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numDiamond> <outputFilePrefix>" << std::endl;
+      std::cerr << "Module diamond <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix>" << std::endl;
       std::cerr << "Module random <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix> [density]" << std::endl;
       std::cerr << "Module tree <numConstant> <numPredicate> <sizeOfHead> <sizeOfBody> <notProbability> <numRules> <numModules> <outputFilePrefix> [branch]" << std::endl;
 
