@@ -1,5 +1,7 @@
 2010-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Choose the fastest dataset for A (using vector only).
+
 	* generator/gen.sh: Adding Tree topology.
 	* generator/Module.cpp: Likewise.
 
