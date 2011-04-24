@@ -1,3 +1,7 @@
+2010-04-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genExampleCore.sh: Generate 'interesting' examples.
+
 2010-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genParameterSetting.sh: Generate a complete benchmark suite for a topology.
