@@ -451,7 +451,7 @@ int main(int argc, char *argv[])
   catch(const GeneralError &ge)
 	{
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
-		return 1;
+		return 0;
 	}
 	catch(const std::exception& e)
 	{
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 	}
 
 	// regular exit
-	return 0;
+	return 1;
 }
 
 #if 0

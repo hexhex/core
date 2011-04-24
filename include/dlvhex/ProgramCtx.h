@@ -37,6 +37,10 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/fwd.hpp"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/State.h"
+#include "dlvhex/Logger.hpp"
+#if 0
 #include "dlvhex/Configuration.hpp"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Interpretation.hpp"
@@ -46,6 +50,7 @@
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/ModelBuilder.hpp"
+#endif
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>
@@ -57,6 +62,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#if 0
 typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
   EvalHeuristicFactory;
 
@@ -65,6 +71,7 @@ typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
 
 typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
   ModelBuilderFactory;
+#endif
 
 /**
  * @brief Program context class.
@@ -74,6 +81,7 @@ typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
 class DLVHEX_EXPORT ProgramCtx
 {
 public:
+	#if 0
 	// previously globals
 	Configuration config;
 
@@ -135,6 +143,7 @@ public:
   ModelBuilderPtr modelBuilder;
   // model graph is only accessible via modelbuilder->getModelGraph()!
   // (model graph is part of the model builder) TODO think about that
+	#endif
 
   StatePtr state;
 
@@ -146,6 +155,7 @@ public:
 
   ~ProgramCtx();
 
+	#if 0
   ASPSolverManager::SoftwareConfigurationPtr
   getASPSoftware() const;
 
@@ -174,6 +184,7 @@ public:
 
   // setup this ProgramCtx (using setupProgramCtx() for of all plugins)
   void setupByPlugins();
+	#endif
 
   //
   // state processing
@@ -195,6 +206,8 @@ public:
   void evaluate();
   void postProcess();
 
+};
+#if 0
 protected:
   // symbol storage of this program context
   // (this is a shared ptr because we might want
@@ -233,6 +246,7 @@ typename PluginT::CtxData& ProgramCtx::getPluginData()
   assert(!!pret);
   return *pret;
 }
+#endif
 
 DLVHEX_NAMESPACE_END
 

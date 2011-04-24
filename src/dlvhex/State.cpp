@@ -491,7 +491,8 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
 }
 #endif
 
-OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
+//OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,StrongSafetyCheckState);
+MANDATORY_STATE_CONSTRUCTOR(SafetyCheckState);
 
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)

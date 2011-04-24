@@ -23,7 +23,7 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 
 
-SUBDIRS = libltdl src 
+SUBDIRS = include libltdl src 
 
 EXTRA_DIST = \
     bm3.7.0 \

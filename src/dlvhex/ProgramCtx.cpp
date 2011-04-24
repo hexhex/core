@@ -36,7 +36,7 @@
 
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginContainer.h"
+//#include "dlvhex/PluginContainer.h"
 #include "dlvhex/State.h"
 //#include "dlvhex/DLVProcess.h"
 
@@ -48,8 +48,8 @@
 DLVHEX_NAMESPACE_BEGIN
 
 	
-ProgramCtx::ProgramCtx():
-		maxint(0)
+ProgramCtx::ProgramCtx()
+		//maxint(0)
 {
 }
 
@@ -59,6 +59,7 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting state");
   state.reset();
 
+	#if 0
   DBGLOG(DBG,"resetting callbacks");
   modelCallbacks.clear();
   finalCallbacks.clear();
@@ -97,7 +98,8 @@ ProgramCtx::~ProgramCtx()
   pluginAtoms.clear();
 
   DBGLOG(DBG,"resetting pluginContainer, usage count was " << _pluginContainer.use_count() << " (it should be 1)");
-  _pluginContainer.reset();
+  //_pluginContainer.reset();
+	#endif
 }
   
 
@@ -120,7 +122,6 @@ void ProgramCtx::setupRegistryPluginContainer(
   _registry = registry;
   _pluginContainer = pluginContainer;
 }
-#endif
 
 // cannot change registry if something is already stored here
 void ProgramCtx::setupRegistry(
@@ -161,6 +162,7 @@ void ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr softw
 {
   aspsoftware = software;
 }
+#endif
 
 void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }

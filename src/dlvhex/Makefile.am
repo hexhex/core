@@ -21,6 +21,8 @@ lib_LTLIBRARIES = libdlvhexbase.la
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
 
+TESTS = dlvhex
+
 #    RuleMLOutputBuilder.cpp 
 
 #
@@ -40,6 +42,9 @@ dlvhex_LDADD = \
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
+    ID.cpp \
+    Logger.cpp \
+    Printer.cpp \
     Error.cpp \
     ProgramCtx.cpp \
     SafetyChecker.cpp \
@@ -67,13 +72,10 @@ foobar_var = \
     GuessAndCheckModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \
     HexParser.cpp \
-    ID.cpp \
     InputProvider.cpp \
     Interpretation.cpp \
-    Logger.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
-    Printer.cpp \
     URLBuf.cpp
 
 ## dlvhex ASP component
