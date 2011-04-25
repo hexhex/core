@@ -1,5 +1,14 @@
 #!/bin/bash
-mainDir=$1		#main directory where all folder parameter setting are
+
+#
+# run benchmark example
+#
+# require 2 params
+# 1st param: directory target, example: ModuleCore/ModuleCore-line
+# 2nd param: directory result, example: StatsCore/StatsCore-line
+#
+
+mainDir=$1
 resultDir=$2
 rm -rf $2
 mkdir $2

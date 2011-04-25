@@ -1,5 +1,8 @@
 2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/summaryET.sh: Adding comments.
+	* generator/runScriptET.sh: Likewise.
+
 	* generator/plotting.sh: Create plotting data for gnuplot.
 
 	* generator/summaryStatsET.sh: Creating statistical information from summary.
