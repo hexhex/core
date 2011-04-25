@@ -57,6 +57,8 @@ public:
     explicit
     GeneralError(const std::string& msg);
 
+    virtual ~GeneralError() throw() {}
+
     /**
      * @brief Returns error string.
      *
