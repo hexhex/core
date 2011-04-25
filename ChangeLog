@@ -1,5 +1,10 @@
 2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/summaryStatsET.sh: Creating statistical information from summary.
+	* generator/stats.awk: Likewise.
+
+2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* generator/summaryET.sh: Create file summary for each parameter setting.
 
 	* generator/runScriptET.sh: Run benchmark for a topology.
