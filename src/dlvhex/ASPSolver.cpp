@@ -327,6 +327,10 @@ DLVSoftware::Delegate::getResults()
 //
 #ifdef HAVE_LIBDLV
 
+// if this does not work, maybe the old other branch helps
+// (it was not fully working back then either, but maybe there are hints)
+// https://dlvhex.svn.sourceforge.net/svnroot/dlvhex/dlvhex/branches/dlvhex-libdlv-integration@2879
+
 struct DLVLibSoftware::Delegate::Impl
 {
   Options options;
