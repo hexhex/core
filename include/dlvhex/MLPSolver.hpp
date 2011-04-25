@@ -195,6 +195,7 @@ class DLVHEX_EXPORT MLPSolver{
     int printLevel;
     bool writeLog;
     int nASReturned;
+    int forget;
 
     inline void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const; 
     inline void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
@@ -213,6 +214,7 @@ class DLVHEX_EXPORT MLPSolver{
     int ctrCallToDLV;
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
+    inline void setForget(int n);
     inline void setPrintLevel(int level);
     inline bool solve(); // return false if the program is not ic-stratified
 
@@ -227,6 +229,10 @@ void MLPSolver::setNASReturned(int n)
    }
 }
 
+void MLPSolver::setForget(int n)
+{
+  if ( n==0 || n==1 ) forget = n;
+}
 
 void MLPSolver::setPrintLevel(int level)
 {
@@ -249,6 +255,7 @@ void MLPSolver::dataReset()
 MLPSolver::MLPSolver(ProgramCtx& ctx1){
   printLevel = 0;
   nASReturned = 0;
+  forget = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
@@ -1132,10 +1139,13 @@ bool MLPSolver::comp(ValueCallsType C)
 	  path = stackPath.back();
 	  *M = *stackM.back();
 	  A = stackA.back();
-	  RegistryPtr R2(new Registry(*stackRegistry.back() ));
-	  registrySolver = R2;
-	  M->setRegistry(registrySolver);
-	  moduleInstTable = stackMInst.back();
+	  if ( forget == 1 ) // if forget is activated
+	    {
+	      RegistryPtr R2(new Registry(*stackRegistry.back() ));
+	      registrySolver = R2;
+	      M->setRegistry(registrySolver);
+	      moduleInstTable = stackMInst.back();
+	    }
 	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
 	  Interpretation currAns = *stackAns.back();
           DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
@@ -1162,8 +1172,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackPath.erase(stackPath.end()-1);
 	      stackM.erase(stackM.end()-1);
 	      stackA.erase(stackA.end()-1);
-	      stackRegistry.erase(stackRegistry.end()-1);
-	      stackMInst.erase(stackMInst.end()-1);
+	      if ( forget == 1 )
+		{	
+	          stackRegistry.erase(stackRegistry.end()-1);
+	          stackMInst.erase(stackMInst.end()-1);
+		}
 	      if ( (printLevel & Logger::INFO) != 0 )
 	        {
 		  stackCallGraph.erase(stackCallGraph.end()-1);
@@ -1399,8 +1412,11 @@ bool MLPSolver::comp(ValueCallsType C)
  	  	  stackM.push_back(M2);
 	  	  stackA.push_back(A);
                   RegistryPtr R2(new Registry(*registrySolver) );
-	          stackRegistry.push_back( R2 );  
-	  	  stackMInst.push_back(moduleInstTable);
+		  if ( forget == 1 )
+		    {	
+	              stackRegistry.push_back( R2 );  
+	  	      stackMInst.push_back(moduleInstTable);
+		    }	
 		  if ( (printLevel & Logger::INFO) != 0 )
 		    { 
 	  	      stackCallGraph.push_back(callGraph);
@@ -1470,8 +1486,11 @@ bool MLPSolver::comp(ValueCallsType C)
  	      stackM.push_back(M2);
 	      stackA.push_back(A);
 	      RegistryPtr R2(new Registry(*registrySolver) );
-	      stackRegistry.push_back( R2 );  
-	      stackMInst.push_back(moduleInstTable);
+	      if ( forget == 1 )
+		{
+	          stackRegistry.push_back( R2 );  
+	          stackMInst.push_back(moduleInstTable);
+		}
 	      stackModuleSrcAtom.push_back(idAlpha);
 	      if ( (printLevel & Logger::INFO) != 0 )
 		{
