@@ -756,7 +756,7 @@ void processOptionsPrePlugin(
 	for (int i = optind; i < argc; ++i)
 	{
 		std::string arg(argv[i]);
-		if( arg.substr(arg.size()-4) == ".typ" )
+		if( arg.size() > 4 && arg.substr(arg.size()-4) == ".typ" )
 		{
 			#if defined(HAVE_DLVDB)
 			boost::shared_ptr<ASPSolver::DLVDBSoftware::Configuration> ptr =
