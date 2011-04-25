@@ -332,13 +332,11 @@ DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [doc])
 AC_CONFIG_FILES([
            Makefile 
            dlvhex.pc
-           examples/Makefile
            include/Makefile
            include/common.h
            include/dlvhex/Makefile
            src/Makefile
            src/dlvhex/Makefile
-           testsuite/Makefile
 ])
 
 

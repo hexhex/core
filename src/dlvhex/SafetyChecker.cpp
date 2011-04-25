@@ -308,6 +308,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
   RegistryPtr reg = ctx.registry();
   assert(!!reg);
 
+	throw SyntaxError("if this exception is caught correctly and the program then exits gracefully the bug is resolved");
+
   //
   // testing for simple rule safety:
   // * a constant is safe

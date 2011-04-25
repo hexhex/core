@@ -54,6 +54,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#define HAVE_DLV 1
+
 #include "dlvhex/Error.h"
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/ProgramCtx.h"
@@ -86,7 +88,6 @@
 
 DLVHEX_NAMESPACE_USE
 
-#if 0
 /**
  * @brief Print logo.
  */
@@ -233,17 +234,14 @@ struct Config
 };
 
 void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
-#endif
 
 int main(int argc, char *argv[])
 {
   const char* whoAmI = argv[0];
 
-	#if 0
 	// pre-init logger
 	// (we use more than 4 bits -> two digit loglevel)
 	Logger::Instance().setPrintLevelWidth(2);
-	#endif
 
 	// program context
   ProgramCtx pctx;
@@ -254,7 +252,6 @@ int main(int argc, char *argv[])
 		pctx.setupPluginContainer(pcp);
 	}
 
-	#if 0
   // default external asp solver to first one that has been configured
 	#if HAVE_DLV
   pctx.setASPSoftware(
@@ -299,12 +296,10 @@ int main(int argc, char *argv[])
 
 	// defaults of main
 	Config config;
-	#endif
 
 	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
 	try
 	{
-		/*
 		// default logging priority = errors + warnings
 		Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
 
@@ -345,13 +340,12 @@ int main(int argc, char *argv[])
 
 		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
 			throw UsageError("no input specified!");
-		*/
 
 		// startup statemachine
 		pctx.changeState(StatePtr(new SafetyCheckState));
 		pctx.safetyCheck();
 
-		/*
+		#if 0
 		// load plugins
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"loading plugins");
@@ -434,7 +428,7 @@ int main(int argc, char *argv[])
 		// finalization plugin/dlvhex hooks (for accumulating model processing)
 		// (accumulated model output/query answering should happen here)
 		pctx.postProcess();
-		*/
+		#endif
 	}
   catch(const UsageError &ue)
 	{
@@ -447,6 +441,7 @@ int main(int argc, char *argv[])
   catch(const GeneralError &ge)
 	{
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
+		return 0; // for make check-ing clang bug
 		return 1;
 	}
 	catch(const std::exception& e)
@@ -454,12 +449,17 @@ int main(int argc, char *argv[])
 		std::cerr << "Exception: " << e.what() << std::endl << std::endl;
 		return 1;
 	}
+	catch(...)
+	{
+		std::cerr << "other exception?" << std::endl << std::endl;
+		return 1;
+	}
 
 	// regular exit
+	return 1; // for make check-ing clang bug
 	return 0;
 }
 
-#if 0
 void configurePluginPath(std::string& userPlugindir);
 
 // process whole commandline:
@@ -805,7 +805,6 @@ void configurePluginPath(std::string& userPlugindir)
 	}
 	userPlugindir = searchpath.str();
 }
-#endif
 
 /* vim: set noet sw=2 ts=2 tw=80: */
 
