@@ -55,16 +55,13 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/Error.h"
-//#include "dlvhex/Benchmarking.h"
+#include "dlvhex/Benchmarking.h"
 #include "dlvhex/ProgramCtx.h"
-#if 0
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginContainer.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
-#endif
 #include "dlvhex/State.h"
-#if 0
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
@@ -72,10 +69,9 @@
 #include "dlvhex/EvalHeuristicEasy.hpp"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
-#endif
 
 // internal plugin
-//#include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/QueryPlugin.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -251,7 +247,6 @@ int main(int argc, char *argv[])
 
 	// program context
   ProgramCtx pctx;
-	#if 0
 	{
 		RegistryPtr registry(new Registry);
 		PluginContainerPtr pcp(new PluginContainer);
@@ -259,6 +254,7 @@ int main(int argc, char *argv[])
 		pctx.setupPluginContainer(pcp);
 	}
 
+	#if 0
   // default external asp solver to first one that has been configured
 	#if HAVE_DLV
   pctx.setASPSoftware(
@@ -451,7 +447,7 @@ int main(int argc, char *argv[])
   catch(const GeneralError &ge)
 	{
 		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
-		return 0;
+		return 1;
 	}
 	catch(const std::exception& e)
 	{
@@ -460,7 +456,7 @@ int main(int argc, char *argv[])
 	}
 
 	// regular exit
-	return 1;
+	return 0;
 }
 
 #if 0

@@ -62,7 +62,6 @@ namespace
 
 void RawPrinter::print(ID id)
 {
-	#if 0
 	switch(id.kind & ID::MAINKIND_MASK)
 	{
 	case ID::MAINKIND_LITERAL:
@@ -246,7 +245,6 @@ void RawPrinter::print(ID id)
 	default:
 		assert(false);
 	}
-	#endif
 }
 
 DLVHEX_NAMESPACE_END

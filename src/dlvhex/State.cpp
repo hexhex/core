@@ -140,7 +140,6 @@ STATE_FUNC_DEFAULT_IMPL(postProcess);
 #define OPTIONAL_STATE_CONSTRUCTOR(state,skiptostate) \
   state :: state (): State(StatePtr(new skiptostate)) {}
 
-#if 0
 OPTIONAL_STATE_CONSTRUCTOR(ShowPluginsState,ConvertState);
 
 void ShowPluginsState::showPlugins(ProgramCtx* ctx)
@@ -489,10 +488,8 @@ RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
   StatePtr next(new SafetyCheckState);
   changeState(ctx, next);
 }
-#endif
 
-//OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,StrongSafetyCheckState);
-MANDATORY_STATE_CONSTRUCTOR(SafetyCheckState);
+OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
 
 void
 SafetyCheckState::safetyCheck(ProgramCtx* ctx)
@@ -513,7 +510,6 @@ SafetyCheckState::safetyCheck(ProgramCtx* ctx)
 	*/
 }
 
-#if 0
 MANDATORY_STATE_CONSTRUCTOR(CreateDependencyGraphState);
 
 void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
@@ -954,7 +950,6 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   changeState(ctx, next);
 }
 
-#endif
 
 DLVHEX_NAMESPACE_END
 

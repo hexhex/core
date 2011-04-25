@@ -34,16 +34,14 @@
 #define REGISTRY_HPP_INCLUDED_14012011
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ID.hpp"
-#if 0
 #include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/ID.hpp"
 #include "dlvhex/TermTable.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 #include "dlvhex/BuiltinAtomTable.hpp"
 #include "dlvhex/AggregateAtomTable.hpp"
 #include "dlvhex/ExternalAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
-#endif
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -68,7 +66,6 @@ struct Registry:
   explicit Registry(const Registry& other);
   ~Registry();
 
-	#if 0
   TermTable terms;
   // ordinary ground atoms
   OrdinaryAtomTable ogatoms;
@@ -78,7 +75,6 @@ struct Registry:
   AggregateAtomTable aatoms;
   ExternalAtomTable eatoms;
   RuleTable rules;
-	#endif
 
 #warning namespaces
   //NamespaceTable namespaces;
@@ -115,7 +111,6 @@ struct Registry:
   //
   // modifiers
   //
-	#if 0
 
   // lookup by tuple, if does not exist create text and store as new atom
   // assume, that oatom.id and oatom.tuple is initialized!
@@ -165,7 +160,6 @@ struct Registry:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
-	#endif
 
 protected:
   struct Impl;

@@ -74,7 +74,6 @@ SafetyChecker::~SafetyChecker()
 }
 
 
-#if 0
 
 namespace
 {
@@ -299,14 +298,10 @@ void determineSafeVariables(
 }
 
 } // anonymous namespace
-#endif
 
 void
 SafetyChecker::operator() () const throw (SyntaxError)
 {
-      throw SyntaxError("Rule not safe: ");
-
-			#if 0
   LOG_SCOPE(ANALYZE,"safety",false);
 	LOG(ANALYZE,"=safety checker");
 
@@ -377,10 +372,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
     assert(allvars == safevars &&
 				"we assume that same set cardinality means same variables");
   }
-	#endif
 }
 
-#if 0
 
 StrongSafetyChecker::StrongSafetyChecker(const ProgramCtx& ctx):
   SafetyCheckerBase(ctx)
@@ -619,7 +612,6 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 		}
 	}
 }
-#endif
 
 
 DLVHEX_NAMESPACE_END
