@@ -1,5 +1,7 @@
 2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/plotting.sh: Create plotting data for gnuplot.
+
 	* generator/summaryStatsET.sh: Creating statistical information from summary.
 	* generator/stats.awk: Likewise.
 
