@@ -181,7 +181,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
   assert(pimpl->reg);
   pimpl->mask = program.mask;
 
-  // TODO HO checks
+  #warning TODO HO checks
   //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
   //  throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
 
@@ -202,6 +202,8 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
     }
     // request stdin as last parameter
     proc.addOption("--");
+    LOG(DBG,"external process was setup with path '" << pimpl->proc.path() << "'");
+
     // fork dlv process
     proc.spawn();
 
@@ -209,7 +211,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
 
     // output program
     RawPrinter printer(programStream, program.registry);
-    // TODO HO stuff
+    #warning TODO HO stuff
     //PrinterPtr printer;
     //if( options.rewriteHigherOrder )
     //  printer = PrinterPtr(new HOPrintVisitor(programStream));
@@ -233,6 +235,7 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
   CATCH_RETHROW_DLVDELEGATE
 }
 
+#warning TODO certain interfaces deactivated
 #if 0
 void
 DLVSoftware::Delegate::useStringInput(const std::string& program)
@@ -553,6 +556,7 @@ DLVLibSoftware::Delegate::getResults()
 #endif // HAVE_LIBDLV
 
 
+#warning TODO reactivate dlvdb
 
 #if 0
 #if defined(HAVE_DLVDB)
@@ -590,6 +594,8 @@ void DLVDBSoftware::Delegate::setupProcess()
 
 #endif // defined(HAVE_DLVDB)
 #endif
+
+#warning TODO clingo nightly tests
 
 //
 // ClingoSoftware
