@@ -20,6 +20,8 @@ lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
 
+EXTRA_DIST = testdlvhex.sh
+
 TESTS = testdlvhex.sh
 
 #    RuleMLOutputBuilder.cpp 
