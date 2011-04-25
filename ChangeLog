@@ -1,5 +1,7 @@
 2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/genTopologyCore.sh: Renaming from generator/genExampleCore.sh.
+
 	* generator/genTopology.sh: Renaming from generator/genExample.sh.
 
 	* include/dlvhex/MLPSolver.hpp: Add option --forget (forgetting instantiation)
