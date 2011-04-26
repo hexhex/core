@@ -1,5 +1,30 @@
 #!/bin/bash
 
+#
+# file   genParameterSetting.sh
+# author Tri Kurniawan Wijaya
+# date   Tue 26 Apr 2011 12:08:36 PM CEST 
+#
+# brief: create benchmark example for a parameter setting
+#
+# require 2 params
+# 1st param: Name of object file to be executed in order to generate benchmark.
+#            Example: Object file = "Module.o", 1st param should be "Module"
+# 2nd param: Topology name
+# 3rd param: max. number of Constant
+# 4th param: max. number of Predicate
+# 5th param: max. number of Head
+# 6th param: max. number of Body
+# 7th param: probability of a body atom to appear with negation as failure (not), 0-100
+# 8th param: max. number of Rules
+# 9th param: number of Modules
+# 10th param: optional. For random topology, this will be its density. 
+#             For tree topology, this will be its branch.
+#
+# The result will be contained in a folder that is named by concatinating 
+# all of the parameters
+#
+
 if [ "$1" = "" ];
 	then	echo "usage: genParameterSetting.sh <FileGenerator>"
 	else

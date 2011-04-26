@@ -1,5 +1,22 @@
 #!/bin/bash
 
+#
+# file   genTopology.sh
+# author Tri Kurniawan Wijaya
+# date   Tue 26 Apr 2011 12:09:02 PM CEST 
+#
+# brief: create benchmark example for a topology
+#
+# require 2 params
+# 1st param: Name of object file to be executed in order to generate benchmark.
+#            Example: Object file = "Module.o", 1st param should be "Module"
+# 2nd param: Topology name
+#
+# The result will be contained in a folder that is named by concatinating 
+# 2 parameters above
+#
+
+
 if [ "$1" = "" ];
 then	echo "usage: genExample.sh <FileGenerator> <Topology>"
 else

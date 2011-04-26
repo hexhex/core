@@ -1,18 +1,22 @@
 #!/bin/bash
 
 #
-# run benchmark example
+# file   runScriptET.sh
+# author Tri Kurniawan Wijaya
+# date   Tue 26 Apr 2011 01:00:03 PM CEST 
+#
+# run benchmark example for a topology
 #
 # require 2 params
-# 1st param: directory target, example: ModuleCore/ModuleCore-line
-# 2nd param: directory result, example: StatsCore/StatsCore-line
+# 1st param: target directory, example: ModuleCore/ModuleCore-line
+# 2nd param: result directory, example: StatsCore/StatsCore-line
 #
 
 mainDir=$1
 resultDir=$2
 rm -rf $2
 mkdir $2
-DLVHEX="dlvhex --mlp --num=100 --verbose=128"
+DLVHEX="dlvhex --mlp --forget --num=100 --verbose=128"
 for dir in $mainDir/*; do 
 	if [ -d $dir ]; then
 		#execute 10 instances here

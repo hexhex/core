@@ -1,13 +1,18 @@
 #!/bin/bash
 
 #
-# From stats-* create a summary, one file for each type of data: ctrAS, 
-#      moduleInstantiation, sizeM, ctrASFromDLV, callToDLV, Time
+# file   summaryET.sh
+# author Tri Kurniawan Wijaya
+# date   Tue 26 Apr 2011 11:57:58 AM CEST 
+#
+# brief: From stats-* create a summary, one file for each type of data: ctrAS, 
+#        moduleInstantiation, sizeM, ctrASFromDLV, callToDLV, Time
 #
 # require 2 params
 # 1st param: directory target, example: StatsCore/StatsCore-line
 # 2nd param: directory result, example: SummaryCore/SummaryCore-line
 #
+
 
 mainDir=$1		#main directory where all folder parameter setting are
 resultDir=$2
@@ -16,7 +21,7 @@ mkdir $2
 for dir in $mainDir/*; do 
 	if [ -d $dir ]; then
 		shortDir=${dir#$mainDir/}
-		mkdir $2/$shortDir
+		mkdir $resultDir/$shortDir
 		fileSummaryMI="$2/$shortDir/summary-MI-$shortDir.txt"
 		fileSummarySizeM="$2/$shortDir/summary-SizeM-$shortDir.txt"
 		fileSummaryASDLV="$2/$shortDir/summary-ASDLV-$shortDir.txt"
@@ -52,8 +57,6 @@ for dir in $mainDir/*; do
 				echo $lastASDLV >> $fileSummaryASDLV
 				echo $lastCallDLV >> $fileSummaryCallDLV
 				echo $lastTime >> $fileSummaryTime
-			else
-				echo "$i"
 			fi
 		done
 	fi  

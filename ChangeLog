@@ -1,5 +1,11 @@
 2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/genParameterSetting.sh: Adding comments.
+	* generator/genTopology.sh: Likewise.
+	* generator/summaryET.sh: Likewise.
+	* generator/summaryStatsET.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+
 	* generator/genTopologyCore.sh: Adding looping on constant, generate for all topology.
 
 	* generator/summaryET.sh: Adding comments.

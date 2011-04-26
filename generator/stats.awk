@@ -31,5 +31,6 @@ END {
 	sdvn = sqrt(sumtimes/(n-1))
     }
     
-    print "cnt: ", n, " sum: ", sum, " avg: ", avg, " med: ", med, " dvn: ", dvn, " sdvn: ", sdvn
+    # print "cnt: ", n, " sum: ", sum, " avg: ", avg, " med: ", med, " dvn: ", dvn, " sdvn: ", sdvn
+    printf "cnt: %d  sum: %4.2f  avg: %4.2f  med: %4.2f  dvn: %4.2f  sdvn: %4.2f\n", n, sum, avg, med, dvn, sdvn
 }
