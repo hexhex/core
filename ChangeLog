@@ -1,5 +1,8 @@
 2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/summaryAT.sh: Create summary information for all topology.
+	* generator/summaryStatsAT.sh: Likewise.
+
 	* generator/runScriptAT.sh: Run benchmark for all topology.
 
 	* generator/genParameterSetting.sh: Adding comments.
