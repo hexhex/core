@@ -1,5 +1,7 @@
 2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/genTopologyCore.sh: Fixing bug in creating result directory.
+
 	* generator/plotting.sh: Generate plotting time data for a parameter setting.
 
 	* generator/summaryAT.sh: Create summary information for all topology.

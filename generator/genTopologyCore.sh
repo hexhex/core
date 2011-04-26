@@ -22,6 +22,7 @@ then	echo "usage: genExampleCore.sh <FileGenerator> <resultDirectory>"
 else
 	dirResult=$2
 	rm -rf $dirResult
+	mkdir $dirResult
 	for topology in line random star ring tree diamond
 	do
 		genParameterSetting="./genParameterSetting.sh"
