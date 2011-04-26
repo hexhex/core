@@ -1,5 +1,7 @@
 2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/runScriptAT.sh: Run benchmark for all topology.
+
 	* generator/genParameterSetting.sh: Adding comments.
 	* generator/genTopology.sh: Likewise.
 	* generator/summaryET.sh: Likewise.
