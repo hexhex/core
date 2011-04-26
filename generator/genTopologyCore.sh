@@ -1,11 +1,29 @@
 #!/bin/bash
 
+#
+# file   genTopologyCore.sh
+# author Tri Kurniawan Wijaya
+# date   Tue 26 Apr 2011 12:10:32 PM CEST 
+#
+# brief: create benchmark example for a topology
+#
+# require 2 params
+# 1st param: Name of object file to be executed in order to generate benchmark.
+#            Example: Object file = "Module.o", 1st param should be "Module"
+# 2nd param: result directory
+#
+# The result will be contained in a folder that is named by concatinating 
+# 2 parameters above
+#
+
+
 if [ "$1" = "" ];
-then	echo "usage: genExampleCore.sh <FileGenerator> <Topology>"
+then	echo "usage: genExampleCore.sh <FileGenerator> <resultDirectory>"
 else
-	if [ "$2" = "" ];
-	then	echo "usage: genExample.sh <FileGenerator> <Topology>"
-	else
+	dirResult=$2
+	rm -rf $dirResult
+	for topology in line random star ring tree diamond
+	do
 		genParameterSetting="./genParameterSetting.sh"
 		defConstant=20
 		defPredicate=5
@@ -14,9 +32,9 @@ else
 		defBody=10
 		defRules=10
 		defModules=10
-		if [ "$2" = "random" ];
+		if [ "$topology" = "random" ];
 		then opt=$defDensity
-		else if [ "$2" = "tree" ];
+		else if [ "$topology" = "tree" ];
 			then opt=$defBranch
 			fi
 		fi
@@ -32,45 +50,52 @@ else
 
 			for modules in {5,10,15,20,25} #looping modules
 			do 
-				$genParameterSetting $1 $2 $defConstant $defPredicate $head $defBody $not $defRules $modules $opt
+				$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $defRules $modules $opt
 			done
 
 			for rules in {5,10,15,20} #looping rules
 			do 
-				$genParameterSetting $1 $2 $defConstant $defPredicate $head $defBody $not $rules $defModules $opt
+				$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $rules $defModules $opt
 			done
 
 			for body in {5,10,15} #looping body
 			do 
-				$genParameterSetting $1 $2 $defConstant $defPredicate $head $body $not $defRules $defModules $opt
+				$genParameterSetting $1 $topology $defConstant $defPredicate $head $body $not $defRules $defModules $opt
+			done
+
+			for constant in {10,20,30,40} #looping constant
+			do 
+				$genParameterSetting $1 $topology $constant $defPredicate $head $defBody $not $defRules $defModules $opt
 			done
 
 			if [ "$2" = "random" ];
 			then 
-				for density in {10,15,20} #looping body
+				for density in {10,15,20} #looping density
 				do 
-					$genParameterSetting $1 $2 $defConstant $defPredicate $head $defBody $not $defRules $defModules $density
+					$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $defRules $defModules $density
 				done
 				
 			else 	if [ "$2" = "tree" ];
 				then 
-					for branch in {2,3,5} #looping body
+					for branch in {2,3,5} #looping branch
 					do 
-						$genParameterSetting $1 $2 $defConstant $defPredicate $head $defBody $not $defRules $defModules $branch
+						$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $defRules $defModules $branch
 					done
 
 				fi
 			fi
+
 		done
 
 		#finish, now collect all in one folder
-		rm -rf $1-$2 
-		mkdir $1-$2
-		mv -f $1-$2-* $1-$2
-		cd $1-$2
+		rm -rf $1-$topology 
+		mkdir $1-$topology
+		mv -f $1-$topology-* $1-$topology
+
 		#write script to run it
+		cd $1-$topology
 		echo "" > run.sh
-		for i in $1-$2-*
+		for i in $1-$topology-*
 		do  
 			msg1='echo "'
 			msg2="process: $i"
@@ -80,5 +105,9 @@ else
 			echo "./run.sh" >> run.sh
 			echo "cd .." >> run.sh
 		done
-	fi
+		cd ..
+
+		mv $1-$topology $dirResult
+
+	done
 fi

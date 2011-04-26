@@ -1,4 +1,6 @@
-2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genTopologyCore.sh: Adding looping on constant, generate for all topology.
 
 	* generator/summaryET.sh: Adding comments.
 	* generator/runScriptET.sh: Likewise.
