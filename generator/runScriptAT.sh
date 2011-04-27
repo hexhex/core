@@ -12,11 +12,12 @@
 # 2nd param: result directory, example: StatsCore
 #
 
-targetDir=$1
-resultDir=$2
+targetDir=$2
+resultDir=$3
 rm -rf $resultDir
 mkdir $resultDir
-DLVHEX="dlvhex --mlp --forget --num=100 --verbose=128"
+#DLVHEX="dlvhex --mlp --forget --num=100 --verbose=128"
+DLVHEX=$1
 for mainDir in $targetDir/*; do
   if [ -d $mainDir ]; then
     shortMainDir=${mainDir#$targetDir/}

@@ -1,3 +1,8 @@
+2010-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/runScriptAT.sh: Put command as the 1st param.
+	* generator/runScriptET.sh: Likewise.
+
 2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genTopologyCore.sh: Fixing bug in creating result directory.
