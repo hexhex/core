@@ -1,5 +1,10 @@
 2010-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/Benchmark-Module.zip: Adding benchmark files.
+	* generator/Benchmark-Stats.zip: Likewise.
+	* generator/Benchmark-Summary.zip: Likewise.
+
+
 	* generator/runScriptAT.sh: Put command as the 1st param.
 	* generator/runScriptET.sh: Likewise.
 
