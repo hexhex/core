@@ -49,6 +49,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <time.h>
 #include <sys/time.h>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -159,14 +160,14 @@ class DLVHEX_EXPORT MLPSolver{
     inline int extractS(int PiS);
     inline int extractPi(int PiS);
     inline bool isEmptyInterpretation(int S);
-    inline bool foundNotEmptyInst(ValueCallsType C);
+    inline bool foundNotEmptyInst(const ValueCallsType& C);
     inline void unionCtoFront(ValueCallsType& C, const ValueCallsType& C2);
     inline std::string getAtomTextFromTuple(const Tuple& tuple);
 
-    inline ID rewriteOrdinaryAtom(ID oldAtomID, int idxM);
-    inline ID rewriteModuleAtom(const ModuleAtom& oldAtom, int idxM);
-    inline ID rewritePredicate(const Predicate& oldPred, int idxM);
-    inline void rewriteTuple(Tuple& tuple, int idxM);
+    inline ID rewriteOrdinaryAtom(ID oldAtomID, int idxMI);
+    inline ID rewriteModuleAtom(const ModuleAtom& oldAtom, int idxMI);
+    inline ID rewritePredicate(const Predicate& oldPred, int idxMI);
+    inline void rewriteTuple(Tuple& tuple, int idxMI);
     inline void createMiS(int instIdx, const InterpretationPtr& intr, InterpretationPtr& intrResult);
     inline void replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& idb);
     inline void rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, Tuple& idbResult);
@@ -183,7 +184,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline ID smallestILL(const Tuple& newRules);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
-    inline void createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result);
+    inline void createInterpretationFromTuple(const Tuple& tuple, Interpretation& result);
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
 
     inline void resizeIfNeededA(int idxPjT);
@@ -196,6 +197,17 @@ class DLVHEX_EXPORT MLPSolver{
     bool writeLog;
     int nASReturned;
     int forget;
+    int recordingTime;
+    double totalTimePost;
+    double totalTimePartA;
+    double totalTimeRewrite;
+    double totalTimePartB;
+    double totalTimePartC;
+    double totalTimeCallDLV;
+    double totalTimePushBack;
+    double totalTimeCPathA;
+    int countB;
+    int countC;
 
     inline void printValueCallsType(std::ostringstream& oss, const RegistryPtr& reg1, const ValueCallsType& C) const; 
     inline void printPath(std::ostringstream& oss, const RegistryPtr& reg1, const std::vector<ValueCallsType>& path) const;
@@ -298,7 +310,7 @@ bool MLPSolver::foundCinPath(const ValueCallsType& C, const std::vector<ValueCal
 int MLPSolver::extractS(int PiS)
 {  
   // PiS is an index to moduleInstTable
-  ModuleInst m = moduleInstTable.get<impl::AddressTag>().at(PiS);
+  const ModuleInst& m = moduleInstTable.get<impl::AddressTag>().at(PiS);
   return m.idxS;
 }
 
@@ -306,7 +318,7 @@ int MLPSolver::extractS(int PiS)
 int MLPSolver::extractPi(int PiS)
 {  
   // PiS is an index to moduleInstTable
-  ModuleInst m = moduleInstTable.get<impl::AddressTag>().at(PiS);
+  const ModuleInst& m = moduleInstTable.get<impl::AddressTag>().at(PiS);
   return m.idxModule;
 }
 
@@ -314,7 +326,7 @@ int MLPSolver::extractPi(int PiS)
 bool MLPSolver::isEmptyInterpretation(int S)
 {
   // S is an index to sTable 
-  Interpretation IS = sTable.get<impl::AddressTag>().at(S);
+  const Interpretation& IS = sTable.get<impl::AddressTag>().at(S);
   if ( IS.isClear() )
     {
       DBGLOG(DBG, "[MLPSolver::isEmptyInterpretation] empty interpretation: " << IS);
@@ -328,7 +340,7 @@ bool MLPSolver::isEmptyInterpretation(int S)
 }
 
 
-bool MLPSolver::foundNotEmptyInst(ValueCallsType C)
+bool MLPSolver::foundNotEmptyInst(const ValueCallsType& C)
 { //  loop over all PiS inside C, check is the S is not empty
   VCAddressIndex::const_iterator itC = C.get<impl::AddressTag>().begin();
   VCAddressIndex::const_iterator itCend = C.get<impl::AddressTag>().end();
@@ -380,15 +392,16 @@ std::string MLPSolver::getAtomTextFromTuple(const Tuple& tuple)
 }
 
 
-ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
+//  rewrite ordinary atom, for example p(a) -> m25___p(a)
+ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxMI)
 {
   // find the correct table: og/on
   OrdinaryAtomTable* tbl;
-  if ( oldAtomID.isOrdinaryGroundAtom() )
+  if ( oldAtomID.isOrdinaryGroundAtom() )   // if ground atom
     {
       tbl = &registrySolver->ogatoms;
     }
-  else
+  else // if non-ground atoms
     {
       tbl = &registrySolver->onatoms;
     }
@@ -399,7 +412,7 @@ ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
   Predicate p = registrySolver->preds.getByID(predR);
   // rename the predicate name by <prefix> + <old name>
   std::stringstream ss;
-  ss << "m" << idxM << MODULEINSTSEPARATOR;
+  ss << "m" << idxMI << MODULEINSTSEPARATOR;
   p.symbol = ss.str() + p.symbol;
   DBGLOG(DBG, "[MLPSolver::rewriteOrdinaryAtom] " << p.symbol);
   // try to locate the new pred name
@@ -428,12 +441,12 @@ ID MLPSolver::rewriteOrdinaryAtom(ID oldAtomID, int idxM)
 
 
 // prefix only the input predicates (with PiS)
-ID MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, int idxM)
+ID MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, int idxMI)
 {
   // create the new atom (so that we do not rewrite the original one)
   DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] To be rewritten = " << oldAtom);
   ModuleAtom atomRnew = oldAtom;
-  rewriteTuple(atomRnew.inputs, idxM);
+  rewriteTuple(atomRnew.inputs, idxMI);
   DBGLOG(DBG, "[MLPSolver::rewriteModuleAtom] After rewriting = " << atomRnew);
   ID atomRnewID = registrySolver->matoms.getIDByElement(atomRnew.predicate, atomRnew.inputs, atomRnew.outputAtom);
   if ( atomRnewID == ID_FAIL )
@@ -444,12 +457,12 @@ ID MLPSolver::rewriteModuleAtom(const ModuleAtom& oldAtom, int idxM)
 }
 
 
-ID MLPSolver::rewritePredicate(const Predicate& oldPred, int idxM)
+ID MLPSolver::rewritePredicate(const Predicate& oldPred, int idxMI)
 {
   // create the new Predicate (so that we do not rewrite the original one)
   Predicate predRnew = oldPred;
   std::stringstream ss;
-  ss << "m" << idxM << MODULEINSTSEPARATOR;
+  ss << "m" << idxMI << MODULEINSTSEPARATOR;
   predRnew.symbol = ss.str() + predRnew.symbol;
   ID predFind = registrySolver->preds.getIDByString(predRnew.symbol);
   DBGLOG(DBG, "[MLPSolver::rewritePredicate] ID predFind = " << predFind);
@@ -462,7 +475,7 @@ ID MLPSolver::rewritePredicate(const Predicate& oldPred, int idxM)
 }
 
 
-void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
+void MLPSolver::rewriteTuple(Tuple& tuple, int idxMI)
 {
   Tuple::iterator it = tuple.begin();
   while ( it != tuple.end() )
@@ -474,26 +487,26 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary ground atom = " << *it);
 	      if ( it->isLiteral() )
-	        *it = ID::literalFromAtom(rewriteOrdinaryAtom(*it, idxM), it->isNaf() );
+	        *it = ID::literalFromAtom(rewriteOrdinaryAtom(*it, idxMI), it->isNaf() );
               else 
-	        *it = rewriteOrdinaryAtom(*it, idxM);
+	        *it = rewriteOrdinaryAtom(*it, idxMI);
 
             }
           else if ( it->isOrdinaryNongroundAtom() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite ordinary non ground atom = " << *it );
 	      if ( it->isLiteral() )
-		*it = ID::literalFromAtom( rewriteOrdinaryAtom(*it, idxM), it->isNaf() );
+		*it = ID::literalFromAtom( rewriteOrdinaryAtom(*it, idxMI), it->isNaf() );
 	      else 
-	        *it = rewriteOrdinaryAtom(*it, idxM);
+	        *it = rewriteOrdinaryAtom(*it, idxMI);
             }
           else if ( it->isModuleAtom() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite module atom = " << *it);
 	      if ( it->isLiteral() )
-                *it = ID::literalFromAtom( rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxM), it->isNaf() );
+                *it = ID::literalFromAtom( rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxMI), it->isNaf() );
 	      else 
-                *it = rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxM);
+                *it = rewriteModuleAtom(registrySolver->matoms.getByID(*it), idxMI);
             }
         }
       else if ( it->isTerm() )
@@ -501,7 +514,7 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxM)
           if ( it->isPredicateTerm() )
             {
               DBGLOG(DBG, "[MLPSolver::rewriteTuple] Rewrite predicate term = " << *it);
-              *it = rewritePredicate(registrySolver->preds.getByID(*it), idxM);
+              *it = rewritePredicate(registrySolver->preds.getByID(*it), idxMI);
             }
         }
 
@@ -538,6 +551,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 {
   DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] idb input = " << printvector(idb));
 
+  // iterate over rules, check if there is a module atoms there
   Tuple::iterator itR = idb.begin();
   while ( itR != idb.end() )
     { 
@@ -559,18 +573,18 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 		    { // if found
 		      // create the PjT	
 		      // first, get the module atom
-		      ModuleAtom ma = registrySolver->matoms.getByID(*itB);
+		      const ModuleAtom& ma = registrySolver->matoms.getByID(*itB);
 		      // create the interpretation Mi/S
 		      InterpretationPtr newM(new Interpretation( registrySolver )); 
 		      createMiS(instIdx, M, newM);
 		      // get the module Pj using the predicate from the module input, get the formal input
                       const Module& m = registrySolver->moduleTable.getModuleByName(ma.actualModuleName);
-		      Tuple formalInputs = registrySolver->inputList.at(m.inputList);
+		      const Tuple& formalInputs = registrySolver->inputList.at(m.inputList);
 		      Tuple restrictT;
 		      Tuple newT;
 	  	      restrictionAndRenaming( *(newM), ma.inputs, formalInputs, restrictT, newT);  //  Mi/S restrict by p rename to q
 		      Interpretation intrNewT;
-		      createInterpretationFromTuple(registrySolver, newT, intrNewT);	      
+		      createInterpretationFromTuple(newT, intrNewT);	      
 		      int idxPjT = addOrGetModuleIstantiation(m.moduleName, intrNewT);
 
 		      // get the outputAtom 
@@ -689,7 +703,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       // get the module idx and idx S
       int idxM = extractPi(*itC);
       int idxS = extractS(*itC);
-      Module m = registrySolver->moduleTable.getByAddress(idxM);
+      const Module& m = registrySolver->moduleTable.getByAddress(idxM);
       // rewrite the edb, get the edb pointed by m.edb
       DBGLOG(DBG, "[MLPSolver::rewrite] rewrite edb ");
       InterpretationPtr edbTemp( new Interpretation(registrySolver) );
@@ -713,13 +727,13 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
       DBGLOG(DBG, "[MLPSolver::rewrite] Mi/S as a facts if not nil");
       InterpretationPtr MiS(new Interpretation() );
       createMiS(*itC, M, MiS);
-	  Interpretation::Storage MiSAtoms = MiS->getStorage();
-	  Interpretation::Storage::enumerator itMiSAtoms = MiSAtoms.first();
-          while ( itMiSAtoms != MiSAtoms.end() )
-	    {
-	      edbResult->setFact(*itMiSAtoms);
-	      itMiSAtoms++;
-	    }
+      Interpretation::Storage MiSAtoms = MiS->getStorage();
+      Interpretation::Storage::enumerator itMiSAtoms = MiSAtoms.first();
+      while ( itMiSAtoms != MiSAtoms.end() )
+	{
+	  edbResult->setFact(*itMiSAtoms);
+	  itMiSAtoms++;
+	}
 
       // rewrite the idb
       DBGLOG(DBG, "[MLPSolver::rewrite] rewrite idb");
@@ -1031,9 +1045,9 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
 }
 
 
-void MLPSolver::createInterpretationFromTuple(const RegistryPtr& reg1, const Tuple& tuple, Interpretation& result)
+void MLPSolver::createInterpretationFromTuple(const Tuple& tuple, Interpretation& result)
 {
-  result.setRegistry(reg1);
+  // result.setRegistry(registrySolver);
   result.clear();
   // iterate over the tuple of fact, create a new interpretation s
   Tuple::const_iterator it = tuple.begin();
@@ -1101,6 +1115,26 @@ bool MLPSolver::containFinA(int idxPjT)
 // comp() from the paper 
 bool MLPSolver::comp(ValueCallsType C)
 {
+
+  //recording time for rewrite
+  struct timeval timeStruct;
+  double startTimeRewrite = 0.0;
+  double endTimeRewrite = 0.0;
+  double startTimePartB = 0.0;
+  double endTimePartB = 0.0;
+  double startTimePartC = 0.0;
+  double endTimePartC = 0.0;
+  double startTimePost = 0.0;
+  double endTimePost = 0.0;
+  double startTimeCallDLV = 0.0;
+  double endTimeCallDLV = 0.0;
+  double startTimePushBack = 0.0;
+  double endTimePushBack = 0.0;
+  double startTimeCPathA = 0.0;
+  double endTimeCPathA = 0.0;
+  double startTimePartA = 0.0;
+  double endTimePartA = 0.0;
+
   // for ASPSolver
   ASPSolver::DLVSoftware::Configuration config;
   ASPSolverManager mgr;
@@ -1126,7 +1160,6 @@ bool MLPSolver::comp(ValueCallsType C)
   stackC.push_back(C);
   int status = 0; //status=0 for the first time
   ID idAlpha;
-  int ctrPushBack = 0;
   int maxStackSize = 0;
   while (stackC.size()>0) 
     {
@@ -1134,6 +1167,14 @@ bool MLPSolver::comp(ValueCallsType C)
 	
       C = stackC.back();
       status = stackStatus.back();
+
+      // recording time for post processing ans bu	
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          startTimePost = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	}
+
       if ( status == 1 || status == 2)	// 1 = from part b, 2 = from part c 
 	{
 	  path = stackPath.back();
@@ -1193,7 +1234,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // get the formal input paramater, tuple of predicate term
               const ModuleAtom& alpha = registrySolver->matoms.getByID( idAlpha);
 	      const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
-	      Tuple formalInputs = registrySolver->inputList.at(alphaJ.inputList);
+	      const Tuple& formalInputs = registrySolver->inputList.at(alphaJ.inputList);
 	      Tuple restrictT;
 	      Tuple newT;
 	      restrictionAndRenaming( currAns, alpha.inputs, formalInputs, restrictT, newT);
@@ -1201,7 +1242,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  
 	      // defining Pj T
 	      InterpretationType intrNewT;
-	      createInterpretationFromTuple(registrySolver, newT, intrNewT);
+	      createInterpretationFromTuple(newT, intrNewT);
 	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
 	  
 	      // next: defining the new C and path
@@ -1222,8 +1263,9 @@ bool MLPSolver::comp(ValueCallsType C)
 		          boost::add_edge(*it, idxPjT, callGraph);
 		          // add edge name T here
 		          InterpretationType intrRestrictT;
-		          createInterpretationFromTuple(registrySolver, restrictT, intrRestrictT);
+		          createInterpretationFromTuple(restrictT, intrRestrictT);
 		          oss.str("");
+			  intrRestrictT.setRegistry(registrySolver);
 		          intrRestrictT.printWithoutPrefix(oss);
 		          edgeName.push_back(oss.str());
         	          it++;  
@@ -1239,27 +1281,44 @@ bool MLPSolver::comp(ValueCallsType C)
 	{ // from the beginnning
           stackC.erase(stackC.end()-1);
 	}
+      // recording time for post processing ans bu	
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          endTimePost = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+          totalTimePost = totalTimePost + endTimePost - startTimePost;
+	}
 
       // print the C:
-      DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
-      oss.str("");		
-      printValueCallsType(oss, registrySolver, C);
-      DBGLOG(INFO,oss.str());
-      // print the path:
-      DBGLOG(INFO,"[MLPSolver::comp] with path: ");
-      oss.str("");
-      printPath(oss,registrySolver, path);
-      DBGLOG(INFO,oss.str());
-      // print the M:	
-      DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
-      // print the A:
-      DBGLOG(INFO,"[MLPSolver::comp] with A: ");
-      oss.str("");
-      printA(oss,registrySolver, A);
-      DBGLOG(INFO,oss.str());
+      if ( (printLevel & Logger::INFO) != 0 ) 
+	{
+	  DBGLOG(INFO,"[MLPSolver::comp] Enter comp with C: ");
+          oss.str("");		
+          printValueCallsType(oss, registrySolver, C);
+          DBGLOG(INFO,oss.str());
+          // print the path:
+          DBGLOG(INFO,"[MLPSolver::comp] with path: ");
+          oss.str("");
+          printPath(oss,registrySolver, path);
+          DBGLOG(INFO,oss.str());
+          // print the M:	
+          DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
+          // print the A:
+          DBGLOG(INFO,"[MLPSolver::comp] with A: ");
+          oss.str("");
+          printA(oss,registrySolver, A);
+          DBGLOG(INFO,oss.str());
+	}
 
-      // int cint;
-      // std::cin >> cint;
+      // part a
+
+      //recording time part a
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          startTimePartA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	}
+
       ValueCallsType CPrev;
       int PiSResult;
       bool wasInLoop = false;
@@ -1303,31 +1362,79 @@ bool MLPSolver::comp(ValueCallsType C)
         {
           DBGLOG(DBG, "[MLPSolver::comp] found no value-call-loop in value calls");
         }
+
+      //finish recording time part a
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          endTimePartA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+          totalTimePartA = totalTimePartA + endTimePartA - startTimePartA;
+	}
+
+      //recording time rewrite
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          startTimeRewrite = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	}
+
       InterpretationPtr edbRewrite;
       Tuple idbRewrite;
       rewrite(C, edbRewrite, idbRewrite); 
+
+      if ( recordingTime == 1 )
+	{
+          gettimeofday(&timeStruct, NULL);
+          endTimeRewrite = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+          totalTimeRewrite = totalTimeRewrite + endTimeRewrite - startTimeRewrite;
+	}
 
       DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
       printEdbIdb(registrySolver, edbRewrite, idbRewrite);
   
       if ( isOrdinary(idbRewrite) )
         {
+          // start recording time part b
+	  countB++;
+          if ( recordingTime == 1 )
+	    {
+              gettimeofday(&timeStruct, NULL);
+              startTimePartB = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	    }
+
           DBGLOG(DBG, "[MLPSolver::comp] enter isOrdinary");
           if ( path.size() == 0 ) 
             {
               //printProgram(ctxSolver,edbRewrite, idbRewrite);
               DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
               // try to get the answer set:	
-	      int lastOgatomsSize = registrySolver->ogatoms.getSize();
+	      //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
+
+              // recording time to call DLV
+              if ( recordingTime == 1 )
+		{
+          	  gettimeofday(&timeStruct, NULL);
+          	  startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		}
+
 	      res = mgr.solve(config, program);
 	      ctrCallToDLV++;
+
+	      if ( recordingTime == 1 )
+		{
+	          gettimeofday(&timeStruct, NULL);
+	          endTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	          totalTimeCallDLV = totalTimeCallDLV + endTimeCallDLV - startTimeCallDLV;
+		}
+
               AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
               while (int0 !=0 )
                 {
+
 	          InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
 	          // integrate the answer
@@ -1364,6 +1471,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	              DBGLOG(INFO, "Registry information: "); 
 	              DBGLOG(INFO, *registrySolver); 
 		    }	
+
 	          if ( nASReturned > 0 && ctrAS == nASReturned) return true;
 
 	          // get the next answer set 
@@ -1373,15 +1481,21 @@ bool MLPSolver::comp(ValueCallsType C)
           else
             {
               ValueCallsType C2 = path.back();
-              DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
-	      oss.str("");
-	      printPath(oss, registrySolver, path);
-              DBGLOG(DBG,oss.str());
+              if ( (printLevel & Logger::DBG) != 0 ) 
+		{
+                  DBGLOG(DBG,"[MLPSolver::comp] path before erase: ");
+	          oss.str("");
+	          printPath(oss, registrySolver, path);
+                  DBGLOG(DBG,oss.str());
+		}
               path.erase(path.end()-1);
-              DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
-	      oss.str("");
-	      printPath(oss, registrySolver, path);
-              DBGLOG(DBG,oss.str());
+              if ( (printLevel & Logger::DBG) != 0 ) 
+		{
+                  DBGLOG(DBG,"[MLPSolver::comp] path after erase: ");
+	          oss.str("");
+	          printPath(oss, registrySolver, path);
+                  DBGLOG(DBG,oss.str());
+		}
 	      const VCAddressIndex& idx = C.get<impl::AddressTag>();
               VCAddressIndex::const_iterator it = idx.begin();
               while ( it != idx.end() )
@@ -1392,28 +1506,67 @@ bool MLPSolver::comp(ValueCallsType C)
                 } 
               // for all ans(newCtx) here
               // try to get the answer set:	
-	      int lastOgatomsSize = registrySolver->ogatoms.getSize();
+	      //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
+
+              // recording time to call DLV
+              if ( recordingTime == 1 )
+		{
+          	  gettimeofday(&timeStruct, NULL);
+          	  startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		}
+
 	      res = mgr.solve(config, program);
 	      ctrCallToDLV++;
+
+	      if ( recordingTime == 1 )
+		{
+	          gettimeofday(&timeStruct, NULL);
+	          endTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	          totalTimeCallDLV = totalTimeCallDLV + endTimeCallDLV - startTimeCallDLV;
+		}
+
 	      // for the recursion part b
 	      AnswerSet::Ptr int0 = res->getNextAnswerSet();
 	      if ( int0!=0 ) 
 	        {
+
+	          // start recording time for push back part b	
+                  if ( recordingTime == 1 )
+		    {
+          	      gettimeofday(&timeStruct, NULL);
+          	      startTimePushBack = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		    }
+
 	          stackAns.push_back((int0->interpretation));	
           	  stackAnsRes.push_back(res);
           	  stackStatus.push_back(1);
+
+                  if ( recordingTime == 1 )
+		    {
+          	      gettimeofday(&timeStruct, NULL);
+          	      startTimeCPathA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		    }
+
           	  stackC.push_back(C2);
           	  stackPath.push_back(path);
+	  	  stackA.push_back(A);
+
+	          if ( recordingTime == 1 )
+		    {
+	              gettimeofday(&timeStruct, NULL);
+	              endTimeCPathA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	              totalTimeCPathA = totalTimeCPathA + endTimeCPathA - startTimeCPathA;
+		    }
+
                   InterpretationPtr M2(new Interpretation(registrySolver));
 	          *M2 = *M;
  	  	  stackM.push_back(M2);
-	  	  stackA.push_back(A);
-                  RegistryPtr R2(new Registry(*registrySolver) );
 		  if ( forget == 1 )
 		    {	
+                      RegistryPtr R2(new Registry(*registrySolver) );
 	              stackRegistry.push_back( R2 );  
 	  	      stackMInst.push_back(moduleInstTable);
 		    }	
@@ -1422,12 +1575,33 @@ bool MLPSolver::comp(ValueCallsType C)
 	  	      stackCallGraph.push_back(callGraph);
 	  	      stackEdgeName.push_back(edgeName);
 		    }
-			ctrPushBack++;
+
+	          // ending recording time for push back part b	
+	          if ( recordingTime == 1 )
+		    {
+	              gettimeofday(&timeStruct, NULL);
+	              endTimePushBack = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	              totalTimePushBack = totalTimePushBack + endTimePushBack - startTimePushBack;
+		    }
+
 	    	}	
             } // else if path size = 0, else 
+          // finish recording time part b
+          if ( recordingTime == 1 )
+	    {
+              gettimeofday(&timeStruct, NULL);
+              endTimePartB = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+              totalTimePartB = totalTimePartB + endTimePartB - startTimePartB;
+	    }
         } // if isOrdinary ( idb... 
       else // if not ordinary
-        {
+        { // part c
+	  countC++;
+          if ( recordingTime == 1 ) // start recording time part c
+	    {
+              gettimeofday(&timeStruct, NULL);
+              startTimePartC = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	    }
           DBGLOG(DBG, "[MLPSolver::comp] enter not ordinary part");
           ID idAlpha = smallestILL(idbRewrite);
           if ( idAlpha == ID_FAIL ) 
@@ -1464,30 +1638,68 @@ bool MLPSolver::comp(ValueCallsType C)
 	    }
           DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
 
-          int lastOgatomsSize = registrySolver->ogatoms.getSize();	
+          //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();	
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
 
           ASPSolverManager::ResultsPtr res;
 	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
+
+          // recording time to call DLV
+          if ( recordingTime == 1 )
+	    {
+              gettimeofday(&timeStruct, NULL);
+              startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	    }
+
 	  res = mgr.solve(config, program);
 	  ctrCallToDLV++;
+
+	  if ( recordingTime == 1 )
+	    {
+	      gettimeofday(&timeStruct, NULL);
+	      endTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	      totalTimeCallDLV = totalTimeCallDLV + endTimeCallDLV - startTimeCallDLV;
+	    }
+
           AnswerSet::Ptr int0 = res->getNextAnswerSet();
 
           if ( int0!=0 ) 
             {
+	      // recording time for push back part c	
+              if ( recordingTime == 1 )
+		{
+          	  gettimeofday(&timeStruct, NULL);
+          	  startTimePushBack = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		}
+
 	      stackAns.push_back((int0->interpretation));	
               stackAnsRes.push_back(res);
               stackStatus.push_back(2);
+
+              if ( recordingTime == 1 )
+		{
+          	  gettimeofday(&timeStruct, NULL);
+          	  startTimeCPathA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		}
+
               stackC.push_back(C);
               stackPath.push_back(path);
+	      stackA.push_back(A);
+
+	      if ( recordingTime == 1 )
+		{
+	          gettimeofday(&timeStruct, NULL);
+	          endTimeCPathA = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	          totalTimeCPathA = totalTimeCPathA + endTimeCPathA - startTimeCPathA;
+		}
+
               InterpretationPtr M2(new Interpretation(registrySolver));
 	      *M2 = *M;
  	      stackM.push_back(M2);
-	      stackA.push_back(A);
-	      RegistryPtr R2(new Registry(*registrySolver) );
 	      if ( forget == 1 )
 		{
+	          RegistryPtr R2(new Registry(*registrySolver) );
 	          stackRegistry.push_back( R2 );  
 	          stackMInst.push_back(moduleInstTable);
 		}
@@ -1497,10 +1709,26 @@ bool MLPSolver::comp(ValueCallsType C)
 	          stackCallGraph.push_back(callGraph);
 	          stackEdgeName.push_back(edgeName);
 		}
-			ctrPushBack++;
+
+	      // recording time for push back part c	
+	      if ( recordingTime == 1 )
+		{
+	          gettimeofday(&timeStruct, NULL);
+	          endTimePushBack = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+	          totalTimePushBack = totalTimePushBack + endTimePushBack - startTimePushBack;
+		}
 
             }
+          // finish recording time part c
+          if ( recordingTime == 1 )
+	    {
+              gettimeofday(&timeStruct, NULL);
+              endTimePartC = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+              totalTimePartC = totalTimePartC + endTimePartC - startTimePartC;
+	    }
+
         } // else  (if ordinary ... else ...)
+
     } // while stack is not empty
   DBGLOG(DBG, "[MLPSolver::comp] finished");
 
@@ -1563,6 +1791,17 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
 bool MLPSolver::solve()
 {
+  recordingTime = 0;
+  totalTimePost = 0.0;
+  totalTimePartA = 0.0;
+  totalTimeRewrite = 0.0;
+  totalTimePartB = 0.0;
+  totalTimePartC = 0.0;
+  totalTimeCallDLV = 0.0;
+  totalTimePushBack = 0.0;
+  totalTimeCPathA = 0.0;
+  countB = 0;
+  countC = 0;
   printProgramInformation = false;
   DBGLOG(STATS, "1st row: '80'-> ignore this; 2nd row: ctrAS; 3rd row: #moduleInstantiation, 4th row: #ordinaryGroundAtoms, 5th row: #ASFromDLV, 6th row: #callToDLV, 7th row: TimeElapsed");
   DBGLOG(DBG, "[MLPSolver::solve] started");
@@ -1571,6 +1810,7 @@ bool MLPSolver::solve()
   std::vector<int>::const_iterator it = mainModules.begin();
   int i = 0;
   dataReset();
+
   // to record time
   struct timeval startTimeStruct;
   gettimeofday(&startTimeStruct, NULL);
@@ -1579,6 +1819,15 @@ bool MLPSolver::solve()
   ctrAS = 0;	
   ctrCallToDLV = 0;
   ctrASFromDLV = 0;
+
+  //recording time for comp
+  double compStartTime;
+  double compEndTime;
+  if ( recordingTime ==1 )
+    {
+      gettimeofday(&startTimeStruct, NULL);
+      compStartTime = startTimeStruct.tv_sec+(startTimeStruct.tv_usec/1000000.0);
+    }
   while ( it != mainModules.end() )
     {
       A.clear();
@@ -1596,6 +1845,21 @@ bool MLPSolver::solve()
       	}
       i++;
       it++;
+    }
+  gettimeofday(&startTimeStruct, NULL);
+  //recording time...
+  if ( recordingTime ==1 )
+    {
+        compEndTime = startTimeStruct.tv_sec+(startTimeStruct.tv_usec/1000000.0);
+        std::cerr << "Total comp time: " << compEndTime-compStartTime << std::endl;
+	std::cerr << "Post process ans(bu) Time: " << totalTimePost << std::endl;
+	std::cerr << "Part A time: " << totalTimePartA << std::endl;
+	std::cerr << "Rewrite Time: " << totalTimeRewrite << ", countRwr: " << countB+countC << ", avgtimeRwr: " << totalTimeRewrite/(countB+countC) << std::endl;
+	std::cerr << "Part B time: " << totalTimePartB << ", countB: " << countB << ", avgtimeB: " << totalTimePartB/countB << std::endl;
+	std::cerr << "Part C time: " << totalTimePartC << ", countC: " << countC << ", avgtimeC: " << totalTimePartC/countC << std::endl;
+        std::cerr << "Call DLV time: " << totalTimeCallDLV << ", countCallDLV: " << ctrCallToDLV << ", avgtimeCallDLV: " << totalTimeCallDLV/ctrCallToDLV << std::endl;
+        std::cerr << "Push back time: " << totalTimePushBack << std::endl;
+	std::cerr << "PushBack CPathA Time: " << totalTimeCPathA << std::endl;
     }
   DBGLOG(INFO, "Total answer set: " << ctrAS); 
 /*

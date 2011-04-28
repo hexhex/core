@@ -1,3 +1,7 @@
+2010-04-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding functional time information and fixing some references.
+
 2010-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Benchmark-Module.zip: Adding benchmark files.
