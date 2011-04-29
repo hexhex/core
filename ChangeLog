@@ -1,5 +1,10 @@
 2010-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/runScriptAT.sh: Adding interactive dialog if the result dir is exist.
+	* generator/genTopologyCore.sh: Likewise.
+	* generator/summaryAT.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+
 	* include/dlvhex/MLPSolver.hpp: Fixing some references.
 
 2010-04-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

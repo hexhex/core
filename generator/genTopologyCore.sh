@@ -20,8 +20,23 @@
 if [ "$1" = "" ];
 then	echo "usage: genExampleCore.sh <FileGenerator> <resultDirectory>"
 else
-	dirResult=$2
+
+  dirResult=$2
+
+  go=1
+  if [ -a $dirResult ]; then
+    go=0
+    echo "$dirResult is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
+    read inp
+    if [ "$inp" = "y" ]; then
+      rm -rf $dirResult
+      go=1
+    fi 
+  fi
+
+  if [ $go -eq 1 ]; then
 	rm -rf $dirResult
+
 	mkdir $dirResult
 	for topology in line random star ring tree diamond
 	do
@@ -111,4 +126,5 @@ else
 		mv $1-$topology $dirResult
 
 	done
+  fi
 fi

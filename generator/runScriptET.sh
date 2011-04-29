@@ -14,7 +14,20 @@
 
 mainDir=$2
 resultDir=$3
-rm -rf $resultDir
+
+go=1
+if [ -a $resultDir ]; then
+  go=0
+  echo "$resultDir is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
+  read inp
+  if [ "$inp" = "y" ]; then
+    rm -rf $resultDir
+    go=1
+  fi 
+fi
+
+if [ $go -eq 1 ]; then
+
 mkdir $resultDir
 #DLVHEX="dlvhex --mlp --forget --num=100 --verbose=128"
 DLVHEX=$1
@@ -33,3 +46,5 @@ for dir in $mainDir/*; do
 		
 	fi
 done
+
+fi

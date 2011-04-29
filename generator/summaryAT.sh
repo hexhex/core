@@ -17,8 +17,21 @@
 
 targetDir=$1		#main directory where all folder parameter setting are
 resultDir=$2
-rm -rf $2
-mkdir $2
+
+go=1
+if [ -a $resultDir ]; then
+  go=0
+  echo "$resultDir is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
+  read inp
+  if [ "$inp" = "y" ]; then
+    rm -rf $resultDir
+    go=1
+  fi 
+fi
+
+if [ $go -eq 1 ]; then
+
+mkdir $resultDir
 for mainDir in $targetDir/*; do
   if [ -d $mainDir ]; then
     shortMainDir=${mainDir#$targetDir/}
@@ -68,3 +81,5 @@ for mainDir in $targetDir/*; do
     done
   fi
 done
+
+fi

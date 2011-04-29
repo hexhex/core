@@ -14,7 +14,20 @@
 
 targetDir=$2
 resultDir=$3
-rm -rf $resultDir
+
+go=1
+if [ -a $resultDir ]; then
+  go=0
+  echo "$resultDir is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
+  read inp
+  if [ "$inp" = "y" ]; then
+    rm -rf $resultDir
+    go=1
+  fi 
+fi
+
+if [ $go -eq 1 ]; then
+
 mkdir $resultDir
 #DLVHEX="dlvhex --mlp --forget --num=100 --verbose=128"
 DLVHEX=$1
@@ -30,10 +43,12 @@ for mainDir in $targetDir/*; do
 		echo "process $shortMainDir/$shortDir"
 		for i in {1..10}
 		do
-			(ulimit -v 1048576 ; /usr/bin/time --verbose -o $resultDir/$shortMainDir/$shortDir/time-$shortDir-i$i.log $DLVHEX $mainDir/$shortDir/$shortDir-i$i-*.mlp) 2>$resultDir/$shortMainDir/$shortDir/stats-$shortDir-i$i.log 1>/dev/null
+			(ulimit -v 1048576 ; /usr/bin/time --verbose -o $resultDir/$shortMainDir/$shortDir/time-$shortDir-i$i.log timelimit -p -s 1 -t 600 -T 5 $DLVHEX $mainDir/$shortDir/$shortDir-i$i-*.mlp) 2>$resultDir/$shortMainDir/$shortDir/stats-$shortDir-i$i.log 1>/dev/null
 			echo "$i instances(s) processed"
 		done
 	fi
     done
   fi
 done
+
+fi #if $go -eq 1
