@@ -644,7 +644,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
       		      while ( itMjTAtoms != MjTAtoms.end() )
 		        {
 			  // if the atoms is set 
-			      OrdinaryAtom atomGround = registrySolver->ogatoms.getByAddress(*itMjTAtoms);
+			      const OrdinaryAtom& atomGround = registrySolver->ogatoms.getByAddress(*itMjTAtoms);
 			      DBGLOG(DBG, "[MLPSolver::replacedModuleAtoms] atomGround inspected = " << atomGround);
 			      if (atomGround.tuple.front() == newOutputAtom.tuple.front() ) 
 				{ // if the predicate = newOutputAtom, if yes:  edb->setFact(*itMjTAtoms);	
