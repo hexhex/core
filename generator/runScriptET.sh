@@ -18,8 +18,7 @@ resultDir=$3
 go=1
 if [ -a $resultDir ]; then
   go=0
-  echo "$resultDir is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
-  read inp
+  read -p "$resultDir is already exist. Do you want to delete it anyway? [y]es / [c]ancel execution: " inp
   if [ "$inp" = "y" ]; then
     rm -rf $resultDir
     go=1

@@ -1,5 +1,8 @@
 2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/runScriptET.sh: Fixing the prompted message.
+	* generator/summaryAT.sh: Likewise.
+
 	* generator/genTopologyCore.sh: Create a new, bigger testsuite.
 
 	* generator/runScriptAT.sh: Change memory limit up to 2Gb.
