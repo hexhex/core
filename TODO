@@ -3,6 +3,18 @@
 * TODO add configure options for various debugging switches (-lmcheck -D_GLIBCXX_DEBUG -DNDEBUG)
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
+* TODO allow --solver=/path/to/solver?
+* TODO support streaming of answer sets
+If the GraphProcessor found an answer set, it should immediately call
+the output builder / query processor. This helps (a) if we only want a
+single answer set, and dlv will possibly support streaming in the
+future as well, and (b) for brave reasoning we don't have to collect
+all of them, but just stop at the first occurrence of the query.
+* TODO maintain a bimap between replacement atom predicates and PluginAtom objects
+Replacement atoms show up in answer sets, and we have to find the
+right PluginAtom. There could be more than one replacement atom for a
+single PluginAtom, even for a single rule if we decompose recursive
+rules.
 * TODO Add support for GraphML
 The GraphML could be handy for debugging the dependency graph and
 other stuff: <http://graphml.graphdrawing.org/>

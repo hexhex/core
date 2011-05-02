@@ -109,6 +109,13 @@ typedef Interpretation::ConstPtr InterpretationConstPtr;
 
 std::size_t hash_value(const Interpretation& intr);
 
+// TODO perhaps we want to have something like this for (manual) joins
+// (see https://dlvhex.svn.sourceforge.net/svnroot/dlvhex/dlvhex/branches/dlvhex-depgraph-refactoring@1555) 
+//void multiplyInterpretations(
+//		const std::vector<InterpretationPtr>& i1,
+//		const std::vector<InterpretationPtr>& i2,
+//		std::vector<InterpretationPtr>& result);
+
 DLVHEX_NAMESPACE_END
 
 #endif // INTERPRETATION_HPP_INCLUDED__08112010
