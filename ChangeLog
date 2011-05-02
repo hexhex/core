@@ -1,5 +1,7 @@
 2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/stats.awk: Fixed standard deviation computation when handling one entry.
+
 	* generator/runScriptET.sh: Fixing the prompted message.
 	* generator/summaryAT.sh: Likewise.
 

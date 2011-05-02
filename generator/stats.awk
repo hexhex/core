@@ -28,7 +28,11 @@ END {
 	}
 	
 	dvn = sqrt(sumtimes/n)
-	sdvn = sqrt(sumtimes/(n-1))
+	if ( n == 1 ) {
+		sdvn = 0	
+	} else {
+		sdvn = sqrt(sumtimes/(n-1))
+	}
     }
     
     # print "cnt: ", n, " sum: ", sum, " avg: ", avg, " med: ", med, " dvn: ", dvn, " sdvn: ", sdvn
