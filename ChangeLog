@@ -1,5 +1,8 @@
 2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/summaryAT.sh: Handle time-out and mem-out.
+	* generator/summaryStatsAT.sh: Likewise.
+
 	* generator/stats.awk: Fixed standard deviation computation when handling one entry.
 
 	* generator/runScriptET.sh: Fixing the prompted message.

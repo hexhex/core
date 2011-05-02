@@ -45,11 +45,18 @@ for mainDir in $targetDir/*; do
 		fileSummaryCallDLV="$resultDir/$shortMainDir/$shortDir/summary-CallDLV-$shortDir.txt"
 		fileSummaryTime="$resultDir/$shortMainDir/$shortDir/summary-Time-$shortDir.txt"
 		fileSummaryCtrAS="$resultDir/$shortMainDir/$shortDir/summary-CtrAS-$shortDir.txt"
+		fileSummaryTimeOut="$resultDir/$shortMainDir/$shortDir/summary-TimeOut-$shortDir.txt"
+		fileSummaryMemOut="$resultDir/$shortMainDir/$shortDir/summary-MemOut-$shortDir.txt"
 		for i in $dir/stats-*; do 
 			ctr=-1
+			echo "process: $i"
 			while read LINE	
 			do
-				if [ $ctr -ge 0 ]; then
+				if [ "$LINE" = "timelimit: sending warning signal 1" ]; then
+					echo "time-out $i" >> $fileSummaryTimeOut
+				elif [ "$LINE" = "fork: Cannot allocate memory" ]; then
+					echo "mem-out $i" >> $fileSummaryMemOut
+				elif [ $ctr -ge 0 ]; then
 					let data=$ctr%7
 					if [ $data -eq 1 ]; then
 						lastCtrAS=$LINE

@@ -33,79 +33,57 @@ if [ -d $mainDir ]; then
 
   for dir in $mainDir/*; do 
     if [ -d $dir ]; then
+
       #sort
-      sort -n $dir/summary-ASDLV-${dir#$mainDir/}.txt > $dir/summaryASDLV.txt
-      sort -n $dir/summary-CallDLV-${dir#$mainDir/}.txt > $dir/summaryCallDLV.txt
-      sort -n $dir/summary-MI-${dir#$mainDir/}.txt > $dir/summaryMI.txt
-      sort -n $dir/summary-SizeM-${dir#$mainDir/}.txt > $dir/summarySizeM.txt
-      sort -n $dir/summary-Time-${dir#$mainDir/}.txt > $dir/summaryTime.txt
-      sort -n $dir/summary-CtrAS-${dir#$mainDir/}.txt > $dir/summaryCtrAS.txt
+      for attr in ASDLV CallDLV MI SizeM Time CtrAS 
+      do 
+	if [ -a $dir/summary-$attr-${dir#$mainDir/}.txt ]; then
+		sort -n $dir/summary-$attr-${dir#$mainDir/}.txt > $dir/summary$attr.txt
+	fi
+      done
 
       #print stats
       res=${dir#$mainDir/}
       echo $res >> $mainDir/summaryTotal.txt
       latex=$res
-	  
-      res2=`cat $dir/summaryMI.txt | awk -f $statsScript`
-      echo "MI = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsMI.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std"
 
-      res2=`cat $dir/summarySizeM.txt | awk -f $statsScript`
-      echo "SizeM = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsSizeM.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std"
-
-      res2=`cat $dir/summaryCallDLV.txt | awk -f $statsScript`
-      echo "CallDLV = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsCallDLV.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std"
-
-      res2=`cat $dir/summaryASDLV.txt | awk -f $statsScript`
-      echo "ASDLV = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsASDLV.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std"
-
-      res2=`cat $dir/summaryCtrAS.txt | awk -f $statsScript`
-      echo "CtrAS = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsCtrAS.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std"
-
-      res2=`cat $dir/summaryTime.txt | awk -f $statsScript`
-      echo "Time = [$res2]" >> $mainDir/summaryTotal.txt
-      echo "$res = [$res2]" >> $mainDir/summaryStatsTime.txt
-      #for latex
-      avg=${res2#$leadingAvg}
-      avg=${avg%$trailingAvg}
-      std=${res2#$leadingStdDev}
-      std=${std%$trailingStdDev}
-      latex="$latex&$avg&$std\\\\"
+      for attr in MI SizeM CallDLV ASDLV CtrAS Time
+      do 	
+	if [ -a $dir/summary$attr.txt ]; then   
+		#echo "$dir/summary$attr.txt"
+		res2=`cat $dir/summary$attr.txt | awk -f $statsScript`
+		echo "$attr = [$res2]" >> $mainDir/summaryTotal.txt
+		echo "$res = [$res2]" >> $mainDir/summaryStats$attr.txt
+		#for latex
+		avg=${res2#$leadingAvg}
+		avg=${avg%$trailingAvg}
+		std=${res2#$leadingStdDev}
+		std=${std%$trailingStdDev}
+		latex="$latex&$avg&$std"
+	else
+		echo "$attr = [-]" >> $mainDir/summaryTotal.txt
+		echo "$res = [-]" >> $mainDir/summaryStats$attr.txt
+		latex="$latex&-&-"
+	fi
+      done
+      for attrOut in TimeOut MemOut
+      do 
+	if [ -a $dir/summary-$attrOut-${dir#$mainDir/}.txt ]; then
+		numOut=`cat $dir/summary-$attrOut-${dir#$mainDir/}.txt | wc -l`
+		if [ "$numOut" = "10" ]; then
+			numOut="all"
+		else
+			numOut="0.$numOut"	
+		fi 	  
+	else 
+		numOut="-"
+	fi
+	echo "$attrOut prob = [$numOut]" >> $mainDir/summaryTotal.txt
+	latex="$latex&$numOut"
+      done
+      latex="$latex\\\\"
       echo $latex >> $mainDir/summaryLatex.txt
+      echo "" >> $mainDir/summaryTotal.txt
     fi
   done
 fi
