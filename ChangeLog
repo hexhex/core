@@ -1,4 +1,13 @@
+2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/runScriptAT.sh: Change memory limit up to 2Gb.
+
 2010-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genTopologyCore.sh: Fixing the prompted message.
+	* generator/runScriptAT.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+	* generator/summaryAT.sh: Likewise.
 
 	* generator/runScriptAT.sh: Adding interactive dialog if the result dir is exist.
 	* generator/genTopologyCore.sh: Likewise.
