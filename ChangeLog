@@ -1,5 +1,7 @@
 2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/genTopologyCore.sh: Create a new, bigger testsuite.
+
 	* generator/runScriptAT.sh: Change memory limit up to 2Gb.
 
 2010-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>

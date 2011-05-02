@@ -26,8 +26,7 @@ else
   go=1
   if [ -a $dirResult ]; then
     go=0
-    echo "$dirResult is exist. Do you want to delete anyway? [y]es / [c]ancel execution: "
-    read inp
+    read -p "$dirResult is already exist. Do you want to delete it anyway? [y]es / [c]ancel execution: " inp
     if [ "$inp" = "y" ]; then
       rm -rf $dirResult
       go=1
@@ -69,12 +68,12 @@ else
 				$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $defRules $modules $opt
 			done
 
-			for rules in {5,10,15,20} #looping rules
+			for rules in {5,10,20,40} #looping rules
 			do 
 				$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $rules $defModules $opt
 			done
 
-			for body in {5,10,15} #looping body
+			for body in {5,10,15,20} #looping body
 			do 
 				$genParameterSetting $1 $topology $defConstant $defPredicate $head $body $not $defRules $defModules $opt
 			done
@@ -84,14 +83,19 @@ else
 				$genParameterSetting $1 $topology $constant $defPredicate $head $defBody $not $defRules $defModules $opt
 			done
 
-			if [ "$2" = "random" ];
+			for predicate in {10,20,40} #looping constant
+			do 
+				$genParameterSetting $1 $topology $defConstant $predicate $head $defBody $not $defRules $defModules $opt
+			done
+
+			if [ "$topology" = "random" ];
 			then 
-				for density in {10,15,20} #looping density
+				for density in {10,15,20,25} #looping density
 				do 
 					$genParameterSetting $1 $topology $defConstant $defPredicate $head $defBody $not $defRules $defModules $density
 				done
 				
-			else 	if [ "$2" = "tree" ];
+			else 	if [ "$topology" = "tree" ];
 				then 
 					for branch in {2,3,5} #looping branch
 					do 
@@ -100,6 +104,12 @@ else
 
 				fi
 			fi
+
+			#gen big mlp
+			$genParameterSetting $1 $topology 250 20 $head $defBody $not $defRules 100 $opt
+			$genParameterSetting $1 $topology 500 20 $head $defBody $not $defRules 100 $opt
+			$genParameterSetting $1 $topology 500 50 $head $defBody $not $defRules 100 $opt
+			$genParameterSetting $1 $topology 1000 50 $head $defBody $not $defRules 100 $opt
 
 		done
 
