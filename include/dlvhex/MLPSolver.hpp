@@ -1047,7 +1047,7 @@ void MLPSolver::restrictionAndRenaming(const Interpretation& intr, const Tuple& 
 
 void MLPSolver::createInterpretationFromTuple(const Tuple& tuple, Interpretation& result)
 {
-  // result.setRegistry(registrySolver);
+  result.setRegistry(registrySolver);
   result.clear();
   // iterate over the tuple of fact, create a new interpretation s
   Tuple::const_iterator it = tuple.begin();

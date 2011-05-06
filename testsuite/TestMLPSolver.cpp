@@ -1085,3 +1085,65 @@ BOOST_AUTO_TEST_CASE(testBigProgram)
   LOG(DBG, "Test Big Program finish");
 }
 */
+
+/*
+//21
+BOOST_AUTO_TEST_CASE(testStarProgram) 
+{
+
+#ifdef NDEBUG
+  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#endif
+
+  LOG(DBG, " ");
+  LOG(DBG, "Test Star Program begin");
+
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::string filename1 = "../../examples/star-0.mlp";
+  std::string filename2 = "../../examples/star-1.mlp";
+  std::string filename3 = "../../examples/star-2.mlp";
+  std::string filename4 = "../../examples/star-3.mlp";
+  std::ifstream ifs;
+  std::ostringstream buf;
+
+  ifs.open(filename1.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename2.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename3.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  ifs.open(filename4.c_str());
+  BOOST_REQUIRE(ifs.is_open());
+  buf << ifs.rdbuf();
+  ifs.close();
+
+  std::stringstream ss;
+  ss << buf.str();
+
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  BasicHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+  // after parser, print ctx
+  //...LOG_REGISTRY_PROGRAM(ctx);
+
+  // syntax verifying:
+  ModuleSyntaxChecker sC(ctx);
+  BOOST_REQUIRE( sC.verifySyntax() == true );
+
+  MLPSolver m(ctx);
+  BOOST_REQUIRE ( m.solve() == true );
+  LOG(DBG, "Test star Program finish");
+}
+*/
