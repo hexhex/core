@@ -45,6 +45,7 @@ for mainDir in $targetDir/*; do
 		do
 			(ulimit -v 2097152 ; /usr/bin/time --verbose -o $resultDir/$shortMainDir/$shortDir/time-$shortDir-i$i.log timelimit -p -s 1 -t 300 -T 5 $DLVHEX $mainDir/$shortDir/$shortDir-i$i-*.mlp) 2>$resultDir/$shortMainDir/$shortDir/stats-$shortDir-i$i.log 1>/dev/null
 			echo "$i instances(s) processed"
+			killall -q -u `whoami` dlv
 		done
 	fi
     done

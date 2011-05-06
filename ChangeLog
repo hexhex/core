@@ -1,5 +1,7 @@
 2010-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/runScriptAT.sh: Automatically kill left-over dlv.
+
 	* generator/Module.cpp: Incorporating higher arity predicate.
 
 	* include/dlvhex/MLPSolver.hpp: Fixing some bug when print some interpretation.
