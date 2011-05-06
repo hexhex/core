@@ -51,13 +51,18 @@ class BaseTopology
     int notProbability;
     int numRuleMax;
     int numModules;
-    std::vector<int> numConstantVector; // for each modules
-    std::vector<int> numPredicateVector; // for each modules
-    std::vector<int> numRuleVector; // for each modules
-    std::vector<int> numInputPredsVector; // number of input predicates for each modules
+    int maxPredArity;
+    std::vector<int> numInputPredVector; // number of input predicates for each modules
+    std::vector< std::vector<int> > listInputPreds;
+    std::vector< std::vector<int> > numPredArity; // number of input predicates for each modules
+
+    int* createAtom(int idxModule, int idxPredicate, std::string content, int maxToRand, std::ostream& oss);
+    void createGroundAtom(int idxModule, int idxPredicate, std::ostream& oss);
+    int* createNonGroundAtom(int idxModule, int idxPredicate, std::ostream& oss);
 
     void createModuleHeader(int idxModule, std::ostream& oss);
     void generateFacts(int idxModule, std::ostream& oss);
+    void generateRule(int idxModule, std::ostream& ossResult);
     void generateRules(int idxModule, std::ostream& oss);
     void generateModuleCall(int idxModuleSrc, int idxModuleDest, std::ostream& oss);
     virtual void createMainModule(std::ostream& oss){};
@@ -129,40 +134,101 @@ void BaseTopology::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int
   notProbability = NotProbability;
   numRuleMax = NumRule;
   numModules = NumModules;
+  maxPredArity = 4;
+  if (maxPredArity > numPredicateMax) maxPredArity = numPredicateMax;
+  // list of arity per predicate
+  int arrArity[22];
+  for (int i= 0;i< 2;i++) arrArity[i]=0;  // 2
+  for (int i= 2;i<12;i++) arrArity[i]=1;  // 10
+  for (int i=12;i<17;i++) arrArity[i]=2;  // 5
+  for (int i=17;i<20;i++) arrArity[i]=3;  // 3
+  for (int i=20;i<22;i++) arrArity[i]=4;  // 2
+
+  for (int i=0; i<numModules; i++)
+    {
+      std::vector<int> listArity;	
+      for (int j=0; j<numPredicateMax; j++)
+	{
+//          listArity.push_back( arrArity[rand()% 22] ); // random between 0-maxPredArity
+          listArity.push_back( rand()% (maxPredArity + 1) ); // random between 0-maxPredArity
+	}
+      numPredArity.push_back(listArity);
+    }
+
+  // maxInputPreds for modules
   int maxInputPreds = numPredicateMax/3;
   if ( maxInputPreds == 1 && numPredicateMax > 1)
     {
       maxInputPreds = 2;
     }
   if (maxInputPreds == 0) maxInputPreds = 1;
+
+  // defining input preds per module
   for (int i=0;i<numModules;i++)
     {
-      numConstantVector.push_back( (rand()%numConstantMax) + 1);
-      numPredicateVector.push_back( (rand()%numPredicateMax) + 1);
-      numRuleVector.push_back( (rand()%numPredicateMax) + 1);
       // for randomizing input preds for each module
       if ( i==0 )
 	{ // for main module, input preds = 0
-	  numInputPredsVector.push_back(0);  
+	  numInputPredVector.push_back(0);  
+	  std::vector<int> listInputPred;
+	  listInputPreds.push_back(listInputPred);
 	}
       else
 	{ // for library module, input preds min = 1
-	  numInputPredsVector.push_back( (rand()% maxInputPreds ) + 1);
-	  if (numInputPredsVector.back() > numPredicateVector.back() ) 
-	    numInputPredsVector.back() = numPredicateVector.back();
+	  numInputPredVector.push_back( (rand()% maxInputPreds ) + 1);
+	  std::vector<int> listInputPred;
+	  for (int j=0; j<numInputPredVector.back(); j++) 
+	    { // loop on how many input preds we have on this module
+	      listInputPred.push_back( rand() % numPredicateMax ); 
+	    }
+	  listInputPreds.push_back( listInputPred );
 	}
     }
 }
 
 
+
+int* BaseTopology::createAtom(int idxModule, int idxPredicate, std::string content, int maxToRand, std::ostream& oss)
+{ 
+  int* conf = new int[maxToRand];
+  for (int i=0; i<maxPredArity; i++) conf[i] = 0;
+  oss << "p" << idxPredicate;
+  for (int i=0;i<numPredArity.at(idxModule).at(idxPredicate);i++)
+    {
+      if ( i == 0 ) oss << "("; else oss << ",";
+      int value = rand() % maxToRand;
+      conf[value] = 1;
+      oss << content << value;
+      if ( i == numPredArity.at(idxModule).at(idxPredicate)-1 ) oss << ")";
+    }
+  return conf;
+}
+
+
+// create p(c0, c2, c2, c3) -> constants based on listConstant
+void BaseTopology::createGroundAtom(int idxModule, int idxPredicate, std::ostream& oss)
+{
+  int* conf = createAtom(idxModule, idxPredicate, "c", numConstantMax, oss);
+  delete[] conf;
+}
+
+
+// create p(X0, X2, X2, X3) -> variables based on listVars
+int* BaseTopology::createNonGroundAtom(int idxModule, int idxPredicate, std::ostream& oss)
+{
+  int* arr = 0;
+  arr = createAtom(idxModule, idxPredicate, "X", maxPredArity, oss);
+  return arr;
+}
+
 // create module header: #module(..., [...]).
 void BaseTopology::createModuleHeader(int idxModule, std::ostream& oss)
 {
   oss << "#module(mod" << idxModule << ", [";
-  for (int i=0;i<numInputPredsVector.at(idxModule);i++)
+  for (int i=0;i<numInputPredVector.at(idxModule);i++)
     {
-      if (i>0) oss << ", ";
-      oss << "p" << idxModule << "p" << i << "/1";
+      if ( i>0 ) oss << ", ";
+      oss << "p" << listInputPreds.at(idxModule).at(i) << "/" << numPredArity.at(idxModule).at( listInputPreds.at(idxModule).at(i) );
     }
   oss << "]).";  
 }
@@ -172,61 +238,94 @@ void BaseTopology::createModuleHeader(int idxModule, std::ostream& oss)
 // input params: idxModule, numConstant, numPredicate, numFacts to be generated
 void BaseTopology::generateFacts(int idxModule, std::ostream& oss)
 {
-  int constant;
-  int predicate;
-  int numFacts = numConstantVector.at(idxModule)*numPredicateVector.at(idxModule)*2/3;
+  int idxPredicate;
+  int numFacts = rand() % (numConstantMax*numPredicateMax/3);
+  if (numFacts < (numConstantMax+numPredicateMax)) numFacts = numConstantMax+numPredicateMax;
   for (int i=0;i<numFacts;i++)
     {
-      predicate = rand() % numPredicateVector.at(idxModule);
-      constant = rand() % numConstantVector.at(idxModule);
-      oss << "p" << idxModule << "p" << predicate << "(c" << constant << "). ";           
+      idxPredicate = rand() % numPredicateMax;
+      createGroundAtom(idxModule, idxPredicate, oss);
+      oss << ". " << std::endl;           
     }
+}
+
+
+void BaseTopology::generateRule(int idxModule, std::ostream& ossResult)
+{
+  bool safe=false;
+  std::ostringstream oss;
+  while (safe==false) 
+    {
+      oss.str("");
+      // generate head
+      int confHead[maxPredArity];  // list the name of vars X(0-XmaxPredArity-1)
+      for (int i=0; i<maxPredArity; i++) confHead[i] = 0;
+      int sizeOfHead = (rand() % sizeOfHeadMax) + 1;
+      for (int j=0;j<sizeOfHead;j++)
+	{
+	  int idxPredicate = rand() % numPredicateMax;
+	  if ( j>0 ) oss << " v ";
+	  int* conf = 0;
+	  conf = createNonGroundAtom(idxModule, idxPredicate, oss);
+		//rmv. std::cout<<"head: " << oss.str();
+	  for (int k=0;k<maxPredArity;k++) 
+	    {
+		//rmv. std::cout << conf[k];	
+		if (conf[k]==1) confHead[k]=1;
+	    }
+	  //rmv. std::cout<< std::endl;
+	  delete [] conf;
+	} 
+	
+      oss << " :- ";
+      // generate body
+      int confBody[maxPredArity];  // list the name of vars X(0-XmaxPredArity-1)
+      for (int i=0; i<maxPredArity; i++) confBody[i] = 0;
+      int sizeOfBody = (rand() % sizeOfBodyMax) + 1;
+      for (int j=0;j<sizeOfBody;j++)
+	{
+	  int idxPredicate = rand() % numPredicateMax;
+	  int notProbs = rand() % 100;
+	  if ( j>0 ) oss << ", ";
+	  if ( notProbs < notProbability ) oss << "not ";
+	  int* conf = createNonGroundAtom(idxModule, idxPredicate, oss);
+	  if ( notProbs < notProbability ) 
+	   { for (int k=0;k<maxPredArity;k++) if (conf[k]==1) confHead[k]=1; }
+	  else 
+	   { for (int k=0;k<maxPredArity;k++) if (conf[k]==1) confBody[k]=1; }
+	  delete [] conf;
+	} 
+
+      oss << "." << std::endl;
+      oss << "% [";
+      for (int k=0;k<maxPredArity;k++) oss << confHead[k];
+      oss << "] [";
+      for (int k=0;k<maxPredArity;k++) oss << confBody[k];
+      oss << "]" << std::endl;
+
+      // check
+      safe = true;
+      int k=0;
+      while (k<maxPredArity && safe==true)
+	{
+	  if (confHead[k]==1 && confBody[k]==0) safe=false;
+	  k++;
+	}
+    }
+    ossResult << oss.str();  
 }
 
 
 // generate rules
 // input params: idxModule, numConstant, numPredicate, sizeOfHead, sizeOfBody, notProbability, numRules to be generated
+////////////////// ensure rule safety here
 void BaseTopology::generateRules(int idxModule, std::ostream& oss)
 {
-  int constant;
-  int predicate;
-  int notProbs;
-  char vars;
   // generate rules
   int numRule = rand() % numRuleMax;
   for (int i=0;i<numRule;i++)
     {
-      // generate head
-      int sizeOfHead = (rand() % sizeOfHeadMax) + 1;
-      for (int j=0;j<sizeOfHead;j++)
-	{
-	  predicate = rand() % numPredicateVector.at(idxModule);
-	  constant = rand() % numConstantVector.at(idxModule);
-	  if ( j>0 ) oss << " v ";
-          vars = j+65;  // generate variable
-          oss << "p" << idxModule << "p" << predicate << "(" << vars << ")";           
-	} 
-      oss << " :- ";
-      // generate body
-      for (int j=0;j<sizeOfHead;j++)
-	{
-	  predicate = rand() % numPredicateVector.at(idxModule);
-	  vars = (j) + 65; // generate variables
-	  notProbs = rand() % 100;
-	  if ( j>0 ) oss << ", ";
-          oss << "p" << idxModule <<"p" << predicate << "(" << vars << ")";           
-	} 
-      int sizeOfBody = (rand() % sizeOfBodyMax) + 1;
-      for (int j=sizeOfHead;j<sizeOfBody;j++)
-	{
-	  predicate = rand() % numPredicateVector.at(idxModule);
-	  vars = (rand() % sizeOfHead) + 65; // generate variables
-	  notProbs = rand() % 100;
-	  if ( j>0 ) oss << ", ";
-	  if ( notProbs < notProbability ) oss << "not ";
-          oss << "p" << idxModule << "p" << predicate << "(" << vars << ")";           
-	} 
-      oss << "." << std::endl;
+      generateRule(idxModule, oss);
     }
 }
 
@@ -235,10 +334,26 @@ void BaseTopology::generateRules(int idxModule, std::ostream& oss)
 void BaseTopology::generateModuleCall(int idxModuleSrc, int idxModuleDest, std::ostream& oss)
 {
   oss << "out" << idxModuleSrc << " :- @mod" << idxModuleDest << "[";
-  for (int i=0;i<numInputPredsVector.at(idxModuleDest);i++) 
+  int ctrNew=0;
+  for (int i=0;i<numInputPredVector.at(idxModuleDest);i++) 
     {
       if (i > 0) oss <<",";
-      oss << "p" << idxModuleSrc << "p" << (rand()%numPredicateVector.at(idxModuleSrc));
+      int value = 0;
+      // test for arity matching
+      int ctrLoop=0;
+      bool match = false;      
+      while (ctrLoop<1 && match==false)
+	{
+	  value = rand() % numPredicateMax;
+          if (numPredArity.at(idxModuleSrc).at(value)== numPredArity.at(idxModuleDest).at( listInputPreds.at(idxModuleDest).at(i) )) match = true;
+	  ctrLoop++;
+	}
+      if (match==false)
+	{
+	  oss << "pnew" << ctrNew;
+	  ctrNew++;
+	}
+      else oss << "p" << ( value );
     }
   oss << "]::out" << idxModuleDest << ".";
 }

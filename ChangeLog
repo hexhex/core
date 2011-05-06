@@ -1,3 +1,10 @@
+2010-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Module.cpp: Incorporating higher arity predicate.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing some bug when print some interpretation.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/summaryAT.sh: Handle time-out and mem-out.
