@@ -1,5 +1,7 @@
 2010-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/genTopologyCore.sh: Adding a new big parameter setting.
+
 	* generator/runScriptAT.sh: Automatically kill left-over dlv.
 
 	* generator/Module.cpp: Incorporating higher arity predicate.

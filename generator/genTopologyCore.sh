@@ -18,7 +18,7 @@
 
 
 if [ "$1" = "" ];
-then	echo "usage: genExampleCore.sh <FileGenerator> <resultDirectory>"
+then	echo "usage: ./genTopologyCore.sh <FileGenerator> <resultDirectory>"
 else
 
   dirResult=$2
@@ -106,10 +106,10 @@ else
 			fi
 
 			#gen big mlp
-			$genParameterSetting $1 $topology 250 20 $head $defBody $not $defRules 100 $opt
-			$genParameterSetting $1 $topology 500 20 $head $defBody $not $defRules 100 $opt
-			$genParameterSetting $1 $topology 500 50 $head $defBody $not $defRules 100 $opt
-			$genParameterSetting $1 $topology 1000 50 $head $defBody $not $defRules 100 $opt
+			$genParameterSetting $1 $topology 100 50 $head $defBody $not 10 50 $opt
+			$genParameterSetting $1 $topology 100 50 $head $defBody $not 20 50 $opt
+			$genParameterSetting $1 $topology 100 50 $head $defBody $not 10 100 $opt
+			$genParameterSetting $1 $topology 100 50 $head $defBody $not 20 100 $opt
 
 		done
 
