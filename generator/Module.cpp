@@ -149,8 +149,8 @@ void BaseTopology::setAll(int NumConstant, int NumPredicate, int SizeOfHead, int
       std::vector<int> listArity;	
       for (int j=0; j<numPredicateMax; j++)
 	{
-//          listArity.push_back( arrArity[rand()% 22] ); // random between 0-maxPredArity
-          listArity.push_back( rand()% (maxPredArity + 1) ); // random between 0-maxPredArity
+          listArity.push_back( arrArity[rand()% 22] ); // random between 0-maxPredArity
+//          listArity.push_back( rand()% (maxPredArity + 1) ); // random between 0-maxPredArity
 	}
       numPredArity.push_back(listArity);
     }
@@ -297,12 +297,13 @@ void BaseTopology::generateRule(int idxModule, std::ostream& ossResult)
 	} 
 
       oss << "." << std::endl;
+/*
       oss << "% [";
       for (int k=0;k<maxPredArity;k++) oss << confHead[k];
       oss << "] [";
       for (int k=0;k<maxPredArity;k++) oss << confBody[k];
       oss << "]" << std::endl;
-
+*/
       // check
       safe = true;
       int k=0;
