@@ -53,7 +53,7 @@ typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
 typedef ComponentGraph::ComponentSet ComponentSet;
 
-namespace
+namespace internal
 {
 
 template<typename ComponentGraph, typename Sequence>
@@ -131,6 +131,9 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 }
 
 }
+
+// required for some GCCs for DFSVisitor CopyConstructible Concept Check
+using namespace internal;
 
 void EvalHeuristicEasy::build()
 {

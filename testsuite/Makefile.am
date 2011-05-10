@@ -45,9 +45,7 @@ check_PROGRAMS =  \
   TestModelGraph TestModelGraphND \
   TestEvalGraph TestEvalGraphND \
   TestOnlineModelBuilder TestOnlineModelBuilderND \
-  TestOfflineModelBuilder TestOfflineModelBuilderND
-
-noinst_PROGRAMS = \
+  TestOfflineModelBuilder TestOfflineModelBuilderND \
   TestPlainHEX TestPlainHEXND
 
 # remove .dot files produced by running check_PROGRAMS

@@ -48,8 +48,8 @@ install current versions of the following ports:
 
 - automake
 - autoconf
-- pkg-config
-- libtool
+- pkgconfig
+- libtool-devel
 - boost (>1.43)
 
 ** Configuration
