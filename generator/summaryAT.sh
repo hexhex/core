@@ -56,6 +56,8 @@ for mainDir in $targetDir/*; do
 					echo "time-out $i" >> $fileSummaryTimeOut
 				elif [ "$LINE" = "fork: Cannot allocate memory" ]; then
 					echo "mem-out $i" >> $fileSummaryMemOut
+				elif [ "$LINE" = "terminate called after throwing an instance of 'std::bad_alloc'" ]; then
+					echo "mem-out $i" >> $fileSummaryMemOut
 				elif [ $ctr -ge 0 ]; then
 					let data=$ctr%7
 					if [ $data -eq 1 ]; then
