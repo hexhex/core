@@ -1,3 +1,7 @@
+2010-05-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/forLatex.sh: Fix a small bug about opt.
+
 2010-05-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/forLatex.sh: Automatic latex table generation. 
