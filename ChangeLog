@@ -1,3 +1,9 @@
+2010-05-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Benchmark-Summary.zip: Delete old benchmark files.
+	* generator/Benchmark-Stats.zip: Likewise.
+	* generator/Benchmark-Module.zip: Likewise.
+
 2010-05-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/forLatex.sh: Fix a small bug about opt.
