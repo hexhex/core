@@ -1184,9 +1184,9 @@ bool MLPSolver::comp(ValueCallsType C)
 	    {
 	      RegistryPtr R2(new Registry(*stackRegistry.back() ));
 	      registrySolver = R2;
-	      M->setRegistry(registrySolver);
 	      moduleInstTable = stackMInst.back();
 	    }
+          M->setRegistry(registrySolver);
 	  if (status == 2) idAlpha = stackModuleSrcAtom.back();
 	  Interpretation currAns = *stackAns.back();
           DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
