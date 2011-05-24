@@ -43,6 +43,14 @@ In Debian/Ubuntu, you need to install the following packages:
 - libtool
 - libltdl-dev
 
+In MacOS, you need to install a current XCode and the macports and
+install current versions of the following ports:
+
+- automake
+- autoconf
+- pkgconfig
+- libtool-devel
+- boost (>1.43)
 
 ** Configuration
 Right after a subversion check-put, you need to create the `configure'

@@ -259,8 +259,9 @@ int main(int argc, char *argv[])
 		ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
 	#else
 		#if HAVE_DLVDB
-		pctx.setASPSoftware(
-			ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+		#error reactivate dlvdb
+		//pctx.setASPSoftware(
+		//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
 		#else
 			#if HAVE_LIBDLV
 			pctx.setASPSoftware(
@@ -685,8 +686,9 @@ void processOptionsPrePlugin(
 						else if( solver == "dlvdb" )
 						{
 							#if defined(HAVE_DLVDB)
-							pctx.setASPSoftware(
-								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+							#warning reactivate dlvhdb
+							//pctx.setASPSoftware(
+							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif

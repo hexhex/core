@@ -1244,7 +1244,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      InterpretationType intrNewT;
 	      createInterpretationFromTuple(newT, intrNewT);
 	      int idxPjT = addOrGetModuleIstantiation(alphaJ.moduleName, intrNewT);
-	  
+
 	      // next: defining the new C and path
 	      resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
