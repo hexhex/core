@@ -43,6 +43,7 @@
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/HexGrammarPTToASTConverter.h"
 #include "dlvhex/SpiritDebugging.h"
+#include "dlvhex/PluginExtendableHexParser.hpp"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -367,6 +368,8 @@ void QueryPlugin::processOptions(
 		throw FatalError("querying plugin enabled but no querying mode selected");
 }
 
+#if 0
+OLD
 // create custom parser that extends and uses the basic hex parser for parsing queries
 // this parser also stores the query information into the plugin
 HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
@@ -376,6 +379,12 @@ HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
 		return HexParserPtr();
 
 	return HexParserPtr(new HexQueryParser);
+}
+#endif
+
+void addParserModules(PluginExtendableHexParserPtr)
+{
+	#warning TODO implement this!
 }
 
 namespace

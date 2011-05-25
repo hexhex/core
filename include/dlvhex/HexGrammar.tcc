@@ -78,13 +78,14 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
   neg
     = ch_p('-')|'~';
   user_pred_classical
-    = !neg >> ident_or_var >> '(' >> terms >> ')';
+    = !neg >> ident_or_var >> !(ch_p('(') >> terms >> ')');
   user_pred_tuple
     = '(' >> terms >> ')';
-  user_pred_atom
-    = !neg >> ident_or_var;
+  //user_pred_atom
+  //  = !neg >> ident_or_var;
+	// TODO test these modifications!
   user_pred
-    = user_pred_classical | user_pred_tuple | user_pred_atom;
+    = user_pred_classical | user_pred_tuple; // | user_pred_atom;
   external_inputs
     = '[' >> !terms >> ']';
   external_outputs

@@ -36,6 +36,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+class PluginExtendableHexParser;
+
 class QueryPlugin:
   public PluginInterface
 {
@@ -88,9 +90,10 @@ public:
   // (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // create custom parser that extends and uses the basic hex parser for parsing queries
-  // this parser also stores the query information into the plugin
-  virtual HexParserPtr createParser(ProgramCtx&);
+  // OLD create custom parser that extends and uses the basic hex parser for parsing queries
+  // OLD this parser also stores the query information into the plugin
+	// NEW add custom parser modules to hex parser
+	virtual void addParserModules(PluginExtendableHexParserPtr);
 
   // rewrite program by adding auxiliary query rules
   virtual PluginRewriterPtr createRewriter(ProgramCtx&);

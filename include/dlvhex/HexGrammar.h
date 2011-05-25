@@ -101,7 +101,7 @@ struct HexGrammarBase
     boost::spirit::rule<S, c, tag<Neg> >                 neg;
     boost::spirit::rule<S, c, tag<UserPredClassical> >   user_pred_classical;
     boost::spirit::rule<S, c, tag<UserPredTuple> >       user_pred_tuple;
-    boost::spirit::rule<S, c, tag<UserPredAtom> >        user_pred_atom;
+    //boost::spirit::rule<S, c, tag<UserPredAtom> >        user_pred_atom;
     boost::spirit::rule<S, c, tag<UserPred> >            user_pred;
     boost::spirit::rule<S, c, tag<Body> >                body;
     boost::spirit::rule<S, c, tag<Maxint> >              maxint;

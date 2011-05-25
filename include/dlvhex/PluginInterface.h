@@ -1004,6 +1004,15 @@ public:
   virtual HexParserPtr createParser(ProgramCtx&)
     { return HexParserPtr(); }
 
+	/**
+	 * \brief Allow plugin to extend parser with parser modules
+	 *
+	 * see PluginExtendableHexParser.hpp
+	 * QueryPlugin.cpp is one plugin using this feature
+	 */
+	virtual void addParserModules(PluginExtendableHexParserPtr)
+		{}
+
   /**
    * \brief Rewriter for hex-programs.
    *

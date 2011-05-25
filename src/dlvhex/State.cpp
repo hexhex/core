@@ -263,7 +263,8 @@ void ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
-  // use alternative parser from plugins, if applicable
+  // first possibility for plugin to influence parser:
+	// use alternative parser from plugins, if applicable
   assert(!ctx->parser);
   BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
   {
@@ -288,8 +289,23 @@ void ParseState::parse(ProgramCtx* ctx)
   if( !ctx->parser )
   {
     LOG(INFO,"using default parser (no alternatives provided by plugins)");
-    ctx->parser.reset(new BasicHexParser);
+    // OLD: basic hex parser, no modules
+		// ctx->parser.reset(new BasicHexParser);
+		// NEW: modular hex parser
+    ctx->parser.reset(new PluginExtendableHexParser);
   }
+
+	// second possibility for plugins to influence parser: parser modules
+	PluginExtendableHexParserPtr peParser =
+		boost::dynamic_pointer_cast<PluginExtendableHexParser>(ctx->parser);
+	if( !!peParser )
+	{
+    LOG(INFO,"allowing plugins to add parser modules to PluginExtendableHexParser");
+		BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+		{
+			plugin->addParserModules(peParser);
+		}
+	}
 
   // parse
   assert(!!ctx->parser);
