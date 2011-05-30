@@ -33,13 +33,21 @@ AC_PROG_CXXCPP
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
 
-   AC_MSG_CHECKING([for g++ >= 4.3])
+   AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
    AC_LANG_PUSH([C++])
    AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
  int dummy;
 #else
-#error gcc is too old, we need at least gcc 4.3
+# if __clang__ == 1
+#  if __clang_major__ >= 3 || (__clang_major__ == 2 && __clang_minor__ >= 9)
+ int dummy;
+#  else
+#    error clang is too old, we need at least clang 2.9
+#  endif
+# else
+#  error gcc is too old, we need at least gcc 4.3
+# endif
 #endif 
 ]], [[
 dummy;
@@ -49,7 +57,7 @@ dummy;
 ],
 [
 	AC_MSG_RESULT([no])
-	AC_MSG_ERROR([Cannot find g++ >= 4.3. Please upgrade your compiler.])
+	AC_MSG_ERROR([Cannot find g++ >= 4.3 or clang++ >= 2.9. Please upgrade your compiler.])
 ]
 )
 AC_LANG_POP()
@@ -61,6 +69,7 @@ fi
 case $CXX in
    clang*)
      CXXFLAGS="$CXXFLAGS -ferror-limit=5"
+     # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)
    ;;
