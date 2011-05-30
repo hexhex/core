@@ -382,7 +382,7 @@ HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
 }
 #endif
 
-void addParserModules(PluginExtendableHexParserPtr)
+void QueryPlugin::addParserModules(PluginExtendableHexParserPtr)
 {
 	#warning TODO implement this!
 }

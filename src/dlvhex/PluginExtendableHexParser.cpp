@@ -32,4 +32,17 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+struct PluginExtendableHexParser::Impl
+{
+};
+
+PluginExtendableHexParser::PluginExtendableHexParser():
+	pimpl(new Impl)
+{
+}
+
+PluginExtendableHexParser::~PluginExtendableHexParser()
+{
+}
+
 DLVHEX_NAMESPACE_END

@@ -87,7 +87,9 @@ public:
 	};
 
 public:
-  virtual void parse(InputProviderPtr in, ProgramCtx& out);
+	PluginExtendableHexParser();
+	virtual ~PluginExtendableHexParser();
+  //virtual void parse(InputProviderPtr in, ProgramCtx& out);
 
 	// register new parser module (must be derived from one of the above base classes)
 	template<typename Module>

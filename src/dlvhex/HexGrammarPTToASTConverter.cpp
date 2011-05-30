@@ -353,21 +353,26 @@ ID HexGrammarPTToASTConverter::createAtomFromUserPred(node_t& node)
   {
   case HexGrammar::UserPredClassical:
     {
-      // <foo> ( <bar>, <baz>, ... )
+      // <foo> plus optional ( <bar>, <baz>, ... )
       atom.tuple.push_back(createTermFromIdentVar(prednode.children[0+offset]));
-      // =append
-      Tuple t = createTupleFromTerms(prednode.children[2+offset]);
-      atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
+			if( prednode.children.size() > 1 )
+			{
+				// =append
+				Tuple t = createTupleFromTerms(prednode.children[2+offset]);
+				atom.tuple.insert(atom.tuple.end(), t.begin(), t.end());
+			}
     }
     break;
   case HexGrammar::UserPredTuple:
     // ( <foo>, <bar>, <baz>, ... )
     atom.tuple = createTupleFromTerms(prednode.children[1]);
     break;
+	#if 0
   case HexGrammar::UserPredAtom:
     // <foo>
     atom.tuple.push_back(createTermFromIdentVar(prednode.children[0+offset]));
     break;
+	#endif
   default:
     assert(false && "encountered unknown node in createAtomFromUserPred!");
   }
