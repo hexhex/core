@@ -32,7 +32,30 @@ AC_PROG_CXXCPP
 # allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
+
+   AC_MSG_CHECKING([for g++ >= 4.3])
+   AC_LANG_PUSH([C++])
+   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
+ int dummy;
+#else
+#error gcc is too old, we need at least gcc 4.3
+#endif 
+]], [[
+dummy;
+]]),
+[
+	AC_MSG_RESULT([yes])
+],
+[
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([Cannot find g++ >= 4.3. Please upgrade your compiler.])
+]
+)
+AC_LANG_POP()
+
 fi
+
 
 # check for clang
 case $CXX in
