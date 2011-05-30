@@ -18,6 +18,14 @@ LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 lib_LTLIBRARIES = libdlvhextest.la
 
+check-examples:
+	if $(TESTS_ENVIRONMENT) $(srcdir)/run-dlvhex-tests.sh; then \
+		echo "PASS"; \
+	else \
+		echo "FAIL"; \
+	fi
+
+
 TESTS = \
   run-dlvhex-tests.sh \
   TestEvalEndToEnd TestEvalEndToEndND \
