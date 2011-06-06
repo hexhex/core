@@ -125,6 +125,7 @@ class DLVHEX_EXPORT MLPSolver{
     typedef IDSet::index<impl::ElementTag>::type IDSElementIndex;
     // vector of IDTable, the index of the i/S should match with the index in tableInst
     std::vector<IDSet> A;
+    std::vector<IDSet> Top; // to store top rules (in instantiation splitting mode)
     
     // type for the Mi/S
     typedef std::vector<InterpretationType> VectorOfInterpretation;
@@ -177,11 +178,22 @@ class DLVHEX_EXPORT MLPSolver{
     inline ValueCallsType createValueCallsMainModule(int idxModule);
     inline void assignFin(IDSet& t);
     inline void findAllModulesAtom(const Tuple& newRules, Tuple& result);
-    inline bool containsIDRuleHead(const ID& id, const Tuple& ruleHead);
+    inline bool containsPredName(const Tuple& tuple, const ID& id);
+    inline ID getPredIDFromAtomID(const ID& atomID);
     inline bool defined(const Tuple& preds, const Tuple& ruleHead);
     inline void collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& predsSearched, Tuple& rulesResult);
     inline bool allPrepared(const ID& moduleAtom, const Tuple& rules);
     inline ID smallestILL(const Tuple& newRules);
+
+    inline void addHeadOfModuleAtom(const Tuple& rules, IDSet& atomsForbid, IDSet& rulesForbid);
+    inline bool tupleContainPredNameIDSet(const Tuple& tuple, const IDSet& idset);
+    inline bool containID(ID id, const IDSet& idSet);
+    inline void addTuplePredNameToIDSet(const Tuple& tuple, IDSet& idSet);
+    inline void addTupleToIDSet(const Tuple& tuple, IDSet& idSet);
+    inline void addHeadPredsForbid(const Tuple& rules, IDSet& atomsForbid, IDSet& rulesForbid);
+    inline void IDSetToTuple(const IDSet& idSet, Tuple& result);
+    inline void collectLargestBottom(const Tuple& rules, Tuple& result);
+
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
     inline void createInterpretationFromTuple(const Tuple& tuple, Interpretation& result);
@@ -197,6 +209,7 @@ class DLVHEX_EXPORT MLPSolver{
     bool writeLog;
     int nASReturned;
     int forget;
+    int instSplitting;
     int recordingTime;
     double totalTimePost;
     double totalTimePartA;
@@ -227,6 +240,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline MLPSolver(ProgramCtx& ctx1);
     inline void setNASReturned(int n);
     inline void setForget(int n);
+    inline void setInstSplitting(int n);
     inline void setPrintLevel(int level);
     inline bool solve(); // return false if the program is not ic-stratified
 
@@ -244,6 +258,11 @@ void MLPSolver::setNASReturned(int n)
 void MLPSolver::setForget(int n)
 {
   if ( n==0 || n==1 ) forget = n;
+}
+
+void MLPSolver::setInstSplitting(int n)
+{
+  if ( n==0 || n==1 ) instSplitting = n;
 }
 
 void MLPSolver::setPrintLevel(int level)
@@ -268,10 +287,10 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
   printLevel = 0;
   nASReturned = 0;
   forget = 0;
+  instSplitting = 0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
-  //TODO: initialization of tableS, tableInst, C, A, M, path, AS here;
   DBGLOG(DBG, "[MLPSolver::MLPSolver] constructor finished");
 }
 
@@ -783,7 +802,6 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 }
 
 
-// TODO: OPEN THIS
 bool MLPSolver::isOrdinary(const Tuple& idb)
 { 
   Tuple::const_iterator itT = idb.begin();
@@ -835,14 +853,35 @@ void MLPSolver::findAllModulesAtom(const Tuple& newRules, Tuple& result)
 }
 
 
-bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
+ID MLPSolver::getPredIDFromAtomID(const ID& atomID)
 {
-    Tuple::const_iterator itRH = ruleHead.begin();
-    while ( itRH != ruleHead.end() )
+  assert( atomID.isAtom() || (atomID).isLiteral()  );
+  if ( atomID.isOrdinaryGroundAtom() )
+    {
+      const OrdinaryAtom& atom = registrySolver->ogatoms.getByID(atomID);
+      return atom.tuple.front();
+    }
+  else if ( atomID.isOrdinaryNongroundAtom() )
+    {
+      const OrdinaryAtom& atom = registrySolver->onatoms.getByID(atomID);
+      return atom.tuple.front();
+    }
+  return ID_FAIL;
+}
+
+
+// look if in the tuple, contain an atom with the same predicate name 
+// as in id
+bool MLPSolver::containsPredName(const Tuple& tuple, const ID& id)
+{
+    Tuple::const_iterator itRH = tuple.begin();
+    while ( itRH != tuple.end() )
       {
         // *itRH = id of an ordinary atom
         if ( (*itRH).isAtom() )
           {
+            if ( id == getPredIDFromAtomID(*itRH) ) return true;	
+/*
             if ( (*itRH).isOrdinaryGroundAtom() )
               {
                 const OrdinaryAtom& atom = registrySolver->ogatoms.getByID(*itRH);
@@ -853,6 +892,7 @@ bool MLPSolver::containsIDRuleHead(const ID& id, const Tuple& ruleHead)
                 const OrdinaryAtom& atom = registrySolver->onatoms.getByID(*itRH);
                 if ( id == atom.tuple.front() ) return true;
               }
+*/
           }
         itRH++;
       }
@@ -877,7 +917,7 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
       while ( it != rules.end() )
         {
           const Rule& r = registrySolver->rules.getByID(*it);
-          if ( containsIDRuleHead(predicate, r.head) ) 
+          if ( containsPredName(r.head, predicate) ) 
             { // if this rule defined the predicate, 
 	      // look into the result, if not found, push it; 
               location = std::find(rulesResult.begin(), rulesResult.end(), *it);
@@ -941,10 +981,11 @@ bool MLPSolver::allPrepared(const ID& moduleAtom, const Tuple& rules)
 }
 
 
+// looking for which module atoms has the smallest ill
 ID MLPSolver::smallestILL(const Tuple& newRules)
 {
   DBGLOG(DBG, "[MLPSolver::smallestILL] enter to find the smallest ILL in: ");
-  printIdb(registrySolver, newRules);
+  if ( printProgramInformation == true ) printIdb(registrySolver, newRules);
 
   Tuple modAtoms;
   findAllModulesAtom(newRules, modAtoms);
@@ -968,11 +1009,146 @@ bool MLPSolver::defined(const Tuple& preds, const Tuple& ruleHead)
   while ( itPred != preds.end() )
   {
     // *itPred = the predicate names (yes the names only, the ID is belong to term predicate)
-    if ( containsIDRuleHead(*itPred, ruleHead) == true ) return true;
+    if ( containsPredName(ruleHead, *itPred) == true ) return true;
     itPred++;
 
   }
   return false;
+}
+
+
+void MLPSolver::addHeadOfModuleAtom(const Tuple& rules, IDSet& predsForbid, IDSet& rulesForbid)
+{
+  Tuple::const_iterator it = rules.begin();
+  while ( it != rules.end() )
+    {
+      if ( it->doesRuleContainModatoms() == true )
+	{ // add rule id to rulesForbid
+	  rulesForbid.get<impl::ElementTag>().insert(*it);
+	  const Rule& r = registrySolver->rules.getByID(*it);
+	  addTuplePredNameToIDSet(r.head, predsForbid);
+	}
+      it++;
+    }
+}
+
+// from tuple, get the atom, get the predicate name, locate the id
+// add the ID into idSet
+void MLPSolver::addTuplePredNameToIDSet(const Tuple& tuple, IDSet& idSet)
+{
+  Tuple::const_iterator it = tuple.begin();
+  while ( it != tuple.end() )
+    {
+      if ( (*it).isAtom() || (*it).isLiteral() ) 
+        idSet.get<impl::ElementTag>().insert( getPredIDFromAtomID(*it) );      
+      it++;
+    }
+}
+
+
+bool MLPSolver::tupleContainPredNameIDSet(const Tuple& tuple, const IDSet& idset)
+{
+  Tuple::const_iterator it = tuple.begin();
+  while ( it != tuple.end() )
+    {
+      DBGLOG(DBG, "[MLPSolver::tupleContainPredNameIDSet] id on inspection: " << *it);	
+      if ( (*it).isAtom() || (*it).isLiteral() ) {
+        if ( containID( getPredIDFromAtomID(*it) , idset) == true ) return true;
+        DBGLOG(DBG, "[MLPSolver::tupleContainPredNameIDSet] is an atom or literal");	
+      } else {
+        DBGLOG(DBG, "[MLPSolver::tupleContainPredNameIDSet] is not an atom or literal");	
+      }	
+      it++;
+    }
+  return false;
+}
+
+
+bool MLPSolver::containID(ID id, const IDSet& idSet)
+{
+  MLPSolver::IDSElementIndex::const_iterator it = idSet.get<impl::ElementTag>().find(id);
+  if ( it != idSet.get<impl::ElementTag>().end() ) return true;
+    else return false;
+}
+
+
+void MLPSolver::addHeadPredsForbid(const Tuple& rules, IDSet& predsForbid, IDSet& rulesForbid)
+{
+  bool stop = false;
+  while ( stop == false )
+    {
+      stop = true;
+      Tuple::const_iterator it = rules.begin();
+      while ( it != rules.end() )
+	{
+	  // if the rule is not contained in rulesForbid, inspect:
+	  if ( containID(*it, rulesForbid) == false )
+	    {
+	      const Rule& r = registrySolver->rules.getByID(*it);
+	      // if the body contains pred forbid
+	      DBGLOG(DBG, "[MLPSolver::addHeadPredsForbid] rules on inspection: " << r);
+ 	      if ( tupleContainPredNameIDSet(r.body, predsForbid) == true )
+		{
+		  addTuplePredNameToIDSet(r.head, predsForbid);
+		  rulesForbid.get<impl::ElementTag>().insert(*it);
+		  stop = false;
+		}
+	      // if disjunctive head contain pred forbid
+	      if ( r.head.size()>1 && tupleContainPredNameIDSet(r.head, predsForbid) == true)
+		{
+		  addTuplePredNameToIDSet(r.head, predsForbid);
+		  rulesForbid.get<impl::ElementTag>().insert(*it);
+		  stop = false;
+		}
+	    }
+	  it++;
+	}
+    }
+}
+
+
+void MLPSolver::IDSetToTuple(const IDSet& idSet, Tuple& result)
+{
+  result.clear();
+  MLPSolver::IDSAddressIndex::const_iterator it = idSet.get<impl::AddressTag>().begin();
+  while ( it != idSet.get<impl::AddressTag>().end() )
+    {
+      result.push_back(*it);	
+      it++;
+    }
+}
+
+
+void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& result)
+{
+  DBGLOG(DBG, "[MLPSolver::collectLargestBottom] enter");
+  IDSet predsForbid;
+  IDSet rulesForbid;
+  addHeadOfModuleAtom(rules, predsForbid, rulesForbid);
+  DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, predsForbid: ");
+  Tuple predsForbidTuple;
+  IDSetToTuple(predsForbid, predsForbidTuple);
+  if ( printProgramInformation == true ) printIdb(registrySolver, predsForbidTuple);
+  DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, rulesForbid: ");
+  Tuple rulesForbidTuple;
+  IDSetToTuple(rulesForbid, rulesForbidTuple);
+  if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
+  if ( predsForbid.size() > 0 )
+    {
+      addHeadPredsForbid(rules, predsForbid, rulesForbid);
+      DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadPredsForbid, rulesForbid: ");
+      rulesForbidTuple.clear();
+      IDSetToTuple(rulesForbid, rulesForbidTuple);
+      if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
+    } 
+  Tuple::const_iterator it = rules.begin();
+  result.clear();
+  while ( it != rules.end() )
+    {
+      if ( containID(*it, rulesForbid) == false )	
+	result.push_back(*it);	
+      it++;
+    }
 }
 
 
@@ -987,8 +1163,8 @@ void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, 
     collectAllRulesDefined(*itPred, rules, predsSearched, result);
     itPred++;
   }
-
 }
+
 
 // actualInputs: Tuple of predicate name (predicate term) in the module atom (caller)
 // formalInputs: Tuple of predicate name (predicate term) in the module list (module header)
@@ -1390,7 +1566,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	}
 
       DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
-      printEdbIdb(registrySolver, edbRewrite, idbRewrite);
+      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, idbRewrite);
   
       if ( isOrdinary(idbRewrite) )
         {
@@ -1624,11 +1800,19 @@ bool MLPSolver::comp(ValueCallsType C)
 	      A.at(*it).get<impl::ElementTag>().insert(idAlpha); 
               it++;  
             } 
+
           Tuple bottom;
           collectBottom(alpha, idbRewrite, bottom);
-          DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-          printEdbIdb(registrySolver, edbRewrite, bottom);
+	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	  if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
 
+	  bottom.clear();
+	  collectLargestBottom(idbRewrite, bottom);	
+	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
+	  if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
+/*	  int cint;
+	  std::cin >> cint;
+*/
           // get the module name
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
@@ -2108,8 +2292,6 @@ void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std:
 
 void MLPSolver::printProgram(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb)
 {
-  if ( printProgramInformation == true )
-    {
   	DBGLOG(DBG, *reg1); 
   	RawPrinter printer(std::cerr, reg1);
       	Interpretation::Storage bits = edb->getStorage();
@@ -2124,33 +2306,26 @@ void MLPSolver::printProgram(const RegistryPtr& reg1, const InterpretationPtr& e
   	printer.printmany(idb,"\n"); 
   	std::cerr << std::endl; 
   	DBGLOG(DBG, "idb end");
-    }
 }
 
 
 void MLPSolver::printIdb(const RegistryPtr& reg1, const Tuple& idb)
 {
-  if ( printProgramInformation == true ) 
-    {
 	RawPrinter printer(std::cerr, reg1);
  	DBGLOG(DBG, "idb begin"); 
   	printer.printmany(idb,"\n"); 
   	std::cerr << std::endl; 
   	DBGLOG(DBG, "idb end");
-    }
 }
 
 void MLPSolver::printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& edb, const Tuple& idb)
 {
-  if ( printProgramInformation == true ) 
-    {
 	std::cerr << "edb = " << *edb << std::endl;
 	RawPrinter printer(std::cerr, reg1);
  	DBGLOG(DBG, "idb begin"); 
   	printer.printmany(idb,"\n"); 
   	std::cerr << std::endl; 
   	DBGLOG(DBG, "idb end");
-    }
 }
 
 

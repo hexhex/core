@@ -1,3 +1,7 @@
+2010-06-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Implement collecting the largest bottom.
+
 2010-05-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fix a little bug in printing M. 
