@@ -192,7 +192,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void addTupleToIDSet(const Tuple& tuple, IDSet& idSet);
     inline void addHeadPredsForbid(const Tuple& rules, IDSet& atomsForbid, IDSet& rulesForbid);
     inline void IDSetToTuple(const IDSet& idSet, Tuple& result);
-    inline void collectLargestBottom(const Tuple& rules, Tuple& result);
+    inline void collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top);
 
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
@@ -200,7 +200,9 @@ class DLVHEX_EXPORT MLPSolver{
     inline int addOrGetModuleIstantiation(const std::string& moduleName, const Interpretation& s);
 
     inline void resizeIfNeededA(int idxPjT);
-    inline bool containFinA(int idxPjT);
+    inline bool containFin(const std::vector<IDSet>& VectorOfIDSet, int idxPjT);
+    inline int getInstIndexOfRule(const Rule& r);
+    inline void updateTop(std::vector<IDSet>& Top, const Tuple& top);
     inline bool comp(ValueCallsType C); // return false if the program is not ic-stratified
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
@@ -719,29 +721,85 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
   VCAddressIndex::const_iterator itCend = C.get<impl::AddressTag>().end();
   while ( itC != itCend )
     { 
-      // get the module idx and idx S
-      int idxM = extractPi(*itC);
-      int idxS = extractS(*itC);
-      const Module& m = registrySolver->moduleTable.getByAddress(idxM);
-      // rewrite the edb, get the edb pointed by m.edb
-      DBGLOG(DBG, "[MLPSolver::rewrite] rewrite edb ");
-      InterpretationPtr edbTemp( new Interpretation(registrySolver) );
-      edbTemp->add(*ctx.edbList.at(m.edb));
-      // add S (from the instantiation) to the edb
-      edbTemp->add( sTable.get<impl::AddressTag>().at(idxS) );
-      // iterate over edb 
-      Interpretation::Storage bits = edbTemp->getStorage();
-      Interpretation::Storage::enumerator it = bits.first();
-      while ( it!=bits.end() ) 
-        {
-	  // get the atom that is pointed by *it (element of the edb)
-	  ID atomRID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it);
-	  // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
-	  ID atomRewrite = rewriteOrdinaryAtom(atomRID, *itC);
-	  edbResult->setFact(atomRewrite.address);
-	  it++;
-        }			
+      // check if idx *itC has been made in Top
+      bool usingTop = false;
+      if ( *itC < Top.size() )
+	{ // if yes, 
+	  IDSet top = Top.at(*itC);
+	  if (top.size()>0)
+	    {
+	      //...if ( idbResult.size()==0 ) IDSetToTuple(top, idbResult);
+	      //...else 
+	      //...{
+		  Tuple idbResultTemp;
+		  IDSetToTuple(top, idbResultTemp);
+		  idbResult.insert(idbResult.end(), idbResultTemp.begin(), idbResultTemp.end());
+		  //...}
 
+	      usingTop = true;
+	      DBGLOG(DBG, "[MLPSolver::rewrite] Get top["<< *itC <<"]: ");
+	      if ( printProgramInformation == true ) printIdb(registrySolver, idbResult);
+	      //...int cint;
+	      //...std::cin>>cint;
+	    }
+	  else
+	    {
+	      DBGLOG(DBG, "Interpretation M: " << *M);
+	      DBGLOG(DBG, "Top[" << *itC << "].size = 0--"); 
+	      //...int cint;
+	      //...std::cin>> cint;
+	    }
+	}
+      if ( usingTop == false )
+	{
+	  // get the module idx and idx S
+	  int idxM = extractPi(*itC);
+	  int idxS = extractS(*itC);
+	  const Module& m = registrySolver->moduleTable.getByAddress(idxM);
+	  // rewrite the edb, get the edb pointed by m.edb
+	  DBGLOG(DBG, "[MLPSolver::rewrite] rewrite edb ");
+	  InterpretationPtr edbTemp( new Interpretation(registrySolver) );
+	  edbTemp->add(*ctx.edbList.at(m.edb));
+	  // add S (from the instantiation) to the edb
+	  edbTemp->add( sTable.get<impl::AddressTag>().at(idxS) );
+	  // iterate over edb 
+	  Interpretation::Storage bits = edbTemp->getStorage();
+	  Interpretation::Storage::enumerator it = bits.first();
+	  while ( it!=bits.end() ) 
+	    {
+	      // get the atom that is pointed by *it (element of the edb)
+	      ID atomRID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it);
+	      // rewrite the atomR, resulting in a new atom with prefixed predicate name, change: the registry in ctxSolver
+	      ID atomRewrite = rewriteOrdinaryAtom(atomRID, *itC);
+	      edbResult->setFact(atomRewrite.address);
+	      it++;
+	    }			
+
+	  // rewrite the idb
+	  DBGLOG(DBG, "[MLPSolver::rewrite] rewrite idb");
+	  Tuple idbTemp;	
+	  idbTemp.insert(idbTemp.end(), ctx.idbList.at(m.idb).begin(), ctx.idbList.at(m.idb).end());
+	  // loop over the rules
+	  Tuple::iterator itT = idbTemp.begin();
+	  while (itT != idbTemp.end())
+	    {
+	      const Rule& r = registrySolver->rules.getByID(*itT);
+	      Rule rNew = r;
+	      // for each rule: body and head, rewrite it
+	      rewriteTuple(rNew.head, *itC);	
+	      rewriteTuple(rNew.body, *itC);
+
+	      ID rNewID = registrySolver->rules.getIDByElement(rNew);
+	      if ( rNewID == ID_FAIL ) 
+		{
+		  rNewID = registrySolver->rules.storeAndGetID(rNew);
+		}
+	      // collect it in the idbResult
+	      idbResult.push_back(rNewID);
+	      itT++;
+	    }	
+	}
+	
       // put Mi/S as a facts if not nil
       DBGLOG(DBG, "[MLPSolver::rewrite] Mi/S as a facts if not nil");
       InterpretationPtr MiS(new Interpretation() );
@@ -753,30 +811,6 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 	  edbResult->setFact(*itMiSAtoms);
 	  itMiSAtoms++;
 	}
-
-      // rewrite the idb
-      DBGLOG(DBG, "[MLPSolver::rewrite] rewrite idb");
-      Tuple idbTemp;	
-      idbTemp.insert(idbTemp.end(), ctx.idbList.at(m.idb).begin(), ctx.idbList.at(m.idb).end());
-      // loop over the rules
-      Tuple::iterator itT = idbTemp.begin();
-      while (itT != idbTemp.end())
-	{
-	  const Rule& r = registrySolver->rules.getByID(*itT);
-	  Rule rNew = r;
-	  // for each rule: body and head, rewrite it
-	  rewriteTuple(rNew.head, *itC);	
-	  rewriteTuple(rNew.body, *itC);
-
-	  ID rNewID = registrySolver->rules.getIDByElement(rNew);
-	  if ( rNewID == ID_FAIL ) 
-	    {
-	      rNewID = registrySolver->rules.storeAndGetID(rNew);
-	    }
-          // collect it in the idbResult
-	  idbResult.push_back(rNewID);
-	  itT++;
-	}	
 
       // inpect module atoms, replace with o, remove module rule property
       // add o as facts prefixed by Pj/T	
@@ -1118,8 +1152,7 @@ void MLPSolver::IDSetToTuple(const IDSet& idSet, Tuple& result)
     }
 }
 
-
-void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& result)
+void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top)
 {
   DBGLOG(DBG, "[MLPSolver::collectLargestBottom] enter");
   IDSet predsForbid;
@@ -1142,13 +1175,14 @@ void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& result)
       if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
     } 
   Tuple::const_iterator it = rules.begin();
-  result.clear();
+  bottom.clear();
   while ( it != rules.end() )
     {
       if ( containID(*it, rulesForbid) == false )	
-	result.push_back(*it);	
+	bottom.push_back(*it);	
       it++;
     }
+  IDSetToTuple(rulesForbid, top);
 }
 
 
@@ -1279,12 +1313,77 @@ void MLPSolver::resizeIfNeededA(int idxPjT)
 
 
 // we treat Fin as ID_FAIL
-bool MLPSolver::containFinA(int idxPjT)
+bool MLPSolver::containFin(const std::vector<IDSet>& VectorOfIDSet, int idxPjT)
 {
-  IDSet Ai = A.at(idxPjT);
+  IDSet Ai = VectorOfIDSet.at(idxPjT);
   MLPSolver::IDSElementIndex::iterator itAi = Ai.get<impl::ElementTag>().find( ID_FAIL );
   if ( itAi == Ai.get<impl::ElementTag>().end() ) return false; 
     else return true;
+}
+
+
+int MLPSolver::getInstIndexOfRule(const Rule& r)
+{
+  assert(r.head.size()>0 || r.body.size()>0);
+  ID atomID = ID_FAIL;
+  // try get an atom from the head
+  if ( r.head.size()>0 )
+    {
+      int i = 0;
+      bool found = false;
+      while ( i<r.head.size() && found == false )
+	{
+	  atomID=r.head.at(i);
+	  if ( atomID.isAtom() || atomID.isLiteral() ) found = true;
+	  i++;
+	}
+    }
+  // if did not find any atom, try the body:
+  if ( atomID == ID_FAIL && r.body.size()>0 )
+    {
+      int i = 0;
+      bool found = false;
+      while ( i<r.body.size() && found == false ) 
+	{
+	  atomID=r.body.at(i);
+	  if ( atomID.isAtom() || atomID.isLiteral() ) found = true;
+	  i++;
+	}
+    }
+  // if an atom is found, extract the predicate name
+  if ( atomID != ID_FAIL )
+    {
+      ID predID = getPredIDFromAtomID( atomID );
+      const Predicate& p = registrySolver->preds.getByID(predID);
+      int separator = p.symbol.find(MODULEINSTSEPARATOR);
+      return atoi( p.symbol.substr(1, separator-1).c_str() );
+    } 
+  return -1; // means no head and no body? what kind of rules is this?
+}
+
+
+void MLPSolver::updateTop(std::vector<IDSet>& Top, const Tuple& top)
+{
+  bm::bvector<> clearance;  // to remember which instantiation that has been cleared
+  clearance.clear();
+  Tuple::const_iterator it = top.begin();
+  while ( it != top.end() ) 
+    {
+      // get the instantiation index for each rule
+      const Rule& r = registrySolver->rules.getByID(*it);
+      int n = getInstIndexOfRule(r);
+      DBGLOG(DBG, "[MLPSolver::updateTop] inst Index of rules: " << n);
+      // get the Top_i/S
+      IDSet& rSet = Top.at(n);
+      // if has never been cleared before, clear it!
+      if ( clearance.get_bit(n) == false )
+	{
+	  clearance.set(n);
+	  rSet.clear();
+	}
+      rSet.get<impl::ElementTag>().insert(*it);
+      it++;
+    }
 }
 
 
@@ -1324,9 +1423,10 @@ bool MLPSolver::comp(ValueCallsType C)
   std::vector< ValueCallsType > stackC;
   std::vector< std::vector<ValueCallsType> > stackPath;
   std::vector< InterpretationPtr > stackM;
-  std::vector< std::vector<IDSet> > stackA;// fixed this
-  std::vector< RegistryPtr > stackRegistry;// remove this
-  std::vector< ModuleInstTable > stackMInst;// remove this
+  std::vector< std::vector<IDSet> > stackA;
+  std::vector< std::vector<IDSet> > stackTop;
+  std::vector< RegistryPtr > stackRegistry;// remove this? No.
+  std::vector< ModuleInstTable > stackMInst;// remove this? No.
   std::vector< ID > stackModuleSrcAtom;
 
   std::vector< Graph > stackCallGraph;
@@ -1356,6 +1456,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  path = stackPath.back();
 	  *M = *stackM.back();
 	  A = stackA.back();
+	  Top = stackTop.back();
 	  if ( forget == 1 ) // if forget is activated
 	    {
 	      RegistryPtr R2(new Registry(*stackRegistry.back() ));
@@ -1389,6 +1490,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackPath.erase(stackPath.end()-1);
 	      stackM.erase(stackM.end()-1);
 	      stackA.erase(stackA.end()-1);
+	      stackTop.erase(stackTop.end()-1);
 	      if ( forget == 1 )
 		{	
 	          stackRegistry.erase(stackRegistry.end()-1);
@@ -1424,7 +1526,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      // next: defining the new C and path
 	      resizeIfNeededA(idxPjT); // resize if A size <=idxPjT
 
-	      if ( /*!MFlag.at(idxPjT).isClear() && */ containFinA(idxPjT) ) 
+	      if ( /*!MFlag.at(idxPjT).isClear() && */ containFin(A, idxPjT) ) 
 	        {
 	        }
 	      else
@@ -1566,7 +1668,8 @@ bool MLPSolver::comp(ValueCallsType C)
 	}
 
       DBGLOG(DBG, "[MLPSolver::comp] after rewrite: ");
-      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, idbRewrite);
+      if ( printProgramInformation == true ) 
+	printEdbIdb(registrySolver, edbRewrite, idbRewrite);
   
       if ( isOrdinary(idbRewrite) )
         {
@@ -1655,7 +1758,7 @@ bool MLPSolver::comp(ValueCallsType C)
                 } // while (int0...
 	    } // if path.size == 0 ...
           else
-            {
+            { // part b, if path is not empty...
               ValueCallsType C2 = path.back();
               if ( (printLevel & Logger::DBG) != 0 ) 
 		{
@@ -1676,8 +1779,11 @@ bool MLPSolver::comp(ValueCallsType C)
               VCAddressIndex::const_iterator it = idx.begin();
               while ( it != idx.end() )
                 {
-                  IDSet& t = A.at(*it);
-                  assignFin(t);
+                  IDSet& a = A.at(*it);
+                  assignFin(a);
+		  //..open this for instSplitting==1
+		  //IDSet& t = Top.at(*it);
+		  //t.clear();
                   it++;  
                 } 
               // for all ans(newCtx) here
@@ -1729,7 +1835,7 @@ bool MLPSolver::comp(ValueCallsType C)
           	  stackC.push_back(C2);
           	  stackPath.push_back(path);
 	  	  stackA.push_back(A);
-
+		  stackTop.push_back(Top);
 	          if ( recordingTime == 1 )
 		    {
 	              gettimeofday(&timeStruct, NULL);
@@ -1791,7 +1897,7 @@ bool MLPSolver::comp(ValueCallsType C)
           DBGLOG(DBG, "[MLPSolver::comp] moduleInstTable size: " << moduleInstTable.size());
           DBGLOG(DBG, "[MLPSolver::comp] A size: " << A.size());
           if ( A.size() < moduleInstTable.size() )  A.resize( moduleInstTable.size() );
-      
+          
           // loop over PiS in C, insert id into AiS
           const VCAddressIndex& idx = C.get<impl::AddressTag>();
           VCAddressIndex::const_iterator it = idx.begin();
@@ -1806,13 +1912,20 @@ bool MLPSolver::comp(ValueCallsType C)
 	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
 	  if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
 
+	  //..open this for instSplitting==1
 	  bottom.clear();
-	  collectLargestBottom(idbRewrite, bottom);	
+	  Tuple top;
+	  collectLargestBottom(idbRewrite, bottom, top);	
 	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
-	  if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
-/*	  int cint;
-	  std::cin >> cint;
-*/
+	  if ( printProgramInformation == true ) 
+	    printEdbIdb(registrySolver, edbRewrite, bottom);
+	  // here add rmlpize 
+	  if ( Top.size() < moduleInstTable.size() ) Top.resize( moduleInstTable.size() );
+	  updateTop(Top, top);
+	  oss.str("");
+	  printA(oss, registrySolver, Top);
+          DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
+	  DBGLOG(DBG, "[MLPSolver::comp] after updateTop: " << oss.str());
           // get the module name
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
@@ -1826,7 +1939,13 @@ bool MLPSolver::comp(ValueCallsType C)
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
 
+	  DBGLOG(DBG, "Program sent to ASP solver: ");
+	  if ( printProgramInformation == true ) 
+	    printEdbIdb(registrySolver, edbRewrite, bottom);
           ASPSolverManager::ResultsPtr res;
+	  //...int cint;
+	  //...std::cin >> cint;
+	  
 	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
 
           // recording time to call DLV
@@ -1870,7 +1989,7 @@ bool MLPSolver::comp(ValueCallsType C)
               stackC.push_back(C);
               stackPath.push_back(path);
 	      stackA.push_back(A);
-
+	      stackTop.push_back(Top);
 	      if ( recordingTime == 1 )
 		{
 	          gettimeofday(&timeStruct, NULL);
@@ -2015,6 +2134,7 @@ bool MLPSolver::solve()
   while ( it != mainModules.end() )
     {
       A.clear();
+      Top.clear();
       M->clear();
       RegistryPtr R2(new Registry( *ctx.registry() ));
       registrySolver = R2;
@@ -2164,7 +2284,7 @@ void MLPSolver::printA(std::ostringstream& oss, const RegistryPtr& reg1, const s
   bool first;
   while ( it != A.end() )
     {
-      oss << "A[" << i << "]: "; 	
+      oss << "A[" << i << "][size:" << (*it).size() << "]: "; 	
       IDSAddressIndex::const_iterator itIDSet = (*it).begin();
       first = true;
       while ( itIDSet != (*it).end() )	
