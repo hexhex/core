@@ -1,3 +1,9 @@
+2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Finishing Instantiation splitting.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
 2010-06-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Implementing instantiation splitting: using Top data structure.

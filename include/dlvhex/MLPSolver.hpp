@@ -723,31 +723,23 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
     { 
       // check if idx *itC has been made in Top
       bool usingTop = false;
-      if ( *itC < Top.size() )
+      
+      if ( instSplitting == 1 && *itC < Top.size() )
 	{ // if yes, 
 	  IDSet top = Top.at(*itC);
 	  if (top.size()>0)
 	    {
-	      //...if ( idbResult.size()==0 ) IDSetToTuple(top, idbResult);
-	      //...else 
-	      //...{
-		  Tuple idbResultTemp;
-		  IDSetToTuple(top, idbResultTemp);
-		  idbResult.insert(idbResult.end(), idbResultTemp.begin(), idbResultTemp.end());
-		  //...}
-
+	      Tuple idbResultTemp;
+	      IDSetToTuple(top, idbResultTemp);
+	      idbResult.insert(idbResult.end(), idbResultTemp.begin(), idbResultTemp.end());
 	      usingTop = true;
 	      DBGLOG(DBG, "[MLPSolver::rewrite] Get top["<< *itC <<"]: ");
 	      if ( printProgramInformation == true ) printIdb(registrySolver, idbResult);
-	      //...int cint;
-	      //...std::cin>>cint;
 	    }
 	  else
 	    {
 	      DBGLOG(DBG, "Interpretation M: " << *M);
 	      DBGLOG(DBG, "Top[" << *itC << "].size = 0--"); 
-	      //...int cint;
-	      //...std::cin>> cint;
 	    }
 	}
       if ( usingTop == false )
@@ -1456,7 +1448,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  path = stackPath.back();
 	  *M = *stackM.back();
 	  A = stackA.back();
-	  Top = stackTop.back();
+	  if ( instSplitting == 1 ) Top = stackTop.back();
 	  if ( forget == 1 ) // if forget is activated
 	    {
 	      RegistryPtr R2(new Registry(*stackRegistry.back() ));
@@ -1490,7 +1482,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      stackPath.erase(stackPath.end()-1);
 	      stackM.erase(stackM.end()-1);
 	      stackA.erase(stackA.end()-1);
-	      stackTop.erase(stackTop.end()-1);
+	      if ( instSplitting == 1 ) stackTop.erase(stackTop.end()-1);
 	      if ( forget == 1 )
 		{	
 	          stackRegistry.erase(stackRegistry.end()-1);
@@ -1781,14 +1773,15 @@ bool MLPSolver::comp(ValueCallsType C)
                 {
                   IDSet& a = A.at(*it);
                   assignFin(a);
-		  //..open this for instSplitting==1
-		  //IDSet& t = Top.at(*it);
-		  //t.clear();
+		  if ( instSplitting == 1 && Top.size() > *it )
+		    {
+		      IDSet& t = Top.at(*it);
+		      t.clear();
+		    }
                   it++;  
                 } 
               // for all ans(newCtx) here
               // try to get the answer set:	
-	      //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
@@ -1835,7 +1828,7 @@ bool MLPSolver::comp(ValueCallsType C)
           	  stackC.push_back(C2);
           	  stackPath.push_back(path);
 	  	  stackA.push_back(A);
-		  stackTop.push_back(Top);
+		  if ( instSplitting == 1 ) stackTop.push_back(Top);
 	          if ( recordingTime == 1 )
 		    {
 	              gettimeofday(&timeStruct, NULL);
@@ -1908,24 +1901,30 @@ bool MLPSolver::comp(ValueCallsType C)
             } 
 
           Tuple bottom;
-          collectBottom(alpha, idbRewrite, bottom);
-	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	  if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
-
-	  //..open this for instSplitting==1
-	  bottom.clear();
-	  Tuple top;
-	  collectLargestBottom(idbRewrite, bottom, top);	
-	  DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
-	  if ( printProgramInformation == true ) 
-	    printEdbIdb(registrySolver, edbRewrite, bottom);
-	  // here add rmlpize 
-	  if ( Top.size() < moduleInstTable.size() ) Top.resize( moduleInstTable.size() );
-	  updateTop(Top, top);
-	  oss.str("");
-	  printA(oss, registrySolver, Top);
-          DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
-	  DBGLOG(DBG, "[MLPSolver::comp] after updateTop: " << oss.str());
+	  if ( instSplitting == 0 ) 
+	    {
+              collectBottom(alpha, idbRewrite, bottom);
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
+	    }
+	  if ( instSplitting == 1 )
+	    {
+	      bottom.clear();
+	      Tuple top;
+	      collectLargestBottom(idbRewrite, bottom, top);	
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
+	      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);	
+	      // here add rmlpize 
+	      if ( Top.size() < moduleInstTable.size() ) Top.resize( moduleInstTable.size() );
+	      updateTop(Top, top);
+	      if ( (printLevel & Logger::INFO) != 0 ) 
+	        {
+		  oss.str("");
+	  	  printA(oss, registrySolver, Top);
+	        }
+              DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
+	      DBGLOG(DBG, "[MLPSolver::comp] after updateTop: " << oss.str());
+	    }	
           // get the module name
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
@@ -1939,12 +1938,7 @@ bool MLPSolver::comp(ValueCallsType C)
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
 
-	  DBGLOG(DBG, "Program sent to ASP solver: ");
-	  if ( printProgramInformation == true ) 
-	    printEdbIdb(registrySolver, edbRewrite, bottom);
           ASPSolverManager::ResultsPtr res;
-	  //...int cint;
-	  //...std::cin >> cint;
 	  
 	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
 
@@ -1989,7 +1983,7 @@ bool MLPSolver::comp(ValueCallsType C)
               stackC.push_back(C);
               stackPath.push_back(path);
 	      stackA.push_back(A);
-	      stackTop.push_back(Top);
+	      if ( instSplitting == 1 ) stackTop.push_back(Top);
 	      if ( recordingTime == 1 )
 		{
 	          gettimeofday(&timeStruct, NULL);

@@ -139,6 +139,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
       << "     --num=<N>        Computes at most N answer sets (N=0 computes all)" << std::endl
+      << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -298,6 +299,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("MLP", 0);
   pctx.config.setOption("NMLP", 0);
   pctx.config.setOption("Forget", 0);
+  pctx.config.setOption("Split", 0);
 
 	// defaults of main
 	Config config;
@@ -545,6 +547,7 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "num", required_argument, &longid, 14 },
 		{ "forget", no_argument, &longid, 15 },
+		{ "split", no_argument, &longid, 16 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -776,6 +779,9 @@ void processOptionsPrePlugin(
 					break;
 				case 15:
 					pctx.config.setOption("Forget",1);
+					break;
+				case 16:
+					pctx.config.setOption("Split",1);
 					break;
 				}
 			break;

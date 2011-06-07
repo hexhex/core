@@ -513,6 +513,7 @@ void MLPSolverState::mlpSolver(ProgramCtx* ctx)
   m.setNASReturned(ctx->nASToBeReturned);
   m.setPrintLevel(ctx->config.getOption("Verbose"));
   m.setForget(ctx->config.getOption("Forget"));
+  m.setInstSplitting(ctx->config.getOption("Split"));
   m.solve();
   StatePtr next(new PostProcessState);
   changeState(ctx, next);
