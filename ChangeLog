@@ -1,4 +1,8 @@
 2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* include/dlvhex/MLPSolver.hpp: Minimize branching in the beginning.
+
+2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Finishing Instantiation splitting.
 	* src/dlvhex/dlvhex.cpp: Likewise.

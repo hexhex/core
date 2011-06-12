@@ -194,6 +194,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void IDSetToTuple(const IDSet& idSet, Tuple& result);
     inline void collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top);
 
+    inline void tupleMinus(const Tuple& source, const Tuple& minusTuple, Tuple& result);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
     inline void restrictionAndRenaming(const Interpretation& intr, const Tuple& actualInputs, const Tuple& formalInputs, Tuple& resultRestriction, Tuple& resultRenaming);
     inline void createInterpretationFromTuple(const Tuple& tuple, Interpretation& result);
@@ -221,6 +222,7 @@ class DLVHEX_EXPORT MLPSolver{
     double totalTimeCallDLV;
     double totalTimePushBack;
     double totalTimeCPathA;
+    double totalTimeUpdateTop;
     int countB;
     int countC;
 
@@ -723,18 +725,22 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
     { 
       // check if idx *itC has been made in Top
       bool usingTop = false;
-      
       if ( instSplitting == 1 && *itC < Top.size() )
 	{ // if yes, 
 	  IDSet top = Top.at(*itC);
-	  if (top.size()>0)
+	  if ( containFin(A, *itC) ) {
+	    // add nothing	
+	    usingTop = true;	
+	  } else 
+	  if (top.size()>0 /*|| containFin(A, *itC) */ )
 	    {
 	      Tuple idbResultTemp;
 	      IDSetToTuple(top, idbResultTemp);
 	      idbResult.insert(idbResult.end(), idbResultTemp.begin(), idbResultTemp.end());
 	      usingTop = true;
 	      DBGLOG(DBG, "[MLPSolver::rewrite] Get top["<< *itC <<"]: ");
-	      if ( printProgramInformation == true ) printIdb(registrySolver, idbResult);
+	      if ( printProgramInformation == true ) 
+		printIdb(registrySolver, idbResult);
 	    }
 	  else
 	    {
@@ -950,9 +956,32 @@ void MLPSolver::collectAllRulesDefined(ID predicate, const Tuple& rules, Tuple& 
 	      if ( location == rulesResult.end() )
 		{
 		  rulesResult.push_back(*it);
-		}
+		}	
 	      Tuple::const_iterator itB = r.body.begin();
 	      while ( itB != r.body.end() )
+		{ //  search for the predicate in the body
+		  OrdinaryAtomTable* tbl; 
+		  if ( itB->isOrdinaryAtom() ) 
+		    {
+		      if (itB->isOrdinaryGroundAtom() ) 
+		        {
+		          tbl = &registrySolver->ogatoms;
+		        }
+		      else
+		        {
+		          tbl = &registrySolver->onatoms;
+		        }
+		      const OrdinaryAtom& oa = tbl->getByID(*itB);
+		      collectAllRulesDefined(oa.tuple.front(), rules, predsSearched, rulesResult);
+		    }
+		  else
+		    {
+  			DBGLOG(DBG, "[MLPSolver::collectAllRulesDefined] found not an Ordinary atom: " << *itB);
+		    }
+  	          *itB++;
+		}
+	      itB = r.head.begin();
+	      while ( itB != r.head.end() )
 		{ //  search for the predicate in the body
 		  OrdinaryAtomTable* tbl; 
 		  if ( itB->isOrdinaryAtom() ) 
@@ -1177,6 +1206,25 @@ void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& t
   IDSetToTuple(rulesForbid, top);
 }
 
+void MLPSolver::tupleMinus(const Tuple& source, const Tuple& minusTuple, Tuple& result)
+{
+  DBGLOG(DBG, "[MLPSolver::tupleMinus] enter");
+  IDSet temp;
+  // insert into one ID set
+  Tuple::const_iterator it = minusTuple.begin();
+  while ( it != minusTuple.end() )
+    {
+      temp.get<impl::ElementTag>().insert(*it);
+      it++;
+    }
+  // loop over source
+  it = source.begin();
+  while ( it != source.end() )
+    { // if not in minusTuple, put in the result
+      if ( ! containID(*it, temp) ) result.push_back(*it);
+      it++;
+    }
+}
 
 void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result)
 {
@@ -1401,6 +1449,8 @@ bool MLPSolver::comp(ValueCallsType C)
   double endTimeCPathA = 0.0;
   double startTimePartA = 0.0;
   double endTimePartA = 0.0;
+  double startTimeUpdateTop = 0.0;
+  double endTimeUpdateTop = 0.0;
 
   // for ASPSolver
   ASPSolver::DLVSoftware::Configuration config;
@@ -1460,6 +1510,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	  Interpretation currAns = *stackAns.back();
           DBGLOG(DBG,"[MLPSolver::comp] got an answer set from ans(b(R))" << currAns);
           DBGLOG(DBG,"[MLPSolver::comp] M before integrate answer " << *M);
+
           // union M and N
 	  M->add( currAns );
 	  ctrASFromDLV++;
@@ -1666,6 +1717,9 @@ bool MLPSolver::comp(ValueCallsType C)
       if ( isOrdinary(idbRewrite) )
         {
           // start recording time part b
+	  //...int cint;
+	  //...std::cin >> cint;
+
 	  countB++;
           if ( recordingTime == 1 )
 	    {
@@ -1773,13 +1827,21 @@ bool MLPSolver::comp(ValueCallsType C)
                 {
                   IDSet& a = A.at(*it);
                   assignFin(a);
-		  if ( instSplitting == 1 && Top.size() > *it )
-		    {
-		      IDSet& t = Top.at(*it);
-		      t.clear();
-		    }
                   it++;  
                 } 
+/* //...
+	      if ( instSplitting == 1 && Top.size() > *it )
+		{
+	          it = idx.begin();
+	          while ( it != idx.end() )
+                    {		  
+		      IDSet& t = Top.at(*it);
+		      t.clear();
+		      it++;  
+                    }
+		} 
+*/
+
               // for all ans(newCtx) here
               // try to get the answer set:	
 
@@ -1905,25 +1967,50 @@ bool MLPSolver::comp(ValueCallsType C)
 	    {
               collectBottom(alpha, idbRewrite, bottom);
 	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);
+	      if ( printProgramInformation == true ) 
+		printEdbIdb(registrySolver, edbRewrite, bottom);
+	      //...int cint;
+	      //...std::cin >> cint;  		
+	      //...std::cout << "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha << std::endl;
+	      //...printEdbIdb(registrySolver, edbRewrite, bottom);
 	    }
-	  if ( instSplitting == 1 )
+	  else if ( instSplitting == 1 )
 	    {
-	      bottom.clear();
 	      Tuple top;
-	      collectLargestBottom(idbRewrite, bottom, top);	
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
-	      if ( printProgramInformation == true ) printEdbIdb(registrySolver, edbRewrite, bottom);	
+              collectBottom(alpha, idbRewrite, bottom);
+	      tupleMinus(idbRewrite, bottom, top); 	
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      //...collectLargestBottom(idbRewrite, bottom, top);	
+	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
+	      if ( printProgramInformation == true ) 
+		printEdbIdb(registrySolver, edbRewrite, bottom);	
+	      //...int cint;
+	      //...std::cin >> cint;  		
+	      //...std::cout << "[MLPSolver::comp] Edb Idb after collect largest bottom: " << std::endl;
+	      //...printEdbIdb(registrySolver, edbRewrite, bottom);	
 	      // here add rmlpize 
 	      if ( Top.size() < moduleInstTable.size() ) Top.resize( moduleInstTable.size() );
+
+	      if ( recordingTime == 1 ) // record time for updateTop
+		{
+		  gettimeofday(&timeStruct, NULL);
+              	  startTimeUpdateTop = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);	
+		}
 	      updateTop(Top, top);
+	      if ( recordingTime == 1 )
+		{
+		  gettimeofday(&timeStruct, NULL);
+		  endTimeUpdateTop = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
+		  totalTimeUpdateTop = totalTimeUpdateTop + endTimeUpdateTop - startTimeUpdateTop;
+		}
+
 	      if ( (printLevel & Logger::INFO) != 0 ) 
 	        {
 		  oss.str("");
 	  	  printA(oss, registrySolver, Top);
+		  DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
+		  DBGLOG(DBG, "[MLPSolver::comp] after updateTop: " << oss.str());
 	        }
-              DBGLOG(INFO,"[MLPSolver::comp] with M: " << *M);
-	      DBGLOG(DBG, "[MLPSolver::comp] after updateTop: " << oss.str());
 	    }	
           // get the module name
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
@@ -2088,7 +2175,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
 bool MLPSolver::solve()
 {
-  recordingTime = 0;
+  recordingTime = 1;
   totalTimePost = 0.0;
   totalTimePartA = 0.0;
   totalTimeRewrite = 0.0;
@@ -2155,6 +2242,7 @@ bool MLPSolver::solve()
 	std::cerr << "Rewrite Time: " << totalTimeRewrite << ", countRwr: " << countB+countC << ", avgtimeRwr: " << totalTimeRewrite/(countB+countC) << std::endl;
 	std::cerr << "Part B time: " << totalTimePartB << ", countB: " << countB << ", avgtimeB: " << totalTimePartB/countB << std::endl;
 	std::cerr << "Part C time: " << totalTimePartC << ", countC: " << countC << ", avgtimeC: " << totalTimePartC/countC << std::endl;
+	std::cerr << "UpdateTop time: " << totalTimeUpdateTop << ", countUpdateTop: " << countC << ", avgtimeUpdateTop: " << totalTimeUpdateTop/countC << std::endl;
         std::cerr << "Call DLV time: " << totalTimeCallDLV << ", countCallDLV: " << ctrCallToDLV << ", avgtimeCallDLV: " << totalTimeCallDLV/ctrCallToDLV << std::endl;
         std::cerr << "Push back time: " << totalTimePushBack << std::endl;
 	std::cerr << "PushBack CPathA Time: " << totalTimeCPathA << std::endl;
