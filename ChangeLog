@@ -1,3 +1,7 @@
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Collecting the largest bottom and turned off some log-printings.
+
 2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* include/dlvhex/MLPSolver.hpp: Minimize branching in the beginning.

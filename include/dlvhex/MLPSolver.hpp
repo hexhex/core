@@ -1965,8 +1965,10 @@ bool MLPSolver::comp(ValueCallsType C)
           Tuple bottom;
 	  if ( instSplitting == 0 ) 
 	    {
-              collectBottom(alpha, idbRewrite, bottom);
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      Tuple top;
+   	      collectLargestBottom(idbRewrite, bottom, top);	
+              //...collectBottom(alpha, idbRewrite, bottom);
+	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
 	      if ( printProgramInformation == true ) 
 		printEdbIdb(registrySolver, edbRewrite, bottom);
 	      //...int cint;
@@ -1977,10 +1979,10 @@ bool MLPSolver::comp(ValueCallsType C)
 	  else if ( instSplitting == 1 )
 	    {
 	      Tuple top;
-              collectBottom(alpha, idbRewrite, bottom);
-	      tupleMinus(idbRewrite, bottom, top); 	
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	      //...collectLargestBottom(idbRewrite, bottom, top);	
+              //...collectBottom(alpha, idbRewrite, bottom);
+	      //...tupleMinus(idbRewrite, bottom, top); 	
+	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      collectLargestBottom(idbRewrite, bottom, top);	
 	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
 	      if ( printProgramInformation == true ) 
 		printEdbIdb(registrySolver, edbRewrite, bottom);	
@@ -2175,7 +2177,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 
 bool MLPSolver::solve()
 {
-  recordingTime = 1;
+  recordingTime = 0;
   totalTimePost = 0.0;
   totalTimePartA = 0.0;
   totalTimeRewrite = 0.0;
