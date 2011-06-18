@@ -33,9 +33,10 @@ dlvhex_LDFLAGS = -export-dynamic
 # dlvhex itself also uses the convenience libs (see below)
 #
 dlvhex_LDADD = \
-  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ \
   libdlvhexbase.la libaspsolver.la libinternalplugins.la \
-  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
+  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
+  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \

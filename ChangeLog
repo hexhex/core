@@ -1,5 +1,8 @@
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
+	end of the list, linux i386 linker is sensitive to this.
+
 	* configure.ac: Fix messages.
 
 	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
