@@ -290,7 +290,7 @@ fi
 
 # extra-debug
 AC_ARG_ENABLE(extradebug,
-              [  --enable-extradebug     switch on GLIBCXX debug ging switches (e.g., safe iterators)],
+              [  --enable-extradebug     switch on GLIBCXX debugging switches (e.g., safe iterators)],
               [extradebug_support=true],
               [extradebug_support=false]
               )
@@ -401,16 +401,19 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  userplugindir: $userplugindir
  sysplugindir: $sysplugindir
 
- - Using the following binaries:
+ - Using the following solver backends:
  DLV: $DLVPATH
  DLVDB: $DLVDBPATH
- doxygen: $DX_DOXYGEN
+ libclingo: $GRINGO_TRUNK_DIR
+ libdlv: $DLVLIB
 
  - Using the following libraries:
  Bitmagic: $BM_VERSION $BM_CPPFLAGS
  Boost: $boost_major_version $BOOST_CPPFLAGS
  Curl: $libcurl_cv_lib_curl_version $LIBCURL_CPPFLAGS
- Cppunit: $have_cppunit
+
+ - Doxygen support:
+ doxygen: $DX_DOXYGEN
  
  - Options:
  Debug: $debug_support

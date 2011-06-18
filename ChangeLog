@@ -1,5 +1,7 @@
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* configure.ac: Fix messages.
+
 	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
 	wc output. (ticket #46)
 
