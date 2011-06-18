@@ -1,3 +1,8 @@
+2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
+	wc output. (ticket #46)
+
 2011-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Check for g++ >= 4.3.
