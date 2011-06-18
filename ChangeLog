@@ -1,5 +1,9 @@
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce
+	compile-time by 33%. Can be further improved by compiling
+	$(top_srcdir)/src/dlvhex/lib{X,Y,Z}.a.
+
 	* README: Small fixes.
 
 	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
