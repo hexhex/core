@@ -1,5 +1,7 @@
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* README: Small fixes.
+
 	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
 	end of the list, linux i386 linker is sensitive to this.
 
