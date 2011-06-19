@@ -1,7 +1,7 @@
 # including headers for make dist
 
 # those guys belong to the dlvhex binary
-noinst_HEADERS = \
+pkginclude_HEADERS = \
   AggregateAtomTable.hpp \
   AnswerSet.hpp \
   AnswerSetPrinterCallback.hpp \

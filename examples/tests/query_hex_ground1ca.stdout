@@ -1,1 +1,1 @@
-0 grep "is cautiously false, evidenced by" |wc -l |grep -qx 2
+0 grep "is cautiously false, evidenced by" | wc -l | tr -d [:blank:] | grep -qx 2
