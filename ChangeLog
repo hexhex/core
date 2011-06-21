@@ -1,3 +1,9 @@
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Incorporating libclingo as the backend solver.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce

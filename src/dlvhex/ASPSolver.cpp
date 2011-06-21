@@ -691,15 +691,34 @@ public:
   inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
   {
     ID id = registry->terms.getIDByString(s);
+
     if( id == ID_FAIL )
     {
-      Term term(ID::MAINKIND_TERM, s);
-      // we can only get strings or constants
-      assert(s[0] == '"' || islower(s[0]));
-      id = registry->terms.storeAndGetID(term);
+      id = registry->preds.getIDByString(s);
+    }
+
+    if( id == ID_FAIL )
+    {
+      if( s.find_first_not_of("0123456789") == std::string::npos )
+        {
+          // integer term	
+    	  std::stringstream st;
+    	  st <<  s;
+    	  ID id1(ID::MAINKIND_TERM | ID::SUBKIND_TERM_INTEGER, 0);
+    	  st >> id1.address;
+    	  return id1;
+  	}
+      else 
+	{	
+      	  Term term(ID::MAINKIND_TERM, s);
+      	  // we can only get strings or constants
+      	  assert(s[0] == '"' || islower(s[0]));
+      	  id = registry->terms.storeAndGetID(term);
+	}
     }
     return id;
   }
+
 
 class MyClaspOutputFormat:
   public Clasp::OutputFormat
