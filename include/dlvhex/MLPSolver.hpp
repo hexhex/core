@@ -1453,7 +1453,8 @@ bool MLPSolver::comp(ValueCallsType C)
   double endTimeUpdateTop = 0.0;
 
   // for ASPSolver
-  ASPSolver::DLVSoftware::Configuration config;
+  ASPSolver::DLVSoftware::Configuration configDLV;
+  ASPSolver::ClingoSoftware::Configuration configClingo;
   ASPSolverManager mgr;
 
   std::ostringstream oss;
@@ -1745,7 +1746,8 @@ bool MLPSolver::comp(ValueCallsType C)
           	  startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
 		}
 
-	      res = mgr.solve(config, program);
+	      //staticSolver res = mgr.solve(config, program);
+	      res = mgr.solve(*ctx.getASPSoftware(), program);
 	      ctrCallToDLV++;
 
 	      if ( recordingTime == 1 )
@@ -1855,7 +1857,8 @@ bool MLPSolver::comp(ValueCallsType C)
           	  startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
 		}
 
-	      res = mgr.solve(config, program);
+	      //staticSolver res = mgr.solve(config, program);
+	      res = mgr.solve(*ctx.getASPSoftware(), program);
 	      ctrCallToDLV++;
 
 	      if ( recordingTime == 1 )
@@ -1965,10 +1968,10 @@ bool MLPSolver::comp(ValueCallsType C)
           Tuple bottom;
 	  if ( instSplitting == 0 ) 
 	    {
-	      Tuple top;
-   	      collectLargestBottom(idbRewrite, bottom, top);	
-              //...collectBottom(alpha, idbRewrite, bottom);
-	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      //...Tuple top;
+   	      //...collectLargestBottom(idbRewrite, bottom, top);	
+              collectBottom(alpha, idbRewrite, bottom);
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
 	      if ( printProgramInformation == true ) 
 		printEdbIdb(registrySolver, edbRewrite, bottom);
 	      //...int cint;
@@ -2038,7 +2041,8 @@ bool MLPSolver::comp(ValueCallsType C)
               startTimeCallDLV = timeStruct.tv_sec+(timeStruct.tv_usec/1000000.0);
 	    }
 
-	  res = mgr.solve(config, program);
+	  //staticSolver res = mgr.solve(config, program);
+	  res = mgr.solve(*ctx.getASPSoftware(), program);
 	  ctrCallToDLV++;
 
 	  if ( recordingTime == 1 )
