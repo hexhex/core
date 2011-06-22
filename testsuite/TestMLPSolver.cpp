@@ -28,6 +28,10 @@
  * @brief  TestMLPSolver
  */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #define NDEBUG
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
@@ -57,11 +61,12 @@
 		LOG(DBG, "idb end");
 #endif
 
+
 DLVHEX_NAMESPACE_USE
 
-
 // 1
-BOOST_AUTO_TEST_CASE(testInconsistentProgram) 
+template<typename SolverSoftwareConfiguration>
+void testInconsistentProgram()
 {
 
 #ifdef NDEBUG
@@ -73,6 +78,7 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Inconsistent.mlp";
   std::ifstream ifs;
@@ -103,9 +109,9 @@ BOOST_AUTO_TEST_CASE(testInconsistentProgram)
   LOG(DBG, "Test Inconsistent Program finish"); 
 }
 
-
 // 2
-BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram) 
+template<typename SolverSoftwareConfiguration>
+void testNoticStratifiedProgram()
 {
 
 #ifdef NDEBUG
@@ -117,6 +123,7 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Not-ic-Stratified.mlp";
   std::ifstream ifs;
@@ -149,7 +156,8 @@ BOOST_AUTO_TEST_CASE(testNoticStratifiedProgram)
 
 
 // 3
-BOOST_AUTO_TEST_CASE(testOneMainModules) 
+template<typename SolverSoftwareConfiguration>
+void testOneMainModules()
 {
 
 #ifdef NDEBUG
@@ -161,6 +169,7 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename1 = "../../examples/module1.mlp";
   std::string filename2 = "../../examples/module2.mlp";
@@ -204,9 +213,9 @@ BOOST_AUTO_TEST_CASE(testOneMainModules)
   LOG(DBG, "Test One Main Modules finish");
 }
 
-
 // 4
-BOOST_AUTO_TEST_CASE(testTwoMainModules) 
+template<typename SolverSoftwareConfiguration>
+void testTwoMainModules()
 {
 
 #ifdef NDEBUG
@@ -217,6 +226,7 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
   LOG(DBG, "Test Two Main Modules begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename1 = "../../examples/module1-MainModules.mlp";
   std::string filename2 = "../../examples/module2.mlp";
@@ -261,7 +271,8 @@ BOOST_AUTO_TEST_CASE(testTwoMainModules)
 
 
 // 5
-BOOST_AUTO_TEST_CASE(testTwoModuleCalls1) 
+template<typename SolverSoftwareConfiguration>
+void testTwoModuleCalls1()
 {
 
 #ifdef NDEBUG
@@ -272,6 +283,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
   LOG(DBG, "Test Two Module Calls 1 begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename1 = "../../examples/module1-Two.mlp";
   std::string filename2 = "../../examples/module2.mlp";
@@ -316,7 +328,8 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls1)
 
 
 // 6
-BOOST_AUTO_TEST_CASE(testTwoModuleCalls2) 
+template<typename SolverSoftwareConfiguration>
+void testTwoModuleCalls2()
 {
 
 #ifdef NDEBUG
@@ -327,6 +340,7 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
   LOG(DBG, "Test Two Module Calls 2 begin");
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename1 = "../../examples/module1.mlp";
   std::string filename2 = "../../examples/module2-Two.mlp";
@@ -371,7 +385,8 @@ BOOST_AUTO_TEST_CASE(testTwoModuleCalls2)
 
 
 // 7
-BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram) 
+template<typename SolverSoftwareConfiguration>
+void testReachabilityNonGroundProgram()
 {
 
 #ifdef NDEBUG
@@ -383,6 +398,7 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Reachability.mlp";
   std::ifstream ifs;
@@ -415,7 +431,8 @@ BOOST_AUTO_TEST_CASE(testReachabilityNonGroundProgram)
 
 
 // 8
-BOOST_AUTO_TEST_CASE(testCardinalityProgram) 
+template<typename SolverSoftwareConfiguration>
+void testCardinalityProgram()
 {
 
 #ifdef NDEBUG
@@ -427,6 +444,7 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Cardinality.mlp";
   std::ifstream ifs;
@@ -459,7 +477,8 @@ BOOST_AUTO_TEST_CASE(testCardinalityProgram)
 
 
 // 9
-BOOST_AUTO_TEST_CASE(testABBAProgram) 
+template<typename SolverSoftwareConfiguration>
+void testABBAProgram()
 {
 
 #ifdef NDEBUG
@@ -471,6 +490,7 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-ABBA.mlp";
   std::ifstream ifs;
@@ -503,7 +523,8 @@ BOOST_AUTO_TEST_CASE(testABBAProgram)
 
 
 // 10
-BOOST_AUTO_TEST_CASE(testDisjunctionProgram) 
+template<typename SolverSoftwareConfiguration>
+void testDisjunctionProgram()
 {
 
 #ifdef NDEBUG
@@ -515,6 +536,7 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Disjunction.mlp";
   std::ifstream ifs;
@@ -547,7 +569,8 @@ BOOST_AUTO_TEST_CASE(testDisjunctionProgram)
 
 
 // 11
-BOOST_AUTO_TEST_CASE(testNegationProgram) 
+template<typename SolverSoftwareConfiguration>
+void testNegationProgram()
 {
 
 #ifdef NDEBUG
@@ -559,6 +582,7 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Negation.mlp";
   std::ifstream ifs;
@@ -591,7 +615,8 @@ BOOST_AUTO_TEST_CASE(testNegationProgram)
 
 
 //12
-BOOST_AUTO_TEST_CASE(testIndirectionProgram) 
+template<typename SolverSoftwareConfiguration>
+void testIndirectionProgram()
 {
 
 #ifdef NDEBUG
@@ -603,6 +628,7 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Indirection.mlp";
   std::ifstream ifs;
@@ -634,7 +660,8 @@ BOOST_AUTO_TEST_CASE(testIndirectionProgram)
 
 
 //13
-BOOST_AUTO_TEST_CASE(testAFinProgram) 
+template<typename SolverSoftwareConfiguration>
+void testAFinProgram()
 {
 
 #ifdef NDEBUG
@@ -646,6 +673,7 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-AFin.mlp";
   std::ifstream ifs;
@@ -677,7 +705,8 @@ BOOST_AUTO_TEST_CASE(testAFinProgram)
 
 
 //14
-BOOST_AUTO_TEST_CASE(testCsProgram) 
+template<typename SolverSoftwareConfiguration>
+void testCsProgram()
 {
 
 #ifdef NDEBUG
@@ -689,6 +718,7 @@ BOOST_AUTO_TEST_CASE(testCsProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Cs.mlp";
   std::ifstream ifs;
@@ -720,7 +750,8 @@ BOOST_AUTO_TEST_CASE(testCsProgram)
 
 
 //15
-BOOST_AUTO_TEST_CASE(testIStratifiedProgram) 
+template<typename SolverSoftwareConfiguration>
+void testIStratifiedProgram()
 {
 
 #ifdef NDEBUG
@@ -732,6 +763,7 @@ BOOST_AUTO_TEST_CASE(testIStratifiedProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-i-Stratified.mlp";
   std::ifstream ifs;
@@ -763,7 +795,8 @@ BOOST_AUTO_TEST_CASE(testIStratifiedProgram)
 
 
 //16
-BOOST_AUTO_TEST_CASE(testIStratified2Program) 
+template<typename SolverSoftwareConfiguration>
+void testIStratified2Program()
 {
 
 #ifdef NDEBUG
@@ -775,6 +808,7 @@ BOOST_AUTO_TEST_CASE(testIStratified2Program)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-i-Stratified-2.mlp";
   std::ifstream ifs;
@@ -806,7 +840,8 @@ BOOST_AUTO_TEST_CASE(testIStratified2Program)
 
 
 // 17
-BOOST_AUTO_TEST_CASE(testHanoiProgram) 
+template<typename SolverSoftwareConfiguration>
+void testHanoiProgram()
 {
 
 #ifdef NDEBUG
@@ -818,6 +853,7 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Hanoi.mlp";
   std::ifstream ifs;
@@ -851,7 +887,8 @@ BOOST_AUTO_TEST_CASE(testHanoiProgram)
 
 
 //18
-BOOST_AUTO_TEST_CASE(testComplexProgram) 
+template<typename SolverSoftwareConfiguration>
+void testComplexProgram()
 {
 
 #ifdef NDEBUG
@@ -863,6 +900,7 @@ BOOST_AUTO_TEST_CASE(testComplexProgram)
 
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   std::string filename = "../../examples/module-Complex.mlp";
   std::ifstream ifs;
@@ -894,256 +932,62 @@ BOOST_AUTO_TEST_CASE(testComplexProgram)
   LOG(DBG, "Test Complex Program finish");
 }
 
-/*
-// 19
-BOOST_AUTO_TEST_CASE(testHanoi3Program) 
+template<typename SolverSoftwareConfiguration>
+void testAll()
 {
+  testInconsistentProgram<SolverSoftwareConfiguration>();
+  testNoticStratifiedProgram<SolverSoftwareConfiguration>();
+  testOneMainModules<SolverSoftwareConfiguration>();
+  testTwoMainModules<SolverSoftwareConfiguration>();
+  testTwoModuleCalls1<SolverSoftwareConfiguration>();
+  testTwoModuleCalls2<SolverSoftwareConfiguration>();
+  testReachabilityNonGroundProgram<SolverSoftwareConfiguration>();
+  testCardinalityProgram<SolverSoftwareConfiguration>();
+  testABBAProgram<SolverSoftwareConfiguration>();
+  testDisjunctionProgram<SolverSoftwareConfiguration>();
 
-#ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
-#endif
+  testNegationProgram<SolverSoftwareConfiguration>();
+  testIndirectionProgram<SolverSoftwareConfiguration>();
+  testAFinProgram<SolverSoftwareConfiguration>();
+  testCsProgram<SolverSoftwareConfiguration>();
+  testIStratifiedProgram<SolverSoftwareConfiguration>();
+  testIStratified2Program<SolverSoftwareConfiguration>();
+  testHanoiProgram<SolverSoftwareConfiguration>();
+  testComplexProgram<SolverSoftwareConfiguration>();
 
-  LOG(DBG, " ");
-  LOG(DBG, "Test Hanoi-3 Program begin");
-
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename = "../../examples/module-Hanoi3.mlp";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-  MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-//  BOOST_REQUIRE ( m.ctrAS == 16 );
-  LOG(DBG, "Test Hanoi-3 Program finish");
 }
 
 
-// 19
-BOOST_AUTO_TEST_CASE(testPower2Program) 
-{
 
-#ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
+#ifdef HAVE_DLV
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
+{
+  testAll<ASPSolver::DLVSoftware::Configuration>();
+}
+#endif
+ 
+#ifdef HAVE_DLVDB
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVDB) 
+{
+  testAll<ASPSolver::DLVDBSoftware::Configuration>();
+}
+#endif
+ 
+#ifdef HAVE_LIBDLV
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVLib) 
+{
+  testAll<ASPSolver::DLVLibSoftware::Configuration>();
+}
+#endif
+ 
+#ifdef HAVE_LIBCLINGO
+BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
+{
+  testAll<ASPSolver::ClingoSoftware::Configuration>();
+  //testInconsistentProgram<ASPSolver::ClingoSoftware::Configuration>();
+  //testNoticStratifiedProgram<ASPSolver::ClingoSoftware::Configuration>();
+  //testOneMainModules<ASPSolver::ClingoSoftware::Configuration>();
+}
 #endif
 
-  LOG(DBG, " ");
-  LOG(DBG, "Test Power2 Program begin");
 
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename = "../../examples/module-Power2.mlp";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-  BOOST_REQUIRE ( m.ctrAS == 1 );
-  LOG(DBG, "Test Power2 Program finish");
-}
-
-
-/*
-// 18
-BOOST_AUTO_TEST_CASE(testPowerProgram) 
-{
-
-#ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
-#endif
-
-  LOG(DBG, " ");
-  LOG(DBG, "Test Power Program begin");
-
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename = "../../examples/module-Power.mlp";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  //rmv. std::cerr << "ctrAS: " << m.ctrAS << std::endl;
-  BOOST_REQUIRE ( m.ctrAS == 1 );
-  LOG(DBG, "Test Power Program finish");
-}
-*/
-
-/*
-//20
-BOOST_AUTO_TEST_CASE(testBigProgram) 
-{
-
-#ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
-#endif
-
-  LOG(DBG, " ");
-  LOG(DBG, "Test Big Program begin");
-
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename1 = "../../examples/module1-Big.mlp";
-  std::string filename2 = "../../examples/module2.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename1.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename2.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename3.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  LOG(DBG, "Test Big Program finish");
-}
-*/
-
-/*
-//21
-BOOST_AUTO_TEST_CASE(testStarProgram) 
-{
-
-#ifdef NDEBUG
-  Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
-#endif
-
-  LOG(DBG, " ");
-  LOG(DBG, "Test Star Program begin");
-
-  ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
-
-  std::string filename1 = "../../examples/star-0.mlp";
-  std::string filename2 = "../../examples/star-1.mlp";
-  std::string filename3 = "../../examples/star-2.mlp";
-  std::string filename4 = "../../examples/star-3.mlp";
-  std::ifstream ifs;
-  std::ostringstream buf;
-
-  ifs.open(filename1.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename2.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename3.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  ifs.open(filename4.c_str());
-  BOOST_REQUIRE(ifs.is_open());
-  buf << ifs.rdbuf();
-  ifs.close();
-
-  std::stringstream ss;
-  ss << buf.str();
-
-  InputProviderPtr ip(new InputProvider);
-  ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
-  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
-  // after parser, print ctx
-  //...LOG_REGISTRY_PROGRAM(ctx);
-
-  // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
-  BOOST_REQUIRE( sC.verifySyntax() == true );
-
-  MLPSolver m(ctx);
-  BOOST_REQUIRE ( m.solve() == true );
-  LOG(DBG, "Test star Program finish");
-}
-*/
