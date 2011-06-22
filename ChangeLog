@@ -1,3 +1,7 @@
+2010-06-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Not always assuming clingo.
+
 2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Incorporating libclingo as the backend solver.

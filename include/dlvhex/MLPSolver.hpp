@@ -1148,8 +1148,17 @@ void MLPSolver::addHeadPredsForbid(const Tuple& rules, IDSet& predsForbid, IDSet
 		  rulesForbid.get<impl::ElementTag>().insert(*it);
 		  stop = false;
 		}
+/*	
 	      // if disjunctive head contain pred forbid
 	      if ( r.head.size()>1 && tupleContainPredNameIDSet(r.head, predsForbid) == true)
+		{
+		  addTuplePredNameToIDSet(r.head, predsForbid);
+		  rulesForbid.get<impl::ElementTag>().insert(*it);
+		  stop = false;
+		}
+*/
+	      // if disjunctive head 
+	      if ( r.head.size()>1)
 		{
 		  addTuplePredNameToIDSet(r.head, predsForbid);
 		  rulesForbid.get<impl::ElementTag>().insert(*it);
@@ -1176,6 +1185,7 @@ void MLPSolver::IDSetToTuple(const IDSet& idSet, Tuple& result)
 void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top)
 {
   DBGLOG(DBG, "[MLPSolver::collectLargestBottom] enter");
+  // collect rules forbid 
   IDSet predsForbid;
   IDSet rulesForbid;
   addHeadOfModuleAtom(rules, predsForbid, rulesForbid);
@@ -1195,6 +1205,7 @@ void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& t
       IDSetToTuple(rulesForbid, rulesForbidTuple);
       if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
     } 
+  // substract rules forbid from the original rules
   Tuple::const_iterator it = rules.begin();
   bottom.clear();
   while ( it != rules.end() )
@@ -1453,8 +1464,8 @@ bool MLPSolver::comp(ValueCallsType C)
   double endTimeUpdateTop = 0.0;
 
   // for ASPSolver
-  ASPSolver::DLVSoftware::Configuration configDLV;
-  ASPSolver::ClingoSoftware::Configuration configClingo;
+  //...ASPSolver::DLVSoftware::Configuration configDLV;
+  //...ASPSolver::ClingoSoftware::Configuration configClingo;
   ASPSolverManager mgr;
 
   std::ostringstream oss;
@@ -1831,18 +1842,19 @@ bool MLPSolver::comp(ValueCallsType C)
                   assignFin(a);
                   it++;  
                 } 
-/* //...
-	      if ( instSplitting == 1 && Top.size() > *it )
+	      if ( instSplitting == 1 )
 		{
 	          it = idx.begin();
 	          while ( it != idx.end() )
                     {		  
-		      IDSet& t = Top.at(*it);
-		      t.clear();
+		      if (Top.size() > *it)
+			{ 
+		      	  IDSet& t = Top.at(*it);
+		      	  t.clear();
+			}
 		      it++;  
                     }
 		} 
-*/
 
               // for all ans(newCtx) here
               // try to get the answer set:	
@@ -1986,7 +1998,7 @@ bool MLPSolver::comp(ValueCallsType C)
 	      //...tupleMinus(idbRewrite, bottom, top); 	
 	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
 	      collectLargestBottom(idbRewrite, bottom, top);	
-	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
 	      if ( printProgramInformation == true ) 
 		printEdbIdb(registrySolver, edbRewrite, bottom);	
 	      //...int cint;
