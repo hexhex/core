@@ -1,8 +1,5 @@
 2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* testsuite/Makefile.am: Back to the old version (before [2953]).
-	* configure.ac: Likewise.
-
 	* include/dlvhex/MLPSolver.hpp: Incorporating libclingo as the backend solver.
 	* src/dlvhex/dlvhex.cpp: Likewise.
 	* src/dlvhex/ASPSolver.cpp: Likewise.

@@ -32,12 +32,44 @@ AC_PROG_CXXCPP
 # allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
+
+   AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
+   AC_LANG_PUSH([C++])
+   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
+ int dummy;
+#else
+# if __clang__ == 1
+#  if __clang_major__ >= 3 || (__clang_major__ == 2 && __clang_minor__ >= 9)
+ int dummy;
+#  else
+#    error clang is too old, we need at least clang 2.9
+#  endif
+# else
+#  error gcc is too old, we need at least gcc 4.3
+# endif
+#endif 
+]], [[
+dummy;
+]]),
+[
+	AC_MSG_RESULT([yes])
+],
+[
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([Cannot find g++ >= 4.3 or clang++ >= 2.9. Please upgrade your compiler.])
+]
+)
+AC_LANG_POP()
+
 fi
+
 
 # check for clang
 case $CXX in
    clang*)
      CXXFLAGS="$CXXFLAGS -ferror-limit=5"
+     # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)
    ;;
@@ -258,7 +290,7 @@ fi
 
 # extra-debug
 AC_ARG_ENABLE(extradebug,
-              [  --enable-extradebug     switch on GLIBCXX debug ging switches (e.g., safe iterators)],
+              [  --enable-extradebug     switch on GLIBCXX debugging switches (e.g., safe iterators)],
               [extradebug_support=true],
               [extradebug_support=false]
               )
@@ -369,16 +401,19 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  userplugindir: $userplugindir
  sysplugindir: $sysplugindir
 
- - Using the following binaries:
+ - Using the following solver backends:
  DLV: $DLVPATH
  DLVDB: $DLVDBPATH
- doxygen: $DX_DOXYGEN
+ libclingo: $GRINGO_TRUNK_DIR
+ libdlv: $DLVLIB
 
  - Using the following libraries:
  Bitmagic: $BM_VERSION $BM_CPPFLAGS
  Boost: $boost_major_version $BOOST_CPPFLAGS
  Curl: $libcurl_cv_lib_curl_version $LIBCURL_CPPFLAGS
- Cppunit: $have_cppunit
+
+ - Doxygen support:
+ doxygen: $DX_DOXYGEN
  
  - Options:
  Debug: $debug_support
