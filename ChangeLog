@@ -1,3 +1,7 @@
+2011-06-27 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/Makefile.am: Fixed include directory of external solver.
+
 2011-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* testsuite/TestMLPSolver.cpp: Removed some hard-coded relative
