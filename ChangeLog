@@ -1,4 +1,7 @@
 2011-06-27 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* testsuite/TestHexParserModule.cpp: Relative path for examples.
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
 	* testsuite/Makefile.am: Fixed include directory of external solver.
 

@@ -242,9 +242,16 @@ void testTwoMainModules()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename1 = "../../examples/module1-MainModules.mlp";
-  std::string filename2 = "../../examples/module2.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  std::string filename2(topsrcdir);
+  std::string filename3(topsrcdir);
+
+  filename1 += "/examples/module1-MainModules.mlp";
+  filename2 += "/examples/module2.mlp";
+  filename3 += "/examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -299,9 +306,16 @@ void testTwoModuleCalls1()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename1 = "../../examples/module1-Two.mlp";
-  std::string filename2 = "../../examples/module2.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  std::string filename2(topsrcdir);
+  std::string filename3(topsrcdir);
+
+  filename1 += "/examples/module1-Two.mlp";
+  filename2 += "/examples/module2.mlp";
+  filename3 += "/examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -356,9 +370,17 @@ void testTwoModuleCalls2()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename1 = "../../examples/module1.mlp";
-  std::string filename2 = "../../examples/module2-Two.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  std::string filename2(topsrcdir);
+  std::string filename3(topsrcdir);
+
+  filename1 += "/examples/module1.mlp";
+  filename2 += "/examples/module2-Two.mlp";
+  filename3 += "/examples/module3.mlp";
+
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -414,7 +436,12 @@ void testReachabilityNonGroundProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Reachability.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+
+  filename += "/examples/module-Reachability.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -460,7 +487,11 @@ void testCardinalityProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Cardinality.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Cardinality.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -506,7 +537,12 @@ void testABBAProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-ABBA.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+
+  filename += "/examples/module-ABBA.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -552,7 +588,11 @@ void testDisjunctionProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Disjunction.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Disjunction.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -598,7 +638,11 @@ void testNegationProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Negation.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Negation.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -644,7 +688,11 @@ void testIndirectionProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Indirection.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Indirection.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -689,7 +737,11 @@ void testAFinProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-AFin.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-AFin.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -734,7 +786,11 @@ void testCsProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Cs.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Cs.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -779,7 +835,11 @@ void testIStratifiedProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-i-Stratified.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-i-Stratified.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -824,7 +884,11 @@ void testIStratified2Program()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-i-Stratified-2.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-i-Stratified-2.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -869,7 +933,11 @@ void testHanoiProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Hanoi.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Hanoi.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -916,7 +984,11 @@ void testComplexProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Complex.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Complex.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -974,28 +1046,28 @@ void testAll()
 
 
 #ifdef HAVE_DLV
-BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLV) 
+BOOST_AUTO_TEST_CASE(testMLPSolverDLV) 
 {
   testAll<ASPSolver::DLVSoftware::Configuration>();
 }
 #endif
  
 #ifdef HAVE_DLVDB
-BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVDB) 
+BOOST_AUTO_TEST_CASE(testMLPSolverDLVDB) 
 {
   testAll<ASPSolver::DLVDBSoftware::Configuration>();
 }
 #endif
  
 #ifdef HAVE_LIBDLV
-BOOST_AUTO_TEST_CASE(testASPSolverSimpleDLVLib) 
+BOOST_AUTO_TEST_CASE(testMLPSolverDLVLib) 
 {
   testAll<ASPSolver::DLVLibSoftware::Configuration>();
 }
 #endif
  
 #ifdef HAVE_LIBCLINGO
-BOOST_AUTO_TEST_CASE(testASPSolverSimpleClingo) 
+BOOST_AUTO_TEST_CASE(testMLPSolverClingo) 
 {
   testAll<ASPSolver::ClingoSoftware::Configuration>();
   //testInconsistentProgram<ASPSolver::ClingoSoftware::Configuration>();

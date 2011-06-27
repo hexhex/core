@@ -72,9 +72,16 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   
   //.. put into different files
-  std::string filename1 = "../../examples/module1.mlp";
-  std::string filename2 = "../../examples/module2.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  std::string filename2(topsrcdir);
+  std::string filename3(topsrcdir);
+
+  filename1 += "/examples/module1.mlp";
+  filename2 += "/examples/module2.mlp";
+  filename3 += "/examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -167,7 +174,11 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
   //.. put into different files
-  std::string filename1 = "../../examples/module1.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  filename1 += "/examples/module1.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -200,7 +211,11 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
-  std::string filename1 = "../../examples/module1-NotExist.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  filename1 += "/examples/module1-NotExist.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -234,15 +249,21 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-TooMany.mlp";
 
-  ifs.open(filename.c_str());
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  filename1 += "/examples/module2-TooMany.mlp";
+
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module3.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
@@ -270,17 +291,22 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-TooFew.mlp";
+  filename1 += "/examples/module2-TooFew.mlp";
 
-  ifs.open(filename.c_str());
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module3.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
@@ -310,17 +336,22 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module2-DiffArity.mlp";
+  filename1 += "/examples/module2-DiffArity.mlp";
 
-  ifs.open(filename.c_str());
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module3.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module3.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
@@ -348,17 +379,22 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-NotExist.mlp";
+  filename1 += "/examples/module3-NotExist.mlp";
 
-  ifs.open(filename.c_str());
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module2.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
@@ -386,17 +422,22 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-DiffArity.mlp";
+  filename1 += "/examples/module3-DiffArity.mlp";
 
-  ifs.open(filename.c_str());
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module2.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
@@ -425,17 +466,22 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
   ProgramCtx ctx;
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
 
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
   std::ifstream ifs;
   std::ostringstream buf;
-  std::string filename = "../../examples/module3-SwapArity.mlp";
+  filename1 += "/examples/module3-SwapArity.mlp";
 
-  ifs.open(filename.c_str());
+  ifs.open(filename1.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
 
-  filename = "../../examples/module2-SwapArity.mlp";
-  ifs.open(filename.c_str());
+  std::string filename2(topsrcdir);
+  filename2 += "/examples/module2-SwapArity.mlp";
+  ifs.open(filename2.c_str());
   BOOST_REQUIRE(ifs.is_open());
   buf << ifs.rdbuf();
   ifs.close();
