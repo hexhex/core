@@ -1,10 +1,15 @@
-2010-06-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* testsuite/TestMLPSolver.cpp: Removed some hard-coded relative
+	paths, missing bits and pieces are for Tri to fix.
+
+2011-06-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: Test different available solver.
 
 	* include/dlvhex/MLPSolver.hpp: Not always assuming clingo.
 
-2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Incorporating libclingo as the backend solver.
 	* src/dlvhex/dlvhex.cpp: Likewise.
@@ -26,21 +31,21 @@
 	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
 	wc output. (ticket #46)
 
-2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Collecting the largest bottom and turned off some log-printings.
 
-2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-	
+2011-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* include/dlvhex/MLPSolver.hpp: Minimize branching in the beginning.
 
-2010-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Finishing Instantiation splitting.
 	* src/dlvhex/dlvhex.cpp: Likewise.
 	* src/dlvhex/State.cpp: Likewise.
 
-2010-06-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Implementing instantiation splitting: using Top data structure.
 
@@ -145,31 +150,31 @@
 	the EDB to "reappear".
 	* documentation moved to doc/ directory (TODO also move NEWS,... there)
 
-2010-05-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fix a little bug in printing M. 
 
-2010-05-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Benchmark-Summary.zip: Delete old benchmark files.
 	* generator/Benchmark-Stats.zip: Likewise.
 	* generator/Benchmark-Module.zip: Likewise.
 
-2010-05-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/forLatex.sh: Fix a small bug about opt.
 
-2010-05-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/forLatex.sh: Automatic latex table generation. 
 
 	* generator/summaryAT.sh: Detect additional message for mem-out.
 
-2010-05-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Module.cpp: Smarter random arity predicate.
 
-2010-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genTopologyCore.sh: Adding a new big parameter setting.
 
@@ -180,7 +185,7 @@
 	* include/dlvhex/MLPSolver.hpp: Fixing some bug when print some interpretation.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2010-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/summaryAT.sh: Handle time-out and mem-out.
 	* generator/summaryStatsAT.sh: Likewise.
@@ -194,7 +199,7 @@
 
 	* generator/runScriptAT.sh: Change memory limit up to 2Gb.
 
-2010-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genTopologyCore.sh: Fixing the prompted message.
 	* generator/runScriptAT.sh: Likewise.
@@ -208,11 +213,11 @@
 
 	* include/dlvhex/MLPSolver.hpp: Fixing some references.
 
-2010-04-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Adding functional time information and fixing some references.
 
-2010-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Benchmark-Module.zip: Adding benchmark files.
 	* generator/Benchmark-Stats.zip: Likewise.
@@ -222,7 +227,7 @@
 	* generator/runScriptAT.sh: Put command as the 1st param.
 	* generator/runScriptET.sh: Likewise.
 
-2010-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genTopologyCore.sh: Fixing bug in creating result directory.
 
@@ -249,7 +254,7 @@
 	* generator/summaryStatsET.sh: Creating statistical information from summary.
 	* generator/stats.awk: Likewise.
 
-2010-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/summaryET.sh: Create file summary for each parameter setting.
 
@@ -263,11 +268,11 @@
 	* src/dlvhex/dlvhex.cpp: Likewise.
 	* src/dlvhex/State.cpp: Likewise.
 
-2010-04-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genExampleCore.sh: Generate 'interesting' examples.
 
-2010-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/genParameterSetting.sh: Generate a complete benchmark suite for a topology.
 	* generator/genExample.sh: Likewise.
@@ -282,7 +287,7 @@
 	* include/dlvhex/MLPSolver.hpp: Adding #callToDLV and #ASFromDLV information.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2010-04-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/Module.cpp: Introducing at most instead of exactly for parameters + formal input more than one predicate.
 
@@ -290,16 +295,16 @@
 
 	* include/dlvhex/RuleTable.hpp: To not insert previously existed rule.
 
-2010-04-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Put data structure for A in a separate file.
 	* include/dlvhex/IDSetContainer.hpp: Likewise.
 
-2010-04-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-	
+2011-04-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* include/dlvhex/MLPSolver.hpp: Fixed stats printing information.
 
-2010-04-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Optimize instantiation information: store it on ogatoms, delete MFlag.
 	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
@@ -308,7 +313,7 @@
 	* include/dlvhex/Module.hpp: Likewise.
 	* include/dlvhex/Table.hpp: Likewise.
 
-2010-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Atoms.hpp: Store actual module name on the module atom.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
@@ -318,7 +323,7 @@
 
 	* include/dlvhex/RuleTable.hpp: Adding hashed index to the RuleTable.
 
-2010-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/gen.sh: Adding diamond and random topology.
 	* generator/Module.cpp: Likewise.
@@ -330,14 +335,14 @@
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* generator/gen.sh: Likewise.
 
-2010-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/gen.sh: Implement a more general script to generate examples.
 
 	* generator/Module.cpp: Generate example for line, star, and ring topology.
 	* generator/makefile: Likewise.
 
-2010-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Optimization on ASPSolver object and printing information.
 	* src/dlvhex/dlvhex.cpp: Likewise.
@@ -345,7 +350,7 @@
 
 	* examples/module-Complex.mlp: Adding an example for a more complex module call.
 
-2010-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/ModuleStar.cpp: Generate examples of star topology.
 	* generator/makefile: Likewise.
@@ -362,7 +367,7 @@
 
 	* src/dlvhex/dlvhex.cpp: Modify --n to --num
 
-2010-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Extend run-dlvhex-tests to work on mlp test suite.
 	* testsuite/TestMLPSolver.cpp: Likewise.
@@ -394,11 +399,11 @@
 
 	* include/dlvhex/MLPSolver.hpp: Optimize setMFlag
 
-2010-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Clean up useless log information.
 
-2010-03-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in storing registry, now memory-wise optimized.
 	* include/dlvhex/Interpretation.hpp: Likewise.
@@ -408,7 +413,7 @@
 	* src/dlvhex/ProgramCtx.cpp: Likewise.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2010-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Hashing the Interpretation.
 	* include/dlvhex/Interpretation.hpp: Likewise.
@@ -418,7 +423,7 @@
 
 	* include/dlvhex/MLPSolver.hpp: Fixed some printing information for post-processing.
 
-2010-03-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestHexParserModule.cpp: Change examples extension to *.mlp.
 	* testsuite/TestMLPSolver.cpp: Likewise.
@@ -428,7 +433,7 @@
 
 	* include/dlvhex/MLPSolver.hpp: Print log information and call graph in verbose level 2.
 
-2010-03-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Adding option --n to restrict the number of answer sets returned.
 	* include/dlvhex/ProgramCtx.h: Likewise.
@@ -437,12 +442,12 @@
 	* src/dlvhex/ProgramCtx.cpp: Likewise.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2010-03-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Adding function to easily print idb.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2010-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: Add test cases for i-stratified program and print, also print the log and graphviz output.
 	* examples/module-i-Stratified-2.mlp: Likewise.
@@ -459,14 +464,14 @@
 
 	* include/dlvhex/MLPSolver.hpp: Updating the answer set counter printing.
 
-2010-03-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: Adding a test case to add (and retrieve) fin from A.
 	* examples/module-AFin.hex: Likewise.
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in setting fin to A and print useful information into a log file.
 
-2010-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in smallest ILL.
 	* include/dlvhex/Logger.hpp: Likewise.
@@ -478,8 +483,8 @@
 
 	* include/dlvhex/ModuleSyntaxChecker.hpp: Allowing empty predicate inputs.
 
-2010-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-	
+2011-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* include/dlvhex/Logger.hpp: Fixed some logging information
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
 
@@ -493,7 +498,7 @@
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug in collecting Answer Set.
 
-2010-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Logger.hpp: Introducing MLPSolver state into dlvhex.
 	* include/dlvhex/State.h: Likewise.
@@ -513,7 +518,7 @@
 	* src/dlvhex/State.cpp: Likewise.
 	* src/dlvhex/ProgramCtx.cpp: Likewise.
 
-2010-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Printing AS result without prefix.
 	* include/dlvhex/Printer.hpp: Likewise.
@@ -530,8 +535,8 @@
 
 	* include/dlvhex/MLPSolver.hpp: Fixed output formatting, minus eliminating prefix.
 
-2010-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-	
+2011-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
 	* testsuite/TestMLPSolver.cpp: Adding more examples about disjunctive and naf
 	* examples/module-ABBA.hex: Likewise.
 	* examples/module-Disjunction.hex: Likewise.
@@ -539,23 +544,22 @@
 
 	* include/dlvhex/MLPSolver.hpp: Fixing bug about naf in replacedModuleAtoms
 
-2010-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
-	* include/dlvhex/MLPSolver.hpp: Converted comp from recursion into loop. 
+	* include/dlvhex/MLPSolver.hpp: Converted comp from recursion into loop.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
 	* testsuite/TestMLPSolver.cpp: Adding an example about how to compare the cardinality between sets.
 	* examples/module-Cardinality.hex: Likewise.
 
-2010-03-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
-
+2011-03-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/PredicateTable.hpp: Output the answer set in a new format.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
 	* src/dlvhex/Interpretation.cpp: Likewise.
 
-	* include/dlvhex/MLPSolver.hpp: Adding S in the instantiation, remove T from M (before call instatiation). 
+	* include/dlvhex/MLPSolver.hpp: Adding S in the instantiation, remove T from M (before call instatiation).
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
 	* testsuite/TestMLPSolver.cpp: Adding an example about reachability and test non-ground module atom.
@@ -569,7 +573,7 @@
 	* examples/module1-Two.hex: Likewise.
 	* examples/module2-Two.hex: Likewise.
 
-2010-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Logger.hpp: Cleaning some printing Information.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
@@ -587,14 +591,14 @@
 
 	* include/dlvhex/MLPSolver.hpp: fixing bug on finding the answer sets (because A is not reverted)
 
-2010-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* examples/module1-MainModules.hex: Handling more than one main module.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 
 	* include/dlvhex/MLPSolver.hpp: Fixing rewrite and completing the recursion.
 
-2010-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Completing rewrite.
 	* include/dlvhex/Interpretation.hpp: Likewise.
@@ -608,17 +612,17 @@
 	* include/dlvhex/Interpretation.hpp: Likewise.
 
 
-2010-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/Interpretation.hpp: adding setRegistry to Interpretation
 
-2010-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleTable.hpp: Implement some helper function for part c.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
 	* include/dlvhex/Interpretation.hpp: Likewise.
 
-2010-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleSyntaxChecker.hpp: Fixing bug in the renaming output predicate module atom.
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
@@ -640,24 +644,24 @@
 
 	* include/dlvhex/MLPSolver.hpp: implement bottom and ans.
 
-2010-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* testsuite/TestMLPSolver.cpp: updating comments.
 
 	* include/dlvhex/MLPSolver.hpp: implement smallest ILL.
 
-2010-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: implement rewrite.
 
 	* include/dlvhex/ID.hpp: modified the ID for module atom, adapted to isOrdinaryAtom() method.
 	* src/dlvhex/ID.cpp: Likewise.
 
-2010-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule.
 
-2010-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: adding MLPSolver.
 	* include/dlvhex/ModuleTable.hpp: Likewise.

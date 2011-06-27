@@ -80,7 +80,11 @@ void testInconsistentProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Inconsistent.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Inconsistent.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -125,7 +129,11 @@ void testNoticStratifiedProgram()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename = "../../examples/module-Not-ic-Stratified.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename(topsrcdir);
+  filename += "/examples/module-Not-ic-Stratified.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
@@ -171,9 +179,15 @@ void testOneMainModules()
   ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
-  std::string filename1 = "../../examples/module1.mlp";
-  std::string filename2 = "../../examples/module2.mlp";
-  std::string filename3 = "../../examples/module3.mlp";
+  char *topsrcdir = getenv("TOPSRCDIR");
+  assert(topsrcdir != 0);
+
+  std::string filename1(topsrcdir);
+  std::string filename2(topsrcdir);
+  std::string filename3(topsrcdir);
+  filename1 += "/examples/module1.mlp";
+  filename2 += "/examples/module2.mlp";
+  filename3 += "/examples/module3.mlp";
   std::ifstream ifs;
   std::ostringstream buf;
 
