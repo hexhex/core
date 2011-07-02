@@ -123,7 +123,16 @@ struct Registry:
   ID storeOrdinaryNAtom(OrdinaryAtom& onatom);
 
   // lookup by symbol, if it does not exist create it in term table
-  // assume term is fully initialized
+  // assume term.kind and term.symbol is initialized
+  // assume term is not an integer (i.e., term.symbol does not start with a digit)
+  ID storeConstOrVarTerm(Term& term);
+
+  // check if term is integer
+  // if yes return integer id
+  // otherwise
+  // * add subkind flags (variable vs constant) to term.kind
+  // * call storeConstOrVarTerm
+  // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
   // auxiliary entities:

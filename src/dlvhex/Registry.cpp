@@ -37,6 +37,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/range/join.hpp>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -291,8 +292,10 @@ ID Registry::storeOrdinaryNAtom(OrdinaryAtom& onatom)
   return storeOrdinaryAtomHelper(this, onatom, onatoms);
 }
 
-ID Registry::storeTerm(Term& term)
+ID Registry::storeConstOrVarTerm(Term& term)
 {
+  // ensure the symbol does not start with a number
+  assert(!term.symbol.empty() && (term.symbol[0] < '0' || term.symbol[0] > '9'));
   ID ret = terms.getIDByString(term.symbol);
   if( ret == ID_FAIL )
   {
@@ -300,6 +303,34 @@ ID Registry::storeTerm(Term& term)
     DBGLOG(DBG,"stored term " << term << " which got " << ret);
   }
   return ret;
+}
+
+ID Registry::storeTerm(Term& term)
+{
+  assert(!term.symbol.empty());
+  if( term.symbol[0] >= '0' && term.symbol[0] <= '9' )
+  {
+    try
+    {
+      return ID::termFromInteger(boost::lexical_cast<uint32_t>(term.symbol));
+    }
+    catch( const boost::bad_lexical_cast& e )
+    {
+      throw FatalError("bad term to convert to integer: '" + term.symbol + "'");
+    }
+  }
+
+  // add subkind flags
+  if( islower(term.symbol[0]) )
+  {
+    term.kind |= ID::SUBKIND_TERM_CONSTANT;
+  }
+  else
+  {
+    term.kind |= ID::SUBKIND_TERM_VARIABLE;
+  }
+
+  return storeConstOrVarTerm(term);
 }
 
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)

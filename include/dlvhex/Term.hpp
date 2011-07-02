@@ -64,12 +64,6 @@ private ostream_printable<Term>
 		return false;
 	}
 	
-	bool isInt() const {
-		if (getInt() == 0)
-			return false;
-		return true;
-	}
-	
 	std::string getQuotedString() const {
 		if (!isString()) 
 			return NULL;
@@ -84,9 +78,9 @@ private ostream_printable<Term>
 		return symbol;
 	}
 	
-	int getInt() const {
-		return strtol(symbol.c_str(), NULL, 10);
-	}
+  // the following method is not useful, as integers are always
+  // represented in the ID.address field and never stored into a table
+  // int getInt() const
 	
 	std::ostream& print(std::ostream& o) const { 
 		return o << "Term(" << symbol << ")"; 
