@@ -28,33 +28,33 @@ check-examples:
 
 TESTS = \
   run-dlvhex-tests.sh \
-  TestEvalEndToEnd TestEvalEndToEndND \
-  TestEvalHeuristic TestEvalHeuristicND \
-  TestComponentGraph TestComponentGraphND \
-  TestDependencyGraph TestDependencyGraphND \
-  TestHexParser TestHexParserND \
-  TestTables TestTablesND \
-  TestModelGraph TestModelGraphND \
-  TestEvalGraph TestEvalGraphND \
-  TestOnlineModelBuilder TestOnlineModelBuilderND \
-  TestOfflineModelBuilder TestOfflineModelBuilderND
+  TestEvalEndToEnd \
+  TestEvalHeuristic \
+  TestComponentGraph \
+  TestDependencyGraph \
+  TestHexParser \
+  TestTables \
+  TestModelGraph \
+  TestEvalGraph \
+  TestOnlineModelBuilder \
+  TestOfflineModelBuilder 
 
 TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
 
 check_PROGRAMS =  \
   TestTestPluginStatic \
-  TestASPSolver TestASPSolverND \
-  TestEvalEndToEnd TestEvalEndToEndND \
-  TestEvalHeuristic TestEvalHeuristicND \
-  TestComponentGraph TestComponentGraphND \
-  TestDependencyGraph TestDependencyGraphND \
-  TestHexParser TestHexParserND \
-  TestTables TestTablesND \
-  TestModelGraph TestModelGraphND \
-  TestEvalGraph TestEvalGraphND \
-  TestOnlineModelBuilder TestOnlineModelBuilderND \
-  TestOfflineModelBuilder TestOfflineModelBuilderND \
-  TestPlainHEX TestPlainHEXND
+  TestASPSolver \
+  TestEvalEndToEnd \
+  TestEvalHeuristic \
+  TestComponentGraph \
+  TestDependencyGraph \
+  TestHexParser \
+  TestTables \
+  TestModelGraph \
+  TestEvalGraph \
+  TestOnlineModelBuilder \
+  TestOfflineModelBuilder \
+  TestPlainHEX 
 
 # remove .dot files produced by running check_PROGRAMS
 clean-local:
@@ -129,11 +129,10 @@ HEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp
 
-noinst_LIBRARIES = libhex.a libhexND.a
+noinst_LIBRARIES = libhex.a
 
 libhex_a_SOURCES = $(HEXSOURCES)
-libhexND_a_SOURCES = $(HEXSOURCES)
-libhexND_a_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) -DNDEBUG
+#libhex_a_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestPlainHEX_SOURCES = $(top_srcdir)/testsuite/TestPlainHEX.cpp
 TestPlainHEX_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
@@ -199,47 +198,3 @@ TestOfflineModelBuilder_SOURCES = \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
 
-# test it with NDEBUG (the real situation)
-TestPlainHEXND_SOURCES = $(TestPlainHEX_SOURCES)
-TestPlainHEXND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestPlainHEXND_CPPFLAGS = $(TestPlainHEX_CPPFLAGS) -DNDEBUG
-
-TestEvalEndToEndND_SOURCES = $(TestEvalEndToEnd_SOURCES)
-TestEvalEndToEndND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestEvalEndToEndND_CPPFLAGS = $(TestEvalEndToEnd_CPPFLAGS) -DNDEBUG
-
-TestASPSolverND_SOURCES = $(TestASPSolver_SOURCES)
-TestASPSolverND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestASPSolverND_CPPFLAGS = $(TestASPSolver_CPPFLAGS) -DNDEBUG
-
-TestEvalHeuristicND_SOURCES = $(TestEvalHeuristic_SOURCES)
-TestEvalHeuristicND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestEvalHeuristicND_CPPFLAGS = $(TestEvalHeuristic_CPPFLAGS) -DNDEBUG
-
-TestComponentGraphND_SOURCES = $(TestComponentGraph_SOURCES)
-TestComponentGraphND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestComponentGraphND_CPPFLAGS = $(TestComponentGraph_CPPFLAGS) -DNDEBUG
-
-TestDependencyGraphND_SOURCES = $(TestDependencyGraph_SOURCES)
-TestDependencyGraphND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestDependencyGraphND_CPPFLAGS = $(TestDependencyGraph_CPPFLAGS) -DNDEBUG
-
-TestHexParserND_SOURCES = $(TestHexParser_SOURCES)
-TestHexParserND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestHexParserND_CPPFLAGS = $(TestHexParser_CPPFLAGS) -DNDEBUG
-
-TestTablesND_SOURCES = $(TestTables_SOURCES)
-TestTablesND_LDADD = libhexND.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestTablesND_CPPFLAGS = $(TestTables_CPPFLAGS) -DNDEBUG
-
-TestModelGraphND_SOURCES = $(TestModelGraph_SOURCES)
-TestModelGraphND_CPPFLAGS = $(TestModelGraph_CPPFLAGS) -DNDEBUG
-
-TestEvalGraphND_SOURCES = $(TestEvalGraph_SOURCES)
-TestEvalGraphND_CPPFLAGS = $(TestEvalGraph_CPPFLAGS) -DNDEBUG
-
-TestOnlineModelBuilderND_SOURCES = $(TestOnlineModelBuilder_SOURCES)
-TestOnlineModelBuilderND_CPPFLAGS = $(TestOnlineModelBuilder_CPPFLAGS) -DNDEBUG
-
-TestOfflineModelBuilderND_SOURCES = $(TestOfflineModelBuilder_SOURCES)
-TestOfflineModelBuilderND_CPPFLAGS = $(TestOfflineModelBuilder_CPPFLAGS) -DNDEBUG

@@ -87,6 +87,73 @@ case $host_os in
      ;;
 esac 
 
+
+#
+# debug and release flags
+#
+# these must be processed early, as they influence,
+# e.g., the boost library selection (_GLIBCXX_DEBUG requires the -d library types)
+
+#
+# --enable-debug vs --enable-release vs --enable-benchmark
+# (only one of the three can be chosen, default is --enable-release)
+#
+AC_ARG_ENABLE(debug,
+              [AS_HELP_STRING([--enable-debug],[build debug version (+assertions+debuglogging)])],
+              [enable_debug=true],
+              [enable_debug=false]
+             )
+AC_ARG_ENABLE(release,
+              [AS_HELP_STRING([--enable-release],[build release version (default)])],
+              [enable_release=true],
+              [enable_release=false]
+             )
+AC_ARG_ENABLE(benchmark,
+              [AS_HELP_STRING([--enable-benchmark],[build benchmark version (release+timers+counters)])],
+              [enable_benchmark=true],
+              [enable_benchmark=false]
+             )
+
+# default = release
+dbgrelbench="$enable_debug$enable_release$enable_benchmark"
+if test "$dbgrelbench" = "falsefalsefalse"; then
+  enable_release=true
+  dbgrelbench="$enable_debug$enable_release$enable_benchmark"
+fi
+# process selection
+if test "$dbgrelbench" = "truefalsefalse"; then
+  # do stuff that must be done for --enable-debug here
+  AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+  CXXFLAGS="$CXXFLAGS -O0"
+else
+  if test "$dbgrelbench" = "falsetruefalse"; then
+    # do stuff that must be done for --enable-release here
+    AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+    CXXFLAGS="$CXXFLAGS -O3"
+  else
+    if test "$dbgrelbench" = "falsefalsetrue"; then
+      # do stuff that must be done for --enable-benchmark here
+      # (we have an implicit DLVHEX_BENCHMARK definition in config.h)
+      AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
+      AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+      CXXFLAGS="$CXXFLAGS -O3"
+    else
+      AC_MSG_ERROR([only one of --enable-debug, --enable-release, --enable-benchmark can be chosen])
+    fi
+  fi
+fi
+
+# --enable-extradebug
+AC_ARG_ENABLE(extradebug,
+              [AS_HELP_STRING([--enable-extradebug],[switch on GLIBCXX debugging switches (e.g., safe iterators) (requires boost library built with the same flags)])],
+              [enable_extradebug=true],
+              [enable_extradebug=false]
+              )
+if test "x$enable_extradebug" = "xtrue"; then
+   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
+   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
+fi
+
 # Checks for libtool's libltdl
 AC_LIB_LTDL
 AC_LIBLTDL_CONVENIENCE
@@ -115,6 +182,10 @@ BOOST_PROGRAM_OPTIONS
 BOOST_TEST
 BOOST_SYSTEM
 BOOST_FILESYSTEM
+# for --enable-debug, we need the boost_date_time library
+if test "x$enable_debug" = "xtrue"; then
+   BOOST_DATE_TIME
+fi
 
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
@@ -271,34 +342,6 @@ AC_SUBST(EXTSOLVER_LDFLAGS)
 AC_SUBST(EXTSOLVER_LIBS)
 
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
-
-# debug
-AC_ARG_ENABLE(debug,
-              [  --enable-debug          switch on debug and benchmarking routines (timers, ...)],
-              [AC_DEFINE(DLVHEX_BENCHMARKING, [], [Turns on benchmarking routines for profiling])
-               debug_support=true],
-              [debug_support=false]
-              )
-
-#AM_CONDITIONAL([DLVHEX_DEBUG], [test x$debug_support = xtrue])
-
-# for debug, we need the boost_date_time library
-if test "$debug_support" = "true"; then
-   BOOST_DATE_TIME
-fi
-
-
-# extra-debug
-AC_ARG_ENABLE(extradebug,
-              [  --enable-extradebug     switch on GLIBCXX debugging switches (e.g., safe iterators)],
-              [extradebug_support=true],
-              [extradebug_support=false]
-              )
-if test "$extradebug_support" = "true"; then
-   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
-   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
-fi
-
 
 #
 # check for libcurl
