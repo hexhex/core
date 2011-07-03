@@ -321,13 +321,17 @@ ID Registry::storeTerm(Term& term)
   }
 
   // add subkind flags
-  if( islower(term.symbol[0]) )
+  if( term.symbol[0] == '"' || islower(term.symbol[0]) )
   {
     term.kind |= ID::SUBKIND_TERM_CONSTANT;
   }
-  else
+  else if( term.symbol[0] == '_' || isupper(term.symbol[0]) )
   {
     term.kind |= ID::SUBKIND_TERM_VARIABLE;
+  }
+  else
+  {
+    assert(false && "could not identify term type");
   }
 
   return storeConstOrVarTerm(term);
