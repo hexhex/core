@@ -1,3 +1,7 @@
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce

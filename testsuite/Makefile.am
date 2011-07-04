@@ -132,7 +132,7 @@ HEXSOURCES = \
 noinst_LIBRARIES = libhex.a
 
 libhex_a_SOURCES = $(HEXSOURCES)
-#libhex_a_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
+libhex_a_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestPlainHEX_SOURCES = $(top_srcdir)/testsuite/TestPlainHEX.cpp
 TestPlainHEX_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@

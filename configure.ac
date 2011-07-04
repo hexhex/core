@@ -226,7 +226,7 @@ CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 #
 # third-party solver integration
 # * dlv as executable
-# * dlv as shared library (libdlv)
+# * dlv as shared library (libdlv (nonfunctional))
 # * clingo as shared library (preliminary)
 #
 
@@ -303,26 +303,22 @@ else
 fi
 
 #
-# libclingo
+# libclingo (see README)
 #
-# use GRINGO_TRUNK_DIR to specify the environment
-#
-# build the potassco/trunk/gringo/ repository without lua and without luasql
-# and with the same boost library as dlvhex
-#
-# you might need to hack CMakeLists.txt to accept your boost version
-# you need to hack Makefile to deactivate lua and luasql
-#
-AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
-  [with_libclingo_support=true],
+AC_ARG_WITH([libclingo],
+  AS_HELP_STRING([--with-libclingo=<gringo-trunk-directory>],
+                 [use clingo as external solver, you need to specify the directory
+                  where you have built clingo-app of tag/gringo-3.0.3 without lua/luasql]),
+  [with_libclingo_support=$withval],
   [with_libclingo_support=false])
 # conditions in makefiles
-AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
-if test "x${with_libclingo_support}" = xtrue; then
+AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" != xfalse])
+if test "x${with_libclingo_support}" != xfalse; then
 	# #define in config.h <- config.h.in
 	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
-  if test "x${GRINGO_TRUNK_DIR}" = "x"; then
-    AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
+  GRINGO_TRUNK_DIR=$with_libclingo_support
+  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
+    AC_MSG_ERROR([You have to specify gringo trunk in --with-libclingo=<gringo-trunk-dir>])
   fi
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
@@ -331,7 +327,7 @@ if test "x${with_libclingo_support}" = xtrue; then
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
-# (at the moment we rely on the user to correctly give GRINGO_TRUNK_DIR)
+# (at the moment we rely on the user to correctly give directory)
 
 if test "x${extsolver_found}" = xfalse; then
   AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
