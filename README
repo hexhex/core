@@ -31,7 +31,25 @@ FIXME
 
 *** libclingo
 
-FIXME
+use --with-libclingo=<gringo-trunk-dir> to specify the directory where you have built clingo-app
+
+how to build a working clingo-app:
+
+* checkout 3.0.3 tag of gringo
+ $ svn co https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-3.0.3
+ $ cd gringo-3.0.3
+* create release directory
+ $ mkdir -p build/release
+* cmake (specify your boost root)
+ $ BOOST_ROOT=<yourboost> cmake ../.. -DCMAKE_CXX_FLAGS=-Wall -DCMAKE_BUILD_TYPE=release
+* make (specify your boost root)
+ $ BOOST_ROOT=<yourboost> make clingo-app
+
+now configure dlvhex with --with-libclingo=<the-gringo-3.0.3-directory>
+
+IMPORTANT:
+* use the same boost library as dlvhex, 1.43 works for us
+* you might need to hack CMakeLists.txt to accept your boost version
 
 *** libdlv
 
