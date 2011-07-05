@@ -687,20 +687,6 @@ public:
   }
 };
 
-#warning TODO move this into registry or term table
-  inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
-  {
-    ID id = registry->terms.getIDByString(s);
-    if( id == ID_FAIL )
-    {
-      Term term(ID::MAINKIND_TERM, s);
-      // we can only get strings or constants
-      assert(s[0] == '"' || islower(s[0]));
-      id = registry->terms.storeAndGetID(term);
-    }
-    return id;
-  }
-
 class MyClaspOutputFormat:
   public Clasp::OutputFormat
 {
@@ -753,8 +739,11 @@ public:
 		it != tok.end(); ++it)
 	    {
 	      DBGLOG(DBG,"got token '" << *it << "'");
-	      ID id = getOrRegisterTerm(registry, *it);
+	      Term term(ID::MAINKIND_TERM, *it);
+	      // the following takes care of int vs const/string
+	      ID id = registry->storeTerm(term);
 	      assert(id != ID_FAIL);
+	      assert(!id.isVariableTerm());
 	      ogatom.tuple.push_back(id);
 	    }
 	  }
