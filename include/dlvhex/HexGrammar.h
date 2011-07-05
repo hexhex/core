@@ -81,7 +81,6 @@ struct HexGrammarBase
     boost::spirit::rule<S>                               aggregate_geq_binop;
     boost::spirit::rule<S>                               aggregate_binop;
     boost::spirit::rule<S>                               binop;
-    boost::spirit::rule<S>                               tertop;
     boost::spirit::rule<S, c, tag<ExtInputs> >           external_inputs;
     boost::spirit::rule<S, c, tag<ExtOutputs> >          external_outputs;
     boost::spirit::rule<S, c, tag<ExtAtom> >             external_atom;

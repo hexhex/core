@@ -62,6 +62,8 @@ ID ID::termFromBuiltinString(const std::string& op)
     case '>': return ID::termFromBuiltin(ID::TERM_BUILTIN_GT);
     case '*': return ID::termFromBuiltin(ID::TERM_BUILTIN_MUL);
     case '+': return ID::termFromBuiltin(ID::TERM_BUILTIN_ADD);
+    case '-': return ID::termFromBuiltin(ID::TERM_BUILTIN_SUB);
+    case '/': return ID::termFromBuiltin(ID::TERM_BUILTIN_DIV);
     default: assert(false); return ID_FAIL;
     }
   case 2:
@@ -104,6 +106,8 @@ ID ID::termFromBuiltinString(const std::string& op)
   { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG); }
   else if( op == "#any" )
   { return ID::termFromBuiltin(ID::TERM_BUILTIN_AGGANY); }
+  else if( op == "#mod" )
+  { return ID::termFromBuiltin(ID::TERM_BUILTIN_MOD); }
   else
   {
     assert(false);
@@ -123,6 +127,8 @@ namespace
 		">=",
 		"*",
 		"+",
+    "-",
+    "/",
 		"#count",
 		"#min",
 		"#max",
@@ -132,6 +138,7 @@ namespace
 		"#any",
 		"#int",
 		"#succ",
+    "#mod",
 	};
 }
 
