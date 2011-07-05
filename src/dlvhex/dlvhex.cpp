@@ -79,6 +79,7 @@
 
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -143,6 +144,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
       << " -f, --filter=foo[,bar[,...]]" << std::endl
       << "                      Only display instances of the specified predicate(s)." << std::endl
+      << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
 //      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
 //      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
@@ -292,6 +294,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("DumpIModelGraph",0);
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
+  pctx.config.setOption("NumberOfModels",0);
 
 	// defaults of main
 	Config config;
@@ -473,7 +476,7 @@ void processOptionsPrePlugin(
   int ch;
   int longid;
   
-  static const char* shortopts = "f:hsvp:are:m:";
+  static const char* shortopts = "hsvf:p:are:m:n:";
   static struct option longopts[] =
 	{
 		{ "help", no_argument, 0, 'h' },
@@ -485,6 +488,7 @@ void processOptionsPrePlugin(
 		{ "reverse", no_argument, 0, 'r' },
 		{ "heuristics", required_argument, 0, 'e' },
 		{ "modelbuilder", required_argument, 0, 'm' },
+		{ "number", required_argument, 0, 'n' },
 		//{ "firstorder", no_argument, &longid, 1 },
 		{ "weaksafety", no_argument, &longid, 2 },
 		//{ "ruleml",     no_argument, &longid, 3 },
@@ -515,8 +519,9 @@ void processOptionsPrePlugin(
 		case 'v':
 			if (optarg)
 			{
-				pctx.config.setOption("Verbose", atoi(optarg));
-				Logger::Instance().setPrintLevels(atoi(optarg));
+				int level = boost::lexical_cast<int>(optarg);
+				pctx.config.setOption("Verbose", level);
+				Logger::Instance().setPrintLevels(level);
 			}
 			else
 			{
@@ -595,6 +600,13 @@ void processOptionsPrePlugin(
 					throw UsageError("unknown model builder '" + modelbuilder +"' specified!");
 				}
 				LOG(INFO,"selected '" << modelbuilder << "' model builder");
+			}
+			break;
+
+		case 'n':
+			{
+				int models = boost::lexical_cast<int>(optarg);
+				pctx.config.setOption("NumberOfModels", models);
 			}
 			break;
 

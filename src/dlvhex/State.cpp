@@ -748,6 +748,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   unsigned mcount = 0;
   bool abort = false;
   bool gotModel;
+  unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
   do
   {
     gotModel = false;
@@ -811,6 +812,11 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       //mb.printEvalGraphModelGraph(std::cerr);
       #endif
       gotModel = true;
+      if( mcountLimit != 0 && mcount >= mcountLimit )
+      {
+        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+        break;
+      }
     }
   }
   while( gotModel && !abort );
@@ -822,7 +828,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   }
   else
   {
-    LOG(INFO,"model building finished after enumerating all models");
+    if( mcountLimit == 0 )
+    {
+      LOG(INFO,"model building finished after enumerating all models");
+    }
+    else
+    {
+      LOG(INFO,"model building finished after enumerating " << mcountLimit << " models");
+    }
   }
 
   if( ctx->config.getOption("DumpModelGraph") )
