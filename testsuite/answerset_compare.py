@@ -40,4 +40,10 @@ if len(only_in_ref) > 0:
   print >>sys.stderr, "answer sets differ: only in reference ", only_in_ref
 if len(only_in_out) > 0:
   print >>sys.stderr, "answer sets differ: only in output ", only_in_out
+if len(only_in_ref) == 1 and len(only_in_out) == 1:
+  ref = only_in_ref.pop()[0]
+  out = only_in_out.pop()[0]
+  print >>sys.stderr, "ref-out: ", (ref-out)
+  print >>sys.stderr, "out-ref: ", (out-ref)
+
 sys.exit(-1) #false
