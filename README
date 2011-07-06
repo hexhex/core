@@ -25,6 +25,36 @@ that it is executable on your system (don't forget to "chmod +x" it!).
 dlvhex is looking for `dlv', so you might want to rename the
 downloaded binary or create a softlink to it.
 
+*** DLVDB
+
+FIXME
+
+*** libclingo
+
+use --with-libclingo=<gringo-trunk-dir> to specify the directory where you have built clingo-app
+
+how to build a working clingo-app:
+
+* checkout 3.0.3 tag of gringo
+ $ svn co https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-3.0.3
+ $ cd gringo-3.0.3
+* create release directory
+ $ mkdir -p build/release
+* cmake (specify your boost root)
+ $ BOOST_ROOT=<yourboost> cmake ../.. -DCMAKE_CXX_FLAGS=-Wall -DCMAKE_BUILD_TYPE=release
+* make (specify your boost root)
+ $ BOOST_ROOT=<yourboost> make clingo-app
+
+now configure dlvhex with --with-libclingo=<the-gringo-3.0.3-directory>
+
+IMPORTANT:
+* use the same boost library as dlvhex, 1.43 works for us
+* you might need to hack CMakeLists.txt to accept your boost version
+
+*** libdlv
+
+FIXME
+
 *** boost
 Boost is a collection of portable C++ source libraries, which are
 intended to be widely useful, and usable across a broad spectrum of
@@ -70,16 +100,6 @@ provides packages called libcurl-dev, libcurlN-openssl-dev, and
 libcurlN-gnutls-dev (or libcurlN-dev) for some N; install one of these
 and you will be able to compile dlvhex.
 
-*** cppunit (optional)
-CppUnit is used for the unit-testing of dlvhex, but not necessary for
-building the application. See <http://cppunit.sourceforge.net/>. Follow
-the instructions of the INSTALL file found in the distributions
-tarball.  dlvhex has been tested with cppunit 1.12.0. Like boost,
-cppunit packages are provided by the major Linux distributions. E.g.,
-in Debian/Ubuntu you just have to run
-
- $ sudo apt-get install libcppunit-dev
-
 ** Configuration
 Run `configure' to create the necessary Makefiles. As usual, use the
 --prefix switch to specify a custom installation location. dlvhex uses
@@ -87,11 +107,11 @@ pkg-config to share build-related configuration with plugins. So if you
 also intend to compile plugins and use a custom prefix for dlvhex,
 make sure to adjust the PKG_CONFIG_PATH environment variable
 appropriately, otherwise the configuration of the plugins will not
-work. E.g., if your prefix is ~/localinstall/, then
-PKG_CONFIG_PATH needs to be set to ~/localinstall/lib/pkgconfig
+work. E.g., if your prefix is $HOME/local, then
+PKG_CONFIG_PATH needs to be set to $HOME/local/lib/pkgconfig
 like this:
 
- $ ./configure PKG_CONFIG_PATH=~/localinstall/lib/pkgconfig
+ $ ./configure PKG_CONFIG_PATH=$HOME/local/lib/pkgconfig
 
 If you installed boost in a non-standard folder, add
 `--with-boost=/path/to/boost/prefix' to the configure switches to
@@ -108,7 +128,7 @@ subdirectory `doc' will be created). By default, only the html-docs
 will be built. To enable other formats, you have to specify the
 according configure-switch, e.g., by calling
 
- $ ./configure ... --enable-doxygen-pdf
+ $ ./configure --enable-doxygen-pdf [...]
 
 you get a pdf of the documentation.
 
@@ -120,6 +140,12 @@ installed.
 ** Installation
 Run `make install' to install the binary dlvhex, its libraries and the
 corresponding header files, which are needed for developing plugins.
+Sometimes it is necessary to run
+
+ $ sudo ldconfig
+
+after the first installation to refresh the shared library cache.
+
 
 * Running dlvhex
 Using dlvhex is very similar to working with the answer-set solver
@@ -129,4 +155,3 @@ documentation provided at
 <http://http://www.kr.tuwien.ac.at/research/systems/dlvhex/> or look
 at the `examples' directory here. DLV programs are described at
 <http://www.dbai.tuwien.ac.at/proj/dlv/#docs>.
-

@@ -98,7 +98,7 @@ struct OrdinaryAtom:
     { assert(ID(kind,0).isOrdinaryAtom());
       assert(!text.empty()); }
   std::ostream& print(std::ostream& o) const
-    { return o << "OrdinaryAtom('" << text << "' " << printvector(tuple) << ")"; }
+    { return o << "OrdinaryAtom(" << std::hex << kind << std::dec << ",'" << text << "'," << printvector(tuple) << ")"; }
 };
 
 struct BuiltinAtom:

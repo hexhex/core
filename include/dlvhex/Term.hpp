@@ -43,22 +43,48 @@ DLVHEX_NAMESPACE_BEGIN
 // Then they are processed into new distinct variables,
 // each with the anonymous bit set and with a new ID.
 struct Term:
-  private ostream_printable<Term>
+private ostream_printable<Term>
 {
-  // the kind part of the ID of this symbol
-  IDKind kind;
+	// the kind part of the ID of this symbol
+	IDKind kind;
 
-  // the textual representation of a
+	// the textual representation of a
 	//  constant,
 	//  constant string (including ""), or
 	//  variable
-  std::string symbol;
+	std::string symbol;
 
-  Term(IDKind kind, const std::string& symbol):
-    kind(kind), symbol(symbol)
-		{ assert(ID(kind,0).isTerm()); }
-  std::ostream& print(std::ostream& o) const
-    { return o << "Term(" << symbol << ")"; }
+	Term(IDKind kind, const std::string& symbol): kind(kind), symbol(symbol) { 
+		assert(ID(kind,0).isTerm()); 
+	}
+	
+	bool isString() const {
+		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
+			return true;
+		return false;
+	}
+	
+	std::string getQuotedString() const {
+		if (!isString()) 
+			return NULL;
+		return '"' + getUnquotedString() + '"';
+	}
+	
+	std::string getUnquotedString() const {
+		if (!isString())
+			return NULL;
+		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
+			return symbol.substr(1, symbol.length()-2);
+		return symbol;
+	}
+	
+  // the following method is not useful, as integers are always
+  // represented in the ID.address field and never stored into a table
+  // int getInt() const
+	
+	std::ostream& print(std::ostream& o) const { 
+		return o << "Term(" << symbol << ")"; 
+	}
 };
 
 DLVHEX_NAMESPACE_END

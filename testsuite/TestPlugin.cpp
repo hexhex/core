@@ -259,6 +259,8 @@ public:
 			resultterm.symbol = "\"" + resultterm.symbol + "\"";
     Tuple tu;
     tu.push_back(registry->storeTerm(resultterm));
+		// the next line would also work and be more efficient, but the above line tests more
+    //tu.push_back(registry->storeConstOrVarTerm(resultterm));
     answer.get().push_back(tu);
   }
 };

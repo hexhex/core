@@ -1,3 +1,27 @@
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+
+2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce
+	compile-time by 33%. Can be further improved by compiling
+	$(top_srcdir)/src/dlvhex/lib{X,Y,Z}.a.
+
+	* README: Small fixes.
+
+	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
+	end of the list, linux i386 linker is sensitive to this.
+
+	* configure.ac: Fix messages.
+
+	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
+	wc output. (ticket #46)
+
+2011-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Check for g++ >= 4.3.
+
 2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Most important changes (i.e., the reason for the new version):

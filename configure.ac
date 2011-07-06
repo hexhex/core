@@ -32,12 +32,44 @@ AC_PROG_CXXCPP
 # allow to disable certain warnings using custom CXXFLAGS
 if test "$GXX" = "yes"; then
    CXXFLAGS="-W -Wall $CXXFLAGS"
+
+   AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
+   AC_LANG_PUSH([C++])
+   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
+ int dummy;
+#else
+# if __clang__ == 1
+#  if __clang_major__ >= 3 || (__clang_major__ == 2 && __clang_minor__ >= 9)
+ int dummy;
+#  else
+#    error clang is too old, we need at least clang 2.9
+#  endif
+# else
+#  error gcc is too old, we need at least gcc 4.3
+# endif
+#endif 
+]], [[
+dummy;
+]]),
+[
+	AC_MSG_RESULT([yes])
+],
+[
+	AC_MSG_RESULT([no])
+	AC_MSG_ERROR([Cannot find g++ >= 4.3 or clang++ >= 2.9. Please upgrade your compiler.])
+]
+)
+AC_LANG_POP()
+
 fi
+
 
 # check for clang
 case $CXX in
    clang*)
      CXXFLAGS="$CXXFLAGS -ferror-limit=5"
+     # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)
    ;;
@@ -54,6 +86,73 @@ case $host_os in
 	CPPFLAGS="$CPPFLAGS -I/opt/local/include -I/sw/include"
      ;;
 esac 
+
+
+#
+# debug and release flags
+#
+# these must be processed early, as they influence,
+# e.g., the boost library selection (_GLIBCXX_DEBUG requires the -d library types)
+
+#
+# --enable-debug vs --enable-release vs --enable-benchmark
+# (only one of the three can be chosen, default is --enable-release)
+#
+AC_ARG_ENABLE(debug,
+              [AS_HELP_STRING([--enable-debug],[build debug version (+assertions+debuglogging)])],
+              [enable_debug=true],
+              [enable_debug=false]
+             )
+AC_ARG_ENABLE(release,
+              [AS_HELP_STRING([--enable-release],[build release version (default)])],
+              [enable_release=true],
+              [enable_release=false]
+             )
+AC_ARG_ENABLE(benchmark,
+              [AS_HELP_STRING([--enable-benchmark],[build benchmark version (release+timers+counters)])],
+              [enable_benchmark=true],
+              [enable_benchmark=false]
+             )
+
+# default = release
+dbgrelbench="$enable_debug$enable_release$enable_benchmark"
+if test "$dbgrelbench" = "falsefalsefalse"; then
+  enable_release=true
+  dbgrelbench="$enable_debug$enable_release$enable_benchmark"
+fi
+# process selection
+if test "$dbgrelbench" = "truefalsefalse"; then
+  # do stuff that must be done for --enable-debug here
+  AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+  CXXFLAGS="$CXXFLAGS -O0"
+else
+  if test "$dbgrelbench" = "falsetruefalse"; then
+    # do stuff that must be done for --enable-release here
+    AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+    CXXFLAGS="$CXXFLAGS -O3"
+  else
+    if test "$dbgrelbench" = "falsefalsetrue"; then
+      # do stuff that must be done for --enable-benchmark here
+      # (we have an implicit DLVHEX_BENCHMARK definition in config.h)
+      AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
+      AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+      CXXFLAGS="$CXXFLAGS -O3"
+    else
+      AC_MSG_ERROR([only one of --enable-debug, --enable-release, --enable-benchmark can be chosen])
+    fi
+  fi
+fi
+
+# --enable-extradebug
+AC_ARG_ENABLE(extradebug,
+              [AS_HELP_STRING([--enable-extradebug],[switch on GLIBCXX debugging switches (e.g., safe iterators) (requires boost library built with the same flags)])],
+              [enable_extradebug=true],
+              [enable_extradebug=false]
+              )
+if test "x$enable_extradebug" = "xtrue"; then
+   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
+   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
+fi
 
 # Checks for libtool's libltdl
 AC_LIB_LTDL
@@ -83,6 +182,10 @@ BOOST_PROGRAM_OPTIONS
 BOOST_TEST
 BOOST_SYSTEM
 BOOST_FILESYSTEM
+# for --enable-debug, we need the boost_date_time library
+if test "x$enable_debug" = "xtrue"; then
+   BOOST_DATE_TIME
+fi
 
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
@@ -123,7 +226,7 @@ CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 #
 # third-party solver integration
 # * dlv as executable
-# * dlv as shared library (libdlv)
+# * dlv as shared library (libdlv (nonfunctional))
 # * clingo as shared library (preliminary)
 #
 
@@ -200,26 +303,22 @@ else
 fi
 
 #
-# libclingo
+# libclingo (see README)
 #
-# use GRINGO_TRUNK_DIR to specify the environment
-#
-# build the potassco/trunk/gringo/ repository without lua and without luasql
-# and with the same boost library as dlvhex
-#
-# you might need to hack CMakeLists.txt to accept your boost version
-# you need to hack Makefile to deactivate lua and luasql
-#
-AC_ARG_WITH([libclingo],[AS_HELP_STRING([--with-libclingo],[use clingo as external solver])],
-  [with_libclingo_support=true],
+AC_ARG_WITH([libclingo],
+  AS_HELP_STRING([--with-libclingo=<gringo-trunk-directory>],
+                 [use clingo as external solver, you need to specify the directory
+                  where you have built clingo-app of tag/gringo-3.0.3 without lua/luasql]),
+  [with_libclingo_support=$withval],
   [with_libclingo_support=false])
 # conditions in makefiles
-AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" = xtrue])
-if test "x${with_libclingo_support}" = xtrue; then
+AM_CONDITIONAL([HAVE_LIBCLINGO],[test "x${with_libclingo_support}" != xfalse])
+if test "x${with_libclingo_support}" != xfalse; then
 	# #define in config.h <- config.h.in
 	AC_DEFINE([HAVE_LIBCLINGO], [1], [Defined if we have --with-libclingo.])
-  if test "x${GRINGO_TRUNK_DIR}" = "x"; then
-    AC_MSG_ERROR([You have to specify GRINGO_TRUNK_DIR in the environment for --with-libclingo.])
+  GRINGO_TRUNK_DIR=$with_libclingo_support
+  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
+    AC_MSG_ERROR([You have to specify gringo trunk in --with-libclingo=<gringo-trunk-dir>])
   fi
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappclingo -lclasp -lappgringo -lgringo -lprogram_opts"
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
@@ -228,7 +327,7 @@ if test "x${with_libclingo_support}" = xtrue; then
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
-# (at the moment we rely on the user to correctly give GRINGO_TRUNK_DIR)
+# (at the moment we rely on the user to correctly give directory)
 
 if test "x${extsolver_found}" = xfalse; then
   AC_MSG_ERROR([No aspsolver backend found. Please make sure at least one of dlv/dlvdb/libdlv/libclingo is available.])
@@ -239,34 +338,6 @@ AC_SUBST(EXTSOLVER_LDFLAGS)
 AC_SUBST(EXTSOLVER_LIBS)
 
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
-
-# debug
-AC_ARG_ENABLE(debug,
-              [  --enable-debug          switch on debug and benchmarking routines (timers, ...)],
-              [AC_DEFINE(DLVHEX_BENCHMARKING, [], [Turns on benchmarking routines for profiling])
-               debug_support=true],
-              [debug_support=false]
-              )
-
-#AM_CONDITIONAL([DLVHEX_DEBUG], [test x$debug_support = xtrue])
-
-# for debug, we need the boost_date_time library
-if test "$debug_support" = "true"; then
-   BOOST_DATE_TIME
-fi
-
-
-# extra-debug
-AC_ARG_ENABLE(extradebug,
-              [  --enable-extradebug     switch on GLIBCXX debug ging switches (e.g., safe iterators)],
-              [extradebug_support=true],
-              [extradebug_support=false]
-              )
-if test "$extradebug_support" = "true"; then
-   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
-   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
-fi
-
 
 #
 # check for libcurl
@@ -369,16 +440,19 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  userplugindir: $userplugindir
  sysplugindir: $sysplugindir
 
- - Using the following binaries:
+ - Using the following solver backends:
  DLV: $DLVPATH
  DLVDB: $DLVDBPATH
- doxygen: $DX_DOXYGEN
+ libclingo: $GRINGO_TRUNK_DIR
+ libdlv: $DLVLIB
 
  - Using the following libraries:
  Bitmagic: $BM_VERSION $BM_CPPFLAGS
  Boost: $boost_major_version $BOOST_CPPFLAGS
  Curl: $libcurl_cv_lib_curl_version $LIBCURL_CPPFLAGS
- Cppunit: $have_cppunit
+
+ - Doxygen support:
+ doxygen: $DX_DOXYGEN
  
  - Options:
  Debug: $debug_support

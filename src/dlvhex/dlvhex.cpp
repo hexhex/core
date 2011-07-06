@@ -656,7 +656,7 @@ void processOptionsPrePlugin(
 						}
 						else if( solver == "libclingo" )
 						{
-							#if defined(WITH_LIBCLINGO)
+							#if defined(HAVE_LIBCLINGO)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
 							#else
