@@ -60,6 +60,7 @@ libdlvhexbase_la_SOURCES = \
     WellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
     HexGrammarPTToASTConverter.cpp \
+    HexGrammar.cpp \
     HexParser.cpp \
     PluginExtendableHexParser.cpp \
     ID.cpp \

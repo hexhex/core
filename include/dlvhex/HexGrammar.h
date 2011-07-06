@@ -120,9 +120,6 @@ struct HexGrammar:
 {
 };
 
-// directly include the implementation in the namespace
-#include "dlvhex/HexGrammar.tcc"
-
 DLVHEX_NAMESPACE_END
 
 #endif // DLVHEX_HEX_GRAMMAR_H_INCLUDED

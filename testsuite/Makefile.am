@@ -113,6 +113,7 @@ HEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
 	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammar.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \
