@@ -6,6 +6,7 @@ AM_CXXFLAGS = \
     $(BOOST_CPPFLAGS) \
     $(BM_CPPFLAGS) \
     $(DLVHEX_CFLAGS) \
+    $(EXTSOLVER_CPPFLAGS) \
     -DBOOST_TEST_DYN_LINK
 
     #-DCWDEBUG
@@ -87,7 +88,9 @@ TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/dlvhex/libinternalplugins.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestTestPluginStatic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
+# the following line is just to make sure TestPlugin.cpp will be built separately
+# for libdlvhextest_la and for TestTestPluginStatic (seems like a automake/libtool bug)
+TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
 # full debugging output
 
@@ -132,24 +135,19 @@ HEXSOURCES = \
 noinst_LIBRARIES = libhex.a
 
 libhex_a_SOURCES = $(HEXSOURCES)
-libhex_a_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestPlainHEX_SOURCES = $(top_srcdir)/testsuite/TestPlainHEX.cpp
 TestPlainHEX_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestPlainHEX_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestEvalEndToEnd_SOURCES = $(top_srcdir)/testsuite/TestEvalEndToEnd.cpp
 TestEvalEndToEnd_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestEvalEndToEnd_CPPFLAGS = $(EXTSOLVER_CPPFLAGS)
 
 TestASPSolver_SOURCES = $(top_srcdir)/testsuite/TestASPSolver.cpp
 TestASPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-TestASPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = $(top_srcdir)/testsuite/TestEvalHeuristic.cpp
 TestEvalHeuristic_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
-TestEvalHeuristic_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 TestComponentGraph_SOURCES = $(top_srcdir)/testsuite/TestComponentGraph.cpp
 TestComponentGraph_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
