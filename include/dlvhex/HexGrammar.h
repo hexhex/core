@@ -49,7 +49,7 @@ struct HexGrammarBase
     None = 0, Root, Clause, Maxint, Namespace,
     Rule, Constraint, WeakConstraint, Body, Disj,
     Number, Ident, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
-    UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
+    UserPredClassical, UserPredTuple, UserPred, BodyPred,
     Aggregate, AggregatePred, AggregateRel, AggregateRange,
     ExtAtom, ExtInputs, ExtOutputs,
     BuiltinPred, BuiltinOther,
@@ -101,8 +101,8 @@ struct HexGrammarBase
     boost::spirit::rule<S, c, tag<Neg> >                 neg;
     boost::spirit::rule<S, c, tag<UserPredClassical> >   user_pred_classical;
     boost::spirit::rule<S, c, tag<UserPredTuple> >       user_pred_tuple;
-    //boost::spirit::rule<S, c, tag<UserPredAtom> >        user_pred_atom;
     boost::spirit::rule<S, c, tag<UserPred> >            user_pred;
+    boost::spirit::rule<S, c, tag<BodyPred> >            body_pred;
     boost::spirit::rule<S, c, tag<Body> >                body;
     boost::spirit::rule<S, c, tag<Maxint> >              maxint;
     boost::spirit::rule<S, c, tag<Namespace> >           namespace_;

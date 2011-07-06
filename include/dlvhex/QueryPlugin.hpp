@@ -33,10 +33,14 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/PluginInterface.h"
+#include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 class PluginExtendableHexParser;
+
+class QueryParserModule;
+typedef boost::shared_ptr<QueryParserModule> QueryParserModulePtr;
 
 class QueryPlugin:
   public PluginInterface
@@ -90,9 +94,7 @@ public:
   // (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // OLD create custom parser that extends and uses the basic hex parser for parsing queries
-  // OLD this parser also stores the query information into the plugin
-	// NEW add custom parser modules to hex parser
+	// add query parser module to hex parser
 	virtual void addParserModules(PluginExtendableHexParserPtr);
 
   // rewrite program by adding auxiliary query rules
@@ -102,6 +104,9 @@ public:
   virtual void setupProgramCtx(ProgramCtx&);
 
   // no atoms!
+
+private:
+  QueryParserModulePtr queryParserModule;
 };
 
 DLVHEX_NAMESPACE_END

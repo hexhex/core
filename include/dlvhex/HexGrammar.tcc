@@ -114,9 +114,10 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     builtin_tertop_infix | builtin_tertop_prefix |
     builtin_binop_infix | builtin_binop_prefix | builtin_other;
   naf = sp::lexeme_d[(str_p("not") | "non") >> sp::space_p];
+  body_pred = user_pred | external_atom | aggregate;
   literal
     = builtin_pred
-    | ( !naf >> (user_pred | external_atom | aggregate) );
+    | ( !naf >> body_pred );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> '.';
@@ -175,7 +176,7 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     BOOST_SPIRIT_DEBUG_NODE(user_pred_classical);
     BOOST_SPIRIT_DEBUG_NODE(user_pred_tuple);
     BOOST_SPIRIT_DEBUG_NODE(user_pred_atom);
-    BOOST_SPIRIT_DEBUG_NODE(user_pred);
+    BOOST_SPIRIT_DEBUG_NODE(body_pred);
     BOOST_SPIRIT_DEBUG_NODE(body);
     BOOST_SPIRIT_DEBUG_NODE(maxint);
     BOOST_SPIRIT_DEBUG_NODE(namespace_);

@@ -82,6 +82,7 @@ namespace
   };
 }
 
+#if 0
 struct HexQueryGrammarBase:
 	public HexGrammarBase
 {
@@ -271,6 +272,64 @@ void HexQueryParser::parse(InputProviderPtr in, ProgramCtx& ctx)
 	if( ctxdata.query.empty() )
 		throw FatalError("query mode enabled, but got no query!");
 }
+# endif
+
+struct QueryParserModule:
+	public PluginExtendableHexParser::ClauseParserModule
+{
+	typedef PluginExtendableHexParser::ClauseParserModule Base;
+
+	#warning TODO pass to constructor HexGrammarPTToASTConverter& converter;
+
+	// reuse the whole HexGrammar for this query-only parser
+	struct GrammarBase:
+		public HexGrammarBase
+	{
+		// S = ScannerT
+		template<typename S>
+		struct definition:
+			public HexGrammarBase::definition<S>
+		{
+			typedef typename HexGrammarBase::definition<S> Base;
+
+			typedef boost::spirit::parser_context<> c;
+			template<int Tag> struct tag: public boost::spirit::parser_tag<Tag> {};
+
+			boost::spirit::rule<S, c> query;
+
+			boost::spirit::rule< S, c > const& start() const { return query; }
+
+			definition(GrammarBase const& self):
+				Base(self)
+			{
+				namespace sp = boost::spirit;
+				using sp::ch_p;
+
+				// shortcut for sp::discard_node_d()
+				const sp::node_parser_gen<sp::discard_node_op> rm =
+					sp::node_parser_gen<sp::discard_node_op>();
+
+				query = Base::body >> rm[ch_p('?')];
+
+			#   ifdef BOOST_SPIRIT_DEBUG
+					BOOST_SPIRIT_DEBUG_NODE(query);
+			#   endif
+			}
+		};
+	};
+
+	struct Grammar:
+		public boost::spirit::grammar<Grammar>,
+		public GrammarBase
+	{
+	};
+
+	virtual void addFromClause(node_t& node)
+	{
+		#warning TODO implement
+		throw "feejkl";
+	}
+};
 
 QueryPlugin::CtxData::CtxData():
 	enabled(false),
@@ -284,7 +343,8 @@ QueryPlugin::CtxData::CtxData():
 }
 
 QueryPlugin::QueryPlugin():
-	PluginInterface()
+	PluginInterface(),
+	queryParserModule(new QueryParserModule)
 {
 	setNameVersion("dlvhex-queryplugin[internal]", 2, 0, 0);
 }
@@ -369,7 +429,6 @@ void QueryPlugin::processOptions(
 }
 
 #if 0
-OLD
 // create custom parser that extends and uses the basic hex parser for parsing queries
 // this parser also stores the query information into the plugin
 HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
@@ -382,9 +441,9 @@ HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
 }
 #endif
 
-void QueryPlugin::addParserModules(PluginExtendableHexParserPtr)
-{
-	#warning TODO implement this!
+void QueryPlugin::addParserModules(PluginExtendableHexParserPtr parser)
+{ 
+	parser->addModule(queryParserModule);
 }
 
 namespace

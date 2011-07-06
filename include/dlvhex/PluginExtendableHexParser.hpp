@@ -56,8 +56,9 @@ public:
 	class ClauseParserModule
 	{
 	public:
-		ClauseParserModule(HexGrammarPTToASTConverter& converter):
-			converter(converter) {}
+    typedef PluginExtendableHexParser::node_t node_t;
+
+		ClauseParserModule() {}
 		virtual ~ClauseParserModule() {}
 
 		// derived classes have to define:
@@ -65,36 +66,34 @@ public:
 
 		// interprets parsed node and uses converter and data from converter to add to program ctx 
 		virtual void addFromClause(node_t& node) = 0;
-	protected:
-		HexGrammarPTToASTConverter& converter;
 	};
 	
 	// alternative to predicateparser (e.g., use this for strong negation and higher order)
-	class PredicateParserModule
+	class BodyPredicateParserModule
 	{
 	public:
-		PredicateParserModule(HexGrammarPTToASTConverter& converter):
-			converter(converter) {}
-		virtual ~PredicateParserModule() {}
+    typedef PluginExtendableHexParser::node_t node_t;
+
+		BodyPredicateParserModule() {}
+		virtual ~BodyPredicateParserModule() {}
 
 		// derived classes have to define:
 		// class Grammar: public boost::spirit::grammar<Grammar> { ... spirit grammar ... }
 
 		// interprets parsed node, creates atom, registers in registry and returns ID for further processing
 		virtual ID createAtomFromUserPred(node_t& node) = 0;
-	protected:
-		HexGrammarPTToASTConverter& converter;
 	};
 
 public:
 	PluginExtendableHexParser();
 	virtual ~PluginExtendableHexParser();
-  //virtual void parse(InputProviderPtr in, ProgramCtx& out);
 
-	// register new parser module (must be derived from one of the above base classes)
-	template<typename Module>
-	void addModule(boost::shared_ptr<Module> module); 
-	
+  virtual void parse(InputProviderPtr in, ProgramCtx& out);
+
+	// register parser module
+	void addModule(boost::shared_ptr<ClauseParserModule> module); 
+	void addModule(boost::shared_ptr<BodyPredicateParserModule> module); 
+
 private:
 	struct Impl;
   boost::scoped_ptr<Impl> pimpl;
