@@ -30,6 +30,7 @@ EXTRA_DIST = \
     safety1.hex \
     safety2.hex \
     simple1.hex \
+    simple2.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -83,6 +84,7 @@ EXTRA_DIST = \
     tests/safety1.stderr \
     tests/safety2.stderr \
     tests/simple1.out \
+    tests/simple2.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
