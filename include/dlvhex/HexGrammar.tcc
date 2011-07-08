@@ -42,7 +42,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 
-//#include <boost/config/warning_disable.hpp>
+#include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
 //#include <boost/spirit/include/phoenix_core.hpp>
 //#include <boost/spirit/include/phoenix_operator.hpp>
@@ -65,11 +65,48 @@ HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
 }
 
 template<typename Iterator, typename Skipper>
-HexGrammarBase::HexGrammarBase(HexGrammarSemantics& sem):
+HexGrammarBase<Iterator, Skipper>::
+HexGrammarBase(HexGrammarSemantics& sem):
   sem(sem)
 {
   namespace qi = boost::spirit::qi;
-  // TODO build grammar rules here
+  namespace ascii = boost::spirit::ascii;
+  typedef HexGrammarSemantics Sem;
+
+  cident
+    = qi::lexeme[ ascii::lower >> *(ascii::alnum | qi::char_('_')) ];
+  string
+    = qi::lexeme[ qi::char_('"') >> *(qi::char_ - qi::char_('"')) >> qi::char_('"') ];
+  variable
+    = qi::char_('_')
+    | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];
+  posinteger
+    = qi::ulong_;
+  term
+    = termExt
+    | cident     [ Sem::termFromCIdent(sem) ]
+    | string     [ Sem::termFromString(sem) ]
+    | variable   [ Sem::termFromVariable(sem) ]
+    | posinteger [ Sem::termFromInteger(sem) ];
+  terms
+    = term % qi::lit(',');
+  externalatom
+    = (
+        qi::lit('&') > cident >
+        (
+          (qi::lit('[') > -terms >> qi::lit(']')) ||
+          (qi::lit('(') > -terms >> qi::lit(')'))
+        )
+      ) [ Sem::handler(sem) ];
+  /*
+     boost::fusion::vector2<
+      std::basic_string<char>,
+      boost::fusion::vector2<
+        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
+        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
+      >
+     >
+   */
 
   toplevelExt
     = qi::eps(false);
@@ -84,7 +121,9 @@ HexGrammarBase::HexGrammarBase(HexGrammarSemantics& sem):
 //! register module for parsing top level elements of input file
 //! (use this to parse queries or other meta or control flow information)
 template<typename Iterator, typename Skipper>
-void HexGrammarBase::registerToplevelModule(
+void 
+HexGrammarBase<Iterator, Skipper>::
+registerToplevelModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
@@ -93,7 +132,9 @@ void HexGrammarBase::registerToplevelModule(
 //! register module for parsing body elements of rules and constraints
 //! (use this to parse predicates in rule bodies)
 template<typename Iterator, typename Skipper>
-void HexGrammarBase::registerBodyPredicateModule(
+void 
+HexGrammarBase<Iterator, Skipper>::
+registerBodyPredicateModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
@@ -102,7 +143,9 @@ void HexGrammarBase::registerBodyPredicateModule(
 //! register module for parsing head elements of rules
 //! (use this to parse predicates in rule heads)
 template<typename Iterator, typename Skipper>
-void HexGrammarBase::registerHeadPredicateModule(
+void 
+HexGrammarBase<Iterator, Skipper>::
+registerHeadPredicateModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
@@ -111,7 +154,9 @@ void HexGrammarBase::registerHeadPredicateModule(
 //! register module for parsing terms
 //! (use this to parse terms in any predicates)
 template<typename Iterator, typename Skipper>
-void HexGrammarBase::registerTermModule(
+void 
+HexGrammarBase<Iterator, Skipper>::
+registerTermModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
@@ -121,25 +166,7 @@ DLVHEX_NAMESPACE_END
 
 # if 0
 
-template<typename ScannerT>
-HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
-{
-  namespace sp = boost::spirit;
-  using sp::str_p;
-  using sp::ch_p;
-
-  // shortcut for sp::discard_node_d()
-  const sp::node_parser_gen<sp::discard_node_op> rm =
-    sp::node_parser_gen<sp::discard_node_op>();
-
   sp::chset<> alnum_("a-zA-Z0-9_");
-  // identifier or string
-  ident
-    = sp::token_node_d[sp::lower_p >> *alnum_]
-    | sp::token_node_d['"' >> *(~ch_p('"')) >> '"'];
-  // variable
-  var
-    = sp::token_node_d[sp::upper_p >> *alnum_];
   // nonnegative integer
   number
     = sp::token_node_d[+sp::digit_p];
@@ -157,11 +184,6 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     = str_p("<>") | "!=" | aggregate_binop;
   cons
     = str_p(":-") | "<-";
-  // identifiers, variables, numbers, anonymous variables
-  term
-    = ident_or_var_or_number | '_';
-  terms
-    = term >> *(rm[ch_p(',')] >> term);
   neg
     = ch_p('-')|'~';
   user_pred_classical

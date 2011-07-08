@@ -47,8 +47,12 @@
 //#include <boost/spirit/include/phoenix_operator.hpp>
 //#include <boost/spirit/include/phoenix_stl.hpp>
 
+#include <boost/mpl/assert.hpp>
+#include <boost/type_traits.hpp>
+
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ID.hpp"
+
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -108,11 +112,70 @@ typedef boost::spirit::qi::grammar<
 typedef boost::shared_ptr<HexParserModuleGrammar>
   HexParserModuleGrammarPtr;
 
+class HexGrammarSemantics;
+
 //! HEX grammar semantics
 //! TODO see top of this file
-struct HexGrammarSemantics
+class HexGrammarSemantics
 {
-  int todo;
+public:
+  struct handler
+  {
+    handler(HexGrammarSemantics&);
+
+    template<typename Attrib, typename Ctx>
+    void operator()(Attrib& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
+      { BOOST_MPL_ASSERT(( boost::is_same< Attrib, void > )); }
+  };
+
+  struct termFromCIdent: handler
+  {
+    termFromCIdent(HexGrammarSemantics& sem): handler(sem) { }
+
+    template<typename Ctx>
+    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
+    {
+      ID& target = boost::fusion::at_c<0>(ctx.attributes);
+      // TODO return ID from attrib
+    }
+  };
+
+  struct termFromInteger: handler
+  {
+    termFromInteger(HexGrammarSemantics& sem): handler(sem) { }
+
+    template<typename Ctx>
+    void operator()(unsigned int& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
+    {
+      ID& target = boost::fusion::at_c<0>(ctx.attributes);
+      // TODO return ID from attrib
+    }
+  };
+
+  struct termFromString: handler
+  {
+    termFromString(HexGrammarSemantics& sem): handler(sem) { }
+
+    template<typename Ctx>
+    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
+    {
+      ID& target = boost::fusion::at_c<0>(ctx.attributes);
+      // TODO return ID from attrib
+    }
+  };
+
+  struct termFromVariable: handler
+  {
+    termFromVariable(HexGrammarSemantics& sem): handler(sem) { }
+
+    template<typename Ctx>
+    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
+    {
+      ID& target = boost::fusion::at_c<0>(ctx.attributes);
+      // TODO return ID from attrib
+    }
+  };
+
 };
 
 //! basic HEX Grammar
@@ -155,6 +218,10 @@ struct HexGrammarBase
 
   // core grammar rules (parser modules can derive from this class and reuse these rules!)
   typename Rule<>::type start;
+  typename Rule<std::string>::type cident, string, variable;
+  typename Rule<uint32_t>::type posinteger;
+  typename Rule<ID>::type term, externalatom;
+  typename Rule<std::vector<ID> >::type terms;
   // rules that are extended by modules
   typename Rule<ID>::type toplevelExt, bodyPredicateExt, headPredicateExt, termExt;
 };
