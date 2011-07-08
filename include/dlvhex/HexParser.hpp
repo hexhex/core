@@ -59,6 +59,27 @@ public:
   virtual void parse(InputProviderPtr in, ProgramCtx& out);
 };
 
+/**
+ * @brief Parses HEX-programs, extendable by parser modules.
+ */
+class DLVHEX_EXPORT ModuleHexParser:
+  public HexParser
+{
+public:
+  virtual void registerModule(HexParserModulePtr module);
+
+public:
+  virtual void parse(InputProviderPtr in, ProgramCtx& out);
+};
+
+#warning TODO move this into separate header "HexParserModule.hpp", only used by parser and extending parsers
+# if 0
+class HexParserModule
+{
+// TODO here we can do stuff including complicated module type containing spirit iterator/grammar types
+};
+#endif
+
 DLVHEX_NAMESPACE_END
 
 #endif // HEXPARSER_HPP_INCLUDED__14102010

@@ -59,7 +59,7 @@ libdlvhexbase_la_SOURCES = \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
-    HexGrammarPTToASTConverter.cpp \
+    HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
     InputProvider.cpp \

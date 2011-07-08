@@ -30,7 +30,96 @@
  * @brief  Implementation of HexGrammar.h
  */
 
-// this .tcc file should only be included by HexGrammar.h -> no include guards, no namespaces
+/**
+ * @file   HexGrammar.tcc
+ * @author Peter Schüller
+ * 
+ * @brief  Grammar for parsing HEX using boost::spirit
+ */
+
+#ifndef DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
+#define DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
+
+#include "dlvhex/PlatformDefinitions.h"
+
+//#include <boost/config/warning_disable.hpp>
+#include <boost/spirit/include/qi.hpp>
+//#include <boost/spirit/include/phoenix_core.hpp>
+//#include <boost/spirit/include/phoenix_operator.hpp>
+//#include <boost/spirit/include/phoenix_stl.hpp>
+
+DLVHEX_NAMESPACE_BEGIN
+
+template<typename Iterator>
+HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
+  HexParserSkipperGrammar::base_type(start)
+{
+  using namespace boost::spirit;
+  start
+    = ascii::space
+    | qi::lexeme[ qi::char_('%') > *(qi::char_ - qi::eol) ];
+
+  #ifdef BOOST_SPIRIT_DEBUG
+  BOOST_SPIRIT_DEBUG_NODE(start);
+  #endif
+}
+
+template<typename Iterator, typename Skipper>
+HexGrammarBase::HexGrammarBase(HexGrammarSemantics& sem):
+  sem(sem)
+{
+  namespace qi = boost::spirit::qi;
+  // TODO build grammar rules here
+
+  toplevelExt
+    = qi::eps(false);
+  bodyPredicateExt
+    = qi::eps(false);
+  headPredicateExt
+    = qi::eps(false);
+  termExt
+    = qi::eps(false);
+}
+
+//! register module for parsing top level elements of input file
+//! (use this to parse queries or other meta or control flow information)
+template<typename Iterator, typename Skipper>
+void HexGrammarBase::registerToplevelModule(
+    HexParserModuleGrammarPtr module)
+{
+  // TODO
+}
+
+//! register module for parsing body elements of rules and constraints
+//! (use this to parse predicates in rule bodies)
+template<typename Iterator, typename Skipper>
+void HexGrammarBase::registerBodyPredicateModule(
+    HexParserModuleGrammarPtr module)
+{
+  // TODO
+}
+
+//! register module for parsing head elements of rules
+//! (use this to parse predicates in rule heads)
+template<typename Iterator, typename Skipper>
+void HexGrammarBase::registerHeadPredicateModule(
+    HexParserModuleGrammarPtr module)
+{
+  // TODO
+}
+
+//! register module for parsing terms
+//! (use this to parse terms in any predicates)
+template<typename Iterator, typename Skipper>
+void HexGrammarBase::registerTermModule(
+    HexParserModuleGrammarPtr module)
+{
+  // TODO
+}
+
+DLVHEX_NAMESPACE_END
+
+# if 0
 
 template<typename ScannerT>
 HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
@@ -183,6 +272,9 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     BOOST_SPIRIT_DEBUG_NODE(root);
 #   endif
 }
+#endif
+
+#endif // DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 
 // Local Variables:
 // mode: C++

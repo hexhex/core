@@ -28,19 +28,153 @@
  * @date   Wed Jul  8 14:00:48 CEST 2009
  * 
  * @brief  Grammar for parsing HEX using boost::spirit
+ *
+ * We code everything as intended by boost::spirit (use templates)
+ * however we explicitly instantiate the template paramters in
+ * a separate compilation unit HexGrammar.cpp to
+ * 1) have faster compilation, and
+ * 2) allow us to extend parsers by plugins from shared libraries
+ *    (i.e., during runtime).
  */
 
 #ifndef DLVHEX_HEX_GRAMMAR_H_INCLUDED
 #define DLVHEX_HEX_GRAMMAR_H_INCLUDED
 
-#include <boost/spirit/core.hpp>
-#include <boost/spirit/utility/chset.hpp>
-#include <boost/spirit/utility/confix.hpp>
-#include <boost/spirit/tree/common.hpp>
+//#include <boost/config/warning_disable.hpp>
+#include <boost/spirit/include/qi.hpp>
+//#include <boost/spirit/include/qi_rule.hpp>
+//#include <boost/spirit/include/phoenix_core.hpp>
+//#include <boost/spirit/include/phoenix_operator.hpp>
+//#include <boost/spirit/include/phoenix_stl.hpp>
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ID.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
+
+/*
+ * Structure of this Header
+ * 
+ * HexParserSkipperGrammar
+ * * skip parser for HEX
+ * * shared by all parsers and parser modules
+ *
+ * HexGrammarSemantics
+ * * semantic evaluation functionality class
+ * * holds registry and program ctx and store parsed stuff there
+ * * required to be passed to all modules and grammars
+ * * intended to be called/reused by parser modules
+ * * TODO will likely also be extended by parser modules
+ * * TODO probably should be moved into separate header
+ *
+ * HexGrammarBase
+ * * template, source in HexGrammar.tcc, instantiated via HexGrammar
+ * * reusable by parser modules
+ *
+ * HexGrammar
+ * * concrete grammar used for parsing HEX
+ * * instantiated in HexGrammar.cpp and in parser modules
+ *
+ * HexParserIterator
+ * * concrete iterator type used for parsing HEX
+ * * used to instantiate grammar and parser modules
+ * 
+ * HexParserModuleGrammar
+ * * non-template base class for grammars of parser modules in shared libraries
+ * * has fixed attribute type to communicate with HexGrammar
+ * * uses fixed HexParserSkipper
+ * * uses fixed HexParserIterator
+ */
+
+//! skip parser for parsing hex (eliminates spaces and comments)
+template<typename Iterator>
+struct HexParserSkipperGrammar:
+	boost::spirit::qi::grammar<Iterator>
+{
+	HexParserSkipperGrammar();
+  boost::spirit::qi::rule<Iterator> start;
+};
+
+//! concrete iterator type used
+typedef std::string::iterator HexParserIterator;
+
+//! concrete skip parser used
+typedef HexParserSkipperGrammar<HexParserIterator> HexParserSkipper;
+
+//! concrete type for grammars used in parser modules
+typedef boost::spirit::qi::grammar<
+  HexParserIterator, ID(), HexParserSkipper>
+    HexParserModuleGrammar;
+typedef boost::shared_ptr<HexParserModuleGrammar>
+  HexParserModuleGrammarPtr;
+
+//! HEX grammar semantics
+//! TODO see top of this file
+struct HexGrammarSemantics
+{
+  int todo;
+};
+
+//! basic HEX Grammar
+template<typename Iterator, typename Skipper>
+struct HexGrammarBase
+{
+  HexGrammarSemantics& sem;
+  HexGrammarBase(HexGrammarSemantics&);
+
+  //! register module for parsing top level elements of input file
+  //! (use this to parse queries or other meta or control flow information)
+  void registerToplevelModule(HexParserModuleGrammarPtr module);
+
+  //! register module for parsing body elements of rules and constraints
+  //! (use this to parse predicates in rule bodies)
+  void registerBodyPredicateModule(HexParserModuleGrammarPtr module);
+
+  //! register module for parsing head elements of rules
+  //! (use this to parse predicates in rule heads)
+  void registerHeadPredicateModule(HexParserModuleGrammarPtr module);
+
+  //! register module for parsing terms
+  //! (use this to parse terms in any predicates)
+  void registerTermModule(HexParserModuleGrammarPtr module);
+
+  // helper struct for creating rule types
+  // wrt Dummy see http://stackoverflow.com/questions/6301966/c-nested-template-classes-error-explicit-specialization-in-non-namespace-scop
+  template<typename Attrib=void, typename Dummy=void>
+  struct Rule
+  {
+    typedef boost::spirit::qi::rule<Iterator, Attrib(), Skipper> type;
+  };
+  template<typename Dummy>
+  struct Rule<void, Dummy>
+  {
+    typedef boost::spirit::qi::rule<Iterator, Skipper> type;
+    // BEWARE: this is _not_ the same (!) as
+    // typedef boost::spirit::qi::rule<Iterator, boost::spirit::unused_type, Skipper> type;
+  };
+
+  // core grammar rules (parser modules can derive from this class and reuse these rules!)
+  typename Rule<>::type start;
+  // rules that are extended by modules
+  typename Rule<ID>::type toplevelExt, bodyPredicateExt, headPredicateExt, termExt;
+};
+
+template<typename Iterator, typename Skipper>
+struct HexGrammar:
+  HexGrammarBase<Iterator, Skipper>,
+  boost::spirit::qi::grammar<Iterator, Skipper>
+{
+  typedef HexGrammarBase<Iterator, Skipper> GrammarBase;
+  typedef boost::spirit::qi::grammar<Iterator, Skipper> QiBase;
+
+  HexGrammar(HexGrammarSemantics& sem):
+    GrammarBase(sem),
+    QiBase(GrammarBase::start)
+  {
+  }
+};
+
+#if 0
 
 // the grammar of hex (see "The Grammar" in the boost::spirit docs)
 struct HexGrammarBase
@@ -113,14 +247,7 @@ struct HexGrammarBase
   };
 };
 
-struct HexGrammar:
-  public boost::spirit::grammar<HexGrammar>,
-  public HexGrammarBase
-{
-};
-
-// directly include the implementation in the namespace
-#include "dlvhex/HexGrammar.tcc"
+#endif
 
 DLVHEX_NAMESPACE_END
 
