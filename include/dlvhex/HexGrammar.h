@@ -142,91 +142,30 @@ struct SemanticActionBase
   }
 };
 
-//! TODO see top of this file
+//! see top of this file
 class HexGrammarSemantics
 {
 public:
-  struct termFromCIdent:
-    SemanticActionBase<HexGrammarSemantics, ID, termFromCIdent>
-  {
-    termFromCIdent(HexGrammarSemantics& mgr): termFromCIdent::base_type(mgr) { }
-  };
+  #define DLVHEX_DEFINE_SEMANTIC_ACTION(name, targettype) \
+    struct name: \
+      SemanticActionBase<HexGrammarSemantics, targettype, name> \
+    { \
+      name(HexGrammarSemantics& mgr): name ::base_type(mgr) {} \
+    };
 
-  struct classicalAtomFromPrefix:
-    SemanticActionBase<HexGrammarSemantics, ID, classicalAtomFromPrefix>
-  {
-    classicalAtomFromPrefix(HexGrammarSemantics& mgr): classicalAtomFromPrefix::base_type(mgr) {}
-  };
+  DLVHEX_DEFINE_SEMANTIC_ACTION(termFromCIdent, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(termFromInteger, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(termFromString, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(termFromVariable, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromPrefix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromTuple, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
 
-  struct classicalAtomFromTuple:
-    SemanticActionBase<HexGrammarSemantics, ID, classicalAtomFromTuple>
-  {
-    classicalAtomFromTuple(HexGrammarSemantics& mgr): classicalAtomFromTuple::base_type(mgr) {}
-  };
-
-  #if 0
-//! HEX grammar semantics
-  struct termFromInteger: handler
-  {
-    termFromInteger(HexGrammarSemantics& sem): handler(sem) { }
-
-    template<typename Ctx>
-    void operator()(unsigned int& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
-    {
-      ID& target = boost::fusion::at_c<0>(ctx.attributes);
-      // TODO return ID from attrib
-      throw std::runtime_error("TODO implement me 89104391");
-    }
-  };
-
-  struct termFromString: handler
-  {
-    termFromString(HexGrammarSemantics& sem): handler(sem) { }
-
-    template<typename Ctx>
-    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
-    {
-      ID& target = boost::fusion::at_c<0>(ctx.attributes);
-      // TODO return ID from attrib
-      throw std::runtime_error("TODO implement me 15tw2351");
-    }
-  };
-
-  struct termFromVariable: handler
-  {
-    termFromVariable(HexGrammarSemantics& sem): handler(sem) { }
-
-    template<typename Ctx>
-    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
-    {
-      ID& target = boost::fusion::at_c<0>(ctx.attributes);
-      // TODO return ID from attrib
-      throw std::runtime_error("TODO implement me 15t32141");
-    }
-  };
-
-  struct externalAtom: handler
-  {
-    externalAtom(HexGrammarSemantics& sem): handler(sem) { }
-
-    template<typename Ctx>
-    void operator()(const
-        boost::fusion::vector2<
-          std::basic_string<char>,
-          boost::fusion::vector2<
-            boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
-            boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
-          >
-        >, Ctx& ctx, boost::spirit::qi::unused_type) const
-    {
-      ID& target = boost::fusion::at_c<0>(ctx.attributes);
-      throw std::runtime_error("TODO implement me 15t32141");
-    }
-  };
-  #endif
-
- // boost::fusion::vector2<dlvhex::ID, std::vector<dlvhex::ID, std::allocator<dlvhex::ID> >
-
+  #undef DLVHEX_DEFINE_SEMANTIC_ACTION
 };
 
 //! basic HEX Grammar
@@ -271,7 +210,7 @@ struct HexGrammarBase
   typename Rule<>::type start;
   typename Rule<std::string>::type cident, string, variable;
   typename Rule<uint32_t>::type posinteger;
-  typename Rule<ID>::type term, externalAtom, classicalAtomPredicate, classicalAtom;
+  typename Rule<ID>::type term, externalAtom, classicalAtomPredicate, classicalAtom, builtinAtom, bodyAtom, bodyLiteral, headAtom, rule, constraint;
   typename Rule<std::vector<ID> >::type terms;
   // rules that are extended by modules
   typename Rule<ID>::type toplevelExt, bodyAtomExt, headAtomExt, termExt;

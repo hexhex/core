@@ -80,6 +80,33 @@ struct sem<HexGrammarSemantics::termFromCIdent>
 };
 
 template<>
+struct sem<HexGrammarSemantics::termFromInteger>
+{
+  void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target)
+  {
+    throw std::runtime_error("TODO implement me 89104391");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::termFromString>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  {
+    throw std::runtime_error("TODO implement me foo4321");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::termFromVariable>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  {
+    throw std::runtime_error("TODO implement me f892921");
+  }
+};
+
+template<>
 struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
 {
   void operator()(
@@ -100,6 +127,80 @@ struct sem<HexGrammarSemantics::classicalAtomFromTuple>
     ID& target)
   {
     throw std::runtime_error("TODO implement me 917ss991");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::externalAtom>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<
+      std::basic_string<char>,
+      boost::fusion::vector2<
+        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
+        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
+      >
+    >& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 917ss991");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::bodyLiteral>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<
+      boost::optional<std::string>,
+      dlvhex::ID
+    >& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 987sJEDR");
+  }
+};
+
+
+template<>
+struct sem<HexGrammarSemantics::rule>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      std::vector<dlvhex::ID>,
+      boost::optional<std::vector<dlvhex::ID> >,
+      char
+    >& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 988009R");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::constraint>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const std::vector<dlvhex::ID>& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 988009R");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::add>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const dlvhex::ID& source,
+    const boost::spirit::unused_type& target)
+  {
+    throw std::runtime_error("TODO implement me add!");
   }
 };
 
@@ -127,9 +228,9 @@ HexGrammarBase(HexGrammarSemantics& sem):
   term
     = termExt
     | cident     [ Sem::termFromCIdent(sem) ]
-    ;//| string     [ Sem::termFromString(sem) ]
-    //| variable   [ Sem::termFromVariable(sem) ]
-   // | posinteger [ Sem::termFromInteger(sem) ];
+    | string     [ Sem::termFromString(sem) ]
+    | variable   [ Sem::termFromVariable(sem) ]
+    | posinteger [ Sem::termFromInteger(sem) ];
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
   terms
     = term % qi::lit(',');
@@ -137,7 +238,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   // if we have this, we can easily extend this to higher order using a module
   classicalAtomPredicate
     = cident [ Sem::termFromCIdent(sem) ]
-; //    | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
+    | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
   classicalAtom
     = (
         classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')'))
@@ -146,7 +247,6 @@ HexGrammarBase(HexGrammarSemantics& sem):
         qi::lit('(') > classicalAtomPredicate >> qi::lit(',') > terms >> qi::lit(')')
       ) [ Sem::classicalAtomFromTuple(sem) ];
   // TODO aggregate atom
-  #if 0
   externalAtom
     = (
         qi::lit('&') > cident >
@@ -156,8 +256,37 @@ HexGrammarBase(HexGrammarSemantics& sem):
         )
       ) [ Sem::externalAtom(sem) ]
       > qi::eps; // do not allow backtracking (would need to undo semantic action)
-      #endif
+  bodyAtom
+    = classicalAtom
+    //| aggregateAtom
+    | externalAtom
+    | builtinAtom;
+  bodyLiteral
+    = (
+        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >> bodyAtom
+      ) [ Sem::bodyLiteral(sem) ];
+  rule
+    = (
+        (headAtom % qi::lexeme[ascii::space >> qi::char_('v') >> ascii::space]) >>
+       -(
+          qi::lit(":-") >>
+          (bodyLiteral % qi::char_(','))
+        ) >>
+        qi::char_('.')
+      ) [ Sem::rule(sem) ];
+  constraint
+    = (
+        qi::lit(":-") >>
+        (bodyLiteral % qi::char_(','))
+        // TODO add weak constraints here
+      ) [ Sem::constraint(sem) ];
 
+  // the root rule
+  start
+    = (rule > qi::eps) // disallow backtracking here
+        [ Sem::add(sem) ]
+    | (constraint > qi::eps) // disallow backtracking here
+        [ Sem::add(sem) ];
 
   toplevelExt
     = qi::eps(false);
@@ -263,10 +392,6 @@ DLVHEX_NAMESPACE_END
   builtin_pred =
     builtin_tertop_infix | builtin_tertop_prefix |
     builtin_binop_infix | builtin_binop_prefix | builtin_other;
-  naf = sp::lexeme_d[(str_p("not") | "non") >> sp::space_p];
-  literal
-    = builtin_pred
-    | ( !naf >> (user_pred | external_atom | aggregate) );
   disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
   body = literal >> *(rm[ch_p(',')] >> literal);
   maxint = str_p("#maxint") >> '=' >> number >> '.';
