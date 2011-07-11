@@ -68,7 +68,7 @@ fi
 # check for clang
 case $CXX in
    clang*)
-     CXXFLAGS="$CXXFLAGS -ferror-limit=5"
+     CXXFLAGS="$CXXFLAGS -ferror-limit=2"
      # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)

@@ -48,6 +48,8 @@
 //#include <boost/spirit/include/phoenix_stl.hpp>
 
 #include <boost/mpl/assert.hpp>
+#include <boost/mpl/and.hpp>
+#include <boost/mpl/logical.hpp>
 #include <boost/type_traits.hpp>
 
 #include "dlvhex/PlatformDefinitions.h"
@@ -112,34 +114,58 @@ typedef boost::spirit::qi::grammar<
 typedef boost::shared_ptr<HexParserModuleGrammar>
   HexParserModuleGrammarPtr;
 
-class HexGrammarSemantics;
+// generic semantic action processor which creates useful compile-time error messages
+// (if the grammar compiles, this class is never used, this means we have a handler for each action)
+template<typename Tag>
+struct sem
+{
+  template<typename Mgr, typename Source, typename Target>
+  void operator()(Mgr& mgr, const Source& source, Target& target)
+    { BOOST_MPL_ASSERT(( boost::mpl::and_<boost::is_same< Source, void >, boost::is_same< Target, void > > )); }
+};
 
-//! HEX grammar semantics
+// base class for semantic actions
+// this class delegates to sem<Tag>::operator() where all the true processing happens (hidden in compilation unit)
+template<typename ManagerClass, typename TargetAttribute, typename SourceAttributes, typename Tag>
+struct SemanticActionBase
+{
+  typedef SemanticActionBase<ManagerClass, TargetAttribute, SourceAttributes, Tag> base_type;
+
+  ManagerClass& mgr;
+  SemanticActionBase(ManagerClass& mgr): mgr(mgr) {}
+
+  template<typename Ctx>
+  void operator()(const SourceAttributes& source, Ctx& ctx, boost::spirit::qi::unused_type) const
+  {
+    TargetAttribute& target = boost::fusion::at_c<0>(ctx.attributes);
+    sem<Tag>()(mgr, source, target);
+  }
+};
+
 //! TODO see top of this file
 class HexGrammarSemantics
 {
 public:
-  struct handler
+  struct termFromCIdent:
+    SemanticActionBase<HexGrammarSemantics, ID, std::string, termFromCIdent>
   {
-    handler(HexGrammarSemantics&);
-
-    template<typename Attrib, typename Ctx>
-    void operator()(Attrib& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
-      { BOOST_MPL_ASSERT(( boost::is_same< Attrib, void > )); }
+    termFromCIdent(HexGrammarSemantics& mgr): termFromCIdent::base_type(mgr) { }
   };
 
-  struct termFromCIdent: handler
+  struct classicalAtomFromPrefix:
+    SemanticActionBase<HexGrammarSemantics, ID, boost::fusion::vector2<ID, boost::optional<boost::optional<std::vector<ID> > > >, classicalAtomFromPrefix>
   {
-    termFromCIdent(HexGrammarSemantics& sem): handler(sem) { }
-
-    template<typename Ctx>
-    void operator()(const std::string& attrib, Ctx& ctx, boost::spirit::qi::unused_type) const
-    {
-      ID& target = boost::fusion::at_c<0>(ctx.attributes);
-      // TODO return ID from attrib
-    }
+    classicalAtomFromPrefix(HexGrammarSemantics& mgr): classicalAtomFromPrefix::base_type(mgr) {}
   };
 
+  struct classicalAtomFromTuple:
+    SemanticActionBase<HexGrammarSemantics, ID, boost::fusion::vector2<ID, std::vector<ID> >, classicalAtomFromTuple>
+  {
+    classicalAtomFromTuple(HexGrammarSemantics& mgr): classicalAtomFromTuple::base_type(mgr) {}
+  };
+
+  #if 0
+//! HEX grammar semantics
   struct termFromInteger: handler
   {
     termFromInteger(HexGrammarSemantics& sem): handler(sem) { }
@@ -149,6 +175,7 @@ public:
     {
       ID& target = boost::fusion::at_c<0>(ctx.attributes);
       // TODO return ID from attrib
+      throw std::runtime_error("TODO implement me 89104391");
     }
   };
 
@@ -161,6 +188,7 @@ public:
     {
       ID& target = boost::fusion::at_c<0>(ctx.attributes);
       // TODO return ID from attrib
+      throw std::runtime_error("TODO implement me 15tw2351");
     }
   };
 
@@ -173,8 +201,31 @@ public:
     {
       ID& target = boost::fusion::at_c<0>(ctx.attributes);
       // TODO return ID from attrib
+      throw std::runtime_error("TODO implement me 15t32141");
     }
   };
+
+  struct externalAtom: handler
+  {
+    externalAtom(HexGrammarSemantics& sem): handler(sem) { }
+
+    template<typename Ctx>
+    void operator()(const
+        boost::fusion::vector2<
+          std::basic_string<char>,
+          boost::fusion::vector2<
+            boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
+            boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
+          >
+        >, Ctx& ctx, boost::spirit::qi::unused_type) const
+    {
+      ID& target = boost::fusion::at_c<0>(ctx.attributes);
+      throw std::runtime_error("TODO implement me 15t32141");
+    }
+  };
+  #endif
+
+ // boost::fusion::vector2<dlvhex::ID, std::vector<dlvhex::ID, std::allocator<dlvhex::ID> >
 
 };
 
@@ -191,11 +242,11 @@ struct HexGrammarBase
 
   //! register module for parsing body elements of rules and constraints
   //! (use this to parse predicates in rule bodies)
-  void registerBodyPredicateModule(HexParserModuleGrammarPtr module);
+  void registerBodyAtomModule(HexParserModuleGrammarPtr module);
 
   //! register module for parsing head elements of rules
   //! (use this to parse predicates in rule heads)
-  void registerHeadPredicateModule(HexParserModuleGrammarPtr module);
+  void registerHeadAtomModule(HexParserModuleGrammarPtr module);
 
   //! register module for parsing terms
   //! (use this to parse terms in any predicates)
@@ -220,10 +271,10 @@ struct HexGrammarBase
   typename Rule<>::type start;
   typename Rule<std::string>::type cident, string, variable;
   typename Rule<uint32_t>::type posinteger;
-  typename Rule<ID>::type term, externalatom;
+  typename Rule<ID>::type term, externalAtom, classicalAtomPredicate, classicalAtom;
   typename Rule<std::vector<ID> >::type terms;
   // rules that are extended by modules
-  typename Rule<ID>::type toplevelExt, bodyPredicateExt, headPredicateExt, termExt;
+  typename Rule<ID>::type toplevelExt, bodyAtomExt, headAtomExt, termExt;
 };
 
 template<typename Iterator, typename Skipper>

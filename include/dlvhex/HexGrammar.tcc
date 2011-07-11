@@ -50,6 +50,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/////////////////////////////////////////////////////////////////
+// Skipper //////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 template<typename Iterator>
 HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
   HexParserSkipperGrammar::base_type(start)
@@ -64,6 +67,45 @@ HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
   #endif
 }
 
+/////////////////////////////////////////////////////////////////
+// HexGrammarBase semantic processors ///////////////////////////
+/////////////////////////////////////////////////////////////////
+template<>
+struct sem<HexGrammarSemantics::termFromCIdent>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  {
+    throw std::runtime_error("TODO implement me 910df391");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<ID, boost::optional<boost::optional<std::vector<ID> > > >& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 91702191");
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::classicalAtomFromTuple>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<ID, std::vector<ID> >& source,
+    ID& target)
+  {
+    throw std::runtime_error("TODO implement me 917ss991");
+  }
+};
+
+/////////////////////////////////////////////////////////////////
+// HexGrammarBase ///////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
 template<typename Iterator, typename Skipper>
 HexGrammarBase<Iterator, Skipper>::
 HexGrammarBase(HexGrammarSemantics& sem):
@@ -76,7 +118,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   cident
     = qi::lexeme[ ascii::lower >> *(ascii::alnum | qi::char_('_')) ];
   string
-    = qi::lexeme[ qi::char_('"') >> *(qi::char_ - qi::char_('"')) >> qi::char_('"') ];
+    = qi::lexeme[ qi::char_('"') >> *(qi::char_ - (qi::char_('"') | qi::eol)) >> qi::char_('"') ];
   variable
     = qi::char_('_')
     | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];
@@ -85,34 +127,43 @@ HexGrammarBase(HexGrammarSemantics& sem):
   term
     = termExt
     | cident     [ Sem::termFromCIdent(sem) ]
-    | string     [ Sem::termFromString(sem) ]
-    | variable   [ Sem::termFromVariable(sem) ]
-    | posinteger [ Sem::termFromInteger(sem) ];
+    ;//| string     [ Sem::termFromString(sem) ]
+    //| variable   [ Sem::termFromVariable(sem) ]
+   // | posinteger [ Sem::termFromInteger(sem) ];
+    // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
   terms
     = term % qi::lit(',');
-  externalatom
+
+  // if we have this, we can easily extend this to higher order using a module
+  classicalAtomPredicate
+    = cident [ Sem::termFromCIdent(sem) ]
+; //    | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
+  classicalAtom
+    = (
+        classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')'))
+      ) [ Sem::classicalAtomFromPrefix(sem) ]
+    | (
+        qi::lit('(') > classicalAtomPredicate >> qi::lit(',') > terms >> qi::lit(')')
+      ) [ Sem::classicalAtomFromTuple(sem) ];
+  // TODO aggregate atom
+  #if 0
+  externalAtom
     = (
         qi::lit('&') > cident >
         (
           (qi::lit('[') > -terms >> qi::lit(']')) ||
           (qi::lit('(') > -terms >> qi::lit(')'))
         )
-      ) [ Sem::handler(sem) ];
-  /*
-     boost::fusion::vector2<
-      std::basic_string<char>,
-      boost::fusion::vector2<
-        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
-        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
-      >
-     >
-   */
+      ) [ Sem::externalAtom(sem) ]
+      > qi::eps; // do not allow backtracking (would need to undo semantic action)
+      #endif
+
 
   toplevelExt
     = qi::eps(false);
-  bodyPredicateExt
+  bodyAtomExt
     = qi::eps(false);
-  headPredicateExt
+  headAtomExt
     = qi::eps(false);
   termExt
     = qi::eps(false);
@@ -127,6 +178,7 @@ registerToplevelModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
+  throw std::runtime_error("TODO implement 809anmkl21 u890804321");
 }
 
 //! register module for parsing body elements of rules and constraints
@@ -134,10 +186,11 @@ registerToplevelModule(
 template<typename Iterator, typename Skipper>
 void 
 HexGrammarBase<Iterator, Skipper>::
-registerBodyPredicateModule(
+registerBodyAtomModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
+  throw std::runtime_error("TODO implement me u890804321");
 }
 
 //! register module for parsing head elements of rules
@@ -145,10 +198,11 @@ registerBodyPredicateModule(
 template<typename Iterator, typename Skipper>
 void 
 HexGrammarBase<Iterator, Skipper>::
-registerHeadPredicateModule(
+registerHeadAtomModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
+  throw std::runtime_error("TODO implement me u89021fsdyy");
 }
 
 //! register module for parsing terms
@@ -160,20 +214,13 @@ registerTermModule(
     HexParserModuleGrammarPtr module)
 {
   // TODO
+  throw std::runtime_error("TODO implement asef04321");
 }
 
 DLVHEX_NAMESPACE_END
 
 # if 0
 
-  sp::chset<> alnum_("a-zA-Z0-9_");
-  // nonnegative integer
-  number
-    = sp::token_node_d[+sp::digit_p];
-  ident_or_var
-    = ident | var;
-  ident_or_var_or_number
-    = ident | var | number;
   aggregate_leq_binop
     = str_p("<=") | '<';
   aggregate_geq_binop
@@ -194,12 +241,6 @@ DLVHEX_NAMESPACE_END
     = !neg >> ident_or_var;
   user_pred
     = user_pred_classical | user_pred_tuple | user_pred_atom;
-  external_inputs
-    = '[' >> !terms >> ']';
-  external_outputs
-    = '(' >> !terms >> ')';
-  external_atom
-    = '&' >> ident >> !external_inputs >> !external_outputs;
   aggregate_pred
     = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
     >> '{' >> terms >> ':' >> body >> '}';
