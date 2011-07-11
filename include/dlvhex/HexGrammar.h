@@ -121,20 +121,20 @@ struct sem
 {
   template<typename Mgr, typename Source, typename Target>
   void operator()(Mgr& mgr, const Source& source, Target& target)
-    { BOOST_MPL_ASSERT(( boost::mpl::and_<boost::is_same< Source, void >, boost::is_same< Target, void > > )); }
+    { BOOST_MPL_ASSERT(( boost::is_same< Source, void > )); }
 };
 
 // base class for semantic actions
 // this class delegates to sem<Tag>::operator() where all the true processing happens (hidden in compilation unit)
-template<typename ManagerClass, typename TargetAttribute, typename SourceAttributes, typename Tag>
+template<typename ManagerClass, typename TargetAttribute, typename Tag>
 struct SemanticActionBase
 {
-  typedef SemanticActionBase<ManagerClass, TargetAttribute, SourceAttributes, Tag> base_type;
+  typedef SemanticActionBase<ManagerClass, TargetAttribute, Tag> base_type;
 
   ManagerClass& mgr;
   SemanticActionBase(ManagerClass& mgr): mgr(mgr) {}
 
-  template<typename Ctx>
+  template<typename SourceAttributes, typename Ctx>
   void operator()(const SourceAttributes& source, Ctx& ctx, boost::spirit::qi::unused_type) const
   {
     TargetAttribute& target = boost::fusion::at_c<0>(ctx.attributes);
@@ -147,19 +147,19 @@ class HexGrammarSemantics
 {
 public:
   struct termFromCIdent:
-    SemanticActionBase<HexGrammarSemantics, ID, std::string, termFromCIdent>
+    SemanticActionBase<HexGrammarSemantics, ID, termFromCIdent>
   {
     termFromCIdent(HexGrammarSemantics& mgr): termFromCIdent::base_type(mgr) { }
   };
 
   struct classicalAtomFromPrefix:
-    SemanticActionBase<HexGrammarSemantics, ID, boost::fusion::vector2<ID, boost::optional<boost::optional<std::vector<ID> > > >, classicalAtomFromPrefix>
+    SemanticActionBase<HexGrammarSemantics, ID, classicalAtomFromPrefix>
   {
     classicalAtomFromPrefix(HexGrammarSemantics& mgr): classicalAtomFromPrefix::base_type(mgr) {}
   };
 
   struct classicalAtomFromTuple:
-    SemanticActionBase<HexGrammarSemantics, ID, boost::fusion::vector2<ID, std::vector<ID> >, classicalAtomFromTuple>
+    SemanticActionBase<HexGrammarSemantics, ID, classicalAtomFromTuple>
   {
     classicalAtomFromTuple(HexGrammarSemantics& mgr): classicalAtomFromTuple::base_type(mgr) {}
   };
