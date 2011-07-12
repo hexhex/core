@@ -1,3 +1,7 @@
+2011-07-12 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/avgScript.sh: Computes average performance for each call pattern.
+
 2011-06-27 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 	
 	* testsuite/TestHexParserModule.cpp: Relative path for examples.
