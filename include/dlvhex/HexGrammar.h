@@ -53,6 +53,7 @@
 #include <boost/type_traits.hpp>
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/ID.hpp"
 
 
@@ -146,6 +147,8 @@ struct SemanticActionBase
 class HexGrammarSemantics
 {
 public:
+  HexGrammarSemantics(ProgramCtx& ctx);
+
   #define DLVHEX_DEFINE_SEMANTIC_ACTION(name, targettype) \
     struct name: \
       SemanticActionBase<HexGrammarSemantics, targettype, name> \
@@ -166,6 +169,9 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
 
   #undef DLVHEX_DEFINE_SEMANTIC_ACTION
+
+protected:
+  ProgramCtx& ctx;
 };
 
 //! basic HEX Grammar

@@ -288,7 +288,7 @@ void ParseState::parse(ProgramCtx* ctx)
   if( !ctx->parser )
   {
     LOG(INFO,"using default parser (no alternatives provided by plugins)");
-    ctx->parser.reset(new BasicHexParser);
+    ctx->parser.reset(new ModuleHexParser);
   }
 
   // parse

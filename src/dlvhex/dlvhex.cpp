@@ -311,8 +311,9 @@ int main(int argc, char *argv[])
 
 		// initialize internal plugins
 		{
-			PluginInterfacePtr queryPlugin(new QueryPlugin);
-			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			#warning reactivate queryplugin once parser is done!
+			//PluginInterfacePtr queryPlugin(new QueryPlugin);
+			//pctx.pluginContainer()->addInternalPlugin(queryPlugin);
 		}
 
 		// before anything else we dump the logo

@@ -21,6 +21,7 @@
  * 02110-1301 USA.
  */
 
+#if 0
 /**
  * @file QueryPlugin.cpp
  * @author Peter Schueller
@@ -1057,6 +1058,7 @@ void * PLUGINIMPORTFUNCTION()
 }
 #endif
 
+#endif
 /* vim: set noet sw=2 ts=2 tw=80: */
 
 // Local Variables:

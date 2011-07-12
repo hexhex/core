@@ -1,7 +1,7 @@
 /* dlvhex -- Answer-Set Programming with external interfaces.
  * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
- * Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011 Thomas Krennwallner
- * Copyright (C) 2009, 2010, 2011 Peter Schüller
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
  * 
  * This file is part of dlvhex.
  *
@@ -21,34 +21,54 @@
  * 02110-1301 USA.
  */
 
+
 /**
- * @file   HexGrammar.cpp
+ * @file   HexGrammar.h
  * @author Peter Schüller
+ * @date   Wed Jul  8 14:00:48 CEST 2009
  * 
- * @brief  Template Instantiations for HexGrammar.h
+ * @brief  Grammar for parsing HEX using boost::spirit
  *
- * This file is intended to contain mainly template instantiations.
+ * We code everything as intended by boost::spirit (use templates)
+ * however we explicitly instantiate the template paramters in
+ * a separate compilation unit HexGrammar.cpp to
+ * 1) have faster compilation, and
+ * 2) allow us to extend parsers by plugins from shared libraries
+ *    (i.e., during runtime).
  */
+
+#ifndef DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
+#define DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/HexGrammar.h"
-#include "dlvhex/HexGrammar.tcc"
 
 DLVHEX_NAMESPACE_BEGIN
 
-// instantiate skip parser grammar
-template struct HexParserSkipperGrammar<HexParserIterator>;
-
-// instantiate HEX parser grammar base
-template struct HexGrammarBase<HexParserIterator, HexParserSkipper>;
-
-// instantiate HEX parser grammar
-template struct HexGrammar<HexParserIterator, HexParserSkipper>;
-
-// HEX grammar semantic action processor
-HexGrammarSemantics::HexGrammarSemantics(ProgramCtx& ctx):
-  ctx(ctx)
+class HexParserModule
 {
-}
+public:
+  enum Type
+  {
+    TOPLEVEL,
+    BODYATOM,
+    HEADATOM,
+    TERM
+  };
+
+  Type getType() const { return type; }
+  HexParserModule(Type type): type(type) {}
+
+  virtual HexParserModuleGrammarPtr createGrammarModule() = 0;
+
+protected:
+  Type type;
+};
 
 DLVHEX_NAMESPACE_END
+
+#endif // DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
+
+// Local Variables:
+// mode: C++
+// End:

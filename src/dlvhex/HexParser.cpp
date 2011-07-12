@@ -31,7 +31,10 @@
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/HexGrammar.h"
-#include "dlvhex/HexGrammarPTToASTConverter.h"
+#include "dlvhex/HexParserModule.hpp"
+#include "dlvhex/fwd.hpp"
+
+#include <boost/spirit/include/qi_parse.hpp>
 
 #include <boost/scope_exit.hpp>
 #include <fstream>
@@ -44,7 +47,12 @@ HexParser::~HexParser()
 {
 }
 
-void BasicHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
+void ModuleHexParser::registerModule(HexParserModulePtr module)
+{
+  modules.push_back(module);
+}
+
+void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
 {
   assert(!!in);
   assert(!!ctx.registry());
@@ -62,28 +70,56 @@ void BasicHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
   buf << in->getAsStream().rdbuf();
   std::string input = buf.str();
 
-  HexGrammar grammar;
-  typedef HexGrammarPTToASTConverter Converter;
+  // create grammar
+  HexGrammarSemantics semanticsMgr(ctx);
+  HexGrammar<HexParserIterator, HexParserSkipper> grammar(semanticsMgr);
 
-  Converter::iterator_t it_begin(input.c_str(), input.c_str()+input.size());
-  Converter::iterator_t it_end;
+  // configure grammar with modules
+  BOOST_FOREACH(HexParserModulePtr module, modules)
+  {
+    switch(module->getType())
+    {
+      case HexParserModule::TOPLEVEL:
+        grammar.registerToplevelModule(module->createGrammarModule());
+        break;
+      case HexParserModule::BODYATOM:
+        grammar.registerBodyAtomModule(module->createGrammarModule());
+        break;
+      case HexParserModule::HEADATOM:
+        grammar.registerHeadAtomModule(module->createGrammarModule());
+        break;
+      case HexParserModule::TERM:
+        grammar.registerTermModule(module->createGrammarModule());
+        break;
+      default:
+        LOG(ERROR,"unknown parser module type " << module->getType() << "!");
+        assert(false);
+        break;
+    }
+  }
 
-  // parse ast
-  boost::spirit::tree_parse_info<Converter::iterator_t, Converter::factory_t> info =
-    boost::spirit::pt_parse<Converter::factory_t>(
-        it_begin, it_end, grammar, boost::spirit::space_p);
+  // prepare iterators
+  HexParserIterator it_begin = input.begin();
+  HexParserIterator it_end = input.end();
 
-  // successful parse?
-  if( !info.full )
-    throw SyntaxError("Could not parse complete input!",
-        info.stop.get_position().line, "TODO");
+  // parse
+  HexParserSkipper skipper;
+  LOG(DBG,"starting to parse");
+  bool success = boost::spirit::qi::phrase_parse(
+      it_begin, it_end, grammar, skipper);
+  LOG(DBG,"parsing returned with success=" << success);
+  if( !success || it_begin != it_end )
+  {
+    if( it_begin != it_end )
+      LOG(WARNING,"iterators not the same!");
 
-  // if this is not ok, there is some bug and the following code will be incomplete
-  assert(info.trees.size() == 1);
-
-  // create dlvhex AST from spirit parser tree
-  Converter converter(ctx);
-  converter.convertPTToAST(*info.trees.begin());
+    HexParserIterator it_displayend = it_begin;
+    unsigned limit = 20;
+    while( limit-- > 0 && it_displayend != it_end )
+      it_displayend++;
+    LOG(WARNING,"unparsed tail '" << std::string(it_begin, it_displayend) << "'");
+    throw SyntaxError("Could not parse complete input!");
+  }
 }
 
 DLVHEX_NAMESPACE_END
