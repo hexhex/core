@@ -41,7 +41,11 @@ TESTS = \
   TestOnlineModelBuilder \
   TestOfflineModelBuilder 
 
-TESTS_ENVIRONMENT = TOPSRCDIR=$(top_srcdir) TOPBUILDDIR=$(top_builddir) BOOST_TEST_REPORT_LEVEL=detailed BOOST_TEST_LOG_LEVEL=all
+TESTS_ENVIRONMENT = \
+  TOP_SRCDIR=$(top_srcdir) \
+  DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
+  BOOST_TEST_REPORT_LEVEL=detailed \
+  BOOST_TEST_LOG_LEVEL=all
 
 check_PROGRAMS =  \
   TestTestPluginStatic \

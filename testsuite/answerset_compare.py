@@ -1,0 +1,1 @@
+../dlvhex-common/testsuite/answerset_compare.py
