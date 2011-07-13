@@ -1,3 +1,7 @@
+2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update.
+
 2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
