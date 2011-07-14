@@ -627,7 +627,7 @@ int main(int argn, char** argv)
   // parse HEX program
   LOG(INFO,"parsing HEX program");
   DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "HexParser::parse");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   parser.parse(ip, ctx);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 

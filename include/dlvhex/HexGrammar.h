@@ -99,7 +99,7 @@ struct HexParserSkipperGrammar:
 	boost::spirit::qi::grammar<Iterator>
 {
 	HexParserSkipperGrammar();
-  boost::spirit::qi::rule<Iterator> start;
+  boost::spirit::qi::rule<Iterator> ws;
 };
 
 //! concrete iterator type used
@@ -147,6 +147,10 @@ struct SemanticActionBase
 class HexGrammarSemantics
 {
 public:
+  ProgramCtx& ctx;
+  void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r);
+
+public:
   HexGrammarSemantics(ProgramCtx& ctx);
 
   #define DLVHEX_DEFINE_SEMANTIC_ACTION(name, targettype) \
@@ -169,9 +173,6 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
 
   #undef DLVHEX_DEFINE_SEMANTIC_ACTION
-
-protected:
-  ProgramCtx& ctx;
 };
 
 //! basic HEX Grammar
@@ -213,7 +214,7 @@ struct HexGrammarBase
   };
 
   // core grammar rules (parser modules can derive from this class and reuse these rules!)
-  typename Rule<>::type start;
+  typename Rule<>::type start, toplevel;
   typename Rule<std::string>::type cident, string, variable;
   typename Rule<uint32_t>::type posinteger;
   typename Rule<ID>::type term, externalAtom, classicalAtomPredicate, classicalAtom, builtinAtom, bodyAtom, bodyLiteral, headAtom, rule, constraint;

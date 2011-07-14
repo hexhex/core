@@ -41,6 +41,9 @@
 #define DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 
 #include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -55,15 +58,15 @@ DLVHEX_NAMESPACE_BEGIN
 /////////////////////////////////////////////////////////////////
 template<typename Iterator>
 HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
-  HexParserSkipperGrammar::base_type(start)
+  HexParserSkipperGrammar::base_type(ws)
 {
   using namespace boost::spirit;
-  start
+  ws
     = ascii::space
     | qi::lexeme[ qi::char_('%') > *(qi::char_ - qi::eol) ];
 
   #ifdef BOOST_SPIRIT_DEBUG
-  BOOST_SPIRIT_DEBUG_NODE(start);
+  BOOST_SPIRIT_DEBUG_NODE(ws);
   #endif
 }
 
@@ -75,7 +78,13 @@ struct sem<HexGrammarSemantics::termFromCIdent>
 {
   void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
   {
-    throw std::runtime_error("TODO implement me 910df391");
+    assert(!source.empty() && islower(source[0]));
+    target = mgr.ctx.registry()->terms.getIDByString(source);
+    if( target == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
+      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    }
   }
 };
 
@@ -84,7 +93,7 @@ struct sem<HexGrammarSemantics::termFromInteger>
 {
   void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target)
   {
-    throw std::runtime_error("TODO implement me 89104391");
+    target = ID::termFromInteger(source);
   }
 };
 
@@ -93,7 +102,13 @@ struct sem<HexGrammarSemantics::termFromString>
 {
   void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
   {
-    throw std::runtime_error("TODO implement me foo4321");
+    assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
+    target = mgr.ctx.registry()->terms.getIDByString(source);
+    if( target == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
+      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    }
   }
 };
 
@@ -102,31 +117,127 @@ struct sem<HexGrammarSemantics::termFromVariable>
 {
   void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
   {
-    throw std::runtime_error("TODO implement me f892921");
+    assert(!source.empty() && ((source[0] == '_' && source.size() == 1) || isupper(source[0])));
+    // special handling of anonymous variables
+    IDKind addFlags = 0;
+    if( source == "_" )
+    {
+      addFlags |= ID::PROPERTY_VAR_ANONYMOUS;
+    }
+    // regular handling + flags
+    target = mgr.ctx.registry()->terms.getIDByString(source);
+    if( target == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | addFlags, source);
+      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    }
   }
 };
 
 template<>
 struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
 {
+  void createAtom(RegistryPtr reg, OrdinaryAtom& atom, ID& target)
+  {
+    // groundness
+    DBGLOG(DBG,"checking groundness of tuple " << printrange(atom.tuple));
+    IDKind kind = 0;
+    BOOST_FOREACH(const ID& id, atom.tuple)
+    {
+      kind |= id.kind;
+      // make this sure to make the groundness check work
+      // (if we add "builtin constant terms" like #supremum we might have to change the above statement)
+      assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
+    }
+    const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
+    OrdinaryAtomTable* tbl;
+    if( ground )
+    {
+      atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+      tbl = &reg->ogatoms;
+    }
+    else
+    {
+      atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+      tbl = &reg->onatoms;
+    }
+
+    // lookup if we already know this one
+    DBGLOG(DBG,"looking up tuple " << printvector(atom.tuple));
+    target = tbl->getIDByTuple(atom.tuple);
+    if( target != ID_FAIL )
+      return;
+
+    // generate atom.text (TODO see comments in Atoms.hpp)
+    std::stringstream ss;
+    RawPrinter printer(ss, reg);
+    Tuple::const_iterator it = atom.tuple.begin();
+    printer.print(*it);
+    it++;
+    if( it != atom.tuple.end() )
+    {
+      ss << "(";
+      printer.print(*it);
+      it++;
+      while(it != atom.tuple.end())
+      {
+        ss << ",";
+        printer.print(*it);
+        it++;
+      }
+      ss << ")";
+    }
+    atom.text = ss.str();
+
+    // store new atom in table
+    DBGLOG(DBG,"got atom text '" << atom.text << "'");
+    target = tbl->storeAndGetID(atom);
+    DBGLOG(DBG,"stored atom " << atom << " which got id " << target);
+  }
+
   void operator()(
     HexGrammarSemantics& mgr,
     const boost::fusion::vector2<ID, boost::optional<boost::optional<std::vector<ID> > > >& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 91702191");
+    RegistryPtr reg = mgr.ctx.registry();
+    OrdinaryAtom atom(ID::MAINKIND_ATOM);
+
+    // predicate
+    const ID& idpred = boost::fusion::at_c<0>(source);
+    atom.tuple.push_back(idpred);
+
+    // arguments
+    if( (!!boost::fusion::at_c<1>(source)) &&
+        (!!(boost::fusion::at_c<1>(source).get())) )
+    {
+      const Tuple& tuple = boost::fusion::at_c<1>(source).get().get();
+      atom.tuple.insert(atom.tuple.end(), tuple.begin(), tuple.end());
+    }
+
+    createAtom(reg, atom, target);
   }
 };
 
 template<>
-struct sem<HexGrammarSemantics::classicalAtomFromTuple>
+struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
+  private sem<HexGrammarSemantics::classicalAtomFromPrefix>
 {
   void operator()(
     HexGrammarSemantics& mgr,
     const boost::fusion::vector2<ID, std::vector<ID> >& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 917ss991");
+    RegistryPtr reg = mgr.ctx.registry();
+    OrdinaryAtom atom(ID::MAINKIND_ATOM);
+
+    // predicate
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+    // arguments
+    const Tuple& tuple = boost::fusion::at_c<1>(source);
+    atom.tuple.insert(atom.tuple.end(), tuple.begin(), tuple.end());
+
+    createAtom(reg, atom, target);
   }
 };
 
@@ -159,7 +270,9 @@ struct sem<HexGrammarSemantics::bodyLiteral>
     >& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 987sJEDR");
+    bool isNaf = !!boost::fusion::at_c<0>(source);
+    assert(boost::fusion::at_c<1>(source).isAtom());
+    target = ID::literalFromAtom(boost::fusion::at_c<1>(source), isNaf);
   }
 };
 
@@ -169,14 +282,46 @@ struct sem<HexGrammarSemantics::rule>
 {
   void operator()(
     HexGrammarSemantics& mgr,
-    const boost::fusion::vector3<
+    const boost::fusion::vector2<
       std::vector<dlvhex::ID>,
-      boost::optional<std::vector<dlvhex::ID> >,
-      char
+      boost::optional<std::vector<dlvhex::ID> >
     >& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 988009R");
+    RegistryPtr reg = mgr.ctx.registry();
+    const Tuple& head = boost::fusion::at_c<0>(source);
+    bool hasBody = !!boost::fusion::at_c<1>(source);
+
+    if( hasBody )
+    {
+      // rule -> put into IDB
+      const Tuple& body = boost::fusion::at_c<1>(source).get();
+
+      Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
+      mgr.markExternalPropertyIfExternalBody(reg, r);
+      // mark as disjunctive if required
+      if( r.head.size() > 1 )
+        r.kind |= ID::PROPERTY_RULE_DISJ;
+      target = reg->rules.storeAndGetID(r);
+    }
+    else
+    {
+      if( head.size() > 1 )
+      {
+        // disjunctive fact -> create rule
+        Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
+          head, Tuple());
+        mgr.markExternalPropertyIfExternalBody(reg, r);
+        target = reg->rules.storeAndGetID(r);
+      }
+      else
+      {
+        assert(head.size() == 1);
+
+        // return ID of fact
+        target = *head.begin();
+      }
+    }
   }
 };
 
@@ -200,7 +345,26 @@ struct sem<HexGrammarSemantics::add>
     const dlvhex::ID& source,
     const boost::spirit::unused_type& target)
   {
-    throw std::runtime_error("TODO implement me add!");
+    RegistryPtr reg = mgr.ctx.registry();
+    if( source.isAtom() )
+    {
+      // fact -> put into EDB
+      if( !source.isOrdinaryGroundAtom() )
+        throw SyntaxError(
+          "fact '"+reg->ogatoms.getByID(source).text+"' not safe!");
+      mgr.ctx.edb->setFact(source.address);
+      DBGLOG(DBG,"added fact with id " << source << " to edb");
+    }
+    else if( source.isRule() )
+    {
+      mgr.ctx.idb.push_back(source);
+      DBGLOG(DBG,"added rule with id " << source << " to idb");
+    }
+    else
+    {
+      // something bad happened if we get no rule and no atom here
+      assert(false);
+    }
   }
 };
 
@@ -226,11 +390,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
   posinteger
     = qi::ulong_;
   term
-    = termExt
-    | cident     [ Sem::termFromCIdent(sem) ]
+    = cident     [ Sem::termFromCIdent(sem) ]
     | string     [ Sem::termFromString(sem) ]
     | variable   [ Sem::termFromVariable(sem) ]
-    | posinteger [ Sem::termFromInteger(sem) ];
+    | posinteger [ Sem::termFromInteger(sem) ]
+    | termExt;
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
   terms
     = term % qi::lit(',');
@@ -260,19 +424,23 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = classicalAtom
     //| aggregateAtom
     | externalAtom
-    | builtinAtom;
+    | builtinAtom
+    | bodyAtomExt;
   bodyLiteral
     = (
         -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >> bodyAtom
       ) [ Sem::bodyLiteral(sem) ];
+  headAtom
+    = classicalAtom
+    | headAtomExt;
   rule
     = (
-        (headAtom % qi::lexeme[ascii::space >> qi::char_('v') >> ascii::space]) >>
+        (headAtom % qi::no_skip[ascii::space >> qi::char_('v') >> ascii::space]) >>
        -(
           qi::lit(":-") >>
           (bodyLiteral % qi::char_(','))
         ) >>
-        qi::char_('.')
+        qi::lit('.')
       ) [ Sem::rule(sem) ];
   constraint
     = (
@@ -281,12 +449,18 @@ HexGrammarBase(HexGrammarSemantics& sem):
         // TODO add weak constraints here
       ) [ Sem::constraint(sem) ];
 
+  toplevel
+    = rule
+// TODO disallow backtracking here
+        [ Sem::add(sem) ]
+    | constraint
+// TODO disallow backtracking here
+        [ Sem::add(sem) ]
+    | toplevelExt
+        [ Sem::add(sem) ];
   // the root rule
   start
-    = (rule > qi::eps) // disallow backtracking here
-        [ Sem::add(sem) ]
-    | (constraint > qi::eps) // disallow backtracking here
-        [ Sem::add(sem) ];
+    = *(toplevel);
 
   toplevelExt
     = qi::eps(false);
@@ -296,6 +470,28 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = qi::eps(false);
   termExt
     = qi::eps(false);
+
+  #ifdef BOOST_SPIRIT_DEBUG
+  BOOST_SPIRIT_DEBUG_NODE(cident);
+  BOOST_SPIRIT_DEBUG_NODE(string);
+  BOOST_SPIRIT_DEBUG_NODE(variable);
+  BOOST_SPIRIT_DEBUG_NODE(posinteger);
+  BOOST_SPIRIT_DEBUG_NODE(term);
+  BOOST_SPIRIT_DEBUG_NODE(terms);
+  BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
+  BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtom);
+  BOOST_SPIRIT_DEBUG_NODE(bodyAtom);
+  BOOST_SPIRIT_DEBUG_NODE(bodyLiteral);
+  BOOST_SPIRIT_DEBUG_NODE(rule);
+  BOOST_SPIRIT_DEBUG_NODE(constraint);
+  BOOST_SPIRIT_DEBUG_NODE(toplevel);
+  BOOST_SPIRIT_DEBUG_NODE(start);
+  BOOST_SPIRIT_DEBUG_NODE(toplevelExt);
+  BOOST_SPIRIT_DEBUG_NODE(bodyAtomExt);
+  BOOST_SPIRIT_DEBUG_NODE(headAtomExt);
+  BOOST_SPIRIT_DEBUG_NODE(termExt);
+  #endif
 }
 
 //! register module for parsing top level elements of input file

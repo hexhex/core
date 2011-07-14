@@ -30,6 +30,7 @@
  * This file is intended to contain mainly template instantiations.
  */
 
+#define BOOST_SPIRIT_DEBUG
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/HexGrammar.tcc"
@@ -49,6 +50,15 @@ template struct HexGrammar<HexParserIterator, HexParserSkipper>;
 HexGrammarSemantics::HexGrammarSemantics(ProgramCtx& ctx):
   ctx(ctx)
 {
+}
+
+void HexGrammarSemantics::markExternalPropertyIfExternalBody(
+    RegistryPtr registry, Rule& r)
+{
+  Tuple eatoms;
+  registry->getExternalAtomsInTuple(r.body, eatoms);
+  if( !eatoms.empty() )
+    r.kind |= ID::PROPERTY_RULE_EXTATOMS;
 }
 
 DLVHEX_NAMESPACE_END

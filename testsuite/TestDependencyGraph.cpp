@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
     ":- X(b), not f(a)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);

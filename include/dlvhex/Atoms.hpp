@@ -83,6 +83,8 @@ struct OrdinaryAtom:
   // the textual representation of the whole thing
   // this is stored for efficient parsing and printing
   // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
+  // TODO if we get answer sets in a structured way we do not need to parse them anymore
+  // TODO if we only need this for printing, we should generate it on-demand and save a lot of effort
   std::string text;
 
   bool unifiesWith(const OrdinaryAtom& a) const;

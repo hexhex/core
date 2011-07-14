@@ -104,10 +104,10 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
 
   // parse
   HexParserSkipper skipper;
-  LOG(DBG,"starting to parse");
+  DBGLOG(DBG,"starting to parse");
   bool success = boost::spirit::qi::phrase_parse(
       it_begin, it_end, grammar, skipper);
-  LOG(DBG,"parsing returned with success=" << success);
+  DBGLOG(DBG,"parsing returned with success=" << success);
   if( !success || it_begin != it_end )
   {
     if( it_begin != it_end )

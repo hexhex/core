@@ -69,7 +69,7 @@ void testSimple()
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
