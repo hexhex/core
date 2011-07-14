@@ -105,19 +105,42 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
   // parse
   HexParserSkipper skipper;
   DBGLOG(DBG,"starting to parse");
-  bool success = boost::spirit::qi::phrase_parse(
+  bool success = false;
+  try
+  {
+    success = boost::spirit::qi::phrase_parse(
       it_begin, it_end, grammar, skipper);
-  DBGLOG(DBG,"parsing returned with success=" << success);
+    DBGLOG(DBG,"parsing returned with success=" << success);
+  }
+  catch(const boost::spirit::qi::expectation_failure<HexParserIterator>& e)
+  {
+    DBGLOG(DBG,"parsing returned with expectation failure '" << e.what() << "'");
+    it_begin = e.first;
+  }
   if( !success || it_begin != it_end )
   {
     if( it_begin != it_end )
       LOG(WARNING,"iterators not the same!");
 
+    HexParserIterator it_displaybegin = it_begin;
     HexParserIterator it_displayend = it_begin;
-    unsigned limit = 20;
-    while( limit-- > 0 && it_displayend != it_end )
+    unsigned usedLeft = 0;
+    while( usedLeft++ < 50 &&
+           it_displaybegin != input.begin() &&
+           *it_displaybegin != '\n' )
+      it_displaybegin--;
+    if( *it_displaybegin == '\n' )
+    {
+      it_displaybegin++;
+      usedLeft--;
+    }
+    unsigned limitRight = 50;
+    while( limitRight-- > 0 &&
+           it_displayend != it_end &&
+           *it_displayend != '\n' )
       it_displayend++;
-    LOG(WARNING,"unparsed tail '" << std::string(it_begin, it_displayend) << "'");
+    LOG(WARNING,"unparsed '" << std::string(it_displaybegin, it_displayend) << "'");
+    LOG(WARNING,"---------" << std::string(usedLeft, '-') << "^");
     throw SyntaxError("Could not parse complete input!");
   }
 }

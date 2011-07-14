@@ -242,20 +242,152 @@ struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
 };
 
 template<>
+struct sem<HexGrammarSemantics::builtinTernaryInfix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector4<
+      ID, ID, ID, ID
+    >& source,
+    ID& target)
+  {
+    BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+    atom.tuple.push_back(boost::fusion::at_c<2>(source));
+    atom.tuple.push_back(boost::fusion::at_c<1>(source));
+    atom.tuple.push_back(boost::fusion::at_c<3>(source));
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+
+    DBGLOG(DBG,"storing builtin atom " << atom);
+    target = mgr.ctx.registry()->batoms.storeAndGetID(atom);
+    DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::builtinBinaryInfix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      ID, ID, ID
+    >& source,
+    ID& target)
+  {
+    BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+    atom.tuple.push_back(boost::fusion::at_c<1>(source));
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+    atom.tuple.push_back(boost::fusion::at_c<2>(source));
+
+    DBGLOG(DBG,"storing builtin atom " << atom);
+    target = mgr.ctx.registry()->batoms.storeAndGetID(atom);
+    DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::builtinUnaryPrefix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<
+      ID, ID
+    >& source,
+    ID& target)
+  {
+    BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+    atom.tuple.push_back(boost::fusion::at_c<1>(source));
+
+    DBGLOG(DBG,"storing builtin atom " << atom);
+    target = mgr.ctx.registry()->batoms.storeAndGetID(atom);
+    DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::builtinBinaryPrefix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      ID, ID, ID
+    >& source,
+    ID& target)
+  {
+    BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+    atom.tuple.push_back(boost::fusion::at_c<1>(source));
+    atom.tuple.push_back(boost::fusion::at_c<2>(source));
+
+    DBGLOG(DBG,"storing builtin atom " << atom);
+    target = mgr.ctx.registry()->batoms.storeAndGetID(atom);
+    DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
+  }
+};
+
+template<>
+struct sem<HexGrammarSemantics::builtinTernaryPrefix>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector4<
+      ID, ID, ID, ID
+    >& source,
+    ID& target)
+  {
+    BuiltinAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
+    atom.tuple.push_back(boost::fusion::at_c<0>(source));
+    atom.tuple.push_back(boost::fusion::at_c<1>(source));
+    atom.tuple.push_back(boost::fusion::at_c<2>(source));
+    atom.tuple.push_back(boost::fusion::at_c<3>(source));
+
+    DBGLOG(DBG,"storing builtin atom " << atom);
+    target = mgr.ctx.registry()->batoms.storeAndGetID(atom);
+    DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
+  }
+};
+
+template<>
 struct sem<HexGrammarSemantics::externalAtom>
 {
   void operator()(
     HexGrammarSemantics& mgr,
     const boost::fusion::vector2<
-      std::basic_string<char>,
+      ID,
       boost::fusion::vector2<
-        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >,
-        boost::optional<boost::optional<std::vector<dlvhex::ID, std::allocator<dlvhex::ID> > > >
+        boost::optional<boost::optional<std::vector<ID> > >,
+        boost::optional<boost::optional<std::vector<ID> > >
       >
     >& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 917ss991");
+    ExternalAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_EXTERNAL);
+
+    // predicate
+    atom.predicate = boost::fusion::at_c<0>(source);
+
+    // inputs
+    const
+      boost::fusion::vector2<
+        boost::optional<boost::optional<std::vector<ID> > >,
+        boost::optional<boost::optional<std::vector<ID> > >
+      >& source2 = boost::fusion::at_c<1>(source);
+    if( (!!boost::fusion::at_c<0>(source2)) &&
+        (!!(boost::fusion::at_c<0>(source2).get())) )
+    {
+      atom.inputs = boost::fusion::at_c<0>(source2).get().get();
+    }
+
+    // outputs
+    if( (!!boost::fusion::at_c<1>(source2)) &&
+        (!!(boost::fusion::at_c<1>(source2).get())) )
+    {
+      atom.tuple = boost::fusion::at_c<1>(source2).get().get();
+    }
+
+    DBGLOG(DBG,"storing external atom " << atom);
+    target = mgr.ctx.registry()->eatoms.storeAndGetID(atom);
+    DBGLOG(DBG,"external atom " << atom << " got id " << target);
   }
 };
 
@@ -368,6 +500,18 @@ struct sem<HexGrammarSemantics::add>
   }
 };
 
+template<>
+struct sem<HexGrammarSemantics::maxint>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    unsigned int source,
+    const boost::spirit::unused_type& target)
+  {
+    mgr.ctx.maxint = source;
+  }
+};
+
 /////////////////////////////////////////////////////////////////
 // HexGrammarBase ///////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -397,7 +541,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | termExt;
     // allow backtracking over terms (no real need to undo the semantic actions == id registrations)
   terms
-    = term % qi::lit(',');
+    = (term > qi::eps) % qi::lit(',');
 
   // if we have this, we can easily extend this to higher order using a module
   classicalAtomPredicate
@@ -405,21 +549,60 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
   classicalAtom
     = (
-        classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')'))
+        classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps
       ) [ Sem::classicalAtomFromPrefix(sem) ]
     | (
-        qi::lit('(') > classicalAtomPredicate >> qi::lit(',') > terms >> qi::lit(')')
+        qi::lit('(') > classicalAtomPredicate > qi::lit(',') > terms >> qi::lit(')') > qi::eps
       ) [ Sem::classicalAtomFromTuple(sem) ];
+  builtinOpsUnary.add
+    ("#int", ID::termFromBuiltin(ID::TERM_BUILTIN_INT));
+  builtinOpsBinary.add
+    ("=", ID::termFromBuiltin(ID::TERM_BUILTIN_EQ))
+    ("==", ID::termFromBuiltin(ID::TERM_BUILTIN_EQ))
+    ("!=", ID::termFromBuiltin(ID::TERM_BUILTIN_NE))
+    ("<>", ID::termFromBuiltin(ID::TERM_BUILTIN_NE))
+    ("<", ID::termFromBuiltin(ID::TERM_BUILTIN_LT))
+    ("<=", ID::termFromBuiltin(ID::TERM_BUILTIN_LE))
+    (">", ID::termFromBuiltin(ID::TERM_BUILTIN_GT))
+    (">=", ID::termFromBuiltin(ID::TERM_BUILTIN_GE))
+    ("#succ", ID::termFromBuiltin(ID::TERM_BUILTIN_SUCC));
+  builtinOpsTernary.add
+    ("*", ID::termFromBuiltin(ID::TERM_BUILTIN_MUL))
+    ("+", ID::termFromBuiltin(ID::TERM_BUILTIN_ADD))
+    ("-", ID::termFromBuiltin(ID::TERM_BUILTIN_SUB))
+    ("/", ID::termFromBuiltin(ID::TERM_BUILTIN_DIV))
+    ("#mod", ID::termFromBuiltin(ID::TERM_BUILTIN_MOD));
+  builtinOpsAgg.add
+    ("#count", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGCOUNT))
+    ("#min", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGMIN))
+    ("#max", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGMAX))
+    ("#sum", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGSUM))
+    ("#times", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGTIMES))
+    ("#avg", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGAVG))
+    ("#any", ID::termFromBuiltin(ID::TERM_BUILTIN_AGGANY));
+  builtinAtom
+    = (term >> qi::lit('=') >> term >> builtinOpsTernary >> term > qi::eps)
+      [ Sem::builtinTernaryInfix(sem) ]
+    | (term >> builtinOpsBinary >> term > qi::eps)
+      [ Sem::builtinBinaryInfix(sem) ]
+    | (builtinOpsUnary > qi::lit('(') > term > qi::lit(')'))
+      [ Sem::builtinUnaryPrefix(sem) ]
+    | (builtinOpsBinary > qi::lit('(') > term > qi::lit(',') > term > qi::lit(')'))
+      [ Sem::builtinBinaryPrefix(sem) ]
+    | (builtinOpsTernary > qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
+      [ Sem::builtinTernaryPrefix(sem) ];
   // TODO aggregate atom
+  externalAtomPredicate
+    = cident [ Sem::termFromCIdent(sem) ];
   externalAtom
     = (
-        qi::lit('&') > cident >
+        qi::lit('&') > externalAtomPredicate >
         (
-          (qi::lit('[') > -terms >> qi::lit(']')) ||
-          (qi::lit('(') > -terms >> qi::lit(')'))
+          (qi::lit('[') > -terms >> qi::lit(']') > qi::eps) ||
+          (qi::lit('(') > -terms >> qi::lit(')') > qi::eps)
         )
-      ) [ Sem::externalAtom(sem) ]
-      > qi::eps; // do not allow backtracking (would need to undo semantic action)
+        > qi::eps
+      ) [ Sem::externalAtom(sem) ];
   bodyAtom
     = classicalAtom
     //| aggregateAtom
@@ -428,7 +611,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | bodyAtomExt;
   bodyLiteral
     = (
-        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >> bodyAtom
+        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] > bodyAtom
       ) [ Sem::bodyLiteral(sem) ];
   headAtom
     = classicalAtom
@@ -437,7 +620,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = (
         (headAtom % qi::no_skip[ascii::space >> qi::char_('v') >> ascii::space]) >>
        -(
-          qi::lit(":-") >>
+          qi::lit(":-") >
           (bodyLiteral % qi::char_(','))
         ) >>
         qi::lit('.')
@@ -446,51 +629,65 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = (
         qi::lit(":-") >>
         (bodyLiteral % qi::char_(','))
-        // TODO add weak constraints here
       ) [ Sem::constraint(sem) ];
-
+  toplevelBuiltin
+    = (qi::lit("#maxint") > qi::lit('=') > qi::ulong_ >> qi::lit('.') > qi::eps)
+        [ Sem::maxint(sem) ];
   toplevel
-    = rule
-// TODO disallow backtracking here
+    = (rule > qi::eps)
         [ Sem::add(sem) ]
-    | constraint
-// TODO disallow backtracking here
+    | (constraint > qi::eps)
         [ Sem::add(sem) ]
-    | toplevelExt
+    | (toplevelBuiltin > qi::eps)
+    | (toplevelExt > qi::eps)
         [ Sem::add(sem) ];
   // the root rule
   start
     = *(toplevel);
 
+  // TODO will weak constraints go into toplevelExt?
+  // TODO queries go into toplevelExt
+  // TODO namespaces go into toplevelExt
   toplevelExt
     = qi::eps(false);
+  // TODO strong negation goes into bodyAtomExt
   bodyAtomExt
     = qi::eps(false);
+  // TODO strong negation goes into HeadAtomExt
+  // TODO action atoms go into HeadAtomExt
   headAtomExt
     = qi::eps(false);
   termExt
     = qi::eps(false);
 
   #ifdef BOOST_SPIRIT_DEBUG
+  BOOST_SPIRIT_DEBUG_NODE(start);
+  BOOST_SPIRIT_DEBUG_NODE(toplevel);
+  BOOST_SPIRIT_DEBUG_NODE(toplevelBuiltin);
   BOOST_SPIRIT_DEBUG_NODE(cident);
   BOOST_SPIRIT_DEBUG_NODE(string);
   BOOST_SPIRIT_DEBUG_NODE(variable);
   BOOST_SPIRIT_DEBUG_NODE(posinteger);
   BOOST_SPIRIT_DEBUG_NODE(term);
-  BOOST_SPIRIT_DEBUG_NODE(terms);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtom);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
-  BOOST_SPIRIT_DEBUG_NODE(externalAtom);
+  BOOST_SPIRIT_DEBUG_NODE(builtinAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyLiteral);
+  BOOST_SPIRIT_DEBUG_NODE(headAtom);
   BOOST_SPIRIT_DEBUG_NODE(rule);
   BOOST_SPIRIT_DEBUG_NODE(constraint);
-  BOOST_SPIRIT_DEBUG_NODE(toplevel);
-  BOOST_SPIRIT_DEBUG_NODE(start);
+  BOOST_SPIRIT_DEBUG_NODE(terms);
   BOOST_SPIRIT_DEBUG_NODE(toplevelExt);
   BOOST_SPIRIT_DEBUG_NODE(bodyAtomExt);
   BOOST_SPIRIT_DEBUG_NODE(headAtomExt);
   BOOST_SPIRIT_DEBUG_NODE(termExt);
+  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsUnary);
+  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsBinary);
+  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsTernary);
+  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsAgg);
   #endif
 }
 
@@ -554,16 +751,6 @@ DLVHEX_NAMESPACE_END
     = aggregate_leq_binop | aggregate_geq_binop | "==" | '=';
   binop
     = str_p("<>") | "!=" | aggregate_binop;
-  cons
-    = str_p(":-") | "<-";
-  neg
-    = ch_p('-')|'~';
-  user_pred_classical
-    = !neg >> ident_or_var >> '(' >> terms >> ')';
-  user_pred_tuple
-    = '(' >> terms >> ')';
-  user_pred_atom
-    = !neg >> ident_or_var;
   user_pred
     = user_pred_classical | user_pred_tuple | user_pred_atom;
   aggregate_pred
@@ -576,10 +763,6 @@ DLVHEX_NAMESPACE_END
     = (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
     | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
   aggregate = aggregate_rel | aggregate_range;
-  builtin_tertop_infix =
-    term >> '=' >> term >> (ch_p('*') | '+' | '-' | '/') >> term;
-  builtin_tertop_prefix =
-    (ch_p('*') | '+' | '-' | '/' | str_p("#mod")) >> '(' >> term >> ',' >> term >> ',' >> term >> ')';
   builtin_binop_prefix = binop >> '(' >> term >> ',' >> term >> ')';
   builtin_binop_infix = term >> binop >> term;
   builtin_other
@@ -588,12 +771,6 @@ DLVHEX_NAMESPACE_END
   builtin_pred =
     builtin_tertop_infix | builtin_tertop_prefix |
     builtin_binop_infix | builtin_binop_prefix | builtin_other;
-  disj = user_pred >> *(rm[ch_p('v')] >> user_pred);
-  body = literal >> *(rm[ch_p(',')] >> literal);
-  maxint = str_p("#maxint") >> '=' >> number >> '.';
-  namespace_ = str_p("#namespace") >> '(' >> ident >> ',' >> ident >> ')' >> '.';
-  // rule (optional body/condition)
-  rule_ = disj >> !(cons >> !body) >> '.';
   // constraint
   constraint = (cons >> body >> '.');
   // weak constraint

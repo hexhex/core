@@ -166,11 +166,17 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromVariable, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromTuple, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryInfix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(builtinBinaryInfix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(builtinUnaryPrefix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(builtinBinaryPrefix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(maxint, const boost::spirit::unused_type);
 
   #undef DLVHEX_DEFINE_SEMANTIC_ACTION
 };
@@ -214,13 +220,23 @@ struct HexGrammarBase
   };
 
   // core grammar rules (parser modules can derive from this class and reuse these rules!)
-  typename Rule<>::type start, toplevel;
-  typename Rule<std::string>::type cident, string, variable;
-  typename Rule<uint32_t>::type posinteger;
-  typename Rule<ID>::type term, externalAtom, classicalAtomPredicate, classicalAtom, builtinAtom, bodyAtom, bodyLiteral, headAtom, rule, constraint;
-  typename Rule<std::vector<ID> >::type terms;
+  typename Rule<>::type
+    start, toplevel, toplevelBuiltin;
+  typename Rule<std::string>::type
+    cident, string, variable;
+  typename Rule<uint32_t>::type
+    posinteger;
+  typename Rule<ID>::type
+    term, externalAtom, externalAtomPredicate,
+    classicalAtomPredicate, classicalAtom, builtinAtom,
+    bodyAtom, bodyLiteral, headAtom, rule, constraint;
+  typename Rule<std::vector<ID> >::type
+    terms;
   // rules that are extended by modules
-  typename Rule<ID>::type toplevelExt, bodyAtomExt, headAtomExt, termExt;
+  typename Rule<ID>::type
+    toplevelExt, bodyAtomExt, headAtomExt, termExt;
+  boost::spirit::qi::symbols<char, ID>
+    builtinOpsUnary, builtinOpsBinary, builtinOpsTernary, builtinOpsAgg;
 };
 
 template<typename Iterator, typename Skipper>
