@@ -171,6 +171,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinUnaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinBinaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryPrefix, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(aggregateAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
@@ -228,13 +229,16 @@ struct HexGrammarBase
     posinteger;
   typename Rule<ID>::type
     term, externalAtom, externalAtomPredicate,
-    classicalAtomPredicate, classicalAtom, builtinAtom,
+    classicalAtomPredicate, classicalAtom, builtinAtom, aggregateAtom,
     bodyAtom, bodyLiteral, headAtom, rule, constraint;
   typename Rule<std::vector<ID> >::type
     terms;
+  typename Rule<boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> > >::type
+    aggregateTerm;
   // rules that are extended by modules
   typename Rule<ID>::type
     toplevelExt, bodyAtomExt, headAtomExt, termExt;
+  // symbol tables
   boost::spirit::qi::symbols<char, ID>
     builtinOpsUnary, builtinOpsBinary, builtinOpsTernary, builtinOpsAgg;
 };

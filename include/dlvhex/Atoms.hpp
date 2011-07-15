@@ -133,6 +133,7 @@ struct AggregateAtom:
   // variables of the symbolic set
   Tuple variables;
   // atoms in conjunction of the symbolic set
+  #warning TODO rename this from atoms to literals, as this might contain literals
   Tuple atoms;
 
   AggregateAtom(IDKind kind):
@@ -146,7 +147,7 @@ struct AggregateAtom:
       assert(!variables.empty()); assert(!atoms.empty()); }
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
-        printvector(variables) << " and atoms " << printvector(atoms) << ")"; }
+        printvector(variables) << " and literals " << printvector(atoms) << ")"; }
 };
 
 // this is one concrete atom in one rule

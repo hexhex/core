@@ -348,16 +348,68 @@ struct sem<HexGrammarSemantics::builtinTernaryPrefix>
 };
 
 template<>
+struct sem<HexGrammarSemantics::aggregateAtom>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      boost::optional<boost::fusion::vector2<ID, ID> >,
+      boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> >,
+      boost::optional<boost::fusion::vector2<ID, ID> >
+    >& source,
+    ID& target)
+  {
+    AggregateAtom aatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_AGGREGATE);
+    ID& leftTerm = aatom.tuple[0];
+    ID& leftComp = aatom.tuple[1];
+    ID& aggFunc = aatom.tuple[2];
+    Tuple& aggVariables = aatom.variables;
+    Tuple& aggBody = aatom.atoms;
+    ID& rightComp = aatom.tuple[3];
+    ID& rightTerm = aatom.tuple[4];
+
+    // left term + operator
+    if( !!boost::fusion::at_c<0>(source) )
+    {
+      leftTerm = boost::fusion::at_c<0>(
+        boost::fusion::at_c<0>(source).get());
+      leftComp = boost::fusion::at_c<1>(
+        boost::fusion::at_c<0>(source).get());
+    }
+
+    // right term + operator
+    if( !!boost::fusion::at_c<2>(source) )
+    {
+      rightComp = boost::fusion::at_c<0>(
+        boost::fusion::at_c<2>(source).get());
+      rightTerm = boost::fusion::at_c<1>(
+        boost::fusion::at_c<2>(source).get());
+    }
+
+    #warning TODO throw iterator in syntax error and display it nicely (like expectation failure)
+    if( leftTerm == ID_FAIL && rightTerm == ID_FAIL )
+      throw SyntaxError("aggregate needs at least one term + comparison operator");
+
+    // aggregation + symbolic set
+    aggFunc = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source));
+    aggVariables = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source));
+    aggBody = boost::fusion::at_c<2>(boost::fusion::at_c<1>(source));
+
+    DBGLOG(DBG,"storing aggregate atom " << aatom);
+    target = mgr.ctx.registry()->aatoms.storeAndGetID(aatom);
+    DBGLOG(DBG,"stored aggregate atom " << aatom << " which got id " << target);
+  }
+};
+
+template<>
 struct sem<HexGrammarSemantics::externalAtom>
 {
   void operator()(
     HexGrammarSemantics& mgr,
-    const boost::fusion::vector2<
+    const boost::fusion::vector3<
       ID,
-      boost::fusion::vector2<
-        boost::optional<boost::optional<std::vector<ID> > >,
-        boost::optional<boost::optional<std::vector<ID> > >
-      >
+      boost::optional<boost::optional<std::vector<ID> > >,
+      boost::optional<boost::optional<std::vector<ID> > >
     >& source,
     ID& target)
   {
@@ -367,22 +419,17 @@ struct sem<HexGrammarSemantics::externalAtom>
     atom.predicate = boost::fusion::at_c<0>(source);
 
     // inputs
-    const
-      boost::fusion::vector2<
-        boost::optional<boost::optional<std::vector<ID> > >,
-        boost::optional<boost::optional<std::vector<ID> > >
-      >& source2 = boost::fusion::at_c<1>(source);
-    if( (!!boost::fusion::at_c<0>(source2)) &&
-        (!!(boost::fusion::at_c<0>(source2).get())) )
+    if( (!!boost::fusion::at_c<1>(source)) &&
+        (!!(boost::fusion::at_c<1>(source).get())) )
     {
-      atom.inputs = boost::fusion::at_c<0>(source2).get().get();
+      atom.inputs = boost::fusion::at_c<1>(source).get().get();
     }
 
     // outputs
-    if( (!!boost::fusion::at_c<1>(source2)) &&
-        (!!(boost::fusion::at_c<1>(source2).get())) )
+    if( (!!boost::fusion::at_c<2>(source)) &&
+        (!!(boost::fusion::at_c<2>(source).get())) )
     {
-      atom.tuple = boost::fusion::at_c<1>(source2).get().get();
+      atom.tuple = boost::fusion::at_c<2>(source).get().get();
     }
 
     DBGLOG(DBG,"storing external atom " << atom);
@@ -465,9 +512,15 @@ struct sem<HexGrammarSemantics::constraint>
     const std::vector<dlvhex::ID>& source,
     ID& target)
   {
-    throw std::runtime_error("TODO implement me 988009R");
+    Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+    r.body = source;
+    mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
+    target = mgr.ctx.registry()->rules.storeAndGetID(r);
+    DBGLOG(DBG,"created constraint " << r << " with id " << target);
   }
 };
+
+#warning look at spirit mailing list 'optimizing parsing of large input'
 
 template<>
 struct sem<HexGrammarSemantics::add>
@@ -591,23 +644,30 @@ HexGrammarBase(HexGrammarSemantics& sem):
       [ Sem::builtinBinaryPrefix(sem) ]
     | (builtinOpsTernary > qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinTernaryPrefix(sem) ];
-  // TODO aggregate atom
+  aggregateTerm
+    = builtinOpsAgg > qi::lit('{') > terms > qi::lit(':') >
+      (bodyLiteral % qi::char_(',')) > qi::lit('}');
+  aggregateAtom
+    // aggregate range or only left or only right part of it
+    // (the semantics handler has to rule out that no binop exists)
+    = (
+        -(term >> builtinOpsBinary) >>
+        aggregateTerm >>
+        -(builtinOpsBinary >> term) > qi::eps
+      ) [ Sem::aggregateAtom(sem) ];
   externalAtomPredicate
     = cident [ Sem::termFromCIdent(sem) ];
   externalAtom
     = (
         qi::lit('&') > externalAtomPredicate >
-        (
-          (qi::lit('[') > -terms >> qi::lit(']') > qi::eps) ||
-          (qi::lit('(') > -terms >> qi::lit(')') > qi::eps)
-        )
-        > qi::eps
+        -(qi::lit('[') > -terms >> qi::lit(']')) > qi::eps >
+        -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps 
       ) [ Sem::externalAtom(sem) ];
   bodyAtom
     = classicalAtom
-    //| aggregateAtom
     | externalAtom
     | builtinAtom
+    | aggregateAtom
     | bodyAtomExt;
   bodyLiteral
     = (
@@ -618,7 +678,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | headAtomExt;
   rule
     = (
-        (headAtom % qi::no_skip[ascii::space >> qi::char_('v') >> ascii::space]) >>
+        (headAtom % qi::no_skip[qi::char_('v') >> ascii::space]) >>
        -(
           qi::lit(":-") >
           (bodyLiteral % qi::char_(','))
@@ -628,7 +688,8 @@ HexGrammarBase(HexGrammarSemantics& sem):
   constraint
     = (
         qi::lit(":-") >>
-        (bodyLiteral % qi::char_(','))
+        (bodyLiteral % qi::char_(',')) >>
+        qi::lit('.')
       ) [ Sem::constraint(sem) ];
   toplevelBuiltin
     = (qi::lit("#maxint") > qi::lit('=') > qi::ulong_ >> qi::lit('.') > qi::eps)
@@ -674,12 +735,14 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
   BOOST_SPIRIT_DEBUG_NODE(builtinAtom);
+  BOOST_SPIRIT_DEBUG_NODE(aggregateAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyAtom);
   BOOST_SPIRIT_DEBUG_NODE(bodyLiteral);
   BOOST_SPIRIT_DEBUG_NODE(headAtom);
   BOOST_SPIRIT_DEBUG_NODE(rule);
   BOOST_SPIRIT_DEBUG_NODE(constraint);
   BOOST_SPIRIT_DEBUG_NODE(terms);
+  BOOST_SPIRIT_DEBUG_NODE(aggregateTerm);
   BOOST_SPIRIT_DEBUG_NODE(toplevelExt);
   BOOST_SPIRIT_DEBUG_NODE(bodyAtomExt);
   BOOST_SPIRIT_DEBUG_NODE(headAtomExt);
@@ -742,38 +805,6 @@ registerTermModule(
 DLVHEX_NAMESPACE_END
 
 # if 0
-
-  aggregate_leq_binop
-    = str_p("<=") | '<';
-  aggregate_geq_binop
-    = str_p(">=") | '>';
-  aggregate_binop
-    = aggregate_leq_binop | aggregate_geq_binop | "==" | '=';
-  binop
-    = str_p("<>") | "!=" | aggregate_binop;
-  user_pred
-    = user_pred_classical | user_pred_tuple | user_pred_atom;
-  aggregate_pred
-    = (str_p("#any")|"#avg"|"#count"|"#max"|"#min"|"#sum"|"#times")
-    >> '{' >> terms >> ':' >> body >> '}';
-  aggregate_rel
-    = (term >> aggregate_binop >> aggregate_pred)
-    | (aggregate_pred >> aggregate_binop >> term);
-  aggregate_range
-    = (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
-    | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
-  aggregate = aggregate_rel | aggregate_range;
-  builtin_binop_prefix = binop >> '(' >> term >> ',' >> term >> ')';
-  builtin_binop_infix = term >> binop >> term;
-  builtin_other
-    = (str_p("#int") >> '(' >> term >> ')')
-    | (str_p("#succ") >> '(' >> term >> ',' >> term >> ')');
-  builtin_pred =
-    builtin_tertop_infix | builtin_tertop_prefix |
-    builtin_binop_infix | builtin_binop_prefix | builtin_other;
-  // constraint
-  constraint = (cons >> body >> '.');
-  // weak constraint
   wconstraint =
     ":~" >> body >> '.' >>
     // optional weight
@@ -788,51 +819,6 @@ DLVHEX_NAMESPACE_END
        // end_p enforces a "full" match (in case of success)
        // even with trailing newlines
        >> !sp::end_p;
-
-#   ifdef BOOST_SPIRIT_DEBUG
-    BOOST_SPIRIT_DEBUG_NODE(ident);
-    BOOST_SPIRIT_DEBUG_NODE(var);
-    BOOST_SPIRIT_DEBUG_NODE(number);
-    BOOST_SPIRIT_DEBUG_NODE(ident_or_var);
-    BOOST_SPIRIT_DEBUG_NODE(ident_or_var_or_number);
-    BOOST_SPIRIT_DEBUG_NODE(cons);
-    BOOST_SPIRIT_DEBUG_NODE(term);
-    BOOST_SPIRIT_DEBUG_NODE(terms);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_leq_binop);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_geq_binop);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_binop);
-    BOOST_SPIRIT_DEBUG_NODE(binop);
-    BOOST_SPIRIT_DEBUG_NODE(external_inputs);
-    BOOST_SPIRIT_DEBUG_NODE(external_outputs);
-    BOOST_SPIRIT_DEBUG_NODE(external_atom);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_pred);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_rel);
-    BOOST_SPIRIT_DEBUG_NODE(aggregate_range);
-    BOOST_SPIRIT_DEBUG_NODE(naf);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_tertop_infix);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_tertop_prefix);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_binop_infix);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_binop_prefix);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_other);
-    BOOST_SPIRIT_DEBUG_NODE(builtin_pred);
-    BOOST_SPIRIT_DEBUG_NODE(literal);
-    BOOST_SPIRIT_DEBUG_NODE(disj);
-    BOOST_SPIRIT_DEBUG_NODE(neg);
-    BOOST_SPIRIT_DEBUG_NODE(user_pred_classical);
-    BOOST_SPIRIT_DEBUG_NODE(user_pred_tuple);
-    BOOST_SPIRIT_DEBUG_NODE(user_pred_atom);
-    BOOST_SPIRIT_DEBUG_NODE(user_pred);
-    BOOST_SPIRIT_DEBUG_NODE(body);
-    BOOST_SPIRIT_DEBUG_NODE(maxint);
-    BOOST_SPIRIT_DEBUG_NODE(namespace_);
-    BOOST_SPIRIT_DEBUG_NODE(rule_);
-    BOOST_SPIRIT_DEBUG_NODE(constraint);
-    BOOST_SPIRIT_DEBUG_NODE(wconstraint);
-    BOOST_SPIRIT_DEBUG_NODE(clause);
-    BOOST_SPIRIT_DEBUG_NODE(root);
-#   endif
-}
 #endif
 
 #endif // DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
