@@ -45,11 +45,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
 
-#include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
-//#include <boost/spirit/include/phoenix_core.hpp>
-//#include <boost/spirit/include/phoenix_operator.hpp>
-//#include <boost/spirit/include/phoenix_stl.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -747,12 +743,12 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(bodyAtomExt);
   BOOST_SPIRIT_DEBUG_NODE(headAtomExt);
   BOOST_SPIRIT_DEBUG_NODE(termExt);
-  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsUnary);
-  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsBinary);
-  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsTernary);
-  //BOOST_SPIRIT_DEBUG_NODE(builtinOpsAgg);
   #endif
 }
+
+#warning TODO more efficient than "rule = rule.copy() | *module" could be something else (see comments below)
+// this could be a separate list for each type and a | b | c | d alternatives (have to be coded for each number of arguments)
+// this could be something not yet existing, see spirit-general mailinglist Sat, Jul 9, 2011 Vol 62, Issue 6
 
 //! register module for parsing top level elements of input file
 //! (use this to parse queries or other meta or control flow information)
@@ -762,8 +758,9 @@ HexGrammarBase<Iterator, Skipper>::
 registerToplevelModule(
     HexParserModuleGrammarPtr module)
 {
-  // TODO
-  throw std::runtime_error("TODO implement 809anmkl21 u890804321");
+  // remember the pointer (own it)
+  modules.push_back(module);
+  toplevelExt = toplevelExt.copy() | *module;
 }
 
 //! register module for parsing body elements of rules and constraints
@@ -774,8 +771,9 @@ HexGrammarBase<Iterator, Skipper>::
 registerBodyAtomModule(
     HexParserModuleGrammarPtr module)
 {
-  // TODO
-  throw std::runtime_error("TODO implement me u890804321");
+  // remember the pointer (own it)
+  modules.push_back(module);
+  bodyAtomExt = bodyAtomExt.copy() | *module;
 }
 
 //! register module for parsing head elements of rules
@@ -786,8 +784,9 @@ HexGrammarBase<Iterator, Skipper>::
 registerHeadAtomModule(
     HexParserModuleGrammarPtr module)
 {
-  // TODO
-  throw std::runtime_error("TODO implement me u89021fsdyy");
+  // remember the pointer (own it)
+  modules.push_back(module);
+  headAtomExt = headAtomExt.copy() | *module;
 }
 
 //! register module for parsing terms
@@ -798,28 +797,12 @@ HexGrammarBase<Iterator, Skipper>::
 registerTermModule(
     HexParserModuleGrammarPtr module)
 {
-  // TODO
-  throw std::runtime_error("TODO implement asef04321");
+  // remember the pointer (own it)
+  modules.push_back(module);
+  termExt = termExt.copy() | *module;
 }
 
 DLVHEX_NAMESPACE_END
-
-# if 0
-  wconstraint =
-    ":~" >> body >> '.' >>
-    // optional weight
-    !( '[' >> !ident_or_var_or_number >> ':' >> !ident_or_var_or_number >> ']');
-  clause = maxint | namespace_ | rule_ | constraint | wconstraint;
-  ///@todo: namespace, maxint before other things
-  root
-    = *( // comment
-         rm[sp::comment_p("%")]
-       | clause
-       )
-       // end_p enforces a "full" match (in case of success)
-       // even with trailing newlines
-       >> !sp::end_p;
-#endif
 
 #endif // DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 

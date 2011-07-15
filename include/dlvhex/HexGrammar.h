@@ -40,12 +40,11 @@
 #ifndef DLVHEX_HEX_GRAMMAR_H_INCLUDED
 #define DLVHEX_HEX_GRAMMAR_H_INCLUDED
 
-//#include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
+#warning use explicit qi headers to reduce compile time
 //#include <boost/spirit/include/qi_rule.hpp>
-//#include <boost/spirit/include/phoenix_core.hpp>
-//#include <boost/spirit/include/phoenix_operator.hpp>
-//#include <boost/spirit/include/phoenix_stl.hpp>
+//#include <boost/spirit/include/qi_grammar.hpp>
+//#include <boost/spirit/include/qi_symbols.hpp>
 
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/and.hpp>
@@ -241,6 +240,8 @@ struct HexGrammarBase
   // symbol tables
   boost::spirit::qi::symbols<char, ID>
     builtinOpsUnary, builtinOpsBinary, builtinOpsTernary, builtinOpsAgg;
+protected:
+  std::vector<HexParserModuleGrammarPtr> modules;
 };
 
 template<typename Iterator, typename Skipper>
@@ -257,81 +258,6 @@ struct HexGrammar:
   {
   }
 };
-
-#if 0
-
-// the grammar of hex (see "The Grammar" in the boost::spirit docs)
-struct HexGrammarBase
-{
-  enum RuleTags {
-    None = 0, Root, Clause, Maxint, Namespace,
-    Rule, Constraint, WeakConstraint, Body, Disj,
-    Number, Ident, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
-    UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
-    Aggregate, AggregatePred, AggregateRel, AggregateRange,
-    ExtAtom, ExtInputs, ExtOutputs,
-    BuiltinPred, BuiltinOther,
-    BuiltinTertopPrefix, BuiltinTertopInfix,
-    BuiltinBinopPrefix, BuiltinBinopInfix,
-    MaxTag // this must stay last for extendability!
-  };
-
-  // S = ScannerT
-  template<typename S>
-  struct definition
-  {
-    // shortcut
-    typedef boost::spirit::parser_context<> c;
-    template<int Tag> struct tag: public boost::spirit::parser_tag<Tag> {};
-
-    definition(HexGrammarBase const& self);
-    boost::spirit::rule< S, c, tag<Root> > const& start() const { return root; }
-
-    boost::spirit::rule<S, c, tag<Ident> >               ident;
-    boost::spirit::rule<S>                               var;
-    boost::spirit::rule<S, c, tag<Number> >              number;
-    boost::spirit::rule<S, c, tag<IdentVar> >            ident_or_var;
-    boost::spirit::rule<S, c, tag<IdentVarNumber> >      ident_or_var_or_number;
-    boost::spirit::rule<S>                               cons;
-    boost::spirit::rule<S, c, tag<Term> >                term;
-    boost::spirit::rule<S, c, tag<Terms> >               terms;
-    boost::spirit::rule<S>                               aggregate_leq_binop;
-    boost::spirit::rule<S>                               aggregate_geq_binop;
-    boost::spirit::rule<S>                               aggregate_binop;
-    boost::spirit::rule<S>                               binop;
-    boost::spirit::rule<S, c, tag<ExtInputs> >           external_inputs;
-    boost::spirit::rule<S, c, tag<ExtOutputs> >          external_outputs;
-    boost::spirit::rule<S, c, tag<ExtAtom> >             external_atom;
-    boost::spirit::rule<S, c, tag<Aggregate> >           aggregate;
-    boost::spirit::rule<S, c, tag<AggregatePred> >       aggregate_pred;
-    boost::spirit::rule<S, c, tag<AggregateRel> >        aggregate_rel;
-    boost::spirit::rule<S, c, tag<AggregateRange> >      aggregate_range;
-    boost::spirit::rule<S, c, tag<Naf> >                 naf;
-    boost::spirit::rule<S, c, tag<BuiltinTertopInfix> >  builtin_tertop_infix;
-    boost::spirit::rule<S, c, tag<BuiltinTertopPrefix> > builtin_tertop_prefix;
-    boost::spirit::rule<S, c, tag<BuiltinBinopInfix> >   builtin_binop_infix;
-    boost::spirit::rule<S, c, tag<BuiltinBinopPrefix> >  builtin_binop_prefix;
-    boost::spirit::rule<S, c, tag<BuiltinOther> >        builtin_other;
-    boost::spirit::rule<S, c, tag<BuiltinPred> >         builtin_pred;
-    boost::spirit::rule<S, c, tag<Literal> >             literal;
-    boost::spirit::rule<S, c, tag<Disj> >                disj;
-    boost::spirit::rule<S, c, tag<Neg> >                 neg;
-    boost::spirit::rule<S, c, tag<UserPredClassical> >   user_pred_classical;
-    boost::spirit::rule<S, c, tag<UserPredTuple> >       user_pred_tuple;
-    boost::spirit::rule<S, c, tag<UserPredAtom> >        user_pred_atom;
-    boost::spirit::rule<S, c, tag<UserPred> >            user_pred;
-    boost::spirit::rule<S, c, tag<Body> >                body;
-    boost::spirit::rule<S, c, tag<Maxint> >              maxint;
-    boost::spirit::rule<S, c, tag<Namespace> >           namespace_;
-    boost::spirit::rule<S, c, tag<Rule> >                rule_;
-    boost::spirit::rule<S, c, tag<Constraint> >          constraint;
-    boost::spirit::rule<S, c, tag<WeakConstraint> >      wconstraint;
-    boost::spirit::rule<S, c, tag<Clause> >              clause;
-    boost::spirit::rule<S, c, tag<Root> >                root;
-  };
-};
-
-#endif
 
 DLVHEX_NAMESPACE_END
 

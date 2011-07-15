@@ -30,7 +30,8 @@
  * This file is intended to contain mainly template instantiations.
  */
 
-#define BOOST_SPIRIT_DEBUG
+//#define BOOST_SPIRIT_DEBUG
+
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/HexGrammar.h"
 #include "dlvhex/HexGrammar.tcc"
