@@ -11,6 +11,7 @@ EXTRA_DIST = \
     builtin_safety1c.hex \
     builtin_safety1d.hex \
     builtin_safety2.hex \
+    comments.hex \
     empty.hex \
     equality.hex \
     extatom1.hex \
@@ -30,6 +31,7 @@ EXTRA_DIST = \
     safety1.hex \
     safety2.hex \
     simple1.hex \
+    simple2.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -65,6 +67,7 @@ EXTRA_DIST = \
     tests/builtin_safety1c.stderr \
     tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
+    tests/comments.out \
     tests/empty.out \
     tests/equality.out \
     tests/extatom1.out \
@@ -83,6 +86,7 @@ EXTRA_DIST = \
     tests/safety1.stderr \
     tests/safety2.stderr \
     tests/simple1.out \
+    tests/simple2.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \

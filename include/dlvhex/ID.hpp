@@ -106,6 +106,8 @@ struct ID:
     TERM_BUILTIN_GE,
     TERM_BUILTIN_MUL,
     TERM_BUILTIN_ADD,
+    TERM_BUILTIN_SUB,
+    TERM_BUILTIN_DIV,
     // then the prefix builtins (see isInfixBuiltin)
     TERM_BUILTIN_AGGCOUNT,
     TERM_BUILTIN_AGGMIN,
@@ -116,6 +118,7 @@ struct ID:
     TERM_BUILTIN_AGGANY,
     TERM_BUILTIN_INT,
     TERM_BUILTIN_SUCC,
+    TERM_BUILTIN_MOD,
   };
   
   static inline ID termFromInteger(uint32_t i)

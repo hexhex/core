@@ -56,7 +56,7 @@ namespace
 {
   bool isInfixBuiltin(IDAddress id)
   {
-    return id <= ID::TERM_BUILTIN_ADD;
+    return id <= ID::TERM_BUILTIN_DIV;
   }
 }
 

@@ -8,6 +8,7 @@
 ../safety1.hex safety1.stderr
 ../safety2.hex safety2.stderr
 ../simple1.hex simple1.out
+../simple2.hex simple2.out
 ../wellfounded1.hex wellfounded1.out --nofacts
 ../wellfounded2.hex wellfounded2.out --nofacts
 ../notstronglysafe1.hex notstronglysafe1.stderr

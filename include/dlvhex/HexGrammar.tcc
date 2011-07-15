@@ -68,8 +68,6 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     = aggregate_leq_binop | aggregate_geq_binop | "==" | '=';
   binop
     = str_p("<>") | "!=" | aggregate_binop;
-  tertop
-    = ch_p('*') | '+';
   cons
     = str_p(":-") | "<-";
   // identifiers, variables, numbers, anonymous variables
@@ -110,9 +108,10 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     = (term >> aggregate_leq_binop >> aggregate_pred >> aggregate_leq_binop >> term)
     | (term >> aggregate_geq_binop >> aggregate_pred >> aggregate_geq_binop >> term);
   aggregate = aggregate_rel | aggregate_range;
-  builtin_tertop_infix = term >> '=' >> term >> tertop >> term;
+  builtin_tertop_infix =
+    term >> '=' >> term >> (ch_p('*') | '+' | '-' | '/') >> term;
   builtin_tertop_prefix =
-    tertop >> '(' >> term >> ',' >> term >> ',' >> term >> ')';
+    (ch_p('*') | '+' | '-' | '/' | str_p("#mod")) >> '(' >> term >> ',' >> term >> ',' >> term >> ')';
   builtin_binop_prefix = binop >> '(' >> term >> ',' >> term >> ')';
   builtin_binop_infix = term >> binop >> term;
   builtin_other
@@ -169,7 +168,6 @@ HexGrammarBase::definition<ScannerT>::definition(HexGrammarBase const&)
     BOOST_SPIRIT_DEBUG_NODE(aggregate_geq_binop);
     BOOST_SPIRIT_DEBUG_NODE(aggregate_binop);
     BOOST_SPIRIT_DEBUG_NODE(binop);
-    BOOST_SPIRIT_DEBUG_NODE(tertop);
     BOOST_SPIRIT_DEBUG_NODE(external_inputs);
     BOOST_SPIRIT_DEBUG_NODE(external_outputs);
     BOOST_SPIRIT_DEBUG_NODE(external_atom);

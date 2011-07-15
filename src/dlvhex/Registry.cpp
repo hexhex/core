@@ -314,6 +314,11 @@ ID Registry::storeConstOrVarTerm(Term& term)
   // ensure the symbol does not start with a number
   assert(!term.symbol.empty() && (term.symbol[0] < '0' || term.symbol[0] > '9'));
   ID ret = terms.getIDByString(term.symbol);
+  // check if might registered as a predicate
+  if( ret == ID_FAIL )
+  {
+    ret = preds.getIDByString(term.symbol);
+  }
   if( ret == ID_FAIL )
   {
     ret = terms.storeAndGetID(term);

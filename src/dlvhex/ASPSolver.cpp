@@ -687,6 +687,7 @@ public:
   }
 };
 
+/*
 #warning TODO move this into registry or term table
   inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
   {
@@ -718,6 +719,7 @@ public:
     }
     return id;
   }
+*/
 
 
 class MyClaspOutputFormat:
@@ -772,8 +774,11 @@ public:
 		it != tok.end(); ++it)
 	    {
 	      DBGLOG(DBG,"got token '" << *it << "'");
-	      ID id = getOrRegisterTerm(registry, *it);
+	      Term term(ID::MAINKIND_TERM, *it);
+	      // the following takes care of int vs const/string
+	      ID id = registry->storeTerm(term);
 	      assert(id != ID_FAIL);
+	      assert(!id.isVariableTerm());
 	      ogatom.tuple.push_back(id);
 	    }
 	  }

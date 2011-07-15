@@ -1,9 +1,21 @@
 #maxint = 6.
 
+% *(X,Y,Z), or alternatively: Z=X*Y is true, iff Z=X*Y holds.
 mul1(X,Y) :- 6 = X * Y, #int(X), #int(Y).
 mul2(X,Y) :- *(X, Y, 6), #int(X), #int(Y).
+
+% +(X,Y,Z), or alternatively: Z=X+Y is true, iff Z=X+Y holds.
 plus1(X,Y) :- 6=X+Y, #int(X), #int(Y).
 plus2(X,Y) :- +(X,Y,6), #int(X), #int(Y).
 
-% force it to be higher order
-X(foo) :- mul1(X,X).
+% -(X,Y,Z), or alternatively: Z=X-Y is true, iff Z=X-Y holds.
+minus1(X,Y) :- -(X,Y,2), #int(X), #int(Y).
+minus2(X,Y) :- 2=X-Y, #int(X), #int(Y).
+
+% /(X,Y,Z), or alternatively: Z=X/Y is true, iff Z=X/Y holds.
+div1(X,Y) :- /(X,Y,2), #int(X), #int(Y).
+div2(X,Y) :- 2=X/Y, #int(X), #int(Y).
+
+% #mod(X,Y,Z) is true, iff X%Y=Z holds
+mod1(X,Y) :- #mod(X,Y,2), #int(X), #int(Y).
+
