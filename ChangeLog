@@ -1,4 +1,8 @@
-2011-07-12 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update.
+
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/avgScript.sh: Computes average performance for each call pattern.
 
