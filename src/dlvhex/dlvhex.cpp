@@ -802,6 +802,13 @@ void configurePluginPath(std::string& userPlugindir)
   
 	if( !reset )
 	{
+		// add LD_LIBRARY_PATH
+		const char *envld = ::getenv("LD_LIBRARY_PATH");
+		if( envld )
+		{
+			searchpath << envld << ":";
+		}
+
 		const char* homedir = ::getpwuid(::geteuid())->pw_dir;
 		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
 	}
