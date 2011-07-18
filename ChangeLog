@@ -76,6 +76,8 @@
 	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
 	* State machine for dlvhex implementation now features states that may be
 	implicitly skipped (= optional states).
+	* Prefixing --plugindir argument with ! resets the search path (also de-
+	activating LD_LIBRARY_PATH for the plugin library search).
 
 	Temporarily removed functionality:
 
