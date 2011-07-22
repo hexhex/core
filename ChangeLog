@@ -1,5 +1,7 @@
 2011-07-22 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* generator/createBigEvenOdd.sh: Create a big benchmarks for Even-Odd program.
+
 	* include/dlvhex/MLPSolver.hpp: Tests for -n and --split.
 	* examples/tests/dlvhextests.test: Likewise.
 	* examples/tests/module-EvenOdd-n1.out: Likewise.
