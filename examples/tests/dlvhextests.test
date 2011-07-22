@@ -78,3 +78,5 @@
 ../module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp
 ../module-Hanoi.mlp module-Hanoi.out --mlp
 ../module-Complex.mlp module-Complex.out --mlp
+../module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1
+../module-EvenOdd.mlp module-EvenOdd.out --mlp --split

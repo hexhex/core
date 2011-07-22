@@ -1994,11 +1994,11 @@ bool MLPSolver::comp(ValueCallsType C)
 	  else if ( instSplitting == 1 )
 	    {
 	      Tuple top;
-              //...collectBottom(alpha, idbRewrite, bottom);
-	      //...tupleMinus(idbRewrite, bottom, top); 	
-	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	      collectLargestBottom(idbRewrite, bottom, top);	
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
+              collectBottom(alpha, idbRewrite, bottom);
+	      tupleMinus(idbRewrite, bottom, top); 	
+	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      //...collectLargestBottom(idbRewrite, bottom, top);	
+	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
 	      if ( printProgramInformation == true ) 
 		printEdbIdb(registrySolver, edbRewrite, bottom);	
 	      //...int cint;

@@ -1,8 +1,14 @@
+2011-07-22 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Tests for -n and --split.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/module-EvenOdd-n1.out: Likewise.
+
 2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update.
 
-2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/avgScript.sh: Computes average performance for each call pattern.
 
