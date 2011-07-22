@@ -2194,6 +2194,7 @@ MLPSolver::ValueCallsType MLPSolver::createValueCallsMainModule(int idxModule)
 bool MLPSolver::solve()
 {
   recordingTime = 0;
+  if ( (printLevel & Logger::ANALYZE) != 0 ) recordingTime = 1;
   totalTimePost = 0.0;
   totalTimePartA = 0.0;
   totalTimeRewrite = 0.0;

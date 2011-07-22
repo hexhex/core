@@ -1,5 +1,7 @@
 2011-07-22 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Log time analysis.
+
 	* generator/createBigEvenOdd.sh: Create a big benchmarks for Even-Odd program.
 
 	* include/dlvhex/MLPSolver.hpp: Tests for -n and --split.
