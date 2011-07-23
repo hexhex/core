@@ -192,7 +192,7 @@ class DLVHEX_EXPORT MLPSolver{
     inline void addTupleToIDSet(const Tuple& tuple, IDSet& idSet);
     inline void addHeadPredsForbid(const Tuple& rules, IDSet& atomsForbid, IDSet& rulesForbid);
     inline void IDSetToTuple(const IDSet& idSet, Tuple& result);
-    inline void collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top);
+    inline void collectLargestBottom(const ModuleAtom& moduleAtom, const Tuple& rulesSource, Tuple& bottom, Tuple& top);
 
     inline void tupleMinus(const Tuple& source, const Tuple& minusTuple, Tuple& result);
     inline void collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result);
@@ -1182,32 +1182,47 @@ void MLPSolver::IDSetToTuple(const IDSet& idSet, Tuple& result)
     }
 }
 
-void MLPSolver::collectLargestBottom(const Tuple& rules, Tuple& bottom, Tuple& top)
+void MLPSolver::collectLargestBottom(const ModuleAtom& moduleAtom, const Tuple& rulesSource, Tuple& bottom, Tuple& top)
 {
   DBGLOG(DBG, "[MLPSolver::collectLargestBottom] enter");
+  // first, get the bottom of input splitting set
+  bottom.clear();
+  collectBottom(moduleAtom, rulesSource, bottom);
+  Tuple rules; 
+  tupleMinus(rulesSource, bottom, rules); // rulesSource  - bottom = rules
+  
   // collect rules forbid 
   IDSet predsForbid;
   IDSet rulesForbid;
+  // the head of the rule that contain module atom in the body is forbidden
   addHeadOfModuleAtom(rules, predsForbid, rulesForbid);
-  DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, predsForbid: ");
-  Tuple predsForbidTuple;
-  IDSetToTuple(predsForbid, predsForbidTuple);
-  if ( printProgramInformation == true ) printIdb(registrySolver, predsForbidTuple);
-  DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, rulesForbid: ");
-  Tuple rulesForbidTuple;
-  IDSetToTuple(rulesForbid, rulesForbidTuple);
-  if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
+
+  if ( printProgramInformation == true ) 
+    {
+      DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, predsForbid: ");
+      Tuple predsForbidTuple;
+      IDSetToTuple(predsForbid, predsForbidTuple);
+      printIdb(registrySolver, predsForbidTuple);
+
+      DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadOfModuleAtom, rulesForbid: ");
+      Tuple rulesForbidTuple;
+      IDSetToTuple(rulesForbid, rulesForbidTuple);
+      printIdb(registrySolver, rulesForbidTuple);
+    }
+  // if there is something that is forbidden
   if ( predsForbid.size() > 0 )
     {
       addHeadPredsForbid(rules, predsForbid, rulesForbid);
       DBGLOG(DBG, "[MLPSolver::collectLargestBottom] after addHeadPredsForbid, rulesForbid: ");
-      rulesForbidTuple.clear();
-      IDSetToTuple(rulesForbid, rulesForbidTuple);
-      if ( printProgramInformation == true ) printIdb(registrySolver, rulesForbidTuple);
+      if ( printProgramInformation == true ) 
+	{
+      	  Tuple rulesForbidTuple;
+      	  IDSetToTuple(rulesForbid, rulesForbidTuple);
+       	  printIdb(registrySolver, rulesForbidTuple);
+	}
     } 
   // substract rules forbid from the original rules
   Tuple::const_iterator it = rules.begin();
-  bottom.clear();
   while ( it != rules.end() )
     {
       if ( containID(*it, rulesForbid) == false )	
@@ -1237,6 +1252,8 @@ void MLPSolver::tupleMinus(const Tuple& source, const Tuple& minusTuple, Tuple& 
     }
 }
 
+
+// get the bottom of input splitting set
 void MLPSolver::collectBottom(const ModuleAtom& moduleAtom, const Tuple& rules, Tuple& result)
 {
   DBGLOG(DBG, "[MLPSolver::collectBottom] enter");
@@ -1983,9 +2000,10 @@ bool MLPSolver::comp(ValueCallsType C)
 	      //...Tuple top;
    	      //...collectLargestBottom(idbRewrite, bottom, top);	
               collectBottom(alpha, idbRewrite, bottom);
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	      if ( printProgramInformation == true ) 
+	      if ( printProgramInformation == true ) {
+	        DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
 		printEdbIdb(registrySolver, edbRewrite, bottom);
+	      }	
 	      //...int cint;
 	      //...std::cin >> cint;  		
 	      //...std::cout << "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha << std::endl;
@@ -1994,13 +2012,14 @@ bool MLPSolver::comp(ValueCallsType C)
 	  else if ( instSplitting == 1 )
 	    {
 	      Tuple top;
-              collectBottom(alpha, idbRewrite, bottom);
-	      tupleMinus(idbRewrite, bottom, top); 	
-	      DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
-	      //...collectLargestBottom(idbRewrite, bottom, top);	
-	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
-	      if ( printProgramInformation == true ) 
+	      //...collectBottom(alpha, idbRewrite, bottom);
+	      //...tupleMinus(idbRewrite, bottom, top); 	
+	      //...DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect bottom for id: " << idAlpha);
+	      collectLargestBottom(alpha, idbRewrite, bottom, top);	
+	      if ( printProgramInformation == true ) {
+	        DBGLOG(DBG, "[MLPSolver::comp] Edb Idb after collect largest bottom: ");
 		printEdbIdb(registrySolver, edbRewrite, bottom);	
+	      }	
 	      //...int cint;
 	      //...std::cin >> cint;  		
 	      //...std::cout << "[MLPSolver::comp] Edb Idb after collect largest bottom: " << std::endl;

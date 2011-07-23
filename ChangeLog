@@ -1,3 +1,7 @@
+2011-07-23 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixed largest bottom.
+
 2011-07-22 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Log time analysis.
