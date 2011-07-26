@@ -996,6 +996,19 @@ public:
   }
 
   /**
+   * \brief Provide parser modules
+   * 
+   * This is the preferred way to extend the input language by supplying dlvhex
+   * with parser modules that plug into the HEX grammar and extend the syntax for
+   * valid program input.
+   *
+   * See the QueryPlugin and the StrongNegationPlugin for example plugins that
+   * use this feature.
+   */
+  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&)
+    { return std::vector<HexParserModulePtr>(); }
+
+  /**
    * \brief Provide alternative parser
    * 
    * This method can be overwritten to provide an alternative HEX parser,

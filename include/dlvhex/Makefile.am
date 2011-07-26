@@ -61,8 +61,6 @@ pkginclude_HEADERS = \
   Rule.hpp \
   RuleTable.hpp \
   SafetyChecker.h \
-  SpiritDebugging.h \
-  SpiritFilePositionNode.h \
   State.h \
   Table.hpp \
   Term.hpp \

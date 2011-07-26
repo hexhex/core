@@ -290,6 +290,35 @@ void ParseState::parse(ProgramCtx* ctx)
     LOG(INFO,"using default parser (no alternatives provided by plugins)");
     ctx->parser.reset(new ModuleHexParser);
   }
+  
+  // configure parser modules if possible
+  {
+    ModuleHexParserPtr mhp =
+      boost::dynamic_pointer_cast<ModuleHexParser>(ctx->parser);
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+    {
+      std::vector<HexParserModulePtr> modules =
+        plugin->createParserModules(*ctx);
+      if( !modules.empty() )
+      {
+        if( !!mhp )
+        {
+          LOG(INFO,"got " << modules.size() <<
+              " parser modules from plugin " << plugin->getPluginName());
+          BOOST_FOREACH(HexParserModulePtr module, modules)
+          {
+            mhp->registerModule(module);
+          }
+          LOG(INFO,"registered successfully");
+        }
+        else
+        {
+          LOG(WARNING,"ignoring parser module from plugin '" <<
+              plugin->getPluginName() << "' as ModuleHexParser is not used");
+        }
+      }
+    }
+  }
 
   // parse
   assert(!!ctx->parser);

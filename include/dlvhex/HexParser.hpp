@@ -63,6 +63,7 @@ public:
 protected:
   std::vector<HexParserModulePtr> modules;
 };
+typedef boost::shared_ptr<ModuleHexParser> ModuleHexParserPtr;
 
 DLVHEX_NAMESPACE_END
 
