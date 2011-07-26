@@ -28,27 +28,27 @@
  * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.
  */
 
-//#define BOOST_SPIRIT_DEBUG
-#ifdef BOOST_SPIRIT_DEBUG
-# define BOOST_SPIRIT_DEBUG_OUT std::cerr
-# define BOOST_SPIRIT_DEBUG_FLAGS BOOST_SPIRIT_DEBUG_FLAGS_MAX
-# include <boost/spirit/debug.hpp>
-#endif
-#include "dlvhex/QueryPlugin.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/HexGrammar.h"
-#include "dlvhex/HexGrammarPTToASTConverter.h"
-#include "dlvhex/SpiritDebugging.h"
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+//#define BOOST_SPIRIT_DEBUG
+
+#include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/HexParserModule.hpp"
+#include "dlvhex/HexGrammar.h"
+
 DLVHEX_NAMESPACE_BEGIN
+
+namespace spirit = boost::spirit;
+namespace qi = boost::spirit::qi;
 
 // this is copied from AnswerSetPrinterCallback.cpp
 namespace
@@ -79,196 +79,6 @@ namespace
       }
     }
   };
-}
-
-struct HexQueryGrammarBase:
-	public HexGrammarBase
-{
-	typedef HexGrammarBase Base;
-
-	enum QueryTags { MinTag = Base::MaxTag,
-		Query,
-    MaxTag // this must stay last for extendability!
-	};
-
-  // S = ScannerT
-  template<typename S>
-  struct definition:
-		public HexGrammarBase::definition<S>
-  {
-		typedef typename HexGrammarBase::definition<S> Base;
-
-    typedef boost::spirit::parser_context<> c;
-    template<int Tag> struct tag: public boost::spirit::parser_tag<Tag> {};
-
-    definition(HexQueryGrammarBase const& self);
-    boost::spirit::rule<S, c, tag<Query> > query;
-	};
-};
-
-struct HexQueryGrammar:
-  public boost::spirit::grammar<HexQueryGrammar>,
-  public HexQueryGrammarBase
-{
-};
-
-template<typename ScannerT>
-HexQueryGrammarBase::definition<ScannerT>::definition(HexQueryGrammarBase const& self):
-	Base(self)
-{
-  namespace sp = boost::spirit;
-  using sp::ch_p;
-
-  // shortcut for sp::discard_node_d()
-  const sp::node_parser_gen<sp::discard_node_op> rm =
-    sp::node_parser_gen<sp::discard_node_op>();
-
-	query = Base::body >> rm[ch_p('?')];
-	Base::clause = Base::maxint | Base::namespace_ | Base::rule_ | query | Base::constraint | Base::wconstraint;
-
-#   ifdef BOOST_SPIRIT_DEBUG
-    BOOST_SPIRIT_DEBUG_NODE(query);
-#   endif
-}
-
-class HexQueryGrammarPTToASTConverter:
-	public HexGrammarPTToASTConverter
-{
-public:
-	typedef HexGrammarPTToASTConverter Base;
-
-public:
-	HexQueryGrammarPTToASTConverter(ProgramCtx& ctx):
-		Base(ctx) { }
-	virtual ~HexQueryGrammarPTToASTConverter() {}
-	virtual void createASTFromClause(node_t& node);
-};
-
-void HexQueryGrammarPTToASTConverter::createASTFromClause(node_t& node)
-{
-  // node is from "clause" rule
-  assert(node.children.size() == 1);
-  node_t& child = node.children[0];
-  if( Logger::Instance().shallPrint(Logger::DBG) )
-  {
-    LOG(DBG,"QueryGrammarPTToAstConverter::createASTFromClause:");
-		printSpiritPT(Logger::Instance().stream(), child, "cAFC");
-  }
-
-	if( child.value.id().to_long() == HexQueryGrammar::Query )
-	{
-		QueryPlugin::CtxData& ctxdata =
-			ctx.getPluginData<QueryPlugin>();
-
-		if( !ctxdata.query.empty() )
-		{
-			LOG(WARNING,"got more than one query, ignoring all but the first one!");
-			return;
-		}
-
-		LOG(DBG,"child.children.size() = " << child.children.size());
-		assert(child.children.size() == 1);
-		// query body
-		ctxdata.query = createRuleBodyFromBody(child.children[0]);
-
-		// get variables/check groundness
-		std::set<ID> vars;
-		ctx.registry()->getVariablesInTuple(ctxdata.query, vars);
-		ctxdata.ground = vars.empty();
-		LOG(INFO,"got " << (ctxdata.ground?"ground":"nonground") << " query!");
-
-		if( ctxdata.allWitnesses && !ctxdata.ground )
-		{
-			LOG(WARNING,"--query-all is only useful for ground queries!");
-		}
-
-		// safety of the query is implicitly checked by checking safety
-		// of the transformed rules
-		#warning we should check query safety explicitly to get better error messages
-	}
-	else
-	{
-		Base::createASTFromClause(node);
-	}
-}
-
-class HexQueryParser:
-	public HexParser
-{
-public:
-	HexQueryParser() {}
-	virtual ~HexQueryParser() {}
-	virtual void parse(InputProviderPtr in, ProgramCtx& ctx);
-};
-
-void HexQueryParser::parse(InputProviderPtr in, ProgramCtx& ctx)
-{
-	#warning this is copied from HexParser.cpp, we should find some more generic way to extend parsers/grammars
-  assert(!!in);
-  assert(!!ctx.registry());
-
-	QueryPlugin::CtxData& ctxdata =
-		ctx.getPluginData<QueryPlugin>();
-	assert(ctxdata.enabled && "we should not be here if plugin is not enabled");
-	assert(ctxdata.query.empty() &&
-			"we do not want to parse if we already have parsed some query");
-
-  if( ctx.edb == 0 )
-  {
-    // create empty interpretation using this context's registry
-    ctx.edb.reset(new Interpretation(ctx.registry()));
-  }
-
-  // put whole input from stream into a string
-  // (an alternative would be the boost::spirit::multi_pass iterator
-  // but this can be done later when the parser is updated to Spirit V2)
-  #warning TODO incrementally read and parse this stream
-  std::ostringstream buf;
-  buf << in->getAsStream().rdbuf();
-  std::string input = buf.str();
-
-	//LOG(DBG,"=== parsing input" << std::endl << input << std::endl << "===");
-  HexQueryGrammar grammar;
-  typedef HexQueryGrammarPTToASTConverter Converter;
-
-  Converter::iterator_t it_begin(input.c_str(), input.c_str()+input.size());
-  Converter::iterator_t it_end;
-
-  // parse ast
-	//LOG(DBG,"parsing with special parser");
-  boost::spirit::tree_parse_info<Converter::iterator_t, Converter::factory_t> info =
-    boost::spirit::pt_parse<
-			Converter::factory_t, Converter::iterator_t, HexQueryGrammar>(
-        it_begin, it_end, grammar, boost::spirit::space_p);
-
-  // successful parse?
-  if( !info.full )
-	{
-		if( Logger::Instance().shallPrint(Logger::DBG) )
-		{
-			LOG(DBG,"HexQueryParser partial parse tree");
-			if( info.trees.empty() )
-			{
-				LOG(DBG,"(empty)");
-			}
-			else
-			{
-				printSpiritPT(Logger::Instance().stream(), *info.trees.begin(), "ppt");
-			}
-		}
-    throw SyntaxError("Could not parse complete input!",
-        info.stop.get_position().line, "TODO");
-	}
-
-  // if this is not ok, there is some bug and the following code will be incomplete
-  assert(info.trees.size() == 1);
-
-  // create dlvhex AST from spirit parser tree
-  Converter converter(ctx);
-  converter.convertPTToAST(*info.trees.begin());
-
-	if( ctxdata.query.empty() )
-		throw FatalError("query mode enabled, but got no query!");
 }
 
 QueryPlugin::CtxData::CtxData():
@@ -366,16 +176,164 @@ void QueryPlugin::processOptions(
 	if( ctxdata.enabled && ctxdata.mode == CtxData::DEFAULT )
 		throw FatalError("querying plugin enabled but no querying mode selected");
 }
-
-// create custom parser that extends and uses the basic hex parser for parsing queries
-// this parser also stores the query information into the plugin
-HexParserPtr QueryPlugin::createParser(ProgramCtx& ctx)
+	
+class QueryParserModuleSemantics:
+	public HexGrammarSemantics
 {
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
-	if( !ctxdata.enabled )
-		return HexParserPtr();
+public:
+	QueryPlugin::CtxData& ctxdata;
 
-	return HexParserPtr(new HexQueryParser);
+public:
+	QueryParserModuleSemantics(ProgramCtx& ctx):
+		HexGrammarSemantics(ctx),
+		ctxdata(ctx.getPluginData<QueryPlugin>())
+	{
+	}
+
+	// use SemanticActionBase to redirect semantic action call into globally
+	// specializable sem<T> struct space
+	struct queryBody:
+		SemanticActionBase<QueryParserModuleSemantics, ID, queryBody>
+	{
+		queryBody(QueryParserModuleSemantics& mgr):
+			queryBody::base_type(mgr)
+		{
+		}
+	};
+};
+
+// create semantic handler for above semantic action
+// (needs to be in globally specializable struct space)
+template<>
+struct sem<QueryParserModuleSemantics::queryBody>
+{
+  void operator()(
+    QueryParserModuleSemantics& mgr,
+    const std::vector<ID> source,
+    ID&) // the target is not used
+  {
+		if( !mgr.ctxdata.query.empty() )
+		{
+			LOG(WARNING,"got more than one query, ignoring all but the first one!");
+			return;
+		}
+
+		// set query
+		mgr.ctxdata.query = source;
+
+		// get variables/check groundness
+		std::set<ID> vars;
+		mgr.ctx.registry()->getVariablesInTuple(mgr.ctxdata.query, vars);
+		mgr.ctxdata.ground = vars.empty();
+		DBGLOG(DBG,"found variables " << printset(vars) << " in query");
+		LOG(INFO,"got " << (mgr.ctxdata.ground?"ground":"nonground") << " query!");
+
+		if( mgr.ctxdata.allWitnesses && !mgr.ctxdata.ground )
+		{
+			LOG(WARNING,"--query-all is only useful for ground queries!");
+		}
+
+		// safety of the query is implicitly checked by checking safety
+		// of the transformed rules
+		#warning we should check query safety explicitly to get better error messages
+  }
+};
+
+namespace
+{
+
+template<typename Iterator, typename Skipper>
+struct QueryParserModuleGrammarBase:
+	// we derive from the original hex grammar
+	// -> we can reuse its rules
+	public HexGrammarBase<Iterator, Skipper>
+{
+	typedef HexGrammarBase<Iterator, Skipper> Base;
+
+	QueryParserModuleSemantics& sem;
+
+	QueryParserModuleGrammarBase(QueryParserModuleSemantics& sem):
+		Base(sem),
+		sem(sem)
+	{
+		typedef QueryParserModuleSemantics Sem;
+		query
+			= (
+					(Base::bodyLiteral % qi::char_(',')) >>
+					qi::lit('?') >
+					qi::eps
+				) [ Sem::queryBody(sem) ];
+
+		#ifdef BOOST_SPIRIT_DEBUG
+		BOOST_SPIRIT_DEBUG_NODE(query);
+		#endif
+	}
+
+	qi::rule<Iterator, ID(), Skipper> query;
+};
+
+struct QueryParserModuleGrammar:
+  QueryParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
+	// required for interface
+  // note: HexParserModuleGrammar =
+	//       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
+	HexParserModuleGrammar
+{
+	typedef QueryParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+  typedef HexParserModuleGrammar QiBase;
+
+  QueryParserModuleGrammar(QueryParserModuleSemantics& sem):
+    GrammarBase(sem),
+    QiBase(GrammarBase::query)
+  {
+  }
+};
+typedef boost::shared_ptr<QueryParserModuleGrammar>
+	QueryParserModuleGrammarPtr;
+
+class QueryParserModule:
+	public HexParserModule
+{
+public:
+	// the semantics manager is stored/owned by this module!
+	QueryParserModuleSemantics sem;
+	// we also keep a shared ptr to the grammar module here
+	QueryParserModuleGrammarPtr grammarModule;
+
+	QueryParserModule(ProgramCtx& ctx):
+		HexParserModule(TOPLEVEL),
+		sem(ctx)
+	{
+		LOG(INFO,"constructed QueryParserModule");
+	}
+
+	virtual HexParserModuleGrammarPtr createGrammarModule()
+	{
+		assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
+		grammarModule.reset(new QueryParserModuleGrammar(sem));
+		LOG(INFO,"created QueryParserModuleGrammar");
+		return grammarModule;
+	}
+};
+
+} // anonymous namespace
+
+// create parser modules that extend and the basic hex grammar
+// this parser also stores the query information into the plugin
+std::vector<HexParserModulePtr>
+QueryPlugin::createParserModules(ProgramCtx& ctx)
+{
+	DBGLOG(DBG,"QueryPlugin::createParserModules()");
+	std::vector<HexParserModulePtr> ret;
+
+	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	if( ctxdata.enabled )
+	{
+		ret.push_back(HexParserModulePtr(
+					new QueryParserModule(ctx)));
+	}
+
+	return ret;
 }
 
 namespace
@@ -404,6 +362,9 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 
 	RegistryPtr reg = ctx.registry();
 	assert(reg);
+
+	if( ctxdata.query.empty() )
+		throw FatalError("query mode enabled, but got no query!");
 
 	// convert query
 	if( ctxdata.mode == CtxData::BRAVE && ctxdata.ground )
@@ -1055,8 +1016,8 @@ void * PLUGINIMPORTFUNCTION()
 {
 	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theQueryPlugin);
 }
-#endif
 
+#endif
 /* vim: set noet sw=2 ts=2 tw=80: */
 
 // Local Variables:

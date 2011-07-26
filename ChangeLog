@@ -1,38 +1,28 @@
-2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+2011-07-26  Peter Schueller  <ps@kr.tuwien.ac.at>
 
-	* README: Update.
+	Summary of changes for going from version 1.7.X to version 2.Y:
 
-2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	Most important changes:
 
-	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+	* Implemented Evaluation formalism with Evaluation Graph and Model Graph as
+	described in the paper "Pushing Efficient Evaluation of HEX Programs by Modular
+	Decomposition" by Thomas Eiter, Michael Fink, Giovambattista Ianni, Thomas
+	Krennwallner, and Peter Schüller at LPNMR 2011.
+	Currently implemented evaluation heuristics are "old" (old dlvhex behavior),
+	"trivial" (keep all initial evaluation units, causes a lot of overhead), and
+	"easy" (try to collapse evaluation units that are related). Heuristics are
+	selectable with --heuristics.
 
-2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+	* Implemented incremental model generation (one model at a time).
 
-	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce
-	compile-time by 33%. Can be further improved by compiling
-	$(top_srcdir)/src/dlvhex/lib{X,Y,Z}.a.
+	* Entities are now managed using 64bit integers (class dlvhex::ID) and an
+	entity registry where all constants, rules, ... are registered.
 
-	* README: Small fixes.
-
-	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
-	end of the list, linux i386 linker is sensitive to this.
-
-	* configure.ac: Fix messages.
-
-	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
-	wc output. (ticket #46)
-
-2011-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
-
-	* configure.ac: Check for g++ >= 4.3.
-
-2011-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
-
-	Most important changes (i.e., the reason for the new version):
-
-	* TODO details [rewrote model building according to LPNMR2011 paper: new dependency notion, evalgraph, evaluation heuristics, ...]
-	* evaluation heuristics selectable with --heuristics=...
-	* query support (ground and nonground queries, support for displaying all witnesses, incremental cautious nonground querying, external atoms currently not possible in queries)
+	* Query Support:
+	Queries are now supported as an 'internal' plugin (use --query-enable),
+	namely ground and nonground queries as in DLV, support for displaying all
+	witnesses, and for incremental cautious nonground querying. External atoms
+	are currently not supported in queries.
 
 	Plugin API changes:
 
@@ -40,7 +30,8 @@
 	a "deleter" compiled into the respective plugin (see PluginInterface.h)
 	* New central auxiliary constant management method in Registry:
 	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
-	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin interface ComfortPluginInterface.hpp
+	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin
+	interface ComfortPluginInterface.hpp.
 	* Plugins may now provide an alternative HEX parser by overriding createParser()
 
 	Testing and debugging additions:
@@ -123,6 +114,38 @@
 	need to keep facts and we never want derived facts that are present in
 	the EDB to "reappear".
 	* documentation moved to doc/ directory (TODO also move NEWS,... there)
+
+2011-07-26  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* TODO: Update.
+
+2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update.
+
+2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+
+2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* testsuite/Makefile.am: Create libhex.a and libhexND.a to reduce
+	compile-time by 33%. Can be further improved by compiling
+	$(top_srcdir)/src/dlvhex/lib{X,Y,Z}.a.
+
+	* README: Small fixes.
+
+	* src/dlvhex/Makefile.am (dlvhex_LDADD): Move @LIBCURL@ to the
+	end of the list, linux i386 linker is sensitive to this.
+
+	* configure.ac: Fix messages.
+
+	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
+	wc output. (ticket #46)
+
+2011-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Check for g++ >= 4.3.
 
 2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
 

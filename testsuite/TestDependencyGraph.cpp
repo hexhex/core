@@ -70,20 +70,20 @@ BOOST_AUTO_TEST_CASE(testNonext)
 		// a <-(+)-> f(X) (head/head = disjunctive)
     // 2x head -> rule
     "a v f(X)." << std::endl <<
-	  // X(a) -(+)-> f(X) (unifying+?)
+	  // f(a) -(+)-> f(X) (unifying+?)
 	  // f(b) -(+)-> f(X) (unifying+?)
 	  // b -> rule (head/rule = positive)
-    // rule -(+)-> X(a) (rule/body = positive)
+    // rule -(+)-> f(a) (rule/body = positive)
 	  // rule -(-)-> f(b) (rule/nafbody = negative)
-    "b :- X(a), not f(b)." << std::endl <<
-	  // X(b) -(+c)-> f(X) (unifying pos_constraint)
+    "b :- f(a), not f(b)." << std::endl <<
+	  // f(b) -(+c)-> f(X) (unifying pos_constraint)
 	  // f(a) -(-c)-> f(X) (unifying neg_constraint)
     // rule -> body (pos_constraint)
     // rule -> nafbody (neg_constraint)
-    ":- X(b), not f(a)." << std::endl;
+    ":- f(b), not f(a)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -95,9 +95,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
   BOOST_REQUIRE((ida | idb | idfb | idfa) != ID_FAIL);
 
   ID idfX = ctx.registry()->onatoms.getIDByString("f(X)");
-  ID idXa = ctx.registry()->onatoms.getIDByString("X(a)");
-  ID idXb = ctx.registry()->onatoms.getIDByString("X(b)");
-  BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
+  BOOST_REQUIRE(idfX != ID_FAIL);
 
   // full dependency graph
   {
@@ -105,8 +103,8 @@ BOOST_AUTO_TEST_CASE(testNonext)
     depgraph.createNodesAndBasicDependencies(ctx.idb);
     depgraph.createUnifyingDependencies();
 
-    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
-    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 8);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 11);
 
     const char* fnamev = "testDependencyGraphNonextFullVerbose.dot";
     LOG(INFO,"dumping verbose graph to " << fnamev);

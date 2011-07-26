@@ -59,6 +59,8 @@ struct ExternalAtom;
 
 class HexParser;
 typedef boost::shared_ptr<HexParser> HexParserPtr;
+class HexParserModule;
+typedef boost::shared_ptr<HexParserModule> HexParserModulePtr;
 
 class InputProvider;
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;

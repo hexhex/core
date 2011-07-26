@@ -23,40 +23,51 @@
 
 
 /**
- * @file   SpiritDebugging.h
+ * @file   HexGrammar.h
  * @author Peter Schüller
- * @date   Wed Mar 22 14:38:53 CET 2006
+ * @date   Wed Jul  8 14:00:48 CEST 2009
  * 
- * @brief  Recursive parse-tree print template function for boost::spirit
+ * @brief  Grammar for parsing HEX using boost::spirit
+ *
+ * We code everything as intended by boost::spirit (use templates)
+ * however we explicitly instantiate the template paramters in
+ * a separate compilation unit HexGrammar.cpp to
+ * 1) have faster compilation, and
+ * 2) allow us to extend parsers by plugins from shared libraries
+ *    (i.e., during runtime).
  */
 
-#ifndef DLVHEX_SPIRITDEBUGGING_H_INCLUDED
-#define DLVHEX_SPIRITDEBUGGING_H_INCLUDED
+#ifndef DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
+#define DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 
-#include <string>
-#include <ostream>
+#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/HexGrammar.h"
 
-/// @todo this header is useable only for SpiritV1, so it should be phased out, anyways BOOST_SPIRIT_DEBUG is more useful!
+DLVHEX_NAMESPACE_BEGIN
 
-// boost::spirit parse-tree debugging
-template<typename NodeT>
-void printSpiritPT(std::ostream& o, const NodeT& node, const std::string& indent="");
-
-template<typename NodeT>
-void printSpiritPT(std::ostream& o, const NodeT& node, const std::string& indent)
+class HexParserModule
 {
-  o << indent << "'" << std::string(node.value.begin(), node.value.end()) << "'\t\t\t(" << node.value.id().to_long() << ")" << std::endl;
-  if( !node.children.empty() )
+public:
+  enum Type
   {
-    std::string cindent(indent + "  ");
-    for(typename NodeT::const_tree_iterator it = node.children.begin(); it != node.children.end(); ++it)
-    {
-      printSpiritPT(o, *it, cindent);
-    }
-  }
-}
+    TOPLEVEL,
+    BODYATOM,
+    HEADATOM,
+    TERM
+  };
 
-#endif // DLVHEX_SPIRITDEBUGGING_H_INCLUDED
+  Type getType() const { return type; }
+  HexParserModule(Type type): type(type) {}
+
+  virtual HexParserModuleGrammarPtr createGrammarModule() = 0;
+
+protected:
+  Type type;
+};
+
+DLVHEX_NAMESPACE_END
+
+#endif // DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 
 // Local Variables:
 // mode: C++

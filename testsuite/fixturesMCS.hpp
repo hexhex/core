@@ -142,7 +142,7 @@ ProgramMCSMedEQProgramCtxFixture::ProgramMCSMedEQProgramCtxFixture():
     "ctx(4)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testcase");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   parser.parse(ip, ctx);
 
   ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);
@@ -193,7 +193,7 @@ ProgramMCSMedDProgramCtxFixture::ProgramMCSMedDProgramCtxFixture():
     "ctx(4)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testcase");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   parser.parse(ip, ctx);
 
   ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);

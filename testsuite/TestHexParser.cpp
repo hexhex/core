@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(testHexParserConstraint)
     ":- g(X), not h(X,X)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -136,6 +136,8 @@ BOOST_AUTO_TEST_CASE(testHexParserConstraint)
   }
 }
 
+#warning Weak constraints currently not implemented, here is a testcase for them
+#if 0
 BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint) 
 {
   ProgramCtx ctx;
@@ -147,7 +149,7 @@ BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint)
     ":~ g(X). [X:4]";
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -184,6 +186,7 @@ BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint)
     }
   }
 }
+#endif
 
 #warning reenable true negation
 #if 0
@@ -197,7 +200,7 @@ BOOST_AUTO_TEST_CASE(testHexParserTrueNegation)
     "a. -b. -b :- a, -b, not -b, not a." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -244,7 +247,7 @@ BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates)
     ":- X != 4, X < Y, >=(X,Y), #int(X).";
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -322,7 +325,7 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
     ":- &foo[a,b,X](b,X,4).";
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);

@@ -35,11 +35,10 @@
 #include "dlvhex/fwd.hpp"
 #include "dlvhex/Error.h"
 
+#include <vector>
 #include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
-
-class ProgramCtx;
 
 class DLVHEX_EXPORT HexParser
 {
@@ -50,14 +49,21 @@ public:
 typedef boost::shared_ptr<HexParser> HexParserPtr;
 
 /**
- * @brief Parses HEX-programs.
+ * @brief Parses HEX-programs, extendable by parser modules.
  */
-class DLVHEX_EXPORT BasicHexParser:
+class DLVHEX_EXPORT ModuleHexParser:
   public HexParser
 {
 public:
+  virtual void registerModule(HexParserModulePtr module);
+
+public:
   virtual void parse(InputProviderPtr in, ProgramCtx& out);
+
+protected:
+  std::vector<HexParserModulePtr> modules;
 };
+typedef boost::shared_ptr<ModuleHexParser> ModuleHexParserPtr;
 
 DLVHEX_NAMESPACE_END
 

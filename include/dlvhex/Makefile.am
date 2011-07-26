@@ -31,9 +31,9 @@ pkginclude_HEADERS = \
   fwd.hpp \
   GuessAndCheckModelGenerator.hpp \
   HexGrammar.h \
-  HexGrammarPTToASTConverter.h \
   HexGrammar.tcc \
   HexParser.hpp \
+  HexParserModule.hpp \
   ID.hpp \
   InputProvider.hpp \
   Interpretation.hpp \
@@ -61,8 +61,6 @@ pkginclude_HEADERS = \
   Rule.hpp \
   RuleTable.hpp \
   SafetyChecker.h \
-  SpiritDebugging.h \
-  SpiritFilePositionNode.h \
   State.h \
   Table.hpp \
   Term.hpp \
