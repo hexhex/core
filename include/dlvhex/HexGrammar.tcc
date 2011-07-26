@@ -550,12 +550,27 @@ struct sem<HexGrammarSemantics::add>
 };
 
 template<>
+struct sem<HexGrammarSemantics::ignoreAndWarnIfNotFail>
+{
+  void operator()(
+    HexGrammarSemantics&, // mgr,
+    const dlvhex::ID& source,
+    const boost::spirit::unused_type&) // target)
+  {
+    if( source != ID_FAIL )
+    {
+      LOG(WARNING,"ignoring ID " << source);
+    }
+  }
+};
+
+template<>
 struct sem<HexGrammarSemantics::maxint>
 {
   void operator()(
     HexGrammarSemantics& mgr,
     unsigned int source,
-    const boost::spirit::unused_type& target)
+    const boost::spirit::unused_type& )// target)
   {
     mgr.ctx.maxint = source;
   }
@@ -667,7 +682,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | bodyAtomExt;
   bodyLiteral
     = (
-        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] > bodyAtom
+        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >> bodyAtom
       ) [ Sem::bodyLiteral(sem) ];
   headAtom
     = classicalAtom
@@ -697,7 +712,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
         [ Sem::add(sem) ]
     | (toplevelBuiltin > qi::eps)
     | (toplevelExt > qi::eps)
-        [ Sem::add(sem) ];
+        [ Sem::ignoreAndWarnIfNotFail(sem) ];
   // the root rule
   start
     = *(toplevel);
@@ -760,7 +775,7 @@ registerToplevelModule(
 {
   // remember the pointer (own it)
   modules.push_back(module);
-  toplevelExt = toplevelExt.copy() | *module;
+  toplevelExt = *module | toplevelExt.copy();
 }
 
 //! register module for parsing body elements of rules and constraints

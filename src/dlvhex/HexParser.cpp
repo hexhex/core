@@ -114,13 +114,13 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
   }
   catch(const boost::spirit::qi::expectation_failure<HexParserIterator>& e)
   {
-    DBGLOG(DBG,"parsing returned with expectation failure '" << e.what() << "'");
+    LOG(ERROR,"parsing returned with failure: expected '" << e.what_ << "'");
     it_begin = e.first;
   }
   if( !success || it_begin != it_end )
   {
     if( it_begin != it_end )
-      LOG(WARNING,"iterators not the same!");
+      LOG(ERROR,"iterators not the same!");
 
     HexParserIterator it_displaybegin = it_begin;
     HexParserIterator it_displayend = it_begin;
@@ -139,8 +139,8 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
            it_displayend != it_end &&
            *it_displayend != '\n' )
       it_displayend++;
-    LOG(WARNING,"unparsed '" << std::string(it_displaybegin, it_displayend) << "'");
-    LOG(WARNING,"---------" << std::string(usedLeft, '-') << "^");
+    LOG(ERROR,"unparsed '" << std::string(it_displaybegin, it_displayend) << "'");
+    LOG(ERROR,"---------" << std::string(usedLeft, '-') << "^");
     throw SyntaxError("Could not parse complete input!");
   }
 }

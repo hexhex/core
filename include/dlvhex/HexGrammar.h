@@ -152,6 +152,8 @@ public:
 public:
   HexGrammarSemantics(ProgramCtx& ctx);
 
+  // the classes defined here act as tags to resolve semantic actions
+  // in a global template which is partially specialized using these tags
   #define DLVHEX_DEFINE_SEMANTIC_ACTION(name, targettype) \
     struct name: \
       SemanticActionBase<HexGrammarSemantics, targettype, name> \
@@ -176,6 +178,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(ignoreAndWarnIfNotFail, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(maxint, const boost::spirit::unused_type);
 
   #undef DLVHEX_DEFINE_SEMANTIC_ACTION

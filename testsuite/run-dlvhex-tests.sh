@@ -63,7 +63,7 @@ ntests=0
 
 echo ============ dlvhex tests start ============
 
-DLVHEX="${TOPBUILDDIR}/src/dlvhex/dlvhex --verbose=126 -s --plugindir=${TOPBUILDDIR}/testsuite/"
+DLVHEX="${TOPBUILDDIR}/src/dlvhex/dlvhex --verbose=255 -s --plugindir=${TOPBUILDDIR}/testsuite/"
 TESTDIR="${TOPSRCDIR}/examples/tests/"
 
 for t in $(find ${TESTDIR} -name '*.test' -type f)

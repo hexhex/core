@@ -35,9 +35,11 @@
 //#define BOOST_SPIRIT_DEBUG
 
 #include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/HexParserModule.hpp"
@@ -78,60 +80,6 @@ namespace
     }
   };
 }
-
-#if 0
-
-void HexQueryGrammarPTToASTConverter::createASTFromClause(node_t& node)
-{
-  // node is from "clause" rule
-  assert(node.children.size() == 1);
-  node_t& child = node.children[0];
-  if( Logger::Instance().shallPrint(Logger::DBG) )
-  {
-    LOG(DBG,"QueryGrammarPTToAstConverter::createASTFromClause:");
-		printSpiritPT(Logger::Instance().stream(), child, "cAFC");
-  }
-
-	if( child.value.id().to_long() == HexQueryGrammar::Query )
-	{
-		QueryPlugin::CtxData& ctxdata =
-			ctx.getPluginData<QueryPlugin>();
-
-		if( !ctxdata.query.empty() )
-		{
-			LOG(WARNING,"got more than one query, ignoring all but the first one!");
-			return;
-		}
-
-		LOG(DBG,"child.children.size() = " << child.children.size());
-		assert(child.children.size() == 1);
-		// query body
-		ctxdata.query = createRuleBodyFromBody(child.children[0]);
-
-		// get variables/check groundness
-		std::set<ID> vars;
-		ctx.registry()->getVariablesInTuple(ctxdata.query, vars);
-		ctxdata.ground = vars.empty();
-		LOG(INFO,"got " << (ctxdata.ground?"ground":"nonground") << " query!");
-
-		if( ctxdata.allWitnesses && !ctxdata.ground )
-		{
-			LOG(WARNING,"--query-all is only useful for ground queries!");
-		}
-
-		// safety of the query is implicitly checked by checking safety
-		// of the transformed rules
-		#warning we should check query safety explicitly to get better error messages
-	}
-	else
-	{
-		Base::createASTFromClause(node);
-	}
-}
-
-	if( ctxdata.query.empty() )
-		throw FatalError("query mode enabled, but got no query!");
-#endif
 
 QueryPlugin::CtxData::CtxData():
 	enabled(false),
@@ -261,13 +209,33 @@ struct sem<QueryParserModuleSemantics::queryBody>
 {
   void operator()(
     QueryParserModuleSemantics& mgr,
-    std::vector<ID> source,
-    const ID& target)
+    const std::vector<ID> source,
+    ID&) // the target is not used
   {
-		#warning TODO implement query
-		throw std::runtime_error("todo implement parser sem act");
+		if( !mgr.ctxdata.query.empty() )
+		{
+			LOG(WARNING,"got more than one query, ignoring all but the first one!");
+			return;
+		}
 
-    // mgr.ctx.maxint = source;
+		// set query
+		mgr.ctxdata.query = source;
+
+		// get variables/check groundness
+		std::set<ID> vars;
+		mgr.ctx.registry()->getVariablesInTuple(mgr.ctxdata.query, vars);
+		mgr.ctxdata.ground = vars.empty();
+		DBGLOG(DBG,"found variables " << printset(vars) << " in query");
+		LOG(INFO,"got " << (mgr.ctxdata.ground?"ground":"nonground") << " query!");
+
+		if( mgr.ctxdata.allWitnesses && !mgr.ctxdata.ground )
+		{
+			LOG(WARNING,"--query-all is only useful for ground queries!");
+		}
+
+		// safety of the query is implicitly checked by checking safety
+		// of the transformed rules
+		#warning we should check query safety explicitly to get better error messages
   }
 };
 
@@ -295,6 +263,10 @@ struct QueryParserModuleGrammarBase:
 					qi::lit('?') >
 					qi::eps
 				) [ Sem::queryBody(sem) ];
+
+		#ifdef BOOST_SPIRIT_DEBUG
+		BOOST_SPIRIT_DEBUG_NODE(query);
+		#endif
 	}
 
 	qi::rule<Iterator, ID(), Skipper> query;
@@ -390,6 +362,9 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 
 	RegistryPtr reg = ctx.registry();
 	assert(reg);
+
+	if( ctxdata.query.empty() )
+		throw FatalError("query mode enabled, but got no query!");
 
 	// convert query
 	if( ctxdata.mode == CtxData::BRAVE && ctxdata.ground )
