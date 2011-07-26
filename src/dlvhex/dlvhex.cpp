@@ -70,8 +70,9 @@
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
 
-// internal plugin
+// internal plugins
 #include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/StrongNegationPlugin.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -313,6 +314,8 @@ int main(int argc, char *argv[])
 		{
 			PluginInterfacePtr queryPlugin(new QueryPlugin);
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
+			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
 		}
 
 		// before anything else we dump the logo

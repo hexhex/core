@@ -1,0 +1,4 @@
+one(a). one(b). two(c). two(d).
+in(X,Y) v -in(X,Y) :- one(X), two(Y).
+in(b,c).
+-in(a,c).

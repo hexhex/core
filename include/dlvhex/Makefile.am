@@ -34,6 +34,7 @@ pkginclude_HEADERS = \
   HexGrammar.tcc \
   HexParser.hpp \
   HexParserModule.hpp \
+  HigherOrderPlugin.hpp \
   ID.hpp \
   InputProvider.hpp \
   Interpretation.hpp \
@@ -60,6 +61,7 @@ pkginclude_HEADERS = \
   Registry.hpp \
   Rule.hpp \
   RuleTable.hpp \
+  StrongNegationPlugin.hpp \
   SafetyChecker.h \
   State.h \
   Table.hpp \

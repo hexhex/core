@@ -32,6 +32,11 @@ EXTRA_DIST = \
     safety2.hex \
     simple1.hex \
     simple2.hex \
+    strongnegation_asp1.hex \
+    strongnegation_asp2.hex \
+    strongnegation_asp3.hex \
+    strongnegation_asp4.hex \
+    strongnegation_asp5.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -87,6 +92,11 @@ EXTRA_DIST = \
     tests/safety2.stderr \
     tests/simple1.out \
     tests/simple2.out \
+    tests/strongnegation_asp1.out \
+    tests/strongnegation_asp2.out \
+    tests/strongnegation_asp3.out \
+    tests/strongnegation_asp4.out \
+    tests/strongnegation_asp5.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \

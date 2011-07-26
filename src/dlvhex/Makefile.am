@@ -84,7 +84,8 @@ libaspsolver_la_SOURCES = \
 
 # dlvhex internal plugins
 libinternalplugins_la_SOURCES = \
-    QueryPlugin.cpp
+    QueryPlugin.cpp \
+    StrongNegationPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,

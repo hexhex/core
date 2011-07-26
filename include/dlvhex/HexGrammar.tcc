@@ -146,48 +146,16 @@ struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
       assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
     }
     const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
-    OrdinaryAtomTable* tbl;
     if( ground )
     {
       atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
-      tbl = &reg->ogatoms;
+      target = reg->storeOrdinaryGAtom(atom);
     }
     else
     {
       atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
-      tbl = &reg->onatoms;
+      target = reg->storeOrdinaryNAtom(atom);
     }
-
-    // lookup if we already know this one
-    DBGLOG(DBG,"looking up tuple " << printvector(atom.tuple));
-    target = tbl->getIDByTuple(atom.tuple);
-    if( target != ID_FAIL )
-      return;
-
-    // generate atom.text (TODO see comments in Atoms.hpp)
-    std::stringstream ss;
-    RawPrinter printer(ss, reg);
-    Tuple::const_iterator it = atom.tuple.begin();
-    printer.print(*it);
-    it++;
-    if( it != atom.tuple.end() )
-    {
-      ss << "(";
-      printer.print(*it);
-      it++;
-      while(it != atom.tuple.end())
-      {
-        ss << ",";
-        printer.print(*it);
-        it++;
-      }
-      ss << ")";
-    }
-    atom.text = ss.str();
-
-    // store new atom in table
-    DBGLOG(DBG,"got atom text '" << atom.text << "'");
-    target = tbl->storeAndGetID(atom);
     DBGLOG(DBG,"stored atom " << atom << " which got id " << target);
   }
 
@@ -788,7 +756,7 @@ registerBodyAtomModule(
 {
   // remember the pointer (own it)
   modules.push_back(module);
-  bodyAtomExt = bodyAtomExt.copy() | *module;
+  bodyAtomExt = *module | bodyAtomExt.copy();
 }
 
 //! register module for parsing head elements of rules
@@ -801,7 +769,7 @@ registerHeadAtomModule(
 {
   // remember the pointer (own it)
   modules.push_back(module);
-  headAtomExt = headAtomExt.copy() | *module;
+  headAtomExt = *module | headAtomExt.copy();
 }
 
 //! register module for parsing terms
@@ -814,7 +782,7 @@ registerTermModule(
 {
   // remember the pointer (own it)
   modules.push_back(module);
-  termExt = termExt.copy() | *module;
+  termExt = *module | termExt.copy();
 }
 
 DLVHEX_NAMESPACE_END

@@ -22,25 +22,25 @@
  */
 
 /**
- * @file QueryPlugin.hpp
+ * @file HigherOrderPlugin.hpp
  * @author Peter Schueller
  *
  * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.
  */
 
-#ifndef QUERY_PLUGIN__HPP_INCLUDED_1518
-#define QUERY_PLUGIN__HPP_INCLUDED_1518
+#ifndef HIGHER_ORDER_PLUGIN__HPP_INCLUDED_1518
+#define HIGHER_ORDER_PLUGIN__HPP_INCLUDED_1518
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/PluginInterface.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class QueryPlugin:
+class HigherOrderPlugin:
   public PluginInterface
 {
 public:
-  // stored in ProgramCtx, accessed using getPluginData<QueryPlugin>()
+  // stored in ProgramCtx, accessed using getPluginData<HigherOrderPlugin>()
   class CtxData:
     public PluginData
   {
@@ -76,13 +76,13 @@ public:
   };
 
 public:
-  QueryPlugin();
-  virtual ~QueryPlugin();
+  HigherOrderPlugin();
+  virtual ~HigherOrderPlugin();
 
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --query-enable --query-brave --query-cautious
+  // accepted options: --query-enables --query-brave --query-cautious
   //
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)

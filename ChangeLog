@@ -24,6 +24,9 @@
 	witnesses, and for incremental cautious nonground querying. External atoms
 	are currently not supported in queries.
 
+	* Strong Negation is now implemented as an internal plugin and has to be
+	activated using --strongnegation-enable (see also strong negation testcases).
+
 	Plugin API changes:
 
 	* Plugins must now return PluginAtomPtrs/PluginConverterPtrs/... that use
@@ -32,7 +35,8 @@
 	getAuxiliaryConstantSymbol(), PluginAtom no longer manages its auxiliaries.
 	* added comfortable "text-only no-registry-ID-trouble" (and slow) plugin
 	interface ComfortPluginInterface.hpp.
-	* Plugins may now provide an alternative HEX parser by overriding createParser()
+	* Plugins may now provide an alternative HEX parser by overriding createParser().
+	* Plugins may now extend the HEX parser using parser modules.
 
 	Testing and debugging additions:
 

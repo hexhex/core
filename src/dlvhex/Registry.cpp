@@ -53,6 +53,8 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is a rule)
  * 'q': Query evaluation auxiliary (QueryPlugin)
  *      (source ID is ID(0,0) or ID(0,1) ... see QueryPlugin.cpp)
+ * 's': Strong negation auxiliary (StrongNegationPlugin)
+ *      (source ID is a constant term)
  */
 
 namespace

@@ -22,25 +22,25 @@
  */
 
 /**
- * @file QueryPlugin.hpp
+ * @file StrongNegationPlugin.hpp
  * @author Peter Schueller
  *
- * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.
+ * @brief Plugin for handling strong negation (extended programs) via rewriting to non-extended programs.
  */
 
-#ifndef QUERY_PLUGIN__HPP_INCLUDED_1518
-#define QUERY_PLUGIN__HPP_INCLUDED_1518
+#ifndef STRONG_NEGATION_PLUGIN__HPP_INCLUDED_1518
+#define STRONG_NEGATION_PLUGIN__HPP_INCLUDED_1518
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/PluginInterface.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class QueryPlugin:
+class StrongNegationPlugin:
   public PluginInterface
 {
 public:
-  // stored in ProgramCtx, accessed using getPluginData<QueryPlugin>()
+  // stored in ProgramCtx, accessed using getPluginData<StrongNegationPlugin>()
   class CtxData:
     public PluginData
   {
@@ -48,41 +48,22 @@ public:
     // whether plugin is enabled
     bool enabled;
 
-    // reasoning mode (at the moment DEFAULT triggers an error,
-    // so the user _must_ choose a reasoning mode)
-    enum Mode { DEFAULT, BRAVE, CAUTIOUS };
-    Mode mode;
-
-    // true for ground queries, false for nonground
-    bool ground;
-
-    // the query (contains body literals)
-    // (this is not directly stored into IDB or EDB)
-    Tuple query;
-
-    // auxiliary predicate symbols for nonground query evaluation
-    ID varAuxPred;
-    ID novarAuxPred;
-
-    // IDs of variables as they occur in auxiliary nonground predicate
-    Tuple variableIDs;
-
-    // whether to display all witnesses for ground queries
-    // (positive witnesses for brave and negative for cautious reasoning)
-    bool allWitnesses;
+    // predicate constants which were encountered in negative form and their arity
+    typedef std::map<ID,unsigned> PredicateArityMap;
+    PredicateArityMap negPredicateArities;
 
     CtxData();
     virtual ~CtxData() {};
   };
 
 public:
-  QueryPlugin();
-  virtual ~QueryPlugin();
+  StrongNegationPlugin();
+  virtual ~StrongNegationPlugin();
 
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --query-enable --query-brave --query-cautious
+  // accepted options: --strongnegation-enable
   //
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
@@ -92,10 +73,10 @@ public:
   // this parser also stores the query information into the plugin
   virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
-  // rewrite program by adding auxiliary query rules
+  // rewrite program by adding auxiliary constraints
   virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // change model callback and register final callback
+  // change model callback (print auxiliaries as negative atoms)
   virtual void setupProgramCtx(ProgramCtx&);
 
   // no atoms!

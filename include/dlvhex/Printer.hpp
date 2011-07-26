@@ -73,7 +73,7 @@ public:
 template<typename PrinterT>
 std::string printToString(ID id, RegistryPtr reg)
 {
-  std::stringstream s;
+  std::ostringstream s;
   PrinterT p(s, reg);
   p.print(id);
   return s.str();
@@ -83,7 +83,7 @@ template<typename PrinterT>
 std::string printManyToString(
     const Tuple& ids, const std::string& separator, RegistryPtr reg)
 {
-  std::stringstream s;
+  std::ostringstream s;
   PrinterT p(s, reg);
   p.printmany(ids, separator);
   return s.str();

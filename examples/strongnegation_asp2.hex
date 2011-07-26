@@ -1,0 +1,8 @@
+% testcase for strong negation plugin
+object(a). object(b). object(c).
+in(X) v -in(X) :- object(X).
+
+-in(c) :- in(a).
+
+-in(b).
+in(a).

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file QueryPlugin.cpp
+ * @file StrongNegationPlugin.cpp
  * @author Peter Schueller
  *
  * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.
@@ -34,7 +34,7 @@
 
 //#define BOOST_SPIRIT_DEBUG
 
-#include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/StrongNegationPlugin.hpp"
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
@@ -81,46 +81,38 @@ namespace
   };
 }
 
-QueryPlugin::CtxData::CtxData():
+StrongNegationPlugin::CtxData::CtxData():
 	enabled(false),
-	mode(DEFAULT),
-	ground(false),
-	query(),
-	varAuxPred(ID_FAIL),
-	novarAuxPred(ID_FAIL),
-	allWitnesses(false)
+	negPredicateArities()
 {
 }
 
-QueryPlugin::QueryPlugin():
+StrongNegationPlugin::StrongNegationPlugin():
 	PluginInterface()
 {
-	setNameVersion("dlvhex-queryplugin[internal]", 2, 0, 0);
+	setNameVersion("dlvhex-strongnegationplugin[internal]", 2, 0, 0);
 }
 
-QueryPlugin::~QueryPlugin()
+StrongNegationPlugin::~StrongNegationPlugin()
 {
 }
 
 // output help message for this plugin
-void QueryPlugin::printUsage(std::ostream& o) const
+void StrongNegationPlugin::printUsage(std::ostream& o) const
 {
   //    123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-	o << "     --query-enable   Enable this (i.e., the querying) plugin." << std::endl <<
-		   "     --query-brave    Do brave reasoning." << std::endl <<
-		   "     --query-all      Give all witnesses when doing ground reasoning." << std::endl <<
-			 "     --query-cautious Do cautious reasoning." << std::endl;
+	o << "     --strongnegation-enable   Enable strong negation plugin." << std::endl;
 }
 
-// accepted options: --query-enables --query-brave --query-cautious
+// accepted options: --strongnegation-enable
 //
 // processes options for this plugin, and removes recognized options from pluginOptions
 // (do not free the pointers, the const char* directly come from argv)
-void QueryPlugin::processOptions(
+void StrongNegationPlugin::processOptions(
 		std::list<const char*>& pluginOptions,
 		ProgramCtx& ctx)
 {
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 
 	typedef std::list<const char*>::iterator Iterator;
 	Iterator it;
@@ -130,31 +122,16 @@ void QueryPlugin::processOptions(
 	{
 		bool processed = false;
 		const std::string str(*it);
-		if( str == "--query-enable" )
+		if( str == "--strongnegation-enable" )
 		{
 			ctxdata.enabled = true;
-			processed = true;
-		}
-		else if( str == "--query-brave" )
-		{
-			ctxdata.mode = CtxData::BRAVE;
-			processed = true;
-		}
-		else if( str == "--query-cautious" )
-		{
-			ctxdata.mode = CtxData::CAUTIOUS;
-			processed = true;
-		}
-		else if( str == "--query-all" )
-		{
-			ctxdata.allWitnesses = true;
 			processed = true;
 		}
 
 		if( processed )
 		{
 			// return value of erase: element after it, maybe end()
-			DBGLOG(DBG,"QueryPlugin successfully processed option " << str);
+			DBGLOG(DBG,"StrongNegationPlugin successfully processed option " << str);
 			it = pluginOptions.erase(it);
 		}
 		else
@@ -162,41 +139,28 @@ void QueryPlugin::processOptions(
 			it++;
 		}
 	}
-
-	// some checks
-	if( ctxdata.mode != CtxData::DEFAULT )
-	{
-		if( !ctxdata.enabled )
-		{
-			LOG(WARNING,"querying mode selected, but plugin not enabled "
-					"(automatically enabling)");
-			ctxdata.enabled = true;
-		}
-	}
-	if( ctxdata.enabled && ctxdata.mode == CtxData::DEFAULT )
-		throw FatalError("querying plugin enabled but no querying mode selected");
 }
 	
-class QueryParserModuleSemantics:
+class StrongNegationParserModuleSemantics:
 	public HexGrammarSemantics
 {
 public:
-	QueryPlugin::CtxData& ctxdata;
+	StrongNegationPlugin::CtxData& ctxdata;
 
 public:
-	QueryParserModuleSemantics(ProgramCtx& ctx):
+	StrongNegationParserModuleSemantics(ProgramCtx& ctx):
 		HexGrammarSemantics(ctx),
-		ctxdata(ctx.getPluginData<QueryPlugin>())
+		ctxdata(ctx.getPluginData<StrongNegationPlugin>())
 	{
 	}
 
 	// use SemanticActionBase to redirect semantic action call into globally
 	// specializable sem<T> struct space
-	struct queryBody:
-		SemanticActionBase<QueryParserModuleSemantics, ID, queryBody>
+	struct stronglyNegatedPrefixAtom:
+		SemanticActionBase<StrongNegationParserModuleSemantics, ID, stronglyNegatedPrefixAtom>
 	{
-		queryBody(QueryParserModuleSemantics& mgr):
-			queryBody::base_type(mgr)
+		stronglyNegatedPrefixAtom(StrongNegationParserModuleSemantics& mgr):
+			stronglyNegatedPrefixAtom::base_type(mgr)
 		{
 		}
 	};
@@ -205,37 +169,92 @@ public:
 // create semantic handler for above semantic action
 // (needs to be in globally specializable struct space)
 template<>
-struct sem<QueryParserModuleSemantics::queryBody>
+struct sem<StrongNegationParserModuleSemantics::stronglyNegatedPrefixAtom>
 {
-  void operator()(
-    QueryParserModuleSemantics& mgr,
-    const std::vector<ID>& source,
-    ID&) // the target is not used
+  void createAtom(RegistryPtr reg, OrdinaryAtom& atom, ID& target)
   {
-		if( !mgr.ctxdata.query.empty() )
+    // groundness
+    DBGLOG(DBG,"checking groundness of tuple " << printrange(atom.tuple));
+    IDKind kind = 0;
+    BOOST_FOREACH(const ID& id, atom.tuple)
+    {
+      kind |= id.kind;
+      // make this sure to make the groundness check work
+      // (if we add "builtin constant terms" like #supremum we might have to change the above statement)
+      assert((id.kind & ID::SUBKIND_MASK) != ID::SUBKIND_TERM_BUILTIN);
+    }
+    const bool ground = !(kind & ID::SUBKIND_TERM_VARIABLE);
+    if( ground )
+    {
+      atom.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+      target = reg->storeOrdinaryGAtom(atom);
+    }
+    else
+    {
+      atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+      target = reg->storeOrdinaryNAtom(atom);
+    }
+    DBGLOG(DBG,"stored atom " << atom << " which got id " << target);
+  }
+
+  void operator()(
+    StrongNegationParserModuleSemantics& mgr,
+		const boost::fusion::vector2<
+			dlvhex::ID,
+		  boost::optional<boost::optional<std::vector<dlvhex::ID> > >
+		>& source,
+    ID& target)
+  {
+		typedef StrongNegationPlugin::CtxData::PredicateArityMap PredicateArityMap;
+
+    RegistryPtr reg = mgr.ctx.registry();
+
+		// strong negation is always present here!
+
+    // predicate
+    const ID& idpred = boost::fusion::at_c<0>(source);
+
+		// create/get aux constant for idpred
+		const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
+
+		// build atom with auxiliary (SUBKIND is initialized by createAtom())
+    OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+    atom.tuple.push_back(idnegpred);
+
+    // arguments
+    if( (!!boost::fusion::at_c<1>(source)) &&
+        (!!(boost::fusion::at_c<1>(source).get())) )
+    {
+      const Tuple& tuple = boost::fusion::at_c<1>(source).get().get();
+      atom.tuple.insert(atom.tuple.end(), tuple.begin(), tuple.end());
+    }
+
+		// store predicate with arity (ensure each predicate is used with only one arity)
+		PredicateArityMap::const_iterator it =
+			mgr.ctxdata.negPredicateArities.find(idpred);
+		if( it != mgr.ctxdata.negPredicateArities.end() )
 		{
-			LOG(WARNING,"got more than one query, ignoring all but the first one!");
-			return;
+			// verify
+			if( it->second != atom.tuple.size() - 1 )
+			{
+				LOG(ERROR,"strongly negated predicate '" <<
+						printToString<RawPrinter>(idpred, reg) <<
+						"' encountered with arity " << it->second <<
+						" before and with arity " << (atom.tuple.size()-1) << " now");
+				throw FatalError("got strongly negated predicate with multiple arities");
+			}
+		}
+		else
+		{
+			// store as new
+			mgr.ctxdata.negPredicateArities[idpred] = atom.tuple.size() - 1;
+			DBGLOG(DBG,"got strongly negated predicate " <<
+					printToString<RawPrinter>(idpred, reg) << "/" <<
+					idpred << " with arity " << atom.tuple.size() - 1);
 		}
 
-		// set query
-		mgr.ctxdata.query = source;
-
-		// get variables/check groundness
-		std::set<ID> vars;
-		mgr.ctx.registry()->getVariablesInTuple(mgr.ctxdata.query, vars);
-		mgr.ctxdata.ground = vars.empty();
-		DBGLOG(DBG,"found variables " << printset(vars) << " in query");
-		LOG(INFO,"got " << (mgr.ctxdata.ground?"ground":"nonground") << " query!");
-
-		if( mgr.ctxdata.allWitnesses && !mgr.ctxdata.ground )
-		{
-			LOG(WARNING,"--query-all is only useful for ground queries!");
-		}
-
-		// safety of the query is implicitly checked by checking safety
-		// of the transformed rules
-		#warning we should check query safety explicitly to get better error messages
+		// create atom
+		createAtom(reg, atom, target);
   }
 };
 
@@ -243,75 +262,77 @@ namespace
 {
 
 template<typename Iterator, typename Skipper>
-struct QueryParserModuleGrammarBase:
+struct StrongNegationParserModuleGrammarBase:
 	// we derive from the original hex grammar
 	// -> we can reuse its rules
 	public HexGrammarBase<Iterator, Skipper>
 {
 	typedef HexGrammarBase<Iterator, Skipper> Base;
 
-	QueryParserModuleSemantics& sem;
+	StrongNegationParserModuleSemantics& sem;
 
-	QueryParserModuleGrammarBase(QueryParserModuleSemantics& sem):
+	StrongNegationParserModuleGrammarBase(StrongNegationParserModuleSemantics& sem):
 		Base(sem),
 		sem(sem)
 	{
-		typedef QueryParserModuleSemantics Sem;
-		query
+		typedef StrongNegationParserModuleSemantics Sem;
+		stronglyNegatedPrefixAtom
 			= (
-					(Base::bodyLiteral % qi::char_(',')) >>
-					qi::lit('?') >
-					qi::eps
-				) [ Sem::queryBody(sem) ];
+					qi::lit('-') >> Base::classicalAtomPredicate >>
+					-(qi::lit('(') > -Base::terms >> qi::lit(')')) > qi::eps
+				) [ Sem::stronglyNegatedPrefixAtom(sem) ];
 
 		#ifdef BOOST_SPIRIT_DEBUG
-		BOOST_SPIRIT_DEBUG_NODE(query);
+		BOOST_SPIRIT_DEBUG_NODE(stronglyNegatedPrefixAtom);
 		#endif
 	}
 
-	qi::rule<Iterator, ID(), Skipper> query;
+	qi::rule<Iterator, ID(), Skipper> stronglyNegatedPrefixAtom;
 };
 
-struct QueryParserModuleGrammar:
-  QueryParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
+struct StrongNegationParserModuleGrammar:
+  StrongNegationParserModuleGrammarBase<HexParserIterator, HexParserSkipper>,
 	// required for interface
   // note: HexParserModuleGrammar =
 	//       boost::spirit::qi::grammar<HexParserIterator, HexParserSkipper>
 	HexParserModuleGrammar
 {
-	typedef QueryParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
+	typedef StrongNegationParserModuleGrammarBase<HexParserIterator, HexParserSkipper> GrammarBase;
   typedef HexParserModuleGrammar QiBase;
 
-  QueryParserModuleGrammar(QueryParserModuleSemantics& sem):
+  StrongNegationParserModuleGrammar(StrongNegationParserModuleSemantics& sem):
     GrammarBase(sem),
-    QiBase(GrammarBase::query)
+    QiBase(GrammarBase::stronglyNegatedPrefixAtom)
   {
   }
 };
-typedef boost::shared_ptr<QueryParserModuleGrammar>
-	QueryParserModuleGrammarPtr;
+typedef boost::shared_ptr<StrongNegationParserModuleGrammar>
+	StrongNegationParserModuleGrammarPtr;
 
-class QueryParserModule:
+// moduletype = HexParserModule::BODYATOM
+// moduletype = HexParserModule::HEADATOM
+template<enum HexParserModule::Type moduletype>
+class StrongNegationParserModule:
 	public HexParserModule
 {
 public:
 	// the semantics manager is stored/owned by this module!
-	QueryParserModuleSemantics sem;
+	StrongNegationParserModuleSemantics sem;
 	// we also keep a shared ptr to the grammar module here
-	QueryParserModuleGrammarPtr grammarModule;
+	StrongNegationParserModuleGrammarPtr grammarModule;
 
-	QueryParserModule(ProgramCtx& ctx):
-		HexParserModule(TOPLEVEL),
+	StrongNegationParserModule(ProgramCtx& ctx):
+		HexParserModule(moduletype),
 		sem(ctx)
 	{
-		LOG(INFO,"constructed QueryParserModule");
+		LOG(INFO,"constructed StrongNegationParserModule");
 	}
 
 	virtual HexParserModuleGrammarPtr createGrammarModule()
 	{
 		assert(!grammarModule && "for simplicity (storing only one grammarModule pointer) we currently assume this will be called only once .. should be no problem to extend");
-		grammarModule.reset(new QueryParserModuleGrammar(sem));
-		LOG(INFO,"created QueryParserModuleGrammar");
+		grammarModule.reset(new StrongNegationParserModuleGrammar(sem));
+		LOG(INFO,"created StrongNegationParserModuleGrammar");
 		return grammarModule;
 	}
 };
@@ -321,16 +342,18 @@ public:
 // create parser modules that extend and the basic hex grammar
 // this parser also stores the query information into the plugin
 std::vector<HexParserModulePtr>
-QueryPlugin::createParserModules(ProgramCtx& ctx)
+StrongNegationPlugin::createParserModules(ProgramCtx& ctx)
 {
-	DBGLOG(DBG,"QueryPlugin::createParserModules()");
+	DBGLOG(DBG,"StrongNegationPlugin::createParserModules()");
 	std::vector<HexParserModulePtr> ret;
 
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 	if( ctxdata.enabled )
 	{
 		ret.push_back(HexParserModulePtr(
-					new QueryParserModule(ctx)));
+					new StrongNegationParserModule<HexParserModule::BODYATOM>(ctx)));
+		ret.push_back(HexParserModulePtr(
+					new StrongNegationParserModule<HexParserModule::HEADATOM>(ctx)));
 	}
 
 	return ret;
@@ -339,186 +362,127 @@ QueryPlugin::createParserModules(ProgramCtx& ctx)
 namespace
 {
 
-typedef QueryPlugin::CtxData CtxData;
+typedef StrongNegationPlugin::CtxData CtxData;
 
-class QueryAdderRewriter:
+class StrongNegationConstraintAdder:
 	public PluginRewriter
 {
 public:
-	QueryAdderRewriter() {}
-	virtual ~QueryAdderRewriter() {}
+	StrongNegationConstraintAdder() {}
+	virtual ~StrongNegationConstraintAdder() {}
 
   virtual void rewrite(ProgramCtx& ctx);
 };
 
-void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
+void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 {
-	DBGLOG_SCOPE(DBG,"query_rewrite",false);
-	DBGLOG(DBG,"= QueryAdderRewriter::rewrite");
+	typedef StrongNegationPlugin::CtxData::PredicateArityMap PredicateArityMap;
 
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	DBGLOG_SCOPE(DBG,"neg_rewr",false);
+	DBGLOG(DBG,"= StrongNegationConstraintAdder::rewrite");
+
+	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 	assert(ctxdata.enabled && "this rewriter should only be used "
 			"if the plugin is enabled");
 
 	RegistryPtr reg = ctx.registry();
 	assert(reg);
-
-	if( ctxdata.query.empty() )
-		throw FatalError("query mode enabled, but got no query!");
-
-	// convert query
-	if( ctxdata.mode == CtxData::BRAVE && ctxdata.ground )
+	PredicateArityMap::const_iterator it;
+	for(it = ctxdata.negPredicateArities.begin();
+			it != ctxdata.negPredicateArities.end(); ++it)
 	{
-		// from query a_1,...,a_j,not a_{j+1},...,not a_n
-		// create constraints
-		// :- not a_i. for 1 <= i <= j
-		// :- a_i. for j+1 <= i <= n
-		// then all answer sets are positive witnesses of the ground query
+		// for predicate foo of arity k create constraint
+		// :- foo(X1,X2,...,Xk), foo_neg_aux(X1,X2,...,Xk).
 
-		assert(!ctxdata.query.empty());
-		BOOST_FOREACH(ID idl, ctxdata.query)
+		// create atoms
+		const ID idpred = it->first;
+		const unsigned arity = it->second;
+		DBGLOG(DBG,"processing predicate '" <<
+				printToString<RawPrinter>(idpred, reg) << "'/" << idpred <<
+				" with arity " << arity);
+
+		const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
+		ID idatom;
+		ID idnegatom;
+		if( arity == 0 )
 		{
-			Rule r(
-					ID::MAINKIND_RULE |
-					ID::SUBKIND_RULE_CONSTRAINT |
-					ID::PROPERTY_RULE_AUX);
-			ID negated_idl(ID::literalFromAtom(
-						ID::atomFromLiteral(idl),
-						!idl.isNaf()));
-			r.body.push_back(negated_idl);
-
-			ID idcon = reg->rules.storeAndGetID(r);
-			ctx.idb.push_back(idcon);
-			DBGLOG(DBG,"created aux constraint '" <<
-					printToString<RawPrinter>(idcon, reg) << "'");
+			// ground atoms
+			OrdinaryAtom predAtom(
+					ID::MAINKIND_ATOM |
+					ID::SUBKIND_ATOM_ORDINARYG);
+			predAtom.tuple.push_back(idpred);
+			OrdinaryAtom negpredAtom(
+					ID::MAINKIND_ATOM |
+					ID::SUBKIND_ATOM_ORDINARYG |
+					ID::PROPERTY_ATOM_AUX);
+			negpredAtom.tuple.push_back(idnegpred);
+			idatom = reg->storeOrdinaryGAtom(predAtom);
+			idnegatom = reg->storeOrdinaryGAtom(negpredAtom);
 		}
-	}
-	else if( ctxdata.mode == CtxData::CAUTIOUS && ctxdata.ground )
-	{
-		// from query a_1,...,a_j,not a_{j+1},...,not a_n
-		// create constraint
-		// :- a_1,...,a_j,not a_{j+1},...,not a_n.
-		// then all answer sets are negative witnesses of the ground query
+		else
+		{
+			// nonground atoms
+			OrdinaryAtom predAtom(
+					ID::MAINKIND_ATOM |
+					ID::SUBKIND_ATOM_ORDINARYN);
+			predAtom.tuple.push_back(idpred);
+			OrdinaryAtom negpredAtom(
+					ID::MAINKIND_ATOM |
+					ID::SUBKIND_ATOM_ORDINARYN |
+					ID::PROPERTY_ATOM_AUX);
+			negpredAtom.tuple.push_back(idnegpred);
 
-		assert(!ctxdata.query.empty());
+			// add variables
+			for(unsigned i = 0; i < arity; ++i)
+			{
+				// create variable
+				std::ostringstream s;
+				s << "X" << i;
+				Term var(
+						ID::MAINKIND_TERM |
+						ID::SUBKIND_TERM_VARIABLE |
+						ID::PROPERTY_TERM_AUX,
+						s.str());
+				const ID idvar = reg->storeConstOrVarTerm(var);
+				predAtom.tuple.push_back(idvar);
+				negpredAtom.tuple.push_back(idvar);
+			}
+
+			DBGLOG(DBG,"storing auxiliary atom " << predAtom);
+			idatom = reg->storeOrdinaryNAtom(predAtom);
+			DBGLOG(DBG,"storing auxiliary negative atom " << negpredAtom);
+			idnegatom = reg->storeOrdinaryNAtom(negpredAtom);
+		}
+
+		// create constraint
 		Rule r(
 				ID::MAINKIND_RULE |
 				ID::SUBKIND_RULE_CONSTRAINT |
 				ID::PROPERTY_RULE_AUX);
-		r.body = ctxdata.query;
+
+		r.body.push_back(ID::posLiteralFromAtom(idatom));
+		r.body.push_back(ID::posLiteralFromAtom(idnegatom));
 
 		ID idcon = reg->rules.storeAndGetID(r);
 		ctx.idb.push_back(idcon);
 		DBGLOG(DBG,"created aux constraint '" <<
 				printToString<RawPrinter>(idcon, reg) << "'");
 	}
-	else if( !ctxdata.ground )
-	{
-		// from query a_1,...,a_j,not a_{j+1},...,not a_n
-		// with variables X_1,...,X_k
-		// create rule
-		// aux[q0](X_1,...,X_k) :- a_1,...,a_j,not a_{j+1},...,not a_n.
-
-		// create auxiliary
-		ctxdata.varAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,0));
-
-		// get variables
-		std::set<ID> vars;
-		reg->getVariablesInTuple(ctxdata.query, vars);
-		assert(!vars.empty() && "nonground queries contain at least one variable");
-
-		// register variables and build var aux predicate
-		OrdinaryAtom auxHead(ID::MAINKIND_ATOM |
-				ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
-		auxHead.tuple.push_back(ctxdata.varAuxPred);
-		assert(ctxdata.variableIDs.empty());
-		BOOST_FOREACH(ID idvar, vars)
-		{
-			auxHead.tuple.push_back(idvar);
-			ctxdata.variableIDs.push_back(idvar);
-		}
-		ID varAuxHeadId = reg->storeOrdinaryNAtom(auxHead);
-		DBGLOG(DBG,"stored auxiliary query head " <<
-				printToString<RawPrinter>(varAuxHeadId, reg));
-
-		// add auxiliary rule with variables
-		Rule varAuxRule(ID::MAINKIND_RULE |
-				ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
-		#warning TODO extatom flag in rule
-		varAuxRule.head.push_back(varAuxHeadId);
-		varAuxRule.body = ctxdata.query;
-		ID varAuxRuleId = reg->rules.storeAndGetID(varAuxRule);
-		ctx.idb.push_back(varAuxRuleId);
-		LOG(DBG,"added auxiliary rule " <<
-				printToString<RawPrinter>(varAuxRuleId, reg));
-
-		if( ctxdata.mode == CtxData::BRAVE )
-		{
-			// create rule
-			// aux[q1] :- aux(Q)(X_1,...,X_k).
-			// create constraint
-			// :- not aux[q1].
-			// then all answer sets are positive witnesses of the nonground query
-			// and facts aux[q0] in the respective model gives all bravely true substitutions
-
-			// create auxiliary
-			ctxdata.novarAuxPred = reg->getAuxiliaryConstantSymbol('q', ID(0,1));
-
-			// build novar aux predicate
-			OrdinaryAtom nvauxHead(ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
-			nvauxHead.tuple.push_back(ctxdata.novarAuxPred);
-			ID novarAuxHeadId = reg->storeOrdinaryGAtom(nvauxHead);
-			DBGLOG(DBG,"stored auxiliary query head " <<
-					printToString<RawPrinter>(novarAuxHeadId, reg));
-
-			// add auxiliary rule without variables
-			Rule novarAuxRule(ID::MAINKIND_RULE |
-					ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
-			novarAuxRule.head.push_back(novarAuxHeadId);
-			novarAuxRule.body.push_back(ID::literalFromAtom(varAuxHeadId, false));
-			ID novarAuxRuleId = reg->rules.storeAndGetID(novarAuxRule);
-			ctx.idb.push_back(novarAuxRuleId);
-			LOG(DBG,"added auxiliary rule " <<
-					printToString<RawPrinter>(novarAuxRuleId, reg));
-
-			// add auxiliary constraint
-			Rule auxConstraint(ID::MAINKIND_RULE |
-					ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_RULE_AUX);
-			auxConstraint.body.push_back(ID::literalFromAtom(novarAuxHeadId, true));
-			ID auxConstraintId = reg->rules.storeAndGetID(auxConstraint);
-			ctx.idb.push_back(auxConstraintId);
-			LOG(DBG,"added auxiliary constraint " <<
-					printToString<RawPrinter>(auxConstraintId, reg));
-		}
-		else if( ctxdata.mode == CtxData::CAUTIOUS )
-		{
-			// intersect all answer sets,
-			// facts aux[q0] in the resulting model gives all cautiously true substitutions
-		}
-		else
-		{
-			assert("this case should never happen");
-		}
-	}
-	else
-	{
-		assert("this case should never happen");
-	}
 }
 
 } // anonymous namespace
 
 // rewrite program by adding auxiliary query rules
-PluginRewriterPtr QueryPlugin::createRewriter(ProgramCtx& ctx)
+PluginRewriterPtr StrongNegationPlugin::createRewriter(ProgramCtx& ctx)
 {
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 	if( !ctxdata.enabled )
 		return PluginRewriterPtr();
 
-	return PluginRewriterPtr(new QueryAdderRewriter);
+	return PluginRewriterPtr(new StrongNegationConstraintAdder);
 }
 
+#if 0
 namespace
 {
 
@@ -609,18 +573,18 @@ void VerdictPrinterCallback::operator()()
 // substitutes into the query
 // outputs the query (one line per substitution)
 // (this is used in brave mode and cautious mode derives from this)
-class QuerySubstitutionPrinterCallback:
+class StrongNegationSubstitutionPrinterCallback:
   public ModelCallback
 {
 public:
-  QuerySubstitutionPrinterCallback(
+  StrongNegationSubstitutionPrinterCallback(
 			RegistryPtr reg, const CtxData& ctxdata);
-	virtual ~QuerySubstitutionPrinterCallback() {}
+	virtual ~StrongNegationSubstitutionPrinterCallback() {}
 
   virtual bool operator()(AnswerSetPtr model);
 
 protected:
-	virtual void substituteIntoQueryAndPrint(
+	virtual void substituteIntoStrongNegationAndPrint(
 			std::ostream& o, RegistryPtr reg, const Tuple& substitution) const;
 	virtual void printAllSubstitutions(
 		std::ostream& o, InterpretationPtr interpretation);
@@ -639,7 +603,7 @@ protected:
 	std::vector<OrdinaryAtom> querycache;
 };
 
-QuerySubstitutionPrinterCallback::QuerySubstitutionPrinterCallback(
+StrongNegationSubstitutionPrinterCallback::StrongNegationSubstitutionPrinterCallback(
 		RegistryPtr reg,
 		const CtxData& ctxdata):
 	ctxdata(ctxdata)
@@ -655,11 +619,11 @@ QuerySubstitutionPrinterCallback::QuerySubstitutionPrinterCallback(
 	}
 }
 
-bool QuerySubstitutionPrinterCallback::operator()(
+bool StrongNegationSubstitutionPrinterCallback::operator()(
 		AnswerSetPtr model)
 {
 	DBGLOG_SCOPE(DBG,"qspc",false);
-	DBGLOG(DBG,"= QuerySubstitutionPrinterCallback::operator()");
+	DBGLOG(DBG,"= StrongNegationSubstitutionPrinterCallback::operator()");
 
 	typedef Interpretation::Storage Storage;
 	Storage& bits = model->interpretation->getStorage();
@@ -677,8 +641,8 @@ bool QuerySubstitutionPrinterCallback::operator()(
 	return true;
 }
 
-void QuerySubstitutionPrinterCallback::
-substituteIntoQueryAndPrint(
+void StrongNegationSubstitutionPrinterCallback::
+substituteIntoStrongNegationAndPrint(
 		std::ostream& o, RegistryPtr reg, const Tuple& substitution) const
 {
 	// prepare substitution map
@@ -741,7 +705,7 @@ substituteIntoQueryAndPrint(
 	o << "}";
 }
 
-void QuerySubstitutionPrinterCallback::
+void StrongNegationSubstitutionPrinterCallback::
 printAllSubstitutions(
 		std::ostream& o, InterpretationPtr interpretation)
 {
@@ -767,7 +731,7 @@ printAllSubstitutions(
 
 		// add and print substitution
 		printedSubstitutions.insert(subst);
-		substituteIntoQueryAndPrint(o, reg, subst);
+		substituteIntoStrongNegationAndPrint(o, reg, subst);
 		o << std::endl;
 	}
 }
@@ -776,14 +740,14 @@ printAllSubstitutions(
 // other models: intersect model with cached interpretation
 // prints substitutions in projected interpretation to STDERR
 // (this is used in cautious mode)
-class IntersectedQuerySubstitutionPrinterCallback:
-	public QuerySubstitutionPrinterCallback
+class IntersectedStrongNegationSubstitutionPrinterCallback:
+	public StrongNegationSubstitutionPrinterCallback
 {
 public:
-  IntersectedQuerySubstitutionPrinterCallback(
+  IntersectedStrongNegationSubstitutionPrinterCallback(
 			RegistryPtr reg, const CtxData& ctxdata,
 			bool printPreliminaryModels);
-	virtual ~IntersectedQuerySubstitutionPrinterCallback() {}
+	virtual ~IntersectedStrongNegationSubstitutionPrinterCallback() {}
 
   virtual bool operator()(AnswerSetPtr model);
 
@@ -794,25 +758,25 @@ protected:
 	InterpretationPtr cachedInterpretation;
 	bool printPreliminaryModels;
 };
-typedef boost::shared_ptr<IntersectedQuerySubstitutionPrinterCallback>
-	IntersectedQuerySubstitutionPrinterCallbackPtr;
+typedef boost::shared_ptr<IntersectedStrongNegationSubstitutionPrinterCallback>
+	IntersectedStrongNegationSubstitutionPrinterCallbackPtr;
 
-IntersectedQuerySubstitutionPrinterCallback::IntersectedQuerySubstitutionPrinterCallback(
+IntersectedStrongNegationSubstitutionPrinterCallback::IntersectedStrongNegationSubstitutionPrinterCallback(
 		RegistryPtr reg,
 		const CtxData& ctxdata,
 		bool printPreliminaryModels):
-	QuerySubstitutionPrinterCallback(reg, ctxdata),
+	StrongNegationSubstitutionPrinterCallback(reg, ctxdata),
 	// do not create it here!
 	cachedInterpretation(),
 	printPreliminaryModels(printPreliminaryModels)
 {
 }
 
-bool IntersectedQuerySubstitutionPrinterCallback::operator()(
+bool IntersectedStrongNegationSubstitutionPrinterCallback::operator()(
 		AnswerSetPtr model)
 {
 	DBGLOG_SCOPE(DBG,"iqspc",false);
-	DBGLOG(DBG,"= IntersectedQuerySubstitutionPrinterCallback::operator()");
+	DBGLOG(DBG,"= IntersectedStrongNegationSubstitutionPrinterCallback::operator()");
 
 	typedef Interpretation::Storage Storage;
 	RegistryPtr reg = model->interpretation->getRegistry();
@@ -876,7 +840,7 @@ bool IntersectedQuerySubstitutionPrinterCallback::operator()(
 }
 
 // print result after it is clear that no more models follow
-void IntersectedQuerySubstitutionPrinterCallback::
+void IntersectedStrongNegationSubstitutionPrinterCallback::
 	printFinalAnswer()
 {
 	if( !!cachedInterpretation )
@@ -899,17 +863,17 @@ class CautiousVerdictPrinterCallback:
 {
 public:
 	CautiousVerdictPrinterCallback(
-			IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter);
+			IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter);
 	virtual ~CautiousVerdictPrinterCallback() {}
 
   virtual void operator()();
 
 protected:
-	IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter;
+	IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter;
 };
 
 CautiousVerdictPrinterCallback::CautiousVerdictPrinterCallback(
-			IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter):
+			IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter):
 	iqsprinter(iqsprinter)
 {
 }
@@ -922,13 +886,17 @@ void CautiousVerdictPrinterCallback::operator()()
 }
 
 } // anonymous namespace
+#endif
 
 // change model callback and register final callback
-void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
+void StrongNegationPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
-	QueryPlugin::CtxData& ctxdata = ctx.getPluginData<QueryPlugin>();
+	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 	if( !ctxdata.enabled )
 		return;
+
+	throw std::runtime_error("TODO setup strong negation program ctx here");
+	#if 0
 
 	RegistryPtr reg = ctx.registry();
 	assert(!!reg);
@@ -977,7 +945,7 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 		{
 		case CtxData::BRAVE:
 			{
-				ModelCallbackPtr qsprinter(new QuerySubstitutionPrinterCallback(reg, ctxdata));
+				ModelCallbackPtr qsprinter(new StrongNegationSubstitutionPrinterCallback(reg, ctxdata));
 				#warning here we could try to only remove the default answer set printer
 				ctx.modelCallbacks.clear();
 				ctx.modelCallbacks.push_back(qsprinter);
@@ -986,8 +954,8 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 		case CtxData::CAUTIOUS:
 			{
 				bool printPreliminaryModels = !ctx.config.getOption("Silent");
-				IntersectedQuerySubstitutionPrinterCallbackPtr iqsprinter(
-						new IntersectedQuerySubstitutionPrinterCallback(
+				IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter(
+						new IntersectedStrongNegationSubstitutionPrinterCallback(
 							reg, ctxdata, printPreliminaryModels));
 				#warning here we could try to only remove the default answer set printer
 				ctx.modelCallbacks.clear();
@@ -1001,6 +969,7 @@ void QueryPlugin::setupProgramCtx(ProgramCtx& ctx)
 			assert("unknown querying mode!");
 		}
 	}
+	#endif
 }
 
 DLVHEX_NAMESPACE_END
@@ -1008,13 +977,13 @@ DLVHEX_NAMESPACE_END
 // this would be the code to use this plugin as a "real" plugin in a .so file
 // but we directly use it in dlvhex.cpp
 #if 0
-QueryPlugin theQueryPlugin;
+StrongNegationPlugin theStrongNegationPlugin;
 
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"
 void * PLUGINIMPORTFUNCTION()
 {
-	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theQueryPlugin);
+	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theStrongNegationPlugin);
 }
 
 #endif

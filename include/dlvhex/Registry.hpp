@@ -113,7 +113,7 @@ struct Registry:
   //
 
   // lookup by tuple, if does not exist create text and store as new atom
-  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.kind and oatom.tuple is initialized!
   // assume, that oatom.text is not initialized!
   // oatom.text will be modified
   //
