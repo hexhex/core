@@ -5,6 +5,7 @@
 ../builtin_safety1c.hex builtin_safety1c.stderr
 ../builtin_safety1d.hex builtin_safety1d.out
 ../builtin_safety2.hex builtin_safety2.out
+../comments.hex comments.out
 ../safety1.hex safety1.stderr
 ../safety2.hex safety2.stderr
 ../simple1.hex simple1.out
