@@ -69,7 +69,8 @@ public:
   virtual ~AuxPrinter() {}
   // print an ID and return true,
   // or do not print it and return false
-  virtual bool print(std::ostream& out, ID id) const = 0;
+  // print prefix in front of printed thing if something is printed
+  virtual bool print(std::ostream& out, ID id, const std::string& prefix) const = 0;
 };
 
 /**
@@ -209,7 +210,8 @@ struct Registry:
 
   // true if anything was printed
   // false if nothing was printed
-  bool printAtomForUser(std::ostream& o, IDAddress address);
+  // if it prints, prints prefix in front of printed thing (for printing lists efficiently)
+  bool printAtomForUser(std::ostream& o, IDAddress address, const std::string& prefix="");
 
 protected:
   struct Impl;

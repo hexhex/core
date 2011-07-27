@@ -68,9 +68,15 @@ bool AnswerSetPrinterCallback::operator()(
     for(; it != bits.end(); ++it)
     {
       if( gotOutput )
-        o << ',';
-      gotOutput =
-        reg->printAtomForUser(o, *it);
+      {
+        gotOutput =
+          reg->printAtomForUser(o, *it, ",");
+      }
+      else
+      {
+        gotOutput =
+          reg->printAtomForUser(o, *it);
+      }
     }
   }
   o << '}' << std::endl;

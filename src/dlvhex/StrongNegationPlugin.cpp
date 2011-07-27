@@ -40,6 +40,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/PredicateMask.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/HexParserModule.hpp"
@@ -49,37 +50,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 namespace spirit = boost::spirit;
 namespace qi = boost::spirit::qi;
-
-// this is copied from AnswerSetPrinterCallback.cpp
-namespace
-{
-  struct FilterCallback
-  {
-    // ordinary ground atoms
-    OrdinaryAtomTable& ogat;
-
-    FilterCallback(RegistryPtr reg):
-      ogat(reg->ogatoms)
-    {
-    }
-
-    bool operator()(IDAddress addr)
-    {
-      const OrdinaryAtom& oa = ogat.getByAddress(addr);
-      if( (oa.kind & ID::PROPERTY_ATOM_AUX) != 0 )
-      {
-        return false;
-      }
-      else
-      {
-        // assert term aux bit
-        assert((oa.tuple.front().kind & ID::PROPERTY_TERM_AUX) == 0 &&
-            "if ordinary ground atom is not auxiliary, predicate term must not be auxiliary");
-        return true;
-      }
-    }
-  };
-}
 
 StrongNegationPlugin::CtxData::CtxData():
 	enabled(false),
@@ -248,6 +218,7 @@ struct sem<StrongNegationParserModuleSemantics::stronglyNegatedPrefixAtom>
 		{
 			// store as new
 			mgr.ctxdata.negPredicateArities[idpred] = atom.tuple.size() - 1;
+			mgr.ctxdata.negToPos[idnegpred] = idpred;
 			DBGLOG(DBG,"got strongly negated predicate " <<
 					printToString<RawPrinter>(idpred, reg) << "/" <<
 					idpred << " with arity " << atom.tuple.size() - 1);
@@ -482,494 +453,100 @@ PluginRewriterPtr StrongNegationPlugin::createRewriter(ProgramCtx& ctx)
 	return PluginRewriterPtr(new StrongNegationConstraintAdder);
 }
 
-#if 0
 namespace
 {
 
-class WitnessPrinterCallback:
-  public ModelCallback
+class NegAuxPrinter:
+	public AuxPrinter
 {
 public:
-  WitnessPrinterCallback(
-			const std::string& message,
-			bool abortAfterFirstWitness,
-			bool keepAuxiliaryPredicates);
-	virtual ~WitnessPrinterCallback() {}
-
-  virtual bool operator()(AnswerSetPtr model);
-	bool gotOne() const { return gotOneModel; }
-
-protected:
-	std::string message;
-  bool abortAfterFirst;
-	bool keepAuxiliaryPredicates;
-	bool gotOneModel;
-};
-typedef boost::shared_ptr<WitnessPrinterCallback> WitnessPrinterCallbackPtr;
-
-WitnessPrinterCallback::WitnessPrinterCallback(
-		const std::string& message,
-		bool abortAfterFirstWitness,
-		bool keepAuxiliaryPredicates):
-	message(message),
-	abortAfterFirst(abortAfterFirstWitness),
-	gotOneModel(false),
-	keepAuxiliaryPredicates(keepAuxiliaryPredicates)
-{
-}
-
-bool WitnessPrinterCallback::operator()(
-		AnswerSetPtr model)
-{
-  if( !keepAuxiliaryPredicates )
-  {
-    // filter by aux bits
-    FilterCallback cb(model->interpretation->getRegistry());
-    unsigned rejected = model->interpretation->filter(cb);
-    DBGLOG(DBG,"WitnessPrinterCB filtered " << rejected << " auxiliaries from interpretation");
-  }
-	std::cout << message << *model << std::endl;
-	gotOneModel = true;
-	if( abortAfterFirst )
-		return false;
-	else
-		return true;
-}
-
-class VerdictPrinterCallback:
-	public FinalCallback
-{
+	typedef StrongNegationPlugin::CtxData::NegToPosMap NegToPosMap;
 public:
-	VerdictPrinterCallback(
-			const std::string& message, WitnessPrinterCallbackPtr wprinter);
-	virtual ~VerdictPrinterCallback() {}
-
-  virtual void operator()();
-
-protected:
-	std::string message;
-	WitnessPrinterCallbackPtr wprinter;
-};
-
-VerdictPrinterCallback::VerdictPrinterCallback(
-		const std::string& message,
-		WitnessPrinterCallbackPtr wprinter):
-	message(message),
-	wprinter(wprinter)
-{
-}
-
-void VerdictPrinterCallback::operator()()
-{
-	assert(!!wprinter);
-	// if no model was returned, we have a message to emit
-	if( !wprinter->gotOne() )
+	NegAuxPrinter(
+			RegistryPtr reg,
+			PredicateMask& negAuxMask,
+			const NegToPosMap& ntpm):
+		reg(reg), mask(negAuxMask), ntpm(ntpm)
 	{
-		std::cout << message << std::endl;
-	}
-}
-
-// gets all auxiliary substitution atoms from the model
-// substitutes into the query
-// outputs the query (one line per substitution)
-// (this is used in brave mode and cautious mode derives from this)
-class StrongNegationSubstitutionPrinterCallback:
-  public ModelCallback
-{
-public:
-  StrongNegationSubstitutionPrinterCallback(
-			RegistryPtr reg, const CtxData& ctxdata);
-	virtual ~StrongNegationSubstitutionPrinterCallback() {}
-
-  virtual bool operator()(AnswerSetPtr model);
-
-protected:
-	virtual void substituteIntoStrongNegationAndPrint(
-			std::ostream& o, RegistryPtr reg, const Tuple& substitution) const;
-	virtual void printAllSubstitutions(
-		std::ostream& o, InterpretationPtr interpretation);
-
-protected:
-	const CtxData& ctxdata;
-
-	// incrementally managed ground atom projection helper
-	PredicateMask mask;
-
-	// store already printed substitutions to avoid duplicate prints
-	std::set<Tuple> printedSubstitutions;
-
-	// "expanded query" cached 
-	std::vector<bool> querycacheNaf;
-	std::vector<OrdinaryAtom> querycache;
-};
-
-StrongNegationSubstitutionPrinterCallback::StrongNegationSubstitutionPrinterCallback(
-		RegistryPtr reg,
-		const CtxData& ctxdata):
-	ctxdata(ctxdata)
-{
-	mask.setRegistry(reg);
-	mask.addPredicate(ctxdata.varAuxPred);
-
-	// create query cache
-	BOOST_FOREACH(ID litid, ctxdata.query)
-	{
-		querycacheNaf.push_back(litid.isNaf());
-		querycache.push_back(reg->lookupOrdinaryAtom(litid));
-	}
-}
-
-bool StrongNegationSubstitutionPrinterCallback::operator()(
-		AnswerSetPtr model)
-{
-	DBGLOG_SCOPE(DBG,"qspc",false);
-	DBGLOG(DBG,"= StrongNegationSubstitutionPrinterCallback::operator()");
-
-	typedef Interpretation::Storage Storage;
-	Storage& bits = model->interpretation->getStorage();
-	RegistryPtr reg = model->interpretation->getRegistry();
-
-	// extract interesting atoms
-	mask.updateMask();
-	// project model (we destroy the original answer set in place!)
-	bits &= mask.mask()->getStorage();
-	DBGLOG(DBG,"projected model to " << *model->interpretation);
-
-	printAllSubstitutions(std::cout, model->interpretation);
-
-	// never abort
-	return true;
-}
-
-void StrongNegationSubstitutionPrinterCallback::
-substituteIntoStrongNegationAndPrint(
-		std::ostream& o, RegistryPtr reg, const Tuple& substitution) const
-{
-	// prepare substitution map
-	std::map<ID,ID> mapper;
-	assert(substitution.size() == ctxdata.variableIDs.size());
-	for(unsigned u = 0; u < substitution.size(); ++u)
-	{
-		mapper[ctxdata.variableIDs[u]] = substitution[u];
 	}
 
-	// substitute and print
-	RawPrinter p(o, reg);
-	assert(querycacheNaf.size() == querycache.size());
-	assert(!querycache.empty());
-	o << "{";
-	bool firstPrinted = true;
-	for(unsigned u = 0; u < querycache.size(); ++u)
+  // print an ID and return true,
+  // or do not print it and return false
+  virtual bool print(std::ostream& out, ID id, const std::string& prefix) const
 	{
-		if( querycacheNaf[u] )
-		{
-			// do not print naf literals in query
-			//o << "not ";
-			continue;
-		}
-		if( firstPrinted )
-		{
-			firstPrinted = false;
-		}
-		else
-		{
-			o << ", ";
-		}
-		const Tuple& atom = querycache[u].tuple;
-		assert(!atom.empty());
-		assert(!atom.front().isVariableTerm());
-		p.print(atom.front());
-		if( atom.size() > 1 )
-		{
-			// copy body
-			Tuple atombody(atom.begin()+1, atom.end());
-
-			// substitute
-			for(Tuple::iterator it = atombody.begin();
-					it != atombody.end(); ++it)
-			{
-				if( it->isVariableTerm() )
-				{
-					assert(mapper.count(*it) == 1 &&
-							"variable in query must be substituted!");
-					*it = mapper[*it];
-				}
-			}
-
-			// print
-			o << "(";
-			p.printmany(atombody,",");
-			o << ")";
-		}
-	}
-	o << "}";
-}
-
-void StrongNegationSubstitutionPrinterCallback::
-printAllSubstitutions(
-		std::ostream& o, InterpretationPtr interpretation)
-{
-	typedef Interpretation::Storage Storage;
-	RegistryPtr reg = interpretation->getRegistry();
-	Storage& bits = interpretation->getStorage();
-	for(Storage::enumerator it = bits.first();
-			it != bits.end(); ++it)
-	{
-		// build substitution tuple
-		const OrdinaryAtom& ogatom = reg->ogatoms.getByAddress(*it);
-		DBGLOG(DBG,"got auxiliary " << ogatom.text);
-		assert(ogatom.tuple.size() > 1);
-		Tuple subst(ogatom.tuple.begin()+1, ogatom.tuple.end());
-		assert(!subst.empty());
-
-		// discard duplicates
-		if( printedSubstitutions.find(subst) != printedSubstitutions.end() )
-		{
-			LOG(DBG,"discarded duplicate substitution from auxiliary atom " << ogatom.text);
-			continue;
-		}
-
-		// add and print substitution
-		printedSubstitutions.insert(subst);
-		substituteIntoStrongNegationAndPrint(o, reg, subst);
-		o << std::endl;
-	}
-}
-
-// first model: project auxiliary substitution atoms into cached interpretation
-// other models: intersect model with cached interpretation
-// prints substitutions in projected interpretation to STDERR
-// (this is used in cautious mode)
-class IntersectedStrongNegationSubstitutionPrinterCallback:
-	public StrongNegationSubstitutionPrinterCallback
-{
-public:
-  IntersectedStrongNegationSubstitutionPrinterCallback(
-			RegistryPtr reg, const CtxData& ctxdata,
-			bool printPreliminaryModels);
-	virtual ~IntersectedStrongNegationSubstitutionPrinterCallback() {}
-
-  virtual bool operator()(AnswerSetPtr model);
-
-	// print result after it is clear that no more models follow
-	virtual void printFinalAnswer();
-
-protected:
-	InterpretationPtr cachedInterpretation;
-	bool printPreliminaryModels;
-};
-typedef boost::shared_ptr<IntersectedStrongNegationSubstitutionPrinterCallback>
-	IntersectedStrongNegationSubstitutionPrinterCallbackPtr;
-
-IntersectedStrongNegationSubstitutionPrinterCallback::IntersectedStrongNegationSubstitutionPrinterCallback(
-		RegistryPtr reg,
-		const CtxData& ctxdata,
-		bool printPreliminaryModels):
-	StrongNegationSubstitutionPrinterCallback(reg, ctxdata),
-	// do not create it here!
-	cachedInterpretation(),
-	printPreliminaryModels(printPreliminaryModels)
-{
-}
-
-bool IntersectedStrongNegationSubstitutionPrinterCallback::operator()(
-		AnswerSetPtr model)
-{
-	DBGLOG_SCOPE(DBG,"iqspc",false);
-	DBGLOG(DBG,"= IntersectedStrongNegationSubstitutionPrinterCallback::operator()");
-
-	typedef Interpretation::Storage Storage;
-	RegistryPtr reg = model->interpretation->getRegistry();
-
-	bool changed = false;
-	if( !cachedInterpretation )
-	{
-		// this is the first model
-		DBGLOG(DBG,"got initial model " << *model->interpretation);
-
-		// -> copy it
-		cachedInterpretation.reset(new Interpretation(*model->interpretation));
-		changed = true;
-
-		Storage& bits = cachedInterpretation->getStorage();
-
-		// extract interesting atoms
+		assert(id.isAuxiliary());
 		mask.updateMask();
-		// project model (we destroy the original answer set in place!)
-		bits &= mask.mask()->getStorage();
-		DBGLOG(DBG,"projected initial model to " << *cachedInterpretation);
-	}
-	else
-	{
-		// this is a subsequent model
-		DBGLOG(DBG,"got subsequent model " << *model->interpretation);
+		DBGLOG(DBG,"mask is " << *mask.mask());
+		if( mask.mask()->getFact(id.address) )
+		{
+			// we cannot use any stored text to print this, we have to assemble it from pieces
+			DBGLOG(DBG,"printing auxiliary for strong negation: " << id);
 
-		// intersect with new model
-		bm::id_t oldBits = cachedInterpretation->getStorage().count();
-		cachedInterpretation->getStorage() &= model->interpretation->getStorage();
-		bm::id_t newBits = cachedInterpretation->getStorage().count();
-		changed = (newBits != oldBits);
-		DBGLOG(DBG,"projected cached interpretation to " << *cachedInterpretation <<
-				(changed?"(changed)":"(unchanged)"));
-	}
+			// get replacement atom details
+			const OrdinaryAtom& r_atom = reg->ogatoms.getByAddress(id.address);
 
-	assert(!!cachedInterpretation);
+			// find positive version of predicate
+			assert(!r_atom.tuple.empty());
+			const NegToPosMap::const_iterator itpred = ntpm.find(r_atom.tuple.front());
+			assert(itpred != ntpm.end());
+			const ID idpred = itpred->second;
 
-	if( changed && printPreliminaryModels )
-	{
-		// display preliminary set of substitutions (on stderr)
-		std::cerr << "preliminary cautious query answers:" << std::endl;
+			// print strong negation
+			out << prefix << '-';
 
-		// reset duplicate elimination set
-		printedSubstitutions.clear();
+			// print tuple
+      RawPrinter printer(out, reg);
+      // predicate
+      printer.print(idpred);
+      if( r_atom.tuple.size() > 1 )
+      {
+        Tuple t(r_atom.tuple.begin()+1, r_atom.tuple.end());
+        out << "(";
+        printer.printmany(t,",");
+        out << ")";
+      }
 
-		printAllSubstitutions(std::cerr, cachedInterpretation);
-	}
-
-	// abort iff cached interpretation contains no bits -> no more substitutions cautiously entailed
-	if( cachedInterpretation->getStorage().none() )
-	{
-		// abort
+			return true;
+		}
 		return false;
 	}
-	else
-	{
-		// do not abort
-		return true;
-	}
-}
-
-// print result after it is clear that no more models follow
-void IntersectedStrongNegationSubstitutionPrinterCallback::
-	printFinalAnswer()
-{
-	if( !!cachedInterpretation )
-	{
-		// reset duplicate elimination set
-		printedSubstitutions.clear();
-
-		// print this to stderr s.t. stdout output contains only models
-		if( printPreliminaryModels )
-			std::cerr << "final cautious query answers:" << std::endl;
-
-		// print result
-		printAllSubstitutions(std::cout, cachedInterpretation);
-	}
-	// print nothing if final answer is "no cautiously entailed substitutions"
-}
-
-class CautiousVerdictPrinterCallback:
-	public FinalCallback
-{
-public:
-	CautiousVerdictPrinterCallback(
-			IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter);
-	virtual ~CautiousVerdictPrinterCallback() {}
-
-  virtual void operator()();
 
 protected:
-	IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter;
+	RegistryPtr reg;
+	PredicateMask& mask;
+	const NegToPosMap& ntpm;
 };
-
-CautiousVerdictPrinterCallback::CautiousVerdictPrinterCallback(
-			IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter):
-	iqsprinter(iqsprinter)
-{
-}
-
-void CautiousVerdictPrinterCallback::operator()()
-{
-	assert(!!iqsprinter);
-	// fully delegate printing to iqsprinter
-	iqsprinter->printFinalAnswer();
-}
 
 } // anonymous namespace
-#endif
 
-// change model callback and register final callback
+// register auxiliary printer for strong negation auxiliaries
 void StrongNegationPlugin::setupProgramCtx(ProgramCtx& ctx)
 {
 	StrongNegationPlugin::CtxData& ctxdata = ctx.getPluginData<StrongNegationPlugin>();
 	if( !ctxdata.enabled )
 		return;
 
-	throw std::runtime_error("TODO setup strong negation program ctx here");
-	#if 0
-
 	RegistryPtr reg = ctx.registry();
-	assert(!!reg);
 
-	if( ctxdata.ground )
+	// init predicate mask
+	ctxdata.myAuxiliaryPredicateMask.setRegistry(reg);
+
+	// add all auxiliaries to mask (here we should already have parsed all of them)
+	typedef CtxData::NegToPosMap NegToPosMap;
+	NegToPosMap::const_iterator it;
+	for(it = ctxdata.negToPos.begin();
+			it != ctxdata.negToPos.end(); ++it)
 	{
-		// create messages
-		std::string modelmsg, finalmsg;
-		{
-			std::stringstream msgs;
-			RawPrinter pr(msgs, reg);
-			pr.printmany(ctxdata.query, ", ");
-			msgs << " is ";
-			switch(ctxdata.mode)
-			{
-			case CtxData::BRAVE:
-				msgs << "bravely ";
-				modelmsg = msgs.str() + "true, evidenced by ";
-				finalmsg = msgs.str() + "false.";
-				break;
-			case CtxData::CAUTIOUS:
-				msgs << "cautiously ";
-				modelmsg = msgs.str() + "false, evidenced by ";
-				finalmsg = msgs.str() + "true.";
-				break;
-			default:
-				assert("unknown querying mode!");
-			}
-		}
-		
-		bool keepAuxiliaryPredicates =
-			(1 == ctx.config.getOption("KeepAuxiliaryPredicates"));
-		WitnessPrinterCallbackPtr wprinter(
-				new WitnessPrinterCallback(modelmsg,
-					!ctxdata.allWitnesses, keepAuxiliaryPredicates));
-		FinalCallbackPtr fprinter(
-				new VerdictPrinterCallback(finalmsg, wprinter));
-		#warning here we could try to only remove the default answer set printer
-		ctx.modelCallbacks.clear();
-		ctx.modelCallbacks.push_back(wprinter);
-		ctx.finalCallbacks.push_back(fprinter);
+		ctxdata.myAuxiliaryPredicateMask.addPredicate(it->first);
 	}
-	else
-	{
-		switch(ctxdata.mode)
-		{
-		case CtxData::BRAVE:
-			{
-				ModelCallbackPtr qsprinter(new StrongNegationSubstitutionPrinterCallback(reg, ctxdata));
-				#warning here we could try to only remove the default answer set printer
-				ctx.modelCallbacks.clear();
-				ctx.modelCallbacks.push_back(qsprinter);
-			}
-			break;
-		case CtxData::CAUTIOUS:
-			{
-				bool printPreliminaryModels = !ctx.config.getOption("Silent");
-				IntersectedStrongNegationSubstitutionPrinterCallbackPtr iqsprinter(
-						new IntersectedStrongNegationSubstitutionPrinterCallback(
-							reg, ctxdata, printPreliminaryModels));
-				#warning here we could try to only remove the default answer set printer
-				ctx.modelCallbacks.clear();
-				ctx.modelCallbacks.push_back(iqsprinter);
-				FinalCallbackPtr fprinter(
-						new CautiousVerdictPrinterCallback(iqsprinter));
-				ctx.finalCallbacks.push_back(fprinter);
-			}
-			break;
-		default:
-			assert("unknown querying mode!");
-		}
-	}
-	#endif
+
+	// update predicate mask
+	ctxdata.myAuxiliaryPredicateMask.updateMask();
+
+	// create auxiliary printer using mask
+	AuxPrinterPtr negAuxPrinter(new NegAuxPrinter(
+				reg, ctxdata.myAuxiliaryPredicateMask, ctxdata.negToPos));
+	reg->registerUserAuxPrinter(negAuxPrinter);
 }
 
 DLVHEX_NAMESPACE_END

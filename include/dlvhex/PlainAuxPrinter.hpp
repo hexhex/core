@@ -44,7 +44,7 @@ public:
 
   // print an ID and return true,
   // or do not print it and return false
-  virtual bool print(std::ostream& out, ID id) const;
+  virtual bool print(std::ostream& out, ID id, const std::string& prefix) const;
 protected:
   RegistryPtr reg;
 };

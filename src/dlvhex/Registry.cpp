@@ -433,13 +433,13 @@ void Registry::registerUserDefaultAuxPrinter(AuxPrinterPtr printer)
 
 // true if anything was printed
 // false if nothing was printed
-bool Registry::printAtomForUser(std::ostream& o, IDAddress address)
+bool Registry::printAtomForUser(std::ostream& o, IDAddress address, const std::string& prefix)
 {
   DBGLOG(DBG,"printing for user id " << address);
   if( !getAuxiliaryGroundAtomMask()->getFact(address) )
   {
     // fast direct output
-    o << ogatoms.getByAddress(address).text;
+    o << prefix << ogatoms.getByAddress(address).text;
     return true;
   }
   else
@@ -453,13 +453,13 @@ bool Registry::printAtomForUser(std::ostream& o, IDAddress address)
         it != pimpl->auxPrinters.end(); ++it)
     {
       DBGLOG(DBG,"trying registered aux printer");
-      if( (*it)->print(o, id) )
+      if( (*it)->print(o, id, prefix) )
         return true;
     }
     if( !!pimpl->defaultAuxPrinter )
     {
       DBGLOG(DBG,"trying default aux printer");
-      return pimpl->defaultAuxPrinter->print(o, id);
+      return pimpl->defaultAuxPrinter->print(o, id, prefix);
     }
     return false;
   }

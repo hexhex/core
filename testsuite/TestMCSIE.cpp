@@ -392,7 +392,7 @@ int main(int argn, char** argv)
   {
     RegistryPtr registry(new Registry);
     PluginContainerPtr pluginContainer(new PluginContainer(registry));
-    ctx.setupRegistryPluginContainer(registry,pluginContainer);
+    ctx.setupRegistry(registry,pluginContainer);
   }
 
   // create dlv ctx plugin atom

@@ -41,11 +41,11 @@ PlainAuxPrinter::PlainAuxPrinter(RegistryPtr reg):
 // print an ID and return true,
 // or do not print it and return false
 bool PlainAuxPrinter::print(
-    std::ostream& out, ID id) const
+    std::ostream& out, ID id, const std::string& prefix) const
 {
   // simply print all IDs
   assert(id.isOrdinaryGroundAtom() && id.isAuxiliary());
-  out << reg->ogatoms.getByAddress(id.address).text;
+  out << prefix << reg->ogatoms.getByAddress(id.address).text;
   return true;
 }
 

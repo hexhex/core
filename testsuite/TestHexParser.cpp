@@ -55,7 +55,7 @@ DLVHEX_NAMESPACE_USE
 BOOST_AUTO_TEST_CASE(testHexParserSimple) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
 BOOST_AUTO_TEST_CASE(testHexParserConstraint) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(testHexParserConstraint)
 BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(testHexParserWeakConstraint)
 BOOST_AUTO_TEST_CASE(testHexParserTrueNegation) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(testHexParserTrueNegation)
 BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(testHexParserBuiltinPredicates)
 BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<

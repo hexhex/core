@@ -107,21 +107,6 @@ ProgramCtx::changeState(const boost::shared_ptr<State>& s)
   state = s;
 }
 
-#if 0
-// must be setup together
-// pluginContainer must be associated to registry
-#warning deprecated
-void ProgramCtx::setupRegistryPluginContainer(
-    RegistryPtr registry, PluginContainerPtr pluginContainer)
-{
-  assert(!pluginContainer ||
-      (pluginContainer->getRegistry() == registry &&
-      "PluginContainer in ProgramCtx must be associated to registry of programCtx"));
-  _registry = registry;
-  _pluginContainer = pluginContainer;
-}
-#endif
-
 // cannot change registry if something is already stored here
 void ProgramCtx::setupRegistry(
     RegistryPtr registry)
@@ -134,6 +119,7 @@ void ProgramCtx::setupRegistry(
       &&
       "cannot change registry once idb or edb or pluginAtoms contains data");
   _registry = registry;
+  _registry->setupAuxiliaryGroundAtomMask();
 }
 
 void ProgramCtx::setupPluginContainer(

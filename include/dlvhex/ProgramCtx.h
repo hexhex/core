@@ -87,13 +87,6 @@ public:
 
   void setupPluginContainer(PluginContainerPtr pluginContainer);
 
-  // must be setup together
-  // pluginContainer must be associated to registry
-  #warning deprecated
-  void setupRegistryPluginContainer(
-      RegistryPtr registry, PluginContainerPtr pluginContainer=PluginContainerPtr())
-    { setupRegistry(registry); setupPluginContainer(pluginContainer); }
-
   // factory for eval heuristics
   EvalHeuristicFactory evalHeuristicFactory;
   // factory for model builders

@@ -52,6 +52,13 @@ public:
     typedef std::map<ID,unsigned> PredicateArityMap;
     PredicateArityMap negPredicateArities;
 
+    // aux predicate constants and their positive counterparts
+    typedef std::map<ID,ID> NegToPosMap;
+    NegToPosMap negToPos;
+    
+    // for fast detection whether an ID is this plugin's responsitility to display
+    PredicateMask myAuxiliaryPredicateMask;
+
     CtxData();
     virtual ~CtxData() {};
   };

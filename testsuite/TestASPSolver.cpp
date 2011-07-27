@@ -61,7 +61,7 @@ template<typename SolverSoftwareConfiguration>
 void testSimple()
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<

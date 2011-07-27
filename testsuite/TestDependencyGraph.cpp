@@ -63,7 +63,7 @@ DLVHEX_NAMESPACE_USE
 BOOST_AUTO_TEST_CASE(testDisj) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(testDisj)
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
