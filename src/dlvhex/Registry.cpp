@@ -30,8 +30,16 @@
  */
 
 #include "dlvhex/Registry.hpp"
+
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "dlvhex/Benchmarking.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/Interpretation.hpp"
 
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
@@ -98,12 +106,16 @@ typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
 struct Registry::Impl
 {
   AuxiliaryStorage auxSymbols;
+  PredicateMask auxGroundAtomMask;
+  std::list<AuxPrinterPtr> auxPrinters;
+  AuxPrinterPtr defaultAuxPrinter;
 };
 
 
 Registry::Registry():
   pimpl(new Impl)
 {
+  // do not initialize pimpl->auxGroundAtomMask here! (we can do this only outside of the constructor)
 }
 
 // creates a real deep copy
@@ -118,6 +130,7 @@ Registry::Registry(const Registry& other):
   rules(other.rules),
   pimpl(new Impl(*other.pimpl))
 {
+  // do not initialize pimpl->auxGroundAtomMask here! (we can do this only outside of the constructor)
 }
 
 // it is very important that this destructor is not in the .hpp file,
@@ -339,10 +352,18 @@ ID Registry::storeTerm(Term& term)
   return storeConstOrVarTerm(term);
 }
 
+void Registry::setupAuxiliaryGroundAtomMask()
+{
+  assert(!pimpl->auxGroundAtomMask.mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
+  pimpl->auxGroundAtomMask.setRegistry(shared_from_this());
+}
+
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 {
   DBGLOG_SCOPE(DBG,"gACS",false);
   DBGLOG(DBG,"getAuxiliaryConstantSymbol for " << type << " " << id);
+  assert(!!pimpl->auxGroundAtomMask.mask() &&
+      "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
 
   // lookup auxiliary
   AuxiliaryKey key(type,id);
@@ -375,9 +396,73 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   // register auxiliary
   pimpl->auxSymbols.insert(std::make_pair(key, av));
 
+  // update predicate mask
+  pimpl->auxGroundAtomMask.addPredicate(av.id);
+
   // return
   DBGLOG(DBG,"returning id " << av.id << " for aux symbol " << av.symbol);
   return av.id;
+}
+
+// get predicate mask to auxiliary ground atoms
+InterpretationConstPtr Registry::getAuxiliaryGroundAtomMask()
+{
+  assert(!!pimpl->auxGroundAtomMask.mask() &&
+      "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
+  pimpl->auxGroundAtomMask.updateMask();
+  return pimpl->auxGroundAtomMask.mask();
+}
+
+//
+// printing framework
+//
+
+// these printers are used as long as none prints it
+void Registry::registerUserAuxPrinter(AuxPrinterPtr printer)
+{
+  DBGLOG(DBG,"added auxiliary printer");
+  pimpl->auxPrinters.push_back(printer);
+}
+
+// this one printer is used last
+void Registry::registerUserDefaultAuxPrinter(AuxPrinterPtr printer)
+{
+  DBGLOG(DBG,"configured default auxiliary printer");
+  pimpl->defaultAuxPrinter = printer;
+}
+
+// true if anything was printed
+// false if nothing was printed
+bool Registry::printAtomForUser(std::ostream& o, IDAddress address)
+{
+  DBGLOG(DBG,"printing for user id " << address);
+  if( !getAuxiliaryGroundAtomMask()->getFact(address) )
+  {
+    // fast direct output
+    o << ogatoms.getByAddress(address).text;
+    return true;
+  }
+  else
+  {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Registry aux printing");
+
+    ID id(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX, address);
+    DBGLOG(DBG,"printing auxiliary " << address << " (reconstructed id " << id << ")");
+    typedef std::list<AuxPrinterPtr> AuxPrinterList;
+    for(AuxPrinterList::const_iterator it = pimpl->auxPrinters.begin();
+        it != pimpl->auxPrinters.end(); ++it)
+    {
+      DBGLOG(DBG,"trying registered aux printer");
+      if( (*it)->print(o, id) )
+        return true;
+    }
+    if( !!pimpl->defaultAuxPrinter )
+    {
+      DBGLOG(DBG,"trying default aux printer");
+      return pimpl->defaultAuxPrinter->print(o, id);
+    }
+    return false;
+  }
 }
 
 DLVHEX_NAMESPACE_END

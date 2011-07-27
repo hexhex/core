@@ -55,6 +55,7 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
     EvalHeuristicEasy.cpp \
+    PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \

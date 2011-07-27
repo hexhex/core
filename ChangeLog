@@ -37,6 +37,7 @@
 	interface ComfortPluginInterface.hpp.
 	* Plugins may now provide an alternative HEX parser by overriding createParser().
 	* Plugins may now extend the HEX parser using parser modules.
+	* Plugins may now register "auxiliary printer callbacks" for printing certain auxiliaries.
 
 	Testing and debugging additions:
 

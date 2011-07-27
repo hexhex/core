@@ -25,7 +25,7 @@
  * @file   AnswerSetPrinterCallback.cpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Implementation of logging facility.
+ * @brief  Implementation of default answer set printer callback.
  */
 
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
@@ -41,40 +41,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnswerSetPrinterCallback::AnswerSetPrinterCallback(
-    bool keepAuxiliaryPredicates):
-  keepAuxiliaryPredicates(keepAuxiliaryPredicates)
+AnswerSetPrinterCallback::AnswerSetPrinterCallback()
 {
-}
-
-namespace
-{
-  struct FilterCallback
-  {
-    // ordinary ground atoms
-    OrdinaryAtomTable& ogat;
-
-    FilterCallback(RegistryPtr reg):
-      ogat(reg->ogatoms)
-    {
-    }
-
-    bool operator()(IDAddress addr)
-    {
-      const OrdinaryAtom& oa = ogat.getByAddress(addr);
-      if( (oa.kind & ID::PROPERTY_ATOM_AUX) != 0 )
-      {
-        return false;
-      }
-      else
-      {
-        // assert term aux bit
-        assert((oa.tuple.front().kind & ID::PROPERTY_TERM_AUX) == 0 &&
-            "if ordinary ground atom is not auxiliary, predicate term must not be auxiliary");
-        return true;
-      }
-    }
-  };
 }
 
 bool AnswerSetPrinterCallback::operator()(
@@ -82,14 +50,31 @@ bool AnswerSetPrinterCallback::operator()(
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"AnswerSetPrinterCallback");
 
-  if( !keepAuxiliaryPredicates )
+  // uses the Registry to print the interpretation, including
+  // possible influence from AuxiliaryPrinter objects (if any are registered)
+
+  RegistryPtr reg = as->interpretation->getRegistry();
+  const Interpretation::Storage& bits = as->interpretation->getStorage();
+  std::ostream& o = std::cout;
+
+  #warning TODO think about more efficient printing
+  o << '{';
+  Interpretation::Storage::enumerator it = bits.first();
+  if( it != bits.end() )
   {
-    // filter by aux bits
-    FilterCallback cb(as->interpretation->getRegistry());
-    unsigned rejected = as->interpretation->filter(cb);
-    DBGLOG(DBG,"ASPrinterCB filtered " << rejected << " auxiliaries from interpretation");
+    bool gotOutput =
+      reg->printAtomForUser(o, *it);
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      if( gotOutput )
+        o << ',';
+      gotOutput =
+        reg->printAtomForUser(o, *it);
+    }
   }
-  std::cout << *as << std::endl;
+  o << '}' << std::endl;
+
   // never abort
   return true;
 }

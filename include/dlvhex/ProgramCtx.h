@@ -124,8 +124,6 @@ public:
 
   // TODO: add visibility policy (as in clasp)
 
-  // TODO: everything required for executing plain HEX programs (no rewriting involved)
-
   DependencyGraphPtr depgraph;
   ComponentGraphPtr compgraph;
   FinalEvalGraphPtr evalgraph;
@@ -169,7 +167,7 @@ public:
   // associate external atoms in registry of this ProgramCtx
   // with plugin atoms in given idb
   //
-  // throws on unknown atom if configured that way
+  // throws on unknown atom iff failOnUnknownAtom is true
   void associateExtAtomsWithPluginAtoms(const Tuple& idb, bool failOnUnknownAtom=true);
 
   // setup this ProgramCtx (using setupProgramCtx() for of all plugins)

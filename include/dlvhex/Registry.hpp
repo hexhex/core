@@ -45,10 +45,11 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning namespaces
+#warning namespaces where here
 /*
 typedef boost::bimaps::bimap<
   boost::bimaps::set_of<std::string>,
@@ -56,10 +57,27 @@ typedef boost::bimaps::bimap<
   */
 
 /**
+ * Registry Plugin for printing auxiliary IDs.
+ *
+ * Derived classes implement the print method which decides
+ * whether printing the ID is the responsibility of that class
+ * and acts accordingly.
+ */
+class AuxPrinter
+{
+public:
+  virtual ~AuxPrinter() {}
+  // print an ID and return true,
+  // or do not print it and return false
+  virtual bool print(std::ostream& out, ID id) const = 0;
+};
+
+/**
  * @brief Registry for entities used in programs as IDs (collection of symbol tables)
  */
 struct Registry:
-  public ostream_printable<Registry>
+  public ostream_printable<Registry>,
+  public boost::enable_shared_from_this<Registry>
 {
   Registry();
   // creates a real deep copy
@@ -135,13 +153,22 @@ struct Registry:
   // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
-  // auxiliary entities:
+  //
+  // auxiliary management
+  //
+
+  // must be called after construction and before any call to getAuxiliaryConstantSymbol
+  void setupAuxiliaryGroundAtomMask();
+
   // create or lookup auxiliary constant symbol of type <type> for ID <id>
   // with multiple calls, for one <type>/<id> pair the same symbol/ID will be returned
   // we limit ourselves to types of one letter, this should be sufficient
   // see Registry.cpp for documentation of types used internally in dlvhex
   // (plugins may also want to use this method for their own auxiliaries)
   ID getAuxiliaryConstantSymbol(char type, ID id);
+
+  // get predicate mask to auxiliary ground atoms
+  InterpretationConstPtr getAuxiliaryGroundAtomMask();
 
   //
   // accessors
@@ -169,6 +196,20 @@ struct Registry:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+
+  //
+  // printing framework
+  //
+
+  // these printers are used as long as none prints it
+  void registerUserAuxPrinter(AuxPrinterPtr printer);
+
+  // this one printer is used last
+  void registerUserDefaultAuxPrinter(AuxPrinterPtr printer);
+
+  // true if anything was printed
+  // false if nothing was printed
+  bool printAtomForUser(std::ostream& o, IDAddress address);
 
 protected:
   struct Impl;

@@ -22,29 +22,34 @@
  */
 
 /**
- * @file   AnswerSetPrinterCallback.hpp
+ * @file   PlainAuxPrinter.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Helpers for printing objects to streams.
+ * @brief  Helper for printing auxiliary objects for the user.
  */
 
-#ifndef ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
-#define ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
+#ifndef PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
+#define PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
 
 #include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex/Registry.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class AnswerSetPrinterCallback:
-  public ModelCallback
+class PlainAuxPrinter:
+  public AuxPrinter
 {
 public:
-  AnswerSetPrinterCallback();
-  virtual bool operator()(AnswerSetPtr model);
+  PlainAuxPrinter(RegistryPtr reg);
+
+  // print an ID and return true,
+  // or do not print it and return false
+  virtual bool print(std::ostream& out, ID id) const;
+protected:
+  RegistryPtr reg;
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif // ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
+#endif // PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
 

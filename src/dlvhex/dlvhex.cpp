@@ -248,6 +248,7 @@ int main(int argc, char *argv[])
   ProgramCtx pctx;
 	{
 		RegistryPtr registry(new Registry);
+		registry->setupAuxiliaryGroundAtomMask();
 		PluginContainerPtr pcp(new PluginContainer);
 		pctx.setupRegistry(registry);
 		pctx.setupPluginContainer(pcp);

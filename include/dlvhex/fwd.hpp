@@ -47,6 +47,9 @@ struct AggregateAtom;
 class AnswerSet;
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 
+class AuxPrinter;
+typedef boost::shared_ptr<AuxPrinter> AuxPrinterPtr;
+
 class ComponentGraph;
 typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 

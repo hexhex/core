@@ -56,6 +56,7 @@
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
+#include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/SafetyChecker.h"
 
 #include <boost/foreach.hpp>
@@ -719,18 +720,21 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
-  #warning TODO configure output hook with filter
-  #warning TODO weak model output hook with filter
-
-  // setup default model outputting callback
-
-  bool keepAuxiliaryPredicates = (1 == ctx->config.getOption("KeepAuxiliaryPredicates"));
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(keepAuxiliaryPredicates));
+  // default model outputting callback
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
   ctx->modelCallbacks.push_back(asprinter);
+
+  // setup printing of auxiliaries
+  if( 1 == ctx->config.getOption("KeepAuxiliaryPredicates") )
+  {
+    AuxPrinterPtr plainAuxPrinter(new PlainAuxPrinter(ctx->registry()));
+    ctx->registry()->registerUserDefaultAuxPrinter(plainAuxPrinter);
+  }
 
   // let plugins setup the program ctx (removing the default hooks is permitted)
   ctx->setupByPlugins();
 
+  #warning TODO higher order was here
   /*
   // if we solve using DLV, automagically set higher order mode
   // (this has to be done globally for the global solver configuration,
@@ -961,28 +965,12 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
     (*fcb)();
   }
 
-  ///@todo filtering the atoms here is maybe to costly, how about
-  ///ignoring the aux names when building the output, since the custom
-  ///output builders of the plugins may need the aux names? Likewise
-  ///for --filter predicates...
-
-  //
-  // remove auxiliary atoms
-  //
-  #warning TODO do filtering in output hook for individual models
-  //ctx->getResultContainer()->filterOut(Term::getAuxiliaryNames());
-
+  #warning TODO dlt was here
   ///@todo quick hack for dlt
   //   if (optiondlt)
   //     {
   //       ctx->getResultContainer()->filterOutDLT();
   //     }
-
-  //
-  // apply filter
-  //
-  //if (optionFilter.size() > 0)
-  //ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
 
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);

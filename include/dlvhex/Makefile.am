@@ -47,6 +47,7 @@ pkginclude_HEADERS = \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \
   OrdinaryAtomTable.hpp \
+  PlainAuxPrinter.hpp \
   PlainModelGenerator.hpp \
   PlatformDefinitions.h \
   PluginContainer.h \
