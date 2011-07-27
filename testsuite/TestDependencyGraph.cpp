@@ -60,6 +60,53 @@
 
 DLVHEX_NAMESPACE_USE
 
+BOOST_AUTO_TEST_CASE(testDisj) 
+{
+  ProgramCtx ctx;
+  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+
+  std::stringstream ss;
+  ss <<
+		// a <-(+)-> a (head/head = disjunctive)
+    "a v b." << std::endl <<
+    "a v c." << std::endl;
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  ModuleHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
+	LOG_REGISTRY_PROGRAM(ctx);
+
+  ID ida = ctx.registry()->ogatoms.getIDByString("a");
+  ID idb = ctx.registry()->ogatoms.getIDByString("b");
+  ID idc = ctx.registry()->ogatoms.getIDByString("c");
+  BOOST_REQUIRE((ida | idb | idc) != ID_FAIL);
+
+  // smaller more efficient dependency graph
+  {
+    DependencyGraph depgraph(ctx.registry());
+    std::vector<ID> auxRules;
+    depgraph.createDependencies(ctx.idb, auxRules);
+
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 2);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 2);
+
+    // TODO test dependencies (will do manually with graphviz at the moment)
+
+    const char* fnamev = "testDependencyGraphDisjVerbose.dot";
+    LOG(INFO,"dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testDependencyGraphDisjTerse.dot";
+    LOG(INFO,"dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;

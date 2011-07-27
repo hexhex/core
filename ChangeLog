@@ -1,3 +1,9 @@
+2011-07-27  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/DependencyGraph.cpp: Fixing bug in dependency graph exposed
+	by strong negation tests.
+	* testsuite/TestDependencyGraph.cpp: New testcase to test dependency graph.
+
 2011-07-26  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Summary of changes for going from version 1.7.X to version 2.Y:

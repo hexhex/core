@@ -747,11 +747,26 @@ namespace
       const RangeT& range1, const RangeT& range2,
       const DependencyGraph::DependencyInfo& di, GraphT& dg)
   {
+    bool breakSymmetry = false;
+    if( range1.begin() == range2.begin() &&
+        range1.end() == range2.end() )
+      breakSymmetry = true;
     for(typename RangeT::const_iterator it1 = range1.begin();
         it1 != range1.end(); ++it1)
     {
-      for(typename RangeT::const_iterator it2 = range2.begin();
-          it2 != range2.end(); ++it2)
+      typename RangeT::const_iterator it2;
+      if( breakSymmetry )
+      {
+        // do half cross product, do not intersect with itself
+        it2 = it1;
+        it2++;
+      }
+      else
+      {
+        // do full cross product
+        it2 = range2.begin();
+      }
+      for(;it2 != range2.end(); ++it2)
       {
         if( *it1 == *it2 )
           continue;
@@ -781,6 +796,8 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
   // we start in the inner loop from the element after the outer loop's element
   // this way we can break symmetries and use half the time
 
+  // we also need to create dependencies between equal elements in multiple heads
+
   const HeadBodyHelper::InHeadIndex& hb_ih = hbh.infos.get<InHeadTag>();
   HeadBodyHelper::InHeadIndex::const_iterator it1, it2, itend;
 
@@ -798,6 +815,30 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
     assert(it1->id.isOrdinaryAtom());
     const OrdinaryAtom& oa1 = registry->lookupOrdinaryAtom(it1->id);
     DBGLOG(DBG,"= " << oa1);
+
+    // create head-head dependencies between equal (same iterator, and in
+    // that sense not unifying but trivially unifying) elements in different heads:
+    // * disjunctive:
+    //   * inHeadOfDisjunctiveRules <-> inHeadOfNondisjunctiveRules
+    //   * inHeadOfDisjunctiveRules <-> inHeadOfDisjunctiveRules (but not to itself)
+    //   * inHeadOfNondisjunctiveRules <-> inHeadOfDisjunctiveRules
+    // * nondisjunctive:
+    //   * inHeadOfNondisjunctiveRules <-> inHeadOfNondisjunctiveRules (but not to itself)
+    DBGLOG(DBG,"adding unifying head-head dependency for " << oa1 <<
+        " in head of disjunctive rules " <<
+          printvector(it1->inHeadOfDisjunctiveRules) <<
+        " and in head of nondisjunctive rules " <<
+          printvector(it1->inHeadOfNondisjunctiveRules));
+    addAllMutualDependencies(
+        it1->inHeadOfNondisjunctiveRules, it1->inHeadOfNondisjunctiveRules,
+        diUnifyingHead, dg);
+    // this takes care of both directions
+    addAllMutualDependencies(
+        it1->inHeadOfDisjunctiveRules, it1->inHeadOfNondisjunctiveRules,
+        diUnifyingDisjunctiveHead, dg);
+    addAllMutualDependencies(
+        it1->inHeadOfDisjunctiveRules, it1->inHeadOfDisjunctiveRules,
+        diUnifyingDisjunctiveHead, dg);
 
     // inner loop with it2
     it2 = it1;
@@ -821,7 +862,7 @@ void DependencyGraph::createHeadHeadUnifyingDependencies(
       // * nondisjunctive:
       //   * inHeadOfNondisjunctiveRules <-> inHeadOfNondisjunctiveRules
 
-      LOG(DBG,"adding unifying head-head dependency between " <<
+      DBGLOG(DBG,"adding unifying head-head dependency between " <<
           oa1 << " in head of disjunctive rules " <<
             printvector(it1->inHeadOfDisjunctiveRules) <<
             " and in head of nondisjunctive rules " <<
