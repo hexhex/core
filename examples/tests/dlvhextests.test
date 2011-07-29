@@ -1,3 +1,4 @@
+../anonymousvariable1.hex anonymousvariable1.out --nofacts
 ../rec_agg_bug1.hex rec_agg_bug1.stderr
 ../builtin_safety1.hex builtin_safety1.stderr
 ../builtin_safety1a.hex builtin_safety1a.stderr

@@ -1,0 +1,3 @@
+pair(a,b). pair(b,c). pair(c,d).
+% this will correctly infer {both(b) both(c)} only if _ is not assigned the same variable
+both(X) :- pair(_,X), pair(X,_).

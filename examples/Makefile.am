@@ -5,6 +5,7 @@ EXTRA_DIST = \
     agg1.hex \
     agg2.hex \
     agg3.hex \
+    anonymousvariable1.hex \
     builtin_safety1.hex \
     builtin_safety1a.hex \
     builtin_safety1b.hex \
@@ -66,6 +67,7 @@ EXTRA_DIST = \
     tests/agg1.out \
     tests/agg2.out \
     tests/agg3.out \
+    tests/anonymousvariable1.out \
     tests/builtin_safety1.stderr \
     tests/builtin_safety1a.stderr \
     tests/builtin_safety1b.stderr \

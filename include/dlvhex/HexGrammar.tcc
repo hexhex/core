@@ -561,7 +561,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   string
     = qi::lexeme[ qi::char_('"') >> *(qi::char_ - (qi::char_('"') | qi::eol)) >> qi::char_('"') ];
   variable
-    = qi::char_('_')
+    = qi::string("_") // this can be qi::char_('_') in boost 1.44 ... boost 1.46
     | qi::lexeme[ ascii::upper >> *(ascii::alnum | qi::char_('_')) ];
   posinteger
     = qi::ulong_;
