@@ -73,6 +73,7 @@
 // internal plugins
 #include "dlvhex/QueryPlugin.hpp"
 #include "dlvhex/StrongNegationPlugin.hpp"
+#include "dlvhex/HigherOrderPlugin.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -316,6 +317,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
 			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
 			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
+			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);
+			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
 		}
 
 		// before anything else we dump the logo
@@ -381,11 +384,19 @@ int main(int argc, char *argv[])
 			throw UsageError(bad.str());
 		}
 
+		// use configured plugins to obtain plugin atoms
+		pctx.addPluginAtomsFromPluginContainer();
+
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
 		pctx.parse();
+			
+		// associate PluginAtom instances with
+		// ExternalAtom instances (in the IDB)
+		// (do not fail if we encounter unknown atoms - plugins might fix this!)
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, false);
 			
 		// rewrite program
 		pctx.rewriteEDBIDB();
@@ -393,11 +404,9 @@ int main(int argc, char *argv[])
 		// check weak safety
 		pctx.safetyCheck();
 
-		// use configured plugins to obtain plugin atoms
-		pctx.addPluginAtomsFromPluginContainer();
-			
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
+		// (again, this time fail if not everything is assigned)
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
 
 		// create dependency graph (we need the previous step for this)

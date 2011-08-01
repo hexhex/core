@@ -1,0 +1,8 @@
+% test higher order in naf body
+foo(a).
+foo(b).
+bar(a).
+
+pred(bar).
+
+nice(X) :- foo(X), pred(P), not P(X).

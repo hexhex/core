@@ -25,7 +25,7 @@
  * @file HigherOrderPlugin.hpp
  * @author Peter Schueller
  *
- * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.
+ * @brief Plugin for higher order rewriting.
  */
 
 #ifndef HIGHER_ORDER_PLUGIN__HPP_INCLUDED_1518
@@ -44,32 +44,15 @@ public:
   class CtxData:
     public PluginData
   {
+	public:
+		typedef std::set<unsigned> AritySet;
+
   public:
     // whether plugin is enabled
     bool enabled;
 
-    // reasoning mode (at the moment DEFAULT triggers an error,
-    // so the user _must_ choose a reasoning mode)
-    enum Mode { DEFAULT, BRAVE, CAUTIOUS };
-    Mode mode;
-
-    // true for ground queries, false for nonground
-    bool ground;
-
-    // the query (contains body literals)
-    // (this is not directly stored into IDB or EDB)
-    Tuple query;
-
-    // auxiliary predicate symbols for nonground query evaluation
-    ID varAuxPred;
-    ID novarAuxPred;
-
-    // IDs of variables as they occur in auxiliary nonground predicate
-    Tuple variableIDs;
-
-    // whether to display all witnesses for ground queries
-    // (positive witnesses for brave and negative for cautious reasoning)
-    bool allWitnesses;
+		// which higher order arities were encountered?
+		AritySet arities;
 
     CtxData();
     virtual ~CtxData() {};
@@ -82,20 +65,23 @@ public:
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --query-enables --query-brave --query-cautious
+  // accepted options: --higherorder-enable
   //
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
   // create parser modules that extend and the basic hex grammar
-  // this parser also stores the query information into the plugin
   virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
-  // rewrite program by adding auxiliary query rules
+  // rewrite program:
+	// change all predicates p(t1,...,tn) to auxn(p,t1,...,tn)
+	// for each constant pi occuring at a predicate input of an external atom
+	//   with some predicate pi of arity k occuring somewhere in the program
+	//   create rule pi(V1,...,Vk) :- auxk(pi,V1,...,Vk)
   virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // change model callback and register final callback
+  // register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
   virtual void setupProgramCtx(ProgramCtx&);
 
   // no atoms!

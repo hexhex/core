@@ -22,6 +22,7 @@ EXTRA_DIST = \
     extatom5.hex \
     extatom6.hex \
     extatom7.hex \
+    extatom8.hex \
     extatom9.hex \
     minimality.hex \
     msp.hex \
@@ -38,6 +39,7 @@ EXTRA_DIST = \
     strongnegation_asp3.hex \
     strongnegation_asp4.hex \
     strongnegation_asp5.hex \
+		variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -83,6 +85,7 @@ EXTRA_DIST = \
     tests/extatom5.out \
     tests/extatom6.out \
     tests/extatom7.out \
+    tests/extatom8.out \
     tests/extatom9.out \
     tests/minimality.out \
     tests/msp.out \
@@ -132,5 +135,6 @@ EXTRA_DIST = \
     tests/query_hex_nonground1b.out \
     tests/operators.out \
     tests/tertop.out \
+		tests/variable_predicate_inputs.stderr \
     tests/wellfounded1.out \
     tests/wellfounded2.out

@@ -1,0 +1,10 @@
+% test higher order creating constant input for external atom
+p(a).
+p(b).
+
+pred1(in).
+pred2(p).
+
+P(X) :- pred1(P), pred2(X). 
+
+out(Y) :- &testConcat[x,X,x](Y), in(X).

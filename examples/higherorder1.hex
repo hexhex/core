@@ -1,0 +1,5 @@
+% test higher order without external atoms
+foo(a).
+foo(b).
+
+X(Y) :- foo(X), foo(Y).

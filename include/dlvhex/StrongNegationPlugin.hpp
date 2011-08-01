@@ -77,7 +77,6 @@ public:
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
   // create parser modules that extend and the basic hex grammar
-  // this parser also stores the query information into the plugin
   virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
   // rewrite program by adding auxiliary constraints
