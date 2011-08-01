@@ -38,6 +38,7 @@
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Registry.hpp"
+#include "dlvhex/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -64,18 +65,24 @@ bool AnswerSetPrinterCallback::operator()(
   {
     bool gotOutput =
       reg->printAtomForUser(o, *it);
+    //DBGLOG(DBG,"printed with prefix ''  and output " << gotOutput << " " <<
+    //    printToString<RawPrinter>(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it), reg));
     it++;
     for(; it != bits.end(); ++it)
     {
       if( gotOutput )
       {
-        gotOutput =
+        gotOutput |=
           reg->printAtomForUser(o, *it, ",");
+        //DBGLOG(DBG,"printed with prefix ',' and output " << gotOutput << " " <<
+        //    printToString<RawPrinter>(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it), reg));
       }
       else
       {
-        gotOutput =
+        gotOutput |=
           reg->printAtomForUser(o, *it);
+        //DBGLOG(DBG,"printed with prefix ''  and output " << gotOutput << " " <<
+        //    printToString<RawPrinter>(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it), reg));
       }
     }
   }

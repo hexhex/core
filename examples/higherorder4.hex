@@ -1,7 +1,4 @@
 % test higher order creating constant input for external atom
-p(a).
-p(b).
-
 pred1(in).
 pred2(p).
 

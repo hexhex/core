@@ -1,3 +1,10 @@
+2011-08-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/HigherOrderPlugin.cpp: Implemented Higher Order Plugin.
+	* include/dlvhex/HigherOrderPlugin.hpp: Likewise.
+	* examples/higherorder*.hex: Likewise (testcases).
+	* examples/tests/higherorder*.*: Likewise (testcases).
+
 2011-07-27  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/DependencyGraph.cpp: Fixing bug in dependency graph exposed
@@ -32,6 +39,14 @@
 
 	* Strong Negation is now implemented as an internal plugin and has to be
 	activated using --strongnegation-enable (see also strong negation testcases).
+
+	* Higher Order is now implemented as an internal plugin and has to be
+	activated using --higherorder-enable (see also higher order testcases).
+	Using the higher order mode is discouraged, please formulate your higher order
+	programs just as you would formulate any metaprogram, this way the program can
+	be much more efficient than an automatic plugin could be. (Higher order mode
+	requires strong safety checking to be disabled until a weaker notion of strong
+	safety is defined and implemented.)
 
 	Plugin API changes:
 
@@ -124,7 +139,6 @@
 	* No longer using -nofact for external dlv solver because we sometimes
 	need to keep facts and we never want derived facts that are present in
 	the EDB to "reappear".
-	* documentation moved to doc/ directory (TODO also move NEWS,... there)
 
 2011-07-26  Peter Schueller  <ps@kr.tuwien.ac.at>
 

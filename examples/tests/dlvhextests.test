@@ -19,6 +19,11 @@
 ../extatom7.hex extatom7.out --nofacts
 ../extatom8.hex extatom8.out --nofacts
 ../extatom9.hex extatom9.out
+../higherorder1.hex higherorder1.out --nofacts --higherorder-enable
+../higherorder2.hex higherorder2.out --nofacts --higherorder-enable
+../higherorder3.hex higherorder3.out --nofacts --higherorder-enable
+../higherorder4.hex higherorder4.out --nofacts --higherorder-enable
+../higherorder5.hex higherorder5.out --nofacts --higherorder-enable
 ../maxint.hex maxint.out
 ../minimality.hex minimality.out
 ../naftest.hex naftest.out

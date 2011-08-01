@@ -24,6 +24,12 @@ EXTRA_DIST = \
     extatom7.hex \
     extatom8.hex \
     extatom9.hex \
+    higherorder1.hex \
+    higherorder2.hex \
+    higherorder3.hex \
+    higherorder4.hex \
+    higherorder5.hex \
+    higherorder5except.hex \
     minimality.hex \
     msp.hex \
     namespace1.hex \
@@ -87,6 +93,12 @@ EXTRA_DIST = \
     tests/extatom7.out \
     tests/extatom8.out \
     tests/extatom9.out \
+    tests/higherorder1.out \
+    tests/higherorder2.out \
+    tests/higherorder3.out \
+    tests/higherorder4.out \
+    tests/higherorder5.out \
+    tests/higherorder5except.stderr \
     tests/minimality.out \
     tests/msp.out \
     tests/namespace1.out \

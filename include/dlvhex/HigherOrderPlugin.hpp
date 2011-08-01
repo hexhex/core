@@ -46,6 +46,7 @@ public:
   {
 	public:
 		typedef std::set<unsigned> AritySet;
+		typedef std::set<ID> PredicateInputSet;
 
   public:
     // whether plugin is enabled
@@ -53,6 +54,14 @@ public:
 
 		// which higher order arities were encountered?
 		AritySet arities;
+
+    // which predicates are used as predicate inputs and therefore
+    // 1) are derived via special rules
+    // 2) should not be printed from auxiliaries
+    PredicateInputSet predicateInputConstants;
+
+    // predicate mask for auxiliary higher order predicates
+    PredicateMask myAuxiliaryPredicateMask;
 
     CtxData();
     virtual ~CtxData() {};

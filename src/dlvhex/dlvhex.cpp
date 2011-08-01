@@ -139,7 +139,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
-    //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << "     --weaksafety     Skip strong safety check." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -213,7 +213,6 @@ InternalError (const char *msg)
 // config and defaults of dlvhex main
 struct Config
 {
-  bool checkStrongSafety;
   bool optionNoEval;
   bool helpRequested;
   std::string optionPlugindir;
@@ -225,7 +224,6 @@ struct Config
 	std::list<const char*> pluginOptions;
 
 	Config():
-		checkStrongSafety(true),
   	optionNoEval(false),
   	helpRequested(false),
 		optionPlugindir(""),
@@ -297,6 +295,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
+  pctx.config.setOption("SkipStrongSafetyCheck",0);
 
 	// defaults of main
 	Config config;
@@ -395,19 +394,18 @@ int main(int argc, char *argv[])
 			
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
-		// (do not fail if we encounter unknown atoms - plugins might fix this!)
-		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, false);
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
 			
 		// rewrite program
 		pctx.rewriteEDBIDB();
 			
-		// check weak safety
-		pctx.safetyCheck();
-
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
-		// (again, this time fail if not everything is assigned)
+		// (again, rewrite might add external atoms)
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+
+		// check weak safety
+		pctx.safetyCheck();
 
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();
@@ -421,7 +419,8 @@ int main(int argc, char *argv[])
 		pctx.createComponentGraph();
 
 		// use SCCs to do strong safety check
-		pctx.strongSafetyCheck();
+		if( !pctx.config.getOption("SkipStrongSafetyCheck") )
+			pctx.strongSafetyCheck();
 		
 		// select heuristics and create eval graph
 		pctx.createEvalGraph();
@@ -626,7 +625,7 @@ void processOptionsPrePlugin(
 			switch (longid)
 				{
 				case 2:
-					pctx.config.setOption("StrongSafety", 0);
+					pctx.config.setOption("SkipStrongSafetyCheck",1);
 					break;
 
 				//case 3:

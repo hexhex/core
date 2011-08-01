@@ -356,7 +356,6 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 	// create rules to get predicate inputs for all recorded arities from auxiliary atoms
 
 	// go over all rules and record constants used as predicate inputs
-	std::set<ID> predicateInputs;
 	BOOST_FOREACH(ID rid, ctx.idb)
 	{
 		const Rule& rule = reg->rules.getByID(rid);
@@ -373,15 +372,17 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 					{
 						const ID inp = eatom.inputs[idx];
 						DBGLOG(DBG,"found predicate input " << inp << " at position " << idx);
-						predicateInputs.insert(inp);
+						ctxdata.predicateInputConstants.insert(inp);
 					}
 				}
 			}
 		}
 	}
 	LOG(INFO,"found the following predicate inputs: {" << printManyToString<RawPrinter>(
-				Tuple(predicateInputs.begin(), predicateInputs.end()), ",", reg) << "}");
-	DBGLOG(DBG,"found the following predicate inputs: " << printset(predicateInputs));
+				Tuple(ctxdata.predicateInputConstants.begin(), ctxdata.predicateInputConstants.end()),
+				",", reg) << "}");
+	DBGLOG(DBG,"found the following predicate inputs: " <<
+			printset(ctxdata.predicateInputConstants));
 
 	// go over idb and rewrite any ordinary atoms with one of the recorded arities to auxiliary atoms
 	std::vector<ID> newIdb;
@@ -467,14 +468,18 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 		ID newid = rewriter.rewrite(oldid);
 		if( newid != oldid )
 		{
-			ctx.edb->clearFact(oldid.address);
+			// we do not clear the original facts:
+			// if we clear them we may need to derive them again 
+			// if we clear them --nofact will no longer work
+			// TODO think about how to do higher order more efficiently
+			//ctx.edb->clearFact(oldid.address);
 			ctx.edb->setFact(newid.address);
 		}
 	}
 
 	// create rules to get predicate inputs for all recorded arities from auxiliary atoms
 	#warning we could pre-create variables where this line is and simply use them later (more efficient, more complicated)
-	BOOST_FOREACH(ID pred, predicateInputs)
+	BOOST_FOREACH(ID pred, ctxdata.predicateInputConstants)
 	{
 		// create for each arity
 		BOOST_FOREACH(unsigned arity, ctxdata.arities)
@@ -542,92 +547,14 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 		}
 	}
 
-	#if 0
-
-	typedef std::map<ID,unsigned> ArityMap;
-	ArityMap predicateInputArities;
-	PredicateArityMap::const_iterator it;
-	for(it = ctxdata.negPredicateArities.begin();
-			it != ctxdata.negPredicateArities.end(); ++it)
+	// if any rewriting was required
+	if( !ctxdata.arities.empty() )
 	{
-		// for predicate foo of arity k create constraint
-		// :- foo(X1,X2,...,Xk), foo_neg_aux(X1,X2,...,Xk).
-
-		// create atoms
-		const ID idpred = it->first;
-		const unsigned arity = it->second;
-		DBGLOG(DBG,"processing predicate '" <<
-				printToString<RawPrinter>(idpred, reg) << "'/" << idpred <<
-				" with arity " << arity);
-
-		const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
-		ID idatom;
-		ID idnegatom;
-		if( arity == 0 )
-		{
-			// ground atoms
-			OrdinaryAtom predAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYG);
-			predAtom.tuple.push_back(idpred);
-			OrdinaryAtom negpredAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYG |
-					ID::PROPERTY_ATOM_AUX);
-			negpredAtom.tuple.push_back(idnegpred);
-			idatom = reg->storeOrdinaryGAtom(predAtom);
-			idnegatom = reg->storeOrdinaryGAtom(negpredAtom);
-		}
-		else
-		{
-			// nonground atoms
-			OrdinaryAtom predAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYN);
-			predAtom.tuple.push_back(idpred);
-			OrdinaryAtom negpredAtom(
-					ID::MAINKIND_ATOM |
-					ID::SUBKIND_ATOM_ORDINARYN |
-					ID::PROPERTY_ATOM_AUX);
-			negpredAtom.tuple.push_back(idnegpred);
-
-			// add variables
-			for(unsigned i = 0; i < arity; ++i)
-			{
-				// create variable
-				std::ostringstream s;
-				s << "X" << i;
-				Term var(
-						ID::MAINKIND_TERM |
-						ID::SUBKIND_TERM_VARIABLE |
-						ID::PROPERTY_TERM_AUX,
-						s.str());
-				const ID idvar = reg->storeConstOrVarTerm(var);
-				predAtom.tuple.push_back(idvar);
-				negpredAtom.tuple.push_back(idvar);
-			}
-
-			DBGLOG(DBG,"storing auxiliary atom " << predAtom);
-			idatom = reg->storeOrdinaryNAtom(predAtom);
-			DBGLOG(DBG,"storing auxiliary negative atom " << negpredAtom);
-			idnegatom = reg->storeOrdinaryNAtom(negpredAtom);
-		}
-
-		// create constraint
-		Rule r(
-				ID::MAINKIND_RULE |
-				ID::SUBKIND_RULE_CONSTRAINT |
-				ID::PROPERTY_RULE_AUX);
-
-		r.body.push_back(ID::posLiteralFromAtom(idatom));
-		r.body.push_back(ID::posLiteralFromAtom(idnegatom));
-
-		ID idcon = reg->rules.storeAndGetID(r);
-		ctx.idb.push_back(idcon);
-		DBGLOG(DBG,"created aux constraint '" <<
-				printToString<RawPrinter>(idcon, reg) << "'");
+		// disable strong safety check (sorry, at the moment there is no other way
+		// because the strong safety check is too naive)
+		ctx.config.setOption("SkipStrongSafetyCheck",1);
+		LOG(WARNING,"disabled strong safety check due to higher order rewriting");
 	}
-	#endif
 }
 
 } // anonymous namespace
@@ -642,21 +569,22 @@ PluginRewriterPtr HigherOrderPlugin::createRewriter(ProgramCtx& ctx)
 	return PluginRewriterPtr(new HigherOrderRewriter);
 }
 
-#if 0
 namespace
 {
 
-class NegAuxPrinter:
+class HOAuxPrinter:
 	public AuxPrinter
 {
 public:
-	typedef HigherOrderPlugin::CtxData::NegToPosMap NegToPosMap;
+	typedef HigherOrderPlugin::CtxData::PredicateInputSet PredicateInputSet;
 public:
-	NegAuxPrinter(
+	HOAuxPrinter(
 			RegistryPtr reg,
-			PredicateMask& negAuxMask,
-			const NegToPosMap& ntpm):
-		reg(reg), mask(negAuxMask), ntpm(ntpm)
+			PredicateMask& auxMask,
+			const PredicateInputSet& pis,
+			bool noFacts,
+			InterpretationConstPtr edb):
+		reg(reg), mask(auxMask), pis(pis), noFacts(noFacts), edb(edb)
 	{
 	}
 
@@ -670,33 +598,34 @@ public:
 		if( mask.mask()->getFact(id.address) )
 		{
 			// we cannot use any stored text to print this, we have to assemble it from pieces
-			DBGLOG(DBG,"printing auxiliary for strong negation: " << id);
+			DBGLOG(DBG,"printing auxiliary for higher order: " << id);
 
 			// get replacement atom details
 			const OrdinaryAtom& r_atom = reg->ogatoms.getByAddress(id.address);
-
-			// find positive version of predicate
 			assert(!r_atom.tuple.empty());
-			const NegToPosMap::const_iterator itpred = ntpm.find(r_atom.tuple.front());
-			assert(itpred != ntpm.end());
-			const ID idpred = itpred->second;
 
-			// print strong negation
-			out << prefix << '-';
+			if( pis.count(r_atom.tuple.front()) != 0 )
+			{
+				DBGLOG(DBG,"not printing (in predicate inputs)");
+				return false;
+			}
 
-			// print tuple
-      RawPrinter printer(out, reg);
-      // predicate
-      printer.print(idpred);
-      if( r_atom.tuple.size() > 1 )
-      {
-        Tuple t(r_atom.tuple.begin()+1, r_atom.tuple.end());
-        out << "(";
-        printer.printmany(t,",");
-        out << ")";
-      }
+			// build non-higher-order atom and store to (or get from) registry
+			OrdinaryAtom printatom(
+					ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+			printatom.tuple.insert(printatom.tuple.end(),
+					r_atom.tuple.begin()+1, r_atom.tuple.end());
+			ID idprint = reg->storeOrdinaryGAtom(printatom);
 
-			return true;
+			// ensure that this is no fact (it could be)
+      if( noFacts && edb->getFact(idprint.address) )
+				return false;
+
+			DBGLOG(DBG,"printing from higher order: '" <<
+					printToString<RawPrinter>(idprint, reg));
+
+			// print using printAtomForUser (allows integration with other plugins)
+			return reg->printAtomForUser(out, idprint.address, prefix);
 		}
 		return false;
 	}
@@ -704,11 +633,12 @@ public:
 protected:
 	RegistryPtr reg;
 	PredicateMask& mask;
-	const NegToPosMap& ntpm;
+	const PredicateInputSet& pis;
+	bool noFacts;
+	InterpretationConstPtr edb;
 };
 
 } // anonymous namespace
-#endif
 
 // register auxiliary printer for strong negation auxiliaries
 void HigherOrderPlugin::setupProgramCtx(ProgramCtx& ctx)
@@ -717,29 +647,27 @@ void HigherOrderPlugin::setupProgramCtx(ProgramCtx& ctx)
 	if( !ctxdata.enabled )
 		return;
 
-	#if 0
 	RegistryPtr reg = ctx.registry();
 
-	// init predicate mask
+	// auxiliary predicate mask
+
 	ctxdata.myAuxiliaryPredicateMask.setRegistry(reg);
 
 	// add all auxiliaries to mask (here we should already have parsed all of them)
-	typedef CtxData::NegToPosMap NegToPosMap;
-	NegToPosMap::const_iterator it;
-	for(it = ctxdata.negToPos.begin();
-			it != ctxdata.negToPos.end(); ++it)
+	BOOST_FOREACH(unsigned arity, ctxdata.arities)
 	{
-		ctxdata.myAuxiliaryPredicateMask.addPredicate(it->first);
+		ctxdata.myAuxiliaryPredicateMask.addPredicate(
+			reg->getAuxiliaryConstantSymbol('h', ID(0, arity)));
 	}
 
 	// update predicate mask
 	ctxdata.myAuxiliaryPredicateMask.updateMask();
 
 	// create auxiliary printer using mask
-	AuxPrinterPtr negAuxPrinter(new NegAuxPrinter(
-				reg, ctxdata.myAuxiliaryPredicateMask, ctxdata.negToPos));
-	reg->registerUserAuxPrinter(negAuxPrinter);
-#endif
+	AuxPrinterPtr hoPrinter(new HOAuxPrinter(
+				reg, ctxdata.myAuxiliaryPredicateMask, ctxdata.predicateInputConstants,
+				ctx.config.getOption("NoFacts"), ctx.edb));
+	reg->registerUserAuxPrinter(hoPrinter);
 }
 
 DLVHEX_NAMESPACE_END
