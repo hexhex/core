@@ -568,7 +568,7 @@ ID DependencyGraph::createAuxiliaryRuleHead(
 		const std::list<ID>& variables)
 {
 	// create ordinary nonground atom
-	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 
 	// set tuple
 	head.tuple.push_back(idauxpred);
@@ -602,7 +602,7 @@ ID DependencyGraph::createAuxiliaryRuleHead(
 ID DependencyGraph::createAuxiliaryRule(
 		ID head, const std::list<ID>& body)
 {
-	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
 	r.head.push_back(head);
 	BOOST_FOREACH(ID bid, body)
 	{

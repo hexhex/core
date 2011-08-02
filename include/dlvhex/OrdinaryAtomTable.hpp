@@ -217,8 +217,8 @@ ID OrdinaryAtomTable::storeAndGetID(
 	assert(ID(atm.kind,0).isOrdinaryAtom());
 	assert(!atm.text.empty());
   assert(!(
-      (atm.tuple.front().kind & ID::PROPERTY_TERM_AUX) != 0 &&
-      (atm.kind & ID::PROPERTY_ATOM_AUX) == 0 ) &&
+      (atm.tuple.front().kind & ID::PROPERTY_AUX) != 0 &&
+      (atm.kind & ID::PROPERTY_AUX) == 0 ) &&
       "atom must be auxiliary if predicate term is auxiliary");
 
 	AddressIndex& idx = container.get<impl::AddressTag>();

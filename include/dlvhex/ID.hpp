@@ -82,14 +82,10 @@ struct ID:
 
 	//                                           0x00FF0000
 	static const IDKind PROPERTY_VAR_ANONYMOUS = 0x00010000;
-	static const IDKind PROPERTY_TERM_AUX      = 0x00800000;
 	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ =     0x00100000;
-	static const IDKind PROPERTY_RULE_AUX =      0x00800000;
-	static const IDKind PROPERTY_ATOM_AUX      = 0x00800000;
 	static const IDKind PROPERTY_AUX           = 0x00800000;
-  #warning TODO rename all AUX properties to generic AUX property
 
   // for builtin terms, this is the address part (no table)
   // beware: must be synchronized with isInfixBuiltin() and builtinTerms[]

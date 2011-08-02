@@ -74,6 +74,9 @@ public:
 
 	// store rule (no duplicate check is done/required)
 	inline ID storeAndGetID(const Rule& rule) throw();
+
+	// implementation in Registry.cpp !
+	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
 };
 
 // retrieve by ID

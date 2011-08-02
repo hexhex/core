@@ -115,6 +115,11 @@ struct DLVSoftware::Delegate::Impl
 
   ~Impl()
   {
+    proc.close();
+  }
+
+  void closeAndCheck()
+  {
     int retcode = proc.close();
 
     // check for errors
@@ -211,12 +216,6 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
 
     // output program
     RawPrinter printer(programStream, program.registry);
-    #warning TODO HO stuff
-    //PrinterPtr printer;
-    //if( options.rewriteHigherOrder )
-    //  printer = PrinterPtr(new HOPrintVisitor(programStream));
-    //else
-    //  printer = PrinterPtr(new DLVPrintVisitor(programStream));
 
     if( program.edb != 0 )
     {
@@ -251,6 +250,7 @@ DLVSoftware::Delegate::useStringInput(const std::string& program)
     proc.spawn();
     proc.getOutput() << program << std::endl;
     proc.endoffile();
+    pimpl->closeAndCheck(); // closes process and throws on errors
   }
   CATCH_RETHROW_DLVDELEGATE
 }
@@ -267,6 +267,7 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
     // fork dlv process
     proc.spawn();
     proc.endoffile();
+    pimpl->closeAndCheck(); // closes process and throws on errors
   }
   CATCH_RETHROW_DLVDELEGATE
 }
@@ -306,8 +307,6 @@ DLVSoftware::Delegate::getResults()
 
     // parse result
     DLVResultParser parser(pimpl->reg);
-    // TODO HO stuff
-    // options.dropPredicates?(DLVresultParserDriver::HO):(DLVresultParserDriver::FirstOrder));
     if( pimpl->mask )
     {
       parser.parse(pimpl->proc.getInput(),
@@ -318,6 +317,8 @@ DLVSoftware::Delegate::getResults()
       parser.parse(pimpl->proc.getInput(),
 	  boost::bind(&PreparedResults::add, ret.get(), _1));
     }
+
+    pimpl->closeAndCheck(); // closes process and throws on errors (all results have been parsed above)
 
     ASPSolverManager::ResultsPtr baseret(ret);
     return baseret;

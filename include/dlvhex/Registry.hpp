@@ -175,7 +175,8 @@ struct Registry:
   // accessors
   //
 
-  std::ostream& print(std::ostream& o) const;
+	// cannot be nonconst as printing might change registry caches (TODO create mutable string caches in atoms)
+  std::ostream& print(std::ostream& o);
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const

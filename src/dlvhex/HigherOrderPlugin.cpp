@@ -166,7 +166,7 @@ struct sem<HigherOrderParserModuleSemantics::higherOrderAtom>
     }
 		
 		// create atom
-    OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+    OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
     atom.tuple.push_back(idpred);
 
     // arguments
@@ -489,7 +489,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 				// ground atoms
 				OrdinaryAtom tgt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				tgt.tuple.push_back(pred);
-				OrdinaryAtom src(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX);
+				OrdinaryAtom src(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
 				src.tuple.push_back(reg->getAuxiliaryConstantSymbol('h', ID(0, arity)));
 
 				// store
@@ -511,7 +511,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 				// nonground atoms
 				OrdinaryAtom tgt(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN);
 				tgt.tuple.push_back(pred);
-				OrdinaryAtom src(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+				OrdinaryAtom src(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 				src.tuple.push_back(reg->getAuxiliaryConstantSymbol('h', ID(0, arity)));
 				src.tuple.push_back(pred);
 
@@ -523,7 +523,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 					Term var(
 							ID::MAINKIND_TERM |
 							ID::SUBKIND_TERM_VARIABLE |
-							ID::PROPERTY_TERM_AUX,
+							ID::PROPERTY_AUX,
 							s.str());
 					const ID idvar = reg->storeConstOrVarTerm(var);
 					src.tuple.push_back(idvar);

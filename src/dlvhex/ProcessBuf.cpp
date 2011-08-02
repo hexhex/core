@@ -111,25 +111,6 @@ ProcessBuf::initBuffers()
   setg(ibuf, ibuf, ibuf);
 }
 
-
-/* without this we get
-/bin/sh ../../libtool --tag=CXX   --mode=link clang++  -W -Wall -g -O2 -export-dynamic -L/home/staff/ps/lib/ -L/home/staff/ps/lib/gtk-2.0/2.10.0/immodules -o dlvhex dlvhex.o RuleMLOutputBuilder.o ../../libltdl/libltdlc.la -ldl  -lcurl libdlvhexbase.la libaspsolver.la -ldl
-libtool: link: clang++ -W -Wall -g -O2 -o .libs/dlvhex dlvhex.o RuleMLOutputBuilder.o -Wl,--export-dynamic  /home/staff/ps/Documents/dlvhex/dlvhex/trunk/build_clang/libltdl/./.libs/dlopen.a -L/home/staff/ps/lib/ -L/home/staff/ps/lib/gtk-2.0/2.10.0/immodules ../../libltdl/.libs/libltdlc.a -lcurl ./.libs/libdlvhexbase.so ./.libs/libaspsolver.so /home/staff/ps//lib/libstdc++.so -lm -ldl -Wl,-rpath -Wl,/home/staff/ps//lib
-./.libs/libaspsolver.so: undefined reference to `std::vector<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::size() const'
-collect2: ld returned 1 exit status
-clang: error: linker (via gcc) command failed with exit code 1 (use -v to see invocation)
- */
-
-#warning maybe still clang bug?
-/*
-namespace{
-  const std::vector<std::string> foo;
-  int bar() {
-    return foo.size();
-  }
-}
-*/
-
 pid_t
 ProcessBuf::open(const std::vector<std::string>& av)
 {
@@ -276,7 +257,9 @@ ProcessBuf::close()
 
   // obviously we do not want to leave zombies around, so get status
   // code of the process
-  // @todo if close() is called multiple times, we should infinitely hang, is this intended?
+  // (if the process no longer exists, this will simply fail,
+  // if a new process grabbed the same pid, we are doomed and will wait for that
+  // unrelated process to exit)
   ::waitpid(process, &status, 0);
   process = -1;
 

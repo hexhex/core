@@ -3,8 +3,7 @@ read the comments in testsuite/run-dlvhex-tests.sh.
 
 Deactivated Tests:
 * needs improvement of implementation!
-	extatom2safety.hex
-../higherorder5except.hex higherorder5except.stderr --nofacts --higherorder-enable
+../extatom2safety.hex extatom2.out
 * needs improvement of implementation?
 	extatom3.hex
 * waiting for incremental external solver integration

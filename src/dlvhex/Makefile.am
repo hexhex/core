@@ -20,8 +20,6 @@ lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
 
-#    RuleMLOutputBuilder.cpp 
-
 #
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions

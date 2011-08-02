@@ -39,6 +39,7 @@
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/Interpretation.hpp"
 
 #include <boost/functional/hash.hpp>
@@ -141,9 +142,24 @@ Registry::~Registry()
 {
 }
 
-std::ostream& Registry::print(std::ostream& o) const
+// implementation from RuleTable.hpp
+std::ostream& RuleTable::print(std::ostream& o, RegistryPtr reg) const throw()
 {
-  return
+	const AddressIndex& aidx = container.get<impl::AddressTag>();
+	for(AddressIndex::const_iterator it = aidx.begin();
+			it != aidx.end(); ++it)
+  {
+    const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
+    o <<
+			"  " << ID(it->kind, address) << std::endl <<
+			"   -> " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
+			"   -> " << *it << std::endl;
+  }
+	return o;
+}
+
+std::ostream& Registry::print(std::ostream& o) //const
+{
     o <<
       "REGISTRY BEGIN" << std::endl <<
       "terms:" << std::endl <<
@@ -158,8 +174,10 @@ std::ostream& Registry::print(std::ostream& o) const
       aatoms <<
       "eatoms:" << std::endl <<
       eatoms <<
-      "rules:" << std::endl <<
-      rules <<
+      "rules:" << std::endl;
+	rules.print(o, shared_from_this());
+	return
+		o <<
       "REGISTRY END" << std::endl;
 }
 
@@ -385,7 +403,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   AuxiliaryValue av(s.str(), ID_FAIL);
   DBGLOG(DBG,"created symbol '" << av.symbol << "'");
   Term term(
-      ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
+      ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_AUX,
       av.symbol);
 
   // register ID for symbol

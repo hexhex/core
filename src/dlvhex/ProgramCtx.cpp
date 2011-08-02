@@ -91,6 +91,8 @@ ProgramCtx::~ProgramCtx()
   pluginData.clear();
 
   DBGLOG(DBG,"resetting registry, usage count was " << _registry.use_count() << " (it should be 2)");
+	if( Logger::Instance().shallPrint(Logger::DBG) )
+		_registry->print(Logger::Instance().stream()) << std::endl;
   _registry.reset();
 
   DBGLOG(DBG,"resetting pluginAtoms");

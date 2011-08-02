@@ -721,7 +721,7 @@ ID DependencyGraphFull::createAuxiliaryRuleHead(
 	ID idpred = registry->getAuxiliaryConstantSymbol('i', forEAtom);
 
 	// create ordinary nonground atom
-	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 
 	// set tuple
 	head.tuple.push_back(idpred);
@@ -756,7 +756,7 @@ ID DependencyGraphFull::createAuxiliaryRule(
 		ID head,
 		const std::list<DependencyGraphFull::NodeMappingInfo>& body)
 {
-	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
 	r.head.push_back(head);
 	BOOST_FOREACH(const NodeMappingInfo& nmi, body)
 	{

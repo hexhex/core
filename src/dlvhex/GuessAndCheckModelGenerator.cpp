@@ -212,7 +212,7 @@ void createEatomGuessingRules(
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
 
       // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
       // (build up incrementally)
@@ -260,7 +260,7 @@ void createEatomGuessingRules(
 
       // create rule head
       Rule guessingrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR |
-          ID::PROPERTY_RULE_AUX | ID::PROPERTY_RULE_DISJ);
+          ID::PROPERTY_AUX | ID::PROPERTY_RULE_DISJ);
       guessingrule.head.push_back(posreplacement);
       guessingrule.head.push_back(negreplacement);
 
@@ -389,7 +389,7 @@ void createFLPRules(
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
 
       // tuple: (replacement_predicate, variables*)
       ID flppredicate = reg->getAuxiliaryConstantSymbol('f', rid);
@@ -415,12 +415,12 @@ void createFLPRules(
 
       // create rules
       Rule rflphead(
-          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflphead.head.push_back(fid);
       rflphead.body = r.body;
 
       Rule rflpbody(
-          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflpbody.head = r.head;
       if( rflpbody.head.size() > 1 )
         rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
@@ -560,7 +560,7 @@ VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
   reg(_guess_pos->getRegistry()),
   guess_pos(_guess_pos),
   guess_neg(_guess_neg),
-  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX)
 {
   assert(guess_pos->getRegistry() == guess_neg->getRegistry());
 }

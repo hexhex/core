@@ -8,6 +8,5 @@ pred(setb).
 P(X) :- pred(P), seta(X), X != v.
 % setb(u) setb(w)
 
-% strong safety 
-dom(X) :- seta(X).
-setc(X) :- &testSetMinus[seta,setb](X), dom(X).
+% no strong safety (compare higherorder5.hex)
+setc(X) :- &testSetMinus[seta,setb](X).

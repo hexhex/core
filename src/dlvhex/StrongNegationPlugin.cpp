@@ -188,7 +188,7 @@ struct sem<StrongNegationParserModuleSemantics::stronglyNegatedPrefixAtom>
 		const ID idnegpred = reg->getAuxiliaryConstantSymbol('s', idpred);
 
 		// build atom with auxiliary (SUBKIND is initialized by createAtom())
-    OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+    OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
     atom.tuple.push_back(idnegpred);
 
     // arguments
@@ -385,7 +385,7 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 			OrdinaryAtom negpredAtom(
 					ID::MAINKIND_ATOM |
 					ID::SUBKIND_ATOM_ORDINARYG |
-					ID::PROPERTY_ATOM_AUX);
+					ID::PROPERTY_AUX);
 			negpredAtom.tuple.push_back(idnegpred);
 			idatom = reg->storeOrdinaryGAtom(predAtom);
 			idnegatom = reg->storeOrdinaryGAtom(negpredAtom);
@@ -400,7 +400,7 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 			OrdinaryAtom negpredAtom(
 					ID::MAINKIND_ATOM |
 					ID::SUBKIND_ATOM_ORDINARYN |
-					ID::PROPERTY_ATOM_AUX);
+					ID::PROPERTY_AUX);
 			negpredAtom.tuple.push_back(idnegpred);
 
 			// add variables
@@ -412,7 +412,7 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 				Term var(
 						ID::MAINKIND_TERM |
 						ID::SUBKIND_TERM_VARIABLE |
-						ID::PROPERTY_TERM_AUX,
+						ID::PROPERTY_AUX,
 						s.str());
 				const ID idvar = reg->storeConstOrVarTerm(var);
 				predAtom.tuple.push_back(idvar);
@@ -429,7 +429,7 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 		Rule r(
 				ID::MAINKIND_RULE |
 				ID::SUBKIND_RULE_CONSTRAINT |
-				ID::PROPERTY_RULE_AUX);
+				ID::PROPERTY_AUX);
 
 		r.body.push_back(ID::posLiteralFromAtom(idatom));
 		r.body.push_back(ID::posLiteralFromAtom(idnegatom));
