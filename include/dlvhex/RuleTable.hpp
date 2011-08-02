@@ -32,6 +32,7 @@
 #define RULETABLE_HPP_INCLUDED__12102010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Table.hpp"
 
@@ -74,6 +75,11 @@ public:
 
 	// store rule (no duplicate check is done/required)
 	inline ID storeAndGetID(const Rule& rule) throw();
+
+	// update
+	// (oldStorage must be from getByID() or from *const_iterator)
+	inline void update(
+			const Rule& oldStorage, Rule& newStorage) throw();
 
 	// implementation in Registry.cpp !
 	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
@@ -118,6 +124,16 @@ ID RuleTable::storeAndGetID(
 			rule.kind, // kind
 			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
+}
+
+void RuleTable::update(
+		const Rule& oldStorage, Rule& newStorage) throw()
+{
+	AddressIndex& idx = container.get<impl::AddressTag>();
+	AddressIndex::iterator it = idx.iterator_to(oldStorage);
+	assert(it != idx.end());
+	bool success = idx.replace(it, newStorage);
+	assert(success);
 }
 
 DLVHEX_NAMESPACE_END

@@ -152,8 +152,24 @@ std::ostream& RuleTable::print(std::ostream& o, RegistryPtr reg) const throw()
     const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
     o <<
 			"  " << ID(it->kind, address) << std::endl <<
-			"   -> " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
-			"   -> " << *it << std::endl;
+			"    " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
+			"    ->" << *it << std::endl;
+  }
+	return o;
+}
+
+// implementation from ExternalAtomTable.hpp
+std::ostream& ExternalAtomTable::print(std::ostream& o, RegistryPtr reg) const throw()
+{
+	const AddressIndex& aidx = container.get<impl::AddressTag>();
+	for(AddressIndex::const_iterator it = aidx.begin();
+			it != aidx.end(); ++it)
+  {
+    const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
+    o <<
+			"  " << ID(it->kind, address) << std::endl <<
+			"    " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
+			"    ->" << *it << std::endl;
   }
 	return o;
 }
@@ -172,8 +188,9 @@ std::ostream& Registry::print(std::ostream& o) //const
       batoms <<
       "aatoms:" << std::endl <<
       aatoms <<
-      "eatoms:" << std::endl <<
-      eatoms <<
+      "eatoms:" << std::endl;
+	eatoms.print(o, shared_from_this());
+    o << 
       "rules:" << std::endl;
 	rules.print(o, shared_from_this());
 	return

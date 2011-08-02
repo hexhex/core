@@ -177,6 +177,9 @@ struct Registry:
 
 	// cannot be nonconst as printing might change registry caches (TODO create mutable string caches in atoms)
   std::ostream& print(std::ostream& o);
+  #warning TODO make registry const printable!
+  virtual std::ostream& print(std::ostream& o) const { return const_cast<Registry*>(this)->print(o); }
+
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const

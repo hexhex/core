@@ -82,7 +82,6 @@ struct ID:
 
 	//                                           0x00FF0000
 	static const IDKind PROPERTY_VAR_ANONYMOUS = 0x00010000;
-	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ =     0x00100000;
 	static const IDKind PROPERTY_AUX           = 0x00800000;

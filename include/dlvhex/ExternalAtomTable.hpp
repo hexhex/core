@@ -32,6 +32,7 @@
 #define EXTERNALATOMTABLE_HPP_INCLUDED__18102010
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Table.hpp"
 
@@ -88,6 +89,9 @@ public:
 	// (oldStorage must be from getByID() or from *const_iterator)
 	inline void update(
 			const ExternalAtom& oldStorage, ExternalAtom& newStorage) throw();
+
+	// implementation in Registry.cpp !
+	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
 };
 
 // retrieve by ID

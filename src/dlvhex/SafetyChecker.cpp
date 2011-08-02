@@ -73,228 +73,295 @@ SafetyChecker::~SafetyChecker()
 {
 }
 
-
-
 namespace
 {
 
-// 1) get all positive body literals of the tuple
-// 2) remove ordinary body atoms and put all their variables into the "safeset"
-// 3) for each remaining body atom:
-//   a) if it is an external atom and all inputs are in safeset:
-//      remove literal and put output variables into safeset
-//   b) if it is a builtin atom and certain inputs are in safeset:
-//      remove literal and put certain outputs into safeset
-// 4) while this decreases the set of literals: goto 3
-void determineSafeVariables(
-    RegistryPtr reg, Tuple& tuple, std::set<ID>& safevars)
+bool reorderForSafety(RegistryPtr reg, std::list<ID>& src, Tuple& tgt, std::set<ID>& safevars);
+
+bool transferSafeLiteralsAndNewlySafeVariables(
+		RegistryPtr reg, std::list<ID>& src, Tuple& tgt, const std::set<ID>& safevars, std::set<ID>& newsafevars);
+
+// for each element in src:
+// 1) check if it is one of 2.1) a) to e) (see SafetyChecker::operator())
+// 2) if yes
+// 2.1) move it from src to tgt
+// 2.2) put new safe vars (see 2.2) into newsafevars
+// 2.3) if something was previously nottransferred mark as reordered
+// 3) if no mark as nottransferred
+// return true iff reordering took place:
+//   condition: some element in src was nottransferred AND some element after that element was transferred
+bool transferSafeLiteralsAndNewlySafeVariables(
+		RegistryPtr reg, std::list<ID>& src, Tuple& tgt, const std::set<ID>& safevars, std::set<ID>& newsafevars)
 {
-  // steps 1 and 2
-  std::vector<Tuple::iterator> eraselist;
-  for(Tuple::iterator it = tuple.begin();
-      it != tuple.end(); ++it)
-  {
-    assert(!it->isAtom() && it->isLiteral());
-    if( it->isNaf() )
-    {
-      DBGLOG(DBG,"literal " << *it << " removed for safe var calculation (naf)"); 
-      eraselist.push_back(it);
-    }
-    else if( it->isOrdinaryGroundAtom() )
-    {
-      DBGLOG(DBG,"literal " << *it << " removed for safe var calculation (ground)"); 
-      eraselist.push_back(it);
-    }
-    else if( it->isOrdinaryNongroundAtom() )
-    {
-      DBGLOG(DBG,"marking all variables of onatom " << *it << " as safe");
-			reg->getVariablesInID(*it, safevars);
-			eraselist.push_back(it);
-    }
-  }
-	// erasing something invalidates iterators after that thing
-	// -> erase from end to beginning
-	for(std::vector<Tuple::iterator>::reverse_iterator eraseit =
-			eraselist.rbegin(); eraseit != eraselist.rend(); ++eraseit)
+	assert(!src.empty());
+	assert(!!reg);
+
+	bool nottransferred = false;
+	bool reordered = false;
+
+	typedef std::list<ID>::iterator ListIterator;
+	typedef std::set<ID>::const_iterator SetCIterator;
+	ListIterator it = src.begin();
+	while( it != src.end() )
 	{
-		tuple.erase(*eraseit);
-	}
-	DBGLOG(DBG,"after steps 1 and 2: safe variables=" <<
-			printManyToString<RawPrinter>(
-				Tuple(safevars.begin(), safevars.end()), ", ", reg) <<
-			" and literals still to process=" <<
-			printManyToString<RawPrinter>(tuple, ", ", reg));
-
-  // step 3
-  bool modified;
-  do
-  {
-		modified = false;
-
-		// go through all remaining in tuple
-		std::vector<Tuple::iterator> eraselist;
-		for(Tuple::iterator it = tuple.begin();
-				it != tuple.end(); ++it)
-		{
-			if( it->isBuiltinAtom() )
+		DBGLOG(DBG,"checking literal " << printToString<RawPrinter>(*it, reg)); 
+		bool transfer = false;
+    assert(!it->isAtom() && it->isLiteral());
+		if( it->isOrdinaryGroundAtom() )
+    {
+			DBGLOG(DBG," -> safe (ordinary ground)"); 
+			transfer = true;
+    }
+		else if( it->isNaf() )
+    {
+			DBGLOG(DBG," -> need to check if all variables are safe (NAF and not ground)"); 
+			std::set<ID> vars;
+			reg->getVariablesInID(*it, vars);
+			bool good = true;
+			BOOST_FOREACH(ID idv, vars)
 			{
-				const BuiltinAtom& atom = reg->batoms.getByID(*it);
-
-				// bailout-do
-				do
+				if( safevars.find(idv) == safevars.end() )
 				{
-					// undocumented safety of dlv:
-					// equality is safe in both directions
-					// nothing else is safe in any direction for comparison builtins
-					if( atom.tuple.size() == 3 &&
-							atom.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					good = false;
+					break;
+				}
+			}
+			if( good )
+				transfer = true;
+    }
+    else if( it->isOrdinaryNongroundAtom() ) // positive nonground
+    {
+      DBGLOG(DBG," -> safe, marking all variables as safe");
+			reg->getVariablesInID(*it, newsafevars);
+			transfer = true;
+    }
+		else if( it->isExternalAtom() )
+		{
+      DBGLOG(DBG," -> checking input safety");
+			const ExternalAtom& atom = reg->eatoms.getByID(*it);
+
+			bool good = true;
+			BOOST_FOREACH(ID idt, atom.inputs)
+			{
+				if( idt.isVariableTerm() && safevars.find(idt) == safevars.end() )
+				{
+					good = false;
+					break;
+				}
+			}
+
+			if( good )
+			{
+				DBGLOG(DBG," -> inputs safe, adding outputs as safe");
+				BOOST_FOREACH(ID idt, atom.tuple)
+				{
+					if( idt.isVariableTerm() )
+						newsafevars.insert(idt);
+				}
+				transfer = true;
+			}
+		}
+		else if( it->isAggregateAtom() )
+		{
+			// this is complicated if it is implemented properly:
+			// so we only do lightweight checking (the backend will complain anyways)
+			//
+			// a) get safe variables from aggregate body
+			// b) if aggregate is an assignment, make assigned variable safe
+
+			const AggregateAtom& atom = reg->aatoms.getByID(*it);
+
+			// a) get safe variables from aggregate body
+			// (if we cannot consume the body completely,
+			// we have to wait with checking this aggregate)
+
+			std::list<ID> tmpSrcBody(atom.atoms.begin(), atom.atoms.end());
+			Tuple tmpTgt;
+			tmpTgt.reserve(atom.atoms.size());
+			std::set<ID> tmpNewSafeVars(safevars);
+
+			bool reordered_aggregate =
+				reorderForSafety(reg, tmpSrcBody, tmpTgt, tmpNewSafeVars);
+
+			if( tmpSrcBody.empty() )
+			{
+				// fully consumed body -> make variables in aggregate body safe
+				// TODO we did this before, but this should not be allowed!
+				//safevars.insert(tmpNewSafeVars.begin(), tmpNewSafeVars.end());
+
+				// if aggregate is an assignment, make assigned variable safe
+				if( atom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+				{
+					assert(atom.tuple[0] != ID_FAIL);
+					if( atom.tuple[0].isVariableTerm() )
+						newsafevars.insert(atom.tuple[0]);
+				}
+
+				if( atom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+				{
+					assert(atom.tuple[4] != ID_FAIL);
+					if( atom.tuple[4].isVariableTerm() )
+						newsafevars.insert(atom.tuple[4]);
+				}
+
+				if( reordered_aggregate )
+				{
+					LOG(WARNING,"TODO we should probably store back the reordered aggregate into the registry and transfer this new safety-reordered aggregate (and not propagate the reordering to the parent, as the parent does not change by reordering within the aggregate)");
+				}
+
+				transfer = true;
+			}
+		}
+		else if( it->isBuiltinAtom() )
+		{
+			const BuiltinAtom& atom = reg->batoms.getByID(*it);
+
+			// bailout-do
+			do
+			{
+				// undocumented safety of dlv:
+				// equality is safe in both directions
+				// nothing else is safe in any direction for comparison builtins
+				if( atom.tuple.size() == 3 &&
+						atom.tuple[0] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+				{
+					DBGLOG(DBG," -> equality builtin");
+					if( !atom.tuple[1].isVariableTerm() ||
+							safevars.find(atom.tuple[1]) != safevars.end() )
 					{
-						if( !atom.tuple[1].isVariableTerm() ||
-								safevars.find(atom.tuple[1]) != safevars.end() )
+						// first can make second safe
+						if( atom.tuple[2].isVariableTerm() )
 						{
-							// first can make second safe
-							if( atom.tuple[2].isVariableTerm() )
-							{
-								// second is something that can be made safe
-								safevars.insert(atom.tuple[2]);
-								eraselist.push_back(it);
-								break;
-							}
-						}
-						if( !atom.tuple[2].isVariableTerm() ||
-								safevars.find(atom.tuple[2]) != safevars.end() )
-						{
-							// second can make first safe
-							if( atom.tuple[1].isVariableTerm() )
-							{
-								// first is something that can be made safe
-								safevars.insert(atom.tuple[1]);
-								eraselist.push_back(it);
-								break;
-							}
+							// second is something that can be made safe
+							newsafevars.insert(atom.tuple[2]);
+							transfer = true;
+							break;
 						}
 					}
-				
-					// safe if occurs as last variable in builtin predicate and other variables are safe
-					// (see dlv manual)
-
-					if( isSafeBuiltinPredicate(static_cast<ID::TermBuiltinAddress>(atom.tuple[0].address)) )
+					if( !atom.tuple[2].isVariableTerm() ||
+							safevars.find(atom.tuple[2]) != safevars.end() )
 					{
-						Tuple::const_reverse_iterator itt = atom.tuple.rbegin();
-						// skip last one
-						if( itt != atom.tuple.rend() )
-							itt++;
-						bool good = true;
-						for(; itt != atom.tuple.rend(); ++itt)
+						// second can make first safe
+						if( atom.tuple[1].isVariableTerm() )
 						{
-							if( itt->isVariableTerm() && safevars.find(*itt) == safevars.end() )
-							{
-								good = false;
-								break;
-							}
-						}
-
-						if( good )
-						{
-							if( atom.tuple.back().isVariableTerm() )
-								safevars.insert(atom.tuple.back());
-							eraselist.push_back(it);
+							// first is something that can be made safe
+							newsafevars.insert(atom.tuple[1]);
+							transfer = true;
 							break;
 						}
 					}
 				}
-				while(false); // bailout-do
-			}
-			else if( it->isAggregateAtom() )
-			{
-				// this is complicated if it is implemented properly:
-				// so we only do lightweight checking (the backend will complain anyways)
-				#warning this is a simplification, see dlv documentation for better aggregate safety checking
-				//
-				// a) get safe variables from aggregate body
-				// b) if aggregate is an assignment, make assigned variable safe
-
-				const AggregateAtom& atom = reg->aatoms.getByID(*it);
-
-				// a) get safe variables from aggregate body
-				// (if we cannot consume the body completely,
-				// we have to wait with checking this aggregate)
-
-				std::set<ID> tmpvars;
-				Tuple aggbody(atom.atoms);
-				determineSafeVariables(reg, aggbody, tmpvars); 
-				if( aggbody.empty() )
+				else if( isSafeBuiltinPredicate(static_cast<ID::TermBuiltinAddress>(atom.tuple[0].address)) )
 				{
-					// fully consumed body
-					safevars.insert(tmpvars.begin(), tmpvars.end());
-
-					// b) if aggregate is an assignment, make assigned variable safe
-
-					if( atom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					// safe if occurs as last variable in builtin predicate and other variables are safe
+					// (see dlv manual)
+					DBGLOG(DBG," -> 'safeBuiltinPredicate'");
+					Tuple::const_reverse_iterator itt = atom.tuple.rbegin();
+					// skip last one
+					if( itt != atom.tuple.rend() )
+						itt++;
+					bool good = true;
+					for(; itt != atom.tuple.rend(); ++itt)
 					{
-						assert(atom.tuple[0] != ID_FAIL);
-						if( atom.tuple[0].isVariableTerm() )
-							safevars.insert(atom.tuple[0]);
+						if( itt->isVariableTerm() && safevars.find(*itt) == safevars.end() )
+						{
+							good = false;
+							break;
+						}
 					}
 
-					if( atom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					if( good )
 					{
-						assert(atom.tuple[4] != ID_FAIL);
-						if( atom.tuple[4].isVariableTerm() )
-							safevars.insert(atom.tuple[4]);
-					}
-
-					// remove aggregate from to-be-processed
-					eraselist.push_back(it);
-				}
-			}
-			else if( it->isExternalAtom() )
-			{
-				const ExternalAtom& atom = reg->eatoms.getByID(*it);
-
-				bool good = true;
-				BOOST_FOREACH(ID idt, atom.inputs)
-				{
-					if( idt.isVariableTerm() && safevars.find(idt) == safevars.end() )
-					{
-						good = false;
+						if( atom.tuple.back().isVariableTerm() )
+							newsafevars.insert(atom.tuple.back());
+						transfer = true;
 						break;
 					}
 				}
-
-				if( good )
-				{
-					BOOST_FOREACH(ID idt, atom.tuple)
+				else
+				{ 
+					// other -> all variables must be safe
+					DBGLOG(DBG," -> other builtin");
+					bool good = true;
+					BOOST_FOREACH(ID idv, atom.tuple)
 					{
-						if( idt.isVariableTerm() )
-							safevars.insert(idt);
+						if( idv.isVariableTerm() &&
+								safevars.find(idv) == safevars.end() )
+						{
+							good = false;
+							break;
+						}
 					}
-					eraselist.push_back(it);
+					if( good )
+						transfer = true;
 				}
 			}
-			else
-			{
-				assert("this should never happen, unknown atom type in safety checker");
-			}
+			while(false); // bailout-do
 		}
-
-		// erasing something invalidates iterators after that thing
-		// -> erase from end to beginning
-		for(std::vector<Tuple::iterator>::reverse_iterator eraseit =
-				eraselist.rbegin(); eraseit != eraselist.rend(); ++eraseit)
+		else
 		{
-			tuple.erase(*eraseit);
-			modified = true;
+			assert(false && "encountered unexpected literal during safety reordering");
 		}
 
-		DBGLOG(DBG,"safety checking loop ended with modified=" << modified <<
-				", safe variables = " <<
-				printManyToString<RawPrinter>(
-					Tuple(safevars.begin(), safevars.end()), ", ", reg) <<
-				" and literals still to process=" <<
-				printManyToString<RawPrinter>(tuple, ", ", reg));
-  }
-	while( modified && !tuple.empty() );
+		if( transfer )
+		{
+			// transfer it
+      DBGLOG(DBG," -> transferring");
+			if( nottransferred )
+				reordered = true;
+			tgt.push_back(*it);
+			it = src.erase(it);
+		}
+		else
+		{
+			// do not transfer it
+      DBGLOG(DBG," -> not transferring");
+			nottransferred = true;
+			it++;
+		}
+	}
+
+	DBGLOG(DBG, "transferSafeLiteralsAndNewlySafeVariables returning with "
+			"reordered=" << reordered << " and nottransferred=" << nottransferred);
+	return reordered;
+}
+
+bool reorderForSafety(RegistryPtr reg, std::list<ID>& src, Tuple& tgt, std::set<ID>& safevars)
+{
+	DBGLOG_SCOPE(DBG, "rFS", false);
+	DBGLOG(DBG, "=reorderForSafety");
+	assert(!!reg);
+	assert(!src.empty());
+
+	bool changed = false;
+	do
+	{
+		DBGLOG(DBG, "safety reordering loop:");
+		DBGLOG(DBG, " src '" <<
+				printManyToString<RawPrinter>(Tuple(src.begin(), src.end()), ",", reg) << "'");
+		DBGLOG(DBG, " safevars '" <<
+				printManyToString<RawPrinter>(Tuple(safevars.begin(), safevars.end()), ",", reg) << "'");
+
+		// 2.1) and 2.2)
+		std::set<ID> newsafevars;
+		changed |= transferSafeLiteralsAndNewlySafeVariables(
+				reg, src, tgt, safevars, newsafevars);
+
+		DBGLOG(DBG, " -> src '" <<
+				printManyToString<RawPrinter>(Tuple(src.begin(), src.end()), ",", reg) << "'");
+		DBGLOG(DBG, " -> tgt '" <<
+				printManyToString<RawPrinter>(Tuple(tgt.begin(), tgt.end()), ",", reg) << "'");
+		DBGLOG(DBG, " -> newsafevars '" <<
+				printManyToString<RawPrinter>(Tuple(newsafevars.begin(), newsafevars.end()), ",", reg) << "'");
+
+		safevars.insert(newsafevars.begin(), newsafevars.end());
+
+		if( newsafevars.empty() )
+			break;
+	}
+	while( !src.empty() );
+
+	return changed;
 }
 
 } // anonymous namespace
@@ -311,8 +378,8 @@ SafetyChecker::operator() () const throw (SyntaxError)
   //
   // testing for simple rule safety:
   // * a constant is safe
-  // * an anonymous variable is safe
-  #warning if we want compatibility with other solvers, we may not be able to assume that all anonymous variables are safe!
+	// * Note: for compatibility with other solvers, we do not assume
+	//   (as dlv does) that all anonymous variables are automatically safe
   // * a variable is safe if it occurs in a positive ordinary atom
   // * a variable is safe if it occurs as particular terms of a positive
   //   builtin atom and particular other terms of that builtin atom are safe
@@ -325,19 +392,24 @@ SafetyChecker::operator() () const throw (SyntaxError)
   #warning the last line is a simplification
   #warning see dlv documentation for better aggregate safety checking
   //
-  // algorithm:
-  // 1) get all positive body literals of the rule
-  // 2) remove ordinary body atoms and put all their variables into the "safeset"
-  // 3) for each remaining body atom:
-  //   a) if it is an external atom and all inputs are in safeset:
-  //      remove literal and put output variables into safeset
-  //   b) if it is a builtin atom and certain inputs are in safeset:
-  //      remove literal and put certain outputs into safeset
-  //   c) if it is an aggregate atom and non-local variables 
-  // 4) while this decreases the set of literals: goto 3
-  // 5) test if all variables in the rule are in the safeset
-  //    if not, throw an exception containing rule and variables
-  //
+  // algorithm (this algorithm does reordering for safety):
+	// 1) init empty target rule body, init empty safe variables list
+	// 2) do
+	// 2.1) find all literals L={L1,L2,...} in source body which are safe
+	//      a) negative {ordinary atoms, external atoms, builtins, aggregates} with all variables safe
+	//      b) positive ordinary atoms
+	//      c) positive external atoms with all input variables safe
+	//      d) positive builtins with all "builtin input variables" safe
+	//      e) positive aggregates with assigned variables safe
+	// 2.2) remove L from source body and append to target body, mark variables as safe
+	//      for b) mark all variables
+	//      for c) mark output variables
+	//      for d) mark "builtin output variables"
+	//      for e) mark assigned variables
+	// 2.3) if source rule body not empty and variables were marked repeat
+	// 3) if source rule body is empty and rule head contains only safe variables
+	// 3.1) report rule as safe and store it back to registry
+	// 3.2) otherwise throw an exception containing rule and variables
     
   BOOST_FOREACH(ID idrule, ctx.idb)
   {
@@ -345,32 +417,82 @@ SafetyChecker::operator() () const throw (SyntaxError)
 				printToString<RawPrinter>(idrule, reg));
 
     const Rule& rule = reg->rules.getByID(idrule);
-    std::set<ID> safevars;
-    Tuple body(rule.body);
 
-    // steps 1, 2, 3, 4
-    determineSafeVariables(reg, body, safevars);
+		// create rule with same kind and same storage space
+		Rule newRule(rule.kind);
+		std::set<ID> safevars;
+		newRule.body.reserve(rule.body.size());
+		bool changed = false;
 
-    // step 5
-    std::set<ID> allvars;
-    reg->getVariablesInTuple(rule.body, allvars);
-    reg->getVariablesInTuple(rule.head, allvars);
+		// only check body if not empty (not for disjunctive facts)
+		if( !rule.body.empty() )
+		{
+			// store source body in linked list (more efficient to modify)
+			std::list<ID> src(rule.body.begin(), rule.body.end());
 
-    if( allvars.size() != safevars.size() )
-    {
-      Tuple unsafetuple;
-      std::back_insert_iterator<Tuple> inserter(unsafetuple);
-      std::set_difference(
-					allvars.begin(), allvars.end(),
-					safevars.begin(), safevars.end(),
-					inserter);
-      throw SyntaxError("Rule not safe: "
+			// 2)
+			changed = reorderForSafety(reg, src, newRule.body, safevars);
+
+			// 3)
+			if( !src.empty() )
+			{
+				// body is not safe -> report unsafe
+
+				// get body variables
+				std::set<ID> remainingbodyvars;
+				Tuple remainingbody(src.begin(), src.end());
+				reg->getVariablesInTuple(remainingbody, remainingbodyvars);
+
+				// get unsafe head variables
+				Tuple unsafeBodyVars;
+				std::back_insert_iterator<Tuple> inserter(unsafeBodyVars);
+				std::set_difference(
+						remainingbodyvars.begin(), remainingbodyvars.end(),
+						safevars.begin(), safevars.end(),
+						inserter);
+				throw SyntaxError("Rule not safe (body): "
+						"'" + printToString<RawPrinter>(idrule, reg) + "': "
+						"literals not safe: " +
+						printManyToString<RawPrinter>(Tuple(src.begin(), src.end()), ", ", reg) + ", "
+						"safe variables: " +
+						printManyToString<RawPrinter>(Tuple(safevars.begin(), safevars.end()), ", ", reg) + ", "
+						"unsafe variables: " +
+						printManyToString<RawPrinter>(Tuple(unsafeBodyVars.begin(), unsafeBodyVars.end()), ", ", reg));
+			}
+		}
+
+		// if we are here the body is safe -> check head
+
+		// get head variables
+		std::set<ID> headvars;
+		reg->getVariablesInTuple(rule.head, headvars);
+
+		// get unsafe head variables
+		Tuple unsafeHeadVars;
+		std::back_insert_iterator<Tuple> inserter(unsafeHeadVars);
+		std::set_difference(
+				headvars.begin(), headvars.end(),
+				safevars.begin(), safevars.end(),
+				inserter);
+
+		// report unsafe if unsafe
+		if( !unsafeHeadVars.empty() )
+		{
+			throw SyntaxError("Rule not safe (head): "
 					"'" + printToString<RawPrinter>(idrule, reg) + "': "
 					"variables not safe: " +
-					printManyToString<RawPrinter>(unsafetuple, ", ", reg));
-    }
-    assert(allvars == safevars &&
-				"we assume that same set cardinality means same variables");
+					printManyToString<RawPrinter>(unsafeHeadVars, ", ", reg));
+		}
+
+		// if rule body was reordered for safety, store it back to rule table (i.e., change rule!)
+		if( changed )
+		{
+			DBGLOG(DBG,"storing back rule " << printToString<RawPrinter>(idrule, reg));
+			newRule.head = rule.head;
+			reg->rules.update(rule, newRule);
+			DBGLOG(DBG,"-> reordered rule " << printToString<RawPrinter>(idrule, reg));
+			assert(&rule == &(reg->rules.getByID(idrule)));
+		}
   }
 }
 
@@ -511,7 +633,7 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 				}
 			}
 
-			#warning anonymous variables or variables that do not occur in any other atom should be automatically strongly safe...?
+			#warning variables that do not occur in any other atom should be automatically strongly safe...?
 			DBGLOG(DBG,"need to find component-external domain predicate "
 					"for variables {" << printManyToString<RawPrinter>(
 						Tuple(varsToCheck.begin(), varsToCheck.end()), ", ", reg) + "}");
