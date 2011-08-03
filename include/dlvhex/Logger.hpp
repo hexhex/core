@@ -165,6 +165,15 @@ public:
       }
     }
   };
+
+  class Init
+  {
+  public:
+    Init(Levels levels)
+    {
+      Logger::Instance().setPrintLevels(levels);
+    }
+  };
 };
 
 // the following will always be realized
@@ -176,6 +185,7 @@ public:
 #  define LOG_INDENT(level)              Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, "  ", false)
 #  define LOG_SCOPE(level,name,msg)      Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, msg)
 #  define LOG_VSCOPE(level,name,val,msg) Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, reinterpret_cast<const void* const>(val), msg)
+#  define LOG_INIT(setlevel)             namespace { Logger::Init LOG_CLOSURE_ID (setlevel); }
 
 // the following are debug-flag dependant
 #ifndef NDEBUG

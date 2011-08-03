@@ -63,6 +63,8 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
 
 BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGraphComponentGraphFixture) 

@@ -53,6 +53,8 @@
 
 #include "fixtureOfflineMB.hpp"
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 using dlvhex::MT_IN;
 using dlvhex::MT_OUT;
 

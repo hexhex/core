@@ -56,6 +56,8 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testNonext) 

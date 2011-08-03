@@ -71,6 +71,8 @@
 
 #include "graphviz.hpp"
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
   DBGLOG(DBG,*ctx.registry()); \

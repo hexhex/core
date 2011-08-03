@@ -43,6 +43,8 @@
 
 #include <iostream>
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testTermTable) 
