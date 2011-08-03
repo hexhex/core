@@ -1,77 +1,77 @@
-../3col.hex 3col.out
-../agg1.hex agg1.out
-../agg2.hex agg2.out
-../agg3.hex agg3.out --nofacts
-../anonymousvariable1.hex anonymousvariable1.out --nofacts
-../builtin_safety1.hex builtin_safety1.stderr
-../builtin_safety1a.hex builtin_safety1a.stderr
-../builtin_safety1b.hex builtin_safety1b.stderr
-../builtin_safety1c.hex builtin_safety1c.stderr
-../builtin_safety1d.hex builtin_safety1d.out
-../builtin_safety2.hex builtin_safety2.out
-../comments.hex comments.out
-../equality.hex equality.out
-../extatom1.hex extatom1.out
-../extatom2.hex extatom2.out
-../extatom2safety.hex extatom2.out
-../extatom4.hex extatom4.out
-../extatom5.hex extatom5.out
-../extatom6.hex extatom6.out
-../extatom7.hex extatom7.out --nofacts
-../extatom8.hex extatom8.out --nofacts
-../extatom9.hex extatom9.out
-../higherorder1.hex higherorder1.out --nofacts --higherorder-enable
-../higherorder2.hex higherorder2.out --nofacts --higherorder-enable
-../higherorder3.hex higherorder3.out --nofacts --higherorder-enable
-../higherorder4.hex higherorder4.out --nofacts --higherorder-enable
-../higherorder5.hex higherorder5.out --nofacts --higherorder-enable
-../higherorder5except.hex higherorder5except.stderr --higherorder-enable
-../maxint.hex maxint.out
-../minimality.hex minimality.out
-../naftest.hex naftest.out
-../nonmon_guess.hex nonmon_guess.out
-../nonmon_inc.hex nonmon_inc.out
-../nonmon_noloop.hex nonmon_noloop.out
-../notstronglysafe1.hex notstronglysafe1.stderr
-../notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
-../notwellfounded1.hex notwellfounded1_withfacts.out
-../notwellfounded2.hex notwellfounded2.out --nofacts
-../operators.hex operators.out
-../percentparser.hex percentparser.out
-../query_asp_ground1.hex query_asp_ground1b.stdout --query-enable --query-brave
-../query_asp_ground1.hex query_asp_ground1c.stdout --query-enable --query-cautious
-../query_asp_ground2.hex query_brave_false.stdout --query-enable --query-brave
-../query_asp_ground2.hex query_asp_ground2c.stdout --query-enable --query-cautious
-../query_asp_ground3.hex query_asp_ground3b.stdout --query-enable --query-brave
-../query_asp_ground3.hex query_cautious_true.stdout --query-enable --query-cautious
-../query_asp_ground4.hex query_brave_false.stdout --query-enable --query-brave
-../query_asp_ground4.hex query_cautious_true.stdout --query-enable --query-cautious
-../query_asp_ground5.hex query_asp_ground5b.stdout --query-enable --query-brave
-../query_asp_ground5.hex query_asp_ground5c.stdout --query-enable --query-cautious
-../query_asp_ground6.hex query_asp_ground6b.stdout --query-enable --query-brave
-../query_asp_ground6.hex query_asp_ground6c.stdout --query-enable --query-cautious
-../query_asp_nonground1.hex query_asp_nonground1b.out --query-enable --query-brave
-../query_asp_nonground1.hex no_model.out --query-enable --query-cautious
-../query_asp_nonground2.hex query_asp_nonground2b.out --query-enable --query-brave
-../query_asp_nonground2.hex no_model.out --query-enable --query-cautious
-../query_asp_nonground3.hex query_asp_nonground3b.out --query-enable --query-brave
-../query_asp_nonground3.hex query_asp_nonground3c.out --query-enable --query-cautious
-../query_hex_ground1.hex query_hex_ground1b.stdout --query-enable --query-brave
-../query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious
-../query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all
-../query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave
-../query_hex_nonground1.hex no_model.out --query-enable --query-cautious
-../rec_agg_bug1.hex rec_agg_bug1.stderr
-../safety1.hex safety1.stderr
-../safety2.hex safety2.stderr
-../simple1.hex simple1.out
-../simple2.hex simple2.out
-../strongnegation_asp1.hex strongnegation_asp1.out --strongnegation-enable --nofacts
-../strongnegation_asp2.hex strongnegation_asp2.out --strongnegation-enable --nofacts
-../strongnegation_asp3.hex strongnegation_asp3.out --strongnegation-enable --nofacts
-../strongnegation_asp4.hex strongnegation_asp4.out --strongnegation-enable --nofacts
-../strongnegation_asp5.hex strongnegation_asp5.out --strongnegation-enable --nofacts
-../tertop.hex tertop.out
-../variable_predicate_inputs.hex variable_predicate_inputs.stderr
-../wellfounded1.hex wellfounded1.out --nofacts
-../wellfounded2.hex wellfounded2.out --nofacts
+3col.hex 3col.out
+agg1.hex agg1.out
+agg2.hex agg2.out
+agg3.hex agg3.out --nofacts
+anonymousvariable1.hex anonymousvariable1.out --nofacts
+builtin_safety1.hex builtin_safety1.stderr
+builtin_safety1a.hex builtin_safety1a.stderr
+builtin_safety1b.hex builtin_safety1b.stderr
+builtin_safety1c.hex builtin_safety1c.stderr
+builtin_safety1d.hex builtin_safety1d.out
+builtin_safety2.hex builtin_safety2.out
+comments.hex comments.out
+equality.hex equality.out
+extatom1.hex extatom1.out
+extatom2.hex extatom2.out
+extatom2safety.hex extatom2.out
+extatom4.hex extatom4.out
+extatom5.hex extatom5.out
+extatom6.hex extatom6.out
+extatom7.hex extatom7.out --nofacts
+extatom8.hex extatom8.out --nofacts
+extatom9.hex extatom9.out
+higherorder1.hex higherorder1.out --nofacts --higherorder-enable
+higherorder2.hex higherorder2.out --nofacts --higherorder-enable
+higherorder3.hex higherorder3.out --nofacts --higherorder-enable
+higherorder4.hex higherorder4.out --nofacts --higherorder-enable
+higherorder5.hex higherorder5.out --nofacts --higherorder-enable
+higherorder5except.hex higherorder5except.stderr --higherorder-enable
+maxint.hex maxint.out
+minimality.hex minimality.out
+naftest.hex naftest.out
+nonmon_guess.hex nonmon_guess.out
+nonmon_inc.hex nonmon_inc.out
+nonmon_noloop.hex nonmon_noloop.out
+notstronglysafe1.hex notstronglysafe1.stderr
+notwellfounded1.hex notwellfounded1_nofacts.out --nofacts
+notwellfounded1.hex notwellfounded1_withfacts.out
+notwellfounded2.hex notwellfounded2.out --nofacts
+operators.hex operators.out
+percentparser.hex percentparser.out
+query_asp_ground1.hex query_asp_ground1b.stdout --query-enable --query-brave
+query_asp_ground1.hex query_asp_ground1c.stdout --query-enable --query-cautious
+query_asp_ground2.hex query_brave_false.stdout --query-enable --query-brave
+query_asp_ground2.hex query_asp_ground2c.stdout --query-enable --query-cautious
+query_asp_ground3.hex query_asp_ground3b.stdout --query-enable --query-brave
+query_asp_ground3.hex query_cautious_true.stdout --query-enable --query-cautious
+query_asp_ground4.hex query_brave_false.stdout --query-enable --query-brave
+query_asp_ground4.hex query_cautious_true.stdout --query-enable --query-cautious
+query_asp_ground5.hex query_asp_ground5b.stdout --query-enable --query-brave
+query_asp_ground5.hex query_asp_ground5c.stdout --query-enable --query-cautious
+query_asp_ground6.hex query_asp_ground6b.stdout --query-enable --query-brave
+query_asp_ground6.hex query_asp_ground6c.stdout --query-enable --query-cautious
+query_asp_nonground1.hex query_asp_nonground1b.out --query-enable --query-brave
+query_asp_nonground1.hex no_model.out --query-enable --query-cautious
+query_asp_nonground2.hex query_asp_nonground2b.out --query-enable --query-brave
+query_asp_nonground2.hex no_model.out --query-enable --query-cautious
+query_asp_nonground3.hex query_asp_nonground3b.out --query-enable --query-brave
+query_asp_nonground3.hex query_asp_nonground3c.out --query-enable --query-cautious
+query_hex_ground1.hex query_hex_ground1b.stdout --query-enable --query-brave
+query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious
+query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all
+query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave
+query_hex_nonground1.hex no_model.out --query-enable --query-cautious
+rec_agg_bug1.hex rec_agg_bug1.stderr
+safety1.hex safety1.stderr
+safety2.hex safety2.stderr
+simple1.hex simple1.out
+simple2.hex simple2.out
+strongnegation_asp1.hex strongnegation_asp1.out --strongnegation-enable --nofacts
+strongnegation_asp2.hex strongnegation_asp2.out --strongnegation-enable --nofacts
+strongnegation_asp3.hex strongnegation_asp3.out --strongnegation-enable --nofacts
+strongnegation_asp4.hex strongnegation_asp4.out --strongnegation-enable --nofacts
+strongnegation_asp5.hex strongnegation_asp5.out --strongnegation-enable --nofacts
+tertop.hex tertop.out
+variable_predicate_inputs.hex variable_predicate_inputs.stderr
+wellfounded1.hex wellfounded1.out --nofacts
+wellfounded2.hex wellfounded2.out --nofacts
