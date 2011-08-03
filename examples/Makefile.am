@@ -17,6 +17,8 @@ EXTRA_DIST = \
     equality.hex \
     extatom1.hex \
     extatom2.hex \
+    extatom2dup.hex \
+    extatom2safety.hex \
     extatom3.hex \
     extatom4.hex \
     extatom5.hex \
@@ -87,6 +89,7 @@ EXTRA_DIST = \
     tests/equality.out \
     tests/extatom1.out \
     tests/extatom2.out \
+    tests/extatom2dup.out \
     tests/extatom4.out \
     tests/extatom5.out \
     tests/extatom6.out \

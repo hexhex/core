@@ -2,8 +2,9 @@ For a documentation of the testsuite functionality please
 read the comments in testsuite/run-dlvhex-tests.sh.
 
 Deactivated Tests:
-* needs improvement of implementation?
-	extatom3.hex
+* needs bugfix
+  ../extatom2dup.hex extatom2dup.out --nofacts
+  ../extatom3.hex extatom3.out
 * waiting for incremental external solver integration
 	manyanswersets.hex
 * not implemented yet (namespaces)
