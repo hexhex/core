@@ -1,3 +1,7 @@
+2011-08-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/avgScript-all.sh: Get average data (more detail information) from random program experiments.
+
 2011-07-23 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/MLPSolver.hpp: Fixed largest bottom.
