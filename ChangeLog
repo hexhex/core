@@ -1,3 +1,7 @@
+2011-08-08 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/getFirstASData.sh: Get more detailed information for the first answer set found.
+
 2011-08-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/avgScript-all.sh: Get average data (more detail information) from random program experiments.
