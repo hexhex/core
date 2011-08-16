@@ -129,13 +129,13 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
 	{
           if (itp==inputList.end()) 
             {
-              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << moduleFullName << "' " << std::endl);
+              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "'"<< std::endl);
               return false;
             }
 
           if (predArity1 != ctx.registry()->preds.getByID(*itp).arity) 
            {
-              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity when calling '@" << moduleFullName << "' " << std::endl);
+              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity '" << getStringAfterSeparator(ctx.registry()->preds.getByID(*it).symbol) << "' when calling '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
               return false;
            }
 	}
@@ -144,11 +144,11 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
     }  
   if (itp!=inputList.end()) 
     {
-      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << moduleFullName << "' " << std::endl);
+      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
       return false;
     }
 
-  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << moduleFullName << "' succeeded");
+  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
   return true;
 
 }
@@ -172,12 +172,12 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
 
   if (arity1 == arity2) 
     {
-      DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << moduleFullName << "' succeeded");
+      DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
       return true;
     }
   else 
     {
-      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output of module call '@" << moduleFullName << "' failed" << std::endl);
+      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output '" << predName << "' of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' failed" << std::endl);
       return false;
     }
 } 

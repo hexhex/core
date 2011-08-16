@@ -1,3 +1,7 @@
+2011-08-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Richer error messages.
+
 2011-08-08 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* generator/getFirstASData.sh: Get more detailed information for the first answer set found.
