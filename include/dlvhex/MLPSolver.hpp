@@ -7,15 +7,10 @@
  */
 
 /** 
- * update 2011.03.19: can solve i-stratified MLP
+ * update 2011.03.19: can solve i-stratified MLP?
  * TODO
  * 31.03.2011
- * - optimize A (too many empty elements there)
- * - have you ever accessed ctxSolver.idb and .edb?
- * - storing registry
  * - assertion in preds, matoms, moduleTable
- * - optimize in InspectOgatoms, introduce last index
- * - 
  * - filtering interpretation using and
  * - rewrite predicate in rewrite ordinary atom
  * - optimize in rewrite
@@ -552,8 +547,6 @@ void MLPSolver::createMiS(int instIdx, const InterpretationPtr& intr, Interpreta
   Tuple tuple;
   registrySolver->ogatoms.getTupleByInstTag(instIdx, tuple);
   Tuple::const_iterator it = tuple.begin();
-  // std::cout << "instIdx: " << instIdx << ", tuple size: " << tuple.size() << std::endl;
-  // std::cout << "intr: " << *intr << std::endl;
   while ( it != tuple.end() )
     {
       if ( intr->getFact((*it).address) )
@@ -562,7 +555,6 @@ void MLPSolver::createMiS(int instIdx, const InterpretationPtr& intr, Interpreta
 	}
       it++;
     }
-  // std::cout << "intrResult: " << *intrResult << std::endl;
 }
 
 
@@ -2302,62 +2294,6 @@ bool MLPSolver::solve()
 */
   DBGLOG(INFO, "[MLPSolver::solve] finished");
   
-/*
-  Graph g;
-  std::string vertexName[] = { "p1[{}]", "p2[{q(a),q(b)}]", "p3[{q(a)}]", "zow.h", "foo.cpp",
-                       "libzigzag.a", "killerapp" };
-
-  std::string edgeName[] = { "a", "b", "c", "d"};
-
-
-  int a = 1;
-  int b = 2;
-  int label=4;
-  boost::add_edge(a, b, label, g);
-  a=2;
-  b=3;
-  label = 4;
-  boost::add_edge(a, b, label, g);
-  a=1;
-  b=3;
-  label = 4;
-  boost::add_edge(a, b, label, g);
-/*
-  boost::property_map<Graph, boost::vertex_name_t>::type Vertex_name = get(boost::vertex_name, g);
-  boost::property_map<Graph, boost::edge_name_t>::type Edge_name = get(boost::edge_name, g);
-
-  Vertex u = boost::vertex(1, g);
-  Vertex v = boost::vertex(2, g);
-  Vertex_name[u] = "p1[{}]";
-  Vertex_name[v] = "p2[{q(a),q(b)}]";
-  Edge e1 = boost::add_edge(u, v, g).first;
-  Edge_name[e1] = "a";
-*/ 
-/*
-  VertexIterator itg, itg_end;
-  boost::tie(itg, itg_end) = boost::vertices(g);
-  int ig=0;
-  while (itg != itg_end ) 
-    {
-      DBGLOG(DBG, "[MLPSolver::solve] vertex [" << ig << "]: " << *itg);      
-      itg++;
-      ig++;
-    } 
-
-  EdgeIterator ite, ite_end;
-  boost::tie(ite, ite_end) = boost::edges(g);
-  int ie=0;
-  while (ite != ite_end ) 
-    {
-      DBGLOG(DBG, "[MLPSolver::solve] edge [" << ie << "]: " << *ite << ";" << g[*ite]);      
-      ite++;
-      ie++;
-    } 
-
-//  boost::write_graphviz(std::cout, g, boost::make_label_writer(vertexName), boost::make_label_writer(edgeName));
-
-  boost::write_graphviz(std::cout, g, boost::make_label_writer(vertexName));
-*/
   return true;
 }
 
