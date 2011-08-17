@@ -1,5 +1,7 @@
 2011-08-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* cheatsheet: Cheatsheet for installing TD-MLP.
+
 	* include/dlvhex/MLPSolver.hpp: Cleaning up.
 
 2011-08-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
