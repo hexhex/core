@@ -617,11 +617,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
       [ Sem::builtinTernaryInfix(sem) ]
     | (term >> builtinOpsBinary >> term > qi::eps)
       [ Sem::builtinBinaryInfix(sem) ]
-    | (builtinOpsUnary > qi::lit('(') > term > qi::lit(')'))
+    | (builtinOpsUnary >> qi::lit('(') > term > qi::lit(')'))
       [ Sem::builtinUnaryPrefix(sem) ]
-    | (builtinOpsBinary > qi::lit('(') > term > qi::lit(',') > term > qi::lit(')'))
+    | (builtinOpsBinary >> qi::lit('(') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinBinaryPrefix(sem) ]
-    | (builtinOpsTernary > qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
+    | (builtinOpsTernary >> qi::lit('(') > term > qi::lit(',') > term > qi::lit(',') > term > qi::lit(')'))
       [ Sem::builtinTernaryPrefix(sem) ];
   aggregateTerm
     = builtinOpsAgg > qi::lit('{') > terms > qi::lit(':') >
