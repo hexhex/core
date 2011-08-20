@@ -38,6 +38,7 @@
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/GraphvizHelpers.hpp"
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
@@ -1056,14 +1057,9 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
   {
     o << graphviz_node_id(*it) << "[label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizNodeLabel(ss, *it, verbose);
-      // escape " into \"
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"";
     if( getNodeInfo(*it).id.isRule() )
@@ -1081,14 +1077,9 @@ void DependencyGraph::writeGraphViz(std::ostream& o, bool verbose) const
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizDependencyLabel(o, *dit, verbose);
-      // escape " into \"
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }

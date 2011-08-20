@@ -33,6 +33,7 @@
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
+#include "dlvhex/GraphvizHelpers.hpp"
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/two_bit_color_map.hpp>
@@ -792,15 +793,9 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
   {
     o << graphviz_node_id(*it) << "[shape=record,label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizComponentLabel(ss, *it, verbose);
-      // escape " into \"
-      #warning TODO escape HTML < and >
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }
@@ -815,14 +810,9 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizDependencyLabel(o, *dit, verbose);
-      // escape " into \"
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }

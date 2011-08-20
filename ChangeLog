@@ -2,6 +2,11 @@
 
 	* include/dlvhex/HexGrammar.tcc: Removed expectation operator that interfered
 	with strong negation plugin.
+	* include/dlvhex/GraphvizHelpers.hpp: Improved graphviz output escaping (new file).
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/DependencyGraphFull.cpp: Likewise.
+	* src/dlvhex/ComponentGraph.cpp: Likewise.
 
 2011-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 

@@ -29,6 +29,7 @@ pkginclude_HEADERS = \
   ExternalAtomTable.hpp \
   FinalEvalGraph.hpp \
   fwd.hpp \
+  GraphvizHelpers.hpp \
   GuessAndCheckModelGenerator.hpp \
   HexGrammar.h \
   HexGrammar.tcc \
