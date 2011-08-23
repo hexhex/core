@@ -56,6 +56,8 @@ public:
     TERM
   };
 
+  virtual ~HexParserModule() {};
+
   Type getType() const { return type; }
   HexParserModule(Type type): type(type) {}
 

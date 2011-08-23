@@ -1,3 +1,7 @@
+2011-08-23  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexParserModule.hpp: Added missing virtual destructor.
+
 2011-08-20  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Removed expectation operator that interfered
