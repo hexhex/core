@@ -1,0 +1,137 @@
+Index: src/dlvhex/DependencyGraph.cpp
+===================================================================
+--- src/dlvhex/DependencyGraph.cpp	(revision 3083)
++++ src/dlvhex/DependencyGraph.cpp	(working copy)
+@@ -348,8 +348,15 @@
+ /**
+  * * for each eatom in the rule with variable inputs:
+  *   * create auxiliary input predicate for its input
+- *   * create auxiliary rule collecting its input, use as dependencies all positive literals (including eatoms) in the rule
+- *   (this potentially creates many aux rules (cf. extatom2.hex))
++ *   * create auxiliary rule collecting its input
++ *     * old behavior: use as dependencies all positive literals (including
++ *       eatoms) in the rule (potentially creates many aux rules (cf. extatom2.hex))
++ *     * new behavior: make use of safety reordering:
++ *       eatom can depend only on atoms before it
++ *       1 initialize relevant variables with eatom input variables
++ *       2 if literal before eatom contains relevant variables take it
++ *       2.1 and add variables of literal to relevant variables
++ *       3 goto 2 until at beginning of rule body
+  */
+ void DependencyGraph::createAuxiliaryRuleIfRequired(
+     const Tuple& body,
+@@ -381,7 +388,7 @@
+     }
+   }
+ 
+-  // bailout if no variables
++  // need not do anything if there are no variables
+   if( inputVariables.empty() )
+     return;
+ 
+@@ -404,7 +411,7 @@
+   }
+ 
+   // collect positive body literals of this rule which provide grounding
+-  // for these variables
++  // for input variables
+   std::list<ID> auxBody;
+   std::set<ID> groundedInputVariableSet;
+   for(Tuple::const_iterator itat = body.begin();
+@@ -414,8 +421,7 @@
+     if( *itat == idlit )
+       continue;
+ 
+-    // see comment at top of DependencyGraph.hpp for what could perhaps be improved here
+-    // (and why only positive literals are used)
++    // skip NAF here because NAF cannot make something safe
+     if( itat->isNaf() )
+       continue;
+ 
+@@ -486,6 +492,7 @@
+     else if( itat->isAggregateAtom() )
+     {
+       // we don't need to consider aggregates for grounding eatom
++      // TODO maybe we should, at least in the following for efficiency
+     }
+     else
+     {
+@@ -513,6 +520,78 @@
+ 
+   assert(!auxBody.empty());
+ 
++  // collect set of variables safe in aux rule
++  std::set<ID> safeAuxVariableSet;
++  // so far we only added positive literals, so all variables are safe
++  registry->getVariablesInTuple(Tuple(auxBody.begin(), auxBody.end()), safeAuxVariableSet);
++
++  LOG(DBG,"second aux rule step");
++
++  // use negative ordinary body atoms which contain only variables that are safe
++  // (this is not strictly necessary but it may reduce the amount of external input
++  //  that is given to external calculations and at the same time will
++  //  never fire the rule)
++  // TODO we might also want to use other literals, i.e., external atoms which are already calculated
++  //std::list<ID> auxBodySet(auxBody.begin(), auxBody.end());
++  for(Tuple::const_iterator itat = body.begin();
++      itat != body.end(); ++itat)
++  {
++    // don't compare to self
++    if( *itat == idlit )
++      continue;
++
++    // skip everything not NAF here
++    if( !itat->isNaf() )
++      continue;
++
++    if( itat->isOrdinaryNongroundAtom() || itat->isBuiltinAtom() )
++    {
++      LOG(DBG,"checking whether we can use ordinary nonground/builtin atom " << *itat <<
++          "(" << printToString<RawPrinter>(*itat, registry) << ")");
++
++      const Tuple* atomtuple = 0;
++      if( itat->isOrdinaryNongroundAtom() )
++      {
++        const OrdinaryAtom& oatom =
++          registry->onatoms.getByID(*itat);
++        LOG(DBG,"checking oatom " << oatom);
++        atomtuple = &oatom.tuple;
++      }
++      else
++      {
++        assert(itat->isBuiltinAtom());
++        const BuiltinAtom& batom =
++          registry->batoms.getByID(*itat);
++        LOG(DBG,"checking batom " << batom);
++        atomtuple = &batom.tuple;
++      }
++      assert(!!atomtuple);
++
++      bool good = true;
++      for(Tuple::const_iterator itvar = atomtuple->begin();
++          itvar != atomtuple->end(); ++itvar)
++      {
++        if( itvar->isVariableTerm() && safeAuxVariableSet.count(*itvar) == 0 )
++        {
++          good = false;
++          LOG(DBG,"literal is bad due to variable " << *itvar <<
++              "(" << printToString<RawPrinter>(*itvar, registry) << ")");
++          break;
++        }
++      } // iterate over other body atom's arguments
++      if( good )
++      {
++        LOG(DBG,"using literal as additional aux body!");
++        auxBody.push_back(*itat);
++      }
++    }
++    else
++    {
++      LOG(DBG,"ignoring literal " << *itat <<
++          "(" << printToString<RawPrinter>(*itat, registry) << ") in second aux rule step");
++    }
++  } // iterate over body of rule to find matches
++
+   // now we create an auxiliary input predicate for this rule/eatom combination
+   // derived by a rule with body auxBody
+ 
