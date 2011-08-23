@@ -1,0 +1,1 @@
+1 grep -q "external atom input.*type 'predicate' must not be variable"

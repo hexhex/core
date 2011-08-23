@@ -56,21 +56,23 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
     "a v f(X)." << std::endl <<
-    "b :- X(a), not f(b)." << std::endl <<
-    ":- X(b), not f(a)." << std::endl;
+    "b :- f(a), not f(b)." << std::endl <<
+    ":- f(b), not f(a)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	//LOG_REGISTRY_PROGRAM(ctx);

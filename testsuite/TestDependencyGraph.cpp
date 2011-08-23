@@ -58,32 +58,81 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
+
+BOOST_AUTO_TEST_CASE(testDisj) 
+{
+  ProgramCtx ctx;
+  ctx.setupRegistry(RegistryPtr(new Registry));
+
+  std::stringstream ss;
+  ss <<
+		// a <-(+)-> a (head/head = disjunctive)
+    "a v b." << std::endl <<
+    "a v c." << std::endl;
+  InputProviderPtr ip(new InputProvider);
+  ip->addStreamInput(ss, "testinput");
+  ModuleHexParser parser;
+  BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
+
+	LOG_REGISTRY_PROGRAM(ctx);
+
+  ID ida = ctx.registry()->ogatoms.getIDByString("a");
+  ID idb = ctx.registry()->ogatoms.getIDByString("b");
+  ID idc = ctx.registry()->ogatoms.getIDByString("c");
+  BOOST_REQUIRE((ida | idb | idc) != ID_FAIL);
+
+  // smaller more efficient dependency graph
+  {
+    DependencyGraph depgraph(ctx.registry());
+    std::vector<ID> auxRules;
+    depgraph.createDependencies(ctx.idb, auxRules);
+
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 2);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 2);
+
+    // TODO test dependencies (will do manually with graphviz at the moment)
+
+    const char* fnamev = "testDependencyGraphDisjVerbose.dot";
+    LOG(INFO,"dumping verbose graph to " << fnamev);
+    std::ofstream filev(fnamev);
+    depgraph.writeGraphViz(filev, true);
+    makeGraphVizPdf(fnamev);
+
+    const char* fnamet = "testDependencyGraphDisjTerse.dot";
+    LOG(INFO,"dumping terse graph to " << fnamet);
+    std::ofstream filet(fnamet);
+    depgraph.writeGraphViz(filet, false);
+    makeGraphVizPdf(fnamet);
+  }
+}
 
 BOOST_AUTO_TEST_CASE(testNonext) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
 		// a <-(+)-> f(X) (head/head = disjunctive)
     // 2x head -> rule
     "a v f(X)." << std::endl <<
-	  // X(a) -(+)-> f(X) (unifying+?)
+	  // f(a) -(+)-> f(X) (unifying+?)
 	  // f(b) -(+)-> f(X) (unifying+?)
 	  // b -> rule (head/rule = positive)
-    // rule -(+)-> X(a) (rule/body = positive)
+    // rule -(+)-> f(a) (rule/body = positive)
 	  // rule -(-)-> f(b) (rule/nafbody = negative)
-    "b :- X(a), not f(b)." << std::endl <<
-	  // X(b) -(+c)-> f(X) (unifying pos_constraint)
+    "b :- f(a), not f(b)." << std::endl <<
+	  // f(b) -(+c)-> f(X) (unifying pos_constraint)
 	  // f(a) -(-c)-> f(X) (unifying neg_constraint)
     // rule -> body (pos_constraint)
     // rule -> nafbody (neg_constraint)
-    ":- X(b), not f(a)." << std::endl;
+    ":- f(b), not f(a)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -95,9 +144,7 @@ BOOST_AUTO_TEST_CASE(testNonext)
   BOOST_REQUIRE((ida | idb | idfb | idfa) != ID_FAIL);
 
   ID idfX = ctx.registry()->onatoms.getIDByString("f(X)");
-  ID idXa = ctx.registry()->onatoms.getIDByString("X(a)");
-  ID idXb = ctx.registry()->onatoms.getIDByString("X(b)");
-  BOOST_REQUIRE((idfX | idXa | idXb) != ID_FAIL);
+  BOOST_REQUIRE(idfX != ID_FAIL);
 
   // full dependency graph
   {
@@ -105,8 +152,8 @@ BOOST_AUTO_TEST_CASE(testNonext)
     depgraph.createNodesAndBasicDependencies(ctx.idb);
     depgraph.createUnifyingDependencies();
 
-    BOOST_CHECK_EQUAL(depgraph.countNodes(), 10);
-    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 13);
+    BOOST_CHECK_EQUAL(depgraph.countNodes(), 8);
+    BOOST_CHECK_EQUAL(depgraph.countDependencies(), 11);
 
     const char* fnamev = "testDependencyGraphNonextFullVerbose.dot";
     LOG(INFO,"dumping verbose graph to " << fnamev);

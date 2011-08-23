@@ -53,7 +53,7 @@ IntegrateExternalAnswerIntoInterpretationCB(
     InterpretationPtr outputi):
   outputi(outputi),
   reg(outputi->getRegistry()),
-  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX)
 {
 }
 
@@ -441,7 +441,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
       if( convaatom.atoms != aatom.atoms )
       {
         // really create new aggregate atom
-        convaatom.kind |= ID::PROPERTY_ATOM_AUX;
+        convaatom.kind |= ID::PROPERTY_AUX;
         ID newaatomid = reg->aatoms.storeAndGetID(convaatom);
         convbody.push_back(newaatomid);
       }
@@ -463,7 +463,7 @@ void BaseModelGeneratorFactory::convertRuleBody(
       PluginAtom* pluginAtom = eatom.pluginAtom;
 
       // create replacement atom
-      OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+      OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
       replacement.tuple.push_back(
           reg->getAuxiliaryConstantSymbol('r',
             pluginAtom->getPredicateID()));
@@ -523,7 +523,7 @@ ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
 
   // copy it
   Rule newrule(rule);
-  newrule.kind |= ID::PROPERTY_RULE_AUX;
+  newrule.kind |= ID::PROPERTY_AUX;
   newrule.body.clear();
 
   // convert (recursively in aggregates)

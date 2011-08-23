@@ -5,6 +5,7 @@ EXTRA_DIST = \
     agg1.hex \
     agg2.hex \
     agg3.hex \
+    anonymousvariable1.hex \
     builtin_safety1.hex \
     builtin_safety1a.hex \
     builtin_safety1b.hex \
@@ -16,12 +17,21 @@ EXTRA_DIST = \
     equality.hex \
     extatom1.hex \
     extatom2.hex \
+    extatom2dup.hex \
+    extatom2safety.hex \
     extatom3.hex \
     extatom4.hex \
     extatom5.hex \
     extatom6.hex \
     extatom7.hex \
+    extatom8.hex \
     extatom9.hex \
+    higherorder1.hex \
+    higherorder2.hex \
+    higherorder3.hex \
+    higherorder4.hex \
+    higherorder5.hex \
+    higherorder5except.hex \
     minimality.hex \
     msp.hex \
     namespace1.hex \
@@ -32,6 +42,12 @@ EXTRA_DIST = \
     safety2.hex \
     simple1.hex \
     simple2.hex \
+    strongnegation_asp1.hex \
+    strongnegation_asp2.hex \
+    strongnegation_asp3.hex \
+    strongnegation_asp4.hex \
+    strongnegation_asp5.hex \
+		variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -61,6 +77,7 @@ EXTRA_DIST = \
     tests/agg1.out \
     tests/agg2.out \
     tests/agg3.out \
+    tests/anonymousvariable1.out \
     tests/builtin_safety1.stderr \
     tests/builtin_safety1a.stderr \
     tests/builtin_safety1b.stderr \
@@ -72,11 +89,19 @@ EXTRA_DIST = \
     tests/equality.out \
     tests/extatom1.out \
     tests/extatom2.out \
+    tests/extatom2dup.out \
     tests/extatom4.out \
     tests/extatom5.out \
     tests/extatom6.out \
     tests/extatom7.out \
+    tests/extatom8.out \
     tests/extatom9.out \
+    tests/higherorder1.out \
+    tests/higherorder2.out \
+    tests/higherorder3.out \
+    tests/higherorder4.out \
+    tests/higherorder5.out \
+    tests/higherorder5except.stderr \
     tests/minimality.out \
     tests/msp.out \
     tests/namespace1.out \
@@ -87,6 +112,11 @@ EXTRA_DIST = \
     tests/safety2.stderr \
     tests/simple1.out \
     tests/simple2.out \
+    tests/strongnegation_asp1.out \
+    tests/strongnegation_asp2.out \
+    tests/strongnegation_asp3.out \
+    tests/strongnegation_asp4.out \
+    tests/strongnegation_asp5.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
@@ -120,5 +150,6 @@ EXTRA_DIST = \
     tests/query_hex_nonground1b.out \
     tests/operators.out \
     tests/tertop.out \
+		tests/variable_predicate_inputs.stderr \
     tests/wellfounded1.out \
     tests/wellfounded2.out

@@ -162,11 +162,14 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   }
 
   // syntax verifying:
+/*
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
+*/
 }
 
 
+/*
 // test case if we call a module that is not exist
 BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 {
@@ -500,6 +503,9 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
+
+
+
 
 /* TODO handle this?
 // test case if the predicate inputs specified in the module header have a different arity

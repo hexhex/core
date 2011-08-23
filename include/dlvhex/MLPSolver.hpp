@@ -1754,7 +1754,6 @@ bool MLPSolver::comp(ValueCallsType C)
               //printProgram(ctxSolver,edbRewrite, idbRewrite);
               DBGLOG(DBG, "[MLPSolver::comp] enter path size empty");
               // try to get the answer set:	
-	      //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();
 
               ASPSolverManager::ResultsPtr res;
 	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
@@ -2049,7 +2048,6 @@ bool MLPSolver::comp(ValueCallsType C)
 	    }
           DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
 
-          //rmv. int lastOgatomsSize = registrySolver->ogatoms.getSize();	
           // for all N in ans(bu(R))
           // try to get the answer of the bottom:
 

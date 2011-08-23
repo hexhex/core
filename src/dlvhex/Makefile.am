@@ -20,8 +20,6 @@ lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
 
-#    RuleMLOutputBuilder.cpp 
-
 #
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
@@ -55,11 +53,12 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
     EvalHeuristicEasy.cpp \
+    PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
-    HexGrammarPTToASTConverter.cpp \
+    HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
     InputProvider.cpp \
@@ -84,7 +83,9 @@ libaspsolver_la_SOURCES = \
 
 # dlvhex internal plugins
 libinternalplugins_la_SOURCES = \
-    QueryPlugin.cpp
+    QueryPlugin.cpp \
+    StrongNegationPlugin.cpp \
+    HigherOrderPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,

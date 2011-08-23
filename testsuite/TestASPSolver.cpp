@@ -49,20 +49,22 @@
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(INFO,*ctx.registry()); \
 	RawPrinter printer(std::cerr, ctx.registry()); \
-	std::cerr << "edb = " << *ctx.edbList.front() << std::endl; \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG(INFO,"idb"); \
-	printer.printmany(ctx.idbList.front(),"\n"); \
+	printer.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
 #define LOG_REGISTRY_PROGRAM2(ctx) \
   LOG(INFO,*ctx.registry()); \
 	RawPrinter printer2(std::cerr, ctx.registry()); \
-	std::cerr << "edb = " << *ctx.edbList.front() << std::endl; \
+	std::cerr << "edb = " << *ctx.edb << std::endl; \
 	LOG(INFO,"idb"); \
-	printer2.printmany(ctx.idbList.front(),"\n"); \
+	printer2.printmany(ctx.idb,"\n"); \
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
+
+LOG_INIT(Logger::ERROR | Logger::WARNING | Logger::INFO | Logger::DBG)
 
 DLVHEX_NAMESPACE_USE
 
@@ -70,16 +72,16 @@ template<typename SolverSoftwareConfiguration>
 void testSimple()
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::stringstream ss;
   ss <<
-    "#module(mp,[])." << std::endl <<
+    //"#module(mp,[])." << std::endl <<
     "c(d,e). g(a)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
 	LOG_REGISTRY_PROGRAM(ctx);
@@ -89,7 +91,8 @@ void testSimple()
   //
 
   SolverSoftwareConfiguration config;
-  ASPProgram program(ctx.registry(), ctx.idbList.front(), ctx.edbList.front(), 0);
+//prs  ASPProgram program(ctx.registry(), ctx.idbList.front(), ctx.edbList.front(), 0);
+  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
   LOG(INFO,"calling solve");

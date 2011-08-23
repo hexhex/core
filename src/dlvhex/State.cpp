@@ -56,6 +56,7 @@
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
+#include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/ModuleSyntaxChecker.hpp"
 #include "dlvhex/MLPSolver.hpp"
@@ -309,7 +310,36 @@ void ParseState::parse(ProgramCtx* ctx)
   if( !ctx->parser )
   {
     LOG(INFO,"using default parser (no alternatives provided by plugins)");
-    ctx->parser.reset(new BasicHexParser);
+    ctx->parser.reset(new ModuleHexParser);
+  }
+  
+  // configure parser modules if possible
+  {
+    ModuleHexParserPtr mhp =
+      boost::dynamic_pointer_cast<ModuleHexParser>(ctx->parser);
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+    {
+      std::vector<HexParserModulePtr> modules =
+        plugin->createParserModules(*ctx);
+      if( !modules.empty() )
+      {
+        if( !!mhp )
+        {
+          LOG(INFO,"got " << modules.size() <<
+              " parser modules from plugin " << plugin->getPluginName());
+          BOOST_FOREACH(HexParserModulePtr module, modules)
+          {
+            mhp->registerModule(module);
+          }
+          LOG(INFO,"registered successfully");
+        }
+        else
+        {
+          LOG(WARNING,"ignoring parser module from plugin '" <<
+              plugin->getPluginName() << "' as ModuleHexParser is not used");
+        }
+      }
+    }
   }
 
   // parse
@@ -721,17 +751,16 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpEvalGraph") )
   {
-    #warning eval graph dumping currently implemented as modified compgraph dumping!
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose eval graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
     ctx->compgraph->writeGraphViz(filev, true);
 
     std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
-    LOG(INFO,"dumping terse component graph to " << fnamet);
+    LOG(INFO,"dumping terse eval graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
     ctx->compgraph->writeGraphViz(filet, false);
-    LOG(WARNING,"DumpEvalGraph not fully implemented!");
+    LOG(WARNING,"DumpEvalGraph currently only implemented as modified compgraph dumping!");
     #if 0
     std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
     LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
@@ -758,18 +787,21 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
-  #warning TODO configure output hook with filter
-  #warning TODO weak model output hook with filter
-
-  // setup default model outputting callback
-
-  bool keepAuxiliaryPredicates = (1 == ctx->config.getOption("KeepAuxiliaryPredicates"));
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(keepAuxiliaryPredicates));
+  // default model outputting callback
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
   ctx->modelCallbacks.push_back(asprinter);
+
+  // setup printing of auxiliaries
+  if( 1 == ctx->config.getOption("KeepAuxiliaryPredicates") )
+  {
+    AuxPrinterPtr plainAuxPrinter(new PlainAuxPrinter(ctx->registry()));
+    ctx->registry()->registerUserDefaultAuxPrinter(plainAuxPrinter);
+  }
 
   // let plugins setup the program ctx (removing the default hooks is permitted)
   ctx->setupByPlugins();
 
+  #warning TODO higher order was here
   /*
   // if we solve using DLV, automagically set higher order mode
   // (this has to be done globally for the global solver configuration,
@@ -1000,28 +1032,12 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
     (*fcb)();
   }
 
-  ///@todo filtering the atoms here is maybe to costly, how about
-  ///ignoring the aux names when building the output, since the custom
-  ///output builders of the plugins may need the aux names? Likewise
-  ///for --filter predicates...
-
-  //
-  // remove auxiliary atoms
-  //
-  #warning TODO do filtering in output hook for individual models
-  //ctx->getResultContainer()->filterOut(Term::getAuxiliaryNames());
-
+  #warning TODO dlt was here
   ///@todo quick hack for dlt
   //   if (optiondlt)
   //     {
   //       ctx->getResultContainer()->filterOutDLT();
   //     }
-
-  //
-  // apply filter
-  //
-  //if (optionFilter.size() > 0)
-  //ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
 
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);

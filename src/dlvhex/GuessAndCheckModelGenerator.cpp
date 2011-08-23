@@ -51,7 +51,7 @@ DLVHEX_NAMESPACE_BEGIN
  * interpretations as follows:
  * * replace all external atoms with eatom replacements
  *   -> "xidb" (like in other model generators)
- * * create for each eatom a guessing rule for grounding and guessing
+ * * create for each inner eatom a guessing rule for grounding and guessing
  *   eatoms
  *   -> "gidb"
  * * create for each rule in xidb a rule with same body and individual
@@ -63,15 +63,16 @@ DLVHEX_NAMESPACE_BEGIN
  *   -> "xidbflpbody"
  *
  * evaluation works as follows:
- * * evaluate edb + xidb + gidb -> yields guesses M_1,...,M_n
+ * * evaluate outer eatoms -> yields eedb replacements in interpretation
+ * * evaluate edb + eedb + xidb + gidb -> yields guesses M_1,...,M_n
  * * check for each guess M
  *   * whether eatoms have been guessed correctly (remove others)
- *   * whether M is model of FLP reduct of xidb wrt edb and M
+ *   * whether M is model of FLP reduct of xidb wrt edb, eedb and M
  *     this check is achieved by doing the following
- *     * evaluate edb + xidbflphead + M
+ *     * evaluate edb + eedb + xidbflphead + M
  *       -> yields singleton answer set containing flp heads F for non-blocked rules
  *       (if there is no result answer set, some constraint fired and M can be discarded)
- *     * evaluate edb + xidbflpbody + (M \cap guess_auxiliaries) + F
+ *     * evaluate edb + eedb + xidbflpbody + (M \cap guess_auxiliaries) + F
  *       -> yields singleton answer set M'
  *       (there must be an answer set, or something went wrong)
  *     * if (M' \setminus F) == M then M is a model of the FLP reduct
@@ -175,13 +176,10 @@ void createEatomGuessingRules(
     PredicateMask& gpmask,
     PredicateMask& gnmask)
 {
-  #warning TODO skip eatoms that are not internal ones?
-  #ifndef NDEBUG
   std::set<ID> innerEatomsSet(innerEatoms.begin(), innerEatoms.end());
-  // we don't want literals here, we want external atoms!
-  assert(innerEatomsSet.empty() ||
-      (!innerEatomsSet.begin()->isLiteral() && innerEatomsSet.begin()->isExternalAtom()));
-  #endif
+  assert((innerEatomsSet.empty() ||
+      (!innerEatomsSet.begin()->isLiteral() && innerEatomsSet.begin()->isExternalAtom())) &&
+      "we don't want literals here, we want external atoms");
 
   DBGLOG_SCOPE(DBG,"cEAGR",false);
   BOOST_FOREACH(ID rid, idb)
@@ -199,12 +197,8 @@ void createEatomGuessingRules(
       if( !lit.isExternalAtom() )
         continue;
 
-      #ifndef NDEBUG
       if( innerEatomsSet.count(ID::atomFromLiteral(lit)) == 0 )
-      {
-        LOG(WARNING,"TODO processing external atom that is not an inner eatom for guessing!");
-      }
-      #endif
+        continue;
 
       const ExternalAtom& eatom = reg->eatoms.getByID(lit);
       DBGLOG(DBG,"processing external atom " << lit << " " << eatom);
@@ -212,7 +206,7 @@ void createEatomGuessingRules(
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
 
       // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
       // (build up incrementally)
@@ -260,7 +254,7 @@ void createEatomGuessingRules(
 
       // create rule head
       Rule guessingrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR |
-          ID::PROPERTY_RULE_AUX | ID::PROPERTY_RULE_DISJ);
+          ID::PROPERTY_AUX | ID::PROPERTY_RULE_DISJ);
       guessingrule.head.push_back(posreplacement);
       guessingrule.head.push_back(negreplacement);
 
@@ -389,7 +383,7 @@ void createFLPRules(
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_ATOM_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
 
       // tuple: (replacement_predicate, variables*)
       ID flppredicate = reg->getAuxiliaryConstantSymbol('f', rid);
@@ -415,12 +409,12 @@ void createFLPRules(
 
       // create rules
       Rule rflphead(
-          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflphead.head.push_back(fid);
       rflphead.body = r.body;
 
       Rule rflpbody(
-          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflpbody.head = r.head;
       if( rflpbody.head.size() > 1 )
         rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
@@ -560,7 +554,7 @@ VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
   reg(_guess_pos->getRegistry()),
   guess_pos(_guess_pos),
   guess_neg(_guess_neg),
-  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_ATOM_AUX)
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX)
 {
   assert(guess_pos->getRegistry() == guess_neg->getRegistry());
 }

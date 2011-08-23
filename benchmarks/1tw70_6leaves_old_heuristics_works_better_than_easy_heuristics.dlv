@@ -1,0 +1,120 @@
+% this is another example (from Yuliya Lierler) where old heuristics is better than
+% easy heuristics
+#maxint=70.
+
+leafWeightCardinality(leaf1,1,9).
+leafWeightCardinality(leaf2,6,7).
+leafWeightCardinality(leaf3,7,6).
+leafWeightCardinality(leaf4,2,9).
+leafWeightCardinality(leaf5,6,5).
+leafWeightCardinality(leaf6,2,8).
+innerNode(1).
+innerNode(2).
+innerNode(3).
+innerNode(4).
+innerNode(5).
+num(6).
+max_total_weight(70).
+
+color(red).
+color(blue).
+color(green).
+
+leaf(L) :- leafWeightCardinality(L,W,C).
+
+coloredPos(X) :- innerNode(X).
+
+% Each leaf will have a location in our sequence
+location(0).
+location(X) :-  innerNode(X).
+
+% We mostly care about the lesser of weight and cardinality.
+% Just call it leafCost
+leafCost(L,W) :- leaf(L), leafWeightCardinality(L,W,C), W <= C.
+leafCost(L,C) :- leaf(L), leafWeightCardinality(L,W,C), C < W.
+
+% Give each leaf a location in the sequence
+leafPos(L,N):- not nleafPos(L,N), leaf(L),  location(N).
+nleafPos(L,N):- not leafPos(L,N), leaf(L),  location(N).
+
+% each position has a guy in it
+% strictly speacking this is not nec. as it is also enforced 
+% by :-exists constraint, but it is nice to have it -- clearer
+
+atPos(P) :- leafPos(L,P).
+:- location(P), not atPos(P).
+
+% No sharing locations
+:- leafPos(L1, N), leafPos(L2, N), location(N), L1 < L2.
+
+% No leaf can be at the same time in two different locations
+:- leafPos(L, N1), leafPos(L, N2), location(N1), location(N2), N1 < N2.
+
+
+%%%% COLORS %%%%
+
+
+% coloredPos(1) has a special case, look at locations 0 and 1 in leafPos to
+% to determine color
+
+% green if (weight(right) + card(right)) < (weight(left) + leafCost(right))
+posColor(1,green) :- leafPos(L1,0), leafPos(L2,1), leafWeightCardinality(L1,WL,CL),
+		leafWeightCardinality(L2,WR,CR), leafCost(L2,W3), W1=WR+CR, W2=WL+W3, W1 < W2.
+% blue if not green and card(right) < weight(right)
+posColor(1,blue) :- leafPos(L2,1), leafWeightCardinality(L2,W,C), C < W, 
+		not posColor(1,green).
+% red if not green and weight(right) < card(right)
+posColor(1,red) :- leafPos(L2,1), leafWeightCardinality(L2,W,C), W < C, 
+		not posColor(1,green).
+
+% Decide colors for all other nodes
+% there are 1 .. N-1 inner nodes so we restrict N<NMAX, num(NMAX).
+posColor(N,green) :- N>1, coloredPos(N), leafPos(L,N), leafWeightCardinality(L,WR,CR),
+ 		nWeight(Nm1,WL),  Nm1= N-1, leafCost(L,W2), TWR=WR+CR, TWL=WL+W2, TWR < TWL.
+		
+posColor(N,blue) :- N>1, coloredPos(N), leafPos(L,N), leafWeightCardinality(L,W,C), C < W, 
+		not posColor(N,green).
+
+% If it's not blue or green it must be red
+posColor(N,red) :- N>1, coloredPos(N), not posColor(N,green), not posColor(N,blue).
+
+%%%% WEIGHTS %%%%
+
+% nWeight for first coloredPos
+nWeight(1,W) :- posColor(1,green), leafPos(L,1), leafWeightCardinality(L,WR,CR),
+		W=WR+CR, W<=MAX, max_total_weight(MAX).
+nWeight(1,W) :- not posColor(1,green), leafPos(L1,0), leafPos(L2,1), 
+		leafWeightCardinality(L1,WL,CL), leafCost(L2,WR), W=WL+WR, W<=MAX, 
+		max_total_weight(MAX).
+
+% define nWeight/2
+% green
+nWeight(N,W) :- coloredPos(N), N>1, posColor(N,green), leafPos(L,N), 
+		leafWeightCardinality(L,WR,CR), W=WR+CR, W<=MAX, max_total_weight(MAX).
+
+% not green
+nWeight(N,W) :- coloredPos(N), N>1, not posColor(N,green), leafPos(L,N), 
+		leafCost(L,WR), nWeight(Nm1,WL), Nm1= N-1, W=WL+WR, W<=MAX, max_total_weight(MAX).
+
+tWeight(1,W) :- coloredPos(1), nWeight(1,W), W<=MAX, max_total_weight(MAX).
+tWeight(N,W) :- coloredPos(N), nWeight(N,W1), tWeight(Nm1,W2), Nm1= N-1, W=W1+W2, W<=MAX,
+		max_total_weight(MAX).
+
+
+exists :- tWeight(Nm1,W), Nm1= N-1, num(N), W<=MAX, max_total_weight(MAX).
+:- not exists.
+
+%% + enforce sorted order of nongreen blocks
+%%
+:-not posColor(N,green), not posColor(Nm1,green), Nm1= N-1, coloredPos(Nm1),
+leafPos(L1,Nm1),  leafPos(L2,N), leafCost(L1,C1), leafCost(L2,C2), C1>C2.
+
+:-not posColor(N,green), not posColor(Nm1,green), coloredPos(Nm1),
+leafPos(L1,Nm1),  Nm1= N-1, leafPos(L2,N), leafCost(L1,C), leafCost(L2,C), L1>L2.
+
+%% ++ enforcing sorted green nodes (sorting by ids)
+%%
+:- leafPos(L1,P1),  leafPos(L2,P2), 
+   posColor(P1,green), posColor(P2,green), 
+   L1<L2, P1>P2.
+

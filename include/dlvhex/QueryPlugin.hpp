@@ -82,15 +82,15 @@ public:
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --query-enables --query-brave --query-cautious
+  // accepted options: --query-enable --query-brave --query-cautious
   //
 	// processes options for this plugin, and removes recognized options from pluginOptions
   // (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // create custom parser that extends and uses the basic hex parser for parsing queries
+  // create parser modules that extend and the basic hex grammar
   // this parser also stores the query information into the plugin
-  virtual HexParserPtr createParser(ProgramCtx&);
+  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
   // rewrite program by adding auxiliary query rules
   virtual PluginRewriterPtr createRewriter(ProgramCtx&);

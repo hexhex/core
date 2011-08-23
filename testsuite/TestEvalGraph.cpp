@@ -53,6 +53,8 @@
 #include <vector>
 #include <cassert>
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 BOOST_AUTO_TEST_SUITE(root_TestEvalGraph)
 
 BOOST_FIXTURE_TEST_CASE(setup_eval_graph_e2, EvalGraphE2Fixture)

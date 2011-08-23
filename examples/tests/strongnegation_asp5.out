@@ -1,0 +1,4 @@
+{-in(a,d),-in(b,d)}
+{in(a,d),-in(b,d)}
+{-in(a,d),in(b,d)}
+{in(a,d),in(b,d)}

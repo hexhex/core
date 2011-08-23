@@ -30,8 +30,17 @@
  */
 
 #include "dlvhex/Registry.hpp"
+
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#include "dlvhex/Benchmarking.h"
 #include "dlvhex/Error.h"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/Interpretation.hpp"
 
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
@@ -53,6 +62,10 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is a rule)
  * 'q': Query evaluation auxiliary (QueryPlugin)
  *      (source ID is ID(0,0) or ID(0,1) ... see QueryPlugin.cpp)
+ * 's': Strong negation auxiliary (StrongNegationPlugin)
+ *      (source ID is a constant term)
+ * 'h': Higher order auxiliary (HigherOrderPlugin)
+ *      (source ID is an integer (arity))
  */
 
 namespace
@@ -96,12 +109,16 @@ typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
 struct Registry::Impl
 {
   AuxiliaryStorage auxSymbols;
+  PredicateMask auxGroundAtomMask;
+  std::list<AuxPrinterPtr> auxPrinters;
+  AuxPrinterPtr defaultAuxPrinter;
 };
 
 
 Registry::Registry():
   pimpl(new Impl)
 {
+  // do not initialize pimpl->auxGroundAtomMask here! (we can do this only outside of the constructor)
 }
 
 // creates a real deep copy
@@ -120,6 +137,7 @@ Registry::Registry(const Registry& other):
   inputList(other.inputList),
   pimpl(new Impl(*other.pimpl))
 {
+  // do not initialize pimpl->auxGroundAtomMask here! (we can do this only outside of the constructor)
 }
 
 // it is very important that this destructor is not in the .hpp file,
@@ -128,9 +146,46 @@ Registry::~Registry()
 {
 }
 
-std::ostream& Registry::print(std::ostream& o) const
+// implementation from RuleTable.hpp
+std::ostream& RuleTable::print(std::ostream& o, RegistryPtr reg) const throw()
 {
+/*<<<<<<< .working
   o << "REGISTRY BEGIN" << std::endl <<
+=======*/
+	const AddressIndex& aidx = container.get<impl::AddressTag>();
+	for(AddressIndex::const_iterator it = aidx.begin();
+			it != aidx.end(); ++it)
+  {
+    const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
+    o <<
+			"  " << ID(it->kind, address) << std::endl <<
+			"    " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
+			"    ->" << *it << std::endl;
+  }
+	return o;
+}
+
+// implementation from ExternalAtomTable.hpp
+std::ostream& ExternalAtomTable::print(std::ostream& o, RegistryPtr reg) const throw()
+{
+	const AddressIndex& aidx = container.get<impl::AddressTag>();
+	for(AddressIndex::const_iterator it = aidx.begin();
+			it != aidx.end(); ++it)
+  {
+    const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
+    o <<
+			"  " << ID(it->kind, address) << std::endl <<
+			"    " << printToString<RawPrinter>(ID(it->kind, address), reg) << std::endl <<
+			"    ->" << *it << std::endl;
+  }
+	return o;
+}
+
+std::ostream& Registry::print(std::ostream& o) //const
+{
+    o <<
+      "REGISTRY BEGIN" << std::endl <<
+//>>>>>>> .merge-right.r3086
       "terms:" << std::endl <<
       terms <<
       "preds:" << std::endl <<
@@ -143,21 +198,31 @@ std::ostream& Registry::print(std::ostream& o) const
       batoms <<
       "aatoms:" << std::endl <<
       aatoms <<
+/*<<<<<<< .working
       "eatoms:" << std::endl <<
       eatoms <<
       "matoms:" << std::endl <<
       matoms <<
       "rules:" << std::endl <<
       rules <<
-      "moduleTable:" << std::endl <<
+=======*/
+      "eatoms:" << std::endl;
+	eatoms.print(o, shared_from_this());
+      o << 
+      "matoms:" << std::endl <<
+      matoms <<
+      "rules:" << std::endl;
+	rules.print(o, shared_from_this());
+//>>>>>>> .merge-right.r3086
+      o << "moduleTable:" << std::endl <<
       moduleTable <<
       "inputList:" << std::endl;
+      for (int i=0;i<inputList.size();i++)
+        {
+          o << printvector(inputList.at(i)) << std::endl;
+        }
 
-  for (int i=0;i<inputList.size();i++)
-    {
-      o << printvector(inputList.at(i)) << std::endl;
-    }
-  o << "REGISTRY END" << std::endl;
+      o << "REGISTRY END" << std::endl;
 
   return o;
 
@@ -359,10 +424,18 @@ ID Registry::storeTerm(Term& term)
   return storeConstOrVarTerm(term);
 }
 
+void Registry::setupAuxiliaryGroundAtomMask()
+{
+  assert(!pimpl->auxGroundAtomMask.mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
+  pimpl->auxGroundAtomMask.setRegistry(shared_from_this());
+}
+
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 {
   DBGLOG_SCOPE(DBG,"gACS",false);
   DBGLOG(DBG,"getAuxiliaryConstantSymbol for " << type << " " << id);
+  assert(!!pimpl->auxGroundAtomMask.mask() &&
+      "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
 
   // lookup auxiliary
   AuxiliaryKey key(type,id);
@@ -382,7 +455,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   AuxiliaryValue av(s.str(), ID_FAIL);
   DBGLOG(DBG,"created symbol '" << av.symbol << "'");
   Term term(
-      ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_TERM_AUX,
+      ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_AUX,
       av.symbol);
 
   // register ID for symbol
@@ -395,9 +468,73 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   // register auxiliary
   pimpl->auxSymbols.insert(std::make_pair(key, av));
 
+  // update predicate mask
+  pimpl->auxGroundAtomMask.addPredicate(av.id);
+
   // return
   DBGLOG(DBG,"returning id " << av.id << " for aux symbol " << av.symbol);
   return av.id;
+}
+
+// get predicate mask to auxiliary ground atoms
+InterpretationConstPtr Registry::getAuxiliaryGroundAtomMask()
+{
+  assert(!!pimpl->auxGroundAtomMask.mask() &&
+      "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
+  pimpl->auxGroundAtomMask.updateMask();
+  return pimpl->auxGroundAtomMask.mask();
+}
+
+//
+// printing framework
+//
+
+// these printers are used as long as none prints it
+void Registry::registerUserAuxPrinter(AuxPrinterPtr printer)
+{
+  DBGLOG(DBG,"added auxiliary printer");
+  pimpl->auxPrinters.push_back(printer);
+}
+
+// this one printer is used last
+void Registry::registerUserDefaultAuxPrinter(AuxPrinterPtr printer)
+{
+  DBGLOG(DBG,"configured default auxiliary printer");
+  pimpl->defaultAuxPrinter = printer;
+}
+
+// true if anything was printed
+// false if nothing was printed
+bool Registry::printAtomForUser(std::ostream& o, IDAddress address, const std::string& prefix)
+{
+  DBGLOG(DBG,"printing for user id " << address);
+  if( !getAuxiliaryGroundAtomMask()->getFact(address) )
+  {
+    // fast direct output
+    o << prefix << ogatoms.getByAddress(address).text;
+    return true;
+  }
+  else
+  {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Registry aux printing");
+
+    ID id(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX, address);
+    DBGLOG(DBG,"printing auxiliary " << address << " (reconstructed id " << id << ")");
+    typedef std::list<AuxPrinterPtr> AuxPrinterList;
+    for(AuxPrinterList::const_iterator it = pimpl->auxPrinters.begin();
+        it != pimpl->auxPrinters.end(); ++it)
+    {
+      DBGLOG(DBG,"trying registered aux printer");
+      if( (*it)->print(o, id, prefix) )
+        return true;
+    }
+    if( !!pimpl->defaultAuxPrinter )
+    {
+      DBGLOG(DBG,"trying default aux printer");
+      return pimpl->defaultAuxPrinter->print(o, id, prefix);
+    }
+    return false;
+  }
 }
 
 DLVHEX_NAMESPACE_END

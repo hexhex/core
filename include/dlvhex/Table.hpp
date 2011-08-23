@@ -97,7 +97,9 @@ std::ostream& Table<ValueT,IndexT>::print(std::ostream& o) const
   {
     const uint32_t address = static_cast<uint32_t>(it - aidx.begin());
     // for the next line to work, ValueT must be derived from ostream_printable<ValueT> 
-    o << ID(it->kind, address) << " -> " << static_cast<const ValueT&>(*it) << std::endl;
+    o <<
+			"  " << ID(it->kind, address) << std::endl <<
+			"   -> " << static_cast<const ValueT&>(*it) << std::endl;
   }
   return o;
 }

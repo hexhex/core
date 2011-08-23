@@ -124,13 +124,14 @@ public:
     assert(query.input.size() > 0);
     assert(query.input[0].isConstant());
 
-    std::string t = "-" + query.input[0].strval;
+    // was: std::string t = "-" + query.input[0].strval;
+    std::string t = query.input[0].strval;
     
-    ComfortInterpretation negProj;
-    query.interpretation.matchPredicate(t, negProj);
+    ComfortInterpretation proj;
+    query.interpretation.matchPredicate(t, proj);
 
-    for(ComfortInterpretation::const_iterator it = negProj.begin();
-        it != negProj.end(); ++it)
+    for(ComfortInterpretation::const_iterator it = proj.begin();
+        it != proj.end(); ++it)
     {
       const ComfortAtom& at = *it;
       ComfortTuple::const_iterator itt = at.tuple.begin();
@@ -140,7 +141,7 @@ public:
       while( itt != at.tuple.end() )
       {
         // add each constant of the atom as separate output tuple
-        // so -foo(a,b,c) will end up as three tuples [a], [b], and [c]
+        // so foo(a,b,c) will end up as three tuples [a], [b], and [c]
         ComfortTuple tu;
         tu.push_back(*itt);
         answer.insert(tu);

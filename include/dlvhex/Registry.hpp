@@ -47,10 +47,11 @@
 #include "dlvhex/ModuleTable.hpp"
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning namespaces
+#warning namespaces where here
 /*
 typedef boost::bimaps::bimap<
   boost::bimaps::set_of<std::string>,
@@ -58,10 +59,28 @@ typedef boost::bimaps::bimap<
   */
 
 /**
+ * Registry Plugin for printing auxiliary IDs.
+ *
+ * Derived classes implement the print method which decides
+ * whether printing the ID is the responsibility of that class
+ * and acts accordingly.
+ */
+class AuxPrinter
+{
+public:
+  virtual ~AuxPrinter() {}
+  // print an ID and return true,
+  // or do not print it and return false
+  // print prefix in front of printed thing if something is printed
+  virtual bool print(std::ostream& out, ID id, const std::string& prefix) const = 0;
+};
+
+/**
  * @brief Registry for entities used in programs as IDs (collection of symbol tables)
  */
 struct Registry:
-  public ostream_printable<Registry>
+  public ostream_printable<Registry>,
+  public boost::enable_shared_from_this<Registry>
 {
   Registry();
   // creates a real deep copy
@@ -119,7 +138,7 @@ struct Registry:
   //
 
   // lookup by tuple, if does not exist create text and store as new atom
-  // assume, that oatom.id and oatom.tuple is initialized!
+  // assume, that oatom.kind and oatom.tuple is initialized!
   // assume, that oatom.text is not initialized!
   // oatom.text will be modified
   //
@@ -141,7 +160,13 @@ struct Registry:
   // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
-  // auxiliary entities:
+  //
+  // auxiliary management
+  //
+
+  // must be called after construction and before any call to getAuxiliaryConstantSymbol
+  void setupAuxiliaryGroundAtomMask();
+
   // create or lookup auxiliary constant symbol of type <type> for ID <id>
   // with multiple calls, for one <type>/<id> pair the same symbol/ID will be returned
   // we limit ourselves to types of one letter, this should be sufficient
@@ -149,11 +174,18 @@ struct Registry:
   // (plugins may also want to use this method for their own auxiliaries)
   ID getAuxiliaryConstantSymbol(char type, ID id);
 
+  // get predicate mask to auxiliary ground atoms
+  InterpretationConstPtr getAuxiliaryGroundAtomMask();
+
   //
   // accessors
   //
 
-  std::ostream& print(std::ostream& o) const;
+	// cannot be nonconst as printing might change registry caches (TODO create mutable string caches in atoms)
+  std::ostream& print(std::ostream& o);
+  #warning TODO make registry const printable!
+  virtual std::ostream& print(std::ostream& o) const { return const_cast<Registry*>(this)->print(o); }
+
   // lookup ground or nonground ordinary atoms (ID specifies this)
   const OrdinaryAtom& lookupOrdinaryAtom(ID id) const;
   inline const std::string& getTermStringByID(ID termid) const
@@ -175,6 +207,21 @@ struct Registry:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+
+  //
+  // printing framework
+  //
+
+  // these printers are used as long as none prints it
+  void registerUserAuxPrinter(AuxPrinterPtr printer);
+
+  // this one printer is used last
+  void registerUserDefaultAuxPrinter(AuxPrinterPtr printer);
+
+  // true if anything was printed
+  // false if nothing was printed
+  // if it prints, prints prefix in front of printed thing (for printing lists efficiently)
+  bool printAtomForUser(std::ostream& o, IDAddress address, const std::string& prefix="");
 
 protected:
   struct Impl;

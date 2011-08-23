@@ -45,6 +45,8 @@ TESTS = \
 
 TESTS_ENVIRONMENT = \
   TOP_SRCDIR=$(top_srcdir) \
+  EXAMPLESDIR=$(top_srcdir)/examples \
+  TESTDIR=$(top_srcdir)/examples/tests \
   DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
   BOOST_TEST_REPORT_LEVEL=detailed \
   BOOST_TEST_LOG_LEVEL=all
@@ -124,7 +126,7 @@ HEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicOldDlvhex.cpp \
 	$(top_srcdir)/src/dlvhex/EvalHeuristicTrivial.cpp \
 	$(top_srcdir)/src/dlvhex/GuessAndCheckModelGenerator.cpp \
-	$(top_srcdir)/src/dlvhex/HexGrammarPTToASTConverter.cpp \
+	$(top_srcdir)/src/dlvhex/HexGrammar.cpp \
 	$(top_srcdir)/src/dlvhex/HexParser.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp \
 	$(top_srcdir)/src/dlvhex/Interpretation.cpp \

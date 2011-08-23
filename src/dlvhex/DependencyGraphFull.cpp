@@ -35,6 +35,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Rule.hpp"
 #include "dlvhex/PluginInterface.h"
+#include "dlvhex/GraphvizHelpers.hpp"
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>
@@ -721,7 +722,7 @@ ID DependencyGraphFull::createAuxiliaryRuleHead(
 	ID idpred = registry->getAuxiliaryConstantSymbol('i', forEAtom);
 
 	// create ordinary nonground atom
-	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_ATOM_AUX);
+	OrdinaryAtom head(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
 
 	// set tuple
 	head.tuple.push_back(idpred);
@@ -756,7 +757,7 @@ ID DependencyGraphFull::createAuxiliaryRule(
 		ID head,
 		const std::list<DependencyGraphFull::NodeMappingInfo>& body)
 {
-	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_AUX);
+	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
 	r.head.push_back(head);
 	BOOST_FOREACH(const NodeMappingInfo& nmi, body)
 	{
@@ -885,14 +886,9 @@ void DependencyGraphFull::writeGraphViz(std::ostream& o, bool verbose) const
   {
     o << graphviz_node_id(*it) << "[label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizNodeLabel(ss, *it, verbose);
-      // escape " into \"
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"";
     if( getNodeInfo(*it).id.isRule() )
@@ -910,14 +906,9 @@ void DependencyGraphFull::writeGraphViz(std::ostream& o, bool verbose) const
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
     {
-      std::stringstream ss;
+      std::ostringstream ss;
       writeGraphVizDependencyLabel(o, *dit, verbose);
-      // escape " into \"
-      boost::algorithm::replace_all_copy(
-        std::ostream_iterator<char>(o),
-        ss.str(),
-        "\"",
-        "\\\"");
+			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }

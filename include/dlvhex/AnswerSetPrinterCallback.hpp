@@ -40,10 +40,8 @@ class AnswerSetPrinterCallback:
   public ModelCallback
 {
 public:
-  AnswerSetPrinterCallback(bool keepAuxiliaryPredicates=false);
+  AnswerSetPrinterCallback();
   virtual bool operator()(AnswerSetPtr model);
-protected:
-  bool keepAuxiliaryPredicates;
 };
 
 DLVHEX_NAMESPACE_END

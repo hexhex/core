@@ -47,6 +47,9 @@ struct AggregateAtom;
 class AnswerSet;
 typedef boost::shared_ptr<AnswerSet> AnswerSetPtr;
 
+class AuxPrinter;
+typedef boost::shared_ptr<AuxPrinter> AuxPrinterPtr;
+
 class ComponentGraph;
 typedef boost::shared_ptr<ComponentGraph> ComponentGraphPtr;
 
@@ -59,6 +62,8 @@ struct ExternalAtom;
 
 class HexParser;
 typedef boost::shared_ptr<HexParser> HexParserPtr;
+class HexParserModule;
+typedef boost::shared_ptr<HexParserModule> HexParserModulePtr;
 
 class InputProvider;
 typedef boost::shared_ptr<InputProvider> InputProviderPtr;

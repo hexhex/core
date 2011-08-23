@@ -1,0 +1,13 @@
+% test higher order creating predicate input to external atom
+seta(u).
+seta(v).
+seta(w).
+
+pred(setb).
+
+P(X) :- pred(P), seta(X), X != v.
+% setb(u) setb(w)
+
+% strong safety 
+dom(X) :- seta(X).
+setc(X) :- &testSetMinus[seta,setb](X), dom(X).

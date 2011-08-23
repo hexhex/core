@@ -29,11 +29,13 @@ pkginclude_HEADERS = \
   ExternalAtomTable.hpp \
   FinalEvalGraph.hpp \
   fwd.hpp \
+  GraphvizHelpers.hpp \
   GuessAndCheckModelGenerator.hpp \
   HexGrammar.h \
-  HexGrammarPTToASTConverter.h \
   HexGrammar.tcc \
   HexParser.hpp \
+  HexParserModule.hpp \
+  HigherOrderPlugin.hpp \
   ID.hpp \
   InputProvider.hpp \
   Interpretation.hpp \
@@ -46,6 +48,7 @@ pkginclude_HEADERS = \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \
   OrdinaryAtomTable.hpp \
+  PlainAuxPrinter.hpp \
   PlainModelGenerator.hpp \
   PlatformDefinitions.h \
   PluginContainer.h \
@@ -60,9 +63,8 @@ pkginclude_HEADERS = \
   Registry.hpp \
   Rule.hpp \
   RuleTable.hpp \
+  StrongNegationPlugin.hpp \
   SafetyChecker.h \
-  SpiritDebugging.h \
-  SpiritFilePositionNode.h \
   State.h \
   Table.hpp \
   Term.hpp \

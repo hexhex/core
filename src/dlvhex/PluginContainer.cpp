@@ -49,6 +49,7 @@
 
 #include <boost/foreach.hpp>
 
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <set>
@@ -96,23 +97,42 @@ findplugins(const char* filename, lt_ptr data)
 
 void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std::string>& libcandidates)
 {
-  if (lt_dlinit())
-    {
-      throw GeneralError("Could not initialize libltdl");
-    }
-  
-  //
-  // now look into the user's home, and into the global plugin directory
-  //
-  
-  LOG(PLUGIN,"findPluginLibraryCandidates with searchpath='" << searchpath << "'");
-  if (lt_dlsetsearchpath(searchpath.c_str()))
-    {
-      throw GeneralError("Could not set libltdl search path: " + searchpath);
-    }
+  std::string oldenv_ld;
+  const char *envld = ::getenv("LD_LIBRARY_PATH");
+  if( envld )
+  {
+    oldenv_ld = envld;
+    ::unsetenv("LD_LIBRARY_PATH");
+  }
 
-  // search the directory search paths for plugins and setup pluginList
-  lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
+  try
+  {
+    if (lt_dlinit())
+      {
+        throw GeneralError("Could not initialize libltdl");
+      }
+    
+    //
+    // now look into the user's home, and into the global plugin directory
+    //
+    
+    LOG(PLUGIN,"findPluginLibraryCandidates with searchpath='" << searchpath << "'");
+    if (lt_dlsetsearchpath(searchpath.c_str()))
+      {
+        throw GeneralError("Could not set libltdl search path: " + searchpath);
+      }
+
+    // search the directory search paths for plugins and setup pluginList
+    lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
+  }
+  catch(...)
+  {
+    if( !oldenv_ld.empty() )
+      ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
+    throw;
+  }
+  if( !oldenv_ld.empty() )
+    ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
 }
 
 void loadCandidates(

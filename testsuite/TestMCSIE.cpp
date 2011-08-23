@@ -79,6 +79,8 @@
 
 #include "graphviz.hpp"
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 #ifndef NDEBUG
 # define LOG_REGISTRY_PROGRAM(ctx) \
   DBGLOG(DBG,*ctx.registry()); \
@@ -392,7 +394,7 @@ int main(int argn, char** argv)
   {
     RegistryPtr registry(new Registry);
     PluginContainerPtr pluginContainer(new PluginContainer(registry));
-    ctx.setupRegistryPluginContainer(registry,pluginContainer);
+    ctx.setupRegistry(registry,pluginContainer);
   }
 
   // create dlv ctx plugin atom
@@ -400,8 +402,8 @@ int main(int argn, char** argv)
 
   // parse HEX program
   LOG(INFO,"parsing HEX program");
-  DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "BasicHexParser::parse");
-  BasicHexParser parser;
+  DLVHEX_BENCHMARK_REGISTER_AND_START(sidhexparse, "ModuleHexParser::parse");
+  ModuleHexParser parser;
   parser.parse(ip, ctx);
   DLVHEX_BENCHMARK_STOP(sidhexparse);
 

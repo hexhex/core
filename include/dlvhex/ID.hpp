@@ -83,15 +83,13 @@ struct ID:
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
+	//                                             0x00FF0000
 	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
-	static const IDKind PROPERTY_TERM_AUX        = 0x00020000;
-	//static const IDKind PROPERTY_NEGATIVE =      0x00010000;
 	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
 	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
-	static const IDKind PROPERTY_RULE_AUX        = 0x00200000;
 	static const IDKind PROPERTY_RULE_MODATOMS   = 0x00400000;
 	static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFBFFFFF;
-	static const IDKind PROPERTY_ATOM_AUX        = 0x00020000;
+	static const IDKind PROPERTY_AUX             = 0x00800000;
 
   // for builtin terms, this is the address part (no table)
   // beware: must be synchronized with isInfixBuiltin() and builtinTerms[]
@@ -157,6 +155,7 @@ struct ID:
 
 	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
 	inline bool isNaf() const           { return (kind & NAF_MASK) == NAF_MASK; }
+	inline bool isAuxiliary() const     { return (kind & PROPERTY_AUX) == PROPERTY_AUX; }
   
 	inline bool isRule() const          { return (kind & MAINKIND_MASK) == MAINKIND_RULE; }
 	inline bool isRegularRule() const   { assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_REGULAR; }
@@ -166,6 +165,7 @@ struct ID:
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
 	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }
 	inline bool isRuleDisjunctive() const { assert(isRule()); return (kind & PROPERTY_RULE_DISJ) == PROPERTY_RULE_DISJ; }
+	inline bool isAnonymousVariable() const { assert(isVariableTerm()); return (kind & PROPERTY_VAR_ANONYMOUS) == PROPERTY_VAR_ANONYMOUS; }
 
 	inline bool operator==(const ID& id2) const { return kind == id2.kind && address == id2.address; }
 	inline bool operator!=(const ID& id2) const { return kind != id2.kind || address != id2.address; }

@@ -83,6 +83,8 @@ struct OrdinaryAtom:
   // the textual representation of the whole thing
   // this is stored for efficient parsing and printing
   // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
+  // TODO if we get answer sets in a structured way we do not need to parse them anymore
+  // TODO if we only need this for printing, we should generate it on-demand and save a lot of effort
   std::string text;
 
   // this is needed to optimze localize the module instantiation (MLP case)
@@ -136,6 +138,7 @@ struct AggregateAtom:
   // variables of the symbolic set
   Tuple variables;
   // atoms in conjunction of the symbolic set
+  #warning TODO rename this from atoms to literals, as this might contain literals
   Tuple atoms;
 
   AggregateAtom(IDKind kind):
@@ -149,7 +152,7 @@ struct AggregateAtom:
       assert(!variables.empty()); assert(!atoms.empty()); }
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
-        printvector(variables) << " and atoms " << printvector(atoms) << ")"; }
+        printvector(variables) << " and literals " << printvector(atoms) << ")"; }
 };
 
 // this is one concrete atom in one rule
@@ -172,6 +175,7 @@ struct ExternalAtom:
   // (cannot be indexed in multi_index_container as it is mutable)
   // this is a POD-style pointer as the target object is dynamically loaded
   // shared library code, which cannot be weak_ptr- or shared_ptr-managed.
+	#warning TODO we could use a shared ptr here with an empty deleter
 	mutable PluginAtom* pluginAtom;
 
   // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here

@@ -14,11 +14,11 @@ std::size_t hash_value(const ID& id)
 
 std::ostream& ID::print(std::ostream& o) const
 {
+  if( *this == ID_FAIL )
+		return o << "ID_FAIL";
   o << "ID(0x" <<
       std::setfill('0') << std::hex << std::setw(8) << kind << "," << std::setfill(' ') <<
       std::dec << std::setw(4) << address;
-  if( kind == ALL_ONES && address == ALL_ONES )
-    return o << " fail)"; // plus bailout
 
   if( !!(kind & NAF_MASK) )
     o << " naf";

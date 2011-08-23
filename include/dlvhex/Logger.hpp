@@ -165,6 +165,15 @@ public:
       }
     }
   };
+
+  class Init
+  {
+  public:
+    Init(Levels levels)
+    {
+      Logger::Instance().setPrintLevels(levels);
+    }
+  };
 };
 
 // the following will always be realized
@@ -186,6 +195,9 @@ public:
 #  define LOG_VSCOPE(level,name,val,msg) 	do { } while(false)
 #endif
 */
+
+#  define LOG_INIT(setlevel)             namespace { Logger::Init LOG_CLOSURE_ID (setlevel); }
+
 
 // the following are debug-flag dependant
 #ifndef NDEBUG

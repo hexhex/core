@@ -70,8 +70,10 @@
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
 
-// internal plugin
+// internal plugins
 #include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/StrongNegationPlugin.hpp"
+#include "dlvhex/HigherOrderPlugin.hpp"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -142,6 +144,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --num=<N>        Computes at most N answer sets (N=0 computes all)" << std::endl
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << "     --weaksafety     Skip strong safety check." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -215,7 +218,6 @@ InternalError (const char *msg)
 // config and defaults of dlvhex main
 struct Config
 {
-  bool checkStrongSafety;
   bool optionNoEval;
   bool helpRequested;
   std::string optionPlugindir;
@@ -227,7 +229,6 @@ struct Config
 	std::list<const char*> pluginOptions;
 
 	Config():
-		checkStrongSafety(true),
   	optionNoEval(false),
   	helpRequested(false),
 		optionPlugindir(""),
@@ -303,6 +304,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("MLP", 0);
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
+  pctx.config.setOption("SkipStrongSafetyCheck",0);
 
 	// defaults of main
 	Config config;
@@ -321,6 +323,10 @@ int main(int argc, char *argv[])
 		{
 			PluginInterfacePtr queryPlugin(new QueryPlugin);
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
+			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
+			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);
+			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
 		}
 
 		// before anything else we dump the logo
@@ -386,6 +392,9 @@ int main(int argc, char *argv[])
 			throw UsageError(bad.str());
 		}
 		//rmv. std::cout << "before convert" << std::endl;
+		// use configured plugins to obtain plugin atoms
+		pctx.addPluginAtomsFromPluginContainer();
+
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
 		//rmv. std::cout << "after convert" << std::endl;
@@ -417,36 +426,26 @@ int main(int argc, char *argv[])
 
 		  {	
 
-		// rewrite program
-		//rmv. std::cout << "before rewriteEDBIDB" << std::endl;
-		pctx.rewriteEDBIDB();
-		//rmv. std::cout << "after rewriteEDBIDB" << std::endl;
+		// associate PluginAtom instances with
+		// ExternalAtom instances (in the IDB)
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
 			
-		// check weak safety
-		//rmv. std::cout << "before safetyCheck" << std::endl;
-		pctx.safetyCheck();
-		//rmv. std::cout << "after safetyCheck" << std::endl;
-
-		// use configured plugins to obtain plugin atoms
-		//rmv. std::cout << "before addPluginAtomsFromPluginContainer" << std::endl;
-		pctx.addPluginAtomsFromPluginContainer();
-		//rmv. std::cout << "after addPluginAtomsFromPluginContainer" << std::endl;
+		// rewrite program
+		pctx.rewriteEDBIDB();
 			
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
-		//rmv. std::cout << "before associateExtAtomsWithPluginAtoms" << std::endl;
+		// (again, rewrite might add external atoms)
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
-		//rmv. std::cout << "after associateExtAtomsWithPluginAtoms" << std::endl;
+
+		// check weak safety
+		pctx.safetyCheck();
 
 		// create dependency graph (we need the previous step for this)
-		//rmv. std::cout << "before createDependencyGraph" << std::endl;
 		pctx.createDependencyGraph();
-		//rmv. std::cout << "after createDependencyGraph" << std::endl;
 
 		// optimize dependency graph (some plugin might want to do this, e.g. partial grounding)
-		//rmv. std::cout << "before optimizeEDBDependencyGraph" << std::endl;
 		pctx.optimizeEDBDependencyGraph();
-		//rmv. std::cout << "after optimizeEDBDependencyGraph" << std::endl;
 		// everything in the following will be done using the dependency graph and EDB
 		#warning IDB and dependencygraph could get out of sync!
 			
@@ -454,7 +453,8 @@ int main(int argc, char *argv[])
 		pctx.createComponentGraph();
 
 		// use SCCs to do strong safety check
-		pctx.strongSafetyCheck();
+		if( !pctx.config.getOption("SkipStrongSafetyCheck") )
+			pctx.strongSafetyCheck();
 		
 		// select heuristics and create eval graph
 		pctx.createEvalGraph();
@@ -665,7 +665,7 @@ void processOptionsPrePlugin(
 			switch (longid)
 				{
 				case 2:
-					pctx.config.setOption("StrongSafety", 0);
+					pctx.config.setOption("SkipStrongSafetyCheck",1);
 					break;
 
 				//case 3:
@@ -865,6 +865,13 @@ void configurePluginPath(std::string& userPlugindir)
   
 	if( !reset )
 	{
+		// add LD_LIBRARY_PATH
+		const char *envld = ::getenv("LD_LIBRARY_PATH");
+		if( envld )
+		{
+			searchpath << envld << ":";
+		}
+
 		const char* homedir = ::getpwuid(::geteuid())->pw_dir;
 		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
 	}

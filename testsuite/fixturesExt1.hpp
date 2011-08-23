@@ -247,7 +247,7 @@ ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
     "reached(X) :- &reach[N,edge](X), startnode(N)." << std::endl;
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testcase");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   parser.parse(ip, ctx);
 
   ctx.associateExtAtomsWithPluginAtoms(ctx.idb, true);

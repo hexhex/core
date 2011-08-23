@@ -259,8 +259,8 @@ struct handle_fact
     atom.tuple.push_back(predid);
 
     // aux predicates create aux atoms
-    if( (predid & ID::PROPERTY_TERM_AUX) != 0 )
-      atom.kind |= ID::PROPERTY_ATOM_AUX;
+    if( (predid & ID::PROPERTY_AUX) != 0 )
+      atom.kind |= ID::PROPERTY_AUX;
 
     boost::optional<Tuple>& tup = fusion::at_c<2>(attr);
     if( !!tup )
@@ -398,10 +398,14 @@ DLVResultParser::parse(
 
     // @todo: add better error message with position iterator 
     if (!r || fwd_begin != fwd_end)
+		{
+			LOG(ERROR,"r=" << r << " (begin!=end)=" << (fwd_begin != fwd_end));
       throw SyntaxError("Could not parse complete DLV output!");
+		}
   }
   catch(const qi::expectation_failure<forward_iterator_type>& e)
   {
+		LOG(ERROR,"expectation failure " << e.what_);
     throw SyntaxError("Could not parse DLV output! (expectation failure): \n===\n" + input + "===\n");
   }
 }

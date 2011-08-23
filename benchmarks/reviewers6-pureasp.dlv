@@ -88,7 +88,8 @@ pc("#ihor").
 cand(X,P) :- kw(P,K), pc(X), dlperson(X), dlisAuthorOf(X,P1), dlkeyword(P1,K).
 cand(X,P) :- kw(P,K), pc(X), dloverlapsWith(K,K1), dlisAuthorOf(X,P1), dlkeyword(P1,K1).
 
-assign(X,P) v -assign(X,P) :- cand(X,P) .
+%assign(X,P) v -assign(X,P) :- cand(X,P) .
+assign(X,P) v nassign(X,P) :- cand(X,P) .
 :- assign(X,P), assign(X1,P), X1 != X.
 :- assign(A,P), author(P,A).
 a(P) :- assign(X,P).
