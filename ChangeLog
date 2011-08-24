@@ -1,3 +1,7 @@
+2011-08-24  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexGrammar.h: Adding workaround for boost::spirit bug in 1.47.
+
 2011-08-23  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexParserModule.hpp: Added missing virtual destructor.

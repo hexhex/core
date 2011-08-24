@@ -50,11 +50,23 @@
 #include <boost/mpl/and.hpp>
 #include <boost/mpl/logical.hpp>
 #include <boost/type_traits.hpp>
+#include <boost/version.hpp>
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/fwd.hpp"
 #include "dlvhex/ID.hpp"
 
+#if BOOST_VERSION == 104700
+// workaround for spirit 1.47 issue with optional< optional<T> >
+namespace boost { namespace spirit { namespace traits
+{
+	template <typename T>
+	struct build_optional<boost::optional<T> >
+	{
+		typedef boost::optional<T> type;
+	};
+}}}
+#endif
 
 DLVHEX_NAMESPACE_BEGIN
 
