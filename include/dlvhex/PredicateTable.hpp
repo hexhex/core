@@ -74,6 +74,9 @@ public:
   // assert that ID exists
   inline const Predicate& getByID(ID id) const throw ();
 
+  // change the arity of a specific predicate with ID id 	
+  inline void setArity(ID id, int arity);
+
   // given string, look if already stored
   // if no, return ID_FAIL, otherwise return ID
   inline ID getIDByString(const std::string& str) const throw();
@@ -89,8 +92,8 @@ public:
   inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 
-
 };
+
 
 // retrieve by ID
 // assert that id.kind is correct for Term
@@ -104,6 +107,27 @@ const Predicate& PredicateTable::getByID(ID id) const throw ()
   assert( id.address < idx.size() );
   return idx.at(id.address);
 }
+
+
+// retrieve by ID
+// assert that id.kind is correct for Term
+// assert that ID exists
+// change the arity
+void PredicateTable::setArity(ID id, int arity) 
+{
+  assert(id.isTerm());
+  assert(id.isPredicateTerm() );
+  assert(arity >= 0);
+
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+  // the following check only works for random access indices, but here it is ok
+  assert( id.address < idx.size() );
+  AddressIterator it = idx.begin()+id.address;
+  Predicate newPred((*it).kind, (*it).symbol, arity);
+  container.replace(it, newPred);
+  DBGLOG(DBG, "Change arity of " << (*it).symbol << " to " << arity);
+}
+
 
 // given string, look if already stored
 // if no, return ID_FAIL, otherwise return ID

@@ -235,7 +235,9 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromInteger, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromString, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromVariable, ID);
-  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromPred, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromNameArity, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromNameOnly, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromString, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromTuple, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryInfix, ID);
@@ -303,12 +305,12 @@ struct HexGrammarBase
   typename Rule<uint32_t>::type
     posinteger;
   typename Rule<ID>::type
-    term, externalAtom, externalAtomPredicate, 
+    term, pred, externalAtom, externalAtomPredicate, 
     mlpModuleAtom, mlpModuleAtomPredicate, predDecl,
     classicalAtomPredicate, classicalAtom, builtinAtom, aggregateAtom,
     bodyAtom, bodyLiteral, headAtom, rule, constraint;
   typename Rule<std::vector<ID> >::type
-    terms, predList;
+    terms, preds, predList;
   typename Rule<boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> > >::type
     aggregateTerm;
   // rules that are extended by modules

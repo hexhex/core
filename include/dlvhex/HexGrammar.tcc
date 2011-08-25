@@ -84,8 +84,58 @@ struct sem<HexGrammarSemantics::termFromCIdent>
   }
 };
 
+
 template<>
-struct sem<HexGrammarSemantics::predFromPred>
+struct sem<HexGrammarSemantics::termFromInteger>
+{
+  void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target)
+  {
+    target = ID::termFromInteger(source);
+  }
+};
+
+
+template<>
+struct sem<HexGrammarSemantics::termFromString>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  {
+    assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
+    target = mgr.ctx.registry()->terms.getIDByString(source);
+    if( target == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
+      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    }
+  }
+};
+
+
+template<>
+struct sem<HexGrammarSemantics::termFromVariable>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  {
+    assert(!source.empty() && ((source[0] == '_' && source.size() == 1) || isupper(source[0])));
+    // special handling of anonymous variables
+    IDKind addFlags = 0;
+    if( source == "_" )
+    {
+      addFlags |= ID::PROPERTY_VAR_ANONYMOUS;
+    }
+    // regular handling + flags
+    target = mgr.ctx.registry()->terms.getIDByString(source);
+    if( target == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | addFlags, source);
+      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    }
+  }
+};
+
+
+template<>
+struct sem<HexGrammarSemantics::predFromNameArity>
 {
   void operator()(
     HexGrammarSemantics& mgr, 
@@ -112,51 +162,63 @@ struct sem<HexGrammarSemantics::predFromPred>
 };
 
 
+
 template<>
-struct sem<HexGrammarSemantics::termFromInteger>
+struct sem<HexGrammarSemantics::predFromNameOnly>
 {
-  void operator()(HexGrammarSemantics& mgr, unsigned int source, ID& target)
+  void operator()(
+    HexGrammarSemantics& mgr, 
+    const std::string& source,
+    ID& target)
   {
-    target = ID::termFromInteger(source);
+
+    const std::string& predName = source;
+    int predArity = -1;
+
+    assert(!predName.empty() && islower(predName[0]));
+    target = mgr.ctx.registry()->preds.getIDByString(predName);
+    if( target == ID_FAIL )
+      {   
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, predName, predArity);
+        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
+        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
+      } 
+    else 
+      {
+        DBGLOG(DBG, "Preds previously stored: " << predName << "/" << predArity << " got id: " << target);
+      }
   }
 };
 
+
 template<>
-struct sem<HexGrammarSemantics::termFromString>
+struct sem<HexGrammarSemantics::predFromString>
 {
-  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
+  void operator()(
+    HexGrammarSemantics& mgr, 
+    const std::string& source,
+    ID& target)
   {
+
     assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
-    target = mgr.ctx.registry()->terms.getIDByString(source);
+
+    const std::string& predName = source;
+    int predArity = -1;
+
+    target = mgr.ctx.registry()->preds.getIDByString(predName);
     if( target == ID_FAIL )
-    {
-      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
-      target = mgr.ctx.registry()->terms.storeAndGetID(term);
-    }
+      {   
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, predName, predArity);
+        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
+        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
+      } 
+    else 
+      {
+        DBGLOG(DBG, "Preds previously stored: " << predName << "/" << predArity << " got id: " << target);
+      }
   }
 };
 
-template<>
-struct sem<HexGrammarSemantics::termFromVariable>
-{
-  void operator()(HexGrammarSemantics& mgr, const std::string& source, ID& target)
-  {
-    assert(!source.empty() && ((source[0] == '_' && source.size() == 1) || isupper(source[0])));
-    // special handling of anonymous variables
-    IDKind addFlags = 0;
-    if( source == "_" )
-    {
-      addFlags |= ID::PROPERTY_VAR_ANONYMOUS;
-    }
-    // regular handling + flags
-    target = mgr.ctx.registry()->terms.getIDByString(source);
-    if( target == ID_FAIL )
-    {
-      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE | addFlags, source);
-      target = mgr.ctx.registry()->terms.storeAndGetID(term);
-    }
-  }
-};
 
 template<>
 struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
@@ -205,6 +267,9 @@ struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
     {
       const Tuple& tuple = boost::fusion::at_c<1>(source).get().get();
       atom.tuple.insert(atom.tuple.end(), tuple.begin(), tuple.end());
+      mgr.ctx.registry()->preds.setArity(idpred, tuple.size());
+    } else {
+      mgr.ctx.registry()->preds.setArity(idpred, 0);
     }
 
     createAtom(reg, atom, target);
@@ -651,10 +716,16 @@ HexGrammarBase(HexGrammarSemantics& sem):
   terms
     = (term > qi::eps) % qi::lit(',');
 
+  pred
+    = cident     [ Sem::predFromNameOnly(sem) ];
+
+  preds
+    = (pred > qi::eps) % qi::lit(',');
+
   // if we have this, we can easily extend this to higher order using a module
   classicalAtomPredicate
-    = cident [ Sem::termFromCIdent(sem) ]
-    | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
+    = cident [ Sem::predFromNameOnly(sem) ]
+    | string [ Sem::predFromString(sem) ]; // module for higher order adds a variable here
   classicalAtom
     = (
         classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps
@@ -723,13 +794,13 @@ HexGrammarBase(HexGrammarSemantics& sem):
   mlpModuleAtom
     = (
         qi::lit('@') > mlpModuleAtomPredicate >  // for module predicate
-        -(qi::lit('[') > -terms >> qi::lit(']')) > qi::eps >  // for input
+        -(qi::lit('[') > -preds >> qi::lit(']')) > qi::eps >  // for input
 	qi::lit(':') > qi::lit(':') > classicalAtom > qi::eps // for output
       ) [ Sem::mlpModuleAtom(sem) ];
 
 
   predDecl
-    = (cident > qi::lit('/') > qi::ulong_)[ Sem::predFromPred(sem) ];
+    = (cident > qi::lit('/') > qi::ulong_)[ Sem::predFromNameArity(sem) ];
   predList
     = (predDecl > qi::eps) % qi::lit(',');
 
@@ -810,6 +881,8 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(term);
   BOOST_SPIRIT_DEBUG_NODE(externalAtom);
   BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
+  BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtom);
+  BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
   BOOST_SPIRIT_DEBUG_NODE(builtinAtom);

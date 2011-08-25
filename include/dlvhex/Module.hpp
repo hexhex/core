@@ -59,7 +59,7 @@ struct Module:
   inline bool operator==(const Module& mod2) const 
          { return moduleName == mod2.moduleName && inputList == mod2.inputList && edb == mod2.edb && idb == mod2.idb; }
   inline bool operator!=(const Module& mod2) const 
-         { return moduleName != mod2.moduleName && inputList != mod2.inputList && edb != mod2.edb && idb != mod2.idb; }
+         { return moduleName != mod2.moduleName || inputList || mod2.inputList || edb != mod2.edb || idb != mod2.idb; }
   std::ostream& print(std::ostream& o) const
     { return o << "Module(" << moduleName << ", inputList: " << inputList << ", edb: " << edb << ", idb: " << idb << ")"; }
 };
