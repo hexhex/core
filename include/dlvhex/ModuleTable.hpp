@@ -75,6 +75,9 @@ public:
   // retrieve by address
   inline const Module& getByAddress(int address) const throw ();
 
+  // retrieve module name by address
+  inline const std::string& getModuleName(int address) const throw ();
+
   // get range over all atoms sorted by address
   inline std::pair<AddressIterator, AddressIterator> getAllByAddress() const throw();
 
@@ -82,6 +85,7 @@ public:
   // if no, return MODULE_FAIL, otherwise return the module struct
   inline const Module& getModuleByName(const std::string& moduleName) const throw();
 
+	// get address of a module by its name
   inline int getAddressByName(const std::string& moduleName) const throw();
 
   // store symbol, assuming it does not exist
@@ -127,6 +131,17 @@ const Module& ModuleTable::getByAddress(int address) const throw ()
   const uint32_t& uaddress = address;
   assert( uaddress < idx.size() );
   return idx.at(address);
+}
+
+
+// retrieve by address
+const std::string& ModuleTable::getModuleName(int address) const throw ()
+{
+  const AddressIndex& idx = container.get<impl::AddressTag>();
+  // the following check only works for random access indices, but here it is ok
+  const uint32_t& uaddress = address;
+  assert( uaddress < idx.size() );
+  return idx.at(address).moduleName;
 }
 
 // given a module name, look if already stored

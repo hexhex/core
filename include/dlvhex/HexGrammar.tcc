@@ -134,6 +134,33 @@ struct sem<HexGrammarSemantics::termFromVariable>
 };
 
 
+// helper method to prefix and store predicates
+void storePredicate(const std::string& oriPredName, int predArity, HexGrammarSemantics& mgr, ID& target){
+    std::string newPredName;
+		if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )
+			{ // ordinary encoding
+				newPredName = oriPredName;
+			}	
+		else
+			{	// mlp encoding
+				newPredName = mgr.ctx.registry()->moduleTable.getModuleName( mgr.ctx.registry()->moduleTable.getSize()-1 ) + MODULEPREFIXSEPARATOR + oriPredName;
+			}
+
+    target = mgr.ctx.registry()->preds.getIDByString(newPredName);
+    if( target == ID_FAIL )
+      {   
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, newPredName, predArity);
+        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
+        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
+      } 
+    else 
+      {
+        DBGLOG(DBG, "Preds previously stored: " << newPredName << "/" << predArity << " got id: " << target);
+      }
+}
+
+
+
 template<>
 struct sem<HexGrammarSemantics::predFromNameArity>
 {
@@ -143,21 +170,36 @@ struct sem<HexGrammarSemantics::predFromNameArity>
     ID& target)
   {
 
-    const std::string& predName = boost::fusion::at_c<0>(source);
+    const std::string& oriPredName = boost::fusion::at_c<0>(source);
+    assert(!oriPredName.empty() && islower(oriPredName[0]));
+
     unsigned int predArity = boost::fusion::at_c<1>(source);
 
-    assert(!predName.empty() && islower(predName[0]));
-    target = mgr.ctx.registry()->preds.getIDByString(predName);
+		storePredicate(oriPredName, predArity, mgr, target);
+/*
+    std::string newPredName;
+		if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )
+			{ // ordinary encoding
+				newPredName = oriPredName;
+			}	
+		else
+			{	// mlp encoding
+				newPredName = mgr.ctx.registry()->moduleTable.getModuleName( mgr.ctx.registry()->moduleTable.getSize()-1 ) + MODULEPREFIXSEPARATOR + oriPredName;
+			}
+
+
+    target = mgr.ctx.registry()->preds.getIDByString(newPredName);
     if( target == ID_FAIL )
       {   
-        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, predName, predArity);
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, newPredName, predArity);
         target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
         DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
       } 
     else 
       {
-        DBGLOG(DBG, "Preds previously stored: " << predName << "/" << predArity << " got id: " << target);
+        DBGLOG(DBG, "Preds previously stored: " << newPredName << "/" << predArity << " got id: " << target);
       }
+*/
   }
 };
 
@@ -172,23 +214,38 @@ struct sem<HexGrammarSemantics::predFromNameOnly>
     ID& target)
   {
 
-    const std::string& predName = source;
+    const std::string& oriPredName = source;
+    assert(!oriPredName.empty() && islower(oriPredName[0]));
+
     int predArity = -1;
 
-    assert(!predName.empty() && islower(predName[0]));
-    target = mgr.ctx.registry()->preds.getIDByString(predName);
+		storePredicate(oriPredName, predArity, mgr, target);
+
+/*    std::string newPredName;
+		if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )
+			{ // ordinary encoding
+				newPredName = oriPredName;
+			}	
+		else
+			{	// mlp encoding
+				newPredName = mgr.ctx.registry()->moduleTable.getModuleName( mgr.ctx.registry()->moduleTable.getSize()-1 ) + MODULEPREFIXSEPARATOR + oriPredName;
+			}
+
+    target = mgr.ctx.registry()->preds.getIDByString(newPredName);
     if( target == ID_FAIL )
       {   
-        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, predName, predArity);
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, newPredName, predArity);
         target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
         DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
       } 
     else 
       {
-        DBGLOG(DBG, "Preds previously stored: " << predName << "/" << predArity << " got id: " << target);
+        DBGLOG(DBG, "Preds previously stored: " << newPredName << "/" << predArity << " got id: " << target);
       }
+*/
   }
 };
+
 
 
 template<>
@@ -202,22 +259,14 @@ struct sem<HexGrammarSemantics::predFromString>
 
     assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
 
-    const std::string& predName = source;
+    const std::string& oriPredName = source;
     int predArity = -1;
 
-    target = mgr.ctx.registry()->preds.getIDByString(predName);
-    if( target == ID_FAIL )
-      {   
-        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, predName, predArity);
-        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
-        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
-      } 
-    else 
-      {
-        DBGLOG(DBG, "Preds previously stored: " << predName << "/" << predArity << " got id: " << target);
-      }
+		storePredicate(oriPredName, predArity, mgr, target);
+
   }
 };
+
 
 
 template<>
@@ -276,6 +325,7 @@ struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
   private sem<HexGrammarSemantics::classicalAtomFromPrefix>
@@ -297,6 +347,7 @@ struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
     createAtom(reg, atom, target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::builtinTernaryInfix>
@@ -320,6 +371,7 @@ struct sem<HexGrammarSemantics::builtinTernaryInfix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinBinaryInfix>
 {
@@ -341,6 +393,7 @@ struct sem<HexGrammarSemantics::builtinBinaryInfix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinUnaryPrefix>
 {
@@ -360,6 +413,7 @@ struct sem<HexGrammarSemantics::builtinUnaryPrefix>
     DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::builtinBinaryPrefix>
@@ -382,6 +436,7 @@ struct sem<HexGrammarSemantics::builtinBinaryPrefix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinTernaryPrefix>
 {
@@ -403,6 +458,7 @@ struct sem<HexGrammarSemantics::builtinTernaryPrefix>
     DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::aggregateAtom>
@@ -457,6 +513,7 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     DBGLOG(DBG,"stored aggregate atom " << aatom << " which got id " << target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::externalAtom>

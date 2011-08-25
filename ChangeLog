@@ -1,5 +1,9 @@
 2011-08-25  Tri Kurniawan Wijaya  <ps@kr.tuwien.ac.at>
 
+	* include/dlvhex/ModuleTable.hpp: Renaming predicates in module body (non-working revision, yet).
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* testsuite/TestHexParser.cpp: Likewise.
+
 	* include/dlvhex/HexGrammar.h: Parsing module header (non-working revision, yet).
 	* include/dlvhex/ModuleTable.hpp: Likewise.
 	* include/dlvhex/HexGrammar.tcc: Likewise.
