@@ -650,7 +650,12 @@ HexGrammarBase(HexGrammarSemantics& sem):
     | bodyAtomExt;
   bodyLiteral
     = (
-        -qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >> bodyAtom
+#if BOOST_VERSION >= 104600
+        -qi::hold[ qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] ] >>
+#else
+        -          qi::lexeme[qi::string("not") >> qi::omit[ascii::space]] >>
+#endif
+        bodyAtom
       ) [ Sem::bodyLiteral(sem) ];
   headAtom
     = classicalAtom

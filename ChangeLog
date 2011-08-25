@@ -1,3 +1,7 @@
+2011-08-25  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/HexGrammar.tcc: Need to use hold[] directive for this special rule.
+
 2011-08-24  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.h: Adding workaround for boost::spirit bug in 1.47.
