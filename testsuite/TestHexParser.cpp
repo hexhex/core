@@ -61,8 +61,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
 
   std::stringstream ss;
   ss <<
-    //"#module(m1,[p1/1])" << std::endl <<
-    "#module(m1,[])." << std::endl <<
+    //"#module(m1,[p/1])." << std::endl <<
     "a. b. c(d,e)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X), @m1[p1, p2]::o(c)." << std::endl;
   InputProviderPtr ip(new InputProvider);

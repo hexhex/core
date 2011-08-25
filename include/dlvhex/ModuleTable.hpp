@@ -69,6 +69,9 @@ public:
 
 // methods
 public:
+
+	inline int getSize();
+
   // retrieve by address
   inline const Module& getByAddress(int address) const throw ();
 
@@ -87,6 +90,11 @@ public:
   inline virtual std::ostream& print(std::ostream& o) const;
 
 };
+
+int ModuleTable::getSize()
+{
+  return container.size();
+}
 
 // get range over all atoms sorted by address
 std::pair<ModuleTable::AddressIterator, ModuleTable::AddressIterator>

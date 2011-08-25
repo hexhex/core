@@ -608,6 +608,7 @@ struct sem<HexGrammarSemantics::rule>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::constraint>
 {
@@ -624,6 +625,37 @@ struct sem<HexGrammarSemantics::constraint>
     DBGLOG(DBG,"created constraint " << r << " with id " << target);
   }
 };
+
+
+template<>
+struct sem<HexGrammarSemantics::moduleHeader>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+//    const std::string& source,
+    const boost::fusion::vector2<
+      const std::string&,
+      boost::optional< boost::optional<std::vector<dlvhex::ID> > >
+    >& source,
+    const boost::spirit::unused_type& target)
+  {
+		// take care module name
+		const std::string& mlpModuleName = boost::fusion::at_c<0>(source);
+	  Module module(mlpModuleName, mgr.ctx.registry()->inputList.size(), mgr.ctx.edbList.size(), mgr.ctx.idbList.size());
+		mgr.ctx.registry()->moduleTable.storeAndGetAddress(module);		    
+
+		// get and insert input list
+		// resize +1 to handle if the input list is empty (because it's optional)
+    mgr.ctx.registry()->inputList.resize(mgr.ctx.registry()->inputList.size()+1);
+		mgr.ctx.registry()->inputList.back() = boost::fusion::at_c<1>(source).get().get() ;
+
+		// extend edbList, idbList for the mlp module body
+    mgr.ctx.edbList.resize(mgr.ctx.edbList.size()+1);
+  	mgr.ctx.edbList.back().reset(new Interpretation(mgr.ctx.registry()));
+    mgr.ctx.idbList.resize(mgr.ctx.idbList.size()+1);
+  }
+};
+
 
 #warning look at spirit mailing list 'optimizing parsing of large input'
 
@@ -642,12 +674,27 @@ struct sem<HexGrammarSemantics::add>
       if( !source.isOrdinaryGroundAtom() )
         throw SyntaxError(
           "fact '"+reg->ogatoms.getByID(source).text+"' not safe!");
-      mgr.ctx.edb->setFact(source.address);
+
+		  if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )		    
+				{ // ordinary encoding
+      		mgr.ctx.edb->setFact(source.address);
+				}
+			else
+				{ // mlp encoding
+      		mgr.ctx.edbList.back()->setFact(source.address);
+				}
       DBGLOG(DBG,"added fact with id " << source << " to edb");
     }
     else if( source.isRule() )
     {
-      mgr.ctx.idb.push_back(source);
+		  if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )		    
+				{ // ordinary encoding
+      		mgr.ctx.idb.push_back(source);
+				}
+			else
+				{ // mlp encoding
+      		mgr.ctx.idbList.back().push_back(source);
+				}
       DBGLOG(DBG,"added rule with id " << source << " to idb");
     }
     else
@@ -657,6 +704,7 @@ struct sem<HexGrammarSemantics::add>
     }
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::ignoreAndWarnIfNotFail>
@@ -672,6 +720,7 @@ struct sem<HexGrammarSemantics::ignoreAndWarnIfNotFail>
     }
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::maxint>
@@ -805,10 +854,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = (predDecl > qi::eps) % qi::lit(',');
 
   mlpModuleHeader 
-    = qi::lit("#module") > // #module
-      qi::lit('(') > cident > qi::lit(',') > 		// module name
-      -(qi::lit('[') > -predList >> qi::lit(']')) 	// predicate list
-      >> qi::lit(')') > qi::eps > qi::lit('.');
+    = ( qi::lit("#module") > // #module
+        qi::lit('(') > cident > qi::lit(',') > 		// module name
+        -(qi::lit('[') > -predList >> qi::lit(']')) 	// predicate list
+        >> qi::lit(')') > qi::eps > qi::lit('.') > qi::eps
+      ) [ Sem::moduleHeader(sem) ];
 
   bodyAtom
     = classicalAtom

@@ -252,6 +252,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(moduleHeader, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(ignoreAndWarnIfNotFail, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(maxint, const boost::spirit::unused_type);
 
