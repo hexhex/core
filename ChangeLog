@@ -1,4 +1,6 @@
-2011-08-26  Tri Kurniawan Wijaya  <ps@kr.tuwien.ac.at>
+2011-08-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammar.tcc: Optimized parsing condition.
 
 	* include/dlvhex/HexGrammar.h: Correctly parsing module input list. Updated with the new parser. Working revision.
 	* include/dlvhex/MLPSolver.hpp: Likewise.
@@ -8,7 +10,7 @@
 	* testsuite/TestHexParserModule.cpp: Likewise.
 	* testsuite/TestMLPSolver.cpp: Likewise.
 
-2011-08-25  Tri Kurniawan Wijaya  <ps@kr.tuwien.ac.at>
+2011-08-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/ModuleTable.hpp: Renaming predicates in module body (non-working revision, yet).
 	* include/dlvhex/HexGrammar.tcc: Likewise.

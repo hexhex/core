@@ -137,14 +137,14 @@ struct sem<HexGrammarSemantics::termFromVariable>
 // helper method to prefix and store predicates
 void storePredicate(const std::string& oriPredName, int predArity, HexGrammarSemantics& mgr, ID& target){
     std::string newPredName;
-		if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )
-			{ // ordinary encoding
+//		if ( mgr.mlpMode == 0 )
+//			{ // ordinary encoding
 				newPredName = oriPredName;
-			}	
-		else
-			{	// mlp encoding
+//			}	
+//		else
+//			{	// mlp encoding
 				newPredName = mgr.ctx.registry()->moduleTable.getModuleName( mgr.ctx.registry()->moduleTable.getSize()-1 ) + MODULEPREFIXSEPARATOR + oriPredName;
-			}
+//			}
 
     target = mgr.ctx.registry()->preds.getIDByString(newPredName);
     if( target == ID_FAIL )
@@ -206,12 +206,12 @@ struct sem<HexGrammarSemantics::predFromNameOnly>
 
     assert(!source.empty() && islower(source[0]));
 		if (mgr.mlpMode == 1) 
-			{
+			{ // mlp encoding
 		    int predArity = -1;
 				storePredicate(source, predArity, mgr, target);
 			}
 		else
-			{
+			{ // ordinary encoding
     		target = mgr.ctx.registry()->terms.getIDByString(source);
 		    if( target == ID_FAIL )
     			{
@@ -237,13 +237,13 @@ struct sem<HexGrammarSemantics::predFromString>
     assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
 
 		if (mgr.mlpMode == 1)
-			{
+			{ // mlp encoding
 		    const std::string& oriPredName = source;
     		int predArity = -1;
 				storePredicate(oriPredName, predArity, mgr, target);
 			}
 		else
-			{
+			{ // ordinary encoding
     		target = mgr.ctx.registry()->terms.getIDByString(source);
 		    if( target == ID_FAIL )
 			    {
@@ -745,7 +745,7 @@ struct sem<HexGrammarSemantics::add>
         throw SyntaxError(
           "fact '"+reg->ogatoms.getByID(source).text+"' not safe!");
 
-		  if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )		    
+		  if ( mgr.mlpMode == 0 )		    
 				{ // ordinary encoding
       		mgr.ctx.edb->setFact(source.address);
 				}
@@ -757,7 +757,7 @@ struct sem<HexGrammarSemantics::add>
     }
     else if( source.isRule() )
     {
-		  if ( mgr.ctx.registry()->moduleTable.getSize() == 0 )		    
+		  if ( mgr.mlpMode == 0 )		    
 				{ // ordinary encoding
       		mgr.ctx.idb.push_back(source);
 				}
