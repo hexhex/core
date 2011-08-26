@@ -32,7 +32,7 @@
 #  include "config.h"
 #endif
 
-#define NDEBUG
+//#define NDEBUG
 #include <boost/cstdint.hpp>
 #include "dlvhex/HexParser.hpp"
 #include "dlvhex/ProgramCtx.h"
@@ -61,6 +61,7 @@
 		LOG(DBG, "idb end");
 #endif
 
+LOG_INIT(Logger::ERROR | Logger::WARNING)
 
 DLVHEX_NAMESPACE_USE
 
@@ -77,7 +78,7 @@ void testInconsistentProgram()
   LOG(DBG, "Test Inconsistent Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -98,7 +99,7 @@ void testInconsistentProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -126,7 +127,7 @@ void testNoticStratifiedProgram()
   LOG(DBG, "Test Not ic Stratified Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -147,7 +148,7 @@ void testNoticStratifiedProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -176,7 +177,7 @@ void testOneMainModules()
   LOG(DBG, "Test One Main Modules begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -211,7 +212,7 @@ void testOneMainModules()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -239,7 +240,7 @@ void testTwoMainModules()
   LOG(DBG, " ");
   LOG(DBG, "Test Two Main Modules begin");
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -275,7 +276,7 @@ void testTwoMainModules()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -303,7 +304,7 @@ void testTwoModuleCalls1()
   LOG(DBG, " ");
   LOG(DBG, "Test Two Module Calls 1 begin");
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -339,7 +340,7 @@ void testTwoModuleCalls1()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -367,7 +368,7 @@ void testTwoModuleCalls2()
   LOG(DBG, " ");
   LOG(DBG, "Test Two Module Calls 2 begin");
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -404,7 +405,7 @@ void testTwoModuleCalls2()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -433,7 +434,7 @@ void testReachabilityNonGroundProgram()
   LOG(DBG, "Test Reachability Non Ground Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -455,7 +456,7 @@ void testReachabilityNonGroundProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -484,7 +485,7 @@ void testCardinalityProgram()
   LOG(DBG, "Test Cardinality Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -505,7 +506,7 @@ void testCardinalityProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -534,7 +535,7 @@ void testABBAProgram()
   LOG(DBG, "Test ABBA Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -556,7 +557,7 @@ void testABBAProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -585,7 +586,7 @@ void testDisjunctionProgram()
   LOG(DBG, "Test Disjunction Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -606,7 +607,7 @@ void testDisjunctionProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -635,7 +636,7 @@ void testNegationProgram()
   LOG(DBG, "Test Negation Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -656,7 +657,7 @@ void testNegationProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -685,7 +686,7 @@ void testIndirectionProgram()
   LOG(DBG, "Test Indirection Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -706,7 +707,7 @@ void testIndirectionProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -734,7 +735,7 @@ void testAFinProgram()
   LOG(DBG, "Test AFin Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -755,7 +756,7 @@ void testAFinProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -783,7 +784,7 @@ void testCsProgram()
   LOG(DBG, "Test C more than one begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -804,7 +805,7 @@ void testCsProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -832,7 +833,7 @@ void testIStratifiedProgram()
   LOG(DBG, "Test i Stratified begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -853,7 +854,7 @@ void testIStratifiedProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -881,7 +882,7 @@ void testIStratified2Program()
   LOG(DBG, "Test i stratified 2 begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -902,7 +903,7 @@ void testIStratified2Program()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   LOG_REGISTRY_PROGRAM(ctx);
@@ -930,7 +931,7 @@ void testHanoiProgram()
   LOG(DBG, "Test Hanoi Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -951,7 +952,7 @@ void testHanoiProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   //...LOG_REGISTRY_PROGRAM(ctx);
@@ -981,7 +982,7 @@ void testComplexProgram()
   LOG(DBG, "Test Complex Program begin");
 
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   ctx.setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr(new SolverSoftwareConfiguration));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -1002,7 +1003,7 @@ void testComplexProgram()
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
   // after parser, print ctx
   //...LOG_REGISTRY_PROGRAM(ctx);

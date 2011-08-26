@@ -51,6 +51,7 @@ template struct HexGrammar<HexParserIterator, HexParserSkipper>;
 HexGrammarSemantics::HexGrammarSemantics(ProgramCtx& ctx):
   ctx(ctx)
 {
+	mlpMode=0;
 }
 
 void HexGrammarSemantics::markExternalPropertyIfExternalBody(

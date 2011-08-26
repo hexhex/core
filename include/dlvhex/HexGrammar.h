@@ -165,6 +165,8 @@ class HexGrammarSemantics
 {
 public:
   ProgramCtx& ctx;
+	std::string currentModuleName; // store module name to prefix pred_decl
+  int mlpMode;
   void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r);
   void markModulePropertyIfModuleBody(RegistryPtr registry, Rule& r);
 
@@ -235,7 +237,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromInteger, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromString, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(termFromVariable, ID);
-  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromNameArity, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(predFromPredDecl, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(predFromNameOnly, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(predFromString, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(classicalAtomFromPrefix, ID);
@@ -252,7 +254,8 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
-  DLVHEX_DEFINE_SEMANTIC_ACTION(moduleHeader, const boost::spirit::unused_type);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleName, std::string);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleHeader, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(ignoreAndWarnIfNotFail, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(maxint, const boost::spirit::unused_type);
 
@@ -302,7 +305,7 @@ struct HexGrammarBase
   typename Rule<>::type
     start, toplevel, toplevelBuiltin, mlpModuleHeader;
   typename Rule<std::string>::type
-    cident, string, variable;
+    cident, string, variable, mlpModuleName;
   typename Rule<uint32_t>::type
     posinteger;
   typename Rule<ID>::type

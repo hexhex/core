@@ -63,15 +63,19 @@
 	std::cerr << std::endl; \
 	LOG("idb end");*/
 
+
+LOG_INIT(Logger::ERROR | Logger::WARNING)
+
 DLVHEX_NAMESPACE_USE
 
 
 BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
   
   //.. put into different files
+
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
 
@@ -102,29 +106,30 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
 
   std::stringstream ss;
   ss << buf.str();
+  std::cout << ss.str() << std::endl;
+
 /*
+  std::stringstream ss;
+  ss <<
   "#module(p1,[q1/1])." << std::endl <<
   "q1(a)." << std::endl <<
   "q1(b)." << std::endl <<
   "ok :- @p2[q1]::even(c)." << std::endl <<
-
   "#module(p2,[q2/1])." << std::endl <<
   "q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y." << std::endl <<
   "skip2   :- q2(X), not q2i(X)." << std::endl <<
   "even(c) :- not skip2." << std::endl <<
-  "even(c) :- skip2, @p3[q2i]::odd." << std::endl <<
-
+  "even(c) :- skip2, @p3[q2i]::odd." << std::endl << 
+	std::endl << 
   "#module(p3,[q3/1])." << std::endl <<
   "q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y." << std::endl <<
   "skip3  :- q3(X), not q3i(X)." << std::endl <<
   "odd :- skip3, @p2[q3i]::even(c).";
 */
-  
-//  HexParser parser(ctx);
-//  BOOST_REQUIRE_NO_THROW(parser.parse(ss));
+
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   // after parser, print ctx
@@ -145,6 +150,12 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   BOOST_REQUIRE((idb) != ID_FAIL);
   BOOST_REQUIRE((idc) != ID_FAIL);
   BOOST_REQUIRE((idmymod) != ID_FAIL);
+  ID mod1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE, 0);
+  BOOST_REQUIRE( ctx.registry()->matoms.getByID(mod1).actualModuleName == "p2" );
+  ID mod2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE, 1);
+  BOOST_REQUIRE( ctx.registry()->matoms.getByID(mod2).actualModuleName == "p3" );
+  ID mod3(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE, 2);
+  BOOST_REQUIRE( ctx.registry()->matoms.getByID(mod3).actualModuleName == "p2" );
 //  BOOST_REQUIRE(ctx.edb != 0);
 //  BOOST_REQUIRE(ctx.idb.size() == 3);
   {
@@ -162,19 +173,18 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   }
 
   // syntax verifying:
-/*
   ModuleSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
-*/
+
 }
 
 
-/*
+
 // test case if we call a module that is not exist
 BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   //.. put into different files
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
@@ -196,7 +206,7 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -212,7 +222,7 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -232,7 +242,7 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -248,7 +258,7 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
 BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::ifstream ifs;
   std::ostringstream buf;
@@ -276,7 +286,7 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -292,7 +302,7 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -319,7 +329,7 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -337,7 +347,7 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -364,7 +374,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -380,7 +390,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -407,7 +417,7 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -423,7 +433,7 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
 BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -450,7 +460,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -467,7 +477,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
 BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   char *TOP_SRCDIR = getenv("TOP_SRCDIR");
   assert(TOP_SRCDIR != 0);
@@ -494,7 +504,7 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
-  BasicHexParser parser;
+  ModuleHexParser parser;
   BOOST_REQUIRE_NO_THROW(parser.parse(ip, ctx));
 
   LOG_REGISTRY_PROGRAM(ctx);
@@ -540,7 +550,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader)
 BOOST_AUTO_TEST_CASE(testDuplicateModuleHeader) 
 {
   ProgramCtx ctx;
-  ctx.setupRegistryPluginContainer(RegistryPtr(new Registry));
+  ctx.setupRegistry(RegistryPtr(new Registry));
 
   std::string filename1 = "../../examples/module1.mlp";
   std::ifstream ifs;

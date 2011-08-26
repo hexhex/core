@@ -40,6 +40,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(INFO,*ctx.registry()); \
@@ -50,7 +51,7 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
-LOG_INIT(Logger::ERROR | Logger::WARNING | Logger::INFO | Logger::DBG)
+LOG_INIT(Logger::ERROR | Logger::WARNING)
 
 DLVHEX_NAMESPACE_USE
 
@@ -61,9 +62,9 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
 
   std::stringstream ss;
   ss <<
-    "#module(m1,[p/1])." << std::endl <<
     "a. b. c(d,e)." << std::endl <<
-    "f(X) v b :- g(X), not h(X,X), @m1[p1, p2]::o(c)." << std::endl;
+    "f(X) v b :- g(X), not h(X,X)." << std::endl;
+
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
   ModuleHexParser parser;
@@ -89,7 +90,8 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry()->rules.getByID(ctx.idb[0]);
-    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ | ID::PROPERTY_RULE_MODATOMS));
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ ));
+//    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_REQUIRE(r.head.size() == 2);
@@ -97,7 +99,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
       BOOST_CHECK(r.head[0] == idfX);
       BOOST_CHECK(r.head[1] == idb);
     }
-    BOOST_REQUIRE(r.body.size() == 3);
+    BOOST_REQUIRE(r.body.size() == 2);
     {
       BOOST_CHECK(r.body[0] == ID::posLiteralFromAtom(idgX));
       BOOST_CHECK(r.body[1] == ID::nafLiteralFromAtom(idhXX));
@@ -105,7 +107,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   }
 }
 
-/*
+
 BOOST_AUTO_TEST_CASE(testHexParserConstraint) 
 {
   ProgramCtx ctx;
@@ -367,4 +369,4 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
     }
   }
 }
-*/
+

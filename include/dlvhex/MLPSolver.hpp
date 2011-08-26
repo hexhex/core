@@ -2043,7 +2043,7 @@ bool MLPSolver::comp(ValueCallsType C)
           const Module& alphaJ = registrySolver->moduleTable.getModuleByName(alpha.actualModuleName);
           if (alphaJ.moduleName=="")
 	    {
-              DBGLOG(DBG,"[MLPSolver::comp] Error: got an empty module: " << alphaJ);
+              DBGLOG(DBG,"[MLPSolver::comp] Error: Looking for module "<< alpha.actualModuleName << " got an empty module: " << alphaJ);
 	      return false;	
 	    }
           DBGLOG(DBG,"[MLPSolver::comp] alphaJ: " << alphaJ);
