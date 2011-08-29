@@ -22,21 +22,21 @@
  */
 
 /**
- * @file   EvalHeuristicTrivial.hpp
+ * @file   EvalHeuristicFromFile.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Evaluation heuristic that just uses the compgraph as eval graph.
+ * @brief  Evaluation heuristic that uses collapse commands from given file.
  */
 
-#ifndef EVAL_HEURISTIC_TRIVIAL_HPP_INCLUDED__15112010
-#define EVAL_HEURISTIC_TRIVIAL_HPP_INCLUDED__15112010
+#ifndef EVAL_HEURISTIC_FROMFILE_HPP_INCLUDED__16112010
+#define EVAL_HEURISTIC_FROMFILE_HPP_INCLUDED__16112010
 
 #include "dlvhex/EvalHeuristicBase.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class EvalHeuristicTrivial:
+class EvalHeuristicFromFile:
   public EvalHeuristicBase<EvalGraphBuilder>
 {
   // types
@@ -45,11 +45,15 @@ public:
 
   // methods
 public:
-  EvalHeuristicTrivial();
-  virtual ~EvalHeuristicTrivial();
+  EvalHeuristicFromFile(const std::string& fname);
+  virtual ~EvalHeuristicFromFile();
   virtual void build(EvalGraphBuilder& builder);
+
+  // data
+protected:
+  std::string fname;
 };
 
 DLVHEX_NAMESPACE_END
 
-#endif // EVAL_HEURISTIC_TRIVIAL_HPP_INCLUDED__15112010
+#endif // EVAL_HEURISTIC_EASY_HPP_INCLUDED__16112010

@@ -4,16 +4,29 @@
 dom(d1).
 dom(d2).
 
+% X is either in_ww/1 or out_ww/1
 in_ww(X)      :- dom(X), not out_ww(X).
 out_ww(X)     :- dom(X), not  in_ww(X).
 
+% testA is true for "foo" if interpretation is empty, otherwise it is true for "bar"
+% -> p_ww is false for all values of X as dom is not true for foo or bar
 p_ww(X)       :- &testA[dl_pc_2](X), not &testA[dl_pc_1](X), dom(X).
 
-% some constraints
-fail          :- out_ww(X),     &testA[dl_pc_1](X), not fail.
-fail          :- out_ww(X),     &testA[dl_pc_2](X), not fail.
-fail          :- in_ww(X),  not &testA[dl_pc_2](X), not fail.
-
 % input to the extatoms
+% as p_ww is not true for anything (see above), dl_pc_2 is not true for anything
 dl_pc_2(ww,X) :-  p_ww(X).
+% dl_pc_1 is true for everything in_ww is true for (either d_1 or d_2 or both or nothing)
 dl_pc_1(ww,X) :- in_ww(X).
+
+% so far the program is consistent with all guesses surviving
+
+% testA is never true for something in dom, therefore the following kills all
+% answer sets where something is in_www
+fail :- in_ww(X), not &testA[dl_pc_2](X), not fail.
+
+% these constraints never get active as testA only outputs foo or bar in X
+% nevertheless the constraints are in the program as they may confuse evaluation heuristics
+% (and have repeatedly done so)
+fail :- out_ww(X), &testA[dl_pc_1](X), not fail.
+fail :- out_ww(X), &testA[dl_pc_2](X), not fail.
+

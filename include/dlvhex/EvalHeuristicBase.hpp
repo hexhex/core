@@ -42,14 +42,10 @@ DLVHEX_NAMESPACE_BEGIN
 template<typename EvalGraphBuilderT>
 class EvalHeuristicBase
 {
-protected:
-  EvalGraphBuilderT& builder;
-
 public:
-  EvalHeuristicBase(EvalGraphBuilderT& builder):
-    builder(builder) {}
+  EvalHeuristicBase() {}
   virtual ~EvalHeuristicBase() {}
-  virtual void build() = 0;
+  virtual void build(EvalGraphBuilderT& builder) = 0;
 };
 
 DLVHEX_NAMESPACE_END

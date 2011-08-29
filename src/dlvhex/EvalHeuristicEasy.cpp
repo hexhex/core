@@ -39,8 +39,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicEasy::EvalHeuristicEasy(EvalGraphBuilder& builder):
-  Base(builder)
+EvalHeuristicEasy::EvalHeuristicEasy():
+  Base()
 {
 }
 
@@ -135,7 +135,7 @@ void transitivePredecessorComponents(const ComponentGraph& compgraph, Component 
 // required for some GCCs for DFSVisitor CopyConstructible Concept Check
 using namespace internal;
 
-void EvalHeuristicEasy::build()
+void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
 {
   ComponentGraph& compgraph = builder.getComponentGraph();
 

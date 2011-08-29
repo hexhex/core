@@ -67,6 +67,7 @@
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/EvalHeuristicEasy.hpp"
+#include "dlvhex/EvalHeuristicFromFile.hpp"
 #include "dlvhex/OnlineModelBuilder.hpp"
 #include "dlvhex/OfflineModelBuilder.hpp"
 
@@ -155,7 +156,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
       << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
       << "     --nofacts        Do not output EDB facts" << std::endl
-      << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of (old,trivial,easy)" << std::endl
+      << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
+			<< "                      old - old dlvhex behavior" << std::endl
+			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
+			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
+			<< "                      manual:<file> - read 'collapse <idx> <idx>' commands from <file>" << std::endl
+			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
@@ -277,7 +283,7 @@ int main(int argc, char *argv[])
 	#endif
 
 	// default eval heuristic = "easy" heuristic
-	pctx.evalHeuristicFactory = boost::factory<EvalHeuristicEasy*>();
+	pctx.evalHeuristic.reset(new EvalHeuristicEasy);
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
@@ -566,23 +572,24 @@ void processOptionsPrePlugin(
 			break;
 
 		case 'e':
-			// heuristics={old,trivial,easy}
+			// heuristics={old,trivial,easy,manual:>filename>}
 			{
 				std::string heuri(optarg);
 				if( heuri == "old" )
 				{
-					pctx.evalHeuristicFactory =
-						boost::factory<EvalHeuristicOldDlvhex*>();
+					pctx.evalHeuristic.reset(new EvalHeuristicOldDlvhex);
 				}
 				else if( heuri == "trivial" )
 				{
-					pctx.evalHeuristicFactory =
-						boost::factory<EvalHeuristicTrivial*>();
+					pctx.evalHeuristic.reset(new EvalHeuristicTrivial);
 				}
 				else if( heuri == "easy" )
 				{
-					pctx.evalHeuristicFactory =
-						boost::factory<EvalHeuristicEasy*>();
+					pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+				}
+				else if( heuri.substr(0,7) == "manual:" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicFromFile(heuri.substr(7)));
 				}
 				else
 				{

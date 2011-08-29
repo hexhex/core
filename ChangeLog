@@ -1,3 +1,38 @@
+2011-08-29  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/EvalHeuristicFromFile.hpp: Added new evaluation heuristic
+	that allows to specify component-collapse-plans in a file. (Added file.)
+	* src/dlvhex/EvalHeuristicFromFile.cpp: Likewise. (Added file.)
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise. (Extended commandline option --heuristics.)
+	* examples/extatom3_evalplan.txt: Likewise. (New testcase using the option.)
+
+	* src/dlvhex/ComponentGraph.cpp: Added component index to graphviz output. (These
+	indices are required in the new evaluation heuristic input format - see above.)
+	* include/dlvhex/ComponentGraph.hpp: Likewise.
+
+	* include/dlvhex/EvalHeuristicBase.hpp: Slightly changed evaluation heuristics interface.
+	* include/dlvhex/EvalHeuristicEasy.hpp: Likewise.
+	* include/dlvhex/EvalHeuristicTrivial.hpp: Likewise.
+	* include/dlvhex/EvalHeuristicOldDlvhex.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/EvalHeuristicTrivial.cpp: Likewise.
+	* src/dlvhex/EvalHeuristicEasy.cpp: Likewise.
+	* src/dlvhex/EvalHeuristicOldDlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* testsuite/TestEvalHeuristic.cpp: Likewise.
+	* testsuite/TestPlainHEX.cpp: Likewise.
+	* testsuite/TestEvalEndToEnd.cpp: Likewise.
+
+	* src/dlvhex/GuessAndCheckModelGenerator.cpp: Fixed bug with inner and outer eatoms.
+
+	* examples/Makefile.am: Likewise. (New evaluation heuristics, G&C fix.)
+	* examples/extatom3.hex: Likewise. (...)
+	* examples/tests/extatom3.out: Likewise.(...)
+	* examples/tests/README.txt: Likewise.(...)
+	* examples/tests/dlvhextests.test: Likewise.(...)
+
 2011-08-25  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Need to use hold[] directive for this special rule.

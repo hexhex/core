@@ -38,8 +38,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicTrivial::EvalHeuristicTrivial(EvalGraphBuilder& builder):
-  Base(builder)
+EvalHeuristicTrivial::EvalHeuristicTrivial():
+  Base()
 {
 }
 
@@ -54,7 +54,7 @@ typedef std::vector<Component> ComponentContainer;
 // trivial strategy:
 // do a topological sort of the tree
 // build eval units in that order
-void EvalHeuristicTrivial::build()
+void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
 {
   ComponentGraph& compgraph = builder.getComponentGraph();
 

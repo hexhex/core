@@ -101,8 +101,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
-      heuristicOldDlvhex.build();
+      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
@@ -163,8 +163,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedEQ,ProgramMCSMedEQProgramCtxDepen
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
-      heuristicOldDlvhex.build();
+      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph
@@ -225,8 +225,8 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicMCSMedD,ProgramMCSMedDProgramCtxDepende
 
     {
       // create heuristic, which sends commands to egbuilder
-      EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
-      heuristicOldDlvhex.build();
+      EvalHeuristicOldDlvhex heuristicOldDlvhex;
+      heuristicOldDlvhex.build(egbuilder);
       LOG(INFO,"building eval graph finished");
 
       // log the (changed) component graph

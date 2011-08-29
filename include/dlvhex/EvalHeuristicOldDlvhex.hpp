@@ -45,9 +45,9 @@ public:
 
   // methods
 public:
-  EvalHeuristicOldDlvhex(EvalGraphBuilder& builder);
+  EvalHeuristicOldDlvhex();
   virtual ~EvalHeuristicOldDlvhex();
-  virtual void build();
+  virtual void build(EvalGraphBuilder& builder);
 };
 
 DLVHEX_NAMESPACE_END

@@ -20,6 +20,7 @@ EXTRA_DIST = \
     extatom2dup.hex \
     extatom2safety.hex \
     extatom3.hex \
+    extatom3_evalplan.txt \
     extatom4.hex \
     extatom5.hex \
     extatom6.hex \
@@ -90,6 +91,7 @@ EXTRA_DIST = \
     tests/extatom1.out \
     tests/extatom2.out \
     tests/extatom2dup.out \
+    tests/extatom3.out \
     tests/extatom4.out \
     tests/extatom5.out \
     tests/extatom6.out \
