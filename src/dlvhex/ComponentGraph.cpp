@@ -705,19 +705,18 @@ namespace
 			unsigned count = 0;
 			for(Iterator it = boost::begin(idrange); it != boost::end(idrange); ++it, ++count)
 				;
-			o << "{" << count << " " << prefix << "}|";
+			o << "{" << prefix << ":" << count << "}|";
 		}
 	}
 }
 
-void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const
+void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, unsigned index, bool verbose) const
 {
   const ComponentInfo& ci = getComponentInfo(c);
 	RawPrinter rp(o, reg);
   if( verbose )
   {
-    o << "{";
-		o << c << "|";
+    o << "{idx=" << index << ",component=" << c << "|";
     #ifdef COMPGRAPH_SOURCESDEBUG
     o << "{sources|" << printrange(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
@@ -738,7 +737,7 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, b
   }
   else
   {
-    o << "{";
+    o << "{idx=" << index << "|";
 		printoutTerseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
 		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
 		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
@@ -788,13 +787,14 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
 
   // print vertices
   ComponentIterator it, it_end;
+  unsigned index = 0;
   for(boost::tie(it, it_end) = boost::vertices(cg);
-      it != it_end; ++it)
+      it != it_end; ++it, ++index)
   {
     o << graphviz_node_id(*it) << "[shape=record,label=\"";
     {
       std::ostringstream ss;
-      writeGraphVizComponentLabel(ss, *it, verbose);
+      writeGraphVizComponentLabel(ss, *it, index, verbose);
 			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;

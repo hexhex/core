@@ -25,7 +25,7 @@
  * @file   EvalHeuristicEasy.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Evaluation heuristic that just uses the compgraph as eval graph.
+ * @brief  Evaluation heuristic that just uses a simple but nontrivial heuristic.
  */
 
 #ifndef EVAL_HEURISTIC_EASY_HPP_INCLUDED__16112010
@@ -45,9 +45,9 @@ public:
 
   // methods
 public:
-  EvalHeuristicEasy(EvalGraphBuilder& builder);
+  EvalHeuristicEasy();
   virtual ~EvalHeuristicEasy();
-  virtual void build();
+  virtual void build(EvalGraphBuilder& builder);
 };
 
 DLVHEX_NAMESPACE_END

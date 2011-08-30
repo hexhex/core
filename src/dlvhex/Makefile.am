@@ -50,9 +50,10 @@ libdlvhexbase_la_SOURCES = \
     DependencyGraph.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
+    EvalHeuristicEasy.cpp \
+    EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
-    EvalHeuristicEasy.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
     PredicateMask.cpp \

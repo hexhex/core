@@ -214,7 +214,7 @@ public:
 	//
 protected:
   // helpers for writeGraphViz: extend for more output
-  virtual void writeGraphVizComponentLabel(std::ostream& o, Component c, bool verbose) const;
+  virtual void writeGraphVizComponentLabel(std::ostream& o, Component c, unsigned index, bool verbose) const;
   virtual void writeGraphVizDependencyLabel(std::ostream& o, Dependency dep, bool verbose) const;
 
 protected:

@@ -24,6 +24,7 @@ pkginclude_HEADERS = \
   EvalGraph.hpp \
   EvalHeuristicBase.hpp \
   EvalHeuristicEasy.hpp \
+  EvalHeuristicFromFile.hpp \
   EvalHeuristicOldDlvhex.hpp \
   EvalHeuristicTrivial.hpp \
   ExternalAtomTable.hpp \

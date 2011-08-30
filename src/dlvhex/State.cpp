@@ -719,16 +719,13 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
   EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware);
 
-  // use configured eval heuristics
-  {
-    DBGLOG(DBG,"invoking eval heuristic factory");
-    boost::scoped_ptr<EvalHeuristicBase<EvalGraphBuilder> > heur(
-        ctx->evalHeuristicFactory(egbuilder));
-    assert(!!heur && "need heuristic factory to return heuristic");
-    DBGLOG(DBG,"invoking build() on eval heuristic");
-    heur->build();
-    // destruct heuristics
-  }
+  // use configured eval heuristic
+  assert(!!ctx->evalHeuristic && "need configured heuristic");
+  DBGLOG(DBG,"invoking build() on eval heuristic");
+  ctx->evalHeuristic->build(egbuilder);
+  DBGLOG(DBG,"destructing eval heuristic");
+  // destruct heuristic
+  ctx->evalHeuristic.reset();
 
   // setup final unit used to get full models
   #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!

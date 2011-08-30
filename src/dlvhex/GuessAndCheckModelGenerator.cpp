@@ -604,7 +604,7 @@ output(const Tuple& output)
   // build pos replacement, register, and clear the corresponding bit in guess_pos
   replacement.tuple[0] = pospred;
   ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
-  DBGLOG(DBG,"positive replacement ID = " << idreplacement_pos);
+  DBGLOG(DBG,"pos replacement ID = " << idreplacement_pos);
   if( !guess_pos->getFact(idreplacement_pos.address) )
   {
     // check whether neg is true, if yes we bailout
@@ -613,15 +613,18 @@ output(const Tuple& output)
     if( idreplacement_neg == ID_FAIL )
     {
       // this is ok, the negative replacement does not exist so it cannot be true
-      DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+      DBGLOG(DBG,"neg eatom replacement " << replacement << " not found -> not required");
     }
     else
     {
+      DBGLOG(DBG,"neg eatom replacement ID = " << idreplacement_neg);
+
       // verify if it is true or not
       if( guess_neg->getFact(idreplacement_neg.address) == true )
       {
-        // this is bad, the guess was "false" but it is "true"
+        // this is bad, the guess was "false" but the eatom output says it is "true"
         // -> abort
+        DBGLOG(DBG,"neg eatom replacement is true in guess -> wrong guess!");
 
         // (we now that we won't reuse replacement.tuple,
         //  so we do not care about resizing it here)
@@ -630,7 +633,7 @@ output(const Tuple& output)
       else
       {
         // this is ok, the negative replacement exists but is not true
-        DBGLOG(DBG,"eatom replacement " << replacement << " is superfluous");
+        DBGLOG(DBG,"neg eatom replacement found but not set -> ok");
       }
     }
   }
@@ -726,18 +729,23 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       DBGLOG_SCOPE(DBG,"gM", false);
       DBGLOG(DBG,"= got guess model " << *guessint);
 
+      InterpretationPtr projint(new Interpretation(reg));
+      projint->getStorage() =
+        guessint->getStorage() - postprocessedInput->getStorage();
+      DBGLOG(DBG,"projected guess model " << *projint);
+
       // project to pos and neg eatom replacements for validation
 
       factory.gpMask.updateMask();
       InterpretationPtr projint_pos(new Interpretation(reg));
       projint_pos->getStorage() =
-        guessint->getStorage() & factory.gpMask.mask()->getStorage();
+        projint->getStorage() & factory.gpMask.mask()->getStorage();
       DBGLOG(DBG,"projected positive guess: " << *projint_pos);
 
       factory.gnMask.updateMask();
       InterpretationPtr projint_neg(new Interpretation(reg));
       projint_neg->getStorage() =
-        guessint->getStorage() & factory.gnMask.mask()->getStorage();
+        projint->getStorage() & factory.gnMask.mask()->getStorage();
       DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
       // verify whether correct eatoms where guessed true

@@ -40,8 +40,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-EvalHeuristicOldDlvhex::EvalHeuristicOldDlvhex(EvalGraphBuilder& builder):
-  Base(builder)
+EvalHeuristicOldDlvhex::EvalHeuristicOldDlvhex():
+  Base()
 {
 }
 
@@ -67,7 +67,7 @@ typedef std::vector<Component> ComponentVector;
 //    * is no external component and depends only on prior eval units or "take" components
 // 3) build eval unit from all marked as "take"
 // 4) restart
-void EvalHeuristicOldDlvhex::build()
+void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
 {
   ComponentGraph& compgraph = builder.getComponentGraph();
 

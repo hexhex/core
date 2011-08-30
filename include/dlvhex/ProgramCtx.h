@@ -58,8 +58,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-typedef boost::function<EvalHeuristicBase<EvalGraphBuilder>*(EvalGraphBuilder&)>
-  EvalHeuristicFactory;
+typedef boost::shared_ptr<EvalHeuristicBase<EvalGraphBuilder> >
+  EvalHeuristicPtr;
 
 typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
   ModelBuilderPtr;
@@ -92,7 +92,7 @@ public:
   void setupPluginContainer(PluginContainerPtr pluginContainer);
 
   // factory for eval heuristics
-  EvalHeuristicFactory evalHeuristicFactory;
+  EvalHeuristicPtr evalHeuristic;
   // factory for model builders
   ModelBuilderFactory modelBuilderFactory;
 

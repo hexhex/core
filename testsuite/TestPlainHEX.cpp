@@ -698,23 +698,23 @@ int main(int argn, char** argv)
   {
     // old DLVHEX heuristic
     LOG(INFO,"building eval graph with old heuristics");
-    EvalHeuristicOldDlvhex heuristicOldDlvhex(egbuilder);
-    heuristicOldDlvhex.build();
+    EvalHeuristicOldDlvhex heuristicOldDlvhex;
+    heuristicOldDlvhex.build(egbuilder);
   }
   else if( heurimode == "trivial" )
   {
     // trivial heuristic: just take component graph
     // (maximum number of eval units, probably large overhead)
     LOG(INFO,"building eval graph with trivial heuristics");
-    EvalHeuristicTrivial heuristic(egbuilder);
-    heuristic.build();
+    EvalHeuristicTrivial heuristic;
+    heuristic.build(egbuilder);
   }
   else if( heurimode == "easy" )
   {
     // easy heuristic: just make some easy adjustments to improve on the trivial heuristics
     LOG(INFO,"building eval graph with easy heuristics");
-    EvalHeuristicEasy heuristic(egbuilder);
-    heuristic.build();
+    EvalHeuristicEasy heuristic;
+    heuristic.build(egbuilder);
   }
   else
   {
