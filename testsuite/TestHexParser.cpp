@@ -91,7 +91,6 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   {
     const Rule& r = ctx.registry()->rules.getByID(ctx.idb[0]);
     BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ ));
-//    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_REQUIRE(r.head.size() == 2);

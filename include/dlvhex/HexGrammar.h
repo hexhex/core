@@ -109,27 +109,9 @@ template<typename Iterator>
 struct HexParserSkipperGrammar:
 	boost::spirit::qi::grammar<Iterator>
 {
-/*
-<<<<<<< .working
-  enum RuleTags {
-    None = 0, Root, Clause, Maxint, Namespace,
-    Rule, Constraint, WeakConstraint, Body, Disj,
-    Number, Ident, PredDecl, PredList, IdentVar, IdentVarNumber, Neg, Naf, Terms, Term, Literal,
-    UserPredClassical, UserPredTuple, UserPredAtom, UserPred,
-    Aggregate, AggregatePred, AggregateRel, AggregateRange,
-    ExtAtom, ModHeader, ModInputs, /*ModOutput,*/ 
-/*    ModAtom, ExtInputs, ExtOutputs,
-    BuiltinPred, BuiltinOther,
-    BuiltinTertopPrefix, BuiltinTertopInfix,
-    BuiltinBinopPrefix, BuiltinBinopInfix,
-    MaxTag // this must stay last for extendability!
-  };
-=======
-*/
 	HexParserSkipperGrammar();
   boost::spirit::qi::rule<Iterator> ws;
 };
-//>>>>>>> .merge-right.r3086
 
 //! concrete iterator type used
 typedef std::string::iterator HexParserIterator;
@@ -182,57 +164,6 @@ public:
   void markExternalPropertyIfExternalBody(RegistryPtr registry, Rule& r);
   void markModulePropertyIfModuleBody(RegistryPtr registry, Rule& r);
 
-/*
-<<<<<<< .working
-    boost::spirit::rule<S, c, tag<Ident> >               ident;
-    boost::spirit::rule<S>                               idents;
-    boost::spirit::rule<S, c, tag<PredDecl> >            pred_decl;
-    boost::spirit::rule<S, c, tag<PredList> >            pred_list;
-    boost::spirit::rule<S>                               var;
-    boost::spirit::rule<S, c, tag<Number> >              number;
-    boost::spirit::rule<S, c, tag<IdentVar> >            ident_or_var;
-    boost::spirit::rule<S, c, tag<IdentVarNumber> >      ident_or_var_or_number;
-    boost::spirit::rule<S>                               cons;
-    boost::spirit::rule<S, c, tag<Term> >                term;
-    boost::spirit::rule<S, c, tag<Terms> >               terms;
-    boost::spirit::rule<S>                               aggregate_leq_binop;
-    boost::spirit::rule<S>                               aggregate_geq_binop;
-    boost::spirit::rule<S>                               aggregate_binop;
-    boost::spirit::rule<S>                               binop;
-    boost::spirit::rule<S, c, tag<ExtInputs> >           external_inputs;
-    boost::spirit::rule<S, c, tag<ExtOutputs> >          external_outputs;
-    boost::spirit::rule<S, c, tag<ExtAtom> >             external_atom;
-    boost::spirit::rule<S, c, tag<ModInputs> >           module_inputs;
-    //boost::spirit::rule<S, c, tag<ModOutput> >           module_output;
-    boost::spirit::rule<S, c, tag<ModAtom> >             module_atom;
-    boost::spirit::rule<S, c, tag<Aggregate> >           aggregate;
-    boost::spirit::rule<S, c, tag<AggregatePred> >       aggregate_pred;
-    boost::spirit::rule<S, c, tag<AggregateRel> >        aggregate_rel;
-    boost::spirit::rule<S, c, tag<AggregateRange> >      aggregate_range;
-    boost::spirit::rule<S, c, tag<Naf> >                 naf;
-    boost::spirit::rule<S, c, tag<BuiltinTertopInfix> >  builtin_tertop_infix;
-    boost::spirit::rule<S, c, tag<BuiltinTertopPrefix> > builtin_tertop_prefix;
-    boost::spirit::rule<S, c, tag<BuiltinBinopInfix> >   builtin_binop_infix;
-    boost::spirit::rule<S, c, tag<BuiltinBinopPrefix> >  builtin_binop_prefix;
-    boost::spirit::rule<S, c, tag<BuiltinOther> >        builtin_other;
-    boost::spirit::rule<S, c, tag<BuiltinPred> >         builtin_pred;
-    boost::spirit::rule<S, c, tag<Literal> >             literal;
-    boost::spirit::rule<S, c, tag<Disj> >                disj;
-    boost::spirit::rule<S, c, tag<Neg> >                 neg;
-    boost::spirit::rule<S, c, tag<UserPredClassical> >   user_pred_classical;
-    boost::spirit::rule<S, c, tag<UserPredTuple> >       user_pred_tuple;
-    boost::spirit::rule<S, c, tag<UserPredAtom> >        user_pred_atom;
-    boost::spirit::rule<S, c, tag<UserPred> >            user_pred;
-    boost::spirit::rule<S, c, tag<Body> >                body;
-    boost::spirit::rule<S, c, tag<Maxint> >              maxint;
-    boost::spirit::rule<S, c, tag<Namespace> >           namespace_;
-    boost::spirit::rule<S, c, tag<Rule> >                rule_;
-    boost::spirit::rule<S, c, tag<Constraint> >          constraint;
-    boost::spirit::rule<S, c, tag<WeakConstraint> >      wconstraint;
-    boost::spirit::rule<S, c, tag<Clause> >              clause;
-    boost::spirit::rule<S, c, tag<ModHeader> >           mod_header;
-    boost::spirit::rule<S, c, tag<Root> >                root;
-=======*/
 public:
   HexGrammarSemantics(ProgramCtx& ctx);
 
@@ -303,7 +234,6 @@ struct HexGrammarBase
   struct Rule
   {
     typedef boost::spirit::qi::rule<Iterator, Attrib(), Skipper> type;
-//>>>>>>> .merge-right.r3086
   };
   template<typename Dummy>
   struct Rule<void, Dummy>

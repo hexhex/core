@@ -63,15 +63,10 @@ void HexGrammarSemantics::markExternalPropertyIfExternalBody(
     r.kind |= ID::PROPERTY_RULE_EXTATOMS;
 }
 
+
 void HexGrammarSemantics::markModulePropertyIfModuleBody(
     RegistryPtr registry, Rule& r)
 {
-/*
-  Tuple eatoms;
-  registry->getExternalAtomsInTuple(r.body, eatoms);
-  if( !eatoms.empty() )
-    r.kind |= ID::PROPERTY_RULE_EXTATOMS;
-*/
   for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
     {
       if( itt->isModuleAtom() )

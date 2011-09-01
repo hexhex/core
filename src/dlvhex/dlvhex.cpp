@@ -397,35 +397,23 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-		//rmv. std::cout << "before convert" << std::endl;
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
 
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
-		//rmv. std::cout << "after convert" << std::endl;
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
-		//rmv. std::cout << "before parse" << std::endl;
 		pctx.parse();
-		//rmv. std::cout << "after parse" << std::endl;
 		
 		// check if in mlp mode	
 		if( pctx.config.getOption("MLP") ) 
 		  {
 			// syntax check for mlp
-			//rmv. std::cout << "before moduleSyntaxCheck" << std::endl;
 			pctx.moduleSyntaxCheck();
-			//rmv. std::cout << "after moduleSyntaxCheck" << std::endl;
 
 			// solve mlp
-			//rmv. std::cout << "before mlpSolver" << std::endl;
-			//.. pctx.nASToBeReturned = pctx.config.getOption("NMLP");
 			pctx.mlpSolver();
-			// std::cout << pctx.config.getOption("Verbose");
-			// int cint;
-			// std::cin >> cint;
-			//rmv. std::cout << "after mlpSolver" << std::endl;
 		  }
 
 		else 

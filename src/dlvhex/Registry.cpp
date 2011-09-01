@@ -149,9 +149,6 @@ Registry::~Registry()
 // implementation from RuleTable.hpp
 std::ostream& RuleTable::print(std::ostream& o, RegistryPtr reg) const throw()
 {
-/*<<<<<<< .working
-  o << "REGISTRY BEGIN" << std::endl <<
-=======*/
 	const AddressIndex& aidx = container.get<impl::AddressTag>();
 	for(AddressIndex::const_iterator it = aidx.begin();
 			it != aidx.end(); ++it)
@@ -185,7 +182,6 @@ std::ostream& Registry::print(std::ostream& o) //const
 {
     o <<
       "REGISTRY BEGIN" << std::endl <<
-//>>>>>>> .merge-right.r3086
       "terms:" << std::endl <<
       terms <<
       "preds:" << std::endl <<
@@ -198,14 +194,6 @@ std::ostream& Registry::print(std::ostream& o) //const
       batoms <<
       "aatoms:" << std::endl <<
       aatoms <<
-/*<<<<<<< .working
-      "eatoms:" << std::endl <<
-      eatoms <<
-      "matoms:" << std::endl <<
-      matoms <<
-      "rules:" << std::endl <<
-      rules <<
-=======*/
       "eatoms:" << std::endl;
 	eatoms.print(o, shared_from_this());
       o << 
@@ -213,7 +201,6 @@ std::ostream& Registry::print(std::ostream& o) //const
       matoms <<
       "rules:" << std::endl;
 	rules.print(o, shared_from_this());
-//>>>>>>> .merge-right.r3086
       o << "moduleTable:" << std::endl <<
       moduleTable <<
       "inputList:" << std::endl;
@@ -381,14 +368,14 @@ ID Registry::storeConstOrVarTerm(Term& term)
   ID ret = terms.getIDByString(term.symbol);
   // check if might registered as a predicate
   if( ret == ID_FAIL )
-  {
-    ret = preds.getIDByString(term.symbol);
-  }
-  if( ret == ID_FAIL )
-  {
-    ret = terms.storeAndGetID(term);
-    DBGLOG(DBG,"stored term " << term << " which got " << ret);
-  }
+    {
+      ret = preds.getIDByString(term.symbol);
+      if( ret == ID_FAIL )
+        {
+          ret = terms.storeAndGetID(term);
+          DBGLOG(DBG,"stored term " << term << " which got " << ret);
+        }
+    }
   return ret;
 }
 

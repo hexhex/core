@@ -1,5 +1,17 @@
 2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/HexGrammar.h: Remove left-over code.
+	* include/dlvhex/IDSetContainer.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/HexGrammar.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+	* testsuite/TestHexParser.cpp: Likewise.
+	* testsuite/TestASPSolver.cpp: Likewise.
+
 	* src/dlvhex/ProgramCtx.cpp: Fix ProgramCtx.cpp, re-initialize edb and idb.
 
 2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>

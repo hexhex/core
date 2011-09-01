@@ -55,16 +55,7 @@
 	std::cerr << std::endl; \
 	LOG(INFO,"idb end");
 
-#define LOG_REGISTRY_PROGRAM2(ctx) \
-  LOG(INFO,*ctx.registry()); \
-	RawPrinter printer2(std::cerr, ctx.registry()); \
-	std::cerr << "edb = " << *ctx.edb << std::endl; \
-	LOG(INFO,"idb"); \
-	printer2.printmany(ctx.idb,"\n"); \
-	std::cerr << std::endl; \
-	LOG(INFO,"idb end");
-
-LOG_INIT(Logger::ERROR | Logger::WARNING | Logger::INFO | Logger::DBG)
+LOG_INIT(Logger::ERROR | Logger::WARNING)
 
 DLVHEX_NAMESPACE_USE
 
@@ -103,7 +94,6 @@ void testSimple()
   AnswerSet::Ptr int0 = res->getNextAnswerSet();
   BOOST_REQUIRE(int0 != 0);
   LOG(INFO,"got answer set " << *int0);
-	LOG_REGISTRY_PROGRAM2(ctx);
 
   AnswerSet::Ptr int1 = res->getNextAnswerSet();
   BOOST_REQUIRE(int1 != 0);
