@@ -1,5 +1,9 @@
 2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* src/dlvhex/ProgramCtx.cpp: Fix ProgramCtx.cpp, re-initialize edb and idb.
+
+2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
 	* configure.ac: Fix version.
 
 	* NEWS: Update.

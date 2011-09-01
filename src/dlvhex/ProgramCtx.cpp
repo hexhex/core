@@ -85,7 +85,7 @@ ProgramCtx::~ProgramCtx()
       it->reset();
       it++;
     }
-  // edb.reset();
+  edb.reset();
 
   DBGLOG(DBG,"resetting inputProvider");
   inputProvider.reset();
@@ -121,7 +121,7 @@ void ProgramCtx::setupRegistry(
   assert(
       (
         !_registry || // allow to set from nothing
-        (idbList.size()==0 && edbList.size()==0 && pluginAtoms.empty()) // allow to change if empty
+        (idb.empty() && !edb && idbList.size()==0 && edbList.size()==0 && pluginAtoms.empty()) // allow to change if empty
       )
       &&
       "cannot change registry once idb or edb or pluginAtoms contains data");
