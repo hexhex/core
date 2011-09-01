@@ -48,7 +48,7 @@ EXTRA_DIST = \
     strongnegation_asp3.hex \
     strongnegation_asp4.hex \
     strongnegation_asp5.hex \
-		variable_predicate_inputs.hex \
+    variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -74,6 +74,40 @@ EXTRA_DIST = \
     tertop.hex \
     wellfounded1.hex \
     wellfounded2.hex \
+    module-Hanoi.mlp \
+    module2-Two.mlp \
+    module-Complex.mlp \
+    module-i-Stratified.mlp \
+    module2-SwapArity.mlp \
+    module-AFin.mlp \
+    module-Indirection.mlp \
+    module-EvenOdd.mlp \
+    module-EvenOddTwoCalls2.mlp \
+    module-ABBA.mlp \
+    module3.mlp \
+    module1-DiffArity.mlp \
+    module1-Two.mlp \
+    module2-TooMany.mlp \
+    module1-MainModules.mlp \
+    module-Inconsistent.mlp \
+    module3-DiffArity.mlp \
+    module-Not-ic-Stratified.mlp \
+    module2-DiffArity.mlp \
+    module-Negation.mlp \
+    module2-TooFew.mlp \
+    module-i-Stratified-2.mlp \
+    module3-SwapArity.mlp \
+    module-Cardinality.mlp \
+    module-EvenOddTwoMain.mlp \
+    module1-NotExist.mlp \
+    module1-Big.mlp \
+    module-Disjunction.mlp \
+    module1.mlp \
+    module2.mlp \
+    module-Cs.mlp \
+    module-Reachability.mlp \
+    module-EvenOddTwoCalls1.mlp \
+    module3-NotExist.mlp \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
@@ -152,6 +186,26 @@ EXTRA_DIST = \
     tests/query_hex_nonground1b.out \
     tests/operators.out \
     tests/tertop.out \
-		tests/variable_predicate_inputs.stderr \
+    tests/variable_predicate_inputs.stderr \
     tests/wellfounded1.out \
-    tests/wellfounded2.out
+    tests/wellfounded2.out \
+    tests/module-ABBA.out \
+    tests/module-AFin.out \
+    tests/module-Cardinality.out \
+    tests/module-Complex.out \
+    tests/module-Cs.out \
+    tests/module-Disjunction.out \
+    tests/module-EvenOdd-n1.out \
+    tests/module-EvenOdd.out \
+    tests/module-EvenOddTwoCalls1.out \
+    tests/module-EvenOddTwoCalls2.out \
+    tests/module-EvenOddTwoMain.out \
+    tests/module-Hanoi.out \
+    tests/module-Inconsistent.out \
+    tests/module-Indirection.out \
+    tests/module-i-Stratified-2.out \
+    tests/module-i-Stratified.out \
+    tests/module-Negation.out \
+    tests/module-Not-ic-Stratified.stderr \
+    tests/module-Reachability.out
+

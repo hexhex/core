@@ -1,5 +1,7 @@
 2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* examples/Makefile.am (EXTRA_DIST): Add missing examples.
+
 	* include/dlvhex/Makefile.am (pkginclude_HEADERS): Add Module.hpp,
 	ModuleTable.hpp, ModuleAtomTable.hpp, MLPSolver.hpp,
 	PredicateTable.hpp, ModuleSyntaxChecker.hpp, Predicate.hpp.
