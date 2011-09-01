@@ -141,10 +141,12 @@ public:
 	getAllByAddress() const throw();
 };
 
+
 int OrdinaryAtomTable::getSize()
 {
   return container.size();
 }
+
 
 // retrieve by ID
 // assert that id.kind is correct for Term
@@ -161,6 +163,7 @@ OrdinaryAtomTable::getByID(
   return idx.at(id.address);
 }
 
+
 // retrieve by address (ignore kind)
 // assert that address exists in table
 const OrdinaryAtom&
@@ -172,6 +175,7 @@ OrdinaryAtomTable::getByAddress(
   assert( addr < idx.size() );
   return idx.at(addr);
 }
+
 
 // given string, look if already stored
 // if no, return ID_FAIL, otherwise return ID
@@ -193,6 +197,7 @@ ID OrdinaryAtomTable::getIDByString(
   }
 }
 
+
 // given tuple, look if already stored
 // if no, return ID_FAIL, otherwise return ID
 ID OrdinaryAtomTable::getIDByTuple(
@@ -213,6 +218,7 @@ ID OrdinaryAtomTable::getIDByTuple(
   }
 }
 
+
 // get ID given storage retrieved by other means
 // (storage must have originated from iterator from here)
 ID OrdinaryAtomTable::getIDByStorage(
@@ -229,6 +235,7 @@ ID OrdinaryAtomTable::getIDByStorage(
       it - aidx.begin() // address
       );
 }
+
 
 // store symbol, assuming it does not exist (this is only asserted)
 ID OrdinaryAtomTable::storeAndGetID(
@@ -271,6 +278,7 @@ ID OrdinaryAtomTable::storeAndGetID(
 			container.project<impl::AddressTag>(it) - idx.begin() // address
 			);
 }
+
 
 // get all ordinary atoms with certain predicate id
 std::pair<OrdinaryAtomTable::PredicateIterator, OrdinaryAtomTable::PredicateIterator>
@@ -315,6 +323,7 @@ OrdinaryAtomTable::getAllByAddress() const throw()
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
 }
+
 
 DLVHEX_NAMESPACE_END
 

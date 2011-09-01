@@ -95,6 +95,7 @@ libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 TestTestPluginStatic_SOURCES = TestPlugin.cpp $(top_srcdir)/src/dlvhex/dlvhex.cpp 
 TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/dlvhex/libdlvhexbase.la \
+  $(top_builddir)/src/dlvhex/libmlpsolver.la \
   $(top_builddir)/src/dlvhex/libaspsolver.la \
   $(top_builddir)/src/dlvhex/libinternalplugins.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
@@ -169,10 +170,12 @@ TestDependencyGraph_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestHexParser_SOURCES = $(top_srcdir)/testsuite/TestHexParser.cpp
 TestHexParser_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
-TestHexParserModule_SOURCES = $(top_srcdir)/testsuite/TestHexParserModule.cpp
+TestHexParserModule_SOURCES = $(top_srcdir)/testsuite/TestHexParserModule.cpp 
 TestHexParserModule_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 
-TestMLPSolver_SOURCES = $(top_srcdir)/testsuite/TestMLPSolver.cpp
+TestMLPSolver_SOURCES = \
+	$(top_srcdir)/testsuite/TestMLPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/MLPSolver.cpp
 TestMLPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 TestMLPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 

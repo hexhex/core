@@ -19,6 +19,12 @@
 
 2011-09-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/MLPSolver.hpp: Separate MLPSolver.hpp and MLPSolver.cpp.
+	* src/dlvhex/MLPSolver.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
 	* src/dlvhex/ProgramCtx.cpp: Fix ProgramCtx.cpp, re-initialize edb and idb.
 
 	* include/dlvhex/HexGrammar.h: Remove left-over code.

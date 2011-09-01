@@ -15,7 +15,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la
+lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la libmlpsolver.la
 
 # the dlvhex binary
 dlvhex_SOURCES = dlvhex.cpp
@@ -31,7 +31,7 @@ dlvhex_LDFLAGS = -export-dynamic
 # dlvhex itself also uses the convenience libs (see below)
 #
 dlvhex_LDADD = \
-  libdlvhexbase.la libaspsolver.la libinternalplugins.la \
+  libdlvhexbase.la libmlpsolver.la libaspsolver.la libinternalplugins.la \
   $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
@@ -73,6 +73,10 @@ libdlvhexbase_la_SOURCES = \
     SafetyChecker.cpp \
     State.cpp \
     URLBuf.cpp
+
+# dlvhex MLP component
+libmlpsolver_la_SOURCES = \
+    MLPSolver.cpp 
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
@@ -160,6 +164,7 @@ libinternalplugins_la_SOURCES = \
 #   to use the new version. Bump current, set revision and age to 0.
 #
 libdlvhexbase_la_LDFLAGS = -version-info 6:0:0
+libmlpsolver_la_LDFLAGS = -version-info 1:0:0
 libaspsolver_la_LDFLAGS = -version-info 2:0:0
 libinternalplugins_la_LDFLAGS = -version-info 1:0:0
 
