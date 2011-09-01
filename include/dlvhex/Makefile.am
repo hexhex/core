@@ -41,11 +41,16 @@ pkginclude_HEADERS = \
   InputProvider.hpp \
   Interpretation.hpp \
   Logger.hpp \
+  MLPSolver.hpp \
   Makefile.am \
   Makefile.in \
   ModelBuilder.hpp \
   ModelGenerator.hpp \
   ModelGraph.hpp \
+  Module.hpp \
+  ModuleAtomTable.hpp \
+  ModuleSyntaxChecker.hpp \
+  ModuleTable.hpp \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \
   OrdinaryAtomTable.hpp \
@@ -54,7 +59,9 @@ pkginclude_HEADERS = \
   PlatformDefinitions.h \
   PluginContainer.h \
   PluginInterface.h \
+  Predicate.hpp \
   PredicateMask.hpp \
+  PredicateTable.hpp \
   Printer.hpp \
   Printhelpers.hpp \
   ProcessBuf.h \

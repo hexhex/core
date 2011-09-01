@@ -1,5 +1,24 @@
 2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* include/dlvhex/Makefile.am (pkginclude_HEADERS): Add Module.hpp,
+	ModuleTable.hpp, ModuleAtomTable.hpp, MLPSolver.hpp,
+	PredicateTable.hpp, ModuleSyntaxChecker.hpp, Predicate.hpp.
+
+	* include/dlvhex/NamesTable.h: Remove.
+	* include/dlvhex/Program.h: Likewise.
+	* src/dlvhex/Atom.cpp: Likewise.
+	* src/dlvhex/Term.cpp: Likewise.
+
+	* configure.ac: Fix version.
+
+	* NEWS: Update.
+
+	* AUTHORS: Add Tri.
+
+2011-09-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/ProgramCtx.cpp: Fix ProgramCtx.cpp, re-initialize edb and idb.
+
 	* include/dlvhex/HexGrammar.h: Remove left-over code.
 	* include/dlvhex/IDSetContainer.hpp: Likewise.
 	* include/dlvhex/ProgramCtx.h: Likewise.
@@ -11,16 +30,6 @@
 	* src/dlvhex/ASPSolver.cpp: Likewise.
 	* testsuite/TestHexParser.cpp: Likewise.
 	* testsuite/TestASPSolver.cpp: Likewise.
-
-	* src/dlvhex/ProgramCtx.cpp: Fix ProgramCtx.cpp, re-initialize edb and idb.
-
-2011-09-01  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
-
-	* configure.ac: Fix version.
-
-	* NEWS: Update.
-
-	* AUTHORS: Add Tri.
 
 2011-08-29  Peter Schueller  <ps@kr.tuwien.ac.at>
 
