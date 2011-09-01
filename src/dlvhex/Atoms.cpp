@@ -135,6 +135,13 @@ std::ostream& ExternalAtom::print(std::ostream& o) const
     " auxInputPredicate=" << auxInputPredicate;
 }
 
+std::ostream& ModuleAtom::print(std::ostream& o) const
+{
+  return o <<
+    "ModuleAtom(&" << predicate << "[" << printvector(inputs) <<
+    "]::" << outputAtom;
+}
+
 void ExternalAtom::updatePredicateInputMask() const
 {
   DBGLOG_VSCOPE(DBG,"EA::uIM",this,true);

@@ -30,7 +30,6 @@
 
 #ifndef LOGGER_HPP_INCLUDED__17092010
 #define LOGGER_HPP_INCLUDED__17092010
-
 #include <boost/preprocessor/cat.hpp>
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>
@@ -56,6 +55,7 @@ public:
   static const Levels PLUGIN =  0x10; // plugin related things
   static const Levels ANALYZE = 0x20; // program analysis
   static const Levels MODELB =  0x40; // model building
+  static const Levels STATS  =  0x80; // statistic information
 
 private:
   std::ostream& out;
@@ -177,6 +177,7 @@ public:
 };
 
 // the following will always be realized
+//#ifndef NDEBUG
 #  define LOG(level,streamout) do { if( Logger::Instance().shallPrint(Logger:: level) ) { \
        Logger::Instance().startline(Logger:: level); \
        Logger::Instance().stream() << streamout << std::endl; \
@@ -185,7 +186,18 @@ public:
 #  define LOG_INDENT(level)              Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, "  ", false)
 #  define LOG_SCOPE(level,name,msg)      Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, msg)
 #  define LOG_VSCOPE(level,name,val,msg) Logger::Closure LOG_CLOSURE_ID (Logger::Instance(), Logger:: level, name, reinterpret_cast<const void* const>(val), msg)
+/*
+#else
+#  define LOG(level,streamout) 			do { } while(false)
+#  define LOG_CLOSURE_ID BOOST_PP_CAT(log_closure_,__LINE__) do { } while(false)
+#  define LOG_INDENT(level)              	do { } while(false)
+#  define LOG_SCOPE(level,name,msg)      	do { } while(false)
+#  define LOG_VSCOPE(level,name,val,msg) 	do { } while(false)
+#endif
+*/
+
 #  define LOG_INIT(setlevel)             namespace { Logger::Init LOG_CLOSURE_ID (setlevel); }
+
 
 // the following are debug-flag dependant
 #ifndef NDEBUG

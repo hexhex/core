@@ -62,6 +62,8 @@ An ID of ~0x0 indicates an error (not found ...).
      Address points into AggregateAtom-Table
    * 0x6 External Atom
      Address points into ExternalAtom-Table
+   * 0xA Module Atom
+     Address points into ModuleAtom-Table
 
 ** 0x1 Term
    Subkinds:
@@ -78,6 +80,8 @@ An ID of ~0x0 indicates an error (not found ...).
         mask 0x1: non-anonymous (0) vs anonymous (1)
    * 0x3 Builtin
      Address = builtin code of term, e.g., =, !=, <, <=, #sum, #int
+   * 0x4 Predicate
+     Address points into Predicate-Table
 
 ** 0x2 Literal
    Subkinds inherited from Atom

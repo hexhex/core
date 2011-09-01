@@ -84,6 +84,7 @@ struct sem<HexGrammarSemantics::termFromCIdent>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::termFromInteger>
 {
@@ -92,6 +93,7 @@ struct sem<HexGrammarSemantics::termFromInteger>
     target = ID::termFromInteger(source);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::termFromString>
@@ -107,6 +109,7 @@ struct sem<HexGrammarSemantics::termFromString>
     }
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::termFromVariable>
@@ -129,6 +132,130 @@ struct sem<HexGrammarSemantics::termFromVariable>
     }
   }
 };
+
+
+// helper method to prefix and store predicates
+void storePredicate(const std::string& oriPredName, int predArity, HexGrammarSemantics& mgr, ID& target){
+    std::string newPredName;
+//		if ( mgr.mlpMode == 0 )
+//			{ // ordinary encoding
+				newPredName = oriPredName;
+//			}	
+//		else
+//			{	// mlp encoding
+				newPredName = mgr.ctx.registry()->moduleTable.getModuleName( mgr.ctx.registry()->moduleTable.getSize()-1 ) + MODULEPREFIXSEPARATOR + oriPredName;
+//			}
+
+    target = mgr.ctx.registry()->preds.getIDByString(newPredName);
+    if( target == ID_FAIL )
+      {   
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, newPredName, predArity);
+        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
+        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
+      } 
+    else 
+      {
+        DBGLOG(DBG, "Preds previously stored: " << newPredName << "/" << predArity << " got id: " << target);
+      }
+}
+
+
+
+template<>
+struct sem<HexGrammarSemantics::predFromPredDecl>
+{
+  void operator()(
+    HexGrammarSemantics& mgr, 
+    const boost::fusion::vector2<const std::string&, unsigned int>& source,
+    ID& target)
+  {
+
+    const std::string& oriPredName = boost::fusion::at_c<0>(source);
+    assert(!oriPredName.empty() && islower(oriPredName[0]));
+
+    unsigned int predArity = boost::fusion::at_c<1>(source);
+
+    std::string newPredName;
+		newPredName = mgr.currentModuleName + MODULEPREFIXSEPARATOR + oriPredName;
+
+    target = mgr.ctx.registry()->preds.getIDByString(newPredName);
+    if( target == ID_FAIL )
+      {   
+        Predicate predicate(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, newPredName, predArity);
+        target = mgr.ctx.registry()->preds.storeAndGetID(predicate);
+        DBGLOG(DBG, "Preds stored: " << predicate << " got id: " << target);
+      } 
+    else 
+      {
+        DBGLOG(DBG, "Preds previously stored: " << newPredName << "/" << predArity << " got id: " << target);
+      }
+
+  }
+};
+
+
+
+template<>
+struct sem<HexGrammarSemantics::predFromNameOnly>
+{
+  void operator()(
+    HexGrammarSemantics& mgr, 
+    const std::string& source,
+    ID& target)
+  {
+
+    assert(!source.empty() && islower(source[0]));
+		if (mgr.mlpMode == 1) 
+			{ // mlp encoding
+		    int predArity = -1;
+				storePredicate(source, predArity, mgr, target);
+			}
+		else
+			{ // ordinary encoding
+    		target = mgr.ctx.registry()->terms.getIDByString(source);
+		    if( target == ID_FAIL )
+    			{
+   				  Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
+      			target = mgr.ctx.registry()->terms.storeAndGetID(term);
+    			}
+			}
+
+  }
+};
+
+
+
+template<>
+struct sem<HexGrammarSemantics::predFromString>
+{
+  void operator()(
+    HexGrammarSemantics& mgr, 
+    const std::string& source,
+    ID& target)
+  {
+
+    assert(!source.empty() && source[0] == '"' && source[source.size()-1] == '"');
+
+		if (mgr.mlpMode == 1)
+			{ // mlp encoding
+		    const std::string& oriPredName = source;
+    		int predArity = -1;
+				storePredicate(oriPredName, predArity, mgr, target);
+			}
+		else
+			{ // ordinary encoding
+    		target = mgr.ctx.registry()->terms.getIDByString(source);
+		    if( target == ID_FAIL )
+			    {
+			      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, source);
+			      target = mgr.ctx.registry()->terms.storeAndGetID(term);
+			    }		
+			}
+
+  }
+};
+
+
 
 template<>
 struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
@@ -177,11 +304,15 @@ struct sem<HexGrammarSemantics::classicalAtomFromPrefix>
     {
       const Tuple& tuple = boost::fusion::at_c<1>(source).get().get();
       atom.tuple.insert(atom.tuple.end(), tuple.begin(), tuple.end());
+			if ( mgr.mlpMode==1 ) mgr.ctx.registry()->preds.setArity(idpred, tuple.size());
+    } else {
+      if ( mgr.mlpMode==1 ) mgr.ctx.registry()->preds.setArity(idpred, 0);
     }
 
     createAtom(reg, atom, target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
@@ -205,6 +336,7 @@ struct sem<HexGrammarSemantics::classicalAtomFromTuple>:
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinTernaryInfix>
 {
@@ -227,6 +359,7 @@ struct sem<HexGrammarSemantics::builtinTernaryInfix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinBinaryInfix>
 {
@@ -248,6 +381,7 @@ struct sem<HexGrammarSemantics::builtinBinaryInfix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinUnaryPrefix>
 {
@@ -267,6 +401,7 @@ struct sem<HexGrammarSemantics::builtinUnaryPrefix>
     DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::builtinBinaryPrefix>
@@ -289,6 +424,7 @@ struct sem<HexGrammarSemantics::builtinBinaryPrefix>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::builtinTernaryPrefix>
 {
@@ -310,6 +446,7 @@ struct sem<HexGrammarSemantics::builtinTernaryPrefix>
     DBGLOG(DBG,"builtin atom " << atom << " got id " << target);
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::aggregateAtom>
@@ -365,6 +502,7 @@ struct sem<HexGrammarSemantics::aggregateAtom>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::externalAtom>
 {
@@ -401,6 +539,56 @@ struct sem<HexGrammarSemantics::externalAtom>
     DBGLOG(DBG,"external atom " << atom << " got id " << target);
   }
 };
+
+
+template<>
+struct sem<HexGrammarSemantics::mlpModuleAtom>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector3<
+      ID,
+      boost::optional<boost::optional<std::vector<ID> > >,
+      ID
+    >& source,
+    ID& target)
+  {
+    ModuleAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_MODULE);
+
+    // predicate
+    atom.predicate = boost::fusion::at_c<0>(source);
+
+    // get actual module name	
+    const std::string& predName = mgr.ctx.registry()->preds.getByID(atom.predicate).symbol;
+    int n = predName.find(MODULEPREFIXSEPARATOR);
+    atom.actualModuleName = predName.substr(n+2, predName.length());
+
+    // inputs
+    if( (!!boost::fusion::at_c<1>(source)) &&
+        (!!(boost::fusion::at_c<1>(source).get())) )
+    {
+      atom.inputs = boost::fusion::at_c<1>(source).get().get();
+    }
+
+    // output
+    atom.outputAtom = boost::fusion::at_c<2>(source);
+
+    ID atomNewID = mgr.ctx.registry()->matoms.getIDByElement(atom.predicate, atom.inputs, atom.outputAtom);
+    if ( atomNewID == ID_FAIL )
+      {
+    	DBGLOG(DBG,"storing mlp Module atom " << atom);
+    	target = mgr.ctx.registry()->matoms.storeAndGetID(atom);
+    	DBGLOG(DBG,"mlp Module atom " << atom << " got id " << target);
+      }
+    else 
+      {
+    	DBGLOG(DBG,"previously stored mlp Module atom " << atom);
+    	target = atomNewID;
+    	DBGLOG(DBG,"mlp Module atom " << atom << " got (old) id " << target);
+      }		
+  }
+};
+
 
 template<>
 struct sem<HexGrammarSemantics::bodyLiteral>
@@ -442,6 +630,7 @@ struct sem<HexGrammarSemantics::rule>
 
       Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, head, body);
       mgr.markExternalPropertyIfExternalBody(reg, r);
+      mgr.markModulePropertyIfModuleBody(reg, r);
       // mark as disjunctive if required
       if( r.head.size() > 1 )
         r.kind |= ID::PROPERTY_RULE_DISJ;
@@ -455,6 +644,7 @@ struct sem<HexGrammarSemantics::rule>
         Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ,
           head, Tuple());
         mgr.markExternalPropertyIfExternalBody(reg, r);
+        mgr.markModulePropertyIfModuleBody(reg, r);
         target = reg->rules.storeAndGetID(r);
       }
       else
@@ -468,6 +658,7 @@ struct sem<HexGrammarSemantics::rule>
   }
 };
 
+
 template<>
 struct sem<HexGrammarSemantics::constraint>
 {
@@ -479,10 +670,62 @@ struct sem<HexGrammarSemantics::constraint>
     Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
     r.body = source;
     mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
+    mgr.markModulePropertyIfModuleBody(mgr.ctx.registry(), r);
     target = mgr.ctx.registry()->rules.storeAndGetID(r);
     DBGLOG(DBG,"created constraint " << r << " with id " << target);
   }
 };
+
+
+template<>
+struct sem<HexGrammarSemantics::addMLPModuleName>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const std::string& source,
+    std::string& target)
+  {
+    mgr.mlpMode = 1;
+		mgr.currentModuleName = source;		
+		target = source;
+	}
+};
+
+
+template<>
+struct sem<HexGrammarSemantics::addMLPModuleHeader>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<
+      const std::string&,
+      boost::optional<boost::optional<std::vector<ID> > >
+    >& source,
+    const boost::spirit::unused_type& target)
+  {
+		// take care module name
+		// const std::string& mlpModuleName = boost::fusion::at_c<0>(source);
+		const std::string& mlpModuleName = mgr.currentModuleName;
+	  Module module(mlpModuleName, mgr.ctx.registry()->inputList.size(), mgr.ctx.edbList.size(), mgr.ctx.idbList.size());
+		mgr.ctx.registry()->moduleTable.storeAndGetAddress(module);		    
+
+		// get and insert input list
+		// resize +1 to handle if the input list is empty (because it's optional)
+    mgr.ctx.registry()->inputList.resize(mgr.ctx.registry()->inputList.size()+1);
+    // formal input predicates
+    if( (!!boost::fusion::at_c<1>(source)) &&
+        (!!(boost::fusion::at_c<1>(source).get())) )
+    {
+			mgr.ctx.registry()->inputList.back() = boost::fusion::at_c<1>(source).get().get();
+    }
+
+		// extend edbList, idbList for the mlp module body
+    mgr.ctx.edbList.resize(mgr.ctx.edbList.size()+1);
+  	mgr.ctx.edbList.back().reset(new Interpretation(mgr.ctx.registry()));
+    mgr.ctx.idbList.resize(mgr.ctx.idbList.size()+1);
+  }
+};
+
 
 #warning look at spirit mailing list 'optimizing parsing of large input'
 
@@ -501,12 +744,27 @@ struct sem<HexGrammarSemantics::add>
       if( !source.isOrdinaryGroundAtom() )
         throw SyntaxError(
           "fact '"+reg->ogatoms.getByID(source).text+"' not safe!");
-      mgr.ctx.edb->setFact(source.address);
+
+		  if ( mgr.mlpMode == 0 )		    
+				{ // ordinary encoding
+      		mgr.ctx.edb->setFact(source.address);
+				}
+			else
+				{ // mlp encoding
+      		mgr.ctx.edbList.back()->setFact(source.address);
+				}
       DBGLOG(DBG,"added fact with id " << source << " to edb");
     }
     else if( source.isRule() )
     {
-      mgr.ctx.idb.push_back(source);
+		  if ( mgr.mlpMode == 0 )		    
+				{ // ordinary encoding
+      		mgr.ctx.idb.push_back(source);
+				}
+			else
+				{ // mlp encoding
+      		mgr.ctx.idbList.back().push_back(source);
+				}
       DBGLOG(DBG,"added rule with id " << source << " to idb");
     }
     else
@@ -516,6 +774,7 @@ struct sem<HexGrammarSemantics::add>
     }
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::ignoreAndWarnIfNotFail>
@@ -531,6 +790,7 @@ struct sem<HexGrammarSemantics::ignoreAndWarnIfNotFail>
     }
   }
 };
+
 
 template<>
 struct sem<HexGrammarSemantics::maxint>
@@ -575,10 +835,17 @@ HexGrammarBase(HexGrammarSemantics& sem):
   terms
     = (term > qi::eps) % qi::lit(',');
 
+  pred
+    = cident     [ Sem::predFromNameOnly(sem) ];
+
+  preds
+    = (pred > qi::eps) % qi::lit(',');
+
   // if we have this, we can easily extend this to higher order using a module
   classicalAtomPredicate
-    = cident [ Sem::termFromCIdent(sem) ]
-    | string [ Sem::termFromString(sem) ]; // module for higher order adds a variable here
+    = cident [ Sem::predFromNameOnly(sem) ]
+    | string [ Sem::predFromString(sem) ]; // module for higher order adds a variable here
+
   classicalAtom
     = (
         classicalAtomPredicate >> -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps
@@ -636,18 +903,49 @@ HexGrammarBase(HexGrammarSemantics& sem):
       ) [ Sem::aggregateAtom(sem) ];
   externalAtomPredicate
     = cident [ Sem::termFromCIdent(sem) ];
+
   externalAtom
     = (
         qi::lit('&') > externalAtomPredicate >
         -(qi::lit('[') > -terms >> qi::lit(']')) > qi::eps >
         -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps 
       ) [ Sem::externalAtom(sem) ];
+
+  mlpModuleAtomPredicate
+    = cident [ Sem::predFromNameOnly(sem) ];
+
+  mlpModuleAtom
+    = (
+        qi::lit('@') > mlpModuleAtomPredicate >  // for module predicate
+        -(qi::lit('[') > -preds >> qi::lit(']')) > qi::eps >  // for input
+	qi::lit(':') > qi::lit(':') > classicalAtom > qi::eps // for output
+      ) [ Sem::mlpModuleAtom(sem) ];
+
+
+  predDecl
+    = (cident > qi::lit('/') > qi::ulong_)[ Sem::predFromPredDecl(sem) ];
+
+  predList
+    = (predDecl > qi::eps) % qi::lit(',');
+
+  mlpModuleName 
+		= cident [ Sem::addMLPModuleName(sem) ];
+
+  mlpModuleHeader 
+    = ( qi::lit("#module") >> // #module
+        qi::lit('(') > mlpModuleName >  // module name
+        -( qi::lit(',') > qi::lit('[') > -predList >> qi::lit(']') ) > qi::eps > // predicate list
+        qi::lit(')') > qi::eps > qi::lit('.') > qi::eps
+      ) [ Sem::addMLPModuleHeader(sem) ];
+
   bodyAtom
     = classicalAtom
     | externalAtom
+    | mlpModuleAtom
     | builtinAtom
     | aggregateAtom
     | bodyAtomExt;
+
   bodyLiteral
     = (
 #if BOOST_VERSION >= 104600
@@ -657,9 +955,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
 #endif
         bodyAtom
       ) [ Sem::bodyLiteral(sem) ];
+
   headAtom
     = classicalAtom
     | headAtomExt;
+
   rule
     = (
         (headAtom % qi::no_skip[qi::char_('v') >> ascii::space]) >>
@@ -683,6 +983,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
         [ Sem::add(sem) ]
     | (constraint > qi::eps)
         [ Sem::add(sem) ]
+    | (mlpModuleHeader > qi::eps)
     | (toplevelBuiltin > qi::eps)
     | (toplevelExt > qi::eps)
         [ Sem::ignoreAndWarnIfNotFail(sem) ];
@@ -716,6 +1017,8 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(term);
   BOOST_SPIRIT_DEBUG_NODE(externalAtom);
   BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
+  BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtom);
+  BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtom);
   BOOST_SPIRIT_DEBUG_NODE(builtinAtom);

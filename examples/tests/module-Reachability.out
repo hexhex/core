@@ -1,0 +1,1 @@
+(p1[{}]={v(a),e(a,b),e(b,c),e(c,d),rc(c),r(a),r(b),r(c),r(d),r(c1),r(c2)}, p2[{first(a),edge(a,b),edge(b,c),edge(c,d)}]={edge(a,c1),edge(c1,c2),first(a),edge(a,b),edge(b,c),edge(c,d),reachable(a),reachable(c1),reachable(c2),reachable(b),reachable(c),reachable(d)})

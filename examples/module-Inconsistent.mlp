@@ -1,0 +1,15 @@
+#module(p1,[]).
+fine :- not fine.
+
+
+#module(p2,[]).
+q(a).
+good :- @p3[q]::q(a).
+bad :- not good.
+
+
+#module(p3,[r/1]).
+q(a).
+:- q(a), r(a).
+
+

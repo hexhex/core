@@ -37,12 +37,14 @@
 #include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/TermTable.hpp"
+#include "dlvhex/PredicateTable.hpp"
 #include "dlvhex/OrdinaryAtomTable.hpp"
 #include "dlvhex/BuiltinAtomTable.hpp"
 #include "dlvhex/AggregateAtomTable.hpp"
 #include "dlvhex/ExternalAtomTable.hpp"
+#include "dlvhex/ModuleAtomTable.hpp"
 #include "dlvhex/RuleTable.hpp"
-
+#include "dlvhex/ModuleTable.hpp"
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -86,6 +88,7 @@ struct Registry:
   ~Registry();
 
   TermTable terms;
+  PredicateTable preds;
   // ordinary ground atoms
   OrdinaryAtomTable ogatoms;
   // ordinary nonground atoms
@@ -93,7 +96,10 @@ struct Registry:
   BuiltinAtomTable batoms;
   AggregateAtomTable aatoms;
   ExternalAtomTable eatoms;
+  ModuleAtomTable matoms;
   RuleTable rules;
+  ModuleTable moduleTable;
+  std::vector<Tuple> inputList;
 
 #warning namespaces
   //NamespaceTable namespaces;

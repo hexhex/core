@@ -69,22 +69,27 @@ struct ID:
 	static const IDKind SUBKIND_TERM_INTEGER =   0x01000000;
 	static const IDKind SUBKIND_TERM_VARIABLE =  0x02000000;
 	static const IDKind SUBKIND_TERM_BUILTIN =   0x03000000;
+	static const IDKind SUBKIND_TERM_PREDICATE = 0x04000000;
 
 	static const IDKind SUBKIND_ATOM_ORDINARYG = 0x00000000;
 	static const IDKind SUBKIND_ATOM_ORDINARYN = 0x01000000;
 	static const IDKind SUBKIND_ATOM_BUILTIN =   0x02000000;
 	static const IDKind SUBKIND_ATOM_AGGREGATE = 0x03000000;
+// 6 and A -> check -> because of method isOrdinaryAtom that masked ID with builtin != builtin
 	static const IDKind SUBKIND_ATOM_EXTERNAL =  0x06000000;
+	static const IDKind SUBKIND_ATOM_MODULE =    0x0A000000;
 
 	static const IDKind SUBKIND_RULE_REGULAR =        0x00000000;
 	static const IDKind SUBKIND_RULE_CONSTRAINT =     0x01000000;
 	static const IDKind SUBKIND_RULE_WEAKCONSTRAINT = 0x02000000;
 
-	//                                           0x00FF0000
-	static const IDKind PROPERTY_VAR_ANONYMOUS = 0x00010000;
-	static const IDKind PROPERTY_RULE_EXTATOMS = 0x00080000;
-	static const IDKind PROPERTY_RULE_DISJ =     0x00100000;
-	static const IDKind PROPERTY_AUX           = 0x00800000;
+	//                                             0x00FF0000
+	static const IDKind PROPERTY_VAR_ANONYMOUS   = 0x00010000;
+	static const IDKind PROPERTY_RULE_EXTATOMS   = 0x00080000;
+	static const IDKind PROPERTY_RULE_DISJ       = 0x00100000;
+	static const IDKind PROPERTY_RULE_MODATOMS   = 0x00400000;
+	static const IDKind PROPERTY_RULE_UNMODATOMS = 0xFFBFFFFF;
+	static const IDKind PROPERTY_AUX             = 0x00800000;
 
   // for builtin terms, this is the address part (no table)
   // beware: must be synchronized with isInfixBuiltin() and builtinTerms[]
@@ -135,6 +140,7 @@ struct ID:
 	inline bool isIntegerTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_INTEGER; }
 	inline bool isVariableTerm() const  { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_VARIABLE; }
 	inline bool isBuiltinTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_BUILTIN; }
+	inline bool isPredicateTerm() const   { assert(isTerm()); return (kind & SUBKIND_MASK) == SUBKIND_TERM_PREDICATE; }
 
 	inline bool isAtom() const          { return (kind & MAINKIND_MASK) == MAINKIND_ATOM; }
   // true for ground or nonground ordinary atoms
@@ -145,6 +151,7 @@ struct ID:
 	inline bool isBuiltinAtom() const   { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_BUILTIN; }
 	inline bool isAggregateAtom() const { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_AGGREGATE; }
 	inline bool isExternalAtom() const  { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_EXTERNAL; }
+	inline bool isModuleAtom() const    { assert(isAtom() || isLiteral()); return (kind & SUBKIND_MASK) == SUBKIND_ATOM_MODULE; }
 
 	inline bool isLiteral() const       { return (kind & MAINKIND_MASK) == MAINKIND_LITERAL; }
 	inline bool isNaf() const           { return (kind & NAF_MASK) == NAF_MASK; }
@@ -156,6 +163,7 @@ struct ID:
 	inline bool isWeakConstraint() const{ assert(isRule()); return (kind & SUBKIND_MASK) == SUBKIND_RULE_WEAKCONSTRAINT; }
 
 	inline bool doesRuleContainExtatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_EXTATOMS) == PROPERTY_RULE_EXTATOMS; }
+	inline bool doesRuleContainModatoms() const{ assert(isRule()); return (kind & PROPERTY_RULE_MODATOMS) == PROPERTY_RULE_MODATOMS; }
 	inline bool isRuleDisjunctive() const { assert(isRule()); return (kind & PROPERTY_RULE_DISJ) == PROPERTY_RULE_DISJ; }
 	inline bool isAnonymousVariable() const { assert(isVariableTerm()); return (kind & PROPERTY_VAR_ANONYMOUS) == PROPERTY_VAR_ANONYMOUS; }
 
@@ -170,7 +178,7 @@ struct ID:
 
 std::size_t hash_value(const ID& id);
 
-const ID        ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
+const ID ID_FAIL(ID::ALL_ONES, ID::ALL_ONES);
 
 typedef std::vector<ID> Tuple;
 

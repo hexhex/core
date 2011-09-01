@@ -47,9 +47,13 @@ namespace impl
 
 	// these tags are special
 	struct TermTag {}; // Term
+        struct PredicateNameTag {}; // Predicate
+        struct ModuleNameTag {}; // Module
 	struct TextTag {}; // OrdinaryGroundAtom
 	struct TupleTag {}; // OrdinaryAtom, OrdinaryGroundAtom
-	struct PredicateTag {}; // ExternalAtom
+	struct PredicateTag {}; // ExternalAtom 
+	struct ElementTag {}; // for MLPSolver
+	struct InstTag {}; // instantiation Tag, for ordinary ground atom (for MLP case)
 }
 
 template<typename ValueT, typename IndexT>

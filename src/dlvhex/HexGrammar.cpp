@@ -51,6 +51,7 @@ template struct HexGrammar<HexParserIterator, HexParserSkipper>;
 HexGrammarSemantics::HexGrammarSemantics(ProgramCtx& ctx):
   ctx(ctx)
 {
+	mlpMode=0;
 }
 
 void HexGrammarSemantics::markExternalPropertyIfExternalBody(
@@ -60,6 +61,25 @@ void HexGrammarSemantics::markExternalPropertyIfExternalBody(
   registry->getExternalAtomsInTuple(r.body, eatoms);
   if( !eatoms.empty() )
     r.kind |= ID::PROPERTY_RULE_EXTATOMS;
+}
+
+void HexGrammarSemantics::markModulePropertyIfModuleBody(
+    RegistryPtr registry, Rule& r)
+{
+/*
+  Tuple eatoms;
+  registry->getExternalAtomsInTuple(r.body, eatoms);
+  if( !eatoms.empty() )
+    r.kind |= ID::PROPERTY_RULE_EXTATOMS;
+*/
+  for(Tuple::const_iterator itt = r.body.begin(); itt != r.body.end(); ++itt)
+    {
+      if( itt->isModuleAtom() )
+        {             
+          r.kind |= ID::PROPERTY_RULE_MODATOMS;
+          return;
+        }
+    }
 }
 
 DLVHEX_NAMESPACE_END

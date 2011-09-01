@@ -1,0 +1,6 @@
+#module(p1,[]).
+a v b :- @p2::r.
+
+
+#module(p2,[]).
+r :- @p1::a.

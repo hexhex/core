@@ -1,0 +1,15 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+out1 :- @p2[q1]::out2.
+ok1 :- not out1.
+
+#module(p2,[q/1]).
+out2 :- @p3[q]::out3.
+
+#module(p3,[r/1]).
+out3 :- @p4[r]::out4.
+
+#module(p4,[s/1]).
+out4 :- @p2[s]::out2.
+

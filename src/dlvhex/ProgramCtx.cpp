@@ -47,7 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-	
+
 ProgramCtx::ProgramCtx():
 		maxint(0)
 {
@@ -78,8 +78,14 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting depgraph");
   depgraph.reset();
 
-  DBGLOG(DBG,"resetting edb");
-  edb.reset();
+  DBGLOG(DBG,"resetting edbList");
+  std::vector<InterpretationPtr>::iterator it = edbList.begin();
+  while ( it != edbList.end() )
+    {
+      it->reset();
+      it++;
+    }
+  // edb.reset();
 
   DBGLOG(DBG,"resetting inputProvider");
   inputProvider.reset();
@@ -102,7 +108,6 @@ ProgramCtx::~ProgramCtx()
   _pluginContainer.reset();
 }
   
-
 void
 ProgramCtx::changeState(const boost::shared_ptr<State>& s)
 {
@@ -116,12 +121,17 @@ void ProgramCtx::setupRegistry(
   assert(
       (
         !_registry || // allow to set from nothing
-        (idb.empty() && !edb && pluginAtoms.empty()) // allow to change if empty
+        (idbList.size()==0 && edbList.size()==0 && pluginAtoms.empty()) // allow to change if empty
       )
       &&
       "cannot change registry once idb or edb or pluginAtoms contains data");
   _registry = registry;
   _registry->setupAuxiliaryGroundAtomMask();
+}
+
+void ProgramCtx::changeRegistry(RegistryPtr registry)
+{
+   _registry = registry;
 }
 
 void ProgramCtx::setupPluginContainer(
@@ -153,6 +163,8 @@ void ProgramCtx::setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr softw
 void ProgramCtx::showPlugins() { state->showPlugins(this); }
 void ProgramCtx::convert() { state->convert(this); }
 void ProgramCtx::parse() { state->parse(this); }
+void ProgramCtx::moduleSyntaxCheck() { state->moduleSyntaxCheck(this); }
+void ProgramCtx::mlpSolver() { state->mlpSolver(this); }
 void ProgramCtx::rewriteEDBIDB() { state->rewriteEDBIDB(this); }
 void ProgramCtx::safetyCheck() { state->safetyCheck(this); }
 void ProgramCtx::createDependencyGraph() { state->createDependencyGraph(this); }

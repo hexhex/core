@@ -184,10 +184,28 @@ namespace
 {
   inline ID getOrRegisterTerm(RegistryPtr registry, const std::string& s)
   {
+
+    ID id = registry->terms.getIDByString(s);
+    if( id == ID_FAIL )
+    {
+      id = registry->preds.getIDByString(s);
+    }
+ 
+    if( id == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM, s);
+      // we can only get strings or constants
+      assert(s[0] == '"' || islower(s[0]));
+      id = registry->terms.storeAndGetID(term);
+    }
+    return id;
+
+/*
     Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, s);
     assert((s[0] == '"' || islower(s[0])) && "in this parser we can only get strings or constants!");
     // retrieve or store
     return registry->storeTerm(term);
+*/
   }
 }
 

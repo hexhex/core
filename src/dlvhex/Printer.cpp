@@ -182,6 +182,17 @@ void RawPrinter::print(ID id)
 				out << ")";
 			}
 			break;
+		case ID::SUBKIND_ATOM_MODULE:
+			{
+				const ModuleAtom& atom = registry->matoms.getByID(id);
+				out << "@";
+				print(atom.predicate);
+				out << "[";
+				printmany(atom.inputs,",");
+				out << "]::";
+				print(atom.outputAtom);
+			}
+			break;
 		default:
 			assert(false);
 		}
@@ -192,6 +203,9 @@ void RawPrinter::print(ID id)
 		case ID::SUBKIND_TERM_CONSTANT:
 		case ID::SUBKIND_TERM_VARIABLE:
 			out << registry->terms.getByID(id).symbol;
+			break;
+		case ID::SUBKIND_TERM_PREDICATE:
+			out << registry->preds.getByID(id).symbol;
 			break;
 		case ID::SUBKIND_TERM_INTEGER:
 			out << id.address;
@@ -246,6 +260,44 @@ void RawPrinter::print(ID id)
 		assert(false);
 	}
 }
+
+// remove the prefix
+// from m0___p1__q(a) to q(a)
+std::string RawPrinter::removeModulePrefix(const std::string& text)
+{
+  std::string result;
+  if (text.find(MODULEINSTSEPARATOR) == std::string::npos)
+    { 
+      result = text; 
+    }
+  else 
+    {
+      result = text.substr(text.find(MODULEINSTSEPARATOR)+3); 
+    } 
+  return result.substr(result.find(MODULEPREFIXSEPARATOR)+2); 
+}
+
+
+
+void RawPrinter::printWithoutPrefix(ID id)
+{
+	switch(id.kind & ID::MAINKIND_MASK)
+	{
+	case ID::MAINKIND_ATOM:
+		switch(id.kind & ID::SUBKIND_MASK)
+		{
+		case ID::SUBKIND_ATOM_ORDINARYG:
+			out << removeModulePrefix(registry->ogatoms.getByID(id).text);
+			break;
+		default:
+			assert(false);
+		}
+		break;
+	default:
+		assert(false);
+	}
+}
+
 
 DLVHEX_NAMESPACE_END
 

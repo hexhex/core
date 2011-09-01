@@ -25,7 +25,7 @@
  * @file   Atoms.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Storage classes for atoms: Atom, OrdinaryAtom, BuiltinAtom, AggregateAtom, ExternalAtom.
+ * @brief  Storage classes for atoms: Atom, OrdinaryAtom, BuiltinAtom, AggregateAtom, ExternalAtom, ModuleAtom.
  */
 
 #ifndef ATOMS_HPP_INCLUDED__14102010
@@ -87,16 +87,21 @@ struct OrdinaryAtom:
   // TODO if we only need this for printing, we should generate it on-demand and save a lot of effort
   std::string text;
 
+  // this is needed to optimze localize the module instantiation (MLP case)
+  // in other words, to identify this ground atom belong to which instantiation
+  // w.r.t. instantiation index
+  int instTag;
+
   bool unifiesWith(const OrdinaryAtom& a) const;
 
   OrdinaryAtom(IDKind kind):
-    Atom(kind), text()
+    Atom(kind), text(), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom()); }
   OrdinaryAtom(IDKind kind, const std::string& text):
-    Atom(kind), text(text)
+    Atom(kind), text(text), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom()); assert(!text.empty()); }
   OrdinaryAtom(IDKind kind, const std::string& text, const Tuple& tuple):
-    Atom(kind, tuple), text(text)
+    Atom(kind, tuple), text(text), instTag(-1)
     { assert(ID(kind,0).isOrdinaryAtom());
       assert(!text.empty()); }
   std::ostream& print(std::ostream& o) const
@@ -229,6 +234,49 @@ public:
   InterpretationConstPtr getPredicateInputMask() const
     { return inputMask.mask(); }
 };
+
+// module Atom structure
+struct ModuleAtom:
+  public Atom,
+  private ostream_printable<ModuleAtom>
+  {
+  // @<predicate>[<inputs>]::<outputAtom>
+
+  // module atom name (predicate term)
+  ID predicate;
+  // input terms
+  Tuple inputs;
+  // module output predicate
+  ID outputAtom;
+  // if the <predicate> is p1__p2 (because of prefixing) 
+  // then the actualModuleName should be p2
+  std::string actualModuleName;
+  // Atom::tuple is used for output terms
+
+public:
+  ModuleAtom(IDKind kind, ID predicate, const Tuple& inputs, ID outputAtom, std::string actualModuleName):
+    Atom(kind),
+    predicate(predicate),
+    inputs(inputs),
+    outputAtom(outputAtom),
+    actualModuleName(actualModuleName)
+  { }
+
+  ModuleAtom(IDKind kind):
+    Atom(kind),
+    predicate(ID_FAIL),
+    inputs(),
+    outputAtom(ID_FAIL),
+    actualModuleName("")
+  { }
+
+  std::ostream& print(std::ostream& o) const;
+
+};
+
+// to prefixed atom (predicate name of the atom)
+const std::string MODULEPREFIXSEPARATOR="__";
+const std::string MODULEINSTSEPARATOR="___";
 
 DLVHEX_NAMESPACE_END
 

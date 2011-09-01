@@ -77,3 +77,23 @@ tertop.hex tertop.out
 variable_predicate_inputs.hex variable_predicate_inputs.stderr
 wellfounded1.hex wellfounded1.out --nofacts
 wellfounded2.hex wellfounded2.out --nofacts
+module-Inconsistent.mlp module-Inconsistent.out --mlp
+module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp
+module-EvenOdd.mlp module-EvenOdd.out --mlp
+module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp
+module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp
+module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp
+module-Reachability.mlp module-Reachability.out --mlp
+module-Cardinality.mlp module-Cardinality.out --mlp
+module-ABBA.mlp module-ABBA.out --mlp
+module-Disjunction.mlp module-Disjunction.out --mlp
+module-Negation.mlp module-Negation.out --mlp
+module-Indirection.mlp module-Indirection.out --mlp
+module-AFin.mlp module-AFin.out --mlp
+module-Cs.mlp module-Cs.out --mlp
+module-i-Stratified.mlp module-i-Stratified.out --mlp
+module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp
+module-Hanoi.mlp module-Hanoi.out --mlp
+module-Complex.mlp module-Complex.out --mlp
+module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1
+module-EvenOdd.mlp module-EvenOdd.out --mlp --split

@@ -1,0 +1,12 @@
+#module(p1,[]).
+t.
+p.
+r:-t.
+q:-r.
+s:-not p.
+ok :- @p2[q,s]::b.
+
+#module(p2,[q/0,s/0]).
+b:-q, not s.
+
+

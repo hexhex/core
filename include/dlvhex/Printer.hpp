@@ -62,12 +62,15 @@ public:
 class RawPrinter:
   public Printer
 {
+private: 
+  std::string removeModulePrefix(const std::string& text);
 public:
   RawPrinter(std::ostream& out, Registry* registry):
     Printer(out, registry) {}
   RawPrinter(std::ostream& out, RegistryPtr registry):
     Printer(out, registry) {}
   virtual void print(ID id);
+  void printWithoutPrefix(ID id);
 };
 
 template<typename PrinterT>

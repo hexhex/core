@@ -298,6 +298,102 @@ GraphProcessor::run(const AtomSet& in)
 	} //!leaves.empty()
 
 
+      
+      //
+      // in case we have programs with head cycles, we need to
+      // check allLeavesResult for minimality here
+      // 
+	      
+      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+	{
+	  Globals::Instance()->getVerboseStream() << std::endl
+						  << "Checking allLeavesResult for minimality:"
+						  << std::endl;
+	}
+      
+      ///@todo hack in minimality check, this should be weaved into allLeavesResult and resultModels somehow
+      std::vector<AtomSet> models;
+      
+      for (std::set<AtomSet>::const_iterator ans = allLeavesResult.begin();
+	   ans != allLeavesResult.end();
+	   ++ans)
+	{
+	  //
+	  // now ensure minimality:
+	  //
+	  bool isMinimal = true;
+	  
+	  std::vector<std::vector<AtomSet>::iterator> todelete;
+	  
+	  for (std::vector<AtomSet>::iterator curras = models.begin();
+	       curras != models.end();
+	       ++curras)
+	    {
+	      //
+	      // is the new one a superset (or equal) than an existing one
+	      //
+	      if (std::includes(ans->begin(), ans->end(), curras->begin(), curras->end()))
+		{
+		  isMinimal = false;
+		  break;
+		}
+	      
+	      //
+	      // is the new one a subset of an existing one? Must be a *real* subset,
+	      // if we passed the previous "if"!
+	      //
+	      if (std::includes(curras->begin(), curras->end(), ans->begin(), ans->end()))
+		{
+		  //
+		  // remove existing one
+		  //
+		  todelete.push_back(curras);
+		}
+	    }
+	  
+	  for (std::vector<std::vector<AtomSet>::iterator>::const_iterator it = todelete.begin();
+	       it != todelete.end();
+	       ++it)
+	    {
+	      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+		{
+		  Globals::Instance()->getVerboseStream() << " Killing model: ";
+		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		  (*it)->accept(rpv);
+		  Globals::Instance()->getVerboseStream() << std::endl;
+		}
+	      
+	      models.erase(*it);
+	    }
+	  
+	  if (isMinimal)
+	    {
+	      ///@todo copy over to the models (we might want to make this faster...)
+	      models.push_back(*ans);
+	      
+	      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+		{
+		  Globals::Instance()->getVerboseStream() << " Model passed minimality test for now: ";
+		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		  ans->accept(rpv);
+			  Globals::Instance()->getVerboseStream() << std::endl;
+		}
+	    }
+	  else
+	    {
+	      if (Globals::Instance()->doVerbose(Globals::MODEL_GENERATOR))
+		{
+		  Globals::Instance()->getVerboseStream() << " Model did not pass minimality test:";
+		  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
+		  ans->accept(rpv);
+		  Globals::Instance()->getVerboseStream() << std::endl;
+		}
+	    }
+	}
+
+      // minimality check is done, now models contains the minimal models
+
+
 
       //
       // done with feeding all current result models into the leaf components.
@@ -311,7 +407,7 @@ GraphProcessor::run(const AtomSet& in)
 
       ///@todo looks a bit weird
       resultModels.clear();
-      resultModels.insert(resultModels.end(), allLeavesResult.begin(), allLeavesResult.end());
+      resultModels.insert(resultModels.end(), models.begin(), models.end());
       
       //
       // make copy of subgraph

@@ -125,12 +125,16 @@ Registry::Registry():
 //explicit
 Registry::Registry(const Registry& other):
   terms(other.terms),
+  preds(other.preds),
   ogatoms(other.ogatoms),
   onatoms(other.onatoms),
   batoms(other.batoms),
   aatoms(other.aatoms),
   eatoms(other.eatoms),
+  matoms(other.matoms),
   rules(other.rules),
+  moduleTable(other.moduleTable),
+  inputList(other.inputList),
   pimpl(new Impl(*other.pimpl))
 {
   // do not initialize pimpl->auxGroundAtomMask here! (we can do this only outside of the constructor)
@@ -145,6 +149,9 @@ Registry::~Registry()
 // implementation from RuleTable.hpp
 std::ostream& RuleTable::print(std::ostream& o, RegistryPtr reg) const throw()
 {
+/*<<<<<<< .working
+  o << "REGISTRY BEGIN" << std::endl <<
+=======*/
 	const AddressIndex& aidx = container.get<impl::AddressTag>();
 	for(AddressIndex::const_iterator it = aidx.begin();
 			it != aidx.end(); ++it)
@@ -178,8 +185,11 @@ std::ostream& Registry::print(std::ostream& o) //const
 {
     o <<
       "REGISTRY BEGIN" << std::endl <<
+//>>>>>>> .merge-right.r3086
       "terms:" << std::endl <<
       terms <<
+      "preds:" << std::endl <<
+      preds <<
       "ogatoms:" << std::endl <<
       ogatoms <<
       "onatoms:" << std::endl <<
@@ -188,14 +198,34 @@ std::ostream& Registry::print(std::ostream& o) //const
       batoms <<
       "aatoms:" << std::endl <<
       aatoms <<
+/*<<<<<<< .working
+      "eatoms:" << std::endl <<
+      eatoms <<
+      "matoms:" << std::endl <<
+      matoms <<
+      "rules:" << std::endl <<
+      rules <<
+=======*/
       "eatoms:" << std::endl;
 	eatoms.print(o, shared_from_this());
-    o << 
+      o << 
+      "matoms:" << std::endl <<
+      matoms <<
       "rules:" << std::endl;
 	rules.print(o, shared_from_this());
-	return
-		o <<
-      "REGISTRY END" << std::endl;
+//>>>>>>> .merge-right.r3086
+      o << "moduleTable:" << std::endl <<
+      moduleTable <<
+      "inputList:" << std::endl;
+      for (int i=0;i<inputList.size();i++)
+        {
+          o << printvector(inputList.at(i)) << std::endl;
+        }
+
+      o << "REGISTRY END" << std::endl;
+
+  return o;
+
 }
 
 // lookup ground or nonground ordinary atoms (ID specifies this)
@@ -349,6 +379,11 @@ ID Registry::storeConstOrVarTerm(Term& term)
   // ensure the symbol does not start with a number
   assert(!term.symbol.empty() && (term.symbol[0] < '0' || term.symbol[0] > '9'));
   ID ret = terms.getIDByString(term.symbol);
+  // check if might registered as a predicate
+  if( ret == ID_FAIL )
+  {
+    ret = preds.getIDByString(term.symbol);
+  }
   if( ret == ID_FAIL )
   {
     ret = terms.storeAndGetID(term);

@@ -35,9 +35,7 @@
 #include "dlvhex/fwd.hpp"
 #include "dlvhex/ModelGenerator.hpp"
 #include "dlvhex/ID.hpp"
-
 #include <bm/bm.h>
-
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -61,6 +59,7 @@ protected:
 
   // members
 public:
+  inline Interpretation(){};
   Interpretation(RegistryPtr registry);
   virtual ~Interpretation();
   // TODO: bitset stuff with bitmagic
@@ -69,10 +68,15 @@ public:
   virtual unsigned filter(FilterCallback callback);
 
   virtual std::ostream& print(std::ostream& o, const char* first, const char* sep, const char* last) const;
+  virtual std::ostream& printWithoutPrefix(std::ostream& o, const char* first, const char* sep, const char* last) const;
+  virtual std::ostream& printAsNumber(std::ostream& o, const char* first, const char* sep, const char* last) const;
   virtual std::ostream& print(std::ostream& o) const;
+  virtual std::ostream& printWithoutPrefix(std::ostream& o) const;
+  virtual std::ostream& printAsNumber(std::ostream& o) const;
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
   void add(const Interpretation& other);
+  void bit_and(const Interpretation& other);
   #warning todo we may want to name this "add" "remove" and "has" (...Fact)
   inline void setFact(IDAddress id)
     { bits.set(id); }
@@ -86,11 +90,24 @@ public:
 
   RegistryPtr getRegistry() const { return registry; }
 
+  void setRegistry(RegistryPtr registry1) { registry = registry1; }
+
+  inline bool isClear() const
+    {  return bits.none();  }
+
+  inline void clear() 
+    {  bits.clear();  }
+
   bool operator==(const Interpretation& other) const;
+  bool operator<(const Interpretation& other) const;
+  
+
 };
 
 typedef Interpretation::Ptr InterpretationPtr;
 typedef Interpretation::ConstPtr InterpretationConstPtr;
+
+std::size_t hash_value(const Interpretation& intr);
 
 // TODO perhaps we want to have something like this for (manual) joins
 // (see https://dlvhex.svn.sourceforge.net/svnroot/dlvhex/dlvhex/branches/dlvhex-depgraph-refactoring@1555) 

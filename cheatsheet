@@ -1,0 +1,33 @@
+dlvhex+mlp cheat sheet
+
+1. Install boost
+- get boost from: http://www.boost.org/
+- [sometimes] in order to install boost-iostream, install libbz2-dev
+- in root dir: 
+	$ ./bootstrap.h --prefix=build
+	$ ./bjam --build-type=complete --layout=tagged --build-dir=build threading=single
+	$ ./bjam --prefix=build --build-dir=build --layout=tagged threading=single install
+
+
+2. Install dlvhex+mlp
+- checkout from svn repository: 
+	$ svn co https://dlvhex.svn.sourceforge.net/svnroot/dlvhex/dlvhex/branches/dlvhex+mlp
+- in root dir: 
+	$ ./bootstrap.h
+- build in separate directory:
+	$ mkdir build
+	$ cd build
+	$ ../configure --with-boost=<boost-build-dir> 
+	[if necessary: $ LD_LIBRARY_PATH=<boost-build-dir>/lib ../configure --with-boost=<boost-build-dir> ]
+- build in root directory
+	$ ./configure --with-boost=<boost-build-dir> 
+	[if necessary: $ LD_LIBRARY_PATH=<boost-build-dir>/lib ./configure --with-boost=<boost-build-dir> ]
+- build with clingo: 
+	get clingo: http://sourceforge.net/projects/potassco/files/clingo/3.0.3/clingo-3.0.3-source.tar.gz/download
+	extract it
+	Delete the lua support in Makefile, i.e., 
+		delete the [second] line cmake_options=-DWITH_LUA=shipped -DWITH_LUASQL=1
+	add --with-libclingo=<CLINGO-DIR> when configure, e.g.
+		$ ./configure --with-boost=<boost-build-dir> --with-libclingo=<CLINGO-DIR>
+
+	

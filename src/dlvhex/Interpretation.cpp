@@ -31,8 +31,23 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printer.hpp"
+#include <boost/functional/hash.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
+
+std::size_t hash_value(const Interpretation& intr)
+{
+  std::size_t seed = 0;
+  Interpretation::Storage bits= intr.getStorage();
+  Interpretation::Storage::enumerator it = bits.first();
+  while ( it != bits.end() )
+    {
+      boost::hash_combine(seed, *it);
+      it++;
+    }
+  return seed;
+}
+
 
 Interpretation::Interpretation(RegistryPtr registry):
   registry(registry),
@@ -77,6 +92,16 @@ std::ostream& Interpretation::print(std::ostream& o) const
   return print(o, "{", ",", "}");
 }
 
+std::ostream& Interpretation::printWithoutPrefix(std::ostream& o) const
+{
+  return printWithoutPrefix(o, "{", ",", "}");
+}
+
+std::ostream& Interpretation::printAsNumber(std::ostream& o) const
+{
+  return printAsNumber(o, "{", ",", "}");
+}
+
 std::ostream& Interpretation::printAsFacts(std::ostream& o) const
 {
   print(o, "", ".", "");
@@ -106,14 +131,63 @@ std::ostream& Interpretation::print(
   return o << last;
 }
 
+std::ostream& Interpretation::printWithoutPrefix(
+    std::ostream& o,
+    const char* first, const char* sep, const char* last) const
+{
+  Storage::enumerator it = bits.first();
+  o << first;
+  RawPrinter printer(o, registry);
+  if( it != bits.end() )
+  {
+    printer.printWithoutPrefix(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      o << sep;
+      printer.printWithoutPrefix(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it));
+    }
+  }
+  return o << last;
+}
+
+std::ostream& Interpretation::printAsNumber(
+    std::ostream& o,
+    const char* first, const char* sep, const char* last) const
+{
+  Storage::enumerator it = bits.first();
+  o << first;
+  if( it != bits.end() )
+  {
+    o << *it;
+    it++;
+    for(; it != bits.end(); ++it)
+    {
+      o << sep;
+      o << *it; 
+    }
+  }
+  return o << last;
+}
+
 void Interpretation::add(const Interpretation& other)
 {
   bits |= other.bits;
 }
 
+void Interpretation::bit_and(const Interpretation& other)
+{
+  bits &= other.bits;
+}
+
 bool Interpretation::operator==(const Interpretation& other) const
 {
   return bits == other.bits;
+}
+
+bool Interpretation::operator<(const Interpretation& other) const
+{
+  return bits < other.bits;
 }
 
 DLVHEX_NAMESPACE_END

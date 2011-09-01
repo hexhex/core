@@ -97,7 +97,7 @@ void
 printLogo()
 {
 	std::cout
-		<< "DLVHEX "
+		<< "DLVHEX  "
 #ifdef HAVE_CONFIG_H
 		<< VERSION << " "
 #endif // HAVE_CONFIG_H
@@ -140,6 +140,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
+      << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
+      << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
+      << "     --num=<N>        Computes at most N answer sets (N=0 computes all)" << std::endl
+      << "     --split          Use instantiation splitting techniques" << std::endl
+    //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
@@ -301,6 +306,10 @@ int main(int argc, char *argv[])
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
+  pctx.config.setOption("NMLP", 0);
+  pctx.config.setOption("MLP", 0);
+  pctx.config.setOption("Forget", 0);
+  pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
 
 	// defaults of main
@@ -388,16 +397,41 @@ int main(int argc, char *argv[])
 			}
 			throw UsageError(bad.str());
 		}
-
+		//rmv. std::cout << "before convert" << std::endl;
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
 
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
+		//rmv. std::cout << "after convert" << std::endl;
 			
 		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
+		//rmv. std::cout << "before parse" << std::endl;
 		pctx.parse();
-			
+		//rmv. std::cout << "after parse" << std::endl;
+		
+		// check if in mlp mode	
+		if( pctx.config.getOption("MLP") ) 
+		  {
+			// syntax check for mlp
+			//rmv. std::cout << "before moduleSyntaxCheck" << std::endl;
+			pctx.moduleSyntaxCheck();
+			//rmv. std::cout << "after moduleSyntaxCheck" << std::endl;
+
+			// solve mlp
+			//rmv. std::cout << "before mlpSolver" << std::endl;
+			//.. pctx.nASToBeReturned = pctx.config.getOption("NMLP");
+			pctx.mlpSolver();
+			// std::cout << pctx.config.getOption("Verbose");
+			// int cint;
+			// std::cin >> cint;
+			//rmv. std::cout << "after mlpSolver" << std::endl;
+		  }
+
+		else 
+
+		  {	
+
 		// associate PluginAtom instances with
 		// ExternalAtom instances (in the IDB)
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
@@ -441,6 +475,8 @@ int main(int argc, char *argv[])
 		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
 		// (individual model output should happen here)
 		pctx.evaluate();
+
+		} // end if (mlp) else ...
 
 		// finalization plugin/dlvhex hooks (for accumulating model processing)
 		// (accumulated model output/query answering should happen here)
@@ -518,6 +554,10 @@ void processOptionsPrePlugin(
 		{ "graphviz", required_argument, &longid, 10 },
 		{ "keepauxpreds", no_argument, &longid, 11 },
 		{ "nofacts", no_argument, &longid, 12 },
+		{ "mlp", no_argument, &longid, 13 },
+		{ "num", required_argument, &longid, 14 },
+		{ "forget", no_argument, &longid, 15 },
+		{ "split", no_argument, &longid, 16 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -749,6 +789,18 @@ void processOptionsPrePlugin(
 					break;
 				case 12:
 					pctx.config.setOption("NoFacts",1);
+					break;
+				case 13:
+					pctx.config.setOption("MLP",1);
+					break;
+				case 14:
+					pctx.config.setOption("NumberOfModels",atoi(optarg));
+					break;
+				case 15:
+					pctx.config.setOption("Forget",1);
+					break;
+				case 16:
+					pctx.config.setOption("Split",1);
 					break;
 				}
 			break;

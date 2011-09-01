@@ -1,0 +1,16 @@
+#module(main,[]).
+q(a).
+q(b).
+q(c).
+callNext :- @p1[q]::callNext.
+
+#module(p1,[q1/1]).
+q1i(X) v q1i(Y) :- q1(X), q1(Y), X!=Y.
+callP2 :- @p2[q1i]::callNext2.
+callNext :- @p1[q1i]::callNext.
+
+#module(p2,[q2/1]).
+q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y.
+callNext2 :- @p2[q2i]::callNext2.
+
+

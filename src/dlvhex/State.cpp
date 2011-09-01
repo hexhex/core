@@ -58,6 +58,8 @@
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
 #include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/SafetyChecker.h"
+#include "dlvhex/ModuleSyntaxChecker.hpp"
+#include "dlvhex/MLPSolver.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -98,6 +100,23 @@ void State::changeState(ProgramCtx* ctx, StatePtr s)
   ctx->changeState(s);
 }
 
+/*
+void State::showPlugins(ProgramCtx*) { }
+void State::convert(ProgramCtx*) { }
+void State::parse(ProgramCtx*) { }
+void State::syntaxCheck(ProgramCtx*) { }
+void State::rewriteEDBIDB(ProgramCtx*) { }
+void State::optimizeEDBDependencyGraph(ProgramCtx*) {}
+void State::createComponentGraph(ProgramCtx*) {}
+void State::createEvalGraph(ProgramCtx*) {}
+void State::configureModelBuilder(ProgramCtx*) {}
+void State::createDependencyGraph(ProgramCtx*) { }
+void State::safetyCheck(ProgramCtx*) { }
+void State::strongSafetyCheck(ProgramCtx*) { }
+void State::evaluate(ProgramCtx*) { }
+void State::postProcess(ProgramCtx*) { } 
+*/
+
 // each of these functions skips to the "failureState" and executes the executed function on it
 // this is useful for having optional states
 // if no failureState is given, an exception is raised
@@ -124,6 +143,8 @@ void State::changeState(ProgramCtx* ctx, StatePtr s)
 STATE_FUNC_DEFAULT_IMPL(showPlugins);
 STATE_FUNC_DEFAULT_IMPL(convert);
 STATE_FUNC_DEFAULT_IMPL(parse);
+STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
+STATE_FUNC_DEFAULT_IMPL(mlpSolver);
 STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
 STATE_FUNC_DEFAULT_IMPL(safetyCheck);
 STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
@@ -478,10 +499,57 @@ removeNamespaces()
     LOG(INFO,"parsed EDB:");
     Logger::Instance().stream() << *(ctx->edb) << std::endl;
 	}
+  if( ctx->config.getOption("MLP") ) 
+    {
+      //rmv. std::cout << "[State.cpp] got an MLP option" << std::endl;
+      StatePtr next(new ModuleSyntaxCheckState);
+      changeState(ctx, next);
+    }
+  else 
+    {
+      //rmv. std::cout << "[State.cpp] have no MLP option" << std::endl;
+      StatePtr next(new RewriteEDBIDBState);
+      changeState(ctx, next);
+    }
+}
 
-  StatePtr next(new RewriteEDBIDBState);
+MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
+// ModuleSyntaxChecker ..
+void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
+{
+  //rmv. std::cout << "[State.cpp] entering ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
+  ModuleSyntaxChecker sC(*ctx);
+  bool success = sC.verifySyntax();
+  //rmv. std::cout << "[State.cpp] after verifySyntax: " << success << std::endl;
+  if (success)
+    {
+      StatePtr next(new MLPSolverState);
+      changeState(ctx, next);
+    }
+  else
+    {
+      std::cout << "Does not solve the MLP because of syntax error" << std::endl;
+      StatePtr next(new PostProcessState);
+      changeState(ctx, next);
+    }
+  //rmv. std::cout << "[State.cpp] leaving ModuleSyntaxCheckState::moduleSyntaxCheck" << std::endl;
+}
+
+MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);
+void MLPSolverState::mlpSolver(ProgramCtx* ctx)
+{
+  MLPSolver m(*ctx);
+  m.setNASReturned(ctx->config.getOption("NumberOfModels"));
+  m.setPrintLevel(ctx->config.getOption("Verbose"));
+  m.setForget(ctx->config.getOption("Forget"));
+  m.setInstSplitting(ctx->config.getOption("Split"));
+  m.solve();
+  StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }
+
+
 
 OPTIONAL_STATE_CONSTRUCTOR(RewriteEDBIDBState,SafetyCheckState);
 

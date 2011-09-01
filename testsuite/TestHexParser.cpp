@@ -40,6 +40,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #define LOG_REGISTRY_PROGRAM(ctx) \
   LOG(INFO,*ctx.registry()); \
@@ -63,6 +64,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   ss <<
     "a. b. c(d,e)." << std::endl <<
     "f(X) v b :- g(X), not h(X,X)." << std::endl;
+
   InputProviderPtr ip(new InputProvider);
   ip->addStreamInput(ss, "testinput");
   ModuleHexParser parser;
@@ -88,7 +90,8 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
   BOOST_REQUIRE(ctx.idb.size() == 1);
   {
     const Rule& r = ctx.registry()->rules.getByID(ctx.idb[0]);
-    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ));
+    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ ));
+//    BOOST_CHECK(r.kind == (ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ | ID::PROPERTY_RULE_MODATOMS));
     BOOST_CHECK(r.weight == ID_FAIL);
     BOOST_CHECK(r.level == ID_FAIL);
     BOOST_REQUIRE(r.head.size() == 2);
@@ -103,6 +106,7 @@ BOOST_AUTO_TEST_CASE(testHexParserSimple)
     }
   }
 }
+
 
 BOOST_AUTO_TEST_CASE(testHexParserConstraint) 
 {
@@ -365,3 +369,4 @@ BOOST_AUTO_TEST_CASE(testHexParserExternalAtoms)
     }
   }
 }
+

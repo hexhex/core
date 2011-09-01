@@ -33,6 +33,34 @@
 	* examples/tests/README.txt: Likewise.(...)
 	* examples/tests/dlvhextests.test: Likewise.(...)
 
+2011-08-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammar.tcc: Optimized parsing condition.
+
+	* include/dlvhex/HexGrammar.h: Correctly parsing module input list. Updated with the new parser. Working revision.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* src/dlvhex/HexGrammar.cpp: Likewise.
+	* testsuite/TestHexParser.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-08-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleTable.hpp: Renaming predicates in module body (non-working revision, yet).
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* testsuite/TestHexParser.cpp: Likewise.
+
+	* include/dlvhex/HexGrammar.h: Parsing module header (non-working revision, yet).
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* testsuite/TestHexParser.cpp: Likewise.
+
+	* include/dlvhex/HexGrammar.h: Parsing predicate. Differentiation between predicates and terms.
+	* include/dlvhex/PredicateTable.hpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+
 2011-08-25  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/HexGrammar.tcc: Need to use hold[] directive for this special rule.
@@ -55,10 +83,28 @@
 	* src/dlvhex/DependencyGraphFull.cpp: Likewise.
 	* src/dlvhex/ComponentGraph.cpp: Likewise.
 
+2011-08-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* cheatsheet: Cheatsheet for installing TD-MLP.
+
+	* include/dlvhex/MLPSolver.hpp: Cleaning up.
+
+2011-08-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Richer error messages.
+
 2011-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/GuessAndCheckModelGenerator.cpp: Fixed TODO in G&C Model Generator.
 	* src/dlvhex/State.cpp: Made warning message more precise.
+
+2011-08-08 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/getFirstASData.sh: Get more detailed information for the first answer set found.
+
+2011-08-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/avgScript-all.sh: Get average data (more detail information) from random program experiments.
 
 2011-08-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
@@ -206,13 +252,36 @@
 
 	* TODO: Update.
 
+2011-07-23 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixed largest bottom.
+
+2011-07-22 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Log time analysis.
+
+	* generator/createBigEvenOdd.sh: Create a big benchmarks for Even-Odd program.
+
+	* include/dlvhex/MLPSolver.hpp: Tests for -n and --split.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/tests/module-EvenOdd-n1.out: Likewise.
+
 2011-07-13  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update.
 
-2010-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+2011-06-27 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* testsuite/TestHexParserModule.cpp: Relative path for examples.
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
-	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+	* testsuite/Makefile.am: Fixed include directory of external solver.
+
+2011-06-27  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* testsuite/TestMLPSolver.cpp: Removed some hard-coded relative
+	paths, missing bits and pieces are for Tri to fix.
+
 
 2011-06-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
@@ -230,9 +299,569 @@
 	* examples/tests/query_hex_ground1ca.stdout: Remove whitespace in
 	wc output. (ticket #46)
 
+2011-06-17 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: Test different available solver.
+
+	* include/dlvhex/MLPSolver.hpp: Not always assuming clingo.
+
+2011-06-16 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Incorporating libclingo as the backend solver.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* src/dlvhex/dlvhex.cpp: Bugfix for libclingo.
+
+	* include/dlvhex/MLPSolver.hpp: Collecting the largest bottom and turned off some log-printings.
+
+2011-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Minimize branching in the beginning.
+
+2011-06-07 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Finishing Instantiation splitting.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+2011-06-06 Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Implementing instantiation splitting: using Top data structure.
+
+	* include/dlvhex/MLPSolver.hpp: Implement collecting the largest bottom.
+
+
 2011-05-30  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* configure.ac: Check for g++ >= 4.3.
+
+2011-05-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fix a little bug in printing M. 
+
+2011-05-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Benchmark-Summary.zip: Delete old benchmark files.
+	* generator/Benchmark-Stats.zip: Likewise.
+	* generator/Benchmark-Module.zip: Likewise.
+
+2011-05-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/forLatex.sh: Fix a small bug about opt.
+
+2011-05-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/forLatex.sh: Automatic latex table generation. 
+
+	* generator/summaryAT.sh: Detect additional message for mem-out.
+
+2011-05-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Module.cpp: Smarter random arity predicate.
+
+2011-05-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genTopologyCore.sh: Adding a new big parameter setting.
+
+	* generator/runScriptAT.sh: Automatically kill left-over dlv.
+
+	* generator/Module.cpp: Incorporating higher arity predicate.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing some bug when print some interpretation.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-05-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/summaryAT.sh: Handle time-out and mem-out.
+	* generator/summaryStatsAT.sh: Likewise.
+
+	* generator/stats.awk: Fixed standard deviation computation when handling one entry.
+
+	* generator/runScriptET.sh: Fixing the prompted message.
+	* generator/summaryAT.sh: Likewise.
+
+	* generator/genTopologyCore.sh: Create a new, bigger testsuite.
+
+	* generator/runScriptAT.sh: Change memory limit up to 2Gb.
+
+2011-04-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genTopologyCore.sh: Fixing the prompted message.
+	* generator/runScriptAT.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+	* generator/summaryAT.sh: Likewise.
+
+	* generator/runScriptAT.sh: Adding interactive dialog if the result dir is exist.
+	* generator/genTopologyCore.sh: Likewise.
+	* generator/summaryAT.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing some references.
+
+2011-04-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding functional time information and fixing some references.
+
+2011-04-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Benchmark-Module.zip: Adding benchmark files.
+	* generator/Benchmark-Stats.zip: Likewise.
+	* generator/Benchmark-Summary.zip: Likewise.
+
+
+	* generator/runScriptAT.sh: Put command as the 1st param.
+	* generator/runScriptET.sh: Likewise.
+
+2011-04-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genTopologyCore.sh: Fixing bug in creating result directory.
+
+	* generator/plotting.sh: Generate plotting time data for a parameter setting.
+
+	* generator/summaryAT.sh: Create summary information for all topology.
+	* generator/summaryStatsAT.sh: Likewise.
+
+	* generator/runScriptAT.sh: Run benchmark for all topology.
+
+	* generator/genParameterSetting.sh: Adding comments.
+	* generator/genTopology.sh: Likewise.
+	* generator/summaryET.sh: Likewise.
+	* generator/summaryStatsET.sh: Likewise.
+	* generator/runScriptET.sh: Likewise.
+
+	* generator/genTopologyCore.sh: Adding looping on constant, generate for all topology.
+
+	* generator/summaryET.sh: Adding comments.
+	* generator/runScriptET.sh: Likewise.
+
+	* generator/plotting.sh: Create plotting data for gnuplot.
+
+	* generator/summaryStatsET.sh: Creating statistical information from summary.
+	* generator/stats.awk: Likewise.
+
+2011-04-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/summaryET.sh: Create file summary for each parameter setting.
+
+	* generator/runScriptET.sh: Run benchmark for a topology.
+
+	* generator/genTopologyCore.sh: Renaming from generator/genExampleCore.sh.
+
+	* generator/genTopology.sh: Renaming from generator/genExample.sh.
+
+	* include/dlvhex/MLPSolver.hpp: Add option --forget (forgetting instantiation)
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+2011-04-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genExampleCore.sh: Generate 'interesting' examples.
+
+2011-04-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/genParameterSetting.sh: Generate a complete benchmark suite for a topology.
+	* generator/genExample.sh: Likewise.
+
+	* generator/Module.cpp: Use numModules instead of numDiamond in Diamond topology.
+
+	* include/dlvhex/MLPSolver.hpp: Choose the fastest dataset for A (using vector only).
+
+	* generator/gen.sh: Adding Tree topology.
+	* generator/Module.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Adding #callToDLV and #ASFromDLV information.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-04-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/Module.cpp: Introducing at most instead of exactly for parameters + formal input more than one predicate.
+
+	* include/dlvhex/MLPSolver.hpp: Including time information in STATS.
+
+	* include/dlvhex/RuleTable.hpp: To not insert previously existed rule.
+
+2011-04-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Put data structure for A in a separate file.
+	* include/dlvhex/IDSetContainer.hpp: Likewise.
+
+2011-04-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixed stats printing information.
+
+2011-04-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Optimize instantiation information: store it on ogatoms, delete MFlag.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/ID.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* include/dlvhex/Table.hpp: Likewise.
+
+2011-04-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Atoms.hpp: Store actual module name on the module atom.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Store the same rule only once.
+
+	* include/dlvhex/RuleTable.hpp: Adding hashed index to the RuleTable.
+
+2011-04-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/gen.sh: Adding diamond and random topology.
+	* generator/Module.cpp: Likewise.
+	* generator/makefile: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Use registry for solve() rather than ctx.
+
+	* include/dlvhex/Logger.hpp: Printing additional statistical information.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* generator/gen.sh: Likewise.
+
+2011-04-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/gen.sh: Implement a more general script to generate examples.
+
+	* generator/Module.cpp: Generate example for line, star, and ring topology.
+	* generator/makefile: Likewise.
+
+2011-04-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Optimization on ASPSolver object and printing information.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+	* examples/module-Complex.mlp: Adding an example for a more complex module call.
+
+2011-04-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* generator/ModuleStar.cpp: Generate examples of star topology.
+	* generator/makefile: Likewise.
+	* generator/gen.sh: Likewise.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Adapting terms and preds to mlp or not mlp.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Put atom with second order variable in onatoms.
+
+	* include/dlvhex/MLPSolver.hpp: Refactoring stack, store only once for each answer set result.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+	* examples/tests/module-EvenOddTwoMain.out: Likewise.
+	* examples/tests/module-EvenOdd.out: Likewise.
+
+	* src/dlvhex/dlvhex.cpp: Modify --n to --num
+
+2011-04-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Extend run-dlvhex-tests to work on mlp test suite.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+	* examples/module-EvenOddTwoCalls1.mlp: Likewise.
+	* examples/module-EvenOddTwoCalls2.mlp: Likewise.
+	* examples/module-EvenOdd.mlp: Likewise.
+	* examples/tests/module-Hanoi.out: Likewise.
+	* examples/tests/module-EvenOddTwoMain.out: Likewise.
+	* examples/tests/module-ABBA.out: Likewise.
+	* examples/tests/module-Disjunction.out: Likewise.
+	* examples/tests/module-Reachability.out: Likewise.
+	* examples/tests/module-Cardinality.out: Likewise.
+	* examples/tests/module-Negation.out: Likewise.
+	* examples/tests/module-Complex.out: Likewise.
+	* examples/tests/module-Indirection.out: Likewise.
+	* examples/tests/module-EvenOddTwoCalls1.out: Likewise.
+	* examples/tests/module-EvenOddTwoCalls2.out: Likewise.
+	* examples/tests/module-Not-ic-Stratified.stderr: Likewise.
+	* examples/tests/module-i-Stratified-2.out: Likewise.
+	* examples/tests/module-EvenOdd.out: Likewise.
+	* examples/tests/module-i-Stratified.out: Likewise.
+	* examples/tests/module-Cs.out: Likewise.
+	* examples/tests/module-AFin.out: Likewise.
+	* examples/tests/module-Inconsistent.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/module-EvenOddTwoMain.mlp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Optimizing on how to store module instantiations.
+
+	* include/dlvhex/MLPSolver.hpp: Optimize setMFlag
+
+2011-04-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Clean up useless log information.
+
+2011-03-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in storing registry, now memory-wise optimized.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-03-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Hashing the Interpretation.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
+	* src/dlvhex/postpross.sh: Adding post-processing script for call-graph output and answer set.
+
+	* include/dlvhex/MLPSolver.hpp: Fixed some printing information for post-processing.
+
+2011-03-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestHexParserModule.cpp: Change examples extension to *.mlp.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Remove parameter in solve(), remove deprecated code, move printing method in the end.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Print log information and call graph in verbose level 2.
+
+2011-03-24  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding option --n to restrict the number of answer sets returned.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-03-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Adding function to easily print idb.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+2011-03-19  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: Add test cases for i-stratified program and print, also print the log and graphviz output.
+	* examples/module-i-Stratified-2.mlp: Likewise.
+	* examples/module-i-Stratified.mlp: Likewise.
+
+	* examples/module-Not-ic-Stratified.hex: Modified to not-i-stratified.
+
+	* include/dlvhex/MLPSolver.hpp: Modified the solver to solve an i-stratified program.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Impose an exception for a duplicate module name.
+
+	* testsuite/TestMLPSolver.cpp: Adding a test case for C contains more than one element when enter comp().
+	* examples/module-Cs.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Updating the answer set counter printing.
+
+2011-03-18  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: Adding a test case to add (and retrieve) fin from A.
+	* examples/module-AFin.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in setting fin to A and print useful information into a log file.
+
+2011-03-17  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in smallest ILL.
+	* include/dlvhex/Logger.hpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Adding a test case for indirect rule to collect the bottom.
+	* examples/module-Indirection.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in collecting bottom.
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Allowing empty predicate inputs.
+
+2011-03-15  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Logger.hpp: Fixed some logging information
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Add tower of hanoi examples.
+	* examples/module-Hanoi.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Producing call graph.
+
+	* testsuite/TestHexParserModule.cpp: Completing the test cases with throw requirement.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in collecting Answer Set.
+
+2011-03-13  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Logger.hpp: Introducing MLPSolver state into dlvhex.
+	* include/dlvhex/State.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Throw an exception on not ic stratified program.
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Throw an exception on syntax check error.
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: First approach to incorporate MLPSolver into dlvhex.
+	* include/dlvhex/State.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/dlvhex.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+2011-03-12  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Printing AS result without prefix.
+	* include/dlvhex/Printer.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* include/dlvhex/Logger.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+	* src/dlvhex/Printer.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Fixed some testcases.
+
+	* src/dlvhex/dlvhex.cpp: Adding option --mlp.
+
+	* include/dlvhex/MLPSolver.hpp: Fixed output formatting, minus eliminating prefix.
+
+2011-03-11  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: Adding more examples about disjunctive and naf
+	* examples/module-ABBA.hex: Likewise.
+	* examples/module-Disjunction.hex: Likewise.
+	* examples/module-Negation.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug about naf in replacedModuleAtoms
+
+2011-03-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Converted comp from recursion into loop.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Adding an example about how to compare the cardinality between sets.
+	* examples/module-Cardinality.hex: Likewise.
+
+2011-03-07  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/PredicateTable.hpp: Output the answer set in a new format.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Adding S in the instantiation, remove T from M (before call instatiation).
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Adding an example about reachability and test non-ground module atom.
+	* examples/module-Reachability.hex: Likewise.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fixing bug in storing predicate arity and user_pred_tuple.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Fixing bug in storing module atom.
+
+	* testsuite/TestMLPSolver.cpp: Adding test cases for more than one module call in one module.
+	* examples/module1-Two.hex: Likewise.
+	* examples/module2-Two.hex: Likewise.
+
+2011-03-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Logger.hpp: Cleaning some printing Information.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* testsuite/TestMLPSolver.cpp: Adding more testcases.
+	* examples/module-Inconsistent.hex: Likewise.
+	* examples/module-Not-ic-Stratified.hex: Likewise.
+	* examples/module1-Big.hex: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Giving return value whether ic-stratified or not.
+
+	* src/dlvhex/Interpretation.cpp: print edb, one fact each line 
+
+	* include/dlvhex/MLPSolver.hpp: fixing bug on finding the answer sets (because A is not reverted)
+
+2011-03-04  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* examples/module1-MainModules.hex: Handling more than one main module.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing rewrite and completing the recursion.
+
+2011-03-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: Completing rewrite.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
+	* src/dlvhex/Interpretation.cpp: Likewise.
+
+	* include/dlvhex/ID.hpp: Adding kind to take out property rule modatoms.
+
+	* include/dlvhex/MLPSolver.hpp: Finishing comp.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+
+
+2011-03-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/Interpretation.hpp: adding setRegistry to Interpretation
+
+2011-03-01  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleTable.hpp: Implement some helper function for part c.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* include/dlvhex/Interpretation.hpp: Likewise.
+
+2011-02-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Fixing bug in the renaming output predicate module atom.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Implementing restriction and renaming.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
+	* include/dlvhex/MLPSolver.hpp: Fixing bug in bottom.
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing renaming for the output predicate in the module atom.
+
+	* testsuite/Makefile.am: fixing the test case for MLPSolver.
+
+	* include/dlvhex/MLPSolver.hpp: implement bottom and ans.
+
+2011-02-25  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestMLPSolver.cpp: updating comments.
+
+	* include/dlvhex/MLPSolver.hpp: implement smallest ILL.
+
+2011-02-23  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: implement rewrite.
+
+	* include/dlvhex/ID.hpp: modified the ID for module atom, adapted to isOrdinaryAtom() method.
+	* src/dlvhex/ID.cpp: Likewise.
+
+2011-02-06  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: separated the method to mark the External rule and Module rule.
+
+2011-02-05  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/MLPSolver.hpp: adding MLPSolver.
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Likewise.
+	* include/dlvhex/Registry.hpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+
+	* example/module1.hex: modified example for mlp.
+
+	* testsuite/Makefile.am: add test case for the MLP solver.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
 
 2011-01-31  Peter Schueller  <ps@kr.tuwien.ac.at>
 
@@ -244,9 +873,202 @@
 
 	* src/dlvhex/PluginContainer.cpp: More verbose plugin loading.
 
+2010-12-31  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ProgramCtx.h: substitute edb and idb by edbList and idbList
+	* src/dlvhex/HexParser.cpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+
+	* testsuite/Makefile.am: remove declaration of ModuleHeaderTable (old version)
+	* include/dlvhex/ProgramCtx.h: Likewise.
+
+	* src/dlvhex/ID.cpp: fixing how term predicate is printed
+
+	* include/dlvhex/ModuleTable.hpp: new way of module syntax checking using new version of module table
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* include/dlvhex/Module.hpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: Likewise.
+
+2010-12-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: change termz to terms
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+
+2010-12-21  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ProgramCtx.h: include boost/functional/factory.hpp compiled
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: extend DLVresultParserDriver to support terms and preds table
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise
+	* testsuite/TestASPSolver.cpp: Likewise
+
+	* include/dlvhex/Module.hpp: adding module structure and module table 
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/Predicate.hpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+2010-12-20  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/TermTable.hpp: separated term table and pred table 
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* src/dlvhex/TestHexParserModule.cpp: Likewise.
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* src/dlvhex/ID.cpp: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+
+	* include/dlvhex/ID.hpp: adding idb list, edb list, and predicate list 
+	* include/dlvhex/ProgramCtx.h: Likewise.
+
+	* include/dlvhex/ID.hpp: Separating predicate from term table 
+	* include/dlvhex/Predicate.hpp: Likewise.
+	* include/dlvhex/PredicateTable.hpp: Likewise.
+
 2010-12-17  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* examples/comments.hex: Add testcase for comment parsing.
+
+2010-12-16  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammarPTToASTConverter.cpp: change the way predicate namespaced
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+
+2010-12-14  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.h: adding method verifySyntax that take care all of the process of module syntax check
+	* src/dlvhex/ModuleSyntaxChecker.cpp: adding method verifySyntax that take care all of the process of module syntax check 
+	* testsuite/TestHexParserModule.cpp: Adding testcases and supported example files 
+	* examples/module1.hex: Likewise.
+	* examples/module2.hex: Likewise.
+	* examples/module3.hex: Likewise.
+	* examples/module1-DiffArity.hex: Likewise.
+	* examples/module1-NotExist.hex: Likewise.
+	* examples/module2-DiffArity.hex: Likewise.
+ 	* examples/module2-TooFew.hex: Likewise.
+ 	* examples/module2-TooMany.hex: Likewise.
+	* examples/module3-DiffArity.hex: Likewise.
+	* examples/module3-NotExist.hex: Likewise.
+	* examples/module2-SwapArity.hex: Likewise.
+	* examples/module3-SwapArity.hex: Likewise.
+
+2010-12-10  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/SyntaxChecker.h: deleted
+	* src/dlvhex/SyntaxChecker.cpp: deleted
+	* include/dlvhex/ModuleSyntaxChecker.h: update from SyntaxChecker.h, verifying output predicate module call using outputAtom
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* src/dlvhex/ModuleHeaderTable.cpp: change outputpredicate in ModuleAtom into outputAtom
+	* include/dlvhex/State.h: change SyntaxCheckState into ModuleSyntaxCheckState, and syntaxCheck into ModuleSyntaxCheck
+	* src/dlvhex/State.cpp: Likewise.
+	* include/dlvhex/HexGrammarPTToASTConverter.h: fixing: namepace only for predicate, change module output into atom
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: change ModOutput into atom
+	* include/dlvhex/HexGrammar.h: Likewise.
+	* src/dlvhex/Atoms.cpp: change the way module atom printed
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: change SyntaxChecker into ModuleSyntaxChecker
+
+	* include/dlvhex/ProgramCtx.h: move mHT out of Registry, add SyntaxCheckState into State 
+	* include/dlvhex/State.h: Likewise.
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* src/dlvhex/State.cpp: Likewise.
+
+2010-12-09  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/SyntaxChecker.h (new addition): syntax checking mechanism for mlp 
+	* src/dlvhex/SyntaxChecker.cpp (new addition): Likewise.
+	* include/dlvhex/ModuleAtomTable.h: adding getSize() and getAllByAddress()
+	* src/dlvhex/ModuleAtomTable.cpp: Likewise.
+	* include/dlvhex/ProgramCtx.h: adding ModuleHeaderTable mHT in registry
+	* src/dlvhex/ProgramCtx.cpp: Likewise.
+	* include/dlvhex/ModuleHeaderTable.h: adding typedef, adding method getPredInputs and getModuleSet
+	* src/dlvhex/ModuleHeaderTable.cpp: adding method getPredInputs and getModuleSet
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding namespacing in createTerm_Helper
+	* src/dlvhex/TestHexParserModule.cpp: adding SyntaxChecker
+
+2010-12-08  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* src/dlvhex/ModuleHeaderTable.cpp: implementing data structures for module
+	* include/dlvhex/ModuleHeaderTable.h: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: storing module header, edb, and idb for each module
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
+	* testsuite/Makefile.am: adapting TestHexParserModule to ModuleHeaderTable
+
+2010-12-03  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.h: adding syntax checking for duplicating predicate input 
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* testsuite/TestModuleSyntaxChecker.cpp: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
+2010-11-30  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.h: updating: retrieve predSet by sequenced
+	* src/dlvhex/ModuleSyntaxChecker.cpp: Likewise.
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: fixing bug in detecting module header
+	* testsuite/TestHexParserModule.cpp: updating test case for the syntax checker
+
+	* include/dlvhex/ModuleSyntaxChecker.h: class for syntactic checking of modular logic programs
+	* src/dlvhex/ModuleSyntaxChecker.cpp: class implementation for syntactic checking of modular logic programs
+	* include/dlvhex/HexGrammarPTToASTConverter.h: incorporate syntactic checking of modular logic programs
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: Likewise.
+	* testsuite/TestHexParserModule.cpp: update testing case for the syntactic checking of modular logic programs
+
+2010-11-29  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* src/dlvhex/ModuleSyntaxChecker.cpp: handle the syntactic checking of modular logic programs
+	* Makefile.am: including ModuleSyntaxChecker.cpp
+
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: identifying the elements of module header
+	* include/dlvhex/HexGrammar.h: adding tag to pred_decl and pred_list
+
+2010-11-28  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* testsuite/TestHexParserModule.cpp: add a test case for the 'even' program which consists of 3 module 
+
+2010-11-27  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+	
+	* src/dlvhex/TestHexParserModule.cpp: add module header test
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: add method if module header is found (doModuleHeader)
+	* include/dlvhex/HexGrammarPTToASTConverter.h: add method if module header is found (doModuleHeader)
+
+	* include/dlvhex/HexGrammar.tcc: allowing empty module inputs and module output with 0 arity
+	* include/dlvhex/Atoms.hpp: fixing struct ModuleAtom
+	* src/dlvhex/Atoms.cpp: fixing print output ModuleAtom
+	* src/dlvhex/ProgramCtx.cpp: fixing print output ModuleAtom
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: updating createModAtomFromModAtom
+	* testsuite/TestHexParserModule.cpp: updating test cases for module output
+
+	* testsuite/TestHexParserModule.cpp: testing whether the module atom is registered
+	* src/dlvhex/HexGrammarPTToASTConverter.cpp: adding createModAtomFromModAtom
+	* include/dlvhex/HexGrammarPTToASTConverter.h: Likewise.
+	* include/dlvhex/ProgramCtx.h: registering module atoms
+	* include/dlvhex/Atoms.hpp: add struct ModuleAtom
+	* include/dlvhex/ModuleAtomTable.hpp: table for storing module atoms (copy paste from ExternalAtomTable with renaming)
+
+2010-11-26  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* ID-Concept.txt: adding definition for module atom
+	* include/dlvhex/ID.hpp: Likewise.
+	* src/dlvhex/ID.hpp: Likewise.
+
+	* include/dlvhex/HexGrammar.tcc: put Module atom in literal
+	* testsuite/TestHexParserModule.cpp: test case for Module atom
+	* Makefile.am: defining test: TestHexParserModule
+	* Committed revision 2478.
+
+	* testsuite/TestHexParserModule.cpp: adding test to parse module header
+
+2010-11-22  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/HexGrammar.h: adding grammar for module atom
+	* include/dlvhex/HexGrammar.tcc: Likewise.
 
 2010-11-19  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
@@ -668,6 +1490,10 @@
 	* bootstrap.sh: Add sanity checks for the autotool commands.
 
 	* AUTHORS: Add Peter to the list of authors.
+
+2010-06-07  Matthias Steindl  <steindlmatthias@gmx.at>
+
+	* AUTHORS: Add Peter & me to the list of authors.
 
 2010-05-14  Peter Schueller  <ps@kr.tuwien.ac.at>
 
