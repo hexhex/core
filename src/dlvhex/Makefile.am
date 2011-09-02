@@ -76,7 +76,8 @@ libdlvhexbase_la_SOURCES = \
 
 # dlvhex MLP component
 libmlpsolver_la_SOURCES = \
-    MLPSolver.cpp 
+    MLPSolver.cpp \
+    MLPSyntaxChecker.cpp 
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \

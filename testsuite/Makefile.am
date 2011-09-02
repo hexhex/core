@@ -170,11 +170,14 @@ TestDependencyGraph_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestHexParser_SOURCES = $(top_srcdir)/testsuite/TestHexParser.cpp
 TestHexParser_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
-TestHexParserModule_SOURCES = $(top_srcdir)/testsuite/TestHexParserModule.cpp 
+TestHexParserModule_SOURCES = \
+	$(top_srcdir)/testsuite/TestHexParserModule.cpp \
+	$(top_srcdir)/src/dlvhex/MLPSyntaxChecker.cpp
 TestHexParserModule_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 
 TestMLPSolver_SOURCES = \
 	$(top_srcdir)/testsuite/TestMLPSolver.cpp \
+	$(top_srcdir)/src/dlvhex/MLPSyntaxChecker.cpp \
 	$(top_srcdir)/src/dlvhex/MLPSolver.cpp
 TestMLPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 TestMLPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 

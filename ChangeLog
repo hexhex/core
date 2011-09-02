@@ -1,3 +1,12 @@
+2011-09-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
+
+	* include/dlvhex/ModuleSyntaxChecker.hpp: Separates ModuleSyntaxChecker.hpp into MLPSyntaxChekcer.hpp and MLPSyntaxChekcer.cpp.
+	* include/dlvhex/MLPSyntaxChecker.hpp: Likewise.
+	* include/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/MLPSyntaxChecker.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
 2011-09-02  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* src/dlvhex/MLPSolver.cpp (printCallGraph): Fix clang FTBFS

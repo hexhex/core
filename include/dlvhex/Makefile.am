@@ -42,6 +42,7 @@ pkginclude_HEADERS = \
   Interpretation.hpp \
   Logger.hpp \
   MLPSolver.hpp \
+  MLPSyntaxChecker.hpp \
   Makefile.am \
   Makefile.in \
   ModelBuilder.hpp \
@@ -49,7 +50,6 @@ pkginclude_HEADERS = \
   ModelGraph.hpp \
   Module.hpp \
   ModuleAtomTable.hpp \
-  ModuleSyntaxChecker.hpp \
   ModuleTable.hpp \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \

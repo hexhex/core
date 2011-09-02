@@ -1,63 +1,54 @@
+/* dlvhex -- Answer-Set Programming with external interfaces.
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
+ * 
+ * This file is part of dlvhex.
+ *
+ * dlvhex is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * dlvhex is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with dlvhex; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
+ */
+
+
 /**
- * @file   ModuleSyntaxChecker.h
+ * @file   MLPSolver.h
  * @author Tri Kurniawan Wijaya
- * @date   Wed Dec 8 09:53:00 CET 2010
+ * @date   Fri 02 Sep 2011 02:18:37 PM CEST 
  * 
  * @brief  Checking syntax for modular logic programs
  */
 
-#if !defined(_DLVHEX_MODULESYNTAXCHECKER_H)
-#define _DLVHEX_MODULESYNTAXCHECKER_H
-
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/ProgramCtx.h"
-//#include "dlvhex/ModuleTable.hpp"
-
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/identity.hpp>
-#include <iostream>
-#include <iterator>
-#include <string>
+#include "dlvhex/MLPSyntaxChecker.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-// the complete class to perform syntactic checking on the modular logic programs
-
-class DLVHEX_EXPORT ModuleSyntaxChecker{
-  private:
-    ProgramCtx ctx;
-    inline int getArity(std::string predName);
-    inline int getArity(ID idp);
-    inline std::string getStringBeforeSeparator(const std::string& s);
-    inline std::string getStringAfterSeparator(const std::string& s);
-    // bool verifyPredInputsModuleHeader(ModuleTable::modStruct module);
-    // bool verifyPredInputsAllModuleHeader();
-    inline bool verifyPredInputsArityModuleCall(ID module, Tuple tuple);
-    inline bool verifyPredOutputArityModuleCall(ID module, ID outputpredicate);
-    inline bool verifyAllModuleCall();
-
-  public:
-    inline ModuleSyntaxChecker(ProgramCtx& ctx1);
-    // void printModuleHeaderTable(); 
-    // TODO inline void printAllModuleCalls();
-    inline bool verifySyntax();
-};
 
 ModuleSyntaxChecker::ModuleSyntaxChecker(ProgramCtx& ctx1)
 {
   ctx = ctx1;
 }
 
+
+
 // get the arity of the predicate
 int ModuleSyntaxChecker::getArity(std::string predName)
 {
   return ctx.registry()->preds.getByString(predName).arity;
 }
+
+
 
 // get the arity of predicate idp
 int ModuleSyntaxChecker::getArity(ID idp)
@@ -69,6 +60,8 @@ int ModuleSyntaxChecker::getArity(ID idp)
   return ctx.registry()->preds.getByID(idp).arity;
 }
 
+
+
 // s = "p1.p2" will return "p1"
 std::string ModuleSyntaxChecker::getStringBeforeSeparator(const std::string& s)
 {
@@ -76,12 +69,16 @@ std::string ModuleSyntaxChecker::getStringBeforeSeparator(const std::string& s)
   return s.substr(0, n);
 }
 
+
+
 // s = "p1.p2" will return "p2"
 std::string ModuleSyntaxChecker::getStringAfterSeparator(const std::string& s)
 {
   int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(n+2, s.length());
 }
+
+
 
 // for example:
 // module = p1.p2
@@ -93,15 +90,6 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
   // get the module to call
   std::string moduleFullName = ctx.registry()->preds.getByID(module).symbol;
   std::string moduleToCall = getStringAfterSeparator(moduleFullName);
-
-/*
-  ModuleHeaderTable::predSet predInputs; 
-  if ( ctx.mHT.getPredInputs(moduleToCall, predInputs) == false )
-    {
-      DBGLOG(DBG,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleFullName << "' not found");
-      return false;
-    }
-*/
 
   // get the module that is called
   const Module& moduleCalled = ctx.registry()->moduleTable.getModuleByName(moduleToCall);
@@ -153,6 +141,8 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
 
 }
 
+
+
 bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAtom) 
 {
   // get the module to call
@@ -182,7 +172,9 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
     }
 } 
 
-bool ModuleSyntaxChecker::verifyAllModuleCall()
+
+
+bool ModuleSyntaxChecker::verifyAllModuleCalls()
 {
   ModuleAtomTable::AddressIterator it, it_end;
   boost::tie(it, it_end) = ctx.registry()->matoms.getAllByAddress(); 
@@ -207,15 +199,19 @@ bool ModuleSyntaxChecker::verifyAllModuleCall()
   return true;
 }
 
+
 bool ModuleSyntaxChecker::verifySyntax()
 {
-  bool result = verifyAllModuleCall();
+  bool result = verifyAllModuleCalls();
   // successful verification?
   if( result ==  false )
     throw FatalError("MLP syntax error");
   return result;
 }
 
+
 DLVHEX_NAMESPACE_END
 
-#endif /* _DLVHEX_MODULESYNTAXCHECKER_H */
+// Local Variables:
+// mode: C++
+// End:
