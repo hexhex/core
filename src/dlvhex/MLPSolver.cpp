@@ -2174,7 +2174,7 @@ void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std:
 {
   // produce all module instantiation table
   std::ostringstream ss;
-  std::string vertexName[moduleInstTable.size()];
+  std::vector<std::string> vertexName(moduleInstTable.size());
   for (int i=0;i<moduleInstTable.size();i++)
     {
       ss.str("");
