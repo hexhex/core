@@ -1,5 +1,11 @@
 2011-09-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
+	* include/dlvhex/OrdinaryAtomTable.hpp: Freed OrdinaryAtomTable from Instantiation indexing.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/MLPSolver.hpp: Likewise.
+	* src/dlvhex/MLPSolver.cpp: Likewise.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 	* include/dlvhex/MLPSyntaxChecker.hpp: Fixed problem posed by deleting ModuleSyntaxChecker.hpp.
 	* src/dlvhex/MLPSyntaxChecker.cpp: Likewise.
 	* src/dlvhex/State.cpp: Likewise.

@@ -76,7 +76,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 
 class DLVHEX_EXPORT MLPSolver{
-  private:
 
     typedef Interpretation InterpretationType;
 
@@ -173,9 +172,9 @@ class DLVHEX_EXPORT MLPSolver{
 
     std::vector<ValueCallsType> path;
 
-    // int lastSizeOgatoms;
     ProgramCtx ctx;
     RegistryPtr registrySolver;
+
     void dataReset();
     bool foundCinPath(const ValueCallsType& C, const std::vector<ValueCallsType>& path, ValueCallsType& CPrev, int& PiSResult);
     int extractS(int PiS);
@@ -225,6 +224,11 @@ class DLVHEX_EXPORT MLPSolver{
     void updateTop(std::vector<IDSet>& Top, const Tuple& top);
     bool comp(ValueCallsType C); // return false if the program is not ic-stratified
 
+    // for instantiation - ogatoms indexing
+    std::vector<std::vector<ID> > instOgatoms;
+    int totalSizeInstOgatoms;       
+    const Tuple& getOgatomsInInst(int instIdx);
+
     std::ofstream ofsGraph;
     std::ofstream ofsLog;
     bool printProgramInformation;
@@ -268,6 +272,8 @@ class DLVHEX_EXPORT MLPSolver{
     void setInstSplitting(int n);
     void setPrintLevel(int level);
     bool solve(); // return false if the program is not ic-stratified
+
+  
 
 };
 

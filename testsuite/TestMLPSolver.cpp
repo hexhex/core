@@ -1041,7 +1041,6 @@ void testAll()
   testIStratified2Program<SolverSoftwareConfiguration>();
   testHanoiProgram<SolverSoftwareConfiguration>();
   testComplexProgram<SolverSoftwareConfiguration>();
-
 }
 
 

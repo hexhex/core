@@ -41,6 +41,7 @@ MLPSolver::MLPSolver(ProgramCtx& ctx1){
   nASReturned = 0;
   forget = 0;
   instSplitting = 0;
+  totalSizeInstOgatoms=0;
   ctx = ctx1;
   RegistryPtr R2(new Registry(*ctx.registry()) );
   registrySolver = R2;
@@ -57,6 +58,8 @@ void MLPSolver::dataReset()
   A.clear();
   M.reset( new Interpretation( registrySolver ));
   path.clear();
+  totalSizeInstOgatoms = 0;
+  instOgatoms.clear();
 }
 
 
@@ -335,13 +338,13 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxMI)
 }
 
 
+// instIdx: refer to the index of Mi/S in the moduleInstTable
+// intr: \bM
+// intrResult: Mi/S as the result
 void MLPSolver::createMiS(int instIdx, const InterpretationPtr& intr, InterpretationPtr& intrResult)
 {
-  // std::vector<std::vector<ID> > InstOgatomsIndex;
-  // update 
   intrResult->clear();
-  Tuple tuple;
-  registrySolver->ogatoms.getTupleByInstTag(instIdx, tuple);
+  const Tuple& tuple = getOgatomsInInst(instIdx);
   Tuple::const_iterator it = tuple.begin();
   while ( it != tuple.end() )
     {
@@ -2255,6 +2258,32 @@ void MLPSolver::printEdbIdb(const RegistryPtr& reg1, const InterpretationPtr& ed
 }
 
 
+
+const Tuple& MLPSolver::getOgatomsInInst(int instIdx){
+  // check the size of ogatoms, 
+  // whether we should update our indexing mechanisms
+  if ( registrySolver->ogatoms.getSize() > totalSizeInstOgatoms )
+    { 
+      // update instOgatoms
+      instOgatoms.resize( moduleInstTable.size() );	
+      for (int i=totalSizeInstOgatoms; i<registrySolver->ogatoms.getSize();i++ )
+	{
+	  const OrdinaryAtom& oa = registrySolver->ogatoms.getByAddress(i);	
+	  int n = oa.text.find( MODULEINSTSEPARATOR );
+	  if ( n != std::string::npos )
+	    { 
+	      // MODULEINSTSEPARATOR found
+	      std::string pref = oa.text.substr(0, n);
+	      pref = pref.substr( 1 );
+	      int instIdx = atoi( pref.c_str() );
+	      instOgatoms.at(instIdx).push_back( ID(oa.kind, i) );
+	    }
+
+	}
+      totalSizeInstOgatoms = registrySolver->ogatoms.getSize();
+    }
+  return instOgatoms.at(instIdx);
+}
 
 DLVHEX_NAMESPACE_END
 

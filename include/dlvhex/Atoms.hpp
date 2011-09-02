@@ -87,25 +87,21 @@ struct OrdinaryAtom:
   // TODO if we only need this for printing, we should generate it on-demand and save a lot of effort
   std::string text;
 
-  // this is needed to optimze localize the module instantiation (MLP case)
-  // in other words, to identify this ground atom belong to which instantiation
-  // w.r.t. instantiation index
-  int instTag;
-
   bool unifiesWith(const OrdinaryAtom& a) const;
 
   OrdinaryAtom(IDKind kind):
-    Atom(kind), text(), instTag(-1)
+    Atom(kind), text()
     { assert(ID(kind,0).isOrdinaryAtom()); }
   OrdinaryAtom(IDKind kind, const std::string& text):
-    Atom(kind), text(text), instTag(-1)
+    Atom(kind), text(text)
     { assert(ID(kind,0).isOrdinaryAtom()); assert(!text.empty()); }
   OrdinaryAtom(IDKind kind, const std::string& text, const Tuple& tuple):
-    Atom(kind, tuple), text(text), instTag(-1)
+    Atom(kind, tuple), text(text)
     { assert(ID(kind,0).isOrdinaryAtom());
       assert(!text.empty()); }
   std::ostream& print(std::ostream& o) const
     { return o << "OrdinaryAtom(" << std::hex << kind << std::dec << ",'" << text << "'," << printvector(tuple) << ")"; }
+
 };
 
 struct BuiltinAtom:
