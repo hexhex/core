@@ -58,7 +58,7 @@
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
 #include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/SafetyChecker.h"
-#include "dlvhex/ModuleSyntaxChecker.hpp"
+#include "dlvhex/MLPSyntaxChecker.hpp"
 #include "dlvhex/MLPSolver.hpp"
 
 #include <boost/foreach.hpp>
@@ -512,11 +512,11 @@ removeNamespaces()
 }
 
 MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
-// ModuleSyntaxChecker ..
+// MLPSyntaxChecker ..
 void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
-  ModuleSyntaxChecker sC(*ctx);
+  MLPSyntaxChecker sC(*ctx);
   bool success = sC.verifySyntax();
   if (success)
     {

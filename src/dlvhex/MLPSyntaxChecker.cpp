@@ -35,7 +35,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 
-ModuleSyntaxChecker::ModuleSyntaxChecker(ProgramCtx& ctx1)
+MLPSyntaxChecker::MLPSyntaxChecker(ProgramCtx& ctx1)
 {
   ctx = ctx1;
 }
@@ -43,7 +43,7 @@ ModuleSyntaxChecker::ModuleSyntaxChecker(ProgramCtx& ctx1)
 
 
 // get the arity of the predicate
-int ModuleSyntaxChecker::getArity(std::string predName)
+int MLPSyntaxChecker::getArity(std::string predName)
 {
   return ctx.registry()->preds.getByString(predName).arity;
 }
@@ -51,7 +51,7 @@ int ModuleSyntaxChecker::getArity(std::string predName)
 
 
 // get the arity of predicate idp
-int ModuleSyntaxChecker::getArity(ID idp)
+int MLPSyntaxChecker::getArity(ID idp)
 {
   if (idp.isTerm()==false) 
   {
@@ -63,7 +63,7 @@ int ModuleSyntaxChecker::getArity(ID idp)
 
 
 // s = "p1.p2" will return "p1"
-std::string ModuleSyntaxChecker::getStringBeforeSeparator(const std::string& s)
+std::string MLPSyntaxChecker::getStringBeforeSeparator(const std::string& s)
 {
   int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(0, n);
@@ -72,7 +72,7 @@ std::string ModuleSyntaxChecker::getStringBeforeSeparator(const std::string& s)
 
 
 // s = "p1.p2" will return "p2"
-std::string ModuleSyntaxChecker::getStringAfterSeparator(const std::string& s)
+std::string MLPSyntaxChecker::getStringAfterSeparator(const std::string& s)
 {
   int n=s.find(MODULEPREFIXSEPARATOR);
   return s.substr(n+2, s.length());
@@ -85,7 +85,7 @@ std::string ModuleSyntaxChecker::getStringAfterSeparator(const std::string& s)
 // tuple = (q1)
 // moduleFullName = p1.p2
 // moduleToCall = p2
-bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple)
+bool MLPSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple)
 {
   // get the module to call
   std::string moduleFullName = ctx.registry()->preds.getByID(module).symbol;
@@ -95,7 +95,7 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
   const Module& moduleCalled = ctx.registry()->moduleTable.getModuleByName(moduleToCall);
   if ( moduleCalled == MODULE_FAIL )
     {
-      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleToCall << "' not found");
+      DBGLOG(ERROR,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Error: Module '" << moduleToCall << "' not found");
       return false;
     }
   
@@ -117,13 +117,13 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
 	{
           if (itp==inputList.end()) 
             {
-              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "'"<< std::endl);
+              DBGLOG(ERROR,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Error: Too many predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "'"<< std::endl);
               return false;
             }
 
           if (predArity1 != ctx.registry()->preds.getByID(*itp).arity) 
            {
-              DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity '" << getStringAfterSeparator(ctx.registry()->preds.getByID(*it).symbol) << "' when calling '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
+              DBGLOG(ERROR,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Error: Mismatch predicate inputs arity '" << getStringAfterSeparator(ctx.registry()->preds.getByID(*it).symbol) << "' when calling '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
               return false;
            }
 	}
@@ -132,18 +132,18 @@ bool ModuleSyntaxChecker::verifyPredInputsArityModuleCall(ID module, Tuple tuple
     }  
   if (itp!=inputList.end()) 
     {
-      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
+      DBGLOG(ERROR,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Error: Need more predicate inputs in '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' " << std::endl);
       return false;
     }
 
-  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
+  DBGLOG(INFO,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate inputs in module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
   return true;
 
 }
 
 
 
-bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAtom) 
+bool MLPSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAtom) 
 {
   // get the module to call
   std::string moduleFullName = ctx.registry()->preds.getByID(module).symbol;
@@ -162,19 +162,19 @@ bool ModuleSyntaxChecker::verifyPredOutputArityModuleCall(ID module, ID outputAt
 
   if (arity1 == arity2) 
     {
-      DBGLOG(INFO,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
+      DBGLOG(INFO,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Verifying predicate output of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' succeeded");
       return true;
     }
   else 
     {
-      DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output '" << predName << "' of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' failed" << std::endl);
+      DBGLOG(ERROR,"[MLPSyntaxChecker::verifyPredInputsArityModuleCall] Error: Verifying predicate output '" << predName << "' of module call '@" << getStringAfterSeparator(moduleFullName) << "' in module '" << getStringBeforeSeparator(moduleFullName) << "' failed" << std::endl);
       return false;
     }
 } 
 
 
 
-bool ModuleSyntaxChecker::verifyAllModuleCalls()
+bool MLPSyntaxChecker::verifyAllModuleCalls()
 {
   ModuleAtomTable::AddressIterator it, it_end;
   boost::tie(it, it_end) = ctx.registry()->matoms.getAllByAddress(); 
@@ -184,23 +184,23 @@ bool ModuleSyntaxChecker::verifyAllModuleCalls()
       // Verifying pred Inputs
       if (verifyPredInputsArityModuleCall(ma.predicate, ma.inputs) == false) 
         {
-          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
+          DBGLOG(ERROR,"[MLPSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
           return false;
         }
       // Verifying pred Ouput
       if (verifyPredOutputArityModuleCall(ma.predicate, ma.outputAtom) == false) 
         {
-          DBGLOG(ERROR,"[ModuleSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
+          DBGLOG(ERROR,"[MLPSyntaxChecker::verifyAllModuleCall] Error: Verifying predicates input and output for all module calls failed in " << ma << std::endl);
           return false;
         }
       it++;
     }
-  DBGLOG(INFO,"[ModuleSyntaxChecker::verifyAllModuleCall] Verifying predicates input and output for all module calls succeeded");
+  DBGLOG(INFO,"[MLPSyntaxChecker::verifyAllModuleCall] Verifying predicates input and output for all module calls succeeded");
   return true;
 }
 
 
-bool ModuleSyntaxChecker::verifySyntax()
+bool MLPSyntaxChecker::verifySyntax()
 {
   bool result = verifyAllModuleCalls();
   // successful verification?

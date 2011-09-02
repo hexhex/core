@@ -1,7 +1,7 @@
 /**
- * @file   ModuleSyntaxChecker.h
+ * @file   MLPSyntaxChecker.h
  * @author Tri Kurniawan Wijaya
- * @date   Wed Dec 8 09:53:00 CET 2010
+ * @date   Fri 02 Sep 2011 03:29:05 PM CEST 
  * 
  * @brief  Checking syntax for modular logic programs
  */
@@ -29,7 +29,7 @@ DLVHEX_NAMESPACE_BEGIN
 // the complete class to perform syntactic checking on the modular logic programs
 
 
-class DLVHEX_EXPORT ModuleSyntaxChecker{
+class DLVHEX_EXPORT MLPSyntaxChecker{
   private:
     ProgramCtx ctx;
     int getArity(std::string predName);
@@ -41,7 +41,7 @@ class DLVHEX_EXPORT ModuleSyntaxChecker{
     bool verifyAllModuleCalls();
 
   public:
-    ModuleSyntaxChecker(ProgramCtx& ctx1);
+    MLPSyntaxChecker(ProgramCtx& ctx1);
     bool verifySyntax();
 };
 

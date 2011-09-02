@@ -337,6 +337,8 @@ void MLPSolver::rewriteTuple(Tuple& tuple, int idxMI)
 
 void MLPSolver::createMiS(int instIdx, const InterpretationPtr& intr, InterpretationPtr& intrResult)
 {
+  // std::vector<std::vector<ID> > InstOgatomsIndex;
+  // update 
   intrResult->clear();
   Tuple tuple;
   registrySolver->ogatoms.getTupleByInstTag(instIdx, tuple);
@@ -2174,7 +2176,7 @@ void MLPSolver::printCallGraph(std::ostream& oss, const Graph& graph, const std:
 {
   // produce all module instantiation table
   std::ostringstream ss;
-  std::vector<std::string> vertexName(moduleInstTable.size());
+  std::vector<std::string> 	vertexName(moduleInstTable.size());
   for (int i=0;i<moduleInstTable.size();i++)
     {
       ss.str("");
