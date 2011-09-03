@@ -1,3 +1,9 @@
+2011-09-03  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* testsuite/TestHexParserModule.cpp: Use MLPSyntaxChecker instead
+	of ModuleSyntaxChecker.
+	* testsuite/TestMLPSolver.cpp: Likewise.
+
 2011-09-02  Tri Kurniawan Wijaya  <trikurniawanwijaya@gmail.com>
 
 	* include/dlvhex/OrdinaryAtomTable.hpp: Freed OrdinaryAtomTable from Instantiation indexing.

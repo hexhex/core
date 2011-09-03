@@ -35,7 +35,7 @@
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ModuleSyntaxChecker.hpp"
+#include "dlvhex/MLPSyntaxChecker.hpp"
 //#include "dlvhex/MLPSolver.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(testHexParserModuleAtoms)
   }
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
 }
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(testCallNotExistModule)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   // BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(testPredInputsNotExistModuleHeader)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 }
 
@@ -291,7 +291,7 @@ BOOST_AUTO_TEST_CASE(testTooManyPredInputsModuleCalls)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_CASE(testTooFewPredInputsModuleCalls)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredInputsModuleCalls)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -422,7 +422,7 @@ BOOST_AUTO_TEST_CASE(testPredOutputsModuleCallsNotExist)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityPredOutputsModuleCalls)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(testSwapArityPredInputsModuleCalls)
 
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   //rmv. BOOST_REQUIRE( sC.verifySyntax() == false );
   BOOST_REQUIRE_THROW(sC.verifySyntax(), FatalError);
 }
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(testDifferentArityModuleHeader)
   BOOST_REQUIRE_NO_THROW(parser.parse(ss));
   LOG_REGISTRY_PROGRAM(ctx);
 
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == false );
 }
 */

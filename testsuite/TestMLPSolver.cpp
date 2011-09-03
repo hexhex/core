@@ -38,7 +38,7 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printer.hpp"
 #include "dlvhex/Registry.hpp"
-#include "dlvhex/ModuleSyntaxChecker.hpp"
+#include "dlvhex/MLPSyntaxChecker.hpp"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/MLPSolver.hpp"
 
@@ -105,7 +105,7 @@ void testInconsistentProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -154,7 +154,7 @@ void testNoticStratifiedProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -218,7 +218,7 @@ void testOneMainModules()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -282,7 +282,7 @@ void testTwoMainModules()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -346,7 +346,7 @@ void testTwoModuleCalls1()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -411,7 +411,7 @@ void testTwoModuleCalls2()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -462,7 +462,7 @@ void testReachabilityNonGroundProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -512,7 +512,7 @@ void testCardinalityProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -563,7 +563,7 @@ void testABBAProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -613,7 +613,7 @@ void testDisjunctionProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -663,7 +663,7 @@ void testNegationProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -713,7 +713,7 @@ void testIndirectionProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
@@ -762,7 +762,7 @@ void testAFinProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
@@ -811,7 +811,7 @@ void testCsProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
@@ -860,7 +860,7 @@ void testIStratifiedProgram()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
@@ -909,7 +909,7 @@ void testIStratified2Program()
   LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
   MLPSolver m(ctx);
   BOOST_REQUIRE ( m.solve() == true );
@@ -958,7 +958,7 @@ void testHanoiProgram()
   //...LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
@@ -1009,7 +1009,7 @@ void testComplexProgram()
   //...LOG_REGISTRY_PROGRAM(ctx);
 
   // syntax verifying:
-  ModuleSyntaxChecker sC(ctx);
+  MLPSyntaxChecker sC(ctx);
   BOOST_REQUIRE( sC.verifySyntax() == true );
 
   MLPSolver m(ctx);
