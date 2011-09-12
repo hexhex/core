@@ -126,8 +126,8 @@ void State::postProcess(ProgramCtx*) { }
   { \
     if( !!failureState ) \
     { \
-      changeState(ctx, failureState); \
-      failureState-> function (ctx); \
+      changeState(ctx, failureState); /* <-- this destructs *this */ \
+      ctx->state-> function (ctx); \
     } \
     else \
     { \
