@@ -1,0 +1,10 @@
+#module(p1,[]).
+q(1). q(2). q(3). q(4). % q(5). q(6).
+ok :- @p2[q]::even.
+   :- not ok.
+
+#module(p2,[q/1]).
+p(X) v p(Y) :- q(X), q(Y), X != Y.
+skip        :- q(X).
+odd         :- skip, @p2[p]::even.
+even        :- not odd.
