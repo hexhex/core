@@ -58,22 +58,18 @@ private ostream_printable<Term>
 		assert(ID(kind,0).isTerm()); 
 	}
 	
-	bool isString() const {
+	bool isQuotedString() const {
 		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
 			return true;
 		return false;
 	}
 	
 	std::string getQuotedString() const {
-		if (!isString()) 
-			return NULL;
 		return '"' + getUnquotedString() + '"';
 	}
 	
-	std::string getUnquotedString() const {
-		if (!isString())
-			return NULL;
-		if ((symbol.at(0) == '"') && (symbol.at(symbol.length()-1) == '"'))
+	std::string getUnquotedString() const {;
+		if (isQuotedString())
 			return symbol.substr(1, symbol.length()-2);
 		return symbol;
 	}
