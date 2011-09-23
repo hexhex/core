@@ -382,7 +382,7 @@ ID Registry::storeConstOrVarTerm(Term& term)
 ID Registry::storeTerm(Term& term)
 {
   assert(!term.symbol.empty());
-  if( term.symbol[0] >= '0' && term.symbol[0] <= '9' )
+  if( isdigit(term.symbol[0]) )
   {
     try
     {
