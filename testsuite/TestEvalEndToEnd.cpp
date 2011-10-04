@@ -135,7 +135,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   omb.printEvalGraphModelGraph(std::cerr);
 
   // evaluate
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m1 = omb.getNextIModel(ufinal);
   BOOST_REQUIRE(!!m1);
   InterpretationConstPtr int1 = omb.getModelGraph().propsOf(m1.get()).interpretation;
@@ -143,7 +143,7 @@ BOOST_FIXTURE_TEST_CASE(testEvalHeuristicExt1,ProgramExt1ProgramCtxDependencyGra
   LOG(INFO,"model #1 is " << *int1);
   omb.printEvalGraphModelGraph(std::cerr);
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m2 = omb.getNextIModel(ufinal);
   BOOST_REQUIRE(!m2);
   omb.printEvalGraphModelGraph(std::cerr);

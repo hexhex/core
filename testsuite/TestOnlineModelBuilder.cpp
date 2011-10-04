@@ -89,7 +89,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e1_ufinal_input, OnlineModelBuilde
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel mfull = omb.getNextIModel(ufinal);
   BOOST_REQUIRE(!!mfull);
   {
@@ -101,7 +101,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e1_ufinal_input, OnlineModelBuilde
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel nfm = omb.getNextIModel(ufinal);
   BOOST_REQUIRE(!nfm);
 
@@ -112,7 +112,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2F
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m3 = omb.getNextIModel(u2);
   BOOST_REQUIRE(!!m3);
   {
@@ -121,7 +121,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(a)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m4 = omb.getNextIModel(u2);
   BOOST_REQUIRE(!!m4);
   {
@@ -130,7 +130,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextIModel(u2);
   BOOST_REQUIRE(!nfm);
 
@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2F
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m6 = omb.getNextIModel(u3);
   BOOST_REQUIRE(!!m6);
   {
@@ -150,7 +150,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(a)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m7 = omb.getNextIModel(u3);
   BOOST_REQUIRE(!!m7);
   {
@@ -159,7 +159,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextIModel(u3);
   BOOST_REQUIRE(!nfm);
 
@@ -170,7 +170,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_output, OnlineModelBuilderE2
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m5 = omb.getNextOModel(u2);
   BOOST_REQUIRE(!!m5);
   {
@@ -179,7 +179,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u2_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(p,time)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel nfm = omb.getNextOModel(u2);
   BOOST_REQUIRE(!nfm);
 
@@ -190,7 +190,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m8 = omb.getNextOModel(u3);
   BOOST_REQUIRE(!!m8);
   {
@@ -199,7 +199,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(c)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m9 = omb.getNextOModel(u3);
   BOOST_REQUIRE(!!m9);
   {
@@ -208,7 +208,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(d)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel m10 = omb.getNextOModel(u3);
   BOOST_REQUIRE(!!m10);
   {
@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #4");
+  BOOST_TEST_MESSAGE("requesting model #4");
   OptionalModel m11 = omb.getNextOModel(u3);
   BOOST_REQUIRE(!!m11);
   {
@@ -226,7 +226,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u3_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #5");
+  BOOST_TEST_MESSAGE("requesting model #5");
   OptionalModel nfm = omb.getNextOModel(u3);
   BOOST_REQUIRE(!nfm);
 
@@ -238,7 +238,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2F
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
   omb.printEvalGraphModelGraph(std::cerr);
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m12 = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!m12);
@@ -249,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m13 = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!m13);
@@ -260,7 +260,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_input, OnlineModelBuilderE2F
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
@@ -273,7 +273,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
   omb.printEvalGraphModelGraph(std::cerr);
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m12 = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!m12);
@@ -284,7 +284,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(e)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel m13 = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!m13);
@@ -295,7 +295,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_u4_input, OnlineModelBu
     BOOST_CHECK_EQUAL(ti.getAtoms().count("use(f)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel nfm = omb.getNextIModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
@@ -308,7 +308,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_output, OnlineModelBuilderE2
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
   omb.printEvalGraphModelGraph(std::cerr);
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel m14 = omb.getNextOModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!m14);
@@ -318,7 +318,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_u4_output, OnlineModelBuilderE2
     BOOST_CHECK_EQUAL(ti.getAtoms().count("need(u,time)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel nfm = omb.getNextOModel(u4);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
@@ -331,7 +331,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_ufinal_input, OnlineModelBuilde
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
   omb.printEvalGraphModelGraph(std::cerr);
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel mcomplete = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete);
@@ -344,7 +344,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2_ufinal_input, OnlineModelBuilde
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel nfm = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
@@ -357,7 +357,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineMod
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
   omb.printEvalGraphModelGraph(std::cerr);
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel mcomplete = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete);
@@ -370,7 +370,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_e2mirrored_ufinal_input, OnlineMod
     BOOST_CHECK_EQUAL(ti.getAtoms().count("plan(b)"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel nfm = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
@@ -382,7 +382,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
 {
   DO_MODEL_GENERATION_TWICE_CHECK_GENERATORCOUNT_BEGIN
 
-  BOOST_MESSAGE("requesting model #1");
+  BOOST_TEST_MESSAGE("requesting model #1");
   OptionalModel mcomplete1 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete1);
@@ -395,7 +395,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("m"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #2");
+  BOOST_TEST_MESSAGE("requesting model #2");
   OptionalModel mcomplete2 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete2);
@@ -408,7 +408,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("n"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #3");
+  BOOST_TEST_MESSAGE("requesting model #3");
   OptionalModel mcomplete3 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete3);
@@ -422,7 +422,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("m"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #4");
+  BOOST_TEST_MESSAGE("requesting model #4");
   OptionalModel mcomplete4 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete4);
@@ -436,7 +436,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("n"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #5");
+  BOOST_TEST_MESSAGE("requesting model #5");
   OptionalModel mcomplete5 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete5);
@@ -454,7 +454,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("o"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #6");
+  BOOST_TEST_MESSAGE("requesting model #6");
   OptionalModel mcomplete6 = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!!mcomplete6);
@@ -471,7 +471,7 @@ BOOST_FIXTURE_TEST_CASE(online_model_building_ex1_ufinal_input, OnlineModelBuild
     BOOST_CHECK_EQUAL(ti.getAtoms().count("k"), 1);
   }
 
-  BOOST_MESSAGE("requesting model #7");
+  BOOST_TEST_MESSAGE("requesting model #7");
   OptionalModel nfm = omb.getNextIModel(ufinal);
   omb.printEvalGraphModelGraph(std::cerr);
   BOOST_REQUIRE(!nfm);
