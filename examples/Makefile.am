@@ -13,6 +13,7 @@ EXTRA_DIST = \
     builtin_safety1d.hex \
     builtin_safety2.hex \
     comments.hex \
+    duplicaterule.asp \
     empty.hex \
     equality.hex \
     extatom1.hex \
@@ -120,6 +121,7 @@ EXTRA_DIST = \
     tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
     tests/comments.out \
+    tests/duplicaterule.out \
     tests/empty.out \
     tests/equality.out \
     tests/extatom1.out \

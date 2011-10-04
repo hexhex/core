@@ -1,5 +1,12 @@
 2011-10-04  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* include/dlvhex/RuleTable.hpp: Fixing bug with duplicate rules.
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* examples/duplicaterule.asp: New testcase with duplicate rules.
+	* examples/tests/duplicaterule.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/Makefile.am: Likewise.
 	* testsuite/TestOnlineModelBuilder.cpp: Using BOOST_TEST_MESSAGE instead
 	of deprecated BOOST_MESSAGE (BOOST_MESSAGE no longer exists in boost trunk).
 	* testsuite/TestEvalEndToEnd.cpp: Likewise.

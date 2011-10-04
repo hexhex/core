@@ -10,6 +10,7 @@ builtin_safety1c.hex builtin_safety1c.stderr
 builtin_safety1d.hex builtin_safety1d.out
 builtin_safety2.hex builtin_safety2.out
 comments.hex comments.out
+duplicaterule.asp duplicaterule.out
 equality.hex equality.out
 extatom1.hex extatom1.out
 extatom2.hex extatom2.out

@@ -322,7 +322,8 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForRule(
     ID idrule, std::vector<ID>& createdAuxRules, HeadBodyHelper& hbh)
 {
   LOG_VSCOPE(DBG,"cNaIRDfR", idrule.address,true);
-  DBGLOG(DBG,"=createNodesAndIntraRuleDependenciesForRule for rule " << idrule);
+  DBGLOG(DBG,"=createNodesAndIntraRuleDependenciesForRule for rule " << idrule <<
+      " " << printToString<RawPrinter>(idrule, registry));
   assert(idrule.isRule());
 
   // create new node for rule

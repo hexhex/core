@@ -155,10 +155,6 @@ ID RuleTable::storeAndGetID(
 	assert(!(rule.head.empty() && rule.body.empty()));
 	assert(!(rule.head.empty() && ID(rule.kind,0).isRegularRule()));
 	assert(!(rule.head.size() > 1 && !ID(rule.kind,0).isRuleDisjunctive()));
-
-	// check if we already have this rule:
-	ID id = getIDByElement(rule);
-	if ( id != ID_FAIL ) return id;
  
 	AddressIndex& idx = container.get<impl::AddressTag>();
 

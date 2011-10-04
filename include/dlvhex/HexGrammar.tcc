@@ -634,7 +634,11 @@ struct sem<HexGrammarSemantics::rule>
       // mark as disjunctive if required
       if( r.head.size() > 1 )
         r.kind |= ID::PROPERTY_RULE_DISJ;
-      target = reg->rules.storeAndGetID(r);
+      ID existing = reg->rules.getIDByElement(r);
+      if( existing == ID_FAIL )
+        target = reg->rules.storeAndGetID(r);
+      else
+        target = ID_FAIL;
     }
     else
     {
@@ -645,7 +649,11 @@ struct sem<HexGrammarSemantics::rule>
           head, Tuple());
         mgr.markExternalPropertyIfExternalBody(reg, r);
         mgr.markModulePropertyIfModuleBody(reg, r);
-        target = reg->rules.storeAndGetID(r);
+        ID existing = reg->rules.getIDByElement(r);
+        if( existing == ID_FAIL )
+          target = reg->rules.storeAndGetID(r);
+        else
+          target = ID_FAIL;
       }
       else
       {
@@ -671,8 +679,14 @@ struct sem<HexGrammarSemantics::constraint>
     r.body = source;
     mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
     mgr.markModulePropertyIfModuleBody(mgr.ctx.registry(), r);
-    target = mgr.ctx.registry()->rules.storeAndGetID(r);
-    DBGLOG(DBG,"created constraint " << r << " with id " << target);
+    ID existing = mgr.ctx.registry()->rules.getIDByElement(r);
+    if( existing == ID_FAIL )
+    {
+      target = mgr.ctx.registry()->rules.storeAndGetID(r);
+      DBGLOG(DBG,"created constraint " << r << " with id " << target);
+    }
+    else
+      target = ID_FAIL;
   }
 };
 
@@ -738,7 +752,12 @@ struct sem<HexGrammarSemantics::add>
     const boost::spirit::unused_type& target)
   {
     RegistryPtr reg = mgr.ctx.registry();
-    if( source.isAtom() )
+    if( source == ID_FAIL )
+    {
+#warning we cannot report the rule here because the ID = ID_FAIL is used to transport the information that the rule is duplicated TODO replace ID in this case by pair<ID,bool> where bool indicates 'skip'
+      DBGLOG(DBG,"ignoring duplicate rule");
+    }
+    else if( source.isAtom() )
     {
       // fact -> put into EDB
       if( !source.isOrdinaryGroundAtom() )
