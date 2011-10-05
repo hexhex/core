@@ -1,3 +1,7 @@
+2011-10-05  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/DLVresultParserDriver.cpp: Parsing one answer set at a time.
+
 2011-10-04  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/RuleTable.hpp: Fixing bug with duplicate rules.

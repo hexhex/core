@@ -223,7 +223,10 @@ struct handle_finished_answerset
 
   void operator()(qi::unused_type, qi::unused_type, qi::unused_type) const
   {
+    // add current answer set as full answer set
+    DBGLOG(DBG,"handling parsed answer set " << *state.current);
     state.adder(state.current);
+    // create empty answer set for subsequent parsing
 		state.current.reset(new AnswerSet(state.registry));
   }
 
@@ -300,7 +303,7 @@ struct DLVResultGrammar:
   public qi::grammar<Iterator, ascii::space_type>
 {
 	DLVResultGrammar(ParserState& state):
-		DLVResultGrammar::base_type(answersets), state(state)
+		DLVResultGrammar::base_type(dlvline), state(state)
 	{
     using spirit::int_;
     using spirit::_val;
@@ -330,16 +333,13 @@ struct DLVResultGrammar:
     /// @todo: do not throw away weak answer set information but store it
     costline
       = lit("Cost") > +(ascii::alnum|char_("[]<>():"));
-		answersets
-			// end_p enforces a "full" match (in case of success) even with trailing newlines
-			= *(
-            (-lit("Best model:") >> answerset)
-            |
-            costline
-         ) > (qi::eol | qi::eoi);
+		dlvline
+			= (-lit("Best model:") >> answerset)
+        |
+        costline;
 
     #ifdef BOOST_SPIRIT_DEBUG
-		BOOST_SPIRIT_DEBUG_NODE(answersets);
+		BOOST_SPIRIT_DEBUG_NODE(dlvline);
 		BOOST_SPIRIT_DEBUG_NODE(answerset);
 		BOOST_SPIRIT_DEBUG_NODE(costline);
 		BOOST_SPIRIT_DEBUG_NODE(fact);
@@ -348,7 +348,7 @@ struct DLVResultGrammar:
     #endif
 	}
 
-	qi::rule<Iterator, ascii::space_type>                  answersets,
+	qi::rule<Iterator, ascii::space_type>                  dlvline,
                                                          answerset,
                                                          fact,
                                                          costline;
@@ -366,38 +366,57 @@ DLVResultParser::parse(
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVResultParser::parse");
 
-  // @todo: read each line to the next endl, then parse, then get exactly one answer set per parse, maybe reuse the grammar (state can be avoided by using attributes, AtomSetPtr and AtomPtr or just use a new AST with integers instead)
-
-	std::ostringstream buf;
-	buf << is.rdbuf();
-	const std::string& input = buf.str();
-  LOG(DBG,"parsing input '" << input << "'");
-
-	typedef std::string::const_iterator forward_iterator_type;
-	// convert input iterator to forward iterator, usable by spirit parser
-	forward_iterator_type fwd_begin = input.begin();
-	forward_iterator_type fwd_end = input.end();
-
 	bool dropPredicates =
 		(pMode == DLVResultParser::HO);
 	ParserState state(reg, adder, dropPredicates);
 
+  typedef std::string::const_iterator forward_iterator_type;
   DLVResultGrammar<forward_iterator_type> grammar(state);
-  try
+  unsigned errors = 0;
+  do
   {
-    bool r = qi::phrase_parse(fwd_begin, fwd_end, grammar, ascii::space);
+    // @todo: read each line to the next endl, then parse, then get exactly one answer set per parse, maybe reuse the grammar (state can be avoided by using attributes, AtomSetPtr and AtomPtr or just use a new AST with integers instead)
 
-    // @todo: add better error message with position iterator 
-    if (!r || fwd_begin != fwd_end)
-		{
-			LOG(ERROR,"r=" << r << " (begin!=end)=" << (fwd_begin != fwd_end));
-      throw SyntaxError("Could not parse complete DLV output!");
-		}
+    // get next input line
+    std::string input;
+    std::getline(is, input);
+    DBGLOG(DBG,"obtained " << input.size() << " characters from input stream via getline");
+    if( input.empty() || is.bad() )
+    {
+      DBGLOG(DBG,"leaving loop because got input size " << input.size() <<
+          ", stream bits fail " << is.fail() << ", bad " << is.bad() << ", eof " << is.eof());
+      break;
+    }
+
+    // TODO allocate answer set here, just set bits in parser
+    LOG(DBG,"parsing input from DLV: '" << input << "'");
+
+    // convert input iterator to forward iterator, usable by spirit parser
+    forward_iterator_type fwd_begin = input.begin();
+    forward_iterator_type fwd_end = input.end();
+
+    try
+    {
+      bool r = qi::phrase_parse(fwd_begin, fwd_end, grammar, ascii::space);
+
+      // @todo: add better error message with position iterator 
+      if (!r || fwd_begin != fwd_end)
+      {
+        LOG(ERROR,"for input '" << input << "': r=" << r << " (begin!=end)=" << (fwd_begin != fwd_end));
+        errors++;
+      }
+    }
+    catch(const qi::expectation_failure<forward_iterator_type>& e)
+    {
+      LOG(ERROR,"for input '" << input << "': could not parse DLV output(expectation failure) " << e.what_);
+      errors++;
+    }
   }
-  catch(const qi::expectation_failure<forward_iterator_type>& e)
+  while(errors < 20);
+
+  if( errors != 0  )
   {
-		LOG(ERROR,"expectation failure " << e.what_);
-    throw SyntaxError("Could not parse DLV output! (expectation failure): \n===\n" + input + "===\n");
+    throw SyntaxError("Could not parse complete DLV output! (see error log messages)");
   }
 }
 
