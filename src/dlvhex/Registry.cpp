@@ -109,9 +109,12 @@ typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
 struct Registry::Impl
 {
   AuxiliaryStorage auxSymbols;
-  PredicateMask auxGroundAtomMask;
+  PredicateMaskPtr auxGroundAtomMask;
   std::list<AuxPrinterPtr> auxPrinters;
   AuxPrinterPtr defaultAuxPrinter;
+
+  Impl():
+    auxGroundAtomMask(new PredicateMask) {}
 };
 
 
@@ -413,15 +416,15 @@ ID Registry::storeTerm(Term& term)
 
 void Registry::setupAuxiliaryGroundAtomMask()
 {
-  assert(!pimpl->auxGroundAtomMask.mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
-  pimpl->auxGroundAtomMask.setRegistry(shared_from_this());
+  assert(!pimpl->auxGroundAtomMask->mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
+  pimpl->auxGroundAtomMask->setRegistry(shared_from_this());
 }
 
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 {
   DBGLOG_SCOPE(DBG,"gACS",false);
   DBGLOG(DBG,"getAuxiliaryConstantSymbol for " << type << " " << id);
-  assert(!!pimpl->auxGroundAtomMask.mask() &&
+  assert(!!pimpl->auxGroundAtomMask->mask() &&
       "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
 
   // lookup auxiliary
@@ -456,7 +459,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   pimpl->auxSymbols.insert(std::make_pair(key, av));
 
   // update predicate mask
-  pimpl->auxGroundAtomMask.addPredicate(av.id);
+  pimpl->auxGroundAtomMask->addPredicate(av.id);
 
   // return
   DBGLOG(DBG,"returning id " << av.id << " for aux symbol " << av.symbol);
@@ -466,10 +469,10 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 // get predicate mask to auxiliary ground atoms
 InterpretationConstPtr Registry::getAuxiliaryGroundAtomMask()
 {
-  assert(!!pimpl->auxGroundAtomMask.mask() &&
+  assert(!!pimpl->auxGroundAtomMask->mask() &&
       "setupAuxiliaryGroundAtomMask has not been called before calling getAuxiliaryConstantSymbol!");
-  pimpl->auxGroundAtomMask.updateMask();
-  return pimpl->auxGroundAtomMask.mask();
+  pimpl->auxGroundAtomMask->updateMask();
+  return pimpl->auxGroundAtomMask->mask();
 }
 
 //

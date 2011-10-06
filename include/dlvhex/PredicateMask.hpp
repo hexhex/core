@@ -36,6 +36,8 @@
 #include "dlvhex/fwd.hpp"
 #include "dlvhex/ID.hpp"
 
+#include <boost/thread/mutex.hpp>
+
 #include <set>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -70,6 +72,17 @@ protected:
   InterpretationPtr maski;
   // address of the last ogatom already inspected for updating mask
   IDAddress knownAddresses;
+
+  boost::mutex updateMutex;
+
+private:
+  // these functions have no implementation
+
+  // copying a mask is not useful, masks should and can be shared
+  // (for a new registry they need to be recreated anyways)
+  PredicateMask(const PredicateMask&);
+  // assigning a mask is like copying and likewise forbidden
+  PredicateMask& operator=(const PredicateMask&);
 };
 
 DLVHEX_NAMESPACE_END

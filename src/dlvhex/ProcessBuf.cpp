@@ -225,7 +225,6 @@ ProcessBuf::open(const std::vector<std::string>& av)
   return process;
 }
 
-
 void
 ProcessBuf::endoffile()
 {
@@ -239,9 +238,16 @@ ProcessBuf::endoffile()
     }
 }
 
+// wait for end of process
+// if kill is true, kill if not already ended
 int
-ProcessBuf::close()
+ProcessBuf::close(bool kill)
 {
+  if( process == -1 )
+    return -1;
+
+  LOG(DBG,"ProcessBuf::close for process " << process << "(" << kill << ")");
+
   // we're done writing
   endoffile();
 
@@ -255,16 +261,26 @@ ProcessBuf::close()
       outpipes[0] = -1;
     }
 
+  // try to waitpid without waiting (just see if the process is still there)
+  if( ::waitpid(process, &status, WNOHANG) == 0 )
+  {
+    int sig = SIGTERM;
+    LOG(INFO,"sending signal " << sig << " to process " << process);
+    ::kill(process, sig);
+  }
+
   // obviously we do not want to leave zombies around, so get status
   // code of the process
   // (if the process no longer exists, this will simply fail,
   // if a new process grabbed the same pid, we are doomed and will wait for that
   // unrelated process to exit)
   ::waitpid(process, &status, 0);
+  int exitstatus = WEXITSTATUS(status);
+  LOG(DBG,"ProcessBuf::close for process " << process << ": exit status " << exitstatus);
   process = -1;
 
   // exit code of process
-  return WEXITSTATUS(status);
+  return exitstatus;
 }
 
 

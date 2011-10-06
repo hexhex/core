@@ -151,7 +151,7 @@ DLVProcess::endoffile()
 
 
 int
-DLVProcess::close()
+DLVProcess::close(bool kill)
 {
   assert(ipipe != 0 && opipe != 0);
 
@@ -159,7 +159,7 @@ DLVProcess::close()
   opipe->clear();
   ipipe->clear();
   // exit code of process
-  return proc.close();
+  return proc.close(kill);
 }
 
 

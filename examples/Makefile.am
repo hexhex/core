@@ -34,6 +34,7 @@ EXTRA_DIST = \
     higherorder4.hex \
     higherorder5.hex \
     higherorder5except.hex \
+    manyanswersets.hex \
     minimality.hex \
     msp.hex \
     namespace1.hex \
@@ -140,6 +141,7 @@ EXTRA_DIST = \
     tests/higherorder4.out \
     tests/higherorder5.out \
     tests/higherorder5except.stderr \
+    tests/manyanswersets_twomodels.stdout \
     tests/minimality.out \
     tests/msp.out \
     tests/namespace1.out \

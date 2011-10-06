@@ -142,7 +142,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
-      << "     --num=<N>        Computes at most N answer sets (N=0 computes all)" << std::endl
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
@@ -543,7 +542,6 @@ void processOptionsPrePlugin(
 		{ "keepauxpreds", no_argument, &longid, 11 },
 		{ "nofacts", no_argument, &longid, 12 },
 		{ "mlp", no_argument, &longid, 13 },
-		{ "num", required_argument, &longid, 14 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
 		{ NULL, 0, NULL, 0 }
@@ -564,7 +562,15 @@ void processOptionsPrePlugin(
 		case 'v':
 			if (optarg)
 			{
-				int level = boost::lexical_cast<int>(optarg);
+				int level = 1;
+				try
+				{
+					level = boost::lexical_cast<int>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse verbosity level '" << optarg << "' - using default=" << level << "!");
+				}
 				pctx.config.setOption("Verbose", level);
 				Logger::Instance().setPrintLevels(level);
 			}
@@ -651,7 +657,18 @@ void processOptionsPrePlugin(
 
 		case 'n':
 			{
-				int models = boost::lexical_cast<int>(optarg);
+				int models = 0;
+				try
+				{
+					if( optarg[0] == '=' )
+						models = boost::lexical_cast<unsigned>(&optarg[1]);
+					else
+						models = boost::lexical_cast<unsigned>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse model count '" << optarg << "' - using default=" << models << "!");
+				}
 				pctx.config.setOption("NumberOfModels", models);
 			}
 			break;
@@ -781,9 +798,7 @@ void processOptionsPrePlugin(
 				case 13:
 					pctx.config.setOption("MLP",1);
 					break;
-				case 14:
-					pctx.config.setOption("NumberOfModels",atoi(optarg));
-					break;
+				// unused case 14:
 				case 15:
 					pctx.config.setOption("Forget",1);
 					break;

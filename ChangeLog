@@ -1,16 +1,68 @@
-2011-10-05  Peter Schueller  <ps@kr.tuwien.ac.at>
+2011-10-06  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/DLVresultParserDriver.cpp: Parsing one answer set at a time.
+
+	* include/dlvhex/ConcurrentMessageQueueOwning.h: Added modified version of
+	concurrent message queue from DMCS project.
+	* include/dlvhex/Makefile.am: Likewise.
+
+	* configure.ac: Added check and libraries for boost::threads.
+	* src/dlvhex/Makefile.am: Likewise.
+	* testsuite/Makefile.am: Likewise.
+
+	* include/dlvhex/ASPSolverManager.h: New type of results container
+	for asynchronous retrieval of answer sets using the message queue
+	(class ConcurrentQueueResults).
+	* src/dlvhex/ASPSolverManager.cpp: Likewise.
+
+	* include/dlvhex/ASPSolver.h: Using asynchronous answer set
+	retrieval in separate thread for DLV backend.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* examples/tests/dlvhextests.test: Activated testcase which verifies
+	that the threading works (manyanswersets.hex).
+	* examples/tests/README.txt: Likewise.
+	* examples/Makefile.am: Likewise.
+
+	* src/dlvhex/ProcessBuf.cpp: Making processes kill-able.
+	* src/dlvhex/DLVProcess.cpp: Likewise.
+	* include/dlvhex/ProcessBuf.h: Likewise.
+	* include/dlvhex/DLVProcess.h: Likewise.
+	* include/dlvhex/Process.h: Likewise.
+
+	* src/dlvhex/dlvhex.cpp: Removed redundant --num option. Fixed
+	commandline argument correctness checking.
+
+	* include/dlvhex/Table.hpp: Making tables thread-safe.
+	* include/dlvhex/TermTable.hpp: Likewise.
+	* include/dlvhex/OrdinaryAtomTable.hpp: Likewise.
+	* include/dlvhex/ModuleTable.hpp: Likewise.
+	* include/dlvhex/PredicateTable.hpp: Likewise.
+	* include/dlvhex/RuleTable.hpp: Likewise.
+	* include/dlvhex/ExternalAtomTable.hpp: Likewise.
+	* include/dlvhex/AggregateAtomTable.hpp: Likewise.
+	* include/dlvhex/BuiltinAtomTable.hpp: Likewise.
+	* include/dlvhex/ModuleAtomTable.hpp: Likewise.
+
+	* include/dlvhex/PredicateMask.hpp: Update mutex for PredicateMask.
+	* include/dlvhex/Atoms.hpp: Likewise.
+	* include/dlvhex/fwd.hpp: Likewise.
+	* src/dlvhex/PredicateMask.cpp: Likewise.
+	* src/dlvhex/Atoms.cpp: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
 
 2011-10-04  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex/RuleTable.hpp: Fixing bug with duplicate rules.
 	* include/dlvhex/HexGrammar.tcc: Likewise.
 	* src/dlvhex/DependencyGraph.cpp: Likewise.
+
 	* examples/duplicaterule.asp: New testcase with duplicate rules.
 	* examples/tests/duplicaterule.out: Likewise.
 	* examples/tests/dlvhextests.test: Likewise.
 	* examples/Makefile.am: Likewise.
+
 	* testsuite/TestOnlineModelBuilder.cpp: Using BOOST_TEST_MESSAGE instead
 	of deprecated BOOST_MESSAGE (BOOST_MESSAGE no longer exists in boost trunk).
 	* testsuite/TestEvalEndToEnd.cpp: Likewise.

@@ -39,6 +39,7 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Error.h"
+#include "dlvhex/ConcurrentMessageQueueOwning.h"
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -204,6 +205,40 @@ protected:
   Storage::const_iterator current;
 };
 typedef boost::shared_ptr<PreparedResults> PreparedResultsPtr;
+
+struct AnswerSetQueueElement
+{
+  AnswerSetPtr answerset;
+  std::string error;
+  AnswerSetQueueElement(AnswerSetPtr answerset, const std::string& error):
+    answerset(answerset), error(error) {}
+};
+typedef boost::shared_ptr<AnswerSetQueueElement> AnswerSetQueueElementPtr;
+
+// concrete queue for answer sets
+typedef ConcurrentMessageQueueOwning<AnswerSetQueueElement> AnswerSetQueue;
+typedef boost::shared_ptr<AnswerSetQueue> AnswerSetQueuePtr;
+
+// results that are not streamed but provided to be incrementally requested
+class ConcurrentQueueResults:
+  public ASPSolverManager::Results
+{
+public:
+  ConcurrentQueueResults();
+  virtual ~ConcurrentQueueResults();
+
+  void enqueueAnswerset(AnswerSetPtr answerset);
+  void enqueueException(const std::string& error);
+  void enqueueEnd();
+
+  // gets next answer set or throws exception on error condition
+  // returns AnswerSetPtr() on end of queue
+  virtual AnswerSetPtr getNextAnswerSet();
+
+protected:
+  AnswerSetQueuePtr queue;
+};
+typedef boost::shared_ptr<ConcurrentQueueResults> ConcurrentQueueResultsPtr;
 
 DLVHEX_NAMESPACE_END
 

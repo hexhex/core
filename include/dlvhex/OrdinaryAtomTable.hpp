@@ -91,9 +91,6 @@ public:
 
 	// methods
 public:
-
-	inline int getSize();
-
   // retrieve by ID
   // assert that id.kind is correct for OrdinaryGroundAtom
   // assert that ID exists in table
@@ -128,13 +125,6 @@ public:
 	getAllByAddress() const throw();
 };
 
-
-int OrdinaryAtomTable::getSize()
-{
-  return container.size();
-}
-
-
 // retrieve by ID
 // assert that id.kind is correct for Term
 // assert that ID exists
@@ -144,6 +134,7 @@ OrdinaryAtomTable::getByID(
 {
 	assert(id.isAtom() || id.isLiteral());
 	assert(id.isOrdinaryAtom());
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -157,7 +148,8 @@ const OrdinaryAtom&
 OrdinaryAtomTable::getByAddress(
     IDAddress addr) const throw ()
 {
-  const AddressIndex& idx = container.get<impl::AddressTag>();
+  ReadLock lock(mutex);
+  const AddressIndex& idx(container.get<impl::AddressTag>());
   // the following check only works for random access indices, but here it is ok
   assert( addr < idx.size() );
   return idx.at(addr);
@@ -170,13 +162,14 @@ ID OrdinaryAtomTable::getIDByString(
 		const std::string& str) const throw()
 {
 	typedef Container::index<impl::TextTag>::type OrdinaryAtomIndex;
-	const TextIndex& sidx = container.get<impl::TextTag>();
-	TextIndex::const_iterator it = sidx.find(str);
+  ReadLock lock(mutex);
+	const TextIndex& sidx(container.get<impl::TextTag>());
+	TextIndex::const_iterator it(sidx.find(str));
 	if( it == sidx.end() )
 		return ID_FAIL;
 	else
   {
-    const AddressIndex& aidx = container.get<impl::AddressTag>();
+    const AddressIndex& aidx(container.get<impl::AddressTag>());
 		return ID(
 				it->kind, // kind
 				container.project<impl::AddressTag>(it) - aidx.begin() // address
@@ -184,20 +177,20 @@ ID OrdinaryAtomTable::getIDByString(
   }
 }
 
-
 // given tuple, look if already stored
 // if no, return ID_FAIL, otherwise return ID
 ID OrdinaryAtomTable::getIDByTuple(
     const Tuple& tuple) const throw()
 {
 	typedef Container::index<impl::TupleTag>::type TupleIndex;
-	const TupleIndex& sidx = container.get<impl::TupleTag>();
-	TupleIndex::const_iterator it = sidx.find(tuple);
+  ReadLock lock(mutex);
+	const TupleIndex& sidx(container.get<impl::TupleTag>());
+	TupleIndex::const_iterator it(sidx.find(tuple));
 	if( it == sidx.end() )
 		return ID_FAIL;
 	else
   {
-    const AddressIndex& aidx = container.get<impl::AddressTag>();
+    const AddressIndex& aidx(container.get<impl::AddressTag>());
 		return ID(
 				it->kind, // kind
 				container.project<impl::AddressTag>(it) - aidx.begin() // address
@@ -214,8 +207,9 @@ ID OrdinaryAtomTable::getIDByStorage(
   // we cannot assert anything really useful here!
   // (if the user specifies another storage, iterator_to will segfault
   //  anyway as there is no associated internal multi_index storage node)
-  const AddressIndex& aidx = container.get<impl::AddressTag>();
-  AddressIndex::const_iterator it = aidx.iterator_to(atom);
+  ReadLock lock(mutex);
+  const AddressIndex& aidx(container.get<impl::AddressTag>());
+  AddressIndex::const_iterator it(aidx.iterator_to(atom));
   assert(atom.kind == it->kind);
   return ID(
       atom.kind, // kind
@@ -236,11 +230,12 @@ ID OrdinaryAtomTable::storeAndGetID(
       (atm.kind & ID::PROPERTY_AUX) == 0 ) &&
       "atom must be auxiliary if predicate term is auxiliary");
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
 	AddressIndex::const_iterator it;
 	bool success;
-	boost::tie(it, success) = idx.push_back(atm);
+
+  WriteLock lock(mutex);
+	AddressIndex& idx(container.get<impl::AddressTag>());
+  boost::tie(it, success) = idx.push_back(atm);
 	(void)success;
 	assert(success);
 
@@ -256,6 +251,8 @@ std::pair<OrdinaryAtomTable::PredicateIterator, OrdinaryAtomTable::PredicateIter
 OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm());
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
 }
@@ -265,6 +262,8 @@ OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
 std::pair<OrdinaryAtomTable::AddressIterator, OrdinaryAtomTable::AddressIterator>
 OrdinaryAtomTable::getAllByAddress() const throw()
 {
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
 }

@@ -199,7 +199,7 @@ struct ExternalAtom:
   // long as we don't use predicateInputMask in an index of the
   // multi_index_container"
   //
-  mutable PredicateMask inputMask;
+  mutable boost::shared_ptr<PredicateMask> inputMask;
 
 public:
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
@@ -208,7 +208,7 @@ public:
     inputs(inputs),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask()
+    inputMask(new PredicateMask)
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
   ExternalAtom(IDKind kind):
     Atom(kind),
@@ -216,7 +216,7 @@ public:
     inputs(),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask()
+    inputMask(new PredicateMask)
     { assert(ID(kind,0).isExternalAtom()); }
   ~ExternalAtom();
 
@@ -228,7 +228,7 @@ public:
   // we make this const so that we can call it on eatoms in ExternalAtomTable
   void updatePredicateInputMask() const;
   InterpretationConstPtr getPredicateInputMask() const
-    { return inputMask.mask(); }
+    { return inputMask->mask(); }
 };
 
 // module Atom structure

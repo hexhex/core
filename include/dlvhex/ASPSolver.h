@@ -88,8 +88,10 @@ struct DLVSoftware:
     virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
-    struct Impl;
-    boost::scoped_ptr<Impl> pimpl;
+    struct ConcurrentQueueResultsImpl;
+    typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
+      ConcurrentQueueResultsImplPtr;
+    ConcurrentQueueResultsImplPtr results;
   };
 };
 

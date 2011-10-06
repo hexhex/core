@@ -150,6 +150,53 @@ AnswerSet::Ptr PreparedResults::getNextAnswerSet()
   }
 }
 
+ConcurrentQueueResults::ConcurrentQueueResults():
+  queue(new AnswerSetQueue)
+{
+  DBGLOG(DBG,"ConcurrentQueueResults()" << this);
+}
+
+ConcurrentQueueResults::~ConcurrentQueueResults()
+{
+  DBGLOG(DBG,"~ConcurrentQueueResults()" << this);
+}
+
+#warning in this case we could really just store structs and not pointers in the queue
+void ConcurrentQueueResults::enqueueAnswerset(AnswerSetPtr answerset)
+{
+  assert(!!queue);
+  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(answerset, "")), 0);
+}
+
+void ConcurrentQueueResults::enqueueException(const std::string& error)
+{
+  assert(!!queue);
+  // if there is an exception we immediately queue it
+  queue->flush();
+  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), error)), 0);
+}
+
+void ConcurrentQueueResults::enqueueEnd()
+{
+  assert(!!queue);
+  queue->send(AnswerSetQueueElementPtr(new AnswerSetQueueElement(AnswerSetPtr(), "")), 0);
+}
+
+// gets next answer set or throws exception on error condition
+// returns AnswerSetPtr() on end of queue
+AnswerSetPtr ConcurrentQueueResults::getNextAnswerSet()
+{
+  assert(!!queue);
+  AnswerSetQueueElementPtr qe;
+  unsigned u = 0;
+  queue->receive(qe,u);
+  assert(!!qe);
+  if( qe->error.empty() )
+    return qe->answerset;
+  else
+    throw FatalError("ConcurrentQueueResults error:" + qe->error);
+}
+
 DLVHEX_NAMESPACE_END
 
 /* vim: set noet sw=2 ts=8 tw=80: */

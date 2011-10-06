@@ -69,6 +69,8 @@ void PredicateMask::addPredicate(ID pred)
 
 void PredicateMask::updateMask()
 {
+  boost::mutex::scoped_lock lock(updateMutex);
+
   DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
   DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
       printset(predicates));

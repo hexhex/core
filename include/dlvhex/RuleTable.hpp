@@ -83,7 +83,6 @@ public:
   typedef ElementIndex::iterator ElementIterator;
 	// methods
 public:
-	inline int getSize();
   // retrieve by ID
   // assert that id.kind is correct for Rule
   // assert that ID exists in table
@@ -105,12 +104,6 @@ public:
 	std::ostream& print(std::ostream& o, RegistryPtr reg) const throw();
 };
 
-
-int RuleTable::getSize()
-{
-  return container.size();
-}
-
 // retrieve by ID
 // assert that id.kind is correct for Rule
 // assert that ID exists
@@ -120,6 +113,7 @@ RuleTable::getByID(
 {
 	assert(id.isRule());
 	assert(id.isRegularRule() || id.isConstraint() || id.isWeakConstraint());
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -130,6 +124,7 @@ RuleTable::getByID(
 // getID by rule
 ID RuleTable::getIDByElement(const Rule& rule) const throw()
 {
+  ReadLock lock(mutex);
   const ElementIndex& sidx = container.get<impl::ElementTag>();
   ElementIndex::const_iterator it = sidx.find( boost::make_tuple(rule.kind, rule.head, rule.body, rule.weight, rule.level) );
   if( it == sidx.end() )
@@ -156,11 +151,12 @@ ID RuleTable::storeAndGetID(
 	assert(!(rule.head.empty() && ID(rule.kind,0).isRegularRule()));
 	assert(!(rule.head.size() > 1 && !ID(rule.kind,0).isRuleDisjunctive()));
  
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
 	AddressIndex::const_iterator it;
 	bool success;
-	boost::tie(it, success) = idx.push_back(rule);
+
+  WriteLock lock(mutex);
+	AddressIndex& idx = container.get<impl::AddressTag>();
+  boost::tie(it, success) = idx.push_back(rule);
 	(void)success;
 	assert(success);
 
@@ -170,17 +166,23 @@ ID RuleTable::storeAndGetID(
 			);
 }
 
-void RuleTable::clear(){
+void RuleTable::clear()
+{
+  WriteLock lock(mutex);
   container.clear();
 }
 
 void RuleTable::update(
 		const Rule& oldStorage, Rule& newStorage) throw()
 {
+  bool success;
+
+  WriteLock lock(mutex);
 	AddressIndex& idx = container.get<impl::AddressTag>();
-	AddressIndex::iterator it = idx.iterator_to(oldStorage);
-	assert(it != idx.end());
-	bool success = idx.replace(it, newStorage);
+  AddressIndex::iterator it(idx.iterator_to(oldStorage));
+  assert(it != idx.end());
+  success = idx.replace(it, newStorage);
+  (void)success;
 	assert(success);
 }
 

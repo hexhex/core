@@ -97,6 +97,9 @@ class PluginRewriter;
 // beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
+class PredicateMask;
+typedef boost::shared_ptr<PredicateMask> PredicateMaskPtr;
+
 class ProgramCtx;
 
 struct Registry;

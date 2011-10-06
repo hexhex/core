@@ -4,8 +4,6 @@ read the comments in testsuite/run-dlvhex-tests.sh.
 Deactivated Tests:
 * needs bugfix
   ../extatom2dup.hex extatom2dup.out --nofacts
-* waiting for incremental external solver integration
-	manyanswersets.hex
 * not implemented yet (namespaces)
 	namespace1.hex
 	namespace2.hex

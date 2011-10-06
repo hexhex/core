@@ -14,6 +14,7 @@ pkginclude_HEADERS = \
   CAUAlgorithms.hpp \
   ComfortPluginInterface.hpp \
   ComponentGraph.hpp \
+  ConcurrentMessageQueueOwning.h \
   Configuration.hpp \
   DependencyGraphFull.hpp \
   DependencyGraph.hpp \

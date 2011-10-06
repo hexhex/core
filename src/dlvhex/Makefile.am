@@ -25,14 +25,14 @@ dlvhex_SOURCES = dlvhex.cpp
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
 #dlvhex_LDFLAGS = -static -export-dynamic
-dlvhex_LDFLAGS = -export-dynamic
+dlvhex_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
 dlvhex_LDADD = \
   libdlvhexbase.la libmlpsolver.la libaspsolver.la libinternalplugins.la \
-  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
+  $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 

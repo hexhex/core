@@ -102,6 +102,7 @@ TermTable::getByID(
 	assert(id.isTerm());
 	// integers are not allowed in this table!
 	assert(id.isConstantTerm() || id.isVariableTerm());
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -114,6 +115,7 @@ ID TermTable::getIDByString(
 		const std::string& str) const throw()
 {
 	typedef Container::index<impl::TermTag>::type TermIndex;
+  ReadLock lock(mutex);
 	const TermIndex& sidx = container.get<impl::TermTag>();
 	TermIndex::const_iterator it = sidx.find(str);
 	if( it == sidx.end() )
@@ -138,11 +140,12 @@ ID TermTable::storeAndGetID(
 	assert(ID(symb.kind,0).isConstantTerm() || ID(symb.kind,0).isVariableTerm());
 	assert(!symb.symbol.empty());
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
+  bool success;
+  AddressIndex::const_iterator it;
 
-	AddressIndex::const_iterator it;
-	bool success;
-	boost::tie(it, success) = idx.push_back(symb);
+  WriteLock lock(mutex);
+  AddressIndex& idx = container.get<impl::AddressTag>();
+  boost::tie(it, success) = idx.push_back(symb);
 	(void)success;
 	assert(success);
 

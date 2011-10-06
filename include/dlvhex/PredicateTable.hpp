@@ -59,6 +59,7 @@ class PredicateTable:
 				BOOST_MULTI_INDEX_MEMBER(Predicate,std::string,symbol)
 			>
 		>
+    // WARNING: do not put an index on arity, it might be changed (see below)
 	>
 {
 public:
@@ -102,6 +103,7 @@ const Predicate& PredicateTable::getByID(ID id) const throw ()
 {
   assert(id.isTerm());
   assert(id.isPredicateTerm() );
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -119,6 +121,7 @@ void PredicateTable::setArity(ID id, int arity)
   assert(id.isPredicateTerm() );
   assert(arity >= 0);
 
+  WriteLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -133,6 +136,7 @@ void PredicateTable::setArity(ID id, int arity)
 // if no, return ID_FAIL, otherwise return ID
 ID PredicateTable::getIDByString(const std::string& str) const throw()
 {
+  ReadLock lock(mutex);
   const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
   PredicateNameIndex::const_iterator it = sidx.find(str);
   if( it == sidx.end() )
@@ -148,6 +152,7 @@ ID PredicateTable::getIDByString(const std::string& str) const throw()
 
 const Predicate& PredicateTable::getByString(const std::string& str) const throw()
 {
+  ReadLock lock(mutex);
   const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
   PredicateNameIndex::const_iterator it = sidx.find(str);
   if( it == sidx.end() )
@@ -166,10 +171,12 @@ ID PredicateTable::storeAndGetID(const Predicate& symb) throw()
   assert(ID(symb.kind,0).isTerm());
   assert(ID(symb.kind,0).isPredicateTerm() );
   assert(!symb.symbol.empty());
-  AddressIndex& idx = container.get<impl::AddressTag>();
-  
+
   AddressIndex::const_iterator it;
   bool success;
+
+  WriteLock lock(mutex);
+  AddressIndex& idx = container.get<impl::AddressTag>();
   boost::tie(it, success) = idx.push_back(symb);
   (void)success;
   assert(success);
@@ -184,6 +191,8 @@ ID PredicateTable::storeAndGetID(const Predicate& symb) throw()
 std::pair<PredicateTable::AddressIterator, PredicateTable::AddressIterator>
 PredicateTable::getAllByAddress() const throw()
 {
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
 }

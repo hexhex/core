@@ -182,6 +182,7 @@ BOOST_PROGRAM_OPTIONS
 BOOST_TEST
 BOOST_SYSTEM
 BOOST_FILESYSTEM
+BOOST_THREADS
 # for --enable-debug, we need the boost_date_time library
 if test "x$enable_debug" = "xtrue"; then
    BOOST_DATE_TIME

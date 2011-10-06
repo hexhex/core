@@ -27,9 +27,8 @@ check-examples:
 		echo "FAIL"; \
 	fi
 
-
-TESTS = \
-  run-dlvhex-tests.sh \
+AUTOMATED_TEST_PROGS = \
+  TestASPSolver \
   TestEvalEndToEnd \
   TestEvalHeuristic \
   TestComponentGraph \
@@ -43,6 +42,15 @@ TESTS = \
   TestOnlineModelBuilder \
   TestOfflineModelBuilder 
 
+check_PROGRAMS =  \
+  $(AUTOMATED_TEST_PROGS) \
+  TestTestPluginStatic \
+  TestPlainHEX
+
+TESTS = \
+  run-dlvhex-tests.sh \
+  $(AUTOMATED_TEST_PROGS)
+
 TESTS_ENVIRONMENT = \
   TOP_SRCDIR=$(top_srcdir) \
   EXAMPLESDIR=$(top_srcdir)/examples \
@@ -50,23 +58,6 @@ TESTS_ENVIRONMENT = \
   DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
   BOOST_TEST_REPORT_LEVEL=detailed \
   BOOST_TEST_LOG_LEVEL=all
-
-check_PROGRAMS =  \
-  TestTestPluginStatic \
-  TestASPSolver \
-  TestEvalEndToEnd \
-  TestEvalHeuristic \
-  TestComponentGraph \
-  TestDependencyGraph \
-  TestHexParser \
-  TestHexParserModule \
-  TestMLPSolver \
-  TestTables \
-  TestModelGraph \
-  TestEvalGraph \
-  TestOnlineModelBuilder \
-  TestOfflineModelBuilder \
-  TestPlainHEX 
 
 # remove .dot files produced by running check_PROGRAMS
 clean-local:
@@ -98,7 +89,8 @@ TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/dlvhex/libmlpsolver.la \
   $(top_builddir)/src/dlvhex/libaspsolver.la \
   $(top_builddir)/src/dlvhex/libinternalplugins.la \
-  $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) \
+  $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
+  $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 # the following line is just to make sure TestPlugin.cpp will be built separately
 # for libdlvhextest_la and for TestTestPluginStatic (seems like a automake/libtool bug)
@@ -149,44 +141,44 @@ noinst_LIBRARIES = libhex.a
 libhex_a_SOURCES = $(HEXSOURCES)
 
 TestPlainHEX_SOURCES = $(top_srcdir)/testsuite/TestPlainHEX.cpp
-TestPlainHEX_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestPlainHEX_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestEvalEndToEnd_SOURCES = $(top_srcdir)/testsuite/TestEvalEndToEnd.cpp
-TestEvalEndToEnd_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestEvalEndToEnd_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestASPSolver_SOURCES = $(top_srcdir)/testsuite/TestASPSolver.cpp
-TestASPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestASPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = $(top_srcdir)/testsuite/TestEvalHeuristic.cpp
-TestEvalHeuristic_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@  @LIBCURL@
+TestEvalHeuristic_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestComponentGraph_SOURCES = $(top_srcdir)/testsuite/TestComponentGraph.cpp
-TestComponentGraph_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestComponentGraph_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestDependencyGraph_SOURCES = $(top_srcdir)/testsuite/TestDependencyGraph.cpp
-TestDependencyGraph_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestDependencyGraph_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestHexParser_SOURCES = $(top_srcdir)/testsuite/TestHexParser.cpp
-TestHexParser_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+TestHexParser_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 TestHexParserModule_SOURCES = \
 	$(top_srcdir)/testsuite/TestHexParserModule.cpp \
 	$(top_srcdir)/src/dlvhex/MLPSyntaxChecker.cpp
-TestHexParserModule_LDADD = libhex.a @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
+TestHexParserModule_LDADD = libhex.a $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
 
 TestMLPSolver_SOURCES = \
 	$(top_srcdir)/testsuite/TestMLPSolver.cpp \
 	$(top_srcdir)/src/dlvhex/MLPSyntaxChecker.cpp \
 	$(top_srcdir)/src/dlvhex/MLPSolver.cpp
-TestMLPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
+TestMLPSolver_LDADD = libhex.a $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 TestMLPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
 
 TestTables_SOURCES = \
 	TestTables.cpp \
 	$(top_srcdir)/src/dlvhex/Logger.cpp \
 	$(top_srcdir)/src/dlvhex/ID.cpp
-TestTables_LDADD = @LIBLTDL@ @LIBADD_DL@ 
+TestTables_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestModelGraph_SOURCES = \
 	TestModelGraph.cpp \

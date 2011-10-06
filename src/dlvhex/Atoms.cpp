@@ -146,16 +146,16 @@ void ExternalAtom::updatePredicateInputMask() const
 {
   DBGLOG_VSCOPE(DBG,"EA::uIM",this,true);
 
-  if( !inputMask.mask() )
+  if( !inputMask->mask() )
   {
     // initially configure mask
 
     assert(!!pluginAtom);
     RegistryPtr reg = pluginAtom->getRegistry();
 
-    inputMask.setRegistry(reg);
+    inputMask->setRegistry(reg);
   }
-  inputMask.updateMask();
+  inputMask->updateMask();
 }
 
 DLVHEX_NAMESPACE_END

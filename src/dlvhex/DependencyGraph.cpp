@@ -679,7 +679,7 @@ void DependencyGraph::createExternalPredicateInputDependencies(
             registry->getTermStringByID(idpred) + "')");
 			assert(idpred.isConstantTerm());
       // inputMask is mutable so we may store it back this way (no index on it)
-      eatom.inputMask.addPredicate(idpred);
+      eatom.inputMask->addPredicate(idpred);
 
       // here: we found a predicate input for this eatom where we need to calculate all dependencies
       createExternalPredicateInputDependenciesForInput(*itext, idpred, hbh);

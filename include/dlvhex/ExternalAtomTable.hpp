@@ -102,6 +102,8 @@ ExternalAtomTable::getByID(ID id) const throw ()
 {
 	assert(id.isAtom() || id.isLiteral());
 	assert(id.isExternalAtom());
+
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -113,6 +115,8 @@ std::pair<ExternalAtomTable::PredicateIterator, ExternalAtomTable::PredicateIter
 ExternalAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm() && id.isConstantTerm());
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
 }
@@ -124,11 +128,12 @@ ID ExternalAtomTable::storeAndGetID(
 	assert(ID(atm.kind,0).isAtom());
 	assert(ID(atm.kind,0).isExternalAtom());
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
 	AddressIndex::const_iterator it;
 	bool success;
-	boost::tie(it, success) = idx.push_back(atm);
+
+  WriteLock lock(mutex);
+	AddressIndex& idx = container.get<impl::AddressTag>();
+  boost::tie(it, success) = idx.push_back(atm);
 	(void)success;
 	assert(success);
 
@@ -141,13 +146,18 @@ ID ExternalAtomTable::storeAndGetID(
 void ExternalAtomTable::update(
 		const ExternalAtom& oldStorage, ExternalAtom& newStorage) throw()
 {
+  bool success;
+
+  WriteLock lock(mutex);
 	AddressIndex& idx = container.get<impl::AddressTag>();
-	AddressIndex::iterator it = idx.iterator_to(oldStorage);
-	assert(it != idx.end());
-	bool success = idx.replace(it, newStorage);
+  AddressIndex::iterator it(idx.iterator_to(oldStorage));
+  assert(it != idx.end());
+  success = idx.replace(it, newStorage);
+  (void)success;
 	assert(success);
 }
 
 DLVHEX_NAMESPACE_END
+
 
 #endif // BUILTINATOMTABLE_HPP_INCLUDED__12102010

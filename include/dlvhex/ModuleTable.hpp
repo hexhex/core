@@ -70,8 +70,6 @@ public:
 // methods
 public:
 
-	inline int getSize();
-
   // retrieve by address
   inline const Module& getByAddress(int address) const throw ();
 
@@ -95,21 +93,19 @@ public:
 
 };
 
-int ModuleTable::getSize()
-{
-  return container.size();
-}
-
 // get range over all atoms sorted by address
 std::pair<ModuleTable::AddressIterator, ModuleTable::AddressIterator>
 ModuleTable::getAllByAddress() const throw()
 {
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
 }
 
 std::ostream& ModuleTable::print(std::ostream& o) const 
 {
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   AddressIndex::const_iterator it = idx.begin();
   int address = 0;
@@ -126,6 +122,7 @@ std::ostream& ModuleTable::print(std::ostream& o) const
 // retrieve by address
 const Module& ModuleTable::getByAddress(int address) const throw ()
 {
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   const uint32_t& uaddress = address;
@@ -137,6 +134,7 @@ const Module& ModuleTable::getByAddress(int address) const throw ()
 // retrieve by address
 const std::string& ModuleTable::getModuleName(int address) const throw ()
 {
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   const uint32_t& uaddress = address;
@@ -148,6 +146,7 @@ const std::string& ModuleTable::getModuleName(int address) const throw ()
 // if no, return MODULE_FAIL, otherwise return the module struct
 const Module& ModuleTable::getModuleByName(const std::string& moduleName) const throw()
 {
+  ReadLock lock(mutex);
   const ModuleNameIndex& sidx = container.get<impl::ModuleNameTag>();
   ModuleNameIndex::const_iterator it = sidx.find(moduleName);
   if( it == sidx.end() ) 
@@ -165,6 +164,7 @@ const Module& ModuleTable::getModuleByName(const std::string& moduleName) const 
 // if no, return -1, otherwise return the address
 int ModuleTable::getAddressByName(const std::string& moduleName) const throw()
 {
+  ReadLock lock(mutex);
   const ModuleNameIndex& sidx = container.get<impl::ModuleNameTag>();
   ModuleNameIndex::const_iterator it = sidx.find(moduleName);
   if( it == sidx.end() ) 
@@ -183,10 +183,12 @@ int ModuleTable::getAddressByName(const std::string& moduleName) const throw()
 int ModuleTable::storeAndGetAddress(const Module& mod) throw()
 {
   assert(!mod.moduleName.empty());
-  AddressIndex& idx = container.get<impl::AddressTag>();
-  
+
   AddressIndex::const_iterator it;
   bool success;
+
+  WriteLock lock(mutex);
+  AddressIndex& idx = container.get<impl::AddressTag>();
   boost::tie(it, success) = idx.push_back(mod);
   (void)success;
   assert(success);

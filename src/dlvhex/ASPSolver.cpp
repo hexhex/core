@@ -25,6 +25,7 @@
 /**
  * @file ASPSolver.cpp
  * @author Thomas Krennwallner
+ * @author Peter Schueller
  * @date Tue Jun 16 14:34:00 CEST 2009
  *
  * @brief ASP Solvers
@@ -61,25 +62,37 @@
 #include <boost/tokenizer.hpp>
 #endif
 
+#include <boost/thread.hpp>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/foreach.hpp>
 #include <list>
 
-#if 0
-// activate benchmarking if activated by configure option --enable-debug
-
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/AtomSet.h"
-
-#include <boost/scope_exit.hpp>
-#include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
-#include <cassert>
-#endif
-
 DLVHEX_NAMESPACE_BEGIN
+
+namespace
+{
+
+struct MaskedResultAdder
+{
+  ConcurrentQueueResults& queue;
+  InterpretationConstPtr mask;
+
+  MaskedResultAdder(ConcurrentQueueResults& queue, InterpretationConstPtr mask):
+    queue(queue), mask(mask)
+  {
+  }
+
+  void operator()(AnswerSetPtr as)
+  {
+    if( mask )
+      as->interpretation->getStorage() -= mask->getStorage();
+    queue.enqueueAnswerset(as);
+    boost::this_thread::interruption_point();
+  }
+};
+
+} // anonymous namespace
 
 namespace ASPSolver
 {
@@ -101,21 +114,68 @@ DLVSoftware::Options::~Options()
 {
 }
 
-struct DLVSoftware::Delegate::Impl
+//
+// ConcurrentQueueResultsImpl
+//
+
+// Delegate::Impl is used to prepare the result
+// this object would be destroyed long before the result will be destroyed
+// therefore its ownership is passed to the results
+struct DLVSoftware::Delegate::ConcurrentQueueResultsImpl:
+  public ConcurrentQueueResults
 {
+public:
   Options options;
   DLVProcess proc;
   RegistryPtr reg;
   InterpretationConstPtr mask;
+  bool shouldTerminate;
+  boost::thread answerSetProcessingThread;
 
-  Impl(const Options& options):
-    options(options)
+public:
+  ConcurrentQueueResultsImpl(const Options& options):
+    ConcurrentQueueResults(),
+    options(options),
+    shouldTerminate(false)
   {
+    DBGLOG(DBG,"DLVSoftware::Delegate::ConcurrentQueueResultsImpl()" << this);
   }
 
-  ~Impl()
+  virtual ~ConcurrentQueueResultsImpl()
   {
-    proc.close();
+    DBGLOG(DBG,"DLVSoftware::Delegate::~ConcurrentQueueResultsImpl()" << this);
+    DBGLOG(DBG,"setting termination bool, emptying queue, and joining thread");
+    shouldTerminate = true;
+    queue->flush();
+    answerSetProcessingThread.join();
+    DBGLOG(DBG,"closing (probably killing) process");
+    proc.close(true);
+    DBGLOG(DBG,"done");
+  }
+
+  void setupProcess()
+  {
+    proc.setPath(DLVPATH);
+    if( options.includeFacts )
+      proc.addOption("-facts");
+    else
+      proc.addOption("-nofacts");
+    BOOST_FOREACH(const std::string& arg, options.arguments)
+    {
+      proc.addOption(arg);
+    }
+  }
+
+  void answerSetProcessingThreadFunc();
+
+  void startThread()
+  {
+    DBGLOG(DBG,"starting answer set processing thread");
+    answerSetProcessingThread = boost::thread(
+	boost::bind(
+	  &ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc,
+	  boost::ref(*this)));
+    DBGLOG(DBG,"started answer set processing thread");
   }
 
   void closeAndCheck()
@@ -139,99 +199,72 @@ struct DLVSoftware::Delegate::Impl
       throw FatalError(errstr.str());
     }
   }
-
-  void setupProcess()
-  {
-    proc.setPath(DLVPATH);
-    if( options.includeFacts )
-      proc.addOption("-facts");
-    else
-      proc.addOption("-nofacts");
-    BOOST_FOREACH(const std::string& arg, options.arguments)
-    {
-      proc.addOption(arg);
-    }
-  }
 };
 
-DLVSoftware::Delegate::Delegate(const Options& options):
-  pimpl(new Impl(options))
+void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc()
 {
-}
-
-DLVSoftware::Delegate::~Delegate()
-{
-}
-
-#define CATCH_RETHROW_DLVDELEGATE \
-  catch(const GeneralError& e) { \
-    std::stringstream errstr; \
-    int retcode = pimpl->proc.close(); \
-    errstr << pimpl->proc.path() << " (exitcode = " << retcode << \
-      "): " << e.getErrorMsg(); \
-    throw FatalError(errstr.str()); \
-  } \
-  catch(const std::exception& e) \
-  { \
-    throw FatalError(pimpl->proc.path() + ": " + e.what()); \
-  }
-
-void
-DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::useASTInput");
-
-  DLVProcess& proc = pimpl->proc;
-  pimpl->reg = program.registry;
-  assert(pimpl->reg);
-  pimpl->mask = program.mask;
-
-  #warning TODO HO checks
-  //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
-  //  throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
-
-  // in higher-order mode we cannot have aggregates, because then they would
-  // almost certainly be recursive, because of our atom-rewriting!
-  //if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
-  //  throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
-
+  #warning create multithreaded logger by using thread-local storage for logger indent
+  DBGLOG(DBG,"[" << this << "]" " starting answerSetProcessingThreadFunc");
   try
   {
-    pimpl->setupProcess();
-    // handle maxint
-    if( program.maxint > 0 )
+    // parse results and store them into the queue
+
+    // parse result
+    assert(!!reg);
+    DLVResultParser parser(reg);
+    MaskedResultAdder adder(*this, mask);
+    std::istream& is = proc.getInput();
+    do
     {
-      std::ostringstream os;
-      os << "-N=" << program.maxint;
-      proc.addOption(os.str());
+      // get next input line
+      DBGLOG(DBG,"[" << this << "]" "getting input from stream");
+      std::string input;
+      std::getline(is, input);
+      DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() << " characters from input stream via getline");
+      if( input.empty() || is.bad() )
+      {
+	DBGLOG(DBG,"[" << this << "]" "leaving loop because got input size " << input.size() <<
+	    ", stream bits fail " << is.fail() << ", bad " << is.bad() << ", eof " << is.eof());
+	break;
+      }
+
+      // parse line
+      DBGLOG(DBG,"[" << this << "]" "parsing");
+      std::istringstream iss(input);
+      parser.parse(iss, adder);
     }
-    // request stdin as last parameter
-    proc.addOption("--");
-    LOG(DBG,"external process was setup with path '" << pimpl->proc.path() << "'");
+    while(!shouldTerminate);
 
-    // fork dlv process
-    proc.spawn();
-
-    std::ostream& programStream = proc.getOutput();
-
-    // output program
-    RawPrinter printer(programStream, program.registry);
-
-    if( program.edb != 0 )
+    // do clean shutdown if we were not terminated from outside
+    if( !shouldTerminate )
     {
-      // print edb interpretation as facts
-      program.edb->printAsFacts(programStream);
-      programStream << "\n";
-      programStream.flush();
+      closeAndCheck(); // closes process and throws on errors (all results have been parsed above)
+      enqueueEnd();
     }
-
-    printer.printmany(program.idb, "\n");
-    programStream << "\n";
-    programStream.flush();
-
-    proc.endoffile();
   }
-  CATCH_RETHROW_DLVDELEGATE
+  catch(const GeneralError& e)
+  {
+    int retcode = proc.close();
+    std::stringstream s;
+    s << proc.path() << " (exitcode = " << retcode << "): " << e.getErrorMsg();
+    LOG(ERROR, "[" << this << "]" + s.str());
+    enqueueException(s.str());
+  }
+  catch(const std::exception& e)
+  {
+    std::stringstream s;
+    s << proc.path() + ": " + e.what();
+    LOG(ERROR, "[" << this << "]" + s.str());
+    enqueueException(s.str());
+  }
+  catch(...)
+  {
+    std::stringstream s;
+    s << proc.path() + " other exception";
+    LOG(ERROR, "[" << this << "]" + s.str());
+    enqueueException(s.str());
+  }
+  DBGLOG(DBG,"[" << this << "]" "exiting answerSetProcessingThreadFunc");
 }
 
 #warning TODO certain interfaces deactivated
@@ -273,58 +306,98 @@ DLVSoftware::Delegate::useFileInput(const std::string& fileName)
 }
 #endif
 
-namespace
-{
 
-struct MaskedResultAdder
+/////////////////////////////////////
+// DLVSoftware::Delegate::Delegate //
+/////////////////////////////////////
+DLVSoftware::Delegate::Delegate(const Options& options):
+  results(new ConcurrentQueueResultsImpl(options))
 {
-  PreparedResultsPtr ret;
-  InterpretationConstPtr mask;
+}
 
-  MaskedResultAdder(PreparedResultsPtr ret, InterpretationConstPtr mask):
-    ret(ret), mask(mask) {}
-  void operator()(AnswerSetPtr as)
+DLVSoftware::Delegate::~Delegate()
+{
+}
+
+void
+DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::useASTInput");
+
+  DLVProcess& proc = results->proc;
+  results->reg = program.registry;
+  assert(results->reg);
+  results->mask = program.mask;
+
+  #warning TODO HO checks
+  //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
+  //  throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
+
+  // in higher-order mode we cannot have aggregates, because then they would
+  // almost certainly be recursive, because of our atom-rewriting!
+  //if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
+  //  throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
+
+  try
   {
-    as->interpretation->getStorage() -= mask->getStorage();
-    ret->add(as);
-  }
-};
+    results->setupProcess();
+    // handle maxint
+    if( program.maxint > 0 )
+    {
+      std::ostringstream os;
+      os << "-N=" << program.maxint;
+      proc.addOption(os.str());
+    }
+    // request stdin as last parameter
+    proc.addOption("--");
+    LOG(DBG,"external process was setup with path '" << proc.path() << "'");
 
+    // fork dlv process
+    proc.spawn();
+
+    std::ostream& programStream = proc.getOutput();
+
+    // output program
+    RawPrinter printer(programStream, program.registry);
+
+    if( program.edb != 0 )
+    {
+      // print edb interpretation as facts
+      program.edb->printAsFacts(programStream);
+      programStream << "\n";
+      programStream.flush();
+    }
+
+    printer.printmany(program.idb, "\n");
+    programStream << "\n";
+    programStream.flush();
+
+    proc.endoffile();
+
+    // start thread
+    results->startThread();
+  }
+  catch(const GeneralError& e)
+  {
+    std::stringstream errstr;
+    int retcode = results->proc.close();
+    errstr << results->proc.path() << " (exitcode = " << retcode <<
+      "): " << e.getErrorMsg();
+    throw FatalError(errstr.str());
+  }
+  catch(const std::exception& e)
+  {
+    throw FatalError(results->proc.path() + ": " + e.what());
+  }
 }
 
 ASPSolverManager::ResultsPtr 
 DLVSoftware::Delegate::getResults()
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::getResults");
-
-  //DBGLOG(DBG,"getting results");
-  try
-  {
-    // for now, we parse all results and store them into the result container
-    // later we should do kind of an online processing here
-
-    boost::shared_ptr<PreparedResults> ret(new PreparedResults);
-
-    // parse result
-    DLVResultParser parser(pimpl->reg);
-    if( pimpl->mask )
-    {
-      parser.parse(pimpl->proc.getInput(),
-	  MaskedResultAdder(ret, pimpl->mask));
-    }
-    else
-    {
-      parser.parse(pimpl->proc.getInput(),
-	  boost::bind(&PreparedResults::add, ret.get(), _1));
-    }
-
-    pimpl->closeAndCheck(); // closes process and throws on errors (all results have been parsed above)
-
-    ASPSolverManager::ResultsPtr baseret(ret);
-    return baseret;
-  }
-  CATCH_RETHROW_DLVDELEGATE
+  DBGLOG(DBG,"DLVSoftware::Delegate::getResults");
+  return results;
 }
+
 
 //
 // DLVLibSoftware

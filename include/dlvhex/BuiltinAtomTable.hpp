@@ -83,6 +83,7 @@ BuiltinAtomTable::getByID(
 {
 	assert(id.isAtom() || id.isLiteral());
 	assert(id.isBuiltinAtom());
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -97,11 +98,12 @@ ID BuiltinAtomTable::storeAndGetID(
 	assert(ID(atm.kind,0).isBuiltinAtom());
 	assert(!atm.tuple.empty());
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
-	AddressIndex::const_iterator it;
 	bool success;
-	boost::tie(it, success) = idx.push_back(atm);
+	AddressIndex::const_iterator it;
+
+  WriteLock lock(mutex);
+	AddressIndex& idx = container.get<impl::AddressTag>();
+  boost::tie(it, success) = idx.push_back(atm);
 	(void)success;
 	assert(success);
 

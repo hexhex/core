@@ -36,6 +36,7 @@
 #include "dlvhex/Logger.hpp"
 
 #include <boost/multi_index_container.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -68,6 +69,9 @@ public:
 	// storage
 protected:
 	Container container;
+  mutable boost::shared_mutex mutex;
+  typedef boost::shared_lock<boost::shared_mutex> ReadLock;
+  typedef boost::unique_lock<boost::shared_mutex> WriteLock;
 
 	// methods
 public:
@@ -82,12 +86,31 @@ public:
   // we will only create those accessors we really need
   // two important objectives: space efficiency and time efficiency
 
-  virtual std::ostream& print(std::ostream& o) const;
+  std::ostream& print(std::ostream& o) const;
+
+  Table(const Table& other):
+    container(other.container),
+    mutex()
+  {
+  }
+
+  Table& operator=(const Table& other)
+  {
+    WriteLock lock(mutex);
+    container = other.container;
+  }
+
+  inline unsigned getSize() const
+  {
+    ReadLock lock(mutex);
+    return container.size();
+  }
 };
 
 template<typename ValueT, typename IndexT>
 std::ostream& Table<ValueT,IndexT>::print(std::ostream& o) const
 {
+  ReadLock lock(mutex);
   // debugging assumes that each container can be iterated by AddressTag index and contains KindTag index
 	typedef typename Container::template index<impl::AddressTag>::type AddressIndex;
 	const AddressIndex& aidx = container.template get<impl::AddressTag>();

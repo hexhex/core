@@ -29,6 +29,7 @@ higherorder3.hex higherorder3.out --nofacts --higherorder-enable
 higherorder4.hex higherorder4.out --nofacts --higherorder-enable
 higherorder5.hex higherorder5.out --nofacts --higherorder-enable
 higherorder5except.hex higherorder5except.stderr --higherorder-enable
+manyanswersets.hex manyanswersets_twomodels.stdout --number=2
 maxint.hex maxint.out
 minimality.hex minimality.out
 naftest.hex naftest.out

@@ -92,8 +92,6 @@ public:
         // get the ID of the module atom with predicate, inputs, and output atom specified
 	inline ID getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw();
 
-	inline int getSize();
-
         // get all module atoms with certain predicate id
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
@@ -119,6 +117,8 @@ ModuleAtomTable::getByID(ID id) const throw ()
 {
 	assert(id.isAtom() || id.isLiteral());
 	assert(id.isModuleAtom());
+
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
   // the following check only works for random access indices, but here it is ok
   assert( id.address < idx.size() );
@@ -131,6 +131,7 @@ ModuleAtomTable::getByID(ID id) const throw ()
 // outputAtom = r(a) 
 ID ModuleAtomTable::getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw()
 {
+  ReadLock lock(mutex);
   const ElementIndex& sidx = container.get<impl::ElementTag>();
   ElementIndex::const_iterator it = sidx.find( boost::make_tuple(predicate1, inputs1, outputAtom1) );
   if( it == sidx.end() )
@@ -145,17 +146,13 @@ ID ModuleAtomTable::getIDByElement(ID predicate1, const Tuple& inputs1, ID outpu
     }
 }
 
-
-int ModuleAtomTable::getSize()
-{
-  return container.size();
-}
-
 // get all external atoms with certain predicate id
 std::pair<ModuleAtomTable::PredicateIterator, ModuleAtomTable::PredicateIterator>
 ModuleAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm() && id.isConstantTerm());
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
 }
@@ -164,6 +161,8 @@ ModuleAtomTable::getRangeByPredicateID(ID id) const throw()
 std::pair<ModuleAtomTable::AddressIterator, ModuleAtomTable::AddressIterator>
 ModuleAtomTable::getAllByAddress() const throw()
 {
+  #warning this read-only iteration will probably need to be mutexed too!
+  ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
 }
@@ -175,11 +174,12 @@ ID ModuleAtomTable::storeAndGetID(
 	assert(ID(atm.kind,0).isAtom());
 	assert(ID(atm.kind,0).isModuleAtom());
 
-	AddressIndex& idx = container.get<impl::AddressTag>();
-
 	AddressIndex::const_iterator it;
 	bool success;
-	boost::tie(it, success) = idx.push_back(atm);
+
+  ReadLock lock(mutex);
+	AddressIndex& idx = container.get<impl::AddressTag>();
+  boost::tie(it, success) = idx.push_back(atm);
 	(void)success;
 	assert(success);
 
@@ -192,10 +192,14 @@ ID ModuleAtomTable::storeAndGetID(
 void ModuleAtomTable::update(
 		const ModuleAtom& oldStorage, ModuleAtom& newStorage) throw()
 {
-	AddressIndex& idx = container.get<impl::AddressTag>();
-	AddressIndex::iterator it = idx.iterator_to(oldStorage);
-	assert(it != idx.end());
-	bool success = idx.replace(it, newStorage);
+  bool success;
+
+  WriteLock lock(mutex);
+	AddressIndex& idx(container.get<impl::AddressTag>());
+  AddressIndex::iterator it(idx.iterator_to(oldStorage));
+  assert(it != idx.end());
+  success = idx.replace(it, newStorage);
+  (void)success;
 	assert(success);
 }
 
