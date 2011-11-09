@@ -585,7 +585,7 @@ typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
 #if 0
 /**
- * Optimizer class.
+ * Optimizer class (for optimizing dependency graph)
  *
  * \todo doc
  */

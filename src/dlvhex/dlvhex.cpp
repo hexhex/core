@@ -423,7 +423,7 @@ int main(int argc, char *argv[])
 		// ExternalAtom instances (in the IDB)
 		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
 			
-		// rewrite program
+		// rewrite program (plugins might want to do this, e.g., for partial grounding)
 		pctx.rewriteEDBIDB();
 			
 		// associate PluginAtom instances with
@@ -437,10 +437,10 @@ int main(int argc, char *argv[])
 		// create dependency graph (we need the previous step for this)
 		pctx.createDependencyGraph();
 
-		// optimize dependency graph (some plugin might want to do this, e.g. partial grounding)
+		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
 		pctx.optimizeEDBDependencyGraph();
 		// everything in the following will be done using the dependency graph and EDB
-		#warning IDB and dependencygraph could get out of sync!
+		#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
 			
 		// create graph of strongly connected components of dependency graph
 		pctx.createComponentGraph();

@@ -100,23 +100,6 @@ void State::changeState(ProgramCtx* ctx, StatePtr s)
   ctx->changeState(s);
 }
 
-/*
-void State::showPlugins(ProgramCtx*) { }
-void State::convert(ProgramCtx*) { }
-void State::parse(ProgramCtx*) { }
-void State::syntaxCheck(ProgramCtx*) { }
-void State::rewriteEDBIDB(ProgramCtx*) { }
-void State::optimizeEDBDependencyGraph(ProgramCtx*) {}
-void State::createComponentGraph(ProgramCtx*) {}
-void State::createEvalGraph(ProgramCtx*) {}
-void State::configureModelBuilder(ProgramCtx*) {}
-void State::createDependencyGraph(ProgramCtx*) { }
-void State::safetyCheck(ProgramCtx*) { }
-void State::strongSafetyCheck(ProgramCtx*) { }
-void State::evaluate(ProgramCtx*) { }
-void State::postProcess(ProgramCtx*) { } 
-*/
-
 // each of these functions skips to the "failureState" and executes the executed function on it
 // this is useful for having optional states
 // if no failureState is given, an exception is raised
