@@ -1,3 +1,7 @@
+2011-11-12  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/DependencyGraph.cpp: Improved Error output and fixed bug.
+
 2011-10-06  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/DLVresultParserDriver.cpp: Parsing one answer set at a time.

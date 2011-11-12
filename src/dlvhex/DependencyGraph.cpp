@@ -360,7 +360,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     HeadBodyHelper& hbh)
 {
   LOG_SCOPE(DBG,"cARiR",false);
-  DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for body " << printvector(body));
+  DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for body " <<
+      printvector(body) << " = " <<
+      printManyToString<RawPrinter>(body, ",", registry));
   assert(!!pluginAtom);
 
   // collect variables at constant inputs of this external atom
@@ -413,6 +415,10 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
   {
     // don't compare to self
     if( *itat == idlit )
+      continue;
+
+    // ground atoms cannot provide grounding information
+    if( itat->isOrdinaryGroundAtom() )
       continue;
 
     // see comment at top of DependencyGraph.hpp for what could perhaps be improved here
@@ -490,7 +496,9 @@ void DependencyGraph::createAuxiliaryRuleIfRequired(
     }
     else
     {
-      throw FatalError("encountered unknown atom type in createAuxiliaryRuleIfRequired");
+      std::ostringstream oss;
+      oss << "encountered unknown atom type '" << *itat << "' in createAuxiliaryRuleIfRequired";
+      throw FatalError(oss.str());
     }
   } // iterate over body of rule to find matches
 
