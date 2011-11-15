@@ -137,6 +137,8 @@ using namespace internal;
 
 void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
 {
+	throw std::runtime_error("todo: reimplemente EvalHeuristicEasy");
+	#if 0
   ComponentGraph& compgraph = builder.getComponentGraph();
 
   bool didSomething;
@@ -230,7 +232,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
     }
   }
 
-#if 0
+//#if 0
   // this is the old non-transitive version of the above
   {
     ComponentIterator cit;
@@ -301,7 +303,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
       }
     }
   }
-  #endif
+  //#endif
 
   //
   // forall components with only inner rules or constraints:
@@ -492,6 +494,7 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
     EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
+	#endif
 }
 
 DLVHEX_NAMESPACE_END

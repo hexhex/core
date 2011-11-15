@@ -58,9 +58,19 @@ EvalHeuristicFromFile::~EvalHeuristicFromFile()
 {
 }
 
-typedef std::vector<unsigned> CollapseCommand;
-typedef std::vector<CollapseCommand> CommandVector;
-// for an example command file see examples/extatom3_evalplan.txt
+typedef std::vector<unsigned> IdxVector;
+
+struct BuildCommand
+{
+	// components to collapse to unit
+	IdxVector collapse;
+	// components to share into unit (constraint components)
+	IdxVector share;
+};
+typedef std::vector<BuildCommand> CommandVector;
+
+// for an example command file with only collapsing see examples/extatom3_evalplan.txt
+// for an example command file with collapsing and cloning see examples/extatom3_evalplanb.txt
 void parseCommandFile(const std::string& fname, CommandVector& commands);
 
 typedef ComponentGraph::Component Component;
@@ -72,48 +82,69 @@ typedef std::set<Component> ComponentSet;
 typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
 typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
 
-// trivial strategy:
-// do a topological sort of the tree
-// build eval units in that order
+// manual strategy:
+// get commands from file
 void EvalHeuristicFromFile::build(EvalGraphBuilder& builder)
 {
-  ComponentGraph& compgraph = builder.getComponentGraph();
+  const ComponentGraph& compgraph = builder.getComponentGraph();
 
+	// get commands from file
   CommandVector commands;
   parseCommandFile(fname, commands);
 
   // get components in order of iteration into vector
   std::vector<Component> indexableComps;
-	// and create white hash map
-	CompColorHashMap ccWhiteHashMap;
   {
     ComponentGraph::ComponentIterator cit, cit_end;
     for(boost::tie(cit, cit_end) = compgraph.getComponents();
         cit != cit_end; ++cit)
     {
       indexableComps.push_back(*cit);
-      ccWhiteHashMap[*cit] = boost::white_color;
     }
 	}
 
   // collapse according to commands
-  BOOST_FOREACH(const CollapseCommand& cmd, commands)
+  BOOST_FOREACH(const BuildCommand& cmd, commands)
   {
-    LOG(ANALYZE,"collapse command from file collapses components with index " << printvector(cmd));
-    ComponentSet componentsToCollapse;
-    BOOST_FOREACH(unsigned idx, cmd)
+    LOG(ANALYZE,"build command from file collapses components with indices " <<
+				printvector(cmd.collapse) <<
+				" and shared components with indices " << printvector(cmd.share));
+		std::list<Component> comps, ccomps;
+    BOOST_FOREACH(unsigned idx, cmd.collapse)
     {
-      componentsToCollapse.insert(indexableComps[idx]);
-    }
-		Component newcomp = compgraph.collapseComponents(componentsToCollapse);
-    LOG(ANALYZE,"collapsing yielded component " << newcomp);
+			comps.push_back(indexableComps[idx]);
+		}
+    BOOST_FOREACH(unsigned idx, cmd.share)
+    {
+			ccomps.push_back(indexableComps[idx]);
+		}
+		EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+		LOG(ANALYZE,"components " << printrange(comps) <<
+				" with shared " << printrange(ccomps) <<
+				" became eval unit " << u);
   }
 
+	// create eval units for all components not specified in the file and warn
+	typedef EvalGraphBuilder::ComponentGraphRest CGRest;
+	typedef boost::graph_traits<CGRest> CGRestTraits;
+	const CGRest& cgrest = builder.getComponentGraphRest();
+
   // topologically sort all components that are still left at that point
+	// create white hash map for topological sort
+	CompColorHashMap ccWhiteHashMap;
+	{
+		CGRestTraits::vertex_iterator cit, cit_end;
+    for(boost::tie(cit, cit_end) = boost::vertices(cgrest);
+        cit != cit_end; ++cit)
+    {
+      ccWhiteHashMap[*cit] = boost::white_color;
+		}
+	}
+
   ComponentContainer comps;
   std::back_insert_iterator<ComponentContainer> compinserter(comps);
   boost::topological_sort(
-      compgraph.getInternalGraph(),
+      cgrest,
       compinserter,
       boost::color_map(CompColorMap(ccWhiteHashMap)));
 
@@ -121,9 +152,41 @@ void EvalHeuristicFromFile::build(EvalGraphBuilder& builder)
   for(ComponentContainer::const_iterator it = comps.begin();
       it != comps.end(); ++it)
   {
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
+		std::list<Component> comps, ccomps;
+		comps.push_back(*it);
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+    LOG(WARNING,"component " << *it << " was not specified in input file "
+				"and became eval unit " << u);
   }
+}
+
+namespace
+{
+
+struct sem
+{
+	// this is just to create useful compiler/linker errors
+	template<typename Attrib, typename Context>
+	void operator()(const Attrib& attrib, Context& c, boost::spirit::qi::unused_type) const;
+
+  template<typename Context>
+	void operator()(const
+			boost::fusion::vector2<
+				std::vector<unsigned int>,
+				boost::optional<std::vector<unsigned int> >
+		 >& attrib, Context& c, boost::spirit::qi::unused_type) const
+	{
+		BuildCommand& target = boost::fusion::at_c<0>(c.attributes);
+		const std::vector<unsigned int>& collapse = boost::fusion::at_c<0>(attrib);
+		target.collapse = collapse;
+		if( !!boost::fusion::at_c<1>(attrib) )
+		{
+			const std::vector<unsigned int>& share = boost::fusion::at_c<1>(attrib).get();
+			target.share = share;
+		}
+	}
+};
+
 }
 
 // for an example command file see examples/extatom3_evalplan.txt
@@ -141,11 +204,10 @@ void parseCommandFile(const std::string& fname, CommandVector& commands)
 
   namespace spirit = ::boost::spirit;
   namespace qi = ::boost::spirit::qi;
+  qi::rule<std::string::const_iterator, BuildCommand(), spirit::ascii::space_type> cmd;
+	cmd = (qi::lit("collapse") >> +(qi::uint_) >> -(qi::lit("share") >> +(qi::uint_))) [ sem() ];
   qi::rule<std::string::const_iterator, CommandVector(), spirit::ascii::space_type> root;
-  root =
-      *(
-          qi::lit("collapse") >> *(qi::uint_)
-       );
+  root = *( cmd );
   #ifdef BOOST_SPIRIT_DEBUG
   BOOST_SPIRIT_DEBUG_NODE(root);
   #endif

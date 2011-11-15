@@ -145,13 +145,6 @@ public:
 	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();
 
-	// collapse components given in range into one new component
-	// collapse incoming and outgoing dependencies
-	// update properties of dependencies
-	// update properties of component
-	// asserts that this operation does not make the DAG cyclic
-	Component collapseComponents(const ComponentSet& originals);
-
 	//
 	// accessors
 	//
@@ -220,16 +213,6 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
-  // calculate ComponentInfo from dependencies within a collapsed part of the dependency graph.
-	#if 0
-  void calculateCollapsedComponentProperties(
-    const std::set<DependencyGraph::Node>& sourceNodes,
-    ComponentInfo& ci) const;
-  // Calculate DependencyInfo from collapsed dependencies.
-  void calculateCollapsedDependencyProperties(
-    const std::set<DependencyGraph::Dependency>& sourceDependencies,
-    DependencyInfo& di) const;
-	#endif
 };
 
 DLVHEX_NAMESPACE_END
