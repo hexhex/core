@@ -66,7 +66,7 @@ protected:
     { assert(ID(kind,0).isAtom()); }
   Atom(IDKind kind, const Tuple& tuple):
     kind(kind), tuple(tuple)
-    { assert(ID(kind,0).isAtom()); assert(!tuple.empty()); }
+    { assert(ID(kind,0).isAtom()); }
 };
 
 // regarding strong negation:
