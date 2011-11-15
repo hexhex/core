@@ -102,31 +102,18 @@ namespace
   EvalUnitProperties eup_empty;
 }
 
-namespace
+void EvalGraphBuilder::calculateNewEvalUnitInfos(
+		const ComponentSet& comps, const ComponentSet& ccomps,
+		std::list<DependencyInfo>& newUnitDependsOn,
+		ComponentInfo& newUnitInfo)
 {
+	DBGLOG_SCOPE(DBG,"cEUI", false);
+	DBGLOG(DBG,"= calculateEvalUnitInfos(" << printrange(comps) <<
+			"," << printrange(ccomps) << ")");
 
-typedef ComponentGraph::ComponentInfo ComponentInfo;
-struct DependencyInfo:
-	public ComponentGraph::DependencyInfo
-{
-	// this is not a property of a graph,
-	// we use this when we calculate the dependencies of a new unit
-	// and for that we need to know on which units it depends
-	EvalUnit dependsOn;
-};
-typedef ComponentGraph::Component Component;
-typedef ComponentGraph::ComponentSet ComponentSet;
-
-// collapse components given in range into one new component
-// collapse incoming and outgoing dependencies
-// update properties of dependencies
-// update properties of component
-// asserts that this operation does not make the DAG cyclic
-void collapseComponents(
-		const ComponentSet& originals)
-{
-	DBGLOG_SCOPE(DBG,"cC", false);
-	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
+	throw std::runtime_error("TODO implement calculateNewEvalUnitInfos");
+	
+	/*
 
 	typedef std::map<Component, DependencyInfo> DepMap;
 
@@ -295,9 +282,29 @@ void collapseComponents(
 		boost::remove_vertex(*ito, cg);
 	}
 
-	return c;
-}
 
+  // find all dependencies and create them in eval graph
+  ComponentGraph::PredecessorIterator it, it_end;
+  for(boost::tie(it, it_end) = cg.getDependencies(comp);
+      it != it_end; ++it)
+  {
+    Component dcomp = cg.targetOf(*it);
+    DBGLOG(DBG,"found dependency to component " << dcomp);
+    ComponentEvalUnitMapping::left_const_iterator itu =
+      mapping.left.find(dcomp);
+    if( itu == mapping.left.end() )
+      throw std::runtime_error(
+          "tried to create an eval unit, "
+          "where not all predecessors have previously been created!");
+    EvalUnit du = itu->second;
+    DBGLOG(DBG,"adding dependency to unit " << du << " with joinOrder " << joinOrder);
+    eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
+    joinOrder++;
+  }
+
+
+
+	*/
 }
 
 EvalGraphBuilder::EvalUnit
@@ -312,24 +319,32 @@ EvalGraphBuilder::createEvalUnit(
 	// (this verifies a lot of stuff in debug mode)
 	std::list<DependencyInfo> newUnitDependsOn;
 	ComponentInfo newUnitInfo;
-
-
+	{
+		// TODO perhaps directly take ComponentSet as inputs
+		ComponentSet scomps(comps.begin(), comps.end());
+		ComponentSet sccomps(ccomps.begin(), ccomps.end());
+		calculateNewEvalUnitInfos(scomps, sccomps, newUnitDependsOn, newUnitInfo);
+	}
 
   // create eval unit
   EvalUnit u = eg.addUnit(eup_empty);
   LOG(DBG,"created unit " << u);
 
-  // associate with component
-  typedef ComponentEvalUnitMapping::value_type MappedPair;
-  bool success = mapping.insert(MappedPair(comp, u)).second;
-  assert(success); // component must not already exist here
+  // associate comps with component
+	// ignore shared ccomps here (see comments in .hpp file)
+	BOOST_FOREACH(Component c, comps)
+	{
+		typedef ComponentEvalUnitMapping::value_type MappedPair;
+		bool success = mapping.insert(MappedPair(c, u)).second;
+		assert(success); // component must not already exist here
+	}
 
   // configure unit
   EvalUnitProperties& uprops = eg.propsOf(u);
 
   // configure model generator factory, depending on type of component
   {
-    const ComponentGraph::ComponentInfo& ci = cg.propsOf(comp);
+    const ComponentGraph::ComponentInfo& ci = newUnitInfo;
     if( ci.innerEatoms.empty() )
     {
       // no inner external atoms -> plain model generator factory
@@ -357,26 +372,14 @@ EvalGraphBuilder::createEvalUnit(
   }
 
   // create dependencies
-
-  // find all dependencies and create them in eval graph
-  ComponentGraph::PredecessorIterator it, it_end;
   unsigned joinOrder = 0;
-  for(boost::tie(it, it_end) = cg.getDependencies(comp);
-      it != it_end; ++it)
-  {
-    Component dcomp = cg.targetOf(*it);
-    DBGLOG(DBG,"found dependency to component " << dcomp);
-    ComponentEvalUnitMapping::left_const_iterator itu =
-      mapping.left.find(dcomp);
-    if( itu == mapping.left.end() )
-      throw std::runtime_error(
-          "tried to create an eval unit, "
-          "where not all predecessors have previously been created!");
-    EvalUnit du = itu->second;
-    DBGLOG(DBG,"adding dependency to unit " << du << " with joinOrder " << joinOrder);
-    eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
+	BOOST_FOREACH(const DependencyInfo& di, newUnitDependsOn)
+	{
+		// TODO join order?
+    DBGLOG(DBG,"adding dependency to unit " << di.dependsOn << " with joinOrder " << joinOrder);
+    eg.addDependency(u, di.dependsOn, EvalUnitDepProperties(joinOrder));
     joinOrder++;
-  }
+	}
 
   return u;
 }

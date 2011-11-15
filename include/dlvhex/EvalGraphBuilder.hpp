@@ -70,6 +70,18 @@ public:
   typedef ComponentGraph::Dependency Dependency;
 
 protected:
+	typedef ComponentGraph::ComponentSet ComponentSet;
+	typedef ComponentGraph::ComponentInfo ComponentInfo;
+	struct DependencyInfo:
+		public ComponentGraph::DependencyInfo
+	{
+		// this is not a property of a graph,
+		// we use this when we calculate the dependencies of a new unit
+		// and for that we need to know on which units it depends
+		EvalUnit dependsOn;
+	};
+
+protected:
   // we use identity as hash function as eval units are distinct unsigned ints
 
   BOOST_CONCEPT_ASSERT((boost::Convertible<Component, void*>));
@@ -108,7 +120,9 @@ protected:
     UnusedVertexFilter(const UnusedVertexFilter& other): ceum(other.ceum) {}
 		UnusedVertexFilter& operator=(const UnusedVertexFilter& other)
 			{ ceum = other.ceum; return *this; }
-    bool operator()(Component node) const; // { assert(ucmap); return (*ucmap)[static_cast<unsigned>(node)]; }
+		// return true if vertex is still in graph -> return true if not mapped yet
+    bool operator()(Component comp) const
+			{ assert(ceum); return ceum->left.find(comp) == ceum->left.end(); }
     const ComponentEvalUnitMapping* ceum;
   };
   struct UnusedEdgeFilter
@@ -120,7 +134,11 @@ protected:
     UnusedEdgeFilter(const UnusedEdgeFilter& other): cg(other.cg), ceum(other.ceum) {}
 		UnusedEdgeFilter& operator=(const UnusedEdgeFilter& other)
 			{ cg = other.cg; ceum = other.ceum; return *this; }
-    bool operator()(Dependency dep) const;
+    bool operator()(Dependency dep) const
+			{ assert(cg && ceum);
+				return
+					(ceum->left.find(cg->targetOf(dep)) == ceum->left.end()) &&
+					(ceum->left.find(cg->sourceOf(dep)) == ceum->left.end()); }
     const ComponentGraph* cg;
     const ComponentEvalUnitMapping* ceum;
   };
@@ -199,6 +217,17 @@ public:
 	//   constraint pushing restrictions (this will be asserted by createEvalUnit))
   virtual EvalUnit createEvalUnit(
 			const std::list<Component>& comps, const std::list<Component>& ccomps);
+
+protected:
+	// prepare to collapse given components into evaluation unit
+	// prepare collapse incoming dependencies
+	// create dependencies and properties of dependencies
+	// create properties of component
+	// asserts that this operation does not make the DAG cyclic
+	void calculateNewEvalUnitInfos(
+			const ComponentSet& comps, const ComponentSet& ccomps,
+			std::list<DependencyInfo>& newUnitDependsOn,
+			ComponentInfo& newUnitInfo);
 };
 
 DLVHEX_NAMESPACE_END
