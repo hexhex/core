@@ -136,7 +136,7 @@ HEXSOURCES = \
 	$(top_srcdir)/src/dlvhex/URLBuf.cpp \
 	$(top_srcdir)/src/dlvhex/WellfoundedModelGenerator.cpp
 
-noinst_LIBRARIES = libhex.a
+check_LIBRARIES = libhex.a
 
 libhex_a_SOURCES = $(HEXSOURCES)
 
