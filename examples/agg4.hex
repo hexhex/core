@@ -1,0 +1,10 @@
+a(1,a) v a(2,b).
+a(1,c) v a(3,d).
+
+dom(a).
+dom(b).
+dom(c).
+dom(d).
+
+% only choice allowed is a(1,a) and a(1,c) because this generates a unique X
+:- not #count{ X : a(X,Y), dom(Y) } = 1.
