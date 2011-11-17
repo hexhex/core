@@ -147,6 +147,7 @@ public:
     DBGLOG(DBG,"setting termination bool, emptying queue, and joining thread");
     shouldTerminate = true;
     queue->flush();
+    DBGLOG(DBG,"joining thread");
     answerSetProcessingThread.join();
     DBGLOG(DBG,"closing (probably killing) process");
     proc.close(true);
@@ -234,6 +235,7 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
       parser.parse(iss, adder);
     }
     while(!shouldTerminate);
+		DBGLOG(DBG,"[" << this << "]" "after loop " << shouldTerminate);
 
     // do clean shutdown if we were not terminated from outside
     if( !shouldTerminate )
@@ -322,7 +324,7 @@ DLVSoftware::Delegate::~Delegate()
 void
 DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::useASTInput");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useASTInput");
 
   DLVProcess& proc = results->proc;
   results->reg = program.registry;

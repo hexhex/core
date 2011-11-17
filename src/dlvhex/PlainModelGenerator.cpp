@@ -162,7 +162,7 @@ PlainModelGenerator::generateNextModel()
         IntegrateExternalAnswerIntoInterpretationCB cb(newint);
         evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
         DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-            "outer external atom computations");
+            "outer eatom computations");
         DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 
         if( factory.xidb.empty() )

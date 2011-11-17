@@ -159,7 +159,7 @@ WellfoundedModelGenerator::generateNextModel()
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
       evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-          "outer external atom computations");
+          "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
       assert(!factory.xidb.empty() && "the wellfounded model generator is not required for non-idb components! (use plain)");

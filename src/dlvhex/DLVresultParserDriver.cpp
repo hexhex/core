@@ -416,6 +416,7 @@ DLVResultParser::parse(
 
   if( errors != 0  )
   {
+		LOG(ERROR,"error count for parsing DLV output = " << errors);
     throw SyntaxError("Could not parse complete DLV output! (see error log messages)");
   }
 }

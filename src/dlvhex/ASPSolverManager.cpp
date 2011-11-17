@@ -38,18 +38,7 @@
 #  include "config.h"
 #endif
 
-#if 0
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/Configuration.h"
-#include "dlvhex/AtomSet.h"
-
-#include <boost/scope_exit.hpp>
-#include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
-#include <boost/foreach.hpp>
-#include <cassert>
-#endif
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -186,6 +175,8 @@ void ConcurrentQueueResults::enqueueEnd()
 // returns AnswerSetPtr() on end of queue
 AnswerSetPtr ConcurrentQueueResults::getNextAnswerSet()
 {
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ConcurrentQueueRes:getNextAS");
+
   assert(!!queue);
   AnswerSetQueueElementPtr qe;
   unsigned u = 0;
