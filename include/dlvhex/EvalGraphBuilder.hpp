@@ -79,6 +79,8 @@ protected:
 		// we use this when we calculate the dependencies of a new unit
 		// and for that we need to know on which units it depends
 		EvalUnit dependsOn;
+		DependencyInfo(EvalUnit dependsOn, const ComponentGraph::DependencyInfo& parent):
+			ComponentGraph::DependencyInfo(parent), dependsOn(dependsOn) {}
 	};
 
 protected:
@@ -229,6 +231,7 @@ protected:
 			std::list<DependencyInfo>& newUnitDependsOn,
 			ComponentInfo& newUnitInfo);
 };
+typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
 DLVHEX_NAMESPACE_END
 

@@ -460,9 +460,9 @@ std::ostream& GuessAndCheckModelGeneratorFactory::print(
     std::ostream& o, bool verbose) const
 {
   // item separator
-  std::string isep(" ");
+  std::string isep("\n");
   // group separator
-  std::string gsep(" ");
+  std::string gsep("\n");
   if( verbose )
   {
     isep = "\n";

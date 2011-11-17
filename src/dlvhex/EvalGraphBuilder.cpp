@@ -33,6 +33,9 @@
 #include "dlvhex/WellfoundedModelGenerator.hpp"
 #include "dlvhex/GuessAndCheckModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/PluginInterface.h"
 
 #include <boost/range/iterator_range.hpp>
 
@@ -40,25 +43,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#if 0
-template<typename EvalGraphT>
-bool
-EvalGraphBuilder<EvalGraphT>::UnusedEdgeFilter::operator()(
-    ComponentGraph::Dependency dep) const
-{
-  assert(cg);
-  assert(ucmap);
-
-  // edge is good (= unused) if both vertices are unused
-  ComponentGraph::Node n1 = cg->sourceOf(dep);
-  if( (*ucmap)[static_cast<unsigned>(n1)] == false )
-    return false;
-  ComponentGraph::Node n2 = cg->targetOf(dep);
-  return (*ucmap)[static_cast<unsigned>(n2)];
-}
-#endif
-
-//template<typename EvalGraphT>
 EvalGraphBuilder::EvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
@@ -75,14 +59,13 @@ EvalGraphBuilder::EvalGraphBuilder(
 {
 }
 
-//template<typename EvalGraphT>
 EvalGraphBuilder::~EvalGraphBuilder()
 {
 }
 
 #if 0
 template<typename NodeRange>
-EvalGraphBuilder<EvalGraphT>::createEvalUnit(NodeRange nodes)
+EvalGraphBuilder::createEvalUnit(NodeRange nodes)
 {
 	typename NodeRange::iterator itn;
 	for(itn = boost::begin(nodes); itn != boost::end(nodes); ++itn)
@@ -100,8 +83,40 @@ typedef FinalEvalGraph::EvalUnitDepPropertyBundle
 namespace
 {
   EvalUnitProperties eup_empty;
+
+  bool checkEatomMonotonic(
+      RegistryPtr reg,
+      ID eatomid)
+  {
+    DBGLOG(DBG,"checking whether eatom " << eatomid << " is monotonic");
+
+		// check monotonicity
+		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
+		assert(!!eatom.pluginAtom);
+		PluginAtom* pa = eatom.pluginAtom;
+		if( pa->isMonotonic() )
+		{
+			DBGLOG(DBG,"  eatom " << eatomid << " is monotonic");
+			return true;
+		}
+		else
+		{
+			DBGLOG(DBG,"  eatom " << eatomid << " is nonmonotonic");
+			return false;
+		}
+  }
 }
 
+// build evaluation unit from components <comps> and copy into this unit also constraints in <ccomps>
+//
+// look at all dependencies outgoing from <comps>
+// * dependencies to existing units (in this->mapping.left) are accumulated
+//   into unit ependencies -> <newUnitsDependOn>
+// * dependencies to <comps> are rememberd to determine whether eatoms are inner or outer
+//   -> this is used to build newUnitInfo
+// * all other dependencies are forbidden!
+//   -> this ensures that no cycles are introduced
+//
 void EvalGraphBuilder::calculateNewEvalUnitInfos(
 		const ComponentSet& comps, const ComponentSet& ccomps,
 		std::list<DependencyInfo>& newUnitDependsOn,
@@ -111,35 +126,64 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 	DBGLOG(DBG,"= calculateEvalUnitInfos(" << printrange(comps) <<
 			"," << printrange(ccomps) << ")");
 
-	throw std::runtime_error("TODO implement calculateNewEvalUnitInfos");
-	
-	/*
-
-	typedef std::map<Component, DependencyInfo> DepMap;
-
-	// set of dependencies from the new component to other components
+	// set of dependencies from the new components to other components
+	// key = other eval unit
+	// value = dependency info
+	typedef std::map<EvalUnit, DependencyInfo> DepMap;
 	DepMap outgoing;
-  // set of original components that depend on original components
+
+  // set of original components that depend on other original components
+	// (we need this to find out whether an eatom in a component is an outer or
+	// an inner eatom ... if it depends on stuff in the components it is inner)
   ComponentSet internallyDepends;
 
-	// iterate over all originals and over outgoing dependencies
+	// iterate over all originals and over their outgoing dependencies (what they depend on)
 	ComponentSet::const_iterator ito;
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
 		DBGLOG(DBG,"original " << *ito << ":");
 		DBGLOG_INDENT(DBG);
 
-		PredecessorIterator itpred, itpred_end;
-		for(boost::tie(itpred, itpred_end) = getDependencies(*ito);
+		ComponentGraph::PredecessorIterator itpred, itpred_end;
+		for(boost::tie(itpred, itpred_end) = cg.getDependencies(*ito);
 				itpred != itpred_end; ++itpred)
 		{
 			Dependency outgoing_dep = *itpred;
-			Component target = targetOf(outgoing_dep);
-			if( originals.count(target) == 0 )
+			Component target = cg.targetOf(outgoing_dep);
+			if( comps.find(target) == comps.end() )
 			{
 				// dependency not within the new collapsed component
+				// -> dependency must be to eval unit
+				// -> it must be to already mapped component
 				DBGLOG(DBG,"outgoing dependency to " << target);
-				outgoing[target] |= propsOf(outgoing_dep);
+				// map component to unit
+				ComponentEvalUnitMapping::left_map::iterator itu(
+						mapping.left.find(target));
+				#ifndef NDEBUG
+				// be nice: give a nice error message
+				if( itu == mapping.left.end() )
+				{
+					LOG(ERROR,"outgoing dependency from component " << *ito <<
+							" to component " << target << " not allowed because "
+							" the target is not yet mapped to an evaluation unit");
+				}
+				#endif
+				const ComponentGraph::DependencyInfo& comp_depinfo =
+					cg.propsOf(outgoing_dep);
+
+				// accumulate dependency info into <outgoing>
+				assert(itu != mapping.left.end());
+				EvalUnit dependsOn = itu->second;
+				DepMap::iterator itdo = outgoing.find(dependsOn);
+				if( itdo == outgoing.end() )
+				{
+					outgoing.insert(std::make_pair(
+								dependsOn, DependencyInfo(dependsOn, comp_depinfo)));
+				}
+				else
+				{
+					itdo->second |= comp_depinfo;
+				}
 			}
       else
       {
@@ -150,56 +194,15 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 		} // iterate over predecessors
 	} // iterate over originals
 
-	// dependencies of other components on the new component
-	DepMap incoming;
-
-	// iterate over all originals and over incoming dependencies
-  // now also check for duplicate violations
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
-	{
-		DBGLOG(DBG,"original " << *ito << ":");
-		DBGLOG_INDENT(DBG);
-
-		SuccessorIterator itsucc, itsucc_end;
-		for(boost::tie(itsucc, itsucc_end) = getProvides(*ito);
-				itsucc != itsucc_end; ++itsucc)
-		{
-			Dependency incoming_dep = *itsucc;
-			Component source = sourceOf(incoming_dep);
-			if( originals.count(source) == 0 )
-			{
-				// do not count dependencies within the new collapsed component
-				DBGLOG(DBG,"incoming dependency from " << source);
-				incoming[source] |= propsOf(incoming_dep);
-				// ensure that we do not create cycles
-        // (this check is not too costly, so this is no assertion but a real runtime check)
-				DepMap::const_iterator itdm = outgoing.find(source);
-				// if we have an incoming dep and an outgoing dep,
-				// we create a cycle so this collapsing is invalid
-        // (this is a bug in the code calling collapseComponents!)
-        if( itdm != outgoing.end() )
-        {
-          throw std::runtime_error(
-              "collapseComponents tried to create a cycle!");
-        }
-			}
-		} // iterate over successors
-	} // iterate over originals
-
 	//
-	// we prepared all dependencies, so now we create the component
+	// build newUnitInfo
 	//
-
-	Component c = boost::add_vertex(cg);
-	LOG(DBG,"created component node " << c << " for collapsed component");
-
-	// build combined component info
-	ComponentInfo& ci = propsOf(c);
+	ComponentInfo& ci = newUnitInfo;
   assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
       "ComponentInfo constructor should set this to true");
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
-		ComponentInfo& cio = propsOf(*ito);
+		const ComponentInfo& cio = cg.propsOf(*ito);
     #ifdef COMPGRAPH_SOURCESDEBUG
 		ci.sources.insert(ci.sources.end(),
 				cio.sources.begin(), cio.sources.end());
@@ -241,7 +244,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
       {
         BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
         {
-          if( !checkEatomMonotonic(reg, innerEatomId) )
+          if( !checkEatomMonotonic(ctx.registry(), innerEatomId) )
           {
             ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
             break;
@@ -249,62 +252,18 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
         }
       }
     }
-    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
-    // TODO create testcase for this (how about wellfounded2.hex?)
+    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
 
-	// build incoming dependencies
-	for(DepMap::const_iterator itd = incoming.begin();
-			itd != incoming.end(); ++itd)
-	{
-		Dependency newdep;
-		bool success;
-		DBGLOG(DBG,"adding edge " << itd->first << " -> " << c);
-		boost::tie(newdep, success) = boost::add_edge(itd->first, c, itd->second, cg);
-		assert(success); // we only add new edges here, and each only once
-	}
-
-	// build outgoing dependencies
+	//
+	// build newUnitDependsOn
+	//
+	// (we only build outgoing dependencies)
 	for(DepMap::const_iterator itd = outgoing.begin();
 			itd != outgoing.end(); ++itd)
 	{
-		Dependency newdep;
-		bool success;
-		DBGLOG(DBG,"adding edge " << c << " -> " << itd->first);
-		boost::tie(newdep, success) = boost::add_edge(c, itd->first, itd->second, cg);
-		assert(success); // we only add new edges here, and each only once
+		newUnitDependsOn.push_back(itd->second);
 	}
-
-	// remove all original components
-	for(ito = originals.begin(); ito != originals.end(); ++ito)
-	{
-		boost::clear_vertex(*ito, cg);
-		boost::remove_vertex(*ito, cg);
-	}
-
-
-  // find all dependencies and create them in eval graph
-  ComponentGraph::PredecessorIterator it, it_end;
-  for(boost::tie(it, it_end) = cg.getDependencies(comp);
-      it != it_end; ++it)
-  {
-    Component dcomp = cg.targetOf(*it);
-    DBGLOG(DBG,"found dependency to component " << dcomp);
-    ComponentEvalUnitMapping::left_const_iterator itu =
-      mapping.left.find(dcomp);
-    if( itu == mapping.left.end() )
-      throw std::runtime_error(
-          "tried to create an eval unit, "
-          "where not all predecessors have previously been created!");
-    EvalUnit du = itu->second;
-    DBGLOG(DBG,"adding dependency to unit " << du << " with joinOrder " << joinOrder);
-    eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
-    joinOrder++;
-  }
-
-
-
-	*/
 }
 
 EvalGraphBuilder::EvalUnit

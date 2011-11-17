@@ -166,6 +166,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
 			<< "                      manual:<file> - read 'collapse <idx> <idx>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
+			<< "     --dumpevalplan=F dump evaluation plan (usable as manual heuristics) to file F" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
@@ -311,6 +312,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
+	pctx.config.setOption("DumpEvaluationPlan",0);
 
 	// defaults of main
 	Config config;
@@ -545,6 +547,7 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
+		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -805,6 +808,13 @@ void processOptionsPrePlugin(
 					break;
 				case 16:
 					pctx.config.setOption("Split",1);
+					break;
+				case 17:
+					{
+						std::string fname(optarg);
+						pctx.config.setOption("DumpEvaluationPlan",1);
+						pctx.config.setStringOption("DumpEvaluationPlanFile",fname);
+					}
 					break;
 				}
 			break;

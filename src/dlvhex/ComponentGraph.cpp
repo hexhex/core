@@ -57,6 +57,19 @@ ComponentGraph::DependencyInfo::operator|=(
   return *this;
 }
 
+std::ostream& ComponentGraph::ComponentInfo::print(std::ostream& o) const
+{
+	if( !outerEatoms.empty() )
+		o << "outerEatoms: " << printrange(outerEatoms) << std::endl;
+	if( !innerRules.empty() )
+		o << "innerRules: " << printrange(innerRules) << std::endl;
+	if( !innerEatoms.empty() )
+		o << "innerEatoms: " << printrange(innerEatoms) << std::endl;
+	if( !innerConstraints.empty() )
+		o << "innerConstraints: " << printrange(innerConstraints) << std::endl;
+	return o;
+}
+
 std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const
 {
 	return o << static_cast<const DependencyGraph::DependencyInfo&>(*this);
@@ -299,15 +312,6 @@ namespace
 			return false;
 		}
   }
-
-  bool checkEatomMonotonic(
-      RegistryPtr reg,
-      const DependencyGraph& dg,
-      DependencyGraph::Node eatomnode)
-  {
-    return checkEatomMonotonic(reg, dg.propsOf(eatomnode).id);
-  }
-
 }
 
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
@@ -398,8 +402,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
           if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
           {
             // check, if the newly added inner eatom is monotonic
+						ID eatomid = dg.propsOf(*itn).id;
             ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-              checkEatomMonotonic(reg, dg, *itn);
+              checkEatomMonotonic(reg, eatomid);
           }
 				}
 				else
@@ -494,27 +499,20 @@ namespace
   }
 
 	template<typename Range>
-	void printoutVerboseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	void printoutVerboseIfNotEmpty(std::ostream& o, RegistryPtr reg, const char* prefix, Range idrange)
 	{
 		// see boost/range/iterator_range.hpp
 		typedef typename Range::const_iterator Iterator;
 		if( !boost::empty(idrange) )
 		{
 			o << "{" << prefix << "|";
-			Iterator it = boost::begin(idrange);
-			rp.print(*it);
-			it++;
-			for(; it != boost::end(idrange); ++it)
-			{
-				o << "\\n";
-				rp.print(*it);
-			}
+			graphviz::escape(o, printManyToString<RawPrinter>(idrange, "\n", reg));
 			o << "}|";
 		}
 	}
 
 	template<typename Range>
-	void printoutTerseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	void printoutTerseIfNotEmpty(std::ostream& o, RegistryPtr reg, const char* prefix, Range idrange)
 	{
 		// see boost/range/iterator_range.hpp
 		typedef typename Range::const_iterator Iterator;
@@ -531,17 +529,16 @@ namespace
 void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, unsigned index, bool verbose) const
 {
   const ComponentInfo& ci = getComponentInfo(c);
-	RawPrinter rp(o, reg);
   if( verbose )
   {
     o << "{idx=" << index << ",component=" << c << "|";
     #ifdef COMPGRAPH_SOURCESDEBUG
     o << "{sources|" << printrange(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
-		printoutVerboseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
-		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
-		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
-		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+		printoutVerboseIfNotEmpty(o, reg, "outerEatoms", ci.outerEatoms);
+		printoutVerboseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
+		printoutVerboseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
+		printoutVerboseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
     if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
     {
       o << "{fixpoint?|";
@@ -556,10 +553,10 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
   else
   {
     o << "{idx=" << index << "|";
-		printoutTerseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
-		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
-		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
-		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
+		printoutTerseIfNotEmpty(o, reg, "outerEatoms", ci.outerEatoms);
+		printoutTerseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
+		printoutTerseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
+		printoutTerseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
     if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
     {
       o << "{fixpoint?|";
@@ -611,9 +608,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
   {
     o << graphviz_node_id(*it) << "[shape=record,label=\"";
     {
-      std::ostringstream ss;
-      writeGraphVizComponentLabel(ss, *it, index, verbose);
-			graphviz::escape(o, ss.str());
+      writeGraphVizComponentLabel(o, *it, index, verbose);
     }
     o << "\"];" << std::endl;
   }
@@ -628,9 +623,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
     {
-      std::ostringstream ss;
       writeGraphVizDependencyLabel(o, *dit, verbose);
-			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }

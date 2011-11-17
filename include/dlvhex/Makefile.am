@@ -18,6 +18,7 @@ pkginclude_HEADERS = \
   Configuration.hpp \
   DependencyGraphFull.hpp \
   DependencyGraph.hpp \
+  DumpingEvalGraphBuilder.hpp \
   DLVProcess.h \
   DLVresultParserDriver.h \
   Error.h \

@@ -104,13 +104,15 @@ std::ostream& PlainModelGeneratorFactory::print(
     std::ostream& o) const
 {
   RawPrinter printer(o, ctx.registry());
+	o << "outer eatoms:" << std::endl;
   if( !eatoms.empty() )
   {
-    printer.printmany(eatoms,",");
+    printer.printmany(eatoms,"\n");
   }
+	o << "xidb:" << std::endl;
   if( !xidb.empty() )
   {
-    printer.printmany(xidb,",");
+    printer.printmany(xidb,"\n");
   }
   return o;
 }

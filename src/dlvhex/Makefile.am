@@ -48,12 +48,14 @@ libdlvhexbase_la_SOURCES = \
     ComponentGraph.cpp \
     Configuration.cpp \
     DependencyGraph.cpp \
+		DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
+		GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
     PredicateMask.cpp \

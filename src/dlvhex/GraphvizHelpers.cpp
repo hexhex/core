@@ -22,29 +22,52 @@
  */
 
 /**
- * @file   GraphvizHelpers.hpp
- * @author Peter Schueller <ps@kr.tuwien.ac.at>
- * 
- * @brief  Helpers for creating graphviz output.
+ * @file GraphvizHelpers.cpp
+ * @author Peter Schueller
  */
 
-#ifndef GRAPHVIZHELPERS_HPP_INCLUDED__20082011
-#define GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+#include "dlvhex/GraphvizHelpers.hpp"
 
-#include "dlvhex/PlatformDefinitions.h"
-
+#include <ostream>
 #include <string>
-#include <iosfwd>
 
 DLVHEX_NAMESPACE_BEGIN
 
 namespace graphviz
 {
 
-void escape(std::ostream& o, const std::string& s);
+void escape(std::ostream& o, const std::string& s)
+{
+	for(std::string::const_iterator c = s.begin();
+			c != s.end(); ++c)
+	{
+		// escape " into \"
+		// escape < into \<
+		// escape > into \>
+		// escape # into \#
+		// escape { into \{
+		// escape } into \}
+		// escape \n into \\n
+		switch( *c )
+		{
+			case '"': o << "\\\""; break;
+			case '<': o << "\\<"; break;
+			case '>': o << "\\>"; break;
+			case '#': o << "\\#"; break;
+			case '{': o << "\\{"; break;
+			case '}': o << "\\}"; break;
+			case '\n': o << "\\n"; break;
+			default: o << *c; break;
+		}
+	}
+}
 
 }
 
 DLVHEX_NAMESPACE_END
 
-#endif // GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+// vim: set noet sw=4 ts=8 tw=80:
+
+// Local Variables:
+// mode: C++
+// End:
