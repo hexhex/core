@@ -1016,6 +1016,11 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   //       ctx->getResultContainer()->filterOutDLT();
   //     }
 
+	// cleanup some stuff that is better not automatically destructed
+	DBGLOG(DBG,"usage count of model builder before reset is " <<
+			ctx->modelBuilder.use_count());
+	ctx->modelBuilder.reset();
+
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
