@@ -1,3 +1,14 @@
+2011-11-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/dlvhex/SafetyChecker.cpp: Fixed bug in safety checker.
+	* examples/agg4.hex: Added new testcase for aggregates to detect
+	above safety checker bug.
+	* examples/tests/agg4.out: Likewise.
+	* examples/tests/dlvhextests.test: Likewise.
+	* examples/Makefile.am: Likewise.
+
+	* testsuite/Makefile.am: Only building test library for make check.
+
 2011-11-12  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/DependencyGraph.cpp: Improved Error output and fixed bug.

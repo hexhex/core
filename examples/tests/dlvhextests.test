@@ -2,6 +2,7 @@
 agg1.hex agg1.out
 agg2.hex agg2.out
 agg3.hex agg3.out --nofacts
+agg4.hex agg4.out --nofacts
 anonymousvariable1.hex anonymousvariable1.out --nofacts
 builtin_safety1.hex builtin_safety1.stderr
 builtin_safety1a.hex builtin_safety1a.stderr

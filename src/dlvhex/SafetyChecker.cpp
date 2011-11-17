@@ -112,9 +112,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 			DBGLOG(DBG," -> safe (ordinary ground)"); 
 			transfer = true;
     }
-		else if( it->isNaf() )
+		else if( it->isNaf() && !it->isAggregateAtom() )
     {
-			DBGLOG(DBG," -> need to check if all variables are safe (NAF and not ground)"); 
+			DBGLOG(DBG," -> need to check if all variables are safe (NAF and not ground and no aggregate)"); 
 			std::set<ID> vars;
 			reg->getVariablesInID(*it, vars);
 			bool good = true;
@@ -167,7 +167,8 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 			// so we only do lightweight checking (the backend will complain anyways)
 			//
 			// a) get safe variables from aggregate body
-			// b) if aggregate is an assignment, make assigned variable safe
+			// b) if aggregate is an assignment and the aggregate is not in a NAF literal,
+			//    make assigned variable safe
 
 			const AggregateAtom& atom = reg->aatoms.getByID(*it);
 
@@ -189,19 +190,22 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 				// TODO we did this before, but this should not be allowed!
 				//safevars.insert(tmpNewSafeVars.begin(), tmpNewSafeVars.end());
 
-				// if aggregate is an assignment, make assigned variable safe
-				if( atom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+				// if aggregate is an assignment and not in NAF, make assigned variable safe
+				if( !it->isNaf() )
 				{
-					assert(atom.tuple[0] != ID_FAIL);
-					if( atom.tuple[0].isVariableTerm() )
-						newsafevars.insert(atom.tuple[0]);
-				}
+					if( atom.tuple[1] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					{
+						assert(atom.tuple[0] != ID_FAIL);
+						if( atom.tuple[0].isVariableTerm() )
+							newsafevars.insert(atom.tuple[0]);
+					}
 
-				if( atom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
-				{
-					assert(atom.tuple[4] != ID_FAIL);
-					if( atom.tuple[4].isVariableTerm() )
-						newsafevars.insert(atom.tuple[4]);
+					if( atom.tuple[3] == ID::termFromBuiltin(ID::TERM_BUILTIN_EQ) )
+					{
+						assert(atom.tuple[4] != ID_FAIL);
+						if( atom.tuple[4].isVariableTerm() )
+							newsafevars.insert(atom.tuple[4]);
+					}
 				}
 
 				if( reordered_aggregate )
