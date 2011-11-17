@@ -38,6 +38,7 @@
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
 #include <ostream>
 
@@ -162,6 +163,8 @@ private:
   std::ostream* output;
   Count printSkip;
 
+	boost::mutex mutex;
+
   inline std::ostream& printInSecs(std::ostream& o, const Duration& d, int width=0) const;
 
   // print information about stat
@@ -262,12 +265,14 @@ void BenchmarkController::printInformation(const Stat& st)
 // print only count of ID
 std::ostream& BenchmarkController::printCount(std::ostream& out, ID id)
 {
+	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   return out << st.count;
 }
 
 std::ostream& BenchmarkController::printDuration(std::ostream& out, ID id)
 {
+	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   return printInSecs(out, st.duration);
 }
@@ -300,6 +305,7 @@ void BenchmarkController::printInformationContinous(Stat& st, const Duration& du
 // start timer
 void BenchmarkController::start(ID id)
 {
+	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
   st.start = boost::posix_time::microsec_clock::local_time();
 }
@@ -308,6 +314,7 @@ void BenchmarkController::start(ID id)
 // stop and record elapsed time, print stats
 void BenchmarkController::stop(ID id)
 {
+	boost::mutex::scoped_lock lock(mutex);
   Stat& st = instrumentations[id];
 
   Duration dur = boost::posix_time::microsec_clock::local_time() - st.start;
@@ -320,6 +327,7 @@ void BenchmarkController::stop(ID id)
 // inline for performance
 void BenchmarkController::count(ID id, Count increment)
 {
+	boost::mutex::scoped_lock lock(mutex);
   Stat& s = instrumentations[id];
   s.count += increment;
   s.prints += increment - 1;
