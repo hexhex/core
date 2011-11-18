@@ -138,12 +138,24 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
-private:
-  // not implemented on purpose because forbidden to use
-	ComponentGraph(const Component& other);
+protected:
+	// only to be used by explicit clone method
+	ComponentGraph(const ComponentGraph& other);
 public:
 	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();
+
+	// for explicit cloning of the graph
+	ComponentGraph* clone() const;
+
+	//
+	// modifiers
+	//
+
+	// collapse several components into one
+	#warning this method is a relic from old evaluation graph
+	Component collapseComponents(
+			const ComponentSet& originals);
 
 	//
 	// accessors

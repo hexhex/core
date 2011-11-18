@@ -288,8 +288,7 @@ int main(int argc, char *argv[])
 	#endif
 
 	// default eval heuristic = "easy" heuristic
-	LOG(WARNING,"using old eval heuristics by default!");
-	pctx.evalHeuristic.reset(new EvalHeuristicOldDlvhex);
+	pctx.evalHeuristic.reset(new EvalHeuristicEasy);
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 

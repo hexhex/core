@@ -489,6 +489,188 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   } // create dependencies outgoing from SCC s
 }
 
+// collapse components given in range into one new component
+// collapse incoming and outgoing dependencies
+// update properties of dependencies
+// update properties of component
+// asserts that this operation does not make the DAG cyclic
+ComponentGraph::Component
+ComponentGraph::collapseComponents(
+		const ComponentSet& originals)
+{
+	DBGLOG_SCOPE(DBG,"cC", false);
+	DBGLOG(DBG,"= collapseComponents(" << printrange(originals) << ")");
+
+	typedef std::map<Component, DependencyInfo> DepMap;
+
+	// set of dependencies from the new component to other components
+	DepMap outgoing;
+  // set of original components that depend on original components
+  ComponentSet internallyDepends;
+
+	// iterate over all originals and over outgoing dependencies
+	ComponentSet::const_iterator ito;
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG_INDENT(DBG);
+
+		PredecessorIterator itpred, itpred_end;
+		for(boost::tie(itpred, itpred_end) = getDependencies(*ito);
+				itpred != itpred_end; ++itpred)
+		{
+			Dependency outgoing_dep = *itpred;
+			Component target = targetOf(outgoing_dep);
+			if( originals.count(target) == 0 )
+			{
+				// dependency not within the new collapsed component
+				DBGLOG(DBG,"outgoing dependency to " << target);
+				outgoing[target] |= propsOf(outgoing_dep);
+			}
+      else
+      {
+				// dependency within the new collapsed component
+				DBGLOG(DBG,"internal dependency (to " << target << ")");
+				internallyDepends.insert(*ito);
+      }
+		} // iterate over predecessors
+	} // iterate over originals
+
+	// dependencies of other components on the new component
+	DepMap incoming;
+
+	// iterate over all originals and over incoming dependencies
+  // now also check for duplicate violations
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG_INDENT(DBG);
+
+		SuccessorIterator itsucc, itsucc_end;
+		for(boost::tie(itsucc, itsucc_end) = getProvides(*ito);
+				itsucc != itsucc_end; ++itsucc)
+		{
+			Dependency incoming_dep = *itsucc;
+			Component source = sourceOf(incoming_dep);
+			if( originals.count(source) == 0 )
+			{
+				// do not count dependencies within the new collapsed component
+				DBGLOG(DBG,"incoming dependency from " << source);
+				incoming[source] |= propsOf(incoming_dep);
+				// ensure that we do not create cycles
+        // (this check is not too costly, so this is no assertion but a real runtime check)
+				DepMap::const_iterator itdm = outgoing.find(source);
+				// if we have an incoming dep and an outgoing dep,
+				// we create a cycle so this collapsing is invalid
+        // (this is a bug in the code calling collapseComponents!)
+        if( itdm != outgoing.end() )
+        {
+          throw std::runtime_error(
+              "collapseComponents tried to create a cycle!");
+        }
+			}
+		} // iterate over successors
+	} // iterate over originals
+
+	//
+	// we prepared all dependencies, so now we create the component
+	//
+
+	Component c = boost::add_vertex(cg);
+	LOG(DBG,"created component node " << c << " for collapsed component");
+
+	// build combined component info
+	ComponentInfo& ci = propsOf(c);
+  assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
+      "ComponentInfo constructor should set this to true");
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		ComponentInfo& cio = propsOf(*ito);
+    #ifdef COMPGRAPH_SOURCESDEBUG
+		ci.sources.insert(ci.sources.end(),
+				cio.sources.begin(), cio.sources.end());
+		#endif
+    // inner rules stay inner rules
+		ci.innerRules.insert(ci.innerRules.end(),
+				cio.innerRules.begin(), cio.innerRules.end());
+    // inner eatoms always stay inner eatoms, they cannot become outer eatoms
+		ci.innerEatoms.insert(ci.innerEatoms.end(),
+				cio.innerEatoms.begin(), cio.innerEatoms.end());
+    // inner constraints stay inner constraints
+		ci.innerConstraints.insert(ci.innerConstraints.end(),
+				cio.innerConstraints.begin(), cio.innerConstraints.end());
+
+    // innerEatomsMonotonicAndOnlyPositiveCycles
+    // is false if it is false for any component
+    ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
+      cio.innerEatomsMonotonicAndOnlyPositiveCycles;
+
+    // if *ito does not depend on any component in originals
+    // then outer eatoms stay outer eatoms
+    // otherwise they become inner eatoms
+    if( internallyDepends.find(*ito) == internallyDepends.end() )
+    {
+      // does not depend on other components
+      ci.outerEatoms.insert(ci.outerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+    }
+    else
+    {
+      // does depend on other components
+      // -> former outer eatoms now become inner eatoms
+      ci.innerEatoms.insert(ci.innerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+
+      // innerEatomsMonotonicAndOnlyPositiveCycles
+      // is false if any outer eatom that became an inner eatom is nonmonotonic
+      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+      {
+        BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
+        {
+          if( !checkEatomMonotonic(reg, innerEatomId) )
+          {
+            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+            break;
+          }
+        }
+      }
+    }
+    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
+    // TODO create testcase for this (how about wellfounded2.hex?)
+	}
+
+	// build incoming dependencies
+	for(DepMap::const_iterator itd = incoming.begin();
+			itd != incoming.end(); ++itd)
+	{
+		Dependency newdep;
+		bool success;
+		DBGLOG(DBG,"adding edge " << itd->first << " -> " << c);
+		boost::tie(newdep, success) = boost::add_edge(itd->first, c, itd->second, cg);
+		assert(success); // we only add new edges here, and each only once
+	}
+
+	// build outgoing dependencies
+	for(DepMap::const_iterator itd = outgoing.begin();
+			itd != outgoing.end(); ++itd)
+	{
+		Dependency newdep;
+		bool success;
+		DBGLOG(DBG,"adding edge " << c << " -> " << itd->first);
+		boost::tie(newdep, success) = boost::add_edge(c, itd->first, itd->second, cg);
+		assert(success); // we only add new edges here, and each only once
+	}
+
+	// remove all original components
+	for(ito = originals.begin(); ito != originals.end(); ++ito)
+	{
+		boost::clear_vertex(*ito, cg);
+		boost::remove_vertex(*ito, cg);
+	}
+
+	return c;
+}
+
 namespace
 {
   std::string graphviz_node_id(ComponentGraph::Component c)
@@ -630,6 +812,20 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
 
   o << "}" << std::endl;
 }
+
+ComponentGraph::ComponentGraph(const ComponentGraph& other):
+	reg(other.reg),
+	dg(other.dg),
+	cg(other.cg)
+{
+}
+
+// for explicit cloning of the graph
+ComponentGraph* ComponentGraph::clone() const
+{
+	return new ComponentGraph(*this);
+}
+
 
 DLVHEX_NAMESPACE_END
 

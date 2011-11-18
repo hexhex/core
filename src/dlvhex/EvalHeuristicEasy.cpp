@@ -36,6 +36,7 @@
 #include <boost/graph/topological_sort.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/scoped_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -137,9 +138,9 @@ using namespace internal;
 
 void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
 {
-	throw std::runtime_error("todo: reimplemente EvalHeuristicEasy");
-	#if 0
-  ComponentGraph& compgraph = builder.getComponentGraph();
+  const ComponentGraph& constcompgraph = builder.getComponentGraph();
+	boost::scoped_ptr<ComponentGraph> pcompgraph(constcompgraph.clone());
+  ComponentGraph& compgraph(*pcompgraph);
 
   bool didSomething;
   do
@@ -231,79 +232,6 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
       }
     }
   }
-
-//#if 0
-  // this is the old non-transitive version of the above
-  {
-    ComponentIterator cit;
-    for(cit = compgraph.getComponents().first; // do not use boost::tie here! the container is modified in the loop!
-        cit != compgraph.getComponents().second; ++cit)
-    {
-      Component comp = *cit;
-      if( compgraph.propsOf(comp).outerEatoms.empty() )
-        continue;
-
-      LOG("checking whether to collapse external component " << comp);
-
-      // get predecessors (we could do transitive closure here)
-      ComponentSet preds;
-      ComponentGraph::PredecessorIterator pit, pit_end;
-      for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp);
-          pit != pit_end; ++pit)
-      {
-        preds.insert(compgraph.targetOf(*pit));
-      }
-      // insert this component
-      preds.insert(comp);
-
-      // get successors
-      ComponentSet collapse;
-      ComponentGraph::SuccessorIterator sit, sit_end;
-      for(boost::tie(sit, sit_end) = compgraph.getProvides(comp);
-          sit != sit_end; ++sit)
-      {
-        Component succ = compgraph.sourceOf(*sit);
-
-        // skip successors with eatoms
-        if( !compgraph.propsOf(succ).outerEatoms.empty() )
-          continue;
-
-        LOG("found successor " << succ);
-
-        ComponentGraph::PredecessorIterator pit, pit_end;
-        bool good = true;
-        for(boost::tie(pit, pit_end) = compgraph.getDependencies(succ);
-            pit != pit_end; ++pit)
-        {
-          Component dependson = compgraph.targetOf(*pit);
-          if( preds.find(dependson) == preds.end() )
-          {
-            LOG("successor bad as it depends on other node " << dependson);
-            good = false;
-            break;
-          }
-        }
-        if( good )
-        {
-          collapse.insert(succ);
-          preds.insert(succ);
-        }
-      }
-
-      // collapse if not nonempty
-      if( !collapse.empty() )
-      {
-        collapse.insert(comp);
-        Component c = compgraph.collapseComponents(collapse);
-        LOG("collapse of " << printrange(collapse) << " yielded new component " << c);
-
-        // restart loop after collapse
-        cit = compgraph.getComponents().first;
-        didSomething = true;
-      }
-    }
-  }
-  //#endif
 
   //
   // forall components with only inner rules or constraints:
@@ -491,10 +419,11 @@ void EvalHeuristicEasy::build(EvalGraphBuilder& builder)
   for(ComponentContainer::const_iterator it = sortedcomps.begin();
       it != sortedcomps.end(); ++it)
   {
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
+		std::list<Component> comps, ccomps;
+		comps.push_back(*it);
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
-	#endif
 }
 
 DLVHEX_NAMESPACE_END
