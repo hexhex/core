@@ -51,6 +51,7 @@ libdlvhexbase_la_SOURCES = \
 		DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
+    EvalHeuristicASP.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \

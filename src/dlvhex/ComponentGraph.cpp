@@ -352,7 +352,6 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   SCCToComponentMap sccToComponent(scccount);
   for(unsigned s = 0; s < scccount; ++s)
   {
-    //createComponentFromDepgraphSCC(dg, scc, *itc);
     const NodeSet& nodes = sccMembers[s];
     Component c = boost::add_vertex(cg);
     DBGLOG(DBG,"created component node " << c << " for scc " << s <<
@@ -374,11 +373,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				if( id.isRegularRule() )
 				{
 					ci.innerRules.push_back(id);
-          #warning innerEatomsMonotonicAndOnlyPositiveCycles should be called innerEatomsMonotonicAndInnerRulesFixpointCalculateable
           if( id.isRuleDisjunctive() )
           {
-            // if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+						ci.disjunctiveHeads = true;
           }
 				}
 				else if( id.isConstraint() || id.isWeakConstraint() )
@@ -398,18 +395,30 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				{
 					ci.innerEatoms.push_back(id);
           innerEatomNodes.push_back(*itn);
-          // only if we still think that we can use wellfounded model building
-          if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-          {
-            // check, if the newly added inner eatom is monotonic
+
+					if( ci.innerEatomsNonmonotonic == false )
+					{
+						// check, if the newly added inner eatom is monotonic
 						ID eatomid = dg.propsOf(*itn).id;
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-              checkEatomMonotonic(reg, eatomid);
+						if( !checkEatomMonotonic(reg, eatomid) )
+						{
+							ci.innerEatomsNonmonotonic = true;
+						}
           }
 				}
 				else
 				{
 					ci.outerEatoms.push_back(id);
+
+					if( ci.outerEatomsNonmonotonic == false )
+					{
+						// check, if the newly added inner eatom is monotonic
+						ID eatomid = dg.propsOf(*itn).id;
+						if( !checkEatomMonotonic(reg, eatomid) )
+						{
+							ci.outerEatomsNonmonotonic = true;
+						}
+          }
 				}
       }
 			else
@@ -417,26 +426,28 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				assert(false);
 			}
     }
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
-
-		// do positive cycle check if all eatoms monotonic
-		// (i.e., only if we still think that we can use wellfounded model building)
-		if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+		
+		// check, if the component contains only positive cycles
+		if( !checkNoNegativeEdgesInComponent(dg, nodes) )
 		{
-			// check, if the component contains only positive cycles
-			ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-        checkNoNegativeEdgesInComponent(dg, nodes);
+			ci.negationInCycles = true;
 		}
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
+    DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
+				" negationInCycles=" << ci.negationInCycles <<
+				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
+				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic);
 
-		assert( ci.outerEatoms.empty() ||
-				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
+		assert(( ci.outerEatoms.empty() ||
+				    (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty())) &&
+				   "components with outer eatoms may not contain anything else");
   }
+
+	#warning TODO if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles ... ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
 
   //
   // create dependencies between components (now that all of them exist)
@@ -581,8 +592,6 @@ ComponentGraph::collapseComponents(
 
 	// build combined component info
 	ComponentInfo& ci = propsOf(c);
-  assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
-      "ComponentInfo constructor should set this to true");
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
 		ComponentInfo& cio = propsOf(*ito);
@@ -600,10 +609,9 @@ ComponentGraph::collapseComponents(
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
 
-    // innerEatomsMonotonicAndOnlyPositiveCycles
-    // is false if it is false for any component
-    ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-      cio.innerEatomsMonotonicAndOnlyPositiveCycles;
+    ci.disjunctiveHeads |= cio.disjunctiveHeads;
+    ci.negationInCycles |= cio.negationInCycles;
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -613,6 +621,7 @@ ComponentGraph::collapseComponents(
       // does not depend on other components
       ci.outerEatoms.insert(ci.outerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
+			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
     else
     {
@@ -621,22 +630,10 @@ ComponentGraph::collapseComponents(
       ci.innerEatoms.insert(ci.innerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-      // innerEatomsMonotonicAndOnlyPositiveCycles
-      // is false if any outer eatom that became an inner eatom is nonmonotonic
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-      {
-        BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
-        {
-          if( !checkEatomMonotonic(reg, innerEatomId) )
-          {
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
-            break;
-          }
-        }
-      }
+      // here, outer eatom becomes inner eatom
+			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
-    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
-    // TODO create testcase for this (how about wellfounded2.hex?)
+    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
 
 	// build incoming dependencies
@@ -721,15 +718,17 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		printoutVerboseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
 		printoutVerboseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
 		printoutVerboseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
-    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-    {
-      o << "{fixpoint?|";
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-        o << "true";
-      else
-        o << "false";
-      o << "}|";
-    }
+    if( !ci.innerRules.empty() )
+		{
+			if( ci.disjunctiveHeads )
+				o << "{rules contain disjunctive heads}|";
+			if( ci.negationInCycles )
+				o << "{rules contain negation in cycles}|";
+		}
+    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+      o << "{inner eatoms nonmonotonic}|";
+    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+      o << "{outer eatoms nonmonotonic}|";
 		o << "}";
   }
   else
@@ -739,15 +738,17 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 		printoutTerseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
 		printoutTerseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
 		printoutTerseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
-    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-    {
-      o << "{fixpoint?|";
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-        o << "true";
-      else
-        o << "false";
-      o << "}|";
-    }
+    if( !ci.innerRules.empty() )
+		{
+			if( ci.disjunctiveHeads )
+				o << "{rules contain disjunctive heads}|";
+			if( ci.negationInCycles )
+				o << "{rules contain negation in cycles}|";
+		}
+    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+      o << "{inner eatoms nonmonotonic}|";
+    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+      o << "{outer eatoms nonmonotonic}|";
 		o << "}";
   }
 }

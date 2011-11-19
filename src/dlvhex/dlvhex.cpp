@@ -64,6 +64,7 @@
 #include "dlvhex/State.h"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalHeuristicASP.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/EvalHeuristicEasy.hpp"
@@ -164,8 +165,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
-			<< "                      manual:<file> - read 'collapse <idx> <idx>' commands from <file>" << std::endl
+			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
+			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
 			<< "     --dumpevalplan=F dump evaluation plan (usable as manual heuristics) to file F" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
@@ -627,6 +629,10 @@ void processOptionsPrePlugin(
 				else if( heuri.substr(0,7) == "manual:" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicFromFile(heuri.substr(7)));
+				}
+				else if( heuri.substr(0,4) == "asp:" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicASP(heuri.substr(4)));
 				}
 				else
 				{

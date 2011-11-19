@@ -83,28 +83,6 @@ typedef FinalEvalGraph::EvalUnitDepPropertyBundle
 namespace
 {
   EvalUnitProperties eup_empty;
-
-  bool checkEatomMonotonic(
-      RegistryPtr reg,
-      ID eatomid)
-  {
-    DBGLOG(DBG,"checking whether eatom " << eatomid << " is monotonic");
-
-		// check monotonicity
-		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-		assert(!!eatom.pluginAtom);
-		PluginAtom* pa = eatom.pluginAtom;
-		if( pa->isMonotonic() )
-		{
-			DBGLOG(DBG,"  eatom " << eatomid << " is monotonic");
-			return true;
-		}
-		else
-		{
-			DBGLOG(DBG,"  eatom " << eatomid << " is nonmonotonic");
-			return false;
-		}
-  }
 }
 
 // build evaluation unit from components <comps> and copy into this unit also constraints in <ccomps>
@@ -198,8 +176,6 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 	// build newUnitInfo
 	//
 	ComponentInfo& ci = newUnitInfo;
-  assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
-      "ComponentInfo constructor should set this to true");
 	for(ito = comps.begin(); ito != comps.end(); ++ito)
 	{
 		const ComponentInfo& cio = cg.propsOf(*ito);
@@ -217,10 +193,9 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
 
-    // innerEatomsMonotonicAndOnlyPositiveCycles
-    // is false if it is false for any component
-    ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-      cio.innerEatomsMonotonicAndOnlyPositiveCycles;
+    ci.disjunctiveHeads |= cio.disjunctiveHeads;
+    ci.negationInCycles |= cio.negationInCycles;
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -230,6 +205,7 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
       // does not depend on other components
       ci.outerEatoms.insert(ci.outerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
+			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
     else
     {
@@ -238,19 +214,8 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
       ci.innerEatoms.insert(ci.innerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-      // innerEatomsMonotonicAndOnlyPositiveCycles
-      // is false if any outer eatom that became an inner eatom is nonmonotonic
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-      {
-        BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
-        {
-          if( !checkEatomMonotonic(ctx.registry(), innerEatomId) )
-          {
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
-            break;
-          }
-        }
-      }
+      // here, outer eatom becomes inner eatom
+			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
     #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
@@ -313,9 +278,10 @@ EvalGraphBuilder::createEvalUnit(
     }
     else
     {
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+      if( !ci.innerEatomsNonmonotonic && !ci.negationInCycles && !ci.disjunctiveHeads )
       {
-        // inner external atoms and only in positive cycles and monotonic -> wellfounded/fixpoint model generator factory
+        // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
+				// -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
         uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
               ctx, ci, externalEvalConfig));

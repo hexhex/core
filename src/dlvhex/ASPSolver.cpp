@@ -269,6 +269,7 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
   DBGLOG(DBG,"[" << this << "]" "exiting answerSetProcessingThreadFunc");
 }
 
+
 #warning TODO certain interfaces deactivated
 #if 0
 void
@@ -319,6 +320,51 @@ DLVSoftware::Delegate::Delegate(const Options& options):
 
 DLVSoftware::Delegate::~Delegate()
 {
+}
+
+void
+DLVSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useInputProvInp");
+
+  DLVProcess& proc = results->proc;
+  results->reg = reg;
+  assert(results->reg);
+  #warning TODO set results->mask?
+
+  try
+  {
+    results->setupProcess();
+    // request stdin as last parameter
+    proc.addOption("--");
+    LOG(DBG,"external process was setup with path '" << proc.path() << "'");
+
+    // fork dlv process
+    proc.spawn();
+
+    std::ostream& programStream = proc.getOutput();
+
+    // copy stream
+    programStream << inp.getAsStream().rdbuf();
+    programStream.flush();
+
+    proc.endoffile();
+
+    // start thread
+    results->startThread();
+  }
+  catch(const GeneralError& e)
+  {
+    std::stringstream errstr;
+    int retcode = results->proc.close();
+    errstr << results->proc.path() << " (exitcode = " << retcode <<
+      "): " << e.getErrorMsg();
+    throw FatalError(errstr.str());
+  }
+  catch(const std::exception& e)
+  {
+    throw FatalError(results->proc.path() + ": " + e.what());
+  }
 }
 
 void
@@ -942,6 +988,12 @@ ClingoSoftware::Delegate::Delegate(const Options& options):
 
 ClingoSoftware::Delegate::~Delegate()
 {
+}
+
+void
+ClingoSoftare::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
+{
+  throw std::runtime_error("TODO implement ClingoSoftare::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
 }
 
 void

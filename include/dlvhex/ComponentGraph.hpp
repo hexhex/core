@@ -84,10 +84,19 @@ public:
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
-    bool innerEatomsMonotonicAndOnlyPositiveCycles;
+		bool disjunctiveHeads;
+		bool negationInCycles;
+		bool innerEatomsNonmonotonic;
+		bool outerEatomsNonmonotonic;
+		// previous:
+    //bool innerEatomsMonotonicAndOnlyPositiveCycles;
+		// := (!innerEatomsNonmonotonic && !negationInCycles && !disjunctiveHeads)
 
 		ComponentInfo():
-      innerEatomsMonotonicAndOnlyPositiveCycles(true) {}
+      disjunctiveHeads(false),
+			negationInCycles(false),
+			innerEatomsNonmonotonic(false),
+			outerEatomsNonmonotonic(false) {}
     std::ostream& print(std::ostream& o) const;
   };
 

@@ -24,6 +24,7 @@ pkginclude_HEADERS = \
   Error.h \
   EvalGraphBuilder.hpp \
   EvalGraph.hpp \
+  EvalHeuristicASP.hpp \
   EvalHeuristicBase.hpp \
   EvalHeuristicEasy.hpp \
   EvalHeuristicFromFile.hpp \
