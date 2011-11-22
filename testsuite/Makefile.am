@@ -83,7 +83,10 @@ libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 #this is just to verify that TestPlugin can link to the rest of the code
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
-TestTestPluginStatic_SOURCES = TestPlugin.cpp $(top_srcdir)/src/dlvhex/dlvhex.cpp 
+TestTestPluginStatic_SOURCES = \
+  TestPlugin.cpp \
+  $(top_srcdir)/src/dlvhex/dlvhex.cpp \
+  $(top_srcdir)/src/dlvhex/State.cpp 
 TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/dlvhex/libdlvhexbase.la \
   $(top_builddir)/src/dlvhex/libmlpsolver.la \
@@ -96,38 +99,40 @@ TestTestPluginStatic_LDADD = \
 # for libdlvhextest_la and for TestTestPluginStatic (seems like a automake/libtool bug)
 TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
-LDADD_WITHOUT_EXTSOLVER = $(top_builddir)/src/dlvhex/libmlpsolver.la $(top_builddir)/src/dlvhex/libdlvhexbase.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-LDADD_WITH_EXTSOLVER = $(top_builddir)/src/dlvhex/libaspsolver.la $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) $(LDADD_WITHOUT_EXTSOLVER)
-# TODO review which code goes into which library, it should be libdlvhexbase.la and libaspsolver do not depend on each other, and both do not depend on libmlpsolver.la
+# libdlvhexbase does not depend on libaspsolver and does not depend on libmlpsolver
+# libaspsolver does not depend on libmlpsolver
+LDADD_BASE = $(top_builddir)/src/dlvhex/libdlvhexbase.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+LDADD_ASPSOLVER = $(top_builddir)/src/dlvhex/libaspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
+LDADD_MLP_ASPSOLVER = $(top_builddir)/src/dlvhex/libmlpsolver.la $(LDADD_ASPSOLVER)
 
 TestPlainHEX_SOURCES = TestPlainHEX.cpp
-TestPlainHEX_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestPlainHEX_LDADD = $(LDADD_ASPSOLVER)
 
 TestEvalEndToEnd_SOURCES = TestEvalEndToEnd.cpp
-TestEvalEndToEnd_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestEvalEndToEnd_LDADD = $(LDADD_ASPSOLVER)
 
 TestASPSolver_SOURCES = TestASPSolver.cpp
-TestASPSolver_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestASPSolver_LDADD = $(LDADD_ASPSOLVER)
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = TestEvalHeuristic.cpp
-TestEvalHeuristic_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestEvalHeuristic_LDADD = $(LDADD_BASE)
 
 TestComponentGraph_SOURCES = TestComponentGraph.cpp
-TestComponentGraph_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestComponentGraph_LDADD = $(LDADD_BASE)
 
 TestDependencyGraph_SOURCES = TestDependencyGraph.cpp $(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp
-TestDependencyGraph_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestDependencyGraph_LDADD = $(LDADD_BASE)
 
 TestHexParser_SOURCES = TestHexParser.cpp
-TestHexParser_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestHexParser_LDADD = $(LDADD_BASE)
 
+# TODO why do we need MLP here?
 TestHexParserModule_SOURCES = TestHexParserModule.cpp
-TestHexParserModule_LDADD = $(LDADD_WITH_EXTSOLVER)
+TestHexParserModule_LDADD = $(LDADD_MLP_ASPSOLVER)
 
 TestMLPSolver_SOURCES = $(top_srcdir)/testsuite/TestMLPSolver.cpp
-TestMLPSolver_LDADD = $(LDADD_WITH_EXTSOLVER)
-#TestMLPSolver_CPPFLAGS = $(EXTSOLVER_CPPFLAGS) 
+TestMLPSolver_LDADD = $(LDADD_MLP_ASPSOLVER)
 
 TestTables_SOURCES = \
 	TestTables.cpp \

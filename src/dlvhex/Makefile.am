@@ -18,7 +18,7 @@ bin_PROGRAMS = dlvhex
 lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la libmlpsolver.la
 
 # the dlvhex binary
-dlvhex_SOURCES = dlvhex.cpp
+dlvhex_SOURCES = dlvhex.cpp State.cpp
 
 #
 # -static: statically link libdlvhexbase
@@ -40,6 +40,7 @@ dlvhex_LDADD = \
 libdlvhexbase_la_SOURCES = \
     AnswerSet.cpp \
     AnswerSetPrinterCallback.cpp \
+    ASPSolverManager.cpp \
     Atoms.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
@@ -74,7 +75,6 @@ libdlvhexbase_la_SOURCES = \
     ProgramCtx.cpp \
     Registry.cpp \
     SafetyChecker.cpp \
-    State.cpp \
     URLBuf.cpp
 
 # dlvhex MLP component
@@ -85,7 +85,6 @@ libmlpsolver_la_SOURCES = \
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
     ASPSolver.cpp \
-    ASPSolverManager.cpp \
     DLVProcess.cpp \
     DLVresultParserDriver.cpp \
     ProcessBuf.cpp
