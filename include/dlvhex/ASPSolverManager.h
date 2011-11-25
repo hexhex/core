@@ -166,19 +166,11 @@ public:
       const SoftwareConfigurationBase& solver,
       const ASPProgram& program) throw (FatalError);
 
-  /*
-  // solve string program and add to result
-  void solveString(
+  //! solve program from input provider (i.e., an input stream)
+  ResultsPtr solve(
       const SoftwareConfigurationBase& solver,
-      const std::string& program,
-      std::vector<AtomSet>& result) throw (FatalError);
-
-  // solve program in file and add to result
-  void solveFile(
-      const SoftwareConfigurationBase& solver,
-      const std::string& filename,
-      std::vector<AtomSet>& result) throw (FatalError);
-      */
+      InputProvider& input,
+      RegistryPtr reg) throw (FatalError);
 };
 
 // results that are not streamed but provided to be incrementally requested

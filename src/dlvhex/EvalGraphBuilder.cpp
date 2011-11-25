@@ -63,6 +63,11 @@ EvalGraphBuilder::~EvalGraphBuilder()
 {
 }
 
+RegistryPtr EvalGraphBuilder::registry()
+{
+  return ctx.registry();
+}
+
 #if 0
 template<typename NodeRange>
 EvalGraphBuilder::createEvalUnit(NodeRange nodes)

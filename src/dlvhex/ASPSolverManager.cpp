@@ -66,6 +66,17 @@ ASPSolverManager::ResultsPtr ASPSolverManager::solve(
   return delegate->getResults();
 }
 
+//! solve program from input provider (i.e., an input stream)
+ASPSolverManager::ResultsPtr ASPSolverManager::solve(
+    const SoftwareConfigurationBase& solver,
+    InputProvider& input,
+    RegistryPtr reg) throw (FatalError)
+{
+  DelegatePtr delegate = solver.createDelegate();
+  delegate->useInputProviderInput(input, reg);
+  return delegate->getResults();
+}
+
 #if 0
 // solve string program and add to result
 void ASPSolverManager::solveString(

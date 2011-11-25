@@ -198,6 +198,9 @@ public:
 	// returns a graph consisting of all components that still need to be built into some evaluation unit
   inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
 
+	// returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header)
+  RegistryPtr registry();
+
   //
   // modifiers
   //

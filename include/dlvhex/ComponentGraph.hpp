@@ -180,6 +180,8 @@ public:
   // get range over all components
   inline std::pair<ComponentIterator, ComponentIterator> getComponents() const
     { return boost::vertices(cg); }
+  inline std::pair<DependencyIterator, DependencyIterator> getDependencies() const
+    { return boost::edges(cg); }
 
 	// get node info given node
 	inline const ComponentInfo& getComponentInfo(Component c) const

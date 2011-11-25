@@ -62,6 +62,7 @@ struct DLVSoftware:
     virtual ~Options();
 
     // whether to rewrite all predicates to allow higher order in DLV (default=no)
+    #warning do we use this? do we need this?
     bool rewriteHigherOrder;
 
     // whether to drop predicates in received answer sets (default=no)
