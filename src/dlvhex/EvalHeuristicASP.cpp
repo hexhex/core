@@ -61,6 +61,7 @@
  */
 
 #include "dlvhex/EvalHeuristicASP.hpp"
+#include "dlvhex/EvalHeuristicShared.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ASPSolver.h"
@@ -73,6 +74,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+using namespace evalheur;
+
 EvalHeuristicASP::EvalHeuristicASP(const std::string& scriptname):
   Base(),
   scriptname(scriptname)
@@ -83,15 +86,30 @@ EvalHeuristicASP::~EvalHeuristicASP()
 {
 }
 
-void transformComponentGraphIntoASPFacts(std::ostream& facts, const ComponentGraph& cg, RegistryPtr reg);
+namespace
+{
 
 typedef ComponentGraph::Component Component;
 typedef ComponentGraph::ComponentIterator ComponentIterator;
 typedef std::vector<Component> ComponentContainer;
 typedef std::set<Component> ComponentSet;
 
-// manual strategy:
-// get commands from file
+void transformComponentGraphIntoASPFacts(
+    std::ostream& facts,
+    std::map<unsigned, Component>& componentindices,
+    const ComponentGraph& cg,
+    RegistryPtr reg);
+
+void buildEvalUnitsFromAnswerSet(
+    EvalGraphBuilder& builder,
+    AnswerSet::Ptr as,
+    const std::map<unsigned, Component>& componentindices);
+
+}
+
+// ASP strategy:
+// send component graph to ASP
+// get commands from first answer set
 void EvalHeuristicASP::build(EvalGraphBuilder& builder)
 {
   const ComponentGraph& compgraph = builder.getComponentGraph();
@@ -99,8 +117,10 @@ void EvalHeuristicASP::build(EvalGraphBuilder& builder)
 	// create inputprovider
   InputProviderPtr inp(new InputProvider);
 
+  std::map<unsigned, Component> componentindices;
+
   std::ostringstream facts;
-	transformComponentGraphIntoASPFacts(facts, compgraph, builder.registry());
+	transformComponentGraphIntoASPFacts(facts, componentindices, compgraph, builder.registry());
   inp->addStringInput(facts.str(), "facts_from_EvalHeuristicASP.cpp");
 
   //  put in program file
@@ -120,9 +140,7 @@ void EvalHeuristicASP::build(EvalGraphBuilder& builder)
     DBGLOG(DBG,"evaluation heuristic (first) answer set:");
     DBGLOG(DBG,*as);
 
-    // make use of answer set
-    throw std::runtime_error("TODO continue here");
-
+    buildEvalUnitsFromAnswerSet(builder, as, componentindices);
 
     #ifndef NDEBUG
     // display the rest of answer sets
@@ -156,10 +174,102 @@ inline void printCommentedWithInfoIfNonempty(std::ostream& out, RawPrinter& pr, 
   }
 }
 
+struct EvalUnitInfo
+{
+  bool gotUnit;
+  std::list<Component> collapse;
+  std::list<Component> share;
+  
+  EvalUnitInfo():
+    gotUnit(false) {}
+};
+
+void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, const std::map<unsigned, Component>& componentindices)
+{
+  InterpretationPtr interpretation = as->interpretation;
+  RegistryPtr reg = interpretation->getRegistry();
+
+  // get ids for interesting preds
+  Term termunit(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "unit");
+  Term termuse(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "use");
+  Term termshare(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "share");
+  ID idunit = reg->storeConstOrVarTerm(termunit);
+  ID iduse = reg->storeConstOrVarTerm(termuse);
+  ID idshare = reg->storeConstOrVarTerm(termshare);
+
+  // create answer set projection mask
+  PredicateMask interestingPreds;
+  interestingPreds.setRegistry(reg);
+  interestingPreds.addPredicate(idunit);
+  interestingPreds.addPredicate(iduse);
+  interestingPreds.addPredicate(idshare);
+  interestingPreds.updateMask();
+
+  // project
+  InterpretationPtr projected(new Interpretation(*interpretation));
+  projected->bit_and(*interestingPreds.mask());
+
+  typedef std::map<ID, EvalUnitInfo> UnitMap;
+  UnitMap um;
+
+  // build um
+  Interpretation::TrueBitIterator bit, bit_end;
+  for(boost::tie(bit, bit_end) = projected->trueBits();
+      bit != bit_end; ++bit)
+  {
+    const OrdinaryAtom& gatom = reg->ogatoms.getByAddress(*bit);
+
+    assert((gatom.tuple.size() == 2 || gatom.tuple.size() == 3) && "expecting unit(U), use(U,C), share(U,C) here");
+
+    // lookup or create unit info
+    EvalUnitInfo& thisunitinfo = um[gatom.tuple[1]];
+
+    if( gatom.tuple.size() == 2 )
+    {
+      assert(gatom.tuple[0] == idunit);
+      thisunitinfo.gotUnit = true;
+    }
+    else if( gatom.tuple[0] == iduse )
+    {
+      assert(gatom.tuple[3].isIntegerTerm());
+      unsigned index = gatom.tuple[2].address;
+      // implicit assert in next line's ->
+      thisunitinfo.collapse.push_back(componentindices.find(index)->second);
+    }
+    else
+    {
+      assert(gatom.tuple[0] == idshare);
+      assert(gatom.tuple[3].isIntegerTerm());
+      unsigned index = gatom.tuple[2].address;
+      // implicit assert in next line's ->
+      thisunitinfo.share.push_back(componentindices.find(index)->second);
+    }
+  }
+
+  // verify um and create commands from um
+  CommandVector cv;
+  for(UnitMap::const_iterator umit = um.begin();
+      umit != um.end(); ++umit)
+  {
+    const EvalUnitInfo& uinfos = umit->second;
+    if( !uinfos.gotUnit )
+    {
+      LOG(WARNING,"EvalHeuristicASP: did not get unit(" <<
+          printToString<RawPrinter>(umit->first, reg) <<
+          ") while getting commands for that unit");
+    }
+
+    BuildCommand bc;
+    bc.collapse.insert(bc.collapse.end(), uinfos.collapse.begin(), uinfos.collapse.end());
+    bc.share.insert(bc.share.end(), uinfos.share.begin(), uinfos.share.end());
+    cv.push_back(bc);
+  }
+
+  executeBuildCommands(cv, builder);
 }
 
 // see documentation at top of file
-void transformComponentGraphIntoASPFacts(std::ostream& facts, const ComponentGraph& cg, RegistryPtr reg)
+void transformComponentGraphIntoASPFacts(std::ostream& facts, std::map<unsigned, Component>& componentindices, const ComponentGraph& cg, RegistryPtr reg)
 {
   // put in facts as string
 	ComponentIterator it, end;
@@ -171,8 +281,9 @@ void transformComponentGraphIntoASPFacts(std::ostream& facts, const ComponentGra
 	for(boost::tie(it, end) = cg.getComponents(); it != end; ++it, ++idx)
 	{
     const ComponentGraph::ComponentInfo& ci = cg.getComponentInfo(*it);
-    std::string c("c" + boost::lexical_cast<std::string>(idx));
+    std::string c(boost::lexical_cast<std::string>(idx));
     componentidentifier[*it] = c;
+    componentindices[idx] = *it;
 
     // output component debug information
     #ifndef NDEBUG
@@ -241,6 +352,8 @@ void transformComponentGraphIntoASPFacts(std::ostream& facts, const ComponentGra
     if( di.externalPredicateInput )
       facts << "extpred" << arg;
   }
+}
+
 }
 
 DLVHEX_NAMESPACE_END
