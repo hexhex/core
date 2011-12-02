@@ -53,8 +53,11 @@
  * if externalConstantInput is true, extconst(C1,C2) is a fact
  * if externalPredicateInput is true, extpred(C1,C2) is a fact
  *
- * TODO documentation of output of eval heuristic program
- *
+ * The following predicates in the answer set of the eval heuristic program
+ * are used to create the evaluation graph:
+ * unit(U) creates an evaluation unit with id U
+ * use(U,C) uses C exclusively in evaluation unit U
+ * share(U,C) uses C shared in evaluation unit U
  */
 
 #include "dlvhex/EvalHeuristicASP.hpp"

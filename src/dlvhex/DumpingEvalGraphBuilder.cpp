@@ -54,9 +54,30 @@ DumpingEvalGraphBuilder::EvalUnit
 DumpingEvalGraphBuilder::createEvalUnit(
 		const std::list<Component>& comps, const std::list<Component>& ccomps)
 {
-	output << "collapse" << printrange(comps, " ", " ", " ");
-	if( !ccomps.empty() )
-		output << "share" << printrange(ccomps, " ", " ", " ");
+  if( componentidx.empty() )
+  {
+    ComponentGraph::ComponentIterator cit, cit_end;
+    unsigned idx = 0;
+    for(boost::tie(cit, cit_end) = cg.getComponents();
+        cit != cit_end; ++cit, ++idx)
+    {
+      componentidx[*cit] = idx;
+    }
+  }
+
+  std::vector<unsigned> icomps, iccomps;
+  BOOST_FOREACH(const Component& comp, comps)
+  {
+    icomps.push_back(componentidx[comp]);
+  }
+  BOOST_FOREACH(const Component& comp, ccomps)
+  {
+    iccomps.push_back(componentidx[comp]);
+  }
+
+	output << "collapse" << printrange(icomps, " ", " ", " ");
+	if( !iccomps.empty() )
+		output << "share" << printrange(iccomps, " ", " ", " ");
 	output << std::endl;
 
 	DumpingEvalGraphBuilder::EvalUnit u(

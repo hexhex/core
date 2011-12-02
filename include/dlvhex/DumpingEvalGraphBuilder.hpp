@@ -41,6 +41,7 @@ class DumpingEvalGraphBuilder:
 {
 protected:
 	std::ofstream output;
+  std::map<ComponentGraph::Component, unsigned> componentidx;
 
   //////////////////////////////////////////////////////////////////////////////
   // methods

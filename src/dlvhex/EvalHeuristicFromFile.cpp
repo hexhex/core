@@ -33,11 +33,10 @@
  */
 
 #include "dlvhex/EvalHeuristicFromFile.hpp"
+#include "dlvhex/EvalHeuristicShared.hpp"
 #include "dlvhex/Logger.hpp"
 
 #include <boost/unordered_map.hpp>
-#include <boost/graph/topological_sort.hpp>
-#include <boost/property_map/property_map.hpp>
 #include <boost/graph/properties.hpp>
 
 //#define BOOST_SPIRIT_DEBUG
@@ -47,6 +46,57 @@
 #include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
+
+using namespace evalheur;
+
+namespace
+{
+
+typedef std::vector<unsigned> IdxVector;
+
+struct IdxBuildCommand
+{
+	// components to collapse to unit
+	IdxVector collapse;
+	// components to share into unit (constraint components)
+	IdxVector share;
+};
+typedef std::vector<IdxBuildCommand> IdxCommandVector;
+
+void translateIdxBuildCommandsToBuildCommands(
+    const IdxCommandVector& icommands,
+    const ComponentGraph& cg,
+    CommandVector& commands)
+{
+  // get components in order of iteration into vector
+  std::vector<Component> indexableComps;
+  {
+    ComponentGraph::ComponentIterator cit, cit_end;
+    for(boost::tie(cit, cit_end) = cg.getComponents();
+        cit != cit_end; ++cit)
+    {
+      indexableComps.push_back(*cit);
+    }
+	}
+
+  BOOST_FOREACH(const IdxBuildCommand& ibc, icommands)
+  {
+    BuildCommand bc;
+    BOOST_FOREACH(unsigned idx, ibc.collapse)
+    {
+      assert(idx < indexableComps.size() && "got bad component index");
+      bc.collapse.push_back(indexableComps[idx]);
+    }
+    BOOST_FOREACH(unsigned idx, ibc.share)
+    {
+      assert(idx < indexableComps.size() && "got bad component index");
+      bc.share.push_back(indexableComps[idx]);
+    }
+    commands.push_back(bc);
+  }
+}
+
+}
 
 EvalHeuristicFromFile::EvalHeuristicFromFile(const std::string& fname):
   Base(),
@@ -58,29 +108,9 @@ EvalHeuristicFromFile::~EvalHeuristicFromFile()
 {
 }
 
-typedef std::vector<unsigned> IdxVector;
-
-struct BuildCommand
-{
-	// components to collapse to unit
-	IdxVector collapse;
-	// components to share into unit (constraint components)
-	IdxVector share;
-};
-typedef std::vector<BuildCommand> CommandVector;
-
 // for an example command file with only collapsing see examples/extatom3_evalplan.txt
 // for an example command file with collapsing and cloning see examples/extatom3_evalplanb.txt
-void parseCommandFile(const std::string& fname, CommandVector& commands);
-
-typedef ComponentGraph::Component Component;
-typedef ComponentGraph::ComponentIterator ComponentIterator;
-typedef std::vector<Component> ComponentContainer;
-typedef std::set<Component> ComponentSet;
-
-// we need a hash map, as component graph is no graph with vecS-storage
-typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
-typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
+void parseCommandFile(const std::string& fname, IdxCommandVector& commands);
 
 // manual strategy:
 // get commands from file
@@ -89,68 +119,24 @@ void EvalHeuristicFromFile::build(EvalGraphBuilder& builder)
   const ComponentGraph& compgraph = builder.getComponentGraph();
 
 	// get commands from file
+  IdxCommandVector icommands;
+  parseCommandFile(fname, icommands);
+
   CommandVector commands;
-  parseCommandFile(fname, commands);
+  translateIdxBuildCommandsToBuildCommands(
+      icommands, compgraph, commands);
 
-  // get components in order of iteration into vector
-  std::vector<Component> indexableComps;
-  {
-    ComponentGraph::ComponentIterator cit, cit_end;
-    for(boost::tie(cit, cit_end) = compgraph.getComponents();
-        cit != cit_end; ++cit)
-    {
-      indexableComps.push_back(*cit);
-    }
-	}
-
-  // collapse according to commands
-  BOOST_FOREACH(const BuildCommand& cmd, commands)
-  {
-    LOG(ANALYZE,"build command from file collapses components with indices " <<
-				printvector(cmd.collapse) <<
-				" and shared components with indices " << printvector(cmd.share));
-		std::list<Component> comps, ccomps;
-    BOOST_FOREACH(unsigned idx, cmd.collapse)
-    {
-			comps.push_back(indexableComps[idx]);
-		}
-    BOOST_FOREACH(unsigned idx, cmd.share)
-    {
-			ccomps.push_back(indexableComps[idx]);
-		}
-		EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
-		LOG(ANALYZE,"components " << printrange(comps) <<
-				" with shared " << printrange(ccomps) <<
-				" became eval unit " << u);
-  }
+  executeBuildCommands(commands, builder);
 
 	// create eval units for all components not specified in the file and warn
-	typedef EvalGraphBuilder::ComponentGraphRest CGRest;
-	typedef boost::graph_traits<CGRest> CGRestTraits;
-	const CGRest& cgrest = builder.getComponentGraphRest();
 
   // topologically sort all components that are still left at that point
-	// create white hash map for topological sort
-	CompColorHashMap ccWhiteHashMap;
-	{
-		CGRestTraits::vertex_iterator cit, cit_end;
-    for(boost::tie(cit, cit_end) = boost::vertices(cgrest);
-        cit != cit_end; ++cit)
-    {
-      ccWhiteHashMap[*cit] = boost::white_color;
-		}
-	}
-
-  ComponentContainer comps;
-  std::back_insert_iterator<ComponentContainer> compinserter(comps);
-  boost::topological_sort(
-      cgrest,
-      compinserter,
-      boost::color_map(CompColorMap(ccWhiteHashMap)));
+  ComponentContainer sortedleftovers;
+  topologicalSortComponents(builder.getComponentGraphRest(), sortedleftovers);
 
   // create evaluation units
-  for(ComponentContainer::const_iterator it = comps.begin();
-      it != comps.end(); ++it)
+  for(ComponentContainer::const_iterator it = sortedleftovers.begin();
+      it != sortedleftovers.end(); ++it)
   {
 		std::list<Component> comps, ccomps;
 		comps.push_back(*it);
@@ -176,7 +162,7 @@ struct sem
 				boost::optional<std::vector<unsigned int> >
 		 >& attrib, Context& c, boost::spirit::qi::unused_type) const
 	{
-		BuildCommand& target = boost::fusion::at_c<0>(c.attributes);
+		IdxBuildCommand& target = boost::fusion::at_c<0>(c.attributes);
 		const std::vector<unsigned int>& collapse = boost::fusion::at_c<0>(attrib);
 		target.collapse = collapse;
 		if( !!boost::fusion::at_c<1>(attrib) )
@@ -190,7 +176,7 @@ struct sem
 }
 
 // for an example command file see examples/extatom3_evalplan.txt
-void parseCommandFile(const std::string& fname, CommandVector& commands)
+void parseCommandFile(const std::string& fname, IdxCommandVector& commands)
 {
   std::string input;
   #warning we should directly parse from stream
@@ -204,9 +190,9 @@ void parseCommandFile(const std::string& fname, CommandVector& commands)
 
   namespace spirit = ::boost::spirit;
   namespace qi = ::boost::spirit::qi;
-  qi::rule<std::string::const_iterator, BuildCommand(), spirit::ascii::space_type> cmd;
+  qi::rule<std::string::const_iterator, IdxBuildCommand(), spirit::ascii::space_type> cmd;
 	cmd = (qi::lit("collapse") >> +(qi::uint_) >> -(qi::lit("share") >> +(qi::uint_))) [ sem() ];
-  qi::rule<std::string::const_iterator, CommandVector(), spirit::ascii::space_type> root;
+  qi::rule<std::string::const_iterator, IdxCommandVector(), spirit::ascii::space_type> root;
   root = *( cmd );
   #ifdef BOOST_SPIRIT_DEBUG
   BOOST_SPIRIT_DEBUG_NODE(root);
