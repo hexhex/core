@@ -116,7 +116,7 @@ TestASPSolver_LDADD = $(LDADD_ASPSOLVER)
 
 #TODO evalheuristic should (and could) be tested with fake model generator and fake interpretation
 TestEvalHeuristic_SOURCES = TestEvalHeuristic.cpp
-TestEvalHeuristic_LDADD = $(LDADD_BASE)
+TestEvalHeuristic_LDADD = $(LDADD_ASPSOLVER)
 
 TestComponentGraph_SOURCES = TestComponentGraph.cpp
 TestComponentGraph_LDADD = $(LDADD_BASE)

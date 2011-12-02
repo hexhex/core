@@ -52,7 +52,6 @@ libdlvhexbase_la_SOURCES = \
 		DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
-    EvalHeuristicASP.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \
@@ -86,8 +85,9 @@ libmlpsolver_la_SOURCES = \
 libaspsolver_la_SOURCES = \
     ASPSolver.cpp \
     DLVProcess.cpp \
+    EvalHeuristicASP.cpp \
     DLVresultParserDriver.cpp \
-    ProcessBuf.cpp
+    ProcessBuf.cpp 
 
 # dlvhex internal plugins
 libinternalplugins_la_SOURCES = \
