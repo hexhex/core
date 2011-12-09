@@ -12,6 +12,7 @@ pkginclude_HEADERS = \
   Benchmarking.h \
   BuiltinAtomTable.hpp \
   CAUAlgorithms.hpp \
+  CDNLSolver.hpp \
   ComfortPluginInterface.hpp \
   ComponentGraph.hpp \
   ConcurrentMessageQueueOwning.h \
@@ -33,6 +34,7 @@ pkginclude_HEADERS = \
   fwd.hpp \
   GraphvizHelpers.hpp \
   GuessAndCheckModelGenerator.hpp \
+  GenuineGuessAndCheckModelGenerator.hpp \
   HexGrammar.h \
   HexGrammar.tcc \
   HexParser.hpp \
@@ -40,6 +42,9 @@ pkginclude_HEADERS = \
   HigherOrderPlugin.hpp \
   ID.hpp \
   InputProvider.hpp \
+  InternalGroundASPSolver.hpp \
+  InternalGroundDASPSolver.hpp \
+  InternalGrounder.hpp \
   Interpretation.hpp \
   Logger.hpp \
   MLPSolver.hpp \
@@ -52,11 +57,13 @@ pkginclude_HEADERS = \
   Module.hpp \
   ModuleAtomTable.hpp \
   ModuleTable.hpp \
+  Nogood.hpp \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \
   OrdinaryAtomTable.hpp \
   PlainAuxPrinter.hpp \
   PlainModelGenerator.hpp \
+  GenuinePlainModelGenerator.hpp \
   PlatformDefinitions.h \
   PluginContainer.h \
   PluginInterface.h \
@@ -74,12 +81,14 @@ pkginclude_HEADERS = \
   RuleTable.hpp \
   StrongNegationPlugin.hpp \
   SafetyChecker.h \
+  Set.hpp \
   State.h \
   Table.hpp \
   Term.hpp \
   TermTable.hpp \
   URLBuf.h \
-  WellfoundedModelGenerator.hpp
+  WellfoundedModelGenerator.hpp \
+  GenuineWellfoundedModelGenerator.hpp
 
 
 # those belong to libaspsolver

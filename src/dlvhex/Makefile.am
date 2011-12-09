@@ -44,6 +44,7 @@ libdlvhexbase_la_SOURCES = \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
+    CDNLSolver.cpp \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     Configuration.cpp \
@@ -56,15 +57,22 @@ libdlvhexbase_la_SOURCES = \
     EvalHeuristicTrivial.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
+    GenuinePlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
+    GenuineWellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
+    GenuineGuessAndCheckModelGenerator.cpp \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
+    InternalGroundASPSolver.cpp \
+    InternalGroundDASPSolver.cpp \
+    InternalGrounder.cpp \
     InputProvider.cpp \
     Interpretation.cpp \
     Logger.cpp \
+    Nogood.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \

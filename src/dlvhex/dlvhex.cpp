@@ -139,6 +139,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
+      << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
+      << "     --extlearn       Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -291,6 +293,8 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("InternalSolver", 0);
+  pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -544,6 +548,8 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
+		{ "internalsolver", no_argument, 0, 17 },
+		{ "extlearn", no_argument, 0, 18 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -805,6 +811,14 @@ void processOptionsPrePlugin(
 				case 16:
 					pctx.config.setOption("Split",1);
 					break;
+				case 17:
+					pctx.config.setOption("InternalSolver", 1);
+					break;
+
+				case 18:
+					pctx.config.setOption("ExternalLearning", 1);
+					break;
+
 				}
 			break;
 
