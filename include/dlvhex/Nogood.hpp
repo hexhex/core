@@ -28,8 +28,8 @@
  * @brief  Data structures for CDNLSolver.
  */
 
-#ifndef NOGOOD_HPP_INCLUDED__03122011
-#define NOGOOD_HPP_INCLUDED__03122011
+#ifndef NOGOOD_HPP_INCLUDED__09122011
+#define NOGOOD_HPP_INCLUDED__09122011
 
 #include "dlvhex/ID.hpp"
 #include <vector>
