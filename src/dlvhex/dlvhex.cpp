@@ -811,15 +811,15 @@ void processOptionsPrePlugin(
 				case 16:
 					pctx.config.setOption("Split",1);
 					break;
-				case 17:
-					pctx.config.setOption("InternalSolver", 1);
-					break;
-
-				case 18:
-					pctx.config.setOption("ExternalLearning", 1);
-					break;
-
 				}
+			break;
+
+		case 17:
+				pctx.config.setOption("InternalSolver", 1);
+				break;
+
+		case 18:
+			pctx.config.setOption("ExternalLearning", 1);
 			break;
 
 		case '?':
