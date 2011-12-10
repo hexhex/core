@@ -92,6 +92,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	learnedNogood = violatedNogood;
 	int count;
 	int resSteps = 0;
+	int latestDL;
 	do{
 		count = 0;
 		IDAddress impliedLit = ID_FAIL;
@@ -103,6 +104,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 				latestLit = lit;
 			}
 		}
+		latestDL = decisionlevel[latestLit.address];
 //		DBGLOG(DBG, "Latest literal in nogood is " << latestLit.address);
 
 //		int maxDL = 0;
@@ -111,7 +113,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 //				maxDL = decisionlevel[lit.address];
 //				count = 0;
 //			}
-			if (decisionlevel[lit.address] == decisionlevel[latestLit.address]){
+			if (decisionlevel[lit.address] == latestDL){
 				count++;
 				if (!isDecisionLiteral(lit.address)){
 					impliedLit = lit.address;
@@ -139,7 +141,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	// backtrack to the second-highest decision level
 	int bt = 0;
 	BOOST_FOREACH (ID lit, learnedNogood){
-		if (decisionlevel[lit.address] > bt && decisionlevel[lit.address] < currentDL){
+		if (decisionlevel[lit.address] > bt && decisionlevel[lit.address] < latestDL){
 			bt = decisionlevel[lit.address];
 		}
 	}	
