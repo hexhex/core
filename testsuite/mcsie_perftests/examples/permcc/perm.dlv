@@ -1,0 +1,19 @@
+% "grounding interface" inbound
+person(vip4) :- person_vip4.
+person(pers98) :- person_pers98.
+ccValid(2113) :- ccValid_2113.
+ccValid(7468) :- ccValid_7468.
+
+% "grounding interface" outbound
+ccard_pers98_7468 :- ccard(pers98,7468).
+ccard_vip4_2113 :- ccard(vip4,2113).
+grant_vip4 :- grant(vip4).
+grant_pers98 :- grant(pers98).
+igrant_vip4 :- igrant(vip4).
+igrant_pers98 :- igrant(pers98).
+
+% normal context
+group(vip4,"vip"). ccard(vip4,2113). ccard(pers98,7468).
+igrant(PersId) :- person(PersId), group(PersId,"vip").
+grant(PersId) :- igrant(PersId).
+grant(PersId) :- ccValid(CCNumber), ccard(PersId, CCNumber).

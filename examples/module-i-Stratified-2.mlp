@@ -1,0 +1,12 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+ok1 :- @p2[q1]::ok2.
+
+#module(p2,[q2/1]).
+ok2 :- @p3[q2]::ok3.
+
+#module(p3,[q3/1]).
+r(X):-q3(X).
+ok3 :- @p2[r]::q2(a).
+

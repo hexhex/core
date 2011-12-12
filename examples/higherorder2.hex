@@ -1,0 +1,5 @@
+%test higher order created from external atom
+foo(a).
+foo(b).
+
+X(Y) :- foo(Y), &testConcat[pred,C](X), foo(C).

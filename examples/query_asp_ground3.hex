@@ -1,0 +1,8 @@
+foo(a) v bar(b).
+c(X) :- foo(X).
+c(X) :- bar(X).
+d :- c(X).
+
+% this is bravely and cautiously true
+d ?
+

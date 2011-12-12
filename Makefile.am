@@ -23,9 +23,10 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 
 
-SUBDIRS = libltdl examples include src
+SUBDIRS = libltdl examples include src testsuite
 
 EXTRA_DIST = \
+    bm3.7.0 \
     COPYING.LESSER \
     dlvhex.pc.in \
     doxygen.am \

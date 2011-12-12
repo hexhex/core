@@ -44,6 +44,7 @@
 #include <iosfwd>
 #include <vector>
 #include <string>
+#include <cassert>
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -99,8 +100,10 @@ class DLVHEX_EXPORT DLVProcess : public Process
   virtual void
   endoffile();
 
+  // wait for end of process
+  // if kill is true, kill if not already ended
   virtual int
-  close();
+  close(bool kill=false);
 
   virtual std::ostream&
   getOutput();

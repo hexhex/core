@@ -3,10 +3,14 @@ d(c2).
 d(c3).
 d(c4).
 
+% guess for c1 p/1 or q/1 depending on r/1
 p(c1) :- r(X), not q(c1).
 q(c1) :- r(X), not p(c1).
 
+% create s/1 for all d/1
 s(X)  :- d(X), not p(c1).
 s(X)  :- d(X), not q(c1).
 
-r(X)  :- d(X), s(X), not &testC[s](X).
+% create r/1 for all X
+r(X)  :- d(X), s(X), not &testC[t](X).
+

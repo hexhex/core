@@ -48,6 +48,7 @@
 #define DLVHEX_EXPORT
 #endif /* DLLEXPORT/IMPORT */
 
+#include <boost/cstdint.hpp>
 
 #endif /* _DLVHEX_PLATFORMDEFINITIONS_H */
 

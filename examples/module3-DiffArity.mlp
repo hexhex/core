@@ -1,0 +1,4 @@
+#module(p3,[q3/1]).
+q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y.
+skip3  :- q3(X), not q3i(X).
+odd :- skip3, @p2[q3i]::even.

@@ -25,6 +25,7 @@
 /**
  * @file   PluginContainer.h
  * @author Roman Schindlauer
+ * @author Peter Schueller
  * @date   Thu Sep 1 17:21:53 2005
  * 
  * @brief  Container class for plugins.
@@ -36,7 +37,7 @@
 #define _DLVHEX_PLUGINCONTAINER_H
 
 #include "dlvhex/PlatformDefinitions.h"
-
+#include "dlvhex/fwd.hpp"
 #include "dlvhex/PluginInterface.h"
 
 #include <string>
@@ -44,60 +45,82 @@
 
 #include <boost/shared_ptr.hpp>
 
-
 DLVHEX_NAMESPACE_BEGIN
-
 
 /**
  * @brief Collects and administrates all available plugins.
+ *
+ * The PluginContainer loads and manages dynamically loaded and internal plugins.
+ * It is not aware of the configuration or usage of plugins or plugin atoms in a
+ * ProgramCtx.
+ *
+ * Important: memory allocation policy:
+ * * PluginInterface objects are passed by pointer from the extern "C" plugin
+ *   import function, they are wrapped in a non-deleting smart pointer by the
+ *   PluginContainer and must be deallocated by the library itself.
+ * * PluginAtom objects are created by PluginInterface::getAtoms and
+ *   then owned by a smart pointer in the PluginContainer. These smart pointers
+ *   must contain a "deleter" compiled into the library.
  */
 class DLVHEX_EXPORT PluginContainer
 {
- protected:
-  /// ctor
-  explicit
-  PluginContainer(const std::string& path);
-
-  /// copy ctor
+private:
+  /// copy ctor (must not be used, would duplicate library unloads)
   PluginContainer(const PluginContainer&);
 
+public:
+  /// ctor
+  PluginContainer();
+
   /// dtor
+  // unloads shared libraries (if shared_ptr reference counts are ok)
   ~PluginContainer();
 
+  //
+  // loading and accessing
+  //
+
+	// search for plugins in searchpath and open those that are plugins
+	// may be called multiple times with different paths
+	// paths may be separated by ":" just like LD_LIBRARY_PATH
+	void loadPlugins(const std::string& searchpath="");
+
+  // add a PluginInterface to the container
+  // the smart pointer will not be reconfigured, so if you need to use a
+  // custom "deleter", do it before you call this method
+  void addInternalPlugin(PluginInterfacePtr plugin);
+
+  // get container with plugins loaded so far
+  const std::vector<PluginInterfacePtr>& getPlugins() const
+  { return pluginInterfaces; }
+
+  //
+  // batch operations on all plugins
+  //
+
+	// call printUsage for each loaded plugin
+	void printUsage(std::ostream& o);
+
 public:
-
-  /// get the PluginContainer singleton instance
-  static PluginContainer*
-  instance(const std::string&);
-
-  /**
-   * @brief Loads a library and accesses its plugin-interface.
-   */
-  std::vector<PluginInterface*>
-  importPlugins();
-
-  /**
-   * @brief returns a plugin-atom object corresponding to a name.
-   */
-  boost::shared_ptr<PluginAtom>
-  getAtom(const std::string& name) const;
-
-
+  struct LoadedPlugin;
+  typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
+  typedef std::vector<LoadedPluginPtr> LoadedPluginVector;
+  typedef std::vector<PluginInterfacePtr> PluginInterfaceVector;
+  
 private:
+  // add loaded plugin (do not extract plugin atoms)
+  void addInternalPlugin(LoadedPluginPtr lplugin);
 
-  /// singleton instance
-  static PluginContainer* theContainer;
+	/// current search path
+	std::string searchPath;
 
-  /// list of plugins
-  std::vector<std::string> pluginList;
+  // loaded plugins
+  LoadedPluginVector plugins;
 
-  /**
-   * @brief Associative map of external atoms provided by plugins.
-   */
-  PluginInterface::AtomFunctionMap pluginAtoms;
-
+  // loaded plugins (interface ptrs)
+  PluginInterfaceVector pluginInterfaces;
 };
-
+typedef boost::shared_ptr<PluginContainer> PluginContainerPtr;
 
 DLVHEX_NAMESPACE_END
 

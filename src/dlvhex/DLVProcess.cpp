@@ -37,7 +37,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex/DLVProcess.h"
-#include "dlvhex/globals.h"
+#include "dlvhex/Logger.hpp"
 
 #include <iostream>
 #include <boost/iostreams/tee.hpp>
@@ -96,24 +96,24 @@ DLVProcess::setupStreams()
 {
   if (ipipe == 0 && opipe == 0)
     {
-      // first, setup the iostreams
-      if (Globals::Instance()->doVerbose(Globals::GRAPH_PROCESSOR))
-	{
-	  Globals::Instance()->getVerboseStream() << std::endl
-						  << "Setting up DLVProcess opipe to be verbose"
-						  << std::endl;
+      #ifndef NDEBUG
+      if( Logger::Instance().shallPrint(Logger::DBG) )
+      {
+	// setup iostreams to copy to log stream
+	DBGLOG(DBG,"Setting up DLVProcess opipe to be verbose");
 
-	  boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
+	boost::iostreams::filtering_ostream* tmpopipe = new boost::iostreams::filtering_ostream;
 
-	  tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
-	  tmpopipe->push(Globals::Instance()->getVerboseStream());
+	tmpopipe->push(boost::iostreams::tee_filter<std::streambuf>(proc));
+	tmpopipe->push(Logger::Instance().stream());
 	  
-	  opipe = tmpopipe;
-	}
+	opipe = tmpopipe;
+      }
       else
-	{
-	  opipe = new std::iostream(&proc);
-	}
+      #endif
+      {
+	opipe = new std::iostream(&proc);
+      }
       
       ipipe = new std::iostream(&proc);
       
@@ -151,7 +151,7 @@ DLVProcess::endoffile()
 
 
 int
-DLVProcess::close()
+DLVProcess::close(bool kill)
 {
   assert(ipipe != 0 && opipe != 0);
 
@@ -159,7 +159,7 @@ DLVProcess::close()
   opipe->clear();
   ipipe->clear();
   // exit code of process
-  return proc.close();
+  return proc.close(kill);
 }
 
 

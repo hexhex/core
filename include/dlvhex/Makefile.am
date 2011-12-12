@@ -1,16 +1,85 @@
 # including headers for make dist
 
 # those guys belong to the dlvhex binary
-noinst_HEADERS = \
-	GraphProcessor.h \
-	HexGrammar.h \
-	HexGrammar.tcc \
-	HexGrammarPTToASTConverter.h \
-	RuleMLOutputBuilder.h \
-	SafetyChecker.h \
-	SpiritFilePositionNode.h \
-	State.h \
-	URLBuf.h
+pkginclude_HEADERS = \
+  AggregateAtomTable.hpp \
+  AnswerSet.hpp \
+  AnswerSetPrinterCallback.hpp \
+  ASPSolver.h \
+  ASPSolverManager.h \
+  Atoms.hpp \
+  BaseModelGenerator.hpp \
+  Benchmarking.h \
+  BuiltinAtomTable.hpp \
+  CAUAlgorithms.hpp \
+  ComfortPluginInterface.hpp \
+  ComponentGraph.hpp \
+  ConcurrentMessageQueueOwning.h \
+  Configuration.hpp \
+  DependencyGraphFull.hpp \
+  DependencyGraph.hpp \
+  DLVProcess.h \
+  DLVresultParserDriver.h \
+  Error.h \
+  EvalGraphBuilder.hpp \
+  EvalGraph.hpp \
+  EvalHeuristicBase.hpp \
+  EvalHeuristicEasy.hpp \
+  EvalHeuristicFromFile.hpp \
+  EvalHeuristicOldDlvhex.hpp \
+  EvalHeuristicTrivial.hpp \
+  ExternalAtomTable.hpp \
+  FinalEvalGraph.hpp \
+  fwd.hpp \
+  GraphvizHelpers.hpp \
+  GuessAndCheckModelGenerator.hpp \
+  HexGrammar.h \
+  HexGrammar.tcc \
+  HexParser.hpp \
+  HexParserModule.hpp \
+  HigherOrderPlugin.hpp \
+  ID.hpp \
+  InputProvider.hpp \
+  Interpretation.hpp \
+  Logger.hpp \
+  MLPSolver.hpp \
+  MLPSyntaxChecker.hpp \
+  Makefile.am \
+  Makefile.in \
+  ModelBuilder.hpp \
+  ModelGenerator.hpp \
+  ModelGraph.hpp \
+  Module.hpp \
+  ModuleAtomTable.hpp \
+  ModuleTable.hpp \
+  OfflineModelBuilder.hpp \
+  OnlineModelBuilder.hpp \
+  OrdinaryAtomTable.hpp \
+  PlainAuxPrinter.hpp \
+  PlainModelGenerator.hpp \
+  PlatformDefinitions.h \
+  PluginContainer.h \
+  PluginInterface.h \
+  Predicate.hpp \
+  PredicateMask.hpp \
+  PredicateTable.hpp \
+  Printer.hpp \
+  Printhelpers.hpp \
+  ProcessBuf.h \
+  Process.h \
+  ProgramCtx.h \
+  QueryPlugin.hpp \
+  Registry.hpp \
+  Rule.hpp \
+  RuleTable.hpp \
+  StrongNegationPlugin.hpp \
+  SafetyChecker.h \
+  State.h \
+  Table.hpp \
+  Term.hpp \
+  TermTable.hpp \
+  URLBuf.h \
+  WellfoundedModelGenerator.hpp
 
 
 # those belong to libaspsolver
@@ -28,8 +97,9 @@ LIBDLVHEXBASE = \
 	AggregateAtom.h \
 	AnswerSet.h \
 	Atom.h \
-	AtomNode.h \
+	#AtomNode.h \
 	AtomSet.h \
+	AtomTable.h \
 	BaseVisitor.h \
 	Benchmarking.h \
 	BoostComponentFinder.h \
@@ -45,7 +115,6 @@ LIBDLVHEXBASE = \
 	HexParserDriver.h \
 	Literal.h \
 	ModelGenerator.h \
-	NamesTable.h \
 	NodeGraph.h \
 	OutputBuilder.h \
 	ParserDriver.h \
@@ -60,9 +129,10 @@ LIBDLVHEXBASE = \
 	ResultContainer.h \
 	Rule.h \
 	SpiritDebugging.h \
+	SymbolTable.h \
 	Term.h \
 	TextOutputBuilder.h
 
 
 # install libaspsolver and libdlvhexbase headers
-pkginclude_HEADERS = $(LIBASPSOLVER) $(LIBDLVHEXBASE)
+#pkginclude_HEADERS = $(LIBASPSOLVER) $(LIBDLVHEXBASE)

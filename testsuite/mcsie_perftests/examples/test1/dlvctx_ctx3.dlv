@@ -1,0 +1,2 @@
+% forbid the case that the bird needs to be rescued, but we don't rescue it
+:- needs_rescue, not rescue.

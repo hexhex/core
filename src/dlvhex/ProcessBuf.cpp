@@ -33,7 +33,8 @@
  */
 
 #include "dlvhex/ProcessBuf.h"
-#include "dlvhex/globals.h"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/Printhelpers.hpp"
 
 #include <boost/foreach.hpp>
 #include <sstream>
@@ -110,20 +111,10 @@ ProcessBuf::initBuffers()
   setg(ibuf, ibuf, ibuf);
 }
 
-
-
 pid_t
 ProcessBuf::open(const std::vector<std::string>& av)
 {
-  if (Globals::Instance()->doVerbose(Globals::COMPONENT_EVALUATION))
-  {
-    Globals::Instance()->getVerboseStream() << "ProcessBuf open:";
-    BOOST_FOREACH(const std::string& arg, av)
-    {
-      Globals::Instance()->getVerboseStream() << " " << arg;
-    }
-    Globals::Instance()->getVerboseStream() << std::endl;
-  }
+  LOG(DBG,"ProcessBuf::open" << printvector(av));
 
   // close before re-open it
   if (process != -1)
@@ -210,6 +201,7 @@ ProcessBuf::open(const std::vector<std::string>& av)
 	::close(inpipes[1]);
 	
 	// execute command, should not return
+        #warning TODO handle signals to parent process (pass on to children s.t. child process is not reparented to init)
 	::execvp(*argv, argv);
 	
 	// just in case we couldn't execute the command
@@ -233,7 +225,6 @@ ProcessBuf::open(const std::vector<std::string>& av)
   return process;
 }
 
-
 void
 ProcessBuf::endoffile()
 {
@@ -247,9 +238,16 @@ ProcessBuf::endoffile()
     }
 }
 
+// wait for end of process
+// if kill is true, kill if not already ended
 int
-ProcessBuf::close()
+ProcessBuf::close(bool kill)
 {
+  if( process == -1 )
+    return -1;
+
+  LOG(DBG,"ProcessBuf::close for process " << process << "(" << kill << ")");
+
   // we're done writing
   endoffile();
 
@@ -263,14 +261,26 @@ ProcessBuf::close()
       outpipes[0] = -1;
     }
 
+  // try to waitpid without waiting (just see if the process is still there)
+  if( ::waitpid(process, &status, WNOHANG) == 0 )
+  {
+    int sig = SIGTERM;
+    LOG(INFO,"sending signal " << sig << " to process " << process);
+    ::kill(process, sig);
+  }
+
   // obviously we do not want to leave zombies around, so get status
   // code of the process
-  // @todo if close() is called multiple times, we should infinitely hang, is this intended?
+  // (if the process no longer exists, this will simply fail,
+  // if a new process grabbed the same pid, we are doomed and will wait for that
+  // unrelated process to exit)
   ::waitpid(process, &status, 0);
+  int exitstatus = WEXITSTATUS(status);
+  LOG(DBG,"ProcessBuf::close for process " << process << ": exit status " << exitstatus);
   process = -1;
 
   // exit code of process
-  return WEXITSTATUS(status);
+  return exitstatus;
 }
 
 

@@ -1,4 +1,4 @@
-#namespace("foo","http://www.foo.com/bar%20baz").
+:- bar("foo","http://www.foo.com/bar%20baz").
 :- foo("bar%").
 foobar :- foo("%baz").
 percent_parse_successful.

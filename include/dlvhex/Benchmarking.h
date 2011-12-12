@@ -33,7 +33,8 @@
 #ifndef DLVHEX_H_BENCHMARKING_INCLUDED_1555
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
-#include <dlvhex/PlatformDefinitions.h>
+#include "dlvhex/PlatformDefinitions.h"
+
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -109,9 +110,9 @@
 # define DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sid,msg) \
     DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_SCOPE_TPL(sid);
 # define DLVHEX_BENCHMARK_REGISTER_AND_START(sid,msg) \
-    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid); } while(0)
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_START(sid);
 # define DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sid,msg,num) \
-    do { DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_COUNT(sid,num); } while(0)
+    DLVHEX_BENCHMARK_REGISTER(sid,msg); DLVHEX_BENCHMARK_COUNT(sid,num);
 #else
 # define DLVHEX_BENCHMARK_REGISTER(sid,msg)               do { } while(0)
 # define DLVHEX_BENCHMARK_START(sid)                      do { } while(0)
@@ -196,6 +197,10 @@ public:
   ID getInstrumentationID(const std::string& name);
   // print information about ID
   inline void printInformation(ID id); // inline for performance
+  // print only count of ID
+  inline std::ostream& printCount(std::ostream& out, ID id); // inline for performance
+  // print only duration of ID
+  inline std::ostream& printDuration(std::ostream& out, ID id); // inline for performance
 
   // 
   // record measured things
@@ -241,10 +246,30 @@ void BenchmarkController::printInformation(const Stat& st)
       "BM:" << std::setw(30) << st.name <<
       ": count:" << std::setw(6) << st.count <<
       " avg:";
-    printInSecs(*output, st.duration/st.count, 4) << "s" <<
-      " total:";
+		if( st.count > 0 )
+		{
+			printInSecs(*output, st.duration/st.count, 4);
+		}
+		else
+		{
+			(*output) << "   -.---";
+		}
+		(*output) << "s" << " total:";
     printInSecs(*output, st.duration, 6) << "s" << std::endl;
   }
+}
+
+// print only count of ID
+std::ostream& BenchmarkController::printCount(std::ostream& out, ID id)
+{
+  Stat& st = instrumentations[id];
+  return out << st.count;
+}
+
+std::ostream& BenchmarkController::printDuration(std::ostream& out, ID id)
+{
+  Stat& st = instrumentations[id];
+  return printInSecs(out, st.duration);
 }
 
 // print continuous information about stat

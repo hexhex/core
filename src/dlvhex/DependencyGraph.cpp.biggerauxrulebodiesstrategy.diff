@@ -1,0 +1,266 @@
+Index: src/dlvhex/DependencyGraph.cpp
+===================================================================
+--- src/dlvhex/DependencyGraph.cpp	(revision 3083)
++++ src/dlvhex/DependencyGraph.cpp	(working copy)
+@@ -348,8 +348,15 @@
+ /**
+  * * for each eatom in the rule with variable inputs:
+  *   * create auxiliary input predicate for its input
+- *   * create auxiliary rule collecting its input, use as dependencies all positive literals (including eatoms) in the rule
+- *   (this potentially creates many aux rules (cf. extatom2.hex))
++ *   * create auxiliary rule collecting its input
++ *     * old behavior: use as dependencies all positive literals (including
++ *       eatoms) in the rule (potentially creates many aux rules (cf. extatom2.hex))
++ *     * new behavior: make use of safety reordering:
++ *       eatom can depend only on atoms before it
++ *       1 initialize relevant variables with eatom input variables
++ *       2 if literal before eatom contains relevant variables take it
++ *       2.1 and add variables of literal to relevant variables
++ *       3 goto 2 until at beginning of rule body
+  */
+ void DependencyGraph::createAuxiliaryRuleIfRequired(
+     const Tuple& body,
+@@ -362,11 +369,10 @@
+   DBGLOG(DBG,"=createAuxiliaryRuleIfRequired for body " << printvector(body));
+   assert(!!pluginAtom);
+ 
+-  // collect variables at constant inputs of this external atom
+-  std::list<ID> inputVariables;
+-  std::set<ID> inputVariableSet;
++  // set of relevant variables
++  std::set<ID> relevant;
+ 
+-  // find variables for constant inputs
++  // initialize with variables for constant inputs
+   for(unsigned at = 0; at != eatom.inputs.size(); ++at)
+   {
+     if( ((pluginAtom->getInputType(at) == PluginAtom::CONSTANT) ||
+@@ -375,19 +381,22 @@
+         (eatom.inputs[at].isVariableTerm()) )
+     {
+       ID varID = eatom.inputs[at];
+-      LOG(DBG,"at index " << at << ": found constant input that is a variable: " << varID);
+-      inputVariables.push_back(varID);
+-      inputVariableSet.insert(varID);
++      DBGLOG(DBG,"at index " << at << ": found constant input that is a variable: " << varID);
++      relevant.insert(varID);
+     }
+   }
+ 
+-  // bailout if no variables
+-  if( inputVariables.empty() )
++  // need not do anything if there are no variables
++  if( relevant.empty() )
+     return;
+ 
++  //
++  // build auxInputMapping
++  //
++
+   // build unique ordered list of input variables, and
+   // build mapping from input variable in aux predicate to input for eatom
+-  std::list<ID> uniqueInputVariables(inputVariableSet.begin(), inputVariableSet.end());
++  std::list<ID> uniqueInputVariables(relevant.begin(), relevant.end());
+   ExternalAtom::AuxInputMapping auxInputMapping;
+   for(std::list<ID>::const_iterator ituiv = uniqueInputVariables.begin();
+       ituiv != uniqueInputVariables.end(); ++ituiv)
+@@ -403,115 +412,91 @@
+     auxInputMapping.push_back(replaceWhere);
+   }
+ 
+-  // collect positive body literals of this rule which provide grounding
+-  // for these variables
++  //
++  // find relevant rule body literals
++  //
+   std::list<ID> auxBody;
+-  std::set<ID> groundedInputVariableSet;
+-  for(Tuple::const_iterator itat = body.begin();
+-      itat != body.end(); ++itat)
+-  {
+-    // don't compare to self
+-    if( *itat == idlit )
+-      continue;
+ 
+-    // see comment at top of DependencyGraph.hpp for what could perhaps be improved here
+-    // (and why only positive literals are used)
+-    if( itat->isNaf() )
+-      continue;
++  // see comment above function
++  // short story: we rely heavily on safety reordering
+ 
+-    if( itat->isExternalAtom() )
+-    {
+-      LOG(DBG,"checking if we depend on output list of external atom " << *itat);
++  // find literal we provide grouding for
++  Tuple::const_iterator itlit = body.begin();
++  while( *itlit != idlit && itlit != body.end() )
++    ++itlit;
++  assert(itlit != body.end() && "we must find idlit in the body");
+ 
+-      const ExternalAtom& eatom2 =
+-        registry->eatoms.getByID(*itat);
+-      LOG(DBG,"checking eatom " << eatom2);
++  // collect literals before this one
++  // (those are the literals the eatom may depend on)
++  // collect all that intersect with relevant variables
++  // (and extend relevant variables)
++  Tuple::const_iterator itbackward = itlit - 1;
++  for(; itbackward != body.begin(); --itbackward)
++  {
++    DBGLOG(DBG,"collecting backward: candidate " << *itbackward << "(" << printToString<RawPrinter>(*itbackward, registry) << ")");
+ 
+-      bool addedThis = false;
+-      for(Tuple::const_iterator itvar = eatom2.tuple.begin();
+-          itvar != eatom2.tuple.end(); ++itvar)
++    std::set<ID> vars;
++    registry->getVariablesInID(*itbackward, vars);
++    DBGLOG(DBG,"-> got variables " << printManyToString<RawPrinter>(Tuple(vars.begin(), vars.end()), ", ", registry));
++
++    bool intersects = false;
++    BOOST_FOREACH(ID id, vars)
++    {
++      if( relevant.count(id) != 0 )
+       {
+-        if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
+-        {
+-          LOG(ANALYZE,"will ground variable " << *itvar << " by external atom " << eatom2 << " in auxiliary rule");
+-          if( !addedThis )
+-          {
+-            auxBody.push_back(*itat);
+-            addedThis = true;
+-          }
+-          groundedInputVariableSet.insert(*itvar);
+-          // continue remembering which variables we already grounded
+-        }
++        intersects = true;
++        break;
+       }
+-    } // other body atom is external atom
+-    else if( itat->isOrdinaryNongroundAtom() || itat->isBuiltinAtom() )
++    }
++
++    if( intersects )
+     {
+-      LOG(DBG,"checking if we depend on ordinary nonground/builtin atom " << *itat);
++      DBGLOG(DBG,"-> intersects!");
+ 
+-      const Tuple* atomtuple = 0;
+-      if( itat->isOrdinaryNongroundAtom() )
+-      {
+-        const OrdinaryAtom& oatom =
+-          registry->onatoms.getByID(*itat);
+-        LOG(DBG,"checking oatom " << oatom);
+-        atomtuple = &oatom.tuple;
+-      }
+-      else
+-      {
+-        assert(itat->isBuiltinAtom());
+-        const BuiltinAtom& batom =
+-          registry->batoms.getByID(*itat);
+-        LOG(DBG,"checking batom " << batom);
+-        atomtuple = &batom.tuple;
+-      }
+-      assert(!!atomtuple);
++      // push to front to keep safety ordering
++      auxBody.push_front(*itbackward);
+ 
+-      bool addedThis = false;
+-      for(Tuple::const_iterator itvar = atomtuple->begin();
+-          itvar != atomtuple->end(); ++itvar)
+-      {
+-        if( itvar->isVariableTerm() && inputVariableSet.count(*itvar) )
+-        {
+-          LOG(ANALYZE,"will ground variable " << *itvar << " by atom " << printvector(*atomtuple) << " in auxiliary rule");
+-          if( !addedThis )
+-          {
+-            auxBody.push_back(*itat);
+-            addedThis = true;
+-          }
+-          groundedInputVariableSet.insert(*itvar);
+-          // continue remembering which variables we already grounded
+-        }
+-      } // iterate over other body atom's arguments
++      // extend set of relevant variables
++      relevant.insert(vars.begin(), vars.end());
++      DBGLOG(DBG,"-> extended set of relevant variables to " <<
++          printManyToString<RawPrinter>(Tuple(relevant.begin(), relevant.end()), ", ", registry));
+     }
+-    else if( itat->isAggregateAtom() )
++  }
++
++  // collect literals after this one
++  // (those are the literals which might additinally limit grounding)
++  // collect only literals that contain variables that have been collected 
++  Tuple::const_iterator itforward = itlit + 1;
++  for(; itforward != body.end(); --itforward)
++  {
++    DBGLOG(DBG,"collecting forward: candidate " << *itforward << "(" << printToString<RawPrinter>(*itforward, registry) << ")");
++
++    std::set<ID> vars;
++    registry->getVariablesInID(*itforward, vars);
++    DBGLOG(DBG,"-> got variables " << printManyToString<RawPrinter>(Tuple(vars.begin(), vars.end()), ", ", registry));
++
++    bool subset = true;
++    BOOST_FOREACH(ID id, vars)
+     {
+-      // we don't need to consider aggregates for grounding eatom
++      if( relevant.count(id) == 0 )
++      {
++        subset = false;
++        break;
++      }
+     }
+-    else
+-    {
+-      throw FatalError("encountered unknown atom type in createAuxiliaryRuleIfRequired");
+-    }
+-  } // iterate over body of rule to find matches
+ 
+-  // check if each input variable hit at least once by auxbody
+-  if( groundedInputVariableSet != inputVariableSet )
+-  {
+-    std::stringstream s;
+-    RawPrinter printer(s, registry);
+-    s << "cannot ground external atom input variables in body '";
+-    printer.printmany(body, ", ");
+-    s << "' because of ungrounded variables ";
+-    std::vector<ID> ungrounded;
+-    BOOST_FOREACH(ID iv, inputVariableSet)
++    if( subset )
+     {
+-      if( groundedInputVariableSet.count(iv) == 0 )
+-        ungrounded.push_back(iv);
++      DBGLOG(DBG,"-> subset!");
++
++      // push to back to keep safety ordering
++      auxBody.push_back(*itforward);
+     }
+-    printer.printmany(ungrounded, ", ");
+-    throw FatalError(s.str());
+   }
+ 
+   assert(!auxBody.empty());
++  DBGLOG(DBG,"auxBody = " << printManyToString<RawPrinter>(
++        Tuple(auxBody.begin(), auxBody.end()), ", ", registry));
+ 
+   // now we create an auxiliary input predicate for this rule/eatom combination
+   // derived by a rule with body auxBody
+@@ -526,14 +511,10 @@
+     RawPrinter printer(s, registry);
+     s << "created auxiliary rule '";
+     printer.print(auxRule);
+-    s << "' to ground variables '";
+-    printer.printmany(
+-        std::vector<ID>(
+-          inputVariableSet.begin(), inputVariableSet.end()),
+-        ", ");
+-    s << "' of eatom '";
++    s << "' to ground constant inputs of eatom '";
+     printer.print(idat);
+-    s << "'";
++    s << "' with variable set ";
++    printer.printmany(Tuple(relevant.begin(), relevant.end()), ", ");
+     LOG(DBG,s.str());
+   }
+   // pass auxiliary rule to outside

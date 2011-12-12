@@ -36,28 +36,36 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/fwd.hpp"
+#include "dlvhex/Configuration.hpp"
 #include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/Interpretation.hpp"
+#include "dlvhex/PluginContainer.h"
+#include "dlvhex/InputProvider.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
+#include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/ModelBuilder.hpp"
+#include "dlvhex/Registry.hpp"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/functional/factory.hpp>
+
+#include <typeinfo>
 #include <vector>
 #include <string>
 #include <iosfwd>
 
-#include <boost/shared_ptr.hpp>
-
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declarations
-class PluginContainer;
-class PluginInterface;
-class Program;
-class AtomSet;
-class NodeGraph;
-class DependencyGraph;
-class Process;
-class ResultContainer;
-class OutputBuilder;
-class State;
+typedef boost::shared_ptr<EvalHeuristicBase<EvalGraphBuilder> >
+  EvalHeuristicPtr;
 
+typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
+  ModelBuilderPtr;
+
+typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
+  ModelBuilderFactory;
 
 /**
  * @brief Program context class.
@@ -66,97 +74,74 @@ class State;
  */
 class DLVHEX_EXPORT ProgramCtx
 {
- private:
-  std::vector<std::string>* options;
+public:
+	// previously globals
+	Configuration config;
 
-  std::vector<std::string> inputsources;
+  const RegistryPtr& registry() const
+    { return _registry; }
+	const PluginContainerPtr& pluginContainer() const
+    { return _pluginContainer; }
 
-  PluginContainer* container;
-  std::vector<PluginInterface*>* plugins;
+  // cannot change registry if something is already stored here
+  void setupRegistry(RegistryPtr registry);
 
-  std::istream* programstream;
+  // change registry 
+  void changeRegistry(RegistryPtr registry);
 
-  /// stores the rules of the program
-  Program* IDB;
-  /// stores the facts of the program
-  AtomSet* EDB;
+  void setupPluginContainer(PluginContainerPtr pluginContainer);
 
-  NodeGraph* nodegraph;
-  DependencyGraph* depgraph;
+  // factory for eval heuristics
+  EvalHeuristicPtr evalHeuristic;
+  // factory for model builders
+  ModelBuilderFactory modelBuilderFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
-  ResultContainer* result;
+	// program input provider (if a converter is used, the converter consumes this
+	// input and replaces it by another input)
+	InputProviderPtr inputProvider;
 
-  OutputBuilder* outputbuilder;
+  // the input parser
+  HexParserPtr parser;
 
-  boost::shared_ptr<State> state;
+  // idb 
+  std::vector<ID> idb; 
+  std::vector<std::vector<ID> > idbList;
 
+  // edb 
+  Interpretation::Ptr edb; 
+  std::vector<InterpretationPtr> edbList;
 
- protected:
-  friend class State;
+  // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
+  uint32_t maxint;
+
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
+  template<typename PluginT>
+  typename PluginT::CtxData& getPluginData();
+
+  // TODO: add visibility policy (as in clasp)
+
+  DependencyGraphPtr depgraph;
+  ComponentGraphPtr compgraph;
+  FinalEvalGraphPtr evalgraph;
+  FinalEvalGraph::EvalUnit ufinal;
+  std::list<ModelCallbackPtr> modelCallbacks;
+  std::list<FinalCallbackPtr> finalCallbacks;
+  ModelBuilderPtr modelBuilder;
+  // model graph is only accessible via modelbuilder->getModelGraph()!
+  // (model graph is part of the model builder) TODO think about that
+
+  StatePtr state;
 
   void
   changeState(const boost::shared_ptr<State>&);
 
-
- public:
+public:
   ProgramCtx();
 
-  virtual
   ~ProgramCtx();
-
-
-  void
-  setPluginContainer(PluginContainer*);
-
-  PluginContainer*
-  getPluginContainer() const;
-  
-
-  void
-  addPlugins(const std::vector<PluginInterface*>&);
-
-  std::vector<PluginInterface*>*
-  getPlugins() const;
-
-  void
-  addOption(const std::string&);
-
-  std::vector<std::string>*
-  getOptions() const;
-
-  void
-  addInputSource(const std::string&);
-
-  const std::vector<std::string>&
-  getInputSources() const;
-
-
-  // the program's input stream
-  std::istream&
-  getInput();
-
-
-  Program*
-  getIDB() const;
-
-  AtomSet*
-  getEDB() const;
-
-
-  NodeGraph*
-  getNodeGraph() const;
-
-  void
-  setNodeGraph(NodeGraph*);
-
-  DependencyGraph*
-  getDependencyGraph() const;
-
-  void
-  setDependencyGraph(DependencyGraph*);
-
 
   ASPSolverManager::SoftwareConfigurationPtr
   getASPSoftware() const;
@@ -164,65 +149,89 @@ class DLVHEX_EXPORT ProgramCtx
   void
   setASPSoftware(ASPSolverManager::SoftwareConfigurationPtr);
 
+  //
+  // plugin helpers
+  //
 
-  ResultContainer*
-  getResultContainer() const;
+	// process options for each plugin loaded in this ProgramCtx
+	// (this is supposed to remove "recognized" options from pluginOptions)
+	void processPluginOptions(std::list<const char*>& pluginOptions);
 
-  void
-  setResultContainer(ResultContainer*);
+  // use _pluginContainer to get plugin atoms
+  void addPluginAtomsFromPluginContainer();
 
+  // add atom to this ProgramCtx and link it to registry of this ProgramCtx
+  void addPluginAtom(PluginAtomPtr atom);
 
-  OutputBuilder*
-  getOutputBuilder() const;
+  // associate external atoms in registry of this ProgramCtx
+  // with plugin atoms in given idb
+  //
+  // throws on unknown atom iff failOnUnknownAtom is true
+  void associateExtAtomsWithPluginAtoms(const Tuple& idb, bool failOnUnknownAtom=true);
 
-  void
-  setOutputBuilder(OutputBuilder*);
-
+  // setup this ProgramCtx (using setupProgramCtx() for of all plugins)
+  void setupByPlugins();
 
   //
   // state processing
+  // the following functions are given in intended order of calling
+  // optional functions may be omitted
   //
 
-  void
-  openPlugins();
+  void showPlugins();                // optional
+  void convert();                    // optional
+  void parse();
+  void moduleSyntaxCheck();
+  void mlpSolver();
+  void rewriteEDBIDB();              // optional
+  void safetyCheck();                // optional (if you know that your program is safe!)
+  void createDependencyGraph();
+	void optimizeEDBDependencyGraph(); // optional
+	void createComponentGraph();
+  void strongSafetyCheck();          // optional (if you know that your program is safe!)
+	void createEvalGraph();
+  void setupProgramCtx();
+  void evaluate();
+  void postProcess();
 
-  void
-  convert();
+protected:
+  // symbol storage of this program context
+  // (this is a shared ptr because we might want
+  // to have multiple program contexts sharing the same registry)
+  RegistryPtr _registry;
 
-  void
-  parse();
+	// plugin container (this must be initialized with above registry!)
+	PluginContainerPtr _pluginContainer;
 
-  void
-  rewrite();
+  // data associated with one specific plugin
+  // externally we see this as a non-const reference, the shared_ptr is totally internal
+  typedef std::map<std::string, boost::shared_ptr<PluginData> > PluginDataContainer;
+  PluginDataContainer pluginData;
 
-  void
-  createNodeGraph();
-
-  void
-  optimize();
-
-  void
-  createDependencyGraph();
-
-  void
-  safetyCheck();
-
-  void
-  strongSafetyCheck();
-
-  void
-  setupProgramCtx();
-
-  void
-  evaluate();
-
-  void
-  postProcess();
-
-  void
-  output();
-
+  // atoms usable for evaluation (loaded from plugins or manually added)
+  PluginAtomMap pluginAtoms;
 };
+
+// used by plugins to store specific plugin data in ProgramCtx
+// default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
+template<typename PluginT>
+typename PluginT::CtxData& ProgramCtx::getPluginData()
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginDataContainer::const_iterator it =
+    pluginData.find(pluginTypeName);
+  if( it == pluginData.end() )
+  {
+    it = pluginData.insert(std::make_pair(
+          pluginTypeName,
+          boost::shared_ptr<PluginData>(new typename PluginT::CtxData))
+        ).first;
+  }
+  typename PluginT::CtxData* pret =
+    dynamic_cast<typename PluginT::CtxData*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
 
 DLVHEX_NAMESPACE_END
 

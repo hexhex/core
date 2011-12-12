@@ -1,0 +1,24 @@
+dom(x).
+dom(xx).
+
+% disjunction a v b v c v d.
+foo(xx) v bar(xx) v baz(xx) v d.
+
+% a :- b
+bar(x) :- bar(xx).
+foo(X) :- &testConcat[Y,x](X), bar(Y), dom(X). 
+% b :- a
+foo(x) :- foo(xx).
+bar(X) :- &testConcat[Y,x](X), foo(Y), dom(X). 
+% a :- c
+baz(x) :- baz(xx).
+foo(X) :- &testConcat[Y,x](X), baz(Y), dom(X). 
+
+% compare with the following program:
+% a v b v c v d.
+% a :- b.
+% b :- a.
+% a :- c.
+
+% the result should be: {a,b} {d}
+% hence (projected to foo(xx), bar(xx), baz(xx), and d {foo(xx),bar(xx)} and {d}

@@ -1,0 +1,25 @@
+% thanks to Yulia Lierler for this testcase
+power(1).
+power(2).
+power(3).
+power(4).
+power(5).
+power(6).
+power(7).
+power(8).
+power(9).
+power(10).
+power(11).
+power(12).
+power(13).
+power(14).
+power(15).
+power(16).
+power(17).
+power(18).
+power(19).
+
+choice(P):-power(P), not nchoice(P).
+nchoice(P):-power(P), not choice(P).
+
+

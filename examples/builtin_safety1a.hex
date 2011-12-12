@@ -1,0 +1,4 @@
+#maxint=10.
+
+foo(X,Y,Z) :- +(X,Y,Z).
+% this file only works for dlv < 2010-10-14

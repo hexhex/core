@@ -1,0 +1,9 @@
+start(prefix).
+more(a).
+more(b).
+use(X) v nuse(X) :- more(X).
+:- use(X), use(Y), X != Y.
+complete(F) :- &testConcat[S,M](F), start(S), use(M).
+
+% should return two results '{complete(prefixa)}' and '{complete(prefixb)}' in brave and no result in cautious mode
+complete(X)?

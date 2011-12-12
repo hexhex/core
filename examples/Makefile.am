@@ -1,25 +1,57 @@
 EXTRA_DIST = \
     tests/dlvhextests.test \
+    tests/README.txt \
     3col.hex \
     agg1.hex \
     agg2.hex \
+    agg3.hex \
+    agg4.hex \
+    anonymousvariable1.hex \
     builtin_safety1.hex \
+    builtin_safety1a.hex \
+    builtin_safety1b.hex \
+    builtin_safety1c.hex \
+    builtin_safety1d.hex \
     builtin_safety2.hex \
+    comments.hex \
+    duplicaterule.asp \
     empty.hex \
     equality.hex \
     extatom1.hex \
     extatom2.hex \
+    extatom2dup.hex \
+    extatom2safety.hex \
     extatom3.hex \
+    extatom3_evalplan.txt \
     extatom4.hex \
     extatom5.hex \
     extatom6.hex \
+    extatom7.hex \
+    extatom8.hex \
     extatom9.hex \
+    higherorder1.hex \
+    higherorder2.hex \
+    higherorder3.hex \
+    higherorder4.hex \
+    higherorder5.hex \
+    higherorder5except.hex \
+    manyanswersets.hex \
     minimality.hex \
     msp.hex \
     namespace1.hex \
     namespace2.hex \
     percentparser.hex \
+    rec_agg_bug1.hex \
+    safety1.hex \
+    safety2.hex \
     simple1.hex \
+    simple2.hex \
+    strongnegation_asp1.hex \
+    strongnegation_asp2.hex \
+    strongnegation_asp3.hex \
+    strongnegation_asp4.hex \
+    strongnegation_asp5.hex \
+    variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
     maxint.hex \
@@ -27,34 +59,159 @@ EXTRA_DIST = \
     nonmon_noloop.hex \
     nonmon_inc.hex \
     nonmon_guess.hex \
+    notstronglysafe1.hex \
+    notwellfounded1.hex \
+    notwellfounded2.hex \
     operators.hex \
+    query_asp_ground1.hex  \
+    query_asp_ground2.hex \
+    query_asp_ground3.hex \
+    query_asp_ground4.hex \
+    query_asp_ground5.hex \
+    query_asp_ground6.hex \
+    query_asp_nonground1.hex \
+    query_asp_nonground2.hex \
+    query_asp_nonground3.hex \
+    query_hex_ground1.hex \
+    query_hex_nonground1.hex \
     tertop.hex \
+    wellfounded1.hex \
+    wellfounded2.hex \
+    module-Hanoi.mlp \
+    module2-Two.mlp \
+    module-Complex.mlp \
+    module-i-Stratified.mlp \
+    module2-SwapArity.mlp \
+    module-AFin.mlp \
+    module-Indirection.mlp \
+    module-EvenOdd.mlp \
+    module-EvenOddTwoCalls2.mlp \
+    module-ABBA.mlp \
+    module3.mlp \
+    module1-DiffArity.mlp \
+    module1-Two.mlp \
+    module2-TooMany.mlp \
+    module1-MainModules.mlp \
+    module-Inconsistent.mlp \
+    module3-DiffArity.mlp \
+    module-Not-ic-Stratified.mlp \
+    module2-DiffArity.mlp \
+    module-Negation.mlp \
+    module2-TooFew.mlp \
+    module-i-Stratified-2.mlp \
+    module3-SwapArity.mlp \
+    module-Cardinality.mlp \
+    module-EvenOddTwoMain.mlp \
+    module1-NotExist.mlp \
+    module1-Big.mlp \
+    module-Disjunction.mlp \
+    module1.mlp \
+    module2.mlp \
+    module-Cs.mlp \
+    module-Reachability.mlp \
+    module-EvenOddTwoCalls1.mlp \
+    module3-NotExist.mlp \
     tests/3col.out \
     tests/agg1.out \
     tests/agg2.out \
-    tests/builtin_safety1.out \
+    tests/agg3.out \
+    tests/agg4.out \
+    tests/anonymousvariable1.out \
+    tests/builtin_safety1.stderr \
+    tests/builtin_safety1a.stderr \
+    tests/builtin_safety1b.stderr \
+    tests/builtin_safety1c.stderr \
+    tests/builtin_safety1d.out \
     tests/builtin_safety2.out \
+    tests/comments.out \
+    tests/duplicaterule.out \
     tests/empty.out \
     tests/equality.out \
     tests/extatom1.out \
     tests/extatom2.out \
+    tests/extatom2dup.out \
+    tests/extatom3.out \
     tests/extatom4.out \
     tests/extatom5.out \
     tests/extatom6.out \
+    tests/extatom7.out \
+    tests/extatom8.out \
     tests/extatom9.out \
+    tests/higherorder1.out \
+    tests/higherorder2.out \
+    tests/higherorder3.out \
+    tests/higherorder4.out \
+    tests/higherorder5.out \
+    tests/higherorder5except.stderr \
+    tests/manyanswersets_twomodels.stdout \
     tests/minimality.out \
     tests/msp.out \
     tests/namespace1.out \
     tests/namespace2.out \
     tests/percentparser.out \
+    tests/rec_agg_bug1.stderr \
+    tests/safety1.stderr \
+    tests/safety2.stderr \
     tests/simple1.out \
+    tests/simple2.out \
+    tests/strongnegation_asp1.out \
+    tests/strongnegation_asp2.out \
+    tests/strongnegation_asp3.out \
+    tests/strongnegation_asp4.out \
+    tests/strongnegation_asp5.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
     tests/maxint.out \
     tests/naftest.out \
+    tests/no_model.out \
     tests/nonmon_noloop.out \
     tests/nonmon_inc.out \
     tests/nonmon_guess.out \
+    tests/notstronglysafe1.stderr \
+    tests/notwellfounded1_nofacts.out \
+    tests/notwellfounded1_withfacts.out \
+    tests/notwellfounded2.out \
+    tests/query_asp_ground1b.stdout \
+    tests/query_asp_ground1c.stdout \
+    tests/query_asp_ground2c.stdout \
+    tests/query_asp_ground3b.stdout \
+    tests/query_asp_ground5b.stdout \
+    tests/query_asp_ground5c.stdout \
+    tests/query_asp_ground6b.stdout \
+    tests/query_asp_ground6c.stdout \
+    tests/query_asp_nonground1b.out \
+    tests/query_asp_nonground2b.out \
+    tests/query_asp_nonground3b.out \
+    tests/query_asp_nonground3c.out \
+    tests/query_brave_false.stdout \
+    tests/query_cautious_true.stdout \
+    tests/query_hex_ground1c.stdout \
+    tests/query_hex_ground1b.stdout \
+    tests/query_hex_ground1ca.stdout \
+    tests/query_hex_nonground1b.out \
     tests/operators.out \
-    tests/tertop.out
+    tests/tertop.out \
+    tests/variable_predicate_inputs.stderr \
+    tests/wellfounded1.out \
+    tests/wellfounded2.out \
+    tests/module-ABBA.out \
+    tests/module-AFin.out \
+    tests/module-Cardinality.out \
+    tests/module-Complex.out \
+    tests/module-Cs.out \
+    tests/module-Disjunction.out \
+    tests/module-EvenOdd-n1.out \
+    tests/module-EvenOdd.out \
+    tests/module-EvenOddTwoCalls1.out \
+    tests/module-EvenOddTwoCalls2.out \
+    tests/module-EvenOddTwoMain.out \
+    tests/module-Hanoi.out \
+    tests/module-Inconsistent.out \
+    tests/module-Indirection.out \
+    tests/module-i-Stratified-2.out \
+    tests/module-i-Stratified.out \
+    tests/module-Negation.out \
+    tests/module-Not-ic-Stratified.stderr \
+    tests/module-Reachability.out
+

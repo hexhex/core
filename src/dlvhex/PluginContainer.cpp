@@ -26,6 +26,7 @@
  * @file   PluginContainer.cpp
  * @author Roman Schindlauer
  * @author Thomas Krennwallner
+ * @author Peter Schueller
  * @date   Thu Sep 1 17:25:55 2005
  * 
  * @brief  Container class for plugins.
@@ -33,10 +34,12 @@
  * 
  */
 
-#include "dlvhex/globals.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/PluginInterface.h"
 #include "dlvhex/PluginContainer.h"
+#include "dlvhex/Configuration.hpp"
+#include "dlvhex/Error.h"
+#include "dlvhex/Logger.hpp"
+#include "dlvhex/PluginInterface.h"
+#include "dlvhex/Registry.hpp"
 
 #include <ltdl.h>
 
@@ -44,28 +47,32 @@
 #include <dirent.h>
 #include <pwd.h>
 
+#include <boost/foreach.hpp>
+
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <set>
 
 DLVHEX_NAMESPACE_BEGIN
 
-typedef PluginInterface* (*t_import)();
-
-PluginContainer* PluginContainer::theContainer = 0;
-
-
-PluginContainer*
-PluginContainer::instance(const std::string& optionPath)
+struct PluginContainer::LoadedPlugin
 {
-  if (PluginContainer::theContainer == 0)
-    {
-      PluginContainer::theContainer = new PluginContainer(optionPath);
-    }
+  // handle is NULL for statically linked plugins
+  lt_dlhandle handle;
+  PluginInterfacePtr plugin;
+  
+  LoadedPlugin(lt_dlhandle handle, PluginInterfacePtr plugin):
+    handle(handle), plugin(plugin) {}
+};
 
-  return PluginContainer::theContainer;
-}
+namespace
+{
 
+typedef PluginContainer::LoadedPlugin LoadedPlugin;
+typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
+typedef PluginContainer::LoadedPluginVector LoadedPluginVector;
+typedef PluginInterface* (*t_import)();
 
 int
 findplugins(const char* filename, lt_ptr data)
@@ -88,156 +95,239 @@ findplugins(const char* filename, lt_ptr data)
   return 0;
 }
 
-
-PluginContainer::PluginContainer(const PluginContainer& pc)
-  : pluginList(pc.pluginList),
-    pluginAtoms(pc.pluginAtoms)
-{ }
-
-
-PluginContainer::PluginContainer(const std::string& optionPath)
+void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std::string>& libcandidates)
 {
-  if (lt_dlinit())
-    {
-      throw GeneralError("Could not initialize libltdl");
-    }
-  
-  //
-  // now look into the user's home, and into the global plugin directory
-  //
-  std::stringstream searchpath;
-  
-  const char* homedir = ::getpwuid(::geteuid())->pw_dir;
-  
-  searchpath << optionPath << ':'
-	     << homedir << "/" USER_PLUGIN_DIR << ':'
-	     << SYS_PLUGIN_DIR;
-  
-  if (Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING))
-    {
-      Globals::Instance()->getVerboseStream() << "Plugin Search Path: \"" 
-					      << searchpath.str() << "\"" 
-					      << std::endl;
-    }
-  
-  if (lt_dlsetsearchpath(searchpath.str().c_str()))
-    {
-      throw GeneralError("Could not set libltdl search path: " + searchpath.str());
-    }
+  std::string oldenv_ld;
+  const char *envld = ::getenv("LD_LIBRARY_PATH");
+  if( envld )
+  {
+    oldenv_ld = envld;
+    ::unsetenv("LD_LIBRARY_PATH");
+  }
 
-  // search the directory search paths for plugins and setup pluginList
-  lt_dlforeachfile(NULL, findplugins, &this->pluginList);
+  try
+  {
+    if (lt_dlinit())
+      {
+        throw GeneralError("Could not initialize libltdl");
+      }
+    
+    //
+    // now look into the user's home, and into the global plugin directory
+    //
+    
+    LOG(PLUGIN,"findPluginLibraryCandidates with searchpath='" << searchpath << "'");
+    if (lt_dlsetsearchpath(searchpath.c_str()))
+      {
+        throw GeneralError("Could not set libltdl search path: " + searchpath);
+      }
+
+    // search the directory search paths for plugins and setup pluginList
+    lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
+  }
+  catch(...)
+  {
+    if( !oldenv_ld.empty() )
+      ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
+    throw;
+  }
+  if( !oldenv_ld.empty() )
+    ::setenv("LD_LIBRARY_PATH", oldenv_ld.c_str(), 1);
 }
 
+void loadCandidates(
+    const std::vector<std::string>& libnames,
+    LoadedPluginVector& plugins)
+{
+  BOOST_FOREACH(const std::string& lib, libnames)
+  {
+    LOG(PLUGIN,"loading Plugin Library: '" << lib << "'");
+    lt_dlhandle dlHandle = lt_dlopenext(lib.c_str());
+
+    // do while false for breaking out easily
+    do
+    {
+      if( dlHandle == NULL )
+      {
+        LOG(WARNING,"Selected library '" << lib << "' for opening but cannot open: '" << lt_dlerror() << "' (skipping)");
+        break;
+      }
+
+      t_import getplugin = reinterpret_cast<t_import>(lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING));
+      if( getplugin == NULL )
+      {
+        LOG(INFO,"Library '" << lib << "' selected for opening, but found no "
+          "import function '" << PLUGINIMPORTFUNCTIONSTRING << "' (skipping)");
+        break;
+      }
+
+      // get it!
+      DBGLOG(DBG,"now calling plugin import function for " << lib);
+      PluginInterface* plugin(getplugin());
+      DBGLOG(DBG,"plugin import function returned " << printptr(plugin));
+
+      // now wrap in non-deleting shared_ptr
+      PluginInterfacePtr nopDeletingPluginPtr(plugin, PluginPtrNOPDeleter<PluginInterface>());
+
+      plugins.push_back(LoadedPluginPtr(new LoadedPlugin(dlHandle, nopDeletingPluginPtr)));
+    }
+    while(false);
+  }
+}
+
+void selectLoadedPlugins(
+    LoadedPluginVector& plugins,
+    LoadedPluginVector& candidates)
+{
+  // remove those with duplicate names
+  std::set<std::string> names;
+  BOOST_FOREACH(LoadedPluginPtr lplugin, plugins)
+  {
+    names.insert(lplugin->plugin->getPluginName());
+  }
+  DBGLOG(DBG,"selectLoadedPlugins: already loaded: " << printset(names));
+
+  LoadedPluginVector::iterator it = candidates.begin();
+  while(it != candidates.end())
+  {
+    const std::string& pname = (*it)->plugin->getPluginName();
+    if( names.find(pname) != names.end() )
+    {
+      // warn, unload, remove, restart loop
+
+      // warn
+      LOG(WARNING,"already loaded a plugin with name " << pname << " (skipping)");
+
+      #warning TODO check if any pointer is used?
+      DBGLOG(DBG,"usage count on interface ptr is " << (*it)->plugin.use_count() << " (should be 1)");
+
+      // unload lib
+      if( 0 != lt_dlclose((*it)->handle) )
+      {
+        LOG(WARNING,"failed unloading plugin library " << pname << ":" << lt_dlerror());
+      }
+      // remove
+      candidates.erase(it);
+      // restart
+      it = candidates.begin();
+    }
+    else
+    {
+      // check next
+      ++it;
+    }
+  }
+}
+
+} // anonymous namespace
+
+#if 0
+PluginContainer::PluginContainer(const PluginContainer& pc):
+  registry(pc.registry),
+  searchPath(pc.searchPath),
+  plugins(pc.plugins),
+  pluginAtoms(pc.pluginAtoms)
+{
+}
+#endif
+
+
+PluginContainer::PluginContainer()
+{
+}
 
 PluginContainer::~PluginContainer()
 {
-  ///@todo this does not work, we have to include specific unloading functions in the plugins
-  /* if (lt_dlexit())
+  // these are pointers also existing in vector plugins -> destroy them first
+  pluginInterfaces.clear();
+
+  DBGLOG(DBG,"unloading plugins");
+  // unload all plugins in reverse order
+  for(LoadedPluginVector::reverse_iterator it = plugins.rbegin();
+      it != plugins.rend(); ++it)
+  {
+    LoadedPluginPtr lp = *it;
+    const std::string& pname = lp->plugin->getPluginName();
+    if( lp->handle == 0 )
     {
-      std::cerr << "lt_dlexit() failed" << std::endl;
-      } */
-}
-
-
-std::vector<PluginInterface*>
-PluginContainer::importPlugins()
-{
-  std::set<std::string> names;
-
-  ///@todo this is not that good
-  std::vector<PluginInterface*> plugins;
-
-  for (std::vector<std::string>::const_iterator it = pluginList.begin();
-       it != pluginList.end(); ++it)
-    {
-      if (Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING))
-	{
-	  Globals::Instance()->getVerboseStream() << "Loading Plugin Library: \"" 
-						  << *it 
-						  << "\"" 
-						  << std::endl;
-	}
-
-      lt_dlhandle dlHandle = lt_dlopenext(it->c_str());
-
-      ///@todo if we cannot open the plugin, we bail out. maybe we
-      ///should gracefully resuscitate ourselves
-      if (dlHandle == NULL)
-	{
-	  throw FatalError("Cannot open library " + *it + ": " + lt_dlerror());
-	}
-      
-      t_import getplugin = (t_import) lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING);
-      
-      if (getplugin != NULL)
-	{
-	  PluginInterface::AtomFunctionMap pa;
-	  
-	  PluginInterface* plugin = getplugin();
-
-	  const std::string& pname = plugin->getPluginName();
-
-	  if (names.find(pname) != names.end())
-	    {
-	      ///@todo is this a warning, or a proper (installation) error?
-	      std::cerr << "Warning: Already loaded a plugin with name "
-			<< pname
-			<< ", ignoring " 
-			<< *it
-			<< std::endl;
-	    }
-	  else
-	    {
-	      names.insert(pname);
-	      plugins.push_back(plugin);
-	  
-	      plugin->getAtoms(pa);
-	  
-	      for(PluginInterface::AtomFunctionMap::const_iterator it = pa.begin();
-		  it != pa.end();
-		  ++it)
-		{
-		  // first come, first serve
-		  if (pluginAtoms.find(it->first) == pluginAtoms.end())
-		    {
-		      pluginAtoms[it->first] = it->second;
-		    }
-		  else
-		    {
-		      ///@todo is this a warning, or a proper (installation) error?
-		      std::cerr << "Warning: the external atom " << it->first
-				<< " is already loaded." << std::endl;
-		    }
-		}
-	    }
-	}
-      else
-        {
-          if (Globals::Instance()->doVerbose(Globals::PLUGIN_LOADING))
-          {
-            Globals::Instance()->getVerboseStream() <<
-              "Found no symbol \"" << PLUGINIMPORTFUNCTIONSTRING << "\" "
-              "in Library: \"" << *it << "\"" << std::endl;
-          }
-	}
+      DBGLOG(DBG,"unloading plugin '" << pname << "' not necessary (NULL handle)");
+      continue;
     }
 
-  return plugins;
+    LOG(DBG,"about to unload loaded plugin '" << pname << "'");
+
+    #warning TODO check if any pointer is used?
+    unsigned use = lp->plugin.use_count();
+    if( use != 1 )
+      LOG(WARNING,"usage count on PluginInterfacePtr is " << use << " (should be 1)");
+
+    // unload lib
+    if( 0 != lt_dlclose(lp->handle) )
+    {
+      LOG(WARNING,"failed unloading plugin library '" << pname << "':" << lt_dlerror());
+    }
+  }
+  DBGLOG(DBG,"done unloading");
 }
 
-
-boost::shared_ptr<PluginAtom>
-PluginContainer::getAtom(const std::string& name) const
+// search for plugins in searchpath and open those that are plugins
+// may be called multiple times with different paths
+// paths may be separated by ":" just like LD_LIBRARY_PATH
+void PluginContainer::loadPlugins(const std::string& search)
 {
-  PluginInterface::AtomFunctionMap::const_iterator pa = pluginAtoms.find(name);
+  LOG_SCOPE(PLUGIN,"loadPlugins",false);
 
-  if (pa == pluginAtoms.end())
-    {
-      return boost::shared_ptr<PluginAtom>();
-    }
-    
-  return pa->second;
+  // find candidates
+  std::vector<std::string> libcandidates;
+  findPluginLibraryCandidates(search, libcandidates);
+
+  // TODO probably preselect using library names and already loaded plugins
+
+  // load candidates
+  LoadedPluginVector plugincandidates;
+  loadCandidates(libcandidates, plugincandidates);
+
+  // TODO probably select/unload using PluginInterface and already loaded plugins
+  selectLoadedPlugins(plugins, plugincandidates);
+
+  // add new plugins to list of loaded plugins
+  BOOST_FOREACH(LoadedPluginPtr cand, plugincandidates)
+  {
+    // (automatically adds atoms)
+    addInternalPlugin(cand);
+  }
+
+  // add to existing search path
+  if( !searchPath.empty() )
+    searchPath += ":";
+  searchPath += search;
+}
+
+// add dlhandle and plugin interface to the container
+void PluginContainer::addInternalPlugin(LoadedPluginPtr lplugin)
+{
+  LOG(PLUGIN,"adding PluginInterface '" << lplugin->plugin->getPluginName() << "' with dlhandle " << lplugin->handle);
+
+  plugins.push_back(lplugin);
+  pluginInterfaces.push_back(lplugin->plugin);
+}
+
+// add a PluginInterface to the container
+void PluginContainer::addInternalPlugin(PluginInterfacePtr plugin)
+{
+  addInternalPlugin(LoadedPluginPtr(new LoadedPlugin(0, plugin)));
+}
+
+// call printUsage for each loaded plugin
+void PluginContainer::printUsage(
+    std::ostream& o)
+{
+  BOOST_FOREACH(PluginInterfacePtr plugin, pluginInterfaces)
+  {
+    o << std::endl <<
+      "Plugin help for " << plugin->getPluginName() << ":" << std::endl;
+	  plugin->printUsage(o);
+  }
 }
 
 DLVHEX_NAMESPACE_END

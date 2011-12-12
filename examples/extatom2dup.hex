@@ -1,0 +1,14 @@
+prefix("testa:").
+prefix("testb:").
+more("a","b","c").
+more("d","e","f").
+limit("testa:","testa: a").
+limit("testb:","testb: d").
+complete(F) :- more(X,Y,Z),prefix(S),
+                  &testConcat[S," "](A),
+                  &testConcat[A,X](B),
+                  &testConcat[B," "](C),
+                  &testConcat[C,Y](D),
+                  &testConcat[D," "](E),
+                  &testConcat[E,Z](F),
+									limit(S,B).

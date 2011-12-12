@@ -67,8 +67,10 @@ public:
   virtual pid_t
   open(const std::vector<std::string>&);
 
+  // wait for end of process
+  // if kill is true, kill if not already ended
   virtual int
-  close();
+  close(bool kill=false);
 
 private:
   pid_t process;

@@ -38,16 +38,12 @@
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <vector>
 
 DLVHEX_NAMESPACE_BEGIN
-
-class Program;
-class AtomSet;
-class Process;
 
 namespace ASPSolver
 {
@@ -86,17 +82,44 @@ struct DLVSoftware:
 
     Delegate(const Options& options);
     virtual ~Delegate();
-    void useASTInput(const Program& idb, const AtomSet& edb);
-    void useStringInput(const std::string& program);
-    void useFileInput(const std::string& fileName);
-    void getOutput(std::vector<AtomSet>& result);
+    virtual void useASTInput(const ASPProgram& program);
+    //void useStringInput(const std::string& program);
+    //void useFileInput(const std::string& fileName);
+    virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
-    virtual void setupProcess();
+    struct ConcurrentQueueResultsImpl;
+    typedef boost::shared_ptr<ConcurrentQueueResultsImpl>
+      ConcurrentQueueResultsImplPtr;
+    ConcurrentQueueResultsImplPtr results;
+  };
+};
+
+// "DLV as a shared library" softwares
+struct DLVLibSoftware:
+  public DLVSoftware
+{
+  typedef ASPSolverManager::SoftwareConfiguration<DLVLibSoftware> Configuration;
+
+  //typedef DLVSoftware::Options Options;
+
+  // the delegate for DLVSoftware
+  class Delegate:
+    public ASPSolverManager::DelegateInterface
+  {
+  public:
+    typedef DLVSoftware::Options Options;
+
+    Delegate(const Options& options);
+    virtual ~Delegate();
+    virtual void useASTInput(const ASPProgram& program);
+    //void useStringInput(const std::string& program);
+    //void useFileInput(const std::string& fileName);
+    virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
-    Options options;
-    DLVProcess proc;
+    struct Impl;
+    boost::scoped_ptr<Impl> pimpl;
   };
 };
 
@@ -133,6 +156,40 @@ struct DLVDBSoftware:
 
   protected:
     Options options;
+  };
+};
+
+// clingo=clasp+gringo software (very basic integration, involves parsing)
+struct ClingoSoftware:
+  public ASPSolverManager::SoftwareBase
+{
+  typedef ASPSolverManager::SoftwareConfiguration<ClingoSoftware> Configuration;
+
+  // specific options for clingo
+  struct Options:
+    public ASPSolverManager::GenericOptions
+  {
+    Options();
+    virtual ~Options();
+
+    // nothing there yet
+  };
+
+  // the delegate for ClingoSoftware
+  class Delegate:
+    public ASPSolverManager::DelegateInterface
+  {
+  public:
+    typedef ClingoSoftware::Options Options;
+
+    Delegate(const Options& options);
+    virtual ~Delegate();
+    virtual void useASTInput(const ASPProgram& program);
+    virtual ASPSolverManager::ResultsPtr getResults();
+
+  protected:
+    struct Impl;
+    boost::scoped_ptr<Impl> pimpl;
   };
 };
 

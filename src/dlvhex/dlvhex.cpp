@@ -54,37 +54,41 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/AtomNode.h"
-#include "dlvhex/NodeGraph.h"
-#include "dlvhex/globals.h"
 #include "dlvhex/Error.h"
-#include "dlvhex/RuleMLOutputBuilder.h"
-#include "dlvhex/PrintVisitor.h"
 #include "dlvhex/Benchmarking.h"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/PluginContainer.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
+#include "dlvhex/State.h"
+#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex/EvalHeuristicTrivial.hpp"
+#include "dlvhex/EvalHeuristicEasy.hpp"
+#include "dlvhex/EvalHeuristicFromFile.hpp"
+#include "dlvhex/OnlineModelBuilder.hpp"
+#include "dlvhex/OfflineModelBuilder.hpp"
+
+// internal plugins
+#include "dlvhex/QueryPlugin.hpp"
+#include "dlvhex/StrongNegationPlugin.hpp"
+#include "dlvhex/HigherOrderPlugin.hpp"
 
 #include <getopt.h>
+#include <sys/types.h>
+#include <pwd.h>
+
+#include <boost/tokenizer.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <cstring>
 
-#include <boost/tokenizer.hpp>
-
-
 DLVHEX_NAMESPACE_USE
-
-using namespace ASPSolver;
-
-
-/// argv[0]
-const char*  WhoAmI;
-
-
 
 /**
  * @brief Print logo.
@@ -93,7 +97,7 @@ void
 printLogo()
 {
 	std::cout
-		<< "DLVHEX "
+		<< "DLVHEX  "
 #ifdef HAVE_CONFIG_H
 		<< VERSION << " "
 #endif // HAVE_CONFIG_H
@@ -111,14 +115,14 @@ printLogo()
  * @brief Print usage help.
  */
 void
-printUsage(std::ostream &out, bool full)
+printUsage(std::ostream &out, const char* whoAmI, bool full)
 {
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
-  out << "Usage: " << WhoAmI 
+  out << "Usage: " << whoAmI 
       << " [OPTION] FILENAME [FILENAME ...]" << std::endl
       << std::endl;
   
-  out << "   or: " << WhoAmI 
+  out << "   or: " << whoAmI 
       << " [OPTION] --" << std::endl
       << std::endl;
   
@@ -136,19 +140,33 @@ printUsage(std::ostream &out, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
+      << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
+      << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
+      << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
+      << "     --weaksafety     Skip strong safety check." << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
-      << "                      and $HOME/.dlvhex/plugins)." << std::endl
+      << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
+			<< "                      preset plugin paths, e.g., '!:/lib' will use only /lib/." << std::endl
       << " -f, --filter=foo[,bar[,...]]" << std::endl
       << "                      Only display instances of the specified predicate(s)." << std::endl
+      << " -n, --number=<num>   Limit number of displayed models to <num>, 0 (default) means all." << std::endl
       << " -a, --allmodels      Display all models also under weak constraints." << std::endl
-      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
-      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
+//      << " -r, --reverse        Reverse weak constraint ordering." << std::endl
+//      << "     --ruleml         Output in RuleML-format (v0.9)." << std::endl
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << "     --nofacts        Do not output EDB facts" << std::endl
+      << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
+			<< "                      old - old dlvhex behavior" << std::endl
+			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
+			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
+			<< "                      manual:<file> - read 'collapse <idx> <idx>' commands from <file>" << std::endl
+			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
+      << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
       << "                      1  - program analysis information (including dot-file)" << std::endl
@@ -157,6 +175,14 @@ printUsage(std::ostream &out, bool full)
       << "                      8  - timing information (only if configured with" << std::endl
       << "                                               --enable-debug)" << std::endl
       << "                      add values for multiple categories." << std::endl
+      << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
+      << "                      Default is none, graph types are:" << std::endl
+      << "                      dep    - Dependency Graph (once per program)" << std::endl
+      << "                      comp   - Component Graph (once per program)" << std::endl
+      << "                      eval   - Evaluation Graph (once per program)" << std::endl
+      << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
+      << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
 }
 
@@ -166,7 +192,7 @@ printVersion()
 {
   std::cout << PACKAGE_TARNAME << " " << VERSION << std::endl;
 
-  std::cout << "Copyright (C) 2010 Roman Schindlauer, Thomas Krennwallner, Peter Schüller" << std::endl
+  std::cout << "Copyright (C) 2011 Roman Schindlauer, Thomas Krennwallner, Peter Schüller" << std::endl
 	    << "License LGPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/lgpl.html>" << std::endl
 	    << "This is free software: you are free to change and redistribute it." << std::endl
 	    << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
@@ -194,191 +220,289 @@ InternalError (const char *msg)
   exit (99);
 }
 
-
-
-///@brief predicate returns true iff argument is not alpha-numeric and
-///is not one of {_,-,.} characters, i.e., it returns true if
-///characater does not belong to XML's NCNameChar character class.
-struct NotNCNameChar : public std::unary_function<char, bool>
+// config and defaults of dlvhex main
+struct Config
 {
-  bool
-  operator() (char c)
-  {
-    c = std::toupper(c);
-    return
-      (c < 'A' || c > 'Z') &&
-      (c < '0' || c > '9') &&
-      c != '-' &&
-      c != '_' &&
-      c != '.';
-  }
+  bool optionNoEval;
+  bool helpRequested;
+  std::string optionPlugindir;
+  #if defined(HAVE_DLVDB)
+	// dlvdb speciality
+	std::string typFile;
+  #endif
+	// those options unhandled by dlvhex main
+	std::list<const char*> pluginOptions;
+
+	Config():
+  	optionNoEval(false),
+  	helpRequested(false),
+		optionPlugindir(""),
+		#if defined(HAVE_DLVDB)
+		typFile(),
+		#endif
+		pluginOptions() {}
 };
 
+void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
 
-void
-insertNamespaces()
+int main(int argc, char *argv[])
 {
-  ///@todo move this stuff to Term, this has nothing to do here!
+  const char* whoAmI = argv[0];
 
-  if (Term::getNameSpaces().empty())
-    return;
+	// pre-init logger
+	// (we use more than 4 bits -> two digit loglevel)
+	Logger::Instance().setPrintLevelWidth(2);
 
-  std::string prefix;
-
-  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
-       nm != Term::getNames().end();
-       ++nm)
-    {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
-	   ns != Term::getNameSpaces().end();
-	   ++ns)
-	{
-	  prefix = ns->second + ':';
-
-	  //
-	  // prefix must occur either at beginning or right after quote
-	  //
-	  unsigned start = 0;
-	  unsigned end = (*nm).length();
-
-	  if ((*nm)[0] == '"')
-	    {
-	      ++start;
-	      --end;
-	    }
-
-	    
-	  //
-	  // accourding to http://www.w3.org/TR/REC-xml-names/ QNames
-	  // consist of a prefix followed by ':' and a LocalPart, or
-	  // just a LocalPart. In case of a single LocalPart, we would
-	  // not find prefix and leave that Term alone. If we find a
-	  // prefix in the Term, we must disallow non-NCNames in
-	  // LocalPart, otw. we get in serious troubles when replacing
-	  // proper Terms:
-	  // NameChar ::= Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender  
-	  //
-
-	  std::string::size_type colon = (*nm).find(":", start);
-					  
-	  if (colon != std::string::npos) // Prefix:LocalPart
-	    {
-	      std::string::const_iterator it =
-		std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
-
-	      // prefix starts with ns->second, LocalPart does not
-	      // contain non-NCNameChars, hence we can replace that
-	      // Term
-	      if ((*nm).find(prefix, start) == start &&
-		  (it == (*nm).begin() + end - 1)
-		  )
-		{
-		  std::string r(*nm);
-	      
-		  r.replace(start, prefix.length(), ns->first); // replace ns->first from start to prefix + 1
-		  r.replace(0, 1, "\"<");
-		  r.replace(r.length() - 1, 1, ">\"");
-	      
-		  Term::getNames().modify(nm, r);
-		}
-	    }
-	}
-    }
-}
-
-
-
-void
-removeNamespaces()
-{
-  ///@todo move this stuff to Term, this has nothing to do here!
-
-  if (Term::getNameSpaces().empty())
-    return;
-
-  std::string prefix;
-  std::string fullns;
-
-  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
-       nm != Term::getNames().end();
-       ++nm)
-    {
-      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
-	   ns != Term::getNameSpaces().end();
-	   ++ns)
-	{
-	  fullns = ns->first;
-
-	  prefix = ns->second + ":";
-
-	  //
-	  // original ns must occur either at beginning or right after quote
-	  //
-	  unsigned start = 0;
-	  if ((*nm)[0] == '"')
-	    start = 1;
-
-	  if ((*nm).find(fullns, start) == start)
-	    {
-	      std::string r(*nm);
-
-	      r.replace(start, fullns.length(), prefix);
-
-	      Term::getNames().modify(nm, r);
-	    }
-	}
-    }
-}
-
-int
-main (int argc, char *argv[])
-{
-  WhoAmI = argv[0];
-
-  // The Program Context
+	// program context
   ProgramCtx pctx;
+	{
+		RegistryPtr registry(new Registry);
+		PluginContainerPtr pcp(new PluginContainer);
+		pctx.setupRegistry(registry);
+		pctx.setupPluginContainer(pcp);
+	}
 
+  // default external asp solver to first one that has been configured
+	#if HAVE_DLV
+  pctx.setASPSoftware(
+		ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+	#else
+		#if HAVE_DLVDB
+		#error reactivate dlvdb
+		//pctx.setASPSoftware(
+		//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+		#else
+			#if HAVE_LIBDLV
+			pctx.setASPSoftware(
+				ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+			#else
+				#if HAVE_LIBCLINGO
+				pctx.setASPSoftware(
+					ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+				#else
+					#error no asp software configured! configure.ac should not allow this to happen!
+				#endif
+			#endif
+		#endif
+	#endif
 
-  /////////////////////////////////////////////////////////////////
-  //
-  // Option handling
-  //
-  /////////////////////////////////////////////////////////////////
+	// default eval heuristic = "easy" heuristic
+	pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+	// default model builder = "online" model builder
+	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
-  // global defaults:
-  ///@todo clean up!!
-  Globals::Instance()->setOption("Silent", 0);
-  Globals::Instance()->setOption("Verbose", 0);
-  Globals::Instance()->setOption("StrongSafety", 1);
-  Globals::Instance()->setOption("AllModels", 0);
-  Globals::Instance()->setOption("ReverseAllModels", 0);
-  Globals::Instance()->setOption("UseExtAtomCache",1);
+  pctx.config.setOption("Silent", 0);
+  pctx.config.setOption("Verbose", 0);
+  pctx.config.setOption("WeakAllModels", 0);
+  // TODO was/is not implemented: pctx.config.setOption("WeakReverseAllModels", 0);
+  pctx.config.setOption("UseExtAtomCache",1);
+  pctx.config.setOption("KeepNamespacePrefix",0);
+  pctx.config.setOption("DumpDepGraph",0);
+  pctx.config.setOption("DumpCompGraph",0);
+  pctx.config.setOption("DumpEvalGraph",0);
+  pctx.config.setOption("DumpModelGraph",0);
+  pctx.config.setOption("DumpIModelGraph",0);
+  pctx.config.setOption("KeepAuxiliaryPredicates",0);
+  pctx.config.setOption("NoFacts",0);
+  pctx.config.setOption("NumberOfModels",0);
+  pctx.config.setOption("NMLP", 0);
+  pctx.config.setOption("MLP", 0);
+  pctx.config.setOption("Forget", 0);
+  pctx.config.setOption("Split", 0);
+  pctx.config.setOption("SkipStrongSafetyCheck",0);
 
-  // per default use DLV as ASP solver software
-  ASPSolverManager::SoftwareConfigurationPtr dlvSoftware(
-    new DLVSoftware::Configuration);
-  pctx.setASPSoftware(dlvSoftware);
+	// defaults of main
+	Config config;
 
-#if defined(HAVE_DLVDB)
-  // allow to use dlvdbSoftware (we need this here to handle .typ file arguments)
-  boost::shared_ptr<DLVDBSoftware::Configuration> dlvdbSoftware;
-#endif
+	// if we throw UsageError inside this, error and usage will be displayed, otherwise only error
+	try
+	{
+		// default logging priority = errors + warnings
+		Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING);
 
-  // options only used here in main():
-  bool optionPipe = false;
-  bool optionNoEval = false;
-  bool optionKeepNSPrefix = false;
+		// manage options we can already manage
+		// TODO use boost::program_options
+		processOptionsPrePlugin(argc, argv, config, pctx);
 
-  // path to an optional plugin directory
-  std::string optionPlugindir;
+		// initialize internal plugins
+		{
+			PluginInterfacePtr queryPlugin(new QueryPlugin);
+			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
+			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
+			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);
+			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
+		}
 
-  //
-  // dlt switch should be temporary until we have a proper rewriter for flogic!
-  //
-  bool optiondlt = false;
+		// before anything else we dump the logo
+		if( !pctx.config.getOption("Silent") )
+			printLogo();
 
-  bool helpRequested = false;
+		// initialize benchmarking (--verbose=8) with scope exit
+		// (this cannot be outsourced due to the scope)
+		benchmark::BenchmarkController& ctr =
+			benchmark::BenchmarkController::Instance();
+		if( pctx.config.doVerbose(Configuration::PROFILING) )
+		{
+			LOG(INFO,"initializing benchmarking output");
+			ctr.setOutput(&Logger::Instance().stream());
+			// for continuous statistics output, display every 1000'th output
+			ctr.setPrintInterval(999);
+		}
+		else
+			ctr.setOutput(0);
+		// deconstruct benchmarking (= output results) at scope exit 
+		int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
+		BOOST_SCOPE_EXIT( (dummy) ) {
+			(void)dummy;
+			benchmark::BenchmarkController::finish();
+		}
+		BOOST_SCOPE_EXIT_END
 
+		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
+			throw UsageError("no input specified!");
+
+		// startup statemachine
+		pctx.changeState(StatePtr(new ShowPluginsState));
+
+		// load plugins
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"loading plugins");
+			pctx.pluginContainer()->loadPlugins(config.optionPlugindir);
+			pctx.showPlugins();
+		}
+
+		// now we may offer help, including plugin help
+		if( config.helpRequested )
+		{
+			printUsage(std::cerr, whoAmI, true);
+			pctx.pluginContainer()->printUsage(std::cerr);
+			return 1;
+		}
+
+		// process plugin options using plugins
+		// (this deletes processed options from config.pluginOptions)
+		// TODO use boost::program_options
+		pctx.processPluginOptions(config.pluginOptions);
+			
+		// handle options not recognized by dlvhex and not by plugins
+		if( !config.pluginOptions.empty() )
+		{
+			std::stringstream bad;
+			bad << "Unknown option(s):";
+			BOOST_FOREACH(const char* opt, config.pluginOptions)
+			{
+				bad << " " << opt;
+			}
+			throw UsageError(bad.str());
+		}
+		// use configured plugins to obtain plugin atoms
+		pctx.addPluginAtomsFromPluginContainer();
+
+		// convert input (only done if at least one plugin provides a converter)
+		pctx.convert();
+			
+		// parse input (coming directly from inputprovider or from inputprovider provided by the convert() step)
+		pctx.parse();
+		
+		// check if in mlp mode	
+		if( pctx.config.getOption("MLP") ) 
+		  {
+			// syntax check for mlp
+			pctx.moduleSyntaxCheck();
+
+			// solve mlp
+			pctx.mlpSolver();
+		  }
+
+		else 
+
+		  {	
+
+		// associate PluginAtom instances with
+		// ExternalAtom instances (in the IDB)
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+			
+		// rewrite program (plugins might want to do this, e.g., for partial grounding)
+		pctx.rewriteEDBIDB();
+			
+		// associate PluginAtom instances with
+		// ExternalAtom instances (in the IDB)
+		// (again, rewrite might add external atoms)
+		pctx.associateExtAtomsWithPluginAtoms(pctx.idb, true);
+
+		// check weak safety
+		pctx.safetyCheck();
+
+		// create dependency graph (we need the previous step for this)
+		pctx.createDependencyGraph();
+
+		// optimize dependency graph (plugins might want to do this, e.g. by using domain information)
+		pctx.optimizeEDBDependencyGraph();
+		// everything in the following will be done using the dependency graph and EDB
+		#warning IDB and dependencygraph could get out of sync! should we lock or empty the IDB to ensure that it is not directly used anymore after this step?
+			
+		// create graph of strongly connected components of dependency graph
+		pctx.createComponentGraph();
+
+		// use SCCs to do strong safety check
+		if( !pctx.config.getOption("SkipStrongSafetyCheck") )
+			pctx.strongSafetyCheck();
+		
+		// select heuristics and create eval graph
+		pctx.createEvalGraph();
+
+		// stop here if no evaluation was requested
+		if( config.optionNoEval )
+			return 0;
+
+		// setup model builder and configure plugin/dlvhex model processing hooks
+		pctx.setupProgramCtx();
+			
+		// evaluate (generally done in streaming mode, may exit early if indicated by hooks)
+		// (individual model output should happen here)
+		pctx.evaluate();
+
+		} // end if (mlp) else ...
+
+		// finalization plugin/dlvhex hooks (for accumulating model processing)
+		// (accumulated model output/query answering should happen here)
+		pctx.postProcess();
+	}
+  catch(const UsageError &ue)
+	{
+		std::cerr << "UsageError: " << ue.getErrorMsg() << std::endl << std::endl;
+		printUsage(std::cerr, whoAmI, true);
+		if( !!pctx.pluginContainer() )
+			pctx.pluginContainer()->printUsage(std::cerr);
+		return 1;
+	}
+  catch(const GeneralError &ge)
+	{
+		std::cerr << "GeneralError: " << ge.getErrorMsg() << std::endl << std::endl;
+		return 1;
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Exception: " << e.what() << std::endl << std::endl;
+		return 1;
+	}
+
+	// regular exit
+	return 0;
+}
+
+void configurePluginPath(std::string& userPlugindir);
+
+// process whole commandline:
+// * recognized arguments are stored into some config
+// * non-option arguments are interpreted as input files
+//   and used to configure config.inputProvider (exception: .typ files)
+// * non-recognized option arguments are stored into config.pluginOptions
+void processOptionsPrePlugin(
+		int argc, char** argv,
+		Config& config, ProgramCtx& pctx)
+{
   extern char* optarg;
   extern int optind;
   extern int opterr;
@@ -392,515 +516,379 @@ main (int argc, char *argv[])
   int ch;
   int longid;
   
-  static const char* shortopts = "f:hsvp:ar";
+  static const char* shortopts = "hsvf:p:are:m:n:";
   static struct option longopts[] =
-    {
-      { "help", no_argument, 0, 'h' },
-      { "silent", no_argument, 0, 's' },
-      { "verbose", optional_argument, 0, 'v' },
-      { "filter", required_argument, 0, 'f' },
-      { "plugindir", required_argument, 0, 'p' },
-      { "allmodels", no_argument, 0, 'a' },
-      { "reverse", no_argument, 0, 'r' },
-      { "firstorder", no_argument, &longid, 1 },
-      { "weaksafety", no_argument, &longid, 2 },
-      { "ruleml",     no_argument, &longid, 3 },
-      { "dlt",        no_argument, &longid, 4 },
-      { "noeval",     no_argument, &longid, 5 },
-      { "keepnsprefix", no_argument, &longid, 6 },
-      { "solver", required_argument, &longid, 7 },
-      { "nocache",    no_argument, &longid, 8 },
-      { "version",    no_argument, &longid, 9 },
-      { NULL, 0, NULL, 0 }
-    };
+	{
+		{ "help", no_argument, 0, 'h' },
+		{ "silent", no_argument, 0, 's' },
+		{ "verbose", optional_argument, 0, 'v' },
+		{ "filter", required_argument, 0, 'f' },
+		{ "plugindir", required_argument, 0, 'p' },
+		{ "allmodels", no_argument, 0, 'a' },
+		{ "reverse", no_argument, 0, 'r' },
+		{ "heuristics", required_argument, 0, 'e' },
+		{ "modelbuilder", required_argument, 0, 'm' },
+		{ "number", required_argument, 0, 'n' },
+		//{ "firstorder", no_argument, &longid, 1 },
+		{ "weaksafety", no_argument, &longid, 2 },
+		//{ "ruleml",     no_argument, &longid, 3 },
+		//{ "dlt",        no_argument, &longid, 4 },
+		{ "noeval",     no_argument, &longid, 5 },
+		{ "keepnsprefix", no_argument, &longid, 6 },
+		{ "solver", required_argument, &longid, 7 },
+		{ "nocache",    no_argument, &longid, 8 },
+		{ "version",    no_argument, &longid, 9 },
+		{ "graphviz", required_argument, &longid, 10 },
+		{ "keepauxpreds", no_argument, &longid, 11 },
+		{ "nofacts", no_argument, &longid, 12 },
+		{ "mlp", no_argument, &longid, 13 },
+		{ "forget", no_argument, &longid, 15 },
+		{ "split", no_argument, &longid, 16 },
+		{ NULL, 0, NULL, 0 }
+	};
 
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
-    {
-      switch (ch)
 	{
-	case 'h':
-	  helpRequested = 1;
-	  break;
-
-	case 's':
-	  Globals::Instance()->setOption("Silent", 1);
-	  break;
-
-	case 'v':
-	  if (optarg)
-	    Globals::Instance()->setOption("Verbose", atoi(optarg));
-	  else
-	    Globals::Instance()->setOption("Verbose", 1);
-	  break;
-
-	case 'f':
-	  {
-	    boost::char_separator<char> sep(",");
-	    std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
-	    boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
-	    
-	    for (boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
-		 f != tok.end(); ++f)
-	      {
-		Globals::Instance()->addFilter(*f);
-	      }
-	  }
-	  break;
-	  
-	case 'p':
-	  optionPlugindir = std::string(optarg);
-	  break;
-
-	case 'a':
-	  Globals::Instance()->setOption("AllModels", 1);
-	  break;
-
-	case 'r':
-	  Globals::Instance()->setOption("ReverseOrder", 1);
-	  break;
-
-	case 0:
-	  switch (longid)
-	    {
-	    case 1:
-	      std::cerr << "warning: --firstorder is deprecated (autodetect)" << std::endl;
-	      break;
-
-	    case 2:
-	      Globals::Instance()->setOption("StrongSafety", 0);
-	      break;
-
-	    case 3:
-	      pctx.setOutputBuilder(new RuleMLOutputBuilder);
-	      // XML output makes only sense with silent:
-	      Globals::Instance()->setOption("Silent", 1);
-	      break;
-
-	    case 4:
-	      optiondlt = true;
-	      break;
-
-	    case 5:
-	      optionNoEval = true;
-	      break;
-
-	    case 6:
-	      optionKeepNSPrefix = true;
-	      break;
-
-	    case 7:
-	      {
-	      std::string solver(optarg);
-	      if (solver == "dlvdb")
+		switch (ch)
 		{
-#if defined(HAVE_DLVDB)
-		  // use DLVDB as ASP solver software
-		  dlvSoftware.reset();
-		  dlvdbSoftware =
-	            boost::shared_ptr<DLVDBSoftware::Configuration>(
-		      new DLVDBSoftware::Configuration);
-		  pctx.setASPSoftware(dlvdbSoftware);
-#else
-		  printLogo();
-		  std::cerr << "The command line option ``--solver=dlvdb´´ "
-			    << "requires that dlvhex has compiled-in dlvdb support. "
-			    << "Please reconfigure the dlvhex source." 
-			    << std::endl;
-		  exit(1);
-#endif // HAVE_DLVDB
+		case 'h':
+			config.helpRequested = 1;
+			break;
+
+		case 's':
+			pctx.config.setOption("Silent", 1);
+			break;
+
+		case 'v':
+			if (optarg)
+			{
+				int level = 1;
+				try
+				{
+					level = boost::lexical_cast<int>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse verbosity level '" << optarg << "' - using default=" << level << "!");
+				}
+				pctx.config.setOption("Verbose", level);
+				Logger::Instance().setPrintLevels(level);
+			}
+			else
+			{
+				pctx.config.setOption("Verbose", 1);
+				Logger::Instance().setPrintLevels(Logger::ERROR | Logger::WARNING | Logger::INFO);
+			}
+			break;
+
+		case 'f':
+			{
+				boost::char_separator<char> sep(",");
+				std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+				boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+				
+				for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+						f != tok.end(); ++f)
+					pctx.config.addFilter(*f);
+			}
+			break;
+			
+		case 'p':
+			config.optionPlugindir = std::string(optarg);
+			break;
+
+		case 'a':
+			pctx.config.setOption("AllModels", 1);
+			break;
+
+		case 'r':
+			pctx.config.setOption("ReverseOrder", 1);
+			break;
+
+		case 'e':
+			// heuristics={old,trivial,easy,manual:>filename>}
+			{
+				std::string heuri(optarg);
+				if( heuri == "old" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicOldDlvhex);
+				}
+				else if( heuri == "trivial" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicTrivial);
+				}
+				else if( heuri == "easy" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+				}
+				else if( heuri.substr(0,7) == "manual:" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicFromFile(heuri.substr(7)));
+				}
+				else
+				{
+					throw UsageError("unknown evaluation heuristic '" + heuri +"' specified!");
+				}
+				LOG(INFO,"selected '" << heuri << "' evaluation heuristics");
+			}
+			break;
+
+		case 'm':
+			// modelbuilder={offline,online}
+			{
+				std::string modelbuilder(optarg);
+				if( modelbuilder == "offline" )
+				{
+					pctx.modelBuilderFactory =
+						boost::factory<OfflineModelBuilder<FinalEvalGraph>*>();
+				}
+				else if( modelbuilder == "online" )
+				{
+					pctx.modelBuilderFactory =
+						boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
+				}
+				else
+				{
+					throw UsageError("unknown model builder '" + modelbuilder +"' specified!");
+				}
+				LOG(INFO,"selected '" << modelbuilder << "' model builder");
+			}
+			break;
+
+		case 'n':
+			{
+				int models = 0;
+				try
+				{
+					if( optarg[0] == '=' )
+						models = boost::lexical_cast<unsigned>(&optarg[1]);
+					else
+						models = boost::lexical_cast<unsigned>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse model count '" << optarg << "' - using default=" << models << "!");
+				}
+				pctx.config.setOption("NumberOfModels", models);
+			}
+			break;
+
+		case 0:
+			switch (longid)
+				{
+				case 2:
+					pctx.config.setOption("SkipStrongSafetyCheck",1);
+					break;
+
+				//case 3:
+				 // pctx.setOutputBuilder(new RuleMLOutputBuilder);
+					// XML output makes only sense with silent:
+				 // pctx.config.setOption("Silent", 1);
+				 // break;
+
+				//case 4:
+				//  optiondlt = true;
+				//  break;
+
+				case 5:
+					config.optionNoEval = true;
+					break;
+
+				case 6:
+					pctx.config.setOption("KeepNamespacePrefix",1);
+					break;
+
+				case 7:
+					{
+						std::string solver(optarg);
+						if( solver == "dlv" )
+						{
+							#if defined(HAVE_DLV)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "dlvdb" )
+						{
+							#if defined(HAVE_DLVDB)
+							#warning reactivate dlvhdb
+							//pctx.setASPSoftware(
+							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "libdlv" )
+						{
+							#if defined(HAVE_LIBDLV)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "libclingo" )
+						{
+							#if defined(HAVE_LIBCLINGO)
+							pctx.setASPSoftware(
+								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else
+						{
+							throw UsageError("unknown solver backend '" + solver +"' specified!");
+						}
+						LOG(INFO,"selected '" << solver << "' solver backend");
+					}
+					break;
+
+				case 8:
+					pctx.config.setOption("UseExtAtomCache",0);
+					break;
+
+				case 9:
+					printVersion();
+					break;
+
+				case 10:
+					{
+						boost::char_separator<char> sep(",");
+						std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+						boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+						
+						for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+								f != tok.end(); ++f)
+						{
+							const std::string& token = *f;
+							if( token == "dep" )
+							{
+								pctx.config.setOption("DumpDepGraph",1);
+							}
+							else if( token == "comp" )
+							{
+								pctx.config.setOption("DumpCompGraph",1);
+							}
+							else if( token == "eval" )
+							{
+								pctx.config.setOption("DumpEvalGraph",1);
+							}
+							else if( token == "model" )
+							{
+								pctx.config.setOption("DumpModelGraph",1);
+							}
+							else if( token == "imodel" )
+							{
+								pctx.config.setOption("DumpIModelGraph",1);
+							}
+							else
+								throw UsageError("unknown graphviz graph type '"+token+"'");
+						}
+					}
+					break;
+				case 11:
+					pctx.config.setOption("KeepAuxiliaryPredicates",1);
+					break;
+				case 12:
+					pctx.config.setOption("NoFacts",1);
+					break;
+				case 13:
+					pctx.config.setOption("MLP",1);
+					break;
+				// unused case 14:
+				case 15:
+					pctx.config.setOption("Forget",1);
+					break;
+				case 16:
+					pctx.config.setOption("Split",1);
+					break;
+				}
+			break;
+
+		case '?':
+			config.pluginOptions.push_back(argv[optind - 1]);
+			break;
 		}
-	      else
+	}
+
+	// configure plugin path
+	configurePluginPath(config.optionPlugindir);
+
+	// check input files (stdin, file, or URI)
+
+	// start with new input provider
+	pctx.inputProvider.reset(new InputProvider);
+
+	// stdin requested, append it first
+	if( std::string(argv[optind - 1]) == "--" )
+		pctx.inputProvider->addStreamInput(std::cin, "<stdin>");
+
+	// collect further filenames/URIs
+	// if we use dlvdb, manage .typ files
+	for (int i = optind; i < argc; ++i)
+	{
+		std::string arg(argv[i]);
+		if( arg.size() > 4 && arg.substr(arg.size()-4) == ".typ" )
 		{
-	  	  // nothing todo as default is DLV
+			#if defined(HAVE_DLVDB)
+			boost::shared_ptr<ASPSolver::DLVDBSoftware::Configuration> ptr =
+				boost::dynamic_pointer_cast<ASPSolver::DLVDBSoftware::Configuration>(pctx.getASPSoftware());
+			if( ptr == 0 )
+				throw GeneralError(".typ files can only be used if dlvdb backend is used");
+
+			if( !ptr->options.typFile.empty() )
+				throw GeneralError("cannot use more than one .typ file with dlvdb");
+			
+			ptr->options.typFile = arg;
+			#endif
 		}
-	      }
-	      break;
-
-	    case 8:
-	      Globals::Instance()->setOption("UseExtAtomCache",0);
-	      break;
-
-	    case 9:
-	      printVersion();
-	      break;
-	    }
-	  break;
-
-	case '?':
-	  pctx.addOption(argv[optind - 1]);
-	  break;
+		else if( arg.find("http://") == 0 )
+		{
+			pctx.inputProvider->addURLInput(arg);
+		}
+		else
+		{
+			pctx.inputProvider->addFileInput(arg);
+		}
 	}
-    }
-
-  //
-  // before anything else we dump the logo
-  //
-
-  if (!Globals::Instance()->getOption("Silent"))
-    {
-      printLogo();
-    }
-
-  //
-  // no arguments at all: shorthelp
-  //
-  if (argc == 1)
-    {
-      printUsage(std::cerr, false);
-      exit(1);
-    }
-
-  bool inputIsWrong = false;
-
-  //
-  // now we have options, initialize benchmarking (--verbose=8)
-  //
-
-  benchmark::BenchmarkController& ctr =
-    benchmark::BenchmarkController::Instance();
-  if( Globals::Instance()->doVerbose(Globals::PROFILING) )
-  {
-    ctr.setOutput(&Globals::Instance()->getVerboseStream());
-    // for continuous statistics output, display every 1000'th output
-    ctr.setPrintInterval(999);
-  }
-  else
-    ctr.setOutput(0);
-
-  // deconstruct benchmarking (= output results) at scope exit 
-  int dummy; // this is needed, as SCOPE_EXIT is not defined for no arguments
-  BOOST_SCOPE_EXIT( (dummy) ) {
-	  (void)dummy;
-	  benchmark::BenchmarkController::finish();
-  }
-  BOOST_SCOPE_EXIT_END
-
-  //
-  // check if we have any input (stdin, file, or URI)
-  // if inout is not or badly specified, remember this and show shorthelp
-  // later if everthing was ok with the options
-  //
-
-  //
-  // stdin requested, append it first
-  //
-  if (!strcmp(argv[optind - 1], "--"))
-    {
-      optionPipe = true;
-      pctx.addInputSource(argv[optind - 1]);
-    }
-
-  if (optind == argc && !optionPipe)
-    {
-      // no files and no stdin - error
-      inputIsWrong = true;
-    }
-  else if (optind == argc && optionPipe)
-    {
-      // no files and stdin: set the lpfilename to a dummy value
-      Globals::Instance()->lpfilename = "lpgraph.dot";
-    }
-  else
-    {
-      //
-      // collect filenames/URIs
-      // if we use dlvdb, filter out .typ files
-      //
-      #if defined(HAVE_DLVDB)
-      bool foundTyp = false;
-      #endif
-      for (int i = optind; i < argc; ++i)
-	{
-	  std::string arg(argv[i]);
-          #if defined(HAVE_DLVDB)
-	  if( dlvdbSoftware != 0 && arg.substr(arg.size()-4) == ".typ" )
-	  {
-		  if( foundTyp )
-		  {
-			  std::cerr << "cannot use more than one .typ file with dlvdb!" << std::endl;
-			  exit(-1);
-		  }
-		  foundTyp = true;
-		  dlvdbSoftware->options.typFile = arg;
-	  }
-	  else
-	  #endif
-	  {
-		  pctx.addInputSource(arg);
-	  }
-	}
-    }
-
-  // setup the plugin container
-  pctx.setPluginContainer(PluginContainer::instance(optionPlugindir));
-
-
-  /////////////////////////////////////////////////////////////////
-  //
-  // DLVHEX main execution
-  //
-  /////////////////////////////////////////////////////////////////
-  try
-    {
-
-      /////////////////////////////////////////////////////////////////
-      //
-      // search for plugins
-      //
-      /////////////////////////////////////////////////////////////////
-  
-      ///@todo this could be better
-      Globals::Instance()->setOption("HelpRequested", helpRequested);
-
-      if (helpRequested)
-	{
-	  printUsage(std::cerr, true);
-	}
-
-      pctx.openPlugins();
-
-      //
-      // help was requested -> we are done now
-      //
-      if (helpRequested)
-	{
-	  exit(0);
-	}
-      
-      //
-      // any unknown options left?
-      //
-      if (!pctx.getOptions()->empty())
-	{
-	  std::cerr << "Unknown option(s):";
-	  
-	  std::vector<std::string>::const_iterator opb = pctx.getOptions()->begin();
-	  
-	  while (opb != pctx.getOptions()->end())
-	    std::cerr << " " << *opb++;
-	  
-	  std::cerr << std::endl;
-	  printUsage(std::cerr, false);
-	  
-	  exit(1);
-	}
-      
-      //
-      // options are all ok, but input is badly specified
-      //
-      if (inputIsWrong)
-	{
-	  printUsage(std::cerr, false);
-	  exit(1);
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // convert input
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.convert();
-      
-      if (Globals::Instance()->doVerbose(Globals::DUMP_CONVERTED_PROGRAM))
-	{
-	  //
-	  // we need to read the input-istream now - use a stringstream
-	  // for output and initialize the input-istream to its
-	  // content again
-	  //
-	  std::stringstream ss;
-	  ss << pctx.getInput().rdbuf();
-	  Globals::Instance()->getVerboseStream() << "Converted input:" << std::endl;
-	  Globals::Instance()->getVerboseStream() << ss.str();
-	  Globals::Instance()->getVerboseStream() << std::endl;
-	  delete pctx.getInput().rdbuf(); 
-	  pctx.getInput().rdbuf(new std::stringbuf(ss.str()));
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // parse input
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.parse();
-      
-      //
-      // expand constant names
-      ///@todo move to Term
-      //
-      insertNamespaces();
-      
-      if (Globals::Instance()->doVerbose(Globals::DUMP_PARSED_PROGRAM))
-	{
-	  Globals::Instance()->getVerboseStream() << "Parsed Rules: " << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << "Parsed EDB: " << std::endl;
-	  pctx.getEDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-      
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // rewrite program
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.rewrite();
-      
-      if (Globals::Instance()->doVerbose(Globals::DUMP_REWRITTEN_PROGRAM))
-	{
-	  Globals::Instance()->getVerboseStream() << "Rewritten rules:" << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getIDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << "Rewritten EDB:" << std::endl;
-	  pctx.getEDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // generate node graph
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.createNodeGraph();
-      
-      if (Globals::Instance()->doVerbose(Globals::DUMP_DEPENDENCY_GRAPH))
-	{
-	  const NodeGraph* nodegraph = pctx.getNodeGraph();
-
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
-
-	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
-	       node != nodegraph->getNodes().end();
-	       ++node)
-	    {
-	      Globals::Instance()->getVerboseStream() << **node << std::endl;
-	    }
-	  
-	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // optimize program
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.optimize();
-      
-      if (Globals::Instance()->doVerbose(Globals::DUMP_OPTIMIZED_PROGRAM))
-	{
-	  Globals::Instance()->getVerboseStream() << "Optimized graph:" << std::endl;
-
-	  const NodeGraph* nodegraph = pctx.getNodeGraph();
-
-	  Globals::Instance()->getVerboseStream() << "Dependency graph - Program Nodes:" << std::endl;
-
-	  for (std::vector<AtomNodePtr>::const_iterator node = nodegraph->getNodes().begin();
-	       node != nodegraph->getNodes().end();
-	       ++node)
-	    {
-	      Globals::Instance()->getVerboseStream() << **node << std::endl;
-	    }
-	  
-	  Globals::Instance()->getVerboseStream() << "Dependency graph end" << std::endl;
-
-	  Globals::Instance()->getVerboseStream() << std::endl << "Optimized EDB:" << std::endl;
-	  RawPrintVisitor rpv(Globals::Instance()->getVerboseStream());
-	  pctx.getEDB()->accept(rpv);
-	  Globals::Instance()->getVerboseStream() << std::endl << std::endl;
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // generate dependency graph
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.createDependencyGraph();
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // perform safety check
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.safetyCheck();
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // perform strong safety check
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.strongSafetyCheck();
-
-      /////////////////////////////////////////////////////////////////
-      //
-      // last change to setup ProgramCtx before we evaluate it
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.setupProgramCtx();
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // evaluate program
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      if (optionNoEval)
-	{
-	  exit(0);
-	}
-      
-      pctx.evaluate();
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // postprocess results
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.postProcess();
-      
-      //
-      // contract constant names again, if specified
-      //
-      if (optionKeepNSPrefix)
-	{
-	  removeNamespaces();
-	}
-      
-      /////////////////////////////////////////////////////////////////
-      //
-      // output results
-      //
-      /////////////////////////////////////////////////////////////////
-      
-      pctx.output();
-    }
-  catch (GeneralError &e)
-    {
-      std::cerr << e.getErrorMsg() << std::endl << std::endl;
-      exit(1);
-    }
-
-  /////////////////////////////////////////////////////////////////
-  //
-  // execution completed
-  //
-  /////////////////////////////////////////////////////////////////
- 
- return 0;
 }
 
-/* vim: set noet sw=8 ts=8 tw=80: */
+void configurePluginPath(std::string& userPlugindir)
+{
+	bool reset = false;
+	if( !userPlugindir.empty() && userPlugindir[0] == '!' )
+	{
+		reset = true;
+		if( userPlugindir.size() > 2 && userPlugindir[1] == ':' )
+			userPlugindir.erase(0,2);
+		else
+			userPlugindir.erase(0,1);
+	}
+
+  std::stringstream searchpath;
+
+	if( !userPlugindir.empty() )
+		searchpath << userPlugindir << ':';
+  
+	if( !reset )
+	{
+		// add LD_LIBRARY_PATH
+		const char *envld = ::getenv("LD_LIBRARY_PATH");
+		if( envld )
+		{
+			searchpath << envld << ":";
+		}
+
+		const char* homedir = ::getpwuid(::geteuid())->pw_dir;
+		searchpath << homedir << "/" USER_PLUGIN_DIR << ':' << SYS_PLUGIN_DIR;
+	}
+	userPlugindir = searchpath.str();
+}
+
+/* vim: set noet sw=2 ts=2 tw=80: */
 
 // Local Variables:
 // mode: C++

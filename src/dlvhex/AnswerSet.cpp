@@ -21,25 +21,28 @@
  * 02110-1301 USA.
  */
 
-
 /**
  * @file AnswerSet.cpp
- * @author Roman Schindlauer
- * @date Wed May  3 13:28:37 CEST 2006
+ * @author Roman Schindlauer, Peter Schüller
  *
  * @brief AnswerSet class.
- *
- *
  */
 
-#include "dlvhex/AnswerSet.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/Error.h"
+#include "dlvhex/AnswerSet.hpp"
 
 
 DLVHEX_NAMESPACE_BEGIN
 
+std::ostream& AnswerSet::print(std::ostream& o) const
+{
+  // use ", " with space here! (compatibility)
+  interpretation->print(o, "{", ", ", "}");
+  if( costWeight != -1 || costLevel != -1 )
+    o << ",weight=" << costWeight << ",level=" << costLevel;
+  return o;
+}
+
+#if 0
 unsigned AnswerSet::maxLevel = 1;
 unsigned AnswerSet::maxWeight = 0;
 
@@ -319,6 +322,7 @@ operator<< (std::ostream& out, const AnswerSet& atomset)
     const_cast<AnswerSet*>(&atomset)->accept(rpv);
     return out;
 }
+#endif
 
 
 DLVHEX_NAMESPACE_END

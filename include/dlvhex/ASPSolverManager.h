@@ -36,15 +36,37 @@
 
 
 #include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex/ID.hpp"
+#include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Error.h"
+#include "dlvhex/ConcurrentMessageQueueOwning.h"
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include <list>
 
 DLVHEX_NAMESPACE_BEGIN
 
-class Program;
-class AtomSet;
+struct Registry;
+typedef boost::shared_ptr<Registry> RegistryPtr;
+
+// this is kind of a program context for pure (=non-HEX) ASPs
+struct ASPProgram
+{
+  RegistryPtr registry;
+  const std::vector<ID>& idb;
+  Interpretation::ConstPtr edb;
+  uint32_t maxint;
+  Interpretation::ConstPtr mask;
+
+  ASPProgram(
+      RegistryPtr registry,
+      const std::vector<ID>& idb,
+      Interpretation::ConstPtr edb,
+      uint32_t maxint = 0,
+      Interpretation::ConstPtr mask = Interpretation::ConstPtr()):
+    registry(registry), idb(idb), edb(edb), maxint(maxint), mask(mask) {}
+};
 
 class ASPSolverManager
 {
@@ -63,15 +85,22 @@ public:
     bool includeFacts;
   };
 
+  struct Results
+  {
+    virtual ~Results() {}
+    virtual AnswerSet::Ptr getNextAnswerSet() = 0;
+  };
+  typedef boost::shared_ptr<Results> ResultsPtr;
+
   // interface for delegates
   class DelegateInterface
   {
   public:
     virtual ~DelegateInterface() {}
-    virtual void useASTInput(const Program& idb, const AtomSet& edb) = 0;
-    virtual void useStringInput(const std::string& program) = 0;
-    virtual void useFileInput(const std::string& fileName) = 0;
-    virtual void getOutput(std::vector<AtomSet>& result) = 0;
+    virtual void useASTInput(const ASPProgram& program) = 0;
+    //virtual void useStringInput(const std::string& program) = 0;
+    //virtual void useFileInput(const std::string& fileName) = 0;
+    virtual ResultsPtr getResults() = 0;
   };
   typedef boost::shared_ptr<DelegateInterface> DelegatePtr;
 
@@ -130,17 +159,14 @@ public:
   };
 
 public:
-  //
-  // singleton class (we may have a shared pool of solvers later on, and multithreaded access to this pool)
-  //
-  static ASPSolverManager& Instance();
+  ASPSolverManager();
 
-  //! solve idb/edb and add to result
-  void solve(
+  //! solve idb/edb and get result provider
+  ResultsPtr solve(
       const SoftwareConfigurationBase& solver,
-      const Program& idb, const AtomSet& edb,
-      std::vector<AtomSet>& answersets) throw (FatalError);
+      const ASPProgram& program) throw (FatalError);
 
+  /*
   // solve string program and add to result
   void solveString(
       const SoftwareConfigurationBase& solver,
@@ -152,11 +178,67 @@ public:
       const SoftwareConfigurationBase& solver,
       const std::string& filename,
       std::vector<AtomSet>& result) throw (FatalError);
-
-private:
-  // singleton -> instantiate using Instance()
-  ASPSolverManager();
+      */
 };
+
+// results that are not streamed but provided to be incrementally requested
+class PreparedResults:
+  public ASPSolverManager::Results
+{
+public:
+  typedef std::list<AnswerSet::Ptr> Storage;
+
+public:
+  PreparedResults(const Storage& storage);
+  PreparedResults();
+  virtual ~PreparedResults();
+
+  // add further result (this must be done before getNextAnswerSet()
+  // has been called the first time)
+  void add(AnswerSet::Ptr as);
+
+  virtual AnswerSet::Ptr getNextAnswerSet();
+
+protected:
+  Storage answersets;
+  bool resetCurrent;
+  Storage::const_iterator current;
+};
+typedef boost::shared_ptr<PreparedResults> PreparedResultsPtr;
+
+struct AnswerSetQueueElement
+{
+  AnswerSetPtr answerset;
+  std::string error;
+  AnswerSetQueueElement(AnswerSetPtr answerset, const std::string& error):
+    answerset(answerset), error(error) {}
+};
+typedef boost::shared_ptr<AnswerSetQueueElement> AnswerSetQueueElementPtr;
+
+// concrete queue for answer sets
+typedef ConcurrentMessageQueueOwning<AnswerSetQueueElement> AnswerSetQueue;
+typedef boost::shared_ptr<AnswerSetQueue> AnswerSetQueuePtr;
+
+// results that are not streamed but provided to be incrementally requested
+class ConcurrentQueueResults:
+  public ASPSolverManager::Results
+{
+public:
+  ConcurrentQueueResults();
+  virtual ~ConcurrentQueueResults();
+
+  void enqueueAnswerset(AnswerSetPtr answerset);
+  void enqueueException(const std::string& error);
+  void enqueueEnd();
+
+  // gets next answer set or throws exception on error condition
+  // returns AnswerSetPtr() on end of queue
+  virtual AnswerSetPtr getNextAnswerSet();
+
+protected:
+  AnswerSetQueuePtr queue;
+};
+typedef boost::shared_ptr<ConcurrentQueueResults> ConcurrentQueueResultsPtr;
 
 DLVHEX_NAMESPACE_END
 

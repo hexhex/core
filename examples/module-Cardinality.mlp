@@ -1,0 +1,25 @@
+#module(p1, []). 
+q(a). 
+q(b).
+r(a). 
+r(b). 
+s(a).
+equalQR :- @p2[q,r]::equal.
+notEqualQR :- not equalQR.
+greater_thanRS :- @p2[r,s]::greater_than.
+notGreaterThanRS :- not greater_thanRS.
+less_thanSR :- @p2[s,r]::less_than.
+notLessThanSR :- not less_thanSR.
+
+
+#module(p2, [q1/1, q2/1]).
+q1i(X) v q1i(Y) :- q1(X), q1(Y), X != Y.
+q2i(X) v q2i(Y) :- q2(X), q2(Y), X != Y.
+skip1 :- q1(X), not q1i(X).
+skip2 :- q2(X), not q2i(X).
+equal :- skip1 , skip2 , @p2[q1i,q2i]::equal.
+equal :- not skip1 , not skip2.
+less_than :- skip1 , skip2 , @p2[q1i,q2i]::less_than.
+less_than :- not skip1 , skip2.
+greater_than :- skip1 , skip2 , @p2[q1i,q2i]::greater_than.
+greater_than :- skip1 , not skip2.

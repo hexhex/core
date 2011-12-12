@@ -72,7 +72,7 @@ public:
   endoffile() = 0;
 
   virtual int
-  close() = 0;
+  close(bool kill=false) = 0;
 
   virtual std::ostream&
   getOutput() = 0;

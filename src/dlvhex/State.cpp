@@ -25,6 +25,7 @@
 /**
  * @file State.cpp
  * @author Thomas Krennwallner
+ * @author Peter Schüller
  * @date
  *
  * @brief State class.
@@ -33,280 +34,189 @@
  *
  */
 
-
 #include "dlvhex/State.h"
 
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#  ifdef DLVHEX_DEBUG
-#    define DLVHEX_BENCHMARK
-#  endif
 #endif
 
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Error.h"
+#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/Benchmarking.h"
 #include "dlvhex/ASPSolverManager.h"
 #include "dlvhex/ASPSolver.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/GraphBuilder.h"
-#include "dlvhex/ComponentFinder.h"
-#include "dlvhex/BoostComponentFinder.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/OutputBuilder.h"
-#include "dlvhex/TextOutputBuilder.h"
-#include "dlvhex/SafetyChecker.h"
-#include "dlvhex/HexParserDriver.h"
-#include "dlvhex/PrintVisitor.h"
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/Printer.hpp"
+#include "dlvhex/Registry.hpp"
 #include "dlvhex/PluginContainer.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/Component.h"
-#include "dlvhex/URLBuf.h"
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/FinalEvalGraph.hpp"
+#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/AnswerSetPrinterCallback.hpp"
+#include "dlvhex/PlainAuxPrinter.hpp"
+#include "dlvhex/SafetyChecker.h"
+#include "dlvhex/MLPSyntaxChecker.hpp"
+#include "dlvhex/MLPSolver.hpp"
+
+#include <boost/foreach.hpp>
 
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <vector>
 
-
 DLVHEX_NAMESPACE_BEGIN
 
-
-void
-State::changeState(ProgramCtx* ctx, const boost::shared_ptr<State>& s)
+State::State(StatePtr failureState):
+  failureState(failureState)
 {
+}
+
+State::~State()
+{
+}
+
+namespace
+{
+  std::ostream& printStatePtr(std::ostream& o, StatePtr ptr)
+  {
+    if( !ptr )
+      return o << "NULL";
+    else
+      return o << "'" << typeid(*ptr).name() << "'";
+  }
+}
+
+void State::changeState(ProgramCtx* ctx, StatePtr s)
+{
+  LOG(INFO,
+    "State::changeState from " <<
+    print_function(boost::bind(&printStatePtr, _1, ctx->state)) <<
+    " to " <<
+    print_function(boost::bind(&printStatePtr, _1, s)));
   ctx->changeState(s);
 }
 
-void
-State::openPlugins(ProgramCtx*)
-{ }
+// each of these functions skips to the "failureState" and executes the executed function on it
+// this is useful for having optional states
+// if no failureState is given, an exception is raised
+// this is useful for non-optional states
+#define STATE_FUNC_DEFAULT_IMPL(function) \
+  void State:: function (ProgramCtx* ctx) \
+  { \
+    if( !!failureState ) \
+    { \
+      changeState(ctx, failureState); /* <-- this destructs *this */ \
+      ctx->state-> function (ctx); \
+    } \
+    else \
+    { \
+      throw std::runtime_error("tried to skip execution of '" \
+          #function "' in State!"); \
+    } \
+  }
 
-void
-State::convert(ProgramCtx*)
-{ }
+// all state methods get skipping possibility
+// derived classes will decide whether to set the failureState or not
+// if it is set, the state is skippable,
+// if not, execution of this state is mandatory
+STATE_FUNC_DEFAULT_IMPL(showPlugins);
+STATE_FUNC_DEFAULT_IMPL(convert);
+STATE_FUNC_DEFAULT_IMPL(parse);
+STATE_FUNC_DEFAULT_IMPL(moduleSyntaxCheck);
+STATE_FUNC_DEFAULT_IMPL(mlpSolver);
+STATE_FUNC_DEFAULT_IMPL(rewriteEDBIDB);
+STATE_FUNC_DEFAULT_IMPL(safetyCheck);
+STATE_FUNC_DEFAULT_IMPL(createDependencyGraph);
+STATE_FUNC_DEFAULT_IMPL(optimizeEDBDependencyGraph);
+STATE_FUNC_DEFAULT_IMPL(createComponentGraph);
+STATE_FUNC_DEFAULT_IMPL(strongSafetyCheck);
+STATE_FUNC_DEFAULT_IMPL(createEvalGraph);
+STATE_FUNC_DEFAULT_IMPL(setupProgramCtx);
+STATE_FUNC_DEFAULT_IMPL(evaluate);
+STATE_FUNC_DEFAULT_IMPL(postProcess);
 
-void
-State::parse(ProgramCtx*)
-{ }
+#define MANDATORY_STATE_CONSTRUCTOR(state) \
+  state :: state (): State() {}
 
-void
-State::rewrite(ProgramCtx*)
-{ }
+#define OPTIONAL_STATE_CONSTRUCTOR(state,skiptostate) \
+  state :: state (): State(StatePtr(new skiptostate)) {}
 
-void
-State::createNodeGraph(ProgramCtx*)
-{ }
+OPTIONAL_STATE_CONSTRUCTOR(ShowPluginsState,ConvertState);
 
-void
-State::optimize(ProgramCtx*)
-{ }
-
-
-void
-State::createDependencyGraph(ProgramCtx*)
-{ }
-
-void
-State::safetyCheck(ProgramCtx*)
-{ }
-
-void
-State::strongSafetyCheck(ProgramCtx*)
-{ }
-
-void
-State::setupProgramCtx(ProgramCtx*)
-{ }
-
-void
-State::evaluate(ProgramCtx*)
-{ }
-
-void
-State::postProcess(ProgramCtx*)
-{ }
-
-void
-State::output(ProgramCtx*)
-{ }
-
-
-void
-OpenPluginsState::openPlugins(ProgramCtx* ctx)
+void ShowPluginsState::showPlugins(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Importing plugins");
-
-  PluginContainer* container = ctx->getPluginContainer();
-
-  std::vector<PluginInterface*> plugins = container->importPlugins();
-  ctx->addPlugins(plugins);
-
-  //
-  // set options in the found plugins
-  //
-  for (std::vector<PluginInterface*>::const_iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end(); ++pi)
+  if( !ctx->config.getOption("Silent") )
+  {
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
     {
-      PluginInterface* plugin = *pi;
-
-      if (plugin != 0)
-	{
-	  // print plugin's version information
-	  if (!Globals::Instance()->getOption("Silent"))
-	    {
-	      Globals::Instance()->getVerboseStream() << "opening "
-						      << plugin->getPluginName()
-						      << " version "
-						      << plugin->getVersionMajor() << "."
-						      << plugin->getVersionMinor() << "."
-						      << plugin->getVersionMicro() << std::endl;
-	    }
-
-	  std::stringstream pluginhelp;
-
-	  plugin->setOptions(Globals::Instance()->getOption("HelpRequested"), *ctx->getOptions(), pluginhelp);
-
-	  if (!pluginhelp.str().empty())
-	    {
-	      Globals::Instance()->getVerboseStream() << std::endl << pluginhelp.str();
-	    }
-	}
+      LOG(INFO,"opening plugin " << plugin->getPluginName() <<
+               " version " <<
+               plugin->getVersionMajor() << "." <<
+               plugin->getVersionMinor() << "." <<
+               plugin->getVersionMicro());
     }
+  }
 
   boost::shared_ptr<State> next(new ConvertState);
   changeState(ctx, next);
 }
 
+OPTIONAL_STATE_CONSTRUCTOR(ConvertState,ParseState);
 
-void
-ConvertState::convert(ProgramCtx* ctx)
+void ConvertState::convert(ProgramCtx* ctx)
 {
+  assert(!!ctx->inputProvider && ctx->inputProvider->hasContent() && "need input provider with content for converting");
+
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin converters");
 
-  ///@todo move file/uri opening into its own state
+  // get combination of input filenames for creating debug output files and for naming converted input
+  std::string inputName;
+  BOOST_FOREACH(const std::string& name, ctx->inputProvider->contentNames())
+  {
+    // only use part after last / here
+    inputName += "_" + name.substr(name.find_last_of("/") + 1);
+  }
+  LOG(INFO,"inputName='" << inputName << "'");
 
-  const std::vector<std::string>& allFiles = ctx->getInputSources();
-  assert(allFiles.size() > 0);
+  // store it
+  ctx->config.debugFilePrefix() = "dlvhex_debug" + inputName;
+  LOG(DBG,"debugFilePrefix='" << ctx->config.debugFilePrefix() << "'");
 
-  //
-  // store filename of (first) logic program, we might use this somewhere
-  // else (e.g., when writing the graphviz file in the boost-part
-  //
-  const std::string& lpfile = *allFiles.begin();
-  Globals::Instance()->lpfilename = lpfile.substr(lpfile.find_last_of("/") + 1) + ".dot";
-
-  ///@todo hm, maybe boost::iostream::chain helps???
-  for (std::vector<std::string>::const_iterator f = allFiles.begin(); f != allFiles.end(); ++f)
+  std::vector<PluginConverterPtr> converters;
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    BOOST_FOREACH(PluginConverterPtr pc, plugin->createConverters(*ctx))
     {
-      //
-      // stream to store the url/file/stdin content
-      //
-      std::stringstream tmpin;
+      LOG(PLUGIN,"got plugin converter from plugin " << plugin->getPluginName());
+      converters.push_back(pc);
+    }
+  }
 
-      // URL
-      if (f->find("http://") == 0)
-	{
-	  URLBuf ubuf;
-	  ubuf.open(*f);
-	  std::istream is(&ubuf);
+  if( converters.size() > 1 )
+    LOG(WARNING,"got more than one plugin converter, using arbitrary order!");
 
-	  tmpin << is.rdbuf();
+  BOOST_FOREACH(PluginConverterPtr converter, converters)
+  {
+    DBGLOG(DBG,"calling input converter");
+    std::stringstream out;
+    converter->convert(ctx->inputProvider->getAsStream(), out);
 
-	  if (ubuf.responsecode() == 404)
-	    {
-	      throw GeneralError("Requested URL " + *f + " was not found");
-	    }
-	}
-      else if (*f == "--") // stdin requested
-	{
-	  // copy stdin
-	  tmpin << std::cin.rdbuf();
-	}
-      else // file
-	{
-	  std::ifstream ifs;
+    // debug output (if requested)
+    if( ctx->config.doVerbose(Configuration::DUMP_CONVERTED_PROGRAM) )
+    {
+      LOG(DBG,"input conversion result:" << std::endl << out.str() << std::endl);
+    }
 
-	  ifs.open(f->c_str());
-
-	  if (!ifs.is_open())
-	    {
-	      throw GeneralError("File " + *f + " not found");
-	    }
-
-	  tmpin << ifs.rdbuf();
-	  ifs.close();
+    // replace input provider with converted input provider
+    ctx->inputProvider.reset(new InputProvider);
+    ctx->inputProvider->addStringInput(out.str(), "converted" + inputName);
 	}
 
-      //
-      // create a stringbuffer on the heap (will be deleted later) to
-      // hold the file-content. put it into the context input
-      //
-      ctx->getInput().rdbuf(new std::stringbuf(tmpin.str()));
-
-      //
-      // new output stream with stringbuffer on the heap
-      //
-      std::ostream converterResult(new std::stringbuf);
-
-      for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-	   pi != ctx->getPlugins()->end();
-	   ++pi)
-	{
-	  std::vector<PluginConverter*> pcs = (*pi)->createConverters();
-
-	  if (pcs.size() > 0)
-	    {
-	      //
-	      // go through all converters and rewrite input to converterResult
-	      //
-	      for (std::vector<PluginConverter*>::iterator it = pcs.begin();
-		   it != pcs.end(); ++it)
-		{
-		  (*it)->convert(ctx->getInput(), converterResult);
-
-		  //
-		  // old input buffer can be deleted now
-		  //
-		  delete ctx->getInput().rdbuf();
-
-		  //
-		  // store the current output buffer
-		  //
-		  std::streambuf* tmp = converterResult.rdbuf();
-
-		  //
-		  // make a new buffer for the output (=reset the output)
-		  //
-		  converterResult.rdbuf(new std::stringbuf);
-
-		  //
-		  // set the input buffer to be the output of the last
-		  // rewriting. now, after each loop, the converted
-		  // program is in input.
-		  //
-		  ctx->getInput().rdbuf(tmp);
-		}
-	    }
-	}
-
-      // result of last converter can be removed now
-      delete converterResult.rdbuf();
-
-
-      //
-      // at this point, the whole program is in the context input stream - either
-      // directly read from the file or as a result of some previous
-      // rewriting!
-      //
-
-      ///@todo move dlt code outside!
-
-// 	  FILE* fp = 0;
-
+#warning TODO realize dlt as a plugin
 // 	  //
 // 	  // now call dlt if needed
 // 	  //
@@ -347,113 +257,370 @@ ConvertState::convert(ProgramCtx* ctx)
 // 	      delete input.rdbuf();
 // 	      input.rdbuf(fb);
 // 	    }
-    }
 
   boost::shared_ptr<State> next(new ParseState);
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(ParseState);
 
-void
-ParseState::parse(ProgramCtx* ctx)
+void ParseState::parse(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Parsing input");
 
-  HexParserDriver driver;
-
-  //
-  // tell the parser driver where the rules are actually coming
-  // from (needed for error-messages)
-  //
-  driver.setOrigin(*ctx->getInputSources().begin());
-
-  // run the parser
-  driver.parse(ctx->getInput(), *ctx->getIDB(), *ctx->getEDB());
-
-  ///@todo move dlt code outside
-//       if (optiondlt)
-// 	{
-// 	  int dltret = pclose(fp);
-
-// 	  if (dltret != 0)
-// 	    {
-// 	      throw GeneralError("Preparser dlt returned error");
-// 	    }
-// 	}
-
-  //
-  // wherever the input-buffer was created before - now we don't
-  // need it anymore
-  //
-  delete ctx->getInput().rdbuf();
-
-//      if (optiondlt)
-// 	{
-// 	  unlink(tempfile);
-// 	}
-
-  boost::shared_ptr<State> next(new RewriteState);
-  changeState(ctx, next);
-}
-
-
-void
-RewriteState::rewrite(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
-
-  //
-  // now call rewriters
-  //
-  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end();
-       ++pi)
+  // use alternative parser from plugins, if applicable
+  assert(!ctx->parser);
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    HexParserPtr alternativeParser = plugin->createParser(*ctx);
+    if( !!alternativeParser )
     {
-      PluginRewriter* pr = (*pi)->createRewriter();
+      if( !!ctx->parser )
+      {
+        LOG(WARNING,"ignoring alternative parser provided by plugin " <<
+            plugin->getPluginName() << " because parser already initialized");
+      }
+      else
+      {
+        LOG(INFO,"using alternative parser provided by plugin " <<
+            plugin->getPluginName());
+        ctx->parser = alternativeParser;
+      }
+    }
+  }
 
-      if (pr != 0)
+  // use default parser if no alternative parsers given
+  if( !ctx->parser )
+  {
+    LOG(INFO,"using default parser (no alternatives provided by plugins)");
+    ctx->parser.reset(new ModuleHexParser);
+  }
+  
+  // configure parser modules if possible
+  {
+    ModuleHexParserPtr mhp =
+      boost::dynamic_pointer_cast<ModuleHexParser>(ctx->parser);
+    BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+    {
+      std::vector<HexParserModulePtr> modules =
+        plugin->createParserModules(*ctx);
+      if( !modules.empty() )
+      {
+        if( !!mhp )
+        {
+          LOG(INFO,"got " << modules.size() <<
+              " parser modules from plugin " << plugin->getPluginName());
+          BOOST_FOREACH(HexParserModulePtr module, modules)
+          {
+            mhp->registerModule(module);
+          }
+          LOG(INFO,"registered successfully");
+        }
+        else
+        {
+          LOG(WARNING,"ignoring parser module from plugin '" <<
+              plugin->getPluginName() << "' as ModuleHexParser is not used");
+        }
+      }
+    }
+  }
+
+  // parse
+  assert(!!ctx->parser);
+  ctx->parser->parse(ctx->inputProvider, *ctx);
+
+  // free input provider memory
+  assert(ctx->inputProvider.use_count() == 1);
+  ctx->inputProvider.reset();
+
+	#warning namespaces were here!
+#if 0
+
+///@brief predicate returns true iff argument is not alpha-numeric and
+///is not one of {_,-,.} characters, i.e., it returns true if
+///characater does not belong to XML's NCNameChar character class.
+struct NotNCNameChar : public std::unary_function<char, bool>
+{
+  bool
+  operator() (char c)
+  {
+    c = std::toupper(c);
+    return
+      (c < 'A' || c > 'Z') &&
+      (c < '0' || c > '9') &&
+      c != '-' &&
+      c != '_' &&
+      c != '.';
+  }
+};
+#endif
+
+// TODO implement namespaces
+#if 0
+void
+insertNamespaces()
+{
+  ///@todo move this stuff to Term, this has nothing to do here!
+
+  if (Term::getNameSpaces().empty())
+    return;
+
+  std::string prefix;
+
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
+       ++nm)
+    {
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
+	   ++ns)
 	{
-	  pr->rewrite(*ctx->getIDB(), *ctx->getEDB());
+	  prefix = ns->second + ':';
+
+	  //
+	  // prefix must occur either at beginning or right after quote
+	  //
+	  unsigned start = 0;
+	  unsigned end = (*nm).length();
+
+	  if ((*nm)[0] == '"')
+	    {
+	      ++start;
+	      --end;
+	    }
+
+	    
+	  //
+	  // accourding to http://www.w3.org/TR/REC-xml-names/ QNames
+	  // consist of a prefix followed by ':' and a LocalPart, or
+	  // just a LocalPart. In case of a single LocalPart, we would
+	  // not find prefix and leave that Term alone. If we find a
+	  // prefix in the Term, we must disallow non-NCNames in
+	  // LocalPart, otw. we get in serious troubles when replacing
+	  // proper Terms:
+	  // NameChar ::= Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender  
+	  //
+
+	  std::string::size_type colon = (*nm).find(":", start);
+					  
+	  if (colon != std::string::npos) // Prefix:LocalPart
+	    {
+	      std::string::const_iterator it =
+		std::find_if((*nm).begin() + colon + 1, (*nm).begin() + end - 1, NotNCNameChar());
+
+	      // prefix starts with ns->second, LocalPart does not
+	      // contain non-NCNameChars, hence we can replace that
+	      // Term
+	      if ((*nm).find(prefix, start) == start &&
+		  (it == (*nm).begin() + end - 1)
+		  )
+		{
+		  std::string r(*nm);
+	      
+		  r.replace(start, prefix.length(), ns->first); // replace ns->first from start to prefix + 1
+		  r.replace(0, 1, "\"<");
+		  r.replace(r.length() - 1, 1, ">\"");
+	      
+		  Term::getNames().modify(nm, r);
+		}
+	    }
 	}
     }
+}
 
-  boost::shared_ptr<State> next;
+void
+removeNamespaces()
+{
+  ///@todo move this stuff to Term, this has nothing to do here!
 
-  if (ctx->getNodeGraph() == 0)
+  if (Term::getNameSpaces().empty())
+    return;
+
+  std::string prefix;
+  std::string fullns;
+
+  for (NamesTable<std::string>::const_iterator nm = Term::getNames().begin();
+       nm != Term::getNames().end();
+       ++nm)
     {
-      // no NodeGraph: continue with the SafetyCheck
-      next = boost::shared_ptr<State>(new SafetyCheckState);
+      for (std::vector<std::pair<std::string, std::string> >::iterator ns = Term::getNameSpaces().begin();
+	   ns != Term::getNameSpaces().end();
+	   ++ns)
+	{
+	  fullns = ns->first;
+
+	  prefix = ns->second + ":";
+
+	  //
+	  // original ns must occur either at beginning or right after quote
+	  //
+	  unsigned start = 0;
+	  if ((*nm)[0] == '"')
+	    start = 1;
+
+	  if ((*nm).find(fullns, start) == start)
+	    {
+	      std::string r(*nm);
+
+	      r.replace(start, fullns.length(), prefix);
+
+	      Term::getNames().modify(nm, r);
+	    }
+	}
+    }
+}
+#endif
+
+	// be verbose if requested
+	if( ctx->config.doVerbose(Configuration::DUMP_PARSED_PROGRAM) )
+	{
+    LOG(INFO,"parsed IDB:");
+    RawPrinter rp(Logger::Instance().stream(), ctx->registry());
+	  rp.printmany(ctx->idb, "\n");
+    Logger::Instance().stream() << std::endl;
+
+    LOG(INFO,"parsed EDB:");
+    Logger::Instance().stream() << *(ctx->edb) << std::endl;
+	}
+  if( ctx->config.getOption("MLP") ) 
+    {
+      StatePtr next(new ModuleSyntaxCheckState);
+      changeState(ctx, next);
+    }
+  else 
+    {
+      StatePtr next(new RewriteEDBIDBState);
+      changeState(ctx, next);
+    }
+}
+
+MANDATORY_STATE_CONSTRUCTOR(ModuleSyntaxCheckState);
+// MLPSyntaxChecker ..
+void ModuleSyntaxCheckState::moduleSyntaxCheck(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Module Syntax Check");
+  MLPSyntaxChecker sC(*ctx);
+  bool success = sC.verifySyntax();
+  if (success)
+    {
+      StatePtr next(new MLPSolverState);
+      changeState(ctx, next);
     }
   else
     {
-      next = boost::shared_ptr<State>(new CreateNodeGraph);
+      std::cout << "Does not solve the MLP because of syntax error" << std::endl;
+      StatePtr next(new PostProcessState);
+      changeState(ctx, next);
     }
-
-  changeState(ctx, next);
 }
 
-
-void
-CreateNodeGraph::createNodeGraph(ProgramCtx* ctx)
+MANDATORY_STATE_CONSTRUCTOR(MLPSolverState);
+void MLPSolverState::mlpSolver(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building node graph");
-
-  //
-  // The GraphBuilder creates nodes and dependency edges from the raw program.
-  //
-  GraphBuilder gb;
-
-  gb.run(*ctx->getIDB(), *ctx->getNodeGraph(), *ctx->getPluginContainer());
-
-  boost::shared_ptr<State> next(new OptimizeState);
+  MLPSolver m(*ctx);
+  m.setNASReturned(ctx->config.getOption("NumberOfModels"));
+  m.setPrintLevel(ctx->config.getOption("Verbose"));
+  m.setForget(ctx->config.getOption("Forget"));
+  m.setInstSplitting(ctx->config.getOption("Split"));
+  m.solve();
+  StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }
 
 
+
+OPTIONAL_STATE_CONSTRUCTOR(RewriteEDBIDBState,SafetyCheckState);
+
 void
-OptimizeState::optimize(ProgramCtx* ctx)
+RewriteEDBIDBState::rewriteEDBIDB(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin rewriters");
+  DBGLOG_SCOPE(DBG,"rewrite",false);
+
+  // get rewriter from each plugin
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    PluginRewriterPtr rewriter = plugin->createRewriter(*ctx);
+    if( !rewriter )
+      continue;
+
+    LOG(PLUGIN,"got plugin rewriter from plugin " << plugin->getPluginName());
+
+	  rewriter->rewrite(*ctx);
+
+    // be verbose if requested
+    if( ctx->config.doVerbose(Configuration::DUMP_REWRITTEN_PROGRAM) )
+    {
+      LOG(INFO,"rewritten IDB:");
+      RawPrinter rp(Logger::Instance().stream(), ctx->registry());
+      rp.printmany(ctx->idb, "\n");
+      Logger::Instance().stream() << std::endl;
+
+      LOG(INFO,"rewritten EDB:");
+      Logger::Instance().stream() << *(ctx->edb) << std::endl;
+    }
+  }
+      
+  StatePtr next(new SafetyCheckState);
+  changeState(ctx, next);
+}
+
+OPTIONAL_STATE_CONSTRUCTOR(SafetyCheckState,CreateDependencyGraphState);
+
+void
+SafetyCheckState::safetyCheck(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
+
+  //
+  // Performing the safety check
+  //
+  SafetyChecker schecker(*ctx);
+  // check by calling the object
+  schecker();
+
+  StatePtr next(new CreateDependencyGraphState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(CreateDependencyGraphState);
+
+void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building dependency graph");
+
+  DependencyGraphPtr depgraph(new DependencyGraph(ctx->registry()));
+  std::vector<dlvhex::ID> auxRules;
+  depgraph->createDependencies(ctx->idb, auxRules);
+
+  if( ctx->config.getOption("DumpDepGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_DepGraphVerbose.dot";
+    LOG(INFO,"dumping verbose dependency graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    depgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_DepGraphTerse.dot";
+    LOG(INFO,"dumping terse dependency graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    depgraph->writeGraphViz(filet, false);
+  }
+
+  ctx->depgraph = depgraph;
+
+  StatePtr next(new OptimizeEDBDependencyGraphState);
+  changeState(ctx, next);
+}
+
+OPTIONAL_STATE_CONSTRUCTOR(OptimizeEDBDependencyGraphState,CreateComponentGraphState);
+
+void
+OptimizeEDBDependencyGraphState::optimizeEDBDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin optimizers");
+
+  #warning TODO call handle optimizers and implement a testcase
+#if 0
 
   //
   // now call optimizers
@@ -466,99 +633,151 @@ OptimizeState::optimize(ProgramCtx* ctx)
 
       if (po != 0)
 	{
-	  po->optimize(*ctx->getNodeGraph(), *ctx->getEDB());
+	  po->optimize(*ctx->getDependencyGraph(), *ctx->getEDB());
 	}
     }
 
-  boost::shared_ptr<State> next(new CreateDependencyGraphState);
+#endif
+
+  StatePtr next(new CreateComponentGraphState);
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(CreateComponentGraphState);
 
-
-void
-CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
+void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building dependency graph");
+  assert(!!ctx->depgraph && "need depgraph for building component graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"building component graph");
 
-  //
-  // The ComponentFinder provides functions for finding SCCs and WCCs from a
-  // set of nodes.
-  //
-  ComponentFinder* cf = new BoostComponentFinder;
+  ComponentGraphPtr compgraph(
+      new ComponentGraph(*ctx->depgraph, ctx->registry()));
 
-  //
-  // The DependencyGraph identifies and creates the graph components that will
-  // be processed by the GraphProcessor.
-  //
-  // Initializing the DependencyGraph. Its constructor uses the
-  // ComponentFinder to find relevant graph
-  // properties for the subsequent processing stage.
-  //
-  DependencyGraph* dg = new DependencyGraph(cf, *ctx);
-  ctx->setDependencyGraph(dg);
+  if( ctx->config.getOption("DumpCompGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_CompGraphVerbose.dot";
+    LOG(INFO,"dumping verbose component graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    compgraph->writeGraphViz(filev, true);
 
-  boost::shared_ptr<State> next(new SafetyCheckState);
+    std::string fnamet = ctx->config.debugFilePrefix()+"_CompGraphTerse.dot";
+    LOG(INFO,"dumping terse component graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    compgraph->writeGraphViz(filet, false);
+  }
+
+  ctx->compgraph = compgraph;
+
+  StatePtr next(new StrongSafetyCheckState);
   changeState(ctx, next);
 }
 
+OPTIONAL_STATE_CONSTRUCTOR(StrongSafetyCheckState,CreateEvalGraphState);
 
-void
-SafetyCheckState::safetyCheck(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Safety checking");
-
-  //
-  // Performing the safety check
-  //
-  SafetyChecker schecker(*ctx->getIDB());
-  schecker();
-
-  boost::shared_ptr<State> next;
-
-  if (ctx->getDependencyGraph() == 0)
-    {
-      // no dependency graph: continue with the evaluation of the IDB/EDB
-      next = boost::shared_ptr<State>(new SetupProgramCtxState);
-    }
-  else
-    {
-      next = boost::shared_ptr<State>(new StrongSafetyCheckState);
-    }
-
-  changeState(ctx, next);
-}
-
-
-
-void
-StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
+void StrongSafetyCheckState::strongSafetyCheck(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Strong safety checking");
 
-  StrongSafetyChecker sschecker(*ctx->getDependencyGraph());
+  StrongSafetyChecker sschecker(*ctx);
+  // check by calling the object
   sschecker();
 
-  boost::shared_ptr<State> next(new SetupProgramCtxState);
+  StatePtr next(new CreateEvalGraphState);
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(CreateEvalGraphState);
 
-void
-SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
+void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Setting up ProgramCtx");
+  assert(!!ctx->compgraph &&
+      "need component graph for creating evaluation graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
-  //
-  // now let the plugins setup the ProgramCtx
-  //
-  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end();
-       ++pi)
-    {
-      (*pi)->setupProgramCtx(*ctx);
-    }
+  FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
+  EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware);
 
+  // use configured eval heuristic
+  assert(!!ctx->evalHeuristic && "need configured heuristic");
+  DBGLOG(DBG,"invoking build() on eval heuristic");
+  ctx->evalHeuristic->build(egbuilder);
+  DBGLOG(DBG,"destructing eval heuristic");
+  // destruct heuristic
+  ctx->evalHeuristic.reset();
+
+  // setup final unit used to get full models
+  #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!
+  FinalEvalGraph::EvalUnit ufinal =
+    evalgraph->addUnit(FinalEvalGraph::EvalUnitPropertyBundle());
+  LOG(DBG,"created virtual final unit ufinal = " << ufinal);
+
+  FinalEvalGraph::EvalUnitIterator it, itend;
+  boost::tie(it, itend) = evalgraph->getEvalUnits();
+  for(; it != itend && *it != ufinal; ++it)
+  {
+    DBGLOG(DBG,"adding dependency from ufinal to unit " << *it <<
+        " join order " << *it);
+    // we can do this because we know that eval units
+    // (= vertices of a vecS adjacency list) are unsigned integers
+    evalgraph->addDependency(
+        ufinal, *it,
+        FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
+  }
+
+  if( ctx->config.getOption("DumpEvalGraph") )
+  {
+    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose eval graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ctx->compgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse eval graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    ctx->compgraph->writeGraphViz(filet, false);
+    LOG(WARNING,"DumpEvalGraph currently only implemented as modified compgraph dumping!");
+    #if 0
+    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    evalgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse evaluation graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    evalgraph->writeGraphViz(filet, false);
+    #endif
+  }
+
+  ctx->ufinal = ufinal;
+  ctx->evalgraph = evalgraph;
+
+  StatePtr next(new SetupProgramCtxState);
+  changeState(ctx, next);
+}
+
+MANDATORY_STATE_CONSTRUCTOR(SetupProgramCtxState);
+
+void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
+
+  // default model outputting callback
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
+  ctx->modelCallbacks.push_back(asprinter);
+
+  // setup printing of auxiliaries
+  if( 1 == ctx->config.getOption("KeepAuxiliaryPredicates") )
+  {
+    AuxPrinterPtr plainAuxPrinter(new PlainAuxPrinter(ctx->registry()));
+    ctx->registry()->registerUserDefaultAuxPrinter(plainAuxPrinter);
+  }
+
+  // let plugins setup the program ctx (removing the default hooks is permitted)
+  ctx->setupByPlugins();
+
+  #warning TODO higher order was here
+  /*
   // if we solve using DLV, automagically set higher order mode
   // (this has to be done globally for the global solver configuration,
   // it can be done locally for other usages of ASPSolver(Manager))
@@ -574,27 +793,146 @@ SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
       dlvconfiguration->options.dropPredicates = true;
     }
   }
+  */
 
-  boost::shared_ptr<State> next;
-
-  if (ctx->getDependencyGraph() == 0)
-    {
-      // no dependency graph: continue with the evaluation of the IDB/EDB
-      next = boost::shared_ptr<State>(new EvaluateProgramState);
-    }
-  else
-    {
-      next = boost::shared_ptr<State>(new EvaluateDepGraphState);
-    }
-
+  StatePtr next(new EvaluateState);
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(EvaluateState);
 
 void
-EvaluateProgramState::evaluate(ProgramCtx* ctx)
+EvaluateState::evaluate(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating Program");
+  typedef ModelBuilder<FinalEvalGraph>::Model Model;
+  typedef ModelBuilder<FinalEvalGraph>::OptionalModel OptionalModel;
+  typedef ModelBuilder<FinalEvalGraph>::MyModelGraph MyModelGraph;
+
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"evaluate()");
+
+  LOG(INFO,"creating model builder");
+  {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
+    ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(*ctx->evalgraph));
+  }
+  ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
+
+  // get model and call all callbacks
+  // abort if one callback returns false
+  DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+  unsigned mcount = 0;
+  bool abort = false;
+  bool gotModel;
+  unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
+  do
+  {
+    gotModel = false;
+    DBGLOG(DBG,"requesting imodel");
+    DLVHEX_BENCHMARK_START(sidgetnextmodel);
+    OptionalModel om = mb.getNextIModel(ctx->ufinal);
+    DLVHEX_BENCHMARK_STOP(sidgetnextmodel);
+    if( !!om )
+    {
+      Model m = om.get();
+      InterpretationConstPtr interpretation =
+        mb.getModelGraph().propsOf(m).interpretation;
+
+      // if the program is empty, we may get a NULL interpretation
+      if( !interpretation )
+      {
+        assert(mb.getModelGraph().propsOf(m).dummy == true);
+        interpretation.reset(new Interpretation(ctx->registry()));
+      }
+
+      if( ctx->config.getOption("DumpIModelGraph") )
+      {
+        throw std::runtime_error("DumpIModelGraph  not implemented!");
+        #warning TODO individual eval/model graphviz output
+      }
+      #ifndef NDEBUG
+      DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
+      /*
+      std::set<Model> onlyFor;
+      onlyFor.insert(m.get());
+      GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
+          true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
+      std::stringstream smodel;
+      smodel << fname << "PlainHEXOnlineModel" << mcount;
+      writeGraphVizFunctors(func, func, smodel.str());
+      */
+      #endif
+      mcount++;
+
+      // model callbacks
+      AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
+      // copy interpretation! (callbacks can modify it)
+      answerset->interpretation->getStorage() = interpretation->getStorage();
+
+      // add EDB if configured that way
+      if( !ctx->config.getOption("NoFacts") )
+      {
+        answerset->interpretation->getStorage() |=
+          ctx->edb->getStorage();
+      }
+
+      BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+      {
+        bool aborthere = !(*mcb)(answerset);
+        abort |= aborthere;
+        if( aborthere )
+          LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+      }
+
+      #ifndef NDEBUG
+      //mb.printEvalGraphModelGraph(std::cerr);
+      #endif
+      gotModel = true;
+      if( mcountLimit != 0 && mcount >= mcountLimit )
+      {
+        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+        break;
+      }
+    }
+  }
+  while( gotModel && !abort );
+
+  LOG(INFO,"got " << mcount << " models");
+  if( abort )
+  {
+    LOG(INFO,"model building was aborted by callback");
+  }
+  else
+  {
+    if( mcountLimit == 0 )
+    {
+      LOG(INFO,"model building finished after enumerating all models");
+    }
+    else
+    {
+      LOG(INFO,"model building finished after enumerating " << mcountLimit << " models");
+    }
+  }
+
+  if( ctx->config.getOption("DumpModelGraph") )
+  {
+    throw std::runtime_error("DumpModelGraph  not implemented!");
+    #warning TODO overall eval/model graphviz output
+  }
+
+  #if 0
+  #ifndef NDEBUG
+  mb.printEvalGraphModelGraph(std::cerr);
+  #endif
+  #ifndef NDEBUG
+  GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
+      true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), boost::none);
+  writeGraphVizFunctors(func, func, fname+"PlainHEXOnlineEgMg");
+  #endif
+  #endif
+  //std::cerr << __FILE__ << ":" << __LINE__ << std::endl << *ctx.registry() << std::endl;
+
+
+  #if 0
 
   //
   // We don't have a depedency graph, so just dump the program to an
@@ -644,139 +982,39 @@ EvaluateProgramState::evaluate(ProgramCtx* ctx)
       ctx->getResultContainer()->addSet(*it);
     }
 
-  boost::shared_ptr<State> next(new PostProcessState);
+  #endif
+
+  #if 0
+    std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
+      ctx->evalgraph.countEvalUnits() << " evalunits " << ctx->evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
+    benchmark::BenchmarkController::Instance().printDuration(std::cerr, sidoverall) << std::endl;
+  #endif
+
+  StatePtr next(new PostProcessState);
   changeState(ctx, next);
 }
 
+MANDATORY_STATE_CONSTRUCTOR(PostProcessState);
 
-void
-EvaluateDepGraphState::evaluate(ProgramCtx* ctx)
+void PostProcessState::postProcess(ProgramCtx* ctx)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Evaluating dependency graph");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"postProcess");
 
-  //
-  // The GraphProcessor provides the actual strategy of how to compute the
-  // hex-models of a given dependency graph.
-  //
-  GraphProcessor gp(*ctx);
+  // call final callbacks
+  BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
+  {
+    DBGLOG(DBG,"calling final callback " << printptr(fcb));
+    (*fcb)();
+  }
 
-  //
-  // The GraphProcessor starts its computation with the program's ground
-  // facts as input.
-  // But only if the original EDB is consistent, otherwise, we can skip it
-  // anyway.
-  //
-  if (ctx->getEDB()->isConsistent())
-    {
-      gp.run(*ctx->getEDB());
-    }
-
-  ///@todo weak contraint prefixes are a bit clumsy here. How can we do better?
-
-  //
-  // prepare result container
-  //
-  // if we had any weak constraints, we have to tell the result container the
-  // prefix in order to be able to compute each asnwer set's costs!
-  //
-  std::string wcprefix;
-
-  if (ctx->getIDB()->getWeakConstraints().size() > 0)
-    {
-      wcprefix = "wch__";
-    }
-
-  ResultContainer* result = new ResultContainer(wcprefix);
-  ctx->setResultContainer(result);
-
-  //
-  // put GraphProcessor result into ResultContainer
-  ///@todo we can do better, for sure
-  //
-  AtomSet* res;
-
-  while ((res = gp.getNextModel()) != 0)
-    {
-      ctx->getResultContainer()->addSet(*res);
-    }
-
-  boost::shared_ptr<State> next(new PostProcessState);
-  changeState(ctx, next);
-}
-
-
-void
-PostProcessState::postProcess(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Postproc GraphProcessor res");
-
-  ///@todo filtering the atoms here is maybe to costly, how about
-  ///ignoring the aux names when building the output, since the custom
-  ///output builders of the plugins may need the aux names? Likewise
-  ///for --filter predicates...
-
-  //
-  // remove auxiliary atoms
-  //
-  ctx->getResultContainer()->filterOut(Term::getAuxiliaryNames());
-
+  #warning TODO dlt was here
   ///@todo quick hack for dlt
-//   if (optiondlt)
-//     {
-//       ctx->getResultContainer()->filterOutDLT();
-//     }
+  //   if (optiondlt)
+  //     {
+  //       ctx->getResultContainer()->filterOutDLT();
+  //     }
 
-
-  //
-  // apply filter
-  //
-  //if (optionFilter.size() > 0)
-  ctx->getResultContainer()->filterIn(Globals::Instance()->getFilters());
-
-  boost::shared_ptr<State> next(new OutputState);
-  changeState(ctx, next);
-}
-
-
-void
-OutputState::output(ProgramCtx* ctx)
-{
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Building output");
-
-  //
-  // output format
-  //
-  OutputBuilder* outputbuilder = ctx->getOutputBuilder();
-
-  if (outputbuilder == 0)
-    {
-      OutputBuilder* tmpoutputbuilder = 0;
-
-      // first look if some plugin has an OutputBuilder
-      for (std::vector<PluginInterface*>::const_iterator pi = ctx->getPlugins()->begin();
-	   pi != ctx->getPlugins()->end(); ++pi)
-	{
-	  ///@todo this is very clumsy, what should we do if there
-	  ///are more than one output builders available from the
-	  ///atoms?
-	  tmpoutputbuilder = (*pi)->createOutputBuilder();
-	  outputbuilder = tmpoutputbuilder != 0 ? tmpoutputbuilder : outputbuilder;
-	}
-
-      // if no plugin provides an OutputBuilder, we use our own to output the models
-      if (outputbuilder == 0)
-	{
-	  outputbuilder = new TextOutputBuilder;
-	  ctx->setOutputBuilder(outputbuilder);
-	}
-    }
-
-
-  ctx->setOutputBuilder(outputbuilder);
-
-  ctx->getResultContainer()->print(std::cout, ctx->getOutputBuilder());
-
-  ///@todo explicit endstate which does nothing?
+  // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
 }

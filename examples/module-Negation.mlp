@@ -1,0 +1,6 @@
+#module(p1,[]).
+c :- @p2::d.
+
+
+#module(p2,[]).
+d :- not @p1::c, not e.

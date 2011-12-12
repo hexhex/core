@@ -1,0 +1,15 @@
+#context(1,"dlv_asp_context_acc", "./permcc/perm.dlv").
+#context(2,"dlv_asp_context_acc", "./permcc/cc_ua.dlv").
+
+%r1_vip4:
+%  (1:person_vip4).
+r1_pers98:
+  (1:person_pers98).
+r2_vip4_2113:
+  (2:card_2113) :- (1:person_vip4), not (1:grant_vip4), (1:ccard_vip4_2113).
+r2_pers98_7468:
+  (2:card_7468) :- (1:person_pers98), not (1:grant_pers98), (1:ccard_pers98_7468).
+r3_2113:
+  (1:ccValid_2113) :- (2:valid_2113).
+r3_7468:
+  (1:ccValid_7468) :- (2:valid_7468).

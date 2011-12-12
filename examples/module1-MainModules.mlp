@@ -1,0 +1,15 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+ok :- @p2[q1]::even(c).
+
+#module(p11,[q11/1]).
+q11(a).
+q11(b).
+ok :- @p2[q11]::even(c).
+
+#module(p12,[]).
+q12(a).
+q12(b).
+ok :- @p2[q12]::even(c).
+

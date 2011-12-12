@@ -1,0 +1,17 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+ok :- @p2[q1]::even(c).
+bad :- not ok.
+
+#module(p2,[q2/1]).
+q2i(X) v q2i(Y) :- q2(X), q2(Y), X!=Y.
+skip2   :- q2(X), not q2i(X).
+even(c) :- not skip2.
+even(c) :- skip2, @p3[q2i]::odd.
+even(a) :- skip2, @p3[q2i]::odd.
+
+#module(p3,[q3/1]).
+q3i(X) v q3i(Y) :- q3(X), q3(Y), X!=Y.
+skip3  :- q3(X), not q3i(X).
+odd :- skip3, @p2[q3i]::even(c).

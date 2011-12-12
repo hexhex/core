@@ -1,5 +1,12 @@
 dlvhex NEWS -- history of user-visible changes.
 
+* Version 2.0.0 (??)
+
+** Complete rewrite.
+
+** Add support for input-call stratified modular nonmonotonic logic programs (MLPs).
+
+
 * Version 1.7.3 ( 2010)
 
 ** Fix ticket #33.

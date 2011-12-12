@@ -1,0 +1,8 @@
+% ctx1 is a context which accepts only the input "foo"
+#context(1,"dlv_asp_context_acc", "./test2/dlvctx_ctx1.dlv").
+r1:(1:foo) :- not (1:bar).
+r2:(1:bar) :- not (1:foo).
+
+% there should exist exactly the following output-projected equilibrium:
+%
+% ({foo})

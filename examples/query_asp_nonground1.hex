@@ -1,0 +1,7 @@
+foo(a) v bar(b).
+c(X) :- foo(X).
+c(X) :- bar(X).
+
+% this returns two results '{c(a)}' and '{c(b)}' in brave mode (any order is ok) and no result in cautious mode
+c(X)?
+

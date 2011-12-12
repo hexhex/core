@@ -57,6 +57,8 @@ public:
     explicit
     GeneralError(const std::string& msg);
 
+    virtual ~GeneralError() throw() {}
+
     /**
      * @brief Returns error string.
      *
@@ -180,6 +182,16 @@ public:
 private:
 
     std::string context;
+};
+
+// thrown to give error message about wrong usage of commandline of program or plugin
+// (you should give a usage help message when catching this)
+class UsageError: public FatalError
+{
+	public:
+		UsageError(const std::string& msg):
+			FatalError(msg) {}
+		virtual ~UsageError() throw() {}
 };
 
 DLVHEX_NAMESPACE_END

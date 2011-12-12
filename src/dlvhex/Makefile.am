@@ -4,6 +4,9 @@ AM_CPPFLAGS = \
     -I$(top_builddir)/src \
     -I$(top_srcdir)/src \
     $(BOOST_CPPFLAGS) \
+    $(BM_CPPFLAGS) \
+    $(DLVHEX_CFLAGS) \
+    $(EXTSOLVER_CPPFLAGS) \
     @INCLTDL@ \
     @LIBCURL_CPPFLAGS@
 
@@ -12,74 +15,83 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la
+lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la libmlpsolver.la
 
 # the dlvhex binary
-dlvhex_SOURCES = \
-    dlvhex.cpp \
-    RuleMLOutputBuilder.cpp 
+dlvhex_SOURCES = dlvhex.cpp
 
 #
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
 #dlvhex_LDFLAGS = -static -export-dynamic
-dlvhex_LDFLAGS = -export-dynamic
+dlvhex_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = libdlvhexbase.la libaspsolver.la @LIBLTDL@ @LIBADD_DL@ @LIBCURL@ 
+dlvhex_LDADD = \
+  libdlvhexbase.la libmlpsolver.la libaspsolver.la libinternalplugins.la \
+  $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) \
+  @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+
 
 # dlvhex API
 libdlvhexbase_la_SOURCES = \
-    Atom.cpp \
-    AggregateAtom.cpp \
-    AtomNode.cpp \
-    AtomSet.cpp \
+    AnswerSet.cpp \
+    AnswerSetPrinterCallback.cpp \
+    Atoms.cpp \
+    BaseModelGenerator.cpp \
     Benchmarking.cpp \
-    BoostComponentFinder.cpp \
-    Component.cpp \
-    ComponentFinder.cpp \
-    Dependency.cpp \
+    CAUAlgorithms.cpp \
+    ComfortPluginInterface.cpp \
+    ComponentGraph.cpp \
+    Configuration.cpp \
     DependencyGraph.cpp \
-    EvaluateExtatom.cpp \
-    ExternalAtom.cpp \
     Error.cpp \
-    FixpointModelGenerator.cpp \
-    globals.cpp \
-    GraphBuilder.cpp \
-    GraphProcessor.cpp \
-    GuessCheckModelGenerator.cpp \
-    Literal.cpp \
-    NodeGraph.cpp \
-    OrdinaryModelGenerator.cpp \
+    EvalGraphBuilder.cpp \
+    EvalHeuristicEasy.cpp \
+    EvalHeuristicFromFile.cpp \
+    EvalHeuristicOldDlvhex.cpp \
+    EvalHeuristicTrivial.cpp \
+    PlainAuxPrinter.cpp \
+    PlainModelGenerator.cpp \
+    PredicateMask.cpp \
+    WellfoundedModelGenerator.cpp \
+    GuessAndCheckModelGenerator.cpp \
+    HexGrammar.cpp \
+    HexParser.cpp \
+    ID.cpp \
+    InputProvider.cpp \
+    Interpretation.cpp \
+    Logger.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
-    PrintVisitor.cpp \
-    Program.cpp \
+    Printer.cpp \
     ProgramCtx.cpp \
-    Repository.cpp \
     Registry.cpp \
-    Rule.cpp \
     SafetyChecker.cpp \
     State.cpp \
-    Term.cpp \
-    ResultContainer.cpp \
-    TextOutputBuilder.cpp \
-    HexGrammarPTToASTConverter.cpp \
-    HexParserDriver.cpp \
-    AnswerSet.cpp \
     URLBuf.cpp
+
+# dlvhex MLP component
+libmlpsolver_la_SOURCES = \
+    MLPSolver.cpp \
+    MLPSyntaxChecker.cpp 
 
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
-    DLVresultParserDriver.cpp \
-    ASPSolverManager.cpp \
     ASPSolver.cpp \
+    ASPSolverManager.cpp \
     DLVProcess.cpp \
+    DLVresultParserDriver.cpp \
     ProcessBuf.cpp
 
+# dlvhex internal plugins
+libinternalplugins_la_SOURCES = \
+    QueryPlugin.cpp \
+    StrongNegationPlugin.cpp \
+    HigherOrderPlugin.cpp
 
 # for more information on `-version-info current[:revision[:age]]' see
 # <http://www.gnu.org/software/libtool/manual/libtool.html#Versioning>,
@@ -153,7 +165,9 @@ libaspsolver_la_SOURCES = \
 #   to use the new version. Bump current, set revision and age to 0.
 #
 libdlvhexbase_la_LDFLAGS = -version-info 6:0:0
+libmlpsolver_la_LDFLAGS = -version-info 1:0:0
 libaspsolver_la_LDFLAGS = -version-info 2:0:0
+libinternalplugins_la_LDFLAGS = -version-info 1:0:0
 
 libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 

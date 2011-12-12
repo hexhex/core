@@ -1,0 +1,15 @@
+#module(p1,[]).
+q1(a).
+q1(b).
+r1(a) :- @p3[q1]::c. 
+r1(b) :- r1(a). 
+ok1 :- @p2[r1]::ok2.
+bad1 :- not ok1.
+
+#module(p2,[q2/1]).
+ok2 :- @p3[q2]::c.
+bad2 :- not ok2.
+
+#module(p3,[q3/1]).
+c :- q3(a), q3(b).
+
