@@ -473,6 +473,7 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
+#include "dlvhex/CDNLSolver.hpp"
 
 #include <map>
 #include <string>
@@ -585,7 +586,7 @@ typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
 #if 0
 /**
- * Optimizer class (for optimizing dependency graph)
+ * Optimizer class.
  *
  * \todo doc
  */
@@ -642,6 +643,7 @@ public:
     InterpretationConstPtr interpretation;
     Tuple input;
     Tuple pattern;
+    const ExternalAtom* eatom;
 
     /**
      * The input arguments are the ground terms of the input list.
@@ -670,7 +672,17 @@ public:
           const Tuple& pattern):
       interpretation(interpretation),
       input(input),
-      pattern(pattern) {}
+      pattern(pattern),
+      eatom(0) {}
+
+    Query(InterpretationConstPtr interpretation,
+          const Tuple& input,
+          const Tuple& pattern,
+          const ExternalAtom* ea):
+      interpretation(interpretation),
+      input(input),
+      pattern(pattern),
+      eatom(ea) {}
 
     // no member encapsulation and no accessors as this will always be supplied to plugins as a const ref
 
@@ -792,6 +804,7 @@ public:
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
+  virtual void retrieveCached(const Query&, Answer&, CDNLSolverPtr solver);
 
   /**
    * \brief Retrieve answer object according to a query.
@@ -799,6 +812,10 @@ public:
    * This function implements the external atom.
    */
   virtual void retrieve(const Query&, Answer&) = 0;
+  virtual void retrieve(const Query&, Answer&, CDNLSolverPtr solver);
+
+  Nogood getInputNogood(CDNLSolverPtr solver, const Query& query);
+  Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer);
 
   /**
    * \brief Returns the type of the input argument specified by position

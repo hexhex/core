@@ -239,6 +239,172 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   }
 }
 
+void PluginAtom::retrieveCached(const Query& query, Answer& answer, CDNLSolverPtr solver)
+{
+	DBGLOG(DBG, "Retrieve with learning, solver: " << (solver == CDNLSolverPtr() ? "not " : "") << "available" );
+
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
+	// Cache answer for queries which were already done once:
+	//
+	// The most efficient way would be:
+	// * use cache for same inputSet + same *inputi + more specific pattern
+	// * store new cache for new inputSet/*inputi combination or unrelated (does not unify) pattern
+	// * replace cache for existing inputSet/*inputi combination and less specific (unifies in one direction) pattern
+	// 
+	// The currently implemented "poor (wo)man's version" is:
+	// * store answers in cache with queries as keys, disregard relations between patterns
+	///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
+
+	Answer& ans = queryAnswerCache[query];
+	if( ans.hasBeenUsed() )
+	{
+		// answer was not default constructed
+		// -> use cache
+		answer = ans;
+	}
+	else
+	{
+		// answer was default constructed
+		// -> retrieve and replace in cache
+		{
+			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
+
+			retrieve(query, ans, solver);
+			// if there was no answer, perhaps it has never been used, so we use it manually
+			ans.use();
+		}
+		answer = ans;
+	}
+
+#if 0
+	retrieveCached(query, answer);
+
+	if (solver != CDNLSolverPtr()){
+
+		DBGLOG(DBG, "Learning from external call");
+
+		// find relevant input
+		bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+
+		Nogood extNgInput;
+
+		while (en < en_end){
+			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
+			en++;
+		}
+
+		DBGLOG(DBG, "Input nogood: " << extNgInput);
+
+		// construct replacement atom
+		OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		replacement.tuple.resize(1);
+		replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
+		replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
+		int s = replacement.tuple.size();
+
+		const std::vector<Tuple>& otuples = answer.get();
+		BOOST_FOREACH (Tuple otuple, otuples){
+			replacement.tuple.resize(s);
+			// add current output
+			replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
+			// get ID of this replacement atom
+			ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+
+			Nogood extNg = extNgInput;
+			extNg.insert(solver->createLiteral(idreplacement.address));
+			DBGLOG(DBG, "Overall nogood: " << extNg);
+			solver->addNogood(extNg);
+		}
+	}
+#endif
+}
+
+void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solver){
+
+	retrieve(query, answer);
+
+	if (solver != CDNLSolverPtr()){
+
+		DBGLOG(DBG, "Learning from external call");
+
+		Nogood extNgInput = getInputNogood(solver, query);
+		DBGLOG(DBG, "Input nogood: " << extNgInput);
+
+		Set<ID> out = getOutputAtoms(solver, query, answer);
+		BOOST_FOREACH (ID oid, out){
+			Nogood extNg = extNgInput;
+			extNg.insert(solver->createLiteral(oid));
+			DBGLOG(DBG, "Overall nogood: " << extNg);
+			solver->addNogood(extNg);
+		}
+
+#if 0
+		// construct replacement atom
+		OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		replacement.tuple.resize(1);
+		replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
+		replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
+		int s = replacement.tuple.size();
+
+		const std::vector<Tuple>& otuples = answer.get();
+		BOOST_FOREACH (Tuple otuple, otuples){
+			replacement.tuple.resize(s);
+			// add current output
+			replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
+			// get ID of this replacement atom
+			ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+
+			Nogood extNg = extNgInput;
+			extNg.insert(solver->createLiteral(idreplacement.address));
+			DBGLOG(DBG, "Overall nogood: " << extNg);
+			solver->addNogood(extNg);
+		}
+#endif
+	}
+}
+
+Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+
+	Nogood extNgInput;
+
+	while (en < en_end){
+		extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
+		en++;
+	}
+
+	return extNgInput;
+}
+
+Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer){
+
+	Set<ID> out;
+
+	// construct replacement atom
+	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+	replacement.tuple.resize(1);
+	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
+	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
+	int s = replacement.tuple.size();
+
+	const std::vector<Tuple>& otuples = answer.get();
+	BOOST_FOREACH (Tuple otuple, otuples){
+		replacement.tuple.resize(s);
+		// add current output
+		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
+		// get ID of this replacement atom
+		ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+		out.insert(idreplacement);
+
+	}
+
+	return out;
+}
+
 PluginAtom::InputType
 PluginAtom::getInputType(const unsigned index) const
 {

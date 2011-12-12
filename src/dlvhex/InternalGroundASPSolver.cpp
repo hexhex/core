@@ -551,7 +551,7 @@ ID InternalGroundASPSolver::getPossibleSourceRule(Set<ID> ufs){
 
 // a head atom uses the rule as source, if
 // 1. the atom is currently unfounded
-// 2. no other head literal is true on a lower decision level
+// 2. no other head literal was set to true earlier
 bool InternalGroundASPSolver::useAsNewSourceForHeadAtom(IDAddress headAtom, ID sourceRuleID){
 
 	DBGLOG(DBG, "Checking if " << headAtom << " uses rule " << sourceRuleID.address << " as source");
@@ -699,7 +699,7 @@ Set<ID> InternalGroundASPSolver::satisfiesIndependently(ID ruleID, Set<ID> y){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
 
-	// compute all literals which satisfy the rule independently from set y:
+	// compute all literals which satisfy the rule independently of set y:
 	// either (i) the body of rule is false; or
 	//        (ii) some head literal, which is not in y, is true
 	Set<ID> indSat;

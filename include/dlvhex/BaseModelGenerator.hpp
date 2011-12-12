@@ -39,6 +39,7 @@
 #include "dlvhex/Atoms.hpp"
 
 #include <list>
+#include "dlvhex/CDNLSolver.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -99,7 +100,8 @@ protected:
   virtual bool evaluateExternalAtom(RegistryPtr reg,
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
-    ExternalAnswerTupleCallback& cb) const;
+    ExternalAnswerTupleCallback& cb,
+    CDNLSolverPtr solver = CDNLSolverPtr()) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
   //
@@ -107,7 +109,8 @@ protected:
   virtual bool evaluateExternalAtoms(RegistryPtr reg,
     const std::vector<ID>& eatoms,
     InterpretationConstPtr inputi,
-    ExternalAnswerTupleCallback& cb) const;
+    ExternalAnswerTupleCallback& cb,
+    CDNLSolverPtr solver = CDNLSolverPtr()) const;
 
   //
   // helper methods used by evaluateExternalAtom

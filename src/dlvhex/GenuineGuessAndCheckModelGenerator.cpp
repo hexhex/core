@@ -823,7 +823,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		// we might need edb facts here
 		// (dependencies to edb are not modelled in the dependency graph)
 		// therefore we did not mask the guess program before
-		aborted = !evaluateExternalAtoms(reg, factory.innerEatoms, modelCandidate, cb);
+		aborted = !evaluateExternalAtoms(reg, factory.innerEatoms, modelCandidate, cb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
 
 		if (projectedModelCandidate_pos_val->getStorage().count() > 0){
 			aborted = true;
@@ -840,6 +840,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 			DBGLOG(DBG,"= final model candidate " << *modelCandidate);
 
+#if 0
 			// Learning
 			BOOST_FOREACH(ID eatomid, factory.innerEatoms)
 			{
@@ -853,14 +854,16 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 				learnFromExternalAtom(eatom, modelCandidate, eaResult);
 			}
-
+#endif
 		}
 	}while(aborted);
 
 	return modelCandidate;
 }
 
+#if 0
 bool GenuineGuessAndCheckModelGenerator::learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output){
+	return false;
 
 	if (!factory.ctx.config.getOption("ExternalLearning")) return false;
 
@@ -890,6 +893,7 @@ bool GenuineGuessAndCheckModelGenerator::learnFromExternalAtom(const ExternalAto
 	}
 	return learned;
 }
+#endif
 
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, bm::bvector<> factWasSet){
 
@@ -940,9 +944,10 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 			DBGLOG(DBG, "Evaluating external atom");
 			InterpretationPtr eaResult(new Interpretation(reg));
 			IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
-			evaluateExternalAtom(reg, eatom, partialInterpretation, intcb);
-
-			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
+			int i = igas->getNogoodCount();
+			evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
+			if (igas->getNogoodCount() != i) learned = true;
+//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
 		}else{
 			DBGLOG(DBG, "Input is not complete");
 		}

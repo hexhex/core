@@ -114,10 +114,12 @@ output(const Tuple& output)
 // calls eatom function
 // reintegrates output tuples as auxiliary atoms into outputi
 // (inputi and outputi may point to the same interpretation)
+
 bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   const ExternalAtom& eatom,
   InterpretationConstPtr inputi,
-  ExternalAnswerTupleCallback& cb) const
+  ExternalAnswerTupleCallback& cb,
+  CDNLSolverPtr solver) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
@@ -196,9 +198,9 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     #endif
 
     // query
-    PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
+    PluginAtom::Query query(eatominp, inputtuple, eatom.tuple, &eatom);
     PluginAtom::Answer answer;
-    pluginAtom->retrieveCached(query, answer);
+    pluginAtom->retrieveCached(query, answer, solver);
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if( !answer.get().empty() )
@@ -244,10 +246,12 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 }
 
 // calls evaluateExternalAtom for each atom in eatoms
+
 bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
   const std::vector<ID>& eatoms,
   InterpretationConstPtr inputi,
-  ExternalAnswerTupleCallback& cb) const
+  ExternalAnswerTupleCallback& cb,
+  CDNLSolverPtr solver) const
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {

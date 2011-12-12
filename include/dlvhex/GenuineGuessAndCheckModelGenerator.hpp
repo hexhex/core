@@ -73,7 +73,7 @@ protected:
   Interpretation* currentanswer;
 
   // members
-  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
+//  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
   bool learn(Interpretation::Ptr partialInterpretation, bm::bvector<> factWasSet);
 
 public:

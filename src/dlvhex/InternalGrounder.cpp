@@ -333,9 +333,15 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 
 		BOOST_FOREACH (ID bodyLitID, rule.body){
 			ID groundBodyLiteralID = applySubstitutionToAtom(s, bodyLitID);
-			const OrdinaryAtom& groundBodyLiteral = reg->ogatoms.getByID(groundBodyLiteralID);
 
-			if (optimization){
+			if (groundBodyLiteralID.isBuiltinAtom() && optimization){
+				// at this point, built-in atoms are always true, otherwise the grounding terminates even earlier
+				continue;
+			}
+
+			if (groundBodyLiteralID.isOrdinaryAtom() && optimization){
+				const OrdinaryAtom& groundBodyLiteral = reg->ogatoms.getByID(groundBodyLiteralID);
+
 				// h :- a, not b         where a is known to be true
 				// optimization: skip satisfied literals
 				if (!groundBodyLiteralID.isNaf() && trueAtoms->getFact(groundBodyLiteralID.address)){
@@ -400,6 +406,17 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 
 bool InternalGrounder::match(ID atomID, ID patternAtomID, Substitution& s){
 
+	if (atomID.isOrdinaryAtom()){
+		return matchOrdinary(atomID, patternAtomID, s);
+	}else if(atomID.isBuiltinAtom()){
+		return matchBuiltin(atomID, patternAtomID, s);
+	}
+
+	assert(false);
+}
+
+bool InternalGrounder::matchOrdinary(ID atomID, ID patternAtomID, Substitution& s){
+
 	const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
 	const OrdinaryAtom& patternAtom = reg->ogatoms.getByID(patternAtomID);
 
@@ -414,8 +431,39 @@ bool InternalGrounder::match(ID atomID, ID patternAtomID, Substitution& s){
 	return true;
 }
 
+bool InternalGrounder::matchBuiltin(ID atomID, ID patternAtomID, Substitution& s){
+
+	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+	const BuiltinAtom& patternAtom = reg->batoms.getByID(patternAtomID);
+
+	// compute the unifying substitution
+	Substitution s2 = s;
+	for (unsigned int termIndex = 0; termIndex < atom.tuple.size(); ++termIndex){
+		if (atom.tuple[termIndex].isVariableTerm()){
+			if (s.find(atom.tuple[termIndex]) != s.end() && s[atom.tuple[termIndex]] != patternAtom.tuple[termIndex]) return false;
+			s[atom.tuple[termIndex]] = patternAtom.tuple[termIndex];
+		}else{
+			if (atom.tuple[termIndex] != patternAtom.tuple[termIndex]) return false;
+		}
+	}
+	s = s2;
+	return true;
+}
+
 int InternalGrounder::matchNextFromExtension(ID atomID, Substitution& s, int startSearchIndex){
 
+	if (atomID.isOrdinaryAtom()){
+		return matchNextFromExtensionOrdinary(atomID, s, startSearchIndex);
+	}else if (atomID.isBuiltinAtom()){
+		return matchNextFromExtensionBuiltin(atomID, s, startSearchIndex);
+	}
+
+	assert(false);
+}
+
+int InternalGrounder::matchNextFromExtensionOrdinary(ID atomID, Substitution& s, int startSearchIndex){
+
+	DBGLOG(DBG, "Macthing ordinary atom");
 	const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
 	std::vector<ID>& extension = derivableAtomsOfPredicate[atom.front()];
 
@@ -429,6 +477,139 @@ int InternalGrounder::matchNextFromExtension(ID atomID, Substitution& s, int sta
 	}
 	// no match
 	return -1;
+}
+
+int InternalGrounder::matchNextFromExtensionBuiltin(ID atomID, Substitution& s, int startSearchIndex){
+
+	DBGLOG(DBG, "Matching builtin atom");
+	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+
+	switch (atom.tuple[0].address){
+		case ID::TERM_BUILTIN_INT:
+			return matchNextFromExtensionBuiltinUnary(atomID, s, startSearchIndex);
+
+		case ID::TERM_BUILTIN_EQ:
+		case ID::TERM_BUILTIN_NE:
+		case ID::TERM_BUILTIN_LT:
+		case ID::TERM_BUILTIN_LE:
+		case ID::TERM_BUILTIN_GT:
+		case ID::TERM_BUILTIN_GE:
+			return matchNextFromExtensionBuiltinBinary(atomID, s, startSearchIndex);
+
+		case ID::TERM_BUILTIN_ADD:
+		case ID::TERM_BUILTIN_MUL:
+		case ID::TERM_BUILTIN_SUB:
+		case ID::TERM_BUILTIN_DIV:
+			return matchNextFromExtensionBuiltinTrinary(atomID, s, startSearchIndex);
+	}
+	assert(false);
+}
+
+int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID atomID, Substitution& s, int startSearchIndex){
+
+	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+	switch (atom.tuple[0].address){
+		case ID::TERM_BUILTIN_INT:
+			if (startSearchIndex > 100 /* max int */){
+				return -1;
+			}else{
+				if (atom.tuple[1].isVariableTerm()){
+					s[atom.tuple[1]] = ID::termFromInteger(startSearchIndex);
+					return startSearchIndex + 1;
+				}else if (atom.tuple[1].isConstantTerm()){
+					return -1;
+				}else{
+					assert(atom.tuple[1].isIntegerTerm());
+
+					if (startSearchIndex <= atom.tuple[1].address){
+						return atom.tuple[1].address + 1;
+					}
+				}
+			}
+	}
+	assert(false);
+}
+
+int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID atomID, Substitution& s, int startSearchIndex){
+
+	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+
+	if (startSearchIndex > 0) return -1;
+
+	bool cmp;
+	switch (atom.tuple[0].address){
+		case ID::TERM_BUILTIN_EQ: cmp = (atom.tuple[1].address == atom.tuple[2].address); break;
+		case ID::TERM_BUILTIN_NE: cmp = (atom.tuple[1].address != atom.tuple[2].address); break;
+		case ID::TERM_BUILTIN_LT: cmp = (atom.tuple[1].address < atom.tuple[2].address); break;
+		case ID::TERM_BUILTIN_LE: cmp = (atom.tuple[1].address <= atom.tuple[2].address); break;
+		case ID::TERM_BUILTIN_GT: cmp = (atom.tuple[1].address > atom.tuple[2].address); break;
+		case ID::TERM_BUILTIN_GE: cmp = (atom.tuple[1].address >= atom.tuple[2].address); break;
+	}
+	if (cmp) return 1;
+	else return -1;
+}
+
+int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID atomID, Substitution& s, int startSearchIndex){
+
+	if (startSearchIndex > (ctx.maxint + 1) * (ctx.maxint + 1)){
+		return -1;
+	}else{
+		const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+
+		int x = startSearchIndex / (ctx.maxint + 1);
+		int y = startSearchIndex % (ctx.maxint + 1);
+
+		if (atom.tuple[1].isConstantTerm() || atom.tuple[2].isConstantTerm() || atom.tuple[3].isConstantTerm()) return -1;
+
+/*
+		if (atom.tuple[1].isVariableTerm() && atom.tuple[2].isVariableTerm()){
+			if (atom.tuple[3].isVariableTerm()){
+				s[atom.tuple[1]] = ID::termFromInteger(x);
+				s[atom.tuple[2]] = ID::termFromInteger(y);
+				s[atom.tuple[3]] = ID::termFromInteger(x + y);
+				y++;
+				if (y > 100){
+					y = 0;
+					x++;
+				}
+				return x * 101 + y + 1;
+			}else{
+				while ((x + y != atom.tuple[3].address) && (x <= 100 && y <= 100)){
+					y++;
+					if (y > 100){
+						y = 0;
+						x++;
+					}
+				}
+				if (x <= 100 && y <= 100){
+					s[atom.tuple[1]] = ID::termFromInteger(x);
+					s[atom.tuple[2]] = ID::termFromInteger(y);
+					s[atom.tuple[3]] = ID::termFromInteger(x + y);
+					return x * 101 + y + 1;
+				}else{
+					return -1;
+				}
+			}
+		}
+*/
+
+		if (atom.tuple[1].isIntegerTerm() && atom.tuple[2].isIntegerTerm()){
+			if (x <= atom.tuple[1].address && y < atom.tuple[2].address){
+				x = atom.tuple[1].address;
+				y = atom.tuple[2].address;
+				int z = applyIntFunction(x_op_y_eq_ret, atom.tuple[0], x, y);
+				if (atom.tuple[3].isIntegerTerm()){
+					if (atom.tuple[3].address != z) return -1;
+					else return x * (ctx.maxint + 1) + y + 1;
+				}else{
+					s[atom.tuple[3]] = ID::termFromInteger(z);
+					return x * (ctx.maxint + 1) + y + 1;
+				}
+			}else{
+				return -1;
+			}
+		}
+	}
 }
 
 int InternalGrounder::backtrack(ID ruleID, Binder& binders, int currentIndex){
@@ -489,6 +670,17 @@ void InternalGrounder::addDerivableAtom(ID atomID, std::vector<ID>& groundRules,
 
 ID InternalGrounder::applySubstitutionToAtom(Substitution s, ID atomID){
 
+	if (atomID.isOrdinaryAtom()){
+		return applySubstitutionToOrdinaryAtom(s, atomID);
+	}
+
+	if (atomID.isBuiltinAtom()){
+		return applySubstitutionToBuiltinAtom(s, atomID);
+	}
+}
+
+ID InternalGrounder::applySubstitutionToOrdinaryAtom(Substitution s, ID atomID){
+
 	if (atomID.isOrdinaryGroundAtom()) return atomID;
 
 	// apply substitution to tuple of atom
@@ -527,6 +719,23 @@ ID InternalGrounder::applySubstitutionToAtom(Substitution s, ID atomID){
 	return ID(kind, id.address);
 }
 
+ID InternalGrounder::applySubstitutionToBuiltinAtom(Substitution s, ID atomID){
+
+	const BuiltinAtom& batom = reg->batoms.getByID(atomID);
+	Tuple t = batom.tuple;
+	bool isGround = true;
+	for (unsigned int termIndex = 0; termIndex < t.size(); ++termIndex){
+		if (s.find(t[termIndex]) != s.end()){
+			t[termIndex] = s[t[termIndex]];
+		}
+		if (t[termIndex].isVariableTerm()) isGround = false;
+	}
+
+	BuiltinAtom sbatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN, t);
+	// TODO: We have to check if sbatom is already present, otherwise the registry crashes!
+	return reg->batoms.storeAndGetID(sbatom);
+}
+
 std::string InternalGrounder::ruleToString(ID ruleID){
 	std::stringstream ss;
 	RawPrinter p(ss, reg);
@@ -536,8 +745,16 @@ std::string InternalGrounder::ruleToString(ID ruleID){
 
 ID InternalGrounder::getPredicateOfAtom(ID atomID){
 
-	const OrdinaryAtom& atom = (atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID));
-	return atom.front();
+	if (atomID.isOrdinaryAtom()){
+		const OrdinaryAtom& atom = (atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID));
+		return atom.front();
+	}
+	if (atomID.isBuiltinAtom()){
+		const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+		return atom.front();
+	}
+
+	return ID_FAIL;
 }
 
 bool InternalGrounder::isGroundRule(ID ruleID){
@@ -603,7 +820,39 @@ InternalGrounder::Binder InternalGrounder::getBinderOfRule(ID ruleID){
 	return binders;
 }
 
-InternalGrounder::InternalGrounder(ProgramCtx& ctx, ASPProgram& p) : inputprogram(p){
+int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
+
+	switch(ad){
+		case x_op_y_eq_ret:
+			switch (op.address){
+				case ID::TERM_BUILTIN_ADD: return x + y;
+				case ID::TERM_BUILTIN_MUL: DBGLOG(DBG, "!!!"); return x * y;
+				case ID::TERM_BUILTIN_SUB: return x - y;
+				case ID::TERM_BUILTIN_DIV: return x / y;
+				case ID::TERM_BUILTIN_MOD: return x % y;
+			}
+			break;
+		case x_op_ret_eq_y:
+			switch (op.address){
+				case ID::TERM_BUILTIN_ADD: return y - x;
+				case ID::TERM_BUILTIN_MUL: if (y % x == 0) return y / x;
+				case ID::TERM_BUILTIN_SUB: return x - y;
+				case ID::TERM_BUILTIN_DIV: if (x % y == 0) return x / y;
+			}
+			break;
+		case ret_op_y_eq_x:
+			switch (op.address){
+				case ID::TERM_BUILTIN_ADD: return x - y;
+				case ID::TERM_BUILTIN_MUL: if (x % y == 0) return x / y;
+				case ID::TERM_BUILTIN_SUB: return x + y;
+				case ID::TERM_BUILTIN_DIV: return x * y;
+			}
+			break;
+	}
+	return -1;
+}
+
+InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p) : inputprogram(p), ctx(c){
 
 	DBGLOG(DBG, "Starting grounding");
 

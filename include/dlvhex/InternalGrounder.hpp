@@ -49,6 +49,7 @@ protected:
 	typedef std::map<ID, int> Binder;
 
 	ASPProgram inputprogram;
+	ProgramCtx& ctx;
 	RegistryPtr reg;
 
 	// dependency graph
@@ -96,7 +97,14 @@ protected:
 	void buildGroundInstance(ID ruleID, Substitution s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms);
 
 	bool match(ID atom, ID patternAtom, Substitution& s);
+	bool matchOrdinary(ID atom, ID patternAtom, Substitution& s);
+	bool matchBuiltin(ID atom, ID patternAtom, Substitution& s);
 	int matchNextFromExtension(ID atom, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionOrdinary(ID atom, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltin(ID atom, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinUnary(ID atom, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinBinary(ID atom, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinTrinary(ID atom, Substitution& s, int startSearchIndex);
 	int backtrack(ID ruleID, Binder& binders, int currentIndex);
 
 	void setToTrue(ID atom);
@@ -105,6 +113,8 @@ protected:
 
 	// helper members
 	ID applySubstitutionToAtom(Substitution s, ID atomID);
+	ID applySubstitutionToOrdinaryAtom(Substitution s, ID atomID);
+	ID applySubstitutionToBuiltinAtom(Substitution s, ID atomID);
 	std::string ruleToString(ID ruleID);
 	ID getPredicateOfAtom(ID atomID);
 	bool isGroundRule(ID ruleID);
@@ -112,6 +122,13 @@ protected:
 	bool isAtomDerivable(ID atom);
 	int getStratumOfRule(ID ruleID);
 	Binder getBinderOfRule(ID ruleID);
+
+	enum AppDir{
+		x_op_y_eq_ret,
+		x_op_ret_eq_y,
+		ret_op_y_eq_x,
+	};
+	int applyIntFunction(AppDir ad, ID op, int x, int y);
 public:
 	InternalGrounder(ProgramCtx& ctx, ASPProgram& p);
 

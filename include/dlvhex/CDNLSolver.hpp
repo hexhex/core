@@ -25,7 +25,7 @@
  * @file   CDNLSolver.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Conflict-driven Nogood Learning Solver.
+ * @brief  SAT solver based on conflict-driven nogood learning.
  */
 
 #ifndef CDNLSOLVER_HPP_INCLUDED__09122011
