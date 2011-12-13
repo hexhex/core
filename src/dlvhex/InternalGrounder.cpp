@@ -500,6 +500,7 @@ int InternalGrounder::matchNextFromExtensionBuiltin(ID atomID, Substitution& s, 
 		case ID::TERM_BUILTIN_MUL:
 		case ID::TERM_BUILTIN_SUB:
 		case ID::TERM_BUILTIN_DIV:
+		case ID::TERM_BUILTIN_MOD:
 			return matchNextFromExtensionBuiltinTrinary(atomID, s, startSearchIndex);
 	}
 	assert(false);
@@ -510,7 +511,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID atomID, Substitution
 	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
 	switch (atom.tuple[0].address){
 		case ID::TERM_BUILTIN_INT:
-			if (startSearchIndex > 100 /* max int */){
+			if (startSearchIndex > ctx.maxint /* max int */){
 				return -1;
 			}else{
 				if (atom.tuple[1].isVariableTerm()){

@@ -226,7 +226,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				// cheap exchange -> thisret1 will then be free'd
 				dst->getStorage().swap(model->getStorage());
 				DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
-				DBGLOG(DBG, "Statistics:" << std::endl << igas.getStatistics());
+				DBGLOG(DBG, "Final Statistics:" << std::endl << igas.getStatistics());
 			}
 
 			// check whether new interpretation is superset of old one

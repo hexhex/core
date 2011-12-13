@@ -549,7 +549,7 @@ std::string CDNLSolver::getStatistics(){
 	std::stringstream ss;
 	ss	<< "Assignments: " << cntAssignments << std::endl
 		<< "Backtracks: " << cntBacktracks << std::endl
-		<< "Resolving steps: " << cntResSteps << std::endl
+		<< "Resolution steps: " << cntResSteps << std::endl
 		<< "Conflicts: " << cntDetectedConflicts;
 	return ss.str();
 #else

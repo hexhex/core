@@ -63,7 +63,7 @@ protected:
   // members
 public:
   GenuineWellfoundedModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuineWellfoundedModelGenerator() {}
+  virtual ~GenuineWellfoundedModelGenerator() { }
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

@@ -78,7 +78,7 @@ protected:
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuineGuessAndCheckModelGenerator() {}
+  virtual ~GenuineGuessAndCheckModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << igas->getStatistics()); }
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
@@ -140,7 +140,7 @@ public:
   GenuineGuessAndCheckModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~GenuineGuessAndCheckModelGeneratorFactory() {}
+  virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
 
   virtual ModelGeneratorPtr createModelGenerator(
     InterpretationConstPtr input)
