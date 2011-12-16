@@ -122,6 +122,8 @@ protected:
 	bool isAtomDerivable(ID atom);
 	int getStratumOfRule(ID ruleID);
 	Binder getBinderOfRule(ID ruleID);
+	int getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables);
+	std::set<ID> getDepVars(ID ruleID, int litIndex);
 
 	enum AppDir{
 		x_op_y_eq_ret,

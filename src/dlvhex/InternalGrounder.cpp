@@ -244,6 +244,21 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	// compute binders of the variables in the rule
 	Binder binders = getBinderOfRule(ruleID);
 
+	// compute output variables of this rule
+	// this is the set of all variables which occur in literals over non-resolved predicates
+	std::set<ID> outputVars;
+	BOOST_FOREACH (ID headLitIndex, rule.head){
+		if (!isPredicateResolved(getPredicateOfAtom(headLitIndex))){
+			reg->getVariablesInID(headLitIndex, outputVars);	
+		}
+	}
+	BOOST_FOREACH (ID bodyLitIndex, rule.body){
+		if (!isPredicateResolved(getPredicateOfAtom(bodyLitIndex))){
+			reg->getVariablesInID(bodyLitIndex, outputVars);	
+		}
+	}
+
+	int csb = -1;
 	if (rule.body.size() == 0){
 		// grounding of choice rules
 		buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
@@ -273,11 +288,45 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 				currentSubstitution = newSubst;
 
 				DBGLOG(DBG, "Finding next match at position " << bodyLitIndex << " in extension after index " << searchPos[bodyLitIndex]);
+				int startSearchPos = searchPos[bodyLitIndex];
 				searchPos[bodyLitIndex] = matchNextFromExtension(applySubstitutionToAtom(currentSubstitution, bodyAtomID), currentSubstitution, searchPos[bodyLitIndex]);
 				DBGLOG(DBG, "Search result: " << searchPos[bodyLitIndex]);
 
 				// match?
 				if (searchPos[bodyLitIndex] == -1){
+
+/*
+					int btIndex = -1;
+					if (startSearchPos == 0){
+						// failure on first match
+						DBGLOG(DBG, "Failure on first match at position " << bodyLitIndex);
+						std::set<ID> vars;
+						reg->getVariablesInID(*it, vars);
+						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
+						if (btIndex < csb) csb = btIndex;
+					}else{
+						// failure on next match
+						DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
+
+						if (bodyLitIndex == csb){
+							csb = getClosestBinder(ruleID, bodyLitIndex + 1, outputVars);
+						}
+
+						std::set<ID> vars = getDepVars(ruleID, bodyLitIndex);
+						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
+DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
+						if (btIndex != -1 && csb > btIndex) btIndex = csb;
+					}
+					if (btIndex == -1){
+						DBGLOG(DBG, "No more matches");
+						return;
+					}else{
+						DBGLOG(DBG, "Backtracking to literal " << btIndex);
+						it = rule.body.begin() + btIndex;
+					}
+*/
+
+
 
 					// backtrack
 					int btIndex = backtrack(ruleID, binders, bodyLitIndex);
@@ -288,6 +337,8 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						DBGLOG(DBG, "Backtracking to literal " << btIndex);
 						it = rule.body.begin() + btIndex;
 					}
+
+
 					continue;
 				}
 			}
@@ -297,6 +348,17 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 			if (it == rule.body.end() - 1){
 				DBGLOG(DBG, "Substitution complete");
 				buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
+/*
+				int btIndex = getClosestBinder(ruleID, bodyLitIndex + 1, outputVars);
+				if (btIndex == -1){
+					DBGLOG(DBG, "No more matches after solution found");
+					return;
+				}else{
+					DBGLOG(DBG, "Backtracking to literal " << btIndex << " after solution found");
+					csb = btIndex;
+					it = rule.body.begin() + btIndex;
+				}
+*/
 
 				// go back to last non-naf body literal
 				while(bodyAtomID.isNaf()){
@@ -304,6 +366,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 					--it;
 					bodyAtomID = *it;
 				}
+
 			}else{
 				// go to next atom in rule body
 				++it;
@@ -877,6 +940,49 @@ InternalGrounder::Binder InternalGrounder::getBinderOfRule(ID ruleID){
 		++litIdx;
 	}
 	return binders;
+}
+
+int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables){
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+	int cb = -1;
+	for (int i = 0; i < litIndex; ++i){
+		// is this literal a binder of some variable?
+		if (!rule.body[i].isNaf()){
+			std::set<ID> varsInLit;
+			reg->getVariablesInID(rule.body[i], varsInLit);
+			BOOST_FOREACH(ID v, varsInLit){
+				if (variables.count(v) > 0){
+					cb = i;
+					break;
+				}
+			}
+		}
+	}
+	return cb;
+}
+
+std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+	std::set<ID> vars;
+	reg->getVariablesInID(rule.body[litIndex], vars);
+	for (int i = litIndex + 1; i < rule.body.size(); ++i){
+		std::set<ID> v2;
+		reg->getVariablesInID(rule.body[i], v2);
+		// check if v2 contains some variable in vars
+		bool depending = false;
+		BOOST_FOREACH (ID v, v2){
+			if (vars.count(v) > 0){
+				depending = true;
+				break;
+			}
+		}
+		if (depending){
+			reg->getVariablesInID(rule.body[i], vars);
+		}
+	}
+	return vars;
 }
 
 int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
