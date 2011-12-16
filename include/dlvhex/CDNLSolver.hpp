@@ -42,6 +42,7 @@
 #include "Set.hpp"
 #include "dlvhex/Nogood.hpp"
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -55,8 +56,8 @@ protected:
 	// solver state information
 	Interpretation::Ptr interpretation;
 	bm::bvector<> factWasSet;
-	std::map<IDAddress, int> decisionlevel;
-	std::map<IDAddress, int> cause;
+	boost::unordered_map<IDAddress, int> decisionlevel;
+	boost::unordered_map<IDAddress, int> cause;
 	int currentDL;
 	OrderedSet<IDAddress> assignmentOrder;
 
@@ -64,16 +65,16 @@ protected:
 	std::map<int, ID> decisionLiteralOfDecisionLevel;
 
 	// watching data structures for efficient unit propagation
-	std::map<ID, Set<int> > nogoodsOfLiteral;
-	std::map<ID, Set<int> > watchingNogoodsOfLiteral;
+	boost::unordered_map<ID, Set<int> > nogoodsOfLiteral;
+	boost::unordered_map<ID, Set<int> > watchingNogoodsOfLiteral;
 	std::vector<Set<ID> > watchedLiteralsOfNogood;
 	Set<int> unitNogoods;
 	Set<int> contradictoryNogoods;
 
 	// variable selection heuristics
 	int conflicts;
-	std::map<IDAddress, int> varCounterPos;
-	std::map<IDAddress, int> varCounterNeg;
+	boost::unordered_map<IDAddress, int> varCounterPos;
+	boost::unordered_map<IDAddress, int> varCounterNeg;
 	std::vector<int> recentConflicts;
 
 	// statistics

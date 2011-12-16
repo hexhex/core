@@ -368,9 +368,11 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 
 	// if the fact is a falsified body literal, all atoms which depend on it become unfounded
 	if (fact.isNaf()){
-		BOOST_FOREACH (IDAddress dependingAtom, foundedAtomsOfBodyAtom[fact.address]){
-			DBGLOGD(DBG, "" << dependingAtom << " is initially unfounded because the body of its source rule became false");
-			newlyUnfoundedAtoms.insert(dependingAtom);
+		if (foundedAtomsOfBodyAtom.find(fact.address) != foundedAtomsOfBodyAtom.end()){
+			BOOST_FOREACH (IDAddress dependingAtom, foundedAtomsOfBodyAtom[fact.address]){
+				DBGLOGD(DBG, "" << dependingAtom << " is initially unfounded because the body of its source rule became false");
+				newlyUnfoundedAtoms.insert(dependingAtom);
+			}
 		}
 	}
 

@@ -369,44 +369,48 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 		changed = false;
 
 		// go through all nogoods which watch this literal negatively and inactivate them
-		BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[negation(lit)]){
-			inactivateNogood(nogoodNr);
+		if (watchingNogoodsOfLiteral.find(negation(lit)) != watchingNogoodsOfLiteral.end()){
+			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[negation(lit)]){
+				inactivateNogood(nogoodNr);
+			}
 		}
 
 		// go through all nogoods which watch this literal positively and find a new watched literal
-		BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[lit]){
-			const Nogood& ng = nogoodset.nogoods[nogoodNr];
+		if (watchingNogoodsOfLiteral.find(lit) != watchingNogoodsOfLiteral.end()){
+			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[lit]){
+				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
-			// stop watching lit
-			stopWatching(nogoodNr, lit);
+				// stop watching lit
+				stopWatching(nogoodNr, lit);
 
-			// search for a new literal which is
-			// 1. not assigned yet
-			// 2. currently not watched
-			bool inactive = false;
-			BOOST_FOREACH (ID nglit, ng){
-				if ((watchedLiteralsOfNogood[nogoodNr].size() < 2) && !assigned(nglit.address) && (watchedLiteralsOfNogood[nogoodNr].count(nglit) == 0)){
-					// watch it
-					startWatching(nogoodNr, nglit);
-				}else if (falsified(nglit)){
-					DBGLOGD(DBG, "Nogood " << nogoodNr << " is now inactive");
-					inactivateNogood(nogoodNr);
-					inactive = true;
-					break;
+				// search for a new literal which is
+				// 1. not assigned yet
+				// 2. currently not watched
+				bool inactive = false;
+				BOOST_FOREACH (ID nglit, ng){
+					if ((watchedLiteralsOfNogood[nogoodNr].size() < 2) && !assigned(nglit.address) && (watchedLiteralsOfNogood[nogoodNr].count(nglit) == 0)){
+						// watch it
+						startWatching(nogoodNr, nglit);
+					}else if (falsified(nglit)){
+						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now inactive");
+						inactivateNogood(nogoodNr);
+						inactive = true;
+						break;
+					}
 				}
-			}
-			// nogood might have become unit or contradictory
-			if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
-				DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
-				unitNogoods.insert(nogoodNr);
-			}else if (!inactive && watchedLiteralsOfNogood[nogoodNr].size() == 0){
-				DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
-				contradictoryNogoods.insert(nogoodNr);
-				unitNogoods.erase(nogoodNr);
-			}
+				// nogood might have become unit or contradictory
+				if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
+					DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
+					unitNogoods.insert(nogoodNr);
+				}else if (!inactive && watchedLiteralsOfNogood[nogoodNr].size() == 0){
+					DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
+					contradictoryNogoods.insert(nogoodNr);
+					unitNogoods.erase(nogoodNr);
+				}
 
-			changed = true;
-			break;
+				changed = true;
+				break;
+			}
 		}
 	}while(changed);
 }
@@ -428,59 +432,61 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 	positiveAndNegativeLiteral.insert(literal);
 	positiveAndNegativeLiteral.insert(negation(literal));
 	BOOST_FOREACH (ID lit, positiveAndNegativeLiteral){
-		BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
+		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
+			BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
 
-			const Nogood& ng = nogoodset.nogoods[nogoodNr];
+				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
-			bool stillInactive = false;
-			Set<ID> watched;
+				bool stillInactive = false;
+				Set<ID> watched;
 
-			// check the number of currently watched literals
-			int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
-			switch(watchedNum){
-				case 0:		// nogood was inactive or contradictory before
-					// nogood can:
-					// 1. still be inactive
-					// 2. have one unassigned literal
-					// 3. have multiple unassigned literals
-					// it cannot be contraditory anymore because at least one literal is unassigned!
-					BOOST_FOREACH (ID lit, ng){
-						if (falsified(lit)){
-							stillInactive = true;
-							break;
+				// check the number of currently watched literals
+				int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
+				switch(watchedNum){
+					case 0:		// nogood was inactive or contradictory before
+						// nogood can:
+						// 1. still be inactive
+						// 2. have one unassigned literal
+						// 3. have multiple unassigned literals
+						// it cannot be contraditory anymore because at least one literal is unassigned!
+						BOOST_FOREACH (ID lit, ng){
+							if (falsified(lit)){
+								stillInactive = true;
+								break;
+							}
+							// collect up to 2 watched literals
+							if (!assigned(lit.address) && watched.size() < 2){
+								watched.insert(lit);
+							}
 						}
-						// collect up to 2 watched literals
-						if (!assigned(lit.address) && watched.size() < 2){
-							watched.insert(lit);
-						}
-					}
-					if (!stillInactive){
-						DBGLOGD(DBG, "Nogood " << nogoodNr << " is reactivated");
-						BOOST_FOREACH (ID lit, watched){
-							startWatching(nogoodNr, lit);
-						}
+						if (!stillInactive){
+							DBGLOGD(DBG, "Nogood " << nogoodNr << " is reactivated");
+							BOOST_FOREACH (ID lit, watched){
+								startWatching(nogoodNr, lit);
+							}
 
-						if (watched.size() == 1){
-							DBGLOGD(DBG, "Nogood " << nogoodNr << " becomes unit");
-							unitNogoods.insert(nogoodNr);
+							if (watched.size() == 1){
+								DBGLOGD(DBG, "Nogood " << nogoodNr << " becomes unit");
+								unitNogoods.insert(nogoodNr);
+							}
+
+							// nogood is (for sure) not contradictory anymore
+							contradictoryNogoods.erase(nogoodNr);
 						}
+						break;
+					case 1:		// nogood was unit before
+						// watch litadr
+						startWatching(nogoodNr, literal);
 
-						// nogood is (for sure) not contradictory anymore
-						contradictoryNogoods.erase(nogoodNr);
-					}
-					break;
-				case 1:		// nogood was unit before
-					// watch litadr
-					startWatching(nogoodNr, literal);
-
-					// nogood is not unit anymore
-					DBGLOGD(DBG, "Nogood " << nogoodNr << " is not unit anymore");
-					unitNogoods.erase(nogoodNr);
-					break;
-				default:	// nogood has more than one watched literal
-					// number of unassigned literals has possibly even increased
-					// nothing to do
-					break;
+						// nogood is not unit anymore
+						DBGLOGD(DBG, "Nogood " << nogoodNr << " is not unit anymore");
+						unitNogoods.erase(nogoodNr);
+						break;
+					default:	// nogood has more than one watched literal
+						// number of unassigned literals has possibly even increased
+						// nothing to do
+						break;
+				}
 			}
 		}
 	}
