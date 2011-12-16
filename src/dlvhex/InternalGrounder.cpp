@@ -615,17 +615,75 @@ int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID atomID, Substituti
 
 int InternalGrounder::backtrack(ID ruleID, Binder& binders, int currentIndex){
 
+	// TODO: Jumping to the maximum binder of variables in the current literal does not work!
+	// counter example:
+
+/*
+kw(subm6,"#WSMO").
+pc("#mkif").
+
+dloverlapsWith("#WSMO","#OWL-S").
+dloverlapsWith("#WSMO","#SWSF").
+
+dlisAuthorOf("#mkif","#pa14").
+dlkeyword("#pa14","#SWSF").
+
+cand(X,P) :- kw(P,K), pc(X), dloverlapsWith(K,K1), dlisAuthorOf(X,P1), dlkeyword(P1,K1).
+*/
+
+	// for K1="#OWL-S", X="#mkif", P1="#pa14", the final match of dlkeyword(P1,K1) fails
+	// the algorithm backtracks to dlisAuthorOf(X,P1) and checks for another match, which fails as well
+	// it then jumps back to the maximum binder of X and P1, which is pc(X)
+	// note that dloverlapsWith(K,K1) is skipped!!
+	// however, another match (dloverlapsWith("#WSMO","#SWSF")) would lead to a complete match!
+
+	// output:
+/*
+ 1 Undoing variable assignments before position 4
+ 1 Finding next match at position 4 in extension after index 0
+ 1 stored oatom OrdinaryAtom(0,'dlkeyword("#pa14","#OWL-S")',[ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   6 term constant)]) which got ID(0x00000000,   6 atom ordinary_ground)
+ 1 Macthing ordinary atom
+ 1 unifiesWith ENTRY
+ 1 unifiesWith starting with result1 tuple [ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   6 term constant)]
+ 1 unifiesWith starting with result2 tuple [ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   7 term constant)]
+ 1 unifiesWith at position 0: checking ID(0x10000000,  10 term constant) vs ID(0x10000000,  10 term constant)
+ 1 unifiesWith at position 1: checking ID(0x10000000,   9 term constant) vs ID(0x10000000,   9 term constant)
+ 1 unifiesWith at position 2: checking ID(0x10000000,   6 term constant) vs ID(0x10000000,   7 term constant)
+ 1 unifiesWith EXIT
+ 1 Search result: -1
+ 1 Backtracking to literal 3
+ 1 Undoing variable assignments before position 3
+ 1 Finding next match at position 3 in extension after index 1
+ 1 Macthing ordinary atom
+ 1 Search result: -1
+ 1 Backtracking to literal 1
+ 1 Undoing variable assignments before position 1
+ 1 Finding next match at position 1 in extension after index 1
+ 1 Macthing ordinary atom
+ 1 Search result: -1
+ 1 Backtracking to literal 0
+ 1 Undoing variable assignments before position 0
+ 1 Finding next match at position 0 in extension after index 1
+ 1 Macthing ordinary atom
+ 1 Search result: -1
+ 1 No more matches
+ 1 Processing cyclically depending rules
+ 1 Produced 0 ground rules
+*/
+
+
+
 	// backtrack to the maximum binder of variables in the current literal, which is not the current literal itself
 	const Rule& rule = reg->rules.getByID(ruleID);
-	std::set<ID> currentVars;
-	reg->getVariablesInID(rule.body[currentIndex], currentVars);
+//	std::set<ID> currentVars;
+//	reg->getVariablesInID(rule.body[currentIndex], currentVars);
 
 	int bt = -1;
-	BOOST_FOREACH (ID var, currentVars){
-		if (binders[var] > bt && binders[var] < currentIndex){
-			bt = binders[var];
-		}
-	}
+//	BOOST_FOREACH (ID var, currentVars){
+//		if (binders[var] > bt && binders[var] < currentIndex){
+//			bt = binders[var];
+//		}
+//	}
 
 	// no binder: backtrack to last positive literal
 	if (bt == -1){
