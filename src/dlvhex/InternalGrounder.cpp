@@ -95,7 +95,7 @@ void InternalGrounder::computeStrata(){
 
 	// translate into real map
 	depSCC = std::vector<std::set<ID> >(num);
-	int nodeNr = 0;
+	Node nodeNr = 0;
 	BOOST_FOREACH (int componentOfNode, componentMap){
 		depSCC[componentOfNode].insert(depGraph[nodeNr]);
 		nodeNr++;
@@ -121,8 +121,11 @@ void InternalGrounder::computeStrata(){
 
 	// create a graph modeling the dependencies between the predicate components
 	// one node for each component
+	std::map<int, SCCDepGraph::vertex_descriptor> compToVertex;
+	std::map<SCCDepGraph::vertex_descriptor, int> vertexToComp;
 	for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){
-		boost::add_vertex(compNr, compDependencies);
+		compToVertex[compNr] = boost::add_vertex(compNr, compDependencies);
+		vertexToComp[compToVertex[compNr]] = compNr;
 	}
 	// go through all edges of the dep graph
 	std::pair<DepGraph::edge_iterator, DepGraph::edge_iterator> edgeIteratorRange = boost::edges(depGraph);
@@ -132,15 +135,16 @@ void InternalGrounder::computeStrata(){
 		int targetIdx = componentMap[boost::target(*edgeIterator, depGraph)];
 		if (sourceIdx != targetIdx){
 			DBGLOG(DBG, "Component " << sourceIdx << " depends on " << targetIdx);
-			boost::add_edge(sourceIdx, targetIdx, compDependencies);
+			boost::add_edge(compToVertex[sourceIdx], compToVertex[targetIdx], compDependencies);
 		}
 	}
 
 	// compute topological ordering of components
-	std::vector<int> compOrdering;
+	std::vector<SCCDepGraph::vertex_descriptor> compOrdering;
 	topological_sort(compDependencies, std::back_inserter(compOrdering));
 	DBGLOG(DBG, "Processing components in the following ordering:");
-	BOOST_FOREACH (int comp, compOrdering){
+	BOOST_FOREACH (SCCDepGraph::vertex_descriptor compVertex, compOrdering){
+		int comp = vertexToComp[compVertex];
 		DBGLOG(DBG, "Component " << comp << ", predicates are: ");
 		std::set<ID> stratum;
 		BOOST_FOREACH (ID pred, depSCC[comp]){

@@ -229,7 +229,7 @@ void InternalGroundASPSolver::computeStronglyConnectedComponents(){
 
 	// translate into real map
 	depSCC = std::vector<Set<IDAddress> >(num);
-	int nodeNr = 0;
+	Node nodeNr = 0;
 	BOOST_FOREACH (int componentOfNode, componentMap){
 		depSCC[componentOfNode].insert(depGraph[nodeNr]);
 		componentOfAtom[depGraph[nodeNr]] = componentOfNode;
