@@ -235,7 +235,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 }
 
 void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms){
-
+//#define OPTIMIZED
 	Substitution currentSubstitution = s;
 	const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -243,19 +243,10 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 
 	// compute binders of the variables in the rule
 	Binder binders = getBinderOfRule(ruleID);
-
-	// compute output variables of this rule
-	// this is the set of all variables which occur in literals over non-resolved predicates
-	std::set<ID> outputVars;
-	BOOST_FOREACH (ID headLitIndex, rule.head){
-		if (!isPredicateResolved(getPredicateOfAtom(headLitIndex))){
-			reg->getVariablesInID(headLitIndex, outputVars);	
-		}
-	}
-	BOOST_FOREACH (ID bodyLitIndex, rule.body){
-		if (!isPredicateResolved(getPredicateOfAtom(bodyLitIndex))){
-			reg->getVariablesInID(bodyLitIndex, outputVars);	
-		}
+	std::set<ID> outputVars = getOutputVariables(ruleID);
+	std::vector<std::set<ID> > depVars;
+	for (int i = 0; i < rule.body.size(); ++i){
+		depVars.push_back(getDepVars(ruleID, i));
 	}
 
 	int csb = -1;
@@ -295,7 +286,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 				// match?
 				if (searchPos[bodyLitIndex] == -1){
 
-/*
+#ifdef OPTIMIZED
 					int btIndex = -1;
 					if (startSearchPos == 0){
 						// failure on first match
@@ -303,19 +294,24 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						std::set<ID> vars;
 						reg->getVariablesInID(*it, vars);
 						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
-						if (btIndex < csb) csb = btIndex;
+						if (depends(ruleID, btIndex, csb)) csb = btIndex;
 					}else{
 						// failure on next match
 						DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
 
 						if (bodyLitIndex == csb){
-							csb = getClosestBinder(ruleID, bodyLitIndex + 1, outputVars);
+							csb = getClosestBinder(ruleID, bodyLitIndex, outputVars);
 						}
 
-						std::set<ID> vars = getDepVars(ruleID, bodyLitIndex);
-						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
-DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
-						if (btIndex != -1 && csb > btIndex) btIndex = csb;
+						btIndex = getClosestBinder(ruleID, bodyLitIndex, depVars[bodyLitIndex]);
+DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex << ", csb: " << csb);
+
+						if (depends(ruleID, btIndex, csb)){
+//						if (btIndex < csb){
+							btIndex = csb;
+						}
+
+//						if (btIndex != -1 && csb > btIndex) btIndex = csb;
 					}
 					if (btIndex == -1){
 						DBGLOG(DBG, "No more matches");
@@ -324,7 +320,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
 						DBGLOG(DBG, "Backtracking to literal " << btIndex);
 						it = rule.body.begin() + btIndex;
 					}
-*/
+#else
 
 
 
@@ -337,7 +333,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
 						DBGLOG(DBG, "Backtracking to literal " << btIndex);
 						it = rule.body.begin() + btIndex;
 					}
-
+#endif
 
 					continue;
 				}
@@ -348,7 +344,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
 			if (it == rule.body.end() - 1){
 				DBGLOG(DBG, "Substitution complete");
 				buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
-/*
+#ifdef OPTIMIZED
 				int btIndex = getClosestBinder(ruleID, bodyLitIndex + 1, outputVars);
 				if (btIndex == -1){
 					DBGLOG(DBG, "No more matches after solution found");
@@ -358,7 +354,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
 					csb = btIndex;
 					it = rule.body.begin() + btIndex;
 				}
-*/
+#else
 
 				// go back to last non-naf body literal
 				while(bodyAtomID.isNaf()){
@@ -366,7 +362,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex);
 					--it;
 					bodyAtomID = *it;
 				}
-
+#endif
 			}else{
 				// go to next atom in rule body
 				++it;
@@ -905,15 +901,36 @@ bool InternalGrounder::isAtomDerivable(ID atom){
 int InternalGrounder::getStratumOfRule(ID ruleID){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
+	int stratum = 0;
 
 	// constraints are grounded at highest level
-	if (rule.head.size() == 0){
-		DBGLOG(DBG, "Stratum of constraint " << ruleToString(ruleID) << " is " << (predicatesOfStratum.size() - 1));
-		return predicatesOfStratum.size() - 1;
-	}
+//	if (rule.head.size() == 0){
+
+//		stratum = predicatesOfStratum.size() - 1;
+
+		BOOST_FOREACH (ID lit, rule.body){
+			int s;
+			if (lit.isOrdinaryAtom()){
+				const OrdinaryAtom& atom = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(lit) : reg->onatoms.getByID(lit));
+				s = stratumOfPredicate[atom.front()];
+			}else{
+				s = 0;
+			}
+			stratum = (s > stratum ? s : stratum);
+		}
+
+//		DBGLOG(DBG, "Stratum of constraint " << ruleToString(ruleID) << " is " << stratum);//(predicatesOfStratum.size() - 1));
+//		return stratum;
+
+
+
+
+
+//		return predicatesOfStratum.size() - 1;
+//	}
 
 	// ordinary rules: compute the highest stratum of all head atoms
-	int stratum = 0;
+
 	BOOST_FOREACH (ID headLit, rule.head){
 		const OrdinaryAtom& atom = (headLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(headLit) : reg->onatoms.getByID(headLit));
 		int s = stratumOfPredicate[atom.front()];
@@ -983,6 +1000,40 @@ std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
 		}
 	}
 	return vars;
+}
+
+std::set<ID> InternalGrounder::getOutputVariables(ID ruleID){
+
+	// compute output variables of this rule
+	// this is the set of all variables which occur in literals over non-resolved predicates
+	const Rule& rule = reg->rules.getByID(ruleID);
+	std::set<ID> outputVars;
+	BOOST_FOREACH (ID headLitIndex, rule.head){
+		if (!isPredicateResolved(getPredicateOfAtom(headLitIndex))){
+			reg->getVariablesInID(headLitIndex, outputVars);	
+		}
+	}
+	BOOST_FOREACH (ID bodyLitIndex, rule.body){
+		if (!isPredicateResolved(getPredicateOfAtom(bodyLitIndex))){
+			reg->getVariablesInID(bodyLitIndex, outputVars);	
+		}
+	}
+	return outputVars;
+}
+
+bool InternalGrounder::depends(ID ruleID, int lit1, int lit2){
+
+	if (lit1 == -1 || lit2 == -1) return false;
+	if (lit1 > lit2) return false;
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+	std::set<ID> depVars = getDepVars(ruleID, lit1);
+	std::set<ID> vars2;
+	reg->getVariablesInID(rule.body[lit2], vars2);
+	BOOST_FOREACH (ID v2, vars2){
+		if (depVars.count(v2) > 0) return true;
+	}
+	return false;
 }
 
 int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){

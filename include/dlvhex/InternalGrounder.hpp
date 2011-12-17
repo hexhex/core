@@ -124,6 +124,8 @@ protected:
 	Binder getBinderOfRule(ID ruleID);
 	int getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables);
 	std::set<ID> getDepVars(ID ruleID, int litIndex);
+	std::set<ID> getOutputVariables(ID ruleID);
+	bool depends(ID ruleID, int lit1, int lit2);
 
 	enum AppDir{
 		x_op_y_eq_ret,
