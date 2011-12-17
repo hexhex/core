@@ -235,7 +235,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 }
 
 void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms){
-//#define OPTIMIZED
+#define OPTIMIZED
 	Substitution currentSubstitution = s;
 	const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -244,12 +244,15 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	// compute binders of the variables in the rule
 	Binder binders = getBinderOfRule(ruleID);
 	std::set<ID> outputVars = getOutputVariables(ruleID);
-	std::vector<std::set<ID> > depVars;
+//	std::vector<std::set<ID> > depVars;
+	std::vector<std::set<ID> > freeVars;
 	for (int i = 0; i < rule.body.size(); ++i){
-		depVars.push_back(getDepVars(ruleID, i));
+//		depVars.push_back(getDepVars(ruleID, i));
+		freeVars.push_back(getFreeVars(ruleID, i));
 	}
+	std::set<ID> failureVars;
 
-	int csb = -1;
+	int csb = -1;	// barrier for backjumping
 	if (rule.body.size() == 0){
 		// grounding of choice rules
 		buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
@@ -287,6 +290,9 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 				if (searchPos[bodyLitIndex] == -1){
 
 #ifdef OPTIMIZED
+					// the conflict in this literal is due to any of the variables occurring in it
+					reg->getVariablesInID(*it, failureVars);
+
 					int btIndex = -1;
 					if (startSearchPos == 0){
 						// failure on first match
@@ -294,24 +300,19 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						std::set<ID> vars;
 						reg->getVariablesInID(*it, vars);
 						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
-						if (depends(ruleID, btIndex, csb)) csb = btIndex;
+//						if (depends(ruleID, btIndex, csb)){
+//							csb = btIndex;
+//						}
 					}else{
 						// failure on next match
 						DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
 
-						if (bodyLitIndex == csb){
-							csb = getClosestBinder(ruleID, bodyLitIndex, outputVars);
+						btIndex = getClosestBinder(ruleID, bodyLitIndex, failureVars);
+						btIndex = csb > btIndex ? csb : btIndex;
+
+						if (btIndex == csb){
+							csb = getClosestBinder(ruleID, btIndex, outputVars);
 						}
-
-						btIndex = getClosestBinder(ruleID, bodyLitIndex, depVars[bodyLitIndex]);
-DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex << ", csb: " << csb);
-
-						if (depends(ruleID, btIndex, csb)){
-//						if (btIndex < csb){
-							btIndex = csb;
-						}
-
-//						if (btIndex != -1 && csb > btIndex) btIndex = csb;
 					}
 					if (btIndex == -1){
 						DBGLOG(DBG, "No more matches");
@@ -321,9 +322,6 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex << ", csb: 
 						it = rule.body.begin() + btIndex;
 					}
 #else
-
-
-
 					// backtrack
 					int btIndex = backtrack(ruleID, binders, bodyLitIndex);
 					if (btIndex == -1){
@@ -336,6 +334,12 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex << ", csb: 
 #endif
 
 					continue;
+				}else{
+					// variables which occur in the current literals are now no failure variables anymore
+					BOOST_FOREACH (ID v, freeVars[bodyLitIndex]){
+						failureVars.erase(v);
+					}
+//					failureVars.erase(freeVars[bodyLitIndex].begin(), freeVars[bodyLitIndex].end());
 				}
 			}
 
@@ -351,7 +355,7 @@ DBGLOG(DBG, "Closest binder wrt " << bodyLitIndex << ": " << btIndex << ", csb: 
 					return;
 				}else{
 					DBGLOG(DBG, "Backtracking to literal " << btIndex << " after solution found");
-					csb = btIndex;
+					csb = getClosestBinder(ruleID, btIndex, outputVars);
 					it = rule.body.begin() + btIndex;
 				}
 #else
@@ -959,7 +963,7 @@ InternalGrounder::Binder InternalGrounder::getBinderOfRule(ID ruleID){
 	return binders;
 }
 
-int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables){
+int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables /*do not make this a reference because it is used as working copy!*/ ){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
 	int cb = -1;
@@ -971,7 +975,7 @@ int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> var
 			BOOST_FOREACH(ID v, varsInLit){
 				if (variables.count(v) > 0){
 					cb = i;
-					break;
+					variables.erase(v);	// make sure that only the first literal with v is recognized as binder of v
 				}
 			}
 		}
@@ -979,6 +983,7 @@ int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> var
 	return cb;
 }
 
+/*
 std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
@@ -997,6 +1002,23 @@ std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
 		}
 		if (depending){
 			reg->getVariablesInID(rule.body[i], vars);
+		}
+	}
+	return vars;
+}
+*/
+
+std::set<ID> InternalGrounder::getFreeVars(ID ruleID, int litIndex){
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+	std::set<ID> vars;
+	reg->getVariablesInID(rule.body[litIndex], vars);
+	for (int i = 0; i < litIndex; ++i){
+		std::set<ID> v2;
+		reg->getVariablesInID(rule.body[i], v2);
+		// check if v2 contains some variable in vars
+		BOOST_FOREACH (ID v, v2){
+			vars.erase(v);
 		}
 	}
 	return vars;
@@ -1021,6 +1043,7 @@ std::set<ID> InternalGrounder::getOutputVariables(ID ruleID){
 	return outputVars;
 }
 
+/*
 bool InternalGrounder::depends(ID ruleID, int lit1, int lit2){
 
 	if (lit1 == -1 || lit2 == -1) return false;
@@ -1035,6 +1058,7 @@ bool InternalGrounder::depends(ID ruleID, int lit1, int lit2){
 	}
 	return false;
 }
+*/
 
 int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 
