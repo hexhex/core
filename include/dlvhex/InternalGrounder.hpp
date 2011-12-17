@@ -121,12 +121,15 @@ protected:
 	bool isPredicateResolved(ID pred);
 	bool isAtomDerivable(ID atom);
 	int getStratumOfRule(ID ruleID);
-	Binder getBinderOfRule(ID ruleID);
-	int getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables);
-//	std::set<ID> getDepVars(ID ruleID, int litIndex);
-	std::set<ID> getFreeVars(ID ruleID, int litIndex);
+
+	Binder getBinderOfRule(std::vector<ID>& body);
+	int getClosestBinder(std::vector<ID>& body, int litIndex, std::set<ID> variables);
+//	std::set<ID> getDepVars(std::vector<ID>& body, int litIndex);
+	std::set<ID> getFreeVars(std::vector<ID>& body, int litIndex);
 	std::set<ID> getOutputVariables(ID ruleID);
-//	bool depends(ID ruleID, int lit1, int lit2);
+//	bool depends(std::vector<ID>& body, int lit1, int lit2);
+	std::vector<ID> reorderRuleBody(ID ruleID);
+	bool biDependency(ID bi1, ID bi2);
 
 	enum AppDir{
 		x_op_y_eq_ret,

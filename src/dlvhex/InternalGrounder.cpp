@@ -241,38 +241,40 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 
 	DBGLOG(DBG, "Grounding rule " << ruleToString(ruleID));
 
+	std::vector<ID> body = reorderRuleBody(ruleID);
+
 	// compute binders of the variables in the rule
-	Binder binders = getBinderOfRule(ruleID);
+	Binder binders = getBinderOfRule(body);
 	std::set<ID> outputVars = getOutputVariables(ruleID);
 //	std::vector<std::set<ID> > depVars;
 	std::vector<std::set<ID> > freeVars;
-	for (int i = 0; i < rule.body.size(); ++i){
-//		depVars.push_back(getDepVars(ruleID, i));
-		freeVars.push_back(getFreeVars(ruleID, i));
+	for (int i = 0; i < body.size(); ++i){
+//		depVars.push_back(getDepVars(body, i));
+		freeVars.push_back(getFreeVars(body, i));
 	}
 	std::set<ID> failureVars;
 
 	int csb = -1;	// barrier for backjumping
-	if (rule.body.size() == 0){
+	if (body.size() == 0){
 		// grounding of choice rules
 		buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
 	}else{
 		// start search at position 0 in the extension of all predicates
 		std::vector<int> searchPos;
-		for (int i = 0; i < rule.body.size(); ++i) searchPos.push_back(0);
+		for (int i = 0; i < body.size(); ++i) searchPos.push_back(0);
 
 		// go through all (positive) body atoms
-		for (std::vector<ID>::const_iterator it = rule.body.begin(); it != rule.body.end(); ){
+		for (std::vector<ID>::const_iterator it = body.begin(); it != body.end(); ){
 
-			int bodyLitIndex = it - rule.body.begin();
+			int bodyLitIndex = it - body.begin();
 			ID bodyAtomID = *it;
 
 			if (!bodyAtomID.isNaf()){
 
-				// remove assignments to all variables which do not occur between rule.body.begin() and it - 1
+				// remove assignments to all variables which do not occur between body.begin() and it - 1
 				DBGLOG(DBG, "Undoing variable assignments before position " << bodyLitIndex);
 				std::set<ID> keepVars;
-				for (std::vector<ID>::const_iterator itVarCheck = rule.body.begin(); itVarCheck != it; ++itVarCheck){
+				for (std::vector<ID>::const_iterator itVarCheck = body.begin(); itVarCheck != it; ++itVarCheck){
 					reg->getVariablesInID(*itVarCheck, keepVars);
 				}
 				Substitution newSubst = s;
@@ -299,7 +301,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						DBGLOG(DBG, "Failure on first match at position " << bodyLitIndex);
 						std::set<ID> vars;
 						reg->getVariablesInID(*it, vars);
-						btIndex = getClosestBinder(ruleID, bodyLitIndex, vars);
+						btIndex = getClosestBinder(body, bodyLitIndex, vars);
 //						if (depends(ruleID, btIndex, csb)){
 //							csb = btIndex;
 //						}
@@ -307,11 +309,11 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						// failure on next match
 						DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
 
-						btIndex = getClosestBinder(ruleID, bodyLitIndex, failureVars);
+						btIndex = getClosestBinder(body, bodyLitIndex, failureVars);
 						btIndex = csb > btIndex ? csb : btIndex;
 
 						if (btIndex == csb){
-							csb = getClosestBinder(ruleID, btIndex, outputVars);
+							csb = getClosestBinder(body, btIndex, outputVars);
 						}
 					}
 					if (btIndex == -1){
@@ -319,7 +321,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						return;
 					}else{
 						DBGLOG(DBG, "Backtracking to literal " << btIndex);
-						it = rule.body.begin() + btIndex;
+						it = body.begin() + btIndex;
 					}
 #else
 					// backtrack
@@ -329,7 +331,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 						return;
 					}else{
 						DBGLOG(DBG, "Backtracking to literal " << btIndex);
-						it = rule.body.begin() + btIndex;
+						it = body.begin() + btIndex;
 					}
 #endif
 
@@ -345,24 +347,24 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 
 			// match
 			// if we are at the end of the body list we have found a valid substitution
-			if (it == rule.body.end() - 1){
+			if (it == body.end() - 1){
 				DBGLOG(DBG, "Substitution complete");
 				buildGroundInstance(ruleID, currentSubstitution, groundedRules, newDerivableAtoms);
 #ifdef OPTIMIZED
-				int btIndex = getClosestBinder(ruleID, bodyLitIndex + 1, outputVars);
+				int btIndex = getClosestBinder(body, bodyLitIndex + 1, outputVars);
 				if (btIndex == -1){
 					DBGLOG(DBG, "No more matches after solution found");
 					return;
 				}else{
 					DBGLOG(DBG, "Backtracking to literal " << btIndex << " after solution found");
-					csb = getClosestBinder(ruleID, btIndex, outputVars);
-					it = rule.body.begin() + btIndex;
+					csb = getClosestBinder(body, btIndex, outputVars);
+					it = body.begin() + btIndex;
 				}
 #else
 
 				// go back to last non-naf body literal
 				while(bodyAtomID.isNaf()){
-					if (it == rule.body.begin()) return;
+					if (it == body.begin()) return;
 					--it;
 					bodyAtomID = *it;
 				}
@@ -658,7 +660,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID atomID, Substituti
 */
 
 		if (atom.tuple[1].isIntegerTerm() && atom.tuple[2].isIntegerTerm()){
-			if (x <= atom.tuple[1].address && y < atom.tuple[2].address){
+			if (x <= atom.tuple[1].address && y <= atom.tuple[2].address){
 				x = atom.tuple[1].address;
 				y = atom.tuple[2].address;
 				int z = applyIntFunction(x_op_y_eq_ret, atom.tuple[0], x, y);
@@ -944,12 +946,11 @@ int InternalGrounder::getStratumOfRule(ID ruleID){
 	return stratum;
 }
 
-InternalGrounder::Binder InternalGrounder::getBinderOfRule(ID ruleID){
+InternalGrounder::Binder InternalGrounder::getBinderOfRule(std::vector<ID>& body){
 
 	Binder binders;
-	const Rule& rule = reg->rules.getByID(ruleID);
 	int litIdx = 0;
-	BOOST_FOREACH (ID lit, rule.body){
+	BOOST_FOREACH (ID lit, body){
 		std::set<ID> varsInLit;
 		reg->getVariablesInID(lit, varsInLit);
 		BOOST_FOREACH (ID var, varsInLit){
@@ -963,15 +964,14 @@ InternalGrounder::Binder InternalGrounder::getBinderOfRule(ID ruleID){
 	return binders;
 }
 
-int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> variables /*do not make this a reference because it is used as working copy!*/ ){
+int InternalGrounder::getClosestBinder(std::vector<ID>& body, int litIndex, std::set<ID> variables /*do not make this a reference because it is used as working copy!*/ ){
 
-	const Rule& rule = reg->rules.getByID(ruleID);
 	int cb = -1;
 	for (int i = 0; i < litIndex; ++i){
 		// is this literal a binder of some variable?
-		if (!rule.body[i].isNaf()){
+		if (!body[i].isNaf()){
 			std::set<ID> varsInLit;
-			reg->getVariablesInID(rule.body[i], varsInLit);
+			reg->getVariablesInID(body[i], varsInLit);
 			BOOST_FOREACH(ID v, varsInLit){
 				if (variables.count(v) > 0){
 					cb = i;
@@ -984,14 +984,13 @@ int InternalGrounder::getClosestBinder(ID ruleID, int litIndex, std::set<ID> var
 }
 
 /*
-std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
+std::set<ID> InternalGrounder::getDepVars(std::vector<ID>& body, int litIndex){
 
-	const Rule& rule = reg->rules.getByID(ruleID);
 	std::set<ID> vars;
-	reg->getVariablesInID(rule.body[litIndex], vars);
-	for (int i = litIndex + 1; i < rule.body.size(); ++i){
+	reg->getVariablesInID(body[litIndex], vars);
+	for (int i = litIndex + 1; i < body.size(); ++i){
 		std::set<ID> v2;
-		reg->getVariablesInID(rule.body[i], v2);
+		reg->getVariablesInID(body[i], v2);
 		// check if v2 contains some variable in vars
 		bool depending = false;
 		BOOST_FOREACH (ID v, v2){
@@ -1001,21 +1000,20 @@ std::set<ID> InternalGrounder::getDepVars(ID ruleID, int litIndex){
 			}
 		}
 		if (depending){
-			reg->getVariablesInID(rule.body[i], vars);
+			reg->getVariablesInID(body[i], vars);
 		}
 	}
 	return vars;
 }
 */
 
-std::set<ID> InternalGrounder::getFreeVars(ID ruleID, int litIndex){
+std::set<ID> InternalGrounder::getFreeVars(std::vector<ID>& body, int litIndex){
 
-	const Rule& rule = reg->rules.getByID(ruleID);
 	std::set<ID> vars;
-	reg->getVariablesInID(rule.body[litIndex], vars);
+	reg->getVariablesInID(body[litIndex], vars);
 	for (int i = 0; i < litIndex; ++i){
 		std::set<ID> v2;
-		reg->getVariablesInID(rule.body[i], v2);
+		reg->getVariablesInID(body[i], v2);
 		// check if v2 contains some variable in vars
 		BOOST_FOREACH (ID v, v2){
 			vars.erase(v);
@@ -1044,21 +1042,120 @@ std::set<ID> InternalGrounder::getOutputVariables(ID ruleID){
 }
 
 /*
-bool InternalGrounder::depends(ID ruleID, int lit1, int lit2){
+bool InternalGrounder::depends(std::vector<ID>& body, int lit1, int lit2){
 
 	if (lit1 == -1 || lit2 == -1) return false;
 	if (lit1 > lit2) return false;
 
-	const Rule& rule = reg->rules.getByID(ruleID);
-	std::set<ID> depVars = getDepVars(ruleID, lit1);
+	std::set<ID> depVars = getDepVars(body, lit1);
 	std::set<ID> vars2;
-	reg->getVariablesInID(rule.body[lit2], vars2);
+	reg->getVariablesInID(body[lit2], vars2);
 	BOOST_FOREACH (ID v2, vars2){
 		if (depVars.count(v2) > 0) return true;
 	}
 	return false;
 }
 */
+
+
+std::vector<ID> InternalGrounder::reorderRuleBody(ID ruleID){
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+
+	// reorder literals in rule body
+	std::vector<ID> body;
+
+	// 1. positive
+	BOOST_FOREACH (ID lit, rule.body){
+		if (!(lit.isNaf() || lit.isBuiltinAtom())) body.push_back(lit);
+	}
+
+	// 2. naf
+	BOOST_FOREACH (ID lit, rule.body){
+		if (lit.isNaf()) body.push_back(lit);
+	}
+
+	// 3. builtin
+
+	// dependency graph
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ID> BIDepGraph;
+	typedef BIDepGraph::vertex_descriptor BINode;
+	std::map<ID, BINode> biDepNodes;
+	std::map<BINode, ID> biDepNodesIndex;
+	BIDepGraph biDepGraph;
+
+
+	BOOST_FOREACH (ID lit, rule.body){
+		// all builtin-atoms are nodes in the dep graph
+		if (lit.isBuiltinAtom()){
+
+			biDepNodes[lit] = boost::add_vertex(lit, biDepGraph);
+			biDepNodesIndex[biDepNodes[lit]] = lit;
+
+			// add edges between depending nodes
+			BOOST_FOREACH (ID lit2, rule.body){
+				if (lit2.isBuiltinAtom() && lit != lit2){
+					if (biDependency(lit, lit2)){
+						boost::add_edge(biDepNodes[lit], biDepNodes[lit2], biDepGraph);
+					}
+				}
+			}
+		}
+	}
+	// get topological ordering
+
+	// compute topological ordering of components
+	std::vector<BINode> biOrdering;
+	topological_sort(biDepGraph, std::back_inserter(biOrdering));
+	DBGLOG(DBG, "Processing BI-atoms in the following ordering:");
+	BOOST_FOREACH (BINode biAtomNode, biOrdering){
+		ID biAtom = biDepNodesIndex[biAtomNode];
+		DBGLOG(DBG, "" << biAtom.address);
+		body.push_back(biAtom);
+	}
+
+	return body;
+}
+
+bool InternalGrounder::biDependency(ID bi1, ID bi2){
+
+	const BuiltinAtom& biAtom1 = reg->batoms.getByID(bi1);
+	const BuiltinAtom& biAtom2 = reg->batoms.getByID(bi2);
+
+	std::set<ID> output1;
+	std::set<ID> input2;
+
+	switch(biAtom1.tuple.size()){
+		case 2:
+			output1.insert(biAtom1.tuple[1]);
+			break;
+		case 3:
+			output1.insert(biAtom1.tuple[2]);
+			break;
+		case 4:
+			output1.insert(biAtom1.tuple[3]);
+			break;
+		default:
+			assert(false);
+	}
+	switch(biAtom2.tuple.size()){
+		case 2:
+			break;
+		case 3:
+			output1.insert(biAtom1.tuple[1]);
+			break;
+		case 4:
+			output1.insert(biAtom1.tuple[1]);
+			output1.insert(biAtom1.tuple[2]);
+			break;
+		default:
+			assert(false);
+	}
+	BOOST_FOREACH (ID i2, input2){
+		if (output1.count(i2) > 0) return true;
+	}
+	return false;
+}
 
 int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 
