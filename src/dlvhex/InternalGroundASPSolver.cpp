@@ -318,11 +318,13 @@ void InternalGroundASPSolver::initializeLists(){
 
 void InternalGroundASPSolver::setFact(ID fact, int dl, int cause = -1){
 	CDNLSolver::setFact(fact, dl, cause);
+	changed.set_bit(fact.address);
 	updateUnfoundedSetStructuresAfterSetFact(fact);
 }
 
 void InternalGroundASPSolver::clearFact(IDAddress litadr){
 	CDNLSolver::clearFact(litadr);
+	changed.set_bit(litadr);
 	updateUnfoundedSetStructuresAfterClearFact(litadr);
 }
 
@@ -892,8 +894,9 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 				DBGLOG(DBG, "Calling external learner");
 				bool learned = false;
 				BOOST_FOREACH (LearningCallback* cb, learner){
-					learned |= cb->learn(interpretation, factWasSet);
+					learned |= cb->learn(interpretation, factWasSet, changed);
 				}
+				changed.clear();
 
 				if (learned){
 					DBGLOG(DBG, "Learned something");

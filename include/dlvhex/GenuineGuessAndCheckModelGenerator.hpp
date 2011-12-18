@@ -74,7 +74,8 @@ protected:
 
   // members
 //  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
-  bool learn(Interpretation::Ptr partialInterpretation, bm::bvector<> factWasSet);
+  bool firstLearnCall;
+  bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);

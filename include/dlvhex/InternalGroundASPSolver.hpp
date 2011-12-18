@@ -50,7 +50,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 class LearningCallback{
 public:
-	virtual bool learn(Interpretation::Ptr partialInterpretation, bm::bvector<> factWasSet) = 0;
+	virtual bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed) = 0;
 };
 
 class InternalGroundASPSolver : public CDNLSolver{
@@ -87,6 +87,7 @@ protected:
 	boost::unordered_map<IDAddress, ID> sourceRule;				// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 
 	// external learning
+	bm::bvector<> changed;
 	Set<LearningCallback*> learner;
 
 	// statistics

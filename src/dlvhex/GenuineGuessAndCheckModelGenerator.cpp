@@ -574,6 +574,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	igas->addExternalLearner(this);
+	firstLearnCall = true;
     }
 }
 
@@ -895,7 +896,7 @@ bool GenuineGuessAndCheckModelGenerator::learnFromExternalAtom(const ExternalAto
 }
 #endif
 
-bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, bm::bvector<> factWasSet){
+bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
 
 	RegistryPtr reg = factory.ctx.registry();
 
@@ -941,18 +942,25 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet).count() == eatom.getPredicateInputMask()->getStorage().count()){
 			DBGLOG(DBG, "Input is complete");
 
-			DBGLOG(DBG, "Evaluating external atom");
-			InterpretationPtr eaResult(new Interpretation(reg));
-			IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
-			int i = igas->getNogoodCount();
-			evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
-			if (igas->getNogoodCount() != i) learned = true;
-//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
+			// check if at least one input fact changed (otherwise a reevaluation is pointless)
+			if (firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
+
+				DBGLOG(DBG, "Evaluating external atom");
+				InterpretationPtr eaResult(new Interpretation(reg));
+				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
+				int i = igas->getNogoodCount();
+				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
+				if (igas->getNogoodCount() != i) learned = true;
+	//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
+			}else{
+				DBGLOG(DBG, "Do not evaluate external atom because input did not change");
+			}
 		}else{
 			DBGLOG(DBG, "Input is not complete");
 		}
 	}
 
+	firstLearnCall = false;
 	return learned;
 }
 
