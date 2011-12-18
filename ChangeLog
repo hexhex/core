@@ -1,3 +1,9 @@
+2011-12-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Explain boost compilation.
+
+	* cheatsheet: Remove.
+
 2011-11-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/SafetyChecker.cpp: Fixed bug in safety checker.
