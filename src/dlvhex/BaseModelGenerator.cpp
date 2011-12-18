@@ -256,7 +256,7 @@ bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
   BOOST_FOREACH(ID eatomid, eatoms)
   {
     const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-    if( !evaluateExternalAtom(reg, eatom, inputi, cb) )
+    if( !evaluateExternalAtom(reg, eatom, inputi, cb, solver) )
     {
       LOG(DBG,"callbacks aborted evaluateExternalAtoms");
       return false;

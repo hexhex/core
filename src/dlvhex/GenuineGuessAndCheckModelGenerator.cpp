@@ -939,12 +939,38 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 #endif
 
 
+
+
+/*
+
+// TODO: The if block below checks if the predicate input to the external atom changed, but not the aux input.
+//       If the predicate input changed, the external atom is reevaluated, otherwise it is not.
+//       As the aux input is not considered, we might miss some changes in the input and do not evaluate the external atom for learning, even though we could learn something new.
+//       This loop detects whether the aux input changed. However, the computational overhead is big. This needs to be considered when the heuristic is developed.
+
+bool auxChanged = false;
+
+  dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+  for(boost::tie(it, it_end) = reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate); it != it_end; ++it)
+  {
+    const dlvhex::OrdinaryAtom& oatom = *it;
+    ID idoatom = reg->ogatoms.getIDByStorage(oatom);
+    if (changed.get_bit(idoatom.address) != 0) auxChanged = true;
+  }
+*/
+
+
+
+
+
+
+
 		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet).count() == eatom.getPredicateInputMask()->getStorage().count()){
 			DBGLOG(DBG, "Input is complete");
 
 			// check if at least one input fact changed (otherwise a reevaluation is pointless)
-			if (true || firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
-// eatom.getPredicateInputMask()->getStorage().count() == 0 || 
+			if (firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
+// eatom.getPredicateInputMask()->getStorage().count() == 0
 				DBGLOG(DBG, "Evaluating external atom");
 				InterpretationPtr eaResult(new Interpretation(reg));
 				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
