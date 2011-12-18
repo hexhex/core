@@ -1,5 +1,7 @@
 2011-12-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
+	* configure.ac: Add profiling support (--enable-profiling).
+
 	* README: Explain boost compilation.
 
 	* cheatsheet: Remove.
