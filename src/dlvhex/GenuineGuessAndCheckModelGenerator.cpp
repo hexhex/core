@@ -943,13 +943,14 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 			DBGLOG(DBG, "Input is complete");
 
 			// check if at least one input fact changed (otherwise a reevaluation is pointless)
-			if (firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
-
+			if (true || firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
+// eatom.getPredicateInputMask()->getStorage().count() == 0 || 
 				DBGLOG(DBG, "Evaluating external atom");
 				InterpretationPtr eaResult(new Interpretation(reg));
 				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
 				int i = igas->getNogoodCount();
 				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
+				DBGLOG(DBG, "Output has size " << eaResult->getStorage().count());
 				if (igas->getNogoodCount() != i) learned = true;
 	//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
 			}else{
