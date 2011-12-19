@@ -60,6 +60,7 @@ protected:
 	boost::unordered_map<IDAddress, int> cause;
 	int currentDL;
 	OrderedSet<IDAddress> assignmentOrder;
+	std::vector<std::vector<IDAddress> > factsOnDecisionLevel;
 
 	int exhaustedDL;	// maximum decision level such that the search space above was exhausted
 	std::map<int, ID> decisionLiteralOfDecisionLevel;

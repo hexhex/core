@@ -192,6 +192,8 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 		interpretation->setFact(fact.address);
 	}
 	assignmentOrder.insert(fact.address);
+	while (dl >= factsOnDecisionLevel.size()) factsOnDecisionLevel.push_back(std::vector<IDAddress>());
+	factsOnDecisionLevel[dl].push_back(fact.address);
 
 	updateWatchingStructuresAfterSetFact(fact);
 
@@ -213,6 +215,15 @@ void CDNLSolver::clearFact(IDAddress litadr){
 }
 
 void CDNLSolver::backtrack(int dl){
+
+	for (int i = dl + 1; i < factsOnDecisionLevel.size(); ++i){
+		BOOST_FOREACH (IDAddress f, factsOnDecisionLevel[i]){
+			clearFact(f);
+		}
+		factsOnDecisionLevel[i].clear();
+	}
+
+/*
 	// collect assignments to undo
 	std::vector<IDAddress> undo;
 	typedef std::pair<IDAddress, int> DecisionPair;
@@ -225,6 +236,7 @@ void CDNLSolver::backtrack(int dl){
 	BOOST_FOREACH (IDAddress litadr, undo){
 		clearFact(litadr);
 	}
+*/
 
 #ifndef NDEBUG
 	++cntBacktracks;
