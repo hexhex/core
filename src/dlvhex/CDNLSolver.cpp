@@ -319,7 +319,7 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 
 	// search for up to two unassigned literals to watch
 	bool inactive = false;
-	Set<ID> watched;
+	Set<ID> watched(2, 1);
 	BOOST_FOREACH (ID lit, ng){
 		if (!assigned(lit.address) && watched.size() < 2){
 			watched.insert(lit);
@@ -428,7 +428,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 	DBGLOGD(DBG, "updateWatchingStructuresAfterClearFact after " << litToString(literal) << " was cleared");
 
 	// go through all nogoods which contain this literal either positively or negatively
-	Set<ID> positiveAndNegativeLiteral;
+	Set<ID> positiveAndNegativeLiteral(2, 1);
 	positiveAndNegativeLiteral.insert(literal);
 	positiveAndNegativeLiteral.insert(negation(literal));
 	BOOST_FOREACH (ID lit, positiveAndNegativeLiteral){
@@ -438,7 +438,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
 				bool stillInactive = false;
-				Set<ID> watched;
+				Set<ID> watched(2, 1);
 
 				// check the number of currently watched literals
 				int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
@@ -687,7 +687,7 @@ int CDNLSolver::addNogood(Nogood ng){
 	int index = nogoodset.addNogood(ng);
 	DBGLOG(DBG, "Adding nogood " << ng << " with index " << index);
 	if ((int)watchedLiteralsOfNogood.size() <= index){
-		watchedLiteralsOfNogood.push_back(Set<ID>());
+		watchedLiteralsOfNogood.push_back(Set<ID>(2, 1));
 	}
 	updateWatchingStructuresAfterAddNogood(index);
 

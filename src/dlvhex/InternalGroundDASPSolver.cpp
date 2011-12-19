@@ -201,24 +201,25 @@ InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, ASPProgram& 
 
 	// compute HCF status for all components
 	for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){
-		hcf[compNr] = isCompHCF(compNr);
+		hcf.push_back(isCompHCF(compNr));
 		DBGLOG(DBG, "HCF of component " << compNr << ": " << hcf[compNr]);
 	}
 }
 
 InterpretationConstPtr InternalGroundDASPSolver::getNextModel(){
 
+	Set<ID> ufs(0, 1);
 	do{
 		// generate model candidate
 		InterpretationConstPtr mc = InternalGroundASPSolver::getNextModel();
 		if (mc == InterpretationConstPtr()) return mc;
 		DBGLOG(DBG, "Got model candidate: " << *mc);
+
 #ifndef NDEBUG
 		++cntModelCandidates;
 #endif
 
 		// for each non-HCF component do an (exponential) unfounded set check
-		Set<ID> ufs;
 		for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){
 			if (!hcf[compNr]){
 				ufs = getDisjunctiveUnfoundedSetForComponent(compNr);

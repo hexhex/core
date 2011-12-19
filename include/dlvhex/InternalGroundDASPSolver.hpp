@@ -45,7 +45,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 class InternalGroundDASPSolver : public InternalGroundASPSolver{
 protected:
-	std::map<int, bool> hcf;
+	std::vector<bool> hcf;
 
 	// statistics
 	long cntModelCandidates;
