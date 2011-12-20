@@ -443,6 +443,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 	Set<ID> positiveAndNegativeLiteral(2, 1);
 	positiveAndNegativeLiteral.insert(literal);
 	positiveAndNegativeLiteral.insert(negation(literal));
+	Set<ID> watched(2, 1);
 	BOOST_FOREACH (ID lit, positiveAndNegativeLiteral){
 		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
 			BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
@@ -450,7 +451,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
 				bool stillInactive = false;
-				Set<ID> watched(2, 1);
+				watched.clear();
 
 				// check the number of currently watched literals
 				int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
