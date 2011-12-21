@@ -231,9 +231,26 @@ void InternalGrounder::groundStratum(int stratumNr){
 	}
 	DBGLOG(DBG, "Produced " << groundRules.size() << " ground rules");
 
-	resolvedPredicates.insert(predicatesOfStratum[stratumNr].begin(), predicatesOfStratum[stratumNr].end());
-	DBGLOG(DBG, "Set of resolved predicates is now: ");
-	BOOST_FOREACH (ID pred, resolvedPredicates){
+	groundedPredicates.insert(predicatesOfStratum[stratumNr].begin(), predicatesOfStratum[stratumNr].end());
+		BOOST_FOREACH (ID pred, predicatesOfStratum[stratumNr]){
+		// check if the predicate is completely solved; this is, there does not exist a derivable atom which is now known to be true
+		bool solved = true;
+		BOOST_FOREACH (ID atom, derivableAtomsOfPredicate[pred]){
+			if (!trueAtoms->getFact(atom.address)){
+				solved = false;
+				break;
+			}
+		}
+		if (solved) solvedPredicates.insert(pred);
+	}
+
+	DBGLOG(DBG, "Set of grounded predicates is now: ");
+	BOOST_FOREACH (ID pred, groundedPredicates){
+		DBGLOG(DBG, pred);
+	}
+
+	DBGLOG(DBG, "Set of solved predicates is now: ");
+	BOOST_FOREACH (ID pred, solvedPredicates){
 		DBGLOG(DBG, pred);
 	}
 }
@@ -420,7 +437,7 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 
 				// h :- a, not b         where b is known to be not derivable
 				// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
-				if (groundBodyLiteralID.isNaf() && isPredicateResolved(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
+				if (groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
 					DBGLOG(DBG, "Skipping underivable " << groundBodyLiteralID);
 					continue;
 				}
@@ -434,7 +451,7 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 
 				// h :- a, not b         where a is known to be not derivable
 				// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
-				if (!groundBodyLiteralID.isNaf() && isPredicateResolved(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
+				if (!groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
 					DBGLOG(DBG, "Skipping rule " << ruleToString(ruleID) << " due to " << groundBodyLiteralID);
 					return;
 				}
@@ -896,9 +913,14 @@ bool InternalGrounder::isGroundRule(ID ruleID){
 	return true;
 }
 
-bool InternalGrounder::isPredicateResolved(ID pred){
+bool InternalGrounder::isPredicateGrounded(ID pred){
 
-	return (std::find(resolvedPredicates.begin(), resolvedPredicates.end(), pred) != resolvedPredicates.end());
+	return (std::find(groundedPredicates.begin(), groundedPredicates.end(), pred) != groundedPredicates.end());
+}
+
+bool InternalGrounder::isPredicateSolved(ID pred){
+
+	return (std::find(solvedPredicates.begin(), solvedPredicates.end(), pred) != solvedPredicates.end());
 }
 
 bool InternalGrounder::isAtomDerivable(ID atom){
@@ -1031,19 +1053,28 @@ std::set<ID> InternalGrounder::getFreeVars(std::vector<ID>& body, int litIndex){
 std::set<ID> InternalGrounder::getOutputVariables(ID ruleID){
 
 	// compute output variables of this rule
-	// this is the set of all variables which occur in literals over non-resolved predicates
+	// this is the set of all variables which occur in literals over unsolved predicates
 	const Rule& rule = reg->rules.getByID(ruleID);
 	std::set<ID> outputVars;
 	BOOST_FOREACH (ID headLitIndex, rule.head){
-		if (!isPredicateResolved(getPredicateOfAtom(headLitIndex))){
+		if (!isPredicateSolved(getPredicateOfAtom(headLitIndex))){
 			reg->getVariablesInID(headLitIndex, outputVars);	
 		}
 	}
 	BOOST_FOREACH (ID bodyLitIndex, rule.body){
-		if (!isPredicateResolved(getPredicateOfAtom(bodyLitIndex))){
+		// if the head does not contain variables, all body variables are output variables
+		if (!isPredicateSolved(getPredicateOfAtom(bodyLitIndex))){
 			reg->getVariablesInID(bodyLitIndex, outputVars);	
 		}
 	}
+
+#ifndef NDEBUG
+	DBGLOG(DBG, "Output variables:");
+	BOOST_FOREACH (ID var, outputVars){
+		DBGLOG(DBG, "" << var.address);
+	}
+#endif
+
 	return outputVars;
 }
 

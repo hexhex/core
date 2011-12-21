@@ -79,8 +79,9 @@ protected:
 	std::vector<ID> groundRules;
 	std::vector<ID> nonGroundRules;
 
-	std::set<ID> resolvedPredicates;
-
+	std::set<ID> groundedPredicates;					// predicates from a lower stratum (all derivable atoms are known)
+	std::set<ID> solvedPredicates;						// completely solved predicates (all ground instances are known to be true or false)
+										// (solvedPredicates is a subset of groundedPredicates)
 
 	// initialization members
 	void computeDepGraph();
@@ -118,7 +119,8 @@ protected:
 	std::string ruleToString(ID ruleID);
 	ID getPredicateOfAtom(ID atomID);
 	bool isGroundRule(ID ruleID);
-	bool isPredicateResolved(ID pred);
+	bool isPredicateGrounded(ID pred);
+	bool isPredicateSolved(ID pred);
 	bool isAtomDerivable(ID atom);
 	int getStratumOfRule(ID ruleID);
 
