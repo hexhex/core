@@ -816,6 +816,7 @@ public:
 
   Nogood getInputNogood(CDNLSolverPtr solver, const Query& query);
   Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer);
+  ID getOutputAtom(bool sign, const Query& query, Tuple t);
 
   /**
    * \brief Returns the type of the input argument specified by position
@@ -876,6 +877,10 @@ protected:
   /// \brief Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
   QueryAnswerCache queryAnswerCache;
+
+  /// \brief output tuples generated so far (used for learning for
+  //         functional sources)
+  std::vector<Tuple> otuples;
 
   /// \brief Registry associated with this atom
   //

@@ -80,6 +80,7 @@ protected:
 
 	// statistics
 	long cntAssignments;
+	long cntGuesses;
 	long cntBacktracks;
 	long cntResSteps;
 	long cntDetectedConflicts;

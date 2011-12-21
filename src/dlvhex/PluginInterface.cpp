@@ -339,6 +339,24 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solv
 			solver->addNogood(extNg);
 		}
 
+
+		// functionality
+		ID uniqueOut = *(out.begin());		// there is a unique output
+
+		// go through all output tuples which have been generated so far
+		BOOST_FOREACH (Tuple t, otuples){
+			ID id = getOutputAtom(true, query, t);
+			if (id != uniqueOut){
+				Nogood excludeOthers;
+				excludeOthers.insert(uniqueOut);
+				excludeOthers.insert(id);
+				DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
+				solver->addNogood(excludeOthers);
+			}
+		}
+
+
+
 #if 0
 		// construct replacement atom
 		OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -373,7 +391,10 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 	Nogood extNgInput;
 
 	while (en < en_end){
-		extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
+		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
+		if (query.interpretation->getFact(*en) || !isMonotonic()){
+			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
+		}
 		en++;
 	}
 
@@ -393,16 +414,34 @@ Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, con
 
 	const std::vector<Tuple>& otuples = answer.get();
 	BOOST_FOREACH (Tuple otuple, otuples){
+		// remember that otuple was generated
+		this->otuples.push_back(otuple);
+
 		replacement.tuple.resize(s);
 		// add current output
 		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 		// get ID of this replacement atom
 		ID idreplacement = registry->storeOrdinaryGAtom(replacement);
 		out.insert(idreplacement);
-
 	}
 
 	return out;
+}
+
+ID PluginAtom::getOutputAtom(bool sign, const Query& query, Tuple otuple){
+
+	// construct replacement atom with input from query
+	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+	replacement.tuple.resize(1);
+	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
+	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
+	int s = replacement.tuple.size();
+
+	// add output tuple
+	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
+
+	ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+	return idreplacement;
 }
 
 PluginAtom::InputType

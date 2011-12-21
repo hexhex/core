@@ -245,6 +245,9 @@ void CDNLSolver::backtrack(int dl){
 
 ID CDNLSolver::getGuess(){
 
+#ifndef NDEBUG
+	++cntGuesses;
+#endif
 
 	// simple heuristic: guess the next unassigned literal
 	/*
@@ -567,6 +570,7 @@ std::string CDNLSolver::getStatistics(){
 #ifndef NDEBUG
 	std::stringstream ss;
 	ss	<< "Assignments: " << cntAssignments << std::endl
+		<< "Guesses: " << cntGuesses << std::endl
 		<< "Backtracks: " << cntBacktracks << std::endl
 		<< "Resolution steps: " << cntResSteps << std::endl
 		<< "Conflicts: " << cntDetectedConflicts;
