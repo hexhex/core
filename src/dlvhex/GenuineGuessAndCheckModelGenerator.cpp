@@ -957,8 +957,8 @@ bool auxChanged = false;
     ID idoatom = reg->ogatoms.getIDByStorage(oatom);
     if (changed.get_bit(idoatom.address) != 0) auxChanged = true;
   }
-*/
 
+*/
 
 
 
@@ -969,7 +969,7 @@ bool auxChanged = false;
 			DBGLOG(DBG, "Input is complete");
 
 			// check if at least one input fact changed (otherwise a reevaluation is pointless)
-			if (firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
+			if (/* auxChanged || */ firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
 // eatom.getPredicateInputMask()->getStorage().count() == 0
 				DBGLOG(DBG, "Evaluating external atom");
 				InterpretationPtr eaResult(new Interpretation(reg));

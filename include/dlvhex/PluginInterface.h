@@ -762,7 +762,8 @@ protected:
   // addInput...() methods and you have to use setOutputArity().
   PluginAtom(const std::string& predicate, bool monotonic):
     predicate(predicate),
-    monotonic(monotonic) { }
+    monotonic(monotonic),
+    functional(false) { }
 
   // The following functions are to be used in the constructor only:
 
@@ -836,6 +837,12 @@ public:
   bool isMonotonic() const
     { return monotonic; }
 
+  /**
+   * @return functional
+   */
+  bool isFunctional() const
+    { return functional; }
+
   // Associate plugin atom with registry pointer.
   // (This implicitly calculates the predicate ID.)
   virtual void setRegistry(RegistryPtr reg);
@@ -867,6 +874,9 @@ protected:
 
   /// \brief whether the function is monotonic or nonmonotonic
   bool monotonic;
+
+  /// \brief whether the atom is functional or relational
+  bool functional;
 
   /// \brief Type of each input argument (only last may be TUPLE).
   std::vector<InputType> inputType;

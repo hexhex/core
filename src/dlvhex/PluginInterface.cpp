@@ -339,22 +339,24 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solv
 			solver->addNogood(extNg);
 		}
 
-
 		// functionality
-		ID uniqueOut = *(out.begin());		// there is a unique output
+		if (isFunctional()){
+			// there is a unique output
+			const std::vector<Tuple>& otuples = answer.get();
+			ID uniqueOut = getOutputAtom(true, query, otuples[0]);
 
-		// go through all output tuples which have been generated so far
-		BOOST_FOREACH (Tuple t, otuples){
-			ID id = getOutputAtom(true, query, t);
-			if (id != uniqueOut){
-				Nogood excludeOthers;
-				excludeOthers.insert(uniqueOut);
-				excludeOthers.insert(id);
-				DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
-				solver->addNogood(excludeOthers);
+			// go through all output tuples which have been generated so far
+			BOOST_FOREACH (Tuple t, this->otuples){
+				ID id = getOutputAtom(true, query, t);
+				if (id != uniqueOut){
+					Nogood excludeOthers;
+					excludeOthers.insert(solver->createLiteral(uniqueOut));
+					excludeOthers.insert(solver->createLiteral(id));
+					DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
+					solver->addNogood(excludeOthers);
+				}
 			}
 		}
-
 
 
 #if 0

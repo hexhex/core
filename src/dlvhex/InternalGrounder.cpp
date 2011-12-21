@@ -532,7 +532,7 @@ int InternalGrounder::matchNextFromExtension(ID atomID, Substitution& s, int sta
 
 int InternalGrounder::matchNextFromExtensionOrdinary(ID atomID, Substitution& s, int startSearchIndex){
 
-	DBGLOG(DBG, "Macthing ordinary atom");
+	DBGLOG(DBG, "Matching ordinary atom");
 	const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
 	std::vector<ID>& extension = derivableAtomsOfPredicate[atom.front()];
 
@@ -852,8 +852,10 @@ ID InternalGrounder::applySubstitutionToBuiltinAtom(Substitution s, ID atomID){
 	const BuiltinAtom& batom = reg->batoms.getByID(atomID);
 	Tuple t = batom.tuple;
 	bool isGround = true;
-	for (unsigned int termIndex = 0; termIndex < t.size(); ++termIndex){
+	for (unsigned int termIndex = 1; termIndex < t.size(); ++termIndex){
+DBGLOG(DBG, "Term with index " << termIndex << ": " << t[termIndex]);
 		if (s.find(t[termIndex]) != s.end()){
+DBGLOG(DBG, "Applying substitution");
 			t[termIndex] = s[t[termIndex]];
 		}
 		if (t[termIndex].isVariableTerm()) isGround = false;
@@ -1074,12 +1076,7 @@ std::vector<ID> InternalGrounder::reorderRuleBody(ID ruleID){
 		if (!(lit.isNaf() || lit.isBuiltinAtom())) body.push_back(lit);
 	}
 
-	// 2. naf
-	BOOST_FOREACH (ID lit, rule.body){
-		if (lit.isNaf()) body.push_back(lit);
-	}
-
-	// 3. builtin
+	// 2. builtin
 
 	// dependency graph
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ID> BIDepGraph;
@@ -1116,6 +1113,11 @@ std::vector<ID> InternalGrounder::reorderRuleBody(ID ruleID){
 		ID biAtom = biDepNodesIndex[biAtomNode];
 		DBGLOG(DBG, "" << biAtom.address);
 		body.push_back(biAtom);
+	}
+
+	// 3. naf
+	BOOST_FOREACH (ID lit, rule.body){
+		if (lit.isNaf()) body.push_back(lit);
 	}
 
 	return body;

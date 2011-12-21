@@ -325,6 +325,8 @@ void CDNLSolver::initWatchingStructures(){
 }
 
 void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
+
+	DBGLOGD(DBG, "updateWatchingStructuresAfterAddNogood after adding nogood " << index);
 	const Nogood& ng = nogoodset.nogoods[index];
 
 	// remember for all literals in the nogood that they are contained in this nogood
@@ -450,6 +452,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 	BOOST_FOREACH (ID lit, positiveAndNegativeLiteral){
 		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
 			BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
+				DBGLOG(DBG, "Updating nogood " << nogoodNr);
 
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
@@ -476,7 +479,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 							}
 						}
 						if (!stillInactive){
-							DBGLOGD(DBG, "Nogood " << nogoodNr << " is reactivated");
+							DBGLOG(DBG, "Nogood " << nogoodNr << " is reactivated");
 							BOOST_FOREACH (ID lit, watched){
 								startWatching(nogoodNr, lit);
 							}
@@ -580,7 +583,7 @@ std::string CDNLSolver::getStatistics(){
 #endif
 }
 
-CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0){
+CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0){
 
 	initListOfAllFacts();
 
@@ -630,6 +633,7 @@ void CDNLSolver::flipDecisionLiteral(){
 	exhaustedDL = currentDL;
 
 	// goto previous decision level
+	DBGLOG(DBG, "Backtrack to DL " << currentDL);
 	backtrack(currentDL);
 
 	// flip dLit, but now on the previous decision level!
