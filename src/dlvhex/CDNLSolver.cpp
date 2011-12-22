@@ -579,7 +579,7 @@ std::string CDNLSolver::getStatistics(){
 		<< "Conflicts: " << cntDetectedConflicts;
 	return ss.str();
 #else
-	return str::str("Only available in debug mode");
+	return std::str("Only available in debug mode");
 #endif
 }
 
