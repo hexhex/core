@@ -809,7 +809,9 @@ std::string InternalGroundASPSolver::getStatistics(){
 		<< "Detected unfounded sets: " << cntDetectedUnfoundedSets;
 	return ss.str();
 #else
-	return std::str("Only available in debug mode");
+	std::stringstream ss;
+	ss << "Only available in debug mode";
+	return ss.str();
 #endif
 }
 
