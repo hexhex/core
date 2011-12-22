@@ -384,51 +384,34 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 	// become unfounded
 	else{
 		// for all rules which contain the fact in their head
-		BOOST_FOREACH (ID ruleID, rulesWithHeadLiteral[fact]){
-			const Rule& r = reg->rules.getByID(ruleID);
+		if (rulesWithHeadLiteral.find(fact) != rulesWithHeadLiteral.end()){
+			BOOST_FOREACH (ID ruleID, rulesWithHeadLiteral[fact]){
+				const Rule& r = reg->rules.getByID(ruleID);
 
-			// all other head literals cannot use this rule as source, if
-			BOOST_FOREACH (ID otherHeadLit, r.head){
-				if (otherHeadLit.address != fact.address && sourceRule[otherHeadLit.address] == ruleID){
-					// (i) they were set to true later
-					// TODO: maybe we have to compare the order of assignments instead of the decision levels
-					//       or we can use the decision level (would be much more efficient)
-					if (satisfied(createLiteral(otherHeadLit.address)) &&
-					    getAssignmentOrderIndex(otherHeadLit.address) > getAssignmentOrderIndex(fact.address)
-//					    decisionlevel[otherHeadLit.address] > decisionlevel[fact.address]
-					){
-						DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << otherHeadLit.address <<
-							" occurs in the head of its source rule and became true on a lower decision level");
-						newlyUnfoundedAtoms.insert(otherHeadLit.address);
-					}
+				// all other head literals cannot use this rule as source, if
+				BOOST_FOREACH (ID otherHeadLit, r.head){
+					if (otherHeadLit.address != fact.address && sourceRule[otherHeadLit.address] == ruleID){
+						// (i) they were set to true later
+						// TODO: maybe we have to compare the order of assignments instead of the decision levels
+						//       or we can use the decision level (would be much more efficient)
+						if (satisfied(createLiteral(otherHeadLit.address)) &&
+						    getAssignmentOrderIndex(otherHeadLit.address) > getAssignmentOrderIndex(fact.address)
+	//					    decisionlevel[otherHeadLit.address] > decisionlevel[fact.address]
+						){
+							DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << otherHeadLit.address <<
+								" occurs in the head of its source rule and became true on a lower decision level");
+							newlyUnfoundedAtoms.insert(otherHeadLit.address);
+						}
 
-					// (ii) they belong to a different component
-					if (componentOfAtom[otherHeadLit.address] != componentOfAtom[fact.address]){
-						DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << fact.address <<
-							" occurs in the head of its source rule and is true in a different component");
-						newlyUnfoundedAtoms.insert(otherHeadLit.address);
-					}
-				}
-			}
-
-/*
-			// a rule must not be used as source, if it is already satisfied due to true head atoms in different components:
-			// for all head literals which use this rule as source
-			BOOST_FOREACH (ID headLit, r.head){
-				if (sourceRule[headLit.address] == ruleID){
-					// check if another head literal is true and belongs to a different component
-					BOOST_FOREACH (ID otherHeadLit, r.head){
-						if (headLit.address != otherHeadLit.address && satisfied(otherHeadLit) &&
-						    componentOfAtom[otherHeadLit.address] != componentOfAtom[headLit.address]){
-							// in this case, the rule cannot be source for headLit
-							DBGLOGD(DBG, "" << headLit.address << " is initially unfounded because " << otherHeadLit.address <<
-								" occurs in the head of its source rule and is true and is in a different component");
-							newlyUnfoundedAtoms.insert(headLit.address);
+						// (ii) they belong to a different component
+						if (componentOfAtom[otherHeadLit.address] != componentOfAtom[fact.address]){
+							DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << fact.address <<
+								" occurs in the head of its source rule and is true in a different component");
+							newlyUnfoundedAtoms.insert(otherHeadLit.address);
 						}
 					}
 				}
 			}
-*/
 		}
 	}
 
@@ -510,7 +493,7 @@ void InternalGroundASPSolver::updateUnfoundedSetStructuresAfterClearFact(IDAddre
 	DBGLOGD(DBG, "Updated set of unfounded atoms: " << toString(unfoundedAtoms));
 }
 
-ID InternalGroundASPSolver::getPossibleSourceRule(Set<ID> ufs){
+ID InternalGroundASPSolver::getPossibleSourceRule(const Set<ID>& ufs){
 
 	DBGLOG(DBG, "Computing externally supporting rules for " << toString(ufs));
 
@@ -651,7 +634,7 @@ Set<ID> InternalGroundASPSolver::getUnfoundedSet(){
 	return Set<ID>();
 }
 
-bool InternalGroundASPSolver::doesRuleExternallySupportLiteral(ID ruleID, ID lit, Set<ID> s){
+bool InternalGroundASPSolver::doesRuleExternallySupportLiteral(ID ruleID, ID lit, const Set<ID>& s){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -675,7 +658,7 @@ bool InternalGroundASPSolver::doesRuleExternallySupportLiteral(ID ruleID, ID lit
 	return true;
 }
 
-Set<ID> InternalGroundASPSolver::getExternalSupport(Set<ID> s){
+Set<ID> InternalGroundASPSolver::getExternalSupport(const Set<ID>& s){
 
 	Set<ID> extRules;
 	DBGLOG(DBG, "Computing externally supporting rules for set " << toString(s));
@@ -699,7 +682,7 @@ Set<ID> InternalGroundASPSolver::getExternalSupport(Set<ID> s){
 	return extRules;
 }
 
-Set<ID> InternalGroundASPSolver::satisfiesIndependently(ID ruleID, Set<ID> y){
+Set<ID> InternalGroundASPSolver::satisfiesIndependently(ID ruleID, const Set<ID>& y){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -717,7 +700,7 @@ Set<ID> InternalGroundASPSolver::satisfiesIndependently(ID ruleID, Set<ID> y){
 	return indSat;
 }
 
-Nogood InternalGroundASPSolver::getLoopNogood(Set<ID> ufs){
+Nogood InternalGroundASPSolver::getLoopNogood(const Set<ID>& ufs){
 
 	Nogood loopNogood;
 
@@ -763,7 +746,7 @@ ID InternalGroundASPSolver::createNewBodyAtom(){
 	return bodyAtom;
 }
 
-std::string InternalGroundASPSolver::toString(Set<ID> lits){
+std::string InternalGroundASPSolver::toString(const Set<ID>& lits){
 	std::stringstream ss;
 	ss << "{";
 	bool first = true;
@@ -777,7 +760,7 @@ std::string InternalGroundASPSolver::toString(Set<ID> lits){
 	return ss.str();
 }
 
-std::string InternalGroundASPSolver::toString(Set<IDAddress> lits){
+std::string InternalGroundASPSolver::toString(const Set<IDAddress>& lits){
 	std::stringstream ss;
 	ss << "{";
 	bool first = true;
@@ -790,7 +773,7 @@ std::string InternalGroundASPSolver::toString(Set<IDAddress> lits){
 	return ss.str();
 }
 
-std::string InternalGroundASPSolver::toString(std::vector<IDAddress> lits){
+std::string InternalGroundASPSolver::toString(const std::vector<IDAddress>& lits){
 	std::stringstream ss;
 	ss << "{";
 	for (std::vector<IDAddress>::const_iterator it = lits.begin(); it != lits.end(); ++it){

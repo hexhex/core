@@ -336,10 +336,10 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 
 	// search for up to two unassigned literals to watch
 	bool inactive = false;
-	Set<ID> watched(2, 1);
+	tmpWatched.clear();
 	BOOST_FOREACH (ID lit, ng){
-		if (!assigned(lit.address) && watched.size() < 2){
-			watched.insert(lit);
+		if (!assigned(lit.address) && tmpWatched.size() < 2){
+			tmpWatched.insert(lit);
 		}else if(falsified(lit)){
 			inactive = true;
 		}
@@ -347,17 +347,17 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 
 	// remember watches
 	if (!inactive){
-		BOOST_FOREACH (ID lit, watched){
+		BOOST_FOREACH (ID lit, tmpWatched){
 			startWatching(index, lit);
 		}
 	}
 
 	if (inactive){
 		DBGLOGD(DBG, "Nogood " << index << " is inactive");
-	}else if (watched.size() == 1){
+	}else if (tmpWatched.size() == 1){
 		DBGLOGD(DBG, "Nogood " << index << " is unit");
 		unitNogoods.insert(index);
-	}else if (watched.size() == 0){
+	}else if (tmpWatched.size() == 0){
 		DBGLOGD(DBG, "Nogood " << index << " is contradictory");
 		contradictoryNogoods.insert(index);
 	}
@@ -382,18 +382,25 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 
 	DBGLOGD(DBG, "updateWatchingStructuresAfterSetFact after " << litToString(lit) << " was set");
 	bool changed;
-	do{
-		changed = false;
 
-		// go through all nogoods which watch this literal negatively and inactivate them
-		if (watchingNogoodsOfLiteral.find(negation(lit)) != watchingNogoodsOfLiteral.end()){
+	// go through all nogoods which watch this literal negatively and inactivate them
+	if (watchingNogoodsOfLiteral.find(negation(lit)) != watchingNogoodsOfLiteral.end()){
+		do{
+			changed = false;
+
 			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[negation(lit)]){
 				inactivateNogood(nogoodNr);
+				changed = true;
+				break;
 			}
-		}
+		}while(changed);
+	}
 
-		// go through all nogoods which watch this literal positively and find a new watched literal
-		if (watchingNogoodsOfLiteral.find(lit) != watchingNogoodsOfLiteral.end()){
+	// go through all nogoods which watch this literal positively and find a new watched literal
+	if (watchingNogoodsOfLiteral.find(lit) != watchingNogoodsOfLiteral.end()){
+		do{
+			changed = false;
+
 			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[lit]){
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
@@ -428,8 +435,8 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 				changed = true;
 				break;
 			}
-		}
-	}while(changed);
+		}while(changed);
+	}
 }
 
 void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
@@ -445,19 +452,18 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 	DBGLOGD(DBG, "updateWatchingStructuresAfterClearFact after " << litToString(literal) << " was cleared");
 
 	// go through all nogoods which contain this literal either positively or negatively
-	Set<ID> positiveAndNegativeLiteral(2, 1);
-	positiveAndNegativeLiteral.insert(literal);
-	positiveAndNegativeLiteral.insert(negation(literal));
-	Set<ID> watched(2, 1);
-	BOOST_FOREACH (ID lit, positiveAndNegativeLiteral){
-		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
+	for (int positiveAndNegativeLiteral = 1; positiveAndNegativeLiteral <= 2; ++positiveAndNegativeLiteral){
+		ID lit;
+		if (positiveAndNegativeLiteral == 1)	lit = literal;
+		else					lit = negation(literal);
+
+//		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
 			BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
 				DBGLOG(DBG, "Updating nogood " << nogoodNr);
 
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
 				bool stillInactive = false;
-				watched.clear();
 
 				// check the number of currently watched literals
 				int watchedNum = watchedLiteralsOfNogood[nogoodNr].size();
@@ -468,23 +474,24 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 						// 2. have one unassigned literal
 						// 3. have multiple unassigned literals
 						// it cannot be contraditory anymore because at least one literal is unassigned!
+						tmpWatched.clear();
 						BOOST_FOREACH (ID lit, ng){
 							if (falsified(lit)){
 								stillInactive = true;
 								break;
 							}
 							// collect up to 2 watched literals
-							if (!assigned(lit.address) && watched.size() < 2){
-								watched.insert(lit);
+							if (!assigned(lit.address) && tmpWatched.size() < 2){
+								tmpWatched.insert(lit);
 							}
 						}
 						if (!stillInactive){
 							DBGLOG(DBG, "Nogood " << nogoodNr << " is reactivated");
-							BOOST_FOREACH (ID lit, watched){
+							BOOST_FOREACH (ID lit, tmpWatched){
 								startWatching(nogoodNr, lit);
 							}
 
-							if (watched.size() == 1){
+							if (tmpWatched.size() == 1){
 								DBGLOGD(DBG, "Nogood " << nogoodNr << " becomes unit");
 								unitNogoods.insert(nogoodNr);
 							}
@@ -507,7 +514,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 						break;
 				}
 			}
-		}
+//		}
 	}
 }
 
@@ -585,7 +592,7 @@ std::string CDNLSolver::getStatistics(){
 #endif
 }
 
-CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0){
+CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1){
 
 	initListOfAllFacts();
 

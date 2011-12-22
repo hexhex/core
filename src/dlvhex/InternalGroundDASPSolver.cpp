@@ -151,7 +151,7 @@ bool InternalGroundDASPSolver::isCompHCF(int compNr){
 	return true;
 }
 
-Nogood InternalGroundDASPSolver::getViolatedLoopNogood(Set<ID> ufs){
+Nogood InternalGroundDASPSolver::getViolatedLoopNogood(const Set<ID>& ufs){
 
 	Nogood loopNogood;
 

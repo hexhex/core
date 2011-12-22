@@ -114,20 +114,20 @@ protected:
 	void getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact, Set<IDAddress>& newlyUnfoundedAtoms);
 	void updateUnfoundedSetStructuresAfterSetFact(ID fact);
 	void updateUnfoundedSetStructuresAfterClearFact(IDAddress litadr);
-	ID getPossibleSourceRule(Set<ID> ufs);
+	ID getPossibleSourceRule(const Set<ID>& ufs);
 	bool useAsNewSourceForHeadAtom(IDAddress headAtom, ID sourceRule);
 	Set<ID> getUnfoundedSet();
 
 	// helper members
-	bool doesRuleExternallySupportLiteral(ID ruleID, ID lit, Set<ID> s);
-	Set<ID> getExternalSupport(Set<ID> s);
-	Set<ID> satisfiesIndependently(ID ruleID, Set<ID> y);
-	Nogood getLoopNogood(Set<ID> ufs);
+	bool doesRuleExternallySupportLiteral(ID ruleID, ID lit, const Set<ID>& s);
+	Set<ID> getExternalSupport(const Set<ID>& s);
+	Set<ID> satisfiesIndependently(ID ruleID, const Set<ID>& y);
+	Nogood getLoopNogood(const Set<ID>& ufs);
 	ID createNewAtom(std::string predName);
 	ID createNewBodyAtom();
-	std::string toString(Set<ID> lits);
-	std::string toString(Set<IDAddress> lits);
-	std::string toString(std::vector<IDAddress> lits);
+	std::string toString(const Set<ID>& lits);
+	std::string toString(const Set<IDAddress>& lits);
+	std::string toString(const std::vector<IDAddress>& lits);
 
 	template <typename T>
 	inline std::vector<T> intersect(const Set<T>& a, const std::vector<T>& b){

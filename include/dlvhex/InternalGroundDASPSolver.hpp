@@ -56,7 +56,7 @@ protected:
 
 	// helper members
 	bool isCompHCF(int compNr);
-	Nogood getViolatedLoopNogood(Set<ID> ufs);
+	Nogood getViolatedLoopNogood(const Set<ID>& ufs);
 
 public:
 	virtual std::string getStatistics();

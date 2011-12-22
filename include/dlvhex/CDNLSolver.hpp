@@ -85,6 +85,9 @@ protected:
 	long cntResSteps;
 	long cntDetectedConflicts;
 
+	// temporary objects (they are just class members in order to make them reuseable without reallocation)
+	Set<ID> tmpWatched;
+
 	// members
 	inline bool assigned(IDAddress litadr){
 		return factWasSet.get_bit(litadr);

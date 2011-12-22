@@ -220,7 +220,7 @@ private:
 		data = (T*)realloc(data, sizeof(T) * allocSize);
 	}
 
-	int binarySearch(T e){
+	int binarySearch(T e) const{
 		if (rsize == 0) return 0;
 
 		int lower = 0;
@@ -273,12 +273,12 @@ public:
 		data = 0;
 	}
 
-	inline bool contains(T e){
+	inline bool contains(T e) const{
 		int p =  binarySearch(e);
 		return (p < rsize) && (data[p] == e);
 	}
 
-	inline int count(T e){		// for compatibility with std::set
+	inline int count(T e) const{		// for compatibility with std::set
 		return contains(e) ? 1 : 0;
 	}
 
