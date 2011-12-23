@@ -104,6 +104,7 @@ protected:
   // which solver shall be used for external evaluation?
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
+  const ComponentInfo& ci;
 
   //
   // see also comments in GenuineGuessAndCheckModelGenerator.cpp

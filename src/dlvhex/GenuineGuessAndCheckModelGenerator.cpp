@@ -109,7 +109,8 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
   externalEvalConfig(externalEvalConfig),
-  ctx(ctx)
+  ctx(ctx),
+  ci(ci)
 {
   // this model generator can handle any components
   // (and there is quite some room for more optimization)
@@ -570,8 +571,12 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	ASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
-	ASPProgram gprogram = grounder->getGroundProgram();
+	if (factory.ctx.config.getOption("Instantiate")){
+		std::cout << "% Component " << &(factory.ci) << std::endl;
+		std::cout << grounder->getGroundProgramString();
+	}
 
+	ASPProgram gprogram = grounder->getGroundProgram();
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	igas->addExternalLearner(this);
 	firstLearnCall = true;
@@ -714,6 +719,8 @@ output(const Tuple& output)
 // see description of algorithm on top of this file
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
+	if (igas == InternalGroundASPSolverPtr()) return InterpretationPtr();
+
 	if( currentResults == 0 )
 	{
 		// Generate all compatible models

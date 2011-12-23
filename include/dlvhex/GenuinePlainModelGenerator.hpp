@@ -106,6 +106,8 @@ protected:
   // which solver shall be used for external evaluation?
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
   ProgramCtx& ctx;
+  const ComponentInfo& ci;
+
   std::vector<ID> eatoms;
   // original idb (containing eatoms where all inputs are known
   // -> auxiliary input rules of these eatoms must be in predecessor unit!)

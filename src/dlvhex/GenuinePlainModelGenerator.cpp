@@ -51,12 +51,13 @@ GenuinePlainModelGeneratorFactory::GenuinePlainModelGeneratorFactory(
   BaseModelGeneratorFactory(),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
+  ci(ci),
   eatoms(ci.outerEatoms),
   idb(),
   xidb()
 {
   RegistryPtr reg = ctx.registry();
-
+std::cout << "!!!" << "mb " << &(ci) << std::endl;
   // this model generator can handle:
   // components with outer eatoms
   // components with inner rules
@@ -161,8 +162,12 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	ASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
-	ASPProgram gprogram = grounder->getGroundProgram();
+	if (factory.ctx.config.getOption("Instantiate")){
+		std::cout << "% Component " << &(factory.ci) << std::endl;
+		std::cout << grounder->getGroundProgramString();
+	}
 
+	ASPProgram gprogram = grounder->getGroundProgram();
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	currentanswer = 0;
 }
@@ -170,6 +175,8 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 GenuinePlainModelGenerator::InterpretationPtr
 GenuinePlainModelGenerator::generateNextModel()
 {
+	if (igas == InternalGroundASPSolverPtr()) return InterpretationPtr();
+
 	RegistryPtr reg = factory.ctx.registry();
 
 	// remove edb from result

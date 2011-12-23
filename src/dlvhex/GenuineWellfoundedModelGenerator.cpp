@@ -53,6 +53,7 @@ GenuineWellfoundedModelGeneratorFactory::GenuineWellfoundedModelGeneratorFactory
   BaseModelGeneratorFactory(),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
+  ci(ci),
   outerEatoms(ci.outerEatoms),
   innerEatoms(ci.innerEatoms),
   idb(),
@@ -207,6 +208,11 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				ASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
 				InternalGrounder grounder(factory.ctx, program);
 				ASPProgram gprogram = grounder.getGroundProgram();
+				if (factory.ctx.config.getOption("Instantiate")){
+					std::cout << "% Component " << &(factory.ci) << std::endl;
+					std::cout << grounder.getGroundProgramString();
+//					return InterpretationPtr();
+				}
 
 				InternalGroundDASPSolver igas(factory.ctx, gprogram);
 

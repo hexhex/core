@@ -139,6 +139,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
+      << "     --instantiate    Generate ground program without evaluating (only useful with --internalsolver)" << std::endl
       << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
       << "     --extlearn       Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
@@ -294,6 +295,7 @@ int main(int argc, char *argv[])
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
   pctx.config.setOption("InternalSolver", 0);
+  pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
@@ -550,6 +552,7 @@ void processOptionsPrePlugin(
 		{ "split", no_argument, &longid, 16 },
 		{ "internalsolver", no_argument, 0, 17 },
 		{ "extlearn", no_argument, 0, 18 },
+		{ "instantiate", no_argument, 0, 19 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -820,6 +823,10 @@ void processOptionsPrePlugin(
 
 		case 18:
 			pctx.config.setOption("ExternalLearning", 1);
+			break;
+
+		case 19:
+			pctx.config.setOption("Instantiate", 1);
 			break;
 
 		case '?':

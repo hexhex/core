@@ -883,6 +883,13 @@ DBGLOG(DBG, "Applying substitution");
 	return reg->batoms.storeAndGetID(sbatom);
 }
 
+std::string InternalGrounder::atomToString(ID atomID){
+	std::stringstream ss;
+	RawPrinter p(ss, reg);
+	p.print(atomID);
+	return ss.str();
+}
+
 std::string InternalGrounder::ruleToString(ID ruleID){
 	std::stringstream ss;
 	RawPrinter p(ss, reg);
@@ -1254,6 +1261,28 @@ InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p) : inputprogram(
 	}
 	DBGLOG(DBG, "Grounded program: " << std::endl << ss.str());
 #endif
+}
+
+std::string InternalGrounder::getGroundProgramString(){
+
+	std::stringstream ss;
+
+	// add edb
+	bm::bvector<>::enumerator en = trueAtoms->getStorage().first();
+	bm::bvector<>::enumerator en_end = trueAtoms->getStorage().end();
+
+	std::set<ID> newGroundRules;
+	while (en < en_end){
+		ss << ruleToString(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)) << "." << std::endl;
+		en++;
+	}
+
+	// add idb
+	ss << std::endl;
+	BOOST_FOREACH (ID ruleID, groundRules){
+		ss << ruleToString(ruleID) << std::endl;
+	}
+	return ss.str();
 }
 
 ASPProgram InternalGrounder::getGroundProgram(){

@@ -116,6 +116,7 @@ protected:
 	ID applySubstitutionToAtom(Substitution s, ID atomID);
 	ID applySubstitutionToOrdinaryAtom(Substitution s, ID atomID);
 	ID applySubstitutionToBuiltinAtom(Substitution s, ID atomID);
+	std::string atomToString(ID ruleID);
 	std::string ruleToString(ID ruleID);
 	ID getPredicateOfAtom(ID atomID);
 	bool isGroundRule(ID ruleID);
@@ -143,6 +144,7 @@ public:
 	InternalGrounder(ProgramCtx& ctx, ASPProgram& p);
 
 	ASPProgram getGroundProgram();
+	std::string getGroundProgramString();
 
 	typedef boost::shared_ptr<InternalGrounder> Ptr;
 	typedef boost::shared_ptr<const InternalGrounder> ConstPtr;
