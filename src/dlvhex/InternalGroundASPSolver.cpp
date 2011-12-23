@@ -708,7 +708,7 @@ Nogood InternalGroundASPSolver::getLoopNogood(const Set<ID>& ufs){
 	// choose one l from
 	// lamba(ufs) = { Ta | a in ufs} x Prod_{r in extsup(ufs)} indsat(r, ufs)
 	// such that l \ { Ta | a in ufs} is currently satisfied
-	loopNogood.insert(*(ufs.begin()));
+	loopNogood.insert(createLiteral(*(ufs.begin())));
 
 	// choose for each external rule one literal which
 	// (i) satisfies it independently from ufs; and
@@ -718,7 +718,7 @@ Nogood InternalGroundASPSolver::getLoopNogood(const Set<ID>& ufs){
 		Set<ID> satInd = satisfiesIndependently(ruleID, ufs);	// (i)
 		BOOST_FOREACH (ID indLit, satInd){
 			if (satisfied(indLit)){				// (ii)
-				loopNogood.insert(indLit);
+				loopNogood.insert(createLiteral(indLit));
 				break;
 			}
 		}

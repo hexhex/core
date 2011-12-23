@@ -39,8 +39,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-//#define DBGLOGD(X,Y) DBGLOG(X,Y)
-#define DBGLOGD(X,Y) do{}while(false);
+#define DBGLOGD(X,Y) DBGLOG(X,Y)
+//#define DBGLOGD(X,Y) do{}while(false);
 
 // ---------- Class CDNLSolver ----------
 
@@ -185,7 +185,7 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 		interpretation->setFact(fact.address);
 	}
 	assignmentOrder.insert(fact.address);
-	while (dl >= factsOnDecisionLevel.size()) factsOnDecisionLevel.push_back(std::vector<IDAddress>());
+//	while (dl >= factsOnDecisionLevel.size()) factsOnDecisionLevel.push_back(std::vector<IDAddress>());
 	factsOnDecisionLevel[dl].push_back(fact.address);
 
 	updateWatchingStructuresAfterSetFact(fact);
@@ -308,8 +308,10 @@ void CDNLSolver::initWatchingStructures(){
 
 	// reset lazy data structures
 	watchedLiteralsOfNogood = std::vector<Set<ID> >(nogoodset.nogoods.size());
-	watchingNogoodsOfLiteral.clear();
-	nogoodsOfLiteral.clear();
+	watchingNogoodsOfPosLiteral.clear();
+	watchingNogoodsOfNegLiteral.clear();
+	nogoodsOfPosLiteral.clear();
+	nogoodsOfNegLiteral.clear();
 
 	// each nogood watches (at most) two of its literals
 	for (unsigned int nogoodNr = 0; nogoodNr < nogoodset.nogoods.size(); ++nogoodNr){
@@ -324,7 +326,11 @@ void CDNLSolver::updateWatchingStructuresAfterAddNogood(int index){
 
 	// remember for all literals in the nogood that they are contained in this nogood
 	BOOST_FOREACH (ID lit, ng){
-		nogoodsOfLiteral[lit].insert(index);
+		if (!lit.isNaf()){
+			nogoodsOfPosLiteral[lit.address].insert(index);
+		}else{
+			nogoodsOfNegLiteral[lit.address].insert(index);
+		}
 	}
 
 	// search for up to two unassigned literals to watch
@@ -361,7 +367,8 @@ void CDNLSolver::updateWatchingStructuresAfterRemoveNogood(int index){
 
 	// remove the nogood from all literal lists
 	BOOST_FOREACH (ID lit, ng){
-		nogoodsOfLiteral[lit].erase(index);
+		nogoodsOfPosLiteral[lit.address].erase(index);
+		nogoodsOfNegLiteral[lit.address].erase(index);
 	}
 
 	// remove all watched literals
@@ -377,11 +384,12 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 	bool changed;
 
 	// go through all nogoods which watch this literal negatively and inactivate them
-	if (watchingNogoodsOfLiteral.find(negation(lit)) != watchingNogoodsOfLiteral.end()){
+	if ((lit.isNaf() && watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()) ||
+	    (!lit.isNaf() && watchingNogoodsOfNegLiteral.find(lit.address) != watchingNogoodsOfNegLiteral.end())){
 		do{
 			changed = false;
 
-			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[negation(lit)]){
+			BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfPosLiteral[lit.address] : watchingNogoodsOfNegLiteral[lit.address]){
 				inactivateNogood(nogoodNr);
 				changed = true;
 				break;
@@ -390,11 +398,11 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 	}
 
 	// go through all nogoods which watch this literal positively and find a new watched literal
-	if (watchingNogoodsOfLiteral.find(lit) != watchingNogoodsOfLiteral.end()){
+	if (watchingNogoodsOfPosLiteral.find(lit.address) != watchingNogoodsOfPosLiteral.end()){
 		do{
 			changed = false;
 
-			BOOST_FOREACH (int nogoodNr, watchingNogoodsOfLiteral[lit]){
+			BOOST_FOREACH (int nogoodNr, lit.isNaf() ? watchingNogoodsOfNegLiteral[lit.address] : watchingNogoodsOfPosLiteral[lit.address]){
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
 
 				// stop watching lit
@@ -446,12 +454,13 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 
 	// go through all nogoods which contain this literal either positively or negatively
 	for (int positiveAndNegativeLiteral = 1; positiveAndNegativeLiteral <= 2; ++positiveAndNegativeLiteral){
-		ID lit;
-		if (positiveAndNegativeLiteral == 1)	lit = literal;
-		else					lit = negation(literal);
+//		ID lit;
+		
+//		if (positiveAndNegativeLiteral == 1)	lit = literal;
+//		else					lit = negation(literal);
 
 //		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
-			BOOST_FOREACH (int nogoodNr, nogoodsOfLiteral[lit]){
+			BOOST_FOREACH (int nogoodNr, positiveAndNegativeLiteral == 1 ? nogoodsOfPosLiteral[literal.address] : nogoodsOfNegLiteral[literal.address]){
 				DBGLOG(DBG, "Updating nogood " << nogoodNr);
 
 				const Nogood& ng = nogoodset.nogoods[nogoodNr];
@@ -515,7 +524,8 @@ void CDNLSolver::inactivateNogood(int nogoodNr){
 	DBGLOGD(DBG, "Nogood " << nogoodNr << " gets inactive");
 
 	BOOST_FOREACH (ID lit, watchedLiteralsOfNogood[nogoodNr]){
-		watchingNogoodsOfLiteral[lit].erase(nogoodNr);
+		watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
+		watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
 	}
 	watchedLiteralsOfNogood[nogoodNr].clear();
 
@@ -525,14 +535,22 @@ void CDNLSolver::inactivateNogood(int nogoodNr){
 
 void CDNLSolver::stopWatching(int nogoodNr, ID lit){
 	DBGLOGD(DBG, "Nogood " << nogoodNr << " stops watching " << litToString(lit));
-	watchingNogoodsOfLiteral[lit].erase(nogoodNr);
+	if (!lit.isNaf()){
+		watchingNogoodsOfPosLiteral[lit.address].erase(nogoodNr);
+	}else{
+		watchingNogoodsOfNegLiteral[lit.address].erase(nogoodNr);
+	}
 	watchedLiteralsOfNogood[nogoodNr].erase(lit);
 }
 
 void CDNLSolver::startWatching(int nogoodNr, ID lit){
 	DBGLOGD(DBG, "Nogood " << nogoodNr << " starts watching " << litToString(lit));
 	watchedLiteralsOfNogood[nogoodNr].insert(lit);
-	watchingNogoodsOfLiteral[lit].insert(nogoodNr);
+	if (!lit.isNaf()){
+		watchingNogoodsOfPosLiteral[lit.address].insert(nogoodNr);
+	}else{
+		watchingNogoodsOfNegLiteral[lit.address].insert(nogoodNr);
+	}
 }
 
 void CDNLSolver::touchVarsInNogood(Nogood& ng){
@@ -547,14 +565,25 @@ void CDNLSolver::touchVarsInNogood(Nogood& ng){
 
 void CDNLSolver::initListOfAllFacts(){
 
+	IDAddress maxAdr = 0;
+
 	// build a list of all literals which need to be assigned
 	// go through all nogoods
 	for (std::vector<Nogood>::const_iterator nIt = nogoodset.nogoods.begin(); nIt != nogoodset.nogoods.end(); ++nIt){
 		// go through all literals of the nogood
 		for (Nogood::const_iterator lIt = nIt->begin(); lIt != nIt->end(); ++lIt){
 			allFacts.insert(lIt->address);
+
+			if (lIt->address > maxAdr) maxAdr = lIt->address;
 		}
 	}
+
+	decisionlevel.resize(maxAdr + 1);
+	cause.resize(maxAdr + 1);
+//	nogoodsOfPosLiteral.resize(maxAdr + 1);
+//	nogoodsOfNegLiteral.resize(maxAdr + 1);
+//	watchingNogoodsOfPosLiteral.resize(maxAdr + 1);
+//	watchingNogoodsOfNegLiteral.resize(maxAdr + 1);
 }
 
 std::string CDNLSolver::litToString(ID lit){

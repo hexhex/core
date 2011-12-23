@@ -69,20 +69,26 @@ protected:
 	// solver state information
 	Interpretation::Ptr interpretation;
 	bm::bvector<> factWasSet;
-//	DynamicVector<IDAddress, int> decisionlevel;
-//	DynamicVector<IDAddress, int> cause;
-	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> decisionlevel;
-	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
+	DynamicVector<IDAddress, int> decisionlevel;
+	DynamicVector<IDAddress, int> cause;
+//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> decisionlevel;
+//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
 	int currentDL;
 	OrderedSet<IDAddress, SimpleHashIDAddress> assignmentOrder;
-	std::vector<std::vector<IDAddress> > factsOnDecisionLevel;
+	DynamicVector<int, std::vector<IDAddress> > factsOnDecisionLevel;
 
 	int exhaustedDL;	// maximum decision level such that the search space above was exhausted
-	boost::unordered_map<int, ID> decisionLiteralOfDecisionLevel;
+	DynamicVector<int, ID> decisionLiteralOfDecisionLevel;
 
 	// watching data structures for efficient unit propagation
-	boost::unordered_map<ID, Set<int>, SimpleHashID > nogoodsOfLiteral;
-	boost::unordered_map<ID, Set<int>, SimpleHashID > watchingNogoodsOfLiteral;
+//	DynamicVector<IDAddress, Set<int> > nogoodsOfPosLiteral;
+//	DynamicVector<IDAddress, Set<int> > nogoodsOfNegLiteral;
+//	DynamicVector<IDAddress, Set<int> > watchingNogoodsOfPosLiteral;
+//	DynamicVector<IDAddress, Set<int> > watchingNogoodsOfNegLiteral;
+	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > nogoodsOfPosLiteral;
+	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > nogoodsOfNegLiteral;
+	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > watchingNogoodsOfPosLiteral;
+	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > watchingNogoodsOfNegLiteral;
 	std::vector<Set<ID> > watchedLiteralsOfNogood;
 	Set<int> unitNogoods;
 	Set<int> contradictoryNogoods;

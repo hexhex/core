@@ -161,7 +161,7 @@ Nogood InternalGroundDASPSolver::getViolatedLoopNogood(const Set<ID>& ufs){
 	// such that l is currently satisfied
 	BOOST_FOREACH (ID at, ufs){
 		if (satisfied(at)){
-			loopNogood.insert(at);
+			loopNogood.insert(createLiteral(at));
 			break;
 		}
 	}
@@ -174,7 +174,7 @@ Nogood InternalGroundDASPSolver::getViolatedLoopNogood(const Set<ID>& ufs){
 		Set<ID> satInd = satisfiesIndependently(ruleID, ufs);	// (i)
 		BOOST_FOREACH (ID indLit, satInd){
 			if (satisfied(indLit)){				// (ii)
-				loopNogood.insert(indLit);
+				loopNogood.insert(createLiteral(indLit));
 				break;
 			}
 		}
