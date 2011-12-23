@@ -40,6 +40,7 @@
 #include "dlvhex/Printhelpers.hpp"
 #include <boost/foreach.hpp>
 #include "Set.hpp"
+#include "DynamicVector.hpp"
 #include "dlvhex/Nogood.hpp"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -48,6 +49,18 @@ DLVHEX_NAMESPACE_BEGIN
 
 class CDNLSolver{
 protected:
+	struct SimpleHashIDAddress : public std::unary_function<IDAddress, std::size_t> {
+		inline std::size_t operator()(IDAddress const& ida) const{
+			return ida;
+		}
+	};
+	struct SimpleHashID : public std::unary_function<ID, std::size_t> {
+		inline std::size_t operator()(ID const& id) const{
+			if (id.isNaf())	return id.address * 2 + 1;
+			else		return id.address * 2;
+		}
+	};
+
 	// instance information
 	NogoodSet nogoodset;
 	Set<IDAddress> allFacts;
@@ -56,26 +69,30 @@ protected:
 	// solver state information
 	Interpretation::Ptr interpretation;
 	bm::bvector<> factWasSet;
-	boost::unordered_map<IDAddress, int> decisionlevel;
-	boost::unordered_map<IDAddress, int> cause;
+//	DynamicVector<IDAddress, int> decisionlevel;
+//	DynamicVector<IDAddress, int> cause;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> decisionlevel;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
 	int currentDL;
-	OrderedSet<IDAddress> assignmentOrder;
+	OrderedSet<IDAddress, SimpleHashIDAddress> assignmentOrder;
 	std::vector<std::vector<IDAddress> > factsOnDecisionLevel;
 
 	int exhaustedDL;	// maximum decision level such that the search space above was exhausted
-	std::map<int, ID> decisionLiteralOfDecisionLevel;
+	boost::unordered_map<int, ID> decisionLiteralOfDecisionLevel;
 
 	// watching data structures for efficient unit propagation
-	boost::unordered_map<ID, Set<int> > nogoodsOfLiteral;
-	boost::unordered_map<ID, Set<int> > watchingNogoodsOfLiteral;
+	boost::unordered_map<ID, Set<int>, SimpleHashID > nogoodsOfLiteral;
+	boost::unordered_map<ID, Set<int>, SimpleHashID > watchingNogoodsOfLiteral;
 	std::vector<Set<ID> > watchedLiteralsOfNogood;
 	Set<int> unitNogoods;
 	Set<int> contradictoryNogoods;
 
 	// variable selection heuristics
 	int conflicts;
-	boost::unordered_map<IDAddress, int> varCounterPos;
-	boost::unordered_map<IDAddress, int> varCounterNeg;
+//	DynamicVector<IDAddress, int> varCounterPos;
+//	DynamicVector<IDAddress, int> varCounterNeg;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
 	std::vector<int> recentConflicts;
 
 	// statistics
@@ -165,7 +182,10 @@ protected:
 		return i;
 	}
 
-	long getAssignmentOrderIndex(IDAddress adr);
+	inline long getAssignmentOrderIndex(IDAddress adr){
+		if (!assigned(adr)) return -1;
+		return assignmentOrder.getInsertionIndex(adr);
+	}
 public:
 	inline ID createLiteral(ID lit){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);

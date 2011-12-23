@@ -57,7 +57,7 @@ GenuinePlainModelGeneratorFactory::GenuinePlainModelGeneratorFactory(
   xidb()
 {
   RegistryPtr reg = ctx.registry();
-std::cout << "!!!" << "mb " << &(ci) << std::endl;
+
   // this model generator can handle:
   // components with outer eatoms
   // components with inner rules

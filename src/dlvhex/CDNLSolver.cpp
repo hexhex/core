@@ -93,31 +93,32 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	int count;
 	int resSteps = 0;
 	int latestDL;
+	IDAddress impliedLit;
+	ID latestLit;
+	int bt = 0;
 	do{
 		count = 0;
-		IDAddress impliedLit = ID_FAIL;
-
-		ID latestLit = ID_FAIL;
+		impliedLit = ID_FAIL;
+		latestLit = ID_FAIL;
 		BOOST_FOREACH (ID lit, learnedNogood){
-//DBGLOG(DBG, "I(" << lit.address << ") = " << getAssignmentOrderIndex(lit.address) << ", dl(" << lit.address << ") = " << decisionlevel[lit.address]);
 			if (latestLit == ID_FAIL || getAssignmentOrderIndex(lit.address) > getAssignmentOrderIndex(latestLit.address)){
 				latestLit = lit;
 			}
 		}
 		latestDL = decisionlevel[latestLit.address];
-//		DBGLOG(DBG, "Latest literal in nogood is " << latestLit.address);
 
-//		int maxDL = 0;
 		BOOST_FOREACH (ID lit, learnedNogood){
-//			if (decisionlevel[lit.address] > maxDL){
-//				maxDL = decisionlevel[lit.address];
-//				count = 0;
-//			}
+			// compute number of literals on latest dl
 			if (decisionlevel[lit.address] == latestDL){
 				count++;
 				if (!isDecisionLiteral(lit.address)){
 					impliedLit = lit.address;
 				}
+			}
+
+			// backtrack to the second-highest decision level
+			else if (decisionlevel[lit.address] > bt /*&& decisionlevel[lit.address] < latestDL*/){
+				bt = decisionlevel[lit.address];
 			}
 		}
 
@@ -137,14 +138,6 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 		// if resSteps == 0, then learnedNogood == violatedNogood, which was already touched
 		touchVarsInNogood(learnedNogood);
 	}
-
-	// backtrack to the second-highest decision level
-	int bt = 0;
-	BOOST_FOREACH (ID lit, learnedNogood){
-		if (decisionlevel[lit.address] > bt && decisionlevel[lit.address] < latestDL){
-			bt = decisionlevel[lit.address];
-		}
-	}	
 
 	DBGLOG(DBG, "Learned conflict nogood: " << learnedNogood << " (after " << resSteps << " resolution steps)");
 	DBGLOG(DBG, "Backtrack-DL: " << bt);
@@ -205,7 +198,7 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 void CDNLSolver::clearFact(IDAddress litadr){
 	DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
 	factWasSet.clear_bit(litadr);
-	decisionlevel.erase(litadr);
+//	decisionlevel.erase(litadr);
 	cause.erase(litadr);
 	assignmentOrder.erase(litadr);
 
@@ -568,11 +561,6 @@ std::string CDNLSolver::litToString(ID lit){
 	std::stringstream ss;
 	ss << (lit.isNaf() ? std::string("-") : std::string("")) << lit.address;
 	return ss.str();
-}
-
-long CDNLSolver::getAssignmentOrderIndex(IDAddress adr){
-	if (!assigned(adr)) return -1;
-	return assignmentOrder.getInsertionIndex(adr); //std::find(assignmentOrder.begin(), assignmentOrder.end(), adr) - assignmentOrder.begin();
 }
 
 std::string CDNLSolver::getStatistics(){

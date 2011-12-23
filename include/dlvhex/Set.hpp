@@ -33,6 +33,7 @@
 
 #include <iterator>
 #include <boost/foreach.hpp>
+#include <boost/unordered_map.hpp>
 
 template<typename T>
 class Set;
@@ -264,8 +265,8 @@ public:
 		data = (T*)realloc(0, sizeof(T) * s2.allocSize);
 		allocSize = s2.allocSize;
 		increase = s2.increase;
-		rsize = 0;
-		insert(s2.begin(), s2.end());
+		rsize = s2.rsize;
+		memcpy(data, s2.data, sizeof(T) * rsize);
 	}
 
 	virtual ~Set(){
@@ -379,10 +380,14 @@ public:
 	Set<T>& operator=(const Set<T>& s2){
 		clear();
 		grow(s2.size());
-		insert(s2.begin(), s2.end());
+		rsize = s2.rsize;
+		memcpy(data, s2.data, sizeof(T) * rsize);
 		return *this;
 	}
 };
+
+/*
+// alternative implementation based on Set<T>
 
 template<typename T>
 struct SetElement{
@@ -411,6 +416,7 @@ struct SetElement{
 		return element != el2.element;
 	}
 };
+*/
 
 template<typename T>
 struct SortElement{
@@ -440,11 +446,66 @@ struct SortElement{
 	}
 };
 
-template<typename T>
+// implementation based on boost::unordered_map
+template<typename T, typename H>
 class OrderedSet{
+private:
+	boost::unordered_map<T, long, H> os;
+	long c;
+
+	void renumber(){
+		typedef SortElement<T> SortEl;
+		std::vector<SortElement<T> > sorted;
+		sorted.reserve(os.size());
+
+		typedef std::pair<T, long> Pair;
+		BOOST_FOREACH (Pair p, os){
+			sorted.push_back(SortEl(p.second, p.first));
+		}
+
+		std::sort(sorted.begin(), sorted.end());
+
+		c = 0;
+		BOOST_FOREACH (SortEl se, sorted){
+			os[se.elem] = c++;
+		}
+	}
+
+public:
+	OrderedSet() : c(0){
+	}
+	
+	inline void insert(T el){
+		if (c >= 10000000){
+			renumber();
+		}
+		os[el] = c++;
+	}
+
+	inline void erase(T el){
+		os.erase(el);
+	}
+
+	inline long getInsertionIndex(T el){
+		return os[el];
+	}
+
+	inline int compare(T el1, T el2){
+		if (getInsertionIndex(el1) < getInsertionIndex(el2)) return -1;
+		else if (getInsertionIndex(el1) > getInsertionIndex(el2)) return +1;
+		else return 0;
+	}
+
+
+/*
+// alternative implementation based on Set<T>
+
 private:
 	Set<SetElement<T> > os;
 	long c;
+
+	// reusable element (to avoid reallocation on stack of insert, erase and getInsertionIndex)
+	SetElement<T> tmpEl;
 
 	void renumber(){
 		typedef SetElement<T> SetEl;
@@ -468,32 +529,35 @@ public:
 	OrderedSet() : c(0){
 	}
 	
-	void insert(T el){
+	inline void insert(T el){
 		if (c >= 10000000){
 			renumber();
 		}
-		os.insert(SetElement<T>(el, c++));
+		tmpEl.element = el;
+		tmpEl.index = c++;
+		os.insert(tmpEl);
 	}
 
-	void erase(T el){
-		os.erase(SetElement<T>(el, 0));
+	inline void erase(T el){
+		tmpEl.element = el;
+		os.erase(tmpEl);
 	}
 
-	long getInsertionIndex(T el){
-		SetElement<T> e(el, 0);
-		if (os.count(e) > 0){
-			SetElement<T> ose = *(os.find(e));
-			return ose.index;
+	inline long getInsertionIndex(T el){
+		tmpEl.element = el;
+		if (os.count(tmpEl) > 0){
+			return (os.find(tmpEl))->index;
 		}else{
 			return -1;
 		}
 	}
 
-	int compare(T el1, T el2){
+	inline int compare(T el1, T el2){
 		if (getInsertionIndex(el1) < getInsertionIndex(el2)) return -1;
 		else if (getInsertionIndex(el1) > getInsertionIndex(el2)) return +1;
 		else return 0;
 	}
+*/
 };
 
 // compatibility with BOOST_FOREACH

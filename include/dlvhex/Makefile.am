@@ -82,6 +82,7 @@ pkginclude_HEADERS = \
   StrongNegationPlugin.hpp \
   SafetyChecker.h \
   Set.hpp \
+  DynamicVector.hpp \
   State.h \
   Table.hpp \
   Term.hpp \

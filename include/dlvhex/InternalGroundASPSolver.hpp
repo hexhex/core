@@ -70,21 +70,24 @@ protected:
 										// dependency graph
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
-	boost::unordered_map<IDAddress, Node> depNodes;
+//	DynamicVector<IDAddress, Node> depNodes;
+	boost::unordered_map<IDAddress, Node, SimpleHashIDAddress> depNodes;
 	Graph depGraph;
 
 	std::vector<Set<IDAddress> > depSCC;					// store for each component the contained atoms
-	boost::unordered_map<IDAddress, int> componentOfAtom;			// store for each atom its component number
-
-	boost::unordered_map<ID, IDAddress> bodyAtomOfRule;			// store for each rule the body atom
+//	DynamicVector<IDAddress, int> componentOfAtom;				// store for each atom its component number
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> componentOfAtom;// store for each atom its component number
+	boost::unordered_map<ID, IDAddress, SimpleHashID> bodyAtomOfRule;	// store for each rule the body atom
 
 
 	// data structures for unfounded set computation
 	Set<IDAddress> unfoundedAtoms;						// currently unfounded atoms
-	boost::unordered_map<ID, Set<ID> > rulesWithBodyLiteral;		// store for each literal the rules which contain it in their body
-	boost::unordered_map<ID, Set<ID> > rulesWithHeadLiteral;		// store for each literal the rules which contain it in their head
-	boost::unordered_map<IDAddress, Set<IDAddress> > foundedAtomsOfBodyAtom;// store for each body atom the set of atoms which use the corresponding rule as source
-	boost::unordered_map<IDAddress, ID> sourceRule;				// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
+	boost::unordered_map<ID, Set<ID>, SimpleHashID > rulesWithBodyLiteral;	// store for each literal the rules which contain it in their body
+	boost::unordered_map<ID, Set<ID>, SimpleHashID > rulesWithHeadLiteral;	// store for each literal the rules which contain it in their head
+//	DynamicVector<IDAddress, Set<IDAddress> > foundedAtomsOfBodyAtom;	// store for each body atom the set of atoms which use the corresponding rule as source
+//	DynamicVector<IDAddress, ID> sourceRule;				// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
+	boost::unordered_map<IDAddress, Set<IDAddress>, SimpleHashIDAddress > foundedAtomsOfBodyAtom;// store for each body atom the set of atoms which use the corresponding rule as source
+	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 
 	// external learning
 	bm::bvector<> changed;
