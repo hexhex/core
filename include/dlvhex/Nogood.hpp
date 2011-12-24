@@ -39,6 +39,7 @@
 #include "dlvhex/Printhelpers.hpp"
 #include <boost/foreach.hpp>
 #include "Set.hpp"
+#include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -57,7 +58,7 @@ class NogoodSet : private ostream_printable<NogoodSet>{
 public:
 	std::vector<Nogood> nogoods;
 	std::vector<int> freeIndices;
-	std::map<size_t, Set<int> > nogoodsWithHash;
+	boost::unordered_map<size_t, Set<int> > nogoodsWithHash;
 
 	int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);

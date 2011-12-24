@@ -141,14 +141,18 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 	typedef std::pair<ID, ID> RulePair;
 	Set<RulePair> shiftedProgram = createShiftedProgram();
 
+//	IDAddress maxAddress = 0;
+
 	// create for each real shifted rule the nogoods which associate the rule body with the body atom
 	// (shifted rules which were already present in the original program were already handled before)
 	BOOST_FOREACH (RulePair pair, shiftedProgram){
+//		if (pair.second > maxAddress) maxAddress = pair.second;
 		if (!contains(program.idb, pair.first)){
 			const Rule& r = reg->rules.getByID(pair.first);
 			createNogoodsForRuleBody(pair.second, r.body);
 		}
 	}
+//	foundedAtomsOfBodyAtom.resize(maxAddress);
 
 	// an atom must not be true if the bodies of all supporting shifted rules are false
 	BOOST_FOREACH (IDAddress litadr, ordinaryFacts){
@@ -287,22 +291,32 @@ void InternalGroundASPSolver::initSourcePointers(){
 
 void InternalGroundASPSolver::initializeLists(){
 
+	IDAddress maxAddress = 0;
+
 	// determine the set of all facts
 	BOOST_FOREACH (ID ruleID, program.idb){
 		const Rule& r = reg->rules.getByID(ruleID);
 
 		// remember this rule for each contained literal
 		for (std::vector<ID>::const_iterator lIt = r.head.begin(); lIt != r.head.end(); ++lIt){
-			rulesWithHeadLiteral[createLiteral(lIt->address)].insert(ruleID);
+			rulesWithPosHeadLiteral[lIt->address].insert(ruleID);
 			// collect all facts
 			allFacts.insert(lIt->address);
 			ordinaryFacts.insert(lIt->address);
+
+			if (lIt->address > maxAddress) maxAddress = lIt->address;
 		}
 		for (std::vector<ID>::const_iterator lIt = r.body.begin(); lIt != r.body.end(); ++lIt){
-			rulesWithBodyLiteral[createLiteral(lIt->address)].insert(ruleID);
+			if (!lIt->isNaf()){
+				rulesWithPosBodyLiteral[lIt->address].insert(ruleID);
+			}else{
+				rulesWithNegBodyLiteral[lIt->address].insert(ruleID);
+			}
 			// collect all facts
 			allFacts.insert(lIt->address);
 			ordinaryFacts.insert(lIt->address);
+
+			if (lIt->address > maxAddress) maxAddress = lIt->address;
 		}
 	}
 
@@ -312,8 +326,15 @@ void InternalGroundASPSolver::initializeLists(){
 	while (en < en_end){
 		allFacts.insert(*en);
 		ordinaryFacts.insert(*en);
+
+		if (*en > maxAddress) maxAddress = *en;
 		++en;
 	}
+
+	sourceRule.resize(maxAddress);
+	rulesWithPosBodyLiteral.resize(maxAddress);
+	rulesWithNegBodyLiteral.resize(maxAddress);
+	rulesWithPosHeadLiteral.resize(maxAddress);
 }
 
 void InternalGroundASPSolver::setFact(ID fact, int dl, int cause = -1){
@@ -354,7 +375,7 @@ Set<IDAddress> InternalGroundASPSolver::getDependingAtoms(IDAddress litadr){
 	Set<IDAddress> dependingAtoms;
 
 	// go through all rules which contain litadr in their body
-	BOOST_FOREACH (ID ruleID, rulesWithBodyLiteral[createLiteral(litadr)]){
+	BOOST_FOREACH (ID ruleID, rulesWithPosBodyLiteral[litadr]){
 
 		// go through all atoms which use this rule as source
 		BOOST_FOREACH (IDAddress dependingAtom, foundedAtomsOfBodyAtom[bodyAtomOfRule[ruleID]]){
@@ -384,8 +405,8 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 	// become unfounded
 	else{
 		// for all rules which contain the fact in their head
-		if (rulesWithHeadLiteral.find(fact) != rulesWithHeadLiteral.end()){
-			BOOST_FOREACH (ID ruleID, rulesWithHeadLiteral[fact]){
+		if (rulesWithPosHeadLiteral.find(fact.address) != rulesWithPosHeadLiteral.end()){
+			BOOST_FOREACH (ID ruleID, rulesWithPosHeadLiteral[fact.address]){
 				const Rule& r = reg->rules.getByID(ruleID);
 
 				// all other head literals cannot use this rule as source, if
@@ -666,7 +687,7 @@ Set<ID> InternalGroundASPSolver::getExternalSupport(const Set<ID>& s){
 	// go through all rules which contain one of s in their head
 	BOOST_FOREACH (ID lit, s){
 
-		const Set<ID>& containingRules = rulesWithHeadLiteral[lit];
+		const Set<ID>& containingRules = rulesWithPosHeadLiteral[lit.address];
 
 		BOOST_FOREACH (ID ruleID, containingRules){
 
@@ -811,6 +832,7 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, ASPProgram& p) :
 	computeStronglyConnectedComponents();
 	initSourcePointers();
 	setEDB();
+	resizeVectors();
 }
 
 void InternalGroundASPSolver::addExternalLearner(LearningCallback* lb){

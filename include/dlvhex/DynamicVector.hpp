@@ -36,6 +36,7 @@
 #include <utility>
 #include <iostream>
 #include <bm/bm.h>
+#include <boost/numeric/ublas/vector.hpp>
 
 template<typename K, typename T>
 class DynamicVector : public std::vector<T>{
@@ -52,7 +53,7 @@ public:
 	}
 
 	inline T& operator[](K index){
-		while (index >= this->size()) push_back(T());
+		if (index >= this->size()) this->resize(index + 1);
 		stored.set_bit(index);
 		return std::vector<T>::operator[](index);
 	}

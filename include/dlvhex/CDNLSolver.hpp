@@ -95,10 +95,12 @@ protected:
 
 	// variable selection heuristics
 	int conflicts;
-//	DynamicVector<IDAddress, int> varCounterPos;
-//	DynamicVector<IDAddress, int> varCounterNeg;
-	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
-	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
+//	std::vector<int> varCounterPos;
+//	std::vector<int> varCounterNeg;
+	DynamicVector<IDAddress, int> varCounterPos;
+	DynamicVector<IDAddress, int> varCounterNeg;
+//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
+//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
 	std::vector<int> recentConflicts;
 
 	// statistics
@@ -172,6 +174,7 @@ protected:
 
 	// initialization members
 	void initListOfAllFacts();
+	void resizeVectors();
 
 	// helper members
 	static std::string litToString(ID lit);

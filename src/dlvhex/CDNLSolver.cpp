@@ -145,11 +145,15 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 
 	// decision heuristic metric update
 	++conflicts;
-	if (conflicts >= 255){
+	if (conflicts >= 25500){
 		DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
-		typedef std::pair<int, int> Pair;
-		BOOST_FOREACH (Pair p, varCounterPos) p.second /= 2;
-		BOOST_FOREACH (Pair p, varCounterNeg) p.second /= 2;
+//		typedef std::pair<int, int> Pair;
+//		BOOST_FOREACH (Pair p, varCounterPos) p.second /= 2;
+//		BOOST_FOREACH (Pair p, varCounterNeg) p.second /= 2;
+		BOOST_FOREACH (IDAddress litadr, allFacts){
+			varCounterPos[litadr] /= 2;
+			varCounterNeg[litadr] /= 2;
+		}
 		conflicts = 0;
 	}
 }
@@ -565,21 +569,28 @@ void CDNLSolver::touchVarsInNogood(Nogood& ng){
 
 void CDNLSolver::initListOfAllFacts(){
 
-	IDAddress maxAdr = 0;
-
 	// build a list of all literals which need to be assigned
 	// go through all nogoods
 	for (std::vector<Nogood>::const_iterator nIt = nogoodset.nogoods.begin(); nIt != nogoodset.nogoods.end(); ++nIt){
 		// go through all literals of the nogood
 		for (Nogood::const_iterator lIt = nIt->begin(); lIt != nIt->end(); ++lIt){
 			allFacts.insert(lIt->address);
-
-			if (lIt->address > maxAdr) maxAdr = lIt->address;
 		}
+	}
+}
+
+void CDNLSolver::resizeVectors(){
+
+	IDAddress maxAdr = 0;
+
+	BOOST_FOREACH (IDAddress adr, allFacts){
+		if (adr > maxAdr) maxAdr = adr;
 	}
 
 	decisionlevel.resize(maxAdr + 1);
 	cause.resize(maxAdr + 1);
+	varCounterPos.resize(maxAdr + 1);
+	varCounterNeg.resize(maxAdr + 1);
 //	nogoodsOfPosLiteral.resize(maxAdr + 1);
 //	nogoodsOfNegLiteral.resize(maxAdr + 1);
 //	watchingNogoodsOfPosLiteral.resize(maxAdr + 1);
