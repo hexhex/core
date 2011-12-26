@@ -75,23 +75,29 @@ protected:
 	Graph depGraph;
 
 	std::vector<Set<IDAddress> > depSCC;					// store for each component the contained atoms
+//	std::vector<int> componentOfAtom;					// store for each atom its component number
+//	std::vector<IDAddress> bodyAtomOfRule;					// store for each rule the body atom
 //	DynamicVector<IDAddress, int> componentOfAtom;				// store for each atom its component number
+//	DynamicVector<IDAddress, IDAddress> bodyAtomOfRule;			// store for each rule the body atom
 	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> componentOfAtom;// store for each atom its component number
-	boost::unordered_map<ID, IDAddress, SimpleHashID> bodyAtomOfRule;	// store for each rule the body atom
+	boost::unordered_map<IDAddress, IDAddress, SimpleHashIDAddress> bodyAtomOfRule;	// store for each rule the body atom
 
 
 	// data structures for unfounded set computation
 	Set<IDAddress> unfoundedAtoms;						// currently unfounded atoms
-	DynamicVector<IDAddress, Set<ID> > rulesWithPosBodyLiteral;		// store for each literal the rules which contain it positively in their body
-	DynamicVector<IDAddress, Set<ID> > rulesWithNegBodyLiteral;		// store for each literal the rules which contain it negatively in their body
-	DynamicVector<IDAddress, Set<ID> > rulesWithPosHeadLiteral;		// store for each literal the rules which contain it (positively) in their head
-//	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosBodyLiteral;	// store for each literal the rules which contain it positively in their body
-//	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithNegBodyLiteral;	// store for each literal the rules which contain it negatively in their body
-//	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosHeadLiteral;	// store for each literal the rules which contain it (positively) in their head
+//	std::vector<Set<ID> > rulesWithPosBodyLiteral;				// store for each literal the rules which contain it positively in their body
+//	std::vector<Set<ID> > rulesWithNegBodyLiteral;				// store for each literal the rules which contain it negatively in their body
+//	std::vector<Set<ID> > rulesWithPosHeadLiteral;				// store for each literal the rules which contain it (positively) in their head
+//	DynamicVector<IDAddress, Set<ID> > rulesWithPosBodyLiteral;		// store for each literal the rules which contain it positively in their body
+//	DynamicVector<IDAddress, Set<ID> > rulesWithNegBodyLiteral;		// store for each literal the rules which contain it negatively in their body
+//	DynamicVector<IDAddress, Set<ID> > rulesWithPosHeadLiteral;		// store for each literal the rules which contain it (positively) in their head
+	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosBodyLiteral;	// store for each literal the rules which contain it positively in their body
+	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithNegBodyLiteral;	// store for each literal the rules which contain it negatively in their body
+	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosHeadLiteral;	// store for each literal the rules which contain it (positively) in their head
+//	std::vector<Set<IDAddress> > foundedAtomsOfBodyAtom;			// store for each body atom the set of atoms which use the corresponding rule as source
 //	DynamicVector<IDAddress, Set<IDAddress> > foundedAtomsOfBodyAtom;	// store for each body atom the set of atoms which use the corresponding rule as source
-	DynamicVector<IDAddress, ID> sourceRule;				// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 	boost::unordered_map<IDAddress, Set<IDAddress>, SimpleHashIDAddress > foundedAtomsOfBodyAtom;// store for each body atom the set of atoms which use the corresponding rule as source
-//	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
+	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 
 	// external learning
 	bm::bvector<> changed;
@@ -104,8 +110,9 @@ protected:
 	void createNogoodsForRule(ID ruleBodyAtomID, ID ruleID);
 	void createNogoodsForRuleBody(ID ruleBodyAtomID, const Tuple& ruleBody);
 	Set<std::pair<ID, ID> > createShiftedProgram();
-	void createSingularLoopNogoods();
 	void computeClarkCompletion();
+	void createSingularLoopNogoods();
+	virtual void resizeVectors();
 	void setEDB();
 	void computeDepGraph();
 	void computeStronglyConnectedComponents();

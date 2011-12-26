@@ -94,15 +94,21 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	int resSteps = 0;
 	int latestDL;
 	IDAddress impliedLit;
+	long litAssignmentOrderIndex;
 	ID latestLit;
+	long latestLitAssignmentOrderIndex;
 	int bt = 0;
 	do{
 		count = 0;
 		impliedLit = ID_FAIL;
 		latestLit = ID_FAIL;
+		latestLitAssignmentOrderIndex = -1;
 		BOOST_FOREACH (ID lit, learnedNogood){
-			if (latestLit == ID_FAIL || getAssignmentOrderIndex(lit.address) > getAssignmentOrderIndex(latestLit.address)){
+			litAssignmentOrderIndex = getAssignmentOrderIndex(lit.address);
+			if (litAssignmentOrderIndex > latestLitAssignmentOrderIndex){
+//			if (latestLit == ID_FAIL || getAssignmentOrderIndex(lit.address) > getAssignmentOrderIndex(latestLit.address)){
 				latestLit = lit;
+				latestLitAssignmentOrderIndex = getAssignmentOrderIndex(latestLit.address);
 			}
 		}
 		latestDL = decisionlevel[latestLit.address];
@@ -117,7 +123,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 			}
 
 			// backtrack to the second-highest decision level
-			else if (decisionlevel[lit.address] > bt /*&& decisionlevel[lit.address] < latestDL*/){
+			else if (decisionlevel[lit.address] > bt && lit.address != latestLit.address /*&& decisionlevel[lit.address] < latestDL*/){
 				bt = decisionlevel[lit.address];
 			}
 		}
@@ -145,7 +151,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 
 	// decision heuristic metric update
 	++conflicts;
-	if (conflicts >= 25500){
+	if (conflicts >= 255){
 		DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
 //		typedef std::pair<int, int> Pair;
 //		BOOST_FOREACH (Pair p, varCounterPos) p.second /= 2;
@@ -182,7 +188,8 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 	}
 	factWasSet.set_bit(fact.address);			// fact was set
 	decisionlevel[fact.address] = dl;			// store decision level
-	if (c > -1) cause[fact.address] = c;			// store cause
+	//if (c > -1)
+	cause[fact.address] = c;				// store cause
 	if (fact.isNaf()){					// store truth value
 		interpretation->clearFact(fact.address);
 	}else{
@@ -203,7 +210,7 @@ void CDNLSolver::clearFact(IDAddress litadr){
 	DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
 	factWasSet.clear_bit(litadr);
 //	decisionlevel.erase(litadr);
-	cause.erase(litadr);
+	cause[litadr] = -1;
 	assignmentOrder.erase(litadr);
 
 	// getFact will return the truth value which was just unset
@@ -581,20 +588,25 @@ void CDNLSolver::initListOfAllFacts(){
 
 void CDNLSolver::resizeVectors(){
 
-	IDAddress maxAdr = 0;
+//	IDAddress maxAdr = 0;
 
-	BOOST_FOREACH (IDAddress adr, allFacts){
-		if (adr > maxAdr) maxAdr = adr;
-	}
+//	BOOST_FOREACH (IDAddress adr, allFacts){
+//		if (adr > maxAdr) maxAdr = adr;
+//	}
 
-	decisionlevel.resize(maxAdr + 1);
-	cause.resize(maxAdr + 1);
-	varCounterPos.resize(maxAdr + 1);
-	varCounterNeg.resize(maxAdr + 1);
-//	nogoodsOfPosLiteral.resize(maxAdr + 1);
-//	nogoodsOfNegLiteral.resize(maxAdr + 1);
-//	watchingNogoodsOfPosLiteral.resize(maxAdr + 1);
-//	watchingNogoodsOfNegLiteral.resize(maxAdr + 1);
+	unsigned atomNamespaceSize = ctx.registry()->ogatoms.getSize();
+
+	DBGLOG(DBG, "Resizing vectors to ground-atom namespace of size: " << atomNamespaceSize);
+/*
+	cause.resize(atomNamespaceSize);
+	varCounterPos.resize(atomNamespaceSize);
+	varCounterNeg.resize(atomNamespaceSize);
+	nogoodsOfPosLiteral.resize(atomNamespaceSize);
+	nogoodsOfNegLiteral.resize(atomNamespaceSize);
+	watchingNogoodsOfPosLiteral.resize(atomNamespaceSize);
+	watchingNogoodsOfNegLiteral.resize(atomNamespaceSize);
+*/
+	assignmentOrder.resize(atomNamespaceSize);
 }
 
 std::string CDNLSolver::litToString(ID lit){
@@ -622,6 +634,7 @@ std::string CDNLSolver::getStatistics(){
 
 CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1){
 
+	resizeVectors();
 	initListOfAllFacts();
 
 	// create an interpretation

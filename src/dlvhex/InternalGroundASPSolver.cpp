@@ -125,7 +125,7 @@ Set<std::pair<ID, ID> > InternalGroundASPSolver::createShiftedProgram(){
 			// rule was already present in original program and has already a body literal
 			DBGLOG(DBG, "Creating shifted rule which was already present in original program: " << r);
 
-			shiftedProg.insert(std::pair<ID, ID>(ruleID, createLiteral(bodyAtomOfRule[ruleID])));
+			shiftedProg.insert(std::pair<ID, ID>(ruleID, createLiteral(bodyAtomOfRule[ruleID.address])));
 		}
 	}
 
@@ -175,12 +175,28 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 	DBGLOG(DBG, "Nogoods with singular loop nogoods: " << nogoodset);
 }
 
+void InternalGroundASPSolver::resizeVectors(){
+
+	CDNLSolver::resizeVectors();
+
+	unsigned atomNamespaceSize = reg->ogatoms.getSize();
+
+/*
+	componentOfAtom.resize(atomNamespaceSize);
+	bodyAtomOfRule.resize(atomNamespaceSize);
+	rulesWithPosBodyLiteral.resize(atomNamespaceSize);
+	rulesWithNegBodyLiteral.resize(atomNamespaceSize);
+	rulesWithPosHeadLiteral.resize(atomNamespaceSize);
+	foundedAtomsOfBodyAtom.resize(atomNamespaceSize);
+*/
+}
+
 void InternalGroundASPSolver::computeClarkCompletion(){
 
 	// compute completion
 	BOOST_FOREACH (ID ruleID, program.idb){
 		ID ruleBodyAtomID = createNewBodyAtom();
-		bodyAtomOfRule[ruleID] = ruleBodyAtomID.address;
+		bodyAtomOfRule[ruleID.address] = ruleBodyAtomID.address;
 		createNogoodsForRule(ruleBodyAtomID, ruleID);
 	}
 
@@ -291,8 +307,6 @@ void InternalGroundASPSolver::initSourcePointers(){
 
 void InternalGroundASPSolver::initializeLists(){
 
-	IDAddress maxAddress = 0;
-
 	// determine the set of all facts
 	BOOST_FOREACH (ID ruleID, program.idb){
 		const Rule& r = reg->rules.getByID(ruleID);
@@ -303,8 +317,6 @@ void InternalGroundASPSolver::initializeLists(){
 			// collect all facts
 			allFacts.insert(lIt->address);
 			ordinaryFacts.insert(lIt->address);
-
-			if (lIt->address > maxAddress) maxAddress = lIt->address;
 		}
 		for (std::vector<ID>::const_iterator lIt = r.body.begin(); lIt != r.body.end(); ++lIt){
 			if (!lIt->isNaf()){
@@ -315,8 +327,6 @@ void InternalGroundASPSolver::initializeLists(){
 			// collect all facts
 			allFacts.insert(lIt->address);
 			ordinaryFacts.insert(lIt->address);
-
-			if (lIt->address > maxAddress) maxAddress = lIt->address;
 		}
 	}
 
@@ -326,15 +336,8 @@ void InternalGroundASPSolver::initializeLists(){
 	while (en < en_end){
 		allFacts.insert(*en);
 		ordinaryFacts.insert(*en);
-
-		if (*en > maxAddress) maxAddress = *en;
 		++en;
 	}
-
-	sourceRule.resize(maxAddress);
-	rulesWithPosBodyLiteral.resize(maxAddress);
-	rulesWithNegBodyLiteral.resize(maxAddress);
-	rulesWithPosHeadLiteral.resize(maxAddress);
 }
 
 void InternalGroundASPSolver::setFact(ID fact, int dl, int cause = -1){
@@ -356,7 +359,7 @@ void InternalGroundASPSolver::removeSourceFromAtom(IDAddress litadr){
 		if (sourceRule[litadr] != ID_FAIL){
 			ID sourceRuleID = sourceRule[litadr];
 			DBGLOG(DBG, "Literal " << litadr << " canceled its source pointer to rule " << sourceRuleID.address);
-			foundedAtomsOfBodyAtom[bodyAtomOfRule[sourceRuleID]].erase(litadr);
+			foundedAtomsOfBodyAtom[bodyAtomOfRule[sourceRuleID.address]].erase(litadr);
 			sourceRule.erase(litadr);
 		}
 	}
@@ -365,7 +368,7 @@ void InternalGroundASPSolver::removeSourceFromAtom(IDAddress litadr){
 void InternalGroundASPSolver::addSourceToAtom(IDAddress litadr, ID rule){
 	DBGLOG(DBG, "Literal " << litadr << " sets a source pointer to " << rule.address);
 	sourceRule[litadr] = rule;
-	foundedAtomsOfBodyAtom[bodyAtomOfRule[rule]].insert(litadr);
+	foundedAtomsOfBodyAtom[bodyAtomOfRule[rule.address]].insert(litadr);
 }
 
 Set<IDAddress> InternalGroundASPSolver::getDependingAtoms(IDAddress litadr){
@@ -378,7 +381,7 @@ Set<IDAddress> InternalGroundASPSolver::getDependingAtoms(IDAddress litadr){
 	BOOST_FOREACH (ID ruleID, rulesWithPosBodyLiteral[litadr]){
 
 		// go through all atoms which use this rule as source
-		BOOST_FOREACH (IDAddress dependingAtom, foundedAtomsOfBodyAtom[bodyAtomOfRule[ruleID]]){
+		BOOST_FOREACH (IDAddress dependingAtom, foundedAtomsOfBodyAtom[bodyAtomOfRule[ruleID.address]]){
 			// this atom is depends on litadr
 			dependingAtoms.insert(dependingAtom);
 		}
@@ -711,8 +714,8 @@ Set<ID> InternalGroundASPSolver::satisfiesIndependently(ID ruleID, const Set<ID>
 	// either (i) the body of rule is false; or
 	//        (ii) some head literal, which is not in y, is true
 	Set<ID> indSat;
-	indSat.insert(createLiteral(bodyAtomOfRule[ruleID], false));	// (i)
-	BOOST_FOREACH (ID headLiteral, rule.head){			// (ii)
+	indSat.insert(createLiteral(bodyAtomOfRule[ruleID.address], false));	// (i)
+	BOOST_FOREACH (ID headLiteral, rule.head){				// (ii)
 		if (y.count(createLiteral(headLiteral.address)) == 0){
 			indSat.insert(createLiteral(headLiteral.address));
 		}
@@ -824,15 +827,16 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, ASPProgram& p) :
 
 	reg = ctx.registry();
 
+	resizeVectors();
 	initializeLists();
 	computeClarkCompletion();
 	createSingularLoopNogoods();
+	resizeVectors();
 	initWatchingStructures();
 	computeDepGraph();
 	computeStronglyConnectedComponents();
 	initSourcePointers();
 	setEDB();
-	resizeVectors();
 }
 
 void InternalGroundASPSolver::addExternalLearner(LearningCallback* lb){

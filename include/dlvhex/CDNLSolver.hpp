@@ -70,9 +70,9 @@ protected:
 	Interpretation::Ptr interpretation;
 	bm::bvector<> factWasSet;
 	DynamicVector<IDAddress, int> decisionlevel;
-	DynamicVector<IDAddress, int> cause;
-//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> decisionlevel;
-//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
+//	std::vector<int> cause;
+//	DynamicVector<IDAddress, int> cause;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
 	int currentDL;
 	OrderedSet<IDAddress, SimpleHashIDAddress> assignmentOrder;
 	DynamicVector<int, std::vector<IDAddress> > factsOnDecisionLevel;
@@ -81,6 +81,10 @@ protected:
 	DynamicVector<int, ID> decisionLiteralOfDecisionLevel;
 
 	// watching data structures for efficient unit propagation
+//	std::vector<Set<int> > nogoodsOfPosLiteral;
+//	std::vector<Set<int> > nogoodsOfNegLiteral;
+//	std::vector<Set<int> > watchingNogoodsOfPosLiteral;
+//	std::vector<Set<int> > watchingNogoodsOfNegLiteral;
 //	DynamicVector<IDAddress, Set<int> > nogoodsOfPosLiteral;
 //	DynamicVector<IDAddress, Set<int> > nogoodsOfNegLiteral;
 //	DynamicVector<IDAddress, Set<int> > watchingNogoodsOfPosLiteral;
@@ -97,10 +101,10 @@ protected:
 	int conflicts;
 //	std::vector<int> varCounterPos;
 //	std::vector<int> varCounterNeg;
-	DynamicVector<IDAddress, int> varCounterPos;
-	DynamicVector<IDAddress, int> varCounterNeg;
-//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
-//	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
+//	DynamicVector<IDAddress, int> varCounterPos;
+//	DynamicVector<IDAddress, int> varCounterNeg;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
+	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
 	std::vector<int> recentConflicts;
 
 	// statistics
@@ -137,7 +141,7 @@ protected:
 	}
 
 	inline bool isDecisionLiteral(IDAddress litaddr){
-		if (cause.find(litaddr) == cause.end()){
+		if (cause[litaddr] == -1){
 			return true;
 		}else{
 			return false;
@@ -174,7 +178,7 @@ protected:
 
 	// initialization members
 	void initListOfAllFacts();
-	void resizeVectors();
+	virtual void resizeVectors();
 
 	// helper members
 	static std::string litToString(ID lit);
@@ -191,10 +195,11 @@ protected:
 		return i;
 	}
 
-	inline long getAssignmentOrderIndex(IDAddress adr){
+	long getAssignmentOrderIndex(IDAddress adr){
 		if (!assigned(adr)) return -1;
 		return assignmentOrder.getInsertionIndex(adr);
 	}
+
 public:
 	inline ID createLiteral(ID lit){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);

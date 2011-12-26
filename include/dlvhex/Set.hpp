@@ -34,6 +34,7 @@
 #include <iterator>
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
+#include "DynamicVector.hpp"
 
 template<typename T>
 class Set;
@@ -256,8 +257,12 @@ public:
 	typedef T value_type;
 	typedef const T& const_reference;
 
-	Set(int initialSize = 10, int inc = 10) : increase(inc), rsize(0){
-		data = (T*)realloc(0, sizeof(T) * initialSize);
+	Set(int initialSize = 0, int inc = 10) : increase(inc), rsize(0){
+		if (initialSize == 0){
+			data = 0;
+		}else{
+			data = (T*)realloc(0, sizeof(T) * initialSize);
+		}
 		allocSize = initialSize;
 	}
 
@@ -450,7 +455,8 @@ struct SortElement{
 template<typename T, typename H>
 class OrderedSet{
 private:
-	boost::unordered_map<T, long, H> os;
+	DynamicVector<T, long> os;
+//	boost::unordered_map<T, long, H> os;
 	long c;
 
 	void renumber(){
@@ -458,9 +464,14 @@ private:
 		std::vector<SortElement<T> > sorted;
 		sorted.reserve(os.size());
 
-		typedef std::pair<T, long> Pair;
-		BOOST_FOREACH (Pair p, os){
-			sorted.push_back(SortEl(p.second, p.first));
+//		typedef std::pair<T, long> Pair;
+//		BOOST_FOREACH (Pair p, os){
+//			sorted.push_back(SortEl(p.second, p.first));
+//		}
+		for (T i = 0; i < os.size(); ++i){
+			if (os.find(i) != os.end()){
+				sorted.push_back(SortEl(os[i], i));
+			}
 		}
 
 		std::sort(sorted.begin(), sorted.end());
@@ -476,7 +487,7 @@ public:
 	}
 	
 	inline void insert(T el){
-		if (c >= 10000000){
+		if (c >= 1000000000){
 			renumber();
 		}
 		os[el] = c++;
@@ -486,7 +497,7 @@ public:
 		os.erase(el);
 	}
 
-	inline long getInsertionIndex(T el){
+	long getInsertionIndex(T el){
 		return os[el];
 	}
 
@@ -494,6 +505,10 @@ public:
 		if (getInsertionIndex(el1) < getInsertionIndex(el2)) return -1;
 		else if (getInsertionIndex(el1) > getInsertionIndex(el2)) return +1;
 		else return 0;
+	}
+
+	int resize(int s){
+//		os.resize(s);
 	}
 
 

@@ -53,7 +53,9 @@ public:
 	}
 
 	inline T& operator[](K index){
-		if (index >= this->size()) this->resize(index + 1);
+		if (index >= this->size()){
+			this->resize(index + 1);
+		}
 		stored.set_bit(index);
 		return std::vector<T>::operator[](index);
 	}
