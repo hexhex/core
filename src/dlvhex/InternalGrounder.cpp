@@ -1285,10 +1285,36 @@ std::string InternalGrounder::getGroundProgramString(){
 	return ss.str();
 }
 
+std::string InternalGrounder::getNongroundProgramString(){
+
+	std::stringstream ss;
+
+	// add edb
+	bm::bvector<>::enumerator en = inputprogram.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = inputprogram.edb->getStorage().end();
+
+	while (en < en_end){
+		ss << ruleToString(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)) << "." << std::endl;
+		en++;
+	}
+
+	// add idb
+	ss << std::endl;
+	BOOST_FOREACH (ID ruleID, inputprogram.idb){
+		ss << ruleToString(ruleID) << std::endl;
+	}
+	return ss.str();
+}
+
 ASPProgram InternalGrounder::getGroundProgram(){
 
 	ASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
 	return gp;
+}
+
+ASPProgram InternalGrounder::getNongroundProgram(){
+
+	return inputprogram;
 }
 
 DLVHEX_NAMESPACE_END

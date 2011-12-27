@@ -164,6 +164,9 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 	if (factory.ctx.config.getOption("Instantiate")){
 		std::cout << "% Component " << &(factory.ci) << std::endl;
+		std::cout << "% Nonground Program " << &(factory.ci) << std::endl;
+		std::cout << grounder->getNongroundProgramString();
+		std::cout << "% Ground Program " << &(factory.ci) << std::endl;
 		std::cout << grounder->getGroundProgramString();
 	}
 

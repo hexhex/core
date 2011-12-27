@@ -144,7 +144,9 @@ public:
 	InternalGrounder(ProgramCtx& ctx, ASPProgram& p);
 
 	ASPProgram getGroundProgram();
+	ASPProgram getNongroundProgram();
 	std::string getGroundProgramString();
+	std::string getNongroundProgramString();
 
 	typedef boost::shared_ptr<InternalGrounder> Ptr;
 	typedef boost::shared_ptr<const InternalGrounder> ConstPtr;
