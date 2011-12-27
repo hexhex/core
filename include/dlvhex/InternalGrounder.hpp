@@ -67,6 +67,7 @@ protected:
 	std::map<ID, int> stratumOfPredicate;					// stores for each predicate its stratum index
 
 
+	ID globallyNewAtom;							// an atom which does not occur in the program
 	std::map<ID, std::vector<ID> > derivableAtomsOfPredicate;		// stores for each predicate (=term) the set of ground atoms over this
 										// predicate which are currently derivable
 
@@ -74,7 +75,6 @@ protected:
 										// body positions where the predicate occurs
 
 	InterpretationPtr trueAtoms;
-	InterpretationPtr falseAtoms;
 
 	std::vector<ID> groundRules;
 	std::vector<ID> nonGroundRules;
@@ -124,6 +124,7 @@ protected:
 	bool isPredicateSolved(ID pred);
 	bool isAtomDerivable(ID atom);
 	int getStratumOfRule(ID ruleID);
+	void computeGloballyNewAtom();
 
 	Binder getBinderOfRule(std::vector<ID>& body);
 	int getClosestBinder(std::vector<ID>& body, int litIndex, std::set<ID> variables);
