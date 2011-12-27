@@ -544,27 +544,27 @@ bool InternalGrounder::matchBuiltin(ID atomID, ID patternAtomID, Substitution& s
 	return true;
 }
 
-int InternalGrounder::matchNextFromExtension(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtension(ID literalID, Substitution& s, int startSearchIndex){
 
-	if (atomID.isOrdinaryAtom()){
-		return matchNextFromExtensionOrdinary(atomID, s, startSearchIndex);
-	}else if (atomID.isBuiltinAtom()){
-		return matchNextFromExtensionBuiltin(atomID, s, startSearchIndex);
+	if (literalID.isOrdinaryAtom()){
+		return matchNextFromExtensionOrdinary(literalID, s, startSearchIndex);
+	}else if (literalID.isBuiltinAtom()){
+		return matchNextFromExtensionBuiltin(literalID, s, startSearchIndex);
 	}
 
 	assert(false);
 }
 
-int InternalGrounder::matchNextFromExtensionOrdinary(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionOrdinary(ID literalID, Substitution& s, int startSearchIndex){
 
 	DBGLOG(DBG, "Matching ordinary atom");
-	if (!atomID.isNaf()){
-		const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
+	if (!literalID.isNaf()){
+		const OrdinaryAtom& atom = literalID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(literalID) : reg->onatoms.getByID(literalID);
 		std::vector<ID>& extension = derivableAtomsOfPredicate[atom.front()];
 
 		for (std::vector<ID>::const_iterator it = extension.begin() + startSearchIndex; it != extension.end(); ++it){
 
-			if (match(atomID, *it, s)){
+			if (match(literalID, *it, s)){
 				// yes
 				// return next start search index
 				return it - extension.begin() + 1;
@@ -576,30 +576,30 @@ int InternalGrounder::matchNextFromExtensionOrdinary(ID atomID, Substitution& s,
 		if (startSearchIndex > 0) return -1;	// only one match
 
 		// naf-literals will always match if the predicates is unsolved
-		if (!isPredicateSolved(getPredicateOfAtom(atomID))){
+		if (!isPredicateSolved(getPredicateOfAtom(literalID))){
 			return 1;
 		}else{
 			// check if the ground literal is NOT in the (complete) extension
-			ID posID = ID(((atomID.kind & (ID::ALL_ONES ^ ID::MAINKIND_MASK)) | ID::MAINKIND_ATOM) ^ ID::NAF_MASK, atomID.address);
-			const OrdinaryAtom& atom = reg->ogatoms.getByID(atomID);
+			ID posID = ID(((literalID.kind & (ID::ALL_ONES ^ ID::MAINKIND_MASK)) | ID::MAINKIND_ATOM) ^ ID::NAF_MASK, literalID.address);
+			const OrdinaryAtom& atom = reg->ogatoms.getByID(posID);
 			std::vector<ID>& extension = derivableAtomsOfPredicate[atom.front()];
-			if (std::find(extension.begin(), extension.end(), posID) != extension.end()){
-				return -1;	// positive atom is derivable
+			if (isAtomDerivable(posID)){
+				return -1;	// no match of naf-literal
 			}else{
-				return 1;	// positive atom is not derivable, therefore the naf-literal is true
+				return 1;	// match of naf-literal
 			}
 		}
 	}
 }
 
-int InternalGrounder::matchNextFromExtensionBuiltin(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionBuiltin(ID literalID, Substitution& s, int startSearchIndex){
 
 	DBGLOG(DBG, "Matching builtin atom");
-	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 
 	switch (atom.tuple[0].address){
 		case ID::TERM_BUILTIN_INT:
-			return matchNextFromExtensionBuiltinUnary(atomID, s, startSearchIndex);
+			return matchNextFromExtensionBuiltinUnary(literalID, s, startSearchIndex);
 
 		case ID::TERM_BUILTIN_EQ:
 		case ID::TERM_BUILTIN_NE:
@@ -607,21 +607,21 @@ int InternalGrounder::matchNextFromExtensionBuiltin(ID atomID, Substitution& s, 
 		case ID::TERM_BUILTIN_LE:
 		case ID::TERM_BUILTIN_GT:
 		case ID::TERM_BUILTIN_GE:
-			return matchNextFromExtensionBuiltinBinary(atomID, s, startSearchIndex);
+			return matchNextFromExtensionBuiltinBinary(literalID, s, startSearchIndex);
 
 		case ID::TERM_BUILTIN_ADD:
 		case ID::TERM_BUILTIN_MUL:
 		case ID::TERM_BUILTIN_SUB:
 		case ID::TERM_BUILTIN_DIV:
 		case ID::TERM_BUILTIN_MOD:
-			return matchNextFromExtensionBuiltinTrinary(atomID, s, startSearchIndex);
+			return matchNextFromExtensionBuiltinTrinary(literalID, s, startSearchIndex);
 	}
 	assert(false);
 }
 
-int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitution& s, int startSearchIndex){
 
-	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 	switch (atom.tuple[0].address){
 		case ID::TERM_BUILTIN_INT:
 			if (startSearchIndex > ctx.maxint /* max int */){
@@ -644,9 +644,9 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID atomID, Substitution
 	assert(false);
 }
 
-int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitution& s, int startSearchIndex){
 
-	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 
 	if (startSearchIndex > 0) return -1;
 
@@ -663,12 +663,12 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID atomID, Substitutio
 	else return -1;
 }
 
-int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID atomID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID literalID, Substitution& s, int startSearchIndex){
 
 	if (startSearchIndex > (ctx.maxint + 1) * (ctx.maxint + 1)){
 		return -1;
 	}else{
-		const BuiltinAtom& atom = reg->batoms.getByID(atomID);
+		const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 
 		int x = startSearchIndex / (ctx.maxint + 1);
 		int y = startSearchIndex % (ctx.maxint + 1);
