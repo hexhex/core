@@ -47,8 +47,9 @@ DLVHEX_NAMESPACE_BEGIN
 bool CDNLSolver::unitPropagation(Nogood& violatedNogood){
 
 	DBGLOG(DBG, "Unit propagation starts");
+	int nogoodNr;
 	while (unitNogoods.size() > 0){
-		int nogoodNr = *(unitNogoods.begin());
+		nogoodNr = *(unitNogoods.begin());
 		const Nogood& nextUnitNogood = nogoodset.nogoods[nogoodNr];
 		unitNogoods.erase(unitNogoods.begin());
 
@@ -106,7 +107,6 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 		BOOST_FOREACH (ID lit, learnedNogood){
 			litAssignmentOrderIndex = getAssignmentOrderIndex(lit.address);
 			if (litAssignmentOrderIndex > latestLitAssignmentOrderIndex){
-//			if (latestLit == ID_FAIL || getAssignmentOrderIndex(lit.address) > getAssignmentOrderIndex(latestLit.address)){
 				latestLit = lit;
 				latestLitAssignmentOrderIndex = getAssignmentOrderIndex(latestLit.address);
 			}
@@ -123,7 +123,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 			}
 
 			// backtrack to the second-highest decision level
-			else if (decisionlevel[lit.address] > bt && lit.address != latestLit.address /*&& decisionlevel[lit.address] < latestDL*/){
+			if (decisionlevel[lit.address] > bt && lit.address != latestLit.address && decisionlevel[lit.address] < latestDL){
 				bt = decisionlevel[lit.address];
 			}
 		}
@@ -153,9 +153,6 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	++conflicts;
 	if (conflicts >= 255){
 		DBGLOG(DBG, "Maximum conflicts count: dividing all counters by 2");
-//		typedef std::pair<int, int> Pair;
-//		BOOST_FOREACH (Pair p, varCounterPos) p.second /= 2;
-//		BOOST_FOREACH (Pair p, varCounterNeg) p.second /= 2;
 		BOOST_FOREACH (IDAddress litadr, allFacts){
 			varCounterPos[litadr] /= 2;
 			varCounterNeg[litadr] /= 2;
@@ -175,7 +172,6 @@ Nogood CDNLSolver::resolve(Nogood& ng1, Nogood& ng2, IDAddress litadr){
 #ifndef NDEBUG
 	++cntResSteps;
 #endif
-
 	return resolvent;
 }
 
@@ -196,7 +192,6 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 		interpretation->setFact(fact.address);
 	}
 	assignmentOrder.insert(fact.address);
-//	while (dl >= factsOnDecisionLevel.size()) factsOnDecisionLevel.push_back(std::vector<IDAddress>());
 	factsOnDecisionLevel[dl].push_back(fact.address);
 
 	updateWatchingStructuresAfterSetFact(fact);
@@ -209,11 +204,10 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 void CDNLSolver::clearFact(IDAddress litadr){
 	DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
 	factWasSet.clear_bit(litadr);
-//	decisionlevel.erase(litadr);
 	cause[litadr] = -1;
 	assignmentOrder.erase(litadr);
 
-	// getFact will return the truth value which was just unset
+	// getFact will return the truth value which was just cleared
 	// (truth value remains until it is overridden by a new one)
 	updateWatchingStructuresAfterClearFact(createLiteral(litadr, interpretation->getFact(litadr)));
 }
@@ -226,21 +220,6 @@ void CDNLSolver::backtrack(int dl){
 		}
 		factsOnDecisionLevel[i].clear();
 	}
-
-/*
-	// collect assignments to undo
-	std::vector<IDAddress> undo;
-	typedef std::pair<IDAddress, int> DecisionPair;
-	BOOST_FOREACH (DecisionPair decision, decisionlevel){
-		if (decision.second > dl){
-			undo.push_back(decision.first);
-		}
-	}
-	// actually undo them
-	BOOST_FOREACH (IDAddress litadr, undo){
-		clearFact(litadr);
-	}
-*/
 
 #ifndef NDEBUG
 	++cntBacktracks;
@@ -293,14 +272,14 @@ ID CDNLSolver::getGuess(){
 			}
 		}
 
-		// if the nogood has no unassigned variable, it must be either satisfied or contradictory
+		// if the nogood has no unassigned variable, it must be either satisfied or contradictory and the if above applies
 		assert(mostActive != ID_FAIL);
 
 		DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it occurs in recent conflicts");
 		return mostActive;
 	}
 
-	// no recent conflicts
+	// no recent conflicts;
 	// use alternative heuristic: choose globally most active literal
 	ID mostActive = ID_FAIL;
 	BOOST_FOREACH (IDAddress litadr, allFacts){
@@ -383,7 +362,7 @@ void CDNLSolver::updateWatchingStructuresAfterRemoveNogood(int index){
 	}
 
 	// remove all watched literals
-	Set<ID> watched = watchedLiteralsOfNogood[index];
+	Set<ID>& watched = watchedLiteralsOfNogood[index];
 	BOOST_FOREACH (ID lit, watched){
 		stopWatching(index, lit);
 	}
@@ -434,14 +413,16 @@ void CDNLSolver::updateWatchingStructuresAfterSetFact(ID lit){
 						break;
 					}
 				}
-				// nogood might have become unit or contradictory
-				if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
-					DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
-					unitNogoods.insert(nogoodNr);
-				}else if (!inactive && watchedLiteralsOfNogood[nogoodNr].size() == 0){
-					DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
-					contradictoryNogoods.insert(nogoodNr);
-					unitNogoods.erase(nogoodNr);
+				if (!inactive){
+					// nogood might have become unit or contradictory
+					if (watchedLiteralsOfNogood[nogoodNr].size() == 1){
+						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now unit");
+						unitNogoods.insert(nogoodNr);
+					}else if (watchedLiteralsOfNogood[nogoodNr].size() == 0){
+						DBGLOGD(DBG, "Nogood " << nogoodNr << " is now contradictory");
+						contradictoryNogoods.insert(nogoodNr);
+						unitNogoods.erase(nogoodNr);
+					}
 				}
 
 				changed = true;
@@ -465,12 +446,9 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 
 	// go through all nogoods which contain this literal either positively or negatively
 	for (int positiveAndNegativeLiteral = 1; positiveAndNegativeLiteral <= 2; ++positiveAndNegativeLiteral){
-//		ID lit;
-		
-//		if (positiveAndNegativeLiteral == 1)	lit = literal;
-//		else					lit = negation(literal);
 
-//		if (nogoodsOfLiteral.find(lit) != nogoodsOfLiteral.end()){
+		if ((positiveAndNegativeLiteral == 1 && nogoodsOfPosLiteral.find(literal.address) != nogoodsOfPosLiteral.end()) ||
+		    (positiveAndNegativeLiteral == 2 && nogoodsOfNegLiteral.find(literal.address) != nogoodsOfNegLiteral.end())){
 			BOOST_FOREACH (int nogoodNr, positiveAndNegativeLiteral == 1 ? nogoodsOfPosLiteral[literal.address] : nogoodsOfNegLiteral[literal.address]){
 				DBGLOG(DBG, "Updating nogood " << nogoodNr);
 
@@ -527,7 +505,7 @@ void CDNLSolver::updateWatchingStructuresAfterClearFact(ID literal){
 						break;
 				}
 			}
-//		}
+		}
 	}
 }
 
@@ -587,12 +565,6 @@ void CDNLSolver::initListOfAllFacts(){
 }
 
 void CDNLSolver::resizeVectors(){
-
-//	IDAddress maxAdr = 0;
-
-//	BOOST_FOREACH (IDAddress adr, allFacts){
-//		if (adr > maxAdr) maxAdr = adr;
-//	}
 
 	unsigned atomNamespaceSize = ctx.registry()->ogatoms.getSize();
 

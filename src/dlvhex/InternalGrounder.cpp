@@ -95,7 +95,7 @@ void InternalGrounder::computeStrata(){
 	int num = boost::strong_components(depGraph, &componentMap[0]);
 
 	// translate into real map
-	depSCC = std::vector<std::set<ID> >(num);
+	depSCC = std::vector<Set<ID> >(num);
 	Node nodeNr = 0;
 	BOOST_FOREACH (int componentOfNode, componentMap){
 		depSCC[componentOfNode].insert(depGraph[nodeNr]);
@@ -105,7 +105,7 @@ void InternalGrounder::computeStrata(){
 #ifndef NDEBUG
 	std::stringstream compStr;
 	bool firstC = true;
-	BOOST_FOREACH (std::set<ID> component, depSCC){
+	BOOST_FOREACH (Set<ID> component, depSCC){
 		if (!firstC) compStr << ", ";
 		firstC = false;
 		compStr << "{";
@@ -120,7 +120,7 @@ void InternalGrounder::computeStrata(){
 	DBGLOG(DBG, "Predicate components: " << compStr.str());
 #endif
 
-	// create a graph modeling the dependencies between the predicate components
+	// create a graph modeling the dependencies between the strongly-connected predicate components
 	// one node for each component
 	std::map<int, SCCDepGraph::vertex_descriptor> compToVertex;
 	std::map<SCCDepGraph::vertex_descriptor, int> vertexToComp;
@@ -184,6 +184,7 @@ void InternalGrounder::buildPredicateIndex(){
 void InternalGrounder::loadStratum(int index){
 
 	DBGLOG(DBG, "Loading stratum " << index);
+//	nonGroundRules = rulesOfStratum[index];
 	nonGroundRules.clear();
 	nonGroundRules.insert(nonGroundRules.begin(), rulesOfStratum[index].begin(), rulesOfStratum[index].end());
 	buildPredicateIndex();
@@ -194,7 +195,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 	loadStratum(stratumNr);
 
 	DBGLOG(DBG, "Grounding stratum " << stratumNr);
-	std::set<ID> newDerivableAtoms;
+	Set<ID> newDerivableAtoms;
 
 	// all facts are immediately derivable and true
 	if (stratumNr == 0){
@@ -203,7 +204,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 		bm::bvector<>::enumerator en = inputprogram.edb->getStorage().first();
 		bm::bvector<>::enumerator en_end = inputprogram.edb->getStorage().end();
 
-		std::set<ID> newGroundRules;
+		Set<ID> newGroundRules;
 		while (en < en_end){
 			ID atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en);
 			setToTrue(atom);
@@ -224,7 +225,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 	while (newDerivableAtoms.size() > 0){
 
 		// generate further rules for the new derivable atoms
-		std::set<ID> newDerivableAtoms2;
+		Set<ID> newDerivableAtoms2;
 		BOOST_FOREACH (ID atom, newDerivableAtoms){
 			addDerivableAtom(atom, groundRules, newDerivableAtoms2);
 		}
@@ -233,8 +234,8 @@ void InternalGrounder::groundStratum(int stratumNr){
 	DBGLOG(DBG, "Produced " << groundRules.size() << " ground rules");
 
 	groundedPredicates.insert(predicatesOfStratum[stratumNr].begin(), predicatesOfStratum[stratumNr].end());
-		BOOST_FOREACH (ID pred, predicatesOfStratum[stratumNr]){
-		// check if the predicate is completely solved; this is, there does not exist a derivable atom which is now known to be true
+	BOOST_FOREACH (ID pred, predicatesOfStratum[stratumNr]){
+		// check if the predicate is completely solved; this is, there does not exist a derivable atom which is not known to be true
 		bool solved = true;
 		BOOST_FOREACH (ID atom, derivableAtomsOfPredicate[pred]){
 			if (!trueAtoms->getFact(atom.address)){
@@ -245,6 +246,7 @@ void InternalGrounder::groundStratum(int stratumNr){
 		if (solved) solvedPredicates.insert(pred);
 	}
 
+#ifndef NDEBUG
 	DBGLOG(DBG, "Set of grounded predicates is now: ");
 	BOOST_FOREACH (ID pred, groundedPredicates){
 		DBGLOG(DBG, pred);
@@ -254,9 +256,10 @@ void InternalGrounder::groundStratum(int stratumNr){
 	BOOST_FOREACH (ID pred, solvedPredicates){
 		DBGLOG(DBG, pred);
 	}
+#endif
 }
 
-void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms){
+void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, Set<ID>& newDerivableAtoms){
 #define OPTIMIZED
 	Substitution currentSubstitution = s;
 	const Rule& rule = reg->rules.getByID(ruleID);
@@ -268,10 +271,8 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	// compute binders of the variables in the rule
 	Binder binders = getBinderOfRule(body);
 	std::set<ID> outputVars = getOutputVariables(ruleID);
-//	std::vector<std::set<ID> > depVars;
 	std::vector<std::set<ID> > freeVars;
 	for (int i = 0; i < body.size(); ++i){
-//		depVars.push_back(getDepVars(body, i));
 		freeVars.push_back(getFreeVars(body, i));
 	}
 	std::set<ID> failureVars;
@@ -289,81 +290,74 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 		for (std::vector<ID>::const_iterator it = body.begin(); it != body.end(); ){
 
 			int bodyLitIndex = it - body.begin();
-			ID bodyAtomID = *it;
+			ID bodyLiteralID = *it;
 
-			if (true){ // !bodyAtomID.isNaf()){
+			// remove assignments to all variables which do not occur between body.begin() and it - 1
+			DBGLOG(DBG, "Undoing variable assignments before position " << bodyLitIndex);
+			std::set<ID> keepVars;
+			for (std::vector<ID>::const_iterator itVarCheck = body.begin(); itVarCheck != it; ++itVarCheck){
+				reg->getVariablesInID(*itVarCheck, keepVars);
+			}
+			Substitution newSubst = s;
+			BOOST_FOREACH (ID var, keepVars){
+				newSubst[var] = currentSubstitution[var];
+			}
+			currentSubstitution = newSubst;
 
-				// remove assignments to all variables which do not occur between body.begin() and it - 1
-				DBGLOG(DBG, "Undoing variable assignments before position " << bodyLitIndex);
-				std::set<ID> keepVars;
-				for (std::vector<ID>::const_iterator itVarCheck = body.begin(); itVarCheck != it; ++itVarCheck){
-					reg->getVariablesInID(*itVarCheck, keepVars);
-				}
-				Substitution newSubst = s;
-				BOOST_FOREACH (ID var, keepVars){
-					newSubst[var] = currentSubstitution[var];
-				}
-				currentSubstitution = newSubst;
+			DBGLOG(DBG, "Finding next match at position " << bodyLitIndex << " in extension after index " << searchPos[bodyLitIndex]);
+			int startSearchPos = searchPos[bodyLitIndex];
+			searchPos[bodyLitIndex] = matchNextFromExtension(applySubstitutionToAtom(currentSubstitution, bodyLiteralID), currentSubstitution, searchPos[bodyLitIndex]);
+			DBGLOG(DBG, "Search result: " << searchPos[bodyLitIndex]);
 
-				DBGLOG(DBG, "Finding next match at position " << bodyLitIndex << " in extension after index " << searchPos[bodyLitIndex]);
-				int startSearchPos = searchPos[bodyLitIndex];
-				searchPos[bodyLitIndex] = matchNextFromExtension(applySubstitutionToAtom(currentSubstitution, bodyAtomID), currentSubstitution, searchPos[bodyLitIndex]);
-				DBGLOG(DBG, "Search result: " << searchPos[bodyLitIndex]);
-
-				// match?
-				if (searchPos[bodyLitIndex] == -1){
+			// match?
+			if (searchPos[bodyLitIndex] == -1){
 
 #ifdef OPTIMIZED
-					// the conflict in this literal is due to any of the variables occurring in it
-					reg->getVariablesInID(*it, failureVars);
+				// the conflict in this literal is due to any of the variables occurring in it
+				reg->getVariablesInID(*it, failureVars);
 
-					int btIndex = -1;
-					if (startSearchPos == 0){
-						// failure on first match
-						DBGLOG(DBG, "Failure on first match at position " << bodyLitIndex);
-						std::set<ID> vars;
-						reg->getVariablesInID(*it, vars);
-						btIndex = getClosestBinder(body, bodyLitIndex, vars);
-//						if (depends(ruleID, btIndex, csb)){
-//							csb = btIndex;
-//						}
-					}else{
-						// failure on next match
-						DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
+				int btIndex = -1;
+				if (startSearchPos == 0){
+					// failure on first match
+					DBGLOG(DBG, "Failure on first match at position " << bodyLitIndex);
+					std::set<ID> vars;
+					reg->getVariablesInID(*it, vars);
+					btIndex = getClosestBinder(body, bodyLitIndex, vars);
+				}else{
+					// failure on next match
+					DBGLOG(DBG, "Failure on next match at position " << bodyLitIndex);
 
-						btIndex = getClosestBinder(body, bodyLitIndex, failureVars);
-						btIndex = csb > btIndex ? csb : btIndex;
+					btIndex = getClosestBinder(body, bodyLitIndex, failureVars);
+					btIndex = csb > btIndex ? csb : btIndex;
 
-						if (btIndex == csb){
-							csb = getClosestBinder(body, btIndex, outputVars);
-						}
+					if (btIndex == csb){
+						csb = getClosestBinder(body, btIndex, outputVars);
 					}
-					if (btIndex == -1){
-						DBGLOG(DBG, "No more matches");
-						return;
-					}else{
-						DBGLOG(DBG, "Backtracking to literal " << btIndex);
-						it = body.begin() + btIndex;
-					}
+				}
+				if (btIndex == -1){
+					DBGLOG(DBG, "No more matches");
+					return;
+				}else{
+					DBGLOG(DBG, "Backtracking to literal " << btIndex);
+					it = body.begin() + btIndex;
+				}
 #else
-					// backtrack
-					int btIndex = backtrack(ruleID, binders, bodyLitIndex);
-					if (btIndex == -1){
-						DBGLOG(DBG, "No more matches");
-						return;
-					}else{
-						DBGLOG(DBG, "Backtracking to literal " << btIndex);
-						it = body.begin() + btIndex;
-					}
+				// backtrack
+				int btIndex = backtrack(ruleID, binders, bodyLitIndex);
+				if (btIndex == -1){
+					DBGLOG(DBG, "No more matches");
+					return;
+				}else{
+					DBGLOG(DBG, "Backtracking to literal " << btIndex);
+					it = body.begin() + btIndex;
+				}
 #endif
 
-					continue;
-				}else{
-					// variables which occur in the current literals are now no failure variables anymore
-					BOOST_FOREACH (ID v, freeVars[bodyLitIndex]){
-						failureVars.erase(v);
-					}
-//					failureVars.erase(freeVars[bodyLitIndex].begin(), freeVars[bodyLitIndex].end());
+				continue;
+			}else{
+				// variables which occur in the current literals are now no failure variables anymore
+				BOOST_FOREACH (ID v, freeVars[bodyLitIndex]){
+					failureVars.erase(v);
 				}
 			}
 
@@ -385,10 +379,10 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 #else
 
 				// go back to last non-naf body literal
-				while(bodyAtomID.isNaf()){
+				while(bodyLiteralID.isNaf()){
 					if (it == body.begin()) return;
 					--it;
-					bodyAtomID = *it;
+					bodyLiteralID = *it;
 				}
 #endif
 			}else{
@@ -400,7 +394,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 	}
 }
 
-void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms){
+void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vector<ID>& groundedRules, Set<ID>& newDerivableAtoms){
 
 	const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -414,54 +408,48 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 	}
 
 	// ground body
-//	bool optimization = false;
-//	do{	// if optimization eliminates ALL body literals and also the head is empty, we need another run without optimization as empty rules are illegal
-//		optimization = !optimization;	// first we try it with optimization, then without
+	BOOST_FOREACH (ID bodyLitID, rule.body){
+		ID groundBodyLiteralID = applySubstitutionToAtom(s, bodyLitID);
 
-		BOOST_FOREACH (ID bodyLitID, rule.body){
-			ID groundBodyLiteralID = applySubstitutionToAtom(s, bodyLitID);
+		if (groundBodyLiteralID.isBuiltinAtom()){
+			// at this point, built-in atoms are always true, otherwise the grounding terminates even earlier
+			continue;
+		}
 
-			if (groundBodyLiteralID.isBuiltinAtom() /*&& optimization*/){
-				// at this point, built-in atoms are always true, otherwise the grounding terminates even earlier
+		if (groundBodyLiteralID.isOrdinaryAtom()){
+			const OrdinaryAtom& groundBodyLiteral = reg->ogatoms.getByID(groundBodyLiteralID);
+
+			// h :- a, not b         where a is known to be true
+			// optimization: skip satisfied literals
+			if (!groundBodyLiteralID.isNaf() && trueAtoms->getFact(groundBodyLiteralID.address)){
+				DBGLOG(DBG, "Skipping true " << groundBodyLiteralID);
 				continue;
 			}
 
-			if (groundBodyLiteralID.isOrdinaryAtom() /*&& optimization*/){
-				const OrdinaryAtom& groundBodyLiteral = reg->ogatoms.getByID(groundBodyLiteralID);
-
-				// h :- a, not b         where a is known to be true
-				// optimization: skip satisfied literals
-				if (!groundBodyLiteralID.isNaf() && trueAtoms->getFact(groundBodyLiteralID.address)){
-					DBGLOG(DBG, "Skipping true " << groundBodyLiteralID);
-					continue;
-				}
-
-				// h :- a, not b         where b is known to be not derivable
-				// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
-				if (groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
-					DBGLOG(DBG, "Skipping underivable " << groundBodyLiteralID);
-					continue;
-				}
-
-				// h :- a, not b         where b is known to be true
-				// optimization: skip rules which contain a naf-literal which in known to be true
-				if (groundBodyLiteralID.isNaf() && trueAtoms->getFact(groundBodyLiteralID.address)){
-					DBGLOG(DBG, "Skipping rule " << ruleToString(ruleID) << " due to true " << groundBodyLiteralID);
-					return;
-				}
-
-				// h :- a, not b         where a is known to be not derivable
-				// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
-				if (!groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
-					DBGLOG(DBG, "Skipping rule " << ruleToString(ruleID) << " due to " << groundBodyLiteralID);
-					return;
-				}
+			// h :- a, not b         where b is known to be not derivable
+			// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
+			if (groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
+				DBGLOG(DBG, "Skipping underivable " << groundBodyLiteralID);
+				continue;
 			}
 
-			groundedBody.push_back(groundBodyLiteralID);
+			// h :- a, not b         where b is known to be true
+			// optimization: skip rules which contain a naf-literal which in known to be true
+			if (groundBodyLiteralID.isNaf() && trueAtoms->getFact(groundBodyLiteralID.address)){
+				DBGLOG(DBG, "Skipping rule " << ruleToString(ruleID) << " due to true " << groundBodyLiteralID);
+				return;
+			}
+
+			// h :- a, not b         where a is known to be not derivable
+			// optimization for stratified negation: skip naf-body literals over known predicates which are not derivable
+			if (!groundBodyLiteralID.isNaf() && isPredicateGrounded(groundBodyLiteral.front()) && !isAtomDerivable(groundBodyLiteralID)){
+				DBGLOG(DBG, "Skipping rule " << ruleToString(ruleID) << " due to " << groundBodyLiteralID);
+				return;
+			}
 		}
 
-//	}while(groundedHead.size() == 0 && groundedBody.size() == 0 && optimization == true);
+		groundedBody.push_back(groundBodyLiteralID);
+	}
 
 	// determine type of rule
 	IDKind kind = ID::MAINKIND_RULE;
@@ -476,15 +464,15 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 		groundedBody.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, globallyNewAtom.address));
 	}
 
-	// build rule
-	Rule groundedRule(kind, groundedHead, groundedBody);
-
 	// new facts are set immediately
 	if (groundedHead.size() == 1 && groundedBody.size() == 0){
 		// derive new fact
 		DBGLOG(DBG, "Adding fact " << groundedHead[0]);
 		setToTrue(groundedHead[0]);
 	}else{
+		// build rule
+		Rule groundedRule(kind, groundedHead, groundedBody);
+
 		// avoid duplicate entries (they cause the registry to crash)
 		ID id = reg->rules.getIDByElement(groundedRule);
 		if (id == ID_FAIL){
@@ -498,21 +486,26 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 	}
 }
 
-bool InternalGrounder::match(ID atomID, ID patternAtomID, Substitution& s){
+bool InternalGrounder::match(ID literalID, ID patternLiteralID, Substitution& s){
 
-	if (atomID.isOrdinaryAtom()){
-		return matchOrdinary(atomID, patternAtomID, s);
-	}else if(atomID.isBuiltinAtom()){
-		return matchBuiltin(atomID, patternAtomID, s);
+	// sign must be equal
+	if (literalID.isNaf() != patternLiteralID.isNaf()) return false;
+
+	if (literalID.isOrdinaryAtom()){
+		return matchOrdinary(literalID, patternLiteralID, s);
+	}else if(literalID.isBuiltinAtom()){
+		return matchBuiltin(literalID, patternLiteralID, s);
+	}else{
+		// other types of atoms are currently not implemented (e.g. aggregate atoms)
+		assert(false);
+		return false;
 	}
-
-	assert(false);
 }
 
-bool InternalGrounder::matchOrdinary(ID atomID, ID patternAtomID, Substitution& s){
+bool InternalGrounder::matchOrdinary(ID literalID, ID patternLiteralID, Substitution& s){
 
-	const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
-	const OrdinaryAtom& patternAtom = reg->ogatoms.getByID(patternAtomID);
+	const OrdinaryAtom& atom = literalID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(literalID) : reg->onatoms.getByID(literalID);
+	const OrdinaryAtom& patternAtom = reg->ogatoms.getByID(patternLiteralID);
 
 	if (!atom.unifiesWith(patternAtom)) return false;
 
@@ -525,10 +518,14 @@ bool InternalGrounder::matchOrdinary(ID atomID, ID patternAtomID, Substitution& 
 	return true;
 }
 
-bool InternalGrounder::matchBuiltin(ID atomID, ID patternAtomID, Substitution& s){
+bool InternalGrounder::matchBuiltin(ID literalID, ID patternLiteralID, Substitution& s){
 
-	const BuiltinAtom& atom = reg->batoms.getByID(atomID);
-	const BuiltinAtom& patternAtom = reg->batoms.getByID(patternAtomID);
+	// builtin-atoms must not be default-negated
+	assert(!literalID.isNaf());
+	assert(!patternLiteralID.isNaf());
+
+	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
+	const BuiltinAtom& patternAtom = reg->batoms.getByID(patternLiteralID);
 
 	// compute the unifying substitution
 	Substitution s2 = s;
@@ -550,9 +547,11 @@ int InternalGrounder::matchNextFromExtension(ID literalID, Substitution& s, int 
 		return matchNextFromExtensionOrdinary(literalID, s, startSearchIndex);
 	}else if (literalID.isBuiltinAtom()){
 		return matchNextFromExtensionBuiltin(literalID, s, startSearchIndex);
+	}else{
+		// other types of atoms are currently not implemented (e.g. aggregate atoms)
+		assert(false);
+		return false;
 	}
-
-	assert(false);
 }
 
 int InternalGrounder::matchNextFromExtensionOrdinary(ID literalID, Substitution& s, int startSearchIndex){
@@ -573,6 +572,8 @@ int InternalGrounder::matchNextFromExtensionOrdinary(ID literalID, Substitution&
 		// no match
 		return -1;
 	}else{
+		assert(!literalID.isOrdinaryNongroundAtom()); // matching of non-ground naf-literals is illegal
+
 		if (startSearchIndex > 0) return -1;	// only one match
 
 		// naf-literals will always match if the predicates is unsolved
@@ -594,6 +595,9 @@ int InternalGrounder::matchNextFromExtensionOrdinary(ID literalID, Substitution&
 
 int InternalGrounder::matchNextFromExtensionBuiltin(ID literalID, Substitution& s, int startSearchIndex){
 
+	// builtin-atoms must not be default-negated
+	assert (!literalID.isNaf());
+
 	DBGLOG(DBG, "Matching builtin atom");
 	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 
@@ -614,9 +618,10 @@ int InternalGrounder::matchNextFromExtensionBuiltin(ID literalID, Substitution& 
 		case ID::TERM_BUILTIN_SUB:
 		case ID::TERM_BUILTIN_DIV:
 		case ID::TERM_BUILTIN_MOD:
-			return matchNextFromExtensionBuiltinTrinary(literalID, s, startSearchIndex);
+			return matchNextFromExtensionBuiltinTernary(literalID, s, startSearchIndex);
 	}
 	assert(false);
+	return -1;
 }
 
 int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitution& s, int startSearchIndex){
@@ -624,7 +629,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinUnary(ID literalID, Substitut
 	const BuiltinAtom& atom = reg->batoms.getByID(literalID);
 	switch (atom.tuple[0].address){
 		case ID::TERM_BUILTIN_INT:
-			if (startSearchIndex > ctx.maxint /* max int */){
+			if (startSearchIndex > ctx.maxint){
 				return -1;
 			}else{
 				if (atom.tuple[1].isVariableTerm()){
@@ -663,7 +668,7 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitu
 	else return -1;
 }
 
-int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID literalID, Substitution& s, int startSearchIndex){
+int InternalGrounder::matchNextFromExtensionBuiltinTernary(ID literalID, Substitution& s, int startSearchIndex){
 
 	if (startSearchIndex > (ctx.maxint + 1) * (ctx.maxint + 1)){
 		return -1;
@@ -674,38 +679,6 @@ int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID literalID, Substit
 		int y = startSearchIndex % (ctx.maxint + 1);
 
 		if (atom.tuple[1].isConstantTerm() || atom.tuple[2].isConstantTerm() || atom.tuple[3].isConstantTerm()) return -1;
-
-/*
-		if (atom.tuple[1].isVariableTerm() && atom.tuple[2].isVariableTerm()){
-			if (atom.tuple[3].isVariableTerm()){
-				s[atom.tuple[1]] = ID::termFromInteger(x);
-				s[atom.tuple[2]] = ID::termFromInteger(y);
-				s[atom.tuple[3]] = ID::termFromInteger(x + y);
-				y++;
-				if (y > 100){
-					y = 0;
-					x++;
-				}
-				return x * 101 + y + 1;
-			}else{
-				while ((x + y != atom.tuple[3].address) && (x <= 100 && y <= 100)){
-					y++;
-					if (y > 100){
-						y = 0;
-						x++;
-					}
-				}
-				if (x <= 100 && y <= 100){
-					s[atom.tuple[1]] = ID::termFromInteger(x);
-					s[atom.tuple[2]] = ID::termFromInteger(y);
-					s[atom.tuple[3]] = ID::termFromInteger(x + y);
-					return x * 101 + y + 1;
-				}else{
-					return -1;
-				}
-			}
-		}
-*/
 
 		if (atom.tuple[1].isIntegerTerm() && atom.tuple[2].isIntegerTerm()){
 			if (x <= atom.tuple[1].address && y <= atom.tuple[2].address){
@@ -728,81 +701,11 @@ int InternalGrounder::matchNextFromExtensionBuiltinTrinary(ID literalID, Substit
 
 int InternalGrounder::backtrack(ID ruleID, Binder& binders, int currentIndex){
 
-	// TODO: Jumping to the maximum binder of variables in the current literal does not work!
-	// counter example:
-
-/*
-kw(subm6,"#WSMO").
-pc("#mkif").
-
-dloverlapsWith("#WSMO","#OWL-S").
-dloverlapsWith("#WSMO","#SWSF").
-
-dlisAuthorOf("#mkif","#pa14").
-dlkeyword("#pa14","#SWSF").
-
-cand(X,P) :- kw(P,K), pc(X), dloverlapsWith(K,K1), dlisAuthorOf(X,P1), dlkeyword(P1,K1).
-*/
-
-	// for K1="#OWL-S", X="#mkif", P1="#pa14", the final match of dlkeyword(P1,K1) fails
-	// the algorithm backtracks to dlisAuthorOf(X,P1) and checks for another match, which fails as well
-	// it then jumps back to the maximum binder of X and P1, which is pc(X)
-	// note that dloverlapsWith(K,K1) is skipped!!
-	// however, another match (dloverlapsWith("#WSMO","#SWSF")) would lead to a complete match!
-
-	// output:
-/*
- 1 Undoing variable assignments before position 4
- 1 Finding next match at position 4 in extension after index 0
- 1 stored oatom OrdinaryAtom(0,'dlkeyword("#pa14","#OWL-S")',[ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   6 term constant)]) which got ID(0x00000000,   6 atom ordinary_ground)
- 1 Macthing ordinary atom
- 1 unifiesWith ENTRY
- 1 unifiesWith starting with result1 tuple [ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   6 term constant)]
- 1 unifiesWith starting with result2 tuple [ID(0x10000000,  10 term constant),ID(0x10000000,   9 term constant),ID(0x10000000,   7 term constant)]
- 1 unifiesWith at position 0: checking ID(0x10000000,  10 term constant) vs ID(0x10000000,  10 term constant)
- 1 unifiesWith at position 1: checking ID(0x10000000,   9 term constant) vs ID(0x10000000,   9 term constant)
- 1 unifiesWith at position 2: checking ID(0x10000000,   6 term constant) vs ID(0x10000000,   7 term constant)
- 1 unifiesWith EXIT
- 1 Search result: -1
- 1 Backtracking to literal 3
- 1 Undoing variable assignments before position 3
- 1 Finding next match at position 3 in extension after index 1
- 1 Macthing ordinary atom
- 1 Search result: -1
- 1 Backtracking to literal 1
- 1 Undoing variable assignments before position 1
- 1 Finding next match at position 1 in extension after index 1
- 1 Macthing ordinary atom
- 1 Search result: -1
- 1 Backtracking to literal 0
- 1 Undoing variable assignments before position 0
- 1 Finding next match at position 0 in extension after index 1
- 1 Macthing ordinary atom
- 1 Search result: -1
- 1 No more matches
- 1 Processing cyclically depending rules
- 1 Produced 0 ground rules
-*/
-
-
-
-	// backtrack to the maximum binder of variables in the current literal, which is not the current literal itself
+	// backtrack to the last positive literal
 	const Rule& rule = reg->rules.getByID(ruleID);
-//	std::set<ID> currentVars;
-//	reg->getVariablesInID(rule.body[currentIndex], currentVars);
 
-	int bt = -1;
-//	BOOST_FOREACH (ID var, currentVars){
-//		if (binders[var] > bt && binders[var] < currentIndex){
-//			bt = binders[var];
-//		}
-//	}
-
-	// no binder: backtrack to last positive literal
-	if (bt == -1){
-		bt = currentIndex - 1;
-		while (bt > -1 && rule.body[bt].isNaf()) bt--;
-	}
+	int bt = currentIndex - 1;
+	while (bt > -1 && rule.body[bt].isNaf()) bt--;
 	return bt;
 }
 
@@ -812,7 +715,7 @@ void InternalGrounder::setToTrue(ID atom){
 	trueAtoms->setFact(atom.address);
 }
 
-void InternalGrounder::addDerivableAtom(ID atomID, std::vector<ID>& groundRules, std::set<ID>& newDerivableAtoms){
+void InternalGrounder::addDerivableAtom(ID atomID, std::vector<ID>& groundRules, Set<ID>& newDerivableAtoms){
 
 	DBGLOG(DBG, "" << atomID << " becomes derivable");
 
@@ -897,9 +800,7 @@ ID InternalGrounder::applySubstitutionToBuiltinAtom(Substitution s, ID atomID){
 	Tuple t = batom.tuple;
 	bool isGround = true;
 	for (unsigned int termIndex = 1; termIndex < t.size(); ++termIndex){
-DBGLOG(DBG, "Term with index " << termIndex << ": " << t[termIndex]);
 		if (s.find(t[termIndex]) != s.end()){
-DBGLOG(DBG, "Applying substitution");
 			t[termIndex] = s[t[termIndex]];
 		}
 		if (t[termIndex].isVariableTerm()) isGround = false;
@@ -971,33 +872,17 @@ int InternalGrounder::getStratumOfRule(ID ruleID){
 	const Rule& rule = reg->rules.getByID(ruleID);
 	int stratum = 0;
 
-	// constraints are grounded at highest level
-//	if (rule.head.size() == 0){
-
-//		stratum = predicatesOfStratum.size() - 1;
-
-		BOOST_FOREACH (ID lit, rule.body){
-			int s;
-			if (lit.isOrdinaryAtom()){
-				const OrdinaryAtom& atom = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(lit) : reg->onatoms.getByID(lit));
-				s = stratumOfPredicate[atom.front()];
-			}else{
-				s = 0;
-			}
-			stratum = (s > stratum ? s : stratum);
+	// compute the highest stratum of all head atoms
+	BOOST_FOREACH (ID lit, rule.body){
+		int s;
+		if (lit.isOrdinaryAtom()){
+			const OrdinaryAtom& atom = (lit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(lit) : reg->onatoms.getByID(lit));
+			s = stratumOfPredicate[atom.front()];
+		}else{
+			s = 0;
 		}
-
-//		DBGLOG(DBG, "Stratum of constraint " << ruleToString(ruleID) << " is " << stratum);//(predicatesOfStratum.size() - 1));
-//		return stratum;
-
-
-
-
-
-//		return predicatesOfStratum.size() - 1;
-//	}
-
-	// ordinary rules: compute the highest stratum of all head atoms
+		stratum = (s > stratum ? s : stratum);
+	}
 
 	BOOST_FOREACH (ID headLit, rule.head){
 		const OrdinaryAtom& atom = (headLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(headLit) : reg->onatoms.getByID(headLit));
@@ -1012,7 +897,6 @@ void InternalGrounder::computeGloballyNewAtom(){
 
 	// get new predicate name
 	std::string newPredicateName("newPredName");
-//#if 0
 
 	// idb
 	BOOST_FOREACH (ID ruleID, inputprogram.idb){
@@ -1021,8 +905,6 @@ void InternalGrounder::computeGloballyNewAtom(){
 		BOOST_FOREACH (ID headLiteralID, rule.head){
 			ID pred = getPredicateOfAtom(headLiteralID);
 			if (pred.isConstantTerm() || pred.isPredicateTerm()){
-DBGLOG(DBG, "Checking predicate string " << pred);
-//DBGLOG(DBG, reg->getTermStringByID(pred));
 				while (boost::starts_with(reg->getTermStringByID(pred), newPredicateName)){
 					newPredicateName += std::string("0");
 				}
@@ -1031,8 +913,6 @@ DBGLOG(DBG, "Checking predicate string " << pred);
 		BOOST_FOREACH (ID bodyLiteralID, rule.body){
 			ID pred = getPredicateOfAtom(bodyLiteralID);
 			if (pred.isConstantTerm() || pred.isPredicateTerm()){
-DBGLOG(DBG, "Checking predicate string " << pred);
-//DBGLOG(DBG, reg->getTermStringByID(pred));
 				while (boost::starts_with(reg->getTermStringByID(pred), newPredicateName)){
 					newPredicateName += std::string("0");
 				}
@@ -1050,7 +930,6 @@ DBGLOG(DBG, "Checking predicate string " << pred);
 		}
 		en++;
 	}
-//#endif
 
 	// create atom
 	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);

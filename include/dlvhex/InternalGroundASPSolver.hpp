@@ -65,6 +65,7 @@ protected:
 	RegistryPtr reg;
 
 	Set<IDAddress> ordinaryFacts;
+	InterpretationPtr ordinaryFactsInt;
 	Set<IDAddress> nonSingularFacts;
 
 										// dependency graph

@@ -34,19 +34,22 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/Set.hpp"
+
 #include <vector>
 #include <map>
 #include <boost/foreach.hpp>
-#include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/ASPSolverManager.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 class InternalGrounder{
 protected:
-	typedef std::map<ID, ID> Substitution;
-	typedef std::map<ID, int> Binder;
+	typedef boost::unordered_map<ID, ID> Substitution;
+	typedef boost::unordered_map<ID, int> Binder;
 
 	ASPProgram inputprogram;
 	ProgramCtx& ctx;
@@ -55,23 +58,23 @@ protected:
 	// dependency graph
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ID> DepGraph;
 	typedef DepGraph::vertex_descriptor Node;
-	std::map<ID, Node> depNodes;
+	boost::unordered_map<ID, Node> depNodes;
 	DepGraph depGraph;
-	std::vector<std::set<ID> > depSCC;					// store for each component the contained predicates
+	std::vector<Set<ID> > depSCC;						// store for each component the contained predicates
 
 	// strata dependencies
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, int> SCCDepGraph;
 	SCCDepGraph compDependencies;
 	std::vector<std::set<ID> > predicatesOfStratum;				// stores for each stratum the contained predicates
 	std::vector<std::set<ID> > rulesOfStratum;				// stores for each stratum the contained rules
-	std::map<ID, int> stratumOfPredicate;					// stores for each predicate its stratum index
+	boost::unordered_map<ID, int> stratumOfPredicate;			// stores for each predicate its stratum index
 
 
 	ID globallyNewAtom;							// an atom which does not occur in the program
-	std::map<ID, std::vector<ID> > derivableAtomsOfPredicate;		// stores for each predicate (=term) the set of ground atoms over this
+	boost::unordered_map<ID, std::vector<ID> > derivableAtomsOfPredicate;	// stores for each predicate (=term) the set of ground atoms over this
 										// predicate which are currently derivable
 
-	std::map<ID, std::set<std::pair<int, int> > > positionsOfPredicate;	// stores for each predicate the set of non-ground rules and
+	boost::unordered_map<ID, std::set<std::pair<int, int> > > positionsOfPredicate;	// stores for each predicate the set of non-ground rules and
 										// body positions where the predicate occurs
 
 	InterpretationPtr trueAtoms;
@@ -94,22 +97,22 @@ protected:
 	// grounding members
 	void groundStratum(int index);
 
-	void groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms);
-	void buildGroundInstance(ID ruleID, Substitution s, std::vector<ID>& groundedRules, std::set<ID>& newDerivableAtoms);
+	void groundRule(ID ruleID, Substitution& s, std::vector<ID>& groundedRules, Set<ID>& newDerivableAtoms);
+	void buildGroundInstance(ID ruleID, Substitution s, std::vector<ID>& groundedRules, Set<ID>& newDerivableAtoms);
 
-	bool match(ID atom, ID patternAtom, Substitution& s);
-	bool matchOrdinary(ID atom, ID patternAtom, Substitution& s);
-	bool matchBuiltin(ID atom, ID patternAtom, Substitution& s);
-	int matchNextFromExtension(ID atom, Substitution& s, int startSearchIndex);
-	int matchNextFromExtensionOrdinary(ID atom, Substitution& s, int startSearchIndex);
-	int matchNextFromExtensionBuiltin(ID atom, Substitution& s, int startSearchIndex);
-	int matchNextFromExtensionBuiltinUnary(ID atom, Substitution& s, int startSearchIndex);
-	int matchNextFromExtensionBuiltinBinary(ID atom, Substitution& s, int startSearchIndex);
-	int matchNextFromExtensionBuiltinTrinary(ID atom, Substitution& s, int startSearchIndex);
+	bool match(ID literalID, ID patternLiteral, Substitution& s);
+	bool matchOrdinary(ID literalID, ID patternAtom, Substitution& s);
+	bool matchBuiltin(ID literalID, ID patternAtom, Substitution& s);
+	int matchNextFromExtension(ID literalID, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionOrdinary(ID literalID, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltin(ID literalID, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinUnary(ID literalID, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinBinary(ID literalID, Substitution& s, int startSearchIndex);
+	int matchNextFromExtensionBuiltinTernary(ID literalID, Substitution& s, int startSearchIndex);
 	int backtrack(ID ruleID, Binder& binders, int currentIndex);
 
 	void setToTrue(ID atom);
-	void addDerivableAtom(ID atom, std::vector<ID>& groundRules, std::set<ID>& newDerivableAtoms);
+	void addDerivableAtom(ID atom, std::vector<ID>& groundRules, Set<ID>& newDerivableAtoms);
 
 
 	// helper members

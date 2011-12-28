@@ -53,7 +53,7 @@ void InternalGroundASPSolver::createNogoodsForRule(ID ruleBodyAtomID, ID ruleID)
 
 	// 3. head must not be false if body is true
 	Nogood bodyImpliesHead;
-	bodyImpliesHead.insert(ruleBodyAtomID);
+	bodyImpliesHead.insert(createLiteral(ruleBodyAtomID));
 	BOOST_FOREACH(ID headLit, r.head){
 		bodyImpliesHead.insert(createLiteral(headLit.address, false));
 	}
@@ -74,10 +74,10 @@ void InternalGroundASPSolver::createNogoodsForRuleBody(ID ruleBodyAtomID, const 
 
 	// 2. body must not be true if a literal is false
 	BOOST_FOREACH(ID bodyLit, ruleBody){
-		Nogood bodyFalsIfLitFals;			
-		bodyFalsIfLitFals.insert(ruleBodyAtomID);
-		bodyFalsIfLitFals.insert(negation(createLiteral(bodyLit)));
-		nogoodset.addNogood(bodyFalsIfLitFals);
+		Nogood bodyFalseIfLitFalse;			
+		bodyFalseIfLitFalse.insert(createLiteral(ruleBodyAtomID));
+		bodyFalseIfLitFalse.insert(negation(createLiteral(bodyLit)));
+		nogoodset.addNogood(bodyFalseIfLitFalse);
 	}
 }
 
@@ -101,7 +101,7 @@ Set<std::pair<ID, ID> > InternalGroundASPSolver::createShiftedProgram(){
 			BOOST_FOREACH (ID headLit, r.head){
 				// take body of r and current head literal
 				Tuple singularHead;
-				singularHead.push_back(headLit);
+				singularHead.push_back(createLiteral(headLit));
 				Rule shiftedRule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR, singularHead, r.body);
 
 				// add negations of all other head literals to body
@@ -141,18 +141,14 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 	typedef std::pair<ID, ID> RulePair;
 	Set<RulePair> shiftedProgram = createShiftedProgram();
 
-//	IDAddress maxAddress = 0;
-
 	// create for each real shifted rule the nogoods which associate the rule body with the body atom
 	// (shifted rules which were already present in the original program were already handled before)
 	BOOST_FOREACH (RulePair pair, shiftedProgram){
-//		if (pair.second > maxAddress) maxAddress = pair.second;
 		if (!contains(program.idb, pair.first)){
 			const Rule& r = reg->rules.getByID(pair.first);
 			createNogoodsForRuleBody(pair.second, r.body);
 		}
 	}
-//	foundedAtomsOfBodyAtom.resize(maxAddress);
 
 	// an atom must not be true if the bodies of all supporting shifted rules are false
 	BOOST_FOREACH (IDAddress litadr, ordinaryFacts){
@@ -307,7 +303,7 @@ void InternalGroundASPSolver::initSourcePointers(){
 
 void InternalGroundASPSolver::initializeLists(){
 
-	// determine the set of all facts
+	// determine the set of all facts and a literal index
 	BOOST_FOREACH (ID ruleID, program.idb){
 		const Rule& r = reg->rules.getByID(ruleID);
 
@@ -337,6 +333,12 @@ void InternalGroundASPSolver::initializeLists(){
 		allFacts.insert(*en);
 		ordinaryFacts.insert(*en);
 		++en;
+	}
+
+	// built an interpretation of ordinary facts
+	ordinaryFactsInt = InterpretationPtr(new Interpretation(reg));
+	BOOST_FOREACH (IDAddress idadr, ordinaryFacts){
+		ordinaryFactsInt->setFact(idadr);
 	}
 }
 
@@ -404,7 +406,7 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 
 	// if the fact is a satisfied head literal of a rule, all head literals which use it as source rule and
 	// (i) which were set later; or
-	// (ii) which are true in another component
+	// (ii) which are true in a different component
 	// become unfounded
 	else{
 		// for all rules which contain the fact in their head
@@ -420,7 +422,7 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 						//       or we can use the decision level (would be much more efficient)
 						if (satisfied(createLiteral(otherHeadLit.address)) &&
 						    getAssignmentOrderIndex(otherHeadLit.address) > getAssignmentOrderIndex(fact.address)
-	//					    decisionlevel[otherHeadLit.address] > decisionlevel[fact.address]
+//						    decisionlevel[otherHeadLit.address] > decisionlevel[fact.address]
 						){
 							DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << otherHeadLit.address <<
 								" occurs in the head of its source rule and became true on a lower decision level");
@@ -542,14 +544,14 @@ ID InternalGroundASPSolver::getPossibleSourceRule(const Set<ID>& ufs){
 	// and can therefore not be used as source rules
 	BOOST_FOREACH (ID extRuleID, extSup){
 		Set<ID> satInd = satisfiesIndependently(extRuleID, ufs);
-		bool removeRule = false;
+		bool skipRule = false;
 		BOOST_FOREACH (ID indSatLit, satInd){
 			if (satisfied(indSatLit)){
-				removeRule = true;
+				skipRule = true;
 				break;
 			}
 		}
-		if (!removeRule){
+		if (!skipRule){
 			DBGLOG(DBG, "Found possible source rule: " << extRuleID.address);
 			return extRuleID;
 		}else{
@@ -611,9 +613,10 @@ Set<ID> InternalGroundASPSolver::getUnfoundedSet(){
 
 	DBGLOG(DBG, "Currently unfounded atoms: " << toString(unfoundedAtoms));
 
+	Set<ID> ufs(5, 10);
 	while (unfoundedAtoms.size() > 0){
 		IDAddress atom = *(unfoundedAtoms.begin());
-		Set<ID> ufs;
+		ufs.clear();
 		ufs.insert(createLiteral(atom));
 		do{
 			DBGLOG(DBG, "Trying to build an unfounded set over " << toString(ufs));
@@ -699,7 +702,7 @@ Set<ID> InternalGroundASPSolver::getExternalSupport(const Set<ID>& s){
 				DBGLOG(DBG, "Found external rule " << ruleID.address << " for set " << toString(s));
 				extRules.insert(ruleID);
 			}else{
-				DBGLOGD(DBG, "Rule " << ruleID.address << " contains " << lit.address << " but does not externally support it");
+				DBGLOGD(DBG, "Rule " << ruleID.address << " contains " << lit.address << " but does not externally support it wrt " << toString(s));
 			}
 		}
 	}
@@ -938,9 +941,12 @@ InterpretationPtr InternalGroundASPSolver::projectToOrdinaryAtoms(Interpretation
 		return InterpretationPtr();
 	}else{
 		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
-		BOOST_FOREACH (IDAddress ordAt, ordinaryFacts){
-			if (intr->getFact(ordAt)) answer->setFact(ordAt);
-		}
+		answer->add(*intr);
+		answer->bit_and(*ordinaryFactsInt);
+//		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
+//		BOOST_FOREACH (IDAddress ordAt, ordinaryFacts){
+//			if (intr->getFact(ordAt)) answer->setFact(ordAt);
+//		}
 		return answer;
 	}
 }
