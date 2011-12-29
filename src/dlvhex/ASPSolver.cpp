@@ -221,7 +221,8 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
       DBGLOG(DBG,"[" << this << "]" "getting input from stream");
       std::string input;
       std::getline(is, input);
-      DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() << " characters from input stream via getline");
+      DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() <<
+	  " characters from input stream via getline");
       if( input.empty() || is.bad() )
       {
 	DBGLOG(DBG,"[" << this << "]" "leaving loop because got input size " << input.size() <<
@@ -229,18 +230,28 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
 	break;
       }
 
-      // parse line
-      DBGLOG(DBG,"[" << this << "]" "parsing");
-      std::istringstream iss(input);
-      parser.parse(iss, adder);
+      // discard weak answer set cost lines
+      if( 0 == input.compare(0, 22, "Cost ([Weight:Level]):") )
+      {
+	DBGLOG(DBG,"[" << this << "]" "discarding weak answer set cost line");
+      }
+      else
+      {
+	// parse line
+	DBGLOG(DBG,"[" << this << "]" "parsing");
+	std::istringstream iss(input);
+	parser.parse(iss, adder);
+      }
     }
     while(!shouldTerminate);
-		DBGLOG(DBG,"[" << this << "]" "after loop " << shouldTerminate);
+    DBGLOG(DBG,"[" << this << "]" "after loop " << shouldTerminate);
 
     // do clean shutdown if we were not terminated from outside
     if( !shouldTerminate )
     {
-      closeAndCheck(); // closes process and throws on errors (all results have been parsed above)
+      // closes process and throws on errors
+      // (all results have been parsed above)
+      closeAndCheck();
       enqueueEnd();
     }
   }
