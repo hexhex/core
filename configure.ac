@@ -405,6 +405,7 @@ AC_CONFIG_FILES([
            Makefile 
            dlvhex.pc
            examples/Makefile
+           examples/tests/dlvhextests.test
            include/Makefile
            include/common.h
            include/dlvhex/Makefile

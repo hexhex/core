@@ -17,7 +17,10 @@ extatom1.hex extatom1.out
 extatom2.hex extatom2.out
 extatom2safety.hex extatom2.out
 extatom3.hex extatom3.out --nofacts
-extatom3.hex extatom3.out --nofacts --heuristics=manual:extatom3_evalplan.txt
+extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplana.txt
+extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplanb.txt
+extatom3.hex extatom3.out --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_old.asp
+extatom3.hex extatom3.out --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_easy.asp
 extatom4.hex extatom4.out
 extatom5.hex extatom5.out
 extatom6.hex extatom6.out
