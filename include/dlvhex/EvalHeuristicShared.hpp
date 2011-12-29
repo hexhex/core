@@ -80,13 +80,13 @@ void executeBuildCommands(const CommandVector& commands, EvalGraphBuilder& build
   // collapse according to commands
   BOOST_FOREACH(const BuildCommand& cmd, commands)
   {
-    LOG(ANALYZE,"build command from file collapses components " <<
+    LOG(ANALYZE,"BuildCommand collapses components " <<
 				printvector(cmd.collapse) <<
 				" and shared components " << printvector(cmd.share));
 		std::list<Component> comps(cmd.collapse.begin(), cmd.collapse.end());
 		std::list<Component> ccomps(cmd.share.begin(), cmd.share.end());
 		EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
-		LOG(ANALYZE,"became eval unit " << u);
+		LOG(ANALYZE,"yields eval unit " << u);
   }
 }
 

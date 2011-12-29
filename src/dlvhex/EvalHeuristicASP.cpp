@@ -231,7 +231,7 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
     }
     else if( gatom.tuple[0] == iduse )
     {
-      assert(gatom.tuple[3].isIntegerTerm());
+      assert(gatom.tuple[2].isIntegerTerm());
       unsigned index = gatom.tuple[2].address;
       // implicit assert in next line's ->
       thisunitinfo.collapse.push_back(componentindices.find(index)->second);
@@ -239,7 +239,7 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
     else
     {
       assert(gatom.tuple[0] == idshare);
-      assert(gatom.tuple[3].isIntegerTerm());
+      assert(gatom.tuple[2].isIntegerTerm());
       unsigned index = gatom.tuple[2].address;
       // implicit assert in next line's ->
       thisunitinfo.share.push_back(componentindices.find(index)->second);
