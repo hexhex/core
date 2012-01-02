@@ -578,7 +578,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	ASPProgram gprogram = grounder->getGroundProgram();
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
-	igas->addExternalLearner(this);
+	if (factory.ctx.config.getOption("ExternalLearningPartial")){
+		igas->addExternalLearner(this);
+	}
 	firstLearnCall = true;
     }
 }

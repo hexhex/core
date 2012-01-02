@@ -210,6 +210,7 @@ public:
 	virtual std::string getStatistics();
 
 	CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
+	ProgramCtx& getProgramContext();
 
 	virtual InterpretationConstPtr getNextModel();
 	int addNogood(Nogood ng);

@@ -226,6 +226,8 @@ public:
   {
     addInputTuple();
     setOutputArity(1);
+
+    functional = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)

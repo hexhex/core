@@ -141,7 +141,13 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "     --               Parse from stdin." << std::endl
       << "     --instantiate    Generate ground program without evaluating (only useful with --internalsolver)" << std::endl
       << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
-      << "     --extlearn       Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
+      << "     --extlearn[=none,monotonicity,functionality,partial]" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
+      << "                        none: Apply no special rules" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic external atoms" << std::endl
+      << "                        functionality: Apply special rules for functional external atoms" << std::endl
+      << "                        partial: Apply learning rules also when model is still partial" << std::endl
+      << "                      By default, all options are enabled" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -297,6 +303,9 @@ int main(int argc, char *argv[])
   pctx.config.setOption("InternalSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("ExternalLearningMonotonicity", 0);
+  pctx.config.setOption("ExternalLearningFunctionality", 0);
+  pctx.config.setOption("ExternalLearningPartial", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -551,7 +560,7 @@ void processOptionsPrePlugin(
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
 		{ "internalsolver", no_argument, 0, 17 },
-		{ "extlearn", no_argument, 0, 18 },
+		{ "extlearn", optional_argument, 0, 18 },
 		{ "instantiate", no_argument, 0, 19 },
 		{ NULL, 0, NULL, 0 }
 	};
@@ -822,7 +831,40 @@ void processOptionsPrePlugin(
 				break;
 
 		case 18:
+			{
+				if (optarg){
+					boost::char_separator<char> sep(",");
+					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+					boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+
+					for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+							f != tok.end(); ++f)
+					{
+						const std::string& token = *f;
+						if( token == "monotonicity" )
+						{
+							pctx.config.setOption("ExternalLearningMonotonicity", 1);
+						}
+						if( token == "functionality" )
+						{
+							pctx.config.setOption("ExternalLearningFunctionality", 1);
+						}
+						if( token == "partial" )
+						{
+							pctx.config.setOption("ExternalLearningPartial", 1);
+						}
+					}
+				}else{
+					// by default, turn on all external learning rules
+					pctx.config.setOption("ExternalLearningFunctionality", 1);
+					pctx.config.setOption("ExternalLearningMonotonicity", 1);
+					pctx.config.setOption("ExternalLearningPartial", 1);
+				}
+			}
+
 			pctx.config.setOption("ExternalLearning", 1);
+
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
 			break;
 
 		case 19:

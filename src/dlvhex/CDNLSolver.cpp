@@ -617,6 +617,10 @@ CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), con
 	initWatchingStructures();
 };
 
+ProgramCtx& CDNLSolver::getProgramContext(){
+	return ctx;
+}
+
 bool CDNLSolver::handlePreviousModel(){
 
 	// is there a previous model?

@@ -340,7 +340,7 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solv
 		}
 
 		// functionality
-		if (isFunctional()){
+		if (solver->getProgramContext().config.getOption("ExternalLearningFunctionality") && isFunctional()){
 			// there is a unique output
 			const std::vector<Tuple>& otuples = answer.get();
 			ID uniqueOut = getOutputAtom(true, query, otuples[0]);
@@ -394,7 +394,7 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 
 	while (en < en_end){
 		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
-		if (query.interpretation->getFact(*en) || !isMonotonic()){
+		if (query.interpretation->getFact(*en) || !isMonotonic() || !solver->getProgramContext().config.getOption("ExternalLearningMonotonicity")){
 			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
 		}
 		en++;
