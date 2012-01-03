@@ -324,6 +324,11 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solv
 
 	retrieve(query, answer);
 
+	defaultExtLearning(query, answer, solver);
+}
+
+void PluginAtom::defaultExtLearning(const Query& query, Answer& answer, CDNLSolverPtr solver){
+
 	if (solver != CDNLSolverPtr()){
 
 		DBGLOG(DBG, "Learning from external call");

@@ -141,11 +141,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "     --               Parse from stdin." << std::endl
       << "     --instantiate    Generate ground program without evaluating (only useful with --internalsolver)" << std::endl
       << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
-      << "     --extlearn[=none,monotonicity,functionality,partial]" << std::endl
+      << "     --extlearn[=none,monotonicity,functionality,user,partial]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
       << "                        none: Apply no special rules" << std::endl
       << "                        monotonicity: Apply special rules for monotonic external atoms" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
+      << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
@@ -305,6 +306,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
+  pctx.config.setOption("ExternalLearningUser", 0);
   pctx.config.setOption("ExternalLearningPartial", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
@@ -849,6 +851,10 @@ void processOptionsPrePlugin(
 						{
 							pctx.config.setOption("ExternalLearningFunctionality", 1);
 						}
+						if( token == "user" )
+						{
+							pctx.config.setOption("ExternalLearningUser", 1);
+						}
 						if( token == "partial" )
 						{
 							pctx.config.setOption("ExternalLearningPartial", 1);
@@ -858,13 +864,14 @@ void processOptionsPrePlugin(
 					// by default, turn on all external learning rules
 					pctx.config.setOption("ExternalLearningFunctionality", 1);
 					pctx.config.setOption("ExternalLearningMonotonicity", 1);
+					pctx.config.setOption("ExternalLearningUser", 1);
 					pctx.config.setOption("ExternalLearningPartial", 1);
 				}
 			}
 
 			pctx.config.setOption("ExternalLearning", 1);
 
-			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
 			break;
 
 		case 19:

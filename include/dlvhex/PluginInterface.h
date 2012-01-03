@@ -815,6 +815,7 @@ public:
   virtual void retrieve(const Query&, Answer&) = 0;
   virtual void retrieve(const Query&, Answer&, CDNLSolverPtr solver);
 
+  void defaultExtLearning(const Query&, Answer&, CDNLSolverPtr solver);
   Nogood getInputNogood(CDNLSolverPtr solver, const Query& query);
   Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer);
   ID getOutputAtom(bool sign, const Query& query, Tuple t);
