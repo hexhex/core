@@ -1,0 +1,7 @@
+dom(foo).
+dom(bar).
+dom(baz).
+p(a).
+p(X) :- &testA[p](X), dom(X).
+
+r(X) v q(X) :- p(X).
