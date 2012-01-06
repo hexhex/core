@@ -420,7 +420,7 @@ public:
 				Nogood nogood;
 				nogood.insert(solver->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
 				nogood.insert(solver->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
-				nogood.insert(solver->createLiteral(getOutputAtom(false, query, t)));
+				nogood.insert(getOutputAtom(solver, query, t, false));
 				solver->addNogood(nogood);
 
 				DBGLOG(DBG, "Learned user-defined nogood: " << nogood);

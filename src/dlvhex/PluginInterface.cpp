@@ -41,6 +41,9 @@
 
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
+#include "dlvhex/HexParser.hpp"
+#include "dlvhex/InputProvider.hpp"
+#include "dlvhex/InternalGrounder.hpp"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Benchmarking.h"
@@ -336,10 +339,10 @@ void PluginAtom::defaultExtLearning(const Query& query, Answer& answer, CDNLSolv
 		Nogood extNgInput = getInputNogood(solver, query);
 		DBGLOG(DBG, "Input nogood: " << extNgInput);
 
-		Set<ID> out = getOutputAtoms(solver, query, answer);
+		Set<ID> out = getOutputAtoms(solver, query, answer, false);
 		BOOST_FOREACH (ID oid, out){
 			Nogood extNg = extNgInput;
-			extNg.insert(solver->createLiteral(oid));
+			extNg.insert(oid);
 			DBGLOG(DBG, "Overall nogood: " << extNg);
 			solver->addNogood(extNg);
 		}
@@ -348,44 +351,42 @@ void PluginAtom::defaultExtLearning(const Query& query, Answer& answer, CDNLSolv
 		if (solver->getProgramContext().config.getOption("ExternalLearningFunctionality") && isFunctional()){
 			// there is a unique output
 			const std::vector<Tuple>& otuples = answer.get();
-			ID uniqueOut = getOutputAtom(true, query, otuples[0]);
+			ID uniqueOut = getOutputAtom(solver, query, otuples[0], true);
 
 			// go through all output tuples which have been generated so far
 			BOOST_FOREACH (Tuple t, this->otuples){
-				ID id = getOutputAtom(true, query, t);
+				ID id = getOutputAtom(solver, query, t, true);
 				if (id != uniqueOut){
 					Nogood excludeOthers;
-					excludeOthers.insert(solver->createLiteral(uniqueOut));
-					excludeOthers.insert(solver->createLiteral(id));
+					excludeOthers.insert(uniqueOut);
+					excludeOthers.insert(id);
 					DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
 					solver->addNogood(excludeOthers);
 				}
 			}
 		}
 
+/*
+		InputProviderPtr ip(new InputProvider());
+		ip->addStringInput("p(a). q(X) :- dom(X), not sel(X).", "test");
+		ProgramCtx pc;
+		pc.changeRegistry(solver->getProgramContext().registry());
+		ModuleHexParser hp;
+		hp.parse(ip, pc);
 
-#if 0
-		// construct replacement atom
-		OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-		replacement.tuple.resize(1);
-		replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
-		replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
-		int s = replacement.tuple.size();
-
-		const std::vector<Tuple>& otuples = answer.get();
-		BOOST_FOREACH (Tuple otuple, otuples){
-			replacement.tuple.resize(s);
-			// add current output
-			replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
-			// get ID of this replacement atom
-			ID idreplacement = registry->storeOrdinaryGAtom(replacement);
-
-			Nogood extNg = extNgInput;
-			extNg.insert(solver->createLiteral(idreplacement.address));
-			DBGLOG(DBG, "Overall nogood: " << extNg);
-			solver->addNogood(extNg);
+		ASPProgram program(pc.registry(), pc.idb, query.interpretation);
+		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(pc, program, InternalGrounder::builtin));
+		ASPProgram gprogram = ig->getGroundProgram();
+		DBGLOG(DBG, "NONGROUND::");
+		DBGLOG(DBG, ig->getNongroundProgramString());
+		DBGLOG(DBG, "GROUND::");
+		DBGLOG(DBG, ig->getGroundProgramString());
+		// create a nogood for each ground rule
+		BOOST_FOREACH (ID ruleID, gprogram.idb){
+			Nogood ng = getRuleNogood(solver, query, pc.registry()->rules.getByID(ruleID));
+			DBGLOG(DBG, "Rule nogood: " << ng);
 		}
-#endif
+*/
 	}
 }
 
@@ -408,14 +409,29 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 	return extNgInput;
 }
 
-Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer){
+Nogood PluginAtom::getRuleNogood(CDNLSolverPtr solver, const Query& query, const Rule& rule){
+
+	Nogood ng;
+	BOOST_FOREACH (ID hId, rule.head){
+		const OrdinaryAtom& oat = solver->getProgramContext().registry()->ogatoms.getByID(hId);
+		Tuple t;
+		t.insert(t.end(), oat.tuple.begin() + 1, oat.tuple.end());
+		ng.insert(getOutputAtom(solver, query, t, false));
+	}
+	BOOST_FOREACH (ID bId, rule.body){
+		ng.insert(bId);
+	}
+	return ng;
+}
+
+Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer, bool sign){
 
 	Set<ID> out;
 
 	// construct replacement atom
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
 	replacement.tuple.resize(1);
-	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
+	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
 	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
 	int s = replacement.tuple.size();
 
@@ -428,14 +444,14 @@ Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, con
 		// add current output
 		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 		// get ID of this replacement atom
-		ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+		ID idreplacement = solver->createLiteral(registry->storeOrdinaryGAtom(replacement));
 		out.insert(idreplacement);
 	}
 
 	return out;
 }
 
-ID PluginAtom::getOutputAtom(bool sign, const Query& query, Tuple otuple){
+ID PluginAtom::getOutputAtom(CDNLSolverPtr solver, const Query& query, Tuple otuple, bool sign){
 
 	// construct replacement atom with input from query
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -447,7 +463,7 @@ ID PluginAtom::getOutputAtom(bool sign, const Query& query, Tuple otuple){
 	// add output tuple
 	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 
-	ID idreplacement = registry->storeOrdinaryGAtom(replacement);
+	ID idreplacement = solver->createLiteral(registry->storeOrdinaryGAtom(replacement));
 	return idreplacement;
 }
 

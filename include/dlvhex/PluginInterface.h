@@ -817,8 +817,9 @@ public:
 
   void defaultExtLearning(const Query&, Answer&, CDNLSolverPtr solver);
   Nogood getInputNogood(CDNLSolverPtr solver, const Query& query);
-  Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer);
-  ID getOutputAtom(bool sign, const Query& query, Tuple t);
+  Nogood getRuleNogood(CDNLSolverPtr solver, const Query& query, const Rule& rule);
+  Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer, bool sign);
+  ID getOutputAtom(CDNLSolverPtr solver, const Query& query, Tuple t, bool sign);
 
   /**
    * \brief Returns the type of the input argument specified by position

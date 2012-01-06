@@ -47,6 +47,13 @@
 DLVHEX_NAMESPACE_BEGIN
 
 class InternalGrounder{
+public:
+	enum OptLevel{
+		full,
+		builtin,
+		none
+	};
+
 protected:
 	typedef boost::unordered_map<ID, ID> Substitution;
 	typedef boost::unordered_map<ID, int> Binder;
@@ -54,6 +61,7 @@ protected:
 	ASPProgram inputprogram;
 	ProgramCtx& ctx;
 	RegistryPtr reg;
+	OptLevel optlevel;
 
 	// dependency graph
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ID> DepGraph;
@@ -145,7 +153,7 @@ protected:
 	};
 	int applyIntFunction(AppDir ad, ID op, int x, int y);
 public:
-	InternalGrounder(ProgramCtx& ctx, ASPProgram& p);
+	InternalGrounder(ProgramCtx& ctx, ASPProgram& p, OptLevel = full);
 
 	ASPProgram getGroundProgram();
 	ASPProgram getNongroundProgram();

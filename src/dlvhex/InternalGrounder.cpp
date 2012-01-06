@@ -411,12 +411,12 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 	BOOST_FOREACH (ID bodyLitID, rule.body){
 		ID groundBodyLiteralID = applySubstitutionToAtom(s, bodyLitID);
 
-		if (groundBodyLiteralID.isBuiltinAtom()){
+		if (groundBodyLiteralID.isBuiltinAtom() && optlevel != none){
 			// at this point, built-in atoms are always true, otherwise the grounding terminates even earlier
 			continue;
 		}
 
-		if (groundBodyLiteralID.isOrdinaryAtom()){
+		if (groundBodyLiteralID.isOrdinaryAtom() && optlevel == full){
 			const OrdinaryAtom& groundBodyLiteral = reg->ogatoms.getByID(groundBodyLiteralID);
 
 			// h :- a, not b         where a is known to be true
@@ -1191,7 +1191,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 	return -1;
 }
 
-InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p) : inputprogram(p), ctx(c){
+InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p, OptLevel ol) : inputprogram(p), ctx(c), optlevel(ol){
 
 	DBGLOG(DBG, "Starting grounding");
 
