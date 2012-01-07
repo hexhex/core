@@ -842,8 +842,10 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 
 
+
 #if 0
 
+modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
 /*
 * see documentation at top: FLP check
 * * evaluate edb + xidbflphead + M
@@ -926,7 +928,6 @@ ASPSolverManager::ResultsPtr flpbodyres;
 }
 
 #endif
-
 
 
 
