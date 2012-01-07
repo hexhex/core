@@ -943,6 +943,9 @@ InterpretationPtr InternalGroundASPSolver::projectToOrdinaryAtoms(Interpretation
 		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
 		answer->add(*intr);
 		answer->bit_and(*ordinaryFactsInt);
+		if (program.mask != InterpretationConstPtr()){
+			answer->getStorage() -= program.mask->getStorage();
+		}
 //		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
 //		BOOST_FOREACH (IDAddress ordAt, ordinaryFacts){
 //			if (intr->getFact(ordAt)) answer->setFact(ordAt);

@@ -544,7 +544,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     postprocessedInput->add(*factory.ctx.edb);
 
     // remember which facts we must remove
-    InterpretationConstPtr mask(new Interpretation(*postprocessedInput));
+    //InterpretationConstPtr
+    mask.reset(new Interpretation(*postprocessedInput));
 
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
@@ -568,7 +569,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     {
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
-	ASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint, mask);
+	ASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint);
 
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 	if (factory.ctx.config.getOption("Instantiate")){
@@ -839,6 +840,108 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 			aborted = true;
 		}
 
+
+
+#if 0
+
+/*
+* see documentation at top: FLP check
+* * evaluate edb + xidbflphead + M
+*   -> yields singleton answer set containing flp heads F for non-blocked rules
+*   (if there is no result answer set, some constraint fired and M can be discarded)
+* * evaluate edb + xidbflpbody + (M \cap pos_guess_auxiliaries) + F
+*   -> yields singleton answer set M' (we ignore input facts)
+*   (there must be an answer set, or something went wrong)
+* * if M' == M (ignoring input facts "edb \cup pos_guess_auxiliaries \cup flpheads")
+*   then M is a model of the FLP reduct
+*   -> store as candidate
+*/
+InterpretationPtr flpas;
+{
+	DBGLOG(DBG,"evaluating flp head program");
+
+	// here we can mask, we won't lose FLP heads
+	ASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
+	InternalGrounder ig(factory.ctx, flpheadprogram);
+	ASPProgram flpheadgprogram = ig.getGroundProgram();
+	InternalGroundDASPSolver flpheadigas(factory.ctx, flpheadgprogram);
+
+	flpas = flpheadigas.projectToOrdinaryAtoms(flpheadigas.getNextModel());
+	if( flpas == InterpretationPtr() )
+	{
+		DBGLOG(DBG, "FLP head program yielded no answer set");
+		aborted = true;
+	}else{
+		DBGLOG(DBG, "FLP head program yielded at least one answer set");
+	}
+}
+DBGLOG(DBG,"got FLP head model " << *flpas);
+
+
+// evaluate xidbflpbody+edb+flp+eatomguess
+ASPSolverManager::ResultsPtr flpbodyres;
+{
+	DBGLOG(DBG, "evaluating flp body program");
+
+	// build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
+	Interpretation::Ptr edbflpguess(new Interpretation(*modelCandidate));
+	edbflpguess->getStorage() &= (flpas->getStorage() | factory.gpMask.mask()->getStorage());
+
+	// here we can also mask, this eliminates many equal bits for comparisons later
+	ASPProgram flpbodyprogram(reg, factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
+	InternalGrounder ig(factory.ctx, flpbodyprogram);
+	ASPProgram flpbodygprogram = ig.getGroundProgram();
+	InternalGroundDASPSolver flpbodyigas(factory.ctx, flpbodygprogram);
+
+	// for comparing the flpbody answer sets we mask the guess interpretation
+	modelCandidate->getStorage() -= mask->getStorage();
+
+	DBGLOG(DBG, "comparing xidbflpbody answer sets with guess interpretation " << *modelCandidate);
+
+	InterpretationPtr flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
+	while(flpbodyas != InterpretationPtr())
+	{
+		// now we make sure nothing from EDB is left in flpbodyint
+		// (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+		// (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+		//flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+
+		DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyas);
+		DBGLOG(DBG,"model candidate is " << *modelCandidate);
+		if( flpbodyas->getStorage() == modelCandidate->getStorage() )
+		{
+		  DBGLOG(DBG, "found (not yet minimalitychecked) FLP model " << *modelCandidate);
+		  // we found one -> no need to check for more
+		  break;
+		}
+		else
+		{
+		  DBGLOG(DBG, "this FLP body model is not equal to guess interpretation -> continuing check");
+		}
+		flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
+	}
+	if (flpbodyas == InterpretationPtr()){
+		aborted = true;
+	}
+}
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		if (!aborted){
 
 			// remove positive and negative guess
@@ -846,64 +949,14 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 			modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
 
 			// remove edb
-			modelCandidate->getStorage() -= grounder->getGroundProgram().mask->getStorage();
+			modelCandidate->getStorage() -= mask->getStorage();
 
 			DBGLOG(DBG,"= final model candidate " << *modelCandidate);
-
-#if 0
-			// Learning
-			BOOST_FOREACH(ID eatomid, factory.innerEatoms)
-			{
-				const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-
-				DBGLOG(DBG, "Evaluating external atom " << eatom << " for nogood learning");
-
-				InterpretationPtr eaResult(new Interpretation(reg));
-				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
-				evaluateExternalAtom(reg, eatom, modelCandidate, intcb);
-
-				learnFromExternalAtom(eatom, modelCandidate, eaResult);
-			}
-#endif
 		}
 	}while(aborted);
 
 	return modelCandidate;
 }
-
-#if 0
-bool GenuineGuessAndCheckModelGenerator::learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output){
-	return false;
-
-	if (!factory.ctx.config.getOption("ExternalLearning")) return false;
-
-	// find relevant input
-	bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
-	bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
-
-	Nogood extNgInput;
-
-	while (en < en_end){
-		extNgInput.insert(igas->createLiteral(*en, input->getFact(*en)));
-		en++;
-	}
-
-	en = output->getStorage().first();
-	en_end = output->getStorage().end();
-
-	bool learned = false;
-	while (en < en_end){
-		Nogood extNg = extNgInput;
-		extNg.insert(igas->createLiteral(*en, false));
-		DBGLOG(DBG, "Adding externally learned nogood " << extNg);
-		int nc = igas->getNogoodCount();
-		int i = igas->addNogood(extNg);
-		if (i > nc - 1) learned = true;
-		en++;
-	}
-	return learned;
-}
-#endif
 
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
 

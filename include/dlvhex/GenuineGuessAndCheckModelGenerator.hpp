@@ -63,6 +63,7 @@ protected:
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationPtr postprocessedInput;
+  InterpretationPtr mask;
   // result handle for retrieving set of minimal models of this eval unit
   ASPSolverManager::ResultsPtr currentResults;
   std::list<InterpretationPtr> candidates;

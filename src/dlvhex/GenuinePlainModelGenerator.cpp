@@ -185,9 +185,9 @@ GenuinePlainModelGenerator::generateNextModel()
 	// remove edb from result
 	InterpretationPtr modelCandidate = igas->projectToOrdinaryAtoms(igas->getNextModel());
 	DBGLOG(DBG, "Statistics:" << std::endl << igas->getStatistics());
-	if (modelCandidate != InterpretationPtr()){
-		modelCandidate->getStorage() -= grounder->getGroundProgram().mask->getStorage();
-	}
+//	if (modelCandidate != InterpretationPtr()){
+//		modelCandidate->getStorage() -= grounder->getGroundProgram().mask->getStorage();
+//	}
 	return modelCandidate;
 }
 
