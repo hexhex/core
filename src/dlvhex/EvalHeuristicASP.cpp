@@ -112,6 +112,8 @@ void buildEvalUnitsFromAnswerSet(
 // get commands from first answer set
 void EvalHeuristicASP::build(EvalGraphBuilder& builder)
 {
+  LOG(INFO,"using ASP evaluation heuristic '" << scriptname << "'");
+
   const ComponentGraph& compgraph = builder.getComponentGraph();
 
 	// create inputprovider
@@ -184,7 +186,10 @@ struct EvalUnitInfo
     gotUnit(false) {}
 };
 
-void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, const std::map<unsigned, Component>& componentindices)
+void buildEvalUnitsFromAnswerSet(
+    EvalGraphBuilder& builder,
+    AnswerSet::Ptr as,
+    const std::map<unsigned, Component>& componentindices)
 {
   InterpretationPtr interpretation = as->interpretation;
   RegistryPtr reg = interpretation->getRegistry();
@@ -212,14 +217,17 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
   typedef std::map<ID, EvalUnitInfo> UnitMap;
   UnitMap um;
 
-  // build um
+  // * build um
+  // * verify all components were used
+  std::vector<bool> componentsused(componentindices.size(), false);
   Interpretation::TrueBitIterator bit, bit_end;
   for(boost::tie(bit, bit_end) = projected->trueBits();
       bit != bit_end; ++bit)
   {
     const OrdinaryAtom& gatom = reg->ogatoms.getByAddress(*bit);
 
-    assert((gatom.tuple.size() == 2 || gatom.tuple.size() == 3) && "expecting unit(U), use(U,C), share(U,C) here");
+    assert((gatom.tuple.size() == 2 || gatom.tuple.size() == 3) &&
+        "expecting unit(U), use(U,C), share(U,C) here");
 
     // lookup or create unit info
     EvalUnitInfo& thisunitinfo = um[gatom.tuple[1]];
@@ -235,6 +243,16 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
       unsigned index = gatom.tuple[2].address;
       // implicit assert in next line's ->
       thisunitinfo.collapse.push_back(componentindices.find(index)->second);
+
+      // verify that all components have been used not more than once
+      if( componentsused[index] == true )
+      {
+        std::ostringstream os;
+        os << "asp evaluation heuristic uses component " << index <<
+          " exclusively in more than one unit, which is not allowed";
+        throw GeneralError(os.str());
+      }
+      componentsused[index] = true;
     }
     else
     {
@@ -246,7 +264,22 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
     }
   }
 
-  // verify um and create commands from um
+  // verify that all components have been used
+  for(unsigned idx = 0; idx < componentsused.size(); ++idx)
+  {
+    if( componentsused[idx] == false )
+    {
+      std::ostringstream os;
+      os << "asp evaluation heuristic did not use component " << idx <<
+        ", which is not allowed";
+      throw GeneralError(os.str());
+    }
+  }
+
+  // next loop:
+  // * verify that all units in use/2 and share/2 were received as unit/1
+  // * create commands from um
+  // initialize all indices to false
   CommandVector cv;
   for(UnitMap::const_iterator umit = um.begin();
       umit != um.end(); ++umit)
@@ -264,6 +297,8 @@ void buildEvalUnitsFromAnswerSet(EvalGraphBuilder& builder, AnswerSet::Ptr as, c
     bc.share.insert(bc.share.end(), uinfos.share.begin(), uinfos.share.end());
     cv.push_back(bc);
   }
+
+  #warning maybe we need to sort the build commands here, in topological order of units to be created
 
   executeBuildCommands(cv, builder);
 }
