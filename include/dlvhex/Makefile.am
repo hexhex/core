@@ -29,6 +29,7 @@ pkginclude_HEADERS = \
   EvalHeuristicEasy.hpp \
   EvalHeuristicFromFile.hpp \
   EvalHeuristicOldDlvhex.hpp \
+  EvalHeuristicShared.hpp \
   EvalHeuristicTrivial.hpp \
   ExternalAtomTable.hpp \
   FinalEvalGraph.hpp \

@@ -133,10 +133,10 @@ AC_ARG_ENABLE(extradebug,
               )
 
 # default = release
-dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$extradebug"
+dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$enable_extradebug"
 if test "$dbgrelbench" = "false,false,false,false,false"; then
   enable_debug=true
-  dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$extradebug"
+  dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$enable_extradebug"
 fi
 
 optlevel=""
