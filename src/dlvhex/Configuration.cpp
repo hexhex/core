@@ -34,6 +34,7 @@
 #include <dlvhex/Configuration.hpp>
 
 #include <iostream>
+#include <cassert>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -106,6 +107,21 @@ Configuration::getFilters() const
     return optionFilter;
 }
 
+const std::string&
+Configuration::getStringOption(
+		const std::string& key) const
+{
+	std::map<std::string, std::string>::const_iterator it =
+		stringOptionMap.find(key);
+	assert(it != stringOptionMap.end());
+	return it->second;
+}
+
+void Configuration::setStringOption(
+		const std::string& key, const std::string& value)
+{
+	stringOptionMap[key] = value;
+}
 
 DLVHEX_NAMESPACE_END
 

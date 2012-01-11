@@ -22,29 +22,38 @@
  */
 
 /**
- * @file   GraphvizHelpers.hpp
+ * @file   EvalHeuristicASP.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Helpers for creating graphviz output.
+ * @brief  Evaluation heuristic that uses collapse commands from given file.
  */
 
-#ifndef GRAPHVIZHELPERS_HPP_INCLUDED__20082011
-#define GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+#ifndef EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011
+#define EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011
 
-#include "dlvhex/PlatformDefinitions.h"
-
-#include <string>
-#include <iosfwd>
+#include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalGraphBuilder.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-namespace graphviz
+class EvalHeuristicASP:
+  public EvalHeuristicBase<EvalGraphBuilder>
 {
+  // types
+public:
+  typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
-void escape(std::ostream& o, const std::string& s);
+  // methods
+public:
+  EvalHeuristicASP(const std::string& scriptname);
+  virtual ~EvalHeuristicASP();
+  virtual void build(EvalGraphBuilder& builder);
 
-}
+  // data
+protected:
+  std::string scriptname;
+};
 
 DLVHEX_NAMESPACE_END
 
-#endif // GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+#endif // EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011

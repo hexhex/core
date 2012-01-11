@@ -22,29 +22,42 @@
  */
 
 /**
- * @file   GraphvizHelpers.hpp
+ * @file   DumpingEvalGraphBuilder.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Helpers for creating graphviz output.
+ * @brief  Evaluation Graph builder that dumps its evaluation plan.
  */
 
-#ifndef GRAPHVIZHELPERS_HPP_INCLUDED__20082011
-#define GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+#ifndef DUMPING_EVAL_GRAPH_BUILDER_HPP_INCLUDED__16112011
+#define DUMPING_EVAL_GRAPH_BUILDER_HPP_INCLUDED__16112011
 
-#include "dlvhex/PlatformDefinitions.h"
-
-#include <string>
-#include <iosfwd>
+#include "dlvhex/EvalGraphBuilder.hpp"
+#include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
-namespace graphviz
+class DumpingEvalGraphBuilder:
+	public EvalGraphBuilder
 {
+protected:
+	std::ofstream output;
+  std::map<ComponentGraph::Component, unsigned> componentidx;
 
-void escape(std::ostream& o, const std::string& s);
+  //////////////////////////////////////////////////////////////////////////////
+  // methods
+  //////////////////////////////////////////////////////////////////////////////
+public:
+	DumpingEvalGraphBuilder(
+      ProgramCtx& ctx, ComponentGraph& cg, EvalGraphT& eg,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig,
+			const std::string& outputfilename);
+	virtual ~DumpingEvalGraphBuilder();
 
-}
+	// write to file how eval units were created
+  virtual EvalUnit createEvalUnit(
+			const std::list<Component>& comps, const std::list<Component>& ccomps);
+};
 
 DLVHEX_NAMESPACE_END
 
-#endif // GRAPHVIZHELPERS_HPP_INCLUDED__20082011
+#endif

@@ -460,9 +460,9 @@ std::ostream& GuessAndCheckModelGeneratorFactory::print(
     std::ostream& o, bool verbose) const
 {
   // item separator
-  std::string isep(" ");
+  std::string isep("\n");
   // group separator
-  std::string gsep(" ");
+  std::string gsep("\n");
   if( verbose )
   {
     isep = "\n";
@@ -693,7 +693,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       evaluateExternalAtoms(reg,
           factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-          "outer external atom computations");
+          "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
       assert(!factory.xidb.empty() &&

@@ -84,10 +84,19 @@ public:
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
-    bool innerEatomsMonotonicAndOnlyPositiveCycles;
+		bool disjunctiveHeads;
+		bool negationInCycles;
+		bool innerEatomsNonmonotonic;
+		bool outerEatomsNonmonotonic;
+		// previous:
+    //bool innerEatomsMonotonicAndOnlyPositiveCycles;
+		// := (!innerEatomsNonmonotonic && !negationInCycles && !disjunctiveHeads)
 
 		ComponentInfo():
-      innerEatomsMonotonicAndOnlyPositiveCycles(true) {}
+      disjunctiveHeads(false),
+			negationInCycles(false),
+			innerEatomsNonmonotonic(false),
+			outerEatomsNonmonotonic(false) {}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -138,19 +147,24 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
   // methods
   //////////////////////////////////////////////////////////////////////////////
-private:
-  // not implemented on purpose because forbidden to use
-	ComponentGraph(const Component& other);
+protected:
+	// only to be used by explicit clone method
+	ComponentGraph(const ComponentGraph& other);
 public:
 	ComponentGraph(const DependencyGraph& dg, RegistryPtr reg);
 	virtual ~ComponentGraph();
 
-	// collapse components given in range into one new component
-	// collapse incoming and outgoing dependencies
-	// update properties of dependencies
-	// update properties of component
-	// asserts that this operation does not make the DAG cyclic
-	Component collapseComponents(const ComponentSet& originals);
+	// for explicit cloning of the graph
+	ComponentGraph* clone() const;
+
+	//
+	// modifiers
+	//
+
+	// collapse several components into one
+	#warning this method is a relic from old evaluation graph
+	Component collapseComponents(
+			const ComponentSet& originals);
 
 	//
 	// accessors
@@ -166,6 +180,8 @@ public:
   // get range over all components
   inline std::pair<ComponentIterator, ComponentIterator> getComponents() const
     { return boost::vertices(cg); }
+  inline std::pair<DependencyIterator, DependencyIterator> getDependencies() const
+    { return boost::edges(cg); }
 
 	// get node info given node
 	inline const ComponentInfo& getComponentInfo(Component c) const
@@ -220,16 +236,6 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
-  // calculate ComponentInfo from dependencies within a collapsed part of the dependency graph.
-	#if 0
-  void calculateCollapsedComponentProperties(
-    const std::set<DependencyGraph::Node>& sourceNodes,
-    ComponentInfo& ci) const;
-  // Calculate DependencyInfo from collapsed dependencies.
-  void calculateCollapsedDependencyProperties(
-    const std::set<DependencyGraph::Dependency>& sourceDependencies,
-    DependencyInfo& di) const;
-	#endif
 };
 
 DLVHEX_NAMESPACE_END

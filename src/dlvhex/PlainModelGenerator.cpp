@@ -104,13 +104,15 @@ std::ostream& PlainModelGeneratorFactory::print(
     std::ostream& o) const
 {
   RawPrinter printer(o, ctx.registry());
+	o << "outer eatoms:" << std::endl;
   if( !eatoms.empty() )
   {
-    printer.printmany(eatoms,",");
+    printer.printmany(eatoms,"\n");
   }
+	o << "xidb:" << std::endl;
   if( !xidb.empty() )
   {
-    printer.printmany(xidb,",");
+    printer.printmany(xidb,"\n");
   }
   return o;
 }
@@ -160,7 +162,7 @@ PlainModelGenerator::generateNextModel()
         IntegrateExternalAnswerIntoInterpretationCB cb(newint);
         evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
         DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
-            "outer external atom computations");
+            "outer eatom computations");
         DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
 
         if( factory.xidb.empty() )

@@ -18,11 +18,13 @@ pkginclude_HEADERS = \
   Configuration.hpp \
   DependencyGraphFull.hpp \
   DependencyGraph.hpp \
+  DumpingEvalGraphBuilder.hpp \
   DLVProcess.h \
   DLVresultParserDriver.h \
   Error.h \
   EvalGraphBuilder.hpp \
   EvalGraph.hpp \
+  EvalHeuristicASP.hpp \
   EvalHeuristicBase.hpp \
   EvalHeuristicEasy.hpp \
   EvalHeuristicFromFile.hpp \

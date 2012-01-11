@@ -67,64 +67,87 @@ public:
 	typedef FinalEvalGraph EvalGraphT;
 	typedef EvalGraphT::EvalUnit EvalUnit;
   typedef ComponentGraph::Component Component;
+  typedef ComponentGraph::Dependency Dependency;
+
+protected:
+	typedef ComponentGraph::ComponentSet ComponentSet;
+	typedef ComponentGraph::ComponentInfo ComponentInfo;
+	struct DependencyInfo:
+		public ComponentGraph::DependencyInfo
+	{
+		// this is not a property of a graph,
+		// we use this when we calculate the dependencies of a new unit
+		// and for that we need to know on which units it depends
+		EvalUnit dependsOn;
+		DependencyInfo(EvalUnit dependsOn, const ComponentGraph::DependencyInfo& parent):
+			ComponentGraph::DependencyInfo(parent), dependsOn(dependsOn) {}
+	};
 
 protected:
   // we use identity as hash function as eval units are distinct unsigned ints
+
+  BOOST_CONCEPT_ASSERT((boost::Convertible<Component, void*>));
   BOOST_CONCEPT_ASSERT((boost::Convertible<EvalUnit, unsigned>));
+
   struct identity {
     inline unsigned operator()(unsigned u) const { return u; }
   };
-  // bidirectional mapping <one component> <-> <one eval unit>
-  // TODO: extend this to the situation below
-  typedef boost::bimaps::bimap<
-      boost::bimaps::unordered_set_of<Component>,
-      boost::bimaps::unordered_set_of<EvalUnit, identity>
-    > ComponentEvalUnitMapping;
 
-  #if 0
-//  BOOST_CONCEPT_ASSERT((boost::Convertible<ComponentGraph::Node, unsigned>));
-
-
-protected:
   // bidirectional mapping:
   // set of components -> one eval unit
   // set of components <- one eval unit
-  // remember: sets of components may intersect! (shared constraints)
+  // constraint components that have been pushed up are ignored here
+	// (nothing can depend on them, and they are not "used" until all their
+	// dependencies have been fulfilled)
   typedef boost::bimaps::bimap<
-      boost::bimaps::unordered_set_of<ComponentGraph::Node, identity >,
-      boost::bimaps::unordered_multiset_of<typename EvalGraph::EvalUnit, identity >
-    > NodeEvalUnitMapping;
+      boost::bimaps::unordered_set_of<Component>,
+      boost::bimaps::unordered_multiset_of<EvalUnit, identity >
+    > ComponentEvalUnitMapping;
 
+protected:
   // for subgraph of component graph that still needs to be put into eval units:
   //
   // we cannot use subgraph to keep track of the rest of the component graph,
   // because subgraph does not allow for removing vertices and is furthermore
   // broken for bundled properties (see boost bugtracker)
   //
-  // therefore we keep track of used components in an efficient way in the
-  // following vector and filter the graph using boost::filtered_graph
+  // therefore we use the mapping to keep track of used components
+  // and we filter the graph using boost::filtered_graph
   // (components are unsigned ints as verified by the following concept check)
-  typedef std::vector<bool> UnusedNodesMap;
   struct UnusedVertexFilter
   {
     // unfortunately, this predicate must be default constructible
-    UnusedVertexFilter(): ucmap(0) {}
-    UnusedVertexFilter(const UnusedNodesMap* const ucmap): ucmap(ucmap) {}
-    bool operator()(ComponentGraph::Node node) const { assert(ucmap); return (*ucmap)[static_cast<unsigned>(node)]; }
-    const UnusedNodesMap* const ucmap;
+    UnusedVertexFilter(): ceum(0) {}
+    UnusedVertexFilter(const ComponentEvalUnitMapping* ceum): ceum(ceum) {}
+    UnusedVertexFilter(const UnusedVertexFilter& other): ceum(other.ceum) {}
+		UnusedVertexFilter& operator=(const UnusedVertexFilter& other)
+			{ ceum = other.ceum; return *this; }
+		// return true if vertex is still in graph -> return true if not mapped yet
+    bool operator()(Component comp) const
+			{ assert(ceum); return ceum->left.find(comp) == ceum->left.end(); }
+    const ComponentEvalUnitMapping* ceum;
   };
   struct UnusedEdgeFilter
   {
     // unfortunately, this predicate must be default constructible
-    UnusedEdgeFilter(): cg(0), ucmap(0) {}
-    UnusedEdgeFilter(const ComponentGraph* const cg, const UnusedNodesMap* const ucmap): cg(cg), ucmap(ucmap) {}
-    bool operator()(ComponentGraph::Dependency dep) const;
-    const ComponentGraph* const cg;
-    const UnusedNodesMap* const ucmap;
+    UnusedEdgeFilter(): cg(0), ceum(0) {}
+    UnusedEdgeFilter(const ComponentGraph* const cg,
+				const ComponentEvalUnitMapping* const ceum): cg(cg), ceum(ceum) {}
+    UnusedEdgeFilter(const UnusedEdgeFilter& other): cg(other.cg), ceum(other.ceum) {}
+		UnusedEdgeFilter& operator=(const UnusedEdgeFilter& other)
+			{ cg = other.cg; ceum = other.ceum; return *this; }
+    bool operator()(Dependency dep) const
+			{ assert(cg && ceum);
+				return
+					(ceum->left.find(cg->targetOf(dep)) == ceum->left.end()) &&
+					(ceum->left.find(cg->sourceOf(dep)) == ceum->left.end()); }
+    const ComponentGraph* cg;
+    const ComponentEvalUnitMapping* ceum;
   };
+
+public:
   typedef boost::filtered_graph<ComponentGraph::Graph,
           UnusedEdgeFilter, UnusedVertexFilter> ComponentGraphRest;
-  #endif
 
   //////////////////////////////////////////////////////////////////////////////
   // members
@@ -133,52 +156,29 @@ protected:
   // overall program context
   ProgramCtx& ctx;
 	// component graph (this is an input -> const)
-	ComponentGraph& cg;
+	const ComponentGraph& cg;
 	// eval graph
 	EvalGraphT& eg;
   // configuration for model generator factory
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
 
+	// mapping of nonshared components to eval units
   ComponentEvalUnitMapping mapping;
-  //NodeEvalUnitMapping mapping;
 
-  #if 0
   //
   // subgraph of component graph that still needs to be put into eval units
   //
   // (see comment above)
-  UnusedNodesMap unusedNodes; // true if unused
   UnusedEdgeFilter unusedEdgeFilter;
   UnusedVertexFilter unusedVertexFilter;
-  // induced subgraph of cg, induced by unused nodes
-  // for each change in the eval graph,
-  // usedNodes will be updated
+  // induced subgraph of cg:
+	//   nodes not in mapping are part of this graph
+	//   edges where both nodes are not in mapping are part of this graph
   //
-  // the sources of boost::filtered_graph suggest that after an update to
+  // (the sources of boost::filtered_graph suggest that after an update to
   // usedNodes, iterators of cgrest should not be reused, but the graph
-  // need not be reconstructed
+  // need not be reconstructed)
   ComponentGraphRest cgrest;
-  // leaves of cgrest
-  ComponentGraph::LeafContainer cgrestLeaves;
-  #endif
-
-#if 0
-  //
-  // supporting information on cgrest/eg
-  // XXX: perhaps move this into derived class
-  //
-  // this information is invalidated (=marked invalid) by createEvalUnit
-  // and recalculated on demand by accessors to supporting information.
-  //
-  // the reason for this is, that calculating this information is costly,
-  // and it might be useful to create multiple evaluation units with given
-  // information
-  //
-
-  // need recalculation?
-  bool supInvalid;
-  // TODO: 
-#endif
 
   //////////////////////////////////////////////////////////////////////////////
   // methods
@@ -193,37 +193,48 @@ public:
   // accessors
   // 
   inline const EvalGraphT& getEvalGraph() const { return eg; }
-  inline ComponentGraph& getComponentGraph() { return cg; }
+  //inline ComponentGraph& getComponentGraph() { return cg; }
   inline const ComponentGraph& getComponentGraph() const { return cg; }
-  //inline const ComponentGraph::LeafContainer& getRestLeaves() const { return cgrestLeaves; }
+	// returns a graph consisting of all components that still need to be built into some evaluation unit
+  inline const ComponentGraphRest& getComponentGraphRest() const { return cgrest; }
+
+	// returns the registry (useful for printing, cannot do this inline as ProgramCtx depends on this header)
+  RegistryPtr registry();
 
   //
   // modifiers
   //
 
-	// this methods modifies the eval graph and invalidates the helping information
-  // provided by this builder:
+	// this methods modifies the eval graph
   //
   // it asserts that all requirements for evaluation units are fulfilled
   // it adds an evaluation unit created from given nodes, including dependencies
   //
-	// NodeRange = range over nodes of component graph
-	// (you can use a container as a range, or use 
-	//  boost::iterator_range<Container>(first, beyond_last) )
-  //
-	// UnitRange = ordered range over eval units of the eval graph,
-  // which will be used as dependencies of the new eval unit
-	// (you can use a container as a range, or use 
-	//  boost::iterator_range<Container>(first, beyond_last) )
-  //
-  // returns newly created eval unit
-  // TODO: for constraint sharing distinguish between "consumedNodes" and "sharedNodes"
-  // TODO activate this interface, for now we use a simple one "<one component> -> <one eval unit> with random dependency ordering"
+	// TODO add ordered unit dependencies
+	// TODO use ComponentRange
 	//template<typename NodeRange, typename UnitRange>
 	//virtual EvalUnit createEvalUnit(
   //  NodeRange nodes, UnitRange orderedDependencies);
-  virtual EvalUnit createEvalUnit(Component comp);
+	//
+	// comps = list of components to directly put into eval unit
+	// ccomps = list of components to copy into eval unit
+	//   (these copied components may only contain constraints, and these must obey the
+	//   constraint pushing restrictions (this will be asserted by createEvalUnit))
+  virtual EvalUnit createEvalUnit(
+			const std::list<Component>& comps, const std::list<Component>& ccomps);
+
+protected:
+	// prepare to collapse given components into evaluation unit
+	// prepare collapse incoming dependencies
+	// create dependencies and properties of dependencies
+	// create properties of component
+	// asserts that this operation does not make the DAG cyclic
+	void calculateNewEvalUnitInfos(
+			const ComponentSet& comps, const ComponentSet& ccomps,
+			std::list<DependencyInfo>& newUnitDependsOn,
+			ComponentInfo& newUnitInfo);
 };
+typedef boost::shared_ptr<EvalGraphBuilder> EvalGraphBuilderPtr;
 
 DLVHEX_NAMESPACE_END
 

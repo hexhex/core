@@ -117,6 +117,8 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
 
+	#warning TODO create new testcases for EvalGraphBuilder instead of component collapsing tests
+	#if 0
 	// test collapsing (poor (wo)man's way)
 	// [we trust on the order of components to stay the same!]
 	{
@@ -154,6 +156,7 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 		Component comp2 = compgraph.collapseComponents(coll2);
 		LOG(INFO,"collapsing 2 yielded component " << comp2);
 	}
+	#endif
 
 	// print final result
 	{

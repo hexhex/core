@@ -56,7 +56,7 @@ typedef std::vector<Component> ComponentContainer;
 // build eval units in that order
 void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
 {
-  ComponentGraph& compgraph = builder.getComponentGraph();
+  const ComponentGraph& compgraph = builder.getComponentGraph();
 
   //
 	// we need a hash map, as component graph is no graph with vecS-storage
@@ -64,13 +64,14 @@ void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
 	typedef boost::unordered_map<Component, boost::default_color_type> CompColorHashMap;
 	typedef boost::associative_property_map<CompColorHashMap> CompColorMap;
 	CompColorHashMap ccWhiteHashMap;
-	// fill white hash map
-	ComponentIterator cit, cit_end;
-	for(boost::tie(cit, cit_end) = compgraph.getComponents();
-			cit != cit_end; ++cit)
 	{
-		//boost::put(ccWhiteHashMap, *cit, boost::white_color);
-		ccWhiteHashMap[*cit] = boost::white_color;
+		// initialize white hash map
+		ComponentIterator cit, cit_end;
+		for(boost::tie(cit, cit_end) = compgraph.getComponents();
+				cit != cit_end; ++cit)
+		{
+			ccWhiteHashMap[*cit] = boost::white_color;
+		}
 	}
   CompColorHashMap ccHashMap(ccWhiteHashMap);
 
@@ -87,7 +88,9 @@ void EvalHeuristicTrivial::build(EvalGraphBuilder& builder)
   for(ComponentContainer::const_iterator it = comps.begin();
       it != comps.end(); ++it)
   {
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
+		std::list<Component> comps, ccomps;
+		comps.push_back(*it);
+    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
     LOG(ANALYZE,"component " << *it << " became eval unit " << u);
   }
 }

@@ -57,6 +57,19 @@ ComponentGraph::DependencyInfo::operator|=(
   return *this;
 }
 
+std::ostream& ComponentGraph::ComponentInfo::print(std::ostream& o) const
+{
+	if( !outerEatoms.empty() )
+		o << "outerEatoms: " << printrange(outerEatoms) << std::endl;
+	if( !innerRules.empty() )
+		o << "innerRules: " << printrange(innerRules) << std::endl;
+	if( !innerEatoms.empty() )
+		o << "innerEatoms: " << printrange(innerEatoms) << std::endl;
+	if( !innerConstraints.empty() )
+		o << "innerConstraints: " << printrange(innerConstraints) << std::endl;
+	return o;
+}
+
 std::ostream& ComponentGraph::DependencyInfo::print(std::ostream& o) const
 {
 	return o << static_cast<const DependencyGraph::DependencyInfo&>(*this);
@@ -299,15 +312,6 @@ namespace
 			return false;
 		}
   }
-
-  bool checkEatomMonotonic(
-      RegistryPtr reg,
-      const DependencyGraph& dg,
-      DependencyGraph::Node eatomnode)
-  {
-    return checkEatomMonotonic(reg, dg.propsOf(eatomnode).id);
-  }
-
 }
 
 void ComponentGraph::calculateComponents(const DependencyGraph& dg)
@@ -348,7 +352,6 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
   SCCToComponentMap sccToComponent(scccount);
   for(unsigned s = 0; s < scccount; ++s)
   {
-    //createComponentFromDepgraphSCC(dg, scc, *itc);
     const NodeSet& nodes = sccMembers[s];
     Component c = boost::add_vertex(cg);
     DBGLOG(DBG,"created component node " << c << " for scc " << s <<
@@ -370,11 +373,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				if( id.isRegularRule() )
 				{
 					ci.innerRules.push_back(id);
-          #warning innerEatomsMonotonicAndOnlyPositiveCycles should be called innerEatomsMonotonicAndInnerRulesFixpointCalculateable
           if( id.isRuleDisjunctive() )
           {
-            // if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
+						ci.disjunctiveHeads = true;
           }
 				}
 				else if( id.isConstraint() || id.isWeakConstraint() )
@@ -394,17 +395,30 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				{
 					ci.innerEatoms.push_back(id);
           innerEatomNodes.push_back(*itn);
-          // only if we still think that we can use wellfounded model building
-          if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-          {
-            // check, if the newly added inner eatom is monotonic
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-              checkEatomMonotonic(reg, dg, *itn);
+
+					if( ci.innerEatomsNonmonotonic == false )
+					{
+						// check, if the newly added inner eatom is monotonic
+						ID eatomid = dg.propsOf(*itn).id;
+						if( !checkEatomMonotonic(reg, eatomid) )
+						{
+							ci.innerEatomsNonmonotonic = true;
+						}
           }
 				}
 				else
 				{
 					ci.outerEatoms.push_back(id);
+
+					if( ci.outerEatomsNonmonotonic == false )
+					{
+						// check, if the newly added inner eatom is monotonic
+						ID eatomid = dg.propsOf(*itn).id;
+						if( !checkEatomMonotonic(reg, eatomid) )
+						{
+							ci.outerEatomsNonmonotonic = true;
+						}
+          }
 				}
       }
 			else
@@ -412,26 +426,28 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				assert(false);
 			}
     }
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
-
-		// do positive cycle check if all eatoms monotonic
-		// (i.e., only if we still think that we can use wellfounded model building)
-		if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+		
+		// check, if the component contains only positive cycles
+		if( !checkNoNegativeEdgesInComponent(dg, nodes) )
 		{
-			// check, if the component contains only positive cycles
-			ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-        checkNoNegativeEdgesInComponent(dg, nodes);
+			ci.negationInCycles = true;
 		}
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
     DBGLOG(DBG,"-> innerEatoms " << printrange(ci.innerEatoms));
-    DBGLOG(DBG,"-> innerEatomsMonotonicAndOnlyPositiveCycles " << ci.innerEatomsMonotonicAndOnlyPositiveCycles);
+    DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
+				" negationInCycles=" << ci.negationInCycles <<
+				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
+				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic);
 
-		assert( ci.outerEatoms.empty() ||
-				   (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty()));
+		assert(( ci.outerEatoms.empty() ||
+				    (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty())) &&
+				   "components with outer eatoms may not contain anything else");
   }
+
+	#warning TODO if we have just one disjunctive rule inside, we can no longer use fixpoint calculation with inner eatoms, even if they are monotonic and we have only positive cycles ... ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
 
   //
   // create dependencies between components (now that all of them exist)
@@ -576,8 +592,6 @@ ComponentGraph::collapseComponents(
 
 	// build combined component info
 	ComponentInfo& ci = propsOf(c);
-  assert(ci.innerEatomsMonotonicAndOnlyPositiveCycles &&
-      "ComponentInfo constructor should set this to true");
 	for(ito = originals.begin(); ito != originals.end(); ++ito)
 	{
 		ComponentInfo& cio = propsOf(*ito);
@@ -595,10 +609,9 @@ ComponentGraph::collapseComponents(
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
 
-    // innerEatomsMonotonicAndOnlyPositiveCycles
-    // is false if it is false for any component
-    ci.innerEatomsMonotonicAndOnlyPositiveCycles &=
-      cio.innerEatomsMonotonicAndOnlyPositiveCycles;
+    ci.disjunctiveHeads |= cio.disjunctiveHeads;
+    ci.negationInCycles |= cio.negationInCycles;
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -608,6 +621,7 @@ ComponentGraph::collapseComponents(
       // does not depend on other components
       ci.outerEatoms.insert(ci.outerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
+			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
     else
     {
@@ -616,22 +630,10 @@ ComponentGraph::collapseComponents(
       ci.innerEatoms.insert(ci.innerEatoms.end(),
           cio.outerEatoms.begin(), cio.outerEatoms.end());
 
-      // innerEatomsMonotonicAndOnlyPositiveCycles
-      // is false if any outer eatom that became an inner eatom is nonmonotonic
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-      {
-        BOOST_FOREACH(ID innerEatomId, cio.outerEatoms)
-        {
-          if( !checkEatomMonotonic(reg, innerEatomId) )
-          {
-            ci.innerEatomsMonotonicAndOnlyPositiveCycles = false;
-            break;
-          }
-        }
-      }
+      // here, outer eatom becomes inner eatom
+			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
     }
-    // TODO i.e., if "input" component consists only of eatoms, they may be nonmonotonic, and we stil can have wellfounded model generator
-    // TODO create testcase for this (how about wellfounded2.hex?)
+    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
 	}
 
 	// build incoming dependencies
@@ -676,27 +678,20 @@ namespace
   }
 
 	template<typename Range>
-	void printoutVerboseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	void printoutVerboseIfNotEmpty(std::ostream& o, RegistryPtr reg, const char* prefix, Range idrange)
 	{
 		// see boost/range/iterator_range.hpp
 		typedef typename Range::const_iterator Iterator;
 		if( !boost::empty(idrange) )
 		{
 			o << "{" << prefix << "|";
-			Iterator it = boost::begin(idrange);
-			rp.print(*it);
-			it++;
-			for(; it != boost::end(idrange); ++it)
-			{
-				o << "\\n";
-				rp.print(*it);
-			}
+			graphviz::escape(o, printManyToString<RawPrinter>(idrange, "\n", reg));
 			o << "}|";
 		}
 	}
 
 	template<typename Range>
-	void printoutTerseIfNotEmpty(std::ostream& o, RawPrinter& rp, const char* prefix, Range idrange)
+	void printoutTerseIfNotEmpty(std::ostream& o, RegistryPtr reg, const char* prefix, Range idrange)
 	{
 		// see boost/range/iterator_range.hpp
 		typedef typename Range::const_iterator Iterator;
@@ -713,44 +708,47 @@ namespace
 void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, unsigned index, bool verbose) const
 {
   const ComponentInfo& ci = getComponentInfo(c);
-	RawPrinter rp(o, reg);
   if( verbose )
   {
     o << "{idx=" << index << ",component=" << c << "|";
     #ifdef COMPGRAPH_SOURCESDEBUG
     o << "{sources|" << printrange(ci.sources, "\\{", ",", "\\}") << "}|";
     #endif
-		printoutVerboseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
-		printoutVerboseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
-		printoutVerboseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
-		printoutVerboseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
-    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-    {
-      o << "{fixpoint?|";
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-        o << "true";
-      else
-        o << "false";
-      o << "}|";
-    }
+		printoutVerboseIfNotEmpty(o, reg, "outerEatoms", ci.outerEatoms);
+		printoutVerboseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
+		printoutVerboseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
+		printoutVerboseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerRules.empty() )
+		{
+			if( ci.disjunctiveHeads )
+				o << "{rules contain disjunctive heads}|";
+			if( ci.negationInCycles )
+				o << "{rules contain negation in cycles}|";
+		}
+    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+      o << "{inner eatoms nonmonotonic}|";
+    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+      o << "{outer eatoms nonmonotonic}|";
 		o << "}";
   }
   else
   {
     o << "{idx=" << index << "|";
-		printoutTerseIfNotEmpty(o, rp, "outerEatoms", ci.outerEatoms);
-		printoutTerseIfNotEmpty(o, rp, "innerRules", ci.innerRules);
-		printoutTerseIfNotEmpty(o, rp, "innerEatoms", ci.innerEatoms);
-		printoutTerseIfNotEmpty(o, rp, "innerConstraints", ci.innerConstraints);
-    if( !ci.innerEatoms.empty() || !ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-    {
-      o << "{fixpoint?|";
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
-        o << "true";
-      else
-        o << "false";
-      o << "}|";
-    }
+		printoutTerseIfNotEmpty(o, reg, "outerEatoms", ci.outerEatoms);
+		printoutTerseIfNotEmpty(o, reg, "innerRules", ci.innerRules);
+		printoutTerseIfNotEmpty(o, reg, "innerEatoms", ci.innerEatoms);
+		printoutTerseIfNotEmpty(o, reg, "innerConstraints", ci.innerConstraints);
+    if( !ci.innerRules.empty() )
+		{
+			if( ci.disjunctiveHeads )
+				o << "{rules contain disjunctive heads}|";
+			if( ci.negationInCycles )
+				o << "{rules contain negation in cycles}|";
+		}
+    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+      o << "{inner eatoms nonmonotonic}|";
+    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+      o << "{outer eatoms nonmonotonic}|";
 		o << "}";
   }
 }
@@ -793,9 +791,7 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
   {
     o << graphviz_node_id(*it) << "[shape=record,label=\"";
     {
-      std::ostringstream ss;
-      writeGraphVizComponentLabel(ss, *it, index, verbose);
-			graphviz::escape(o, ss.str());
+      writeGraphVizComponentLabel(o, *it, index, verbose);
     }
     o << "\"];" << std::endl;
   }
@@ -810,15 +806,27 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
     o << graphviz_node_id(src) << " -> " << graphviz_node_id(target) <<
       "[label=\"";
     {
-      std::ostringstream ss;
       writeGraphVizDependencyLabel(o, *dit, verbose);
-			graphviz::escape(o, ss.str());
     }
     o << "\"];" << std::endl;
   }
 
   o << "}" << std::endl;
 }
+
+ComponentGraph::ComponentGraph(const ComponentGraph& other):
+	reg(other.reg),
+	dg(other.dg),
+	cg(other.cg)
+{
+}
+
+// for explicit cloning of the graph
+ComponentGraph* ComponentGraph::clone() const
+{
+	return new ComponentGraph(*this);
+}
+
 
 DLVHEX_NAMESPACE_END
 

@@ -103,8 +103,8 @@ public:
 	const std::vector<std::string>&
 	getFilters() const;
 
-	const std::string& debugFilePrefix() const { return _debugFilePrefix; }
-	      std::string& debugFilePrefix()       { return _debugFilePrefix; }
+	const std::string& getStringOption(const std::string& key) const;
+	void setStringOption(const std::string& key, const std::string& value);
 
 private:
 
@@ -117,14 +117,12 @@ private:
 	 * @brief Associates option names with values.
 	 */
 	std::map<std::string, unsigned> optionMap;
+	std::map<std::string, std::string> stringOptionMap;
 
 	/**
 	 * @brief List of filter-predicates.
 	 */
 	std::vector<std::string> optionFilter;
-
-	// prefix for files created for debugging (e.g., .dot files)
-	std::string _debugFilePrefix;
 };
 
 DLVHEX_NAMESPACE_END

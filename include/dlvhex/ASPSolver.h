@@ -62,6 +62,7 @@ struct DLVSoftware:
     virtual ~Options();
 
     // whether to rewrite all predicates to allow higher order in DLV (default=no)
+    #warning do we use this? do we need this?
     bool rewriteHigherOrder;
 
     // whether to drop predicates in received answer sets (default=no)
@@ -83,8 +84,7 @@ struct DLVSoftware:
     Delegate(const Options& options);
     virtual ~Delegate();
     virtual void useASTInput(const ASPProgram& program);
-    //void useStringInput(const std::string& program);
-    //void useFileInput(const std::string& fileName);
+    virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
@@ -113,8 +113,7 @@ struct DLVLibSoftware:
     Delegate(const Options& options);
     virtual ~Delegate();
     virtual void useASTInput(const ASPProgram& program);
-    //void useStringInput(const std::string& program);
-    //void useFileInput(const std::string& fileName);
+    virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
@@ -185,6 +184,7 @@ struct ClingoSoftware:
     Delegate(const Options& options);
     virtual ~Delegate();
     virtual void useASTInput(const ASPProgram& program);
+    virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 
   protected:
