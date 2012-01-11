@@ -106,8 +106,6 @@ LDADD_BASE = $(top_builddir)/src/dlvhex/libdlvhexbase.la $(BOOST_THREAD_LDFLAGS)
 LDADD_ASPSOLVER = $(top_builddir)/src/dlvhex/libaspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 LDADD_MLP_ASPSOLVER = $(top_builddir)/src/dlvhex/libmlpsolver.la $(LDADD_ASPSOLVER)
 
-check_LIBRARIES = libhex.a
-
 TestPlainHEX_SOURCES = TestPlainHEX.cpp
 TestPlainHEX_LDADD = $(LDADD_ASPSOLVER)
 
