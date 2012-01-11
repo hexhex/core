@@ -40,6 +40,7 @@
 #include "dlvhex/AnswerSet.hpp"
 #include "dlvhex/Error.h"
 #include "dlvhex/ConcurrentMessageQueueOwning.h"
+#include "dlvhex/InputProvider.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -98,8 +99,7 @@ public:
   public:
     virtual ~DelegateInterface() {}
     virtual void useASTInput(const ASPProgram& program) = 0;
-    //virtual void useStringInput(const std::string& program) = 0;
-    //virtual void useFileInput(const std::string& fileName) = 0;
+    virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg) = 0;
     virtual ResultsPtr getResults() = 0;
   };
   typedef boost::shared_ptr<DelegateInterface> DelegatePtr;
@@ -166,19 +166,11 @@ public:
       const SoftwareConfigurationBase& solver,
       const ASPProgram& program) throw (FatalError);
 
-  /*
-  // solve string program and add to result
-  void solveString(
+  //! solve program from input provider (i.e., an input stream)
+  ResultsPtr solve(
       const SoftwareConfigurationBase& solver,
-      const std::string& program,
-      std::vector<AtomSet>& result) throw (FatalError);
-
-  // solve program in file and add to result
-  void solveFile(
-      const SoftwareConfigurationBase& solver,
-      const std::string& filename,
-      std::vector<AtomSet>& result) throw (FatalError);
-      */
+      InputProvider& input,
+      RegistryPtr reg) throw (FatalError);
 };
 
 // results that are not streamed but provided to be incrementally requested

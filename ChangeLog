@@ -1,3 +1,102 @@
+2012-01-11  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Rule.hpp: Include guard fix.
+
+	* m4/libcurl.m4: new upstream version from
+	https://raw.github.com/bagder/curl/master/docs/libcurl/libcurl.m4
+	* examples/tests/dlvhextests.test.in: Making dlvhextests.test a file built
+	* examples/tests/dlvhextests.test: Likewise (remove).
+	by configure.
+	* configure.ac: Fixed some autoconf quoting warnings and replaced deprecated
+	calls by other calls.
+
+	* include/dlvhex/Interpretation.hpp: Added true-bit iteration interface.
+
+	* include/dlvhex/ASPSolver.h: New method useInputProviderInput().
+	* include/dlvhex/ASPSolverManager.h: Likewise.
+	* src/dlvhex/ASPSolverManager.cpp: Likewise.
+	* src/dlvhex/ASPSolver.cpp: Likewise.
+
+	* include/dlvhex/Benchmarking.h: Mutex for profiling data.
+
+	* include/dlvhex/ModelGenerator.hpp: Improved diagnosic messages.
+	* src/dlvhex/WellfoundedModelGenerator.cpp: Likewise.
+	* src/dlvhex/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/DLVresultParserDriver.cpp: Likewise.
+	* src/dlvhex/PlainModelGenerator.cpp: Likewise.
+
+	* include/dlvhex/GraphvizHelpers.hpp: Improved graphviz escape functionality.
+	* src/dlvhex/GraphvizHelpers.cpp: Likewise.
+
+	* include/dlvhex/Configuration.hpp: New generic string options,
+	methods getStringOption() and setStringOption().
+	* src/dlvhex/Configuration.cpp: Likewise.
+
+	* src/dlvhex/OrdinaryModelGenerator.cpp: Remove deprecated file.
+
+	* include/dlvhex/EvalGraph.hpp: Dedicated evaluation graph graphviz
+	printing functionality.
+
+	Changed method of evaluation graph building: now evaluation units are
+	created without modifying the component graph, this involves the
+	following changes:
+	* include/dlvhex/ComponentGraph.hpp: Made ComponentGraph clone()-able
+	and deprecating collapseComponents() interface.
+	* src/dlvhex/ComponentGraph.cpp: Likewise.
+	* include/dlvhex/EvalGraphBuilder.hpp: New methods getComponentGraphRest()
+	and calculateNewEvalUnitInfos() (previously in ComponentGraph in similar form)
+	and changed functionality: now does not modify ComponentGraph for creating
+	evaluation units.
+	* src/dlvhex/EvalGraphBuilder.cpp: Likewise.
+	* src/dlvhex/EvalHeuristicTrivial.cpp: Adapted to new method of eval graph
+	building.
+	* src/dlvhex/EvalHeuristicOldDlvhex.cpp: Likewise.
+	* src/dlvhex/EvalHeuristicFromFile.cpp: Likewise.
+	* src/dlvhex/EvalHeuristicEasy.cpp: Likewise (using deprecated ComponentGraph
+	functionality).
+	* testsuite/TestComponentGraph.cpp: No longer testing original component
+	collapsing functionality.
+
+	* include/dlvhex/EvalHeuristicASP.hpp: New evaluation heuristic
+	that uses ASP to compute evaluation units from components.
+	* src/dlvhex/EvalHeuristicASP.cpp: Likewise.
+	* doc/extatom3.hex_evalplanfactinput.asp: Likewise (added sample input to ASP
+	eval heuristics as a file).
+	* examples/extatom3_evalplan.txt: Likewise (testcase).
+	* examples/extatom3_aspheur_old.asp: Likewise (testcase).
+	* examples/extatom3.hex: Likewise (testcase).
+	* examples/extatom3_evalplana.txt: Likewise (testcase).
+	* examples/extatom3_evalplanb.txt: Likewise (testcase).
+	* examples/extatom3_aspheur_faultya.asp: Likewise (testcase).
+	* examples/extatom3_aspheur_faultyb.asp: Likewise (testcase).
+	* examples/tests/extatom3_faultya.stderr: Likewise (testcase).
+	* examples/tests/extatom3_faultyb.stderr: Likewise (testcase).
+
+	* include/dlvhex/EvalHeuristicShared.hpp: New base class for
+	functionality that is shared among evaluation heuristics.
+	(Currently topologicalSortComponents(), executeBuildCommands(),
+	and related data types.)
+
+	* include/dlvhex/DumpingEvalGraphBuilder.hpp: New evaluation graph
+	builder which can dump the evaluation plan to a text file.
+	* src/dlvhex/DumpingEvalGraphBuilder.cpp: Likewise.
+
+	* src/dlvhex/dlvhex.cpp: Adapted to above changes, including new command
+	line options to activate above features.
+	* src/dlvhex/State.cpp: Likewise.
+	* src/dlvhex/Makefile.am: Likewise.
+
+	* testsuite/Makefile.am: Speeding up tests by using shared libraries built
+	in src/dlvhex/ directory.
+
+2011-12-18  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* configure.ac: Add profiling support (--enable-profiling).
+
+	* README: Explain boost compilation.
+
+	* cheatsheet: Remove.
+
 2011-11-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/SafetyChecker.cpp: Fixed bug in safety checker.
@@ -39,7 +138,7 @@
 	* examples/tests/README.txt: Likewise.
 	* examples/Makefile.am: Likewise.
 
-	* src/dlvhex/ProcessBuf.cpp: Making processes kill-able.
+	* src/dlvhex/ProcessBuf.cpp: Making processes kill()-able.
 	* src/dlvhex/DLVProcess.cpp: Likewise.
 	* include/dlvhex/ProcessBuf.h: Likewise.
 	* include/dlvhex/DLVProcess.h: Likewise.

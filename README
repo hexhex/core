@@ -81,13 +81,22 @@ This file provides some hints how to install and run dlvhex.
 
     for boost version N.NN.
 
-    If your Ubuntu system did not provide recent boost packages, have
-    a look at <https://launchpad.net/~boost-latest/+archive/ppa>.
+    If your Debian/Ubuntu system did not provide recent boost
+    packages, have a look at
+    <https://launchpad.net/~boost-latest/+archive/ppa>.
 
     Installation instructions are given in the INSTALL file found in
-    the boost distributions tarball.  If you have compiled boost by
-    yourself, you have to tell the dlvhex configure script where you
-    have installed it:
+    the boost distributions tarball. In order to install
+    boost-iostream, install libbz2-dev. Here is a quick-start guide
+    for compiling boost (if you have multiple cpus available, call the
+    2nd b2 with -j<N>, where <N> is the number of cpus):
+
+    $ ./bootstrap.h --prefix=/path/to/install/boost
+    $ ./b2 --build-type=complete --layout=tagged threading=single,multi variant=release
+    $ ./b2 install
+
+    If you have compiled boost by yourself, you have to tell the
+    dlvhex configure script where you have installed it with
 
     $ ./configure --with-boost=/path/to/boost-prefix
 *** libcurl
@@ -159,3 +168,4 @@ This file provides some hints how to install and run dlvhex.
   <http://http://www.kr.tuwien.ac.at/research/systems/dlvhex/> or look
   at the `examples' directory here. DLV programs are described at
   <http://www.dbai.tuwien.ac.at/proj/dlv/#docs>.
+	

@@ -147,6 +147,7 @@ public:
     DBGLOG(DBG,"setting termination bool, emptying queue, and joining thread");
     shouldTerminate = true;
     queue->flush();
+    DBGLOG(DBG,"joining thread");
     answerSetProcessingThread.join();
     DBGLOG(DBG,"closing (probably killing) process");
     proc.close(true);
@@ -220,7 +221,8 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
       DBGLOG(DBG,"[" << this << "]" "getting input from stream");
       std::string input;
       std::getline(is, input);
-      DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() << " characters from input stream via getline");
+      DBGLOG(DBG,"[" << this << "]" "obtained " << input.size() <<
+	  " characters from input stream via getline");
       if( input.empty() || is.bad() )
       {
 	DBGLOG(DBG,"[" << this << "]" "leaving loop because got input size " << input.size() <<
@@ -228,17 +230,28 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
 	break;
       }
 
-      // parse line
-      DBGLOG(DBG,"[" << this << "]" "parsing");
-      std::istringstream iss(input);
-      parser.parse(iss, adder);
+      // discard weak answer set cost lines
+      if( 0 == input.compare(0, 22, "Cost ([Weight:Level]):") )
+      {
+	DBGLOG(DBG,"[" << this << "]" "discarding weak answer set cost line");
+      }
+      else
+      {
+	// parse line
+	DBGLOG(DBG,"[" << this << "]" "parsing");
+	std::istringstream iss(input);
+	parser.parse(iss, adder);
+      }
     }
     while(!shouldTerminate);
+    DBGLOG(DBG,"[" << this << "]" "after loop " << shouldTerminate);
 
     // do clean shutdown if we were not terminated from outside
     if( !shouldTerminate )
     {
-      closeAndCheck(); // closes process and throws on errors (all results have been parsed above)
+      // closes process and throws on errors
+      // (all results have been parsed above)
+      closeAndCheck();
       enqueueEnd();
     }
   }
@@ -266,6 +279,7 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
   }
   DBGLOG(DBG,"[" << this << "]" "exiting answerSetProcessingThreadFunc");
 }
+
 
 #warning TODO certain interfaces deactivated
 #if 0
@@ -320,9 +334,54 @@ DLVSoftware::Delegate::~Delegate()
 }
 
 void
+DLVSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
+{
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useInputProvInp");
+
+  DLVProcess& proc = results->proc;
+  results->reg = reg;
+  assert(results->reg);
+  #warning TODO set results->mask?
+
+  try
+  {
+    results->setupProcess();
+    // request stdin as last parameter
+    proc.addOption("--");
+    LOG(DBG,"external process was setup with path '" << proc.path() << "'");
+
+    // fork dlv process
+    proc.spawn();
+
+    std::ostream& programStream = proc.getOutput();
+
+    // copy stream
+    programStream << inp.getAsStream().rdbuf();
+    programStream.flush();
+
+    proc.endoffile();
+
+    // start thread
+    results->startThread();
+  }
+  catch(const GeneralError& e)
+  {
+    std::stringstream errstr;
+    int retcode = results->proc.close();
+    errstr << results->proc.path() << " (exitcode = " << retcode <<
+      "): " << e.getErrorMsg();
+    throw FatalError(errstr.str());
+  }
+  catch(const std::exception& e)
+  {
+    throw FatalError(results->proc.path() + ": " + e.what());
+  }
+}
+
+void
 DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftware::Delegate::useASTInput");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useASTInput");
 
   DLVProcess& proc = results->proc;
   results->reg = program.registry;
@@ -940,6 +999,12 @@ ClingoSoftware::Delegate::Delegate(const Options& options):
 
 ClingoSoftware::Delegate::~Delegate()
 {
+}
+
+void
+ClingoSoftare::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
+{
+  throw std::runtime_error("TODO implement ClingoSoftare::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
 }
 
 void

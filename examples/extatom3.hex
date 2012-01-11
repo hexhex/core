@@ -30,3 +30,5 @@ fail :- in_ww(X), not &testA[dl_pc_2](X), not fail.
 fail :- out_ww(X), &testA[dl_pc_1](X), not fail.
 fail :- out_ww(X), &testA[dl_pc_2](X), not fail.
 
+% useless constraint to demonstrate constraint sharing in eval plans
+:- p_ww(X), dl_pc_2(ww,X).

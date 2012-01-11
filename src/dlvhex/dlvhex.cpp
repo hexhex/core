@@ -64,6 +64,7 @@
 #include "dlvhex/State.h"
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/EvalHeuristicBase.hpp"
+#include "dlvhex/EvalHeuristicASP.hpp"
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/EvalHeuristicEasy.hpp"
@@ -164,8 +165,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
-			<< "                      manual:<file> - read 'collapse <idx> <idx>' commands from <file>" << std::endl
+			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
+			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
+			<< "     --dumpevalplan=F dump evaluation plan (usable as manual heuristics) to file F" << std::endl
       << " -m, --modelbuilder=M Use M as model builder, where M is one of (online,offline)" << std::endl
       << "     --nocache        Do not cache queries to and answers from external atoms." << std::endl
       << " -v, --verbose[=N]    Specify verbose category (default: 1):" << std::endl
@@ -310,6 +313,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
+	pctx.config.setOption("DumpEvaluationPlan",0);
 
 	// defaults of main
 	Config config;
@@ -544,6 +548,7 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
+		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -624,6 +629,10 @@ void processOptionsPrePlugin(
 				else if( heuri.substr(0,7) == "manual:" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicFromFile(heuri.substr(7)));
+				}
+				else if( heuri.substr(0,4) == "asp:" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicASP(heuri.substr(4)));
 				}
 				else
 				{
@@ -804,6 +813,13 @@ void processOptionsPrePlugin(
 					break;
 				case 16:
 					pctx.config.setOption("Split",1);
+					break;
+				case 17:
+					{
+						std::string fname(optarg);
+						pctx.config.setOption("DumpEvaluationPlan",1);
+						pctx.config.setStringOption("DumpEvaluationPlanFile",fname);
+					}
 					break;
 				}
 			break;

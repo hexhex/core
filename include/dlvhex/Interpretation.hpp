@@ -51,6 +51,7 @@ public:
   typedef boost::shared_ptr<const Interpretation> ConstPtr;
   typedef bm::bvector<> Storage;
   typedef boost::function<bool (IDAddress)> FilterCallback;
+  typedef Storage::enumerator TrueBitIterator;
 
   // storage
 protected:
@@ -75,8 +76,10 @@ public:
   virtual std::ostream& printAsNumber(std::ostream& o) const;
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
+  #warning unify these names added by Tri?
   void add(const Interpretation& other);
   void bit_and(const Interpretation& other);
+
   #warning todo we may want to name this "add" "remove" and "has" (...Fact)
   inline void setFact(IDAddress id)
     { bits.set(id); }
@@ -88,8 +91,13 @@ public:
   const Storage& getStorage() const { return bits; }
   Storage& getStorage() { return bits; }
 
+  // dereferencing iterator gives IDAddress
+  std::pair<TrueBitIterator, TrueBitIterator> trueBits() const
+    { return std::make_pair(bits.first(), bits.end()); }
+
   RegistryPtr getRegistry() const { return registry; }
 
+  #warning remove setRegistry() added by Tri?
   void setRegistry(RegistryPtr registry1) { registry = registry1; }
 
   inline bool isClear() const

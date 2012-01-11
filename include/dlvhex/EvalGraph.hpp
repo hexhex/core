@@ -33,6 +33,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/Printhelpers.hpp"
+#include "dlvhex/GraphvizHelpers.hpp"
 
 #include <cassert>
 
@@ -120,6 +121,7 @@ public:
   typedef typename EvalGraphInt::vertex_descriptor EvalUnit;
   typedef typename EvalGraphInt::edge_descriptor EvalUnitDep;
   typedef typename Traits::vertex_iterator EvalUnitIterator;
+  typedef typename Traits::edge_iterator DependencyIterator;
   typedef typename Traits::out_edge_iterator PredecessorIterator;
   typedef typename Traits::in_edge_iterator SuccessorIterator;
 
@@ -259,6 +261,11 @@ public:
   {
     return boost::num_edges(eg);
   }
+
+  // output graph as graphviz source
+  void writeGraphViz(std::ostream& o, bool verbose) const;
+
+	struct Impl;
 }; // class EvalGraph<...>
 
 // projection properties for eval units
@@ -275,6 +282,63 @@ struct EvalUnitProjectionProperties
     bool oproject = false):
       iproject(iproject), oproject(oproject) {}
 };
+
+template<typename EvalUnitPropertyBaseT, typename EvalUnitDepPropertyBaseT>
+struct EvalGraph<EvalUnitPropertyBaseT, EvalUnitDepPropertyBaseT>::Impl
+{
+  static std::string graphviz_node_id(EvalUnit u)
+  {
+    std::ostringstream os;
+    os << "u" << u;
+    return os.str();
+  }
+};
+
+template<typename EvalUnitPropertyBaseT, typename EvalUnitDepPropertyBaseT>
+void EvalGraph<EvalUnitPropertyBaseT, EvalUnitDepPropertyBaseT>::
+	writeGraphViz(std::ostream& o, bool verbose) const
+{
+  // boost::graph::graphviz is horribly broken!
+  // therefore we print it ourselves
+
+  o << "digraph G {" << std::endl <<
+    "rankdir=BT;" << std::endl; // print root nodes at bottom, leaves at top!
+
+  // print vertices
+  EvalUnitIterator it, it_end;
+  unsigned index = 0;
+  for(boost::tie(it, it_end) = boost::vertices(eg);
+      it != it_end; ++it, ++index)
+  {
+    o << Impl::graphviz_node_id(*it) << "[shape=record,label=\"{" << *it << "|";
+    {
+      std::ostringstream ss;
+			// write eval unit property
+      ss << propsOf(*it);
+			graphviz::escape(o, ss.str());
+    }
+    o << "}\"];" << std::endl;
+  }
+
+  // print edges
+  DependencyIterator dit, dit_end;
+  for(boost::tie(dit, dit_end) = boost::edges(eg);
+      dit != dit_end; ++dit)
+  {
+    EvalUnit src = sourceOf(*dit);
+    EvalUnit target = targetOf(*dit);
+    o << Impl::graphviz_node_id(src) << " -> " << Impl::graphviz_node_id(target) <<
+      "[label=\"";
+    {
+      std::ostringstream ss;
+			ss << *dit;
+			graphviz::escape(o, ss.str());
+    }
+    o << "\"];" << std::endl;
+  }
+
+  o << "}" << std::endl;
+}
 
 DLVHEX_NAMESPACE_END
 

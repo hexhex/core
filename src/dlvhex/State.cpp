@@ -55,6 +55,7 @@
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/FinalEvalGraph.hpp"
 #include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex/DumpingEvalGraphBuilder.hpp"
 #include "dlvhex/AnswerSetPrinterCallback.hpp"
 #include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/SafetyChecker.h"
@@ -183,8 +184,8 @@ void ConvertState::convert(ProgramCtx* ctx)
   LOG(INFO,"inputName='" << inputName << "'");
 
   // store it
-  ctx->config.debugFilePrefix() = "dlvhex_debug" + inputName;
-  LOG(DBG,"debugFilePrefix='" << ctx->config.debugFilePrefix() << "'");
+  ctx->config.setStringOption("DebugPrefix","dbg" + inputName);
+  LOG(DBG,"debugFilePrefix='" << ctx->config.getStringOption("DebugPrefix") << "'");
 
   std::vector<PluginConverterPtr> converters;
   BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
@@ -595,12 +596,12 @@ void CreateDependencyGraphState::createDependencyGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpDepGraph") )
   {
-    std::string fnamev = ctx->config.debugFilePrefix()+"_DepGraphVerbose.dot";
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_DepGraphVerbose.dot";
     LOG(INFO,"dumping verbose dependency graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
     depgraph->writeGraphViz(filev, true);
 
-    std::string fnamet = ctx->config.debugFilePrefix()+"_DepGraphTerse.dot";
+    std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_DepGraphTerse.dot";
     LOG(INFO,"dumping terse dependency graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
     depgraph->writeGraphViz(filet, false);
@@ -655,12 +656,12 @@ void CreateComponentGraphState::createComponentGraph(ProgramCtx* ctx)
 
   if( ctx->config.getOption("DumpCompGraph") )
   {
-    std::string fnamev = ctx->config.debugFilePrefix()+"_CompGraphVerbose.dot";
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_CompGraphVerbose.dot";
     LOG(INFO,"dumping verbose component graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
     compgraph->writeGraphViz(filev, true);
 
-    std::string fnamet = ctx->config.debugFilePrefix()+"_CompGraphTerse.dot";
+    std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_CompGraphTerse.dot";
     LOG(INFO,"dumping terse component graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
     compgraph->writeGraphViz(filet, false);
@@ -695,15 +696,28 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"creating evaluation graph");
 
   FinalEvalGraphPtr evalgraph(new FinalEvalGraph);
-  EvalGraphBuilder egbuilder(*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware);
+	EvalGraphBuilderPtr egbuilder;
+	if( ctx->config.getOption("DumpEvaluationPlan") )
+	{
+		egbuilder.reset(new DumpingEvalGraphBuilder(
+					*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware,
+					ctx->config.getStringOption("DumpEvaluationPlanFile")));
+	}
+	else
+	{
+		egbuilder.reset(new EvalGraphBuilder(
+					*ctx, *ctx->compgraph, *evalgraph, ctx->aspsoftware));
+	}
 
   // use configured eval heuristic
   assert(!!ctx->evalHeuristic && "need configured heuristic");
   DBGLOG(DBG,"invoking build() on eval heuristic");
-  ctx->evalHeuristic->build(egbuilder);
+  ctx->evalHeuristic->build(*egbuilder);
   DBGLOG(DBG,"destructing eval heuristic");
   // destruct heuristic
   ctx->evalHeuristic.reset();
+  // destruct eval graph builder
+  egbuilder.reset();
 
   // setup final unit used to get full models
   #warning TODO if we project answer sets, or do querying, we could reduce the number of units used here!
@@ -724,33 +738,21 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
         FinalEvalGraph::EvalUnitDepPropertyBundle(*it));
   }
 
-  if( ctx->config.getOption("DumpEvalGraph") )
-  {
-    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
-    LOG(INFO,"dumping verbose eval graph to " << fnamev);
-    std::ofstream filev(fnamev.c_str());
-    ctx->compgraph->writeGraphViz(filev, true);
-
-    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
-    LOG(INFO,"dumping terse eval graph to " << fnamet);
-    std::ofstream filet(fnamet.c_str());
-    ctx->compgraph->writeGraphViz(filet, false);
-    LOG(WARNING,"DumpEvalGraph currently only implemented as modified compgraph dumping!");
-    #if 0
-    std::string fnamev = ctx->config.debugFilePrefix()+"_EvalGraphVerbose.dot";
-    LOG(INFO,"dumping verbose evaluation graph to " << fnamev);
-    std::ofstream filev(fnamev.c_str());
-    evalgraph->writeGraphViz(filev, true);
-
-    std::string fnamet = ctx->config.debugFilePrefix()+"_EvalGraphTerse.dot";
-    LOG(INFO,"dumping terse evaluation graph to " << fnamet);
-    std::ofstream filet(fnamet.c_str());
-    evalgraph->writeGraphViz(filet, false);
-    #endif
-  }
-
   ctx->ufinal = ufinal;
   ctx->evalgraph = evalgraph;
+
+  if( ctx->config.getOption("DumpEvalGraph") )
+  {
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphVerbose.dot";
+    LOG(INFO,"dumping verbose eval graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    ctx->evalgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.getStringOption("DebugPrefix")+"_EvalGraphTerse.dot";
+    LOG(INFO,"dumping terse eval graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    ctx->evalgraph->writeGraphViz(filet, false);
+  }
 
   StatePtr next(new SetupProgramCtxState);
   changeState(ctx, next);
@@ -1013,6 +1015,11 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   //     {
   //       ctx->getResultContainer()->filterOutDLT();
   //     }
+
+	// cleanup some stuff that is better not automatically destructed
+	DBGLOG(DBG,"usage count of model builder before reset is " <<
+			ctx->modelBuilder.use_count());
+	ctx->modelBuilder.reset();
 
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);

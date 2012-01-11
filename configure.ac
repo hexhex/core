@@ -21,10 +21,18 @@ case $host in
 esac
 AC_SUBST([HAVE_WIN32])
 
-# Check for C/C++ compiler
+# Check for C/C++ compiler (reset {C,CXX}FLAGS, otw. autoconf uses -g -O2 by default)
+save_CFLAGS="$CFLAGS"
+save_CXXFLAGS="$CXXFLAGS"
+${CFLAGS=""}
+${CXXFLAGS=""}
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_CXXCPP
+
+CFLAGS="$CFLAGS $save_CFLAGS"
+CXXFLAGS="$CXXFLAGS $save_CFLAGS"
+
 
 # check compiler
 
@@ -35,7 +43,7 @@ if test "$GXX" = "yes"; then
 
    AC_MSG_CHECKING([for g++ >= 4.3 or clang++ >= 2.9])
    AC_LANG_PUSH([C++])
-   AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
  int dummy;
 #else
@@ -51,7 +59,7 @@ if test "$GXX" = "yes"; then
 #endif 
 ]], [[
 dummy;
-]]),
+]])],
 [
 	AC_MSG_RESULT([yes])
 ],
@@ -95,7 +103,7 @@ esac
 # e.g., the boost library selection (_GLIBCXX_DEBUG requires the -d library types)
 
 #
-# --enable-debug vs --enable-release vs --enable-benchmark
+# --enable-debug vs --enable-release vs --enable-benchmark vs --enable-profiling vs --enable-extradebug
 # (only one of the three can be chosen, default is --enable-release)
 #
 AC_ARG_ENABLE(debug,
@@ -113,54 +121,90 @@ AC_ARG_ENABLE(benchmark,
               [enable_benchmark=true],
               [enable_benchmark=false]
              )
-
-# default = release
-dbgrelbench="$enable_debug$enable_release$enable_benchmark"
-if test "$dbgrelbench" = "falsefalsefalse"; then
-  enable_debug=true
-  dbgrelbench="$enable_debug$enable_release$enable_benchmark"
-fi
-# process selection
-if test "$dbgrelbench" = "truefalsefalse"; then
-  # do stuff that must be done for --enable-debug here
-  AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
-  CXXFLAGS="$CXXFLAGS -O0"
-else
-  if test "$dbgrelbench" = "falsetruefalse"; then
-    # do stuff that must be done for --enable-release here
-    AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
-    CXXFLAGS="$CXXFLAGS -O3"
-  else
-    if test "$dbgrelbench" = "falsefalsetrue"; then
-      # do stuff that must be done for --enable-benchmark here
-      # (we have an implicit DLVHEX_BENCHMARK definition in config.h)
-      AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
-      AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
-      CXXFLAGS="$CXXFLAGS -O3"
-    else
-      AC_MSG_ERROR([only one of --enable-debug, --enable-release, --enable-benchmark can be chosen])
-    fi
-  fi
-fi
-
-# --enable-extradebug
+AC_ARG_ENABLE(profiling,
+              [AS_HELP_STRING([--enable-profiling],[build profiling version (+release+profiling)])],
+              [enable_profiling=true],
+              [enable_profiling=false]
+             )
 AC_ARG_ENABLE(extradebug,
               [AS_HELP_STRING([--enable-extradebug],[switch on GLIBCXX debugging switches (e.g., safe iterators) (requires boost library built with the same flags)])],
               [enable_extradebug=true],
               [enable_extradebug=false]
               )
-if test "x$enable_extradebug" = "xtrue"; then
-   CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG"
-   #CPPFLAGS="$CPPFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
+
+# default = release
+dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$extradebug"
+if test "$dbgrelbench" = "false,false,false,false,false"; then
+  enable_debug=true
+  dbgrelbench="$enable_debug,$enable_release,$enable_benchmark,$enable_profiling,$extradebug"
 fi
 
+optlevel=""
+debuginfo=""
+prof=""
+defines=""
+
+# process selection
+case "$dbgrelbench" in
+
+     true,*,*,*,*)
+	# do stuff that must be done for --enable-debug here
+	AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+	optlevel="-O0"
+	debuginfo="-g"
+	enable_release=false
+	enable_benchmark=false
+	enable_profiling=false
+     ;;
+
+     *,*,*,*,true)
+	# do stuff that must be done for --enable-extra-debug here
+	AC_DEFINE(DEBUG, [], [Activates assertions and debug logging])
+	optlevel="-O0"
+	defines="-D_GLIBCXX_DEBUG"
+	#defines="-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC"
+	debuginfo="-g"
+	enable_release=false
+	enable_benchmark=false
+	enable_profiling=false
+     ;;
+
+     *,*,true,*,*)
+	# do stuff that must be done for --enable-benchmark here
+	# (we have an implicit DLVHEX_BENCHMARK definition in config.h)
+	AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
+	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+	optlevel="-O3"
+     ;&
+
+     *,*,*,true,*)
+	# do stuff that must be done for --enable-profiling here
+	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+	optlevel="-O3"
+	prof="-pg"
+     ;&
+
+     *,true,*,*,*)
+	# do stuff that must be done for --enable-release here
+	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
+	optlevel="-O3"
+     ;&
+
+esac
+
+# setup CXXFLAGS and CPPFLAGS
+CXXFLAGS="$CXXFLAGS $debuginfo $optlevel $prof"
+CPPFLAGS="$CPPFLAGS $defines"
+
+
+# libtool
+LT_INIT([dlopen])
+
 # Checks for libtool's libltdl
-AC_LIB_LTDL
-AC_LIBLTDL_CONVENIENCE
-AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
-AC_SUBST(INCLTDL)
-AC_SUBST(LIBLTDL)
+LT_CONFIG_LTDL_DIR([libltdl])
+LTDL_INIT([installable])
+#AC_SUBST(INCLTDL)
+#AC_SUBST(LIBLTDL)
 
 # configure autogenerated libltdl directory
 # AC_CONFIG_SUBDIRS([libltdl])
@@ -351,7 +395,7 @@ LIBCURL_CHECK_CONFIG([], [], [], [AC_MSG_ERROR([could not find CURL library. Dow
 #
 AC_ARG_WITH(bmagic,
             [  --with-bmagic=DIR       Prefix of bitmagic library (DIR=local forces local bmagic)]
-)	    
+)
 
 BM_CPPFLAGS=""
 BM_VERSION=""
@@ -402,9 +446,10 @@ DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [doc])
 
 # output autogenerated files
 AC_CONFIG_FILES([
-           Makefile 
+           Makefile
            dlvhex.pc
            examples/Makefile
+           examples/tests/dlvhextests.test
            include/Makefile
            include/common.h
            include/dlvhex/Makefile
@@ -418,7 +463,7 @@ AC_OUTPUT
 
 dnl output configuration
 cat <<EOF
- 
+
 $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
 
  - Compiler settings
@@ -428,11 +473,11 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  CPPFLAGS: $CPPFLAGS
  CXXFLAGS: $CXXFLAGS
  LDFLAGS: $LDFLAGS
- 
+
  - Path settings
  prefix: $prefix
  exec_prefix: $exec_prefix
- 
+
  bindir: $bindir
  libdir: $libdir
  pkglibdir: $libdir/$PACKAGE_TARNAME
@@ -454,8 +499,11 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
 
  - Doxygen support:
  doxygen: $DX_DOXYGEN
- 
- - Options:
- Debug: $debug_support
+
+ - Variant:
+ Release: $enable_release
+ Profiling: $enable_profiling
+ Debug: $enable_debug
+ Extra-Debug: $enable_extradebug
 
 EOF

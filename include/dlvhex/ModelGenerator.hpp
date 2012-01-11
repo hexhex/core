@@ -147,7 +147,7 @@ public:
     { if( mgf )
         return o << *mgf;
       else
-          return o << "0"; }
+          return o << "(no ModelGeneratorFactory)"; }
 };
 
 DLVHEX_NAMESPACE_END

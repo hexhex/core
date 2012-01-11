@@ -33,6 +33,9 @@
 #include "dlvhex/WellfoundedModelGenerator.hpp"
 #include "dlvhex/GuessAndCheckModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/Registry.hpp"
+#include "dlvhex/ProgramCtx.h"
+#include "dlvhex/PluginInterface.h"
 
 #include <boost/range/iterator_range.hpp>
 
@@ -40,25 +43,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#if 0
-template<typename EvalGraphT>
-bool
-EvalGraphBuilder<EvalGraphT>::UnusedEdgeFilter::operator()(
-    ComponentGraph::Dependency dep) const
-{
-  assert(cg);
-  assert(ucmap);
-
-  // edge is good (= unused) if both vertices are unused
-  ComponentGraph::Node n1 = cg->sourceOf(dep);
-  if( (*ucmap)[static_cast<unsigned>(n1)] == false )
-    return false;
-  ComponentGraph::Node n2 = cg->targetOf(dep);
-  return (*ucmap)[static_cast<unsigned>(n2)];
-}
-#endif
-
-//template<typename EvalGraphT>
 EvalGraphBuilder::EvalGraphBuilder(
     ProgramCtx& ctx, 
 		ComponentGraph& cg,
@@ -67,56 +51,33 @@ EvalGraphBuilder::EvalGraphBuilder(
   ctx(ctx),
 	cg(cg),
   eg(eg),
-  externalEvalConfig(externalEvalConfig)
-  #if 0
-  ,
-  // todo mapping
-  unusedNodes(cg.countNodes(), true),
-  unusedEdgeFilter(&cg, &unusedNodes),
-  unusedVertexFilter(&unusedNodes),
-  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter),
-  cgrestLeaves(cg.getLeaves())
-  #endif
+  externalEvalConfig(externalEvalConfig),
+	mapping(),
+  unusedEdgeFilter(&cg, &mapping),
+  unusedVertexFilter(&mapping),
+  cgrest(cg.getInternalGraph(), unusedEdgeFilter, unusedVertexFilter)
 {
 }
 
-//template<typename EvalGraphT>
 EvalGraphBuilder::~EvalGraphBuilder()
 {
 }
 
+RegistryPtr EvalGraphBuilder::registry()
+{
+  return ctx.registry();
+}
+
 #if 0
-// create eval unit
-// update unusedNodes
-// update cgrestLeaves
-template<typename EvalGraphT>
-template<typename NodeRange, typename UnitRange>
-typename EvalGraphT::EvalUnit
-EvalGraphBuilder<EvalGraphT>::createEvalUnit(
-  NodeRange nodes, UnitRange orderedDependencies)
+template<typename NodeRange>
+EvalGraphBuilder::createEvalUnit(NodeRange nodes)
 {
 	typename NodeRange::iterator itn;
-	typename UnitRange::iterator itu;
 	for(itn = boost::begin(nodes); itn != boost::end(nodes); ++itn)
 	{
 		LOG("adding node " << *itn << " to new eval unit");
 		// TODO
 	}
-	for(itu = boost::begin(orderedDependencies); itu != boost::end(orderedDependencies); ++itu)
-	{
-		LOG("adding dependency to unit " << *itu << " to eval graph");
-		// TODO
-	}
-  //supInvalid = true;
-}
-
-#if 0
-template<typename EvalGraphT>
-void EvalGraphBuilder<EvalGraphT>::recalculateSupportingInformation()
-{
-  supInvalid = false;
-}
-#endif
 #endif
 
 typedef FinalEvalGraph::EvalUnitPropertyBundle
@@ -129,28 +90,190 @@ namespace
   EvalUnitProperties eup_empty;
 }
 
+// build evaluation unit from components <comps> and copy into this unit also constraints in <ccomps>
+//
+// look at all dependencies outgoing from <comps>
+// * dependencies to existing units (in this->mapping.left) are accumulated
+//   into unit ependencies -> <newUnitsDependOn>
+// * dependencies to <comps> are rememberd to determine whether eatoms are inner or outer
+//   -> this is used to build newUnitInfo
+// * all other dependencies are forbidden!
+//   -> this ensures that no cycles are introduced
+//
+void EvalGraphBuilder::calculateNewEvalUnitInfos(
+		const ComponentSet& comps, const ComponentSet& ccomps,
+		std::list<DependencyInfo>& newUnitDependsOn,
+		ComponentInfo& newUnitInfo)
+{
+	DBGLOG_SCOPE(DBG,"cEUI", false);
+	DBGLOG(DBG,"= calculateEvalUnitInfos(" << printrange(comps) <<
+			"," << printrange(ccomps) << ")");
+
+	// set of dependencies from the new components to other components
+	// key = other eval unit
+	// value = dependency info
+	typedef std::map<EvalUnit, DependencyInfo> DepMap;
+	DepMap outgoing;
+
+  // set of original components that depend on other original components
+	// (we need this to find out whether an eatom in a component is an outer or
+	// an inner eatom ... if it depends on stuff in the components it is inner)
+  ComponentSet internallyDepends;
+
+	// iterate over all originals and over their outgoing dependencies (what they depend on)
+	ComponentSet::const_iterator ito;
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
+	{
+		DBGLOG(DBG,"original " << *ito << ":");
+		DBGLOG_INDENT(DBG);
+
+		ComponentGraph::PredecessorIterator itpred, itpred_end;
+		for(boost::tie(itpred, itpred_end) = cg.getDependencies(*ito);
+				itpred != itpred_end; ++itpred)
+		{
+			Dependency outgoing_dep = *itpred;
+			Component target = cg.targetOf(outgoing_dep);
+			if( comps.find(target) == comps.end() )
+			{
+				// dependency not within the new collapsed component
+				// -> dependency must be to eval unit
+				// -> it must be to already mapped component
+				DBGLOG(DBG,"outgoing dependency to " << target);
+				// map component to unit
+				ComponentEvalUnitMapping::left_map::iterator itu(
+						mapping.left.find(target));
+				#ifndef NDEBUG
+				// be nice: give a nice error message
+				if( itu == mapping.left.end() )
+				{
+					LOG(ERROR,"outgoing dependency from component " << *ito <<
+							" to component " << target << " not allowed because "
+							" the target is not yet mapped to an evaluation unit");
+				}
+				#endif
+				const ComponentGraph::DependencyInfo& comp_depinfo =
+					cg.propsOf(outgoing_dep);
+
+				// accumulate dependency info into <outgoing>
+				assert(itu != mapping.left.end());
+				EvalUnit dependsOn = itu->second;
+				DepMap::iterator itdo = outgoing.find(dependsOn);
+				if( itdo == outgoing.end() )
+				{
+					outgoing.insert(std::make_pair(
+								dependsOn, DependencyInfo(dependsOn, comp_depinfo)));
+				}
+				else
+				{
+					itdo->second |= comp_depinfo;
+				}
+			}
+      else
+      {
+				// dependency within the new collapsed component
+				DBGLOG(DBG,"internal dependency (to " << target << ")");
+				internallyDepends.insert(*ito);
+      }
+		} // iterate over predecessors
+	} // iterate over originals
+
+	//
+	// build newUnitInfo
+	//
+	ComponentInfo& ci = newUnitInfo;
+	for(ito = comps.begin(); ito != comps.end(); ++ito)
+	{
+		const ComponentInfo& cio = cg.propsOf(*ito);
+    #ifdef COMPGRAPH_SOURCESDEBUG
+		ci.sources.insert(ci.sources.end(),
+				cio.sources.begin(), cio.sources.end());
+		#endif
+    // inner rules stay inner rules
+		ci.innerRules.insert(ci.innerRules.end(),
+				cio.innerRules.begin(), cio.innerRules.end());
+    // inner eatoms always stay inner eatoms, they cannot become outer eatoms
+		ci.innerEatoms.insert(ci.innerEatoms.end(),
+				cio.innerEatoms.begin(), cio.innerEatoms.end());
+    // inner constraints stay inner constraints
+		ci.innerConstraints.insert(ci.innerConstraints.end(),
+				cio.innerConstraints.begin(), cio.innerConstraints.end());
+
+    ci.disjunctiveHeads |= cio.disjunctiveHeads;
+    ci.negationInCycles |= cio.negationInCycles;
+		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+
+    // if *ito does not depend on any component in originals
+    // then outer eatoms stay outer eatoms
+    // otherwise they become inner eatoms
+    if( internallyDepends.find(*ito) == internallyDepends.end() )
+    {
+      // does not depend on other components
+      ci.outerEatoms.insert(ci.outerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+			ci.outerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+    }
+    else
+    {
+      // does depend on other components
+      // -> former outer eatoms now become inner eatoms
+      ci.innerEatoms.insert(ci.innerEatoms.end(),
+          cio.outerEatoms.begin(), cio.outerEatoms.end());
+
+      // here, outer eatom becomes inner eatom
+			ci.innerEatomsNonmonotonic |= cio.outerEatomsNonmonotonic;
+    }
+    #warning if "input" component consists only of eatoms, they may be nonmonotonic, and we still can have wellfounded model generator ... create testcase for this ? how about wellfounded2.hex?
+	}
+
+	//
+	// build newUnitDependsOn
+	//
+	// (we only build outgoing dependencies)
+	for(DepMap::const_iterator itd = outgoing.begin();
+			itd != outgoing.end(); ++itd)
+	{
+		newUnitDependsOn.push_back(itd->second);
+	}
+}
+
 EvalGraphBuilder::EvalUnit
 EvalGraphBuilder::createEvalUnit(
-    Component comp)
+		const std::list<Component>& comps, const std::list<Component>& ccomps)
 {
   LOG_SCOPE(ANALYZE,"cEU",true);
-  DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" << comp << ")");
+  DBGLOG(DBG,"= EvalGraphBuilder::createEvalUnit(" <<
+			printrange(comps) << "," << printrange(ccomps) << ")");
+
+	// calculate properties of new eval unit
+	// (this verifies a lot of stuff in debug mode)
+	std::list<DependencyInfo> newUnitDependsOn;
+	ComponentInfo newUnitInfo;
+	{
+		// TODO perhaps directly take ComponentSet as inputs
+		ComponentSet scomps(comps.begin(), comps.end());
+		ComponentSet sccomps(ccomps.begin(), ccomps.end());
+		calculateNewEvalUnitInfos(scomps, sccomps, newUnitDependsOn, newUnitInfo);
+	}
 
   // create eval unit
   EvalUnit u = eg.addUnit(eup_empty);
   LOG(DBG,"created unit " << u);
 
-  // associate with component
-  typedef ComponentEvalUnitMapping::value_type MappedPair;
-  bool success = mapping.insert(MappedPair(comp, u)).second;
-  assert(success); // component must not already exist here
+  // associate comps with component
+	// ignore shared ccomps here (see comments in .hpp file)
+	BOOST_FOREACH(Component c, comps)
+	{
+		typedef ComponentEvalUnitMapping::value_type MappedPair;
+		bool success = mapping.insert(MappedPair(c, u)).second;
+		assert(success); // component must not already exist here
+	}
 
   // configure unit
   EvalUnitProperties& uprops = eg.propsOf(u);
 
   // configure model generator factory, depending on type of component
   {
-    const ComponentGraph::ComponentInfo& ci = cg.propsOf(comp);
+    const ComponentGraph::ComponentInfo& ci = newUnitInfo;
     if( ci.innerEatoms.empty() )
     {
       // no inner external atoms -> plain model generator factory
@@ -160,9 +283,10 @@ EvalGraphBuilder::createEvalUnit(
     }
     else
     {
-      if( ci.innerEatomsMonotonicAndOnlyPositiveCycles )
+      if( !ci.innerEatomsNonmonotonic && !ci.negationInCycles && !ci.disjunctiveHeads )
       {
-        // inner external atoms and only in positive cycles and monotonic -> wellfounded/fixpoint model generator factory
+        // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
+				// -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
         uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
               ctx, ci, externalEvalConfig));
@@ -178,26 +302,14 @@ EvalGraphBuilder::createEvalUnit(
   }
 
   // create dependencies
-
-  // find all dependencies and create them in eval graph
-  ComponentGraph::PredecessorIterator it, it_end;
   unsigned joinOrder = 0;
-  for(boost::tie(it, it_end) = cg.getDependencies(comp);
-      it != it_end; ++it)
-  {
-    Component dcomp = cg.targetOf(*it);
-    DBGLOG(DBG,"found dependency to component " << dcomp);
-    ComponentEvalUnitMapping::left_const_iterator itu =
-      mapping.left.find(dcomp);
-    if( itu == mapping.left.end() )
-      throw std::runtime_error(
-          "tried to create an eval unit, "
-          "where not all predecessors have previously been created!");
-    EvalUnit du = itu->second;
-    DBGLOG(DBG,"adding dependency to unit " << du << " with joinOrder " << joinOrder);
-    eg.addDependency(u, du, EvalUnitDepProperties(joinOrder));
+	BOOST_FOREACH(const DependencyInfo& di, newUnitDependsOn)
+	{
+		// TODO join order?
+    DBGLOG(DBG,"adding dependency to unit " << di.dependsOn << " with joinOrder " << joinOrder);
+    eg.addDependency(u, di.dependsOn, EvalUnitDepProperties(joinOrder));
     joinOrder++;
-  }
+	}
 
   return u;
 }

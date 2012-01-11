@@ -91,25 +91,25 @@ std::ostream& WellfoundedModelGeneratorFactory::print(
   if( !outerEatoms.empty() )
   {
     o << " outer Eatoms={";
-    printer.printmany(outerEatoms,",");
+    printer.printmany(outerEatoms,"\n");
     o << "}";
   }
   if( !innerEatoms.empty() )
   {
     o << " inner Eatoms={";
-    printer.printmany(innerEatoms,",");
+    printer.printmany(innerEatoms,"\n");
     o << "}";
   }
   if( !idb.empty() )
   {
     o << " idb={";
-    printer.printmany(idb," ");
+    printer.printmany(idb,"\n");
     o << "}";
   }
   if( !xidb.empty() )
   {
     o << " xidb={";
-    printer.printmany(xidb," ");
+    printer.printmany(xidb,"\n");
     o << "}";
   }
   return o;
@@ -159,7 +159,7 @@ WellfoundedModelGenerator::generateNextModel()
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
       evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
-          "outer external atom computations");
+          "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
 
       assert(!factory.xidb.empty() && "the wellfounded model generator is not required for non-idb components! (use plain)");

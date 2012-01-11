@@ -69,7 +69,7 @@ typedef std::vector<Component> ComponentVector;
 // 4) restart
 void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
 {
-  ComponentGraph& compgraph = builder.getComponentGraph();
+  const ComponentGraph& compgraph = builder.getComponentGraph();
 
   // get internal compgraph
   const ComponentGraph::Graph& igraph = compgraph.getInternalGraph();
@@ -102,14 +102,13 @@ void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
       compinserter,
       boost::color_map(CompColorMap(ccHashMap)));
 
-  ComponentList finishedcomps;
   ComponentSet finishedcompsSet;
 
   do
   {
 		DBGLOG(DBG,"creating new eval unit:");
     DBGLOG(DBG,"open =     " << printrange(opencomps));
-    DBGLOG(DBG,"finished = " << printrange(finishedcomps));
+    DBGLOG(DBG,"finished = " << printrange(finishedcompsSet));
 
     ComponentSet markedcomps;
     for(ComponentList::const_iterator it = opencomps.begin();
@@ -154,38 +153,34 @@ void EvalHeuristicOldDlvhex::build(EvalGraphBuilder& builder)
 
     LOG(ANALYZE,"marked = " << printrange(markedcomps));
 
-    // collapse marked into new component
-		Component newcomp = compgraph.collapseComponents(markedcomps);
-    LOG(ANALYZE,"collapsing marked yielded component " << newcomp);
+		// create new component
+		{
+			std::list<Component> comps(markedcomps.begin(), markedcomps.end());
+			std::list<Component> ccomps;
+			EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(comps, ccomps);
+			LOG(ANALYZE,"components " << printrange(comps) << " became eval unit " << u);
+		}
 
     // remove marked from opencomps
-    for(ComponentList::iterator it = opencomps.begin();
-        it != opencomps.end();)
+    ComponentList::iterator it = opencomps.begin();
+		while( it != opencomps.end() )
     {
       if( markedcomps.find(*it) != markedcomps.end() )
       {
-        ComponentList::iterator backup = it;
-        it++; // may now be end() !
-        opencomps.erase(backup);
+				// found marked component
+
+				// add to finished set
+				finishedcompsSet.insert(*it);
+
+				// remove from open components list
+				it = opencomps.erase(it);
         continue; // does not increment, first checks if end
       }
       // do it here, so that continue; does not increment
       it++;
     }
-
-    // add newcomp to finished set and list
-    finishedcomps.push_back(newcomp);
-    finishedcompsSet.insert(newcomp);
   }
   while(!opencomps.empty());
-
-  for(ComponentList::const_iterator it = finishedcomps.begin();
-      it != finishedcomps.end(); ++it)
-  {
-    // build eval unit
-    EvalGraphBuilder::EvalUnit u = builder.createEvalUnit(*it);
-    LOG(ANALYZE,"component " << *it << " became eval unit " << u);
-  }
 }
 
 DLVHEX_NAMESPACE_END

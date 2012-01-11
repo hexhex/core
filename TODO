@@ -1,5 +1,6 @@
 -*- org -*-
 
+* TODO think about whether benchmarking should use different mutexes or thread-local storage instead of mutexes
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
 * TODO allow --solver=/path/to/solver?
