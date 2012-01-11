@@ -1,5 +1,9 @@
 2012-01-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* configure.ac: Fixed wrong variable names.
+	* include/dlvhex/Makefile.am: Fixed make distcheck.
+	* examples/Makefile.am: Likewise.
+
 	* include/dlvhex/Rule.hpp: Include guard fix.
 
 	* m4/libcurl.m4: new upstream version from
