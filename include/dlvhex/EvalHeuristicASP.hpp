@@ -25,7 +25,7 @@
  * @file   EvalHeuristicASP.hpp
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Evaluation heuristic that uses collapse commands from given file.
+ * @brief  Evaluation heuristic that uses ASP to plan hex evaluation.
  */
 
 #ifndef EVAL_HEURISTIC_ASP_HPP_INCLUDED__19112011
