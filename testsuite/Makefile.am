@@ -54,7 +54,7 @@ TESTS = \
 TESTS_ENVIRONMENT = \
   TOP_SRCDIR=$(top_srcdir) \
   EXAMPLESDIR=$(top_srcdir)/examples \
-  TESTDIR=$(top_builddir)/examples/tests \
+  TESTS="$(WHICH_DLVHEX_TESTS)" \
   OUTDIR=$(top_srcdir)/examples/tests \
   DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
   BOOST_TEST_REPORT_LEVEL=detailed \
