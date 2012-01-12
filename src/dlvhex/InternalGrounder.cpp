@@ -48,6 +48,19 @@ DLVHEX_NAMESPACE_BEGIN
 
 void InternalGrounder::computeDepGraph(){
 
+	// add edb
+	bm::bvector<>::enumerator en = inputprogram.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = inputprogram.edb->getStorage().end();
+
+	while (en < en_end){
+		ID pred = getPredicateOfAtom(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (depNodes.find(pred) == depNodes.end()){
+			depNodes[pred] = boost::add_vertex(pred, depGraph);
+		}
+		en++;
+	}
+
+
 	// go through all rules
 	BOOST_FOREACH (ID ruleID, inputprogram.idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
