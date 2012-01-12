@@ -112,6 +112,7 @@ void buildEvalUnitsFromAnswerSet(
 // get commands from first answer set
 void EvalHeuristicASP::build(EvalGraphBuilder& builder)
 {
+  typedef ComponentGraph::Component Component;
   LOG(INFO,"using ASP evaluation heuristic '" << scriptname << "'");
 
   const ComponentGraph& compgraph = builder.getComponentGraph();
