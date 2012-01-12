@@ -155,6 +155,8 @@ case "$dbgrelbench" in
 	enable_release=false
 	enable_benchmark=false
 	enable_profiling=false
+  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
+           ["$DISTCHECK_CONFIGURE_FLAGS --enable-debug"])
      ;;
 
      *,*,*,*,true)
@@ -175,6 +177,8 @@ case "$dbgrelbench" in
 	AC_DEFINE(DLVHEX_BENCHMARK, [], [Turns on benchmarking timers and counters])
 	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
 	optlevel="-O3"
+  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
+           ["$DISTCHECK_CONFIGURE_FLAGS --enable-benchmark"])
      ;&
 
      *,*,*,true,*)
@@ -188,6 +192,8 @@ case "$dbgrelbench" in
 	# do stuff that must be done for --enable-release here
 	AC_DEFINE(NDEBUG, [], [Turns off debug logging and assertions])
 	optlevel="-O3"
+  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
+           ["$DISTCHECK_CONFIGURE_FLAGS --enable-release"])
      ;&
 
 esac
@@ -373,6 +379,8 @@ if test "x${with_libclingo_support}" != xfalse; then
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
   WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libclingobackend.test"
+  AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
+           ["$DISTCHECK_CONFIGURE_FLAGS '--with-libclingo==$GRINGO_TRUNK_DIR'"])
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
