@@ -1002,9 +1002,9 @@ ClingoSoftware::Delegate::~Delegate()
 }
 
 void
-ClingoSoftare::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
+ClingoSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
 {
-  throw std::runtime_error("TODO implement ClingoSoftare::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
+  throw std::runtime_error("TODO implement ClingoSoftware::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
 }
 
 void
