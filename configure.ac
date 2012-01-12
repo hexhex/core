@@ -268,6 +268,9 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
+WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/basic.test"
+AC_SUBST(WHICH_DLVHEX_TESTS)
+
 #
 # third-party solver integration
 # * dlv as executable
@@ -369,6 +372,7 @@ if test "x${with_libclingo_support}" != xfalse; then
 	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
 	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libclingobackend.test"
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
@@ -449,7 +453,8 @@ AC_CONFIG_FILES([
            Makefile
            dlvhex.pc
            examples/Makefile
-           examples/tests/dlvhextests.test
+           examples/tests/basic.test
+           examples/tests/libclingobackend.test
            include/Makefile
            include/common.h
            include/dlvhex/Makefile
