@@ -1,3 +1,14 @@
+2012-01-12  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* configure.ac: Using several configure switches for distcheck.
+
+	* configure.ac: Extra tests if using --with-libclingo.
+	* examples/Makefile.am: Likewise.
+	* testsuite/Makefile.am: Likewise.
+	* examples/tests/dlvhextests.test.in: Rename to basic.test.in.
+	* examples/tests/basic.test.in: Collection of 'basic tests'.
+	* examples/tests/libclingobackend.test.in: libclingo tests.
+
 2012-01-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* configure.ac: Fixed wrong variable names.
