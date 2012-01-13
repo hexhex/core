@@ -55,3 +55,6 @@ void Logger::setPrintLevelWidth(int width)
   levelwidth = width;
 }
 
+Logger::Levels Logger::getPrintLevels() const{
+  return printlevels;
+}

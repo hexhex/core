@@ -88,6 +88,7 @@ public:
 
   void setPrintLevels(Levels levels);
   void setPrintLevelWidth(int width);
+  Levels getPrintLevels() const;
 
   // this method does not ask shallPrint!
   inline void startline(Levels forlevel)
