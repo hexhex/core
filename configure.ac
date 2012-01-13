@@ -380,7 +380,7 @@ if test "x${with_libclingo_support}" != xfalse; then
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/libclasp/ -I${GRINGO_TRUNK_DIR}/app/"
   WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libclingobackend.test"
   AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
-           ["$DISTCHECK_CONFIGURE_FLAGS '--with-libclingo==$GRINGO_TRUNK_DIR'"])
+           ["$DISTCHECK_CONFIGURE_FLAGS '--with-libclingo=$GRINGO_TRUNK_DIR'"])
   extsolver_found=true
 fi
 # TODO libclingo search for lib, test lib, set lib variables from these checks
