@@ -820,7 +820,9 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
 
 ComponentGraph::ComponentGraph(const ComponentGraph& other):
 	reg(other.reg),
+  #ifdef COMPGRAPH_SOURCESDEBUG
 	dg(other.dg),
+  #endif
 	cg(other.cg)
 {
 }
