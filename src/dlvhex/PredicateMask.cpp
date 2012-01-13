@@ -70,6 +70,9 @@ void PredicateMask::addPredicate(ID pred)
 void PredicateMask::updateMask()
 {
   boost::mutex::scoped_lock lock(updateMutex);
+  // lock ogatoms for reading -> no updates can happen while we are here
+  // (this is necessary, otherwise the end iterator might change during execution)
+  OrdinaryAtomTable::ReadLock oalock(reg->ogatoms.mutex);
 
   DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
   DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<

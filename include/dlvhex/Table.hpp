@@ -66,12 +66,14 @@ public:
 	typedef typename
 		boost::multi_index_container<ValueT, IndexT> Container;
 
-	// storage
-protected:
-	Container container;
+  // public, because other algorithms might need to lock this
   mutable boost::shared_mutex mutex;
   typedef boost::shared_lock<boost::shared_mutex> ReadLock;
   typedef boost::unique_lock<boost::shared_mutex> WriteLock;
+
+	// storage
+protected:
+	Container container;
 
 	// methods
 public:
