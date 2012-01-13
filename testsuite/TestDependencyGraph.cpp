@@ -28,6 +28,10 @@
  * @brief  Test the dependency graph builder (and the graph)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <boost/cstdint.hpp>
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/DependencyGraphFull.hpp"

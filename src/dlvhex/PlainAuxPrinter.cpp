@@ -28,6 +28,10 @@
  * @brief  Helper for printing auxiliary objects for the user.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/PlainAuxPrinter.hpp"
 #include "dlvhex/Printer.hpp"
 

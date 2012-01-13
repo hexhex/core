@@ -28,6 +28,10 @@
  * @brief  Test the component graph
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <boost/cstdint.hpp>
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/DependencyGraph.hpp"

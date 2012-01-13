@@ -28,6 +28,10 @@
  * @brief  Implementation of logging facility.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/Logger.hpp"
 
 namespace

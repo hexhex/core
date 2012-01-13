@@ -34,6 +34,11 @@
  * 
  */
 
+// activate benchmarking if activated by configure option --enable-debug
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 // use this for developing the parser
 #undef CWDEBUG
 #ifdef CWDEBUG
@@ -49,11 +54,6 @@
 
 // use this for debugging parser progress (XML style)
 #undef BOOST_SPIRIT_DEBUG
-
-// activate benchmarking if activated by configure option --enable-debug
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
 
 #include "dlvhex/Benchmarking.h"
 #include "dlvhex/ID.hpp"

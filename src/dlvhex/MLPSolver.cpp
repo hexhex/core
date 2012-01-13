@@ -30,6 +30,10 @@
  * @brief  Solve the ic-stratified MLP
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/MLPSolver.hpp"
 
 DLVHEX_NAMESPACE_BEGIN

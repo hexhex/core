@@ -28,6 +28,10 @@
  * @brief Implementation of Atoms.hpp
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printhelpers.hpp"

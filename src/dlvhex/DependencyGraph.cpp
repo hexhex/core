@@ -30,6 +30,10 @@
  * @brief Classes for the dependency graph class and its subparts.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/DependencyGraph.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Registry.hpp"

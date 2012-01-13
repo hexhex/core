@@ -28,6 +28,10 @@
  * @brief  Implementation of testing fixtures related to sample graph $\mathcal{E}_2$.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "fixtureE2.hpp"
 
 #include <boost/test/unit_test.hpp>

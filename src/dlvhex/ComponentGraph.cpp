@@ -28,6 +28,10 @@
  * @brief Implementation of the component graph.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Printer.hpp"
@@ -816,7 +820,9 @@ void ComponentGraph::writeGraphViz(std::ostream& o, bool verbose) const
 
 ComponentGraph::ComponentGraph(const ComponentGraph& other):
 	reg(other.reg),
+  #ifdef COMPGRAPH_SOURCESDEBUG
 	dg(other.dg),
+  #endif
 	cg(other.cg)
 {
 }

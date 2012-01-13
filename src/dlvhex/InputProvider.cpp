@@ -29,6 +29,10 @@
  * @brief Input stream provider (collects input sources)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/InputProvider.hpp"
 #include "dlvhex/URLBuf.h"
 #include "dlvhex/Error.h"

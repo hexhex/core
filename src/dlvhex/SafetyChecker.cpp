@@ -31,6 +31,10 @@
  * @brief Class for checking rule and program safety.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/SafetyChecker.h"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"

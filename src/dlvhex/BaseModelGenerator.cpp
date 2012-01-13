@@ -28,6 +28,10 @@
  * @brief Implementation of common model generator functionalities.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/Registry.hpp"

@@ -28,6 +28,10 @@
  * @brief  Implementation of testing fixture for unit testing example 1.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "fixtureEx1.hpp"
 
 #include <boost/test/unit_test.hpp>

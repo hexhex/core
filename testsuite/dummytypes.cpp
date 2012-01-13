@@ -28,6 +28,10 @@
  * @brief  Implementation of dummy replacement types for testing (model building) templates.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dummytypes.hpp"
 
 using namespace dlvhex;
