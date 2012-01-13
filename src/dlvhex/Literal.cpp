@@ -32,6 +32,10 @@
  * 
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/Literal.h"
 #include "dlvhex/BaseVisitor.h"
 #include "dlvhex/PrintVisitor.h"

@@ -28,6 +28,10 @@
  * @brief Implementation of an evaluation heuristic corresponding to old dlvhex.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalHeuristicOldDlvhex.hpp"
 #include "dlvhex/Logger.hpp"
 

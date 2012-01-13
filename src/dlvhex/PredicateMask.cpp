@@ -29,6 +29,10 @@
  *         interpretations to certain predicates.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/PredicateMask.hpp"
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/Logger.hpp"

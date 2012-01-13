@@ -28,6 +28,10 @@
  * @brief  Unit tests for EvalGraph template.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalGraph.hpp"
 #include "dlvhex/CAUAlgorithms.hpp"
 #include "dlvhex/Logger.hpp"

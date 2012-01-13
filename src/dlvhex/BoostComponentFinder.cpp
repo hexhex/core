@@ -33,6 +33,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/BoostComponentFinder.h"
 #include "dlvhex/globals.h"
 #include "dlvhex/PrintVisitor.h"

@@ -28,6 +28,10 @@
  * @brief  Test tables for storing AST data efficiently
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <boost/cstdint.hpp>
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Term.hpp"

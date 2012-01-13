@@ -28,6 +28,10 @@
  * @brief Implementation of a trivial evaluation heuristic.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalHeuristicTrivial.hpp"
 #include "dlvhex/Logger.hpp"
 

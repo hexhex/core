@@ -28,6 +28,10 @@
  * @brief  Evaluation Graph builder that dumps its evaluation plan.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/DumpingEvalGraphBuilder.hpp"
 #include "dlvhex/Logger.hpp"
 

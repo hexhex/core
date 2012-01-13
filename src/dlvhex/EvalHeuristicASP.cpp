@@ -60,6 +60,10 @@
  * share(U,C) uses C shared in evaluation unit U
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalHeuristicASP.hpp"
 #include "dlvhex/EvalHeuristicShared.hpp"
 #include "dlvhex/Logger.hpp"

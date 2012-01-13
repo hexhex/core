@@ -28,6 +28,10 @@
  * @brief Implementation of a nontrivial but simple evaluation heuristic.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalHeuristicEasy.hpp"
 #include "dlvhex/Logger.hpp"
 

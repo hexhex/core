@@ -28,6 +28,10 @@
  * @brief Implementation of the eval graph builder.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/EvalGraphBuilder.hpp"
 #include "dlvhex/PlainModelGenerator.hpp"
 #include "dlvhex/WellfoundedModelGenerator.hpp"

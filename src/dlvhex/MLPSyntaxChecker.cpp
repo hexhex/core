@@ -30,6 +30,10 @@
  * @brief  Checking syntax for modular logic programs
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex/MLPSyntaxChecker.hpp"
 
 DLVHEX_NAMESPACE_BEGIN

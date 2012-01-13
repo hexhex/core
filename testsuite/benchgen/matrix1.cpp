@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 /**
  * external atom &above[predicate/1,constant](X)
  * returns { X | predicate(X), constant < X } in X

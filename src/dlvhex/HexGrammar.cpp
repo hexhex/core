@@ -30,6 +30,10 @@
  * This file is intended to contain mainly template instantiations.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 //#define BOOST_SPIRIT_DEBUG
 
 #include "dlvhex/PlatformDefinitions.h"

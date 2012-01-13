@@ -28,6 +28,10 @@
  * @brief  Test evaluation using PlainHEX sources.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 // dlvhex
 #define DLVHEX_BENCHMARK
 

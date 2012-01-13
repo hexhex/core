@@ -31,6 +31,10 @@
  *         For star, line, ring, diamond, and random topology
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <iostream>
 #include <stdlib.h>
 #include <sstream>
