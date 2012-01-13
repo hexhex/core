@@ -73,11 +73,6 @@ void PredicateMask::addPredicate(ID pred)
 
 void PredicateMask::updateMask()
 {
-  boost::mutex::scoped_lock lock(updateMutex);
-  // lock ogatoms for reading -> no updates can happen while we are here
-  // (this is necessary, otherwise the end iterator might change during execution)
-  OrdinaryAtomTable::ReadLock oalock(reg->ogatoms.mutex);
-
   DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
   DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
       printset(predicates));
@@ -86,23 +81,33 @@ void PredicateMask::updateMask()
   RegistryPtr reg = maski->getRegistry();
   Interpretation::Storage& bits = maski->getStorage();
 
-  // get range over all ogatoms
-  OrdinaryAtomTable::AddressIterator it_begin, it, it_end;
-  boost::tie(it_begin, it_end) = reg->ogatoms.getAllByAddress();
+  unsigned maxaddr = 0;
+  OrdinaryAtomTable::AddressIterator it_begin;
+  {
+    // get one state of it_end, encoded in maxaddr
+    // (we must not use it_end, as it is a generic object but denotes
+    // different endpoints if ogatoms changes during this method)
+    OrdinaryAtomTable::AddressIterator it_end;
+    boost::tie(it_begin, it_end) = reg->ogatoms.getAllByAddress();
+    maxaddr = it_end - it_begin;
+  }
+
+  boost::mutex::scoped_lock lock(updateMutex);
 
   // check if we have unknown atoms
   DBGLOG(DBG,"already inspected ogatoms with address < " << knownAddresses <<
-      ", iterator range has size " << (it_end - it_begin));
-  if( (it_end - it_begin) == knownAddresses )
+      ", iterator range has size " << maxaddr);
+  if( maxaddr == knownAddresses )
     return;
+
   // if not equal, it must be larger -> we must inspect
-  assert((it_end - it_begin) > knownAddresses);
+  assert(maxaddr > knownAddresses);
 
   // advance iterator to first ogatom unknown to predicateInputMask
-  it = it_begin;
+  OrdinaryAtomTable::AddressIterator it = it_begin;
   it += knownAddresses;
 
-  unsigned missingBits = it_end - it;
+  unsigned missingBits = maxaddr - knownAddresses;
   DBGLOG(DBG,"need to inspect " << missingBits << " missing bits");
 
   // check all new ogatoms till the end
@@ -120,8 +125,9 @@ void PredicateMask::updateMask()
   }
   #endif
   assert(knownAddresses == (it - it_begin));
-  for(;it != it_end; ++it)
+  for(;missingBits != 0; it++, missingBits--)
   {
+    assert(it != reg->ogatoms.getAllByAddress().second);
     const OrdinaryAtom& oatom = *it;
     //DBGLOG(DBG,"checking " << oatom.tuple.front());
     IDAddress addr = oatom.tuple.front().address;
@@ -130,7 +136,7 @@ void PredicateMask::updateMask()
       bits.set(it - it_begin);
     }
   }
-  knownAddresses = (it_end - it_begin);
+  knownAddresses += missingBits;
   DBGLOG(DBG,"updateMask created new set of relevant ogatoms: " << *maski << " and knownAddresses is " << knownAddresses);
 }
 
