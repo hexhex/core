@@ -30,6 +30,7 @@ pkginclude_HEADERS = \
   EvalHeuristicOldDlvhex.hpp \
   EvalHeuristicTrivial.hpp \
   ExternalAtomTable.hpp \
+  ExtSourceProperties.hpp \
   FinalEvalGraph.hpp \
   fwd.hpp \
   GraphvizHelpers.hpp \

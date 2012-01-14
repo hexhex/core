@@ -474,10 +474,12 @@
 #include "dlvhex/Atoms.hpp"
 #include "dlvhex/Error.h"
 #include "dlvhex/CDNLSolver.hpp"
+#include "dlvhex/ExtSourceProperties.hpp"
 
 #include <map>
 #include <string>
 #include <iosfwd>
+#include <algorithm>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -644,6 +646,7 @@ public:
     Tuple input;
     Tuple pattern;
     const ExternalAtom* eatom;
+    std::map<ID, int> inputPredicateTable; // stores for each predicate term ID the index of the corresponding parameter in input
 
     /**
      * The input arguments are the ground terms of the input list.
@@ -673,7 +676,10 @@ public:
       interpretation(interpretation),
       input(input),
       pattern(pattern),
-      eatom(0) {}
+      eatom(0)
+    {
+      builtInputPredicateTable();
+    }
 
     Query(InterpretationConstPtr interpretation,
           const Tuple& input,
@@ -682,7 +688,10 @@ public:
       interpretation(interpretation),
       input(input),
       pattern(pattern),
-      eatom(ea) {}
+      eatom(ea)
+    {
+      builtInputPredicateTable();
+    }
 
     // no member encapsulation and no accessors as this will always be supplied to plugins as a const ref
 
@@ -692,6 +701,9 @@ public:
 
     // equality for hashing
     bool operator==(const Query& other) const;
+
+    // stores for each predicate term ID the index of the corresponding parameter in input
+    void builtInputPredicateTable();
   };
 
   /**
@@ -762,8 +774,8 @@ protected:
   // addInput...() methods and you have to use setOutputArity().
   PluginAtom(const std::string& predicate, bool monotonic):
     predicate(predicate),
-    monotonic(monotonic),
-    functional(false) { }
+    monotonic(monotonic)
+    {}
 
   // The following functions are to be used in the constructor only:
 
@@ -834,16 +846,23 @@ public:
     { return inputType; }
 
   /**
-   * @return monotonic
+   * @return general monotonicity
    */
   bool isMonotonic() const
     { return monotonic; }
 
   /**
+   * @return monotonicity on parameter level
+   */
+  bool isMonotonic(const Query& q, int parameterIndex) const
+    { return q.eatom->useProp ? std::find(q.eatom->prop.monotonicInputPredicates.begin(), q.eatom->prop.monotonicInputPredicates.end(), parameterIndex) != q.eatom->prop.monotonicInputPredicates.end()
+                              : std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
+
+  /**
    * @return functional
    */
-  bool isFunctional() const
-    { return functional; }
+  bool isFunctional(const Query& q) const
+    { return q.eatom->useProp ? q.eatom->prop.functional : prop.functional; }
 
   // Associate plugin atom with registry pointer.
   // (This implicitly calculates the predicate ID.)
@@ -877,8 +896,8 @@ protected:
   /// \brief whether the function is monotonic or nonmonotonic
   bool monotonic;
 
-  /// \brief whether the atom is functional or relational
-  bool functional;
+  /// \brief general properties of the external source (may be overridden on atom-level)
+  ExtSourceProperties prop;
 
   /// \brief Type of each input argument (only last may be TUPLE).
   std::vector<InputType> inputType;

@@ -36,6 +36,7 @@
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/PredicateMask.hpp"
+#include "dlvhex/ExtSourceProperties.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -56,16 +57,23 @@ struct Atom
   // (external atoms add an "input tuple" for the inputs)
   Tuple tuple;
 
+  // properties of this external atom
+  ExtSourceProperties prop;
+  bool useProp;
+
   // used for indices
   ID front() const { return tuple.front(); }
 
 protected:
   // atom should not be used directly, so no public constructor
   Atom(IDKind kind):
-    kind(kind), tuple()
+    kind(kind), tuple(), useProp(false)
     { assert(ID(kind,0).isAtom()); }
   Atom(IDKind kind, const Tuple& tuple):
-    kind(kind), tuple(tuple)
+    kind(kind), tuple(tuple), useProp(false)
+    { assert(ID(kind,0).isAtom()); }
+  Atom(IDKind kind, const Tuple& tuple, const ExtSourceProperties& prop):
+    kind(kind), tuple(tuple), prop(prop), useProp(true)
     { assert(ID(kind,0).isAtom()); }
 };
 

@@ -77,6 +77,14 @@ bool PluginAtom::Query::operator==(const Query& other) const
       );
 }
 
+void PluginAtom::Query::builtInputPredicateTable(){
+
+	int index = 0;
+	BOOST_FOREACH (ID inp, input){
+		inputPredicateTable[inp] = index++;
+	}
+}
+
 // hash function for QueryAnswerCache
 std::size_t hash_value(const PluginAtom::Query& q)
 {
@@ -348,20 +356,23 @@ void PluginAtom::defaultExtLearning(const Query& query, Answer& answer, CDNLSolv
 		}
 
 		// functionality
-		if (solver->getProgramContext().config.getOption("ExternalLearningFunctionality") && isFunctional()){
+		if (solver->getProgramContext().config.getOption("ExternalLearningFunctionality") && isFunctional(query)){
 			// there is a unique output
 			const std::vector<Tuple>& otuples = answer.get();
-			ID uniqueOut = getOutputAtom(solver, query, otuples[0], true);
 
-			// go through all output tuples which have been generated so far
-			BOOST_FOREACH (Tuple t, this->otuples){
-				ID id = getOutputAtom(solver, query, t, true);
-				if (id != uniqueOut){
-					Nogood excludeOthers;
-					excludeOthers.insert(uniqueOut);
-					excludeOthers.insert(id);
-					DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
-					solver->addNogood(excludeOthers);
+			if (otuples.size() > 0){
+				ID uniqueOut = getOutputAtom(solver, query, otuples[0], true);
+
+				// go through all output tuples which have been generated so far
+				BOOST_FOREACH (Tuple t, this->otuples){
+					ID id = getOutputAtom(solver, query, t, true);
+					if (id != uniqueOut){
+						Nogood excludeOthers;
+						excludeOthers.insert(uniqueOut);
+						excludeOthers.insert(id);
+						DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
+						solver->addNogood(excludeOthers);
+					}
 				}
 			}
 		}
@@ -399,8 +410,14 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 	Nogood extNgInput;
 
 	while (en < en_end){
+		// get the predicate of the current input atom
+		ID pred = query.interpretation->getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)).tuple[0];
+
+		// find the parameter index of this atom
+		int index = query.inputPredicateTable.find(pred)->second;
+
 		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
-		if (query.interpretation->getFact(*en) || !isMonotonic() || !solver->getProgramContext().config.getOption("ExternalLearningMonotonicity")){
+		if (query.interpretation->getFact(*en) || !isMonotonic(query, index) || !solver->getProgramContext().config.getOption("ExternalLearningMonotonicity")){
 			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
 		}
 		en++;
