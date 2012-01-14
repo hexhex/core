@@ -560,7 +560,9 @@ struct sem<HexGrammarSemantics::externalAtom>
 			throw SyntaxError("Property \"" + defstr + "\": Parameter index out of scope");
 		}
 		DBGLOG(DBG, "External Atom is nonmonotonic in input parameter " + defstr.substr(12));
-		prop.monotonicInputPredicates.push_back(pnr);
+		if (std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), pnr) != prop.monotonicInputPredicates.end()){
+			prop.monotonicInputPredicates.erase(std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), pnr));
+		}
 	}
         else{
 		throw SyntaxError("Property \"" + defstr + "\" unrecognized");
