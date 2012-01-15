@@ -235,6 +235,9 @@ InterpretationConstPtr InternalGroundDASPSolver::getNextModel(){
 			DBGLOG(DBG, "Found an answer set");
 			return mc;
 		}else{
+#ifndef NDEBUG
+			++cntDUnfoundedSets;
+#endif
 			Nogood loopNogood = getViolatedLoopNogood(ufs);
 			DBGLOG(DBG, "Adding loop nogood: " << loopNogood);
 			addNogood(loopNogood);
