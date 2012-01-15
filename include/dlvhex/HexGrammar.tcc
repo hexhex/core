@@ -44,6 +44,7 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/ExtSourceProperties.hpp"
 
 #include <algorithm>
 
@@ -507,10 +508,66 @@ struct sem<HexGrammarSemantics::aggregateAtom>
   }
 };
 
-#include <iostream>
 template<>
 struct sem<HexGrammarSemantics::externalAtom>
 {
+
+  void interpretProperties(HexGrammarSemantics& mgr, ExternalAtom& atom, std::vector<ExtSourceProperty>& props){
+
+    BOOST_FOREACH (ExtSourceProperty prop, props){
+      switch (prop.type){
+        case ExtSourceProperty::FUNCTIONAL:
+          DBGLOG(DBG, "External Atom is functional");
+          atom.prop.functional = true;
+          break;
+        case ExtSourceProperty::NONFUNCTIONAL:
+          DBGLOG(DBG, "External Atom is nonfunctional");
+          atom.prop.functional = false;
+          break;
+        case ExtSourceProperty::MONOTONIC:
+          if (prop.param == ID_FAIL){
+            DBGLOG(DBG, "External Atom is monotonic in all input parameters");
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              atom.prop.monotonicInputPredicates.push_back(i);
+            }
+          }else{
+            bool found = false;
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              if (atom.inputs[i] == prop.param){
+                DBGLOG(DBG, "External Atom is monotonic in parameter " << i);
+                atom.prop.monotonicInputPredicates.push_back(i);
+                found = true;
+                break;
+              }
+            }
+            if (!found) throw SyntaxError("Property refers to invalid input parameter");
+          }
+          break;
+        case ExtSourceProperty::NONMONOTONIC:
+          if (prop.param == ID_FAIL){
+            DBGLOG(DBG, "External Atom is nonmonotonic in all input parameters");
+            atom.prop.monotonicInputPredicates.clear();
+          }else{
+            bool found = false;
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              if (atom.inputs[i] == prop.param){
+                DBGLOG(DBG, "External Atom is nonmonotonic in parameter " << i);
+                if (std::find(atom.prop.monotonicInputPredicates.begin(), atom.prop.monotonicInputPredicates.end(), i) != atom.prop.monotonicInputPredicates.end()){
+                  atom.prop.monotonicInputPredicates.erase(std::find(atom.prop.monotonicInputPredicates.begin(), atom.prop.monotonicInputPredicates.end(), i));
+                }
+                found = true;
+                break;
+              }
+            }
+            if (!found) throw SyntaxError("Property refers to invalid input parameter");
+          }
+          break;
+      }
+    }
+    atom.useProp = true;
+  }
+
+/*
   ExtSourceProperties interpretProperties(HexGrammarSemantics& mgr, int cntInputParameters, Tuple def){
      ExtSourceProperties prop;
 
@@ -571,6 +628,7 @@ struct sem<HexGrammarSemantics::externalAtom>
 
       return prop;
   }
+*/
 
   void operator()(
     HexGrammarSemantics& mgr,
@@ -578,7 +636,7 @@ struct sem<HexGrammarSemantics::externalAtom>
       ID,
       boost::optional<boost::optional<std::vector<ID> > >,
       boost::optional<boost::optional<std::vector<ID> > >,
-      boost::optional<boost::optional<std::vector<ID> > >
+      boost::optional<boost::optional<std::vector<ExtSourceProperty> > >
     >& source,
     ID& target)
   {
@@ -605,9 +663,8 @@ struct sem<HexGrammarSemantics::externalAtom>
     if( (!!boost::fusion::at_c<3>(source)) &&
         (!!(boost::fusion::at_c<3>(source).get())) )
     {
-	Tuple def = boost::fusion::at_c<3>(source).get().get();
-        atom.prop = interpretProperties(mgr, atom.inputs.size(), def);
-        atom.useProp = true;
+	std::vector<ExtSourceProperty> p = boost::fusion::at_c<3>(source).get().get();
+	interpretProperties(mgr, atom, p);
     }
 
     DBGLOG(DBG,"storing external atom " << atom);
@@ -616,6 +673,28 @@ struct sem<HexGrammarSemantics::externalAtom>
   }
 };
 
+template<>
+struct sem<HexGrammarSemantics::extSourceProperty>
+{
+  void operator()(HexGrammarSemantics& mgr, const std::string& property, ExtSourceProperty& target)
+  {
+    operator()(mgr, boost::fusion::vector2<const std::string&, const ID&>(property, ID_FAIL), target);
+  }
+  void operator()(HexGrammarSemantics& mgr, boost::fusion::vector2<const std::string&, const ID&> source, ExtSourceProperty& target)
+  {
+        if (boost::fusion::at_c<0>(source) == "functional"){
+		target = ExtSourceProperty(ExtSourceProperty::FUNCTIONAL, boost::fusion::at_c<1>(source));
+	}else if (boost::fusion::at_c<0>(source) == "nonfunctional"){
+		target = ExtSourceProperty(ExtSourceProperty::NONFUNCTIONAL, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "monotonic"){
+		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "nonmonotonic"){
+		target = ExtSourceProperty(ExtSourceProperty::NONMONOTONIC, boost::fusion::at_c<1>(source));
+	}else{
+		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
+	}
+  }
+};
 
 template<>
 struct sem<HexGrammarSemantics::mlpModuleAtom>
@@ -1004,8 +1083,15 @@ HexGrammarBase(HexGrammarSemantics& sem):
         qi::lit('&') > externalAtomPredicate >
         -(qi::lit('[') > -terms >> qi::lit(']')) > qi::eps >
         -(qi::lit('(') > -terms >> qi::lit(')')) > qi::eps >
-        -(qi::lit('<') > -terms >> qi::lit('>')) > qi::eps
+        -(qi::lit('<') > -externalAtomProperties >> qi::lit('>')) > qi::eps
       ) [ Sem::externalAtom(sem) ];
+
+  externalAtomProperty
+    = (cident >> term > qi::eps) [ Sem::extSourceProperty(sem) ]
+    | (cident > qi::eps) [ Sem::extSourceProperty(sem) ];
+
+  externalAtomProperties
+    = (externalAtomProperty > qi::eps) % qi::lit(',');
 
   mlpModuleAtomPredicate
     = cident [ Sem::predFromNameOnly(sem) ];
@@ -1113,6 +1199,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(term);
   BOOST_SPIRIT_DEBUG_NODE(externalAtom);
   BOOST_SPIRIT_DEBUG_NODE(externalAtomPredicate);
+  BOOST_SPIRIT_DEBUG_NODE(externalAtomProperty);
   BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtom);
   BOOST_SPIRIT_DEBUG_NODE(mlpModuleAtomPredicate);
   BOOST_SPIRIT_DEBUG_NODE(classicalAtomPredicate);
