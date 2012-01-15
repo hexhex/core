@@ -514,6 +514,7 @@ struct sem<HexGrammarSemantics::externalAtom>
 
   void interpretProperties(HexGrammarSemantics& mgr, ExternalAtom& atom, std::vector<ExtSourceProperty>& props){
 
+    atom.useProp = true;
     BOOST_FOREACH (ExtSourceProperty prop, props){
       switch (prop.type){
         case ExtSourceProperty::FUNCTIONAL:
@@ -564,71 +565,7 @@ struct sem<HexGrammarSemantics::externalAtom>
           break;
       }
     }
-    atom.useProp = true;
   }
-
-/*
-  ExtSourceProperties interpretProperties(HexGrammarSemantics& mgr, int cntInputParameters, Tuple def){
-     ExtSourceProperties prop;
-
-     BOOST_FOREACH (ID d, def){
-        std::string defstr = mgr.ctx.registry()->terms.getByID(d).getUnquotedString();
-        if (!d.isConstantTerm()) throw SyntaxError("Property \"" + defstr + "\" unrecognized");
-
-        if (defstr == "functional"){
-		DBGLOG(DBG, "External Atom is functional");
-		prop.functional = true;
-	}
-        else if (defstr == "nonfunctional"){
-		DBGLOG(DBG, "External Atom is not functional");
-		prop.functional = false;
-	}
-        else if (defstr == "monotonic"){
-		DBGLOG(DBG, "External Atom is monotonic in all input parameters");
-		for (int i = 0; i < cntInputParameters; ++i){
-			prop.monotonicInputPredicates.push_back(i);
-		}
-	}
-        else if (boost::starts_with(defstr, "monotonic")){
-		int pnr;
-		try{
-			pnr = boost::lexical_cast<int>(defstr.substr(9));
-		}catch(...){
-			throw SyntaxError("Property \"" + defstr + "\" unrecognized");
-		}
-		if (pnr < 0 || pnr >= cntInputParameters){
-			throw SyntaxError("Property \"" + defstr + "\": Parameter index out of scope");
-		}
-		DBGLOG(DBG, "External Atom is monotonic in input parameter " + defstr.substr(9));
-		prop.monotonicInputPredicates.push_back(pnr);
-	}
-        else if (defstr == "nonmonotonic"){
-		DBGLOG(DBG, "External Atom is nonmonotonic in all input parameters");
-		prop.monotonicInputPredicates.clear();
-	}
-        else if (boost::starts_with(defstr, "nonmonotonic")){
-		int pnr;
-		try{
-			pnr = boost::lexical_cast<int>(defstr.substr(12));
-		}catch(...){
-			throw SyntaxError("Property \"" + defstr + "\" unrecognized");
-		}
-		if (pnr < 0 || pnr >= cntInputParameters){
-			throw SyntaxError("Property \"" + defstr + "\": Parameter index out of scope");
-		}
-		DBGLOG(DBG, "External Atom is nonmonotonic in input parameter " + defstr.substr(12));
-		if (std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), pnr) != prop.monotonicInputPredicates.end()){
-			prop.monotonicInputPredicates.erase(std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), pnr));
-		}
-	}
-        else{
-		throw SyntaxError("Property \"" + defstr + "\" unrecognized");
-	}
-      }
-
-      return prop;
-  }
-*/
 
   void operator()(
     HexGrammarSemantics& mgr,
