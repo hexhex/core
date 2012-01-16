@@ -624,7 +624,7 @@ ID DependencyGraph::createAuxiliaryRule(
     if( bid.isExternalAtom() )
       r.kind |= ID::PROPERTY_RULE_EXTATOMS;
 	}
-	ID id = registry->rules.storeAndGetID(r);
+	ID id = registry->storeRule(r);
 	return id;
 }
 

@@ -1,3 +1,19 @@
+2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex/Registry.hpp: Added storeRule() which checks
+	if rule already exists in rule table and does not store duplicates.
+	* include/dlvhex/RuleTable.hpp: Likewise.
+	* include/dlvhex/HexGrammar.tcc: Likewise.
+	* src/dlvhex/DependencyGraph.cpp: Likewise.
+	* src/dlvhex/Registry.cpp: Likewise.
+	* src/dlvhex/DependencyGraphFull.cpp: Likewise.
+	* src/dlvhex/QueryPlugin.cpp: Likewise.
+	* src/dlvhex/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/dlvhex/HigherOrderPlugin.cpp: Likewise.
+	* src/dlvhex/BaseModelGenerator.cpp: Likewise.
+	* src/dlvhex/MLPSolver.cpp: Likewise.
+	* src/dlvhex/StrongNegationPlugin.cpp: Likewise.
+
 2012-01-12  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* configure.ac: Using several configure switches for distcheck.

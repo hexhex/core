@@ -434,7 +434,7 @@ void StrongNegationConstraintAdder::rewrite(ProgramCtx& ctx)
 		r.body.push_back(ID::posLiteralFromAtom(idatom));
 		r.body.push_back(ID::posLiteralFromAtom(idnegatom));
 
-		ID idcon = reg->rules.storeAndGetID(r);
+		ID idcon = reg->storeRule(r);
 		ctx.idb.push_back(idcon);
 		DBGLOG(DBG,"created aux constraint '" <<
 				printToString<RawPrinter>(idcon, reg) << "'");

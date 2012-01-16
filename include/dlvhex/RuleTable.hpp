@@ -91,7 +91,8 @@ public:
         // get the ID of the rule
 	inline ID getIDByElement(const Rule& rule) const throw();
 
-	// store rule (no duplicate check is done/required)
+	// store rule
+  // assert that rule did not exist in table
 	inline ID storeAndGetID(const Rule& rule) throw();
 	inline void clear();
 
@@ -139,7 +140,7 @@ ID RuleTable::getIDByElement(const Rule& rule) const throw()
     }
 }
 
-// store rule (no duplicate check is done/required)
+// store rule
 ID RuleTable::storeAndGetID(
 		const Rule& rule) throw()
 {
