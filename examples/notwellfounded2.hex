@@ -15,6 +15,7 @@ baz(x) :- baz(xx).
 foo(X) :- &testConcat[Y,x](X), baz(Y), dom(X). 
 
 % compare with the following program:
+% (this program requires sigma-p-2, so it cannot be processed with clingo)
 % a v b v c v d.
 % a :- b.
 % b :- a.

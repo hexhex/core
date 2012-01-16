@@ -163,15 +163,18 @@ public:
   ConcurrentQueueResults& results;
   bool& shouldTerminate;
   RegistryPtr registry;
+  InterpretationConstPtr mask;
 
   MyClaspOutputFormat(
       ConcurrentQueueResults& res,
       bool& shouldTerminate,
-      RegistryPtr registry):
+      RegistryPtr registry,
+      InterpretationConstPtr mask):
     Base(),
     results(res),
     shouldTerminate(shouldTerminate),
-    registry(registry)
+    registry(registry),
+    mask(mask)
   {
   }
 
@@ -222,6 +225,8 @@ public:
 	      ID id = registry->storeTerm(term);
 	      assert(id != ID_FAIL);
 	      assert(!id.isVariableTerm());
+	      if( id.isAuxiliary() )
+		ogatom.kind |= ID::PROPERTY_AUX;
 	      ogatom.tuple.push_back(id);
 	    }
 	  }
@@ -233,6 +238,9 @@ public:
     }
 
     LOG(INFO,"got model from clingo: " << *as);
+    //std::cout << this << "CLINGO MODEL" << std::endl << *as << std::endl;
+    if( mask )
+      as->interpretation->getStorage() -= mask->getStorage();
     results->enqueueAnswerset(as);
 
     if( shouldTerminate )
@@ -269,7 +277,7 @@ public:
     DBGLOG(DBG,"~MyClingoApp()");
   }
 
-  void solve(std::string& program, RegistryPtr registry)
+  void solve(std::string& program, RegistryPtr registry, InterpretationConstPtr mask)
   {
     ConcurrentQueueResults* results = &this->results;
     try
@@ -303,11 +311,12 @@ public:
       // configure in out
       Streams s;
       LOG(DBG,"sending to clingo:" << std::endl << "===" << std::endl << program << std::endl << "===");
+      //std::cout << this << "CLINGO PROGRAM" << std::endl << program << std::endl;
       s.appendStream(
 	  Streams::StreamPtr(new std::istringstream(program)),
 	  "dlvhex_to_clingo");
       in_.reset(new FromGringo<CLINGO>(*this, s));
-      out_.reset(new MyClaspOutputFormat(*results, shouldTerminate, registry));
+      out_.reset(new MyClaspOutputFormat(*results, shouldTerminate, registry, mask));
 
       Clasp::ClaspFacade clasp;
       facade_ = &clasp;
@@ -346,7 +355,7 @@ struct ConcurrentQueueResultsImpl:
 public:
   MyClingoApp myclingo;
   ClingoSoftware::Options options;
-  const ASPProgram& program;
+  ASPProgram program;
   bool shouldTerminate;
   boost::thread answerSetProcessingThread;
 
@@ -417,7 +426,7 @@ void ConcurrentQueueResultsImpl::answerSetProcessingThreadFunc()
     }
 
     // start solver (this creates results in callback)
-    myclingo.solve(str, program.registry);
+    myclingo.solve(str, program.registry, program.mask);
     DBGLOG(DBG,"[" << this << "]" "myclingo.solve terminated regularly");
 
     if( !shouldTerminate )

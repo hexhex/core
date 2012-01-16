@@ -220,6 +220,7 @@ void DLVSoftware::Delegate::ConcurrentQueueResultsImpl::answerSetProcessingThrea
       {
 	// parse line
 	DBGLOG(DBG,"[" << this << "]" "parsing");
+	//std::cout << this << "DLV MODEL" << std::endl << input << std::endl;
 	std::istringstream iss(input);
 	parser.parse(iss, adder);
       }
@@ -372,6 +373,21 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
     programStream.flush();
 
     proc.endoffile();
+
+    #if 0
+    {
+      std::ostringstream oss;
+      RawPrinter printer(oss, program.registry);
+      if( program.edb != 0 )
+      {
+	// print edb interpretation as facts
+	program.edb->printAsFacts(oss);
+      }
+
+      printer.printmany(program.idb, "\n");
+      std::cout << this << "DLV PROGRAM" << std::endl << oss.str() << std::endl;
+    }
+    #endif
 
     // start thread
     results->startThread();
