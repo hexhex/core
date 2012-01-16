@@ -728,7 +728,7 @@ struct sem<HexGrammarSemantics::rule>
         r.kind |= ID::PROPERTY_RULE_DISJ;
       ID existing = reg->rules.getIDByElement(r);
       if( existing == ID_FAIL )
-        target = reg->rules.storeAndGetID(r);
+        target = reg->storeRule(r);
       else
         target = ID_FAIL;
     }
@@ -743,7 +743,7 @@ struct sem<HexGrammarSemantics::rule>
         mgr.markModulePropertyIfModuleBody(reg, r);
         ID existing = reg->rules.getIDByElement(r);
         if( existing == ID_FAIL )
-          target = reg->rules.storeAndGetID(r);
+          target = reg->storeRule(r);
         else
           target = ID_FAIL;
       }
@@ -774,7 +774,7 @@ struct sem<HexGrammarSemantics::constraint>
     ID existing = mgr.ctx.registry()->rules.getIDByElement(r);
     if( existing == ID_FAIL )
     {
-      target = mgr.ctx.registry()->rules.storeAndGetID(r);
+      target = mgr.ctx.registry()->storeRule(r);
       DBGLOG(DBG,"created constraint " << r << " with id " << target);
     }
     else

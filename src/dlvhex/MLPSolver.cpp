@@ -492,7 +492,7 @@ void MLPSolver::replacedModuleAtoms(int instIdx, InterpretationPtr& edb, Tuple& 
 	  ID rNewID = registrySolver->rules.getIDByElement(rNew);
 	  if ( rNewID == ID_FAIL )
 	    {
-	      rNewID = registrySolver->rules.storeAndGetID(rNew);
+	      rNewID = registrySolver->storeRule(rNew);
 	    }
           // collect it in the idbResult
 	  *itR = rNewID;	
@@ -581,7 +581,7 @@ void MLPSolver::rewrite(const ValueCallsType& C, InterpretationPtr& edbResult, T
 	      ID rNewID = registrySolver->rules.getIDByElement(rNew);
 	      if ( rNewID == ID_FAIL ) 
 		{
-		  rNewID = registrySolver->rules.storeAndGetID(rNew);
+		  rNewID = registrySolver->storeRule(rNew);
 		}
 	      // collect it in the idbResult
 	      idbResult.push_back(rNewID);

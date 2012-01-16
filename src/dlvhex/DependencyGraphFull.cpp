@@ -763,7 +763,7 @@ ID DependencyGraphFull::createAuxiliaryRule(
 	{
 		r.body.push_back(nmi.id);
 	}
-	ID id = registry->rules.storeAndGetID(r);
+	ID id = registry->storeRule(r);
 	return id;
 }
 

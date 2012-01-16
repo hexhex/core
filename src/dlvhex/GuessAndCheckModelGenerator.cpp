@@ -298,7 +298,7 @@ void createEatomGuessingRules(
       }
 
       // store rule
-      ID gid = reg->rules.storeAndGetID(guessingrule);
+      ID gid = reg->storeRule(guessingrule);
       DBGLOG(DBG,"stored guessingrule " << guessingrule << " which got id " << gid);
       #ifndef NDEBUG
       {
@@ -422,9 +422,9 @@ void createFLPRules(
       rflpbody.body.push_back(fid);
 
       // store rules
-      ID fheadrid = reg->rules.storeAndGetID(rflphead);
+      ID fheadrid = reg->storeRule(rflphead);
       xidbflphead.push_back(fheadrid);
-      ID fbodyrid = reg->rules.storeAndGetID(rflpbody);
+      ID fbodyrid = reg->storeRule(rflpbody);
       xidbflpbody.push_back(fbodyrid);
 
       #ifndef NDEBUG

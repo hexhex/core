@@ -356,7 +356,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 						!idl.isNaf()));
 			r.body.push_back(negated_idl);
 
-			ID idcon = reg->rules.storeAndGetID(r);
+			ID idcon = reg->storeRule(r);
 			ctx.idb.push_back(idcon);
 			DBGLOG(DBG,"created aux constraint '" <<
 					printToString<RawPrinter>(idcon, reg) << "'");
@@ -376,7 +376,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 				ID::PROPERTY_AUX);
 		r.body = ctxdata.query;
 
-		ID idcon = reg->rules.storeAndGetID(r);
+		ID idcon = reg->storeRule(r);
 		ctx.idb.push_back(idcon);
 		DBGLOG(DBG,"created aux constraint '" <<
 				printToString<RawPrinter>(idcon, reg) << "'");
@@ -416,7 +416,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 		#warning TODO extatom flag in rule
 		varAuxRule.head.push_back(varAuxHeadId);
 		varAuxRule.body = ctxdata.query;
-		ID varAuxRuleId = reg->rules.storeAndGetID(varAuxRule);
+		ID varAuxRuleId = reg->storeRule(varAuxRule);
 		ctx.idb.push_back(varAuxRuleId);
 		LOG(DBG,"added auxiliary rule " <<
 				printToString<RawPrinter>(varAuxRuleId, reg));
@@ -446,7 +446,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 					ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
 			novarAuxRule.head.push_back(novarAuxHeadId);
 			novarAuxRule.body.push_back(ID::literalFromAtom(varAuxHeadId, false));
-			ID novarAuxRuleId = reg->rules.storeAndGetID(novarAuxRule);
+			ID novarAuxRuleId = reg->storeRule(novarAuxRule);
 			ctx.idb.push_back(novarAuxRuleId);
 			LOG(DBG,"added auxiliary rule " <<
 					printToString<RawPrinter>(novarAuxRuleId, reg));
@@ -455,7 +455,7 @@ void QueryAdderRewriter::rewrite(ProgramCtx& ctx)
 			Rule auxConstraint(ID::MAINKIND_RULE |
 					ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX);
 			auxConstraint.body.push_back(ID::literalFromAtom(novarAuxHeadId, true));
-			ID auxConstraintId = reg->rules.storeAndGetID(auxConstraint);
+			ID auxConstraintId = reg->storeRule(auxConstraint);
 			ctx.idb.push_back(auxConstraintId);
 			LOG(DBG,"added auxiliary constraint " <<
 					printToString<RawPrinter>(auxConstraintId, reg));

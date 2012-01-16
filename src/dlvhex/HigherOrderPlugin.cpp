@@ -445,7 +445,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 
 		if( changedRule )
 		{
-			ID newRid = reg->rules.storeAndGetID(newrule);
+			ID newRid = reg->storeRule(newrule);
 			newIdb.push_back(newRid);
 			LOG(INFO,"stored rule with replaced higher order atoms " <<
 					printToString<RawPrinter>(newRid, reg) << " with id " << newRid);
@@ -501,7 +501,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 				r.body.push_back(ID::posLiteralFromAtom(idsrc));
 				r.head.push_back(idtgt);
 
-				ID idr = reg->rules.storeAndGetID(r);
+				ID idr = reg->storeRule(r);
 				ctx.idb.push_back(idr);
 				DBGLOG(DBG,"created aux ground rule '" <<
 						printToString<RawPrinter>(idr, reg) << "'");
@@ -539,7 +539,7 @@ void HigherOrderRewriter::rewrite(ProgramCtx& ctx)
 				r.body.push_back(ID::posLiteralFromAtom(idsrc));
 				r.head.push_back(idtgt);
 
-				ID idr = reg->rules.storeAndGetID(r);
+				ID idr = reg->storeRule(r);
 				ctx.idb.push_back(idr);
 				DBGLOG(DBG,"created aux nonground rule '" <<
 						printToString<RawPrinter>(idr, reg) << "'");
