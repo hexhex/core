@@ -414,6 +414,22 @@ ID Registry::storeTerm(Term& term)
   return storeConstOrVarTerm(term);
 }
 
+// check if rule is contained in registry
+// if yes return integer id
+// otherwise store and return new id
+// assume rule is fully initialized
+ID Registry::storeRule(Rule& rule)
+{
+  assert(ID(rule.kind,0).isRule());
+  assert(!rule.head.empty() || !rule.body.empty());
+
+  ID ret = rules.getIDByElement(rule);
+  if( ret == ID_FAIL )
+    return rules.storeAndGetID(rule);
+  else
+    return ret;
+}
+
 void Registry::setupAuxiliaryGroundAtomMask()
 {
   assert(!pimpl->auxGroundAtomMask->mask() && "must not call setupAuxiliaryGroundAtomMask twice!");

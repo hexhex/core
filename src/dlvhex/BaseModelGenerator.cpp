@@ -534,7 +534,7 @@ ID BaseModelGeneratorFactory::convertRule(RegistryPtr reg, ID ruleid)
   convertRuleBody(reg, rule.body, newrule.body);
 
   // store as rule
-  ID newruleid = reg->rules.storeAndGetID(newrule);
+  ID newruleid = reg->storeRule(newrule);
   #ifndef NDEBUG
   {
     std::stringstream s;

@@ -160,6 +160,12 @@ struct Registry:
   // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
+  // check if rule is contained in registry
+  // if yes return integer id
+  // otherwise store and return new id
+  // assume rule is fully initialized
+  ID storeRule(Rule& rule);
+
   //
   // auxiliary management
   //

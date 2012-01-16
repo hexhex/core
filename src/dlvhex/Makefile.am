@@ -84,6 +84,8 @@ libmlpsolver_la_SOURCES = \
 # dlvhex ASP component
 libaspsolver_la_SOURCES = \
     ASPSolver.cpp \
+    ASPSolver_dlv.cpp \
+    ASPSolver_libclingo.cpp \
     DLVProcess.cpp \
     EvalHeuristicASP.cpp \
     DLVresultParserDriver.cpp \

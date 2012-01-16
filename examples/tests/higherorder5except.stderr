@@ -1,1 +1,1 @@
-1 grep -qi "not safe"
+1 grep -qEi "not safe|unsafe"
