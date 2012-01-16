@@ -420,7 +420,7 @@ ID Registry::storeTerm(Term& term)
 // assume rule is fully initialized
 ID Registry::storeRule(Rule& rule)
 {
-  assert(!rule.kind.isRule());
+  assert(ID(rule.kind,0).isRule());
   assert(!rule.head.empty() || !rule.body.empty());
 
   ID ret = rules.getIDByElement(rule);
