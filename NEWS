@@ -1,8 +1,11 @@
 dlvhex NEWS -- history of user-visible changes.
 
-* Version 1.7.3 ( 2010)
+* Version 1.7.3 ( 2012)
 
 ** Fix ticket #33.
+** clang compatibility.
+** g++-snapshot compatibility.
+** Some additional testcases.
 
 
 * Version 1.7.2 (October 2010)
