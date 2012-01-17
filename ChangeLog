@@ -1,5 +1,14 @@
 2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* configure.ac: Preparing release (renaming binary and include
+	directory to dlvhex2 to ensure coexistence with older version).
+	* src/dlvhex/Makefile.am: Likewise, and dlvhex-specific naming of
+	library for internal dlvhex plugins.
+	* dlvhex2.pc.in: Likewise (renamed from dlvhex.pc.in).
+	* dlvhex.pc.in: Likewise (remove).
+
+2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
 	* include/dlvhex/Registry.hpp: Added storeRule() which checks
 	if rule already exists in rule table and does not store duplicates.
 	* include/dlvhex/RuleTable.hpp: Likewise.

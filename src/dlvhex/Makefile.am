@@ -12,26 +12,26 @@ AM_CPPFLAGS = \
 
 
 # install dlvhex into $prefix/bin
-bin_PROGRAMS = dlvhex
+bin_PROGRAMS = dlvhex2
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libinternalplugins.la libdlvhexbase.la libaspsolver.la libmlpsolver.la
+lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la libmlpsolver.la libdlvhexbaseplugins.la
 
 # the dlvhex binary
-dlvhex_SOURCES = dlvhex.cpp State.cpp
+dlvhex2_SOURCES = dlvhex.cpp State.cpp
 
 #
 # -static: statically link libdlvhexbase
 # -export-dynamic: export all dynamic symbols, otherwise the plugins would use incompatible exceptions
 #
-#dlvhex_LDFLAGS = -static -export-dynamic
-dlvhex_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
+#dlvhex2_LDFLAGS = -static -export-dynamic
+dlvhex2_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 
 #
 # dlvhex itself also uses the convenience libs (see below)
 #
-dlvhex_LDADD = \
-  libdlvhexbase.la libmlpsolver.la libaspsolver.la libinternalplugins.la \
+dlvhex2_LDADD = \
+  libdlvhexbase.la libmlpsolver.la libaspsolver.la libdlvhexbaseplugins.la \
   $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
@@ -92,7 +92,7 @@ libaspsolver_la_SOURCES = \
     ProcessBuf.cpp 
 
 # dlvhex internal plugins
-libinternalplugins_la_SOURCES = \
+libdlvhexbaseplugins_la_SOURCES = \
     QueryPlugin.cpp \
     StrongNegationPlugin.cpp \
     HigherOrderPlugin.cpp
@@ -168,10 +168,10 @@ libinternalplugins_la_SOURCES = \
 #   3. Programs may need to be changed, recompiled, relinked in order
 #   to use the new version. Bump current, set revision and age to 0.
 #
-libdlvhexbase_la_LDFLAGS = -version-info 6:0:0
+libdlvhexbase_la_LDFLAGS = -version-info 7:0:0
 libmlpsolver_la_LDFLAGS = -version-info 1:0:0
-libaspsolver_la_LDFLAGS = -version-info 2:0:0
-libinternalplugins_la_LDFLAGS = -version-info 1:0:0
+libaspsolver_la_LDFLAGS = -version-info 3:0:0
+libdlvhexbaseplugins_la_LDFLAGS = -version-info 1:0:0
 
 libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 
