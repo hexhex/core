@@ -15,7 +15,11 @@ AM_CPPFLAGS = \
 bin_PROGRAMS = dlvhex2
 
 # install those libraries into $libdir
-lib_LTLIBRARIES = libdlvhexbase.la libaspsolver.la libmlpsolver.la libdlvhexbaseplugins.la
+lib_LTLIBRARIES = \
+  libdlvhex2-base.la \
+  libdlvhex2-aspsolver.la \
+  libdlvhex2-mlpsolver.la \
+  libdlvhex2-internalplugins.la
 
 # the dlvhex binary
 dlvhex2_SOURCES = dlvhex.cpp State.cpp
@@ -31,13 +35,14 @@ dlvhex2_LDFLAGS = -export-dynamic $(EXTSOLVER_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
 # dlvhex itself also uses the convenience libs (see below)
 #
 dlvhex2_LDADD = \
-  libdlvhexbase.la libmlpsolver.la libaspsolver.la libdlvhexbaseplugins.la \
+  libdlvhex2-base.la libdlvhex2-mlpsolver.la \
+  libdlvhex2-aspsolver.la libdlvhex2-internalplugins.la \
   $(EXTSOLVER_LIBS) $(BOOST_THREAD_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 
 
 # dlvhex API
-libdlvhexbase_la_SOURCES = \
+libdlvhex2_base_la_SOURCES = \
     AnswerSet.cpp \
     AnswerSetPrinterCallback.cpp \
     ASPSolverManager.cpp \
@@ -77,12 +82,12 @@ libdlvhexbase_la_SOURCES = \
     URLBuf.cpp
 
 # dlvhex MLP component
-libmlpsolver_la_SOURCES = \
+libdlvhex2_mlpsolver_la_SOURCES = \
     MLPSolver.cpp \
     MLPSyntaxChecker.cpp 
 
 # dlvhex ASP component
-libaspsolver_la_SOURCES = \
+libdlvhex2_aspsolver_la_SOURCES = \
     ASPSolver.cpp \
     ASPSolver_dlv.cpp \
     ASPSolver_libclingo.cpp \
@@ -92,7 +97,7 @@ libaspsolver_la_SOURCES = \
     ProcessBuf.cpp 
 
 # dlvhex internal plugins
-libdlvhexbaseplugins_la_SOURCES = \
+libdlvhex2_internalplugins_la_SOURCES = \
     QueryPlugin.cpp \
     StrongNegationPlugin.cpp \
     HigherOrderPlugin.cpp
@@ -168,10 +173,10 @@ libdlvhexbaseplugins_la_SOURCES = \
 #   3. Programs may need to be changed, recompiled, relinked in order
 #   to use the new version. Bump current, set revision and age to 0.
 #
-libdlvhexbase_la_LDFLAGS = -version-info 7:0:0
-libmlpsolver_la_LDFLAGS = -version-info 1:0:0
-libaspsolver_la_LDFLAGS = -version-info 3:0:0
-libdlvhexbaseplugins_la_LDFLAGS = -version-info 1:0:0
+libdlvhex2_base_la_LDFLAGS = -version-info 7:0:0
+libdlvhex2_mlpsolver_la_LDFLAGS = -version-info 1:0:0
+libdlvhex2_aspsolver_la_LDFLAGS = -version-info 3:0:0
+libdlvhex2_internalplugins_la_LDFLAGS = -version-info 1:0:0
 
-libdlvhexbase_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
+libdlvhex2_base_la_LIBADD = @LIBLTDL@ @LIBADD_DL@
 

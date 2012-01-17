@@ -1,9 +1,15 @@
 2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* include/dlvhex2/PluginInterface.h: Added plugin versioning API
+	(loadable modules usually do not have external version numbers)
+	* src/dlvhex/PluginContainer.cpp: Implemented version check in
+	library loading code.
+	* testsuite/TestPlugin.cpp: Adapted test plugin to versioning API.
+
 	* configure.ac: Preparing release (renaming binary and include
 	directory to dlvhex2 to ensure coexistence with older version).
-	* src/dlvhex/Makefile.am: Likewise, and dlvhex-specific naming of
-	library for internal dlvhex plugins.
+	* src/dlvhex/Makefile.am: Likewise, and revised library naming.
+	* testsuite/Makefile.am: Likewise.
 	* dlvhex2.pc.in: Likewise (renamed from dlvhex.pc.in).
 	* dlvhex.pc.in: Likewise (remove).
 

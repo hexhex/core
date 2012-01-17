@@ -456,6 +456,8 @@ TestPlugin theTestPlugin;
 
 DLVHEX_NAMESPACE_END
 
+IMPLEMENT_PLUGINVERSIONFUNCTION(DLVHEX_VERSION_MAJOR,DLVHEX_VERSION_MINOR,DLVHEX_VERSION_MICRO);
+
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"
 void * PLUGINIMPORTFUNCTION()

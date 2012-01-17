@@ -482,9 +482,15 @@
 #include <boost/unordered_map.hpp>
 
 
+#define PLUGINVERSIONFUNCTION getDlvhexPluginVersion
+#define PLUGINVERSIONFUNCTIONSTRING "getDlvhexPluginVersion"
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 
+// the following code must be used by plugins to publish their API compatibility
+// we store the version like boost as an integer
+#define IMPLEMENT_PLUGINVERSIONFUNCTION(major,minor,patch) \
+  extern "C" int PLUGINVERSIONFUNCTION() { return major*10000+minor*100+patch; }
 
 DLVHEX_NAMESPACE_BEGIN
 

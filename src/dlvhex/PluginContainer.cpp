@@ -77,6 +77,7 @@ typedef PluginContainer::LoadedPlugin LoadedPlugin;
 typedef boost::shared_ptr<LoadedPlugin> LoadedPluginPtr;
 typedef PluginContainer::LoadedPluginVector LoadedPluginVector;
 typedef PluginInterface* (*t_import)();
+typedef int (*t_getversion)();
 
 int
 findplugins(const char* filename, lt_ptr data)
@@ -86,12 +87,10 @@ findplugins(const char* filename, lt_ptr data)
   std::string fn(filename);
   std::string::size_type base = fn.find_last_of("/");
 
-  // if basename starts with 'libdlvhex', then we should have a plugin here
-  /// @todo we could lt_dlopen the file here, to check if it is really
-  /// a plugin, for now we exclude loading of libdlvhexbase as it is
-  /// not a plugin and caused duplicate instantiations of the Term tables
-  if (fn.substr(base).find("/libdlvhex") == 0 &&
-      fn.substr(base).find("/libdlvhexbase") == std::string::npos)
+  // if basename starts with 'libdlvhexplugin', then we should have a plugin here
+  // we cannot simply try to open any lib, as opening could already overwrite loaded symbols
+  // (if we load our own base library again, this re-constructs global data structures)
+  if (fn.substr(base).find("/libdlvhexplugin") == 0)
     {
       pluginlist->push_back(fn);
     }
@@ -127,6 +126,7 @@ void findPluginLibraryCandidates(const std::string& searchpath, std::vector<std:
       }
 
     // search the directory search paths for plugins and setup pluginList
+    LOG(PLUGIN,"looking for plugin libraries named 'libdlvhexplugin...'");
     lt_dlforeachfile(NULL, findplugins, reinterpret_cast<void*>(&libcandidates));
   }
   catch(...)
@@ -157,12 +157,44 @@ void loadCandidates(
         break;
       }
 
+      t_getversion getversion = reinterpret_cast<t_getversion>(lt_dlsym(dlHandle, PLUGINVERSIONFUNCTIONSTRING));
+      if( getversion == NULL )
+      {
+        LOG(INFO,"Library '" << lib << "' selected for opening, but found no "
+          "version function '" << PLUGINVERSIONFUNCTIONSTRING << "' (skipping)");
+        break;
+      }
+
       t_import getplugin = reinterpret_cast<t_import>(lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING));
       if( getplugin == NULL )
       {
         LOG(INFO,"Library '" << lib << "' selected for opening, but found no "
           "import function '" << PLUGINIMPORTFUNCTIONSTRING << "' (skipping)");
         break;
+      }
+
+      // verify version
+      DBGLOG(DBG,"now checking plugin version for " << lib);
+      int iversion = getversion();
+      {
+        int imajor = iversion / 10000;
+        int iminor = (iversion / 100) % 100;
+        int ipatch = iversion % 100;
+        LOG(INFO,"got version " << iversion << " from " << lib <<
+            ", interpreted this as (" << imajor << "," << iminor << "," << ipatch << ")");
+        if( imajor != DLVHEX_VERSION_MAJOR )
+        {
+          LOG(INFO,"Library '" << lib << "' returned incompatible major version: " <<
+              imajor << " (library) != " << DLVHEX_VERSION_MAJOR << " (dlvhex) (skipping)");
+          break;
+        }
+        if( iminor > DLVHEX_VERSION_MINOR )
+        {
+          LOG(INFO,"Library '" << lib << "' returned incompatible minor version: " <<
+              iminor << " (library) > " << DLVHEX_VERSION_MINOR << " (dlvhex) (skipping)");
+          break;
+        }
+        // version check successful
       }
 
       // get it!

@@ -18,7 +18,7 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
-lib_LTLIBRARIES = libdlvhextest.la
+lib_LTLIBRARIES = libdlvhexplugin-test.la
 
 check-examples:
 	if $(TESTS_ENVIRONMENT) $(srcdir)/run-dlvhex-tests.sh; then \
@@ -77,10 +77,10 @@ noinst_HEADERS = \
   fixtureOfflineMB.hpp \
   fixtureOnlineMB.hpp
 
-libdlvhextest_la_SOURCES = TestPlugin.cpp
+libdlvhexplugin_test_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
-libdlvhextest_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
-libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
+libdlvhexplugin_test_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
+libdlvhexplugin_test_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 #this is just to verify that TestPlugin can link to the rest of the code
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
@@ -89,10 +89,10 @@ TestTestPluginStatic_SOURCES = \
   $(top_srcdir)/src/dlvhex/dlvhex.cpp \
   $(top_srcdir)/src/dlvhex/State.cpp 
 TestTestPluginStatic_LDADD = \
-  $(top_builddir)/src/dlvhex/libdlvhexbase.la \
-  $(top_builddir)/src/dlvhex/libmlpsolver.la \
-  $(top_builddir)/src/dlvhex/libaspsolver.la \
-  $(top_builddir)/src/dlvhex/libdlvhexbaseplugins.la \
+  $(top_builddir)/src/dlvhex/libdlvhex2-base.la \
+  $(top_builddir)/src/dlvhex/libdlvhex2-mlpsolver.la \
+  $(top_builddir)/src/dlvhex/libdlvhex2-aspsolver.la \
+  $(top_builddir)/src/dlvhex/libdlvhex2-internalplugins.la \
   $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
   $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
@@ -102,9 +102,9 @@ TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
 # libdlvhexbase does not depend on libaspsolver and does not depend on libmlpsolver
 # libaspsolver does not depend on libmlpsolver
-LDADD_BASE = $(top_builddir)/src/dlvhex/libdlvhexbase.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-LDADD_ASPSOLVER = $(top_builddir)/src/dlvhex/libaspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
-LDADD_MLP_ASPSOLVER = $(top_builddir)/src/dlvhex/libmlpsolver.la $(LDADD_ASPSOLVER)
+LDADD_BASE = $(top_builddir)/src/dlvhex/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+LDADD_ASPSOLVER = $(top_builddir)/src/dlvhex/libdlvhex2-aspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
+LDADD_MLP_ASPSOLVER = $(top_builddir)/src/dlvhex/libdlvhex2-mlpsolver.la $(LDADD_ASPSOLVER)
 
 TestPlainHEX_SOURCES = TestPlainHEX.cpp
 TestPlainHEX_LDADD = $(LDADD_ASPSOLVER)
