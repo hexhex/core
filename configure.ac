@@ -470,7 +470,7 @@ AC_CONFIG_FILES([
            examples/tests/libclingobackend.test
            include/Makefile
            include/common.h
-           include/dlvhex/Makefile
+           include/dlvhex2/Makefile
            src/Makefile
            src/dlvhex/Makefile
            testsuite/Makefile
