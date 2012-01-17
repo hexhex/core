@@ -36,9 +36,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/AtomNode.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/Registry.h"
+#include "dlvhex2/AtomNode.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/Registry.h"
 
 
 DLVHEX_NAMESPACE_BEGIN

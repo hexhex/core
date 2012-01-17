@@ -33,7 +33,7 @@
 #ifndef DLVHEX_H_BENCHMARKING_INCLUDED_1555
 #define DLVHEX_H_BENCHMARKING_INCLUDED_1555
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <boost/scope_exit.hpp>
 #include <boost/typeof/typeof.hpp> // seems to be required for scope_exit
@@ -48,7 +48,7 @@
 //
 // Plugins can use benchmarking of dlvhex by doing
 // #define DLVHEX_BENCHMARK
-// #include <dlvhex/Benchmarking.h>
+// #include <dlvhex2/Benchmarking.h>
 // in a .cpp file that wants to use benchmarking.
 //
 // usage example:

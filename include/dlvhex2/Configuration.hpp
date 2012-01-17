@@ -34,7 +34,7 @@
 #if !defined(_DLVHEX_CONFIGURATION_HPP)
 #define _DLVHEX_CONFIGURATION_HPP
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <string>
 #include <vector>

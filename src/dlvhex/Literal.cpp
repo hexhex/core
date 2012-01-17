@@ -36,9 +36,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/Literal.h"
-#include "dlvhex/BaseVisitor.h"
-#include "dlvhex/PrintVisitor.h"
+#include "dlvhex2/Literal.h"
+#include "dlvhex2/BaseVisitor.h"
+#include "dlvhex2/PrintVisitor.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

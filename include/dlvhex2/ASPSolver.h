@@ -35,9 +35,9 @@
 #define _DLVHEX_ASPSOLVER_H
 
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/Error.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/Error.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>

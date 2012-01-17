@@ -33,9 +33,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/URLBuf.h"
-#include "dlvhex/Error.h"
+#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/URLBuf.h"
+#include "dlvhex2/Error.h"
 
 #include <cassert>
 #include <fstream>

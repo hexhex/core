@@ -37,11 +37,11 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/State.h"
-//#include "dlvhex/DLVProcess.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/PluginContainer.h"
+#include "dlvhex2/State.h"
+//#include "dlvhex2/DLVProcess.h"
 
 #include <boost/shared_ptr.hpp>
 

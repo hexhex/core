@@ -122,8 +122,8 @@
  * begin with, the following header files from dlvhex need to be included:
  *
  * \code
- *     #include "dlvhex/PluginInterface.h"
- *     #include "dlvhex/Error.h"
+ *     #include "dlvhex2/PluginInterface.h"
+ *     #include "dlvhex2/Error.h"
  * \endcode
  *
  * If dlvhex was installed correctly, these headers should be available.
@@ -468,11 +468,11 @@
 #if !defined(_DLVHEX_PLUGININTERFACE_H)
 #define _DLVHEX_PLUGININTERFACE_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Atoms.hpp"
-#include "dlvhex/Error.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Error.h"
 
 #include <map>
 #include <string>

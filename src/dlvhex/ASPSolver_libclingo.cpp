@@ -35,13 +35,13 @@
 
 #ifdef HAVE_LIBCLINGO
 
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/AnswerSet.hpp"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/AnswerSet.hpp"
 
 #include <clingo/clingo_app.h>
 

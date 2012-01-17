@@ -31,11 +31,11 @@
 #ifndef ATOMS_HPP_INCLUDED__14102010
 #define ATOMS_HPP_INCLUDED__14102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/PredicateMask.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/PredicateMask.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>

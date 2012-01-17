@@ -31,10 +31,10 @@
 #ifndef INTERPRETATION_HPP_INCLUDED__08112010
 #define INTERPRETATION_HPP_INCLUDED__08112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/ID.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/ID.hpp"
 #include <bm/bm.h>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>

@@ -34,7 +34,7 @@
 #ifndef FWD_HPP_INCLUDED_14012011
 #define FWD_HPP_INCLUDED_14012011
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <boost/shared_ptr.hpp>
 

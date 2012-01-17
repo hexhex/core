@@ -32,9 +32,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/CAUAlgorithms.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/EvalGraph.hpp"
+#include "dlvhex2/CAUAlgorithms.hpp"
+#include "dlvhex2/Logger.hpp"
 
 // must be included before fixtures!
 #define BOOST_TEST_MODULE __FILE__

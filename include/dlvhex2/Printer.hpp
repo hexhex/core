@@ -33,9 +33,9 @@
 #ifndef PRINTER_HPP_INCLUDED_14012011
 #define PRINTER_HPP_INCLUDED_14012011
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ID.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ID.hpp"
 
 #include <vector>
 #include <string>

@@ -32,13 +32,13 @@
  *
  */
 
-#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex2/ASPSolverManager.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex2/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

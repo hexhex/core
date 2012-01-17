@@ -35,7 +35,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex2/Benchmarking.h"
 #include <boost/foreach.hpp>
 #include <iostream>
 

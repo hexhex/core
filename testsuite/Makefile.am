@@ -56,7 +56,7 @@ TESTS_ENVIRONMENT = \
   EXAMPLESDIR=$(top_srcdir)/examples \
   TESTS="$(WHICH_DLVHEX_TESTS)" \
   OUTDIR=$(top_srcdir)/examples/tests \
-  DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
+  DLVHEX="$(top_builddir)/src/dlvhex/dlvhex2 -s --plugindir=!$(top_builddir)/testsuite" \
   BOOST_TEST_REPORT_LEVEL=detailed \
   BOOST_TEST_LOG_LEVEL=all
 
@@ -92,7 +92,7 @@ TestTestPluginStatic_LDADD = \
   $(top_builddir)/src/dlvhex/libdlvhexbase.la \
   $(top_builddir)/src/dlvhex/libmlpsolver.la \
   $(top_builddir)/src/dlvhex/libaspsolver.la \
-  $(top_builddir)/src/dlvhex/libinternalplugins.la \
+  $(top_builddir)/src/dlvhex/libdlvhexbaseplugins.la \
   $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
   $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@

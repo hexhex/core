@@ -45,14 +45,14 @@
 #if !defined(_DLVHEX_MLPSOLVER_H)
 #define _DLVHEX_MLPSOLVER_H
 
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Table.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/AnswerSet.hpp"
-#include "dlvhex/Printer.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/Table.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/Printer.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>

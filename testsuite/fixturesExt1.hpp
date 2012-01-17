@@ -37,16 +37,16 @@
 #ifndef FIXTURES_EXT1_HPP_INCLUDED__08112010
 #define FIXTURES_EXT1_HPP_INCLUDED__08112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Interpretation.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/DependencyGraph.hpp"
+#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Interpretation.hpp"
 #include "fixturesDepgraphCompgraphGeneric.hpp"
 #include <boost/foreach.hpp>
 

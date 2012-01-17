@@ -36,7 +36,7 @@
 #if !defined(_DLVHEX_PROCESS_H)
 #define _DLVHEX_PROCESS_H
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <string>
 #include <vector>

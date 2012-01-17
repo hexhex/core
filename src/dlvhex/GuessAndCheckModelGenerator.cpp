@@ -34,15 +34,15 @@
 
 #define DLVHEX_BENCHMARK
 
-#include "dlvhex/GuessAndCheckModelGenerator.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex2/GuessAndCheckModelGenerator.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <bm/bmalgo.h>
 

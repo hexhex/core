@@ -36,7 +36,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/Error.h"
+#include "dlvhex2/Error.h"
 
 #include <sstream>
 

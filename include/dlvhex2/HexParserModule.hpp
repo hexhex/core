@@ -40,8 +40,8 @@
 #ifndef DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 #define DLVHEX_HEX_PARSER_MODULE_H_INCLUDED
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/HexGrammar.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/HexGrammar.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

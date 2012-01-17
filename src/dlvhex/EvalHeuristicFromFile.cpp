@@ -36,9 +36,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalHeuristicFromFile.hpp"
-#include "dlvhex/EvalHeuristicShared.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/EvalHeuristicFromFile.hpp"
+#include "dlvhex2/EvalHeuristicShared.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/unordered_map.hpp>
 #include <boost/graph/properties.hpp>

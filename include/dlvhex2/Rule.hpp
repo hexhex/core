@@ -31,9 +31,9 @@
 #ifndef RULE_HPP_INCLUDED__12102010
 #define RULE_HPP_INCLUDED__12102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ID.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

@@ -37,17 +37,17 @@
 #include <dlvhex/Printer.hpp>
 #include <dlvhex/Registry.hpp>
 /*
-#include "dlvhex/globals.h"
-#include "dlvhex/ResultContainer.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/ResultContainer.h"
 #include "EquilibriumPrintVisitor.h"
 #include "DiagExplPrintVisitor.h"
 #include "Timing.h"
 #include "Global.h"
-#include "dlvhex/DLVProcess.h"
-#include "dlvhex/Program.h"
-#include "dlvhex/HexParserDriver.h"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/TextOutputBuilder.h"
+#include "dlvhex2/DLVProcess.h"
+#include "dlvhex2/Program.h"
+#include "dlvhex2/HexParserDriver.h"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/TextOutputBuilder.h"
 */
 
 #include <iostream>

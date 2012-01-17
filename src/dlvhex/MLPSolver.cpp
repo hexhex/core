@@ -34,7 +34,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/MLPSolver.hpp"
+#include "dlvhex2/MLPSolver.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

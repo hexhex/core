@@ -31,7 +31,7 @@
 #ifndef DUMPING_EVAL_GRAPH_BUILDER_HPP_INCLUDED__16112011
 #define DUMPING_EVAL_GRAPH_BUILDER_HPP_INCLUDED__16112011
 
-#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex2/EvalGraphBuilder.hpp"
 #include <fstream>
 
 DLVHEX_NAMESPACE_BEGIN

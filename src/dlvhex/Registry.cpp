@@ -29,18 +29,18 @@
  * @brief Registry for program objects, addressed by IDs, organized in individual tables.
  */
 
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/Registry.hpp"
 
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/Interpretation.hpp"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/Error.h"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Printhelpers.hpp"
+#include "dlvhex2/Interpretation.hpp"
 
 #include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>

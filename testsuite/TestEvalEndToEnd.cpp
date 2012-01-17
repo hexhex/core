@@ -34,18 +34,18 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/OnlineModelBuilder.hpp"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex2/EvalGraphBuilder.hpp"
+#include "dlvhex2/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/DependencyGraph.hpp"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/OnlineModelBuilder.hpp"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/ASPSolverManager.h"
 
 // this must be included before dummytypes!
 #define BOOST_TEST_MODULE __FILE__

@@ -39,7 +39,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "dlvhex/AtomSet.h"
+#include "dlvhex2/AtomSet.h"
 
 
 DLVHEX_NAMESPACE_BEGIN

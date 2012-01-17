@@ -31,10 +31,10 @@
 #ifndef RULETABLE_HPP_INCLUDED__12102010
 #define RULETABLE_HPP_INCLUDED__12102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Rule.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Rule.hpp"
+#include "dlvhex2/Table.hpp"
 
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>

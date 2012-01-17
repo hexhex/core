@@ -32,8 +32,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/DumpingEvalGraphBuilder.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/DumpingEvalGraphBuilder.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <fstream>
 

@@ -31,10 +31,10 @@
 #ifndef ANSWER_SET_HPP_INCLUDED__09112010
 #define ANSWER_SET_HPP_INCLUDED__09112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/Interpretation.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Printhelpers.hpp"
+#include "dlvhex2/Interpretation.hpp"
 
 #include <boost/shared_ptr.hpp>
 

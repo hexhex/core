@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/Logger.hpp"
 
 namespace
 {

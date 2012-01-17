@@ -31,8 +31,8 @@
 #ifndef ID_HPP_INCLUDED__08102010
 #define ID_HPP_INCLUDED__08102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Printhelpers.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

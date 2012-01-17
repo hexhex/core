@@ -36,7 +36,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/URLBuf.h"
+#include "dlvhex2/URLBuf.h"
 
 #include <sstream>
 #include <cstdlib>

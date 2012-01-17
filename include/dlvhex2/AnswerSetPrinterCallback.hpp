@@ -31,8 +31,8 @@
 #ifndef ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
 #define ANSWERSETPRINTERCALLBACK_HPP_INCLUDED__18012011
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/PluginInterface.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

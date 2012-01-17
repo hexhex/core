@@ -37,7 +37,7 @@
 #if !defined(_DLVHEX_PROCESSBUF_H)
 #define _DLVHEX_PROCESSBUF_H
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <iostream>
 #include <streambuf>

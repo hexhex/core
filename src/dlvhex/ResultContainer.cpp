@@ -36,9 +36,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ResultContainer.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/OutputBuilder.h"
+#include "dlvhex2/ResultContainer.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/OutputBuilder.h"
 
 #include <vector>
 #include <iostream>

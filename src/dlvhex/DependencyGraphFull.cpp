@@ -33,13 +33,13 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/DependencyGraphFull.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Rule.hpp"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/GraphvizHelpers.hpp"
+#include "dlvhex2/DependencyGraphFull.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Rule.hpp"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/GraphvizHelpers.hpp"
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>

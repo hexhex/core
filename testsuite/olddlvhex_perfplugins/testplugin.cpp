@@ -2,7 +2,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PluginInterface.h"
 
 #include <string>
 #include <sstream>

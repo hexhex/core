@@ -34,33 +34,33 @@
  *
  */
 
-#include "dlvhex/State.h"
+#include "dlvhex2/State.h"
 
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/FinalEvalGraph.hpp"
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/DumpingEvalGraphBuilder.hpp"
-#include "dlvhex/AnswerSetPrinterCallback.hpp"
-#include "dlvhex/PlainAuxPrinter.hpp"
-#include "dlvhex/SafetyChecker.h"
-#include "dlvhex/MLPSyntaxChecker.hpp"
-#include "dlvhex/MLPSolver.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Error.h"
+#include "dlvhex2/Printhelpers.hpp"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/PluginContainer.h"
+#include "dlvhex2/DependencyGraph.hpp"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/FinalEvalGraph.hpp"
+#include "dlvhex2/EvalGraphBuilder.hpp"
+#include "dlvhex2/DumpingEvalGraphBuilder.hpp"
+#include "dlvhex2/AnswerSetPrinterCallback.hpp"
+#include "dlvhex2/PlainAuxPrinter.hpp"
+#include "dlvhex2/SafetyChecker.h"
+#include "dlvhex2/MLPSyntaxChecker.hpp"
+#include "dlvhex2/MLPSolver.hpp"
 
 #include <boost/foreach.hpp>
 

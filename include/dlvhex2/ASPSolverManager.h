@@ -35,12 +35,12 @@
 #define _DLVHEX_ASPSOLVER_MANAGER_H
 
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/AnswerSet.hpp"
-#include "dlvhex/Error.h"
-#include "dlvhex/ConcurrentMessageQueueOwning.h"
-#include "dlvhex/InputProvider.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/Error.h"
+#include "dlvhex2/ConcurrentMessageQueueOwning.h"
+#include "dlvhex2/InputProvider.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <vector>

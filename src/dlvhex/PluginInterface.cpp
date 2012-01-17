@@ -33,17 +33,17 @@
  *      
  */     
 
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PluginInterface.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Term.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Benchmarking.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Term.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -185,7 +185,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   ///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
 
 #if 0
-  #include "dlvhex/PrintVisitor.h"
+  #include "dlvhex2/PrintVisitor.h"
   #include <iostream>
   std::cerr << "cache:" << std::endl;
   for( QueryAnswerCache::const_iterator i = queryAnswerCache.begin(); i != queryAnswerCache.end(); ++i)

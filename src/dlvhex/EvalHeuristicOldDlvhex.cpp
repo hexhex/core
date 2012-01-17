@@ -32,8 +32,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/unordered_map.hpp>
 #include <boost/property_map/property_map.hpp>

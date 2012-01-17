@@ -36,7 +36,7 @@
 //#define DEBUG
 
 #include "InputConverter.h"
-#include "dlvhex/SpiritDebugging.h"
+#include "dlvhex2/SpiritDebugging.h"
 #include "BridgeRuleEntry.h"
 #include "Global.h"
 

@@ -31,12 +31,12 @@
 #ifndef BASE_MODEL_GENERATOR_HPP_INCLUDED__09112010
 #define BASE_MODEL_GENERATOR_HPP_INCLUDED__09112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/Atoms.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/Atoms.hpp"
 
 #include <list>
 

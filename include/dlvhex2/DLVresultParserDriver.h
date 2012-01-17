@@ -31,9 +31,9 @@
 #if !defined(_DLVHEX_DLVRESULTPARSERDRIVER_H)
 #define _DLVHEX_DLVRESULTPARSERDRIVER_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/AnswerSet.hpp"
-#include "dlvhex/Error.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/Error.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>

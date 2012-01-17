@@ -31,10 +31,10 @@
 #ifndef EVAL_GRAPH_BUILDER_HPP_INCLUDED__03112010
 #define EVAL_GRAPH_BUILDER_HPP_INCLUDED__03112010
 
-#include "dlvhex/FinalEvalGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/FinalEvalGraph.hpp"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/range/iterator_range.hpp>
 #include <boost/concept/assert.hpp>

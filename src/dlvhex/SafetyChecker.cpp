@@ -35,9 +35,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/SafetyChecker.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
+#include "dlvhex2/SafetyChecker.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

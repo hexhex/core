@@ -36,9 +36,9 @@
 #if !defined(_DLVHEX_PLUGINCONTAINER_H)
 #define _DLVHEX_PLUGINCONTAINER_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/PluginInterface.h"
 
 #include <string>
 #include <vector>

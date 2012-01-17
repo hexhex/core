@@ -31,7 +31,7 @@
 #ifndef GRAPHVIZHELPERS_HPP_INCLUDED__20082011
 #define GRAPHVIZHELPERS_HPP_INCLUDED__20082011
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <string>
 #include <iosfwd>

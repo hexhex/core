@@ -31,9 +31,9 @@
 #ifndef MODULEATOMTABLE_HPP_INCLUDED__27112010
 #define MODULEATOMTABLE_HPP_INCLUDED__27112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Atoms.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Table.hpp"
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>

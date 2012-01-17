@@ -37,9 +37,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ComfortPluginInterface.hpp"
-#include "dlvhex/Term.hpp"
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/ComfortPluginInterface.hpp"
+#include "dlvhex2/Term.hpp"
+#include "dlvhex2/Registry.hpp"
 
 #include <boost/foreach.hpp>
 

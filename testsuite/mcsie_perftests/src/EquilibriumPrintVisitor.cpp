@@ -35,7 +35,7 @@
 
 #include "EquilibriumPrintVisitor.h"
 
-#include "dlvhex/AtomSet.h"
+#include "dlvhex2/AtomSet.h"
 #include <iostream>
 #include <sstream>
 

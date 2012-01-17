@@ -9,11 +9,11 @@
 #if !defined(_DLVHEX_MLPSYNTAXCHECKER_H)
 #define _DLVHEX_MLPSYNTAXCHECKER_H
 
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/ProgramCtx.h"
-//#include "dlvhex/ModuleTable.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/ProgramCtx.h"
+//#include "dlvhex2/ModuleTable.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>

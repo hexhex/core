@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/AnswerSet.hpp"
+#include "dlvhex2/AnswerSet.hpp"
 
 
 DLVHEX_NAMESPACE_BEGIN

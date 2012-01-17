@@ -31,11 +31,11 @@
 #ifndef FINAL_EVAL_GRAPH_HPP_INCLUDED__08112010
 #define FINAL_EVAL_GRAPH_HPP_INCLUDED__08112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/EvalGraph.hpp"
-//#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/EvalGraph.hpp"
+//#include "dlvhex2/ComponentGraph.hpp"
 
 #include <boost/shared_ptr.hpp>
 

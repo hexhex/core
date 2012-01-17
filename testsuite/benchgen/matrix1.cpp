@@ -22,8 +22,8 @@
 
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Printhelpers.hpp"
 
 #include <sstream>
 #include <iostream>

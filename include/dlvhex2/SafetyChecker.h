@@ -37,9 +37,9 @@
 #ifndef _DLVHEX_SAFETYCHECKER_H
 #define _DLVHEX_SAFETYCHECKER_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Error.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Error.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

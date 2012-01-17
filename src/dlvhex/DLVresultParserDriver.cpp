@@ -49,19 +49,19 @@
 # include <libcwd/debug.h>
 #endif
 
-//#include "dlvhex/DLVResultParser.hpp"
-#include "dlvhex/DLVresultParserDriver.h"
+//#include "dlvhex2/DLVResultParser.hpp"
+#include "dlvhex2/DLVresultParserDriver.h"
 
 // use this for debugging parser progress (XML style)
 #undef BOOST_SPIRIT_DEBUG
 
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Term.hpp"
-#include "dlvhex/Atoms.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Term.hpp"
+#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/optional.hpp>
 #include <boost/spirit/include/qi.hpp>

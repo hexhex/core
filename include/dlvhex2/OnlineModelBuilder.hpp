@@ -31,10 +31,10 @@
 #ifndef ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 #define ONLINE_MODEL_BUILDER_HPP_INCLUDED__23092010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/ModelBuilder.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/ModelBuilder.hpp"
 
 #include <iomanip>
 

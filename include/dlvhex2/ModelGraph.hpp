@@ -22,10 +22,10 @@
 #ifndef MODEL_GRAPH_HPP_INCLUDED__29082010
 #define MODEL_GRAPH_HPP_INCLUDED__29082010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/EvalGraph.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Printhelpers.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>

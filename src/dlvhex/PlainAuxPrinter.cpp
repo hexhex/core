@@ -32,8 +32,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/PlainAuxPrinter.hpp"
-#include "dlvhex/Printer.hpp"
+#include "dlvhex2/PlainAuxPrinter.hpp"
+#include "dlvhex2/Printer.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

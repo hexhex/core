@@ -32,12 +32,12 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/GraphvizHelpers.hpp"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/GraphvizHelpers.hpp"
 
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/two_bit_color_map.hpp>

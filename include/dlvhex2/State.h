@@ -35,8 +35,8 @@
 #if !defined(_DLVHEX_STATE_H)
 #define _DLVHEX_STATE_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
 
 #include <boost/shared_ptr.hpp>
 

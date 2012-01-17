@@ -36,7 +36,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ParserDriver.h"
+#include "dlvhex2/ParserDriver.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

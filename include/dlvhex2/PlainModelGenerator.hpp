@@ -31,11 +31,11 @@
 #ifndef PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
 #define PLAIN_MODEL_GENERATOR_HPP_INCLUDED__09112010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/BaseModelGenerator.hpp"
-#include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/BaseModelGenerator.hpp"
+#include "dlvhex2/ComponentGraph.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

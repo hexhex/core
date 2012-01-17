@@ -38,12 +38,12 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/Configuration.hpp"
-#include "dlvhex/Error.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/PluginContainer.h"
+#include "dlvhex2/Configuration.hpp"
+#include "dlvhex2/Error.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/Registry.hpp"
 
 #include <ltdl.h>
 

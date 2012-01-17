@@ -32,9 +32,9 @@
 #ifndef PREDICATEMASK_HPP_INCLUDED__27012011
 #define PREDICATEMASK_HPP_INCLUDED__27012011
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/ID.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/ID.hpp"
 
 #include <boost/thread/mutex.hpp>
 

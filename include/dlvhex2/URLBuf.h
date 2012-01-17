@@ -36,7 +36,7 @@
 #if !defined(_DLVHEX_URLBUF_H)
 #define _DLVHEX_URLBUF_H
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <iostream>
 #include <streambuf>

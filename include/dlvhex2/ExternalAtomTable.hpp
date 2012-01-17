@@ -31,10 +31,10 @@
 #ifndef EXTERNALATOMTABLE_HPP_INCLUDED__18102010
 #define EXTERNALATOMTABLE_HPP_INCLUDED__18102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Atoms.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Table.hpp"
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>

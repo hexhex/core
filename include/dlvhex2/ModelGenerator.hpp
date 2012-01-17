@@ -34,9 +34,9 @@
 #ifndef MODEL_GENERATOR_HPP_INCLUDED__30082010
 #define MODEL_GENERATOR_HPP_INCLUDED__30082010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Printhelpers.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/concept/assert.hpp>

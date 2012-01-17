@@ -31,8 +31,8 @@
 #ifndef PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
 #define PLAIN_AUX_PRINTER_HPP_INCLUDED__18012011
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Registry.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

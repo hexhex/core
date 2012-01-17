@@ -35,18 +35,18 @@
 #if !defined(_DLVHEX_PROGRAMCTX_H)
 #define _DLVHEX_PROGRAMCTX_H
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Configuration.hpp"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/PluginContainer.h"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/FinalEvalGraph.hpp"
-#include "dlvhex/EvalHeuristicBase.hpp"
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/ModelBuilder.hpp"
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Configuration.hpp"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/PluginContainer.h"
+#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/FinalEvalGraph.hpp"
+#include "dlvhex2/EvalHeuristicBase.hpp"
+#include "dlvhex2/EvalGraphBuilder.hpp"
+#include "dlvhex2/ModelBuilder.hpp"
+#include "dlvhex2/Registry.hpp"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>

@@ -31,9 +31,9 @@
 #ifndef DEPENDENCY_GRAPH_FULL_HPP_INCLUDED__18102010
 #define DEPENDENCY_GRAPH_FULL_HPP_INCLUDED__18102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ID.hpp"
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>

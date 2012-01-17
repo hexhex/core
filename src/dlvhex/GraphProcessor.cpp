@@ -37,14 +37,14 @@
 #endif // HAVE_CONFIG_H
 
 #include <iostream>
-#include "dlvhex/globals.h"
-#include "dlvhex/GraphProcessor.h"
-#include "dlvhex/ModelGenerator.h"
-#include "dlvhex/AtomSet.h"
-#include "dlvhex/Error.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/DependencyGraph.h"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/GraphProcessor.h"
+#include "dlvhex2/ModelGenerator.h"
+#include "dlvhex2/AtomSet.h"
+#include "dlvhex2/Error.h"
+#include "dlvhex2/PrintVisitor.h"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/ProgramCtx.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

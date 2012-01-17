@@ -31,9 +31,9 @@
 #ifndef EVAL_GRAPH_HPP_INCLUDED__29082010
 #define EVAL_GRAPH_HPP_INCLUDED__29082010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/GraphvizHelpers.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Printhelpers.hpp"
+#include "dlvhex2/GraphvizHelpers.hpp"
 
 #include <cassert>
 

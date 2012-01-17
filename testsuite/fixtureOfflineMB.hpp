@@ -35,8 +35,8 @@
 #include "fixtureE2.hpp"
 #include "fixtureEx1.hpp"
 
-#include "dlvhex/OfflineModelBuilder.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/OfflineModelBuilder.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/test/unit_test.hpp>
 

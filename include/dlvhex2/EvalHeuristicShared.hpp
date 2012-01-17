@@ -31,8 +31,8 @@
 #ifndef EVAL_HEURISTIC_SHARED_HPP_INCLUDED__30112011
 #define EVAL_HEURISTIC_SHARED_HPP_INCLUDED__30112011
 
-#include "dlvhex/EvalHeuristicBase.hpp"
-#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex2/EvalHeuristicBase.hpp"
+#include "dlvhex2/EvalGraphBuilder.hpp"
 
 #include <boost/graph/topological_sort.hpp>
 #include <boost/property_map/property_map.hpp>

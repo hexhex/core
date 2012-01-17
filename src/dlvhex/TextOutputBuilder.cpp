@@ -36,10 +36,10 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/TextOutputBuilder.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/ResultContainer.h"
+#include "dlvhex2/TextOutputBuilder.h"
+#include "dlvhex2/PrintVisitor.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/ResultContainer.h"
 
 #include <iostream>
 

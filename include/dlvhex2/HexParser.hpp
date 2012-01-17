@@ -31,9 +31,9 @@
 #ifndef HEXPARSER_HPP_INCLUDED__14102010
 #define HEXPARSER_HPP_INCLUDED__14102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/fwd.hpp"
-#include "dlvhex/Error.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/Error.h"
 
 #include <vector>
 #include <iosfwd>

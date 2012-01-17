@@ -40,10 +40,10 @@
 #ifndef DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 #define DLVHEX_HEX_GRAMMAR_TCC_INCLUDED
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.hpp"
 
 #include <boost/spirit/include/qi.hpp>
 

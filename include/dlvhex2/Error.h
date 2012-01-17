@@ -35,7 +35,7 @@
 #if !defined(_DLVHEX_ERROR_H)
 #define _DLVHEX_ERROR_H
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <string>
 #include <iosfwd>

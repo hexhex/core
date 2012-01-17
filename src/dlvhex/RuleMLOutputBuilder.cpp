@@ -36,8 +36,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/RuleMLOutputBuilder.h"
-#include "dlvhex/ResultContainer.h"
+#include "dlvhex2/RuleMLOutputBuilder.h"
+#include "dlvhex2/ResultContainer.h"
 
 #include <iostream>
 

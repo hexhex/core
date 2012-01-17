@@ -31,9 +31,9 @@
 #ifndef BUILTINATOMTABLE_HPP_INCLUDED__12102010
 #define BUILTINATOMTABLE_HPP_INCLUDED__12102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Atoms.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Table.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

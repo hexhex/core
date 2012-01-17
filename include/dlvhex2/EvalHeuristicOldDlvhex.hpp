@@ -31,8 +31,8 @@
 #ifndef EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
 #define EVAL_HEURISTIC_OLD_DLVHEX_HPP_INCLUDED__03112010
 
-#include "dlvhex/EvalHeuristicBase.hpp"
-#include "dlvhex/EvalGraphBuilder.hpp"
+#include "dlvhex2/EvalHeuristicBase.hpp"
+#include "dlvhex2/EvalGraphBuilder.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

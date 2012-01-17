@@ -35,7 +35,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include <dlvhex/Configuration.hpp>
+#include "dlvhex2/Configuration.hpp"
 
 #include <iostream>
 #include <cassert>

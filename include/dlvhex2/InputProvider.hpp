@@ -33,7 +33,7 @@
 #ifndef INPUT_PROVIDER_HPP_INCLUDED_14012011
 #define INPUT_PROVIDER_HPP_INCLUDED_14012011
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>

@@ -31,10 +31,10 @@
 #ifndef DUMMYTYPES_HPP_INCLUDED__24092010
 #define DUMMYTYPES_HPP_INCLUDED__24092010
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/ModelGraph.hpp"
-#include "dlvhex/ModelGenerator.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/EvalGraph.hpp"
+#include "dlvhex2/ModelGraph.hpp"
+#include "dlvhex2/ModelGenerator.hpp"
 #include <boost/test/unit_test.hpp>
 
 // for testing we use stupid types

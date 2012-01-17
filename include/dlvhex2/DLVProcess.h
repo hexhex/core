@@ -36,10 +36,10 @@
 #if !defined(_DLVHEX_DLVPROCESS_H)
 #define _DLVHEX_DLVPROCESS_H
 
-#include "dlvhex/Process.h"
-#include "dlvhex/ProcessBuf.h"
+#include "dlvhex2/Process.h"
+#include "dlvhex2/ProcessBuf.h"
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 #include <iosfwd>
 #include <vector>

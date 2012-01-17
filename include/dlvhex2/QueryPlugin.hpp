@@ -31,8 +31,8 @@
 #ifndef QUERY_PLUGIN__HPP_INCLUDED_1518
 #define QUERY_PLUGIN__HPP_INCLUDED_1518
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/PluginInterface.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

@@ -31,9 +31,9 @@
 #ifndef OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 #define OFFLINE_MODEL_BUILDER_HPP_INCLUDED__28092010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/OnlineModelBuilder.hpp"
-#include "dlvhex/CAUAlgorithms.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/OnlineModelBuilder.hpp"
+#include "dlvhex2/CAUAlgorithms.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 

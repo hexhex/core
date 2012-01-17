@@ -33,14 +33,14 @@
 #endif // HAVE_CONFIG_H
 
 #include <boost/cstdint.hpp>
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/MLPSyntaxChecker.hpp"
-//#include "dlvhex/MLPSolver.hpp"
+#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/MLPSyntaxChecker.hpp"
+//#include "dlvhex2/MLPSolver.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
 #include <boost/test/unit_test.hpp>

@@ -31,11 +31,11 @@
 #ifndef PREDICATETABLE_HPP_INCLUDED__20122010
 #define PREDICATETABLE_HPP_INCLUDED__20102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Predicate.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Predicate.hpp"
+#include "dlvhex2/Table.hpp"
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>

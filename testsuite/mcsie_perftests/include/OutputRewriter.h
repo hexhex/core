@@ -33,7 +33,7 @@
 #ifndef _DLVHEX_MCSDIAGEXPL_OUTPUTREWRITER_H_
 #define _DLVHEX_MCSDIAGEXPL_OUTPUTREWRITER_H_
 
-#include "dlvhex/OutputBuilder.h"
+#include "dlvhex2/OutputBuilder.h"
 
 namespace dlvhex {
   namespace mcsdiagexpl {

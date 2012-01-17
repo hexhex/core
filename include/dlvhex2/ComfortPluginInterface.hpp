@@ -38,8 +38,8 @@
 #ifndef COMFORT_PLUGIN_INTERFACE_HPP_INCLUDED_19012011
 #define COMFORT_PLUGIN_INTERFACE_HPP_INCLUDED_19012011
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/PluginInterface.h"
 
 #include <cctype>
 

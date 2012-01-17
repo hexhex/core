@@ -31,7 +31,7 @@
 #ifndef EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
 #define EVAL_HEURISTIC_BASE_HPP_INCLUDED__08112010
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

@@ -31,11 +31,11 @@
 #ifndef TERMTABLE_HPP_INCLUDED__12102010
 #define TERMTABLE_HPP_INCLUDED__12102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Term.hpp"
-#include "dlvhex/Table.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Term.hpp"
+#include "dlvhex2/Table.hpp"
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/hashed_index.hpp>

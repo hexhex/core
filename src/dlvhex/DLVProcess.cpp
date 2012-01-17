@@ -36,8 +36,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/DLVProcess.h"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/DLVProcess.h"
+#include "dlvhex2/Logger.hpp"
 
 #include <iostream>
 #include <boost/iostreams/tee.hpp>

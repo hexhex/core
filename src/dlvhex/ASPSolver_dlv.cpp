@@ -34,15 +34,15 @@
 #  include "config.h"
 #endif
 
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/DLVProcess.h"
-#include "dlvhex/DLVresultParserDriver.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/AnswerSet.hpp"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/DLVProcess.h"
+#include "dlvhex2/DLVresultParserDriver.h"
+#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/AnswerSet.hpp"
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>

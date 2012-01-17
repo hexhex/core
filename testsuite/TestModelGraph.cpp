@@ -49,9 +49,9 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/ModelGraph.hpp"
+#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/EvalGraph.hpp"
+#include "dlvhex2/ModelGraph.hpp"
 
 #include "fixtureE2M2.hpp"
 

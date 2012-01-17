@@ -33,12 +33,12 @@
 #endif // HAVE_CONFIG_H
 
 #include <boost/cstdint.hpp>
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/ComponentGraph.hpp"
+#include "dlvhex2/DependencyGraph.hpp"
+#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/PluginInterface.h"
 
 #define BOOST_TEST_MODULE "TestComponentGraph"
 #include <boost/test/unit_test.hpp>

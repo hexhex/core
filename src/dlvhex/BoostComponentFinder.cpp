@@ -37,10 +37,10 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/BoostComponentFinder.h"
-#include "dlvhex/globals.h"
-#include "dlvhex/PrintVisitor.h"
-#include "dlvhex/Component.h"
+#include "dlvhex2/BoostComponentFinder.h"
+#include "dlvhex2/globals.h"
+#include "dlvhex2/PrintVisitor.h"
+#include "dlvhex2/Component.h"
 
 #include <sstream>
 

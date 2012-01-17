@@ -30,7 +30,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/GraphvizHelpers.hpp"
+#include "dlvhex2/GraphvizHelpers.hpp"
 
 #include <ostream>
 #include <string>

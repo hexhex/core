@@ -31,9 +31,9 @@
 #ifndef TABLE_HPP_INCLUDED__12102010
 #define TABLE_HPP_INCLUDED__12102010
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/thread/shared_mutex.hpp>

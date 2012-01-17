@@ -36,9 +36,9 @@
 
 //#define BOOST_SPIRIT_DEBUG
 
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/HexGrammar.h"
-#include "dlvhex/HexGrammar.tcc"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/HexGrammar.h"
+#include "dlvhex2/HexGrammar.tcc"
 
 DLVHEX_NAMESPACE_BEGIN
 

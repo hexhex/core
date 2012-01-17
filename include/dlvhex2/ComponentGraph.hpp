@@ -31,7 +31,7 @@
 #ifndef COMPONENT_GRAPH_HPP_INCLUDED__18102010
 #define COMPONENT_GRAPH_HPP_INCLUDED__18102010
 
-#include "dlvhex/DependencyGraph.hpp"
+#include "dlvhex2/DependencyGraph.hpp"
 
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>

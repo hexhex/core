@@ -32,8 +32,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalHeuristicTrivial.hpp"
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/EvalHeuristicTrivial.hpp"
+#include "dlvhex2/Logger.hpp"
 
 #include <boost/unordered_map.hpp>
 #include <boost/graph/topological_sort.hpp>

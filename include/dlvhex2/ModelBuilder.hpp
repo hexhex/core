@@ -31,7 +31,7 @@
 #ifndef MODEL_BUILDER_HPP_INCLUDED__18012011
 #define MODEL_BUILDER_HPP_INCLUDED__18012011
 
-#include "dlvhex/PlatformDefinitions.h"
+#include "dlvhex2/PlatformDefinitions.h"
 #include "EvalGraph.hpp"
 #include "ModelGraph.hpp"
 
