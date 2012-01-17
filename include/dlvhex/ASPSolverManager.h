@@ -54,7 +54,7 @@ typedef boost::shared_ptr<Registry> RegistryPtr;
 struct ASPProgram
 {
   RegistryPtr registry;
-  const std::vector<ID>& idb;
+  std::vector<ID> idb;
   Interpretation::ConstPtr edb;
   uint32_t maxint;
   Interpretation::ConstPtr mask;

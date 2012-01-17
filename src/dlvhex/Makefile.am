@@ -91,6 +91,8 @@ libmlpsolver_la_SOURCES = \
 libaspsolver_la_SOURCES = \
     ASPSolver.cpp \
     ASPSolverManager.cpp \
+    ASPSolver_dlv.cpp \
+    ASPSolver_libclingo.cpp \
     DLVProcess.cpp \
     DLVresultParserDriver.cpp \
     ProcessBuf.cpp

@@ -14,6 +14,23 @@
 	* src/dlvhex/MLPSolver.cpp: Likewise.
 	* src/dlvhex/StrongNegationPlugin.cpp: Likewise.
 
+	* src/dlvhex/ASPSolver.cpp: Splitting ASPSolver.cpp into solver
+	backend specific compilation units.
+	* src/dlvhex/Makefile.am: Likewise.
+	* src/dlvhex/ASPSolver_dlv.cpp: Likewise.
+	* src/dlvhex/ASPSolver_libclingo.cpp: Likewise, and implemented
+	threading for libclingo integration (similar to dlv threading).
+
+	* include/dlvhex/ASPSolverManager.h: Making ASPProgram::idb a container instead
+	of a reference (permits the caller to die without breaking the reference).
+	* src/dlvhex/ASPSolver_libclingo.cpp: Implemented mask correctly (this fixes
+	the GuessAndCheckModelBuilder together with libclingo).
+	* src/dlvhex/ASPSolver_dlv.cpp: Added debugging messages.
+	* examples/notwellfounded2.hex: Comment about solvability with clasp vs claspD.
+	* examples/tests/higherorder5except.stderr: Making test clingo and dlv compatible.
+	* examples/tests/libclingobackend.test.in: Added all original testcases for
+	the libclingo backend, and gave reasons for each testcase deactivation.
+
 2012-01-12  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* configure.ac: Using several configure switches for distcheck.
