@@ -1,6 +1,7 @@
 # including headers for make dist
 
 # those guys belong to the dlvhex binary
+pkgincludedir=$(includedir)/dlvhex2
 pkginclude_HEADERS = \
   AggregateAtomTable.hpp \
   AnswerSet.hpp \
