@@ -2,7 +2,7 @@ AC_PREREQ([2.61])
 AC_INIT([dlvhex],[2.0.0],[dlvhex-devel@lists.sourceforge.net])
 AM_INIT_AUTOMAKE([-Wall gnu check-news color-tests 1.11])
 
-AC_CONFIG_SRCDIR([src/dlvhex/dlvhex.cpp])
+AC_CONFIG_SRCDIR([src/dlvhex.cpp])
 AC_CONFIG_HEADER([include/config.h])
 
 
@@ -479,7 +479,6 @@ AC_CONFIG_FILES([
            include/common.h
            include/dlvhex2/Makefile
            src/Makefile
-           src/dlvhex/Makefile
            testsuite/Makefile
 ])
 

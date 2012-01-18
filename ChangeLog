@@ -1,3 +1,7 @@
+2012-01-18  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	Moving all files from src/dlvhex/ to src/.
+
 2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex2/PluginInterface.h: Added plugin versioning API
