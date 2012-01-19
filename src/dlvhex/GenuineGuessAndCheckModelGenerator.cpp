@@ -843,91 +843,95 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 
 
-#if 0
 
-modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
-/*
-* see documentation at top: FLP check
-* * evaluate edb + xidbflphead + M
-*   -> yields singleton answer set containing flp heads F for non-blocked rules
-*   (if there is no result answer set, some constraint fired and M can be discarded)
-* * evaluate edb + xidbflpbody + (M \cap pos_guess_auxiliaries) + F
-*   -> yields singleton answer set M' (we ignore input facts)
-*   (there must be an answer set, or something went wrong)
-* * if M' == M (ignoring input facts "edb \cup pos_guess_auxiliaries \cup flpheads")
-*   then M is a model of the FLP reduct
-*   -> store as candidate
-*/
-InterpretationPtr flpas;
-{
-	DBGLOG(DBG,"evaluating flp head program");
+		// FLP check
+		if (factory.ctx.config.getOption("FLPCheck")){
+			DBGLOG(DBG, "FLP Check");
 
-	// here we can mask, we won't lose FLP heads
-	ASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
-	InternalGrounder ig(factory.ctx, flpheadprogram);
-	ASPProgram flpheadgprogram = ig.getGroundProgram();
-	InternalGroundDASPSolver flpheadigas(factory.ctx, flpheadgprogram);
+			modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
+			/*
+			* see documentation at top: FLP check
+			* * evaluate edb + xidbflphead + M
+			*   -> yields singleton answer set containing flp heads F for non-blocked rules
+			*   (if there is no result answer set, some constraint fired and M can be discarded)
+			* * evaluate edb + xidbflpbody + (M \cap pos_guess_auxiliaries) + F
+			*   -> yields singleton answer set M' (we ignore input facts)
+			*   (there must be an answer set, or something went wrong)
+			* * if M' == M (ignoring input facts "edb \cup pos_guess_auxiliaries \cup flpheads")
+			*   then M is a model of the FLP reduct
+			*   -> store as candidate
+			*/
+			InterpretationPtr flpas;
+			{
+				DBGLOG(DBG,"evaluating flp head program");
 
-	flpas = flpheadigas.projectToOrdinaryAtoms(flpheadigas.getNextModel());
-	if( flpas == InterpretationPtr() )
-	{
-		DBGLOG(DBG, "FLP head program yielded no answer set");
-		aborted = true;
-	}else{
-		DBGLOG(DBG, "FLP head program yielded at least one answer set");
-	}
-}
-DBGLOG(DBG,"got FLP head model " << *flpas);
+				// here we can mask, we won't lose FLP heads
+				ASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
+				InternalGrounder ig(factory.ctx, flpheadprogram);
+				ASPProgram flpheadgprogram = ig.getGroundProgram();
+				InternalGroundDASPSolver flpheadigas(factory.ctx, flpheadgprogram);
+
+				flpas = flpheadigas.projectToOrdinaryAtoms(flpheadigas.getNextModel());
+				if( flpas == InterpretationPtr() )
+				{
+					DBGLOG(DBG, "FLP head program yielded no answer set");
+					aborted = true;
+				}else{
+					DBGLOG(DBG, "FLP head program yielded at least one answer set");
+				}
+			}
+			DBGLOG(DBG,"got FLP head model " << *flpas);
 
 
-// evaluate xidbflpbody+edb+flp+eatomguess
-ASPSolverManager::ResultsPtr flpbodyres;
-{
-	DBGLOG(DBG, "evaluating flp body program");
+			// evaluate xidbflpbody+edb+flp+eatomguess
+			ASPSolverManager::ResultsPtr flpbodyres;
+			{
+				DBGLOG(DBG, "evaluating flp body program");
 
-	// build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
-	Interpretation::Ptr edbflpguess(new Interpretation(*modelCandidate));
-	edbflpguess->getStorage() &= (flpas->getStorage() | factory.gpMask.mask()->getStorage());
+				// build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
+				Interpretation::Ptr edbflpguess(new Interpretation(*modelCandidate));
+				edbflpguess->getStorage() &= (flpas->getStorage() | factory.gpMask.mask()->getStorage());
 
-	// here we can also mask, this eliminates many equal bits for comparisons later
-	ASPProgram flpbodyprogram(reg, factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
-	InternalGrounder ig(factory.ctx, flpbodyprogram);
-	ASPProgram flpbodygprogram = ig.getGroundProgram();
-	InternalGroundDASPSolver flpbodyigas(factory.ctx, flpbodygprogram);
+				// here we can also mask, this eliminates many equal bits for comparisons later
+				ASPProgram flpbodyprogram(reg, factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
+				InternalGrounder ig(factory.ctx, flpbodyprogram);
+				ASPProgram flpbodygprogram = ig.getGroundProgram();
+				InternalGroundDASPSolver flpbodyigas(factory.ctx, flpbodygprogram);
 
-	// for comparing the flpbody answer sets we mask the guess interpretation
-	modelCandidate->getStorage() -= mask->getStorage();
+				// for comparing the flpbody answer sets we mask the guess interpretation
+				modelCandidate->getStorage() -= mask->getStorage();
 
-	DBGLOG(DBG, "comparing xidbflpbody answer sets with guess interpretation " << *modelCandidate);
+				DBGLOG(DBG, "comparing xidbflpbody answer sets with guess interpretation " << *modelCandidate);
 
-	InterpretationPtr flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
-	while(flpbodyas != InterpretationPtr())
-	{
-		// now we make sure nothing from EDB is left in flpbodyint
-		// (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
-		// (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
-		//flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+				InterpretationPtr flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
+				while(flpbodyas != InterpretationPtr())
+				{
+					// now we make sure nothing from EDB is left in flpbodyint
+					// (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+					// (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+					//flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
 
-		DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyas);
-		DBGLOG(DBG,"model candidate is " << *modelCandidate);
-		if( flpbodyas->getStorage() == modelCandidate->getStorage() )
-		{
-		  DBGLOG(DBG, "found (not yet minimalitychecked) FLP model " << *modelCandidate);
-		  // we found one -> no need to check for more
-		  break;
+					DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyas);
+					DBGLOG(DBG,"model candidate is " << *modelCandidate);
+					if( flpbodyas->getStorage() == modelCandidate->getStorage() )
+					{
+					  DBGLOG(DBG, "found (not yet minimalitychecked) FLP model " << *modelCandidate);
+					  // we found one -> no need to check for more
+					  break;
+					}
+					else
+					{
+					  DBGLOG(DBG, "this FLP body model is not equal to guess interpretation -> continuing check");
+					}
+					flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
+				}
+				if (flpbodyas == InterpretationPtr()){
+					aborted = true;
+				}
+			}
+		}else{
+			DBGLOG(DBG, "Skipping FLP Check");
 		}
-		else
-		{
-		  DBGLOG(DBG, "this FLP body model is not equal to guess interpretation -> continuing check");
-		}
-		flpbodyas = flpbodyigas.projectToOrdinaryAtoms(flpbodyigas.getNextModel());
-	}
-	if (flpbodyas == InterpretationPtr()){
-		aborted = true;
-	}
-}
-
-#endif
 
 
 

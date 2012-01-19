@@ -149,6 +149,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
+      << "     --noflpcheck     Disable FLP check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -301,6 +302,7 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("InternalSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -564,6 +566,7 @@ void processOptionsPrePlugin(
 		{ "internalsolver", no_argument, 0, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "instantiate", no_argument, 0, 19 },
+		{ "noflpcheck", no_argument, 0, 20 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -876,6 +879,10 @@ void processOptionsPrePlugin(
 
 		case 19:
 			pctx.config.setOption("Instantiate", 1);
+			break;
+
+		case 20:
+			pctx.config.setOption("FLPCheck", 0);
 			break;
 
 		case '?':

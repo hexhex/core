@@ -1,15 +1,34 @@
+if [ $# -le 3 ]; then
+	echo "Usage:"
+	echo "     benchmark.sh [Program] [Min Domain Size] [Max Domain Size] [Timeout/s] [Configuration Strings (optional)]"
+	echo "The configuration string consists of dlvhex options with semicolon as delimiter"
+	exit 0
+fi
+
+# $5: configurations
+if [ $# -le 4 ]; then
+	confstr=";--internalsolver;--internalsolver --extlearn"
+else
+	confstr=$5
+fi
+IFS=';' read -ra confs <<< "$confstr"
+header="#size"
+i=0
+for c in "${confs[@]}"
+do
+	timeout[$i]=0
+	header="$header   \"$c\""
+	let i=i+1
+done
+echo $header
+
+
 # $1: program
 # $2: min domain size
 # $3: max domain size
 # $4: timeout in seconds
 
-echo "#size     dlv     genuine     genuine+extlearn"
-
-dlvto=0
-gento=0
-genlearnto=0
-
-for (( size = $2 ; size < $3 ; size++ ))
+for (( size = $2 ; size <= $3 ; size++ ))
 do
 
 	# construct domain
@@ -23,33 +42,19 @@ do
 	cat $1 > p.hex
 	echo $domain >> p.hex
 
-	# call dlvhex with translation to dlv
-	if [ $dlvto -eq 0 ]; then
-		dlv=`/usr/bin/time -f %e dlvhex p.hex 2>&1 >/dev/null`
-		dlvto=`echo "$dlv > $4" | bc`
-		if [ $dlvto -eq 1 ]; then
-			dlv=$4
+	line="$size"
+	i=0
+	for c in "${confs[@]}"
+	do
+		if [ ${timeout[$i]} -eq 0 ]; then
+			output=`/usr/bin/time -f %e dlvhex $c p.hex 2>&1 >/dev/null`
+			timeout[$i]=`echo "$output > $4" | bc`
+			if [ ${timeout[$i]} -eq 1 ]; then
+				output=$4
+			fi
+			line="$line   $output"
 		fi
-	fi
-
-	# call dlvhex with genuine solver without learning
-	if [ $gento -eq 0 ]; then
-		gen=`/usr/bin/time -f %e dlvhex --internalsolver p.hex 2>&1 >/dev/null`
-		gento=`echo "$gen > $4" | bc`
-		if [ $gento -eq 1 ]; then
-			gen=$4
-		fi
-	fi
-
-	# call dlvhex with genuine solver with learning
-	if [ $genlearnto -eq 0 ]; then
-		genlearn=`/usr/bin/time -f %e dlvhex --internalsolver --extlearn p.hex 2>&1 >/dev/null`
-		genlearnto=`echo "$genlearn > $4" | bc`
-		if [ $genlearnto -eq 1 ]; then
-			genlearn=$4
-		fi
-	fi
-
-	echo "$size         $dlv    $gen        $genlearn"
-
+		let i=i+1
+	done
+	echo $line
 done
