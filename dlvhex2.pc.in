@@ -10,6 +10,6 @@ userplugindir=@userplugindir@
 Name: @PACKAGE@
 Description: HEX-Program Reasoner
 Version: @VERSION@
-Libs: -L${libdir} -ldlvhexbase -laspsolver
+Libs: -L${libdir} -ldlvhex2-base -ldlvhex2-aspsolver
 Cflags: -I${includedir}
 

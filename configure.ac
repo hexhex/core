@@ -272,7 +272,7 @@ else
     userplugindir="$USER_PLUGIN_DIR"
 fi
 
-# this goes into dlvhex.pc
+# this goes into dlvhex2.pc
 AC_SUBST(userplugindir)
 
 # this can only be evaluated in the Makefiles
