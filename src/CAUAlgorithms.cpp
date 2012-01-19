@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/CAUAlgorithms.hpp"
+#include "dlvhex2/CAUAlgorithms.h"
 
 namespace CAUAlgorithms
 {

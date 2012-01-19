@@ -53,8 +53,8 @@
 #include <boost/version.hpp>
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/fwd.hpp"
-#include "dlvhex2/ID.hpp"
+#include "dlvhex2/fwd.h"
+#include "dlvhex2/ID.h"
 
 #if BOOST_VERSION == 104700
 // workaround for spirit 1.47 issue with optional< optional<T> >

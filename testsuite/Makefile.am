@@ -65,17 +65,17 @@ clean-local:
 	-rm -rf test*{Verbose,Terse}.dot
 
 noinst_HEADERS = \
-  dummytypes.hpp \
-  graphviz.hpp \
-  fixturesMCS.hpp \
-  fixtureE1.hpp \
-  fixtureE2.hpp \
-  fixtureE2M2.hpp \
-  fixtureEx1.hpp \
-  fixturesExt1.hpp \
-  fixturesDepgraphCompgraphGeneric.hpp \
-  fixtureOfflineMB.hpp \
-  fixtureOnlineMB.hpp
+  dummytypes.h \
+  graphviz.h \
+  fixturesMCS.h \
+  fixtureE1.h \
+  fixtureE2.h \
+  fixtureE2M2.h \
+  fixtureEx1.h \
+  fixturesExt1.h \
+  fixturesDepgraphCompgraphGeneric.h \
+  fixtureOfflineMB.h \
+  fixtureOnlineMB.h
 
 libdlvhexplugin_test_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY

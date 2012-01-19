@@ -34,7 +34,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/MLPSyntaxChecker.hpp"
+#include "dlvhex2/MLPSyntaxChecker.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

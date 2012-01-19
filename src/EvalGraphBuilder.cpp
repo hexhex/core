@@ -32,12 +32,12 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/EvalGraphBuilder.hpp"
-#include "dlvhex2/PlainModelGenerator.hpp"
-#include "dlvhex2/WellfoundedModelGenerator.hpp"
-#include "dlvhex2/GuessAndCheckModelGenerator.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/PlainModelGenerator.h"
+#include "dlvhex2/WellfoundedModelGenerator.h"
+#include "dlvhex2/GuessAndCheckModelGenerator.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/PluginInterface.h"
 

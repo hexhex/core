@@ -32,15 +32,15 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/BaseModelGenerator.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/BaseModelGenerator.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/PluginInterface.h"
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Atoms.h"
 
 #include <boost/foreach.hpp>
 

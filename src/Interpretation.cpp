@@ -32,9 +32,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/Interpretation.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Printer.h"
 #include <boost/functional/hash.hpp>
 
 DLVHEX_NAMESPACE_BEGIN

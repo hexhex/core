@@ -34,15 +34,15 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/DependencyGraph.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Rule.hpp"
-#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Rule.h"
+#include "dlvhex2/Atoms.h"
 #include "dlvhex2/PluginInterface.h"
-#include "dlvhex2/GraphvizHelpers.hpp"
+#include "dlvhex2/GraphvizHelpers.h"
 
 #include <boost/property_map/property_map.hpp>
 #include <boost/foreach.hpp>

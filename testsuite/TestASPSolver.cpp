@@ -35,11 +35,11 @@
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/HexParser.hpp"
-#include "dlvhex2/InputProvider.hpp"
-#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/AnswerSet.h"
 
 #define BOOST_TEST_MODULE "TestASPSolver"
 #include <boost/test/unit_test.hpp>

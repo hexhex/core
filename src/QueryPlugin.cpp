@@ -34,15 +34,15 @@
 
 //#define BOOST_SPIRIT_DEBUG
 
-#include "dlvhex2/QueryPlugin.hpp"
+#include "dlvhex2/QueryPlugin.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Printhelpers.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/HexParser.hpp"
-#include "dlvhex2/HexParserModule.hpp"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Printhelpers.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/HexParserModule.h"
 #include "dlvhex2/HexGrammar.h"
 
 DLVHEX_NAMESPACE_BEGIN

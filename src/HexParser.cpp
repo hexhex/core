@@ -32,11 +32,11 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/HexParser.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/HexGrammar.h"
-#include "dlvhex2/HexParserModule.hpp"
-#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/HexParserModule.h"
+#include "dlvhex2/fwd.h"
 
 #include <boost/spirit/include/qi_parse.hpp>
 

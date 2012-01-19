@@ -34,13 +34,13 @@
 
 //#define NDEBUG
 #include <boost/cstdint.hpp>
-#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/HexParser.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/MLPSyntaxChecker.hpp"
-#include "dlvhex2/Interpretation.hpp"
-#include "dlvhex2/MLPSolver.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/MLPSyntaxChecker.h"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/MLPSolver.h"
 
 #define BOOST_TEST_MODULE "TestMLPSolver"
 #include <boost/test/unit_test.hpp>

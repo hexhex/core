@@ -38,7 +38,7 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginContainer.h"
 #include "dlvhex2/State.h"
 //#include "dlvhex2/DLVProcess.h"

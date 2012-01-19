@@ -64,12 +64,12 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/EvalHeuristicASP.hpp"
-#include "dlvhex2/EvalHeuristicShared.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/EvalHeuristicASP.h"
+#include "dlvhex2/EvalHeuristicShared.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ASPSolver.h"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Printer.h"
 
 #include <boost/lexical_cast.hpp>
 

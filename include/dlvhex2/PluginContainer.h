@@ -37,7 +37,7 @@
 #define _DLVHEX_PLUGINCONTAINER_H
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/fwd.hpp"
+#include "dlvhex2/fwd.h"
 #include "dlvhex2/PluginInterface.h"
 
 #include <string>

@@ -39,10 +39,10 @@
 #  include "config.h"
 #endif
 
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Term.hpp"
-#include "dlvhex2/ID.hpp"
+#include "dlvhex2/Term.h"
+#include "dlvhex2/ID.h"
 #include "dlvhex2/Benchmarking.h"
 
 DLVHEX_NAMESPACE_BEGIN

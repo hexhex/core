@@ -56,11 +56,11 @@
 #undef BOOST_SPIRIT_DEBUG
 
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/ID.hpp"
-#include "dlvhex2/Term.hpp"
-#include "dlvhex2/Atoms.hpp"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Term.h"
+#include "dlvhex2/Atoms.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
 
 #include <boost/optional.hpp>

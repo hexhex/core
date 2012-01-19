@@ -38,10 +38,10 @@
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/AnswerSet.h"
 
 #include <clingo/clingo_app.h>
 

@@ -33,13 +33,13 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/PredicateMask.hpp"
-#include "dlvhex2/Interpretation.hpp"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Printhelpers.hpp"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/OrdinaryAtomTable.hpp"
+#include "dlvhex2/PredicateMask.h"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Printhelpers.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/OrdinaryAtomTable.h"
 
 #include <boost/foreach.hpp>
 

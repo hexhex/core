@@ -33,14 +33,14 @@
 #endif // HAVE_CONFIG_H
 
 #include <boost/cstdint.hpp>
-#include "dlvhex2/ID.hpp"
-#include "dlvhex2/Term.hpp"
-#include "dlvhex2/Atoms.hpp"
-#include "dlvhex2/TermTable.hpp"
-#include "dlvhex2/OrdinaryAtomTable.hpp"
-#include "dlvhex2/BuiltinAtomTable.hpp"
-#include "dlvhex2/AggregateAtomTable.hpp"
-#include "dlvhex2/RuleTable.hpp"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Term.h"
+#include "dlvhex2/Atoms.h"
+#include "dlvhex2/TermTable.h"
+#include "dlvhex2/OrdinaryAtomTable.h"
+#include "dlvhex2/BuiltinAtomTable.h"
+#include "dlvhex2/AggregateAtomTable.h"
+#include "dlvhex2/RuleTable.h"
 
 #define BOOST_TEST_MODULE "TestTables"
 #include <boost/test/unit_test.hpp>

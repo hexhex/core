@@ -33,8 +33,8 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
 
 #include <cassert>
 

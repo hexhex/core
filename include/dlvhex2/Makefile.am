@@ -3,87 +3,87 @@
 # those guys belong to the dlvhex binary
 pkgincludedir=$(includedir)/dlvhex2
 pkginclude_HEADERS = \
-  AggregateAtomTable.hpp \
-  AnswerSet.hpp \
-  AnswerSetPrinterCallback.hpp \
+  AggregateAtomTable.h \
+  AnswerSet.h \
+  AnswerSetPrinterCallback.h \
   ASPSolver.h \
   ASPSolverManager.h \
-  Atoms.hpp \
-  BaseModelGenerator.hpp \
+  Atoms.h \
+  BaseModelGenerator.h \
   Benchmarking.h \
-  BuiltinAtomTable.hpp \
-  CAUAlgorithms.hpp \
-  ComfortPluginInterface.hpp \
-  ComponentGraph.hpp \
+  BuiltinAtomTable.h \
+  CAUAlgorithms.h \
+  ComfortPluginInterface.h \
+  ComponentGraph.h \
   ConcurrentMessageQueueOwning.h \
-  Configuration.hpp \
-  DependencyGraphFull.hpp \
-  DependencyGraph.hpp \
-  DumpingEvalGraphBuilder.hpp \
+  Configuration.h \
+  DependencyGraphFull.h \
+  DependencyGraph.h \
+  DumpingEvalGraphBuilder.h \
   DLVProcess.h \
   DLVresultParserDriver.h \
   Error.h \
-  EvalGraphBuilder.hpp \
-  EvalGraph.hpp \
-  EvalHeuristicASP.hpp \
-  EvalHeuristicBase.hpp \
-  EvalHeuristicEasy.hpp \
-  EvalHeuristicFromFile.hpp \
-  EvalHeuristicOldDlvhex.hpp \
-  EvalHeuristicShared.hpp \
-  EvalHeuristicTrivial.hpp \
-  ExternalAtomTable.hpp \
-  FinalEvalGraph.hpp \
-  fwd.hpp \
-  GraphvizHelpers.hpp \
-  GuessAndCheckModelGenerator.hpp \
+  EvalGraphBuilder.h \
+  EvalGraph.h \
+  EvalHeuristicASP.h \
+  EvalHeuristicBase.h \
+  EvalHeuristicEasy.h \
+  EvalHeuristicFromFile.h \
+  EvalHeuristicOldDlvhex.h \
+  EvalHeuristicShared.h \
+  EvalHeuristicTrivial.h \
+  ExternalAtomTable.h \
+  FinalEvalGraph.h \
+  fwd.h \
+  GraphvizHelpers.h \
+  GuessAndCheckModelGenerator.h \
   HexGrammar.h \
   HexGrammar.tcc \
-  HexParser.hpp \
-  HexParserModule.hpp \
-  HigherOrderPlugin.hpp \
-  ID.hpp \
-  InputProvider.hpp \
-  Interpretation.hpp \
-  Logger.hpp \
-  MLPSolver.hpp \
-  MLPSyntaxChecker.hpp \
+  HexParser.h \
+  HexParserModule.h \
+  HigherOrderPlugin.h \
+  ID.h \
+  InputProvider.h \
+  Interpretation.h \
+  Logger.h \
+  MLPSolver.h \
+  MLPSyntaxChecker.h \
   Makefile.am \
   Makefile.in \
-  ModelBuilder.hpp \
-  ModelGenerator.hpp \
-  ModelGraph.hpp \
-  Module.hpp \
-  ModuleAtomTable.hpp \
-  ModuleTable.hpp \
-  OfflineModelBuilder.hpp \
-  OnlineModelBuilder.hpp \
-  OrdinaryAtomTable.hpp \
-  PlainAuxPrinter.hpp \
-  PlainModelGenerator.hpp \
+  ModelBuilder.h \
+  ModelGenerator.h \
+  ModelGraph.h \
+  Module.h \
+  ModuleAtomTable.h \
+  ModuleTable.h \
+  OfflineModelBuilder.h \
+  OnlineModelBuilder.h \
+  OrdinaryAtomTable.h \
+  PlainAuxPrinter.h \
+  PlainModelGenerator.h \
   PlatformDefinitions.h \
   PluginContainer.h \
   PluginInterface.h \
-  Predicate.hpp \
-  PredicateMask.hpp \
-  PredicateTable.hpp \
-  Printer.hpp \
-  Printhelpers.hpp \
+  Predicate.h \
+  PredicateMask.h \
+  PredicateTable.h \
+  Printer.h \
+  Printhelpers.h \
   ProcessBuf.h \
   Process.h \
   ProgramCtx.h \
-  QueryPlugin.hpp \
-  Registry.hpp \
-  Rule.hpp \
-  RuleTable.hpp \
-  StrongNegationPlugin.hpp \
+  QueryPlugin.h \
+  Registry.h \
+  Rule.h \
+  RuleTable.h \
+  StrongNegationPlugin.h \
   SafetyChecker.h \
   State.h \
-  Table.hpp \
-  Term.hpp \
-  TermTable.hpp \
+  Table.h \
+  Term.h \
+  TermTable.h \
   URLBuf.h \
-  WellfoundedModelGenerator.hpp
+  WellfoundedModelGenerator.h
 
 
 # those belong to libaspsolver

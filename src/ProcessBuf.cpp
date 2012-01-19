@@ -37,8 +37,8 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/ProcessBuf.h"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/Printhelpers.hpp"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Printhelpers.h"
 
 #include <boost/foreach.hpp>
 #include <sstream>

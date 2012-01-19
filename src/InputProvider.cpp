@@ -33,7 +33,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/InputProvider.h"
 #include "dlvhex2/URLBuf.h"
 #include "dlvhex2/Error.h"
 

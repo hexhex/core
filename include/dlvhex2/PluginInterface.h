@@ -469,9 +469,9 @@
 #define _DLVHEX_PLUGININTERFACE_H
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/fwd.hpp"
-#include "dlvhex2/ID.hpp"
-#include "dlvhex2/Atoms.hpp"
+#include "dlvhex2/fwd.h"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Atoms.h"
 #include "dlvhex2/Error.h"
 
 #include <map>

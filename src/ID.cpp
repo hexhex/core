@@ -3,7 +3,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/ID.hpp"
+#include "dlvhex2/ID.h"
 #include <boost/functional/hash.hpp>
 #include <iomanip>
 

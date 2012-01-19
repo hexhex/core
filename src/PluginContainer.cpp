@@ -39,11 +39,11 @@
 #endif // HAVE_CONFIG_H
 
 #include "dlvhex2/PluginContainer.h"
-#include "dlvhex2/Configuration.hpp"
+#include "dlvhex2/Configuration.h"
 #include "dlvhex2/Error.h"
-#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/Logger.h"
 #include "dlvhex2/PluginInterface.h"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Registry.h"
 
 #include <ltdl.h>
 

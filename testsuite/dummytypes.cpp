@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dummytypes.hpp"
+#include "dummytypes.h"
 
 using namespace dlvhex;
 

@@ -36,17 +36,17 @@
 #define _DLVHEX_PROGRAMCTX_H
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/fwd.hpp"
-#include "dlvhex2/Configuration.hpp"
+#include "dlvhex2/fwd.h"
+#include "dlvhex2/Configuration.h"
 #include "dlvhex2/ASPSolverManager.h"
-#include "dlvhex2/Interpretation.hpp"
+#include "dlvhex2/Interpretation.h"
 #include "dlvhex2/PluginContainer.h"
-#include "dlvhex2/InputProvider.hpp"
-#include "dlvhex2/FinalEvalGraph.hpp"
-#include "dlvhex2/EvalHeuristicBase.hpp"
-#include "dlvhex2/EvalGraphBuilder.hpp"
-#include "dlvhex2/ModelBuilder.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/FinalEvalGraph.h"
+#include "dlvhex2/EvalHeuristicBase.h"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/ModelBuilder.h"
+#include "dlvhex2/Registry.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>

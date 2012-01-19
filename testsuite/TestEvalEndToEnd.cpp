@@ -34,16 +34,16 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/EvalGraphBuilder.hpp"
-#include "dlvhex2/EvalHeuristicOldDlvhex.hpp"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/EvalHeuristicOldDlvhex.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/PluginInterface.h"
-#include "dlvhex2/DependencyGraph.hpp"
-#include "dlvhex2/ComponentGraph.hpp"
-#include "dlvhex2/ModelGenerator.hpp"
-#include "dlvhex2/OnlineModelBuilder.hpp"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/ModelGenerator.h"
+#include "dlvhex2/OnlineModelBuilder.h"
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/ASPSolverManager.h"
 
@@ -51,8 +51,8 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/unit_test.hpp>
 
-#include "fixturesExt1.hpp"
-#include "graphviz.hpp"
+#include "fixturesExt1.h"
+#include "graphviz.h"
 
 #include <iostream>
 #include <fstream>

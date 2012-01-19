@@ -32,16 +32,16 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex2/EvalGraph.hpp"
-#include "dlvhex2/CAUAlgorithms.hpp"
-#include "dlvhex2/Logger.hpp"
+#include "dlvhex2/EvalGraph.h"
+#include "dlvhex2/CAUAlgorithms.h"
+#include "dlvhex2/Logger.h"
 
 // must be included before fixtures!
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/unit_test.hpp>
 
-#include "fixtureE2.hpp"
-#include "fixtureEx1.hpp"
+#include "fixtureE2.h"
+#include "fixtureEx1.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/graph_traits.hpp>

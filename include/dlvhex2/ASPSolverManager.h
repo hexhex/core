@@ -36,11 +36,11 @@
 
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/ID.hpp"
-#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/AnswerSet.h"
 #include "dlvhex2/Error.h"
 #include "dlvhex2/ConcurrentMessageQueueOwning.h"
-#include "dlvhex2/InputProvider.hpp"
+#include "dlvhex2/InputProvider.h"
 
 #include <boost/shared_ptr.hpp>
 #include <vector>

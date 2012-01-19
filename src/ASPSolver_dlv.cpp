@@ -39,10 +39,10 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/DLVProcess.h"
 #include "dlvhex2/DLVresultParserDriver.h"
-#include "dlvhex2/Printer.hpp"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/AnswerSet.h"
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>

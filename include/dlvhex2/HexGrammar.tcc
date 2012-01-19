@@ -42,8 +42,8 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
 
 #include <boost/spirit/include/qi.hpp>
 

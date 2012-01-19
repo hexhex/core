@@ -28,7 +28,7 @@
  * @brief  Implementation of default answer set printer callback.
  */
 
-#include "dlvhex2/AnswerSetPrinterCallback.hpp"
+#include "dlvhex2/AnswerSetPrinterCallback.h"
 
 // activate benchmarking if activated by configure option --enable-debug
 #ifdef HAVE_CONFIG_H
@@ -36,9 +36,9 @@
 #endif
 
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/AnswerSet.hpp"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/AnswerSet.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

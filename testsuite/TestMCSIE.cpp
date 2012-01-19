@@ -35,34 +35,34 @@
 // dlvhex
 #define DLVHEX_BENCHMARK
 
-#include "dlvhex2/HexParser.hpp"
+#include "dlvhex2/HexParser.h"
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/Logger.hpp"
-#include "dlvhex2/ID.hpp"
-#include "dlvhex2/InputProvider.hpp"
-#include "dlvhex2/Table.hpp"
-#include "dlvhex2/TermTable.hpp"
-#include "dlvhex2/OrdinaryAtomTable.hpp"
-#include "dlvhex2/BuiltinAtomTable.hpp"
-#include "dlvhex2/AggregateAtomTable.hpp"
-#include "dlvhex2/ExternalAtomTable.hpp"
-#include "dlvhex2/RuleTable.hpp"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/Table.h"
+#include "dlvhex2/TermTable.h"
+#include "dlvhex2/OrdinaryAtomTable.h"
+#include "dlvhex2/BuiltinAtomTable.h"
+#include "dlvhex2/AggregateAtomTable.h"
+#include "dlvhex2/ExternalAtomTable.h"
+#include "dlvhex2/RuleTable.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
 #include "dlvhex2/PluginInterface.h"
-#include "dlvhex2/EvalGraphBuilder.hpp"
-#include "dlvhex2/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex2/EvalHeuristicTrivial.hpp"
-#include "dlvhex2/EvalHeuristicEasy.hpp"
-#include "dlvhex2/DependencyGraph.hpp"
-#include "dlvhex2/ComponentGraph.hpp"
-#include "dlvhex2/ModelGenerator.hpp"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/EvalHeuristicOldDlvhex.h"
+#include "dlvhex2/EvalHeuristicTrivial.h"
+#include "dlvhex2/EvalHeuristicEasy.h"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/ModelGenerator.h"
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/OnlineModelBuilder.hpp"
-#include "dlvhex2/OfflineModelBuilder.hpp"
+#include "dlvhex2/OnlineModelBuilder.h"
+#include "dlvhex2/OfflineModelBuilder.h"
 
 // mcsie
 
@@ -81,7 +81,7 @@
 #include <fstream>
 #include <cstdlib>
 
-#include "graphviz.hpp"
+#include "graphviz.h"
 
 LOG_INIT(Logger::ERROR | Logger::WARNING)
 

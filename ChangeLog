@@ -1,3 +1,7 @@
+2012-01-19  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	Renaming all ".hpp" header files to ".h".
+
 2012-01-18  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Moving all files from src/dlvhex/ to src/.

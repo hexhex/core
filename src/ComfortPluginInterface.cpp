@@ -28,16 +28,16 @@
  * @brief comfortable plugin interface implementation
  */
 
-#include "dlvhex2/ComfortPluginInterface.hpp"
+#include "dlvhex2/ComfortPluginInterface.h"
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
 #include "dlvhex2/Benchmarking.h"
-#include "dlvhex2/Printer.hpp"
+#include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
-#include "dlvhex2/Registry.hpp"
+#include "dlvhex2/Registry.h"
 
 #include <sstream>
 

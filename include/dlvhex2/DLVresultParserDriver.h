@@ -32,7 +32,7 @@
 #define _DLVHEX_DLVRESULTPARSERDRIVER_H
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/AnswerSet.hpp"
+#include "dlvhex2/AnswerSet.h"
 #include "dlvhex2/Error.h"
 
 #include <boost/shared_ptr.hpp>
