@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   OrdinaryAtomTable.hpp
+ * @file   OrdinaryAtomTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Table for storing Ordinary Atoms (ground or nonground)

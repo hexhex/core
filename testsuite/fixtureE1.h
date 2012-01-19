@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixtureE1.hpp
+ * @file   fixtureE1.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Interface for testing fixtures related to sample graph $\mathcal{E}_1$.

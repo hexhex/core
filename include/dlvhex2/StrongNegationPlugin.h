@@ -22,7 +22,7 @@
  */
 
 /**
- * @file StrongNegationPlugin.hpp
+ * @file StrongNegationPlugin.h
  * @author Peter Schueller
  *
  * @brief Plugin for handling strong negation (extended programs) via rewriting to non-extended programs.

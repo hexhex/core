@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   CAUAlgorithms.hpp
+ * @file   CAUAlgorithms.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Function templates related to Common Ancestor Units (CAUs).

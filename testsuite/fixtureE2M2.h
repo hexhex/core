@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixtureE2M2.hpp
+ * @file   fixtureE2M2.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Interface for testing fixtures related to sample graphs $\mathcal{E}_2$ and $\mathcal{M}_2$.

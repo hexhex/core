@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   HexParser.hpp
+ * @file   HexParser.h
  * @author Peter Schüller
  * 
  * @brief  HEX parser interface and the basic HEX parser

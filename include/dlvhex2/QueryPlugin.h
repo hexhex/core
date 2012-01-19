@@ -22,7 +22,7 @@
  */
 
 /**
- * @file QueryPlugin.hpp
+ * @file QueryPlugin.h
  * @author Peter Schueller
  *
  * @brief Plugin for cautions/brave ground/nonground queries in dlvhex.

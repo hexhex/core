@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ModuleAtomTable.hpp
+ * @file   ModuleAtomTable.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Table for storing Module Atoms (module calls --> @p[q1,q2]::r(a,b,c) )

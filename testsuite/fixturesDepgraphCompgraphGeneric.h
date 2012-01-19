@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixturesDepgraphCompgraphGeneric.hpp
+ * @file   fixturesDepgraphCompgraphGeneric.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Generic testing fixtures for dependency and component graphs.

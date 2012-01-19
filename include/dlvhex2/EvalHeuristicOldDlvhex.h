@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicOldDlvhex.hpp
+ * @file   EvalHeuristicOldDlvhex.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic corresponding to old DLVHEX strategy.

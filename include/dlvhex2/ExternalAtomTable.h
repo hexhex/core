@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ExternalAtomTable.hpp
+ * @file   ExternalAtomTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Table for storing External Atoms

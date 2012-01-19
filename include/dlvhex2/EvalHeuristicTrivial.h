@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicTrivial.hpp
+ * @file   EvalHeuristicTrivial.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic that just uses the compgraph as eval graph.

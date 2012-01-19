@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Module.hpp
+ * @file   Module.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Module structure: stores module name, the associated input list, edb and idb

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   PredicateTable.hpp
+ * @file   PredicateTable.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Table for storing Predicates

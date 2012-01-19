@@ -23,7 +23,7 @@
 
 
 /**
- * @file Registry.hpp
+ * @file Registry.h
  * @author Peter Schueller
  * @date
  *

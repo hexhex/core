@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   GraphvizHelpers.hpp
+ * @file   GraphvizHelpers.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Helpers for creating graphviz output.

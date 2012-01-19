@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   PlainModelGenerator.hpp
+ * @file   PlainModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Model generator for the "Plain" type of components.

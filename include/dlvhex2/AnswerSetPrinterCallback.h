@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   AnswerSetPrinterCallback.hpp
+ * @file   AnswerSetPrinterCallback.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Helpers for printing objects to streams.

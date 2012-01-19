@@ -23,7 +23,7 @@
 
 
 /**
- * @file fwd.hpp
+ * @file fwd.h
  * @author Peter Schueller
  * @date
  *

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixtureEx1.hpp
+ * @file   fixtureEx1.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Interface of testing fixture for unit testing example 1.

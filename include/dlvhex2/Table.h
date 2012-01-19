@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Table.hpp
+ * @file   Table.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Base class for all Tables

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalGraphBuilder.hpp
+ * @file   EvalGraphBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Framework for heuristics to build an EvalGraph from a ComponentGraph.

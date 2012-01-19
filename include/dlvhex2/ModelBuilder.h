@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ModelBuilder.hpp
+ * @file   ModelBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Base template for model building of a ModelGraph based on an EvalGraph.

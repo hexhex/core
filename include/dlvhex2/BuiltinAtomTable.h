@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   BuiltinAtomTable.hpp
+ * @file   BuiltinAtomTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Table for storing Builtin Atoms

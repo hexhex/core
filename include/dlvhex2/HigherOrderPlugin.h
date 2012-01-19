@@ -22,7 +22,7 @@
  */
 
 /**
- * @file HigherOrderPlugin.hpp
+ * @file HigherOrderPlugin.h
  * @author Peter Schueller
  *
  * @brief Plugin for higher order rewriting.

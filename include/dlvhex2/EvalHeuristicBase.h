@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicBase.hpp
+ * @file   EvalHeuristicBase.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic base class.

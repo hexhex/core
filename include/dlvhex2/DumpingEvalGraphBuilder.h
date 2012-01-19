@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   DumpingEvalGraphBuilder.hpp
+ * @file   DumpingEvalGraphBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation Graph builder that dumps its evaluation plan.

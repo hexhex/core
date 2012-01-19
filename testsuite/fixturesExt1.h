@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixturesExt1.hpp
+ * @file   fixturesExt1.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Interface for testing fixtures related to sample program from Roman's thesis.

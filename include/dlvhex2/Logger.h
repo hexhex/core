@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Logger.hpp
+ * @file   Logger.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Logging facility with comfortable indentation and closures.

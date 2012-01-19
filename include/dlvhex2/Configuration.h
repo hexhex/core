@@ -23,7 +23,7 @@
 
 
 /**
- * @file   Configuration.hpp
+ * @file   Configuration.h
  * @author Roman Schindlauer, Peter Schueller
  * @date   Sat Nov  5 15:26:18 CET 2005
  * 

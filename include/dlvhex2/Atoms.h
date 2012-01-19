@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Atoms.hpp
+ * @file   Atoms.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Storage classes for atoms: Atom, OrdinaryAtom, BuiltinAtom, AggregateAtom, ExternalAtom, ModuleAtom.

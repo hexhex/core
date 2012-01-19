@@ -23,7 +23,7 @@
 
 
 /**
- * @file InputProvider.hpp
+ * @file InputProvider.h
  * @author Peter Schueller
  * @date
  *

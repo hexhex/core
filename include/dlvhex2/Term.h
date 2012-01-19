@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Term.hpp
+ * @file   Term.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Term class: stores constants, constant strings, and variables.

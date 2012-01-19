@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   GuessAndCheckModelGenerator.hpp
+ * @file   GuessAndCheckModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Model generator for eval units that do not allow a fixpoint calculation.

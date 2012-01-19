@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   TermTable.hpp
+ * @file   TermTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Table for storing Terms

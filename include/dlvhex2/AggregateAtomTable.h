@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   AggregateAtomTable.hpp
+ * @file   AggregateAtomTable.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Table for storing Aggregate Atoms

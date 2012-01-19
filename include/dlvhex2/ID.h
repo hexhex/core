@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ID.hpp
+ * @file   ID.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Header to help using and debugging within the ID concept (see /ID-Concept.txt)

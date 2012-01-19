@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   OnlineModelBuilder.hpp
+ * @file   OnlineModelBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Template for online model building of a ModelGraph based on an EvalGraph.

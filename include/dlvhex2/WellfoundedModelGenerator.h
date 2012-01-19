@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   WellfoundedModelGenerator.hpp
+ * @file   WellfoundedModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Model generator for eval units that allow a fixpoint calculation.

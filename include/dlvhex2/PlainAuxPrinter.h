@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   PlainAuxPrinter.hpp
+ * @file   PlainAuxPrinter.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Helper for printing auxiliary objects for the user.

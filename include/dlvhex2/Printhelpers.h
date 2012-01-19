@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Printhelpers.hpp
+ * @file   Printhelpers.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Helpers for printing objects to streams.

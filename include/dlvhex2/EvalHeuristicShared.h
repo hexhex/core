@@ -22,7 +22,7 @@
  */
 
 /**
- * @file EvalHeuristicShared.hpp
+ * @file EvalHeuristicShared.h
  * @author Peter Schüller
  *
  * @brief Code used in multiple evaluation heuristics.

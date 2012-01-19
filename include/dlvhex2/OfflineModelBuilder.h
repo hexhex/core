@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   OfflineModelBuilder.hpp
+ * @file   OfflineModelBuilder.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Template for offline model building of a ModelGraph based on an EvalGraph.

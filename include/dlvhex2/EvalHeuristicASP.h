@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicASP.hpp
+ * @file   EvalHeuristicASP.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic that uses ASP to plan hex evaluation.

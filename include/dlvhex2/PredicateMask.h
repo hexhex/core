@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   PredicateMask.hpp
+ * @file   PredicateMask.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Incrementally managed bitmask for projecting ground

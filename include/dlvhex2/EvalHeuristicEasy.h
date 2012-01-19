@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicEasy.hpp
+ * @file   EvalHeuristicEasy.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic that just uses a simple but nontrivial heuristic.

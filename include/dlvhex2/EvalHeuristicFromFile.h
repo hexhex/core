@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   EvalHeuristicFromFile.hpp
+ * @file   EvalHeuristicFromFile.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Evaluation heuristic that uses collapse commands from given file.

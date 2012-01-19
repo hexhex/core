@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   AnswerSet.hpp
+ * @file   AnswerSet.h
  * @author Peter Schüller
  * 
  * @brief  Answer set container: holds interpretation and information about model cost (for weak constraints).

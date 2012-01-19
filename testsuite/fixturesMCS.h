@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   fixturesMCS.hpp
+ * @file   fixturesMCS.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Interface for testing fixtures related to MCS-IE.

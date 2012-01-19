@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Predicate.hpp
+ * @file   Predicate.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Predicate structure: stores predicate and its arity.

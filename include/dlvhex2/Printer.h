@@ -23,7 +23,7 @@
 
 
 /**
- * @file Printer.hpp
+ * @file Printer.h
  * @author Peter Schueller
  * @date
  *

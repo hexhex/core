@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   dummytypes.hpp
+ * @file   dummytypes.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Dummy replacement types for testing (model building) templates.

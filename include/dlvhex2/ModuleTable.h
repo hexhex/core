@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ModuleTable.hpp
+ * @file   ModuleTable.h
  * @author Tri Kurniawan Wijaya <trikurniawanwijaya@gmail.com>
  * 
  * @brief  Table for storing Modules: ModuleName, inputList, edb, idb. Use struct from Module.hpp

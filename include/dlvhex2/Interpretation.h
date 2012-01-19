@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Interpretation.hpp
+ * @file   Interpretation.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Bitset interpretation using bitmagic library.

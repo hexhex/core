@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   FinialEvalGraph.hpp
+ * @file   FinialEvalGraph.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Definition of eval graph as used in real dlvhex evaluation.

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   Rule.hpp
+ * @file   Rule.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Rule: store rules (not facts!), constraints, weak constraints

@@ -22,7 +22,7 @@
  */
 
 /**
- * @file   ModelGenerator.hpp
+ * @file   ModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
  * @brief  Base classes for model generators.
