@@ -410,7 +410,7 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 	}
 }
 
-vpod PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
+void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 		DBGLOG(DBG, "External Learning: Rule");
