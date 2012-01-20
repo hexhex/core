@@ -157,11 +157,11 @@ void loadCandidates(
         break;
       }
 
-      t_getversion getversion = reinterpret_cast<t_getversion>(lt_dlsym(dlHandle, PLUGINVERSIONFUNCTIONSTRING));
+      t_getversion getversion = reinterpret_cast<t_getversion>(lt_dlsym(dlHandle, PLUGINABIVERSIONFUNCTIONSTRING));
       if( getversion == NULL )
       {
         LOG(INFO,"Library '" << lib << "' selected for opening, but found no "
-          "version function '" << PLUGINVERSIONFUNCTIONSTRING << "' (skipping)");
+          "version function '" << PLUGINABIVERSIONFUNCTIONSTRING << "' (skipping)");
         break;
       }
 
@@ -173,27 +173,31 @@ void loadCandidates(
         break;
       }
 
-      // verify version
-      DBGLOG(DBG,"now checking plugin version for " << lib);
+      // verify ABI version
+      //
+      // we use the Apache APR approach to versioning
+      // see https://apr.apache.org/versioning.html
+      DBGLOG(DBG,"now checking plugin ABI version for " << lib);
       int iversion = getversion();
       {
         int imajor = iversion / 10000;
         int iminor = (iversion / 100) % 100;
-        int ipatch = iversion % 100;
-        LOG(INFO,"got version " << iversion << " from " << lib <<
-            ", interpreted this as (" << imajor << "," << iminor << "," << ipatch << ")");
-        if( imajor != DLVHEX_VERSION_MAJOR )
+        int imicro = iversion % 100;
+        LOG(INFO,"got ABI version " << iversion << " from " << lib <<
+            ", interpreted this as (" << imajor << "," << iminor << "," << imicro << ")");
+        if( imajor != DLVHEX2_ABI_VERSION_MAJOR )
         {
-          LOG(INFO,"Library '" << lib << "' returned incompatible major version: " <<
-              imajor << " (library) != " << DLVHEX_VERSION_MAJOR << " (dlvhex) (skipping)");
+          LOG(INFO,"Library '" << lib << "' returned incompatible major ABI version: " <<
+              imajor << " (library) != " << DLVHEX2_ABI_VERSION_MAJOR << " (dlvhex) (skipping)");
           break;
         }
-        if( iminor > DLVHEX_VERSION_MINOR )
+        if( iminor > DLVHEX2_ABI_VERSION_MINOR )
         {
-          LOG(INFO,"Library '" << lib << "' returned incompatible minor version: " <<
-              iminor << " (library) > " << DLVHEX_VERSION_MINOR << " (dlvhex) (skipping)");
+          LOG(INFO,"Library '" << lib << "' returned incompatible minor ABI version: " <<
+              iminor << " (library) > " << DLVHEX2_ABI_VERSION_MINOR << " (dlvhex) (skipping)");
           break;
         }
+        // ignore micro abi version
         // version check successful
       }
 
