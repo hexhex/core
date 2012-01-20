@@ -159,7 +159,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	// store in model generator and store as const
 	postprocessedInput = newint;
 
-	ASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
+	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 	if (factory.ctx.config.getOption("Instantiate")){
@@ -170,7 +170,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 		std::cout << grounder->getGroundProgramString();
 	}
 
-	ASPProgram gprogram = grounder->getGroundProgram();
+	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	currentanswer = 0;
 }

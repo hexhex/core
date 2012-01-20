@@ -825,7 +825,7 @@ std::string InternalGroundASPSolver::getStatistics(){
 #endif
 }
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, ASPProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0){
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, OrdinaryASPProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0){
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	reg = ctx.registry();

@@ -2,11 +2,6 @@ dom(a).
 dom(b).
 dom(c).
 dom(d).
-dom(e).
-dom(f).
-dom(g).
-dom(h).
-dom(i).
 
 nsel(X) :- dom(X), &testSetMinusLearning[dom, sel](X).
 sel(X) :- dom(X), &testSetMinusLearning[dom, nsel](X).

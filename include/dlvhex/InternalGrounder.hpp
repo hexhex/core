@@ -35,7 +35,7 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Printhelpers.hpp"
-#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/OrdinaryASPProgram.hpp"
 #include "dlvhex/Set.hpp"
 
 #include <vector>
@@ -58,7 +58,7 @@ protected:
 	typedef boost::unordered_map<ID, ID> Substitution;
 	typedef boost::unordered_map<ID, int> Binder;
 
-	ASPProgram inputprogram;
+	OrdinaryASPProgram inputprogram;
 	ProgramCtx& ctx;
 	RegistryPtr reg;
 	OptLevel optlevel;
@@ -153,10 +153,10 @@ protected:
 	};
 	int applyIntFunction(AppDir ad, ID op, int x, int y);
 public:
-	InternalGrounder(ProgramCtx& ctx, ASPProgram& p, OptLevel = full);
+	InternalGrounder(ProgramCtx& ctx, OrdinaryASPProgram& p, OptLevel = full);
 
-	ASPProgram getGroundProgram();
-	ASPProgram getNongroundProgram();
+	OrdinaryASPProgram getGroundProgram();
+	OrdinaryASPProgram getNongroundProgram();
 	std::string getGroundProgramString();
 	std::string getNongroundProgramString();
 

@@ -569,7 +569,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     {
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
-	ASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint);
+	OrdinaryASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint);
 
 	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 	if (factory.ctx.config.getOption("Instantiate")){
@@ -577,7 +577,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 		std::cout << grounder->getGroundProgramString();
 	}
 
-	ASPProgram gprogram = grounder->getGroundProgram();
+	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
 	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	if (factory.ctx.config.getOption("ExternalLearningPartial")){
 		igas->addExternalLearner(this);
@@ -834,7 +834,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		// we might need edb facts here
 		// (dependencies to edb are not modelled in the dependency graph)
 		// therefore we did not mask the guess program before
-		aborted = !evaluateExternalAtoms(reg, factory.innerEatoms, modelCandidate, cb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
+		aborted = !evaluateExternalAtoms(reg, factory.innerEatoms, modelCandidate, cb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
 
 		if (projectedModelCandidate_pos_val->getStorage().count() > 0){
 			aborted = true;
@@ -866,9 +866,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 				DBGLOG(DBG,"evaluating flp head program");
 
 				// here we can mask, we won't lose FLP heads
-				ASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
+				OrdinaryASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
 				InternalGrounder ig(factory.ctx, flpheadprogram);
-				ASPProgram flpheadgprogram = ig.getGroundProgram();
+				OrdinaryASPProgram flpheadgprogram = ig.getGroundProgram();
 				InternalGroundDASPSolver flpheadigas(factory.ctx, flpheadgprogram);
 
 				flpas = flpheadigas.projectToOrdinaryAtoms(flpheadigas.getNextModel());
@@ -893,9 +893,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 				edbflpguess->getStorage() &= (flpas->getStorage() | factory.gpMask.mask()->getStorage());
 
 				// here we can also mask, this eliminates many equal bits for comparisons later
-				ASPProgram flpbodyprogram(reg, factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
+				OrdinaryASPProgram flpbodyprogram(reg, factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
 				InternalGrounder ig(factory.ctx, flpbodyprogram);
-				ASPProgram flpbodygprogram = ig.getGroundProgram();
+				OrdinaryASPProgram flpbodygprogram = ig.getGroundProgram();
 				InternalGroundDASPSolver flpbodyigas(factory.ctx, flpbodygprogram);
 
 				// for comparing the flpbody answer sets we mask the guess interpretation
@@ -1042,7 +1042,7 @@ bool auxChanged = false;
 				InterpretationPtr eaResult(new Interpretation(reg));
 				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
 				int i = igas->getNogoodCount();
-				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
+				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? igas : CDNLSolverPtr());
 				DBGLOG(DBG, "Output has size " << eaResult->getStorage().count());
 				if (igas->getNogoodCount() != i) learned = true;
 	//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);

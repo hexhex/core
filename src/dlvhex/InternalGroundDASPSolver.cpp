@@ -199,7 +199,7 @@ std::string InternalGroundDASPSolver::getStatistics(){
 #endif
 }
 
-InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, ASPProgram& p) : InternalGroundASPSolver(ctx, p), cntModelCandidates(0), cntDUnfoundedSets(0){
+InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p) : InternalGroundASPSolver(ctx, p), cntModelCandidates(0), cntDUnfoundedSets(0){
 
 	// compute HCF status for all components
 	for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){

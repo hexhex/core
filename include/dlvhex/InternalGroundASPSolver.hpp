@@ -40,7 +40,7 @@
 #include <boost/foreach.hpp>
 #include "dlvhex/Printhelpers.hpp"
 #include "CDNLSolver.hpp"
-#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex/OrdinaryASPProgram.hpp"
 //#include <bm/bm.h>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -61,7 +61,7 @@ private:
 
 protected:
 	// structural program information
-	ASPProgram program;
+	OrdinaryASPProgram program;
 	RegistryPtr reg;
 
 	Set<IDAddress> ordinaryFacts;
@@ -162,7 +162,7 @@ protected:
 public:
 	virtual std::string getStatistics();
 
-	InternalGroundASPSolver(ProgramCtx& ctx, ASPProgram& p);
+	InternalGroundASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
 
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);

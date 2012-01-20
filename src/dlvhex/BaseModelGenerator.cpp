@@ -119,7 +119,8 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   const ExternalAtom& eatom,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
-  CDNLSolverPtr solver) const
+  ProgramCtx* ctx,
+  NogoodContainerPtr nogoods) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
@@ -200,7 +201,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     // query
     PluginAtom::Query query(eatominp, inputtuple, eatom.tuple, &eatom);
     PluginAtom::Answer answer;
-    pluginAtom->retrieveCached(query, answer, solver);
+    pluginAtom->retrieveCached(query, answer, ctx, nogoods);
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if( !answer.get().empty() )
@@ -251,12 +252,13 @@ bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
   const std::vector<ID>& eatoms,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
-  CDNLSolverPtr solver) const
+  ProgramCtx* ctx,
+  NogoodContainerPtr nogoods) const
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {
     const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-    if( !evaluateExternalAtom(reg, eatom, inputi, cb, solver) )
+    if( !evaluateExternalAtom(reg, eatom, inputi, cb, ctx, nogoods) )
     {
       LOG(DBG,"callbacks aborted evaluateExternalAtoms");
       return false;

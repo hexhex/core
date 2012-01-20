@@ -817,7 +817,7 @@ public:
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
-  virtual void retrieveCached(const Query&, Answer&, CDNLSolverPtr solver);
+  virtual void retrieveCached(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
   /**
    * \brief Retrieve answer object according to a query.
@@ -825,13 +825,17 @@ public:
    * This function implements the external atom.
    */
   virtual void retrieve(const Query&, Answer&) = 0;
-  virtual void retrieve(const Query&, Answer&, CDNLSolverPtr solver);
+  virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
-  void defaultExtLearning(const Query&, Answer&, CDNLSolverPtr solver);
-  Nogood getInputNogood(CDNLSolverPtr solver, const Query& query);
-  Nogood getRuleNogood(CDNLSolverPtr solver, const Query& query, const Rule& rule);
-  Set<ID> getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer, bool sign);
-  ID getOutputAtom(CDNLSolverPtr solver, const Query& query, Tuple t, bool sign);
+  void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+  void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+  void learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule);
+  void learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rule);
+
+  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query);
+  Set<ID> getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign);
+  ID getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple t, bool sign);
+  ID getIDOfRule(ProgramCtx* ctx, std::string rule);
 
   /**
    * \brief Returns the type of the input argument specified by position

@@ -250,9 +250,9 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   }
 }
 
-void PluginAtom::retrieveCached(const Query& query, Answer& answer, CDNLSolverPtr solver)
+void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
 {
-	DBGLOG(DBG, "Retrieve with learning, solver: " << (solver == CDNLSolverPtr() ? "not " : "") << "available" );
+	DBGLOG(DBG, "Retrieve with learning, pointer nogood container: " << (nogoods == NogoodContainerPtr() ? "not " : "") << "available" );
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
 	// Cache answer for queries which were already done once:
@@ -280,7 +280,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, CDNLSolverPt
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
-			retrieve(query, ans, solver);
+			retrieve(query, ans, ctx, nogoods);
 			// if there was no answer, perhaps it has never been used, so we use it manually
 			ans.use();
 		}
@@ -331,77 +331,242 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, CDNLSolverPt
 #endif
 }
 
-void PluginAtom::retrieve(const Query& query, Answer& answer, CDNLSolverPtr solver){
+void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods){
 
 	retrieve(query, answer);
 
-	defaultExtLearning(query, answer, solver);
+	learnFromInputOutputBehavior(ctx, nogoods, answer, query);
+	learnFromFunctionality(ctx, nogoods, answer, query);
 }
 
-void PluginAtom::defaultExtLearning(const Query& query, Answer& answer, CDNLSolverPtr solver){
+void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
 
-	if (solver != CDNLSolverPtr()){
+	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
-		DBGLOG(DBG, "Learning from external call");
+		if (ctx->config.getOption("ExternalLearningEABehavior")){
+			DBGLOG("External Learning: EABehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
-		Nogood extNgInput = getInputNogood(solver, query);
-		DBGLOG(DBG, "Input nogood: " << extNgInput);
+			Nogood extNgInput = getInputNogood(ctx, nogoods, query);
 
-		Set<ID> out = getOutputAtoms(solver, query, answer, false);
-		BOOST_FOREACH (ID oid, out){
-			Nogood extNg = extNgInput;
-			extNg.insert(oid);
-			DBGLOG(DBG, "Overall nogood: " << extNg);
-			solver->addNogood(extNg);
+			Set<ID> out = getOutputAtoms(ctx, nogoods, query, answer, false);
+			BOOST_FOREACH (ID oid, out){
+				Nogood extNg = extNgInput;
+				extNg.insert(oid);
+				DBGLOG(DBG, "Learned nogood " << extNg << " from input-output behavior");
+				nogoods->addNogood(extNg);
+			}
 		}
+	}
+}
 
-		// functionality
-		if (solver->getProgramContext().config.getOption("ExternalLearningFunctionality") && isFunctional(query)){
+void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
+
+	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+
+		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(query)){
+			DBGLOG("External Learning: Functionality");
+
 			// there is a unique output
 			const std::vector<Tuple>& otuples = answer.get();
 
 			if (otuples.size() > 0){
-				ID uniqueOut = getOutputAtom(solver, query, otuples[0], true);
+				ID uniqueOut = getOutputAtom(ctx, nogoods, query, otuples[0], true);
 
 				// go through all output tuples which have been generated so far
 				BOOST_FOREACH (Tuple t, this->otuples){
-					ID id = getOutputAtom(solver, query, t, true);
+					ID id = getOutputAtom(ctx, nogoods, query, t, true);
 					if (id != uniqueOut){
 						Nogood excludeOthers;
 						excludeOthers.insert(uniqueOut);
 						excludeOthers.insert(id);
-						DBGLOG(DBG, "Nogood for functional external source: " << excludeOthers);
-						solver->addNogood(excludeOthers);
+						DBGLOG(DBG, "Learned nogood " << excludeOthers << " from functionality");
+						nogoods->addNogood(excludeOthers);
 					}
 				}
 			}
 		}
-
-/*
-		InputProviderPtr ip(new InputProvider());
-		ip->addStringInput("p(a). q(X) :- dom(X), not sel(X).", "test");
-		ProgramCtx pc;
-		pc.changeRegistry(solver->getProgramContext().registry());
-		ModuleHexParser hp;
-		hp.parse(ip, pc);
-
-		ASPProgram program(pc.registry(), pc.idb, query.interpretation);
-		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(pc, program, InternalGrounder::builtin));
-		ASPProgram gprogram = ig->getGroundProgram();
-		DBGLOG(DBG, "NONGROUND::");
-		DBGLOG(DBG, ig->getNongroundProgramString());
-		DBGLOG(DBG, "GROUND::");
-		DBGLOG(DBG, ig->getGroundProgramString());
-		// create a nogood for each ground rule
-		BOOST_FOREACH (ID ruleID, gprogram.idb){
-			Nogood ng = getRuleNogood(solver, query, pc.registry()->rules.getByID(ruleID));
-			DBGLOG(DBG, "Rule nogood: " << ng);
-		}
-*/
 	}
 }
 
-Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
+void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule){
+
+	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+		DBGLOG("External Learning: Ground Rule");
+
+		const Rule& rule = ctx->registry()->rules.getByID(groundRule);
+
+		Nogood ng;
+		BOOST_FOREACH (ID hId, rule.head){
+			const OrdinaryAtom& oat = ctx->registry()->ogatoms.getByID(hId);
+			Tuple t;
+			t.insert(t.end(), oat.tuple.begin() + 1, oat.tuple.end());
+			ng.insert(getOutputAtom(ctx, nogoods, query, t, false));
+		}
+		BOOST_FOREACH (ID bId, rule.body){
+			ng.insert(bId);
+		}
+		DBGLOG(DBG, "Learned nogood " << ng << " from rule");
+		nogoods->addNogood(ng);
+	}
+}
+
+vpod PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
+
+	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+		DBGLOG("External Learning: Rule");
+
+		DBGLOG(DBG, "Rewriting rule");
+		const Rule& rule = ctx->registry()->rules.getByID(rid);
+
+		Rule rrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+		rrule.head = rule.head;
+		BOOST_FOREACH (ID batom, rule.body){
+
+			const OrdinaryAtom& oatom = batom.isOrdinaryGroundAtom() ? ctx->registry()->ogatoms.getByID(batom) : ctx->registry()->onatoms.getByID(batom);
+
+			// replace predicate name by parameter from query.input
+			OrdinaryAtom roatom = oatom;
+			bool found = false;
+			for (int inp = 0; inp < query.input.size(); inp++){
+				std::stringstream inPredStr;
+				inPredStr << "in" << (inp + 1);
+				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
+				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
+
+				if (roatom.tuple[0] == inPredID){
+					roatom.tuple[0] = query.input[inp];
+					found = true;
+					break;
+				}
+			}
+			assert(found);
+
+			ID batomId = batom.isOrdinaryGroundAtom() ? ctx->registry()->storeOrdinaryGAtom(roatom) : ctx->registry()->storeOrdinaryNAtom(roatom);
+			ID mask(ID::MAINKIND_LITERAL, 0);
+			if (batom.isNaf()) mask = mask | ID(ID::NAF_MASK, 0);
+			if (batom.isOrdinaryGroundAtom()) mask = mask | ID(ID::SUBKIND_ATOM_ORDINARYG, 0);
+			if (batom.isOrdinaryNongroundAtom()) mask = mask | ID(ID::SUBKIND_ATOM_ORDINARYN, 0);
+			rrule.body.push_back(ID(mask.kind, batomId.address));
+		}
+		ID rruleId = ctx->registry()->storeRule(rrule);
+
+		DBGLOG(DBG, "Building ASP Program");
+		InterpretationConstPtr edb = query.interpretation;
+		std::vector<ID> idb;
+		idb.push_back(rruleId);
+		OrdinaryASPProgram program(ctx->registry(), idb, edb);
+
+		DBGLOG(DBG, "Grounding learning rule");
+		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
+		OrdinaryASPProgram gprogram = ig->getGroundProgram();
+
+		DBGLOG(DBG, "Generating nogoods for all ground rules");
+		BOOST_FOREACH (ID rid, gprogram.idb){
+			Nogood ng = getGroundRuleNogood(ctx, nogoods, query, rid);
+			nogoods->addNogood(ng);
+		}
+	}
+
+
+
+
+
+
+
+#if 0
+
+	std::vector<Nogood> outnogoods;
+
+	DBGLOG(DBG, "Constructing EDB");
+	std::vector<ID> idb;
+	idb.push_back(rule);
+	InterpretationPtr edb = InterpretationPtr(new Interpretation(ctx->registry()));
+
+	// go through all input atoms
+	DBGLOG(DBG, "Rewriting input");
+	const std::vector<ID>& params = query.input;
+	for(Interpretation::Storage::enumerator it =
+	    query.interpretation->getStorage().first();
+	    it != query.interpretation->getStorage().end(); ++it){
+
+		ID ogid(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it);
+		const OrdinaryAtom& ogatom = ctx->registry()->ogatoms.getByID(ogid);
+
+		// check if the predicate matches any of the input parameters to simulator atom
+		bool found = false;
+		for (int inp = 0; inp < params.size(); ++inp){
+			DBGLOG(DBG, "Checking predicate " << ogatom.tuple[0] << " against parameter " << inp);
+			if (ogatom.tuple[0] == params[inp]){
+				// replace the predicate by "in[inp]"
+				std::stringstream inPredStr;
+				inPredStr << "in" << (inp + 1);
+				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
+				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
+				OrdinaryAtom oareplace = ogatom;
+				oareplace.tuple[0] = inPredID;
+
+				// get ID of replaced atom
+				ID oareplaceID = ctx->registry()->storeOrdinaryGAtom(oareplace);
+
+				// set this atom in the input interpretation
+				edb->getStorage().set_bit(oareplaceID.address);
+				found = true;
+				break;
+			}
+		}
+		assert(found);
+	}
+	DBGLOG(DBG, "EDB: " << *edb);
+
+	DBGLOG(DBG, "Grounding learning rule");
+	OrdinaryASPProgram program(ctx->registry(), idb, edb);
+	InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
+	OrdinaryASPProgram gprogram = ig->getGroundProgram();
+
+	DBGLOG(DBG, "Generating nogoods for all ground rules");
+	BOOST_FOREACH (ID rid, gprogram.idb){
+		DBGLOG(DBG, "Rewriting rule with ID " << rid);
+		const Rule& rule = ctx->registry()->rules.getByID(rid);
+
+		Rule rrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+		rrule.head = rule.head;
+		BOOST_FOREACH (ID batom, rule.body){
+			const OrdinaryAtom& ogatom = ctx->registry()->ogatoms.getByID(batom);
+
+			// replace predicate name by parameter from query.input
+			OrdinaryAtom rogatom = ogatom;
+			bool found = false;
+			for (int inp = 0; inp < query.input.size(); inp++){
+				std::stringstream inPredStr;
+				inPredStr << "in" << (inp + 1);
+				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
+				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
+
+				if (rogatom.tuple[0] == inPredID){
+					rogatom.tuple[0] = query.input[inp];
+					found = true;
+					break;
+				}
+			}
+			assert(found);
+
+			ID batomId = ctx->registry()->storeOrdinaryGAtom(rogatom);
+			if (batom.isNaf()){
+				rrule.body.push_back(batomId | ID(ID::NAF_MASK, 0));
+			}else{
+				rrule.body.push_back(batomId);
+			}
+		}
+		ID rruleId = ctx->registry()->storeRule(rrule);
+
+		Nogood ng = getGroundRuleNogood(ctx, nogoods, query, rruleId);
+		outnogoods.push_back(ng);
+	}
+	return outnogoods;
+#endif
+}
+
+Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query){
 
 	// find relevant input
 	bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
@@ -417,8 +582,8 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 		int index = query.inputPredicateTable.find(pred)->second;
 
 		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
-		if (query.interpretation->getFact(*en) || !isMonotonic(query, index) || !solver->getProgramContext().config.getOption("ExternalLearningMonotonicity")){
-			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
+		if (query.interpretation->getFact(*en) || !isMonotonic(query, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
+			extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
 		}
 		en++;
 	}
@@ -426,22 +591,7 @@ Nogood PluginAtom::getInputNogood(CDNLSolverPtr solver, const Query& query){
 	return extNgInput;
 }
 
-Nogood PluginAtom::getRuleNogood(CDNLSolverPtr solver, const Query& query, const Rule& rule){
-
-	Nogood ng;
-	BOOST_FOREACH (ID hId, rule.head){
-		const OrdinaryAtom& oat = solver->getProgramContext().registry()->ogatoms.getByID(hId);
-		Tuple t;
-		t.insert(t.end(), oat.tuple.begin() + 1, oat.tuple.end());
-		ng.insert(getOutputAtom(solver, query, t, false));
-	}
-	BOOST_FOREACH (ID bId, rule.body){
-		ng.insert(bId);
-	}
-	return ng;
-}
-
-Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, const Answer& answer, bool sign){
+Set<ID> PluginAtom::getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign){
 
 	Set<ID> out;
 
@@ -461,14 +611,14 @@ Set<ID> PluginAtom::getOutputAtoms(CDNLSolverPtr solver, const Query& query, con
 		// add current output
 		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 		// get ID of this replacement atom
-		ID idreplacement = solver->createLiteral(registry->storeOrdinaryGAtom(replacement));
+		ID idreplacement = nogoods->createLiteral(registry->storeOrdinaryGAtom(replacement));
 		out.insert(idreplacement);
 	}
 
 	return out;
 }
 
-ID PluginAtom::getOutputAtom(CDNLSolverPtr solver, const Query& query, Tuple otuple, bool sign){
+ID PluginAtom::getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple otuple, bool sign){
 
 	// construct replacement atom with input from query
 	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -480,8 +630,32 @@ ID PluginAtom::getOutputAtom(CDNLSolverPtr solver, const Query& query, Tuple otu
 	// add output tuple
 	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
 
-	ID idreplacement = solver->createLiteral(registry->storeOrdinaryGAtom(replacement));
+	ID idreplacement = nogoods->createLiteral(registry->storeOrdinaryGAtom(replacement));
 	return idreplacement;
+}
+
+ID PluginAtom::getIDOfRule(ProgramCtx* ctx, std::string rule){
+
+	// parse rule
+	DBGLOG(DBG, "Parsing rule " << rule);
+	InputProviderPtr ip(new InputProvider());
+	ip->addStringInput(rule, "rule");
+	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
+	Logger::Instance().setPrintLevels(0);
+	ProgramCtx pc;
+	pc.changeRegistry(ctx->registry());
+	ModuleHexParser hp;
+	hp.parse(ip, pc);
+	Logger::Instance().setPrintLevels(l);
+
+	DBGLOG(DBG, "Parsed " << rule);
+	if (pc.idb.size() != 1){
+		DBGLOG(DBG, "Error: Got " << pc.idb.size() << " rules");
+		return ID_FAIL;
+	}else{
+		DBGLOG(DBG, "Got 1 rule");
+		return pc.idb[0];
+	}
 }
 
 PluginAtom::InputType

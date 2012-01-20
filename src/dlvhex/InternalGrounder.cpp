@@ -1204,7 +1204,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 	return -1;
 }
 
-InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p, OptLevel ol) : inputprogram(p), ctx(c), optlevel(ol){
+InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), ctx(c), optlevel(ol){
 
 	DBGLOG(DBG, "Starting grounding");
 
@@ -1222,7 +1222,7 @@ InternalGrounder::InternalGrounder(ProgramCtx& c, ASPProgram& p, OptLevel ol) : 
 	}
 
 #ifndef NDEBUG
-	ASPProgram gp = getGroundProgram();
+	OrdinaryASPProgram gp = getGroundProgram();
 
 	std::stringstream ss;
 	ss << *trueAtoms << " (" << trueAtoms->getStorage().count() << ")";
@@ -1277,13 +1277,13 @@ std::string InternalGrounder::getNongroundProgramString(){
 	return ss.str();
 }
 
-ASPProgram InternalGrounder::getGroundProgram(){
+OrdinaryASPProgram InternalGrounder::getGroundProgram(){
 
-	ASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
+	OrdinaryASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
 	return gp;
 }
 
-ASPProgram InternalGrounder::getNongroundProgram(){
+OrdinaryASPProgram InternalGrounder::getNongroundProgram(){
 
 	return inputprogram;
 }

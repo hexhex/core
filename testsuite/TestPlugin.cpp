@@ -46,6 +46,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <map>
 
 #include <cstdio>
 #include <cassert>
@@ -381,8 +382,10 @@ public:
 	}
   }
 
-  virtual void retrieve(const Query& query, Answer& answer, CDNLSolverPtr solver)
+  virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
   {
+	static std::map<std::string, ID> ruleIDs;
+
 	// find relevant input
 	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
 	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
@@ -404,11 +407,25 @@ public:
 		}
 		en++;
 	}
+
+// Test: Rule-based learning
+if (nogoods != NogoodContainerPtr()){
+	std::string rule = "out(X) :- in1(X), not in2(X).";
+	if (ruleIDs.find(rule) == ruleIDs.end()){
+		ruleIDs[rule] = getIDOfRule(ctx, rule);
+	}
+	ID rid = ruleIDs[rule];
+	learnFromRule(ctx, nogoods, query, rid);
+}
+
+
+
 	BOOST_FOREACH (Tuple t, tuples1){
 		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
 			answer.get().push_back(t);
-
-			if (solver != CDNLSolverPtr()){
+/*
+			// Test: Learning based on direct definition of nogoods
+			if (nogoods != NogoodContainerPtr()){
 				// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
 				OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				at1.tuple.push_back(query.input[0]);
@@ -418,17 +435,19 @@ public:
 				for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
 
 				Nogood nogood;
-				nogood.insert(solver->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
-				nogood.insert(solver->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
-				nogood.insert(getOutputAtom(solver, query, t, false));
-				solver->addNogood(nogood);
+				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
+				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
+				nogood.insert(getOutputAtom(ctx, nogoods, query, t, false));
+				nogoods->addNogood(nogood);
 
 				DBGLOG(DBG, "Learned user-defined nogood: " << nogood);
 			}else{
 				DBGLOG(DBG, "No user-defined learning");
 			}
+*/
 		}
 	}
+
 //	defaultExtLearning(query, answer, solver);
   }
 };

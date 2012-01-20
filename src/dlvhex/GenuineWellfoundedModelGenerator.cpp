@@ -205,9 +205,9 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			{
 				// we don't use a mask here!
 				// -> we receive all facts
-				ASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
+				OrdinaryASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
 				InternalGrounder grounder(factory.ctx, program);
-				ASPProgram gprogram = grounder.getGroundProgram();
+				OrdinaryASPProgram gprogram = grounder.getGroundProgram();
 				if (factory.ctx.config.getOption("Instantiate")){
 					std::cout << "% Component " << &(factory.ci) << std::endl;
 					std::cout << grounder.getGroundProgramString();

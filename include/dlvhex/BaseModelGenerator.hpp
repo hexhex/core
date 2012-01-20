@@ -101,7 +101,8 @@ protected:
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    CDNLSolverPtr solver = CDNLSolverPtr()) const;
+    ProgramCtx* ctx = 0,
+    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
   //
@@ -110,7 +111,8 @@ protected:
     const std::vector<ID>& eatoms,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    CDNLSolverPtr solver = CDNLSolverPtr()) const;
+    ProgramCtx* ctx = 0,
+    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
   //
   // helper methods used by evaluateExternalAtom

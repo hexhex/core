@@ -306,6 +306,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("InternalSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("ExternalLearningEABehavior", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
@@ -846,6 +847,10 @@ void processOptionsPrePlugin(
 							f != tok.end(); ++f)
 					{
 						const std::string& token = *f;
+						if (token == "eabehavior" )
+						{
+							pctx.config.setOption("ExternalLearningEABehavior", 1);
+						}
 						if( token == "monotonicity" )
 						{
 							pctx.config.setOption("ExternalLearningMonotonicity", 1);
@@ -865,8 +870,9 @@ void processOptionsPrePlugin(
 					}
 				}else{
 					// by default, turn on all external learning rules
-					pctx.config.setOption("ExternalLearningFunctionality", 1);
+					pctx.config.setOption("ExternalLearningEABehavior", 1);
 					pctx.config.setOption("ExternalLearningMonotonicity", 1);
+					pctx.config.setOption("ExternalLearningFunctionality", 1);
 					pctx.config.setOption("ExternalLearningUser", 1);
 					pctx.config.setOption("ExternalLearningPartial", 1);
 				}
@@ -874,7 +880,7 @@ void processOptionsPrePlugin(
 
 			pctx.config.setOption("ExternalLearning", 1);
 
-			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [eabehavior: " << pctx.config.getOption("ExternalLearningEABehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
 			break;
 
 		case 19:

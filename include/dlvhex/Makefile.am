@@ -62,6 +62,7 @@ pkginclude_HEADERS = \
   OfflineModelBuilder.hpp \
   OnlineModelBuilder.hpp \
   OrdinaryAtomTable.hpp \
+  OrdinaryASPProgram.hpp \
   PlainAuxPrinter.hpp \
   PlainModelGenerator.hpp \
   GenuinePlainModelGenerator.hpp \
