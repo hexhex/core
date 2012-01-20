@@ -337,12 +337,12 @@ public:
   }
 };
 
-class TestSetMinusLearningAtom:	// tests user-defined external learning
+class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
 public:
-  TestSetMinusLearningAtom():
-    PluginAtom("testSetMinusLearning", false) // monotonic, and no predicate inputs anyway
+  TestSetMinusNogoodBasedLearningAtom():
+    PluginAtom("testSetMinusNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
     #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
     addInputPredicate();
@@ -382,7 +382,105 @@ public:
 	}
   }
 
-#include <iostream>
+  virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
+  {
+	static std::map<std::string, ID> ruleIDs;
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+
+			// Test: Learning based on direct definition of nogoods
+			if (nogoods != NogoodContainerPtr()){
+				// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
+				OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+				at1.tuple.push_back(query.input[0]);
+				for (int i = 0; i < t.size(); ++i) at1.tuple.push_back(t[i]);
+				OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+				at2.tuple.push_back(query.input[1]);
+				for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
+
+				Nogood nogood;
+				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
+				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
+				nogood.insert(getOutputAtom(ctx, nogoods, query, t, false));
+				nogoods->addNogood(nogood);
+
+				DBGLOG(DBG, "Learned user-defined nogood: " << nogood);
+			}else{
+				DBGLOG(DBG, "No user-defined learning");
+			}
+		}
+	}
+  }
+};
+
+class TestSetMinusRuleBasedLearningAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestSetMinusRuleBasedLearningAtom():
+    PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	assert(false);	// this method should never be called
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+		}
+	}
+  }
 
   virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
   {
@@ -410,53 +508,27 @@ public:
 		en++;
 	}
 
-// Test: Rule-based learning
-if (nogoods != NogoodContainerPtr()){
-	std::string rule = "out(X) :- in1(X), not in2(X).";
+	// Test: Rule-based learning
+	if (nogoods != NogoodContainerPtr()){
+		std::string rule = "out(X) :- in1(X), not in2(X).";
 
-	if (ruleIDs.find(rule) == ruleIDs.end()){
-		ruleIDs[rule] = getIDOfLearningRule(ctx, rule);
+		if (ruleIDs.find(rule) == ruleIDs.end()){
+			ruleIDs[rule] = getIDOfLearningRule(ctx, rule);
+		}
+		ID rid = ruleIDs[rule];
+		if (rid == ID_FAIL){
+			DBGLOG(DBG, "Could not learn from rule because parsing failed");
+			exit(0);
+		}else{
+			learnFromRule(ctx, nogoods, query, rid);
+		}
 	}
-	ID rid = ruleIDs[rule];
-	if (rid == ID_FAIL){
-		DBGLOG(DBG, "Could not learn from rule because parsing failed");
-		exit(0);
-	}else{
-		learnFromRule(ctx, nogoods, query, rid);
-	}
-}
-
-
 
 	BOOST_FOREACH (Tuple t, tuples1){
 		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
 			answer.get().push_back(t);
-/*
-			// Test: Learning based on direct definition of nogoods
-			if (nogoods != NogoodContainerPtr()){
-				// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
-				OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-				at1.tuple.push_back(query.input[0]);
-				for (int i = 0; i < t.size(); ++i) at1.tuple.push_back(t[i]);
-				OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-				at2.tuple.push_back(query.input[1]);
-				for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
-
-				Nogood nogood;
-				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
-				nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
-				nogood.insert(getOutputAtom(ctx, nogoods, query, t, false));
-				nogoods->addNogood(nogood);
-
-				DBGLOG(DBG, "Learned user-defined nogood: " << nogood);
-			}else{
-				DBGLOG(DBG, "No user-defined learning");
-			}
-*/
 		}
 	}
-
-//	defaultExtLearning(query, answer, solver);
   }
 };
 
@@ -570,7 +642,8 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
-	  ret.push_back(PluginAtomPtr(new TestSetMinusLearningAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
