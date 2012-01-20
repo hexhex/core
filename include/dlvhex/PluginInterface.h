@@ -827,15 +827,59 @@ public:
   virtual void retrieve(const Query&, Answer&) = 0;
   virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
+  // ========== External Learning Methods ==========
+
+  /**
+   * \brief Learns nogoods which encode that the input from query implies the output in answer.
+   */
   void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+
+  /**
+   * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
+   */
   void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+
+  /**
+   * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
+   *        the external atom. Such a rule encodes that, whenever a is in the extension of the 1-st input parameter, but not in the extension
+   *        of the second, it will always be in the output. The learning rule must be ground.
+   */
   void learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule);
+
+  /**
+   * \brief Learns nogoods according to some rule of kind "out(X) :- in1(X), not in2(X).", where in[i] refers to the i-th input parameter to
+   *        the external atom. Such a rule encodes that, whenever X is in the extension of the 1-st input parameter, but not in the extension
+   *        of the second, it will always be in the output.
+   */
   void learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rule);
 
+  // ========== External Learning Helper Methods ==========
+
+  /**
+   * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
+   *        for nonmonotonic ones all atoms are included..
+   */
   Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query);
+
+  /**
+   * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;
+   *        sign indicates if the positive or negative version of the replacement atom is used.
+   */
   Set<ID> getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign);
+
+  /**
+   * \brief Construct an output (replacement) atom corresponding to the answer tuple t;
+   *        sign indicates if the positive or negative version of the replacement atom is used.
+   */
   ID getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple t, bool sign);
-  ID getIDOfRule(ProgramCtx* ctx, std::string rule);
+
+  /**
+   * \brief Parses a learning rule, checks if it is valid learning rule (i.e. it is of the kind as described in the explanation of learnFromRule),
+   *        and returns its ID; if the parser or the validity check fails, ID_FAIL is returned.
+   */
+  ID getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule);
+
+  // ==========  ==========
 
   /**
    * \brief Returns the type of the input argument specified by position

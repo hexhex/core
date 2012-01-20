@@ -48,6 +48,9 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Benchmarking.h"
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/lexical_cast.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 #if 0
@@ -415,6 +418,17 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 		DBGLOG(DBG, "External Learning: Rule");
 
+		// prepare map for replacing body predicates:
+		// "in[i+1]" is replaced by the predicate passed as parameter number "i"
+		std::map<ID, ID> predReplacementMap;
+		for (int p = 0; p < query.input.size(); p++){
+			std::stringstream inPredStr;
+			inPredStr << "in" << (p + 1);
+			Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
+			ID inPredID = ctx->registry()->storeTerm(inPredTerm);
+			predReplacementMap[inPredID] = query.input[p];
+		}
+
 		DBGLOG(DBG, "Rewriting rule");
 		const Rule& rule = ctx->registry()->rules.getByID(rid);
 
@@ -633,12 +647,14 @@ ID PluginAtom::getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const 
 	return idreplacement;
 }
 
-ID PluginAtom::getIDOfRule(ProgramCtx* ctx, std::string rule){
+ID PluginAtom::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
+
+	RegistryPtr reg = ctx->registry();
 
 	// parse rule
-	DBGLOG(DBG, "Parsing rule " << rule);
+	DBGLOG(DBG, "Parsing learning rule " << learningrule);
 	InputProviderPtr ip(new InputProvider());
-	ip->addStringInput(rule, "rule");
+	ip->addStringInput(learningrule, "rule");
 	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
 	Logger::Instance().setPrintLevels(0);
 	ProgramCtx pc;
@@ -647,13 +663,49 @@ ID PluginAtom::getIDOfRule(ProgramCtx* ctx, std::string rule){
 	hp.parse(ip, pc);
 	Logger::Instance().setPrintLevels(l);
 
-	DBGLOG(DBG, "Parsed " << rule);
-	if (pc.idb.size() != 1){
-		DBGLOG(DBG, "Error: Got " << pc.idb.size() << " rules");
+	if(pc.edb->getStorage().count() > 0){
+		DBGLOG(DBG, "Learning Rule Error: Learning rule must be be a fact");
+		return ID_FAIL;
+	}else if (pc.idb.size() != 1){
+		DBGLOG(DBG, "Error: Got " << pc.idb.size() << " rules; must be 1");
 		return ID_FAIL;
 	}else{
-		DBGLOG(DBG, "Got 1 rule");
-		return pc.idb[0];
+		DBGLOG(DBG, "Got 1 learning rule");
+		ID rid = pc.idb[0];
+		const Rule& r = reg->rules.getByID(rid);
+
+		// learning rules must not be constraints or disjunctive
+		if (r.head.size() != 1){
+			DBGLOG(DBG, "Learning Rule Error: Learning rule is not ordinary (head size must be 1)");
+			return ID_FAIL;
+		}
+
+		// learning rules must use only predicates "out" (in head) and in[i] (in body)
+		BOOST_FOREACH (ID hLit, r.head){
+			const OrdinaryAtom& oatom = hLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(hLit) : reg->onatoms.getByID(hLit);
+			std::string hPred = reg->terms.getByID(oatom.tuple[0]).getUnquotedString();
+			if (hPred != "out"){
+				DBGLOG(DBG, "Learning Rule Error: Head predicate of learning rule must be \"out\"");
+				return ID_FAIL;
+			}
+		}
+		BOOST_FOREACH (ID bLit, r.body){
+			const OrdinaryAtom& oatom = bLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(bLit) : reg->onatoms.getByID(bLit);
+			std::string bPred = reg->terms.getByID(oatom.tuple[0]).getUnquotedString();
+
+			try {    
+				if (boost::starts_with(bPred, "in")){
+					boost::lexical_cast<int>(bPred.c_str() + 2);
+				}else{
+					throw std::bad_cast();
+				}
+			} catch (std::bad_cast){
+				DBGLOG(DBG, "Learning Rule Error: Body predicates must be of kind \"in[integer]\"");
+				return ID_FAIL;
+			}
+		}
+
+		return rid;
 	}
 }
 

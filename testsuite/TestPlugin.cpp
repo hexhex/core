@@ -382,6 +382,8 @@ public:
 	}
   }
 
+#include <iostream>
+
   virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
   {
 	static std::map<std::string, ID> ruleIDs;
@@ -411,11 +413,17 @@ public:
 // Test: Rule-based learning
 if (nogoods != NogoodContainerPtr()){
 	std::string rule = "out(X) :- in1(X), not in2(X).";
+
 	if (ruleIDs.find(rule) == ruleIDs.end()){
-		ruleIDs[rule] = getIDOfRule(ctx, rule);
+		ruleIDs[rule] = getIDOfLearningRule(ctx, rule);
 	}
 	ID rid = ruleIDs[rule];
-	learnFromRule(ctx, nogoods, query, rid);
+	if (rid == ID_FAIL){
+		DBGLOG(DBG, "Could not learn from rule because parsing failed");
+		exit(0);
+	}else{
+		learnFromRule(ctx, nogoods, query, rid);
+	}
 }
 
 

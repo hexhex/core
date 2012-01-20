@@ -726,11 +726,12 @@ struct sem<HexGrammarSemantics::rule>
       // mark as disjunctive if required
       if( r.head.size() > 1 )
         r.kind |= ID::PROPERTY_RULE_DISJ;
-      ID existing = reg->rules.getIDByElement(r);
-      if( existing == ID_FAIL )
-        target = reg->storeRule(r);
-      else
-        target = ID_FAIL;
+      target = reg->storeRule(r);
+      //ID existing = reg->rules.getIDByElement(r);
+      //if( existing == ID_FAIL )
+      //  target = reg->storeRule(r);
+      //else
+      //  target = ID_FAIL;
     }
     else
     {
@@ -741,11 +742,12 @@ struct sem<HexGrammarSemantics::rule>
           head, Tuple());
         mgr.markExternalPropertyIfExternalBody(reg, r);
         mgr.markModulePropertyIfModuleBody(reg, r);
-        ID existing = reg->rules.getIDByElement(r);
-        if( existing == ID_FAIL )
-          target = reg->storeRule(r);
-        else
-          target = ID_FAIL;
+        target = reg->storeRule(r);
+        //ID existing = reg->rules.getIDByElement(r);
+        //if( existing == ID_FAIL )
+        //  target = reg->storeRule(r);
+        //else
+        //  target = ID_FAIL;
       }
       else
       {
