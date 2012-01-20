@@ -655,13 +655,13 @@ ID PluginAtom::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
 	DBGLOG(DBG, "Parsing learning rule " << learningrule);
 	InputProviderPtr ip(new InputProvider());
 	ip->addStringInput(learningrule, "rule");
-	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
-	Logger::Instance().setPrintLevels(0);
+//	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
+//	Logger::Instance().setPrintLevels(0);
 	ProgramCtx pc;
 	pc.changeRegistry(ctx->registry());
 	ModuleHexParser hp;
 	hp.parse(ip, pc);
-	Logger::Instance().setPrintLevels(l);
+//	Logger::Instance().setPrintLevels(l);
 
 	if(pc.edb->getStorage().count() > 0){
 		DBGLOG(DBG, "Learning Rule Error: Learning rule must be be a fact");
