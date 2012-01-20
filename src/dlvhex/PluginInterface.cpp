@@ -335,8 +335,8 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, N
 
 	retrieve(query, answer);
 
-	learnFromInputOutputBehavior(ctx, nogoods, answer, query);
-	learnFromFunctionality(ctx, nogoods, answer, query);
+	learnFromInputOutputBehavior(ctx, nogoods, query, answer);
+	learnFromFunctionality(ctx, nogoods, query, answer);
 }
 
 void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
@@ -344,7 +344,7 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
 		if (ctx->config.getOption("ExternalLearningEABehavior")){
-			DBGLOG("External Learning: EABehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
+			DBGLOG(DBG, "External Learning: EABehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
 			Nogood extNgInput = getInputNogood(ctx, nogoods, query);
 
@@ -364,7 +364,7 @@ void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogo
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
 		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(query)){
-			DBGLOG("External Learning: Functionality");
+			DBGLOG(DBG, "External Learning: Functionality");
 
 			// there is a unique output
 			const std::vector<Tuple>& otuples = answer.get();
@@ -391,7 +391,7 @@ void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogo
 void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule){
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
-		DBGLOG("External Learning: Ground Rule");
+		DBGLOG(DBG, "External Learning: Ground Rule");
 
 		const Rule& rule = ctx->registry()->rules.getByID(groundRule);
 
@@ -413,7 +413,7 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 vpod PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
-		DBGLOG("External Learning: Rule");
+		DBGLOG(DBG, "External Learning: Rule");
 
 		DBGLOG(DBG, "Rewriting rule");
 		const Rule& rule = ctx->registry()->rules.getByID(rid);
