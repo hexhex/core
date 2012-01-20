@@ -462,8 +462,7 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 
 		DBGLOG(DBG, "Generating nogoods for all ground rules");
 		BOOST_FOREACH (ID rid, gprogram.idb){
-			Nogood ng = getGroundRuleNogood(ctx, nogoods, query, rid);
-			nogoods->addNogood(ng);
+			learnGroundRuleNogood(ctx, nogoods, query, rid);
 		}
 	}
 
