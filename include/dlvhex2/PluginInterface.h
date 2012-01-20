@@ -489,11 +489,11 @@
 
 // the following code must be used by plugins to publish their API compatibility
 // we store the version like boost as an integer
-// configure.ac should use DLVHEX2_DEFINE_VERSION([DLVHEX2_ABI],[X.Y.Z])
+// configure.ac should use DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[X.Y.Z])
 // to create the #define'd constants used below
 #define IMPLEMENT_PLUGINABIVERSIONFUNCTION \
   extern "C" int PLUGINABIVERSIONFUNCTION() { \
-    return DLVHEX2_ABI_VERSION_MAJOR*10000+DLVHEX2_ABI_VERSION_MINOR*100+DLVHEX2_ABI_VERSION_MICRO; }
+    return DLVHEX_ABI_VERSION_MAJOR*10000+DLVHEX_ABI_VERSION_MINOR*100+DLVHEX_ABI_VERSION_MICRO; }
 
 DLVHEX_NAMESPACE_BEGIN
 

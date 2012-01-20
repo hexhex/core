@@ -6,10 +6,10 @@ AC_CONFIG_SRCDIR([src/dlvhex.cpp])
 AC_CONFIG_HEADER([include/config.h])
 
 # provide package and ABI version to substitute in .in files and to config.h
-DLVHEX2_DEFINE_VERSION([DLVHEX],[$PACKAGE_VERSION])
+DLVHEX_DEFINE_VERSION([DLVHEX],[$PACKAGE_VERSION])
 # for ABI and library versioning,
 # see https://sourceforge.net/apps/trac/dlvhex/wiki/LibraryVersions
-DLVHEX2_DEFINE_VERSION([DLVHEX2_ABI],[7.0.0])
+DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[7.0.0])
 
 AC_CANONICAL_HOST
 

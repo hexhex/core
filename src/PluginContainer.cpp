@@ -185,16 +185,16 @@ void loadCandidates(
         int imicro = iversion % 100;
         LOG(INFO,"got ABI version " << iversion << " from " << lib <<
             ", interpreted this as (" << imajor << "," << iminor << "," << imicro << ")");
-        if( imajor != DLVHEX2_ABI_VERSION_MAJOR )
+        if( imajor != DLVHEX_ABI_VERSION_MAJOR )
         {
           LOG(INFO,"Library '" << lib << "' returned incompatible major ABI version: " <<
-              imajor << " (library) != " << DLVHEX2_ABI_VERSION_MAJOR << " (dlvhex) (skipping)");
+              imajor << " (library) != " << DLVHEX_ABI_VERSION_MAJOR << " (dlvhex) (skipping)");
           break;
         }
-        if( iminor > DLVHEX2_ABI_VERSION_MINOR )
+        if( iminor > DLVHEX_ABI_VERSION_MINOR )
         {
           LOG(INFO,"Library '" << lib << "' returned incompatible minor ABI version: " <<
-              iminor << " (library) > " << DLVHEX2_ABI_VERSION_MINOR << " (dlvhex) (skipping)");
+              iminor << " (library) > " << DLVHEX_ABI_VERSION_MINOR << " (dlvhex) (skipping)");
           break;
         }
         // ignore micro abi version
