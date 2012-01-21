@@ -141,10 +141,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   out << "     --               Parse from stdin." << std::endl
       << "     --instantiate    Generate ground program without evaluating (only useful with --internalsolver)" << std::endl
       << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
-      << "     --extlearn[=none,monotonicity,functionality,user,partial]" << std::endl
+      << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
-      << "                        none: Apply no special rules" << std::endl
-      << "                        monotonicity: Apply special rules for monotonic external atoms" << std::endl
+      << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic external atoms (only useful with eabehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
