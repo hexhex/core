@@ -93,6 +93,10 @@ class PluginInterface;
 // beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginInterface> PluginInterfacePtr;
 
+class PluginOptimizer;
+// beware: most of the time this Ptr will have to be created with a "deleter" in the library
+typedef boost::shared_ptr<PluginOptimizer> PluginOptimizerPtr;
+
 class PluginRewriter;
 // beware: most of the time this Ptr will have to be created with a "deleter" in the library
 typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;

@@ -25,10 +25,9 @@
 /**
  * @file ProgramCtx.h
  * @author Thomas Krennwallner
- * @date
+ * @author Peter Schueller
  *
  * @brief Program context
- *
  */
 
 
@@ -140,7 +139,7 @@ public:
 
 public:
   ProgramCtx();
-
+  // not virtual, we do not want to derive from this!
   ~ProgramCtx();
 
   ASPSolverManager::SoftwareConfigurationPtr

@@ -620,25 +620,34 @@ OptimizeEDBDependencyGraphState::optimizeEDBDependencyGraph(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"Calling plugin optimizers");
 
-  #warning TODO call handle optimizers and implement a testcase
-#if 0
+  // get optimizer from each plugin
+  bool optimized = false;
+  BOOST_FOREACH(PluginInterfacePtr plugin, ctx->pluginContainer()->getPlugins())
+  {
+    PluginOptimizerPtr optimizer = plugin->createOptimizer(*ctx);
+    if( !optimizer )
+      continue;
 
-  //
-  // now call optimizers
-  //
-  for (std::vector<PluginInterface*>::iterator pi = ctx->getPlugins()->begin();
-       pi != ctx->getPlugins()->end();
-       ++pi)
-    {
-      PluginOptimizer* po = (*pi)->createOptimizer();
+    LOG(PLUGIN,"got plugin optimizer from plugin " << plugin->getPluginName());
 
-      if (po != 0)
-	{
-	  po->optimize(*ctx->getDependencyGraph(), *ctx->getEDB());
-	}
-    }
+	  optimizer->optimize(ctx->edb, ctx->depgraph);
+    optimized = true;
+  }
 
-#endif
+  if( optimized && ctx->config.getOption("DumpDepGraph") )
+  {
+    std::string fnamev = ctx->config.getStringOption("DebugPrefix")+
+      "_DepGraphOptimizedVerbose.dot";
+    LOG(INFO,"dumping optimized verbose dependency graph to " << fnamev);
+    std::ofstream filev(fnamev.c_str());
+    depgraph->writeGraphViz(filev, true);
+
+    std::string fnamet = ctx->config.getStringOption("DebugPrefix")+
+      "_DepGraphOptimizedTerse.dot";
+    LOG(INFO,"dumping optimized terse dependency graph to " << fnamet);
+    std::ofstream filet(fnamet.c_str());
+    depgraph->writeGraphViz(filet, false);
+  }
 
   StatePtr next(new CreateComponentGraphState);
   changeState(ctx, next);
