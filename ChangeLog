@@ -13,7 +13,7 @@
 	* src/dlvhex/PluginContainer.cpp: Implemented version check in
 	library loading code.
 	* testsuite/TestPlugin.cpp: Adapted test plugin to versioning API.
-	* m4/dlvhex2.m4: Likewise.
+	* m4/dlvhex.m4: Likewise.
 
 	* configure.ac: Preparing release (renaming binary and include
 	directory to dlvhex2 to ensure coexistence with older version).
