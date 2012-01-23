@@ -9,7 +9,7 @@ include doxygen.am
 
 pkgconfigdir = $(libdir)/pkgconfig
 
-pkgconfig_DATA = dlvhex.pc
+pkgconfig_DATA = dlvhex2.pc
 
 html-local: doc/dlvhex.tag
 	make doxygen-doc
@@ -28,7 +28,7 @@ SUBDIRS = libltdl examples include src testsuite
 EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
-    dlvhex.pc.in \
+    dlvhex2.pc.in \
     doxygen.am \
     doxygen.cfg
 

@@ -32,7 +32,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "fixtureEx1.hpp"
+#include "fixtureEx1.h"
 
 #include <boost/test/unit_test.hpp>
 

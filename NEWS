@@ -1,15 +1,20 @@
 dlvhex NEWS -- history of user-visible changes.
 
-* Version 2.0.0 (??)
+* Version 2.0.0 (??? 2012)
 
-** Complete rewrite.
-
+** Rewrite of evaluation and decomposition framework, see the paper
+   "Pushing Efficient Evaluation of HEX Programs by Modular Decomposition"
+   by Thomas Eiter, Michael Fink, Giovambattista Ianni, Thomas
+   Krennwallner, and Peter Schüller (LPNMR 2011).
+** Rewrite of entity management (IDs plus Registry instead of strings).
+** Extend Plugin API: ComfortPluginAtom parallel to PluginAtom.
+** Add incremental model building (one model at a time).
+** Add Plugin Versioniong ABI.
+** Add interface for input parser modules.
+** Add ASP querying support (brave, cautious, ground, nonground).
+** Add multithreaded support.
 ** Add support for input-call stratified modular nonmonotonic logic programs (MLPs).
-
-
-* Version 1.7.3 ( 2010)
-
-** Fix ticket #33.
+** Various fixes, improvements, and new testcases.
 
 
 * Version 1.7.2 (October 2010)
@@ -32,7 +37,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 * Version 1.7.0 (June 2010)
 
-** This is the last dlvhex release with major number 1.
+** This is the last dlvhex release with major number 1 and minor number 7.
 
 ** Add support for dlvdb as ASP solver (--solver=dlvdb).
 
@@ -71,6 +76,7 @@ dlvhex NEWS -- history of user-visible changes.
 
 ** Improved documentation.
 
+vi:ts=4:tw=75
 Local variables:
 mode: outline
 paragraph-separate: "[ 	]*$"

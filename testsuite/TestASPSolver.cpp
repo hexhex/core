@@ -32,14 +32,14 @@
 #  include "config.h"
 #endif
 
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/AnswerSet.hpp"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/AnswerSet.h"
 
 #define BOOST_TEST_MODULE "TestASPSolver"
 #include <boost/test/unit_test.hpp>

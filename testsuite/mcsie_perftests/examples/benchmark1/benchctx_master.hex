@@ -1,6 +1,0 @@
-#context(1,"benchcontext1_context_acc0", "").
-#context(2,"benchcontext1_context_acc1", " ").
-#context(3,"benchcontext1_context_acc2", "parameter").
-
-r1:(2:a) :- (1:b).
-r2:(3:c) :- (2:a).

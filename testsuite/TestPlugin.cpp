@@ -37,9 +37,9 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/ComfortPluginInterface.hpp"
-#include "dlvhex/Term.hpp"
-#include "dlvhex/Registry.hpp"
+#include "dlvhex2/ComfortPluginInterface.h"
+#include "dlvhex2/Term.h"
+#include "dlvhex2/Registry.h"
 
 #include <boost/foreach.hpp>
 
@@ -221,8 +221,7 @@ class TestConcatAtom:
 {
 public:
   TestConcatAtom():
-    PluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    PluginAtom("testConcat", true) // monotonic, as there is no predicate input anyway
   {
     addInputTuple();
     setOutputArity(1);
@@ -455,6 +454,8 @@ public:
 TestPlugin theTestPlugin;
 
 DLVHEX_NAMESPACE_END
+
+IMPLEMENT_PLUGINABIVERSIONFUNCTION
 
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"

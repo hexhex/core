@@ -68,6 +68,8 @@ This file provides some hints how to install and run dlvhex.
     Boost.Spirit
     Boost.String_Algo
     Boost.Tokenizer
+    Boost.Thread
+    Boost.UnitTestFramework
 
     Popular Linux and Unix distributions such as Fedora, Debian, and
     NetBSD include pre-built Boost packages. E.g., in Debian/Ubuntu
@@ -169,3 +171,13 @@ This file provides some hints how to install and run dlvhex.
   at the `examples' directory here. DLV programs are described at
   <http://www.dbai.tuwien.ac.at/proj/dlv/#docs>.
 	
+* Implementing your own plugins and external computations
+  For documentation on plugin writing, please consult the doxygen
+  documentation in header files include/dlvhex2/PluginInterface.h and
+  include/dlvhex2/ComfortPluginInterface.h. You might also want to have a
+  look at testsuite/TestPlugin.cpp, the internal plugins of dlvhex
+  (classes QueryPlugin, StrongNegationPlugin, and HigherOrderPlugin) and
+  existing plugins like dlvhex-stringplugin and dlvhex-scriptplugin in the
+  same repository as dlvhex.
+
+vim:ts=4:tw=75:

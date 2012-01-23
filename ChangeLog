@@ -1,4 +1,39 @@
+2012-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	Release version 2.0.0.
+
+	* NEWS: Describe Changes for Release 2.0.0.
+
+2012-01-23  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/ComfortPluginInterface.h: Documentation.
+	* include/dlvhex2/PluginInterface.h: Documentation.
+	* README: Update.
+	* TODO: Update.
+
+2012-01-19  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	Renaming all ".hpp" header files to ".h".
+
+2012-01-18  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	Moving all files from src/dlvhex/ to src/.
+
 2012-01-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/PluginInterface.h: Added plugin versioning API
+	(loadable modules usually do not have external version numbers)
+	* src/dlvhex/PluginContainer.cpp: Implemented version check in
+	library loading code.
+	* testsuite/TestPlugin.cpp: Adapted test plugin to versioning API.
+	* m4/dlvhex.m4: Likewise.
+
+	* configure.ac: Preparing release (renaming binary and include
+	directory to dlvhex2 to ensure coexistence with older version).
+	* src/dlvhex/Makefile.am: Likewise, and revised library naming.
+	* testsuite/Makefile.am: Likewise.
+	* dlvhex2.pc.in: Likewise (renamed from dlvhex.pc.in).
+	* dlvhex.pc.in: Likewise (remove).
 
 	* include/dlvhex/Registry.hpp: Added storeRule() which checks
 	if rule already exists in rule table and does not store duplicates.

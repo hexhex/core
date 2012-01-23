@@ -1,3 +1,0 @@
-% real behavior (both credit cards valid)
-valid_2113 :- card_2113.
-valid_7468 :- card_7468.

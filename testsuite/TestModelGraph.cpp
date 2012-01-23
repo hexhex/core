@@ -49,11 +49,11 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/ModelGraph.hpp"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/EvalGraph.h"
+#include "dlvhex2/ModelGraph.h"
 
-#include "fixtureE2M2.hpp"
+#include "fixtureE2M2.h"
 
 using dlvhex::MT_OUT;
 using dlvhex::MT_IN;

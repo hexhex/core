@@ -49,13 +49,13 @@
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/included/unit_test.hpp>
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/EvalGraph.hpp"
-#include "dlvhex/ModelGraph.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/OnlineModelBuilder.hpp"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/EvalGraph.h"
+#include "dlvhex2/ModelGraph.h"
+#include "dlvhex2/ModelGenerator.h"
+#include "dlvhex2/OnlineModelBuilder.h"
 
-#include "fixtureOnlineMB.hpp"
+#include "fixtureOnlineMB.h"
 
 LOG_INIT(Logger::ERROR | Logger::WARNING)
 

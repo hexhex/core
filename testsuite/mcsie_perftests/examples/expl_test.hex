@@ -1,4 +1,0 @@
-#context(1,"dlv_asp_context_acc", "./medExample/dlvctx.out").
-#context(2,"dlv_asp_context_acc", "./medExample/dlvctx.out").
-r1: (1:a) :- (2:b).
-r2: (2:b) :- not (1:a).

@@ -32,24 +32,24 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ASPSolverManager.h"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/EvalHeuristicOldDlvhex.h"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/ASPSolverManager.h"
 
 // this must be included before dummytypes!
 #define BOOST_TEST_MODULE __FILE__
 #include <boost/test/unit_test.hpp>
 
-#include "fixturesExt1.hpp"
-#include "fixturesMCS.hpp"
-#include "graphviz.hpp"
+#include "fixturesExt1.h"
+#include "fixturesMCS.h"
+#include "graphviz.h"
 
 #include <iostream>
 #include <fstream>

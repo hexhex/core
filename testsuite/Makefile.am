@@ -18,7 +18,7 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
-lib_LTLIBRARIES = libdlvhextest.la
+lib_LTLIBRARIES = libdlvhexplugin-test.la
 
 check-examples:
 	if $(TESTS_ENVIRONMENT) $(srcdir)/run-dlvhex-tests.sh; then \
@@ -56,7 +56,7 @@ TESTS_ENVIRONMENT = \
   EXAMPLESDIR=$(top_srcdir)/examples \
   TESTS="$(WHICH_DLVHEX_TESTS)" \
   OUTDIR=$(top_srcdir)/examples/tests \
-  DLVHEX="$(top_builddir)/src/dlvhex/dlvhex -s --plugindir=!$(top_builddir)/testsuite" \
+  DLVHEX="$(top_builddir)/src/dlvhex2 -s --plugindir=!$(top_builddir)/testsuite" \
   BOOST_TEST_REPORT_LEVEL=detailed \
   BOOST_TEST_LOG_LEVEL=all
 
@@ -65,34 +65,34 @@ clean-local:
 	-rm -rf test*{Verbose,Terse}.dot
 
 noinst_HEADERS = \
-  dummytypes.hpp \
-  graphviz.hpp \
-  fixturesMCS.hpp \
-  fixtureE1.hpp \
-  fixtureE2.hpp \
-  fixtureE2M2.hpp \
-  fixtureEx1.hpp \
-  fixturesExt1.hpp \
-  fixturesDepgraphCompgraphGeneric.hpp \
-  fixtureOfflineMB.hpp \
-  fixtureOnlineMB.hpp
+  dummytypes.h \
+  graphviz.h \
+  fixturesMCS.h \
+  fixtureE1.h \
+  fixtureE2.h \
+  fixtureE2M2.h \
+  fixtureEx1.h \
+  fixturesExt1.h \
+  fixturesDepgraphCompgraphGeneric.h \
+  fixtureOfflineMB.h \
+  fixtureOnlineMB.h
 
-libdlvhextest_la_SOURCES = TestPlugin.cpp
+libdlvhexplugin_test_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
-libdlvhextest_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
-libdlvhextest_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
+libdlvhexplugin_test_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
+libdlvhexplugin_test_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
 #this is just to verify that TestPlugin can link to the rest of the code
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
 TestTestPluginStatic_SOURCES = \
   TestPlugin.cpp \
-  $(top_srcdir)/src/dlvhex/dlvhex.cpp \
-  $(top_srcdir)/src/dlvhex/State.cpp 
+  $(top_srcdir)/src/dlvhex.cpp \
+  $(top_srcdir)/src/State.cpp 
 TestTestPluginStatic_LDADD = \
-  $(top_builddir)/src/dlvhex/libdlvhexbase.la \
-  $(top_builddir)/src/dlvhex/libmlpsolver.la \
-  $(top_builddir)/src/dlvhex/libaspsolver.la \
-  $(top_builddir)/src/dlvhex/libinternalplugins.la \
+  $(top_builddir)/src/libdlvhex2-base.la \
+  $(top_builddir)/src/libdlvhex2-mlpsolver.la \
+  $(top_builddir)/src/libdlvhex2-aspsolver.la \
+  $(top_builddir)/src/libdlvhex2-internalplugins.la \
   $(BOOST_THREAD_LDFLAGS) $(EXTSOLVER_LDFLAGS) \
   $(BOOST_THREAD_LIBS) $(EXTSOLVER_LIBS) \
   @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
@@ -102,9 +102,9 @@ TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
 # libdlvhexbase does not depend on libaspsolver and does not depend on libmlpsolver
 # libaspsolver does not depend on libmlpsolver
-LDADD_BASE = $(top_builddir)/src/dlvhex/libdlvhexbase.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
-LDADD_ASPSOLVER = $(top_builddir)/src/dlvhex/libaspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
-LDADD_MLP_ASPSOLVER = $(top_builddir)/src/dlvhex/libmlpsolver.la $(LDADD_ASPSOLVER)
+LDADD_BASE = $(top_builddir)/src/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+LDADD_ASPSOLVER = $(top_builddir)/src/libdlvhex2-aspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
+LDADD_MLP_ASPSOLVER = $(top_builddir)/src/libdlvhex2-mlpsolver.la $(LDADD_ASPSOLVER)
 
 TestPlainHEX_SOURCES = TestPlainHEX.cpp
 TestPlainHEX_LDADD = $(LDADD_ASPSOLVER)
@@ -122,7 +122,7 @@ TestEvalHeuristic_LDADD = $(LDADD_ASPSOLVER)
 TestComponentGraph_SOURCES = TestComponentGraph.cpp
 TestComponentGraph_LDADD = $(LDADD_BASE)
 
-TestDependencyGraph_SOURCES = TestDependencyGraph.cpp $(top_srcdir)/src/dlvhex/DependencyGraphFull.cpp
+TestDependencyGraph_SOURCES = TestDependencyGraph.cpp $(top_srcdir)/src/DependencyGraphFull.cpp
 TestDependencyGraph_LDADD = $(LDADD_BASE)
 
 TestHexParser_SOURCES = TestHexParser.cpp
@@ -137,8 +137,8 @@ TestMLPSolver_LDADD = $(LDADD_MLP_ASPSOLVER)
 
 TestTables_SOURCES = \
 	TestTables.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp \
-	$(top_srcdir)/src/dlvhex/ID.cpp
+	$(top_srcdir)/src/Logger.cpp \
+	$(top_srcdir)/src/ID.cpp
 TestTables_LDADD = $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ 
 
 TestModelGraph_SOURCES = \
@@ -146,15 +146,15 @@ TestModelGraph_SOURCES = \
 	dummytypes.cpp \
 	fixtureE2M2.cpp \
 	fixtureE2.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp
+	$(top_srcdir)/src/Logger.cpp
 
 TestEvalGraph_SOURCES = \
 	TestEvalGraph.cpp \
 	dummytypes.cpp \
 	fixtureE2.cpp \
 	fixtureEx1.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp \
-	$(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
+	$(top_srcdir)/src/Logger.cpp \
+	$(top_srcdir)/src/CAUAlgorithms.cpp
 
 TestOnlineModelBuilder_SOURCES = \
 	TestOnlineModelBuilder.cpp \
@@ -162,7 +162,7 @@ TestOnlineModelBuilder_SOURCES = \
 	fixtureE1.cpp \
 	fixtureE2.cpp \
 	fixtureEx1.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp
+	$(top_srcdir)/src/Logger.cpp
 
 TestOfflineModelBuilder_SOURCES = \
 	TestOfflineModelBuilder.cpp \
@@ -170,5 +170,5 @@ TestOfflineModelBuilder_SOURCES = \
 	fixtureE1.cpp \
 	fixtureE2.cpp \
 	fixtureEx1.cpp \
-	$(top_srcdir)/src/dlvhex/Logger.cpp \
-	$(top_srcdir)/src/dlvhex/CAUAlgorithms.cpp
+	$(top_srcdir)/src/Logger.cpp \
+	$(top_srcdir)/src/CAUAlgorithms.cpp
