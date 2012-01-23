@@ -221,8 +221,7 @@ class TestConcatAtom:
 {
 public:
   TestConcatAtom():
-    PluginAtom("testConcat", true) // monotonic, and no predicate inputs anyway
-    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+    PluginAtom("testConcat", true) // monotonic, as there is no predicate input anyway
   {
     addInputTuple();
     setOutputArity(1);

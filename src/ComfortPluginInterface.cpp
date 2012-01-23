@@ -29,6 +29,7 @@
  */
 
 #include "dlvhex2/ComfortPluginInterface.h"
+#warning TODO how to implement strong negation (StrongNegationPlugin) with ComfortPluginInterface?
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -250,19 +251,6 @@ void ComfortInterpretation::keep(const std::set<std::string>& predicates)
     }
   }
   while( it != IntBase::end() );
-}
-
-// remove negative atoms
-void ComfortInterpretation::keepPos()
-{
-  throw std::runtime_error("ComfortInterprertation::keepPos not implemented");
-  #warning todo implement
-}
-
-bool ComfortInterpretation::isConsistent() const
-{
-  throw std::runtime_error("ComfortInterprertation::isConsistent not implemented");
-  #warning todo implement
 }
 
 // copy all atoms that match the specified predicate into destination interpretation

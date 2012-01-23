@@ -58,7 +58,7 @@
  * external atom to import triples from RDF files has this form:
  *
  * \code
- * &rdf[uri](X,Y,Z)
+ *   &rdf[uri](X,Y,Z)
  * \endcode
  *
  * where \c uri stands for a string denoting the RDF-source and \c X, \c Y, and
@@ -95,7 +95,7 @@
  * calculates the overall price of a number of books given by their ISBN number:
  *
  * \code
- * &overallbookprice[isbn](X)
+ *   &overallbookprice[isbn](X)
  * \endcode
  *
  * The single input parameter of this atom would be of type "Predicate", meaning
@@ -139,6 +139,31 @@
  * - StrongNegationPlugin.{cpp,hpp}, and
  * - HigherOrderPlugin.{cpp,hpp},
  * as well as other basic plugins like the stringplugin and the scriptplugin.
+ *
+ * \section implementingeatoms Implementing External Atoms
+ *
+ * For implementing external computations there are two very different
+ * possibilities: ComfortPluginAtom and PluginAtom.
+ * - ComfortPluginAtom (in header ComfortPluginInterface.h)
+ *   This interface requires no knowledge of the ID mechanism of dlvhex;
+ *   every class processed in ComfortPluginAtom is defined in
+ *   ComfortPluginInterface.h therefore this interface makes it easy to
+ *   start developing with dlvhex. However this comes at the cost of
+ *   performance.
+ * - PluginAtom (in header PluginInterface.h)
+ *   This interface is the native interface to implement external
+ *   computations, in fact ComfortPluginAtom is implemented using
+ *   PluginAtom. Using PluginAtom requires knowledge of how to deal with
+ *   the Registry and ID classes.
+ *
+ * It is recommended to start prototyping using ComfortPluginAtom and then
+ * later reimplement performance-critical external computations in the
+ * PluginAtom interface. (The HEX programs do not change at all, just the
+ * implementation of the external atom.)
+ *
+ * In TestPlugin.cpp, some plugin atoms are implemented both using
+ * PluginAtom and ComfortPluginAtom in order to provide an example of the
+ * differences.
  * 
  * \section compiling Building Plugins
  * 
@@ -172,19 +197,22 @@
  * Definitions for C ABI interface for dlvhex plugins.
  * We store the version like boost as an integer.
  * We use the apache APR approach to versioning.
- * * see PluginContainer.cpp for version processing,
- * * see Trac wiki page LibraryVersions on the general approach and rationale,
- * * see TestPlugin.cpp for an example plugin implementation
+ * - see PluginContainer.cpp for version processing,
+ * - see Trac wiki page LibraryVersions on the general approach and rationale,
+ * - see TestPlugin.cpp for an example plugin implementation
  *
  * The following code must be used by a plugin to publish their
  * ABI compatibility:
- * * in configure.ac use dlvhex.m4 and the macro
+ * - in configure.ac use dlvhex.m4 and the macro
+ *
  * \code
- * DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[X.Y.Z])
+ *   DLVHEX_DEFINE_VERSION([DLVHEX_ABI],[X.Y.Z])
  * \endcode
- * * in the library source file use
+ *
+ * - in the library source file use
+ *
  * \code
- * IMPLEMENT_PLUGINABIVERSIONFUNCTION
+ *   IMPLEMENT_PLUGINABIVERSIONFUNCTION
  * \endcode
  *
  * See the documentation of PluginInterface for how to publish
@@ -224,16 +252,19 @@ DLVHEX_NAMESPACE_BEGIN
  * To make the plugin available, we need to instantiate it. The simplest way to do
  * this is to define a global variable and the following code:
  * Assume your plugin class is RDFPlugin derived from PluginInterface and you have
+ *
  * \code
- * RDFPlugin theRDFPlugin;
+ *   RDFPlugin theRDFPlugin;
  * \endcode
+ *
  * Then you publish theRDFPlugin to dlvhex as follows:
+ *
  * \code
- * extern "C"
- * void* PLUGINIMPORTFUNCTION()
- * {
- *   return reinterpret_cast<void*>(&theRDFPlugin);
- * }
+ *   extern "C"
+ *   void* PLUGINIMPORTFUNCTION()
+ *   {
+ *     return reinterpret_cast<void*>(&theRDFPlugin);
+ *   }
  * \endcode
  */
 class DLVHEX_EXPORT PluginInterface
@@ -261,9 +292,11 @@ protected:
    *
    * Set the version in your own constructor. It is recommended you
    * add to configure.ac the line
+   *
    * \code
-   * DLVHEX_DEFINE_VERSION([<YOURPLUGINNAME>],[$PACKAGE_VERSION])
+   *   DLVHEX_DEFINE_VERSION([<YOURPLUGINNAME>],[$PACKAGE_VERSION])
    * \endcode
+   *
    * and use for setNameVersion() the defines in config.h.in as created by
    * configure (see also dlvhex.m4).
    */
@@ -294,16 +327,16 @@ public:
    * Example:
    *
    * \code
-   * std::vector<PluginAtomPtr>
-   * createAtoms(ProgramCtx& ctx) const
-   * {
-   * 	std::vector<PluginAtomPtr> ret;
-   *    PluginAtomPtr newatom1(new MyAtom1);
-   *    PluginAtomPtr newatom2(new MyAtom2);
-   *    ret["newatom1"] = newatom1;
-   *    ret["newatom2"] = newatom2;
-   *    return ret;
-   * }
+   *   std::vector<PluginAtomPtr>
+   *   createAtoms(ProgramCtx& ctx) const
+   *   {
+   *   	std::vector<PluginAtomPtr> ret;
+   *      PluginAtomPtr newatom1(new MyAtom1);
+   *      PluginAtomPtr newatom2(new MyAtom2);
+   *      ret["newatom1"] = newatom1;
+   *      ret["newatom2"] = newatom2;
+   *      return ret;
+   *   }
    * \endcode
    *
    * Here, we assume to have defined atoms MyAtom1 and MyAtom2
@@ -434,53 +467,61 @@ typedef boost::shared_ptr<PluginData> PluginDataPtr;
  * evaluation function of the atom is realized in the PluginAtom::retrieve()
  * method. In the constructor, the user must specify monotonicity, the types of
  * input terms and the output arity of the atom.
-
+ *
+ * See also ComfortPluginInterface.
+ *
  * \subsection extatom The External Atom
+ *
  * First, we have to subclass PluginAtom to create our own \b RDFatom class:
  * 
  * \code
- *     class RDFatom : public PluginAtom
- *     {
+ *   class RDFatom: public PluginAtom
+ *   {
  * \endcode
  * 
  * The constructor of \b RDFatom will be used to define some properties of the atom:
  *
  * \code
- *     public:
- *         RDFatom()
- *         {
- *             addInputPredicate();
- *             setOutputArity(3);
- *         }
+ *   public:
+ *     RDFatom():
+ *       PluginAtom("rdf", true)
+ *     {
+ *         addInputPredicate();
+ *         setOutputArity(3);
+ *     }
  * \endcode
  * 
- * Here, we need to specify the number and types of input parameters. The RDF-atom
- * as we used it above, has a single input parameter, which is the name of the
- * predicate to hold the uris. In this case, we just need a single call to
- * PluginAtom::addInputPredicate(). Another possibility would have been to define the
- * single input term as a constant, which represents the uri directly (which
- * means, that then there can only be one uri). In this case, the input
- * interpretation would be irrelevant, since we don't need the extension of any
- * predicate. To define a constant input parameter, we use PluginAtom::addInputConstant().
- * If we wanted to have, say, two input parameters which will represent predicate
- * names and a third one which will be a constant, we would put this sequence of
- * calls in the constructor:
+ * We first specify predicate "&rdf" and monotonicity (it is monotonic).
+ * Then we specify the number and types of input parameters. The RDF-atom
+ * as we used it above, has a single input parameter, which is the name of
+ * the predicate to hold the URIs. In this case, we just need a single call
+ * to PluginAtom::addInputPredicate(). Another possibility would have been
+ * to define the single input term as a constant, which represents the URI
+ * directly (which means, that then there can only be one URI). In this
+ * case, the input interpretation would be irrelevant, since we don't need
+ * the extension of any predicate. To define a constant input parameter, we
+ * use PluginAtom::addInputConstant().
+ *
+ * If we wanted to have, say, two input parameters which will represent
+ * predicate names and a third one which will be a constant, we would put
+ * this sequence of calls in the constructor:
  *
  * \code
- *             addInputPredicate();
- *             addInputPredicate();
- *             addInputConstant();
+ *   addInputPredicate();
+ *   addInputPredicate();
+ *   addInputConstant();
  * \endcode
  * 
- * The call \c setOutputArity(3) ensures that occurences of this atom with other than
- * three output terms will cause an error at parsing time.
+ * The call \c setOutputArity(3) ensures that occurences of this atom with
+ * other than three output terms will cause an error at parsing time.
  * 
- * The only member function of the atom class that needs to be defined is retrieve:
+ * The only member function of the atom class that needs to be defined is
+ * retrieve:
  *
  * \code
- *         virtual void
- *         retrieve(const Query& query, Answer& answer) throw(PluginError)
- *         {
+ *   virtual void
+ *   retrieve(const Query& query, Answer& answer)
+ *   {
  * \endcode
  * 
  * retrieve() always takes a query object as input and returns the result tuples in an
@@ -490,93 +531,91 @@ typedef boost::shared_ptr<PluginData> PluginDataPtr;
  * method retrieveCached() which has the effect that retrieve() is never called twice
  * for the same query (if you do not disable the cache via --nocache).
  * 
- * The input parameters at call time are accessed by Query::getInputTuple():
+ * In the implementation of retrieve, query.input contains the input tuple,
+ * query.pattern contains the tuple of constants and variables an output
+ * tuple should unify with, and query.interpretation is an interpretation
+ * containing all relevant bits of predicate inputs.
+ *
+ * query.input and query.pattern store Term IDs, you resolve such IDs via
+ * the table Registry::terms, except for integers which are directly
+ * encoded in the ID::address member and are detected using ID::isInteger().
+ *
+ * Note that each constant has a unique ID in the Registry, therefore
+ * obtaining const Term& from Registry::terms might not be necessary in all
+ * cases, it might be sufficient to compare the ID without looking at the
+ * actual (printable) content of the symbol.
  * 
  * \code
- *             Tuple parms = query.getInputTuple();
+ *   if( query.input[0].isInteger() )
+ *   {
+ *      std::cerr << "got integer << query.input[0].address << std::endl;
+ *   }
+ *   else
+ *   {
+ *      const Term& t = registry->terms.getByID(query.input[0]);
+ *      std::cerr << "got term << t << std::endl;
+ *   }
  * \endcode
  *
- * The interpretation is retrieved by Query::getInterpretation():
+ * You obtain all ground atoms in the interpretation by iterating over its
+ * bits, or by testing individual bits.
  *
  * \code
- *             AtomSet i = query.getInterpretation();
+ *   Interpretation::TrueBitIterator it, it_end;
+ *   for(boost::tie(it, it_end) = query.interpretation.trueBits();
+ *       it != it_end; ++it)
+ *   {
+ *     const OrdinaryAtom& gatom = registry->ogatoms.getByAddress(*it);
+ *     std::cerr << "got atom in interpretation: " << gatom << std::endl;
+ *   }
  * \endcode
  *
- * For more information about the datatypes of dlvhex, please refer to the
- * documentation of the classes Term, Atom, AtomSet, etc.
+ * Note that each ground atom has a unique ID in the Registry, therefore
+ * obtaining const OrdinaryAtom& from Registry::ogatoms might not be
+ * necessary in all cases, it might be sufficient to compare the ID without
+ * looking at the actual (printable) content of the symbol.
+ *
+ * For more information about accessing interpretation and IDs, please
+ * refer to the documentation and header files of the classes ID, Registry,
+ * Term, Atom, Interpretation, ...
  * 
- * At this point, the plugin author will implement the actual function of the
- * external atom, either within this class or by calling other functions.
- * Furthermore, the author is able to throw an exception of type \b PluginError
- * which will be catched inside dlvhex, e.g.:
+ * At this point, the plugin author will implement the actual function of
+ * the external atom, either within this class or by calling other
+ * functions.
+ *
+ * Throwing exceptions will abort the model building process and display
+ * the exception.
+ * 
+ * Answer tuples of data type Tuple which is std::vector<ID>, are added to
+ * the answer object as follows:
+ *
  * \code
- *             if (something_went_wrong != 0)
- *                 throw PluginError("rdf plugin error");
+ *   Tuple tuple;
+ *   answer.get().push_back(tuple);
  * \endcode
- * 
- * Before returning from the retrieve-function, the answer-object needs to be prepared:
- * 
- * \code
- *             std::vector<Tuple> out;
- * 
- *             // fill the answer object...
- *                 
- *             answer.addTuples(out);
- *         }
- * \endcode
+ *
+ * IDs put into tuple must either be integer IDs or Term IDs that have been
+ * registered in table Registry::terms.
  *
  * \subsection registeratoms Registering the Atoms
  *
  * So far, we described the implementation of a specific external atom. In order
  * to integrate one or more atoms in the interface framework, the plugin author
- * needs to subclass PluginInterface:
- *
- * \code
- *     class RDFplugin : public PluginInterface
- *     {
- *     public:
- * \endcode
- *
- * At the current stage of dlvhex, only the function PluginInterface::getAtoms() needs to be
- * defined inside this class:
- * 
- * \code
- *         virtual void
- *         getAtoms(PluginAtomMap& a)
- *         {
- *             boost::shared_ptr<PluginAtom> rdf(new RDFatom);
- *             a["rdf"] = rdf;
- *         }
- * \endcode
- * 
- * Here, a Plugin-Atom object is related to a string in a map - as soon as
- * dlvhex encounters an external atom (in this case: \c &rdf) during the
- * evaluation of the program, it finds the corresponding atom object (and hence
- * its PluginAtom::retrieve() function) in this map. Naturally, a plugin can
- * comprise several different Plugin-Atoms, which are all registered here:
- *
- * \code
- *             boost::shared_ptr<PluginAtom> str_cat(new strcat_atom);
- *             boost::shared_ptr<PluginAtom> str_find(new strfind_atom);
- *             boost::shared_ptr<PluginAtom> str_erase(new strerase_atom);
- *             a["str_cat"] = str_cat;
- *             a["str_find"] = str_find;
- *             a["str_erase"] = str_erase;
- * \endcode
- * 
+ * needs to subclass PluginInterface and register all external atoms in
+ * PluginInterface::createAtoms (see documentation of PluginInterface).
  */
 class DLVHEX_EXPORT PluginAtom
 {
 public:
   /**
-   * \brief Query class for wrapping the input of an external atom call.
+   * \brief Query class which provides the input of an external atom call.
    *
    * The Query is passed to external computations as a const ref, therefore its data
    * members are not encapsulated.
    *
-   * The input arguments are the ground terms of the input list.
+   * Query::input contains the ground terms of the input list.
    *
-   * The output tuple corresponds to the atom's output list: if it contains
+   * Query::pattern tuple corresponds to the atom's output list: if it contains
    * variables, the query will be a functional one for those missing values; if
    * it is nullary or completely ground, the query will be a boolean one.
    *
@@ -921,126 +960,24 @@ protected:
 };
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
-
 // hash function for QueryAnswerCache
 std::size_t hash_value(const PluginAtom::Query& q);
 
-/**
- * \brief Converter class.
- *
- * A converter can be seen as a preprocessor, which receives the raw input
- * program. A converter can either decide to parse the program and return a
- * well-formed HEX-program or simply leave the input untouched.
-   *
-   * By overloading this function, a plugin can implement one custom preparser,
-   * which will be called first in the entire dlvhex-processing chain. A
-   * converter can expect any kind of input data, and must return either the
-   * original input data or a well-formed hex-program. With this facility, a
-   * preparser can for instance convert a different rule- or query-language to
-   * a hex-program.
-   *
-   * Do not overload this one if you overload createConverters()
 
- * \section modifying Modifying the input program
- * 
- * dlvhex provides three interfaces for plugins to modify the program before it
- * will be evaluated. We will present each of them in the following.
+/**
+ * \brief Converter class (input stream rewriter).
  *
- * \subsection converter The Converter
+ * A converter is a rewriter for the raw input stream.
+ * A converter must return a parseable HEX-program in its output stream.
+ * Note, that the definition of parseable depends on whether your plugin
+ * also replaces or extends the HEX input parser.
  *
- * The converter can be used to, you guessed it, convert the input program
- * before it is processed by dlvhex itself. Thus, a plugin can provide special
- * syntax that deviates from the syntax of HEX-programs and ensure by the
- * rewriter to pass a well-formed HEX-program on to dlvhex. For instance, the
- * plugin for interfacing description logic knowledge bases allows for
- * dl-programs as input, which permit a more intuitive syntax for this type of
- * external atoms. The converter of this plugin transforms the dl-atoms to
- * external atoms and might add some auxiliary rules to the program. Another
- * example of using this facility is the SPARQL-plugin, which converts a SPARQL
- * query into a HEX-program.
- * 
- * There is no specific order for calling the converters, if more than one is
- * provided by existing plugins. So either the converter of a plugin is tolerant
- * enough to leave things untouched if the input is not recognized, or the
- * plugin uses the option-handling facility to be activated manually when
- * invoking dlvhex, thus leaving the plugin unused if not explicitly desired by
- * the user.
- * 
- * A converter must be subclassed from PluginConverter:
- *
- * \code
- *     class MyConverter : public PluginConverter
- *     {
- *     public:
- *
- *         MyConverter()
- *         {
- *         }
- * \endcode
- * 
- * The following function does the actual rewriting and will be called by dlvhex.
- * The input program is read from i. The output must be passed on to the
- * stream o, either the original input stream or the result of a conversion.
- *
- * \code
- *         virtual void
- *         MyConverter::convert(std::istream& i, std::ostream& o)
- *         { 
- *             // do the rewriting, maybe throw a PluginError
- *         }
- *     }
- * \endcode
- * 
- * For supplying a converter to dlvhex, the following function needs to be defined
- * in the class derived from PluginInterface (like \b RDFPlugin above):
- * 
- * \code
- *         virtual PluginConverter*
- *         createConverter()
- *         {
- *             converter = new MyConverter();
- *             return converter;
- *         }
- * \endcode
- * 
- * Of course, this also requires a pointer \b converter to be defined in your
- * plugin class derived from PluginInterface:
- *
- * \code
- *         MyConverter* converter;
- * \endcode
- * 
- * It might be more elegant to define the converter already in the constructor of
- * the plugin:
- *
- * \code
- *         SomePlugin()
- *             : converter(new MyConverter())
- *         { }
- * \endcode
- * 
- * Then, PluginInterface::createConverter only needs to return the object:
- * 
- * \code
- *         virtual PluginConverter*
- *         createConverter()
- *         {
- *             return converter;
- *         }
- * \endcode
- * 
- * The object would be deleted by the
- * plugin's destructor:
- * 
- * \code
- *         ~SomePlugin()
- *         {
- *             delete converter;
- *         }  
- * \endcode
- * 
- * To learn more about how to write the actual conversion routine, refer to the
- * sources of the DL-plugin, which uses a bison/flex parser.
+ * Other possibilities for modifying the way input is prepared for
+ * evaluation are:
+ * - PluginInterface::createRewriter (rewrite the parsed program),
+ * - PluginInterface::createOptimizer (rewrites the dependency graph and
+ *   the EDB), and
+ * - PluginInterface::createParser and PluginInterface::createParserModules.
  */
 class DLVHEX_EXPORT PluginConverter
 {
@@ -1108,53 +1045,17 @@ typedef boost::shared_ptr<FinalCallback> FinalCallbackPtr;
 /**
  * \brief Rewriter class.
  *
- * A plugin can provide a rewriter object.
- * The purpose of a plugin rewriter is to give the plugin author the
- * possibility of creating a custom syntax for her external atoms, which will
- * be rewritten to the hex-program syntax by the rewriter. When dlvhex is
- * executed, the rewriter of each found plugin is applied to the input
- * program. The rewriters are called after the converters and receive an already
- * parsed program, represented by a Program object and an AtomSet (which
- * contains the facts of the program).
-
- * \subsection rewriter The Rewriter
+ * The purpose of a plugin rewriter is to modify the parsed HEX program and
+ * EDB, before the dependency graph is constructed. This can, e.g., be used
+ * to implement partial pregrounding. (Note that HEX processes nonground
+ * programs.)
  *
- * The purpose of a rewriter is to give the plugin author the
- * possibility of creating a custom syntax for her external atoms, which will
- * be rewritten to the hex-program syntax by the rewriter. When dlvhex is
- * executed, the rewriter of each found plugin is applied to the input
- * program. The rewriters are called after the converters and receive an already
- * parsed program, represented by a Program object and an AtomSet (which
- * contains the facts of the program).
- *
- * Subclassing from PluginRewriter works just as with PluginConverter. The
- * rewriter is passed to the plugin interface by defining the following function
- * in the subclassed PluginInterface (as above for the converter):
- *
- * \code
- *         virtual PluginRewriter*
- *         createRewriter()
- *         {
- *             rewriter = new MyRewriter();
- *             return rewriter;
- *         }
- * \endcode
- *
- * Again, this presumes that you have a member PluginRewriter* rewriter in your
- * interface class.
- *
- * The rewriting is not carried out on streams, but on a Program object, since
- * at that stage, the program is already parsed into proper datastructures.
- * Also the set of initial
- * facts, the EDB, is passed to the rewriter and can be considered/altered.
- *
- * \code
- *         virtual void
- *         rewrite(Program& idb, AtomSet& edb)
- *         {
- *             // examine and alter the rules (idb) / facts (edb)
- *         }
- * \endcode
+ * Other possibilities for modifying the way input is prepared for
+ * evaluation are:
+ * - PluginInterface::createConverter (rewrite the raw input stream),
+ * - PluginInterface::createOptimizer (rewrites the dependency graph and
+ *   the EDB), and
+ * - PluginInterface::createParser and PluginInterface::createParserModules.
  */
 class DLVHEX_EXPORT PluginRewriter
 {
@@ -1180,7 +1081,16 @@ typedef boost::shared_ptr<PluginRewriter> PluginRewriterPtr;
 
 
 /**
- * \brief Interface for plugin-specific optimizers.
+ * \brief Optimizer class.
+ *
+ * The purpose of an optimizer is to modify (prune) the dependency graph
+ * and the EDB before evaluation.
+ *
+ * Other possibilities for modifying the way input is prepared for
+ * evaluation are:
+ * - PluginInterface::createRewriter (rewrite the parsed program),
+ * - PluginInterface::createConverter (rewrite the raw input stream),
+ * - PluginInterface::createParser and PluginInterface::createParserModules.
  */
 class DLVHEX_EXPORT PluginOptimizer
 {
@@ -1197,9 +1107,16 @@ public:
 // deleters
 //
 
-// this class should be used as a "deleter" for boost::shared_ptr if the library
-// returning the pointer wants to return an object allocated with "new"
-// this must stay inline! (the correct delete operator must be used by the library)
+/**
+ * \brief Special library deleter to be used with boost smart pointers.
+ *
+ * This class should be used as a "deleter" for boost::shared_ptr if the library
+ * returning the pointer wants to return an object allocated with "new"
+ * this must stay inline! (the correct delete operator must be used by the library)
+ *
+ * You will not need to care about this unless you get segmentation faults
+ * when dlvhex shuts down.
+ */
 template<typename AllocatedT>
 struct PluginPtrDeleter
 {
@@ -1210,10 +1127,17 @@ struct PluginPtrDeleter
   }
 };
 
-// this class should be used as a "deleter" for boost::shared_ptr if the library
-// returning the pointer wants to return a statically linked object (i.e., do not free)
-// [this is used for all PluginInterface pointers, as this pointer is returned as a
-// POD type via an extern "C" function]
+/**
+ * \brief Special library deleter to be used with boost smart pointers.
+ *
+ * This class should be used as a "deleter" for boost::shared_ptr if the library
+ * returning the pointer wants to return a statically linked object (i.e., do not free)
+ * [this is used for all PluginInterface pointers, as this pointer is returned as a
+ * POD type via an extern "C" function]
+ *
+ * You will not need to care about this unless you get segmentation faults
+ * when dlvhex shuts down.
+ */
 template<typename AllocatedT>
 struct PluginPtrNOPDeleter
 {
@@ -1228,7 +1152,7 @@ DLVHEX_NAMESPACE_END
 
 #endif // _DLVHEX_PLUGININTERFACE_H
 
-// vim:ts=4:
+// vim:ts=4:tw=75:
 // Local Variables:
 // mode: C++
 // End:
