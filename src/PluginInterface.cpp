@@ -267,6 +267,12 @@ void PluginAtom::setRegistry(RegistryPtr reg)
   assert(predicateID != ID_FAIL);
 }
 
+std::vector<PluginAtomPtr>
+PluginInterface::createAtoms(ProgramCtx& ctx) const
+{
+	return std::vector<PluginAtomPtr>();
+}
+
 // call printUsage for each loaded plugin
 void PluginInterface::printUsage(std::ostream& o) const
 {
@@ -278,6 +284,44 @@ void PluginInterface::printUsage(std::ostream& o) const
 void PluginInterface::processOptions(std::list<const char*>& pluginOptions, ProgramCtx& ctx)
 {
   // don't fail if no option processing has been defined, simply do not process
+}
+
+PluginConverterPtr
+PluginInterface::createConverter(ProgramCtx&)
+{
+	return PluginConverterPtr();
+}
+
+std::vector<PluginConverterPtr>
+PluginInterface::createConverters(ProgramCtx& ctx)
+{
+	// per default return the single converter created by createConverter
+	std::vector<PluginConverterPtr> ret;
+	PluginConverterPtr pc = this->createConverter(ctx);
+	if( pc )
+		ret.push_back(pc);
+	return ret;
+}
+
+std::vector<HexParserModulePtr>
+PluginInterface::createParserModules(ProgramCtx&)
+{
+	return std::vector<HexParserModulePtr>();
+}
+
+HexParserPtr PluginInterface::createParser(ProgramCtx&)
+{
+	return HexParserPtr();
+}
+
+PluginRewriterPtr PluginInterface::createRewriter(ProgramCtx&)
+{
+	return PluginRewriterPtr();
+}
+
+PluginOptimizerPtr PluginInterface::createOptimizer(ProgramCtx&)
+{
+	return PluginOptimizerPtr();
 }
 
 DLVHEX_NAMESPACE_END

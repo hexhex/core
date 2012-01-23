@@ -640,13 +640,13 @@ OptimizeEDBDependencyGraphState::optimizeEDBDependencyGraph(ProgramCtx* ctx)
       "_DepGraphOptimizedVerbose.dot";
     LOG(INFO,"dumping optimized verbose dependency graph to " << fnamev);
     std::ofstream filev(fnamev.c_str());
-    depgraph->writeGraphViz(filev, true);
+    ctx->depgraph->writeGraphViz(filev, true);
 
     std::string fnamet = ctx->config.getStringOption("DebugPrefix")+
       "_DepGraphOptimizedTerse.dot";
     LOG(INFO,"dumping optimized terse dependency graph to " << fnamet);
     std::ofstream filet(fnamet.c_str());
-    depgraph->writeGraphViz(filet, false);
+    ctx->depgraph->writeGraphViz(filet, false);
   }
 
   StatePtr next(new CreateComponentGraphState);

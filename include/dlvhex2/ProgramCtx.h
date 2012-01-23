@@ -66,6 +66,9 @@ typedef boost::shared_ptr<ModelBuilder<FinalEvalGraph> >
 typedef boost::function<ModelBuilder<FinalEvalGraph>*(FinalEvalGraph&)>
   ModelBuilderFactory;
 
+typedef std::map<std::string, PluginAtomPtr>
+	PluginAtomMap;
+
 /**
  * @brief Program context class.
  *

@@ -239,6 +239,11 @@ DLVHEX_NAMESPACE_BEGIN
 class DLVHEX_EXPORT PluginInterface
 {
 protected:
+  /**
+   * \brief Constructor
+   *
+   * Write your own constructor and set the version using setNameVersion().
+   */
   PluginInterface():
     pluginName(),
     versionMajor(0),
@@ -251,6 +256,17 @@ protected:
   unsigned versionMinor;
   unsigned versionMicro;
 
+  /**
+   * \brief Set plugin name and version (informative, this is not the ABI version).
+   *
+   * Set the version in your own constructor. It is recommended you
+   * add to configure.ac the line
+   * \code
+   * DLVHEX_DEFINE_VERSION([<YOURPLUGINNAME>],[$PACKAGE_VERSION])
+   * \endcode
+   * and use for setNameVersion() the defines in config.h.in as created by
+   * configure (see also dlvhex.m4).
+   */
   void setNameVersion(
       const std::string& name, unsigned major,
       unsigned minor, unsigned micro)
@@ -262,10 +278,10 @@ protected:
   }
 
 public:
-  virtual ~PluginInterface() { }
+  virtual ~PluginInterface() {}
 
   /**
-   * \brief Fills a mapping from atom names to the plugin's atom objects.
+   * \brief Publish external computation sources to dlvhex.
    *
    * This is the central location where the user's atoms are made public.
    * dlvhex will call this function for all found plugins, which write their
@@ -273,66 +289,64 @@ public:
    * PluginAtom objects. The strings denote the name of the atom as it should
    * be used in the program.
    *
+   * Override this method to publish your atoms.
+   *
    * Example:
    *
    * \code
-   * void
-   * getAtoms(PluginAtomMap& a)
+   * std::vector<PluginAtomPtr>
+   * createAtoms(ProgramCtx& ctx) const
    * {
-   *     boost::shared_ptr<PluginAtom> newatom(new MyAtom);
-   *     a["newatom"] = newatom;
+   * 	std::vector<PluginAtomPtr> ret;
+   *    PluginAtomPtr newatom1(new MyAtom1);
+   *    PluginAtomPtr newatom2(new MyAtom2);
+   *    ret["newatom1"] = newatom1;
+   *    ret["newatom2"] = newatom2;
+   *    return ret;
    * }
    * \endcode
    *
-   * Here, we assume to have defined an atom MyAtom derived from PluginAtom.
-   * This atom can now be used in a hex-program with the predicate \b
-   * &newatom.
-   *
-   * Naturally, more than one atoms can be registered here:
-   *
-   * \code
-   * boost::shared_ptr<PluginAtom> split(new SplitAtom);
-   * boost::shared_ptr<PluginAtom> concat(new ConcatAtom);
-   * boost::shared_ptr<PluginAtom> substr(new SubstringAtom);
-   * a["split"] = split;
-   * a["concat"] = concat;
-   * a["substr"] = substr;
-   * \endcode
+   * Here, we assume to have defined atoms MyAtom1 and MyAtom2
+   * derived from PluginAtom. These atom can now be used in a
+   * HEX-program with the predicate \b &newatom1[]() and
+   * \b &newatom2[]().
    */
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
-    { return std::vector<PluginAtomPtr>(); }
+  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const;
 
-	// output help message for this plugin
-	virtual void printUsage(std::ostream& o) const;
+  /**
+   * \brief Output help message for this plugin.
+   */
+  virtual void printUsage(std::ostream& o) const;
 
-	// processes options for this plugin, and removes recognized options from pluginOptions
-  // (do not free the pointers, the const char* directly come from argv)
-	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx& ctx);
+  /**
+   * \brief Processes options for this plugin.
+   *
+   * If you override this method, remove all options your plugin recognizes from
+   * pluginOptions. (Do not free the pointers, the const char* directly come from
+   * argv.) You can store configuration of your plugin using PluginData and
+   * ProgramCtx::getPluginData (see there for more information.)
+   */
+  virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx& ctx);
+
   /**
    * \brief Provide PluginConverter.
    *
-   * See PluginConverter documentation.
-   *
    * This method is called by createConverters, so if you overload
    * createConverters, do not overload createConverter.
+   *
+   * See PluginConverter documentation.
    */
-  virtual PluginConverterPtr createConverter(ProgramCtx&)
-    { return PluginConverterPtr(); }
+  virtual PluginConverterPtr createConverter(ProgramCtx&);
 
   /**
    * \brief Provide multiple PluginConverter objects.
    *
+   * This method calls createConverter, you can override it to provide
+   * multiple converters.
+   *
    * See PluginConverter documentation.
    */
-  virtual std::vector<PluginConverterPtr> createConverters(ProgramCtx& ctx)
-  {
-    // per default return the single converter created by createConverter
-    std::vector<PluginConverterPtr> ret;
-    PluginConverterPtr pc = this->createConverter(ctx);
-    if( pc )
-      ret.push_back(pc);
-    return ret;
-  }
+  virtual std::vector<PluginConverterPtr> createConverters(ProgramCtx& ctx);
 
   /**
    * \brief Provide parser modules
@@ -344,43 +358,38 @@ public:
    * See the QueryPlugin and the StrongNegationPlugin for example plugins that
    * use this feature.
    */
-  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&)
-    { return std::vector<HexParserModulePtr>(); }
+  virtual std::vector<HexParserModulePtr> createParserModules(ProgramCtx&);
 
   /**
    * \brief Provide alternative parser
    * 
-   * This method can be overwritten to provide an alternative HEX parser,
-   * e.g., for implementing slightly changed input syntax.
+   * This method can be overwritten to provide an alternative HEX parser, e.g., for
+   * implementing slightly changed input syntax.
    */
-  virtual HexParserPtr createParser(ProgramCtx&)
-    { return HexParserPtr(); }
+  virtual HexParserPtr createParser(ProgramCtx&);
 
   /**
    * \brief Rewriter for hex-programs.
    *
-   * The rewriters are called second after the preparsers. Hence, a rewriter
-   * can expect a well-formed hex-program as input and must of course also
-   * take care of returning a correct program. A rewriter can realize
-   * syntactic sugar, e.g., providing a simplified syntax for the user which is
-   * then transformed, depending probably on the entire rule body.
+   * The rewriters are called on the parsed HEX program (which may have been
+   * rewritten by a PluginConverter). Hence, a rewriter can expect a well-formed
+   * HEX-program represented in ProgramCtx::edb and ProgramCtx::idb as input and must
+   * of course also take care of keeping that representation correct program.
    */
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&)
-    { return PluginRewriterPtr(); }
+  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
   /**
    * \brief Optimizer: may optimize dependency graph.
    */
-  virtual PluginOptimizerPtr createOptimizer(ProgramCtx&)
-    { return PluginOptimizerPtr(); }
+  virtual PluginOptimizerPtr createOptimizer(ProgramCtx&);
 
   /**
    * Altering the ProgramCtx permits plugins to do many things, e.g.,
-   * * installing model and finish hooks
-   * * removing default model (and finish) hooks
+   * * installing model and finish callbacks
+   * * removing default model (and final) hooks
    * * setting maxint
    * * changing and configuring the solver backend to be used
-   * * TODO other useful examples?
+   * See internal plugins for example usage.
    */
   virtual void setupProgramCtx(ProgramCtx&) {  }
 
@@ -556,43 +565,62 @@ typedef boost::shared_ptr<PluginData> PluginDataPtr;
  * \endcode
  * 
  */
-class PluginAtom;
-typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
-typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 class DLVHEX_EXPORT PluginAtom
 {
 public:
   /**
    * \brief Query class for wrapping the input of an external atom call.
+   *
+   * The Query is passed to external computations as a const ref, therefore its data
+   * members are not encapsulated.
+   *
+   * The input arguments are the ground terms of the input list.
+   *
+   * The output tuple corresponds to the atom's output list: if it contains
+   * variables, the query will be a functional one for those missing values; if
+   * it is nullary or completely ground, the query will be a boolean one.
+   *
+   * The answer shall contain exactly those tuples that match the pattern and are
+   * in the output of the atom's function for the interpretation and the input
+   * arguments.
+   *
+   * Query objects are passed to PluginAtom::retrieve or PluginAtom::retrieveCached.
    */
   struct DLVHEX_EXPORT Query
   {
+    /**
+	 * \brief Bitset of ground atoms representing current (partial) model.
+	 *
+	 * Partial model contains bits about all atoms relevant for the computation,
+	 * i.e., all atoms with a predicate equal to a constant given for a predicate
+	 * input in the input tuple.
+	 */
     InterpretationConstPtr interpretation;
+
+	/**
+	 * \brief Input constant vector.
+	 *
+	 * For predicate inputs it is the predicate of the ground atoms.  For constant
+	 * inputs it is the input constant. (Variables in input tuples in the program are
+	 * grounded via auxiliary predicates, so input never contains variable terms.)
+	 *
+	 * If &extatom[a,b](y,Z) the input tuple is <a,b>.
+	 */
     Tuple input;
+
+	/**
+	 * \brief Output term vector.
+	 *
+	 * The vector of output terms of the external atom.  This vector might contain
+	 * variables, if variables occur as output terms in the program.  Several of
+	 * these variables might even be the same, e.g., if the external atom is
+	 * &extatom[a,b](X,c,X,d) the pattern is <X,c,X,d>.
+	 */
     Tuple pattern;
 
     /**
-     * The input arguments are the ground terms of the input list.
-     *
-     * The output tuple corresponds to the atom's output list: if it contains
-     * variables, the query will be a functional one for those missing values; if
-     * it is nullary or completely ground, the query will be a boolean one.
-     *
-     * The answer shall contain exactly those tuples that match the pattern and are
-     * in the output of the atom's function for the interpretation and the input
-     * arguments.
+     * \brief Construct query.
      */
-    // interpretation is a bitset of ground atoms,
-    //   where the predicate is equal to the constant of a predicate input
-    // input is a vector of constant/integer term IDs:
-    //   for predicate inputs it is the predicate of the ground atoms
-    //   for constant inputs it is the input constant
-    //     (possibly obtained from an auxiliary input rule+predicate)
-    // pattern is a vector of term IDs:
-    //   answer tuples must contain the same number of terms as the pattern tuple
-    //   constants must be the same
-    //   variables must be substituted
-    //   TODO verify and specify if the same variable may be substituted differently: may  &dosomething[](X,b,X) return an answer tuple (a,b,c)?
     Query(InterpretationConstPtr interpretation,
           const Tuple& input,
           const Tuple& pattern):
@@ -600,42 +628,72 @@ public:
       input(input),
       pattern(pattern) {}
 
-    // no member encapsulation and no accessors as this will always be supplied to plugins as a const ref
-
-    // strict weak ordering required for using this as index in a map
-    // TODO we should use a hash map instead
-    //bool operator<(const Query& other) const;
-
-    // equality for hashing
+    /**
+	 * Equality for hashing the query for caching query results.
+	 */
     bool operator==(const Query& other) const;
   };
 
   /**
-   * \brief Answer class for wrapping the output of an external atom call.
+   * \brief Output of an external atom call.
+   *
+   * Answer objects are created in external computations, i.e.,
+   * in PluginAtom::retrieve or PluginAtom::retrieveCached.
+   *
+   * The storage of tuples is accessible only via get() such that the object can be
+   * copied with low cost (only shared pointer is copied) and such that the Answer
+   * cache can be implemented efficiently.
    */
   struct DLVHEX_EXPORT Answer
   {
+	/**
+	 * \brief Constructor.
+	 */
     Answer();
 
-    // simple accessors, controlled by constness of object
+    /**
+	 * \brief Access storage (read/write) and mark answer as used.
+	 */
     std::vector<Tuple>& get() { used = true; return *output; }
+
+    /**
+	 * \brief Access storage (read only). Do NOT mark as used.
+	 */
     const std::vector<Tuple>& get() const { return *output; }
 
-    // for efficient hashtable management
-    // whether the internal vector<Tuple> it has been written to yet
+	/**
+	 * \brief Usage report (for cache).
+	 */
     bool hasBeenUsed() const { return used; }
+
+	/**
+	 * \brief Mark as used (in case you do not add tuples).
+	 *
+	 * Call this method in your PluginAtom::retrieve implementation if you do not
+	 * return tuples. (Otherwise dlvhex will complain.)
+	 */
     void use() { used = true; }
 
+	/**
+	 * \brief Assignment (marks as used).
+	 */
     Answer& operator=(const Answer& other)
       { output = other.output; used = true; return *this; }
 
-    // do not allow comparison (will produce linker error)
+	/**
+	 * \brief Comparison non-implementation (produces linker error on purpose).
+	 *
+	 * Rationale: shallow comparison may yield wrong results, deep comparison is
+	 * inefficient and should (at the moment) never be necessary, as answer tuples
+	 * are immediately integrated into ordinary ground atoms.
+	 */
     bool operator==(const Answer& other) const;
 
   private:
-    // use shared ptr to have low-cost-copying of this object while the vector of tuples need not be copied
+    // shared_ptr storage for have low-cost-copying of this object and for a more
+	// efficient query answer cache implementation.
     boost::shared_ptr<std::vector<Tuple> > output;
-    // true if this was default-constructed and never used
+    // usage marker: true if this was default-constructed and never used
     bool used;
   };
 
@@ -660,37 +718,61 @@ public:
   typedef enum { PREDICATE, CONSTANT, TUPLE } InputType;
 
 protected:
-  // The user must call this constructor when creating custom external
-  // atoms.
-  // \param predicate
-  //   The name of the external atom as it appears in the HEX program
-  //   must be specified here. (This is required to create an auxiliary
-  //   name and it is useful to have a tight connection of each PluginAtom
-  //   with its name, as well as a unified way to get the name of a plugin
-  //   atom.)
-  // \para monotonic 
-  //   This boolean indicates whether the atom is monotonic or not.
-  //   Specifying false is always allowed, but might degrade evaluation
-  //   performance in cases where a fixed point calculation could be used
-  //   instead of guess and check model building.
-  //
-  // within the derived constructor, you have to define inputs using
-  // addInput...() methods and you have to use setOutputArity().
+  /**
+   * \brief Constructor.
+   *
+   * Call this constructor when creating custom external atoms.
+   *
+   * \param predicate
+   *   The name of the external atom as it appears in the HEX program
+   *   must be specified here.
+   *   As it is useful to have a tight connection of each PluginAtom
+   *   with its name, every plugin atom can have only one name.
+   * \para monotonic 
+   *   This boolean indicates whether the atom is monotonic or not.
+   *   Specifying false is always allowed, but might degrade evaluation
+   *   performance in cases where a fixed point calculation could be used
+   *   instead of guess and check model building.
+   *
+   * Within the derived constructor,
+   * - you may define inputs using PluginAtom::addInput..., and
+   * - you must call setOutputArity().
+   */
   PluginAtom(const std::string& predicate, bool monotonic):
     predicate(predicate),
     monotonic(monotonic) { }
 
-  // The following functions are to be used in the constructor only:
+  // The following functions are to be used in the constructor only.
 
-  /// \brief Adds an input parameter of type PREDICATE.
+  /**
+   * \brief Adds an input parameter of type PREDICATE.
+   *
+   * Only use in constructor!
+   */
   void addInputPredicate();
-  /// \brief Adds an input parameter of type CONSTANT.
+
+  /**
+   * \brief Adds an input parameter of type CONSTANT.
+   *
+   * Only use in constructor!
+   */
   void addInputConstant();
-  /// \brief Adds an input parameter of type TUPLE.
+
+  /**
+   * \brief Adds an input parameter of type TUPLE.
+   *
+   * Only use in constructor!
+   */
   void addInputTuple();
 
-  /// \brief Specifies the output arity of the external Atom.
-  /// (This one always has to be fixed.)
+  /**
+   * \brief Specifies the output arity of the external Atom.
+   *
+   * Only use in constructor!
+   *
+   * This arity always has to be fixed, i.e., there are no variable-output-arity
+   * external atoms.
+   */
   void setOutputArity(unsigned arity);
 
 public:
@@ -713,94 +795,135 @@ public:
   bool checkOutputArity(unsigned arity) const;
 
   /**
-   * \brief Retrieve answer object according to a query,
-   * probably utilizing a cache s.t. the same query is not retrieved twice.
+   * \brief Retrieve answer object according to a query (cached).
    *
-   * This function implements the query cache and will rarely need to be
+   * This function implements the query cache, if enabled, and will rarely need to be
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
 
   /**
-   * \brief Retrieve answer object according to a query.
+   * \brief Retrieve answer to a query (external computation happens here).
    *
-   * This function implements the external atom.
+   * This function implements the external atom computation.
+   * See also documentation of Query and Answer classes.
+   *
+   * Answer tuples must conform to the content of the pattern tuple in Query:
+   * - they must contain the same number of terms as pattern
+   * - constants in pattern must match constants in answer tuples
+   * - variables in pattern must be replaced by constants in answer tuples
    */
   virtual void retrieve(const Query&, Answer&) = 0;
 
   /**
-   * \brief Returns the type of the input argument specified by position
-   * (starting with 0). Returns TUPLE for TUPLE input arguments (variably many).
+   * \brief Returns the type of the input argument specified by position.
+   *
+   * Should not be overridden.
+   *
+   * Indexing starts with 0.
+   * Returns TUPLE for TUPLE input arguments (variably many).
    */
   InputType getInputType(unsigned index) const;
 
   /**
-   * @return inputType
+   * \brief Return vector of input types.
+   *
+   * Should not be overridden.
+   *
+   * TUPLE may be returned as last type.
    */
   const std::vector<InputType>& getInputTypes() const
     { return inputType; }
 
   /**
-   * @return monotonic
+   * \brief Return monotonicity of atom.
+   *
+   * Should not be overridden.
    */
   bool isMonotonic() const
     { return monotonic; }
 
-  // Associate plugin atom with registry pointer.
-  // (This implicitly calculates the predicate ID.)
+  /**
+   * \brief Associate plugin atom with registry pointer.
+   *
+   * Should not be overridden.
+   *
+   * This implicitly calculates the predicate ID.
+   * If overridden, the original method must be called.
+   *
+   * As PluginAtom internally stores IDs, it has to be associated with a fixed
+   * Registry for its lifetime. Create several instantiations if you need the same
+   * atom in several registries.
+   *
+   * PluginContainer calls this method automatically when loading a plugin and its
+   * atoms.
+   */
   virtual void setRegistry(RegistryPtr reg);
 
-  /// \brief get associated Registry
+  /**
+   * \brief Get Registry associcated with atom.
+   *
+   * Should not be overridden.
+   *
+   * As PluginAtom internally stores IDs, it has to be associated with a fixed
+   * Registry for its lifetime. Create several instantiations if you need the same
+   * atom in several registries.
+   */
   RegistryPtr getRegistry() const
     { return registry; }
 
-  /// \brief get ID of the predicate name (only works with configured registry)
+  /**
+   * \brief Get ID of the predicate name.
+   *
+   * Should not be overridden.
+   *
+   * Returns ID_FAIL if no registry is set.
+   */
   ID getPredicateID() const
     { return predicateID; }
 
-  /// \brief get predicate name (which was specified in constructor)
+  /**
+   * \brief Get predicate name (as specified in constructor).
+   *
+   * Should not be overridden.
+   */
   const std::string& getPredicate() const
     { return predicate; }
   
 protected:
-  // the predicate of the atom as it appears in HEX programs
+  // Predicate of the atom as it appears in HEX programs
   // (without leading &)
   //
-  // this is not stored as ID, because plugins must be allowed to create
-  // atoms without knowing the registry they will be used with
+  // This is not stored as ID, because plugins must be allowed to create
+  // atoms without knowing the registry they will be used with.
   //
-  // setting the registry provides the predicate ID
+  // Calling setRegistry provides the predicate ID.
   std::string predicate;
 
-  // the id of the predicate name, ID_FAIL if no registry is set
+  // Id of the predicate name, ID_FAIL if no registry is set
   ID predicateID;
 
-  /// \brief whether the function is monotonic or nonmonotonic
+  // whether the function is monotonic or nonmonotonic
   bool monotonic;
 
-  /// \brief Type of each input argument (only last may be TUPLE).
+  // type of each input argument (only last may be TUPLE).
   std::vector<InputType> inputType;
 
-  /// \brief Number of output arguments.
+  // number of output arguments.
   unsigned outputSize;
 
-  /// \brief Query/Answer cache
+  // Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
   QueryAnswerCache queryAnswerCache;
 
-  /// \brief Registry associated with this atom
-  //
-  // This association cannot be done by the plugin itself, it is done by
-  // the PluginContainer loading or receiving the plugin.
+  // Registry associated with this atom
   RegistryPtr registry;
 };
+typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
+typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 
 // hash function for QueryAnswerCache
 std::size_t hash_value(const PluginAtom::Query& q);
-
-/// \brief Associates atom names with PluginAtom instances implementing them.
-typedef std::map<std::string, PluginAtomPtr> PluginAtomMap;
-
 
 /**
  * \brief Converter class.
@@ -1067,7 +1190,7 @@ public:
   /**
    * \brief Optimize EDB and dependency graph.
    */
-  virtual void optimize(Interpretation::Ptr edb, DependencyGraphPtr depgraph) = 0;
+  virtual void optimize(InterpretationPtr edb, DependencyGraphPtr depgraph) = 0;
 };
 
 //
