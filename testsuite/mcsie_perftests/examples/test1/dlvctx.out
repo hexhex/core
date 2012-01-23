@@ -1,3 +1,0 @@
-EQ:({tweedy_is_penguin},{},{do_nothing})
-EQ:({tweedy_is_penguin},{},{rescue})
-EQ:({tweedy_is_dove},{can_fly},{rescue})
