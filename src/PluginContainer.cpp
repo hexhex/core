@@ -146,6 +146,8 @@ void loadCandidates(
   BOOST_FOREACH(const std::string& lib, libnames)
   {
     LOG(PLUGIN,"loading Plugin Library: '" << lib << "'");
+    // reset lt_dlerror
+    (void)lt_dlerror();
     lt_dlhandle dlHandle = lt_dlopenext(lib.c_str());
 
     // do while false for breaking out easily
