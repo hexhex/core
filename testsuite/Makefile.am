@@ -18,7 +18,7 @@ AM_LDFLAGS = $(BOOST_UNIT_TEST_FRAMEWORK_LDFLAGS) #-lcwd
 # global libs
 LIBS = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
 
-lib_LTLIBRARIES = libdlvhexplugin-test.la
+check_LTLIBRARIES = libdlvhexplugin-test.la
 
 check-examples:
 	if $(TESTS_ENVIRONMENT) $(srcdir)/run-dlvhex-tests.sh; then \
@@ -79,8 +79,9 @@ noinst_HEADERS = \
 
 libdlvhexplugin_test_la_SOURCES = TestPlugin.cpp
 # this rpath is specially required as this lib is no plugin_LTLIBRARY but a check_LTLIBRARY
-libdlvhexplugin_test_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module #-rpath /
-libdlvhexplugin_test_la_LIBADD = $(BOOST_UNIT_TEST_FRAMEWORK_LIBS)
+# (if it is a plugin_LTLIBRARY it will be installed and we do not want to install it)
+# (check_plugin_LTLIBRARY does not work at the moment)
+libdlvhexplugin_test_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module -rpath /
 
 #this is just to verify that TestPlugin can link to the rest of the code
 #if this does not work, the TestPlugin cannot be dlopen'ed and all tests are bound to fail
