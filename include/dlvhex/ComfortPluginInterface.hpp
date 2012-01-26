@@ -173,6 +173,8 @@ struct ComfortInterpretation:
 
   // non-virtual (see Printhelpers.hpp)
   std::ostream& print(std::ostream& o) const;
+
+  bool operator==(const ComfortInterpretation& c2) const;
 };
 
 class ComfortPluginAtom:
