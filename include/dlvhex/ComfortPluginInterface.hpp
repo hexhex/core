@@ -40,6 +40,7 @@
 
 #include "dlvhex/PlatformDefinitions.h"
 #include "dlvhex/PluginInterface.h"
+#include <boost/foreach.hpp>
 
 #include <cctype>
 
@@ -103,6 +104,27 @@ protected:
 
 public:
   ComfortTerm() : type(STR), strval("") {}
+
+  ComfortTerm(int intval) : type(INT), intval(intval){
+  }
+
+  ComfortTerm(std::string strval) : type(STR), strval(strval){
+  }
+
+  std::string getUnquotedString() const{
+    if (strval.length() > 1 && strval[0] == '\"' && strval[strval.length() - 1] == '\"')
+      return strval.substr(1, strval.length() - 1);
+    else
+      return strval;
+  }
+
+  std::string getString() const{
+    return strval;
+  }
+
+  std::string getVariable() const{
+    return strval;
+  }
 };
 
 typedef std::vector<ComfortTerm> ComfortTuple;
@@ -159,6 +181,26 @@ struct ComfortAtom:
       assert(index >= 0 && index < tuple.size());
       tuple[index] = arg;
     }
+
+  inline void setArguments(ComfortTuple args)
+    { 
+	assert(tuple.size() > 0);
+	ComfortTerm pred = tuple[0];
+	tuple.clear();
+	tuple.push_back(pred);
+	BOOST_FOREACH (ComfortTerm arg, args){
+		tuple.push_back(arg);
+	}
+    }
+
+  inline ComfortAtom(){}
+
+  inline ComfortAtom(ComfortTerm pred, ComfortTuple args, bool stronglyNegated = false){
+	tuple.push_back(pred);
+	BOOST_FOREACH (ComfortTerm arg, args){
+		tuple.push_back(arg);
+	}
+  }
 
   // TODO implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity, isStrongNegated
 
