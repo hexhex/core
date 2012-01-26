@@ -155,7 +155,8 @@ void loadCandidates(
     {
       if( dlHandle == NULL )
       {
-        LOG(WARNING,"Selected library '" << lib << "' for opening but cannot open: '" << lt_dlerror() << "' (skipping)");
+        LOG(WARNING,"Selected library '" << lib << "' for opening but cannot open: lt_dlerror='" << lt_dlerror() << "' (skipping)");
+        LOG(WARNING,"(You might want to use 'LD_DEBUG={files,help,all} dlvhex2 <arguments>' to debug plugin loading.))");
         break;
       }
 
