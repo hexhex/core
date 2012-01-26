@@ -68,6 +68,8 @@ struct ComfortTerm:
     { return (type == STR) && (isupper(strval[0])); }
   bool isInteger() const
     { return type == INT; }
+  bool isAnon() const
+    { return type == STR && strval == "_"; }
 
   static ComfortTerm createVariable(const std::string& s)
     { assert(!s.empty() && isupper(s[0])); return ComfortTerm(STR, s, 0); }
@@ -98,6 +100,9 @@ protected:
   // stupid constructor, use "create..." functions
   ComfortTerm(Type type, const std::string& strval, int intval):
     type(type), strval(strval), intval(intval) {}
+
+public:
+  ComfortTerm() : type(STR), strval("") {}
 };
 
 typedef std::vector<ComfortTerm> ComfortTuple;
@@ -122,6 +127,39 @@ struct ComfortAtom:
   inline const std::string& getPredicate() const
     { assert(!tuple.empty() && !tuple.front().isInteger());
       return tuple.front().strval; }
+
+  inline const ComfortTuple getArguments() const
+    { 
+      ComfortTuple ct = tuple;
+      assert(ct.size() > 0);
+      ct.erase(ct.begin());
+      return ct;
+    }
+
+  inline const ComfortTerm getArgument(int index) const
+    { 
+      assert(index >= 0 && index < tuple.size());
+      return tuple[index];
+    }
+
+  inline unsigned getArity() const
+    { 
+      return tuple.size() - 1;
+    }
+
+  inline unsigned isStrongNegated() const
+    { 
+      assert(!tuple.empty() && !tuple.front().isInteger());
+      assert(!tuple[0].strval.length() == 0);
+      return tuple[0].strval[0] == '-';
+    }
+
+  inline void setArgument(int index, ComfortTerm arg)
+    { 
+      assert(index >= 0 && index < tuple.size());
+      tuple[index] = arg;
+    }
+
   // TODO implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity, isStrongNegated
 
   bool unifiesWith(const ComfortAtom& other) const;
