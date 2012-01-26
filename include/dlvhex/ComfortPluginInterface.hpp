@@ -108,7 +108,9 @@ public:
   ComfortTerm(int intval) : type(INT), intval(intval){
   }
 
-  ComfortTerm(std::string strval) : type(STR), strval(strval){
+  ComfortTerm(std::string strval, bool addQuotes = false) : type(STR){
+    if (addQuotes) this->strval = std::string("\"") + strval + std::string("\"");
+    else this->strval = strval;
   }
 
   std::string getUnquotedString() const{
