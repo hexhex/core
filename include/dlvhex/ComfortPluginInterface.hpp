@@ -109,13 +109,13 @@ public:
   }
 
   ComfortTerm(std::string strval, bool addQuotes = false) : type(STR){
-    if (addQuotes) this->strval = std::string("\"") + strval + std::string("\"");
+    if (addQuotes && (strval.length() == 0 || strval[0] != '\"' || strval[strval.length() - 1] != '\"')) this->strval = std::string("\"") + strval + std::string("\"");
     else this->strval = strval;
   }
 
   std::string getUnquotedString() const{
     if (strval.length() > 1 && strval[0] == '\"' && strval[strval.length() - 1] == '\"')
-      return strval.substr(1, strval.length() - 1);
+      return strval.substr(1, strval.length() - 2);
     else
       return strval;
   }
@@ -212,6 +212,21 @@ protected:
   mutable std::string strval;
   void calculateStrVal() const;
 };
+
+
+// you can stream out ComfortAtom objects, e.g., for debugging
+struct ComfortLiteral:
+  public ostream_printable<ComfortLiteral>
+{
+public:
+  inline const std::string& toString() const
+    { if( strval.empty() ) calculateStrVal(); return strval; }
+
+protected:
+  mutable std::string strval;
+  void calculateStrVal() const;
+};
+
 
 // this mimicks the old AtomSet
 // you can stream out ComfortInterpretation objects, e.g., for debugging
