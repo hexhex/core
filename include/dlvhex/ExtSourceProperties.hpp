@@ -46,7 +46,9 @@ struct ExtSourceProperty
 		MONOTONIC,
 		NONMONOTONIC,
 		FUNCTIONAL,
-		NONFUNCTIONAL
+		NONFUNCTIONAL,
+		FULLYLINEAR,
+		NONFULLYLINEAR
 	};
 
 	Type type;
@@ -61,9 +63,11 @@ struct ExtSourceProperties
 {
 	std::vector<int> monotonicInputPredicates;
 	bool functional;
+	bool fullylinear;
 
 	ExtSourceProperties(){
 		functional = false;
+		fullylinear = false;
 	}
 };
 

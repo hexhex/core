@@ -646,6 +646,7 @@ public:
     Tuple input;
     Tuple pattern;
     const ExternalAtom* eatom;
+    InterpretationPtr predicateInputMask;
     std::map<ID, int> inputPredicateTable; // stores for each predicate term ID the index of the corresponding parameter in input
 
     /**
@@ -672,23 +673,14 @@ public:
     //   TODO verify and specify if the same variable may be substituted differently: may  &dosomething[](X,b,X) return an answer tuple (a,b,c)?
     Query(InterpretationConstPtr interpretation,
           const Tuple& input,
-          const Tuple& pattern):
-      interpretation(interpretation),
-      input(input),
-      pattern(pattern),
-      eatom(0)
-    {
-      builtInputPredicateTable();
-    }
-
-    Query(InterpretationConstPtr interpretation,
-          const Tuple& input,
           const Tuple& pattern,
-          const ExternalAtom* ea):
+          const ExternalAtom* ea = 0,
+          const InterpretationPtr predicateInputMask = InterpretationPtr()):
       interpretation(interpretation),
       input(input),
       pattern(pattern),
-      eatom(ea)
+      eatom(ea),
+      predicateInputMask(predicateInputMask)
     {
       builtInputPredicateTable();
     }
@@ -830,6 +822,12 @@ public:
   // ========== External Learning Methods ==========
 
   /**
+   * \brief Splits a non-atomic query up into a set of atomic queries, such that the result of the
+   *        composed query corresponds to the union of the results to the atomic queries.
+   */
+  virtual std::vector<Query> splitQuery(ProgramCtx* ctx, const Query& q);
+
+  /**
    * \brief Learns nogoods which encode that the input from query implies the output in answer.
    */
   void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
@@ -911,6 +909,12 @@ public:
    */
   bool isFunctional(const Query& q) const
     { return q.eatom->useProp ? q.eatom->prop.functional : prop.functional; }
+
+  /**
+   * @return full linearity
+   */
+  bool isFullyLinear(const Query& q) const
+    { return q.eatom->useProp ? q.eatom->prop.fullylinear : prop.fullylinear; }
 
   // Associate plugin atom with registry pointer.
   // (This implicitly calculates the predicate ID.)

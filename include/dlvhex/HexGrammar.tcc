@@ -563,6 +563,14 @@ struct sem<HexGrammarSemantics::externalAtom>
             if (!found) throw SyntaxError("Property refers to invalid input parameter");
           }
           break;
+        case ExtSourceProperty::FULLYLINEAR:
+          DBGLOG(DBG, "External Atom is fully linear");
+          atom.prop.fullylinear = true;
+          break;
+        case ExtSourceProperty::NONFULLYLINEAR:
+          DBGLOG(DBG, "External Atom is not fully linear");
+          atom.prop.fullylinear = false;
+          break;
       }
     }
   }
@@ -627,6 +635,8 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "nonmonotonic"){
 		target = ExtSourceProperty(ExtSourceProperty::NONMONOTONIC, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "fullylinear"){
+		target = ExtSourceProperty(ExtSourceProperty::FULLYLINEAR, boost::fusion::at_c<1>(source));
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}

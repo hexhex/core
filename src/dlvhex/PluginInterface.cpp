@@ -289,57 +289,54 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 		}
 		answer = ans;
 	}
-
-#if 0
-	retrieveCached(query, answer);
-
-	if (solver != CDNLSolverPtr()){
-
-		DBGLOG(DBG, "Learning from external call");
-
-		// find relevant input
-		bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-		bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
-
-		Nogood extNgInput;
-
-		while (en < en_end){
-			extNgInput.insert(solver->createLiteral(*en, query.interpretation->getFact(*en)));
-			en++;
-		}
-
-		DBGLOG(DBG, "Input nogood: " << extNgInput);
-
-		// construct replacement atom
-		OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-		replacement.tuple.resize(1);
-		replacement.tuple[0] = registry->getAuxiliaryConstantSymbol('n', query.eatom->predicate);
-		replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
-		int s = replacement.tuple.size();
-
-		const std::vector<Tuple>& otuples = answer.get();
-		BOOST_FOREACH (Tuple otuple, otuples){
-			replacement.tuple.resize(s);
-			// add current output
-			replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
-			// get ID of this replacement atom
-			ID idreplacement = registry->storeOrdinaryGAtom(replacement);
-
-			Nogood extNg = extNgInput;
-			extNg.insert(solver->createLiteral(idreplacement.address));
-			DBGLOG(DBG, "Overall nogood: " << extNg);
-			solver->addNogood(extNg);
-		}
-	}
-#endif
 }
 
 void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods){
 
-	retrieve(query, answer);
+	DBGLOG(DBG, "Splitting query");
+	std::vector<Query> atomicQueries = splitQuery(ctx, query);
 
-	learnFromInputOutputBehavior(ctx, nogoods, query, answer);
-	learnFromFunctionality(ctx, nogoods, query, answer);
+	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
+	BOOST_FOREACH (Query atomicQuery, atomicQueries){
+		DBGLOG(DBG, "Evaluating atomic query");
+		Answer atomicAnswer;
+		retrieve(atomicQuery, atomicAnswer);
+
+		learnFromInputOutputBehavior(ctx, nogoods, atomicQuery, atomicAnswer);
+		learnFromFunctionality(ctx, nogoods, atomicQuery, answer);
+
+		// overall answer is the union of the atomic answers
+		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
+	}
+}
+
+std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Query& query){
+
+	std::vector<Query> atomicQueries;
+	if (isFullyLinear(query) && ctx->config.getOption("ExternalLearningLinearity")){
+
+		DBGLOG(DBG, "Splitting query by exploiting full linearity");
+
+		// create a predicate input mask for each parameter
+		bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+
+		while (en < en_end){
+			DBGLOG(DBG, "Creating partial query for input atom " << *en);
+			// create a partial query only for this input atom
+			Query qa = query;
+			qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
+			qa.predicateInputMask->setFact(*en);
+			atomicQueries.push_back(qa);
+
+			en++;
+		}
+	}else{
+		DBGLOG(DBG, "Do not split query");
+		atomicQueries.push_back(query);
+	}
+
+	return atomicQueries;
 }
 
 void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
@@ -479,111 +476,13 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 			learnFromGroundRule(ctx, nogoods, query, rid);
 		}
 	}
-
-
-
-
-
-
-
-#if 0
-
-	std::vector<Nogood> outnogoods;
-
-	DBGLOG(DBG, "Constructing EDB");
-	std::vector<ID> idb;
-	idb.push_back(rule);
-	InterpretationPtr edb = InterpretationPtr(new Interpretation(ctx->registry()));
-
-	// go through all input atoms
-	DBGLOG(DBG, "Rewriting input");
-	const std::vector<ID>& params = query.input;
-	for(Interpretation::Storage::enumerator it =
-	    query.interpretation->getStorage().first();
-	    it != query.interpretation->getStorage().end(); ++it){
-
-		ID ogid(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it);
-		const OrdinaryAtom& ogatom = ctx->registry()->ogatoms.getByID(ogid);
-
-		// check if the predicate matches any of the input parameters to simulator atom
-		bool found = false;
-		for (int inp = 0; inp < params.size(); ++inp){
-			DBGLOG(DBG, "Checking predicate " << ogatom.tuple[0] << " against parameter " << inp);
-			if (ogatom.tuple[0] == params[inp]){
-				// replace the predicate by "in[inp]"
-				std::stringstream inPredStr;
-				inPredStr << "in" << (inp + 1);
-				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
-				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
-				OrdinaryAtom oareplace = ogatom;
-				oareplace.tuple[0] = inPredID;
-
-				// get ID of replaced atom
-				ID oareplaceID = ctx->registry()->storeOrdinaryGAtom(oareplace);
-
-				// set this atom in the input interpretation
-				edb->getStorage().set_bit(oareplaceID.address);
-				found = true;
-				break;
-			}
-		}
-		assert(found);
-	}
-	DBGLOG(DBG, "EDB: " << *edb);
-
-	DBGLOG(DBG, "Grounding learning rule");
-	OrdinaryASPProgram program(ctx->registry(), idb, edb);
-	InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
-	OrdinaryASPProgram gprogram = ig->getGroundProgram();
-
-	DBGLOG(DBG, "Generating nogoods for all ground rules");
-	BOOST_FOREACH (ID rid, gprogram.idb){
-		DBGLOG(DBG, "Rewriting rule with ID " << rid);
-		const Rule& rule = ctx->registry()->rules.getByID(rid);
-
-		Rule rrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-		rrule.head = rule.head;
-		BOOST_FOREACH (ID batom, rule.body){
-			const OrdinaryAtom& ogatom = ctx->registry()->ogatoms.getByID(batom);
-
-			// replace predicate name by parameter from query.input
-			OrdinaryAtom rogatom = ogatom;
-			bool found = false;
-			for (int inp = 0; inp < query.input.size(); inp++){
-				std::stringstream inPredStr;
-				inPredStr << "in" << (inp + 1);
-				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
-				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
-
-				if (rogatom.tuple[0] == inPredID){
-					rogatom.tuple[0] = query.input[inp];
-					found = true;
-					break;
-				}
-			}
-			assert(found);
-
-			ID batomId = ctx->registry()->storeOrdinaryGAtom(rogatom);
-			if (batom.isNaf()){
-				rrule.body.push_back(batomId | ID(ID::NAF_MASK, 0));
-			}else{
-				rrule.body.push_back(batomId);
-			}
-		}
-		ID rruleId = ctx->registry()->storeRule(rrule);
-
-		Nogood ng = getGroundRuleNogood(ctx, nogoods, query, rruleId);
-		outnogoods.push_back(ng);
-	}
-	return outnogoods;
-#endif
 }
 
 Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query){
 
-	// find relevant input
-	bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
+	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
 
 	Nogood extNgInput;
 
