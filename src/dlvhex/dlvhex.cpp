@@ -146,6 +146,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic external atoms (only useful with eabehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
+      << "                        linear: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
