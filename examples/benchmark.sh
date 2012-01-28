@@ -53,6 +53,8 @@ do
 				output=$4
 			fi
 			line="$line   $output"
+		else
+			line="$line   $4"
 		fi
 		let i=i+1
 	done
