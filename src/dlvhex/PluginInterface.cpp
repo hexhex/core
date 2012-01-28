@@ -293,27 +293,29 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 
 void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods){
 
-	DBGLOG(DBG, "Splitting query");
-	std::vector<Query> atomicQueries = splitQuery(ctx, query);
+	// decide which properties to use
+	ExtSourceProperties prop = this->prop;			// by default the settings of the plugin count
+	if (query.eatom->useProp) prop = query.eatom->prop;	// this may be overridden by single external atoms
 
+	std::vector<Query> atomicQueries = splitQuery(ctx, query, prop);
 	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
 	BOOST_FOREACH (Query atomicQuery, atomicQueries){
 		DBGLOG(DBG, "Evaluating atomic query");
 		Answer atomicAnswer;
 		retrieve(atomicQuery, atomicAnswer);
 
-		learnFromInputOutputBehavior(ctx, nogoods, atomicQuery, atomicAnswer);
-		learnFromFunctionality(ctx, nogoods, atomicQuery, answer);
+		learnFromInputOutputBehavior(ctx, nogoods, atomicQuery, prop, atomicAnswer);
+		learnFromFunctionality(ctx, nogoods, atomicQuery, prop, answer);
 
 		// overall answer is the union of the atomic answers
 		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 	}
 }
 
-std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Query& query){
+std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Query& query, const ExtSourceProperties& prop){
 
 	std::vector<Query> atomicQueries;
-	if (isFullyLinear(query) && ctx->config.getOption("ExternalLearningLinearity")){
+	if (ctx != 0 && isFullyLinear(prop) && ctx->config.getOption("ExternalLearningLinearity")){
 
 		DBGLOG(DBG, "Splitting query by exploiting full linearity");
 
@@ -339,14 +341,14 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 	return atomicQueries;
 }
 
-void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
+void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
 		if (ctx->config.getOption("ExternalLearningEABehavior")){
 			DBGLOG(DBG, "External Learning: EABehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
-			Nogood extNgInput = getInputNogood(ctx, nogoods, query);
+			Nogood extNgInput = getInputNogood(ctx, nogoods, query, prop);
 
 			Set<ID> out = getOutputAtoms(ctx, nogoods, query, answer, false);
 			BOOST_FOREACH (ID oid, out){
@@ -359,11 +361,11 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 	}
 }
 
-void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer){
+void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
-		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(query)){
+		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(prop)){
 			DBGLOG(DBG, "External Learning: Functionality");
 
 			// there is a unique output
@@ -478,7 +480,7 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 	}
 }
 
-Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query){
+Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop){
 
 	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
 	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
@@ -494,7 +496,7 @@ Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, c
 		int index = query.inputPredicateTable.find(pred)->second;
 
 		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
-		if (query.interpretation->getFact(*en) || !isMonotonic(query, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
+		if (query.interpretation->getFact(*en) || !isMonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
 			extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
 		}
 		en++;

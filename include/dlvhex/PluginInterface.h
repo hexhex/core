@@ -825,17 +825,17 @@ public:
    * \brief Splits a non-atomic query up into a set of atomic queries, such that the result of the
    *        composed query corresponds to the union of the results to the atomic queries.
    */
-  virtual std::vector<Query> splitQuery(ProgramCtx* ctx, const Query& q);
+  virtual std::vector<Query> splitQuery(ProgramCtx* ctx, const Query& q, const ExtSourceProperties& prop);
 
   /**
    * \brief Learns nogoods which encode that the input from query implies the output in answer.
    */
-  void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+  void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
 
   /**
    * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
    */
-  void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer);
+  void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
 
   /**
    * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
@@ -857,7 +857,7 @@ public:
    * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
    *        for nonmonotonic ones all atoms are included..
    */
-  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query);
+  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop);
 
   /**
    * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;
@@ -900,21 +900,20 @@ public:
   /**
    * @return monotonicity on parameter level
    */
-  bool isMonotonic(const Query& q, int parameterIndex) const
-    { return q.eatom->useProp ? std::find(q.eatom->prop.monotonicInputPredicates.begin(), q.eatom->prop.monotonicInputPredicates.end(), parameterIndex) != q.eatom->prop.monotonicInputPredicates.end()
-                              : std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
+  bool isMonotonic(const ExtSourceProperties& prop, int parameterIndex) const
+    { return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
 
   /**
    * @return functional
    */
-  bool isFunctional(const Query& q) const
-    { return q.eatom->useProp ? q.eatom->prop.functional : prop.functional; }
+  bool isFunctional(const ExtSourceProperties& prop) const
+    { return prop.functional; }
 
   /**
    * @return full linearity
    */
-  bool isFullyLinear(const Query& q) const
-    { return q.eatom->useProp ? q.eatom->prop.fullylinear : prop.fullylinear; }
+  bool isFullyLinear(const ExtSourceProperties& prop) const
+    { return prop.fullylinear; }
 
   // Associate plugin atom with registry pointer.
   // (This implicitly calculates the predicate ID.)
