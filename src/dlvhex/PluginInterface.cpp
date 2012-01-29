@@ -319,10 +319,8 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 
 		DBGLOG(DBG, "Splitting query by exploiting full linearity");
 
-		// create a predicate input mask for each parameter
 		bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
 		bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
-
 		while (en < en_end){
 			DBGLOG(DBG, "Creating partial query for input atom " << *en);
 			// create a partial query only for this input atom
