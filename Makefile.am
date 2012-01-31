@@ -1,5 +1,5 @@
-# use at least automake >= 1.11
-AUTOMAKE_OPTIONS = 1.11
+# use at least automake >= 1.10
+AUTOMAKE_OPTIONS = 1.10
 
 # use ./m4 directory for additional macros
 ACLOCAL_AMFLAGS = -I m4
