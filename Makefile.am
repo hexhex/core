@@ -15,12 +15,20 @@ html-local: doc/dlvhex.tag
 	make doxygen-doc
 
 install-html-local:
-	install -d $(DESTDIR)/$(docdir)
+	$(INSTALL) -d $(DESTDIR)/$(docdir)
 	cp -rv $(top_builddir)/doc/html $(DESTDIR)/$(docdir)
+
+pkgincludedir = $(includedir)/dlvhex2
+install-data-local:
+	if test x$(BM_INSTALL) == xyes; then \
+	  $(INSTALL) -d $(DESTDIR)$(pkgincludedir)/bm$(BM_VERSION)/bm; \
+	  $(INSTALL) $(top_srcdir)/bm$(BM_VERSION)/bm/*.h $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)/bm/; \
+	fi
 
 uninstall-local:
 	test -d $(DESTDIR)/$(docdir)/html || exit 0; \
 	cd $(DESTDIR)/$(docdir) && rm -rf html
+	-rm -rf $(includedir)/bm$(BM_VERSION)
 
 
 SUBDIRS = libltdl examples include src testsuite

@@ -11,5 +11,5 @@ Name: @PACKAGE@
 Description: HEX-Program Reasoner
 Version: @VERSION@
 Libs: -L${libdir} -ldlvhex2-base -ldlvhex2-aspsolver @LIBCURL@ @BOOST_THREAD_LDFLAGS@ @BOOST_THREAD_LIBS@
-Cflags: -I${includedir} @BOOST_CPPFLAGS@
+Cflags: -I${includedir} @BOOST_CPPFLAGS@ @BM_PKGCONFIG_CPPFLAGS@
 

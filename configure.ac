@@ -88,6 +88,7 @@ case $CXX in
    ;;
 esac
 
+AC_CACHE_SAVE
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -229,6 +230,7 @@ m4_ifdef([_AC_SEEN_TAG(libltdl)], [], [AC_CONFIG_SUBDIRS([libltdl])])
 
 # pkg-config support
 PKG_PROG_PKG_CONFIG
+AC_CACHE_SAVE
 
 # checking for boost libs
 # we need 1.43 for functional/factory
@@ -237,16 +239,21 @@ BOOST_SMART_PTR
 BOOST_STRING_ALGO
 BOOST_TOKENIZER
 BOOST_IOSTREAMS
+AC_CACHE_SAVE
 BOOST_GRAPH
 BOOST_PROGRAM_OPTIONS
+AC_CACHE_SAVE
 BOOST_TEST
+AC_CACHE_SAVE
 BOOST_SYSTEM
 BOOST_FILESYSTEM
+AC_CACHE_SAVE
 BOOST_THREADS
 # for --enable-debug, we need the boost_date_time library
 if test "x$enable_debug" = "xtrue"; then
    BOOST_DATE_TIME
 fi
+AC_CACHE_SAVE
 
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
@@ -420,7 +427,9 @@ AC_ARG_WITH(bmagic,
 )
 
 BM_CPPFLAGS=""
+BM_PKGCONFIG_CPPFLAGS=""
 BM_VERSION=""
+BM_INSTALL="no"
 
 if test x$with_bmagic != xlocal; then
 
@@ -443,11 +452,22 @@ fi
 
 if test x$have_bm != xtrue; then
    # force local bmagic
-   BM_CPPFLAGS="-I\${top_srcdir}/bm3.7.0/"
    BM_VERSION=3.7.0
+   # include bmagic for building this
+   BM_CPPFLAGS="-Idlvhex2/bm${BM_VERSION}/"
+   # in pkgconfig we have include flags 
+   # -I$(includedir)/dlvhex2/bm${BM_VERSION}/
+   # as this is the location where the local bmagic headers will be installed
+   # (rationale: we do not want to install over an existing bmagic if we force local bmagic)
+   BM_PKGCONFIG_CPPFLAGS="-I\${includedir}/dlvhex2/bm${BM_VERSION}/"
+   # this is used in SUBDIRS in makefile, to either install bitmagic headers or not
+   BM_INSTALL=yes
 fi
 
+AC_SUBST(BM_INSTALL)
 AC_SUBST(BM_CPPFLAGS)
+AC_SUBST(BM_VERSION)
+AC_SUBST(BM_PKGCONFIG_CPPFLAGS)
 
 
 

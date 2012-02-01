@@ -4,6 +4,14 @@
 
 	* NEWS: Describe Changes for Release 2.0.0.
 
+2012-02-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* Makefile.am: Installing local bitmagic to safe location if using it,
+	and setting up CFLAGS accordingly.
+	* dlvhex2.pc.in: Likewise.
+	* configure.ac: Likewise, and added AC_CACHE_SAVE checkpoints.
+	* src/PluginContainer.cpp: Improved diagnostics for library loading.
+
 2012-01-23  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex2/ComfortPluginInterface.h: Documentation.
