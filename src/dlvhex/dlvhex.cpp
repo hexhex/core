@@ -139,10 +139,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
-      << "     --instantiate    Generate ground program without evaluating (only useful with --internalsolver)" << std::endl
-      << "     --internalsolver Use internal solver and grounder (builtin-predicates and aggregates currently not implemented)" << std::endl
+      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
+      << "     --genuinesolver[=internal,clingo]" << std::endl
+      << "                      Use embedded solver and grounder (implementation from scratch vs. clingo)" << std::endl
       << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
-      << "                      Learn nogoods from external atom evaluation (only useful with --internalsolver)" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --genuinesolver)" << std::endl
       << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic external atoms (only useful with eabehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
@@ -304,7 +305,7 @@ int main(int argc, char *argv[])
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
   pctx.config.setOption("FLPCheck", 1);
-  pctx.config.setOption("InternalSolver", 0);
+  pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
   pctx.config.setOption("ExternalLearningEABehavior", 0);
@@ -566,7 +567,7 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
-		{ "internalsolver", no_argument, 0, 17 },
+		{ "genuinesolver", optional_argument, 0, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "instantiate", no_argument, 0, 19 },
 		{ "noflpcheck", no_argument, 0, 20 },
@@ -835,7 +836,20 @@ void processOptionsPrePlugin(
 			break;
 
 		case 17:
-				pctx.config.setOption("InternalSolver", 1);
+				DBGLOG(DBG, "Using genuine solver");
+				if (optarg){
+					std::string oa(optarg);
+					if (oa == "internal"){
+						pctx.config.setOption("GenuineSolver", 1);
+					}else if(oa == "clingo"){
+						pctx.config.setOption("GenuineSolver", 2);
+					}else{
+						throw GeneralError(std::string("Genuine solver '") + oa + std::string("' not recognized"));
+					}
+				}else{
+					pctx.config.setOption("GenuineSolver", 1);
+				}
+				
 				break;
 
 		case 18:

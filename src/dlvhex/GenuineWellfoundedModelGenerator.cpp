@@ -38,8 +38,7 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/PluginInterface.h"
 #include "dlvhex/Benchmarking.h"
-#include "dlvhex/InternalGroundDASPSolver.hpp"
-#include "dlvhex/InternalGrounder.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 
 
 #include <boost/foreach.hpp>
@@ -206,18 +205,19 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				// we don't use a mask here!
 				// -> we receive all facts
 				OrdinaryASPProgram program(reg, factory.xidb, dst, factory.ctx.maxint);
-				InternalGrounder grounder(factory.ctx, program);
-				OrdinaryASPProgram gprogram = grounder.getGroundProgram();
-				if (factory.ctx.config.getOption("Instantiate")){
-					std::cout << "% Component " << &(factory.ci) << std::endl;
-					std::cout << grounder.getGroundProgramString();
-//					return InterpretationPtr();
-				}
+//				InternalGrounder grounder(factory.ctx, program);
+//				OrdinaryASPProgram gprogram = grounder.getGroundProgram();
+//				if (factory.ctx.config.getOption("Instantiate")){
+//					std::cout << "% Component " << &(factory.ci) << std::endl;
+//					std::cout << grounder.getGroundProgramString();
+//				}
 
-				InternalGroundDASPSolver igas(factory.ctx, gprogram);
+//				InternalGroundDASPSolver igas(factory.ctx, gprogram);
+
+				GenuineSolverPtr solver = GenuineSolver::getInstance(factory.ctx, program);
 
 				// there must be either no or exactly one answer set
-				InterpretationPtr model = igas.projectToOrdinaryAtoms(igas.getNextModel());
+				InterpretationPtr model = solver->projectToOrdinaryAtoms(solver->getNextModel());
 
 				if( model == InterpretationPtr() )
 				{
@@ -225,14 +225,14 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 					inconsistent = true;
 					break;
 				}
-				InterpretationConstPtr model2 = igas.getNextModel();
+				InterpretationConstPtr model2 = solver->getNextModel();
 				if( model2 != InterpretationPtr() )
 					throw FatalError("got more than one model in Wellfounded model generator -> use other model generator!");
 
 				// cheap exchange -> thisret1 will then be free'd
 				dst->getStorage().swap(model->getStorage());
 				DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
-				DBGLOG(DBG, "Final Statistics:" << std::endl << igas.getStatistics());
+				DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 			}
 
 			// check whether new interpretation is superset of old one

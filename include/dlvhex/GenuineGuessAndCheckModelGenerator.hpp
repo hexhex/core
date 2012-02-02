@@ -39,8 +39,7 @@
 #include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/ComponentGraph.hpp"
 #include "dlvhex/PredicateMask.hpp"
-#include "dlvhex/InternalGroundDASPSolver.hpp"
-#include "dlvhex/InternalGrounder.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 
 #include <boost/shared_ptr.hpp>
 
@@ -69,9 +68,10 @@ protected:
   std::list<InterpretationPtr> candidates;
 
   // internal solver
-  InternalGroundASPSolverPtr igas;
-  InternalGrounderPtr grounder;
-  Interpretation* currentanswer;
+//  InternalGroundASPSolverPtr igas;
+//  InternalGrounderPtr grounder;
+//  Interpretation* currentanswer;
+  GenuineSolverPtr solver;
 
   // members
 //  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
@@ -80,7 +80,7 @@ protected:
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuineGuessAndCheckModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << igas->getStatistics()); }
+  virtual ~GenuineGuessAndCheckModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics()); }
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

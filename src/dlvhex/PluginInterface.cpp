@@ -42,8 +42,7 @@
 #include "dlvhex/Registry.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/InternalGrounder.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 #include "dlvhex/Term.hpp"
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Benchmarking.h"
@@ -468,8 +467,10 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 		OrdinaryASPProgram program(ctx->registry(), idb, edb);
 
 		DBGLOG(DBG, "Grounding learning rule");
-		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
-		OrdinaryASPProgram gprogram = ig->getGroundProgram();
+		GenuineSolverPtr solver = GenuineSolver::getInstance(*ctx, program, false);
+		OrdinaryASPProgram gprogram = solver->getGroundProgram();
+//		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
+//		OrdinaryASPProgram gprogram = ig->getGroundProgram();
 
 		DBGLOG(DBG, "Generating nogoods for all ground rules");
 		BOOST_FOREACH (ID rid, gprogram.idb){

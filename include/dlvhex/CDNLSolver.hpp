@@ -47,21 +47,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class NogoodContainer{
-public:
-	virtual int addNogood(Nogood ng) = 0;
-
-	inline ID createLiteral(ID lit){
-		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);
-	}
-	inline ID createLiteral(IDAddress litadr, bool truthValue = true){
-		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (truthValue ? 0 : ID::NAF_MASK), litadr);
-	}
-
-	typedef boost::shared_ptr<NogoodContainer> Ptr;
-	typedef boost::shared_ptr<const NogoodContainer> ConstPtr;
-};
-
 class CDNLSolver : public NogoodContainer{
 protected:
 	struct SimpleHashIDAddress : public std::unary_function<IDAddress, std::size_t> {
@@ -232,9 +217,6 @@ public:
 
 typedef CDNLSolver::Ptr CDNLSolverPtr;
 typedef CDNLSolver::ConstPtr CDNLSolverConstPtr;
-
-typedef NogoodContainer::Ptr NogoodContainerPtr;
-typedef NogoodContainer::ConstPtr NogoodContainerConstPtr;
 
 DLVHEX_NAMESPACE_END
 

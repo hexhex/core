@@ -36,6 +36,7 @@
 #include "dlvhex/ID.hpp"
 #include "dlvhex/BaseModelGenerator.hpp"
 #include "dlvhex/ComponentGraph.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 #include "dlvhex/InternalGroundDASPSolver.hpp"
 #include "dlvhex/InternalGrounder.hpp"
 
@@ -69,16 +70,17 @@ protected:
   // result handle for asp solver evaluation, using externallyAugmentedInput
   ASPSolverManager::ResultsPtr currentResults;
 
-  // internal solver
-  InternalGroundASPSolverPtr igas;
-  InternalGrounderPtr grounder;
-  Interpretation* currentanswer;
+  // genuine solver
+  GenuineSolverPtr solver;
+//  InternalGroundASPSolverPtr igas;
+//  InternalGrounderPtr grounder;
+//  Interpretation* currentanswer;
 
   // members
 
 public:
   GenuinePlainModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuinePlainModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << igas->getStatistics()); }
+  virtual ~GenuinePlainModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics()); }
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

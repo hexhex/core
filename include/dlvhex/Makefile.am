@@ -36,6 +36,7 @@ pkginclude_HEADERS = \
   GraphvizHelpers.hpp \
   GuessAndCheckModelGenerator.hpp \
   GenuineGuessAndCheckModelGenerator.hpp \
+  GenuineSolver.hpp \
   HexGrammar.h \
   HexGrammar.tcc \
   HexParser.hpp \

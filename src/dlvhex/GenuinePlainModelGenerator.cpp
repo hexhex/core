@@ -161,33 +161,32 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
-	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
-	if (factory.ctx.config.getOption("Instantiate")){
-		std::cout << "% Component " << &(factory.ci) << std::endl;
-		std::cout << "% Nonground Program " << &(factory.ci) << std::endl;
-		std::cout << grounder->getNongroundProgramString();
-		std::cout << "% Ground Program " << &(factory.ci) << std::endl;
-		std::cout << grounder->getGroundProgramString();
-	}
+	solver = GenuineSolver::getInstance(factory.ctx, program);
 
-	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
-	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
-	currentanswer = 0;
+//	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
+//	if (factory.ctx.config.getOption("Instantiate")){
+//		std::cout << "% Component " << &(factory.ci) << std::endl;
+//		std::cout << "% Nonground Program " << &(factory.ci) << std::endl;
+//		std::cout << grounder->getNongroundProgramString();
+//		std::cout << "% Ground Program " << &(factory.ci) << std::endl;
+//		std::cout << grounder->getGroundProgramString();
+//	}
+
+//	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
+//	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
+//	currentanswer = 0;
 }
 
 GenuinePlainModelGenerator::InterpretationPtr
 GenuinePlainModelGenerator::generateNextModel()
 {
-	if (igas == InternalGroundASPSolverPtr()) return InterpretationPtr();
+	if (solver == GenuineSolverPtr()) return InterpretationPtr();
 
 	RegistryPtr reg = factory.ctx.registry();
 
 	// remove edb from result
-	InterpretationPtr modelCandidate = igas->projectToOrdinaryAtoms(igas->getNextModel());
-	DBGLOG(DBG, "Statistics:" << std::endl << igas->getStatistics());
-//	if (modelCandidate != InterpretationPtr()){
-//		modelCandidate->getStorage() -= grounder->getGroundProgram().mask->getStorage();
-//	}
+	InterpretationPtr modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
+	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;
 }
 

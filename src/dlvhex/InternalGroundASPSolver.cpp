@@ -33,6 +33,7 @@
 #include <iostream>
 #include <sstream>
 #include "dlvhex/Logger.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 

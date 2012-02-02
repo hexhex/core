@@ -48,10 +48,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class LearningCallback{
-public:
-	virtual bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed) = 0;
-};
+// forward declaration
+class LearningCallback;
 
 class InternalGroundASPSolver : public CDNLSolver{
 private:
