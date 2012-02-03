@@ -67,6 +67,7 @@ pkginclude_HEADERS = \
   PlainAuxPrinter.hpp \
   PlainModelGenerator.hpp \
   GenuinePlainModelGenerator.hpp \
+  GringoGrounder.hpp \
   PlatformDefinitions.h \
   PluginContainer.h \
   PluginInterface.h \

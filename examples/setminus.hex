@@ -1,2 +1,3 @@
-nsel(X) :- domain(X), &testSetMinusRuleBasedLearning[domain, sel](X).
-sel(X) :- domain(X), &testSetMinusRuleBasedLearning[domain, nsel](X).
+nsel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, sel](X).
+sel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, nsel](X).
+:- sel(X), sel(Y), sel(Z), X != Y, X != Z, Y != Z.

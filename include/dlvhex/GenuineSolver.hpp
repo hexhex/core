@@ -44,6 +44,7 @@
 
 #include "dlvhex/InternalGroundDASPSolver.hpp"
 #include "dlvhex/InternalGrounder.hpp"
+
 #include "dlvhex/Nogood.hpp"
 
 #include <boost/shared_ptr.hpp>
@@ -51,6 +52,8 @@
 #include <vector>
 
 DLVHEX_NAMESPACE_BEGIN
+
+class GringoGrounder;	// fwd declaration
 
 class GenuineSolver : public NogoodContainer{
 public:
@@ -100,7 +103,9 @@ public:
 
 class GenuineSolverClingo : public GenuineSolver{
 private:
-	int c;
+	GringoGrounder* grounder;
+	InternalGroundDASPSolver* solver;
+	OrdinaryASPProgram gprog;
 public:
 	virtual std::string getStatistics();
 	GenuineSolverClingo(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding = true);

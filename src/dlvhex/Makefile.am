@@ -64,6 +64,7 @@ libdlvhexbase_la_SOURCES = \
     GuessAndCheckModelGenerator.cpp \
     GenuineGuessAndCheckModelGenerator.cpp \
     GenuineSolver.cpp \
+    GringoGrounder.cpp \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \

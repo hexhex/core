@@ -51,8 +51,11 @@
 #include <list>
 
 #ifdef HAVE_LIBCLINGO
-#include <clingo/clingo_app.h>
+#include <gringo/gringo_app.h>
 #endif
+
+
+#include "dlvhex/GringoGrounder.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -118,60 +121,67 @@ void GenuineSolverInternal::removeExternalLearner(LearningCallback* lb){
 	solver->removeExternalLearner(lb);
 }
 
-class MyClingoApp: public ClingoApp<CLINGO>
-{
-};
-
 std::string GenuineSolverClingo::getStatistics(){
 #ifdef HAVE_LIBCLINGO
+	return solver->getStatistics();
 #endif // HAVE_LIBCLINGO
 }
 
-GenuineSolverClingo::GenuineSolverClingo(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding) : GenuineSolver(ctx, p, optimizeGrounding){
+GenuineSolverClingo::GenuineSolverClingo(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding) : GenuineSolver(ctx, p, optimizeGrounding), gprog(p){
 #ifdef HAVE_LIBCLINGO
-
-	MyClingoApp myclingo;
+	grounder = new GringoGrounder(ctx, p);
+	gprog = grounder->getGroundProgram();
+	solver = new InternalGroundDASPSolver(ctx, gprog);
 
 #endif // HAVE_LIBCLINGO
 }
 
 const OrdinaryASPProgram& GenuineSolverClingo::getGroundProgram(){
 #ifdef HAVE_LIBCLINGO
+	return gprog;
 #endif // HAVE_LIBCLINGO
 }
 
 GenuineSolverClingo::~GenuineSolverClingo(){
 #ifdef HAVE_LIBCLINGO
+	delete solver;
+	delete grounder;
 #endif // HAVE_LIBCLINGO
 }
 
 InterpretationConstPtr GenuineSolverClingo::getNextModel(){
 #ifdef HAVE_LIBCLINGO
+	return solver->getNextModel();
 #endif // HAVE_LIBCLINGO
 }
 
 InterpretationPtr GenuineSolverClingo::projectToOrdinaryAtoms(InterpretationConstPtr inter){
 #ifdef HAVE_LIBCLINGO
+	return solver->projectToOrdinaryAtoms(inter);
 #endif // HAVE_LIBCLINGO
 }
 
 int GenuineSolverClingo::addNogood(Nogood ng){
 #ifdef HAVE_LIBCLINGO
+	solver->addNogood(ng);
 #endif // HAVE_LIBCLINGO
 }
 
 int GenuineSolverClingo::getNogoodCount(){
 #ifdef HAVE_LIBCLINGO
+	return solver->getNogoodCount();
 #endif // HAVE_LIBCLINGO
 }
 
 void GenuineSolverClingo::addExternalLearner(LearningCallback* lb){
 #ifdef HAVE_LIBCLINGO
+	solver->addExternalLearner(lb);
 #endif // HAVE_LIBCLINGO
 }
 
 void GenuineSolverClingo::removeExternalLearner(LearningCallback* lb){
 #ifdef HAVE_LIBCLINGO
+	solver->removeExternalLearner(lb);
 #endif // HAVE_LIBCLINGO
 }
 
