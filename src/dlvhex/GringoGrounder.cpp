@@ -73,8 +73,32 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	BOOST_FOREACH (LParseRule lpr, rules){
 		if (lpr.head.size() == 1 && lpr.pos.size() == 0 && lpr.neg.size() == 0){
 			// facts
-			DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
-			edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+			if (lpr.head[0] == 1){
+				// special case: unsatisfiable rule:  F :- T
+				// set some (arbitrary) atom A and make a constraint :- A
+
+				OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+				ogatom.text = "sat";
+				Term term(ID::MAINKIND_TERM, "sat");
+				ID tid = ctx.registry()->storeTerm(term);
+				assert(tid != ID_FAIL);
+				assert(!tid.isVariableTerm());
+				if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+				ogatom.tuple.push_back(tid);
+				ID aid = ctx.registry()->ogatoms.getIDByStorage(ogatom);
+				if (aid == ID_FAIL) aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+				assert(aid != ID_FAIL);
+
+				Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+				r.body.push_back(aid);
+				ID rid = ctx.registry()->storeRule(r);
+				DBGLOG(DBG, "Adding rule " << rid << " and setting fact " << aid.address);
+				groundProgram.idb.push_back(rid);
+				edb->setFact(aid.address);
+			}else{
+				DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
+				edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+			}
 		}else{
 			// rules
 			Rule r(ID::MAINKIND_RULE);
