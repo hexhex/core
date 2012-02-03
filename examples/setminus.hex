@@ -1,7 +1,2 @@
-dom(a).
-dom(b).
-dom(c).
-dom(d).
-
-nsel(X) :- dom(X), &testSetMinusLearning[dom, sel](X).
-sel(X) :- dom(X), &testSetMinusLearning[dom, nsel](X).
+nsel(X) :- domain(X), &testSetMinusRuleBasedLearning[domain, sel](X).
+sel(X) :- domain(X), &testSetMinusRuleBasedLearning[domain, nsel](X).
