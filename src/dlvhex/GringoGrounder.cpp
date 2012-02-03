@@ -85,8 +85,10 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				assert(!tid.isVariableTerm());
 				if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
 				ogatom.tuple.push_back(tid);
-				ID aid = ctx.registry()->ogatoms.getIDByStorage(ogatom);
-				if (aid == ID_FAIL) aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+				ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
+				if (aid == ID_FAIL){
+					aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+				}
 				assert(aid != ID_FAIL);
 
 				Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
@@ -102,14 +104,26 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 		}else{
 			// rules
 			Rule r(ID::MAINKIND_RULE);
-			if (lpr.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+			BOOST_FOREACH (uint32_t h, lpr.head){
+				if (h != 1){
+					assert(indexToGroundAtomID.find(h) != indexToGroundAtomID.end());
+					r.head.push_back(indexToGroundAtomID[h]);
+				}
+			}
+			BOOST_FOREACH (uint32_t p, lpr.pos){
+				assert(indexToGroundAtomID.find(p) != indexToGroundAtomID.end());
+				r.body.push_back(indexToGroundAtomID[p]);
+			}
+			BOOST_FOREACH (uint32_t n, lpr.neg){
+				assert(indexToGroundAtomID.find(n) != indexToGroundAtomID.end());
+				r.body.push_back(indexToGroundAtomID[n] | ID(ID::NAF_MASK, 0));
+			}
+
+			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
 			else{
 				r.kind |= ID::SUBKIND_RULE_REGULAR;
-				if (lpr.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
+				if (r.head.size() > 1) r.kind |= ID::PROPERTY_RULE_DISJ;
 			}
-			BOOST_FOREACH (uint32_t h, lpr.head) r.head.push_back(indexToGroundAtomID[h]);
-			BOOST_FOREACH (uint32_t p, lpr.pos) r.body.push_back(indexToGroundAtomID[p]);
-			BOOST_FOREACH (uint32_t n, lpr.neg) r.body.push_back(indexToGroundAtomID[n] | ID(ID::NAF_MASK, 0));
 			ID rid = ctx.registry()->storeRule(r);
 			DBGLOG(DBG, "Adding rule " << rid);
 			groundProgram.idb.push_back(rid);
