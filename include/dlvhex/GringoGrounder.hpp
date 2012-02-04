@@ -23,6 +23,7 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/OrdinaryASPProgram.hpp"
 #include "dlvhex/Printer.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 
 #include <vector>
 #include <map>
@@ -35,7 +36,7 @@ DLVHEX_NAMESPACE_BEGIN
 /**
  * Gringo command line application.
  */
-class GringoGrounder : public MainApp
+class GringoGrounder : public MainApp, public GenuineGrounder
 {
 private:
 	ProgramCtx& ctx;
@@ -90,7 +91,7 @@ public:
 	GringoGrounder(ProgramCtx& ctx, OrdinaryASPProgram& p) : ctx(ctx), nongroundProgram(p), groundProgram(p){
 		doRun();
 	}
-	OrdinaryASPProgram getGroundProgram();
+	const OrdinaryASPProgram& getGroundProgram();
 
 protected:
 	Output *output();

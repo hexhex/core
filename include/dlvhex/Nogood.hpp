@@ -69,6 +69,7 @@ public:
 class NogoodContainer{
 public:
 	virtual int addNogood(Nogood ng) = 0;
+	virtual void removeNogood(int index) = 0;
 
 	inline ID createLiteral(ID lit){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);

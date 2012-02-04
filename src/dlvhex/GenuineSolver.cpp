@@ -44,6 +44,10 @@
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/AnswerSet.hpp"
 
+#include "dlvhex/InternalGrounder.hpp"
+#include "dlvhex/InternalGroundDASPSolver.hpp"
+#include "dlvhex/GringoGrounder.hpp"
+
 #include <boost/tokenizer.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -59,10 +63,40 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-GenuineSolver::GenuineSolver(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding){
+GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+	if (ctx.config.getOption("GenuineSolver") == 1){
+		DBGLOG(DBG, "Instantiating genuine grounder with internal grounder");
+		GenuineGrounderPtr ptr(new InternalGrounder(ctx, p));
+		return ptr;
+	}else{
+#ifdef HAVE_LIBCLINGO
+		DBGLOG(DBG, "Instantiating genuine grounder with gringo");
+		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
+		return ptr;
+#else
+		throw GeneralError("No support for gringo compiled into this binary");
+#endif // HAVE_LIBCLINGO
+	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+	// @TODO: implement clasp interface
+	DBGLOG(DBG, "Instantiating genuine solver with internal solver");
+	GenuineGroundSolverPtr ptr(new InternalGroundDASPSolver(ctx, p));
+	return ptr;
+}
+
+/*
+GenuineSolver::GenuineSolver(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding){
+}
+*/
+
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+	GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, p);
+	OrdinaryASPProgram gprog = grounder->getGroundProgram();
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog);
+	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
+/*
 	if (ctx.config.getOption("GenuineSolver") == 1){
 		DBGLOG(DBG, "Instantiating genuine solver with internal solver");
 		GenuineSolverPtr ptr(dynamic_cast<GenuineSolver*>(new GenuineSolverInternal(ctx, p, optimizeGrounding)));
@@ -76,51 +110,61 @@ GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram&
 		throw GeneralError("No support for clingo compiled into this binary");
 #endif // HAVE_LIBCLINGO
 	}
+*/
 }
 
-std::string GenuineSolverInternal::getStatistics(){
+std::string GenuineSolver::getStatistics(){
 	return solver->getStatistics();
 }
 
+/*
 GenuineSolverInternal::GenuineSolverInternal(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding) : GenuineSolver(ctx, p, optimizeGrounding), gprog(p){
 	grounder = new InternalGrounder(ctx, p, optimizeGrounding ? InternalGrounder::full : InternalGrounder::builtin);
 	gprog = grounder->getGroundProgram();
 	solver = new InternalGroundDASPSolver(ctx, gprog);
 }
+*/
 
-const OrdinaryASPProgram& GenuineSolverInternal::getGroundProgram(){
+const OrdinaryASPProgram& GenuineSolver::getGroundProgram(){
 	return gprog;
 }
 
+/*
 GenuineSolverInternal::~GenuineSolverInternal(){
 	delete solver;
 	delete grounder;
 }
+*/
 
-InterpretationConstPtr GenuineSolverInternal::getNextModel(){
+InterpretationConstPtr GenuineSolver::getNextModel(){
 	return solver->getNextModel();
 }
 
-InterpretationPtr GenuineSolverInternal::projectToOrdinaryAtoms(InterpretationConstPtr inter){
+InterpretationPtr GenuineSolver::projectToOrdinaryAtoms(InterpretationConstPtr inter){
 	return solver->projectToOrdinaryAtoms(inter);
 }
 
-int GenuineSolverInternal::addNogood(Nogood ng){
-	solver->addNogood(ng);
+int GenuineSolver::addNogood(Nogood ng){
+	return solver->addNogood(ng);
 }
 
-int GenuineSolverInternal::getNogoodCount(){
+void GenuineSolver::removeNogood(int index){
+	solver->removeNogood(index);
+}
+
+int GenuineSolver::getNogoodCount(){
 	return solver->getNogoodCount();
 }
 
-void GenuineSolverInternal::addExternalLearner(LearningCallback* lb){
+void GenuineSolver::addExternalLearner(LearningCallback* lb){
 	solver->addExternalLearner(lb);
 }
 
-void GenuineSolverInternal::removeExternalLearner(LearningCallback* lb){
+void GenuineSolver::removeExternalLearner(LearningCallback* lb){
 	solver->removeExternalLearner(lb);
 }
 
+/*
 std::string GenuineSolverClingo::getStatistics(){
 #ifdef HAVE_LIBCLINGO
 	return solver->getStatistics();
@@ -184,7 +228,7 @@ void GenuineSolverClingo::removeExternalLearner(LearningCallback* lb){
 	solver->removeExternalLearner(lb);
 #endif // HAVE_LIBCLINGO
 }
-
+*/
 
 #if 0
 

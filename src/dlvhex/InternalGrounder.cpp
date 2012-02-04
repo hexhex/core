@@ -1222,7 +1222,7 @@ InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLeve
 	}
 
 #ifndef NDEBUG
-	OrdinaryASPProgram gp = getGroundProgram();
+	const OrdinaryASPProgram& gp = getGroundProgram();
 
 	std::stringstream ss;
 	ss << *trueAtoms << " (" << trueAtoms->getStorage().count() << ")";
@@ -1277,13 +1277,13 @@ std::string InternalGrounder::getNongroundProgramString(){
 	return ss.str();
 }
 
-OrdinaryASPProgram InternalGrounder::getGroundProgram(){
+const OrdinaryASPProgram& InternalGrounder::getGroundProgram(){
 
-	OrdinaryASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
+	static OrdinaryASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
 	return gp;
 }
 
-OrdinaryASPProgram InternalGrounder::getNongroundProgram(){
+const OrdinaryASPProgram& InternalGrounder::getNongroundProgram(){
 
 	return inputprogram;
 }

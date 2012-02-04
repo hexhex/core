@@ -43,10 +43,11 @@
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include "dlvhex/GenuineSolver.hpp"
 
 DLVHEX_NAMESPACE_BEGIN
 
-class InternalGrounder{
+class InternalGrounder : public GenuineGrounder{
 public:
 	enum OptLevel{
 		full,
@@ -155,8 +156,8 @@ protected:
 public:
 	InternalGrounder(ProgramCtx& ctx, OrdinaryASPProgram& p, OptLevel = full);
 
-	OrdinaryASPProgram getGroundProgram();
-	OrdinaryASPProgram getNongroundProgram();
+	const OrdinaryASPProgram& getGroundProgram();
+	const OrdinaryASPProgram& getNongroundProgram();
 	std::string getGroundProgramString();
 	std::string getNongroundProgramString();
 

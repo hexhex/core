@@ -47,7 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class CDNLSolver : public NogoodContainer{
+class CDNLSolver : virtual public NogoodContainer{
 protected:
 	struct SimpleHashIDAddress : public std::unary_function<IDAddress, std::size_t> {
 		inline std::size_t operator()(IDAddress const& ida) const{

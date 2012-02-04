@@ -235,7 +235,7 @@ Output *GringoGrounder::output()
 */
 }
 
-OrdinaryASPProgram GringoGrounder::getGroundProgram(){
+const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
 	doRun();
 	return groundProgram;
 }

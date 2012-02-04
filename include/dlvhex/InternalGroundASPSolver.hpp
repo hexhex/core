@@ -41,6 +41,7 @@
 #include "dlvhex/Printhelpers.hpp"
 #include "CDNLSolver.hpp"
 #include "dlvhex/OrdinaryASPProgram.hpp"
+#include "dlvhex/GenuineSolver.hpp"
 //#include <bm/bm.h>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
@@ -51,7 +52,7 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declaration
 class LearningCallback;
 
-class InternalGroundASPSolver : public CDNLSolver{
+class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver{
 private:
 	std::string bodyAtomPrefix;
 	int bodyAtomNumber;
@@ -104,6 +105,11 @@ protected:
 
 	// statistics
 	long cntDetectedUnfoundedSets;
+
+	// inherited members
+	inline int addNogood(Nogood ng){ return CDNLSolver::addNogood(ng); }
+	inline void removeNogood(int index){ CDNLSolver::removeNogood(index); }
+	inline int getNogoodCount() { return CDNLSolver::getNogoodCount(); }
 
 	// initialization members
 	void createNogoodsForRule(ID ruleBodyAtomID, ID ruleID);
@@ -158,6 +164,8 @@ protected:
 	}
 
 public:
+	using NogoodContainer::createLiteral;
+
 	virtual std::string getStatistics();
 
 	InternalGroundASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);

@@ -38,7 +38,7 @@
 #include <map>
 #include <boost/foreach.hpp>
 #include "dlvhex/Printhelpers.hpp"
-#include "InternalGroundASPSolver.hpp"
+#include "dlvhex/InternalGroundASPSolver.hpp"
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN

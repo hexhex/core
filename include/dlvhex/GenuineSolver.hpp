@@ -27,8 +27,8 @@
  * @author Christoph Redl
  * @date   Thu 02 16:00:00 CET 2012
  * 
- * @brief  Interface to genuine nonground disjunctive ASP Solvers
- *         powered by clingo or internal solver
+ * @brief  Interface to genuine nonground disjunctive ASP Grounder and
+ *         Solver (powered by gringo/clasp or internal grounder/solver)
  * 
  */
 
@@ -42,9 +42,6 @@
 
 #include "dlvhex/OrdinaryASPProgram.hpp"
 
-#include "dlvhex/InternalGroundDASPSolver.hpp"
-#include "dlvhex/InternalGrounder.hpp"
-
 #include "dlvhex/Nogood.hpp"
 
 #include <boost/shared_ptr.hpp>
@@ -53,36 +50,75 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class GringoGrounder;	// fwd declaration
-
-class GenuineSolver : public NogoodContainer{
-public:
-	virtual std::string getStatistics() = 0;
-
-	GenuineSolver(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding = true);
-
-	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
-	virtual InterpretationConstPtr getNextModel() = 0;
-	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
-	virtual int addNogood(Nogood ng) = 0;
-	virtual int getNogoodCount() = 0;
-	virtual void addExternalLearner(LearningCallback* lb) = 0;
-	virtual void removeExternalLearner(LearningCallback* lb) = 0;
-
-	typedef boost::shared_ptr<GenuineSolver> Ptr;
-	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
-
-	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool optimizeGrounding = true);
-};
-
-typedef GenuineSolver::Ptr GenuineSolverPtr;
-typedef GenuineSolver::ConstPtr GenuineSolverConstPtr;
-
 class LearningCallback{
 public:
 	virtual bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed) = 0;
 };
 
+class GenuineGrounder{
+public:
+	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
+
+	typedef boost::shared_ptr<GenuineGrounder> Ptr;
+	typedef boost::shared_ptr<const GenuineGrounder> ConstPtr;
+
+	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
+};
+
+typedef GenuineGrounder::Ptr GenuineGrounderPtr;
+typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
+
+
+class GenuineGroundSolver : virtual public NogoodContainer{
+public:
+	virtual std::string getStatistics() = 0;
+	virtual InterpretationConstPtr getNextModel() = 0;
+	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
+	virtual int addNogood(Nogood ng) = 0;
+	virtual void removeNogood(int index) = 0;
+	virtual int getNogoodCount() = 0;
+	virtual void addExternalLearner(LearningCallback* lb) = 0;
+	virtual void removeExternalLearner(LearningCallback* lb) = 0;
+
+	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
+	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
+
+	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
+};
+
+typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
+typedef GenuineGroundSolver::ConstPtr GenuineGroundSolverConstPtr;
+
+
+class GenuineSolver : public GenuineGrounder, public GenuineGroundSolver{
+private:
+	GenuineGrounderPtr grounder;
+	GenuineGroundSolverPtr solver;
+	OrdinaryASPProgram gprog;
+
+	GenuineSolver(GenuineGrounderPtr grounder, GenuineGroundSolverPtr solver, OrdinaryASPProgram gprog) : grounder(grounder), solver(solver), gprog(gprog){}
+public:
+	const OrdinaryASPProgram& getGroundProgram();
+
+	std::string getStatistics();
+	InterpretationConstPtr getNextModel();
+	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter);
+	int addNogood(Nogood ng);
+	void removeNogood(int index);
+	int getNogoodCount();
+	void addExternalLearner(LearningCallback* lb);
+	void removeExternalLearner(LearningCallback* lb);
+
+	typedef boost::shared_ptr<GenuineSolver> Ptr;
+	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
+
+	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p);
+};
+
+typedef GenuineSolver::Ptr GenuineSolverPtr;
+typedef GenuineSolver::ConstPtr GenuineSolverConstPtr;
+
+/*
 class GenuineSolverInternal : public GenuineSolver{
 private:
 	InternalGrounder* grounder;
@@ -118,7 +154,7 @@ public:
 	virtual void addExternalLearner(LearningCallback* lb);
 	virtual void removeExternalLearner(LearningCallback* lb);
 };
-
+*/
 
 #if 0
 // DLV softwares

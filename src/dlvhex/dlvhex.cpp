@@ -139,11 +139,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
-      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --genuinesolver[=internal,clingo]" << std::endl
-      << "                      Use embedded solver and grounder (implementation from scratch vs. clingo)" << std::endl
+//      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
+//      << "     --genuinesolver[=internal,clingo]" << std::endl
+//      << "                      Use embedded solver and grounder (implementation from scratch vs. clingo)" << std::endl
       << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
-      << "                      Learn nogoods from external atom evaluation (only useful with --genuinesolver)" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
       << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic external atoms (only useful with eabehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
@@ -171,7 +171,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi)" << std::endl
+      << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver)" << std::endl
       << "     --nofacts        Do not output EDB facts" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
 			<< "                      old - old dlvhex behavior" << std::endl
@@ -567,9 +568,9 @@ void processOptionsPrePlugin(
 		{ "mlp", no_argument, &longid, 13 },
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
-		{ "genuinesolver", optional_argument, 0, 17 },
+//		{ "genuinesolver", optional_argument, 0, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
-		{ "instantiate", no_argument, 0, 19 },
+//		{ "instantiate", no_argument, 0, 19 },
 		{ "noflpcheck", no_argument, 0, 20 },
 		{ NULL, 0, NULL, 0 }
 	};
@@ -765,6 +766,14 @@ void processOptionsPrePlugin(
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
 						}
+						else if( solver == "genuineii" )
+						{
+							pctx.config.setOption("GenuineSolver", 1);
+						}
+						else if( solver == "genuinegi" )
+						{
+							pctx.config.setOption("GenuineSolver", 2);
+						}
 						else
 						{
 							throw UsageError("unknown solver backend '" + solver +"' specified!");
@@ -834,7 +843,7 @@ void processOptionsPrePlugin(
 					break;
 				}
 			break;
-
+/*
 		case 17:
 				DBGLOG(DBG, "Using genuine solver");
 				if (optarg){
@@ -851,7 +860,7 @@ void processOptionsPrePlugin(
 				}
 				
 				break;
-
+*/
 		case 18:
 			{
 				if (optarg){
@@ -903,11 +912,11 @@ void processOptionsPrePlugin(
 
 			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [eabehavior: " << pctx.config.getOption("ExternalLearningEABehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
 			break;
-
+/*
 		case 19:
 			pctx.config.setOption("Instantiate", 1);
 			break;
-
+*/
 		case 20:
 			pctx.config.setOption("FLPCheck", 0);
 			break;
