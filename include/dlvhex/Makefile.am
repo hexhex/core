@@ -12,6 +12,7 @@ pkginclude_HEADERS = \
   Benchmarking.h \
   BuiltinAtomTable.hpp \
   CAUAlgorithms.hpp \
+  ClaspSolver.hpp \
   CDNLSolver.hpp \
   ComfortPluginInterface.hpp \
   ComponentGraph.hpp \

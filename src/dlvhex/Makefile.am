@@ -45,6 +45,7 @@ libdlvhexbase_la_SOURCES = \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
     CDNLSolver.cpp \
+    ClaspSolver.cpp \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     Configuration.cpp \

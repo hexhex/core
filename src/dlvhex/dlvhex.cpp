@@ -171,8 +171,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi)" << std::endl
-      << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
+      << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
+      << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)" << std::endl
       << "     --nofacts        Do not output EDB facts" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
 			<< "                      old - old dlvhex behavior" << std::endl
@@ -774,6 +775,22 @@ void processOptionsPrePlugin(
 						{
 							#if defined(HAVE_LIBCLINGO)
 							pctx.config.setOption("GenuineSolver", 2);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuineic" )
+						{
+							#if defined(HAVE_LIBCLINGO)
+							pctx.config.setOption("GenuineSolver", 3);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuinegc" )
+						{
+							#if defined(HAVE_LIBCLINGO)
+							pctx.config.setOption("GenuineSolver", 4);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
