@@ -1204,7 +1204,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 	return -1;
 }
 
-InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), ctx(c), optlevel(ol){
+InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), groundProgram(p), ctx(c), optlevel(ol){
 
 	DBGLOG(DBG, "Starting grounding");
 
@@ -1220,6 +1220,8 @@ InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLeve
 	for (unsigned int stratumNr = 0; stratumNr < predicatesOfStratum.size(); ++stratumNr){
 		groundStratum(stratumNr);
 	}
+
+	groundProgram = OrdinaryASPProgram(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
 
 #ifndef NDEBUG
 	const OrdinaryASPProgram& gp = getGroundProgram();
@@ -1279,8 +1281,7 @@ std::string InternalGrounder::getNongroundProgramString(){
 
 const OrdinaryASPProgram& InternalGrounder::getGroundProgram(){
 
-	static OrdinaryASPProgram gp(reg, groundRules, trueAtoms, inputprogram.maxint, inputprogram.mask);
-	return gp;
+	return groundProgram;
 }
 
 const OrdinaryASPProgram& InternalGrounder::getNongroundProgram(){

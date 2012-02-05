@@ -772,7 +772,11 @@ void processOptionsPrePlugin(
 						}
 						else if( solver == "genuinegi" )
 						{
+							#if defined(HAVE_LIBCLINGO)
 							pctx.config.setOption("GenuineSolver", 2);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
 						}
 						else
 						{

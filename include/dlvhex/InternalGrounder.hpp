@@ -60,6 +60,7 @@ protected:
 	typedef boost::unordered_map<ID, int> Binder;
 
 	OrdinaryASPProgram inputprogram;
+	OrdinaryASPProgram groundProgram;
 	ProgramCtx& ctx;
 	RegistryPtr reg;
 	OptLevel optlevel;
