@@ -106,11 +106,6 @@ protected:
 	// statistics
 	long cntDetectedUnfoundedSets;
 
-	// inherited members
-	inline int addNogood(Nogood ng){ return CDNLSolver::addNogood(ng); }
-	inline void removeNogood(int index){ CDNLSolver::removeNogood(index); }
-	inline int getNogoodCount() { return CDNLSolver::getNogoodCount(); }
-
 	// initialization members
 	void createNogoodsForRule(ID ruleBodyAtomID, ID ruleID);
 	void createNogoodsForRuleBody(ID ruleBodyAtomID, const Tuple& ruleBody);
@@ -164,8 +159,6 @@ protected:
 	}
 
 public:
-	using NogoodContainer::createLiteral;
-
 	virtual std::string getStatistics();
 
 	InternalGroundASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);

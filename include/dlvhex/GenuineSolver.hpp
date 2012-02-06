@@ -74,9 +74,9 @@ public:
 	virtual std::string getStatistics() = 0;
 	virtual InterpretationConstPtr getNextModel() = 0;
 	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
-	virtual int addNogood(Nogood ng) = 0;
-	virtual void removeNogood(int index) = 0;
-	virtual int getNogoodCount() = 0;
+//	virtual int addNogood(Nogood ng) = 0;
+//	virtual void removeNogood(int index) = 0;
+//	virtual int getNogoodCount() = 0;
 	virtual void addExternalLearner(LearningCallback* lb) = 0;
 	virtual void removeExternalLearner(LearningCallback* lb) = 0;
 
