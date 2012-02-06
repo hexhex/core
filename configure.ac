@@ -454,7 +454,7 @@ if test x$have_bm != xtrue; then
    # force local bmagic
    BM_VERSION=3.7.0
    # include bmagic for building this
-   BM_CPPFLAGS="-Idlvhex2/bm${BM_VERSION}/"
+   BM_CPPFLAGS="-I\${top_srcdir}/bm${BM_VERSION}/"
    # in pkgconfig we have include flags 
    # -I$(includedir)/dlvhex2/bm${BM_VERSION}/
    # as this is the location where the local bmagic headers will be installed
