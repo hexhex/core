@@ -382,6 +382,42 @@ ID Registry::storeConstOrVarTerm(Term& term)
   return ret;
 }
 
+ID Registry::storeConstantTerm(const std::string& symbol, bool aux)
+{
+  assert(!symbol.empty() && ::islower(symbol[0]));
+
+  ID ret = terms.getIDByString(symbol);
+  if( ret == ID_FAIL )
+    {
+      ret = preds.getIDByString(symbol);
+      if( ret == ID_FAIL )
+        {
+          Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, symbol);
+          if( aux )
+            term.kind |= ID::PROPERTY_AUX;
+          ret = terms.storeAndGetID(term);
+          DBGLOG(DBG,"stored term " << term << " which got " << ret);
+        }
+    }
+  return ret;
+}
+
+ID Registry::storeVariableTerm(const std::string& symbol, bool aux)
+{
+  assert(!symbol.empty() && ::isupper(symbol[0]));
+
+  ID ret = terms.getIDByString(symbol);
+  if( ret == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, symbol);
+      if( aux )
+        term.kind |= ID::PROPERTY_AUX;
+      ret = terms.storeAndGetID(term);
+      DBGLOG(DBG,"stored term " << term << " which got " << ret);
+    }
+  return ret;
+}
+
 ID Registry::storeTerm(Term& term)
 {
   assert(!term.symbol.empty());

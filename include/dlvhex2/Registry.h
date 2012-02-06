@@ -152,6 +152,16 @@ struct Registry:
   // assume term is not an integer (i.e., term.symbol does not start with a digit)
   ID storeConstOrVarTerm(Term& term);
 
+  // assert symbol is constant
+  // lookup symbol and return ID if exists
+  // otherwise register as constant and return ID
+  ID storeConstantTerm(const std::string& symbol, bool aux=false);
+
+  // assert symbol is variable
+  // lookup symbol and return ID if exists
+  // otherwise register as variable and return ID
+  ID storeVariableTerm(const std::string& symbol, bool aux=false);
+
   // check if term is integer
   // if yes return integer id
   // otherwise
