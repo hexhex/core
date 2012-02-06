@@ -30,6 +30,7 @@
 #include <boost/tokenizer.hpp>
 
 #include <iostream>
+#include <algorithm>
 
 namespace
 {
@@ -58,7 +59,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&std::cout, false), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(false), ctx(ctx), groundProgram(groundProgram), symbols_(1){
 }
 
 void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
@@ -98,23 +99,49 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				groundProgram.idb.push_back(rid);
 				edb->setFact(aid.address);
 			}else{
-				DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
-				edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+				// skip facts which are not in the symbol table
+				if (indexToGroundAtomID.find(lpr.head[0]) != indexToGroundAtomID.end()){
+					DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
+					edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+				}
 			}
 		}else{
 			// rules
 			Rule r(ID::MAINKIND_RULE);
 			BOOST_FOREACH (uint32_t h, lpr.head){
 				if (h != 1){
+					if (indexToGroundAtomID.find(h) == indexToGroundAtomID.end()){
+						std::stringstream ss;
+						ss << "Grounding Error: Symbol '" << h << "' not found in symbol table";
+						throw GeneralError(ss.str());
+					}
 					assert(indexToGroundAtomID.find(h) != indexToGroundAtomID.end());
 					r.head.push_back(indexToGroundAtomID[h]);
 				}
 			}
 			BOOST_FOREACH (uint32_t p, lpr.pos){
+				// There seems to be a bug in Gringo:
+				// some symbols, which are facts, are not in the symbol table
+				// however, we can them optimize away as they are facts
+				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end() && std::find(facts.begin(), facts.end(), p) != facts.end()) continue;
+
+				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end()){
+					std::stringstream ss;
+					ss << "Grounding Error: Symbol '" << p << "' not found in symbol table";
+					throw GeneralError(ss.str());
+
+				}
 				assert(indexToGroundAtomID.find(p) != indexToGroundAtomID.end());
 				r.body.push_back(indexToGroundAtomID[p]);
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
+				if (indexToGroundAtomID.find(n) == indexToGroundAtomID.end()){
+					std::stringstream ss;
+					ss << "Grounding Error: Symbol '" << n << "' not found in symbol table";
+					throw GeneralError(ss.str());
+
+				}
+
 				assert(indexToGroundAtomID.find(n) != indexToGroundAtomID.end());
 				r.body.push_back(indexToGroundAtomID[n] | ID(ID::NAF_MASK, 0));
 			}
@@ -131,11 +158,14 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	}
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg){
+void GringoGrounder::GroundHexProgramBuilder::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg){
 	rules.push_back(LParseRule(head, pos, neg));
+	if (pos.size() == 0 && neg.size() == 0){
+		facts.push_back(head);
+	}
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg){
+void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg){
 	rules.push_back(LParseRule(head, pos, neg));
 }
 
@@ -143,7 +173,7 @@ void GringoGrounder::GroundHexProgramBuilder::printChoiceRule(const AtomVec &hea
 	rules.push_back(LParseRule(head, pos, neg));
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
+void GringoGrounder::GroundHexProgramBuilder::printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
 	// @TODO: weights
 	rules.push_back(LParseRule(head, pos, neg));
 }
@@ -161,34 +191,16 @@ void GringoGrounder::GroundHexProgramBuilder::printComputeRule(int models, const
 	// @TODO
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
+void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(uint32_t index, const std::string &atomstring){
 
-	uint32_t index = atom.first;
-
-	std::stringstream atomstring;
-	atomstring << name;
-	if(arity > 0)
-	{
-		ValVec::const_iterator k = vals_.begin() + atom.second;
-		ValVec::const_iterator end = k + arity;
-		atomstring << "(";
-		k->print(s_, atomstring);
-		for(++k; k != end; ++k)
-		{
-			atomstring << ",";
-			k->print(s_, atomstring);
-		}
-		atomstring << ")";
-	}
-
-	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring.str());
+	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring);
 
 	if( dlvhexId == ID_FAIL )
 	{
 		// parse groundatom, register and store
-		DBGLOG(DBG,"parsing clingo ground atom '" << atomstring.str() << "'");
+		DBGLOG(DBG,"parsing clingo ground atom '" << atomstring << "'");
 		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		ogatom.text = atomstring.str();
+		ogatom.text = atomstring;
 		{
 			// create ogatom.tuple
 			boost::char_separator<char> sep(",()");
@@ -210,10 +222,10 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	}
 
 	indexToGroundAtomID[index] = dlvhexId;
-	DBGLOG(DBG, "Got atom " << atomstring.str() << " with Gringo-ID " << index << " and dlvhex-ID " << dlvhexId);
+	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << index << " and dlvhex-ID " << dlvhexId);
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
+void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const Symbol &symbol){
 	// @TODO
 }
 
@@ -223,20 +235,11 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 
 Output *GringoGrounder::output()
 {
-//	return new LparseOutput(&std::cout, gringo.disjShift);
+//	return new LparseOutput(std::cout, gringo.disjShift);
 	return new GroundHexProgramBuilder(ctx, groundProgram);
-/*
-	if (gringo.metaOut)
-		return new ReifiedOutput(&std::cout);
-	else if (gringo.textOut)
-		return new PlainOutput(&std::cout);
-	else
-		return new LparseOutput(&std::cout, gringo.disjShift);
-*/
 }
 
 const OrdinaryASPProgram& GringoGrounder::getGroundProgram(){
-	doRun();
 	return groundProgram;
 }
 
@@ -246,6 +249,58 @@ Streams::StreamPtr GringoGrounder::constStream() const
 	for(std::vector<std::string>::const_iterator i = gringo.consts.begin(); i != gringo.consts.end(); ++i)
 		*constants << "#const " << *i << ".\n";
 	return Streams::StreamPtr(constants.release());
+}
+
+void GringoGrounder::setIinit(IncConfig &cfg)
+{
+	if(cfg.iinit != 1)
+	{
+		if(gringo.iinit != 1)
+		{
+			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding with ";
+			std::cerr << cfg.iinit << "." << std::endl;
+		}
+		gringo.iinit = cfg.iinit;
+	}
+}
+
+void GringoGrounder::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
+{
+	cfg.incStep     = step;
+	if(generic.verbose > 2)
+	{
+		std::cerr << "% grounding cumulative " << cfg.incStep << " ..." << std::endl;
+	}
+	g.ground(*cumulative_);
+	g.groundForget(cfg.incStep);
+	if(goal <= step + cfg.maxVolStep-1)
+	{
+		if(generic.verbose > 2)
+		{
+			std::cerr << "% grounding volatile " << cfg.incStep << " ..." << std::endl;
+		}
+		g.ground(*volatile_);
+	}
+}
+
+void GringoGrounder::groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal)
+{
+	if(generic.verbose > 2)
+	{
+		std::cerr << "% grounding base ..." << std::endl;
+	}
+	g.ground(*base_);
+	goal = std::max(end, goal);
+	for(int i = start; i <= end; i++) { groundStep(g, cfg, i, goal); }
+}
+
+void GringoGrounder::createModules(Grounder &g)
+{
+	base_       = g.createModule();
+	cumulative_ = g.createModule();
+	volatile_   = g.createModule();
+	volatile_->parent(cumulative_);
+	cumulative_->parent(base_);
 }
 
 int GringoGrounder::doRun()
@@ -280,17 +335,16 @@ int GringoGrounder::doRun()
 	else
 	{
 		IncConfig config;
-		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
-		Parser    p(&g, config, inputStreams, gringo.compat);
-
-		config.incBegin = 1;
-		config.incEnd   = config.incBegin + gringo.ifixed;
-		config.incBase  = gringo.ibase;
+		Grounder  g(o.get(), generic.verbose > 2, gringo.heuristics.heuristic);
+		createModules(g);
+		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
 
 		o->initialize();
 		p.parse();
+		if(gringo.magic) g.addMagic();
 		g.analyze(gringo.depGraph, gringo.stats);
-		g.ground();
+		setIinit(config);
+		groundBase(g, config, gringo.iinit, gringo.ifixed, gringo.ifixed);
 		o->finalize();
 	}
 

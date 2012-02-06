@@ -43,6 +43,11 @@ private:
 	OrdinaryASPProgram nongroundProgram;
 	OrdinaryASPProgram groundProgram;
 
+	GringoOptions gringo;
+	::Module *base_;
+	::Module *cumulative_;
+	::Module *volatile_;
+
 	class Printer : public RawPrinter{
 	public:
 		typedef RawPrinter Base;
@@ -70,20 +75,22 @@ private:
 		};
 
 		std::map<uint32_t, ID> indexToGroundAtomID;
+		std::vector<uint32_t> facts;
 		std::vector<LParseRule> rules;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram);
 		void doFinalize();
 
-		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
-		void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
+		void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
+		void printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg);
 		void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
-		void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
+		void printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 		void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 		void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 		void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
-		void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
-		void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+		void printSymbolTableEntry(uint32_t symbol, const std::string &name);
+		void printExternalTableEntry(const Symbol &symbol);
+		void forgetStep(int) { }
 		uint32_t symbol();
 	};
 
@@ -113,13 +120,14 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	// Application interface
 	ProgramOptions::PosOption getPositionalParser() const;
+	void setIinit(IncConfig &cfg);
+	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
+	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
 	void handleSignal(int sig);
+	void createModules(Grounder &g);
 	int  doRun();
 	std::string getVersion() const;
 	// ---------------------------------------------------------------------------------------
-
-public:
-	GringoOptions gringo;
 };
 
 DLVHEX_NAMESPACE_END
