@@ -47,6 +47,13 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
 
+
+#include "clasp/solver.h"
+#include "clasp/literal.h"
+#include "clasp/program_builder.h"
+#include "clasp/unfounded_check.h"
+#include "clasp/model_enumerators.h"
+
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declaration
@@ -55,13 +62,45 @@ class LearningCallback;
 class ClaspSolver : public GenuineGroundSolver{
 private:
 
+	void buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
+	void buildOptimizedAtomIndex(Clasp::Solver& solver);
+
+	static std::string idAddressToString(IDAddress adr);
+	static IDAddress stringToIDAddress(std::string str);
+
+	struct ModelEnumerator : public Clasp::Enumerator::Report {
+		ClaspSolver& cs;
+		ModelEnumerator(ClaspSolver& cs) : cs(cs){}
+		void reportModel(const Clasp::Solver& s, const Clasp::Enumerator&);
+		void reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete);
+	};
+
+	class ExternalPropagator : public Clasp::PostPropagator{
+	private:
+		ClaspSolver& cs;
+
+		bool addNogoodToSolver(Clasp::ClauseCreator& cg, Nogood& ng);
+	public:
+		ExternalPropagator(ClaspSolver& cs) : cs(cs){}
+		virtual bool propagate(Clasp::Solver& s);
+	};
+
 protected:
 	// structural program information
 	ProgramCtx& ctx;
 	OrdinaryASPProgram program;
 	RegistryPtr reg;
 
+	std::vector<InterpretationPtr> models;
+	int nextModel;
+
+	std::map<Clasp::Literal, IDAddress> claspToHex;
+	std::map<IDAddress, Clasp::Literal> hexToClasp;
+
 	Set<LearningCallback*> learner;
+	std::vector<Nogood> nogoods;
+
+	Clasp::Solver claspInstance;
 
 public:
 	virtual std::string getStatistics();
