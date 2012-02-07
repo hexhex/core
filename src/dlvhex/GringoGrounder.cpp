@@ -59,7 +59,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(false), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(true /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
 }
 
 void GringoGrounder::GroundHexProgramBuilder::doFinalize(){

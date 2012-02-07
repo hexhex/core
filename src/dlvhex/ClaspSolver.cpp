@@ -34,9 +34,11 @@
 #include <sstream>
 #include "dlvhex/Logger.hpp"
 #include "dlvhex/GenuineSolver.hpp"
+#include "dlvhex/Printer.hpp"
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 
+#include "clasp/program_rule.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -215,6 +217,11 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 
 	buildAtomIndex(p, pb);
 
+#ifndef NDEBUG
+	std::stringstream programstring;
+	RawPrinter printer(programstring, reg);
+#endif
+
 	// transfer edb
 	DBGLOG(DBG, "Sending EDB to clasp");
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
@@ -226,12 +233,20 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		pb.endRule();
 		en++;
 	}
+#ifndef NDEBUG
+	programstring << *p.edb << std::endl;
+#endif
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.idb){
+#ifndef NDEBUG
+		printer.print(ruleId);
+		programstring << std::endl;
+#endif
+
 		const Rule& rule = reg->rules.getByID(ruleId);
-		pb.startRule();
+		pb.startRule(rule.head.size() == 0 ? Clasp::CONSTRAINTRULE : Clasp::BASICRULE);
 		BOOST_FOREACH (ID h, rule.head){
 			// add literal to head
 			pb.addHead(hexToClasp[h.address].var());
@@ -243,6 +258,9 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		pb.endRule();
 	}
 
+#ifndef NDEBUG
+	DBGLOG(DBG, "Program is: " << std::endl << programstring.str());
+#endif
 
 	bool ic = pb.endProgram(claspInstance, true);
 
@@ -269,6 +287,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 }
 
 std::string ClaspSolver::getStatistics(){
+	return "";
 }
 
 void ClaspSolver::addExternalLearner(LearningCallback* lb){
