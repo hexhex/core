@@ -305,7 +305,6 @@ void GringoGrounder::createModules(Grounder &g)
 
 int GringoGrounder::doRun()
 {
-
 	std::ostringstream programStream;
 	Printer printer(programStream, ctx.registry());
 

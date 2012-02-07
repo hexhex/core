@@ -96,6 +96,7 @@ private:
 
 public:
 	GringoGrounder(ProgramCtx& ctx, OrdinaryASPProgram& p) : ctx(ctx), nongroundProgram(p), groundProgram(p){
+		gringo.disjShift = true;
 		doRun();
 	}
 	const OrdinaryASPProgram& getGroundProgram();
