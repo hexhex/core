@@ -55,6 +55,16 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 
+	// block if buffer is full
+	if (cs.bufferSize != 0){
+		int undelivered = cs.models.size() - cs.nextModel;
+		if (undelivered >= cs.bufferSize){
+			DBGLOG(DBG, "Blocking computation of further models: buffer is full");
+			sleep(10);
+		}
+	}
+	DBGLOG(DBG, "Computing model number " << cs.models.size());
+
 	// create a model
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 
@@ -71,63 +81,55 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	// remember the model
 	cs.models.push_back(model);
+
+//std::cout << "Model: " << *model << std::endl;
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
-bool ClaspSolver::ExternalPropagator::addNogoodToSolver(Clasp::ClauseCreator& cg, Nogood& ng){
-
-	cg.start();
-	BOOST_FOREACH (ID lit, ng){
-		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
-		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
-		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
-		Clasp::Literal clit = Clasp::Literal(cs.hexToClasp[lit.address].var(), !(cs.hexToClasp[lit.address].sign() ^ lit.isNaf()));
-		cg.add(clit);
-	}
-	return cg.end();
-}
-
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
-	DBGLOG(DBG, "Calling external learners to produce nogoods");
+	if (cs.learner.size() == 0) return true;
+
+	DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
+	// create an interpretation and a bitset of assigned values
+	InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
+	InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+
+	// translate clasp assignment to hex assignment
+	// get the symbol table from the solver
+	const Clasp::AtomIndex& symTab = *s.strategies().symTab;
+	for (Clasp::AtomIndex::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+		// bitset of all assigned values
+		if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
+			IDAddress adr = cs.claspToHex[it->second.lit];
+			factWasSet->setFact(adr);
+		}
+		// bitset of true values (partial interpretation)
+		if (s.isTrue(it->second.lit)) {
+			IDAddress adr = cs.claspToHex[it->second.lit];
+			interpretation->setFact(adr);
+		}
+	}
+
+	DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
 	bool learned = false;
 	BOOST_FOREACH (LearningCallback* cb, cs.learner){
-
-		// create an interpretation and a bitset of assigned values
-		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
-		InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-
-		// translate clasp assignment to hex assignment
-		// get the symbol table from the solver
-		const Clasp::AtomIndex& symTab = *s.strategies().symTab;
-		for (Clasp::AtomIndex::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-			// bitset of all assigned values
-			if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
-				IDAddress adr = cs.claspToHex[it->second.lit];
-				factWasSet->setFact(adr);
-			}
-			// bitset of true values (partial interpretation)
-			if (s.isTrue(it->second.lit)) {
-				IDAddress adr = cs.claspToHex[it->second.lit];
-				interpretation->setFact(adr);
-			}
-		}
-
 		// we are currently not able to check what changed inside clasp, so assume that all facts changed
 		learned |= cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
 	}
 
 	// add the produced nogoods to clasp
-	Clasp::ClauseCreator cg(&s);
-	bool inconsistent = true;
-	DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
-	BOOST_FOREACH (Nogood ng, cs.nogoods){
-		inconsistent &= addNogoodToSolver(cg, ng);
-	}
+	bool inconsistent = cs.recentlyBecameInconsistentByAddingNogoods;
+	cs.recentlyBecameInconsistentByAddingNogoods = false;
+//	DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
+//	BOOST_FOREACH (Nogood ng, cs.nogoods){
+//		inconsistent |= cs.addNogoodToClasp(ng);
+//	}
+//	cs.nogoods.clear();
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
-	return inconsistent;
+	return !inconsistent;
 
 /*
 	Nogood ng;
@@ -135,6 +137,34 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 2));
 	return addNogoodToSolver(cg, ng);
 */
+}
+
+bool ClaspSolver::addNogoodToClasp(Nogood& ng){
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << "{";
+	bool first = true;
+#endif
+
+	clauseCreator->start();
+	BOOST_FOREACH (ID lit, ng){
+		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
+		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
+		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
+		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
+		clauseCreator->add(clit);
+#ifndef NDEBUG
+		if (!first) ss << ", ";
+		first = false;
+		ss << (clit.sign() ? "" : "!") << clit.var();
+#endif
+	}
+#ifndef NDEBUG
+	ss << "}";
+	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
+#endif
+	return !clauseCreator->end();
 }
 
 void ClaspSolver::buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
@@ -204,16 +234,30 @@ void ClaspSolver::buildOptimizedAtomIndex(Clasp::Solver& solver){
 	DBGLOG(DBG, "AtomIndex of optimized program: " << std::endl << ss.str());
 }
 
+void* ClaspSolver::runClasp(void *cs){
+	DBGLOG(DBG, "Running clasp");
+	ClaspSolver* claspSolver = (ClaspSolver*)cs;
+
+	DBGLOG(DBG, "Integrity check of ClaspSolver: " << claspSolver->claspThread);
+
+	Clasp::solve(claspSolver->claspInstance, claspSolver->params);
+	claspSolver->claspFinished = true;
+	DBGLOG(DBG, "Clasp terminated -> Exit thread");
+	return 0;
+}
+
 ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p){
 
 	reg = ctx.registry();
 
+	clauseCreator = new Clasp::ClauseCreator(&claspInstance);
 	claspInstance.strategies().symTab.reset(new Clasp::AtomIndex());
 	
 	Clasp::ProgramBuilder pb;
-
 //	pb.setEqOptions(0);
 	pb.startProgram(*claspInstance.strategies().symTab, new Clasp::DefaultUnfoundedCheck());
+	pb.setCompute(1, false);	// 1 is our constant "false"
+	recentlyBecameInconsistentByAddingNogoods = false;
 
 	buildAtomIndex(p, pb);
 
@@ -240,13 +284,18 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
 	BOOST_FOREACH (ID ruleId, p.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
 #ifndef NDEBUG
+		programstring << (rule.head.size() == 0 ? "(constraint)" : "(rule)") << " ";
 		printer.print(ruleId);
 		programstring << std::endl;
 #endif
-
-		const Rule& rule = reg->rules.getByID(ruleId);
-		pb.startRule(rule.head.size() == 0 ? Clasp::CONSTRAINTRULE : Clasp::BASICRULE);
+		if (rule.head.size() == 0){
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(1);	// constant "false"
+		}else{
+			pb.startRule(Clasp::BASICRULE);
+		}
 		BOOST_FOREACH (ID h, rule.head){
 			// add literal to head
 			pb.addHead(hexToClasp[h.address].var());
@@ -260,18 +309,19 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 
 #ifndef NDEBUG
 	DBGLOG(DBG, "Program is: " << std::endl << programstring.str());
+//std::cout << std::endl << std::endl;
+//std::cout << "Program: " << programstring.str() << std::endl;
 #endif
 
 	bool ic = pb.endProgram(claspInstance, true);
-
+	DBGLOG(DBG, "Initially inconsistent: " << ic);
 	buildOptimizedAtomIndex(claspInstance);
 
 	std::stringstream prog;
 	pb.writeProgram(prog);
-	//std::cout << prog.str() << std::endl;
+//	std::cout << prog.str() << std::endl;
 
 	// add enumerator
-	Clasp::SolveParams params;
 	ModelEnumerator enumerator(*this);
 	params.setEnumerator(new Clasp::BacktrackEnumerator(0, &enumerator));
 
@@ -281,9 +331,24 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 
 	// solve
 	params.enumerator()->init(claspInstance, 0);
-	
-	Clasp::solve(claspInstance, params);
+
+	// start clasp in a new thread
+	claspFinished = false;
+	if (false){	// threading or not
+		bufferSize = 5;
+		DBGLOG(DBG, "Starting clasp thread");
+		int rc = pthread_create(&claspThread, NULL, runClasp, this);
+		DBGLOG(DBG, "Continuing in main thread (clasp thread has identifier " << claspThread << ")");
+		assert(0 == rc);
+	}else{
+		bufferSize = 0;
+		runClasp(this);
+	}
 	nextModel = 0;
+}
+
+ClaspSolver::~ClaspSolver(){
+	delete clauseCreator;
 }
 
 std::string ClaspSolver::getStatistics(){
@@ -299,6 +364,7 @@ void ClaspSolver::removeExternalLearner(LearningCallback* lb){
 }
 
 int ClaspSolver::addNogood(Nogood ng){
+	recentlyBecameInconsistentByAddingNogoods |= addNogoodToClasp(ng);
 	nogoods.push_back(ng);
 	return nogoods.size() - 1;
 }
@@ -312,17 +378,33 @@ int ClaspSolver::getNogoodCount(){
 }
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
-	if (nextModel >= models.size()) return InterpretationConstPtr();
-	else return models[nextModel++];
+	// if clasp has not finished yet, wait until new models arrive or clasp terminates
+	while (!claspFinished && nextModel >= models.size()){
+		DBGLOG(DBG, "Waiting for new models from clasp");
+		sleep(10);
+	}
+
+	if (nextModel >= models.size()){
+		DBGLOG(DBG, "No more models");
+		return InterpretationConstPtr();
+	}else{
+		DBGLOG(DBG, "Retrieve model");
+		return models[nextModel++];
+	}
 }
 
 InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){
 	if (intr == InterpretationConstPtr()){
 		return InterpretationPtr();
 	}else{
-		InterpretationPtr pi = InterpretationPtr(new Interpretation(reg));
-		pi->add(*intr);
-		return pi;
+		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
+		answer->add(*intr);
+
+		if (program.mask != InterpretationConstPtr()){
+			answer->getStorage() -= program.mask->getStorage();
+		}
+
+		return answer;
 	}
 }
 

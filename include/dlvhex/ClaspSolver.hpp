@@ -35,6 +35,7 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Nogood.hpp"
+#include <pthread.h>
 #include <vector>
 #include <set>
 #include <map>
@@ -61,7 +62,9 @@ class LearningCallback;
 
 class ClaspSolver : public GenuineGroundSolver{
 private:
+	bool recentlyBecameInconsistentByAddingNogoods;
 
+	bool addNogoodToClasp(Nogood& ng);
 	void buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
 	void buildOptimizedAtomIndex(Clasp::Solver& solver);
 
@@ -85,6 +88,8 @@ private:
 		virtual bool propagate(Clasp::Solver& s);
 	};
 
+	static void* runClasp(void *cs);
+
 protected:
 	// structural program information
 	ProgramCtx& ctx;
@@ -93,6 +98,8 @@ protected:
 
 	std::vector<InterpretationPtr> models;
 	int nextModel;
+	int bufferSize;	// maximum number of computed but unrequested models; 0 = unlimited
+	bool claspFinished;
 
 	std::map<Clasp::Literal, IDAddress> claspToHex;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;
@@ -101,11 +108,15 @@ protected:
 	std::vector<Nogood> nogoods;
 
 	Clasp::Solver claspInstance;
+	Clasp::SolveParams params;
+	pthread_t claspThread;
+	Clasp::ClauseCreator* clauseCreator;
 
 public:
 	virtual std::string getStatistics();
 
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
+	virtual ~ClaspSolver();
 
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);

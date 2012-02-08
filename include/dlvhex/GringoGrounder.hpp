@@ -63,6 +63,7 @@ private:
 		bool hasExternal_;
 		ProgramCtx& ctx;
 		OrdinaryASPProgram& groundProgram;
+		InterpretationPtr mask;
 
 		struct LParseRule{
 			AtomVec head;
@@ -73,6 +74,8 @@ private:
 				head.push_back(h);
 			}
 		};
+
+		void addSymbol(uint32_t symbol);
 
 		std::map<uint32_t, ID> indexToGroundAtomID;
 		std::vector<uint32_t> facts;

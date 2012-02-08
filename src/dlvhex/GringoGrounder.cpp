@@ -30,6 +30,7 @@
 #include <boost/tokenizer.hpp>
 
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 
 namespace
@@ -60,6 +61,45 @@ void GringoGrounder::Printer::print(ID id){
 }
 
 GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(true /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+	mask = InterpretationPtr(new Interpretation(ctx.registry()));
+	if (groundProgram.mask != InterpretationConstPtr()){
+		mask->add(*groundProgram.mask);
+	}
+	groundProgram.mask = mask;
+}
+
+void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
+	// check if the symbol is in the list
+	if (indexToGroundAtomID.find(symbol) != indexToGroundAtomID.end()){
+		// nothing to do
+	}else{
+		// create a dummy atom
+		std::stringstream name;
+		name << "unnamed";
+		static int nr = 0;
+		name << (nr++);
+
+		// create a propositional atom with this name
+		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+		ogatom.text = name.str();
+		Term term(ID::MAINKIND_TERM, name.str());
+		ID tid = ctx.registry()->storeTerm(term);
+		assert(tid != ID_FAIL);
+		assert(!tid.isVariableTerm());
+		if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+		ogatom.tuple.push_back(tid);
+		ID aid = ctx.registry()->ogatoms.getIDByTuple(ogatom.tuple);
+		if (aid == ID_FAIL){
+			aid = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+		}
+		assert(aid != ID_FAIL);
+
+		// we have now a new ID: add it to the table
+		indexToGroundAtomID[symbol] = aid;
+
+		// remove dummy atoms from models
+		mask->setFact(aid.address);
+	}
 }
 
 void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
@@ -99,17 +139,22 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				groundProgram.idb.push_back(rid);
 				edb->setFact(aid.address);
 			}else{
-				// skip facts which are not in the symbol table
-				if (indexToGroundAtomID.find(lpr.head[0]) != indexToGroundAtomID.end()){
-					DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
-					edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
-				}
+				// make sure that the fact is in the symbol table
+				addSymbol(lpr.head[0]);
+
+//				// skip facts which are not in the symbol table
+//				if (indexToGroundAtomID.find(lpr.head[0]) != indexToGroundAtomID.end()){
+				DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
+				edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
+//				}
 			}
 		}else{
 			// rules
 			Rule r(ID::MAINKIND_RULE);
 			BOOST_FOREACH (uint32_t h, lpr.head){
 				if (h != 1){
+					addSymbol(h);
+
 					if (indexToGroundAtomID.find(h) == indexToGroundAtomID.end()){
 						std::stringstream ss;
 						ss << "Grounding Error: Symbol '" << h << "' not found in symbol table";
@@ -123,7 +168,9 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				// There seems to be a bug in Gringo:
 				// some symbols, which are facts, are not in the symbol table
 				// however, we can them optimize away as they are facts
-				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end() && std::find(facts.begin(), facts.end(), p) != facts.end()) continue;
+//				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end() && std::find(facts.begin(), facts.end(), p) != facts.end()) continue;
+
+				addSymbol(p);
 
 				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end()){
 					std::stringstream ss;
@@ -132,9 +179,11 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 
 				}
 				assert(indexToGroundAtomID.find(p) != indexToGroundAtomID.end());
-				r.body.push_back(indexToGroundAtomID[p]);
+				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, indexToGroundAtomID[p].address));
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
+				addSymbol(n);
+
 				if (indexToGroundAtomID.find(n) == indexToGroundAtomID.end()){
 					std::stringstream ss;
 					ss << "Grounding Error: Symbol '" << n << "' not found in symbol table";
@@ -143,7 +192,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				}
 
 				assert(indexToGroundAtomID.find(n) != indexToGroundAtomID.end());
-				r.body.push_back(indexToGroundAtomID[n] | ID(ID::NAF_MASK, 0));
+				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, indexToGroundAtomID[n].address));
 			}
 
 			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
@@ -305,6 +354,10 @@ void GringoGrounder::createModules(Grounder &g)
 
 int GringoGrounder::doRun()
 {
+	// "disable" std::cerr output
+	std::stringstream errstr;
+	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
+
 	std::ostringstream programStream;
 	Printer printer(programStream, ctx.registry());
 
@@ -346,6 +399,11 @@ int GringoGrounder::doRun()
 		groundBase(g, config, gringo.iinit, gringo.ifixed, gringo.ifixed);
 		o->finalize();
 	}
+
+	// restore cerr output
+	std::cerr.rdbuf(origcerr);
+
+	DBGLOG(DBG, errstr.str());
 
 	return EXIT_SUCCESS;
 }

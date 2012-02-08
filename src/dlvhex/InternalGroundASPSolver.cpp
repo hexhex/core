@@ -909,6 +909,7 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 				DBGLOG(DBG, "Calling external learner");
 				bool learned = false;
 				BOOST_FOREACH (LearningCallback* cb, learner){
+					DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
 					learned |= cb->learn(interpretation, factWasSet, changed);
 				}
 				changed.clear();

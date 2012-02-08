@@ -1,5 +1,9 @@
 domain(a).
 domain(b).
+domain(c).
+domain(d).
+domain(e).
+domain(f).
 
 nsel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, sel](X).
 sel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, nsel](X).
