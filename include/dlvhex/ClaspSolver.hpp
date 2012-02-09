@@ -40,7 +40,6 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Nogood.hpp"
-#include <pthread.h>
 #include <vector>
 #include <set>
 #include <map>
@@ -52,7 +51,10 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
-
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+#include <boost/date_time.hpp>
 
 #include "clasp/solver.h"
 #include "clasp/literal.h"
@@ -74,6 +76,8 @@ private:
 	void buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
 	void buildOptimizedAtomIndex();
 
+	boost::thread* claspThread;
+
 	static std::string idAddressToString(IDAddress adr);
 	static IDAddress stringToIDAddress(std::string str);
 
@@ -94,7 +98,7 @@ private:
 		virtual bool propagate(Clasp::Solver& s);
 	};
 
-	static void* runClasp(void *cs);
+	void runClasp();
 
 protected:
 	// structural program information
@@ -103,6 +107,8 @@ protected:
 	RegistryPtr reg;
 
 	std::vector<InterpretationPtr> models;
+	boost::mutex models_mutex;
+	boost::condition models_condition;
 	int nextModel;
 	int bufferSize;	// maximum number of computed but unrequested models; 0 = unlimited
 	bool claspFinished;
@@ -113,8 +119,9 @@ protected:
 	std::vector<Nogood> nogoods;
 
 	Clasp::SharedContext claspInstance;
+	Clasp::ProgramBuilder pb;
+	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
-	pthread_t claspThread;
 	Clasp::ClauseCreator* clauseCreator;
 
 public:

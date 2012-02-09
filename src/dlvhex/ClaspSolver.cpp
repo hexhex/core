@@ -158,34 +158,62 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 
+/*
 	// block if buffer is full
-	if (cs.bufferSize != 0){
-		int undelivered = cs.models.size() - cs.nextModel;
-		if (undelivered >= cs.bufferSize){
-			DBGLOG(DBG, "Blocking computation of further models: buffer is full");
-			sleep(10);
+	while (true){
+		{
+			boost::mutex::scoped_lock lock(cs.models_mutex);
+			if (cs.bufferSize != 0){
+				int undelivered = cs.models.size() - cs.nextModel;
+				if (undelivered < cs.bufferSize){
+					break;
+				}
+			}else{
+				break;
+			}
 		}
+		DBGLOG(DBG, "Blocking computation of further models: buffer is full");
+		sleep(1);
 	}
 	DBGLOG(DBG, "Computing model number " << cs.models.size());
+*/
+	{
+		boost::mutex::scoped_lock lock(cs.models_mutex);
 
-	// create a model
-	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
-
-	// get the symbol table from the solver
-	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
-	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-		// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
-		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
-			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
-//			IDAddress adr = cs.claspToHex[it->second.lit];
-			// set it in the model
-			model->setFact(adr);
+		// compute number of free slots in the models buffer
+		int undelivered = cs.models.size() - cs.nextModel;
+		while (cs.bufferSize != 0 && undelivered >= cs.bufferSize){
+			// buffer is full: wait for free slots
+			DBGLOG(DBG, "Waiting for model slots to become available");
+			cs.models_condition.wait(cs.models_mutex);
+			undelivered = cs.models.size() - cs.nextModel;
 		}
-	}
 
-	// remember the model
-	DBGLOG(DBG, "Model is: " << *model);
-	cs.models.push_back(model);
+		// create a model
+		InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
+
+		// get the symbol table from the solver
+		const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+		for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+			// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
+			if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+				IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+	//			IDAddress adr = cs.claspToHex[it->second.lit];
+				// set it in the model
+				model->setFact(adr);
+			}
+		}
+
+		// remember the model
+		DBGLOG(DBG, "Model is: " << *model);
+//	{
+//		boost::mutex::scoped_lock lock(cs.models_mutex);
+		cs.models.push_back(model);
+
+		// at least one model has arrived: notify the consumer thread
+		DBGLOG(DBG, "Notifying consumer about arrived model");
+	}
+	cs.models_condition.notify_all();
 
 //std::cout << "Model: " << *model << std::endl;
 }
@@ -270,7 +298,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
 #ifndef NDEBUG
 	ss << " }";
-clauseCreator->end();
+	clauseCreator->end();
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 #endif
 	return false;
@@ -342,17 +370,20 @@ void ClaspSolver::buildOptimizedAtomIndex(){
 	DBGLOG(DBG, "AtomIndex of optimized program: " << std::endl << ss.str());
 }
 
-void* ClaspSolver::runClasp(void *cs){
+void ClaspSolver::runClasp(){
 	DBGLOG(DBG, "Running clasp");
 
-	ClaspSolver* claspSolver = static_cast<ClaspSolver*>(cs);
+	DBGLOG(DBG, "Integrity check of ClaspSolver: " << this);
 
-	DBGLOG(DBG, "Integrity check of ClaspSolver: " << claspSolver->claspThread);
+	Clasp::solve(this->claspInstance, this->params);
 
-	Clasp::solve(claspSolver->claspInstance, claspSolver->params);
-	claspSolver->claspFinished = true;
+	{
+		boost::mutex::scoped_lock lock(this->models_mutex);
+		this->claspFinished = true;
+		this->models_condition.notify_all();
+	}
+
 	DBGLOG(DBG, "Clasp terminated -> Exit thread");
-	return 0;
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p){
@@ -363,8 +394,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	
-	Clasp::ProgramBuilder pb;
-	Clasp::ProgramBuilder::EqOptions eqOptions;
 //	eqOptions.iters = 0;
 	pb.startProgram(claspInstance, eqOptions);
 	pb.setCompute(false_, false);
@@ -475,8 +504,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 //	std::cout << prog.str() << std::endl;
 
 	// add enumerator
-	ModelEnumerator enumerator(*this);
-	claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, &enumerator));
+	claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
 	claspInstance.enumerator()->enumerate(0);
 
 	// add propagator
@@ -486,8 +514,16 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	// endInit() must be called once before the search starts
 	claspInstance.endInit();
 
-	// start clasp in a new thread
+	DBGLOG(DBG, "Starting clasp thread, this-pointer is " << this);
 	claspFinished = false;
+	bufferSize = 1;
+	claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
+
+//	DBGLOG(DBG, "Waiting for clasp to terminate");
+//	claspThread->join();
+//	DBGLOG(DBG, "Clasp terminated");
+/*
+	// start clasp in a new thread
 	if (false){	// threading or not
 		bufferSize = 5;
 		DBGLOG(DBG, "Starting clasp thread");
@@ -498,6 +534,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 		bufferSize = 0;
 		runClasp(this);
 	}
+*/
 	nextModel = 0;
 }
 
@@ -533,23 +570,46 @@ int ClaspSolver::getNogoodCount(){
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 	// if clasp has not finished yet, wait until new models arrive or clasp terminates
-	while (!claspFinished && nextModel >= models.size()){
-		DBGLOG(DBG, "Waiting for new models from clasp");
-		sleep(10);
-	}
+/*	while (true){
+		{
+			boost::mutex::scoped_lock lock(models_mutex);
+			if (claspFinished || nextModel < models.size()){
+				break;
+			}
+		}
 
-	if (nextModel >= models.size()){
-		DBGLOG(DBG, "No more models");
-/*
-std::cout << "EXAMPLE 1" << std::endl;
-example1();
-std::cout << "END EXAMPLE 1" << std::endl;
-*/
-		return InterpretationConstPtr();
-	}else{
-		DBGLOG(DBG, "Retrieve model");
-		return models[nextModel++];
+		DBGLOG(DBG, "Waiting for new models from clasp");
+		sleep(1);
 	}
+*/
+	InterpretationConstPtr ip;
+	{
+		boost::mutex::scoped_lock lock(models_mutex);
+
+		// wait for arrived models (if necessary)
+		while (!claspFinished && nextModel >= models.size()){
+			DBGLOG(DBG, "Waiting for models to arrive");
+			models_condition.wait(models_mutex);
+		}
+
+//		DBGLOG(DBG, "Clasp finished: " << claspFinished << "; number of available models : " << models.size() << "; next model index: " << nextModel);
+		if (claspFinished && nextModel >= models.size()){
+			DBGLOG(DBG, "No more models");
+	/*
+	std::cout << "EXAMPLE 1" << std::endl;
+	example1();
+	std::cout << "END EXAMPLE 1" << std::endl;
+	*/
+			ip = InterpretationConstPtr();
+		}else{
+			DBGLOG(DBG, "Retrieve model");
+			ip = models[nextModel++];
+		}
+	}
+	// at least one slot is free: notify the clasp thread
+	DBGLOG(DBG, "Notifying clasp about free slot");
+	models_condition.notify_all();
+	return ip;
 }
 
 InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){

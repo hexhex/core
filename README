@@ -61,6 +61,8 @@ This file provides some hints how to install and run dlvhex.
     IMPORTANT:
     - use the same boost library as dlvhex, 1.43 works for us
     - you might need to hack CMakeLists.txt to accept your boost version
+    - CMakeLists.txt should be modified to force the usage of multithreaded boost
+      (change OFF to ON in the respective line) because dlvhex requires multithreaded boost libraries
 *** DLVDB
     FIXME
 *** libdlv
