@@ -49,6 +49,103 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/*
+
+// callback interface for printing answer sets
+struct AspOutPrinter : public Clasp::Enumerator::Report {
+	void reportModel(const Clasp::Solver& s, const Clasp::Enumerator&);
+	void reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool);
+};
+
+
+// Compute the stable models of the program
+//    a :- not b.
+//    b :- not a.
+void example1() {
+	// The ProgramBuilder lets you define logic programs.
+	// It preprocesses logic programs and converts them
+	// to the internal solver format.
+	// See program_builder.h for details
+	Clasp::ProgramBuilder api;
+	
+	// Among other things, SharedContext maintains a Solver object 
+	// which hosts the data and functions for CDNL answer set solving.
+	// SharedContext also contains the symbol table which stores the 
+	// mapping between atoms of the logic program and the 
+	// propositional literals in the solver.
+	// See solver.h and solver_types.h for details
+	Clasp::SharedContext  ctx;
+	
+	// startProgram must be called once before we can add atoms/rules
+	api.startProgram(ctx);
+	
+	// Populate symbol table. Each atoms must have a unique id, the name is optional.
+	// The symbol table then maps the ids to the propositional 
+	// literals in the solver.
+	api.setAtomName(1, "a");
+	api.setAtomName(2, "b");
+	api.setAtomName(3, "c");
+	api.setAtomName(4, "d");
+	
+	// Define the rules of the program
+	api.startRule(Clasp::BASICRULE).addHead(1).addToBody(2, false).addToBody(3, false).addToBody(4, false).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(2).addToBody(1, false).addToBody(3, false).addToBody(4, false).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(3).addToBody(1, false).addToBody(2, false).addToBody(4, false).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(4).addToBody(1, false).addToBody(2, false).addToBody(3, false).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(1).addToBody(2, true).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(2).addToBody(1, true).endRule();
+	api.startRule(Clasp::BASICRULE).addHead(1).addToBody(3, true).endRule();
+	
+	// Once all rules are defined, call endProgram() to load the (simplified)
+	// program into the context object
+	api.endProgram();
+	if (api.dependencyGraph() && api.dependencyGraph()->nodes() > 0) {
+		// program is non tight - add unfounded set checker
+		Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
+		ufs->attachTo(*ctx.master(), api.dependencyGraph()); // register with solver and graph & transfer ownership
+	}
+	
+	// For printing answer sets
+	AspOutPrinter         printer;
+
+	// Since we want to compute more than one
+	// answer set, we need an enumerator.
+	// See enumerator.h for details
+	ctx.addEnumerator(new Clasp::BacktrackEnumerator(0,&printer));
+	ctx.enumerator()->enumerate(0);
+
+	// endInit() must be called once before the search starts
+	ctx.endInit();
+
+	// Aggregates some solving parameters, e.g.
+	//  - restart-strategy
+	//  - ...
+	// See solve_algorithms.h for details
+	Clasp::SolveParams    params;
+
+	// solve() starts the search for answer sets. It uses the 
+	// given parameters to control the search.
+	Clasp::solve(ctx, params);
+}
+
+void AspOutPrinter::reportModel(const Clasp::Solver& s, const Clasp::Enumerator& e) {
+	std::cout << "Model " << e.enumerated << ": \n";
+	// get the symbol table from the solver
+	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+		// print each named atom that is true w.r.t the current assignment
+		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
+			std::cout << it->second.name.c_str() << " ";
+		}
+	}
+	std::cout << std::endl;
+}
+void AspOutPrinter::reportSolution(const Clasp::Solver&, const Clasp::Enumerator&, bool complete) {
+	if (complete) std::cout << "No more models!" << std::endl;
+	else          std::cout << "More models possible!" << std::endl;
+}
+*/
+
 std::string ClaspSolver::idAddressToString(IDAddress adr){
 	std::stringstream ss;
 	ss << adr;
@@ -306,19 +403,49 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 		printer.print(ruleId);
 		programstring << std::endl;
 #endif
-		pb.startRule(Clasp::BASICRULE);
-		if (rule.head.size() == 0){
-			pb.addHead(false_);
+		if (rule.head.size() > 1){
+			// shifting
+			DBGLOG(DBG, "Shifting");
+			for (int keep = 0; keep < rule.head.size(); ++keep){
+				pb.startRule(Clasp::BASICRULE);
+				int hi = 0;
+				BOOST_FOREACH (ID h, rule.head){
+					if (hi == keep){
+						// add literal to head
+						pb.addHead(hexToClasp[h.address].var());
+					}
+					hi++;
+				}
+				BOOST_FOREACH (ID b, rule.body){
+					// add literal to body
+					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+				}
+				// shifted head atoms
+				hi = 0;
+				BOOST_FOREACH (ID h, rule.head){
+					if (hi != keep){
+						// add literal to head
+						pb.addToBody(hexToClasp[h.address].var(), false);
+					}
+					hi++;
+				}
+				pb.endRule();
+			}
+		}else{
+			pb.startRule(Clasp::BASICRULE);
+			if (rule.head.size() == 0){
+				pb.addHead(false_);
+			}
+			BOOST_FOREACH (ID h, rule.head){
+				// add literal to head
+				pb.addHead(hexToClasp[h.address].var());
+			}
+			BOOST_FOREACH (ID b, rule.body){
+				// add literal to body
+				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			}
+			pb.endRule();
 		}
-		BOOST_FOREACH (ID h, rule.head){
-			// add literal to head
-			pb.addHead(hexToClasp[h.address].var());
-		}
-		BOOST_FOREACH (ID b, rule.body){
-			// add literal to body
-			pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
-		}
-		pb.endRule();
 	}
 
 #ifndef NDEBUG
@@ -332,12 +459,13 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 
 	// Once all rules are defined, call endProgram() to load the (simplified)
 	// program into the context object
-	if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
-		DBGLOG(DBG, "Program is not tight, adding unfounded set checker");
+//	if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
+//		DBGLOG(DBG, "Program is not tight, adding unfounded set checker");
 		// program is non tight - add unfounded set checker
+		DBGLOG(DBG, "Adding unfounded set checker");
 		Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
 		ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
-	}
+//	}
 
 	DBGLOG(DBG, "Initially inconsistent: " << !ic);
 
@@ -354,6 +482,9 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	// add propagator
 	ExternalPropagator* ep = new ExternalPropagator(*this);
 	claspInstance.addPost(ep);
+
+	// endInit() must be called once before the search starts
+	claspInstance.endInit();
 
 	// start clasp in a new thread
 	claspFinished = false;
@@ -409,6 +540,11 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 
 	if (nextModel >= models.size()){
 		DBGLOG(DBG, "No more models");
+/*
+std::cout << "EXAMPLE 1" << std::endl;
+example1();
+std::cout << "END EXAMPLE 1" << std::endl;
+*/
 		return InterpretationConstPtr();
 	}else{
 		DBGLOG(DBG, "Retrieve model");

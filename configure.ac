@@ -374,33 +374,11 @@ fi
 
 
 #
-# libgringo (see README)
-#
-AC_ARG_WITH([libgringo],
-  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
-                 [use gringo as genuine grounder, you need to specify the directory
-                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
-  [with_libgringo_support=$withval],
-  [with_libgringo_support=false])
-# conditions in makefiles
-AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
-if test "x${with_libgringo_support}" != xfalse; then
-	# #define in config.h <- config.h.in
-	AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
-  GRINGO_TRUNK_DIR=$with_libgringo_support
-  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
-    AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
-  fi
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappgringo -lgringo -lprogram_opts"
-	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
-	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib/ ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
-  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
-  extsolver_found=true
-fi
-
-#
 # libclasp (see README)
 #
+# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
+#       otherwise we link against the clasp library included in gringo (which is the wrong version);
+#       (ld processes search pathes in the specified order)
 AC_ARG_WITH([libclasp],
   AS_HELP_STRING([--with-libclasp=<clasp-trunk-directory>],
                  [use clasp as genuine solver, you need to specify the directory
@@ -423,6 +401,30 @@ if test "x${with_libclasp_support}" != xfalse; then
   extsolver_found=true
 fi
 
+#
+# libgringo (see README)
+#
+AC_ARG_WITH([libgringo],
+  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
+                 [use gringo as genuine grounder, you need to specify the directory
+                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
+  [with_libgringo_support=$withval],
+  [with_libgringo_support=false])
+# conditions in makefiles
+AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
+if test "x${with_libgringo_support}" != xfalse; then
+	# #define in config.h <- config.h.in
+	AC_DEFINE([HAVE_LIBGRINGO], [1], [Defined if we have --with-libgringo.])
+  GRINGO_TRUNK_DIR=$with_libgringo_support
+  if test "x$GRINGO_TRUNK_DIR" = "xyes"; then
+    AC_MSG_ERROR([You have to specify gringo trunk in --with-libgringo=<gringo-trunk-dir>])
+  fi
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -lappgringo -lgringo -lprogram_opts"
+	EXTSOLVER_LIBS="${EXTSOLVER_LIBS} ${BOOST_FILESYSTEM_LIBS} ${BOOST_SYSTEM_LIBS}"
+	EXTSOLVER_LDFLAGS="${EXTSOLVER_LDFLAGS} -L${GRINGO_TRUNK_DIR}/build/release/lib ${BOOST_FILESYSTEM_LDFLAGS} ${BOOST_SYSTEM_LDFLAGS}"
+  EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
+  extsolver_found=true
+fi
 
 # TODO libclingo search for lib, test lib, set lib variables from these checks
 # (at the moment we rely on the user to correctly give directory)

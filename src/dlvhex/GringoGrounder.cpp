@@ -65,7 +65,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&emptyStream, true /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
 	mask = InterpretationPtr(new Interpretation(ctx.registry()));
 	if (groundProgram.mask != InterpretationConstPtr()){
 		mask->add(*groundProgram.mask);
