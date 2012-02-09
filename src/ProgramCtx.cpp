@@ -236,7 +236,6 @@ void ProgramCtx::addPluginAtomsFromPluginContainer()
     BOOST_FOREACH(PluginAtomPtr pap, plugin->createAtoms(*this))
     {
       assert(!!pap);
-      pap->setRegistry(registry());
       const std::string& pred = pap->getPredicate();
       LOG(DBG,"  got plugin atom " << pred);
       if( pluginAtoms.count(pred) != 0 )
@@ -245,6 +244,7 @@ void ProgramCtx::addPluginAtomsFromPluginContainer()
       }
       else
       {
+        pap->setRegistry(registry());
         pluginAtoms[pred] = pap;
       }
     }
