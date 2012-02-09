@@ -22,11 +22,17 @@
  */
 
 /**
- * @file InternalGroundASPSolver.cpp
+ * @file ClaspSolver.cpp
  * @author Christoph Redl
  *
  * @brief Interface to genuine clasp-based Solver.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_LIBCLASP
 
 #include "dlvhex/ClaspSolver.hpp"
 
@@ -69,17 +75,19 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 
 	// get the symbol table from the solver
-	const Clasp::AtomIndex& symTab = *s.strategies().symTab;
-	for (Clasp::AtomIndex::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		// translate each named atom that is true w.r.t the current assignment into our dlvhex ID
 		if (s.isTrue(it->second.lit) && !it->second.name.empty()) {
-			IDAddress adr = cs.claspToHex[it->second.lit]; // ClaspSolver::stringToIDAddress(it->second.name);
+			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+//			IDAddress adr = cs.claspToHex[it->second.lit];
 			// set it in the model
 			model->setFact(adr);
 		}
 	}
 
 	// remember the model
+	DBGLOG(DBG, "Model is: " << *model);
 	cs.models.push_back(model);
 
 //std::cout << "Model: " << *model << std::endl;
@@ -99,16 +107,18 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 	// translate clasp assignment to hex assignment
 	// get the symbol table from the solver
-	const Clasp::AtomIndex& symTab = *s.strategies().symTab;
-	for (Clasp::AtomIndex::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
+	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		// bitset of all assigned values
 		if (s.isTrue(it->second.lit) || s.isFalse(it->second.lit)) {
-			IDAddress adr = cs.claspToHex[it->second.lit];
+			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+//			IDAddress adr = cs.claspToHex[it->second.lit];
 			factWasSet->setFact(adr);
 		}
 		// bitset of true values (partial interpretation)
 		if (s.isTrue(it->second.lit)) {
-			IDAddress adr = cs.claspToHex[it->second.lit];
+			IDAddress adr = ClaspSolver::stringToIDAddress(it->second.name.c_str());
+//			IDAddress adr = cs.claspToHex[it->second.lit];
 			interpretation->setFact(adr);
 		}
 	}
@@ -143,7 +153,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
 #ifndef NDEBUG
 	std::stringstream ss;
-	ss << "{";
+	ss << "{ ";
 	bool first = true;
 #endif
 
@@ -160,15 +170,17 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 		ss << (clit.sign() ? "" : "!") << clit.var();
 #endif
 	}
+
 #ifndef NDEBUG
-	ss << "}";
+	ss << " }";
+clauseCreator->end();
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 #endif
-	return !clauseCreator->end();
+	return false;
 }
 
 void ClaspSolver::buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
-	pb.newAtom();
+//	pb.newAtom();
 
 	DBGLOG(DBG, "Building atom index");
 	// edb
@@ -176,12 +188,12 @@ void ClaspSolver::buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& p
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
 		if (hexToClasp.find(*en) == hexToClasp.end()){
-			uint32_t c = pb.newAtom();
+			uint32_t c = *en + 2; // pb.newAtom();
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
 			hexToClasp[*en] = Clasp::Literal(c, true);
 
 			std::string str = idAddressToString(*en);
-			claspInstance.strategies().symTab->addUnique(c, Clasp::Atom(str.c_str()));
+			claspInstance.symTab().addUnique(c, str.c_str());
 		}
 		en++;
 	}
@@ -191,42 +203,41 @@ void ClaspSolver::buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& p
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
 			if (hexToClasp.find(h.address) == hexToClasp.end()){
-				uint32_t c = pb.newAtom();
+				uint32_t c = h.address + 2; // pb.newAtom();
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
 				hexToClasp[h.address] = Clasp::Literal(c, true);
 
 				std::string str = idAddressToString(h.address);
-				claspInstance.strategies().symTab->addUnique(c, Clasp::Atom(str.c_str()));
+				claspInstance.symTab().addUnique(c, str.c_str());
 			}
 		}
 		BOOST_FOREACH (ID b, rule.body){
 			if (hexToClasp.find(b.address) == hexToClasp.end()){
-				uint32_t c = pb.newAtom();
+				uint32_t c = b.address + 2; // pb.newAtom();
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
 				hexToClasp[b.address] = Clasp::Literal(c, true);
 
 				std::string str = idAddressToString(b.address);
-				claspInstance.strategies().symTab->addUnique(c, Clasp::Atom(str.c_str()));
+				claspInstance.symTab().addUnique(c, str.c_str());
 			}
 		}
 	}
 }
 
-void ClaspSolver::buildOptimizedAtomIndex(Clasp::Solver& solver){
+void ClaspSolver::buildOptimizedAtomIndex(){
 
 	hexToClasp.clear();
-	claspToHex.clear();
 
 #ifndef NDEBUG
 	std::stringstream ss;
 #endif
 
 	// go through symbol table
-	const Clasp::AtomIndex& symTab = *solver.strategies().symTab;
-	for (Clasp::AtomIndex::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
-		IDAddress hexAdr = stringToIDAddress(it->second.name);
+	const Clasp::SymbolTable& symTab = claspInstance.symTab();
+	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
+		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		hexToClasp[hexAdr] = it->second.lit;
-		claspToHex[it->second.lit] = hexAdr;
+//		claspToHex[it->second.lit] = hexAdr;
 #ifndef NDEBUG
 		ss << "Hex " << hexAdr << " <--> " << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << std::endl;
 #endif
@@ -236,7 +247,8 @@ void ClaspSolver::buildOptimizedAtomIndex(Clasp::Solver& solver){
 
 void* ClaspSolver::runClasp(void *cs){
 	DBGLOG(DBG, "Running clasp");
-	ClaspSolver* claspSolver = (ClaspSolver*)cs;
+
+	ClaspSolver* claspSolver = static_cast<ClaspSolver*>(cs);
 
 	DBGLOG(DBG, "Integrity check of ClaspSolver: " << claspSolver->claspThread);
 
@@ -248,15 +260,17 @@ void* ClaspSolver::runClasp(void *cs){
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p){
 
+	const int false_ = 1;	// 1 is our constant "false"
+
 	reg = ctx.registry();
 
-	clauseCreator = new Clasp::ClauseCreator(&claspInstance);
-	claspInstance.strategies().symTab.reset(new Clasp::AtomIndex());
+	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	
 	Clasp::ProgramBuilder pb;
-//	pb.setEqOptions(0);
-	pb.startProgram(*claspInstance.strategies().symTab, new Clasp::DefaultUnfoundedCheck());
-	pb.setCompute(1, false);	// 1 is our constant "false"
+	Clasp::ProgramBuilder::EqOptions eqOptions;
+//	eqOptions.iters = 0;
+	pb.startProgram(claspInstance, eqOptions);
+	pb.setCompute(false_, false);
 	recentlyBecameInconsistentByAddingNogoods = false;
 
 	buildAtomIndex(p, pb);
@@ -271,10 +285,12 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
+DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 		// add fact
 		pb.startRule();
 		pb.addHead(hexToClasp[*en].var());
 		pb.endRule();
+
 		en++;
 	}
 #ifndef NDEBUG
@@ -290,11 +306,9 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		printer.print(ruleId);
 		programstring << std::endl;
 #endif
+		pb.startRule(Clasp::BASICRULE);
 		if (rule.head.size() == 0){
-			pb.startRule(Clasp::BASICRULE);
-			pb.addHead(1);	// constant "false"
-		}else{
-			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(false_);
 		}
 		BOOST_FOREACH (ID h, rule.head){
 			// add literal to head
@@ -312,25 +326,34 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 //std::cout << std::endl << std::endl;
 //std::cout << "Program: " << programstring.str() << std::endl;
 #endif
+	bool ic = pb.endProgram();
+	// rebuild the atom index as it might have changed due to optimization
+	buildOptimizedAtomIndex();
 
-	bool ic = pb.endProgram(claspInstance, true);
-	DBGLOG(DBG, "Initially inconsistent: " << ic);
-	buildOptimizedAtomIndex(claspInstance);
+	// Once all rules are defined, call endProgram() to load the (simplified)
+	// program into the context object
+	if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
+		DBGLOG(DBG, "Program is not tight, adding unfounded set checker");
+		// program is non tight - add unfounded set checker
+		Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
+		ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
+	}
+
+	DBGLOG(DBG, "Initially inconsistent: " << !ic);
 
 	std::stringstream prog;
 	pb.writeProgram(prog);
+	DBGLOG(DBG, "Program in LParse format: " << prog.str());
 //	std::cout << prog.str() << std::endl;
 
 	// add enumerator
 	ModelEnumerator enumerator(*this);
-	params.setEnumerator(new Clasp::BacktrackEnumerator(0, &enumerator));
+	claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, &enumerator));
+	claspInstance.enumerator()->enumerate(0);
 
 	// add propagator
 	ExternalPropagator* ep = new ExternalPropagator(*this);
 	claspInstance.addPost(ep);
-
-	// solve
-	params.enumerator()->init(claspInstance, 0);
 
 	// start clasp in a new thread
 	claspFinished = false;
@@ -338,7 +361,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		bufferSize = 5;
 		DBGLOG(DBG, "Starting clasp thread");
 		int rc = pthread_create(&claspThread, NULL, runClasp, this);
-		DBGLOG(DBG, "Continuing in main thread (clasp thread has identifier " << claspThread << ")");
+		DBGLOG(DBG, "Continue in main thread (clasp thread has identifier " << claspThread << ")");
 		assert(0 == rc);
 	}else{
 		bufferSize = 0;
@@ -404,8 +427,11 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 			answer->getStorage() -= program.mask->getStorage();
 		}
 
+		DBGLOG(DBG, "Projected " << *intr << " to " << *answer);
 		return answer;
 	}
 }
 
 DLVHEX_NAMESPACE_END
+
+#endif

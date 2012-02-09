@@ -773,7 +773,7 @@ void processOptionsPrePlugin(
 						}
 						else if( solver == "genuinegi" )
 						{
-							#if defined(HAVE_LIBCLINGO)
+							#if defined(HAVE_LIBGRINGO)
 							pctx.config.setOption("GenuineSolver", 2);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
@@ -781,7 +781,7 @@ void processOptionsPrePlugin(
 						}
 						else if( solver == "genuineic" )
 						{
-							#if defined(HAVE_LIBCLINGO)
+							#if defined(HAVE_LIBCLASP)
 							pctx.config.setOption("GenuineSolver", 3);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
@@ -789,7 +789,7 @@ void processOptionsPrePlugin(
 						}
 						else if( solver == "genuinegc" )
 						{
-							#if defined(HAVE_LIBCLINGO)
+							#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
 							pctx.config.setOption("GenuineSolver", 4);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");

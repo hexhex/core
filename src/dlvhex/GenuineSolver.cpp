@@ -75,7 +75,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProg
 		}
 		break;
 	case 2: case 4:	// Gringo + internal solver or clasp
-#ifdef HAVE_LIBCLINGO
+#ifdef HAVE_LIBGRINGO
 		{
 		DBGLOG(DBG, "Instantiating genuine grounder with gringo");
 		GenuineGrounderPtr ptr(new GringoGrounder(ctx, p));
@@ -99,7 +99,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, Ordinar
 		}
 		break;
 	case 3: case 4:	// internal grounder or Gringo + clasp
-#ifdef HAVE_LIBCLINGO
+#ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp");
 		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p));
@@ -112,34 +112,9 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, Ordinar
 	}
 }
 
-/*
-#include <iostream>
-#include <sstream>
-#include <dlvhex/Printer.hpp>
-
-
-std::string ruleToString(ID ruleID, RegistryPtr reg){
-std::stringstream ss;
-RawPrinter p(ss, reg);
-p.print(ruleID);
-return ss.str();
-}
-*/
-
-
 GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
 	GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, p);
 	OrdinaryASPProgram gprog = grounder->getGroundProgram();
-
-/*
-std::cout << "Grounded" << std::endl;
-std::cout << "EDB: " << *(gprog.edb) << std::endl;
-std::cout << "IDB: ";
-BOOST_FOREACH (ID ruleID, gprog.idb){
-	std::cout << ruleToString(ruleID, gprog.edb->getRegistry()) << std::endl;
-}
-*/
-
 
 	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));

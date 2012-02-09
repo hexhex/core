@@ -16,6 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_LIBGRINGO
+
 #include "dlvhex/GringoGrounder.hpp"
 #include <gringo/inclit.h>
 #include <gringo/parser.h>
@@ -25,7 +31,6 @@
 #include <gringo/lparseoutput.h>
 #include <gringo/reifiedoutput.h>
 #include "dlvhex/Rule.hpp"
-
 
 #include <boost/tokenizer.hpp>
 
@@ -60,7 +65,7 @@ void GringoGrounder::Printer::print(ID id){
 	}
 }
 
-GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(true /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&emptyStream, true /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
 	mask = InterpretationPtr(new Interpretation(ctx.registry()));
 	if (groundProgram.mask != InterpretationConstPtr()){
 		mask->add(*groundProgram.mask);
@@ -207,14 +212,11 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	}
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg){
+void GringoGrounder::GroundHexProgramBuilder::printBasicRule(int head, const AtomVec &pos, const AtomVec &neg){
 	rules.push_back(LParseRule(head, pos, neg));
-	if (pos.size() == 0 && neg.size() == 0){
-		facts.push_back(head);
-	}
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg){
+void GringoGrounder::GroundHexProgramBuilder::printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg){
 	rules.push_back(LParseRule(head, pos, neg));
 }
 
@@ -222,7 +224,7 @@ void GringoGrounder::GroundHexProgramBuilder::printChoiceRule(const AtomVec &hea
 	rules.push_back(LParseRule(head, pos, neg));
 }
 
-void GringoGrounder::GroundHexProgramBuilder::printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
+void GringoGrounder::GroundHexProgramBuilder::printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg){
 	// @TODO: weights
 	rules.push_back(LParseRule(head, pos, neg));
 }
@@ -240,6 +242,58 @@ void GringoGrounder::GroundHexProgramBuilder::printComputeRule(int models, const
 	// @TODO
 }
 
+void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
+
+	std::stringstream ss;
+	ss << name;
+	if(arity > 0)
+	{
+		ValVec::const_iterator k = vals_.begin() + atom.second;
+		ValVec::const_iterator end = k + arity;
+		ss << "(";
+		k->print(s_, ss);
+		for(++k; k != end; ++k)
+		{
+			ss << ",";
+			k->print(s_, ss);
+		}
+		ss << ")";
+	}
+	std::string atomstring = ss.str();
+
+	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring);
+
+	if( dlvhexId == ID_FAIL )
+	{
+		// parse groundatom, register and store
+		DBGLOG(DBG,"parsing clingo ground atom '" << atomstring << "'");
+		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+		ogatom.text = atomstring;
+		{
+			// create ogatom.tuple
+			boost::char_separator<char> sep(",()");
+			typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+			tokenizer tok(ogatom.text, sep);
+			for(tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
+			{
+				DBGLOG(DBG,"got token '" << *it << "'");
+				Term term(ID::MAINKIND_TERM, *it);
+				// the following takes care of int vs const/string
+				ID id = ctx.registry()->storeTerm(term);
+				assert(id != ID_FAIL);
+				assert(!id.isVariableTerm());
+				if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+				ogatom.tuple.push_back(id);
+			}
+		}
+		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
+	}
+
+	indexToGroundAtomID[atom.first] = dlvhexId;
+	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
+}
+
+/*
 void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(uint32_t index, const std::string &atomstring){
 
 	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring);
@@ -273,10 +327,16 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(uint32_t ind
 	indexToGroundAtomID[index] = dlvhexId;
 	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << index << " and dlvhex-ID " << dlvhexId);
 }
+*/
 
+void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
+}
+
+/*
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const Symbol &symbol){
 	// @TODO
 }
+*/
 
 uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
@@ -300,19 +360,7 @@ Streams::StreamPtr GringoGrounder::constStream() const
 	return Streams::StreamPtr(constants.release());
 }
 
-void GringoGrounder::setIinit(IncConfig &cfg)
-{
-	if(cfg.iinit != 1)
-	{
-		if(gringo.iinit != 1)
-		{
-			std::cerr << "Warning: The value of --iinit=<num> is overwritten by the encoding with ";
-			std::cerr << cfg.iinit << "." << std::endl;
-		}
-		gringo.iinit = cfg.iinit;
-	}
-}
-
+/*
 void GringoGrounder::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
 {
 	cfg.incStep     = step;
@@ -351,6 +399,7 @@ void GringoGrounder::createModules(Grounder &g)
 	volatile_->parent(cumulative_);
 	cumulative_->parent(base_);
 }
+*/
 
 int GringoGrounder::doRun()
 {
@@ -361,6 +410,7 @@ int GringoGrounder::doRun()
 	std::ostringstream programStream;
 	Printer printer(programStream, ctx.registry());
 
+	// print nonground program
 	if( nongroundProgram.edb != 0 )
 	{
 		// print edb interpretation as facts
@@ -372,7 +422,7 @@ int GringoGrounder::doRun()
 	DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
 
 	std::auto_ptr<Output> o(output());
-	Streams  inputStreams;
+	Streams inputStreams;
 	inputStreams.appendStream(std::auto_ptr<std::istream>(new std::stringstream(programStream.str())), "program");
 	if(gringo.groundInput)
 	{
@@ -387,18 +437,31 @@ int GringoGrounder::doRun()
 	else
 	{
 		IncConfig config;
-		Grounder  g(o.get(), generic.verbose > 2, gringo.heuristics.heuristic);
-		createModules(g);
-		Parser    p(&g, base_, cumulative_, volatile_, config, inputStreams, gringo.compat, gringo.ifixed > 0);
+		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
+		Parser    p(&g, config, inputStreams, gringo.compat);
+
+		config.incBegin = 1;
+		config.incEnd   = config.incBegin + gringo.ifixed;
+		config.incBase  = gringo.ibase;
 
 		o->initialize();
 		p.parse();
-		if(gringo.magic) g.addMagic();
 		g.analyze(gringo.depGraph, gringo.stats);
-		setIinit(config);
-		groundBase(g, config, gringo.iinit, gringo.ifixed, gringo.ifixed);
+		g.ground();
 		o->finalize();
 	}
+
+	// print ground program
+	programStream.str("");
+	if( groundProgram.edb != 0 )
+	{
+		// print edb interpretation as facts
+		groundProgram.edb->printAsFacts(programStream);
+		programStream << "\n";
+	}
+	printer.printmany(groundProgram.idb, "\n");
+	programStream << std::endl;
+	DBGLOG(DBG, "Got the following ground program from Gringo: " << programStream.str());
 
 	// restore cerr output
 	std::cerr.rdbuf(origcerr);
@@ -426,4 +489,6 @@ std::string GringoGrounder::getVersion() const
 }
 
 DLVHEX_NAMESPACE_END
+
+#endif
 

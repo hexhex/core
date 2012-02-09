@@ -28,8 +28,13 @@
  * @brief  Interface to genuine clasp-based Solver.
  */
 
+
+#ifdef HAVE_LIBCLASP
+
 #ifndef CLASPSPSOLVER_HPP_INCLUDED__09122011
 #define CLASPSPSOLVER_HPP_INCLUDED__09122011
+
+#define DISABLE_MULTI_THREADING // we don't need multithreading capabilities
 
 #include "dlvhex/ID.hpp"
 #include "dlvhex/Interpretation.hpp"
@@ -54,6 +59,7 @@
 #include "clasp/program_builder.h"
 #include "clasp/unfounded_check.h"
 #include "clasp/model_enumerators.h"
+#include "clasp/solve_algorithms.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -66,7 +72,7 @@ private:
 
 	bool addNogoodToClasp(Nogood& ng);
 	void buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
-	void buildOptimizedAtomIndex(Clasp::Solver& solver);
+	void buildOptimizedAtomIndex();
 
 	static std::string idAddressToString(IDAddress adr);
 	static IDAddress stringToIDAddress(std::string str);
@@ -101,13 +107,12 @@ protected:
 	int bufferSize;	// maximum number of computed but unrequested models; 0 = unlimited
 	bool claspFinished;
 
-	std::map<Clasp::Literal, IDAddress> claspToHex;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;
 
 	Set<LearningCallback*> learner;
 	std::vector<Nogood> nogoods;
 
-	Clasp::Solver claspInstance;
+	Clasp::SharedContext claspInstance;
 	Clasp::SolveParams params;
 	pthread_t claspThread;
 	Clasp::ClauseCreator* clauseCreator;
@@ -136,5 +141,7 @@ typedef ClaspSolver::Ptr ClaspSolverPtr;
 typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
 
 DLVHEX_NAMESPACE_END
+
+#endif
 
 #endif

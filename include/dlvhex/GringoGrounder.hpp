@@ -16,6 +16,12 @@
 // You should have received a copy of the GNU General Public License
 // along with gringo.  If not, see <http://www.gnu.org/licenses/>.
 
+
+#ifdef HAVE_LIBGRINGO
+
+#if !defined(_GRINGOGROUNDER_HPP)
+#define _GRINGOGROUNDER_HPP
+
 #include "gringo/gringo_options.h"
 #include "gringo/lparseoutput.h"
 #include "gringo/main_app.h"
@@ -27,9 +33,7 @@
 
 #include <vector>
 #include <map>
-
-#if !defined(_GRINGOGROUNDER_HPP)
-#define _GRINGOGROUNDER_HPP
+#include <sstream>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -44,9 +48,9 @@ private:
 	OrdinaryASPProgram groundProgram;
 
 	GringoOptions gringo;
-	::Module *base_;
-	::Module *cumulative_;
-	::Module *volatile_;
+//	::Module *base_;
+//	::Module *cumulative_;
+//	::Module *volatile_;
 
 	class Printer : public RawPrinter{
 	public:
@@ -59,6 +63,7 @@ private:
 
 	class GroundHexProgramBuilder : public LparseConverter{
 	private:
+		std::stringstream emptyStream;
 		uint32_t symbols_;
 		bool hasExternal_;
 		ProgramCtx& ctx;
@@ -77,22 +82,23 @@ private:
 
 		void addSymbol(uint32_t symbol);
 
-		std::map<uint32_t, ID> indexToGroundAtomID;
-		std::vector<uint32_t> facts;
+		std::map<int, ID> indexToGroundAtomID;
 		std::vector<LParseRule> rules;
 	public:
 		GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram);
 		void doFinalize();
 
-		void printBasicRule(uint32_t head, const AtomVec &pos, const AtomVec &neg);
-		void printConstraintRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg);
+		void printBasicRule(int head, const AtomVec &pos, const AtomVec &neg);
+		void printConstraintRule(int head, int bound, const AtomVec &pos, const AtomVec &neg);
 		void printChoiceRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
-		void printWeightRule(uint32_t head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
+		void printWeightRule(int head, int bound, const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 		void printMinimizeRule(const AtomVec &pos, const AtomVec &neg, const WeightVec &wPos, const WeightVec &wNeg);
 		void printDisjunctiveRule(const AtomVec &head, const AtomVec &pos, const AtomVec &neg);
 		void printComputeRule(int models, const AtomVec &pos, const AtomVec &neg);
-		void printSymbolTableEntry(uint32_t symbol, const std::string &name);
-		void printExternalTableEntry(const Symbol &symbol);
+		void printSymbolTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+		void printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name);
+//		void printSymbolTableEntry(uint32_t symbol, const std::string &name);
+//		void printExternalTableEntry(const Symbol &symbol);
 		void forgetStep(int) { }
 		uint32_t symbol();
 	};
@@ -124,11 +130,13 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	// Application interface
 	ProgramOptions::PosOption getPositionalParser() const;
+	void handleSignal(int sig);
+/*
 	void setIinit(IncConfig &cfg);
 	void groundStep(Grounder &g, IncConfig &cfg, int step, int goal);
 	void groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal);
-	void handleSignal(int sig);
 	void createModules(Grounder &g);
+*/
 	int  doRun();
 	std::string getVersion() const;
 	// ---------------------------------------------------------------------------------------
@@ -138,3 +146,4 @@ DLVHEX_NAMESPACE_END
 
 #endif
 
+#endif
