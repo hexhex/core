@@ -55,6 +55,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/date_time.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include "clasp/solver.h"
 #include "clasp/literal.h"
@@ -70,17 +71,9 @@ class LearningCallback;
 
 class ClaspSolver : public GenuineGroundSolver{
 private:
-	bool recentlyBecameInconsistentByAddingNogoods;
-
-	bool addNogoodToClasp(Nogood& ng);
-	void buildAtomIndex(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
-	void buildOptimizedAtomIndex();
-
 	boost::thread* claspThread;
 
-	static std::string idAddressToString(IDAddress adr);
-	static IDAddress stringToIDAddress(std::string str);
-
+	// answer set processing
 	struct ModelEnumerator : public Clasp::Enumerator::Report {
 		ClaspSolver& cs;
 		ModelEnumerator(ClaspSolver& cs) : cs(cs){}
@@ -88,6 +81,7 @@ private:
 		void reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete);
 	};
 
+	// external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
 	private:
 		ClaspSolver& cs;
@@ -98,37 +92,51 @@ private:
 		virtual bool propagate(Clasp::Solver& s);
 	};
 
+
+	// interface to clasp internals
+	bool addNogoodToClasp(Nogood& ng);
+	void buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
+	void buildOptimizedSymbolTable();
+
+	// iota/atio wrapper
+	static std::string idAddressToString(IDAddress adr);
+	static IDAddress stringToIDAddress(std::string str);
+
+	// startup routine for clasp thread
 	void runClasp();
 
+	// initialization
+	bool sendProgramToClasp(OrdinaryASPProgram& p);
 protected:
 	// structural program information
 	ProgramCtx& ctx;
 	OrdinaryASPProgram program;
 	RegistryPtr reg;
 
-	std::vector<InterpretationPtr> models;
-	boost::mutex models_mutex;
-	boost::condition models_condition;
-	int nextModel;
-	int bufferSize;	// maximum number of computed but unrequested models; 0 = unlimited
-	bool claspFinished;
+	// communiaction between main thread and clasp thread
+	InterpretationPtr nextModel;
+	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
+	bool modelRequest;
+	bool terminationRequest;
+	bool endOfModels;
 
-	std::map<IDAddress, Clasp::Literal> hexToClasp;
-
+	// external behavior learning
 	Set<LearningCallback*> learner;
 	std::vector<Nogood> nogoods;
 
+	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
 	Clasp::ProgramBuilder pb;
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
+	std::map<IDAddress, Clasp::Literal> hexToClasp;
 
 public:
-	virtual std::string getStatistics();
-
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
 	virtual ~ClaspSolver();
+
+	virtual std::string getStatistics();
 
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);
