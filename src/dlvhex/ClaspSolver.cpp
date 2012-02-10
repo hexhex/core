@@ -25,7 +25,7 @@
  * @file ClaspSolver.cpp
  * @author Christoph Redl
  *
- * @brief Interface to genuine clasp-based Solver.
+ * @brief Interface to genuine clasp 2.0.5-based Solver.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -174,6 +174,8 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	DBGLOG(DBG, "ClaspThread: Waiting for further requests");
 	cs.sem_request.wait();
 
+	// @TODO: find a breakout possibility to terminate only the current thread!
+	//        the following throw kills the whole application, which is not what we want
 	if (cs.terminationRequest) throw std::runtime_error("ClaspThread was requested to terminate");
 }
 
@@ -216,10 +218,10 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	// add the produced nogoods to clasp
 	bool inconsistent = false;
 	DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
-	BOOST_FOREACH (Nogood ng, cs.nogoods){
-		inconsistent |= cs.addNogoodToClasp(ng);
+	for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
+		inconsistent |= cs.addNogoodToClasp(cs.nogoods[i]);
 	}
-	cs.nogoods.clear();
+	cs.translatedNogoods = cs.nogoods.size();
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	return !inconsistent;
 
@@ -244,7 +246,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()) return false;
 	}
 
-	// translate
+	// translate dlvhex::Nogood to clasp clause
 	clauseCreator->start();
 	BOOST_FOREACH (ID lit, ng){
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
@@ -346,20 +348,20 @@ void ClaspSolver::runClasp(){
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
 	DBGLOG(DBG, "ClaspThread: Waiting for requests");
-	this->sem_request.wait();	// continue with execution of main thread
+	sem_request.wait();	// continue with execution of main thread
 
-	Clasp::solve(this->claspInstance, this->params);
+	Clasp::solve(claspInstance, params);
 
 	DBGLOG(DBG, "Clasp terminated -> Exit thread");
 	endOfModels = true;
-	this->sem_answer.post();
+	sem_answer.post();
 }
 
 bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 
 	const int false_ = 1;	// 1 is our constant "false"
 
-//	eqOptions.iters = 0;
+//	eqOptions.iters = 0;	// disable program optimization
 	pb.startProgram(claspInstance, eqOptions);
 	pb.setCompute(false_, false);
 
@@ -398,7 +400,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 #endif
 		if (rule.head.size() > 1){
 			// shifting
-			DBGLOG(DBG, "Shifting");
+			DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
 			for (int keep = 0; keep < rule.head.size(); ++keep){
 				pb.startRule(Clasp::BASICRULE);
 				int hi = 0;
@@ -453,7 +455,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0){
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), modelRequest(false), terminationRequest(false), endOfModels(false), translatedNogoods(0){
 
 	reg = ctx.registry();
 
@@ -488,8 +490,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		claspInstance.endInit();
 
 		DBGLOG(DBG, "Starting clasp thread");
-		this->endOfModels = false;
-		terminationRequest = false;
 		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
 }
@@ -500,7 +500,8 @@ ClaspSolver::~ClaspSolver(){
 	if (!endOfModels){
 		DBGLOG(DBG, "ClaspSolver destructor: Clasp is still running - Requesting all outstanding models");
 		while (getNextModel() != InterpretationConstPtr());
-/*
+
+/*		// activate this code if there is a breakout possibility in ModelEnumerator::reportModel in case of termination requests
 		DBGLOG(DBG, "MainThread destructor: clasp is still active");
 		DBGLOG(DBG, "MainThread destructor: sending termination request");
 		terminationRequest = true;
@@ -541,7 +542,8 @@ int ClaspSolver::addNogood(Nogood ng){
 }
 
 void ClaspSolver::removeNogood(int index){
-	nogoods.erase(nogoods.begin() + index);
+//	nogoods.erase(nogoods.begin() + index);
+	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
 }
 
 int ClaspSolver::getNogoodCount(){

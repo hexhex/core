@@ -160,6 +160,9 @@ struct Registry:
   // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
+  // create a globally new constand term (new ID and new text)
+  ID getNewConstantTerm(std::string prefix = "unnamed");
+
   // check if rule is contained in registry
   // if yes return integer id
   // otherwise store and return new id

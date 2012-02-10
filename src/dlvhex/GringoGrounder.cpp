@@ -1,20 +1,32 @@
-// Copyright (c) 2010, Arne König
-// Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
-//
-// This file is part of gringo.
-//
-// gringo is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// gringo is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
+/* dlvhex -- Answer-Set Programming with external interfaces.
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
+ * 
+ * This file is part of dlvhex.
+ *
+ * dlvhex is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * dlvhex is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with dlvhex; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
+ */
+
+/**
+ * @file ClaspSolver.cpp
+ * @author Christoph Redl
+ *
+ * @brief Interface to genuine gringo 3.0.4-based grounder.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -66,6 +78,12 @@ void GringoGrounder::Printer::print(ID id){
 }
 
 GringoGrounder::GroundHexProgramBuilder::GroundHexProgramBuilder(ProgramCtx& ctx, OrdinaryASPProgram& groundProgram) : LparseConverter(&emptyStream, false /* disjunction shifting */), ctx(ctx), groundProgram(groundProgram), symbols_(1){
+	// Note: We do NOT use shifting but ground disjunctive rules as they are.
+	//       Shifting is instead done in ClaspSolver (as clasp does not support disjunctions)
+	//       This allows for using also other solver-backends which support disjunctive programs.
+
+	// take the mask passed with the input program;
+	// it might be extended during grounding in case that intermediate symbols are introduced
 	mask = InterpretationPtr(new Interpretation(ctx.registry()));
 	if (groundProgram.mask != InterpretationConstPtr()){
 		mask->add(*groundProgram.mask);
@@ -78,17 +96,10 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 	if (indexToGroundAtomID.find(symbol) != indexToGroundAtomID.end()){
 		// nothing to do
 	}else{
-		// create a dummy atom
-		std::stringstream name;
-		name << "unnamed";
-		static int nr = 0;
-		name << (nr++);
-
 		// create a propositional atom with this name
 		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		ogatom.text = name.str();
-		Term term(ID::MAINKIND_TERM, name.str());
-		ID tid = ctx.registry()->storeTerm(term);
+		ID tid = ctx.registry()->getNewConstantTerm("unnamedPred");
+		ogatom.text = ctx.registry()->terms.getByID(tid).symbol;
 		assert(tid != ID_FAIL);
 		assert(!tid.isVariableTerm());
 		if( tid.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
@@ -109,6 +120,8 @@ void GringoGrounder::GroundHexProgramBuilder::addSymbol(uint32_t symbol){
 
 void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 
+	const int false_ = 1;	// Gringo index 1 is constant "false"
+
 	DBGLOG(DBG, "Constructing symbol table");
 	printSymbolTable();
 
@@ -119,13 +132,13 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 	BOOST_FOREACH (LParseRule lpr, rules){
 		if (lpr.head.size() == 1 && lpr.pos.size() == 0 && lpr.neg.size() == 0){
 			// facts
-			if (lpr.head[0] == 1){
+			if (lpr.head[0] == false_){
 				// special case: unsatisfiable rule:  F :- T
 				// set some (arbitrary) atom A and make a constraint :- A
 
 				OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 				ogatom.text = "sat";
-				Term term(ID::MAINKIND_TERM, "sat");
+				Term term(ID::MAINKIND_TERM, "sat");	// it is no problem if this term does already exist
 				ID tid = ctx.registry()->storeTerm(term);
 				assert(tid != ID_FAIL);
 				assert(!tid.isVariableTerm());
@@ -147,17 +160,15 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 				// make sure that the fact is in the symbol table
 				addSymbol(lpr.head[0]);
 
-//				// skip facts which are not in the symbol table
-//				if (indexToGroundAtomID.find(lpr.head[0]) != indexToGroundAtomID.end()){
+				// skip facts which are not in the symbol table
 				DBGLOG(DBG, "Setting fact " << indexToGroundAtomID[lpr.head[0]].address << " (Gringo: " << lpr.head[0] << ")");
 				edb->setFact(indexToGroundAtomID[lpr.head[0]].address);
-//				}
 			}
 		}else{
 			// rules
 			Rule r(ID::MAINKIND_RULE);
 			BOOST_FOREACH (uint32_t h, lpr.head){
-				if (h != 1){
+				if (h != false_){
 					addSymbol(h);
 
 					if (indexToGroundAtomID.find(h) == indexToGroundAtomID.end()){
@@ -165,16 +176,10 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 						ss << "Grounding Error: Symbol '" << h << "' not found in symbol table";
 						throw GeneralError(ss.str());
 					}
-					assert(indexToGroundAtomID.find(h) != indexToGroundAtomID.end());
 					r.head.push_back(indexToGroundAtomID[h]);
 				}
 			}
 			BOOST_FOREACH (uint32_t p, lpr.pos){
-				// There seems to be a bug in Gringo:
-				// some symbols, which are facts, are not in the symbol table
-				// however, we can them optimize away as they are facts
-//				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end() && std::find(facts.begin(), facts.end(), p) != facts.end()) continue;
-
 				addSymbol(p);
 
 				if (indexToGroundAtomID.find(p) == indexToGroundAtomID.end()){
@@ -183,7 +188,6 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-				assert(indexToGroundAtomID.find(p) != indexToGroundAtomID.end());
 				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, indexToGroundAtomID[p].address));
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
@@ -195,8 +199,6 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-
-				assert(indexToGroundAtomID.find(n) != indexToGroundAtomID.end());
 				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, indexToGroundAtomID[n].address));
 			}
 
@@ -403,7 +405,7 @@ void GringoGrounder::createModules(Grounder &g)
 
 int GringoGrounder::doRun()
 {
-	// "disable" std::cerr output
+	// redirect std::cerr output to temporary string because gringo spams std:cerr with lots of useless warnings
 	std::stringstream errstr;
 	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
 
@@ -421,6 +423,7 @@ int GringoGrounder::doRun()
 	programStream << std::endl;
 	DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
 
+	// grounding
 	std::auto_ptr<Output> o(output());
 	Streams inputStreams;
 	inputStreams.appendStream(std::auto_ptr<std::istream>(new std::stringstream(programStream.str())), "program");

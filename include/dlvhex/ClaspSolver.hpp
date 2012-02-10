@@ -25,7 +25,7 @@
  * @file   ClaspSolver.hpp
  * @author Christoph Redl <redl@kr.tuwien.ac.at>
  * 
- * @brief  Interface to genuine clasp-based Solver.
+ * @brief  Interface to genuine clasp 2.0.5-based solver.
  */
 
 
@@ -40,14 +40,16 @@
 #include "dlvhex/Interpretation.hpp"
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/Nogood.hpp"
-#include <vector>
-#include <set>
-#include <map>
-#include <boost/foreach.hpp>
 #include "dlvhex/Printhelpers.hpp"
 #include "dlvhex/OrdinaryASPProgram.hpp"
 #include "dlvhex/GenuineSolver.hpp"
-//#include <bm/bm.h>
+#include "dlvhex/Set.hpp"
+
+#include <vector>
+#include <set>
+#include <map>
+
+#include <boost/foreach.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/shared_ptr.hpp>
@@ -71,6 +73,12 @@ class LearningCallback;
 
 class ClaspSolver : public GenuineGroundSolver{
 private:
+	// as clasp offers only a callback interface for answer set processing,
+	// we need a separate thread for providing a getNextModel-method
+	// Note: claspThread is active iff the main thread is blocked, i.e.
+	//       we don't have real multithreading; the thread is only used to
+	//       allow for blocking return from ModelEnumerator::reportModel
+	//       without blocking the whole dlvhex instance.
 	boost::thread* claspThread;
 
 	// answer set processing
@@ -81,24 +89,22 @@ private:
 		void reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete);
 	};
 
-	// external behavior learning
+	// propagator for external behavior learning
 	class ExternalPropagator : public Clasp::PostPropagator{
 	private:
+		// reference to other class instance
 		ClaspSolver& cs;
-
-		bool addNogoodToSolver(Clasp::ClauseCreator& cg, Nogood& ng);
 	public:
 		ExternalPropagator(ClaspSolver& cs) : cs(cs){}
 		virtual bool propagate(Clasp::Solver& s);
 	};
-
 
 	// interface to clasp internals
 	bool addNogoodToClasp(Nogood& ng);
 	void buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
 	void buildOptimizedSymbolTable();
 
-	// iota/atio wrapper
+	// itoa/atio wrapper
 	static std::string idAddressToString(IDAddress adr);
 	static IDAddress stringToIDAddress(std::string str);
 
@@ -123,6 +129,7 @@ protected:
 	// external behavior learning
 	Set<LearningCallback*> learner;
 	std::vector<Nogood> nogoods;
+	int translatedNogoods;	// largest nogood index within nogoods which has already been translated and sent to clasp
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
@@ -130,7 +137,7 @@ protected:
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
-	std::map<IDAddress, Clasp::Literal> hexToClasp;
+	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
 
 public:
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);

@@ -137,7 +137,8 @@ protected:
 	Set<ID> getExternalSupport(const Set<ID>& s);
 	Set<ID> satisfiesIndependently(ID ruleID, const Set<ID>& y);
 	Nogood getLoopNogood(const Set<ID>& ufs);
-	ID createNewAtom(std::string predName);
+//	ID createNewAtom(std::string predName);
+	ID createNewAtom(ID predID);
 	ID createNewBodyAtom();
 	std::string toString(const Set<ID>& lits);
 	std::string toString(const Set<IDAddress>& lits);

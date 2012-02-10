@@ -1,31 +1,38 @@
-// Copyright (c) 2010, Arne König
-// Copyright (c) 2010, Roland Kaminski <kaminski@cs.uni-potsdam.de>
-//
-// This file is part of gringo.
-//
-// gringo is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// gringo is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with gringo.  If not, see <http://www.gnu.org/licenses/>.
+/* dlvhex -- Answer-Set Programming with external interfaces.
+ * Copyright (C) 2005, 2006, 2007 Roman Schindlauer
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010 Thomas Krennwallner
+ * Copyright (C) 2009, 2010 Peter Schüller
+ * 
+ * This file is part of dlvhex.
+ *
+ * dlvhex is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * dlvhex is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with dlvhex; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA.
+ */
 
+/**
+ * @file   GringoGrounder.hpp
+ * @author Christoph Redl <redl@kr.tuwien.ac.at>
+ * 
+ * @brief  Interface to genuine gringo 3.0.4-based grounder.
+ */
 
 #ifdef HAVE_LIBGRINGO
 
-#if !defined(_GRINGOGROUNDER_HPP)
+#ifndef _GRINGOGROUNDER_HPP
 #define _GRINGOGROUNDER_HPP
 
-#include "gringo/gringo_options.h"
-#include "gringo/lparseoutput.h"
-#include "gringo/main_app.h"
-#include <gringo/streams.h>
 #include "dlvhex/ProgramCtx.h"
 #include "dlvhex/OrdinaryASPProgram.hpp"
 #include "dlvhex/Printer.hpp"
@@ -34,6 +41,11 @@
 #include <vector>
 #include <map>
 #include <sstream>
+
+#include "gringo/gringo_options.h"
+#include "gringo/lparseoutput.h"
+#include "gringo/main_app.h"
+#include "gringo/streams.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

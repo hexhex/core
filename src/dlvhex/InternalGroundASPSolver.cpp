@@ -756,10 +756,18 @@ Nogood InternalGroundASPSolver::getLoopNogood(const Set<ID>& ufs){
 	return loopNogood;
 }
 
+/*
 ID InternalGroundASPSolver::createNewAtom(std::string predName){
 	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	Term predTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, predName);
 	ID predID = reg->storeTerm(predTerm);
+	atom.tuple.push_back(predID);
+	return createLiteral(reg->storeOrdinaryGAtom(atom).address);
+}
+*/
+
+ID InternalGroundASPSolver::createNewAtom(ID predID){
+	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	atom.tuple.push_back(predID);
 	return createLiteral(reg->storeOrdinaryGAtom(atom).address);
 }
@@ -769,7 +777,8 @@ ID InternalGroundASPSolver::createNewBodyAtom(){
 	bodyPred << bodyAtomPrefix << bodyAtomNumber;
 	DBGLOG(DBG, "Creating body atom " << bodyPred);
 	bodyAtomNumber++;
-	ID bodyAtom = createNewAtom(bodyPred.str());
+//	ID bodyAtom = createNewAtom(bodyPred.str());
+	ID bodyAtom = createNewAtom(reg->getNewConstantTerm("body"));
 	allFacts.insert(bodyAtom.address);
 	return bodyAtom;
 }
