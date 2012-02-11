@@ -466,6 +466,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 	// if the program is initially inconsistent we do not need to do a search at all
 	if (initiallyInconsistent){
 		endOfModels = true;
+		claspThread = NULL;
 	}else{
 		DBGLOG(DBG, "Adding unfounded set checker");
 		Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
@@ -490,6 +491,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		claspInstance.endInit();
 
 		DBGLOG(DBG, "Starting clasp thread");
+
 		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
 }
@@ -511,11 +513,16 @@ ClaspSolver::~ClaspSolver(){
 		claspThread->join();
 		DBGLOG(DBG, "MainThread destructor: ClaspThread terminated");
 */
+		DBGLOG(DBG, "Joining ClaspThread");
+		claspThread->join();
 	}else{
 		DBGLOG(DBG, "ClaspSolver destructor: Clasp has already terminated");
 	}
-
+	DBGLOG(DBG, "Deleting ClauseCreator");
 	delete clauseCreator;
+
+	DBGLOG(DBG, "Deleting ClaspThread");
+	if (claspThread) delete claspThread;
 }
 
 std::string ClaspSolver::getStatistics(){
