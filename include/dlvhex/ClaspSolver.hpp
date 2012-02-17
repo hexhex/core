@@ -101,6 +101,8 @@ private:
 
 	// interface to clasp internals
 	bool addNogoodToClasp(Nogood& ng);
+	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
+	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
 	void buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
 	void buildOptimizedSymbolTable();
 

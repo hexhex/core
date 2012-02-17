@@ -238,7 +238,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
-claspInstance.enableUpdateShortImplications(false);
+	//claspInstance.enableUpdateShortImplications(false);
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -269,30 +269,92 @@ claspInstance.enableUpdateShortImplications(false);
 	ss << " }";
 	clauseCreator->end();
 
-if (claspInstance.master()->numLearntConstraints() > 0){
-	Clasp::LitVec lv;
-	Clasp::LearntConstraint& lc = claspInstance.master()->getLearnt(claspInstance.master()->numLearntConstraints() - 1);
-	if (lc.clause()) lc.clause()->toLits(lv);
+	/*
+	if (claspInstance.master()->numLearntConstraints() > 0){
+		Clasp::LitVec lv;
+		Clasp::LearntConstraint& lc = claspInstance.master()->getLearnt(claspInstance.master()->numLearntConstraints() - 1);
 
-	std::stringstream ssb;
-	std::cout << "Adding nogood " << ng << " as clasp-clause " << ss.str() << std::endl;
-	std::cout << "Most recent clasp clause: ";
-	BOOST_FOREACH (Clasp::Literal l, lv){
-		std::cout << (l.sign() ? "" : "!") << l.var() << ", ";
-		ssb << "{";
-		for (int i = 0; i < claspToHex[l].size(); ++i) ssb << "-" << claspToHex[l][i] << ", ";
-		Clasp::Literal ln(l.var(), !l.sign());
-		for (int i = 0; i < claspToHex[ln].size(); ++i) ssb << claspToHex[ln][i] << ", ";
-		ssb << "}, ";
+		std::vector<std::vector<ID> > ngg = convertClaspNogood(lc);
+
+		BOOST_FOREACH (std::vector<ID> ng, ngg){
+			std::cout << "{";
+			BOOST_FOREACH (ID id, ng){
+				std::cout << (id.isNaf() ? "-" : "") << id.address << ", ";
+			}
+			std::cout << "} x ";
+		}
+		std::cout << std::endl;
+
+		std::vector<Nogood> nogoods = convertClaspNogood(ngg);
+		BOOST_FOREACH (Nogood nogood, nogoods){
+			std::cout << "NG: " << nogood << std::endl;
+		}
 	}
-	std::cout << std::endl;
-
-	std::cout << "Backtranslation to dlvhex: " << ssb.str() << std::endl;
-}
+	*/
 
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 #endif
 	return false;
+}
+
+std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
+
+	// A clasp literal possibly maps to multiple dlvhex literals
+	// (due to optimization, equivalent and antivalent variables are represented by the same clasp literal).
+	// Therefore a clasp clause can represent several dlvhex nogoods.
+	// The result of this function is a vector of vectors of IDs.
+	// The outer vector has one element for each clasp literal. The inner vector enumerates all possible back-translations of the clasp literal to dlvhex.
+
+	std::vector<std::vector<ID> > ret;
+
+	if (learnedConstraint.clause()){
+		Clasp::LitVec lv;
+		learnedConstraint.clause()->toLits(lv);
+
+		BOOST_FOREACH (Clasp::Literal l, lv){
+			// create for each clasp literal a vector of all possible back-translations to dlvhex
+			std::vector<ID> translations;
+			for (int i = 0; i < claspToHex[l].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[l][i]));
+			Clasp::Literal ln(l.var(), !l.sign());
+			for (int i = 0; i < claspToHex[ln].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[ln][i]));
+			ret.push_back(translations);
+		}
+	}
+	return ret;
+}
+
+std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> >& nogoods){
+
+	// The method "unfolds" a set of nogoods, represented as
+	// { l1[1], ..., l1[n1] } x { l2[1], ..., l2[n2] } x ... x { lk[1], ..., lk[nk] }
+	// into a set of nogoods
+
+	std::vector<Nogood> ret;
+
+	std::vector<int> ind(nogoods.size());
+	for (int i = 0; i < nogoods.size(); ++i) ind[i] = 0;
+	while (true){
+		if (ind[0] >= nogoods[0].size()) break;
+
+		// translate
+		Nogood ng;
+		for (int i = 0; i < nogoods.size(); ++i){
+			ng.insert(nogoods[i][ind[i]]);
+		}
+		ret.push_back(ng);
+
+		int k = nogoods.size() - 1;
+		ind[k]++;
+		while (ind[k] >= nogoods[k].size()){
+			ind[k] = 0;
+			k--;
+			if (k < 0) break;
+			ind[k]++;
+			if (ind[0] >= nogoods[0].size()) break;
+		}
+	}
+
+	return ret;
 }
 
 void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
