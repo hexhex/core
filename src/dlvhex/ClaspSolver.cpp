@@ -185,6 +185,13 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
+/*
+	Nogood ng;
+	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 0));
+	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 2));
+	cs.addNogoodToClasp(ng);
+*/
+
 	if (cs.learner.size() != 0){
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
@@ -226,19 +233,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
-
-
-/*
-	Nogood ng;
-	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 0));
-	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 2));
-	return addNogoodToSolver(cg, ng);
-*/
 }
 
 bool ClaspSolver::addNogoodToClasp(Nogood& ng){
-
-	//claspInstance.enableUpdateShortImplications(false);
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -269,6 +266,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 	ss << " }";
 	clauseCreator->end();
 
+	//std::cout << claspInstance.numTernary() << ", " << claspInstance.numBinary() << ", " << claspInstance.numLearntShort() << std::endl;
 	/*
 	if (claspInstance.master()->numLearntConstraints() > 0){
 		Clasp::LitVec lv;
@@ -544,9 +542,30 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
+/*
+class MyDistributor : public Clasp::Distributor{
+public:
+	uint32 receive(const Clasp::Solver& in, Clasp::SharedLiterals** out, uint32 maxOut){
+		std::cout << "Distributing learned knowledge" << std::endl;
+	}
+
+	MyDistributor() : Clasp::Distributor(2, 3, 32){
+	}
+
+protected:
+	void doPublish(const Clasp::Solver& source, Clasp::SharedLiterals* lits){
+		std::cout << "Distributing learned knowledge" << std::endl;
+	}
+};
+*/
+
 ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), modelRequest(false), terminationRequest(false), endOfModels(false), translatedNogoods(0){
 
 	reg = ctx.registry();
+
+//claspInstance.enableUpdateShortImplications(false);
+//claspInstance.enableConstraintSharing();
+//claspInstance.enableLearntSharing(new MyDistributor());
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = sendProgramToClasp(p);
