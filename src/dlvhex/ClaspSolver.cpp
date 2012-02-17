@@ -45,6 +45,7 @@
 #include <boost/graph/strong_components.hpp>
 
 #include "clasp/program_rule.h"
+#include "clasp/constraint.h"
 
 
 DLVHEX_NAMESPACE_BEGIN
@@ -223,6 +224,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	}
 	cs.translatedNogoods = cs.nogoods.size();
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
+
 	return !inconsistent;
 
 
@@ -236,6 +238,8 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
+claspInstance.enableUpdateShortImplications(false);
+
 #ifndef NDEBUG
 	std::stringstream ss;
 	ss << "{ ";
@@ -247,7 +251,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 	}
 
 	// translate dlvhex::Nogood to clasp clause
-	clauseCreator->start();
+	clauseCreator->start(Clasp::Constraint_t::learnt_other);
 	BOOST_FOREACH (ID lit, ng){
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
 		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
@@ -264,6 +268,28 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 #ifndef NDEBUG
 	ss << " }";
 	clauseCreator->end();
+
+if (claspInstance.master()->numLearntConstraints() > 0){
+	Clasp::LitVec lv;
+	Clasp::LearntConstraint& lc = claspInstance.master()->getLearnt(claspInstance.master()->numLearntConstraints() - 1);
+	if (lc.clause()) lc.clause()->toLits(lv);
+
+	std::stringstream ssb;
+	std::cout << "Adding nogood " << ng << " as clasp-clause " << ss.str() << std::endl;
+	std::cout << "Most recent clasp clause: ";
+	BOOST_FOREACH (Clasp::Literal l, lv){
+		std::cout << (l.sign() ? "" : "!") << l.var() << ", ";
+		ssb << "{";
+		for (int i = 0; i < claspToHex[l].size(); ++i) ssb << "-" << claspToHex[l][i] << ", ";
+		Clasp::Literal ln(l.var(), !l.sign());
+		for (int i = 0; i < claspToHex[ln].size(); ++i) ssb << claspToHex[ln][i] << ", ";
+		ssb << "}, ";
+	}
+	std::cout << std::endl;
+
+	std::cout << "Backtranslation to dlvhex: " << ssb.str() << std::endl;
+}
+
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 #endif
 	return false;
@@ -327,6 +353,7 @@ void ClaspSolver::buildOptimizedSymbolTable(){
 	for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 		IDAddress hexAdr = stringToIDAddress(it->second.name.c_str());
 		hexToClasp[hexAdr] = it->second.lit;
+		claspToHex[it->second.lit].push_back(hexAdr);
 #ifndef NDEBUG
 		ss << "Hex " << hexAdr << " <--> " << (it->second.lit.sign() ? "" : "!") << it->second.lit.var() << std::endl;
 #endif

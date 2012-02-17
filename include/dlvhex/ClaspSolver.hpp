@@ -138,6 +138,7 @@ protected:
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
+	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
 
 public:
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
