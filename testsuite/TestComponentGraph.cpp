@@ -28,20 +28,24 @@
  * @brief  Test the component graph
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <boost/cstdint.hpp>
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginInterface.h"
+#include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/PluginInterface.h"
 
 #define BOOST_TEST_MODULE "TestComponentGraph"
 #include <boost/test/unit_test.hpp>
 
-#include "fixturesExt1.hpp"
-#include "fixturesMCS.hpp"
-#include "graphviz.hpp"
+#include "fixturesExt1.h"
+#include "fixturesMCS.h"
+#include "graphviz.h"
 
 #include <iostream>
 #include <fstream>
@@ -117,6 +121,8 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
   compgraph.writeGraphViz(filet, false);
   makeGraphVizPdf(fnamet);
 
+	#warning TODO create new testcases for EvalGraphBuilder instead of component collapsing tests
+	#if 0
 	// test collapsing (poor (wo)man's way)
 	// [we trust on the order of components to stay the same!]
 	{
@@ -154,6 +160,7 @@ BOOST_FIXTURE_TEST_CASE(testExt1, ProgramExt1ProgramCtxDependencyGraphFixture)
 		Component comp2 = compgraph.collapseComponents(coll2);
 		LOG(INFO,"collapsing 2 yielded component " << comp2);
 	}
+	#endif
 
 	// print final result
 	{

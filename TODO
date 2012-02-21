@@ -1,5 +1,6 @@
 -*- org -*-
 
+* TODO think about whether benchmarking should use different mutexes or thread-local storage instead of mutexes
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
 * TODO allow --solver=/path/to/solver?
@@ -14,54 +15,20 @@ other stuff: <http://graphml.graphdrawing.org/>
 
 Obviously, Boost.Graph has support for it.
 * TODO Check if the undecorated external atom replacement and aux names are working
-* TODO Fix extatom3.hex and dawg.hex testcases
+* TODO Fix dawg.hex testcases
 This goes in line with GuessCheckModelGenerator: if there are already
 solved stratified replacement atoms in the result and there are
 unstratified external atoms in the GnC-component, the guessed model
 also contains the replacement atoms from the input result, hence
 making the check always incompatible with the guess. This need to be
 fixed by introducing a better numbering scheme for the replacement
-atoms.
-* TODO Add Component Optimizer API
-We should allow to optimize the components: generalize component API
-and dependency graph API.
-
-For instance, we can move constraints to the closest possible
-component in order to kill impossible models early.
-* TODO Return a list of rewriters/optimizers
-And adapt to shared_ptrs. This gives greater flexibility to the plugin
-programmers.
-* TODO rebuild depgraph after invoking an optimizer?
-check the interface for optimizers...
+atoms. [PS: probably solved, extatom3.hex now works, however dawg.hex cannot
+work as we do not support namespaces]
 * TODO use boost iostreams for retrieving URLs/ASPsolver/dlt?
 <http://www.boost.org/libs/iostreams/doc/index.html>
 mmap'd file(s)?
-* TODO Fix Term's namespace handling
-We need to add qname support to the Terms, i.e., store prefix and
-localname separately.
-
-Also check boost spirit's symbol table implementation:
-<http://spirit.sourceforge.net/distrib/spirit_1_8_5/libs/spirit/doc/symbols.html>
-
-URIs are effectively identifiers, so namespace prefixes should be
-integers, or map to a namespace table.
-* TODO Move strong negation handling to Term
-Whenever we create a symbol with '-' as first character, or a ctor is
-called with the proper parameter, we set a negation flag in Term.
-* TODO Move auxiliary predicates to Term
-Whenever we create an auxiliary symbol, we tag it in the symbol table
-with the "aux tag."
-
-In general, Terms are immutable wrappers (Flyweights) for the symbol
-table, hence, creating symbols can only be achieved via Term's ctors
-(and no setter methods).
 * TODO Global URI API
 Most plugins need URI handling (as well as dlvhex).
-* TODO Remove replacement/aux name handling from ExternalAtom
-Replacement name == function name, and auxiliary name is generated on
-the fly in GraphBuilder. But we need some context for EvaluateExtatom,
-since it needs to AtomSet::matchPredicate() the auxname for the
-function call. (Or we can matchPredicate in ExternalComponent?)
 * TODO RuleBuilder for all the internal rewriting processes
 Make the rewritings explicit through a dedicated rewriting
 hierarchy. We need to rewrite in
@@ -82,16 +49,7 @@ plugins.
 * TODO Semantics API
 Design proper interfaces for different semantics, e.g., HEX, WFS,
 etc. Should we allow plugins to add new semantic computations?
-* TODO Let plugins maintain global state in the program itself?
-Like
-  #document(foobar.xml)
-  a(X) :- &xpath['//person'](X).
-or
-  #ontology(hugo.owl)
-  a(X) :- DL[Q](X).
-* TODO Query support
-And what kind of queries can we push to dlv? (Query answer parser must
-be created!)
+* TODO what kind of queries can we push to dlv?
 * TODO Magic Set rewriting
 and what kind of MS rewriting can be delegated to dlv?
 * TODO Add support for RIF BLD presentation syntax

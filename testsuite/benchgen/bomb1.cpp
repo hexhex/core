@@ -2,12 +2,16 @@
  * N-bomb defusing, see bomb_defusing.txt
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 // include above because we must link against this
 #include <boost/program_options.hpp>
 
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
-#include "dlvhex/Logger.hpp"
+#include "dlvhex2/Logger.h"
 
 #include <sstream>
 #include <iostream>

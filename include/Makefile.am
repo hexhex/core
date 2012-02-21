@@ -1,2 +1,2 @@
-SUBDIRS = dlvhex
+SUBDIRS = dlvhex2
 

@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 /**
  * external atom &above[predicate/1,constant](X)
  * returns { X | predicate(X), constant < X } in X
@@ -18,8 +22,8 @@
 
 #define _GLIBCXX_DEBUG // safe iterators where possible (where not already included above)
 
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/Printhelpers.hpp"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/Printhelpers.h"
 
 #include <sstream>
 #include <iostream>

@@ -28,15 +28,19 @@
  * @brief  Test HEX parser for Module atoms
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include <boost/cstdint.hpp>
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Interpretation.hpp"
-#include "dlvhex/MLPSyntaxChecker.hpp"
-//#include "dlvhex/MLPSolver.hpp"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Interpretation.h"
+#include "dlvhex2/MLPSyntaxChecker.h"
+//#include "dlvhex2/MLPSolver.hpp"
 
 #define BOOST_TEST_MODULE "TestHexParserModule"
 #include <boost/test/unit_test.hpp>

@@ -28,7 +28,11 @@
  * @brief  Implementation of testing fixtures related to sample graph $\mathcal{E}_1$.
  */
 
-#include "fixtureE1.hpp"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
+#include "fixtureE1.h"
 
 #include <boost/test/unit_test.hpp>
 

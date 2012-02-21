@@ -32,7 +32,7 @@
 #ifndef _DLVHEX_MCSDIAGEXPL_EQUILIBRIUMPRINTVISITOR_H_
 #define _DLVHEX_MCSDIAGEXPL_EQUILIBRIUMPRINTVISITOR_H_
 
-#include "dlvhex/PrintVisitor.h"
+#include "dlvhex2/PrintVisitor.h"
 
 namespace dlvhex {
   namespace mcsdiagexpl {

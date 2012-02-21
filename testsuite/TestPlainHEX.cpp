@@ -28,37 +28,41 @@
  * @brief  Test evaluation using PlainHEX sources.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 // dlvhex
 #define DLVHEX_BENCHMARK
 
-#include "dlvhex/HexParser.hpp"
-#include "dlvhex/PlatformDefinitions.h"
-#include "dlvhex/Logger.hpp"
-#include "dlvhex/ID.hpp"
-#include "dlvhex/Table.hpp"
-#include "dlvhex/TermTable.hpp"
-#include "dlvhex/OrdinaryAtomTable.hpp"
-#include "dlvhex/BuiltinAtomTable.hpp"
-#include "dlvhex/AggregateAtomTable.hpp"
-#include "dlvhex/ExternalAtomTable.hpp"
-#include "dlvhex/RuleTable.hpp"
-#include "dlvhex/ASPSolverManager.h"
-#include "dlvhex/ASPSolver.h"
-#include "dlvhex/Registry.hpp"
-#include "dlvhex/Printer.hpp"
-#include "dlvhex/ProgramCtx.h"
-#include "dlvhex/PluginInterface.h"
-#include "dlvhex/EvalGraphBuilder.hpp"
-#include "dlvhex/EvalHeuristicOldDlvhex.hpp"
-#include "dlvhex/EvalHeuristicTrivial.hpp"
-#include "dlvhex/EvalHeuristicEasy.hpp"
-#include "dlvhex/InputProvider.hpp"
-#include "dlvhex/DependencyGraph.hpp"
-#include "dlvhex/ComponentGraph.hpp"
-#include "dlvhex/ModelGenerator.hpp"
-#include "dlvhex/Benchmarking.h"
-#include "dlvhex/OnlineModelBuilder.hpp"
-#include "dlvhex/OfflineModelBuilder.hpp"
+#include "dlvhex2/HexParser.h"
+#include "dlvhex2/PlatformDefinitions.h"
+#include "dlvhex2/Logger.h"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Table.h"
+#include "dlvhex2/TermTable.h"
+#include "dlvhex2/OrdinaryAtomTable.h"
+#include "dlvhex2/BuiltinAtomTable.h"
+#include "dlvhex2/AggregateAtomTable.h"
+#include "dlvhex2/ExternalAtomTable.h"
+#include "dlvhex2/RuleTable.h"
+#include "dlvhex2/ASPSolverManager.h"
+#include "dlvhex2/ASPSolver.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Printer.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/EvalHeuristicOldDlvhex.h"
+#include "dlvhex2/EvalHeuristicTrivial.h"
+#include "dlvhex2/EvalHeuristicEasy.h"
+#include "dlvhex2/InputProvider.h"
+#include "dlvhex2/DependencyGraph.h"
+#include "dlvhex2/ComponentGraph.h"
+#include "dlvhex2/ModelGenerator.h"
+#include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/OnlineModelBuilder.h"
+#include "dlvhex2/OfflineModelBuilder.h"
 
 // other
 
@@ -69,7 +73,7 @@
 #include <fstream>
 #include <cstdlib>
 
-#include "graphviz.hpp"
+#include "graphviz.h"
 
 LOG_INIT(Logger::ERROR | Logger::WARNING)
 
