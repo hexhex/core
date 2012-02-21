@@ -40,7 +40,7 @@
 #include "dlvhex2/ComfortPluginInterface.h"
 #include "dlvhex2/Term.h"
 #include "dlvhex2/Registry.h"
-#include "dlvhex/ProgramCtx.h"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/foreach.hpp>
 

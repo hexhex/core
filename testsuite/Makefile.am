@@ -103,7 +103,7 @@ TestTestPluginStatic_CPPFLAGS = $(AM_CXXFLAGS)
 
 # libdlvhexbase does not depend on libaspsolver and does not depend on libmlpsolver
 # libaspsolver does not depend on libmlpsolver
-LDADD_BASE = $(top_builddir)/src/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
+LDADD_BASE = $(top_builddir)/src/libdlvhex2-base.la $(BOOST_THREAD_LDFLAGS) $(BOOST_THREAD_LIBS) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS) @LIBLTDL@ @LIBADD_DL@ @LIBCURL@
 LDADD_ASPSOLVER = $(top_builddir)/src/libdlvhex2-aspsolver.la $(LDADD_BASE) $(EXTSOLVER_LDFLAGS) $(EXTSOLVER_LIBS)
 LDADD_MLP_ASPSOLVER = $(top_builddir)/src/libdlvhex2-mlpsolver.la $(LDADD_ASPSOLVER)
 
