@@ -264,6 +264,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
 #ifndef NDEBUG
 	ss << " }";
+#endif
 	clauseCreator->end();
 
 	//std::cout << claspInstance.numTernary() << ", " << claspInstance.numBinary() << ", " << claspInstance.numLearntShort() << std::endl;
@@ -291,7 +292,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 	*/
 
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
-#endif
+
 	return false;
 }
 
