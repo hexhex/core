@@ -126,6 +126,9 @@ GenuineWellfoundedModelGenerator::GenuineWellfoundedModelGenerator(
 {
 }
 
+GenuineWellfoundedModelGenerator::~GenuineWellfoundedModelGenerator(){
+}
+
 GenuineWellfoundedModelGenerator::InterpretationPtr
 GenuineWellfoundedModelGenerator::generateNextModel()
 {
@@ -215,6 +218,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 //				InternalGroundDASPSolver igas(factory.ctx, gprogram);
 
 				GenuineSolverPtr solver = GenuineSolver::getInstance(factory.ctx, program);
+				factory.ctx.globalNogoods.addNogoodListener(solver);
 
 				// there must be either no or exactly one answer set
 				InterpretationPtr model = solver->projectToOrdinaryAtoms(solver->getNextModel());
@@ -233,6 +237,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 				dst->getStorage().swap(model->getStorage());
 				DBGLOG(DBG,"after evaluating ASP: dst is " << *dst);
 				DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
+				factory.ctx.globalNogoods.removeNogoodListener(solver);
 			}
 
 			// check whether new interpretation is superset of old one

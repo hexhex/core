@@ -162,6 +162,11 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
+	factory.ctx.globalNogoods.addNogoodListener(solver);
+
+//Nogood ng1;
+//ng1.insert(solver->createLiteral(29));
+//factory.ctx.globalNogoods.addNogood(ng1);
 
 //	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 //	if (factory.ctx.config.getOption("Instantiate")){
@@ -175,6 +180,11 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 //	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
 //	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 //	currentanswer = 0;
+}
+
+GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
+	factory.ctx.globalNogoods.removeNogoodListener(solver);
+	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
 GenuinePlainModelGenerator::InterpretationPtr

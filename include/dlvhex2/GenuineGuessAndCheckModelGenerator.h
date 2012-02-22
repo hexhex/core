@@ -80,7 +80,7 @@ protected:
 
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuineGuessAndCheckModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics()); }
+  virtual ~GenuineGuessAndCheckModelGenerator();
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

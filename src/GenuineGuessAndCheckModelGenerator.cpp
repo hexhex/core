@@ -580,12 +580,22 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 //	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
 //	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	solver = GenuineSolver::getInstance(factory.ctx, program);
+	factory.ctx.globalNogoods.addNogoodListener(solver);
 	if (factory.ctx.config.getOption("ExternalLearningPartial")){
 		solver->addExternalLearner(this);
 	}
 
+//Nogood ng1;
+//ng1.insert(solver->createLiteral(11));
+//factory.ctx.globalNogoods.addNogood(ng1);
+
 	firstLearnCall = true;
     }
+}
+
+GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
+	factory.ctx.globalNogoods.removeNogoodListener(solver);
+	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
 namespace

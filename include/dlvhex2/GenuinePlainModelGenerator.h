@@ -80,7 +80,7 @@ protected:
 
 public:
   GenuinePlainModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GenuinePlainModelGenerator() { DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics()); }
+  virtual ~GenuinePlainModelGenerator();
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
