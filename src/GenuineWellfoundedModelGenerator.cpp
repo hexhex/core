@@ -225,6 +225,8 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 
 				if( model == InterpretationPtr() )
 				{
+					globalConflictAnalysis(factory.ctx, factory.idb, solver, true);
+
 					LOG(DBG,"got no answer set -> inconsistent");
 					inconsistent = true;
 					break;
