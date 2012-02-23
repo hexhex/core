@@ -424,8 +424,8 @@ public:
 					for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
 
 					Nogood nogood;
-					nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
-					nogood.insert(nogoods->createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
+					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
+					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
 					nogood.insert(getOutputAtom(ctx, nogoods, query, t, false));
 					nogoods->addNogood(nogood);
 

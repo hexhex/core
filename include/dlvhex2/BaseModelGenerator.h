@@ -37,6 +37,10 @@
 #include "dlvhex2/Interpretation.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/Atoms.h"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Nogood.h"
+#include "dlvhex2/GenuineSolver.h"
 
 #include <list>
 #include "dlvhex2/CDNLSolver.h"
@@ -89,6 +93,22 @@ protected:
     InterpretationPtr outputi;
     OrdinaryAtom replacement;
   };
+
+  // ========== Global Learning ==========
+
+  // computes the set of predicate IDs which are relevant
+  // to a certain edb+idb
+  std::set<ID> getPredicates(const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb);
+
+  // restricts an interpretation to the atoms over specified predicates
+  InterpretationPtr restrictInterpretationToPredicates(const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates);
+
+  // converts an interpretation into a nogood
+  Nogood interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer);
+
+  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver);
+
+  // ========== ==========
 
   // projects input interpretation for predicate inputs
   // calculates constant input tuples from auxiliary input predicates and from given constants

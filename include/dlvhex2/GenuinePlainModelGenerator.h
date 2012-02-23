@@ -72,6 +72,7 @@ protected:
 
   // genuine solver
   GenuineSolverPtr solver;
+  int firstModel;
 //  InternalGroundASPSolverPtr igas;
 //  InternalGrounderPtr grounder;
 //  Interpretation* currentanswer;

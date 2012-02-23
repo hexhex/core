@@ -142,6 +142,8 @@ protected:
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
 	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
 
+	// statistics
+	int modelCount;
 public:
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
 	virtual ~ClaspSolver();
@@ -156,6 +158,7 @@ public:
 	int getNogoodCount();
 
 	virtual InterpretationConstPtr getNextModel();
+	virtual int getModelCount();
 	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr intr);
 
 	typedef boost::shared_ptr<ClaspSolver> Ptr;

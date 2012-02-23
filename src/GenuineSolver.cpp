@@ -132,6 +132,10 @@ InterpretationConstPtr GenuineSolver::getNextModel(){
 	return solver->getNextModel();
 }
 
+int GenuineSolver::getModelCount(){
+	return solver->getModelCount();
+}
+
 InterpretationPtr GenuineSolver::projectToOrdinaryAtoms(InterpretationConstPtr inter){
 	return solver->projectToOrdinaryAtoms(inter);
 }

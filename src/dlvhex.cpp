@@ -151,6 +151,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
+      << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --noflpcheck     Disable FLP check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
@@ -308,6 +309,7 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
@@ -576,6 +578,7 @@ void processOptionsPrePlugin(
 		{ "extlearn", optional_argument, 0, 18 },
 //		{ "instantiate", no_argument, 0, 19 },
 		{ "noflpcheck", no_argument, 0, 20 },
+		{ "globlearn", optional_argument, 0, 21 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -954,6 +957,10 @@ void processOptionsPrePlugin(
 */
 		case 20:
 			pctx.config.setOption("FLPCheck", 0);
+			break;
+
+		case 21:
+			pctx.config.setOption("GlobalLearning", 1);
 			break;
 
 		case '?':

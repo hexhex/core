@@ -72,10 +72,10 @@ public:
 	virtual void removeNogood(int index) = 0;
 	virtual int getNogoodCount() = 0;
 
-	inline ID createLiteral(ID lit){
+	static inline ID createLiteral(ID lit){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);
 	}
-	inline ID createLiteral(IDAddress litadr, bool truthValue = true){
+	static inline ID createLiteral(IDAddress litadr, bool truthValue = true){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (truthValue ? 0 : ID::NAF_MASK), litadr);
 	}
 

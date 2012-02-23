@@ -573,6 +573,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 	DBGLOG(DBG, "Initially inconsistent: " << initiallyInconsistent);
 
 	// if the program is initially inconsistent we do not need to do a search at all
+	modelCount = 0;
 	if (initiallyInconsistent){
 		endOfModels = true;
 		claspThread = NULL;
@@ -683,6 +684,11 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 		DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
 		return nextModel;
 	}
+	modelCount++;
+}
+
+int ClaspSolver::getModelCount(){
+	return modelCount;
 }
 
 InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){

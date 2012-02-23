@@ -56,7 +56,10 @@ class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver{
 private:
 	std::string bodyAtomPrefix;
 	int bodyAtomNumber;
+
+protected:
 	bool firstmodel;
+	int modelCount;
 
 protected:
 	// structural program information
@@ -168,6 +171,7 @@ public:
 	void removeExternalLearner(LearningCallback* lb);
 
 	virtual InterpretationConstPtr getNextModel();
+	virtual int getModelCount();
 	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr intr);
 
 	typedef boost::shared_ptr<InternalGroundASPSolver> Ptr;

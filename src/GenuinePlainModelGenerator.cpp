@@ -163,6 +163,7 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
+	firstModel = true;
 
 //Nogood ng1;
 //ng1.insert(solver->createLiteral(29));
@@ -196,6 +197,12 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	// remove edb from result
 	InterpretationPtr modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
+
+	// learn global nogoods
+	if (modelCandidate == InterpretationPtr()){
+		globalConflictAnalysis(factory.ctx, factory.idb, solver);
+	}
+
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;
 }

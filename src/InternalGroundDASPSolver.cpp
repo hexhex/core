@@ -238,6 +238,8 @@ InterpretationConstPtr InternalGroundDASPSolver::getNextModel(){
 #ifndef NDEBUG
 			++cntDUnfoundedSets;
 #endif
+			modelCount--;	// model was a spurious one
+
 			Nogood loopNogood = getViolatedLoopNogood(ufs);
 			DBGLOG(DBG, "Adding loop nogood: " << loopNogood);
 			addNogood(loopNogood);

@@ -835,7 +835,7 @@ std::string InternalGroundASPSolver::getStatistics(){
 #endif
 }
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, OrdinaryASPProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0){
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, OrdinaryASPProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0){
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	reg = ctx.registry();
@@ -943,7 +943,12 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 
 
 	InterpretationConstPtr icp(interpretation);
+	modelCount++;
 	return icp;
+}
+
+int InternalGroundASPSolver::getModelCount(){
+	return modelCount;
 }
 
 InterpretationPtr InternalGroundASPSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){

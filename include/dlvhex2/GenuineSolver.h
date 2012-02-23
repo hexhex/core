@@ -73,6 +73,7 @@ class GenuineGroundSolver : virtual public NogoodContainer{
 public:
 	virtual std::string getStatistics() = 0;
 	virtual InterpretationConstPtr getNextModel() = 0;
+	virtual int getModelCount() = 0;
 	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
 //	virtual int addNogood(Nogood ng) = 0;
 //	virtual void removeNogood(int index) = 0;
@@ -102,6 +103,7 @@ public:
 
 	std::string getStatistics();
 	InterpretationConstPtr getNextModel();
+	int getModelCount();
 	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter);
 	int addNogood(Nogood ng);
 	void removeNogood(int index);
