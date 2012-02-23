@@ -106,7 +106,7 @@ protected:
   // converts an interpretation into a nogood
   Nogood interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer);
 
-  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver);
+  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic);
 
   // ========== ==========
 

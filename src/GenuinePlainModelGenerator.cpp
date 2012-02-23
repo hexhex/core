@@ -200,7 +200,7 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	// learn global nogoods
 	if (modelCandidate == InterpretationPtr()){
-		globalConflictAnalysis(factory.ctx, factory.idb, solver);
+		globalConflictAnalysis(factory.ctx, factory.idb, solver, !factory.ci.disjunctiveHeads && !factory.ci.negationInCycles && !factory.ci.innerEatomsNonmonotonic && !factory.ci.outerEatomsNonmonotonic);
 	}
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());

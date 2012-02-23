@@ -208,17 +208,20 @@ Nogood BaseModelGenerator::interpretationToNogood(InterpretationConstPtr intr, N
 	return ng;
 }
 
-void BaseModelGenerator::globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver){
+void BaseModelGenerator::globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic){
 
 	DBGLOG(DBG, "Global conflict analysis");
 	if (solver->getModelCount() == 0 && ctx.config.getOption("GlobalLearning")){
 		DBGLOG(DBG, "Contradiction on first model: Component is inconsistent wrt. input");
-		Nogood gng;
-		if (input != InterpretationConstPtr()){
-			gng = interpretationToNogood(restrictInterpretationToPredicates(ctx.registry(), input, getPredicates(ctx.registry(), ctx.edb, idb)), ctx.globalNogoods);
+		if (componentIsMonotonic){
+			DBGLOG(DBG, "Component is monotonic");
+			Nogood gng;
+			if (input != InterpretationConstPtr()){
+				gng = interpretationToNogood(restrictInterpretationToPredicates(ctx.registry(), input, getPredicates(ctx.registry(), ctx.edb, idb)), ctx.globalNogoods);
+			}
+			DBGLOG(DBG, "Generating global nogood " << gng);
+			ctx.globalNogoods.addNogood(gng);
 		}
-		DBGLOG(DBG, "Generating global nogood " << gng);
-		ctx.globalNogoods.addNogood(gng);
 	}
 }
 
