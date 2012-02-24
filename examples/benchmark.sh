@@ -1,3 +1,5 @@
+alarm() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
 if [ $# -le 3 ]; then
 	echo "Usage:"
 	echo "     benchmark.sh [Program] [Min Domain Size] [Max Domain Size] [Timeout/s] [Configuration Strings (optional)]"
@@ -57,9 +59,12 @@ do
 	for c in "${confs[@]}"
 	do
 		if [ ${timeout[$i]} -eq 0 ]; then
-			/usr/bin/time -o time.txt -f %e dlvhex $c $wd/prog.hex 2>/dev/null >/dev/null
+			alarm $1 /usr/bin/time -o time.txt -f %e dlvhex2 $c $wd/prog.hex 2>/dev/null >/dev/null
 			output=`cat time.txt`
 			timeout[$i]=`echo "$output > $4" | bc`
+			if [ "$output" = "" ]; then
+				output=$4
+			fi
 			if [ ${timeout[$i]} -eq 1 ]; then
 				output=$4
 			fi
