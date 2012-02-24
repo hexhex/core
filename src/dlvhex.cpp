@@ -140,12 +140,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-//      << "     --genuinesolver[=internal,clingo]" << std::endl
-//      << "                      Use embedded solver and grounder (implementation from scratch vs. clingo)" << std::endl
       << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
       << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
-      << "                        monotonicity: Apply special rules for monotonic external atoms (only useful with eabehavior)" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with eabehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
       << "                        linear: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl

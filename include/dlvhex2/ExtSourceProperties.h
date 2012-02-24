@@ -45,6 +45,8 @@ struct ExtSourceProperty
 	enum Type{
 		MONOTONIC,
 		NONMONOTONIC,
+		ANTIMONOTONIC,
+		NONANTIMONOTONIC,
 		FUNCTIONAL,
 		NONFUNCTIONAL,
 		FULLYLINEAR,
@@ -62,6 +64,7 @@ struct ExtSourceProperty
 struct ExtSourceProperties
 {
 	std::vector<int> monotonicInputPredicates;
+	std::vector<int> antimonotonicInputPredicates;
 	bool functional;
 	bool fullylinear;
 

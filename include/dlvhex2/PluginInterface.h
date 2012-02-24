@@ -975,6 +975,12 @@ public:
     { return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
 
   /**
+   * @return antimonotonicity on parameter level
+   */
+  bool isAntimonotonic(const ExtSourceProperties& prop, int parameterIndex) const
+    { return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
+
+  /**
    * @return functional
    */
   bool isFunctional(const ExtSourceProperties& prop) const

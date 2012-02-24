@@ -497,10 +497,20 @@ Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, c
 		// find the parameter index of this atom
 		int index = query.inputPredicateTable.find(pred)->second;
 
-		// for nonmonotonic parameters we need the positive and negative input, for monotonic ones the positive input suffices
-		if (query.interpretation->getFact(*en) || !isMonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
-			extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
+		// positive atoms are only required for non-antimonotonic input parameters
+		// negative atoms are only required for non-monotonic input parameters
+		if (query.interpretation->getFact(*en)){
+			// positive
+			if (!isAntimonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
+				extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
+			}
+		}else{
+			// negative
+			if (!isMonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
+				extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
+			}
 		}
+
 		en++;
 	}
 

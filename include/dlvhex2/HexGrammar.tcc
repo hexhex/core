@@ -563,6 +563,44 @@ struct sem<HexGrammarSemantics::externalAtom>
             if (!found) throw SyntaxError("Property refers to invalid input parameter");
           }
           break;
+        case ExtSourceProperty::ANTIMONOTONIC:
+          if (prop.param == ID_FAIL){
+            DBGLOG(DBG, "External Atom is antimonotonic in all input parameters");
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              atom.prop.antimonotonicInputPredicates.push_back(i);
+            }
+          }else{
+            bool found = false;
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              if (atom.inputs[i] == prop.param){
+                DBGLOG(DBG, "External Atom is antimonotonic in parameter " << i);
+                atom.prop.antimonotonicInputPredicates.push_back(i);
+                found = true;
+                break;
+              }
+            }
+            if (!found) throw SyntaxError("Property refers to invalid input parameter");
+          }
+          break;
+        case ExtSourceProperty::NONANTIMONOTONIC:
+          if (prop.param == ID_FAIL){
+            DBGLOG(DBG, "External Atom is nonmonotonic in all input parameters");
+            atom.prop.antimonotonicInputPredicates.clear();
+          }else{
+            bool found = false;
+            for (int i = 0; i < atom.inputs.size(); ++i){
+              if (atom.inputs[i] == prop.param){
+                DBGLOG(DBG, "External Atom is nonantimonotonic in parameter " << i);
+                if (std::find(atom.prop.antimonotonicInputPredicates.begin(), atom.prop.antimonotonicInputPredicates.end(), i) != atom.prop.antimonotonicInputPredicates.end()){
+                  atom.prop.antimonotonicInputPredicates.erase(std::find(atom.prop.antimonotonicInputPredicates.begin(), atom.prop.antimonotonicInputPredicates.end(), i));
+                }
+                found = true;
+                break;
+              }
+            }
+            if (!found) throw SyntaxError("Property refers to invalid input parameter");
+          }
+          break;
         case ExtSourceProperty::FULLYLINEAR:
           DBGLOG(DBG, "External Atom is fully linear");
           atom.prop.fullylinear = true;
@@ -635,6 +673,10 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::MONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "nonmonotonic"){
 		target = ExtSourceProperty(ExtSourceProperty::NONMONOTONIC, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "antimonotonic"){
+		target = ExtSourceProperty(ExtSourceProperty::ANTIMONOTONIC, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "nonantimonotonic"){
+		target = ExtSourceProperty(ExtSourceProperty::NONANTIMONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "fullylinear"){
 		target = ExtSourceProperty(ExtSourceProperty::FULLYLINEAR, boost::fusion::at_c<1>(source));
 	}else{
