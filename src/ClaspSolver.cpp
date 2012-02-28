@@ -298,6 +298,15 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
 
+	if (learnedConstraint.clause()){
+		Clasp::LitVec lv;
+		learnedConstraint.clause()->toLits(lv);
+		return convertClaspNogood(lv);
+	}
+}
+
+std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(const Clasp::LitVec& litvec){
+
 	// A clasp literal possibly maps to multiple dlvhex literals
 	// (due to optimization, equivalent and antivalent variables are represented by the same clasp literal).
 	// Therefore a clasp clause can represent several dlvhex nogoods.
@@ -306,18 +315,13 @@ std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConst
 
 	std::vector<std::vector<ID> > ret;
 
-	if (learnedConstraint.clause()){
-		Clasp::LitVec lv;
-		learnedConstraint.clause()->toLits(lv);
-
-		BOOST_FOREACH (Clasp::Literal l, lv){
-			// create for each clasp literal a vector of all possible back-translations to dlvhex
-			std::vector<ID> translations;
-			for (int i = 0; i < claspToHex[l].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[l][i]));
-			Clasp::Literal ln(l.var(), !l.sign());
-			for (int i = 0; i < claspToHex[ln].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[ln][i]));
-			ret.push_back(translations);
-		}
+	BOOST_FOREACH (Clasp::Literal l, litvec){
+		// create for each clasp literal a vector of all possible back-translations to dlvhex
+		std::vector<ID> translations;
+		for (int i = 0; i < claspToHex[l].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[l][i]));
+		Clasp::Literal ln(l.var(), !l.sign());
+		for (int i = 0; i < claspToHex[ln].size(); ++i) translations.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, claspToHex[ln][i]));
+		ret.push_back(translations);
 	}
 	return ret;
 }
@@ -329,6 +333,7 @@ std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> 
 	// into a set of nogoods
 
 	std::vector<Nogood> ret;
+	if (nogoods.size() == 0) return ret;
 
 	std::vector<int> ind(nogoods.size());
 	for (int i = 0; i < nogoods.size(); ++i) ind[i] = 0;
@@ -669,7 +674,21 @@ int ClaspSolver::getNogoodCount(){
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 
-	if (endOfModels) return InterpretationConstPtr();
+	if (endOfModels){
+/*
+		if (modelCount == 0){
+			std::vector<std::vector<ID> > ngt = convertClaspNogood(claspInstance.master()->conflict());
+			std::cout << "hasConflict: " << claspInstance.master()->hasConflict() << " CS: " << ngt.size() << std::endl;
+			std::vector<Nogood> ngg = convertClaspNogood(ngt);
+			std::cout << "Learned conflicts:" << std::endl;
+			BOOST_FOREACH (Nogood ng, ngg){
+				std::cout << ng << std::endl;
+				std::cout << std::endl;
+			}
+		}
+*/
+		return InterpretationConstPtr();
+	}
 
 	DBGLOG(DBG, "MainThread: Sending nextModel request");
 	modelRequest = true;
