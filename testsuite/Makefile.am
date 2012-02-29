@@ -40,12 +40,14 @@ AUTOMATED_TEST_PROGS = \
   TestModelGraph \
   TestEvalGraph \
   TestOnlineModelBuilder \
-  TestOfflineModelBuilder 
+  TestOfflineModelBuilder \
+  TestDLVProcess
 
 check_PROGRAMS =  \
   $(AUTOMATED_TEST_PROGS) \
   TestTestPluginStatic \
-  TestPlainHEX
+  TestPlainHEX \
+  TestDLVProcess
 
 TESTS = \
   run-dlvhex-tests.sh \
@@ -173,3 +175,7 @@ TestOfflineModelBuilder_SOURCES = \
 	fixtureEx1.cpp \
 	$(top_srcdir)/src/Logger.cpp \
 	$(top_srcdir)/src/CAUAlgorithms.cpp
+
+TestDLVProcess_SOURCES = \
+	TestDLVProcess.cpp
+TestDLVProcess_LDADD = $(LDADD_ASPSOLVER)
