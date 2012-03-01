@@ -44,6 +44,8 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 
+#include "dlvhex2/InternalGroundDASPSolver.h"
+
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
 
@@ -628,6 +630,12 @@ ClaspSolver::~ClaspSolver(){
 		claspThread->join();
 		DBGLOG(DBG, "MainThread destructor: ClaspThread terminated");
 */
+
+
+
+
+
+
 		DBGLOG(DBG, "Joining ClaspThread");
 		claspThread->join();
 	}else{
@@ -686,6 +694,21 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 				std::cout << std::endl;
 			}
 		}
+*/
+/*
+std::cout << "Component has no models for input interpretation " << *program.edb << ", contraditory nogoods are:" << std::endl;
+InternalGroundDASPSolver igdas(ctx, program);
+assert(igdas.getNextModel() == InterpretationConstPtr());
+std::vector<Nogood> ngg = igdas.getContradictoryNogoods();
+BOOST_FOREACH (Nogood ng, ngg){
+	std::cout << ng << std::endl;
+
+	BOOST_FOREACH (ID id, ng){
+		std::cout << "Cause of " << id.address << " is " << igdas.getCause(id.address) << std::endl;
+	}
+
+}
+std::cout << "---" << std::endl;
 */
 		return InterpretationConstPtr();
 	}

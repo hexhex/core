@@ -750,4 +750,17 @@ int CDNLSolver::getNogoodCount(){
 	return nogoodset.nogoods.size();
 }
 
+std::vector<Nogood> CDNLSolver::getContradictoryNogoods(){
+
+	std::vector<Nogood> ngg;
+	BOOST_FOREACH (int idx, contradictoryNogoods){
+		ngg.push_back(nogoodset.nogoods[idx]);
+	}
+	return ngg;
+}
+
+Nogood CDNLSolver::getCause(IDAddress adr){
+	return nogoodset.nogoods[cause[adr]];
+}
+
 DLVHEX_NAMESPACE_END

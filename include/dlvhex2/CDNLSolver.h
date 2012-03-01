@@ -140,14 +140,6 @@ protected:
 		return ID(lit.kind ^ ID::NAF_MASK, lit.address);
 	}
 
-	inline bool isDecisionLiteral(IDAddress litaddr){
-		if (cause[litaddr] == -1){
-			return true;
-		}else{
-			return false;
-		}
-	}
-
 	inline bool complete(){
 		return factWasSet.count() == allFacts.size();
 	}
@@ -210,6 +202,16 @@ public:
 	virtual int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
 	int getNogoodCount();
+
+	std::vector<Nogood> getContradictoryNogoods();
+	inline bool isDecisionLiteral(IDAddress litaddr){
+		if (cause[litaddr] == -1){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	Nogood getCause(IDAddress adr);
 
 	typedef boost::shared_ptr<CDNLSolver> Ptr;
 	typedef boost::shared_ptr<const CDNLSolver> ConstPtr;
