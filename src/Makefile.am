@@ -56,14 +56,14 @@ libdlvhex2_base_la_SOURCES = \
     ComponentGraph.cpp \
     Configuration.cpp \
     DependencyGraph.cpp \
-		DumpingEvalGraphBuilder.cpp \
+    DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
-		GraphvizHelpers.cpp \
+    GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
     GenuinePlainModelGenerator.cpp \
@@ -77,6 +77,7 @@ libdlvhex2_base_la_SOURCES = \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
+    InconsistencyAnalyzer.cpp \
     InternalGroundASPSolver.cpp \
     InternalGroundDASPSolver.cpp \
     InternalGrounder.cpp \

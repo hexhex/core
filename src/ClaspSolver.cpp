@@ -44,7 +44,7 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 
-#include "dlvhex2/InternalGroundDASPSolver.h"
+#include "dlvhex2/InconsistencyAnalyzer.h"
 
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
@@ -585,9 +585,11 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		endOfModels = true;
 		claspThread = NULL;
 	}else{
-		DBGLOG(DBG, "Adding unfounded set checker");
-		Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
-		ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
+		if (pb.dependencyGraph() && pb.dependencyGraph()->nodes() > 0) {
+			DBGLOG(DBG, "Adding unfounded set checker");
+			Clasp::DefaultUnfoundedCheck* ufs = new Clasp::DefaultUnfoundedCheck();
+			ufs->attachTo(*claspInstance.master(), pb.dependencyGraph()); // register with solver and graph & transfer ownership
+		}
 
 		std::stringstream prog;
 		pb.writeProgram(prog);
@@ -686,7 +688,7 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 /*
 		if (modelCount == 0){
 			std::vector<std::vector<ID> > ngt = convertClaspNogood(claspInstance.master()->conflict());
-			std::cout << "hasConflict: " << claspInstance.master()->hasConflict() << " CS: " << ngt.size() << std::endl;
+			std::cout << "hasConflict: " << claspInstance.master()->hasConflict() << ", hasStopConflict: " << claspInstance.master()->hasStopConflict() << " CS: " << ngt.size() << std::endl;
 			std::vector<Nogood> ngg = convertClaspNogood(ngt);
 			std::cout << "Learned conflicts:" << std::endl;
 			BOOST_FOREACH (Nogood ng, ngg){
@@ -710,6 +712,12 @@ BOOST_FOREACH (Nogood ng, ngg){
 }
 std::cout << "---" << std::endl;
 */
+/*
+DBGLOG(DBG, "Analyzing inconsistency");
+InconsistencyAnalyzer ia(ctx);
+ia.explainInconsistency(program, program.edb);
+*/
+
 		return InterpretationConstPtr();
 	}
 
