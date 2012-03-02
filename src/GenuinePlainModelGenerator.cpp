@@ -40,6 +40,8 @@
 #include "dlvhex2/PluginInterface.h"
 #include "dlvhex2/Benchmarking.h"
 
+#include "dlvhex2/InconsistencyAnalyzer.h"
+
 #include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -191,7 +193,9 @@ GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
 GenuinePlainModelGenerator::InterpretationPtr
 GenuinePlainModelGenerator::generateNextModel()
 {
-	if (solver == GenuineSolverPtr()) return InterpretationPtr();
+	if (solver == GenuineSolverPtr()){
+		return InterpretationPtr();
+	}
 
 	RegistryPtr reg = factory.ctx.registry();
 
@@ -201,7 +205,31 @@ GenuinePlainModelGenerator::generateNextModel()
 	// learn global nogoods
 	if (modelCandidate == InterpretationPtr()){
 		globalConflictAnalysis(factory.ctx, factory.idb, solver, !factory.ci.disjunctiveHeads && !factory.ci.negationInCycles && !factory.ci.innerEatomsNonmonotonic && !factory.ci.outerEatomsNonmonotonic);
+
+
+
+
+
+/*
+if (firstModel){
+static bool an = true;
+if (an){
+DBGLOG(DBG, "Conflict on first model: Analyzing inconsistency");
+
+// ground the program
+OrdinaryASPProgram gprogram = solver->getGroundProgram();
+
+InconsistencyAnalyzer ia(factory.ctx);
+ia.explainInconsistency(gprogram, postprocessedInput);
+}
+an = false;
+}
+*/
+
+
+
 	}
+	firstModel = false;
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;

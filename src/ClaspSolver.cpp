@@ -44,8 +44,6 @@
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 
-#include "dlvhex2/InconsistencyAnalyzer.h"
-
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
 

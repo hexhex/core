@@ -155,7 +155,7 @@ void InconsistencyAnalyzer::registerExplanationAtoms(InterpretationPtr explEDB, 
 			OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 			atom.tuple.push_back(undef_id);
 			atom.tuple.push_back(ID::termFromInteger(*en));
-			explEDB->setFact(reg->storeOrdinaryGAtom(atom));
+			explEDB->setFact(reg->storeOrdinaryGAtom(atom).address);
 		}
 		en++;
 	}
@@ -703,6 +703,20 @@ Nogood InconsistencyAnalyzer::extractExplanationFromInterpretation(Interpretatio
 
 Nogood InconsistencyAnalyzer::explainInconsistency(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr explainationAtoms){
 
+	DBGLOG(DBG, "Analyze inconsistency of program:");
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << *groundProgram.edb << std::endl;
+	RawPrinter p(ss, reg);
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+		p.print(ruleID);
+	}
+	DBGLOG(DBG, ss.str());
+#endif
+
+	DBGLOG(DBG, "With respect to explanation atoms: " << *explainationAtoms);
+
 	DBGLOG(DBG, "Constructing analysis program");
 	registerTerms();
 
@@ -754,9 +768,8 @@ Nogood InconsistencyAnalyzer::explainInconsistency(const OrdinaryASPProgram& gro
 
 	DBGLOG(DBG, "Analysis program has " << analysisProgram.idb.size() << " rules");
 #ifndef NDEBUG
-	std::stringstream ss;
+	ss.str("");
 	ss << *explEDB << std::endl;
-	RawPrinter p(ss, reg);
 	BOOST_FOREACH (ID ruleID, analysisProgram.idb){
 		p.print(ruleID);
 	}
