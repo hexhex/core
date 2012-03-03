@@ -210,21 +210,43 @@ GenuinePlainModelGenerator::generateNextModel()
 
 
 
-/*
+
 if (firstModel){
+
+HittingSetDetector<int>::Hypergraph hg;
+HittingSetDetector<int>::Hyperedge e1; e1.push_back(0); e1.push_back(2); hg.push_back(e1);
+HittingSetDetector<int>::Hyperedge e2; e2.push_back(0); e2.push_back(7); hg.push_back(e2);
+HittingSetDetector<int>::Hyperedge e3; e3.push_back(6); e3.push_back(2); hg.push_back(e3);
+HittingSetDetector<int>::Hyperedge e4; e4.push_back(6); e4.push_back(7); hg.push_back(e4);
+std::vector<int> hs = HittingSetDetector<int>::getHittingSet(hg);
+/*
+std::cout << "Hitting set: ";
+BOOST_FOREACH (int x, hs){
+	 std::cout << " " << x;
+}
+std::cout << std::endl;
+*/
+
+
+
+
+
+
+
 static bool an = true;
 if (an){
 DBGLOG(DBG, "Conflict on first model: Analyzing inconsistency");
 
-// ground the program
-OrdinaryASPProgram gprogram = solver->getGroundProgram();
+//// ground the program
+//OrdinaryASPProgram gprogram = solver->getGroundProgram();
 
+OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
 InconsistencyAnalyzer ia(factory.ctx);
-ia.explainInconsistency(gprogram, postprocessedInput);
+Nogood ng = ia.explainInconsistency(program, postprocessedInput);
 }
 an = false;
 }
-*/
+
 
 
 

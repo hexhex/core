@@ -136,6 +136,9 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 			Nogood& c = nogoodset.nogoods[cause[impliedLit]];
 			touchVarsInNogood(c);
 			learnedNogood = resolve(learnedNogood, c, impliedLit);
+#ifndef NDEBUG
+	++cntResSteps;
+#endif
 			++resSteps;
 		}
 	}while(count > 1);

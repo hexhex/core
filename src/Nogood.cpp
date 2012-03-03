@@ -103,6 +103,15 @@ std::ostream& NogoodSet::print(std::ostream& o) const{
 	return o;
 }
 
+Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr){
+	// resolvent = union of this and ng2 minus both polarities of the resolved literal
+	Nogood resolvent = *this;
+	resolvent.insert(ng2.begin(), ng2.end());
+	resolvent.erase(NogoodContainer::createLiteral(litadr, true));
+	resolvent.erase(NogoodContainer::createLiteral(litadr, false));
+	DBGLOG(DBG, "Resolution " << *this << " with " << ng2 << ": " << resolvent);
+	return resolvent;
+}
 
 // ---------- Class NogoodSet ----------
 

@@ -52,6 +52,7 @@ public:
 	bool operator==(const Nogood& ng2);
 	bool operator!=(const Nogood& ng2);
 	std::ostream& print(std::ostream& o) const;
+	Nogood resolve(Nogood& ng2, IDAddress litadr);
 };
 
 class NogoodSet : private ostream_printable<NogoodSet>{
@@ -81,6 +82,23 @@ public:
 
 	typedef boost::shared_ptr<NogoodContainer> Ptr;
 	typedef boost::shared_ptr<const NogoodContainer> ConstPtr;
+};
+
+class SimpleNogoodContainer : public NogoodContainer{
+public:
+	NogoodSet ngg;
+
+	int addNogood(Nogood ng){
+		ngg.addNogood(ng);
+	}
+
+	void removeNogood(int index){
+		ngg.removeNogood(index);
+	}
+
+	int getNogoodCount(){
+		return ngg.nogoods.size() - ngg.freeIndices.size();
+	}
 };
 
 typedef NogoodContainer::Ptr NogoodContainerPtr;
