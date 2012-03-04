@@ -58,7 +58,7 @@ Nogood InconsistencyAnalyzer::getIncNogood(const OrdinaryASPProgram& groundProgr
 		const OrdinaryAtom& ogatom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
 		if (ogatom.tuple.front() == inc_id){
 			// if the "inconsistent fact" was true, it must not be true anymore, if it was false, it must not be false anymore
-			ng.insert(NogoodContainer::createLiteral(ogatom.tuple[1].address, groundProgram.edb->getFact(ogatom.tuple[1].address)));
+			ng.insert(NogoodContainer::createLiteral(*en, true));
 		}
 		en++;
 	}

@@ -75,7 +75,10 @@ public:
 		std::map<T, int> counter;
 
 		// 1.
-		Hypergraph activeGraph = graph;
+		Hypergraph activeGraph;
+		BOOST_FOREACH (Hyperedge edge, graph){
+			if (edge.size() > 0) activeGraph.push_back(edge);
+		}
 
 		// 2.
 		std::vector<T> hittingSet;
