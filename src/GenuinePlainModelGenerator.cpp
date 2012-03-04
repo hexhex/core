@@ -231,7 +231,7 @@ std::cout << std::endl;
 
 
 
-
+/*
 
 static bool an = true;
 if (an){
@@ -245,9 +245,10 @@ InconsistencyAnalyzer ia(factory.ctx);
 Nogood ng = ia.explainInconsistency(program, postprocessedInput);
 }
 an = false;
+
+*/
+
 }
-
-
 
 
 	}
