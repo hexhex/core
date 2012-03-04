@@ -149,6 +149,7 @@ private:
 */
 
 	
+	Nogood getIncNogood(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr answerset);
 
 	void extractExplanationFromInterpretation(Nogood& ng, const OrdinaryASPProgram& groundProgram, InterpretationConstPtr answerset);
 	HittingSetDetector<ID>::Hyperedge extractHyperedgeFromInterpretation(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr answerset);

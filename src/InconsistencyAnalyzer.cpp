@@ -46,6 +46,26 @@ void InconsistencyAnalyzer::registerTerms(){
 }
 
 
+Nogood InconsistencyAnalyzer::getIncNogood(const OrdinaryASPProgram& groundProgram, InterpretationConstPtr answerset){
+
+	Nogood ng;
+
+	// go through interpretation
+	bm::bvector<>::enumerator en = answerset->getStorage().first();
+	bm::bvector<>::enumerator en_end = answerset->getStorage().end();
+	while (en < en_end){
+		// check if the atom is over "inc"
+		const OrdinaryAtom& ogatom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (ogatom.tuple.front() == inc_id){
+			// if the "inconsistent fact" was true, it must not be true anymore, if it was false, it must not be false anymore
+			ng.insert(NogoodContainer::createLiteral(ogatom.tuple[1].address, groundProgram.edb->getFact(ogatom.tuple[1].address)));
+		}
+		en++;
+	}
+
+	return ng;
+}
+
 void InconsistencyAnalyzer::extractExplanationFromInterpretation(Nogood& ng, const OrdinaryASPProgram& groundProgram, InterpretationConstPtr intr){
 
 	// go through interpretation
@@ -199,26 +219,19 @@ Nogood InconsistencyAnalyzer::explainInconsistency(const OrdinaryASPProgram& gro
 
 	DBGLOG(DBG, "Extracting explanation from answer sets");
 	InterpretationConstPtr explanation;
-	Nogood ng;
-	std::vector<InterpretationConstPtr> answersets;
-	while ((explanation = solver->getNextModel()) != InterpretationConstPtr()){
-		answersets.push_back(explanation);
-	}
-	// find minimal number of required changes
-	int min = -1;
-	BOOST_FOREACH (InterpretationConstPtr as, answersets){
-		int ch = getNumberOfIncAtoms(as);
-		if (min == -1 || ch < min) min = ch;
-	}
-	DBGLOG(DBG, "Restricting analysis to minimal explanations of size " << min);
+
 	HittingSetDetector<ID>::Hypergraph graph;
-	BOOST_FOREACH (InterpretationConstPtr as, answersets){
-		if (getNumberOfIncAtoms(as) == min){
-			graph.push_back(extractHyperedgeFromInterpretation(groundProgram, as));
-//			extractExplanationFromInterpretation(ng, groundProgram, as);
-		}
+	while ((explanation = solver->getNextModel()) != InterpretationConstPtr()){
+		// optimization: avoid the generation of supersets of this explanation
+		Nogood ng = getIncNogood(groundProgram, explanation);
+		DBGLOG(DBG, "Adding subset minimality nogood " << ng);
+		solver->addNogood(ng);
+
+		// extract hyperedge
+		graph.push_back(extractHyperedgeFromInterpretation(groundProgram, explanation));
 	}
-	ng = getExplanationFromHypergraph(graph);
+
+	Nogood ng = getExplanationFromHypergraph(graph);
 	DBGLOG(DBG, "Explanation is: " << ng);
 	return ng;
 }
