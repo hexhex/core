@@ -28,7 +28,7 @@ install-data-local:
 uninstall-local:
 	test -d $(DESTDIR)/$(docdir)/html || exit 0; \
 	cd $(DESTDIR)/$(docdir) && rm -rf html
-	-rm -rf $(includedir)/bm$(BM_VERSION)
+	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
 
 SUBDIRS = libltdl examples include src testsuite

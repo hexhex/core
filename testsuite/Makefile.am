@@ -1,4 +1,4 @@
-EXTRA_DIST = run-dlvhex-tests.sh answerset_compare.py
+EXTRA_DIST = run-dlvhex-tests.sh answerset_compare.py run_TestDLVProcess.sh
 
 # global preprocessor flags
 AM_CXXFLAGS = \
