@@ -40,8 +40,7 @@ AUTOMATED_TEST_PROGS = \
   TestModelGraph \
   TestEvalGraph \
   TestOnlineModelBuilder \
-  TestOfflineModelBuilder \
-  TestDLVProcess
+  TestOfflineModelBuilder
 
 check_PROGRAMS =  \
   $(AUTOMATED_TEST_PROGS) \
@@ -51,9 +50,11 @@ check_PROGRAMS =  \
 
 TESTS = \
   run-dlvhex-tests.sh \
-  $(AUTOMATED_TEST_PROGS)
+  $(AUTOMATED_TEST_PROGS) \
+  run_TestDLVProcess.sh
 
 TESTS_ENVIRONMENT = \
+  TOP_BUILDDIR=$(top_srcdir) \
   TOP_SRCDIR=$(top_srcdir) \
   EXAMPLESDIR=$(top_srcdir)/examples \
   TESTS="$(WHICH_DLVHEX_TESTS)" \

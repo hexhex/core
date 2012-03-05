@@ -4,6 +4,23 @@
 
 	* NEWS: Describe Changes for Release 2.0.0.
 
+2012-03-05  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/Registry.cpp: Fixed bug in storeConstantTerm.
+
+	* src/ProgramCtx.cpp: Fixed problem with duplicate atoms.
+
+	* include/dlvhex2/PredicateMask.h: Safe copy constructor and assignment operator.
+	* src/PredicateMask.cpp: Likewise.
+
+	* include/dlvhex2/Registry.h: More comfort functions in registry.
+	* src/Registry.cpp: Likewise.
+
+	* testsuite/TestDLVProcess.cpp: New testcase (from Minh Dao-Tran).
+	* testsuite/Makefile.am: Likewise.
+	* testsuite/run_TestDLVProcess.sh: Likewise (workaround to make it work,
+	should be solved properly but there is no documentation how to do it in boost).
+
 2012-02-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* Makefile.am: Installing local bitmagic to safe location if using it,

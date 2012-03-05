@@ -384,7 +384,7 @@ ID Registry::storeConstOrVarTerm(Term& term)
 
 ID Registry::storeConstantTerm(const std::string& symbol, bool aux)
 {
-  assert(!symbol.empty() && ::islower(symbol[0]));
+  assert(!symbol.empty() && (::islower(symbol[0]) || symbol[0] == '"'));
 
   ID ret = terms.getIDByString(symbol);
   if( ret == ID_FAIL )
