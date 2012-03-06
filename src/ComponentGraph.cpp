@@ -366,6 +366,8 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     NodeVector innerEatomNodes;
     sccToComponent[s] = c;
     ComponentInfo& ci = propsOf(c);
+    ci.componentIsMonotonic = true; // assume it's monotonic
+
     // collect rule and eatom ids in scc
     for(NodeSet::const_iterator itn = nodes.begin();
         itn != nodes.end(); ++itn)
@@ -392,6 +394,12 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				{
 					assert(false);
 				}
+
+		// check if the rule uses default negation
+		const Rule& r = reg->rules.getByID(id);
+		BOOST_FOREACH (ID b, r.body){
+			if (b.isNaf()) ci.componentIsMonotonic = false;
+		}
       }
       else if( id.isExternalAtom() )
       {
@@ -438,6 +446,10 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		{
 			ci.negationInCycles = true;
 		}
+    // components are never monotonic if they contain disjunctions or nonmonotonic external atoms
+    if (ci.disjunctiveHeads || ci.innerEatomsNonmonotonic || ci.outerEatomsNonmonotonic){
+      ci.componentIsMonotonic = false;
+    }
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
@@ -446,7 +458,8 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
 				" negationInCycles=" << ci.negationInCycles <<
 				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
-				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic);
+				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic <<
+				" componentIsMonotonic=" << ci.componentIsMonotonic);
 
 		assert(( ci.outerEatoms.empty() ||
 				    (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty())) &&
@@ -618,6 +631,7 @@ ComponentGraph::collapseComponents(
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+		ci.componentIsMonotonic &= cio.componentIsMonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms

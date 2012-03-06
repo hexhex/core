@@ -88,6 +88,8 @@ public:
 		bool negationInCycles;
 		bool innerEatomsNonmonotonic;
 		bool outerEatomsNonmonotonic;
+		bool componentIsMonotonic;
+
 		// previous:
     //bool innerEatomsMonotonicAndOnlyPositiveCycles;
 		// := (!innerEatomsNonmonotonic && !negationInCycles && !disjunctiveHeads)
