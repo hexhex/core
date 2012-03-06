@@ -522,8 +522,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
   BaseModelGenerator(input),
   factory(factory)
 {
-
-    DBGLOG(DBG, "GENUINE GUESS-AND-CHECK MODEL GENERATOR RUNS");
+    DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
 
     RegistryPtr reg = factory.ctx.registry();
 
@@ -595,6 +594,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 	factory.ctx.globalNogoods.removeNogoodListener(solver);
+	if (factory.ctx.config.getOption("ExternalLearningPartial")){
+		solver->removeExternalLearner(this);
+	}
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
@@ -736,69 +738,79 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
 	if (solver == GenuineSolverPtr()) return InterpretationPtr();
 
-	if( currentResults == 0 )
-	{
-		// Generate all compatible models
-		InterpretationPtr cm;
-		while ((cm = generateNextCompatibleModel()) != InterpretationPtr()){
-			candidates.push_back(cm);
-		} 
+	// for non-disjunctive components, generate one model and return it
+	// for disjunctive components, generate all modes, do minimality check, and return one model
+	if (factory.ci.disjunctiveHeads){
+		DBGLOG(DBG, "Solving disjunctive component by GnC Model Generator");
 
-		// minimality check
-		DBGLOG(DBG, "Doing minimality check");
-		typedef std::list<InterpretationPtr> CandidateList;
-		std::set<InterpretationPtr> erase;
-		CandidateList::iterator it;
-		for(it = candidates.begin(); it != candidates.end(); ++it)
+		if( currentResults == 0 )
 		{
-			DBGLOG(DBG,"checking with " << **it);
-			for(CandidateList::iterator itv = candidates.begin();
-			    itv != candidates.end(); ++itv)
+			// Generate all compatible models
+			InterpretationPtr cm;
+			while ((cm = generateNextCompatibleModel()) != InterpretationPtr()){
+				candidates.push_back(cm);
+			} 
+
+			// minimality check
+			DBGLOG(DBG, "Doing minimality check");
+			typedef std::list<InterpretationPtr> CandidateList;
+			std::set<InterpretationPtr> erase;
+			CandidateList::iterator it;
+			for(it = candidates.begin(); it != candidates.end(); ++it)
 			{
-				// do not check against self
-				if( itv == it ) continue;
-
-				// (do not check against those already invalidated)
-				if( erase.find(*itv) != erase.end() ) continue;
-
-				DBGLOG(DBG,"  does it invalidate " << **itv << "?");
-
-				// any_sub(b1, b2) checks if there is any bit in the bitset obtained by 'b1 - b2'
-				// if this is not the case, we know that 'b1 \subseteq b2'
-				if( !bm::any_sub( (*it)->getStorage(), (*itv)->getStorage() ) )
+				DBGLOG(DBG,"checking with " << **it);
+				for(CandidateList::iterator itv = candidates.begin();
+				    itv != candidates.end(); ++itv)
 				{
-					DBGLOG(DBG,"  yes it invalidates!");
-					erase.insert(*itv);
+					// do not check against self
+					if( itv == it ) continue;
+
+					// (do not check against those already invalidated)
+					if( erase.find(*itv) != erase.end() ) continue;
+
+					DBGLOG(DBG,"  does it invalidate " << **itv << "?");
+
+					// any_sub(b1, b2) checks if there is any bit in the bitset obtained by 'b1 - b2'
+					// if this is not the case, we know that 'b1 \subseteq b2'
+					if( !bm::any_sub( (*it)->getStorage(), (*itv)->getStorage() ) )
+					{
+						DBGLOG(DBG,"  yes it invalidates!");
+						erase.insert(*itv);
+					}
+				}
+			}
+			// now all that must be erased are in set 'erase'
+
+			DBGLOG(DBG,"minimal models are:");
+			PreparedResults* pr = new PreparedResults;
+			currentResults.reset(pr);
+			BOOST_FOREACH(InterpretationPtr mdl, candidates)
+			{
+				if( erase.find(mdl) == erase.end() )
+				{
+					DBGLOG(DBG,"  " << *mdl);
+					pr->add(AnswerSetPtr(new AnswerSet(mdl)));
 				}
 			}
 		}
-		// now all that must be erased are in set 'erase'
 
-		DBGLOG(DBG,"minimal models are:");
-		PreparedResults* pr = new PreparedResults;
-		currentResults.reset(pr);
-		BOOST_FOREACH(InterpretationPtr mdl, candidates)
+		assert(currentResults != 0);
+		AnswerSet::Ptr ret = currentResults->getNextAnswerSet();
+		if( ret == 0 )
 		{
-			if( erase.find(mdl) == erase.end() )
-			{
-				DBGLOG(DBG,"  " << *mdl);
-				pr->add(AnswerSetPtr(new AnswerSet(mdl)));
-			}
+			currentResults.reset();
+			return InterpretationPtr();
 		}
-	}
+		DLVHEX_BENCHMARK_REGISTER(sidcountgcanswersets,
+		"GenuineGuessAndCheckMG answer sets");
+		DLVHEX_BENCHMARK_COUNT(sidcountgcanswersets,1);
 
-	assert(currentResults != 0);
-	AnswerSet::Ptr ret = currentResults->getNextAnswerSet();
-	if( ret == 0 )
-	{
-		currentResults.reset();
-		return InterpretationPtr();
-	}
-	DLVHEX_BENCHMARK_REGISTER(sidcountgcanswersets,
-	"GenuineGuessAndCheckMG answer sets");
-	DLVHEX_BENCHMARK_COUNT(sidcountgcanswersets,1);
+		return ret->interpretation;
+	}else{
+		DBGLOG(DBG, "Solving non-disjunctive component by GnC Model Generator");
 
-	return ret->interpretation;
+		return generateNextCompatibleModel();
+	}
 }
 
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleModel()
@@ -851,10 +863,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		if (projectedModelCandidate_pos_val->getStorage().count() > 0){
 			aborted = true;
 		}
-
-
-
-
 
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
@@ -946,20 +954,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		if (!aborted){
 
@@ -1059,7 +1053,6 @@ bool auxChanged = false;
 				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : NogoodContainerPtr());
 				DBGLOG(DBG, "Output has size " << eaResult->getStorage().count());
 				if (solver->getNogoodCount() != i) learned = true;
-	//			learned |= learnFromExternalAtom(eatom, partialInterpretation, eaResult);
 			}else{
 				DBGLOG(DBG, "Do not evaluate external atom because input did not change");
 			}

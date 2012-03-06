@@ -86,11 +86,13 @@ ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
   #endif
   cg()
 {
+  DBGLOG(DBG, "Building component graph");
   calculateComponents(dg);
 }
 
 ComponentGraph::~ComponentGraph()
 {
+  DBGLOG(DBG, "Destructing component graph " << this);
 }
 
 namespace
@@ -825,6 +827,7 @@ ComponentGraph::ComponentGraph(const ComponentGraph& other):
   #endif
 	cg(other.cg)
 {
+  DBGLOG(DBG, "Building component graph");
 }
 
 // for explicit cloning of the graph
