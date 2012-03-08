@@ -117,10 +117,12 @@ public:
 	inline ID storeAndGetID(const OrdinaryAtom& atom) throw();
 
   // get all ordinary atoms with certain predicate id
+  // NOTE: you may need to lock the mutex also while iterating!
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
   // get range over all atoms sorted by address
+  // NOTE: you may need to lock the mutex also while iterating!
 	inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 };
@@ -247,11 +249,11 @@ ID OrdinaryAtomTable::storeAndGetID(
 
 
 // get all ordinary atoms with certain predicate id
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<OrdinaryAtomTable::PredicateIterator, OrdinaryAtomTable::PredicateIterator>
 OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm());
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
@@ -259,10 +261,10 @@ OrdinaryAtomTable::getRangeByPredicateID(ID id) const throw()
 
 
 // get range over all atoms sorted by address
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<OrdinaryAtomTable::AddressIterator, OrdinaryAtomTable::AddressIterator>
 OrdinaryAtomTable::getAllByAddress() const throw()
 {
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());

@@ -180,9 +180,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 			// (if we cannot consume the body completely,
 			// we have to wait with checking this aggregate)
 
-			std::list<ID> tmpSrcBody(atom.atoms.begin(), atom.atoms.end());
+			std::list<ID> tmpSrcBody(atom.literals.begin(), atom.literals.end());
 			Tuple tmpTgt;
-			tmpTgt.reserve(atom.atoms.size());
+			tmpTgt.reserve(atom.literals.size());
 			std::set<ID> tmpNewSafeVars(safevars);
 
 			bool reordered_aggregate =

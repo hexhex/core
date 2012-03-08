@@ -1,6 +1,6 @@
 dlvhex NEWS -- history of user-visible changes.
 
-* Version 2.0.0 (??? 2012)
+* Version 2.0.0 (March 2012)
 
 ** Rewrite of evaluation and decomposition framework, see the paper
    "Pushing Efficient Evaluation of HEX Programs by Modular Decomposition"
@@ -15,6 +15,7 @@ dlvhex NEWS -- history of user-visible changes.
 ** Add multithreaded support.
 ** Add support for input-call stratified modular nonmonotonic logic programs (MLPs).
 ** Various fixes, improvements, and new testcases.
+** See ChangeLog for more details.
 
 
 * Version 1.7.2 (October 2010)

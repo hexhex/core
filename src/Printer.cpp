@@ -156,7 +156,7 @@ void RawPrinter::print(ID id)
         printmany(atom.variables, ",");
         out << " : ";
         // body
-        printmany(atom.atoms, ",");
+        printmany(atom.literals, ",");
         out << " }";
 
         // right operator (if any)

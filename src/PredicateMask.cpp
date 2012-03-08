@@ -51,6 +51,27 @@ PredicateMask::PredicateMask():
 {
 }
 
+PredicateMask::PredicateMask(const PredicateMask& other):
+  predicates(other.predicates),
+  maski(other.maski),
+  knownAddresses(other.knownAddresses),
+  updateMutex() // must not copy mutex!
+{
+  if( !!other.maski )
+    LOG(WARNING,"copied PredicateMask with non-NULL mask!");
+}
+
+PredicateMask&
+PredicateMask::operator=(const PredicateMask& other)
+{
+  predicates = other.predicates;
+  maski = other.maski;
+  knownAddresses = other.knownAddresses;
+  // must not copy mutex!
+  if( !!other.maski )
+    LOG(WARNING,"assigned PredicateMask with non-NULL mask!");
+}
+
 PredicateMask::~PredicateMask()
 {
 }

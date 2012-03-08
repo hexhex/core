@@ -61,13 +61,6 @@ struct DLVSoftware:
     Options();
     virtual ~Options();
 
-    // whether to rewrite all predicates to allow higher order in DLV (default=no)
-    #warning do we use this? do we need this?
-    bool rewriteHigherOrder;
-
-    // whether to drop predicates in received answer sets (default=no)
-    bool dropPredicates;
-
     // commandline arguments to add (default="-silent")
     // this does not include the .typ file for dlvdb
     // (this is managed by DLVDBSoftware::Options/DLVDBSoftware::Delegate)

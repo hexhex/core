@@ -77,6 +77,7 @@ public:
   inline const std::string& getModuleName(int address) const throw ();
 
   // get range over all atoms sorted by address
+  // NOTE: you may need to lock the mutex also while iterating!
   inline std::pair<AddressIterator, AddressIterator> getAllByAddress() const throw();
 
   // given a module name, look if already stored
@@ -94,10 +95,10 @@ public:
 };
 
 // get range over all atoms sorted by address
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<ModuleTable::AddressIterator, ModuleTable::AddressIterator>
 ModuleTable::getAllByAddress() const throw()
 {
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());

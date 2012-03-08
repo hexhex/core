@@ -162,7 +162,9 @@ public:
 	//
 
 	// collapse several components into one
-	#warning this method is a relic from old evaluation graph
+	// NOTE: This method is a relic from old evaluation graph; if we remove or 
+  // rewrite the easy heuristics to use a better method, we can remove this
+  // method as well (we should).
 	Component collapseComponents(
 			const ComponentSet& originals);
 

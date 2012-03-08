@@ -146,6 +146,8 @@ void loadCandidates(
   BOOST_FOREACH(const std::string& lib, libnames)
   {
     LOG(PLUGIN,"loading Plugin Library: '" << lib << "'");
+    // reset lt_dlerror
+    (void)lt_dlerror();
     lt_dlhandle dlHandle = lt_dlopenext(lib.c_str());
 
     // do while false for breaking out easily
@@ -153,7 +155,8 @@ void loadCandidates(
     {
       if( dlHandle == NULL )
       {
-        LOG(WARNING,"Selected library '" << lib << "' for opening but cannot open: '" << lt_dlerror() << "' (skipping)");
+        LOG(WARNING,"Selected library '" << lib << "' for opening but cannot open: lt_dlerror='" << lt_dlerror() << "' (skipping)");
+        LOG(WARNING,"(You might want to use 'LD_DEBUG={files,help,all} dlvhex2 <arguments>' to debug plugin loading.))");
         break;
       }
 

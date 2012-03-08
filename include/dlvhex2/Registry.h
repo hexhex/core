@@ -51,13 +51,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning namespaces where here
-/*
-typedef boost::bimaps::bimap<
-  boost::bimaps::set_of<std::string>,
-  boost::bimaps::set_of<std::string> > NamespaceTable;
-  */
-
 /**
  * Registry Plugin for printing auxiliary IDs.
  *
@@ -101,38 +94,6 @@ struct Registry:
   ModuleTable moduleTable;
   std::vector<Tuple> inputList;
 
-#warning namespaces
-  //NamespaceTable namespaces;
-
-#warning possible efficiency improvement
-	#if 0
-	
-	// this can be done later, for now we can use hashtables and forget this more efficient method, TODO check how often this mapping is actually required
-
-	//
-	// "address range" concept
-	//
-	// from IDKind we obtain integers starting at zero,
-	// for each distinct table a separate integer
-	// this way we can create efficient mappings from IDs of various kinds to use mapKindToAddressRange() method
-	// e.g., for looking up vertices in dependency graph by ID
-	//   -> first lookup O(1) by IDKind, then lookup vertex in O(1) by address in vector
-	//   -> vector storage with no useless storage allocation (one vector for each address range)
-	enum AddressRange
-	{
-		ARTERM = 0,
-		AROATOM,
-		ARONATOM,
-		ARBATOM,
-		ARAATOM,
-		AREATOM,
-		ARRULE,
-		AR_COUNT // this must stay the last entry
-	};
-	static inline AddressRange mapKindToAddressRange(IDKind kind);
-	static inline AddressRange maxAddressRange() { return AR_COUNT; }
-	#endif
-
   //
   // modifiers
   //
@@ -151,6 +112,16 @@ struct Registry:
   // assume term.kind and term.symbol is initialized
   // assume term is not an integer (i.e., term.symbol does not start with a digit)
   ID storeConstOrVarTerm(Term& term);
+
+  // assert symbol is constant
+  // lookup symbol and return ID if exists
+  // otherwise register as constant and return ID
+  ID storeConstantTerm(const std::string& symbol, bool aux=false);
+
+  // assert symbol is variable
+  // lookup symbol and return ID if exists
+  // otherwise register as variable and return ID
+  ID storeVariableTerm(const std::string& symbol, bool aux=false);
 
   // check if term is integer
   // if yes return integer id
@@ -187,9 +158,9 @@ struct Registry:
   // accessors
   //
 
-	// cannot be nonconst as printing might change registry caches (TODO create mutable string caches in atoms)
+	// cannot be nonconst as printing might change registry caches
+  // (TODO create mutable string caches in atoms)
   std::ostream& print(std::ostream& o);
-  #warning TODO make registry const printable!
   virtual std::ostream& print(std::ostream& o) const { return const_cast<Registry*>(this)->print(o); }
 
   // lookup ground or nonground ordinary atoms (ID specifies this)

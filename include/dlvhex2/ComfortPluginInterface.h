@@ -234,7 +234,7 @@ struct ComfortAtom:
     { assert(!tuple.empty() && !tuple.front().isInteger());
       return tuple.front().strval; }
 
-  #warning TODO it might be useful to also implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity
+  // TODO it might be useful to also implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity
 
   /**
    * \brief Check whether one atom unifies with another one.

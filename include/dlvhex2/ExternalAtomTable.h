@@ -79,6 +79,7 @@ public:
 	inline const ExternalAtom& getByID(ID id) const throw ();
 
   // get all external atoms with certain predicate id
+  // NOTE: you may need to lock the mutex also while iterating!
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
@@ -111,11 +112,11 @@ ExternalAtomTable::getByID(ID id) const throw ()
 }
 
 // get all external atoms with certain predicate id
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<ExternalAtomTable::PredicateIterator, ExternalAtomTable::PredicateIterator>
 ExternalAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm() && id.isConstantTerm());
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);

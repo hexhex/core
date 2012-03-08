@@ -243,7 +243,7 @@ void Registry::getExternalAtomsInTuple(
     {
       // check recursively within!
       const AggregateAtom& aatom = aatoms.getByID(*itt);
-      getExternalAtomsInTuple(aatom.atoms, out);
+      getExternalAtomsInTuple(aatom.literals, out);
     }
   }
 }
@@ -279,7 +279,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
   {
     const AggregateAtom& atom = aatoms.getByID(id);
     // body atoms
-    BOOST_FOREACH(ID idt, atom.atoms)
+    BOOST_FOREACH(ID idt, atom.literals)
     {
       getVariablesInID(idt, out);
     }
@@ -378,6 +378,42 @@ ID Registry::storeConstOrVarTerm(Term& term)
           ret = terms.storeAndGetID(term);
           DBGLOG(DBG,"stored term " << term << " which got " << ret);
         }
+    }
+  return ret;
+}
+
+ID Registry::storeConstantTerm(const std::string& symbol, bool aux)
+{
+  assert(!symbol.empty() && (::islower(symbol[0]) || symbol[0] == '"'));
+
+  ID ret = terms.getIDByString(symbol);
+  if( ret == ID_FAIL )
+    {
+      ret = preds.getIDByString(symbol);
+      if( ret == ID_FAIL )
+        {
+          Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, symbol);
+          if( aux )
+            term.kind |= ID::PROPERTY_AUX;
+          ret = terms.storeAndGetID(term);
+          DBGLOG(DBG,"stored term " << term << " which got " << ret);
+        }
+    }
+  return ret;
+}
+
+ID Registry::storeVariableTerm(const std::string& symbol, bool aux)
+{
+  assert(!symbol.empty() && ::isupper(symbol[0]));
+
+  ID ret = terms.getIDByString(symbol);
+  if( ret == ID_FAIL )
+    {
+      Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_VARIABLE, symbol);
+      if( aux )
+        term.kind |= ID::PROPERTY_AUX;
+      ret = terms.storeAndGetID(term);
+      DBGLOG(DBG,"stored term " << term << " which got " << ret);
     }
   return ret;
 }

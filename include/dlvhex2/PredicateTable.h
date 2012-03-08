@@ -90,6 +90,7 @@ public:
   inline ID storeAndGetID(const Predicate& symb) throw();
 
   // get range over all atoms sorted by address
+  // NOTE: you may need to lock the mutex also while iterating!
   inline std::pair<AddressIterator, AddressIterator>
 	getAllByAddress() const throw();
 
@@ -188,10 +189,10 @@ ID PredicateTable::storeAndGetID(const Predicate& symb) throw()
 
 
 // get range over all atoms sorted by address
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<PredicateTable::AddressIterator, PredicateTable::AddressIterator>
 PredicateTable::getAllByAddress() const throw()
 {
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());

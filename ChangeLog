@@ -1,8 +1,62 @@
-2012-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
+2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
 
 	* NEWS: Describe Changes for Release 2.0.0.
+
+	* TODO: Moved several #warnings which were TODOs to TODO,
+	fixed two of them in the process (AggregateAtom::atoms renamed
+	to AggregateAtom::literals, useless data fields removed from
+	ASPSolver::DLVSoftware::Options).
+	* include/dlvhex2/HexGrammar.h: Likewise.
+	* include/dlvhex2/ASPSolver.h: Likewise.
+	* include/dlvhex2/Table.h: Likewise.
+	* include/dlvhex2/ModuleTable.h: Likewise.
+	* include/dlvhex2/EvalHeuristicShared.h: Likewise.
+	* include/dlvhex2/Registry.h: Likewise.
+	* include/dlvhex2/ComfortPluginInterface.h: Likewise.
+	* include/dlvhex2/HexGrammar.tcc: Likewise.
+	* include/dlvhex2/Atoms.h: Likewise.
+	* include/dlvhex2/ComponentGraph.h: Likewise.
+	* include/dlvhex2/ModuleAtomTable.h: Likewise.
+	* include/dlvhex2/Printer.h: Likewise.
+	* include/dlvhex2/Interpretation.h: Likewise.
+	* include/dlvhex2/PredicateTable.h: Likewise.
+	* include/dlvhex2/ExternalAtomTable.h: Likewise.
+	* include/dlvhex2/OrdinaryAtomTable.h: Likewise.
+	* src/DependencyGraph.cpp: Likewise.
+	* src/Registry.cpp: Likewise.
+	* src/SafetyChecker.cpp: Likewise.
+	* src/ASPSolver_dlv.cpp: Likewise.
+	* src/BaseModelGenerator.cpp: Likewise.
+	* src/Printer.cpp: Likewise.
+	* testsuite/TestTables.cpp: Likewise.
+	* testsuite/TestDLVProcess.cpp: Likewise.
+
+2012-03-05  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/Registry.cpp: Fixed bug in storeConstantTerm.
+
+	* src/ProgramCtx.cpp: Fixed problem with duplicate atoms.
+
+	* include/dlvhex2/PredicateMask.h: Safe copy constructor and assignment operator.
+	* src/PredicateMask.cpp: Likewise.
+
+	* include/dlvhex2/Registry.h: More comfort functions in registry.
+	* src/Registry.cpp: Likewise.
+
+	* testsuite/TestDLVProcess.cpp: New testcase (from Minh Dao-Tran).
+	* testsuite/Makefile.am: Likewise.
+	* testsuite/run_TestDLVProcess.sh: Likewise (workaround to make it work,
+	should be solved properly but there is no documentation how to do it in boost).
+
+2012-02-01  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* Makefile.am: Installing local bitmagic to safe location if using it,
+	and setting up CFLAGS accordingly.
+	* dlvhex2.pc.in: Likewise.
+	* configure.ac: Likewise, and added AC_CACHE_SAVE checkpoints.
+	* src/PluginContainer.cpp: Improved diagnostics for library loading.
 
 2012-01-23  Peter Schueller  <ps@kr.tuwien.ac.at>
 
