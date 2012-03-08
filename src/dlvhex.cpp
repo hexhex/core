@@ -36,17 +36,8 @@
  * \section intro_sec Overview
  *
  * You will look into the documentation of dlvhex most likely to implement a
- * plugin. In this case, please continue with the \ref pluginframework "Plugin
- * Interface Module", which contains all necessary information.
- *
- * For an overview on the logical primitives and datatypes used by dlvhex, see
- * \ref dlvhextypes "dlvhex Datatypes".
- */
-
-
-/**
- * \defgroup dlvhextypes dlvhex Types
- *
+ * plugin. In this case, please continue with the \ref pluginframework
+ * "Plugin Interface Module", which contains all necessary information.
  */
 
 #ifdef HAVE_CONFIG_H
