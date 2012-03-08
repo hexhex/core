@@ -84,8 +84,6 @@ namespace ASPSolver
 
 DLVSoftware::Options::Options():
   ASPSolverManager::GenericOptions(),
-  rewriteHigherOrder(false),
-  dropPredicates(false),
   arguments()
 {
   arguments.push_back("-silent");
@@ -328,15 +326,6 @@ DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
   results->reg = program.registry;
   assert(results->reg);
   results->mask = program.mask;
-
-  #warning TODO HO checks
-  //if( idb.isHigherOrder() && !options.rewriteHigherOrder )
-  //  throw SyntaxError("Higher Order Constructions cannot be solved with DLVSoftware without rewriting");
-
-  // in higher-order mode we cannot have aggregates, because then they would
-  // almost certainly be recursive, because of our atom-rewriting!
-  //if( idb.isHigherOrder() && idb.hasAggregateAtoms() )
-  //  throw SyntaxError("Aggregates and Higher Order Constructions must not be used together");
 
   try
   {

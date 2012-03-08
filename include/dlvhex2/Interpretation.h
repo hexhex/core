@@ -76,11 +76,9 @@ public:
   virtual std::ostream& printAsNumber(std::ostream& o) const;
   virtual std::ostream& printAsFacts(std::ostream& o) const;
 
-  #warning unify these names added by Tri?
   void add(const Interpretation& other);
   void bit_and(const Interpretation& other);
 
-  #warning todo we may want to name this "add" "remove" and "has" (...Fact)
   inline void setFact(IDAddress id)
     { bits.set(id); }
   inline void clearFact(IDAddress id)
@@ -97,7 +95,7 @@ public:
 
   RegistryPtr getRegistry() const { return registry; }
 
-  #warning remove setRegistry() added by Tri?
+  // TODO why does this exist? it should not!
   void setRegistry(RegistryPtr registry1) { registry = registry1; }
 
   inline bool isClear() const

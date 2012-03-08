@@ -465,7 +465,7 @@ struct sem<HexGrammarSemantics::aggregateAtom>
     ID& leftComp = aatom.tuple[1];
     ID& aggFunc = aatom.tuple[2];
     Tuple& aggVariables = aatom.variables;
-    Tuple& aggBody = aatom.atoms;
+    Tuple& aggBody = aatom.literals;
     ID& rightComp = aatom.tuple[3];
     ID& rightTerm = aatom.tuple[4];
 

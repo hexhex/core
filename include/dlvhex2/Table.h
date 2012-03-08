@@ -77,7 +77,7 @@ protected:
 
 	// methods
 public:
-	Table(): container() {}
+	Table() {}
 	// no virtual functions allowed, no virtual destructor
 	// -> never store this in a ref to baseclass, destruction will not work!
 	//
@@ -91,8 +91,7 @@ public:
   std::ostream& print(std::ostream& o) const;
 
   Table(const Table& other):
-    container(other.container),
-    mutex()
+    container(other.container)
   {
   }
 

@@ -1,8 +1,37 @@
-2012-XX-XX  Peter Schueller  <ps@kr.tuwien.ac.at>
+2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
 
 	* NEWS: Describe Changes for Release 2.0.0.
+
+	* TODO: Moved several #warnings which were TODOs to TODO,
+	fixed two of them in the process (AggregateAtom::atoms renamed
+	to AggregateAtom::literals, useless data fields removed from
+	ASPSolver::DLVSoftware::Options).
+	* include/dlvhex2/HexGrammar.h: Likewise.
+	* include/dlvhex2/ASPSolver.h: Likewise.
+	* include/dlvhex2/Table.h: Likewise.
+	* include/dlvhex2/ModuleTable.h: Likewise.
+	* include/dlvhex2/EvalHeuristicShared.h: Likewise.
+	* include/dlvhex2/Registry.h: Likewise.
+	* include/dlvhex2/ComfortPluginInterface.h: Likewise.
+	* include/dlvhex2/HexGrammar.tcc: Likewise.
+	* include/dlvhex2/Atoms.h: Likewise.
+	* include/dlvhex2/ComponentGraph.h: Likewise.
+	* include/dlvhex2/ModuleAtomTable.h: Likewise.
+	* include/dlvhex2/Printer.h: Likewise.
+	* include/dlvhex2/Interpretation.h: Likewise.
+	* include/dlvhex2/PredicateTable.h: Likewise.
+	* include/dlvhex2/ExternalAtomTable.h: Likewise.
+	* include/dlvhex2/OrdinaryAtomTable.h: Likewise.
+	* src/DependencyGraph.cpp: Likewise.
+	* src/Registry.cpp: Likewise.
+	* src/SafetyChecker.cpp: Likewise.
+	* src/ASPSolver_dlv.cpp: Likewise.
+	* src/BaseModelGenerator.cpp: Likewise.
+	* src/Printer.cpp: Likewise.
+	* testsuite/TestTables.cpp: Likewise.
+	* testsuite/TestDLVProcess.cpp: Likewise.
 
 2012-03-05  Peter Schueller  <ps@kr.tuwien.ac.at>
 

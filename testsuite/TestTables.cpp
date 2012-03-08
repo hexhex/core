@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(testAggregateAtomTable)
 
 		BOOST_CHECK(aatab.getByID(id).tuple == tupext);
 		BOOST_CHECK(aatab.getByID(id).variables == tupvars);
-		BOOST_CHECK(aatab.getByID(id).atoms == tupatoms);
+		BOOST_CHECK(aatab.getByID(id).literals == tupatoms);
 
     LOG(INFO,"AggregateAtomTable" << aatab);
 	}

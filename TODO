@@ -1,9 +1,17 @@
 -*- org -*-
 
+* TODO use explicit qi headers in include/dlvhex2/HexGrammar.h (and probably in other spirit-using files) to reduce compile time
+* TODO unify names of methods in dlvhex::Interpretation, we may want to name the single-bit methods "add" "remove" and "has" (...Fact)
+* TODO remove dlvhex::Interpretation::setRegistry because it should not exist, instead fix how affected interpretations are created in first place
+* TODO make dlvhex::printManyToString a printer for a const Range with concept check value_type = ID (simplifies a lot of code)
+* TODO rewrite EvaluationHeuristicsEasy and then remove ComponentGraph::collapseComponents
+* TODO extend ComfortPluginInterface.h (see TODO there)
+* TODO make Registry really const-printable (currently we do a const_cast inside the print method)
 * TODO think about whether benchmarking should use different mutexes or thread-local storage instead of mutexes
 * TODO add some "built-in" testing ext-atoms like &e_1_1[a](X), &e_2_3[a,b](X,Y,Z)
 * TODO AC_CONFIG_SUBDIRS([libltdl]) is non-functional with newer autotools
 * TODO allow --solver=/path/to/solver?
+* TODO consider carefully to put stuff from EvalHeuristicShared.h into EvalHeuristicBase.h
 * TODO maintain a bimap between replacement atom predicates and PluginAtom objects
 Replacement atoms show up in answer sets, and we have to find the
 right PluginAtom. There could be more than one replacement atom for a
