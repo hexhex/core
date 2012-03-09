@@ -98,7 +98,8 @@ public:
       disjunctiveHeads(false),
 			negationInCycles(false),
 			innerEatomsNonmonotonic(false),
-			outerEatomsNonmonotonic(false) {}
+	outerEatomsNonmonotonic(false),
+	componentIsMonotonic(true){}
     std::ostream& print(std::ostream& o) const;
   };
 
