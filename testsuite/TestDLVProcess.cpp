@@ -5,7 +5,7 @@
 #include "dlvhex2/DLVProcess.h"
 
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE "testDLVProcess"
+#define BOOST_TEST_MODULE "TestDLVProcess"
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 

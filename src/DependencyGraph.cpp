@@ -310,10 +310,10 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // do the same for aggregate body as we did for the rule body
     // (including generation of auxiliary input rules)
     // (this can become recursive)
-    BOOST_FOREACH(ID idlit_recursive, aatom.atoms)
+    BOOST_FOREACH(ID idlit_recursive, aatom.literals)
     {
       createNodesAndIntraRuleDependenciesForBody(
-          idlit_recursive, idrule, aatom.atoms, nrule, hbh, createdAuxRules);
+          idlit_recursive, idrule, aatom.literals, nrule, hbh, createdAuxRules);
     }
   } // treat aggregate body atoms
   else

@@ -557,9 +557,9 @@ void BaseModelGeneratorFactory::convertRuleBody(
       // findout if aggregate contains external atoms
       const AggregateAtom& aatom = reg->aatoms.getByID(*itlit);
       AggregateAtom convaatom(aatom);
-      convaatom.atoms.clear();
-      convertRuleBody(reg, aatom.atoms, convaatom.atoms);
-      if( convaatom.atoms != aatom.atoms )
+      convaatom.literals.clear();
+      convertRuleBody(reg, aatom.literals, convaatom.literals);
+      if( convaatom.literals != aatom.literals )
       {
         // really create new aggregate atom
         convaatom.kind |= ID::PROPERTY_AUX;

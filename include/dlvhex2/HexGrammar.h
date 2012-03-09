@@ -41,7 +41,6 @@
 #define DLVHEX_HEX_GRAMMAR_H_INCLUDED
 
 #include <boost/spirit/include/qi.hpp>
-#warning use explicit qi headers to reduce compile time
 //#include <boost/spirit/include/qi_rule.hpp>
 //#include <boost/spirit/include/qi_grammar.hpp>
 //#include <boost/spirit/include/qi_symbols.hpp>

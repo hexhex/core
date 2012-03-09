@@ -83,9 +83,15 @@ struct OrdinaryAtom:
 {
   // the textual representation of the whole thing
   // this is stored for efficient parsing and printing
-  // @todo make this a template parameter of OrdinaryAtom, so that we can store various "efficient" representations here (depending on the solver dlvhex should work with; e.g., we could store clasp- or dlv-library internal atom representations here and index them) if we don't need it, we can replace it by an empty struct and conserve space
-  // TODO if we get answer sets in a structured way we do not need to parse them anymore
-  // TODO if we only need this for printing, we should generate it on-demand and save a lot of effort
+  // 
+  // NOTE: We could make 'text' part of a template parameter of OrdinaryAtom,
+  // such that different backends can store different "efficient"
+  // representations here (e.g., we could store clasp- or dlv-library internal
+  // atom representations here and index them). If we don't need it, we can
+  // replace it by an empty struct and conserve space.
+  // 
+  // NOTE: If we only need this for printing, we should generate it on-demand
+  // and save a lot of effort if not everything is printed.
   std::string text;
 
   bool unifiesWith(const OrdinaryAtom& a) const;
@@ -134,22 +140,21 @@ struct AggregateAtom:
 
   // variables of the symbolic set
   Tuple variables;
-  // atoms in conjunction of the symbolic set
-  #warning TODO rename this from atoms to literals, as this might contain literals
-  Tuple atoms;
+  // literals in the conjunction of the symbolic set
+  Tuple literals;
 
   AggregateAtom(IDKind kind):
     Atom(kind, Tuple(5, ID_FAIL)), 
-    variables(), atoms()
+    variables(), literals()
     { assert(ID(kind,0).isAggregateAtom()); }
   AggregateAtom(IDKind kind,
-      const Tuple& tuple, const Tuple& variables, const Tuple& atoms):
-    Atom(kind, tuple), variables(variables), atoms(atoms)
+      const Tuple& tuple, const Tuple& variables, const Tuple& literals):
+    Atom(kind, tuple), variables(variables), literals(literals)
     { assert(ID(kind,0).isAggregateAtom()); assert(tuple.size() == 5);
-      assert(!variables.empty()); assert(!atoms.empty()); }
+      assert(!variables.empty()); assert(!literals.empty()); }
   std::ostream& print(std::ostream& o) const
     { return o << "AggregateAtom(" << printvector(tuple) << " with vars " <<
-        printvector(variables) << " and literals " << printvector(atoms) << ")"; }
+        printvector(variables) << " and literals " << printvector(literals) << ")"; }
 };
 
 // this is one concrete atom in one rule
@@ -172,7 +177,7 @@ struct ExternalAtom:
   // (cannot be indexed in multi_index_container as it is mutable)
   // this is a POD-style pointer as the target object is dynamically loaded
   // shared library code, which cannot be weak_ptr- or shared_ptr-managed.
-	#warning TODO we could use a shared ptr here with an empty deleter
+	// (TODO use a weak ptr here with an empty deleter and adjust everything accordingly)
 	mutable PluginAtom* pluginAtom;
 
   // auxiliary input predicate for this occurance in this rule, ID_FAIL if no input here

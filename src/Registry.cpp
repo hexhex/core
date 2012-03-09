@@ -243,7 +243,7 @@ void Registry::getExternalAtomsInTuple(
     {
       // check recursively within!
       const AggregateAtom& aatom = aatoms.getByID(*itt);
-      getExternalAtomsInTuple(aatom.atoms, out);
+      getExternalAtomsInTuple(aatom.literals, out);
     }
   }
 }
@@ -279,7 +279,7 @@ void Registry::getVariablesInID(ID id, std::set<ID>& out) const
   {
     const AggregateAtom& atom = aatoms.getByID(id);
     // body atoms
-    BOOST_FOREACH(ID idt, atom.atoms)
+    BOOST_FOREACH(ID idt, atom.literals)
     {
       getVariablesInID(idt, out);
     }
@@ -384,7 +384,7 @@ ID Registry::storeConstOrVarTerm(Term& term)
 
 ID Registry::storeConstantTerm(const std::string& symbol, bool aux)
 {
-  assert(!symbol.empty() && ::islower(symbol[0]));
+  assert(!symbol.empty() && (::islower(symbol[0]) || symbol[0] == '"'));
 
   ID ret = terms.getIDByString(symbol);
   if( ret == ID_FAIL )

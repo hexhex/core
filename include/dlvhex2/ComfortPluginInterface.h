@@ -317,7 +317,7 @@ struct ComfortAtom:
 
   // TODO implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity, isStrongNegated
 
-  #warning TODO it might be useful to also implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity
+  // TODO it might be useful to also implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity
 
   /**
    * \brief Check whether one atom unifies with another one.

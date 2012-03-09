@@ -39,8 +39,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#warning contents of this file should probably go directly into EvalHeuristicBase
-
 namespace evalheur
 {
 

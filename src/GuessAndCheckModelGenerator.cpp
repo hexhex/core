@@ -48,8 +48,6 @@
 
 #include <boost/foreach.hpp>
 
-DLVHEX_NAMESPACE_BEGIN
-
 /**
  * for one eval unit, we transform the rules (idb) independent of input
  * interpretations as follows:
@@ -86,6 +84,8 @@ DLVHEX_NAMESPACE_BEGIN
  *   (this means, that for one input, all models have to be calculated
  *    before the first one can be returned due to the minimality check)
  */
+
+DLVHEX_NAMESPACE_BEGIN
 
 namespace
 {

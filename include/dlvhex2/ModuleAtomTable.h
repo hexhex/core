@@ -89,16 +89,18 @@ public:
 	// get the ModuleAtom by ID
 	inline const ModuleAtom& getByID(ID id) const throw ();
 
-        // get the ID of the module atom with predicate, inputs, and output atom specified
+  // get the ID of the module atom with predicate, inputs, and output atom specified
 	inline ID getIDByElement(ID predicate1, const Tuple& inputs1, ID outputAtom1) const throw();
 
-        // get all module atoms with certain predicate id
+  // get all module atoms with certain predicate id
+  // NOTE: you may need to lock the mutex also while iterating!
 	inline std::pair<PredicateIterator, PredicateIterator>
 	getRangeByPredicateID(ID id) const throw();
 
-        // get range over all atoms sorted by address
-        inline std::pair<AddressIterator, AddressIterator>
-        getAllByAddress() const throw();
+  // get range over all atoms sorted by address
+  // NOTE: you may need to lock the mutex also while iterating!
+  inline std::pair<AddressIterator, AddressIterator>
+  getAllByAddress() const throw();
 
 	// store atom, assuming it does not exist
 	inline ID storeAndGetID(const ModuleAtom& atom) throw();
@@ -147,21 +149,21 @@ ID ModuleAtomTable::getIDByElement(ID predicate1, const Tuple& inputs1, ID outpu
 }
 
 // get all external atoms with certain predicate id
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<ModuleAtomTable::PredicateIterator, ModuleAtomTable::PredicateIterator>
 ModuleAtomTable::getRangeByPredicateID(ID id) const throw()
 {
 	assert(id.isTerm() && id.isConstantTerm());
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const PredicateIndex& idx = container.get<impl::PredicateTag>();
 	return idx.equal_range(id);
 }
 
 // get range over all atoms sorted by address
+// NOTE: you may need to lock the mutex also while iterating!
 std::pair<ModuleAtomTable::AddressIterator, ModuleAtomTable::AddressIterator>
 ModuleAtomTable::getAllByAddress() const throw()
 {
-  #warning this read-only iteration will probably need to be mutexed too!
   ReadLock lock(mutex);
   const AddressIndex& idx = container.get<impl::AddressTag>();
 	return std::make_pair(idx.begin(), idx.end());
