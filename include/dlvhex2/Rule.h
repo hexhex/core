@@ -28,8 +28,8 @@
  * @brief  Rule: store rules (not facts!), constraints, weak constraints
  */
 
-#ifndef ORDINARYATOM_HPP_INCLUDED__12102010
-#define ORDINARYATOM_HPP_INCLUDED__12102010
+#ifndef RULE_HPP_INCLUDED__12102010
+#define RULE_HPP_INCLUDED__12102010
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Logger.h"
