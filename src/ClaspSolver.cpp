@@ -730,9 +730,9 @@ ia.explainInconsistency(program, program.edb);
 		return InterpretationConstPtr();
 	}else{
 		DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
+		modelCount++;
 		return nextModel;
 	}
-	modelCount++;
 }
 
 int ClaspSolver::getModelCount(){
