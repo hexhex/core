@@ -114,14 +114,133 @@ output(const Tuple& output)
   return true;
 }
 
+std::set<ID> BaseModelGenerator::getPredicates(const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb){
+
+	std::set<ID> preds;
+
+	// collects edb predicates
+	bm::bvector<>::enumerator en = edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = edb->getStorage().end();
+	while (en < en_end){
+		// check if the predicate is relevant
+		const OrdinaryAtom& ogatom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		preds.insert(ogatom.tuple.front());
+		en++;
+	}
+
+	// collects idb predicates
+	BOOST_FOREACH (ID ruleID, idb){
+		assert(ruleID.isRule());
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// head
+		BOOST_FOREACH (ID atomID, rule.head){
+			const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
+			preds.insert(atom.tuple.front());
+		}
+
+		// body
+		BOOST_FOREACH (ID atomID, rule.body){
+			if (atomID.isOrdinaryAtom()){
+				const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
+				preds.insert(atom.tuple.front());
+			}
+			if (atomID.isExternalAtom()){
+				const ExternalAtom& atom = reg->eatoms.getByID(atomID);
+				// go through predicate input parameters
+				int i = 0;
+				BOOST_FOREACH (ID param, atom.tuple){
+					if (atom.pluginAtom->getInputType(i++) == PluginAtom::PREDICATE){
+						preds.insert(param);
+					}
+				}
+			}
+		}
+	}
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << "Relevant predicates: ";
+	bool first = true;
+	BOOST_FOREACH (ID p, preds){
+		if (!first) ss << ", ";
+		first = false;
+		ss << p;
+	}
+	DBGLOG(DBG, ss.str());
+#endif
+
+	return preds;
+}
+
+InterpretationPtr BaseModelGenerator::restrictInterpretationToPredicates(const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates){
+
+	InterpretationPtr ointr = InterpretationPtr(new Interpretation(reg));
+
+	// go through ground atoms in interpretation
+	bm::bvector<>::enumerator en = intr->getStorage().first();
+	bm::bvector<>::enumerator en_end = intr->getStorage().end();
+	while (en < en_end){
+		// check if the predicate is relevant
+		const OrdinaryAtom& atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (std::find(predicates.begin(), predicates.end(), atom.tuple.front()) != predicates.end()){
+			// yes, set the atom
+			ointr->setFact(*en);
+		}
+		en++;
+	}
+	return ointr;
+}
+
+Nogood BaseModelGenerator::interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer){
+
+	Nogood ng;
+
+	// go through ground atoms in interpretation
+	bm::bvector<>::enumerator en = intr->getStorage().first();
+	bm::bvector<>::enumerator en_end = intr->getStorage().end();
+	while (en < en_end){
+		// add the atom to the nogood
+		ng.insert(ngContainer.createLiteral(*en));
+		en++;
+	}
+
+	return ng;
+}
+
+void BaseModelGenerator::globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic){
+
+	DBGLOG(DBG, "Global conflict analysis");
+	if (solver->getModelCount() == 0 && ctx.config.getOption("GlobalLearning")){
+		DBGLOG(DBG, "Contradiction on first model: Component is inconsistent wrt. input");
+
+BOOST_FOREACH (ID id, idb){
+DBGLOG(DBG, "Rule " << id);
+}
+
+		if (componentIsMonotonic){
+			DBGLOG(DBG, "Component is monotonic");
+			Nogood gng;
+			if (input != InterpretationConstPtr()){
+				gng = interpretationToNogood(restrictInterpretationToPredicates(ctx.registry(), input, getPredicates(ctx.registry(), ctx.edb, idb)), ctx.globalNogoods);
+			}
+			DBGLOG(DBG, "Generating global nogood " << gng);
+			ctx.globalNogoods.addNogood(gng);
+		}
+	}
+}
+
 // projects input interpretation
 // calls eatom function
 // reintegrates output tuples as auxiliary atoms into outputi
 // (inputi and outputi may point to the same interpretation)
+
 bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   const ExternalAtom& eatom,
   InterpretationConstPtr inputi,
-  ExternalAnswerTupleCallback& cb) const
+  ExternalAnswerTupleCallback& cb,
+  ProgramCtx* ctx,
+  NogoodContainerPtr nogoods) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
@@ -200,9 +319,9 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     #endif
 
     // query
-    PluginAtom::Query query(eatominp, inputtuple, eatom.tuple);
+    PluginAtom::Query query(eatominp, inputtuple, eatom.tuple, &eatom);
     PluginAtom::Answer answer;
-    pluginAtom->retrieveCached(query, answer);
+    pluginAtom->retrieveCached(query, answer, ctx, nogoods);
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if( !answer.get().empty() )
@@ -248,15 +367,18 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 }
 
 // calls evaluateExternalAtom for each atom in eatoms
+
 bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
   const std::vector<ID>& eatoms,
   InterpretationConstPtr inputi,
-  ExternalAnswerTupleCallback& cb) const
+  ExternalAnswerTupleCallback& cb,
+  ProgramCtx* ctx,
+  NogoodContainerPtr nogoods) const
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {
     const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-    if( !evaluateExternalAtom(reg, eatom, inputi, cb) )
+    if( !evaluateExternalAtom(reg, eatom, inputi, cb, ctx, nogoods) )
     {
       LOG(DBG,"callbacks aborted evaluateExternalAtoms");
       return false;

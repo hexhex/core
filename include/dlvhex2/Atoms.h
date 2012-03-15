@@ -36,6 +36,7 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/PredicateMask.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -205,6 +206,10 @@ struct ExternalAtom:
   // multi_index_container"
   //
   mutable boost::shared_ptr<PredicateMask> inputMask;
+
+  // properties of this external atom
+  ExtSourceProperties prop;
+  bool useProp;
 
 public:
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):

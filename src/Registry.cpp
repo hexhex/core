@@ -450,6 +450,20 @@ ID Registry::storeTerm(Term& term)
   return storeConstOrVarTerm(term);
 }
 
+ID Registry::getNewConstantTerm(std::string prefix)
+{
+  static long nr = 0;
+  std::stringstream ss;
+  do{
+    ss.str("");
+    ss << prefix << nr;
+    nr++;
+  }while(terms.getIDByString(ss.str()) != ID_FAIL);
+  DBGLOG(DBG, "Creating new term with name '" << ss.str() << "'");
+  Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, ss.str());
+  return storeTerm(term);
+}
+
 // check if rule is contained in registry
 // if yes return integer id
 // otherwise store and return new id

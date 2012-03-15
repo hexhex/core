@@ -1,0 +1,8 @@
+dom(foo).
+dom(bar).
+dom(baz).
+
+out(X) :- &testA[out](X), dom(X).
+out(X) :- not &testB[out, dom](X), dom(X).
+
+x(X) v y(X) v z(X) v xx(X) v yy(X) v zz(X) :- out(X).

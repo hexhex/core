@@ -1,0 +1,176 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+%\usepackage{german}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                   % ... or a4paper or a5paper or ... 
+
+%Quellcode-Listing Einstellungen
+
+\usepackage{color,listings} %bindet das Paket Listings ein
+
+% Der lstset-Befehl ermöglicht haufenweise Einstellungen zur Formatierung
+
+\lstset{language=C, % Grundsprache ist C und Dialekt ist Sharp (C#)
+captionpos=t, % Beschriftung ist unterhalb
+frame=lines, % Oberhalb und unterhalb des Listings ist eine Linie
+basicstyle=\ttfamily, % Schriftart
+keywordstyle=\color{blue}, % Farbe für die Keywords wie public, void, object u.s.w.
+commentstyle=\color{green}, % Farbe der Kommentare
+stringstyle=\color{red}, % Farbe der Zeichenketten
+numbers=none, % Zeilennummern links vom Code
+numberstyle=\tiny, % kleine Zeilennummern
+numbersep=5pt,
+breaklines=true, % Wordwrap a.k.a. Zeilenumbruch aktiviert
+showstringspaces=false,
+% emph legt Farben für bestimmte Wörter manuell fest
+emph={double,bool,int,unsigned,char,true,false,void},
+emphstyle=\color{blue},
+emph={Assert,Test},
+emphstyle=\color{red},
+emph={[2]\using,\#define,\#ifdef,\#endif}, emphstyle={[2]\color{blue}}
+}
+
+\begin{document}
+\title{Equilibrium evaluation for Multi Context Systems in dlvhex}
+\author{Markus Bögl}
+\date{\today}                                           % Activate to display a given date or no date
+
+
+\maketitle
+
+%\begin{abstract}
+%\end{abstract}
+\section{Theoretical Foundations}
+Multi Context Systems (MCS) are systems consisting of contexts and rules between
+those contexts. A context is a logic with some knowledge base and a semantic
+function ACC. ACC decides if the context "accepts" some beliefs, given a certain
+knowledge base. Bridge rules are activated by accepted beliefs and add facts to
+knowledge bases.
+
+The semantics of MCS are defined as equilibria - a stable state of belief sets
+at each context.
+\section{Programming Objective}
+The programming objective is to implement a dlvhex-plugin, which allows to calculate equilibrium-semantics of
+MCS in dlvhex. This plugin shall provide an interface to implement
+arbitrary contexts, as well as a possibility to use ASP programs as contexts. The plugin calculates output-projected equilibria. If we talk about equilibria further, there is always meant output-projected equilibria.
+\subsection{Implementation}
+
+\subsubsection{Inputfile}
+An input file for MCS description is written by the user and contains bridge rules and context descriptions. A bridge rule is of the form
+\[ (k:p_{0}) \leftarrow (r_{1}:p_{1}), \ldots , (r_{j}:p_{j}), not\ (r_{j+1}:p_{j+1}), \ldots , not\ (r_{m}:p_{m}). \]
+where \(p_{i}\) for \(0 < i\) is a belief in the context \(C_{r_{i}}\). If the bridge rule is activated by the accepted beliefs, the belief \(p_{0}\) is added as a fact in context \(C_{k}\).
+A context description is of the form
+\[ \#context(r_{i},"extatom","param"). \]
+where \(r_{i}\) is the ID-number of the context used in the bridge rules, extatom is the name of the external atom, that is implemented by the user, or, if using the DLV ASP Context, it is named as "dlv\_asp\_context\_acc". The param text is a parameter of the acc-function, when a user specified context is used. Otherwise it is the path of the dlv file, that is called for the DLV ASP Context.
+
+\lstset{language=JAVA}
+\begin{lstlisting}[caption={example for input file},frame=tlrb]
+(1:a) :- (2:bcd), (3:e), not (1:b).
+#context(1,"dlv_asp_context_acc","ctx1.dlv").
+#context(2,"dlv_asp_context_acc","ctx2.dlv").
+#context(3,"dlv_asp_context_acc","ctx3.dlv").
+\end{lstlisting}
+If there is a user specified context, for example the later defined user specified external atom "external\_atom\_name", the input file looks like the following example.
+\lstset{language=JAVA}
+\begin{lstlisting}[caption={example for user specified context in input file},frame=tlrb]
+(1:a) :- (2:bcd), (3:e), not (1:b).
+#context(1,"external_atom_name1","someparameter").
+#context(2,"external_atom_name2","someparameter").
+#context(3,"external_atom_name3","someparameter").
+\end{lstlisting}
+\subsubsection{Converting the input file}
+First the input file is converted to a program that is accepted and evaluated by dlvhex. For every bridge rule, the bridge rule is converted to a corresponding ASP rule.
+\[ b\langle k\rangle(p_{0}) \leftarrow a\langle r_{1}\rangle (p_{1}), \ldots , a\langle r_{j}\rangle(p_{j}), na\langle r_{j+1}\rangle(p_{j+1}), \ldots , na\langle r_{m}\rangle(p_{m}). \]
+We guess the activation of each output belief \(p\)  for each context \(C_{i}\) by adding the following rules
+\[ a\langle r_{i}\rangle(p_{i}) \lor na\langle r_{i}\rangle(p_{i}). \]
+\[ o\langle r_{i}\rangle(X) \leftarrow a\langle r_{i}\rangle(X). \]
+\[ o\langle r_{i}\rangle(X) \leftarrow na\langle r_{i}\rangle(X). \]
+The last two rules calculate the set of output beliefs in \(O_{i}\).
+The Context description is converted into following constraint.
+\[ \leftarrow not\ \&\langle extatom\rangle [i,a\langle i\rangle,b\langle i\rangle,o\langle i\rangle,"param"]().\]
+After that parsing the programm is evaluated by dlvhex.
+\pagebreak
+\lstset{language=C}
+\begin{lstlisting}[caption={converted input file},frame=tlrb]
+b1(a) :- a2(bcd), a3(e), na1(b).
+a2(bcd) v na2(bcd).
+a3(e) v na3(e).
+a1(b) v na1(b).
+o1(X) :- a1(X).
+o1(X) :- na1(X).
+o2(X) :- a2(X).
+o2(X) :- na2(X).
+o3(X) :- a3(X).
+o3(X) :- na3(X).
+:- not &dlv_asp_context_acc[1,a1,b1,o1,"ctx1.dlv"]().
+:- not &dlv_asp_context_acc[2,a2,b2,o2,"ctx2.dlv"]().
+:- not &dlv_asp_context_acc[3,a3,b3,o3,"ctx3.dlv"]().
+\end{lstlisting}
+The parsed input file of a user specified context would look the same as above, exept the constraints. The constraints look like the following example.
+\lstset{language=C}
+\begin{lstlisting}[caption={converted input file with a user specified context},frame=tlrb]
+:- not &external_atom_name1[1,a1,b1,o1,"someparameter"]().
+:- not &external_atom_name2[2,a2,b2,o2,"someparameter"]().
+:- not &external_atom_name3[3,a3,b3,o3,"someparameter"]().
+\end{lstlisting}
+\subsubsection{Evaluate External Atoms}
+In order to decide, if the given answer set is accepted by the external atom or not, we have to prove the given parameters. For every given context \(C_{i}\) we have a constraint, where the first parameter is the ID \(i\) of the context \(C_{i}\). The second parameter is the set of guessed output beliefs \(A_{i}\) corresponding to the presence of \(a\langle r_{i}\rangle(p_{i})\). The next one is the set of activated bridge rule heads \(B_{i}\). The fourth parameter is the set of output beliefs \(O_{i}\), that we get by the guessing of 
+\[ a\langle r_{i}\rangle(p_{i}) \lor na\langle r_{i}\rangle(p_{i}). \] 
+and the activation of the rules 
+\[ o\langle r_{i}\rangle(X) \leftarrow a\langle r_{i}\rangle(X). \]
+\[ o\langle r_{i}\rangle(X) \leftarrow na\langle r_{i}\rangle(X). \]
+So we have every belief that appears in the bridge rule body in \(O_{i}\), as well as it is negated or not. The last parameter is the given text parameter.
+
+If a user specified context is used, the user has to write an acc-function, that returns a set of belief sets, that are accepted. The plugin checks, if there exists at least one set, given from the acc-function \(ACC_{i}\), that 
+\[ACC_{i}(param\cup B_{i})\ \cap O_{i} = A_{i} \] 
+and accepts the answer set if this equation is true.
+
+If using the ASP context, we apply a optimization to check the answerset. We add some additional facts and constraints to the program that is given as a parameter. For every activated bridge rule head \(B_{i}\) we add the belief as a fact. Additionally we calculate following sets and add the containing beliefs as constraints to the program.
+\[ \{x | x \in A_{i} \cap O_{i} \} \rightarrow "\leftarrow not \ x." \]
+\[ \{y | y \in O_{i} \setminus A_{i} \} \rightarrow "\leftarrow y." \]
+If there is an answer set returned by the evaluation of this extended program, the answer set is accepted, otherwise it is not accepted.
+\subsubsection{Output Builder}
+After the evaluation we have answer sets for every Context. Because of the corresponding of the answer sets and the output-projected equilibria, we simply step through the answer sets and write them in the form of an output-projected equilibrium.
+\[ (\{OUT_{1}\},\{OUT_{2}\},\ldots,\{OUT_{m}\}) \]
+where \(OUT_{i}\) is the set of accepted beliefs that are in equilibrium for every Context \(C_{i}\) in MCS \(M\).
+
+\subsection{Implement a ContextAtom and ContextPlugin}
+It is very simple to implement your own ContextAtoms with an acc-function. Additionally you have to register the ContextAtoms, so you also have to implement your own ContextPlugin, in which you register the Atom/Atoms.
+
+To make it more easy to implement your own context, there are two preprocessor directives in two header files. You have to include this two header files, name the plugin and give a version number with major, minor and micro as parameter, like in the following example.
+\lstset{language=C}
+\begin{lstlisting}[caption={Implement context plugin},frame=tlrb]
+#include "ContextAtom.h"
+#include "ContextPlugin.h"
+
+DLVHEX_MCSEQUILIBRIUM_PLUGIN(your_plugin_name,0,1,0)
+\end{lstlisting}
+
+This preprocessor directive must not be in a namespace. Even an anonym namespace is not allowed. The name of your plugin has to be unique. After that you define your Context in a anonym namespace and implement the acc-function as follows. The name of the external atom has to be unique and be the same as used in the input file as well.
+\lstset{language=C}
+\begin{lstlisting}[caption={Implement context atoms},frame=tlrb]
+namespace {
+ DLVHEX_MCSEQUILIBRIUM_CONTEXT(your_context_name, 
+                               "external_atom_name1")
+
+ std::set<std::set<std::string> > your_context_name::acc
+ (const std::string& param, 
+  const std::set<std::string>& input)
+ {...}
+ ...
+}
+\end{lstlisting}
+It is possible to define as much context atoms as you want. Each of them must have a unique name for the class name and for the external atom. 
+
+The registration of the atoms has to be inside the namespace. For every defined atom you have to call the registerAtom method with the classname of the atom.
+\lstset{language=C}
+\begin{lstlisting}[caption={Implement Register Context Atoms},frame=tlrb]
+void your_plugin_name::registerAtoms() {
+  registerAtom<your_context_name>();
+  ...
+}
+\end{lstlisting}
+
+\subsection{Using the plugin}
+If you are using your self implemented context, you will get a separate plugin file. To use it in dlvhex, you have to write the path of the plugin file in the plugindir option of dlvhex. It is also important that the MCSequilibriumPlugin is loaded, because your implemented context plugin only provides the acc function of your external atom. The converting of the input file and the printing of the output as output-projected equilibria is provided by the MCSequilibriumPlugin. For using more than one folder as plugindir, you have to separate the path with ":". 
+\end{document}  

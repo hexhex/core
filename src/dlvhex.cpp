@@ -130,6 +130,19 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
+//      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
+      << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
+      << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with eabehavior)" << std::endl
+      << "                        functionality: Apply special rules for functional external atoms" << std::endl
+      << "                        linear: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
+      << "                        user: Apply user-defined rules for nogood learning" << std::endl
+      << "                        partial: Apply learning rules also when model is still partial" << std::endl
+      << "                      By default, all options are enabled" << std::endl
+      << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
+      << "     --noflpcheck     Disable FLP check in Guess-and-check model generator" << std::endl
+      << "     --nomincheck     Disable minimality check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -149,7 +162,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
+      << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
+      << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)" << std::endl
       << "     --nofacts        Do not output EDB facts" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
 			<< "                      old - old dlvhex behavior" << std::endl
@@ -284,6 +299,18 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("GlobalLearning", 0);
+  pctx.config.setOption("FLPCheck", 1);
+  pctx.config.setOption("MinCheck", 1);
+  pctx.config.setOption("GenuineSolver", 0);
+  pctx.config.setOption("Instantiate", 0);
+  pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("ExternalLearningEABehavior", 0);
+  pctx.config.setOption("ExternalLearningMonotonicity", 0);
+  pctx.config.setOption("ExternalLearningFunctionality", 0);
+  pctx.config.setOption("ExternalLearningLinearity", 0);
+  pctx.config.setOption("ExternalLearningUser", 0);
+  pctx.config.setOption("ExternalLearningPartial", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -539,6 +566,11 @@ void processOptionsPrePlugin(
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
 		{ "dumpevalplan", required_argument, &longid, 17 },
+		{ "extlearn", optional_argument, 0, 18 },
+//		{ "instantiate", no_argument, 0, 19 },
+		{ "noflpcheck", no_argument, 0, 20 },
+		{ "globlearn", optional_argument, 0, 21 },
+		{ "nomincheck", no_argument, 0, 22 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -737,6 +769,34 @@ void processOptionsPrePlugin(
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
 						}
+						else if( solver == "genuineii" )
+						{
+							pctx.config.setOption("GenuineSolver", 1);
+						}
+						else if( solver == "genuinegi" )
+						{
+							#if defined(HAVE_LIBGRINGO)
+							pctx.config.setOption("GenuineSolver", 2);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuineic" )
+						{
+							#if defined(HAVE_LIBCLASP)
+							pctx.config.setOption("GenuineSolver", 3);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuinegc" )
+						{
+							#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+							pctx.config.setOption("GenuineSolver", 4);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
 						else
 						{
 							throw UsageError("unknown solver backend '" + solver +"' specified!");
@@ -812,6 +872,91 @@ void processOptionsPrePlugin(
 					}
 					break;
 				}
+			break;
+/*
+		case 17:
+				DBGLOG(DBG, "Using genuine solver");
+				if (optarg){
+					std::string oa(optarg);
+					if (oa == "internal"){
+						pctx.config.setOption("GenuineSolver", 1);
+					}else if(oa == "clingo"){
+						pctx.config.setOption("GenuineSolver", 2);
+					}else{
+						throw GeneralError(std::string("Genuine solver '") + oa + std::string("' not recognized"));
+					}
+				}else{
+					pctx.config.setOption("GenuineSolver", 1);
+				}
+				
+				break;
+*/
+		case 18:
+			{
+				if (optarg){
+					boost::char_separator<char> sep(",");
+					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+					boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+
+					for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+							f != tok.end(); ++f)
+					{
+						const std::string& token = *f;
+						if (token == "eabehavior" )
+						{
+							pctx.config.setOption("ExternalLearningEABehavior", 1);
+						}
+						if( token == "monotonicity" )
+						{
+							pctx.config.setOption("ExternalLearningMonotonicity", 1);
+						}
+						if( token == "functionality" )
+						{
+							pctx.config.setOption("ExternalLearningFunctionality", 1);
+						}
+						if( token == "linearity" )
+						{
+							pctx.config.setOption("ExternalLearningLinearity", 1);
+						}
+                                                if( token == "user" )
+						{
+							pctx.config.setOption("ExternalLearningUser", 1);
+						}
+						if( token == "partial" )
+						{
+							pctx.config.setOption("ExternalLearningPartial", 1);
+						}
+					}
+				}else{
+					// by default, turn on all external learning rules
+					pctx.config.setOption("ExternalLearningEABehavior", 1);
+					pctx.config.setOption("ExternalLearningMonotonicity", 1);
+					pctx.config.setOption("ExternalLearningFunctionality", 1);
+					pctx.config.setOption("ExternalLearningLinearity", 1);
+					pctx.config.setOption("ExternalLearningUser", 1);
+					pctx.config.setOption("ExternalLearningPartial", 1);
+				}
+			}
+
+			pctx.config.setOption("ExternalLearning", 1);
+
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [eabehavior: " << pctx.config.getOption("ExternalLearningEABehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
+			break;
+/*
+		case 19:
+			pctx.config.setOption("Instantiate", 1);
+			break;
+*/
+		case 20:
+			pctx.config.setOption("FLPCheck", 0);
+			break;
+
+		case 21:
+			pctx.config.setOption("GlobalLearning", 1);
+			break;
+
+		case 22:
+			pctx.config.setOption("MinCheck", 0);
 			break;
 
 		case '?':

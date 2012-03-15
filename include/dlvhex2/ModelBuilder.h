@@ -32,8 +32,8 @@
 #define MODEL_BUILDER_HPP_INCLUDED__18012011
 
 #include "dlvhex2/PlatformDefinitions.h"
-#include "dlvhex2/EvalGraph.h"
-#include "dlvhex2/ModelGraph.h"
+#include "EvalGraph.h"
+#include "ModelGraph.h"
 
 DLVHEX_NAMESPACE_BEGIN
 

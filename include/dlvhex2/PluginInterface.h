@@ -185,6 +185,8 @@
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/Error.h"
+#include "dlvhex2/CDNLSolver.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
@@ -192,6 +194,10 @@
 #include <map>
 #include <string>
 #include <iosfwd>
+#include <algorithm>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 /**
  * Definitions for C ABI interface for dlvhex plugins.
@@ -220,6 +226,9 @@
  */
 #define PLUGINABIVERSIONFUNCTION getDlvhex2ABIVersion
 #define PLUGINABIVERSIONFUNCTIONSTRING "getDlvhex2ABIVersion"
+
+#define PLUGINVERSIONFUNCTION getDlvhexPluginVersion
+#define PLUGINVERSIONFUNCTIONSTRING "getDlvhexPluginVersion"
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 #define IMPLEMENT_PLUGINABIVERSIONFUNCTION \
@@ -656,21 +665,34 @@ public:
 	 * &extatom[a,b](X,c,X,d) the pattern is <X,c,X,d>.
 	 */
     Tuple pattern;
+    const ExternalAtom* eatom;
+    InterpretationPtr predicateInputMask;
+    std::map<ID, int> inputPredicateTable; // stores for each predicate term ID the index of the corresponding parameter in input
 
     /**
      * \brief Construct query.
      */
     Query(InterpretationConstPtr interpretation,
           const Tuple& input,
-          const Tuple& pattern):
+          const Tuple& pattern,
+          const ExternalAtom* ea = 0,
+          const InterpretationPtr predicateInputMask = InterpretationPtr()):
       interpretation(interpretation),
       input(input),
-      pattern(pattern) {}
+      pattern(pattern),
+      eatom(ea),
+      predicateInputMask(predicateInputMask)
+    {
+      builtInputPredicateTable();
+    }
 
     /**
 	 * Equality for hashing the query for caching query results.
 	 */
     bool operator==(const Query& other) const;
+
+    // stores for each predicate term ID the index of the corresponding parameter in input
+    void builtInputPredicateTable();
   };
 
   /**
@@ -779,7 +801,8 @@ protected:
    */
   PluginAtom(const std::string& predicate, bool monotonic):
     predicate(predicate),
-    monotonic(monotonic) { }
+    monotonic(monotonic)
+    {}
 
   // The following functions are to be used in the constructor only.
 
@@ -840,6 +863,7 @@ public:
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
+  virtual void retrieveCached(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
   /**
    * \brief Retrieve answer to a query (external computation happens here).
@@ -853,8 +877,71 @@ public:
    * - variables in pattern must be replaced by constants in answer tuples
    */
   virtual void retrieve(const Query&, Answer&) = 0;
+  virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+
+  // ========== External Learning Methods ==========
 
   /**
+   * \brief Splits a non-atomic query up into a set of atomic queries, such that the result of the
+   *        composed query corresponds to the union of the results to the atomic queries.
+   */
+  virtual std::vector<Query> splitQuery(ProgramCtx* ctx, const Query& q, const ExtSourceProperties& prop);
+
+  /**
+   * \brief Learns nogoods which encode that the input from query implies the output in answer.
+   */
+  void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
+
+  /**
+   * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
+   */
+  void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
+
+  /**
+   * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
+   *        the external atom. Such a rule encodes that, whenever a is in the extension of the 1-st input parameter, but not in the extension
+   *        of the second, it will always be in the output. The learning rule must be ground.
+   */
+  void learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule);
+
+  /**
+   * \brief Learns nogoods according to some rule of kind "out(X) :- in1(X), not in2(X).", where in[i] refers to the i-th input parameter to
+   *        the external atom. Such a rule encodes that, whenever X is in the extension of the 1-st input parameter, but not in the extension
+   *        of the second, it will always be in the output.
+   */
+  void learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rule);
+
+  // ========== External Learning Helper Methods ==========
+
+  /**
+   * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
+   *        for nonmonotonic ones all atoms are included..
+   */
+  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop);
+
+  /**
+   * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;
+   *        sign indicates if the positive or negative version of the replacement atom is used.
+   */
+  Set<ID> getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign);
+
+  /**
+   * \brief Construct an output (replacement) atom corresponding to the answer tuple t;
+   *        sign indicates if the positive or negative version of the replacement atom is used.
+   */
+  ID getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple t, bool sign);
+
+  /**
+   * \brief Parses a learning rule, checks if it is valid learning rule (i.e. it is of the kind as described in the explanation of learnFromRule),
+   *        and returns its ID; if the parser or the validity check fails, ID_FAIL is returned.
+   */
+  ID getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule);
+
+  // ==========  ==========
+
+  /**
+   * \brief Returns the type of the input argument specified by position
+   * (starting with 0). Returns TUPLE for TUPLE input arguments (variably many).
    * \brief Returns the type of the input argument specified by position.
    *
    * Should not be overridden.
@@ -875,12 +962,40 @@ public:
     { return inputType; }
 
   /**
+   * @return general monotonicity
    * \brief Return monotonicity of atom.
    *
    * Should not be overridden.
    */
   bool isMonotonic() const
     { return monotonic; }
+
+  /**
+   * @return monotonicity on parameter level
+   */
+  bool isMonotonic(const ExtSourceProperties& prop, int parameterIndex) const
+    { return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
+
+  /**
+   * @return antimonotonicity on parameter level
+   */
+  bool isAntimonotonic(const ExtSourceProperties& prop, int parameterIndex) const
+    { return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
+
+  /**
+   * @return functional
+   */
+  bool isFunctional(const ExtSourceProperties& prop) const
+    { return prop.functional; }
+
+  /**
+   * @return full linearity
+   */
+  bool isFullyLinear(const ExtSourceProperties& prop) const
+    { return prop.fullylinear; }
+
+  // Associate plugin atom with registry pointer.
+  // (This implicitly calculates the predicate ID.)
 
   /**
    * \brief Associate plugin atom with registry pointer.
@@ -945,6 +1060,10 @@ protected:
   // whether the function is monotonic or nonmonotonic
   bool monotonic;
 
+  /// \brief general properties of the external source (may be overridden on atom-level)
+  ExtSourceProperties prop;
+
+  /// \brief Type of each input argument (only last may be TUPLE).
   // type of each input argument (only last may be TUPLE).
   std::vector<InputType> inputType;
 
@@ -954,6 +1073,15 @@ protected:
   // Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
   QueryAnswerCache queryAnswerCache;
+
+  /// \brief output tuples generated so far (used for learning for
+  //         functional sources)
+  std::vector<Tuple> otuples;
+
+  /// \brief Registry associated with this atom
+  //
+  // This association cannot be done by the plugin itself, it is done by
+  // the PluginContainer loading or receiving the plugin.
 
   // Registry associated with this atom
   RegistryPtr registry;

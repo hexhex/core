@@ -36,6 +36,9 @@
 #include "dlvhex2/PlainModelGenerator.h"
 #include "dlvhex2/WellfoundedModelGenerator.h"
 #include "dlvhex2/GuessAndCheckModelGenerator.h"
+#include "dlvhex2/GenuinePlainModelGenerator.h"
+#include "dlvhex2/GenuineWellfoundedModelGenerator.h"
+#include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -282,8 +285,13 @@ EvalGraphBuilder::createEvalUnit(
     {
       // no inner external atoms -> plain model generator factory
       LOG(DBG,"configuring plain model generator factory for eval unit " << u);
-      uprops.mgf.reset(new PlainModelGeneratorFactory(
-            ctx, ci, externalEvalConfig));
+      if (ctx.config.getOption("GenuineSolver") > 0){
+        uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }else{
+        uprops.mgf.reset(new PlainModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
     }
     else
     {
@@ -292,15 +300,25 @@ EvalGraphBuilder::createEvalUnit(
         // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
 				// -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
-        uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }else{
+          uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
       }
       else
       {
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }else{
+          uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
       }
     }
   }

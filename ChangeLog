@@ -50,6 +50,10 @@
 	* testsuite/run_TestDLVProcess.sh: Likewise (workaround to make it work,
 	should be solved properly but there is no documentation how to do it in boost).
 
+2012-02-21  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* Merge trunk 3246-3554 into refactoring branch
+
 2012-02-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* Makefile.am: Installing local bitmagic to safe location if using it,
@@ -236,6 +240,7 @@
 
 	* cheatsheet: Remove.
 
+>>>>>>> .merge-rechts.r3358
 2011-11-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/SafetyChecker.cpp: Fixed bug in safety checker.

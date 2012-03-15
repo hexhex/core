@@ -50,29 +50,41 @@ libdlvhex2_base_la_SOURCES = \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
+    CDNLSolver.cpp \
+    ClaspSolver.cpp \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     Configuration.cpp \
     DependencyGraph.cpp \
-		DumpingEvalGraphBuilder.cpp \
+    DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicTrivial.cpp \
-		GraphvizHelpers.cpp \
+    GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
+    GenuinePlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
+    GenuineWellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
+    GenuineGuessAndCheckModelGenerator.cpp \
+    GenuineSolver.cpp \
+    GringoGrounder.cpp \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
+    InconsistencyAnalyzer.cpp \
+    InternalGroundASPSolver.cpp \
+    InternalGroundDASPSolver.cpp \
+    InternalGrounder.cpp \
     InputProvider.cpp \
     Interpretation.cpp \
     Logger.cpp \
+    Nogood.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \

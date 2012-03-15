@@ -62,6 +62,7 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
+#include <boost/foreach.hpp>
 
 #include <cctype>
 
@@ -118,6 +119,8 @@ struct ComfortTerm:
    */
   bool isInteger() const
     { return type == INT; }
+  bool isAnon() const
+    { return type == STR && strval == "_"; }
 
   /**
    * \brief Construct variable term.
@@ -178,6 +181,32 @@ protected:
    */
   ComfortTerm(Type type, const std::string& strval, int intval):
     type(type), strval(strval), intval(intval) {}
+
+public:
+  ComfortTerm() : type(STR), strval("") {}
+
+  ComfortTerm(int intval) : type(INT), intval(intval){
+  }
+
+  ComfortTerm(std::string strval, bool addQuotes = false) : type(STR){
+    if (addQuotes && (strval.length() == 0 || strval[0] != '\"' || strval[strval.length() - 1] != '\"')) this->strval = std::string("\"") + strval + std::string("\"");
+    else this->strval = strval;
+  }
+
+  std::string getUnquotedString() const{
+    if (strval.length() > 1 && strval[0] == '\"' && strval[strval.length() - 1] == '\"')
+      return strval.substr(1, strval.length() - 2);
+    else
+      return strval;
+  }
+
+  std::string getString() const{
+    return strval;
+  }
+
+  std::string getVariable() const{
+    return strval;
+  }
 };
 
 /**
@@ -234,6 +263,60 @@ struct ComfortAtom:
     { assert(!tuple.empty() && !tuple.front().isInteger());
       return tuple.front().strval; }
 
+  inline const ComfortTuple getArguments() const
+    { 
+      ComfortTuple ct = tuple;
+      assert(ct.size() > 0);
+      ct.erase(ct.begin());
+      return ct;
+    }
+
+  inline const ComfortTerm getArgument(int index) const
+    { 
+      assert(index >= 0 && index < tuple.size());
+      return tuple[index];
+    }
+
+  inline unsigned getArity() const
+    { 
+      return tuple.size() - 1;
+    }
+
+  inline unsigned isStrongNegated() const
+    { 
+      assert(!tuple.empty() && !tuple.front().isInteger());
+      assert(!tuple[0].strval.length() == 0);
+      return tuple[0].strval[0] == '-';
+    }
+
+  inline void setArgument(int index, ComfortTerm arg)
+    { 
+      assert(index >= 0 && index < tuple.size());
+      tuple[index] = arg;
+    }
+
+  inline void setArguments(ComfortTuple args)
+    { 
+	assert(tuple.size() > 0);
+	ComfortTerm pred = tuple[0];
+	tuple.clear();
+	tuple.push_back(pred);
+	BOOST_FOREACH (ComfortTerm arg, args){
+		tuple.push_back(arg);
+	}
+    }
+
+  inline ComfortAtom(){}
+
+  inline ComfortAtom(ComfortTerm pred, ComfortTuple args, bool stronglyNegated = false){
+	tuple.push_back(pred);
+	BOOST_FOREACH (ComfortTerm arg, args){
+		tuple.push_back(arg);
+	}
+  }
+
+  // TODO implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity, isStrongNegated
+
   // TODO it might be useful to also implement setArgument, setArguments, setPredicate, getArguments, getArgument, getArity
 
   /**
@@ -248,6 +331,23 @@ protected:
   void calculateStrVal() const;
 };
 
+// you can stream out ComfortAtom objects, e.g., for debugging
+struct ComfortLiteral:
+  public ostream_printable<ComfortLiteral>
+{
+public:
+  inline const std::string& toString() const
+    { if( strval.empty() ) calculateStrVal(); return strval; }
+
+protected:
+  mutable std::string strval;
+  void calculateStrVal() const;
+};
+
+
+// this mimicks the old AtomSet
+// you can stream out ComfortInterpretation objects, e.g., for debugging
+
 /**
  * \brief String-based Interpretation object (comfort interface).
  *
@@ -255,6 +355,7 @@ protected:
  *
  * You can stream instances of this class into std::ostream&.
  */
+
 struct ComfortInterpretation;
 struct ComfortInterpretation:
   public std::set<ComfortAtom>,
@@ -308,6 +409,8 @@ struct ComfortInterpretation:
    * Non-virtual on purpose. (see Printhelpers.hpp)
    */
   std::ostream& print(std::ostream& o) const;
+
+  bool operator==(const ComfortInterpretation& c2) const;
 };
 
 /**

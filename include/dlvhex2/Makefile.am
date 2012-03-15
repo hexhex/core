@@ -11,6 +11,8 @@ pkginclude_HEADERS = \
   Atoms.h \
   BaseModelGenerator.h \
   Benchmarking.h \
+  ClaspSolver.h \
+  CDNLSolver.h \
   BuiltinAtomTable.h \
   CAUAlgorithms.h \
   ComfortPluginInterface.h \
@@ -23,6 +25,7 @@ pkginclude_HEADERS = \
   DLVProcess.h \
   DLVresultParserDriver.h \
   Error.h \
+  ExtSourceProperties.h \
   EvalGraphBuilder.h \
   EvalGraph.h \
   EvalHeuristicASP.h \
@@ -37,8 +40,14 @@ pkginclude_HEADERS = \
   fwd.h \
   GraphvizHelpers.h \
   GuessAndCheckModelGenerator.h \
+  GenuineGuessAndCheckModelGenerator.h \
+  GenuineSolver.h \
   HexGrammar.h \
   HexGrammar.tcc \
+  InconsistencyAnalyzer.h \
+  InternalGroundASPSolver.h \
+  InternalGroundDASPSolver.h \
+  InternalGrounder.h \
   HexParser.h \
   HexParserModule.h \
   HigherOrderPlugin.h \
@@ -50,6 +59,8 @@ pkginclude_HEADERS = \
   MLPSyntaxChecker.h \
   Makefile.am \
   Makefile.in \
+  Nogood.h \
+  OrdinaryASPProgram.h \
   ModelBuilder.h \
   ModelGenerator.h \
   ModelGraph.h \
@@ -61,6 +72,8 @@ pkginclude_HEADERS = \
   OrdinaryAtomTable.h \
   PlainAuxPrinter.h \
   PlainModelGenerator.h \
+  GenuinePlainModelGenerator.h \
+  GringoGrounder.h \
   PlatformDefinitions.h \
   PluginContainer.h \
   PluginInterface.h \
@@ -78,11 +91,14 @@ pkginclude_HEADERS = \
   RuleTable.h \
   StrongNegationPlugin.h \
   SafetyChecker.h \
+  Set.h \
+  DynamicVector.h \
   State.h \
   Table.h \
   Term.h \
   TermTable.h \
   URLBuf.h \
+  GenuineWellfoundedModelGenerator.h \
   WellfoundedModelGenerator.h
 
 

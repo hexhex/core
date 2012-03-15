@@ -302,6 +302,10 @@ std::ostream& ComfortInterpretation::print(std::ostream& o) const
   return o << printrange(*this, "{", "}", ",");
 }
 
+bool ComfortInterpretation::operator==(const ComfortInterpretation& c2) const{
+  return this->difference(c2).size() == 0 && c2.difference(*this).size() == 0;
+}
+
 namespace
 {
   ComfortTerm convertTerm(RegistryPtr reg, ID tid)
