@@ -740,8 +740,16 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 	// for non-disjunctive components, generate one model and return it
 	// for disjunctive components, generate all modes, do minimality check, and return one model
-	if (factory.ci.disjunctiveHeads){
-		DBGLOG(DBG, "Solving disjunctive component by GnC Model Generator");
+	//
+	// !! disjunctive heads is not a sufficient criterion to make the distinction!
+	// Consider the program: p(X) :- &ext[p](X), dom(X).
+	// with the following definition of ext:
+	//	{} -> {}
+	//	{a} -> {a}
+	// Then {a} is a compatible model but no answer set.
+	// @TODO: find another criterion which allows for skipping the minimality check.
+	if (factory.ctx.config.getOption("MinCheck")){
+		DBGLOG(DBG, "Solving component with minimality check by GnC Model Generator");
 
 		if( currentResults == 0 )
 		{
@@ -807,7 +815,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 		return ret->interpretation;
 	}else{
-		DBGLOG(DBG, "Solving non-disjunctive component by GnC Model Generator");
+		DBGLOG(DBG, "Solving component without minimality check by GnC Model Generator");
 
 		return generateNextCompatibleModel();
 	}

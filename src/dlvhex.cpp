@@ -142,6 +142,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      By default, all options are enabled" << std::endl
       << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --noflpcheck     Disable FLP check in Guess-and-check model generator" << std::endl
+      << "     --nomincheck     Disable minimality check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -300,6 +301,7 @@ int main(int argc, char *argv[])
 
   pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
+  pctx.config.setOption("MinCheck", 1);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -568,6 +570,7 @@ void processOptionsPrePlugin(
 //		{ "instantiate", no_argument, 0, 19 },
 		{ "noflpcheck", no_argument, 0, 20 },
 		{ "globlearn", optional_argument, 0, 21 },
+		{ "nomincheck", no_argument, 0, 22 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -950,6 +953,10 @@ void processOptionsPrePlugin(
 
 		case 21:
 			pctx.config.setOption("GlobalLearning", 1);
+			break;
+
+		case 22:
+			pctx.config.setOption("MinCheck", 0);
 			break;
 
 		case '?':
