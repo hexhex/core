@@ -455,6 +455,7 @@ int GringoGrounder::doRun()
 	}
 
 	// print ground program
+#ifdef NDEBUG
 	programStream.str("");
 	if( groundProgram.edb != 0 )
 	{
@@ -465,6 +466,7 @@ int GringoGrounder::doRun()
 	printer.printmany(groundProgram.idb, "\n");
 	programStream << std::endl;
 	DBGLOG(DBG, "Got the following ground program from Gringo: " << programStream.str());
+#endif
 
 	// restore cerr output
 	std::cerr.rdbuf(origcerr);
