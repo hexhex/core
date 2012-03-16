@@ -1,0 +1,24 @@
+% testNonmon implements the following mapping
+% from the extension of the predicate input to the output tuple:
+% {} -> {2},  {1} -> {1},  {2} -> {1},  {1,2} -> {1,2}
+%
+% There are two model candidates: {1}, {1,2}
+% Both are compatible but only {1} is subset-minimal
+%
+% dlvhex2 currently outputs both models if the
+% minimality check is disabled (--nomincheck, works only with genuine solvers).
+% This is (probably) due to the wrong implementation of the FLP check.
+% If the FLP check would be correct, {1,2} should be eliminated
+% (even without explicit minimality check) because it is
+% not a subset-minimal model of fP^{1,2}.
+% However, as {1,2} spuriously passes the FLP check,
+% an explicit minimality check is needed to guarantee correct
+% behavior.
+%
+% Note: I am not completely sure if this is actually a bug in the FLP check,
+% but I strongly believe it.
+
+dom(1).
+dom(2).
+
+p(X) :- &testNonmon[p](X), dom(X).

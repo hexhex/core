@@ -1,0 +1,19 @@
+% This example demonstrates that there is a problem
+% with the minimality check in the translation approach
+% (GuessAndCheckModelGenerator).
+%
+% The program yields two answer sets: {dom(a), p(a)} and {dom(a)},
+% but only the latter one is subset-minimal.
+%
+% The genuine solvers (--solver=genuinegc) work correctly.
+% I suppose that the problem is due to missing projection to
+% non-auxiliary atoms before the minimality check
+% (a similar problem occurred when I wrote the genuine solver).
+
+
+
+% The external atom behaves like negation-as-failure,
+% hence we have a kind of double negation in the body.
+dom(a).
+
+p(X) :- dom(X), not &testSetMinus[dom,p](X).
