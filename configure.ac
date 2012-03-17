@@ -112,15 +112,15 @@ esac
 # --enable-debug vs --enable-release vs --enable-benchmark vs --enable-profiling vs --enable-extradebug
 # (only one of the three can be chosen, default is --enable-release)
 #
-AC_ARG_ENABLE(debug,
-              [AS_HELP_STRING([--enable-debug],[build debug version (default)])],
-              [enable_debug=true],
-              [enable_debug=false]
-             )
 AC_ARG_ENABLE(release,
-              [AS_HELP_STRING([--enable-release],[build release version (-assertions,-debuglogging)])],
+              [AS_HELP_STRING([--enable-release],[build release version (default, -assertions, -debug logging)])],
               [enable_release=true],
               [enable_release=false]
+             )
+AC_ARG_ENABLE(debug,
+              [AS_HELP_STRING([--enable-debug],[build debug version])],
+              [enable_debug=true],
+              [enable_debug=false]
              )
 AC_ARG_ENABLE(benchmark,
               [AS_HELP_STRING([--enable-benchmark],[build benchmark version (release+timers+counters)])],

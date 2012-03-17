@@ -1,3 +1,11 @@
+2012-XX-XX  Christoph Redl   <redl@kr.tuwien.ac.at>
+	
+	TODO describe Genuine solver changes
+
+2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* configure.ac: Fixing help message.
+
 2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
