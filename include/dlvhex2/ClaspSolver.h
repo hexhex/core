@@ -124,7 +124,9 @@ protected:
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
-	int NUM_PREPAREMODELS;
+	static const int MODELQUEUE_MAXSIZE = 5;
+	boost::mutex modelsMutex;
+	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;
 //	InterpretationPtr nextModel;
 	boost::interprocess::interprocess_semaphore sem_request, sem_answer;

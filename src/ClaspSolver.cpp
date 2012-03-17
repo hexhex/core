@@ -43,6 +43,7 @@
 #include "dlvhex2/Printer.h"
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 #include "clasp/program_rule.h"
 #include "clasp/constraint.h"
@@ -167,23 +168,41 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	// remember the model
 	DBGLOG(DBG, "Model is: " << *model);
-	cs.preparedModels.push(model);
+
+	// thread-safe queue access
+	{
+		boost::mutex::scoped_lock lock(cs.modelsMutex);
+
+//std::cout << "Checking if there is empty space in the queue" << std::endl;
+		while(cs.preparedModels.size() >= ClaspSolver::MODELQUEUE_MAXSIZE){
+			DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved from Main thread");
+//std::cout << "No: Waiting for Main thread" << std::endl;
+			cs.waitForQueueSpaceCondition.wait(lock);
+		}
+
+//std::cout << "Producing model" << std::endl;
+		DBGLOG(DBG, "Adding new model to model queue");
+		cs.preparedModels.push(model);
+	}
+//std::cout << "Notifying main thread about new model" << std::endl;
+	DBGLOG(DBG, "Notifying Main thread about new model");
+	cs.waitForModelCondition.notify_all();
 
 	// if we have prepared enough models we notify the main thread
-	if (cs.preparedModels.size() >= cs.NUM_PREPAREMODELS){
-		cs.modelRequest = false;
-		DBGLOG(DBG, "ClaspThread: Notifying MainThread");
-		cs.sem_answer.post();	// continue with execution of main thread
+//	if (cs.preparedModels.size() >= cs.NUM_PREPAREMODELS){
+//		cs.modelRequest = false;
+//		DBGLOG(DBG, "ClaspThread: Notifying MainThread");
+//		cs.sem_answer.post();	// continue with execution of main thread
 
-		DBGLOG(DBG, "ClaspThread: Waiting for further requests");
-		cs.sem_request.wait();
+//		DBGLOG(DBG, "ClaspThread: Waiting for further requests");
+//		cs.sem_request.wait();
 
-		if (cs.NUM_PREPAREMODELS < 200) cs.NUM_PREPAREMODELS *= 1.3;
-	}
+//		if (cs.NUM_PREPAREMODELS < 200) cs.NUM_PREPAREMODELS *= 1.3;
+//	}
 
 	// @TODO: find a breakout possibility to terminate only the current thread!
 	//        the following throw kills the whole application, which is not what we want
-	if (cs.terminationRequest) throw std::runtime_error("ClaspThread was requested to terminate");
+//	if (cs.terminationRequest) throw std::runtime_error("ClaspThread was requested to terminate");
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
@@ -415,14 +434,21 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 void ClaspSolver::runClasp(){
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
-	DBGLOG(DBG, "ClaspThread: Waiting for requests");
-	sem_request.wait();	// continue with execution of main thread
+//	DBGLOG(DBG, "ClaspThread: Waiting for requests");
+//	sem_request.wait();	// continue with execution of main thread
 
 	Clasp::solve(claspInstance, params);
 
-	DBGLOG(DBG, "Clasp terminated -> Exit thread");
-	endOfModels = true;
-	sem_answer.post();
+	DBGLOG(DBG, "Clasp terminated");
+
+	{
+		DBGLOG(DBG, "Notifying Main thread about end of models");
+		boost::mutex::scoped_lock lock(modelsMutex);
+		endOfModels = true;
+	}
+//std::cout << "Notifying main thread about eom" << std::endl;
+	waitForModelCondition.notify_all();
+//	sem_answer.post();
 }
 
 bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
@@ -523,7 +549,9 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), modelRequest(false), terminationRequest(false), endOfModels(false), translatedNogoods(0), NUM_PREPAREMODELS(5){
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), modelRequest(false), terminationRequest(false), endOfModels(false), translatedNogoods(0)
+//, NUM_PREPAREMODELS(5)
+{
 
 	reg = ctx.registry();
 
@@ -616,39 +644,37 @@ int ClaspSolver::getNogoodCount(){
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 
-	if (endOfModels && preparedModels.size() == 0){
-		// all prepared models are exhausted and also clasp has no more models
+	InterpretationConstPtr nextModel;
+	{
+	        boost::mutex::scoped_lock lock(modelsMutex);
+        // Process data
+//std::cout << "Checking if model is available or endOfModels" << std::endl;
+		while(!endOfModels && preparedModels.empty()){
+//std::cout << "No: Waiting for Clasp thread" << std::endl;
+			DBGLOG(DBG, "Model queue is empty (end endOfModels was not set yet); Waiting for Clasp thread to add models (or set endOfModels)");
+			waitForModelCondition.wait(lock);
+		}
 
-/*
-DBGLOG(DBG, "Analyzing inconsistency");
-InconsistencyAnalyzer ia(ctx);
-ia.explainInconsistency(program, program.edb);
-*/
-
-		return InterpretationConstPtr();
+//std::cout << "endOfModels is set or a model arrived" << std::endl;
+		// now we have either a model or endOfModels is set
+		if (preparedModels.size() == 0){
+			DBGLOG(DBG, "Model arrived");
+//std::cout << "No more models" << std::endl;
+			// all prepared models are exhausted and also clasp has no more models
+			nextModel = InterpretationConstPtr();
+		}else{
+//std::cout << "Got a model" << std::endl;
+			// return next prepared model
+			nextModel = preparedModels.front();
+			preparedModels.pop();
+			DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
+			modelCount++;
+		}
 	}
-
-	// if no prepared models are available we need to generate some
-	if (preparedModels.size() == 0){
-		DBGLOG(DBG, "MainThread: Sending model request");
-		modelRequest = true;
-		sem_request.post();
-		DBGLOG(DBG, "MainThread: Waiting for answer to model request");
-		sem_answer.wait();
-	}
-
-	if (endOfModels && preparedModels.size() == 0){
-		// all prepared models are exhausted and also clasp has no more models
-		DBGLOG(DBG, "MainThread: endOfModels");
-		return InterpretationConstPtr();
-	}else{
-		// return next prepared model
-		InterpretationConstPtr nextModel = preparedModels.front();
-		preparedModels.pop();
-		DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
-		modelCount++;
-		return nextModel;
-	}
+//std::cout << "Notifying clasp thread about empty space" << std::endl;
+	DBGLOG(DBG, "Notifying Clasp thread about empty space in model queue");
+	waitForQueueSpaceCondition.notify_all();
+	return nextModel;
 }
 
 int ClaspSolver::getModelCount(){
