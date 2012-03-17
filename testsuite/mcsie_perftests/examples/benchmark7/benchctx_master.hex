@@ -1,8 +1,0 @@
-#context(1,"benchcontext7_context_acc1", "./benchmark7/dlvctx_ctx1.dlv").
-#context(2,"benchcontext7_context_acc2", "./benchmark7/dlvctx_ctx2.dlv").
-#context(3,"benchcontext7_context_acc3", "./benchmark7/dlvctx_ctx3.dlv").
-#context(4,"benchcontext7_context_acc4", "./benchmark7/dlvctx_ctx4.dlv").
-
-r1:(2:b) :- not (1:a).
-r2:(3:c) :- not (2:b).
-r3:(4:d) :- not (3:c).
