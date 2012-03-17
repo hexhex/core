@@ -48,6 +48,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <queue>
 
 #include <boost/foreach.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -123,7 +124,9 @@ protected:
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
-	InterpretationPtr nextModel;
+	static const int NUM_PREPAREMODELS = 5;
+	std::queue<InterpretationPtr> preparedModels;
+//	InterpretationPtr nextModel;
 	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
 	bool modelRequest;
 	bool terminationRequest;

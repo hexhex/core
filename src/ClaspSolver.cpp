@@ -167,13 +167,17 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	// remember the model
 	DBGLOG(DBG, "Model is: " << *model);
-	cs.nextModel = model;
-	cs.modelRequest = false;
-	DBGLOG(DBG, "ClaspThread: Notifying MainThread");
-	cs.sem_answer.post();	// continue with execution of main thread
+	cs.preparedModels.push(model);
 
-	DBGLOG(DBG, "ClaspThread: Waiting for further requests");
-	cs.sem_request.wait();
+	// if we have prepared enough models we notify the main thread
+	if (cs.preparedModels.size() >= ClaspSolver::NUM_PREPAREMODELS){
+		cs.modelRequest = false;
+		DBGLOG(DBG, "ClaspThread: Notifying MainThread");
+		cs.sem_answer.post();	// continue with execution of main thread
+
+		DBGLOG(DBG, "ClaspThread: Waiting for further requests");
+		cs.sem_request.wait();
+	}
 
 	// @TODO: find a breakout possibility to terminate only the current thread!
 	//        the following throw kills the whole application, which is not what we want
@@ -184,13 +188,6 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 }
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
-
-/*
-	Nogood ng;
-	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 0));
-	ng.insert(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, 2));
-	cs.addNogoodToClasp(ng);
-*/
 
 	if (cs.learner.size() != 0){
 
@@ -266,30 +263,6 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 	ss << " }";
 #endif
 	clauseCreator->end();
-
-	//std::cout << claspInstance.numTernary() << ", " << claspInstance.numBinary() << ", " << claspInstance.numLearntShort() << std::endl;
-	/*
-	if (claspInstance.master()->numLearntConstraints() > 0){
-		Clasp::LitVec lv;
-		Clasp::LearntConstraint& lc = claspInstance.master()->getLearnt(claspInstance.master()->numLearntConstraints() - 1);
-
-		std::vector<std::vector<ID> > ngg = convertClaspNogood(lc);
-
-		BOOST_FOREACH (std::vector<ID> ng, ngg){
-			std::cout << "{";
-			BOOST_FOREACH (ID id, ng){
-				std::cout << (id.isNaf() ? "-" : "") << id.address << ", ";
-			}
-			std::cout << "} x ";
-		}
-		std::cout << std::endl;
-
-		std::vector<Nogood> nogoods = convertClaspNogood(ngg);
-		BOOST_FOREACH (Nogood nogood, nogoods){
-			std::cout << "NG: " << nogood << std::endl;
-		}
-	}
-	*/
 
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 
@@ -548,30 +521,9 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
-/*
-class MyDistributor : public Clasp::Distributor{
-public:
-	uint32 receive(const Clasp::Solver& in, Clasp::SharedLiterals** out, uint32 maxOut){
-		std::cout << "Distributing learned knowledge" << std::endl;
-	}
-
-	MyDistributor() : Clasp::Distributor(2, 3, 32){
-	}
-
-protected:
-	void doPublish(const Clasp::Solver& source, Clasp::SharedLiterals* lits){
-		std::cout << "Distributing learned knowledge" << std::endl;
-	}
-};
-*/
-
 ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), modelRequest(false), terminationRequest(false), endOfModels(false), translatedNogoods(0){
 
 	reg = ctx.registry();
-
-//claspInstance.enableUpdateShortImplications(false);
-//claspInstance.enableConstraintSharing();
-//claspInstance.enableLearntSharing(new MyDistributor());
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
 	bool initiallyInconsistent = sendProgramToClasp(p);
@@ -619,23 +571,6 @@ ClaspSolver::~ClaspSolver(){
 	if (!endOfModels){
 		DBGLOG(DBG, "ClaspSolver destructor: Clasp is still running - Requesting all outstanding models");
 		while (getNextModel() != InterpretationConstPtr());
-
-/*		// activate this code if there is a breakout possibility in ModelEnumerator::reportModel in case of termination requests
-		DBGLOG(DBG, "MainThread destructor: clasp is still active");
-		DBGLOG(DBG, "MainThread destructor: sending termination request");
-		terminationRequest = true;
-		sem_request.post();
-		DBGLOG(DBG, "MainThread destructor: waiting for answer");
-		sem_answer.wait();
-		claspThread->join();
-		DBGLOG(DBG, "MainThread destructor: ClaspThread terminated");
-*/
-
-
-
-
-
-
 		DBGLOG(DBG, "Joining ClaspThread");
 		claspThread->join();
 	}else{
@@ -665,14 +600,11 @@ void ClaspSolver::removeExternalLearner(LearningCallback* lb){
 }
 
 int ClaspSolver::addNogood(Nogood ng){
-//	addNogoodToClasp(ng);
-
 	nogoods.push_back(ng);
 	return nogoods.size() - 1;
 }
 
 void ClaspSolver::removeNogood(int index){
-//	nogoods.erase(nogoods.begin() + index);
 	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
 }
 
@@ -682,34 +614,9 @@ int ClaspSolver::getNogoodCount(){
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 
-	if (endOfModels){
-/*
-		if (modelCount == 0){
-			std::vector<std::vector<ID> > ngt = convertClaspNogood(claspInstance.master()->conflict());
-			std::cout << "hasConflict: " << claspInstance.master()->hasConflict() << ", hasStopConflict: " << claspInstance.master()->hasStopConflict() << " CS: " << ngt.size() << std::endl;
-			std::vector<Nogood> ngg = convertClaspNogood(ngt);
-			std::cout << "Learned conflicts:" << std::endl;
-			BOOST_FOREACH (Nogood ng, ngg){
-				std::cout << ng << std::endl;
-				std::cout << std::endl;
-			}
-		}
-*/
-/*
-std::cout << "Component has no models for input interpretation " << *program.edb << ", contraditory nogoods are:" << std::endl;
-InternalGroundDASPSolver igdas(ctx, program);
-assert(igdas.getNextModel() == InterpretationConstPtr());
-std::vector<Nogood> ngg = igdas.getContradictoryNogoods();
-BOOST_FOREACH (Nogood ng, ngg){
-	std::cout << ng << std::endl;
+	if (endOfModels && preparedModels.size() == 0){
+		// all prepared models are exhausted and also clasp has no more models
 
-	BOOST_FOREACH (ID id, ng){
-		std::cout << "Cause of " << id.address << " is " << igdas.getCause(id.address) << std::endl;
-	}
-
-}
-std::cout << "---" << std::endl;
-*/
 /*
 DBGLOG(DBG, "Analyzing inconsistency");
 InconsistencyAnalyzer ia(ctx);
@@ -719,16 +626,23 @@ ia.explainInconsistency(program, program.edb);
 		return InterpretationConstPtr();
 	}
 
-	DBGLOG(DBG, "MainThread: Sending nextModel request");
-	modelRequest = true;
-	sem_request.post();
-	DBGLOG(DBG, "MainThread: Waiting for answer to nextModel request");
-	sem_answer.wait();
+	// if no prepared models are available we need to generate some
+	if (preparedModels.size() == 0){
+		DBGLOG(DBG, "MainThread: Sending model request");
+		modelRequest = true;
+		sem_request.post();
+		DBGLOG(DBG, "MainThread: Waiting for answer to model request");
+		sem_answer.wait();
+	}
 
-	if (endOfModels){
+	if (endOfModels && preparedModels.size() == 0){
+		// all prepared models are exhausted and also clasp has no more models
 		DBGLOG(DBG, "MainThread: endOfModels");
 		return InterpretationConstPtr();
 	}else{
+		// return next prepared model
+		InterpretationConstPtr nextModel = preparedModels.front();
+		preparedModels.pop();
 		DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
 		modelCount++;
 		return nextModel;
