@@ -380,9 +380,6 @@ int main(int argc, char *argv[])
 		}
 		BOOST_SCOPE_EXIT_END
 
-		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
-			throw UsageError("no input specified!");
-
 		// startup statemachine
 		pctx.changeState(StatePtr(new ShowPluginsState));
 
@@ -419,6 +416,10 @@ int main(int argc, char *argv[])
 		}
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
+
+		// now we check if we got input
+		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
+			throw UsageError("no input specified!");
 
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();

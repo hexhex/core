@@ -10,6 +10,9 @@
 	* src/Makefile.am: Likewise.
 	* src/EvalHeuristicShared.cpp: Likewise (new file).
 
+	* src/dlvhex.cpp: Loading plugins before failing if no input file. (This has
+	the benefit of giving a help message for all plugins even with no input file.)
+
 2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
