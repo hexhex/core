@@ -124,7 +124,7 @@ protected:
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
-	static const int NUM_PREPAREMODELS = 5;
+	int NUM_PREPAREMODELS;
 	std::queue<InterpretationPtr> preparedModels;
 //	InterpretationPtr nextModel;
 	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
