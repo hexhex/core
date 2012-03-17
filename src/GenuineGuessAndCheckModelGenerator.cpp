@@ -871,6 +871,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		if (projectedModelCandidate_pos_val->getStorage().count() > 0){
 			aborted = true;
 		}
+		if (aborted) continue;
 
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
@@ -905,6 +906,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 				{
 					DBGLOG(DBG, "FLP head program yielded no answer set");
 					aborted = true;
+					continue;
 				}else{
 					DBGLOG(DBG, "FLP head program yielded at least one answer set");
 				}
