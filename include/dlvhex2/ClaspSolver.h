@@ -125,12 +125,12 @@ protected:
 
 	// communiaction between main thread and clasp thread
 	static const int MODELQUEUE_MAXSIZE = 5;
+//	int NUM_PREPAREMODELS;
 	boost::mutex modelsMutex;
 	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;
-//	InterpretationPtr nextModel;
-	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
-	bool modelRequest;
+//	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
+//	bool modelRequest;
 	bool terminationRequest;
 	bool endOfModels;
 
