@@ -6,6 +6,10 @@
 
 	* configure.ac: Fixing help message.
 
+	* include/dlvhex2/EvalHeuristicShared.h: Fixing --disable-shared build.
+	* src/Makefile.am: Likewise.
+	* src/EvalHeuristicShared.cpp: Likewise (new file).
+
 2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
