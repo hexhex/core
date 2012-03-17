@@ -240,7 +240,6 @@
 
 	* cheatsheet: Remove.
 
->>>>>>> .merge-rechts.r3358
 2011-11-16  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/dlvhex/SafetyChecker.cpp: Fixed bug in safety checker.

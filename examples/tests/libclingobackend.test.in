@@ -1,17 +1,106 @@
 3col.hex 3col.out --solver=libclingo
+#agg1.hex agg1.out --solver=libclingo # no aggregate support for clingo at the moment
+#agg2.hex agg2.out --solver=libclingo # no aggregate support for clingo at the moment
+#agg3.hex agg3.out --nofacts --solver=libclingo # no aggregate support for clingo at the moment
+#agg4.hex agg4.out --nofacts --solver=libclingo # no aggregate support for clingo at the moment
+anonymousvariable1.hex anonymousvariable1.out --nofacts --solver=libclingo
+#builtin_safety1.hex builtin_safety1.stderr --solver=libclingo # no full builtin support for clingo at the moment
+#builtin_safety1a.hex builtin_safety1a.stderr --solver=libclingo # no full builtin support for clingo at the moment
+#builtin_safety1b.hex builtin_safety1b.stderr --solver=libclingo # no full builtin support for clingo at the moment
+#builtin_safety1c.hex builtin_safety1c.stderr --solver=libclingo # no full builtin support for clingo at the moment
+#builtin_safety1d.hex builtin_safety1d.out --solver=libclingo # no full builtin support for clingo at the moment
+#builtin_safety2.hex builtin_safety2.out --solver=libclingo # no full builtin support for clingo at the moment
 comments.hex comments.out --solver=libclingo
 duplicaterule.asp duplicaterule.out --solver=libclingo
 equality.hex equality.out --solver=libclingo
-# the following tests fail for strange reasons, low priority at the moment
-#extatom1.hex extatom1.out --solver=libclingo
-#extatom2.hex extatom2.out --solver=libclingo
-#extatom2safety.hex extatom2.out --solver=libclingo
-#extatom3.hex extatom3.out --nofacts --solver=libclingo
+extatom1.hex extatom1.out --solver=libclingo
+extatom2.hex extatom2.out --solver=libclingo
+extatom2safety.hex extatom2.out --solver=libclingo
+extatom3.hex extatom3.out --nofacts --solver=libclingo
+extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplana.txt --solver=libclingo
+extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplanb.txt --solver=libclingo
+extatom3.hex extatom3.out --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_old.asp --solver=libclingo
+extatom3.hex extatom3_faultya.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultya.asp --solver=libclingo
+extatom3.hex extatom3_faultyb.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultyb.asp --solver=libclingo
 extatom4.hex extatom4.out --solver=libclingo
 extatom5.hex extatom5.out --solver=libclingo
 extatom6.hex extatom6.out --solver=libclingo
-# the following tests fail for strange reasons, low priority at the moment
-#extatom7.hex extatom7.out --nofacts --solver=libclingo
-#extatom8.hex extatom8.out --nofacts --solver=libclingo
+extatom7.hex extatom7.out --nofacts --solver=libclingo
+extatom8.hex extatom8.out --nofacts --solver=libclingo
 extatom9.hex extatom9.out --solver=libclingo
+higherorder1.hex higherorder1.out --nofacts --higherorder-enable --solver=libclingo
+higherorder2.hex higherorder2.out --nofacts --higherorder-enable --solver=libclingo
+higherorder3.hex higherorder3.out --nofacts --higherorder-enable --solver=libclingo
+higherorder4.hex higherorder4.out --nofacts --higherorder-enable --solver=libclingo
+higherorder5.hex higherorder5.out --nofacts --higherorder-enable --solver=libclingo
+higherorder5except.hex higherorder5except.stderr --higherorder-enable --solver=libclingo
 manyanswersets.hex manyanswersets_twomodels.stdout --number=2 --solver=libclingo
+#maxint.hex maxint.out --solver=libclingo # no maxint support for clingo at the moment
+minimality.hex minimality.out --solver=libclingo
+naftest.hex naftest.out --solver=libclingo
+nonmon_guess.hex nonmon_guess.out --solver=libclingo
+nonmon_inc.hex nonmon_inc.out --solver=libclingo
+nonmon_noloop.hex nonmon_noloop.out --solver=libclingo
+notstronglysafe1.hex notstronglysafe1.stderr --solver=libclingo
+notwellfounded1.hex notwellfounded1_nofacts.out --nofacts --solver=libclingo
+notwellfounded1.hex notwellfounded1_withfacts.out --solver=libclingo
+#notwellfounded2.hex notwellfounded2.out --nofacts --solver=libclingo # no claspD support for libclingo at the moment
+#operators.hex operators.out --solver=libclingo # no full builtin support for libclingo at the moment
+percentparser.hex percentparser.out --solver=libclingo
+query_asp_ground1.hex query_asp_ground1b.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground1.hex query_asp_ground1c.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_ground2.hex query_brave_false.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground2.hex query_asp_ground2c.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_ground3.hex query_asp_ground3b.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground3.hex query_cautious_true.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_ground4.hex query_brave_false.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground4.hex query_cautious_true.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_ground5.hex query_asp_ground5b.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground5.hex query_asp_ground5c.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_ground6.hex query_asp_ground6b.stdout --query-enable --query-brave --solver=libclingo
+query_asp_ground6.hex query_asp_ground6c.stdout --query-enable --query-cautious --solver=libclingo
+query_asp_nonground1.hex query_asp_nonground1b.out --query-enable --query-brave --solver=libclingo
+query_asp_nonground1.hex no_model.out --query-enable --query-cautious --solver=libclingo
+query_asp_nonground2.hex query_asp_nonground2b.out --query-enable --query-brave --solver=libclingo
+query_asp_nonground2.hex no_model.out --query-enable --query-cautious --solver=libclingo
+query_asp_nonground3.hex query_asp_nonground3b.out --query-enable --query-brave --solver=libclingo
+query_asp_nonground3.hex query_asp_nonground3c.out --query-enable --query-cautious --solver=libclingo
+query_hex_ground1.hex query_hex_ground1b.stdout --query-enable --query-brave --solver=libclingo
+query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious --solver=libclingo
+query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all --solver=libclingo
+query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave --solver=libclingo
+query_hex_nonground1.hex no_model.out --query-enable --query-cautious --solver=libclingo
+#rec_agg_bug1.hex rec_agg_bug1.stderr --solver=libclingo  # no aggregate support for clingo at the moment
+safety1.hex safety1.stderr --solver=libclingo
+safety2.hex safety2.stderr --solver=libclingo
+simple1.hex simple1.out --solver=libclingo
+simple2.hex simple2.out --solver=libclingo
+strongnegation_asp1.hex strongnegation_asp1.out --strongnegation-enable --nofacts --solver=libclingo
+strongnegation_asp2.hex strongnegation_asp2.out --strongnegation-enable --nofacts --solver=libclingo
+strongnegation_asp3.hex strongnegation_asp3.out --strongnegation-enable --nofacts --solver=libclingo
+strongnegation_asp4.hex strongnegation_asp4.out --strongnegation-enable --nofacts --solver=libclingo
+strongnegation_asp5.hex strongnegation_asp5.out --strongnegation-enable --nofacts --solver=libclingo
+#tertop.hex tertop.out --solver=libclingo # no full builtin support for libclingo at the moment
+variable_predicate_inputs.hex variable_predicate_inputs.stderr --solver=libclingo
+wellfounded1.hex wellfounded1.out --nofacts --solver=libclingo
+wellfounded2.hex wellfounded2.out --nofacts --solver=libclingo
+module-Inconsistent.mlp module-Inconsistent.out --mlp --solver=libclingo
+module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp --solver=libclingo
+module-EvenOdd.mlp module-EvenOdd.out --mlp --solver=libclingo
+module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp --solver=libclingo
+module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp --solver=libclingo
+module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp --solver=libclingo
+module-Reachability.mlp module-Reachability.out --mlp --solver=libclingo
+module-Cardinality.mlp module-Cardinality.out --mlp --solver=libclingo
+module-ABBA.mlp module-ABBA.out --mlp --solver=libclingo
+module-Disjunction.mlp module-Disjunction.out --mlp --solver=libclingo
+module-Negation.mlp module-Negation.out --mlp --solver=libclingo
+module-Indirection.mlp module-Indirection.out --mlp --solver=libclingo
+module-AFin.mlp module-AFin.out --mlp --solver=libclingo
+module-Cs.mlp module-Cs.out --mlp --solver=libclingo
+module-i-Stratified.mlp module-i-Stratified.out --mlp --solver=libclingo
+module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp --solver=libclingo
+module-Hanoi.mlp module-Hanoi.out --mlp --solver=libclingo
+module-Complex.mlp module-Complex.out --mlp --solver=libclingo
+module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=libclingo
+module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=libclingo --solver=libclingo

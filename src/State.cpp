@@ -900,7 +900,6 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       gotModel = true;
       if( mcountLimit != 0 && mcount >= mcountLimit )
       {
-//exit(0);
         LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
         break;
       }
