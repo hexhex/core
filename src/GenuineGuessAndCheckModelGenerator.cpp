@@ -580,7 +580,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 //	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	solver = GenuineSolver::getInstance(factory.ctx, program);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
-	if (factory.ctx.config.getOption("ExternalLearningPartial") && false /* partial learning is currently not thread safe with clasp */){
+	if (factory.ctx.config.getOption("ExternalLearningPartial") /* && false partial learning is currently not thread safe with clasp */){
 		solver->addExternalLearner(this);
 	}
 
@@ -1022,8 +1022,6 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 		ss << " }";
 		DBGLOG(DBG, ss.str());
 #endif
-
-
 
 
 /*

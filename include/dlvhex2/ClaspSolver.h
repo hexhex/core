@@ -131,7 +131,8 @@ protected:
 	std::queue<InterpretationPtr> preparedModels;
 //	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
 //	bool modelRequest;
-	bool waitingForModel;
+	boost::interprocess::interprocess_semaphore sem_dlvhexDataStructures;
+
 	bool terminationRequest;
 	bool endOfModels;
 

@@ -174,22 +174,22 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 		// get lock and wait until there is free space in the model queue
 		boost::mutex::scoped_lock lock(cs.modelsMutex);
 		while(cs.preparedModels.size() >= ClaspSolver::MODELQUEUE_MAXSIZE){
-			DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved from Main thread");
+			DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved from MainThread");
 			cs.waitForQueueSpaceCondition.wait(lock);
 		}
 
 		DBGLOG(DBG, "Adding new model to model queue");
 		cs.preparedModels.push(model);
 	}
-	DBGLOG(DBG, "Notifying Main thread about new model");
+	DBGLOG(DBG, "Notifying MainThread about new model");
 	cs.waitForModelCondition.notify_all();
 
 /*
-	// if we have prepared enough models we notify the main thread
+	// if we have prepared enough models we notify the MainThread
 	if (cs.preparedModels.size() >= cs.NUM_PREPAREMODELS){
 		cs.modelRequest = false;
 		DBGLOG(DBG, "ClaspThread: Notifying MainThread");
-		cs.sem_answer.post();	// continue with execution of main thread
+		cs.sem_answer.post();	// continue with execution of MainThread
 
 		DBGLOG(DBG, "ClaspThread: Waiting for further requests");
 		cs.sem_request.wait();
@@ -208,7 +208,11 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
-	// wait until the main thread sleeps for sure (otherwise we have a lot of unsynchronized data accesses)
+	// wait until the MainThread sleeps for sure
+	// (otherwise we have a lot of unsynchronized data accesses)
+	cs.sem_dlvhexDataStructures.wait();
+	DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
+
 /*
 	boost::mutex::scoped_lock lock(cs.modelsMutex);
 	while(cs.preparedModels.size() > 0 || !cs.waitingForModel){
@@ -260,6 +264,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		cs.translatedNogoods = cs.nogoods.size();
 		DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	}
+
+	DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
+	cs.sem_dlvhexDataStructures.post();
 
 	return !inconsistent;
 }
@@ -446,13 +453,13 @@ void ClaspSolver::runClasp(){
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
 //	DBGLOG(DBG, "ClaspThread: Waiting for requests");
-//	sem_request.wait();	// continue with execution of main thread
+//	sem_request.wait();	// continue with execution of MainThread
 
 	Clasp::solve(claspInstance, params);
 	DBGLOG(DBG, "Clasp terminated");
 
 	{
-		DBGLOG(DBG, "Notifying Main thread about end of models");
+		DBGLOG(DBG, "Notifying MainThread about end of models");
 		boost::mutex::scoped_lock lock(modelsMutex);
 		endOfModels = true;
 	}
@@ -558,7 +565,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), /*sem_request(0), sem_answer(0), modelRequest(false),*/ waitingForModel(false), terminationRequest(false), endOfModels(false), translatedNogoods(0)
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), /*sem_request(0), sem_answer(0), modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1)
 //, NUM_PREPAREMODELS(5)
 {
 	reg = ctx.registry();
@@ -597,10 +604,13 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		DBGLOG(DBG, "Finalizing clasp initialization");
 		claspInstance.endInit();
 
-		DBGLOG(DBG, "Starting clasp thread");
+		DBGLOG(DBG, "Starting ClaspThread");
 
 		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
+
+	DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	sem_dlvhexDataStructures.wait();
 }
 
 ClaspSolver::~ClaspSolver(){
@@ -660,16 +670,17 @@ int ClaspSolver::getNogoodCount(){
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 
+	DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	sem_dlvhexDataStructures.post();
+
 	InterpretationConstPtr nextModel;
 	{
 		// get lock and wait until there is at least one model in the queue
 	        boost::mutex::scoped_lock lock(modelsMutex);
 		while(!endOfModels && preparedModels.empty()){
-			DBGLOG(DBG, "Model queue is empty (end endOfModels was not set yet); Waiting for Clasp thread to add models (or set endOfModels)");
-			waitingForModel = true;
+			DBGLOG(DBG, "Model queue is empty (end endOfModels was not set yet); Waiting for ClaspThread to add models (or set endOfModels)");
 			waitForModelCondition.wait(lock);
 		}
-		waitingForModel = false;
 
 		// now we have either a model or endOfModels is set
 		// Note: both conditions may apply simultanously (the queue is not empty, but no more models will come, i.e. all remaining ones have arrived)
@@ -681,12 +692,17 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 			// return next prepared model
 			nextModel = preparedModels.front();
 			preparedModels.pop();
-			DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);
+			DBGLOG(DBG, "MainThread: Got a model");
+//			DBGLOG(DBG, "MainThread: Got a model: " << *nextModel);	// This code causes problems as it accesses the registry, which might be currently owned by ClaspThread
 			modelCount++;
 		}
 	}
-	DBGLOG(DBG, "Notifying Clasp thread about empty space in model queue");
+	DBGLOG(DBG, "Notifying ClaspThread about empty space in model queue");
 	waitForQueueSpaceCondition.notify_all();
+
+	sem_dlvhexDataStructures.wait();
+	DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+
 	return nextModel;
 }
 
