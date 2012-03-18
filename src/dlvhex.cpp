@@ -131,10 +131,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=eabehavior,monotonicity,functionality,user,partial]" << std::endl
+      << "     --extlearn[=iobehavior,monotonicity,functionality,user,partial]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
-      << "                        eabehavior: Apply generic rules to learn input-output behavior" << std::endl
-      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with eabehavior)" << std::endl
+      << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
       << "                        linear: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
-  pctx.config.setOption("ExternalLearningEABehavior", 0);
+  pctx.config.setOption("ExternalLearningIOBehavior", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
   pctx.config.setOption("ExternalLearningLinearity", 0);
@@ -903,9 +903,9 @@ void processOptionsPrePlugin(
 							f != tok.end(); ++f)
 					{
 						const std::string& token = *f;
-						if (token == "eabehavior" )
+						if (token == "iobehavior" )
 						{
-							pctx.config.setOption("ExternalLearningEABehavior", 1);
+							pctx.config.setOption("ExternalLearningIOBehavior", 1);
 						}
 						if( token == "monotonicity" )
 						{
@@ -930,7 +930,7 @@ void processOptionsPrePlugin(
 					}
 				}else{
 					// by default, turn on all external learning rules
-					pctx.config.setOption("ExternalLearningEABehavior", 1);
+					pctx.config.setOption("ExternalLearningIOBehavior", 1);
 					pctx.config.setOption("ExternalLearningMonotonicity", 1);
 					pctx.config.setOption("ExternalLearningFunctionality", 1);
 					pctx.config.setOption("ExternalLearningLinearity", 1);
@@ -941,7 +941,7 @@ void processOptionsPrePlugin(
 
 			pctx.config.setOption("ExternalLearning", 1);
 
-			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [eabehavior: " << pctx.config.getOption("ExternalLearningEABehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
 			break;
 /*
 		case 19:

@@ -345,8 +345,8 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 
-		if (ctx->config.getOption("ExternalLearningEABehavior")){
-			DBGLOG(DBG, "External Learning: EABehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
+		if (ctx->config.getOption("ExternalLearningIOBehavior")){
+			DBGLOG(DBG, "External Learning: IOBehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
 
 			Nogood extNgInput = getInputNogood(ctx, nogoods, query, prop);
 
