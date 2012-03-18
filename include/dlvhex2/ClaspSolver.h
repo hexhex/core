@@ -126,7 +126,7 @@ protected:
 	// communiaction between main thread and clasp thread
 	static const int MODELQUEUE_MAXSIZE = 5;
 //	int NUM_PREPAREMODELS;
-	boost::mutex modelsMutex;
+	boost::mutex modelsMutex;	// exclusive access of preparedModels
 	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;
 //	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
@@ -137,9 +137,10 @@ protected:
 	bool endOfModels;
 
 	// external behavior learning
+	boost::mutex learnerMutex;	// exclusive access of learner
 	Set<LearningCallback*> learner;
+	boost::mutex nogoodsMutex;	// exclusive access of nogoods
 	std::vector<Nogood> nogoods;
-	boost::mutex nogoodsMutex;
 	int translatedNogoods;	// largest nogood index within nogoods which has already been translated and sent to clasp
 
 	// interface to clasp internals

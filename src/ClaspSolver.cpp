@@ -208,9 +208,12 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
+	// we access the learner vector
+        boost::mutex::scoped_lock lock(cs.learnerMutex);
 	if (cs.learner.size() != 0){
-		// wait until the MainThread sleeps for sure
-		// (otherwise we have a lot of unsynchronized data accesses)
+		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
+		// because only in this case we know what MainThread is doing and which dlvhex data structures are accessed.
+		// Otherwise we could have a lot of unsynchronized data accesses.
 		cs.sem_dlvhexDataStructures.wait();
 		DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 
@@ -250,6 +253,8 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 			learned |= cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
 		}
 
+		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
+		// which cannot interfere with dlvhex.
 		DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
 		cs.sem_dlvhexDataStructures.post();
 	}
@@ -608,6 +613,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
 
+	// We now return to dlvhex code which is not in this class.
+	// As we do not know what MainThread is doing there, ClaspThread must not access dlvhex data structures.
 	DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
 	sem_dlvhexDataStructures.wait();
 }
@@ -615,19 +622,21 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 ClaspSolver::~ClaspSolver(){
 
 	{
+		// send termination request
 		boost::mutex::scoped_lock lock(modelsMutex);
 		terminationRequest = true;
 	}
 
 	// is clasp still active?
-	if (!endOfModels){
-		DBGLOG(DBG, "ClaspSolver destructor: Clasp is still running - Requesting all outstanding models");
-		while (getNextModel() != InterpretationConstPtr());
-		DBGLOG(DBG, "Joining ClaspThread");
-		claspThread->join();
-	}else{
-		DBGLOG(DBG, "ClaspSolver destructor: Clasp has already terminated");
-	}
+//	if (!endOfModels){
+//		DBGLOG(DBG, "ClaspSolver destructor: Clasp is still running - Requesting all outstanding models");
+	while (getNextModel() != InterpretationConstPtr());
+	DBGLOG(DBG, "Joining ClaspThread");
+	claspThread->join();
+//	}else{
+//		DBGLOG(DBG, "ClaspSolver destructor: Clasp has already terminated");
+//	}
+
 	DBGLOG(DBG, "Deleting ClauseCreator");
 	delete clauseCreator;
 
@@ -644,31 +653,41 @@ std::string ClaspSolver::getStatistics(){
 }
 
 void ClaspSolver::addExternalLearner(LearningCallback* lb){
+	// access learner vector
+        boost::mutex::scoped_lock lock(learnerMutex);
 	learner.insert(lb);
 }
 
 void ClaspSolver::removeExternalLearner(LearningCallback* lb){
+	// access learner vector
+        boost::mutex::scoped_lock lock(learnerMutex);
 	learner.erase(lb);
 }
 
 int ClaspSolver::addNogood(Nogood ng){
+	// access nogoods
         boost::mutex::scoped_lock lock(nogoodsMutex);
 	nogoods.push_back(ng);
 	return nogoods.size() - 1;
 }
 
 void ClaspSolver::removeNogood(int index){
+	// access nogoods
         boost::mutex::scoped_lock lock(nogoodsMutex);
 	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
 }
 
 int ClaspSolver::getNogoodCount(){
+	// access nogoods
         boost::mutex::scoped_lock lock(nogoodsMutex);
 	return nogoods.size();
 }
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
 
+	// MainThread now exectures code of this class, hence we know what it is doing.
+	// As the code below does not interfere with simultanous accessed of dlvhex data structures,
+	// ClaspThread is now allows to enter critical sections.
 	DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
 	sem_dlvhexDataStructures.post();
 
@@ -699,6 +718,8 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 	DBGLOG(DBG, "Notifying ClaspThread about empty space in model queue");
 	waitForQueueSpaceCondition.notify_all();
 
+	// MainThread is now leaving this class. As we do not know what it is doing outside,
+	// ClaspThread is now not allowed to access dlvhex data structures simultanously.
 	sem_dlvhexDataStructures.wait();
 	DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
 
