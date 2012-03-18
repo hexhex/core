@@ -153,6 +153,7 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	DBGLOG(DBG, "ClaspThread: Start producing a model");
 
 	// create a model
+	// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
 
 	// get the symbol table from the solver
@@ -167,14 +168,15 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 	}
 
 	// remember the model
-	DBGLOG(DBG, "Model is: " << *model);
+	//DBGLOG(DBG, "Model is: " << *model);	// this statement could be problematic as it needs exclusive access to the registry
+	DBGLOG(DBG, "ClaspThread: Produced a model");
 
 	// thread-safe queue access
 	{
 		// get lock and wait until there is free space in the model queue
 		boost::mutex::scoped_lock lock(cs.modelsMutex);
 		while(cs.preparedModels.size() >= ClaspSolver::MODELQUEUE_MAXSIZE){
-			DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved from MainThread");
+			DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved by MainThread");
 			cs.waitForQueueSpaceCondition.wait(lock);
 		}
 
@@ -208,11 +210,11 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
-	// we access the learner vector
+	// thread-safe access of the learner vector
         boost::mutex::scoped_lock lock(cs.learnerMutex);
 	if (cs.learner.size() != 0){
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
-		// because only in this case we know what MainThread is doing and which dlvhex data structures are accessed.
+		// because only in this case we know what MainThread is doing and which dlvhex data structures it accesses.
 		// Otherwise we could have a lot of unsynchronized data accesses.
 		cs.sem_dlvhexDataStructures.wait();
 		DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
