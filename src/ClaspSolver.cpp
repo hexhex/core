@@ -208,20 +208,19 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
-	// wait until the MainThread sleeps for sure
-	// (otherwise we have a lot of unsynchronized data accesses)
-	cs.sem_dlvhexDataStructures.wait();
-	DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
+	if (cs.learner.size() != 0){
+		// wait until the MainThread sleeps for sure
+		// (otherwise we have a lot of unsynchronized data accesses)
+		cs.sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 
 /*
-	boost::mutex::scoped_lock lock(cs.modelsMutex);
-	while(cs.preparedModels.size() > 0 || !cs.waitingForModel){
-		DBGLOG(DBG, "Waiting for model queue to become empty");
-		cs.waitForQueueSpaceCondition.wait(lock);
-	}
+		boost::mutex::scoped_lock lock(cs.modelsMutex);
+		while(cs.preparedModels.size() > 0 || !cs.waitingForModel){
+			DBGLOG(DBG, "Waiting for model queue to become empty");
+			cs.waitForQueueSpaceCondition.wait(lock);
+		}
 */
-
-	if (cs.learner.size() != 0){
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
 		// create an interpretation and a bitset of assigned values
@@ -250,6 +249,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 			// we are currently not able to check what changed inside clasp, so assume that all facts changed
 			learned |= cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
 		}
+
+		DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
+		cs.sem_dlvhexDataStructures.post();
 	}
 
 	// add the produced nogoods to clasp
@@ -264,9 +266,6 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		cs.translatedNogoods = cs.nogoods.size();
 		DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	}
-
-	DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
-	cs.sem_dlvhexDataStructures.post();
 
 	return !inconsistent;
 }
