@@ -580,7 +580,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 //	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
 	solver = GenuineSolver::getInstance(factory.ctx, program);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
-	if (factory.ctx.config.getOption("ExternalLearningPartial")){
+	if (factory.ctx.config.getOption("ExternalLearningPartial") && false /* partial learning is currently not thread safe with clasp */){
 		solver->addExternalLearner(this);
 	}
 
@@ -1047,9 +1047,6 @@ bool auxChanged = false;
 
 
 
-
-
-
 		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet).count() == eatom.getPredicateInputMask()->getStorage().count()){
 			DBGLOG(DBG, "Input is complete");
 
@@ -1057,6 +1054,7 @@ bool auxChanged = false;
 			if (/* auxChanged || */ firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
 // eatom.getPredicateInputMask()->getStorage().count() == 0
 				DBGLOG(DBG, "Evaluating external atom");
+
 				InterpretationPtr eaResult(new Interpretation(reg));
 				IntegrateExternalAnswerIntoInterpretationCB intcb(eaResult);
 				int i = solver->getNogoodCount();

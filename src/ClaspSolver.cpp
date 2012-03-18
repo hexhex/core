@@ -208,6 +208,15 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
+	// wait until the main thread sleeps for sure (otherwise we have a lot of unsynchronized data accesses)
+/*
+	boost::mutex::scoped_lock lock(cs.modelsMutex);
+	while(cs.preparedModels.size() > 0 || !cs.waitingForModel){
+		DBGLOG(DBG, "Waiting for model queue to become empty");
+		cs.waitForQueueSpaceCondition.wait(lock);
+	}
+*/
+
 	if (cs.learner.size() != 0){
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
@@ -241,12 +250,16 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 	// add the produced nogoods to clasp
 	bool inconsistent = false;
-	DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
-	for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
-		inconsistent |= cs.addNogoodToClasp(cs.nogoods[i]);
+	{
+	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
+
+		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
+		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
+			inconsistent |= cs.addNogoodToClasp(cs.nogoods[i]);
+		}
+		cs.translatedNogoods = cs.nogoods.size();
+		DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	}
-	cs.translatedNogoods = cs.nogoods.size();
-	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
 }
@@ -545,7 +558,7 @@ DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), /*sem_request(0), sem_answer(0), modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0)
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), /*sem_request(0), sem_answer(0), modelRequest(false),*/ waitingForModel(false), terminationRequest(false), endOfModels(false), translatedNogoods(0)
 //, NUM_PREPAREMODELS(5)
 {
 	reg = ctx.registry();
@@ -630,15 +643,18 @@ void ClaspSolver::removeExternalLearner(LearningCallback* lb){
 }
 
 int ClaspSolver::addNogood(Nogood ng){
+        boost::mutex::scoped_lock lock(nogoodsMutex);
 	nogoods.push_back(ng);
 	return nogoods.size() - 1;
 }
 
 void ClaspSolver::removeNogood(int index){
+        boost::mutex::scoped_lock lock(nogoodsMutex);
 	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
 }
 
 int ClaspSolver::getNogoodCount(){
+        boost::mutex::scoped_lock lock(nogoodsMutex);
 	return nogoods.size();
 }
 
@@ -650,8 +666,10 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 	        boost::mutex::scoped_lock lock(modelsMutex);
 		while(!endOfModels && preparedModels.empty()){
 			DBGLOG(DBG, "Model queue is empty (end endOfModels was not set yet); Waiting for Clasp thread to add models (or set endOfModels)");
+			waitingForModel = true;
 			waitForModelCondition.wait(lock);
 		}
+		waitingForModel = false;
 
 		// now we have either a model or endOfModels is set
 		// Note: both conditions may apply simultanously (the queue is not empty, but no more models will come, i.e. all remaining ones have arrived)

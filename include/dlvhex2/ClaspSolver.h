@@ -131,12 +131,14 @@ protected:
 	std::queue<InterpretationPtr> preparedModels;
 //	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
 //	bool modelRequest;
+	bool waitingForModel;
 	bool terminationRequest;
 	bool endOfModels;
 
 	// external behavior learning
 	Set<LearningCallback*> learner;
 	std::vector<Nogood> nogoods;
+	boost::mutex nogoodsMutex;
 	int translatedNogoods;	// largest nogood index within nogoods which has already been translated and sent to clasp
 
 	// interface to clasp internals
