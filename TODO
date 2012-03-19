@@ -1,5 +1,6 @@
 -*- org -*-
 
+* TODO ProgramCtx::idb should become set of IDs and similar for ProgramCtx::idbList, this has implications in other code and plugins!
 * TODO use explicit qi headers in include/dlvhex2/HexGrammar.h (and probably in other spirit-using files) to reduce compile time
 * TODO unify names of methods in dlvhex::Interpretation, we may want to name the single-bit methods "add" "remove" and "has" (...Fact)
 * TODO remove dlvhex::Interpretation::setRegistry because it should not exist, instead fix how affected interpretations are created in first place
