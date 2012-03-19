@@ -779,11 +779,6 @@ struct sem<HexGrammarSemantics::rule>
       if( r.head.size() > 1 )
         r.kind |= ID::PROPERTY_RULE_DISJ;
       target = reg->storeRule(r);
-      //ID existing = reg->rules.getIDByElement(r);
-      //if( existing == ID_FAIL )
-      //  target = reg->storeRule(r);
-      //else
-      //  target = ID_FAIL;
     }
     else
     {
@@ -795,11 +790,6 @@ struct sem<HexGrammarSemantics::rule>
         mgr.markExternalPropertyIfExternalBody(reg, r);
         mgr.markModulePropertyIfModuleBody(reg, r);
         target = reg->storeRule(r);
-        //ID existing = reg->rules.getIDByElement(r);
-        //if( existing == ID_FAIL )
-        //  target = reg->storeRule(r);
-        //else
-        //  target = ID_FAIL;
       }
       else
       {
@@ -898,12 +888,8 @@ struct sem<HexGrammarSemantics::add>
     const boost::spirit::unused_type& target)
   {
     RegistryPtr reg = mgr.ctx.registry();
-    if( source == ID_FAIL )
-    {
-#warning we cannot report the rule here because the ID = ID_FAIL is used to transport the information that the rule is duplicated TODO replace ID in this case by pair<ID,bool> where bool indicates 'skip'
-      DBGLOG(DBG,"ignoring duplicate rule");
-    }
-    else if( source.isAtom() )
+    assert(source != ID_FAIL);
+    if( source.isAtom() )
     {
       // fact -> put into EDB
       if( !source.isOrdinaryGroundAtom() )

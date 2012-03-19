@@ -4,6 +4,12 @@
 
 2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* include/dlvhex2/HexGrammar.tcc: Ensuring that after parsing the
+	IDs in idb are unique (workaround).
+	* src/HexParser.cpp: Likewise.
+
+2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
 	* configure.ac: Fixing help message.
 
 	* include/dlvhex2/EvalHeuristicShared.h: Fixing --disable-shared build.
