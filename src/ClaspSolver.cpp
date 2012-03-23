@@ -219,14 +219,6 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		cs.sem_dlvhexDataStructures.wait();
 		DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 
-/*
-		boost::mutex::scoped_lock lock(cs.modelsMutex);
-		while(cs.preparedModels.size() > 0 || !cs.waitingForModel){
-			DBGLOG(DBG, "Waiting for model queue to become empty");
-			cs.waitForQueueSpaceCondition.wait(lock);
-		}
-*/
-
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
 		// create an interpretation and a bitset of assigned values
 		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
@@ -266,7 +258,7 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	{
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
 
-		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
+		DBGLOG(DBG, "External learners have produced " << (cs.nogoods.size() - cs.translatedNogoods) << " nogoods; transferring to clasp");
 		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
 			inconsistent |= cs.addNogoodToClasp(cs.nogoods[i]);
 		}
@@ -284,6 +276,7 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 	ss << "{ ";
 	bool first = true;
 #endif
+
 	// only nogoods are relevant where all variables occur in this clasp instance
 	BOOST_FOREACH (ID lit, ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()) return false;
@@ -307,11 +300,12 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 #ifndef NDEBUG
 	ss << " }";
 #endif
-	clauseCreator->end();
+	bool ret = false;
+	if (clauseCreator->end().ok == false) ret = true;
 
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 
-	return false;
+	return ret;
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
@@ -493,7 +487,6 @@ bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
-DBGLOG(DBG, "Fact " << hexToClasp[*en].var());
 		// add fact
 		pb.startRule();
 		pb.addHead(hexToClasp[*en].var());
@@ -623,6 +616,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 
 ClaspSolver::~ClaspSolver(){
 
+	DBGLOG(DBG, "ClaspSolver Destructor");
 	{
 		// send termination request
 		boost::mutex::scoped_lock lock(modelsMutex);
