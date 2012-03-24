@@ -301,7 +301,7 @@ EvalGraphBuilder::createEvalUnit(
 				// -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
         if (ctx.config.getOption("GenuineSolver") > 0){
-          uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+          uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory /*GenuineWellfoundedModelGeneratorFactory*/(
                 ctx, ci, externalEvalConfig));
         }else{
           uprops.mgf.reset(new WellfoundedModelGeneratorFactory(

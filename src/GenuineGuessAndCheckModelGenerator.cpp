@@ -834,7 +834,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "guess and check loop");
 
 	InterpretationPtr modelCandidate;
-	bool aborted;
 	do{
 		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
@@ -843,207 +842,26 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG_SCOPE(DBG,"gM", false);
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
-		// project to pos and neg eatom replacements for validation
-		InterpretationPtr projint(new Interpretation(reg));
-		projint->getStorage() = modelCandidate->getStorage() - postprocessedInput->getStorage();
-
-		factory.gpMask.updateMask();
-		InterpretationPtr projectedModelCandidate_pos(new Interpretation(reg));
-		projectedModelCandidate_pos->getStorage() = projint->getStorage() & factory.gpMask.mask()->getStorage();
-		InterpretationPtr projectedModelCandidate_pos_val(new Interpretation(reg));
-		projectedModelCandidate_pos_val->getStorage() = projectedModelCandidate_pos->getStorage();
-		DBGLOG(DBG,"projected positive guess: " << *projectedModelCandidate_pos);
-
-		factory.gnMask.updateMask();
-		InterpretationPtr projectedModelCandidate_neg(new Interpretation(reg));
-		projectedModelCandidate_neg->getStorage() = projint->getStorage() & factory.gnMask.mask()->getStorage();
-		DBGLOG(DBG,"projected negative guess: " << *projectedModelCandidate_neg);
-
-		// verify whether correct eatoms where guessed true
-		// this callback checks if a positive eatom result was guessed as negative
-		// -> in this case it aborts
-		// this callback resets all positive bits it encounters
-		// -> if the positive interpretation is all-zeroes at the end,
-		//    the guess was correct
-		VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
-		  projectedModelCandidate_pos_val, projectedModelCandidate_neg);
-
-		// we might need edb facts here
-		// (dependencies to edb are not modelled in the dependency graph)
-		// therefore we did not mask the guess program before
-		aborted = !evaluateExternalAtoms(reg, factory.innerEatoms, modelCandidate, cb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
-
-		if (projectedModelCandidate_pos_val->getStorage().count() > 0){
-			aborted = true;
-		}
-		if (aborted) continue;
+		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
+		if (!isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr())) continue;
 
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
 			DBGLOG(DBG, "FLP Check");
-
-			modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
-			/*
-			* FLP check:
-			* Check if the flp reduct of the program has a model which is a proper subset of modelCandidate
-			* 
-			* This check is done as follows:
-			* 1. evaluate edb + xidbflphead + M
-			*    -> yields singleton answer set containing flp heads F for non-blocked rules
-			* 2. evaluate edb + xidbflpbody + gidb + F
-			*    -> yields candidate compatible models Cand[1], ..., Cand[n] of the reduct
-			* 3. check each Cand[i] for compatibility (just as the check above for modelCandidate)
-			*    -> yields compatible reduct models Comp[1], ...,, Comp[m], m <= n
-			* 4. for all i: project modelCandidate and Comp[i] to ordinary atoms (remove flp and replacement atoms)
-			* 5. if for some i, projected Comp[i] is a proper subset of projected modelCandidate, modelCandidate is rejected,
-			*    otherwise it is a subset-minimal model of the flp reduct
-			*/
-			InterpretationPtr flpas;
-			{
-				DBGLOG(DBG,"evaluating flp head program");
-
-				// here we can mask, we won't lose FLP heads
-				OrdinaryASPProgram flpheadprogram(reg, factory.xidbflphead, modelCandidate, factory.ctx.maxint, mask);
-				//InternalGrounder ig(factory.ctx, flpheadprogram);
-				//OrdinaryASPProgram flpheadgprogram = ig.getGroundProgram();
-				//InternalGroundDASPSolver flpheadigas(factory.ctx, flpheadgprogram);
-				GenuineSolverPtr flpheadsolver = GenuineSolver::getInstance(factory.ctx, flpheadprogram);
-
-				flpas = flpheadsolver->projectToOrdinaryAtoms(flpheadsolver->getNextModel());
-				if( flpas == InterpretationPtr() )
-				{
-					DBGLOG(DBG, "FLP head program yielded no answer set");
-					aborted = true;
-					continue;
-				}else{
-					DBGLOG(DBG, "FLP head program yielded at least one answer set");
-				}
-			}
-			DBGLOG(DBG,"got FLP head model " << *flpas);
-
-			// evaluate xidbflpbody+gidb+edb+flp
-			std::stringstream ss;
-			RawPrinter printer(ss, factory.ctx.registry());
-			ASPSolverManager::ResultsPtr flpbodyres;
-			int flpm = 0;
-			{
-				DBGLOG(DBG, "evaluating flp body program");
-
-				// build edb+flp
-				Interpretation::Ptr reductEDB(new Interpretation(reg));
-				factory.fMask.updateMask();
-				reductEDB->getStorage() |= flpas->getStorage() & factory.fMask.mask()->getStorage();
-				reductEDB->add(*postprocessedInput);
-//				edbflpguess->getStorage() &= flpas->getStorage();
-// | factory.gpMask.mask()->getStorage());
-
-				// here we can also mask, this eliminates many equal bits for comparisons later
-				std::vector<ID> simulatedReduct = factory.xidbflpbody;
-				// add guessing program to flpbody program
-				BOOST_FOREACH (ID rid, factory.gidb){
-					simulatedReduct.push_back(rid);
-				}
-				ss << "simulatedReduct: IDB={";
-				printer.printmany(simulatedReduct, "\n");
-				ss << "}\nEDB=" << *reductEDB;
-				DBGLOG(DBG, "Evaluating simulated reduct: " << ss.str());
-				OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, factory.ctx.maxint);
-				GenuineSolverPtr flpbodysolver = GenuineSolver::getInstance(factory.ctx, flpbodyprogram);
-
-				// for comparing the flpbody answer sets we mask the guess interpretation
-//				modelCandidate->getStorage() -= mask->getStorage();
-
-				DBGLOG(DBG, "comparing xidbflpbody answer sets with guess interpretation " << *modelCandidate);
-
-				InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
-				while(flpbodyas != InterpretationPtr())
-				{
-					// remove flp facts
-					flpbodyas->getStorage() -= factory.fMask.mask()->getStorage();
-
-					// compatibility check
-					DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);
-					InterpretationPtr reduct_posguess(new Interpretation(reg));
-					reduct_posguess->getStorage() = flpbodyas->getStorage() & factory.gpMask.mask()->getStorage();
-
-					InterpretationPtr reduct_negguess(new Interpretation(reg));
-					reduct_negguess->getStorage() = flpbodyas->getStorage() & factory.gnMask.mask()->getStorage();
-
-					DBGLOG(DBG, "positive guess: " << *reduct_posguess << ", negative guess: " << *reduct_negguess);
-
-					VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
-					  reduct_posguess, reduct_negguess);
-
-					// we might need edb facts here
-					// (dependencies to edb are not modelled in the dependency graph)
-					// therefore we did not mask the guess program before
-					bool compatible = evaluateExternalAtoms(reg, factory.innerEatoms, flpbodyas, cb, &factory.ctx);
-
-					if (reduct_posguess->getStorage().count() > 0) compatible = false;
-
-					DBGLOG(DBG, "Compatibility: " << compatible);
-
-
-					// remove input (because it was removed from modelCandidate as well)
-					flpbodyas->getStorage() -= postprocessedInput->getStorage();
-					DBGLOG(DBG, "Removed input facts: " << *flpbodyas);
-
-					if (compatible){
-						// check if the reduct model is smaller than modelCandidate
-
-						// project both the model candidate and the reduct model to ordinary atoms
-						InterpretationPtr candidate(new Interpretation(*modelCandidate));
-						candidate->getStorage() -= projectedModelCandidate_pos->getStorage();
-						candidate->getStorage() -= projectedModelCandidate_neg->getStorage();
-						candidate->getStorage() -= postprocessedInput->getStorage();
-
-						flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gpMask.mask()->getStorage());
-						flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gnMask.mask()->getStorage());
-						flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.fMask.mask()->getStorage());
-
-						DBGLOG(DBG, "Checking if reduct model " << *flpbodyas << " is a subset of model candidate " << *candidate);
-
-						if ((candidate->getStorage() & flpbodyas->getStorage()).count() == flpbodyas->getStorage().count() &&	// subset property
-						     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
-							// found a smaller model of the reduct
-							DBGLOG(DBG, "Model candidate " << *modelCandidate << " is rejected because there exists a smaller compatible set of the reduct");
-							flpm++;
-							aborted = true;
-							break;
-						}else{
-							DBGLOG(DBG, "Reduct model is no proper subset");
-							flpm++;
-						}
-					}
-
-					DBGLOG(DBG, "Go to next model of reduct");
-					flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
-				}
-
-			}
-			if (!aborted){
-				DBGLOG(DBG, "Model candidate " << *modelCandidate << " passed FLP check (against " << flpm << " compatible reduct models)");			
-			}else{
-				DBGLOG(DBG, "Model candidate " << *modelCandidate << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found)");
-			}
+			if (!isSubsetMinimalFLPModel(modelCandidate)) continue;
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
 
-		if (!aborted){
+		// remove edb and the guess (from here we don't need the guess anymore)
+		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
+		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
 
-			// remove positive and negative guess
-			modelCandidate->getStorage() -= projectedModelCandidate_pos->getStorage();
-			modelCandidate->getStorage() -= projectedModelCandidate_neg->getStorage();
+		modelCandidate->getStorage() -= mask->getStorage();
 
-			// remove edb
-			modelCandidate->getStorage() -= mask->getStorage();
-
-			DBGLOG(DBG,"= final model candidate " << *modelCandidate);
-		}
-	}while(aborted);
-
-	return modelCandidate;
+		DBGLOG(DBG,"= final model candidate " << *modelCandidate);
+		return modelCandidate;
+	}while(true);
 }
 
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
@@ -1087,28 +905,24 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 		ss << " }";
 		DBGLOG(DBG, ss.str());
 #endif
+		/*
 
+		// TODO: The if block below checks if the predicate input to the external atom changed, but not the aux input.
+		//       If the predicate input changed, the external atom is reevaluated, otherwise it is not.
+		//       As the aux input is not considered, we might miss some changes in the input and do not evaluate the external atom for learning, even though we could learn something new.
+		//       This loop detects whether the aux input changed. However, the computational overhead is big. This needs to be considered when the heuristic is developed.
 
-/*
+		bool auxChanged = false;
 
-// TODO: The if block below checks if the predicate input to the external atom changed, but not the aux input.
-//       If the predicate input changed, the external atom is reevaluated, otherwise it is not.
-//       As the aux input is not considered, we might miss some changes in the input and do not evaluate the external atom for learning, even though we could learn something new.
-//       This loop detects whether the aux input changed. However, the computational overhead is big. This needs to be considered when the heuristic is developed.
+		  dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
+		  for(boost::tie(it, it_end) = reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate); it != it_end; ++it)
+		  {
+		    const dlvhex::OrdinaryAtom& oatom = *it;
+		    ID idoatom = reg->ogatoms.getIDByStorage(oatom);
+		    if (changed.get_bit(idoatom.address) != 0) auxChanged = true;
+		  }
 
-bool auxChanged = false;
-
-  dlvhex::OrdinaryAtomTable::PredicateIterator it, it_end;
-  for(boost::tie(it, it_end) = reg->ogatoms.getRangeByPredicateID(eatom.auxInputPredicate); it != it_end; ++it)
-  {
-    const dlvhex::OrdinaryAtom& oatom = *it;
-    ID idoatom = reg->ogatoms.getIDByStorage(oatom);
-    if (changed.get_bit(idoatom.address) != 0) auxChanged = true;
-  }
-
-*/
-
-
+		*/
 
 		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet).count() == eatom.getPredicateInputMask()->getStorage().count()){
 			DBGLOG(DBG, "Input is complete");
@@ -1134,6 +948,163 @@ bool auxChanged = false;
 
 	firstLearnCall = false;
 	return learned;
+}
+
+bool GenuineGuessAndCheckModelGenerator::isCompatibleSet(InterpretationConstPtr candidateCompatibleSet, NogoodContainerPtr nc){
+
+	RegistryPtr reg = factory.ctx.registry();
+
+	// project to pos and neg eatom replacements for validation
+	InterpretationPtr projint(new Interpretation(reg));
+	projint->getStorage() = candidateCompatibleSet->getStorage() - postprocessedInput->getStorage();
+
+	factory.gpMask.updateMask();
+	InterpretationPtr projectedModelCandidate_pos(new Interpretation(reg));
+	projectedModelCandidate_pos->getStorage() = projint->getStorage() & factory.gpMask.mask()->getStorage();
+	InterpretationPtr projectedModelCandidate_pos_val(new Interpretation(reg));
+	projectedModelCandidate_pos_val->getStorage() = projectedModelCandidate_pos->getStorage();
+	DBGLOG(DBG,"projected positive guess: " << *projectedModelCandidate_pos);
+
+	factory.gnMask.updateMask();
+	InterpretationPtr projectedModelCandidate_neg(new Interpretation(reg));
+	projectedModelCandidate_neg->getStorage() = projint->getStorage() & factory.gnMask.mask()->getStorage();
+	DBGLOG(DBG,"projected negative guess: " << *projectedModelCandidate_neg);
+
+	// verify whether correct eatoms where guessed true
+	// this callback checks if a positive eatom result was guessed as negative
+	// -> in this case it aborts
+	// this callback resets all positive bits it encounters
+	// -> if the positive interpretation is all-zeroes at the end,
+	//    the guess was correct
+	VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
+	  projectedModelCandidate_pos_val, projectedModelCandidate_neg);
+
+	// we might need edb facts here
+	// (dependencies to edb are not modelled in the dependency graph)
+	// therefore we did not mask the guess program before
+	if (!evaluateExternalAtoms(reg, factory.innerEatoms, candidateCompatibleSet, cb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr())){
+		return false;
+	}
+
+	// check if we guessed too many true atoms
+	if (projectedModelCandidate_pos_val->getStorage().count() > 0){
+		return false;
+	}
+	return true;
+}
+
+bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationConstPtr compatibleSet){
+
+	RegistryPtr reg = factory.ctx.registry();
+
+	/*
+	* FLP check:
+	* Check if the flp reduct of the program has a model which is a proper subset of modelCandidate
+	* 
+	* This check is done as follows:
+	* 1. evaluate edb + xidbflphead + M
+	*    -> yields singleton answer set containing flp heads F for non-blocked rules
+	* 2. evaluate edb + xidbflpbody + gidb + F
+	*    -> yields candidate compatible models Cand[1], ..., Cand[n] of the reduct
+	* 3. check each Cand[i] for compatibility (just as the check above for modelCandidate)
+	*    -> yields compatible reduct models Comp[1], ...,, Comp[m], m <= n
+	* 4. for all i: project modelCandidate and Comp[i] to ordinary atoms (remove flp and replacement atoms)
+	* 5. if for some i, projected Comp[i] is a proper subset of projected modelCandidate, modelCandidate is rejected,
+	*    otherwise it is a subset-minimal model of the flp reduct
+	*/
+	InterpretationPtr flpas;
+	{
+		DBGLOG(DBG,"evaluating flp head program");
+
+		// here we can mask, we won't lose FLP heads
+		OrdinaryASPProgram flpheadprogram(reg, factory.xidbflphead, compatibleSet, factory.ctx.maxint);
+		GenuineSolverPtr flpheadsolver = GenuineSolver::getInstance(factory.ctx, flpheadprogram);
+
+		flpas = flpheadsolver->projectToOrdinaryAtoms(flpheadsolver->getNextModel());
+		if( flpas == InterpretationPtr() )
+		{
+			DBGLOG(DBG, "FLP head program yielded no answer set");
+			assert(false);
+		}else{
+			DBGLOG(DBG, "FLP head program yielded at least one answer set");
+		}
+	}
+	DBGLOG(DBG,"got FLP head model " << *flpas);
+
+	// evaluate xidbflpbody+gidb+edb+flp
+	std::stringstream ss;
+	RawPrinter printer(ss, factory.ctx.registry());
+	ASPSolverManager::ResultsPtr flpbodyres;
+	int flpm = 0;
+	{
+		DBGLOG(DBG, "evaluating flp body program");
+
+		// build edb+flp
+		Interpretation::Ptr reductEDB(new Interpretation(reg));
+		factory.fMask.updateMask();
+		reductEDB->getStorage() |= flpas->getStorage() & factory.fMask.mask()->getStorage();
+		reductEDB->add(*postprocessedInput);
+
+		// here we can also mask, this eliminates many equal bits for comparisons later
+		std::vector<ID>& simulatedReduct = factory.xidbflpbody;
+		// add guessing program to flpbody program
+		BOOST_FOREACH (ID rid, factory.gidb){
+			simulatedReduct.push_back(rid);
+		}
+		ss << "simulatedReduct: IDB={";
+		printer.printmany(simulatedReduct, "\n");
+		ss << "}\nEDB=" << *reductEDB;
+		DBGLOG(DBG, "Evaluating simulated reduct: " << ss.str());
+		OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, factory.ctx.maxint);
+		GenuineSolverPtr flpbodysolver = GenuineSolver::getInstance(factory.ctx, flpbodyprogram);
+
+		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+		while(flpbodyas != InterpretationPtr())
+		{
+			// compatibility check
+			DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);
+			bool compatible = isCompatibleSet(flpbodyas);
+			DBGLOG(DBG, "Compatibility: " << compatible);
+
+			// remove input (because it was removed from modelCandidate as well)
+			flpbodyas->getStorage() -= postprocessedInput->getStorage();
+			DBGLOG(DBG, "Removed input facts: " << *flpbodyas);
+
+			if (compatible){
+				// check if the reduct model is smaller than modelCandidate
+
+				// project both the model candidate and the reduct model to ordinary atoms
+				InterpretationPtr candidate(new Interpretation(*compatibleSet));
+				candidate->getStorage() -= (compatibleSet->getStorage() & factory.gpMask.mask()->getStorage());
+				candidate->getStorage() -= (compatibleSet->getStorage() & factory.gnMask.mask()->getStorage());
+				candidate->getStorage() -= postprocessedInput->getStorage();
+
+				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gpMask.mask()->getStorage());
+				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gnMask.mask()->getStorage());
+				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.fMask.mask()->getStorage());
+
+				DBGLOG(DBG, "Checking if reduct model " << *flpbodyas << " is a subset of model candidate " << *candidate);
+
+				if ((candidate->getStorage() & flpbodyas->getStorage()).count() == flpbodyas->getStorage().count() &&	// subset property
+				     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
+					// found a smaller model of the reduct
+					DBGLOG(DBG, "Model candidate " << *compatibleSet << " is rejected because there exists a smaller compatible set of the reduct");
+					flpm++;
+					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found)");
+					return false;
+				}else{
+					DBGLOG(DBG, "Reduct model is no proper subset");
+					flpm++;
+				}
+			}
+
+			DBGLOG(DBG, "Go to next model of reduct");
+			flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+		}
+
+	}
+	DBGLOG(DBG, "Model candidate " << *compatibleSet << " passed FLP check (against " << flpm << " compatible reduct models)");			
+	return true;
 }
 
 DLVHEX_NAMESPACE_END

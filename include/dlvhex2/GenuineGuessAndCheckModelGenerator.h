@@ -78,6 +78,8 @@ protected:
   bool firstLearnCall;
   bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
 
+  bool isCompatibleSet(InterpretationConstPtr candidateCompatibleSet, NogoodContainerPtr nc = NogoodContainerPtr());
+  bool isSubsetMinimalFLPModel(InterpretationConstPtr compatibleSet);
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~GenuineGuessAndCheckModelGenerator();
