@@ -982,7 +982,7 @@ bool GenuineGuessAndCheckModelGenerator::isCompatibleSet(InterpretationConstPtr 
 	// we might need edb facts here
 	// (dependencies to edb are not modelled in the dependency graph)
 	// therefore we did not mask the guess program before
-	if (!evaluateExternalAtoms(reg, factory.innerEatoms, candidateCompatibleSet, cb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr())){
+	if (!evaluateExternalAtoms(reg, factory.innerEatoms, candidateCompatibleSet, cb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? nc : GenuineSolverPtr())){
 		return false;
 	}
 
@@ -1063,7 +1063,7 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 		{
 			// compatibility check
 			DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);
-			bool compatible = isCompatibleSet(flpbodyas);
+			bool compatible = isCompatibleSet(flpbodyas, flpbodysolver);
 			DBGLOG(DBG, "Compatibility: " << compatible);
 
 			// remove input (because it was removed from modelCandidate as well)
