@@ -628,7 +628,7 @@ ClaspSolver::~ClaspSolver(){
 //		DBGLOG(DBG, "ClaspSolver destructor: Clasp is still running - Requesting all outstanding models");
 	while (getNextModel() != InterpretationConstPtr());
 	DBGLOG(DBG, "Joining ClaspThread");
-	claspThread->join();
+	if (claspThread) claspThread->join();
 //	}else{
 //		DBGLOG(DBG, "ClaspSolver destructor: Clasp has already terminated");
 //	}
