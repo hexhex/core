@@ -2,6 +2,10 @@ domain(a).
 domain(b).
 domain(c).
 domain(d).
+domain(e).
+domain(f).
+domain(g).
+domain(h).
 
 sel(X) :- domain(X), &testSetMinus[domain, nsel](X)<monotonic domain,antimonotonic nsel>.
 nsel(X) :- domain(X), &testSetMinus[domain, sel](X)<monotonic domain,antimonotonic sel>.

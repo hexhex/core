@@ -129,12 +129,14 @@ protected:
 	boost::mutex modelsMutex;	// exclusive access of preparedModels
 	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;
-//	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
-//	bool modelRequest;
 	boost::interprocess::interprocess_semaphore sem_dlvhexDataStructures;
-
 	bool terminationRequest;
 	bool endOfModels;
+
+	// more restrictive communication
+	bool strictSingleThreaded;
+	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
+//	bool modelRequest;
 
 	// external behavior learning
 	boost::mutex learnerMutex;	// exclusive access of learner

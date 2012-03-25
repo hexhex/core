@@ -843,7 +843,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
-		if (!isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr())) continue;
+		bool compatible = isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
+		DBGLOG(DBG, "Compatible: " << compatible);
+		if (!compatible) continue;
 
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
