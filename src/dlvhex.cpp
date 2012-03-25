@@ -131,12 +131,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=iobehavior,monotonicity,functionality,user,partial]" << std::endl
+      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,user,partial]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
       << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
       << "                        functionality: Apply special rules for functional external atoms" << std::endl
-      << "                        linear: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
+      << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
       << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
