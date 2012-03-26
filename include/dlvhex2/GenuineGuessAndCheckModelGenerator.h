@@ -140,7 +140,52 @@ protected:
   // bitmask for filtering out FLP predicates
   PredicateMask fMask;
 
+  // predicate postfix for shadow predicates
+  std::string shadowpostfix;
+
   // methods
+  void createEatomGuessingRules(
+      RegistryPtr reg,
+      const std::vector<ID>& idb,
+      const std::vector<ID>& innerEatoms,
+      std::vector<ID>& gidb,
+      PredicateMask& gpmask,
+      PredicateMask& gnmask);
+
+  void createFLPRules(
+      RegistryPtr reg,
+      const std::vector<ID>& xidb,
+      std::vector<ID>& xidbflphead,
+      std::vector<ID>& xidbflpbody,
+      PredicateMask& fmask);
+
+  // computes for each predicate p in idb/edb
+  // a shadow predicate sp which does not yet occur
+  void computeShadowPredicates(
+      RegistryPtr reg,
+      InterpretationConstPtr edb,
+      const std::vector<ID>& idb,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates
+      );
+
+  // adds the shadow facts for some edb input to output
+  void addShadowInterpretation(
+      RegistryPtr reg,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      InterpretationConstPtr input,
+      InterpretationPtr output);
+
+  // computes for each pair of predicate p and shadow predicate sp
+  // of arity n rules:
+  //    :- p(X1, ..., Xn), not sp(X1, ..., Xn).
+  //    smaller :- not p(X1, ..., Xn), sp(X1, ..., Xn).
+  // and one rule
+  //    :- not smaller
+  void createMinimalityRules(
+      RegistryPtr reg,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      std::vector<ID>& idb);
+
 public:
   GenuineGuessAndCheckModelGeneratorFactory(
       ProgramCtx& ctx, const ComponentInfo& ci,

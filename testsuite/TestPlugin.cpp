@@ -552,8 +552,6 @@ public:
 
   virtual void retrieve(const Query& query, Answer& answer)
   {
-	assert(false);	// this method should never be called
-
 	// find relevant input
 	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
 	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();

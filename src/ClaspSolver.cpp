@@ -152,9 +152,15 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	DBGLOG(DBG, "ClaspThread: Start producing a model");
 
+//	cs.sem_dlvhexDataStructures.wait();
+//	DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
+
 	// create a model
 	// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
+
+//	DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
+//	cs.sem_dlvhexDataStructures.post();
 
 	// get the symbol table from the solver
 	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
@@ -219,6 +225,8 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		// create an interpretation and a bitset of assigned values
 		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
 		InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+//		Interpretation::Storage interpretation;
+//		Interpretation::Storage factWasSet;
 
 		// translate clasp assignment to hex assignment
 		// get the symbol table from the solver
@@ -236,12 +244,15 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 			}
 		}
 
-		DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
+		DBGLOG(DBG, "Calling external learners");
 		bool learned = false;
 		BOOST_FOREACH (LearningCallback* cb, cs.learner){
 			// we are currently not able to check what changed inside clasp, so assume that all facts changed
 			learned |= cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
 		}
+
+		interpretation.reset();
+		factWasSet.reset();
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -251,8 +262,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		}
 	}
 
-	// add the produced nogoods to clasp
 	bool inconsistent = false;
+
+	// add the produced nogoods to clasp
 	{
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
 
@@ -266,8 +278,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		inconsistent = s.hasConflict();
 
 		cs.translatedNogoods = cs.nogoods.size();
-		DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 	}
+
+	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
 }
@@ -765,7 +778,6 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 		if (program.mask != InterpretationConstPtr()){
 			answer->getStorage() -= program.mask->getStorage();
 		}
-
 		DBGLOG(DBG, "Projected " << *intr << " to " << *answer);
 		return answer;
 	}

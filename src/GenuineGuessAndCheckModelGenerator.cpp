@@ -83,26 +83,13 @@ DLVHEX_NAMESPACE_BEGIN
  *   (this means, that for one input, all models have to be calculated
  *    before the first one can be returned due to the minimality check)
  */
-
-namespace
-{
-
-void createEatomGuessingRules(
-    RegistryPtr reg,
-    const std::vector<ID>& idb,
-    const std::vector<ID>& innerEatoms,
-    std::vector<ID>& gidb,
-    PredicateMask& gpmask,
-    PredicateMask& gnmask);
-
-void createFLPRules(
-    RegistryPtr reg,
-    const std::vector<ID>& xidb,
-    std::vector<ID>& xidbflphead,
-    std::vector<ID>& xidbflpbody,
-    PredicateMask& fmask);
-
-}
+/*
+		// add minimality rules to flpbody program
+		std::vector<ID> minimalityProgram = createMinimalityProgram();
+		BOOST_FOREACH (ID rid, factory.gidb){
+			simulatedReduct.push_back(rid);
+		}
+*/
 
 GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFactory(
     ProgramCtx& ctx,
@@ -159,9 +146,6 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   #endif
 }
 
-namespace
-{
-
 /**
  * go through all rules with external atoms
  * for each such rule and each inner eatom in the body:
@@ -170,7 +154,7 @@ namespace
  * * build rule <aux_ext_eatompos>(<all variables>) v <aux_ext_eatomneg>(<all variables>) :- <all bodies>
  * * store into gidb
  */
-void createEatomGuessingRules(
+void GenuineGuessAndCheckModelGeneratorFactory::createEatomGuessingRules(
     RegistryPtr reg,
     const std::vector<ID>& idb,
     const std::vector<ID>& innerEatoms,
@@ -325,7 +309,7 @@ void createEatomGuessingRules(
  * * create rule <flpreplacement>(<allvariables>) :- <body> and store in xidbflphead
  * * create rule <head> :- <flpreplacement>(<allvariables>), <body> and store in xidbflpbody
  */
-void createFLPRules(
+void GenuineGuessAndCheckModelGeneratorFactory::createFLPRules(
     RegistryPtr reg,
     const std::vector<ID>& xidb,
     std::vector<ID>& xidbflphead,
@@ -455,6 +439,158 @@ void createFLPRules(
   }
 }
 
+void GenuineGuessAndCheckModelGeneratorFactory::computeShadowPredicates(
+	RegistryPtr reg,
+	InterpretationConstPtr edb,
+	const std::vector<ID>& idb,
+	std::map<ID, std::pair<int, ID> >& shadowPredicates){
+
+	// collect predicates
+	std::set<std::pair<int, ID> > preds;
+
+	// edb
+	bm::bvector<>::enumerator en = edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = edb->getStorage().end();
+	while (en < en_end){
+		const OrdinaryAtom& atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
+		en++;
+	}
+
+	// idb
+	BOOST_FOREACH (ID rid, idb){
+		const Rule& r = reg->rules.getByID(rid);
+		BOOST_FOREACH (ID h, r.head){
+			if (!h.isAuxiliary()){
+				const OrdinaryAtom& atom = h.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(h) : reg->onatoms.getByID(h);
+				preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
+			}
+		}
+		BOOST_FOREACH (ID b, r.body){
+			if (b.isOrdinaryAtom() && !b.isAuxiliary()){
+				const OrdinaryAtom& atom = b.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(b) : reg->onatoms.getByID(b);
+				preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
+			}
+		}
+	}
+
+	// create unique predicate suffix for shadow predicates
+	shadowpostfix = "_shadow";
+	int idx = 0;
+	bool clash;
+	do{
+		clash = false;
+
+		// check if the current postfix clashes with any of the predicates
+		typedef std::pair<int, ID> Pair;
+		BOOST_FOREACH (Pair p, preds){
+			std::string currentPred = reg->terms.getByID(p.second).getUnquotedString();
+			if (shadowpostfix.length() <= currentPred.length() &&						// currentPred is at least as long as shadowpostfix
+			    currentPred.substr(currentPred.length() - shadowpostfix.length()) == shadowpostfix){	// postfixes coincide
+				clash = true;
+				break;
+			}
+		}
+		std::stringstream ss;
+		ss << "_shadow" << idx++;
+	}while(clash);
+
+	// create shadow predicates
+	typedef std::pair<int, ID> Pair;
+	BOOST_FOREACH (Pair p, preds){
+		Term shadowTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, reg->terms.getByID(p.second).getUnquotedString() + shadowpostfix);
+		ID shadowID = reg->storeTerm(shadowTerm);
+		shadowPredicates[p.second] = Pair(p.first, shadowID);
+		DBGLOG(DBG, "Predicate " << reg->terms.getByID(p.second).getUnquotedString() << " [" << p.second << "] has shadow predicate " <<
+				reg->terms.getByID(p.second).getUnquotedString() + shadowpostfix << " [" << shadowID << "]");
+	}
+}
+
+void GenuineGuessAndCheckModelGeneratorFactory::addShadowInterpretation(
+	RegistryPtr reg,
+	std::map<ID, std::pair<int, ID> >& shadowPredicates,
+	InterpretationConstPtr input,
+	InterpretationPtr output){
+
+	bm::bvector<>::enumerator en = input->getStorage().first();
+	bm::bvector<>::enumerator en_end = input->getStorage().end();
+	while (en < en_end){
+		OrdinaryAtom atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (shadowPredicates.find(atom.tuple[0]) != shadowPredicates.end()){
+			atom.tuple[0] = shadowPredicates[atom.tuple[0]].second;
+			output->setFact(reg->storeOrdinaryGAtom(atom).address);
+		}
+		en++;
+	}
+}
+
+void GenuineGuessAndCheckModelGeneratorFactory::createMinimalityRules(
+	RegistryPtr reg,
+	std::map<ID, std::pair<int, ID> >& shadowPredicates,
+	std::vector<ID>& idb){
+
+	// construct a propositional atom which does neither occur in the input program nor as a shadow predicate
+	// for this purpose we use the shadowpostfix alone:
+	// - it cannot be used by the input program (otherwise it would not be a postfix)
+	// - it cannot be used by the shadow atoms (otherwise an input atom would be the empty string, which is not possible)
+	Term smallerTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, shadowpostfix);
+	OrdinaryAtom smallerAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+	smallerAtom.tuple.push_back(reg->storeTerm(smallerTerm));
+	ID smallerAtomID = reg->storeOrdinaryGAtom(smallerAtom);
+
+	typedef std::pair<ID, std::pair<int, ID> > Pair;
+	BOOST_FOREACH (Pair p, shadowPredicates){
+		OrdinaryAtom atom(ID::MAINKIND_ATOM);
+		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		atom.tuple.push_back(p.first);
+		for (int i = 0; i < p.second.first; ++i){
+			std::stringstream var;
+			var << "X" << i;
+			atom.tuple.push_back(reg->storeVariableTerm(var.str()));
+		}
+
+		// store original atom
+		ID origID;
+		if (p.second.first == 0){
+			origID = reg->storeOrdinaryGAtom(atom);
+		}else{
+			origID = reg->storeOrdinaryNAtom(atom);
+		}
+
+		// store shadow atom
+		atom.tuple[0] = p.second.second;
+		ID shadowID;
+		if (p.second.first == 0){
+			shadowID = reg->storeOrdinaryGAtom(atom);
+		}else{
+			shadowID = reg->storeOrdinaryNAtom(atom);
+		}
+
+		// an atom must not be true if the shadow atom is false because the computed interpretation must be a subset of the shadow interpretation
+		{
+			// construct rule   :- a, not a_shadow   to ensure that the models are (not necessarily proper) subsets of the shadow model
+			Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+			r.body.push_back(origID);
+			r.body.push_back(shadowID & ID(ID::ALL_ONES ^ ID::MAINKIND_MASK, ID::ALL_ONES) | ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 0) );
+			idb.push_back(reg->storeRule(r));
+		}
+
+		// but we want a proper subset, so add a rule   smaller :- a_shadow, not a
+		// an atom must not be true if the shadow atom is false because the computed interpretation must be a subset of the shadow interpretation
+		{
+			// construct rule   :- a, not a_shadow   to ensure that the models are (not necessarily proper) subsets of the shadow model
+			Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+			r.head.push_back(smallerAtomID);
+			r.body.push_back(origID & ID(ID::ALL_ONES ^ ID::MAINKIND_MASK, ID::ALL_ONES) | ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 0) );
+			r.body.push_back(shadowID);
+			idb.push_back(reg->storeRule(r));
+		}
+	}
+
+	// construct a rule   :- not smaller   to restrict the search space to proper submodels of the shadow model
+	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
+	r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, smallerAtomID.address));
+	idb.push_back(reg->storeRule(r));
 }
 
 std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(
@@ -1047,16 +1183,29 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 		reductEDB->getStorage() |= flpas->getStorage() & factory.fMask.mask()->getStorage();
 		reductEDB->add(*postprocessedInput);
 
-		// here we can also mask, this eliminates many equal bits for comparisons later
-		std::vector<ID>& simulatedReduct = factory.xidbflpbody;
+		std::vector<ID> simulatedReduct = factory.xidbflpbody;
 		// add guessing program to flpbody program
 		BOOST_FOREACH (ID rid, factory.gidb){
 			simulatedReduct.push_back(rid);
 		}
+
+		static const bool encodeMinimalityCheckIntoReduct = true;
+
+		if (encodeMinimalityCheckIntoReduct){
+			// add minimality rules to flpbody program
+			std::map<ID, std::pair<int, ID> > shadowPredicates;
+			factory.computeShadowPredicates(reg, postprocessedInput, simulatedReduct, shadowPredicates);
+			Interpretation::Ptr shadowInterpretation(new Interpretation(reg));
+			factory.addShadowInterpretation(reg, shadowPredicates, compatibleSet, shadowInterpretation);
+			factory.createMinimalityRules(reg, shadowPredicates, simulatedReduct);
+			reductEDB->add(*shadowInterpretation);
+		}
+
 		ss << "simulatedReduct: IDB={";
 		printer.printmany(simulatedReduct, "\n");
 		ss << "}\nEDB=" << *reductEDB;
 		DBGLOG(DBG, "Evaluating simulated reduct: " << ss.str());
+
 		OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, factory.ctx.maxint);
 		GenuineSolverPtr flpbodysolver = GenuineSolver::getInstance(factory.ctx, flpbodyprogram);
 
@@ -1068,35 +1217,39 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 			bool compatible = isCompatibleSet(flpbodyas, flpbodysolver);
 			DBGLOG(DBG, "Compatibility: " << compatible);
 
-			// remove input (because it was removed from modelCandidate as well)
+			// remove input and shadow input (because it not contained in modelCandidate neither)
 			flpbodyas->getStorage() -= postprocessedInput->getStorage();
 			DBGLOG(DBG, "Removed input facts: " << *flpbodyas);
 
 			if (compatible){
 				// check if the reduct model is smaller than modelCandidate
-
-				// project both the model candidate and the reduct model to ordinary atoms
-				InterpretationPtr candidate(new Interpretation(*compatibleSet));
-				candidate->getStorage() -= (compatibleSet->getStorage() & factory.gpMask.mask()->getStorage());
-				candidate->getStorage() -= (compatibleSet->getStorage() & factory.gnMask.mask()->getStorage());
-				candidate->getStorage() -= postprocessedInput->getStorage();
-
-				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gpMask.mask()->getStorage());
-				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gnMask.mask()->getStorage());
-				flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.fMask.mask()->getStorage());
-
-				DBGLOG(DBG, "Checking if reduct model " << *flpbodyas << " is a subset of model candidate " << *candidate);
-
-				if ((candidate->getStorage() & flpbodyas->getStorage()).count() == flpbodyas->getStorage().count() &&	// subset property
-				     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
-					// found a smaller model of the reduct
-					DBGLOG(DBG, "Model candidate " << *compatibleSet << " is rejected because there exists a smaller compatible set of the reduct");
-					flpm++;
-					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found)");
+				if (encodeMinimalityCheckIntoReduct){
+					// reduct model is a proper subset (this was already ensured by the program encoding)
 					return false;
 				}else{
-					DBGLOG(DBG, "Reduct model is no proper subset");
-					flpm++;
+					// project both the model candidate and the reduct model to ordinary atoms
+					InterpretationPtr candidate(new Interpretation(*compatibleSet));
+					candidate->getStorage() -= (compatibleSet->getStorage() & factory.gpMask.mask()->getStorage());
+					candidate->getStorage() -= (compatibleSet->getStorage() & factory.gnMask.mask()->getStorage());
+					candidate->getStorage() -= postprocessedInput->getStorage();
+
+					flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gpMask.mask()->getStorage());
+					flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.gnMask.mask()->getStorage());
+					flpbodyas->getStorage() -= (flpbodyas->getStorage() & factory.fMask.mask()->getStorage());
+
+					DBGLOG(DBG, "Checking if reduct model " << *flpbodyas << " is a subset of model candidate " << *candidate);
+
+					if ((candidate->getStorage() & flpbodyas->getStorage()).count() == flpbodyas->getStorage().count() &&	// subset property
+					     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
+						// found a smaller model of the reduct
+						DBGLOG(DBG, "Model candidate " << *compatibleSet << " is rejected because there exists a smaller compatible set of the reduct");
+						flpm++;
+						DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found)");
+						return false;
+					}else{
+						DBGLOG(DBG, "Reduct model is no proper subset");
+						flpm++;
+					}
 				}
 			}
 
