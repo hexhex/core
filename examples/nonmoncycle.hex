@@ -1,0 +1,11 @@
+% This example demonstrates that the old implementation of the FLP check is wrong.
+% &testNonmon[p](a) implements the following mapping: {} -> {2}, {1} -> {1}, {2} -> {1}, {1,2} -> {1,2}.
+% Here, the guessing program has two models: {p(1)} and {p(1,2)}, where {p(1)} is subset-minimal.
+% The reduct f P^{p(a)} = { dom(1). dom(2). p(1) :- &testNonmon[p](1), dom(1). } has a smaller model {}.
+% As the old implementation checks only if a candidate is a model of the reduct,
+% but not if it is a subset-minimal model, the FLP check is wrongly passed.
+
+dom(1).
+dom(2).
+
+p(X) :- &testNonmon[p](X), dom(X).
