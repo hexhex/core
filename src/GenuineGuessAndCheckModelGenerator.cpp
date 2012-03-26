@@ -453,7 +453,9 @@ void GenuineGuessAndCheckModelGeneratorFactory::computeShadowPredicates(
 	bm::bvector<>::enumerator en_end = edb->getStorage().end();
 	while (en < en_end){
 		const OrdinaryAtom& atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
+		if (!ID(atom.kind, *en).isAuxiliary()){
+			preds.insert(std::pair<int, ID>(atom.tuple.size() - 1, atom.tuple.front()));
+		}
 		en++;
 	}
 
@@ -558,6 +560,8 @@ void GenuineGuessAndCheckModelGeneratorFactory::createMinimalityRules(
 		}
 
 		// store shadow atom
+		atom.kind = ID::MAINKIND_ATOM;
+		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
 		atom.tuple[0] = p.second.second;
 		ID shadowID;
 		if (p.second.first == 0){
@@ -565,13 +569,16 @@ void GenuineGuessAndCheckModelGeneratorFactory::createMinimalityRules(
 		}else{
 			shadowID = reg->storeOrdinaryNAtom(atom);
 		}
+		DBGLOG(DBG, "Using shadow predicate for " << p.first << " which is " << p.second.second);
 
 		// an atom must not be true if the shadow atom is false because the computed interpretation must be a subset of the shadow interpretation
 		{
 			// construct rule   :- a, not a_shadow   to ensure that the models are (not necessarily proper) subsets of the shadow model
 			Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
-			r.body.push_back(origID);
-			r.body.push_back(shadowID & ID(ID::ALL_ONES ^ ID::MAINKIND_MASK, ID::ALL_ONES) | ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 0) );
+			ID id = origID;
+			r.body.push_back(id);
+			id = ID(ID::MAINKIND_LITERAL | ID::NAF_MASK | (shadowID.kind & ID::SUBKIND_MASK), shadowID.address);
+			r.body.push_back(id);
 			idb.push_back(reg->storeRule(r));
 		}
 
@@ -580,8 +587,10 @@ void GenuineGuessAndCheckModelGeneratorFactory::createMinimalityRules(
 		{
 			// construct rule   :- a, not a_shadow   to ensure that the models are (not necessarily proper) subsets of the shadow model
 			Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-			r.head.push_back(smallerAtomID);
-			r.body.push_back(origID & ID(ID::ALL_ONES ^ ID::MAINKIND_MASK, ID::ALL_ONES) | ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 0) );
+			ID id = smallerAtomID;
+			r.head.push_back(id);
+			id = ID(ID::MAINKIND_LITERAL | ID::NAF_MASK | (origID.kind & ID::SUBKIND_MASK), origID.address);
+			r.body.push_back(id);
 			r.body.push_back(shadowID);
 			idb.push_back(reg->storeRule(r));
 		}
@@ -1225,6 +1234,7 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 				// check if the reduct model is smaller than modelCandidate
 				if (encodeMinimalityCheckIntoReduct){
 					// reduct model is a proper subset (this was already ensured by the program encoding)
+					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
 					return false;
 				}else{
 					// project both the model candidate and the reduct model to ordinary atoms
@@ -1242,9 +1252,8 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 					if ((candidate->getStorage() & flpbodyas->getStorage()).count() == flpbodyas->getStorage().count() &&	// subset property
 					     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
 						// found a smaller model of the reduct
-						DBGLOG(DBG, "Model candidate " << *compatibleSet << " is rejected because there exists a smaller compatible set of the reduct");
 						flpm++;
-						DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found)");
+						DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
 						return false;
 					}else{
 						DBGLOG(DBG, "Reduct model is no proper subset");
