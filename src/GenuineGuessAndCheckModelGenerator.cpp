@@ -1265,7 +1265,6 @@ bool GenuineGuessAndCheckModelGenerator::isSubsetMinimalFLPModel(InterpretationC
 			DBGLOG(DBG, "Go to next model of reduct");
 			flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
 		}
-
 	}
 	DBGLOG(DBG, "Model candidate " << *compatibleSet << " passed FLP check (against " << flpm << " compatible reduct models)");			
 	return true;

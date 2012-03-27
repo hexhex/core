@@ -41,6 +41,7 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/Set.h"
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -270,12 +271,11 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 		DBGLOG(DBG, "External learners have produced " << (cs.nogoods.size() - cs.translatedNogoods) << " nogoods; transferring to clasp");
 		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
-			inconsistent |= cs.addNogoodToClasp(cs.nogoods[i]);
+			inconsistent |= cs.addNogoodToClasp(s, cs.nogoods[i]);
 		}
 //		inconsistent |= s.hasConflict();	// for some strange reason, this is necessary because there might be a conflict even if adding the nogood was successful
 							// this is possibly due to conflicting derived nogoods!?
-//if (inconsistent != s.hasConflict()) std::cout << "DIFFERENCE: inconsistent=" << inconsistent << ", s.hasConflict()=" << s.hasConflict() << std::endl;
-		inconsistent = s.hasConflict();
+//		inconsistent = s.hasConflict();
 
 		cs.translatedNogoods = cs.nogoods.size();
 	}
@@ -285,7 +285,11 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	return !inconsistent;
 }
 
-bool ClaspSolver::addNogoodToClasp(Nogood& ng){
+uint32 ClaspSolver::ExternalPropagator::priority() const{
+	return Clasp::PostPropagator::priority_general;
+}
+
+bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng){
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -303,7 +307,22 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 
 	// translate dlvhex::Nogood to clasp clause
 	clauseCreator->start(Clasp::Constraint_t::learnt_other);
+	Set<uint32> pos;
+	Set<uint32> neg;
 	BOOST_FOREACH (ID lit, ng){
+		// avoid duplicate literals
+		// if the literal was already added with the same sign, skip it
+		// if it was added with different sign, cancel adding the clause
+		if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
+			if (pos.contains(hexToClasp[lit.address].var())) continue;
+			else if (neg.contains(hexToClasp[lit.address].var())) return false;
+			pos.insert(hexToClasp[lit.address].var());
+		}else{
+			if (neg.contains(hexToClasp[lit.address].var())) continue;
+			else if (pos.contains(hexToClasp[lit.address].var())) return false;
+			neg.insert(hexToClasp[lit.address].var());
+		}
+
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
 		// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
 		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
@@ -319,12 +338,11 @@ bool ClaspSolver::addNogoodToClasp(Nogood& ng){
 #ifndef NDEBUG
 	ss << " }";
 #endif
-	bool ret = false;
-	if (clauseCreator->end().ok == false) ret = true;
 
 	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
 
-	return ret;
+//	return !clauseCreator->end().ok;
+	return !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok;
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){

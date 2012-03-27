@@ -98,10 +98,11 @@ private:
 	public:
 		ExternalPropagator(ClaspSolver& cs) : cs(cs){}
 		virtual bool propagate(Clasp::Solver& s);
+		virtual uint32 priority() const;
 	};
 
 	// interface to clasp internals
-	bool addNogoodToClasp(Nogood& ng);
+	bool addNogoodToClasp(Clasp::Solver& s, Nogood& ng);
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
