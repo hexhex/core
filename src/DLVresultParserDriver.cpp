@@ -380,11 +380,17 @@ DLVResultParser::parse(
     // get next input line
     std::string input;
     std::getline(is, input);
+
+    // break silently
+    if( input.empty() )
+      break;
+
     DBGLOG(DBG,"obtained " << input.size() << " characters from input stream via getline");
-    if( input.empty() || is.bad() )
+    
+    if( is.bad() )
     {
-      DBGLOG(DBG,"leaving loop because got input size " << input.size() <<
-          ", stream bits fail " << is.fail() << ", bad " << is.bad() << ", eof " << is.eof());
+      DBGLOG(DBG,"leaving DLVResultParser loop, stream bits are: "
+          "fail " << is.fail() << ", bad " << is.bad() << ", eof " << is.eof());
       break;
     }
 
