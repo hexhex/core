@@ -2,6 +2,11 @@
 	
 	TODO describe Genuine solver changes
 
+2012-03-28  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/Logger.h: Mutex for more readable logs in debug mode.
+	* src/Logger.cpp: Likewise.
+
 2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex2/HexGrammar.tcc: Ensuring that after parsing the

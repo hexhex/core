@@ -34,6 +34,14 @@
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>
 
+#include <boost/thread/mutex.hpp>
+
+#ifndef NDEBUG
+# define LOG_SCOPED_LOCK(varname) boost::mutex::scoped_lock varname(Logger::Mutex());
+#else
+# define LOG_SCOPED_LOCK(varname) do { } while(false)
+#endif
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -82,6 +90,7 @@ private:
 
 public:
   static Logger& Instance();
+  static boost::mutex& Mutex();
 
   inline std::ostream& stream()
     { return out; }
@@ -138,6 +147,7 @@ public:
     {
       if( l.shallPrint(level) )
       {
+        LOG_SCOPED_LOCK(lock);
         l.indent += str + " ";
         sayHello();
       }
@@ -149,6 +159,7 @@ public:
     {
       if( l.shallPrint(level) )
       {
+        LOG_SCOPED_LOCK(lock);
         std::stringstream ss;
         ss << str << "/" << val << " ";
         l.indent += ss.str();
@@ -160,6 +171,7 @@ public:
     {
       if( l.shallPrint(level) )
       {
+        LOG_SCOPED_LOCK(lock);
         sayGoodbye();
         // restore indentation level
         l.indent.erase(cutoff);
@@ -179,7 +191,8 @@ public:
 
 // the following will always be realized
 //#ifndef NDEBUG
-#  define LOG(level,streamout) do { if( Logger::Instance().shallPrint(Logger:: level) ) { \
+#  define LOG(level,streamout) do { LOG_SCOPED_LOCK(lock); \
+     if( Logger::Instance().shallPrint(Logger:: level) ) { \
        Logger::Instance().startline(Logger:: level); \
        Logger::Instance().stream() << streamout << std::endl; \
      } } while(false);

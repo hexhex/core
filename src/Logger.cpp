@@ -39,11 +39,27 @@ namespace
   Logger* instance = 0;
 }
 
+namespace
+{
+  boost::mutex* mutex = 0;
+}
+
 Logger& Logger::Instance()
 {
   if( instance == 0 )
     instance = new Logger();
   return *instance;
+}
+
+boost::mutex& Logger::Mutex()
+{
+#ifndef NDEBUG
+  if( mutex == 0 )
+    mutex = new boost::mutex();
+  return *mutex;
+#else
+  throw std::runtime_error("do not use logging mutex in NDEBUG mode!");
+#endif
 }
 
 void Logger::setPrintLevels(Levels levels)
