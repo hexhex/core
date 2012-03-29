@@ -74,6 +74,11 @@ class LearningCallback;
 
 class ClaspSolver : public GenuineGroundSolver{
 private:
+	class ClaspTermination : public std::runtime_error{
+	public:
+		ClaspTermination() : std::runtime_error("ClaspThread: Termination request"){}
+	};
+
 	// as clasp offers only a callback interface for answer set processing,
 	// we need a separate thread for providing a getNextModel-method
 	// Note: claspThread is active iff the main thread is blocked, i.e.

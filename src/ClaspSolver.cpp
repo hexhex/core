@@ -203,7 +203,8 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	// @TODO: find a breakout possibility to terminate only the current thread!
 	//        the following throw kills the whole application, which is not what we want
-//	if (cs.terminationRequest) throw std::runtime_error("ClaspThread was requested to terminate");
+	static const bool quickTerminationMethod = true;
+	if (quickTerminationMethod && cs.terminationRequest) throw ClaspSolver::ClaspTermination();
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
@@ -494,7 +495,14 @@ void ClaspSolver::runClasp(){
 		sem_request.wait();	// continue with execution of MainThread
 	}
 
-	Clasp::solve(claspInstance, params);
+	try{
+		Clasp::solve(claspInstance, params);
+	}catch(ClaspSolver::ClaspTermination){
+		DBGLOG(DBG, "Clasp was requested to terminate before all models were enumerated");
+	}catch(...){
+		throw;
+	}
+
 	DBGLOG(DBG, "Clasp terminated");
 
 	{
