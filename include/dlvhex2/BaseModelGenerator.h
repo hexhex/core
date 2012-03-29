@@ -94,6 +94,28 @@ protected:
     OrdinaryAtom replacement;
   };
 
+  // for usual model building where we want to collect all true answers
+  // as replacement atoms in an interpretation
+  struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
+    public BaseModelGenerator::ExternalAnswerTupleCallback
+  {
+    VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
+        InterpretationPtr guess_pos,
+        InterpretationPtr guess_neg);
+    virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
+    // remembers eatom and prepares replacement.tuple[0]
+    virtual bool eatom(const ExternalAtom& eatom);
+    // remembers input
+    virtual bool input(const Tuple& input);
+    // creates replacement ogatom and activates respective bit in output interpretation
+    virtual bool output(const Tuple& output);
+  protected:
+    RegistryPtr reg;
+    InterpretationPtr guess_pos, guess_neg;
+    ID pospred, negpred;
+    OrdinaryAtom replacement;
+  };
+
   // ========== Global Learning ==========
 
   // computes the set of predicate IDs which are relevant
@@ -152,6 +174,58 @@ protected:
   // calculate all tuples that are inputs to the eatom and store them into "inputs"
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
+
+  virtual bool isCompatibleSet(
+		std::vector<ID>& innerEatoms,
+		InterpretationConstPtr candidateCompatibleSet,
+		InterpretationConstPtr postprocessedInput,
+		PredicateMask& gpMask,
+		PredicateMask& gnMask,
+		ProgramCtx& ctx,
+		NogoodContainerPtr nc);
+
+  virtual bool isSubsetMinimalFLPModel(
+		std::vector<ID>& innerEatoms,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr postprocessedInput,
+		PredicateMask& gpMask,
+		PredicateMask& gnMask,
+		PredicateMask& fMask,
+		std::vector<ID>& xidbflphead,
+		std::vector<ID>& xidbflpbody,
+		std::vector<ID>& gidb,
+		ProgramCtx& ctx);
+
+
+  // predicate postfix for shadow predicates
+  std::string shadowpostfix;
+
+  // computes for each predicate p in idb/edb
+  // a shadow predicate sp which does not yet occur
+  void computeShadowPredicates(
+      RegistryPtr reg,
+      InterpretationConstPtr edb,
+      const std::vector<ID>& idb,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates
+      );
+
+  // adds the shadow facts for some edb input to output
+  void addShadowInterpretation(
+      RegistryPtr reg,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      InterpretationConstPtr input,
+      InterpretationPtr output);
+
+  // computes for each pair of predicate p and shadow predicate sp
+  // of arity n rules:
+  //    :- p(X1, ..., Xn), not sp(X1, ..., Xn).
+  //    smaller :- not p(X1, ..., Xn), sp(X1, ..., Xn).
+  // and one rule
+  //    :- not smaller
+  void createMinimalityRules(
+      RegistryPtr reg,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      std::vector<ID>& idb);
 };
 
 //
@@ -175,6 +249,23 @@ protected:
   // (works recursively for aggregate atoms,
   // will create additional "auxiliary" aggregate atoms in registry)
   virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
+
+
+  // methods
+  void createEatomGuessingRules(
+      RegistryPtr reg,
+      const std::vector<ID>& idb,
+      const std::vector<ID>& innerEatoms,
+      std::vector<ID>& gidb,
+      PredicateMask& gpmask,
+      PredicateMask& gnmask);
+
+  void createFLPRules(
+      RegistryPtr reg,
+      const std::vector<ID>& xidb,
+      std::vector<ID>& xidbflphead,
+      std::vector<ID>& xidbflpbody,
+      PredicateMask& fmask);
 };
 
 DLVHEX_NAMESPACE_END
