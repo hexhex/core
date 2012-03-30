@@ -286,11 +286,11 @@ struct handle_fact
         }
         atom.text = ss.str();
       }
-      DBGLOG(DBG,"storing atom " << atom);
+      //DBGLOG(DBG,"storing atom " << atom);
       id = state.registry->ogatoms.storeAndGetID(atom);
     }
     //TODO make more efficient (cache pointer to interpretation or even function object)
-    DBGLOG(DBG,"setting fact " << id);
+    //DBGLOG(DBG,"setting fact " << id);
     state.current->interpretation->setFact(id.address);
   }
 
