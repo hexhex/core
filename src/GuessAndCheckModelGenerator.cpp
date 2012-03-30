@@ -339,14 +339,13 @@ void createFLPRules(
   {
     const Rule& r = reg->rules.getByID(rid);
     DBGLOG(DBG,"processing rule " << rid << " " << r);
-    if( rid.isConstraint() ||
-        r.body.empty() )
+    if( r.body.empty() )
     {
       // keep constraints and disjunctive facts as they are
       xidbflphead.push_back(rid);
       xidbflpbody.push_back(rid);
     }
-    else if( rid.isRegularRule() )
+    else if( rid.isConstraint() || rid.isRegularRule() )
     {
       // collect all variables
       std::set<ID> variables;
@@ -417,8 +416,13 @@ void createFLPRules(
       rflphead.head.push_back(fid);
       rflphead.body = r.body;
 
-      Rule rflpbody(
-          ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
+      IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
+      if (r.head.size() == 0){
+        kind |= ID::SUBKIND_RULE_CONSTRAINT;
+      }else{
+        kind |= ID::SUBKIND_RULE_REGULAR;
+      }
+      Rule rflpbody(kind);
       rflpbody.head = r.head;
       if( rflpbody.head.size() > 1 )
         rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
@@ -741,48 +745,51 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
       // project to pos and neg eatom replacements for validation
 
       factory.gpMask.updateMask();
-      InterpretationPtr projint_pos(new Interpretation(reg));
-      projint_pos->getStorage() =
-        projint->getStorage() & factory.gpMask.mask()->getStorage();
-      DBGLOG(DBG,"projected positive guess: " << *projint_pos);
-
       factory.gnMask.updateMask();
-      InterpretationPtr projint_neg(new Interpretation(reg));
-      projint_neg->getStorage() =
-        projint->getStorage() & factory.gnMask.mask()->getStorage();
-      DBGLOG(DBG,"projected negative guess: " << *projint_neg);
 
-      // verify whether correct eatoms where guessed true
-      // this callback checks if a positive eatom result was guessed as negative
-      // -> in this case it aborts
-      // this callback resets all positive bits it encounters
-      // -> if the positive interpretation is all-zeroes at the end,
-      //    the guess was correct
-      VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
-          projint_pos, projint_neg);
-      // we might need edb facts here
-      // (dependencies to edb are not modelled in the dependency graph)
-      // therefore we did not mask the guess program before
-      bool aborted = !evaluateExternalAtoms(
-          reg, factory.innerEatoms, guessint, cb);
-
-      if( aborted )
       {
-        DBGLOG(DBG,"discarding guess as verifier aborted for neg guess " << *projint_neg);
-        continue;
-      }
-      if( projint_pos->getStorage().count() != 0 )
-      {
-        DBGLOG(DBG,"discarding guess due to unconfirmed positive guesses " << *projint_pos);
-        continue;
+        InterpretationPtr projint_pos(new Interpretation(reg));
+        projint_pos->getStorage() =
+          projint->getStorage() & factory.gpMask.mask()->getStorage();
+        DBGLOG(DBG,"projected positive guess: " << *projint_pos);
+
+        InterpretationPtr projint_neg(new Interpretation(reg));
+        projint_neg->getStorage() =
+          projint->getStorage() & factory.gnMask.mask()->getStorage();
+        DBGLOG(DBG,"projected negative guess: " << *projint_neg);
+
+        // verify whether correct eatoms where guessed true
+        // this callback checks if a positive eatom result was guessed as negative
+        // -> in this case it aborts
+        // this callback resets all positive bits it encounters
+        // -> if the positive interpretation is all-zeroes at the end,
+        //    the guess was correct
+        VerifyExternalAnswerAgainstPosNegGuessInterpretationCB cb(
+            projint_pos, projint_neg);
+        // we might need edb facts here
+        // (dependencies to edb are not modelled in the dependency graph)
+        // therefore we did not mask the guess program before
+        bool aborted = !evaluateExternalAtoms(
+            reg, factory.innerEatoms, guessint, cb);
+
+        if( aborted )
+        {
+          DBGLOG(DBG,"discarding guess as verifier aborted for neg guess " << *projint_neg);
+          continue;
+        }
+        if( projint_pos->getStorage().count() != 0 )
+        {
+          DBGLOG(DBG,"discarding guess due to unconfirmed positive guesses " << *projint_pos);
+          continue;
+        }
       }
 
-      LOG(MODELB,"external atom guess " << *projint_pos << " successfully validated, will now check FLP model property");
+      LOG(MODELB,"external atom guess successfully validated, will now check FLP model property");
 
       // remove negative guess bits
       // (we don't need them, removing them speeds up
       // communication with external solver)
-      guessint->getStorage() -= projint_neg->getStorage();
+      guessint->getStorage() -= factory.gnMask.mask()->getStorage();
 
 
 	// FLP check
@@ -824,17 +831,32 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 
 	      DBGLOG(DBG,"got FLP head model " << *flpint);
 
+              Interpretation::Ptr flpbodyatoms(new Interpretation(*flpint));
+              flpbodyatoms->getStorage() -= guessint->getStorage();
+	      DBGLOG(DBG,"got FLP body atoms " << *flpbodyatoms);
+
 	      // evaluate xidbflpbody+edb+flp+eatomguess
 	      ASPSolverManager::ResultsPtr flpbodyres;
 	      {
 		DBGLOG(DBG,"evaluating flp body program");
 
 		// build edb+flp+eatomguess (by keeping of guessint only input and flp bits)
+                //
+                #if 0
+                this could be a bug: guessint does not contain flp bodies, so we never activate flp bodies
 		Interpretation::Ptr edbflpguess(new Interpretation(*guessint));
 		edbflpguess->getStorage() &=
 		  (flpint->getStorage() | factory.gpMask.mask()->getStorage());
+                #endif
+                //
+                // get eatom guess
+		Interpretation::Ptr edbflpguess(new Interpretation(*guessint));
+		edbflpguess->getStorage() &= factory.gpMask.mask()->getStorage();
+                // add flp body atoms
+                edbflpguess->getStorage() |= flpbodyatoms->getStorage();
+                edbflpguess->getStorage() |= postprocessedInput->getStorage();
 
-		// here we can also mask, this eliminates many equal bits for comparisons later
+		// here we mask, as guessint will also be masked for efficiency reasons
 		ASPProgram program(reg,
 		    factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
 		ASPSolverManager mgr;
@@ -843,10 +865,6 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 
 	      // for comparing the flpbody answer sets we mask the guess interpretation
 	      guessint->getStorage() -= mask->getStorage();
-		                      //factory.gpMask.mask()->getStorage();
-		                      //guessint->getStorage() -= factory.ctx.edb->getStorage();
-		                      // this was already done above (using projint_neg) so no need to do it again
-		                      // guessint->getStorage() -= factory.gnMask->getStorage();
 
 	      DBGLOG(DBG,"comparing xidbflpbody answer sets with guess interpretation " << *guessint);
 	      AnswerSetPtr flpbodyas = flpbodyres->getNextAnswerSet();
@@ -854,18 +872,24 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 	      {
 		InterpretationPtr flpbodyint = flpbodyas->interpretation;
 
-		              // now we make sure nothing from EDB is left in flpbodyint
-		              // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
-		              // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
-		              //flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+                // now we make sure nothing from EDB is left in flpbodyint
+                // (if an edb fact is derived in a rule, it will be returned as "derived fact" and we will get a mismatch here)
+                // (e.g., "foo(x). bar(x). foo(X) :- bar(X)." will give "foo(x)" as "answer set without EDB facts"
+                //flpbodyint->getStorage() -= factory.ctx.edb->getStorage();
+
+                // remove flp body atoms from flpbodyint
+                flpbodyint->getStorage() -= flpbodyatoms->getStorage();
 
 		DBGLOG(DBG,"checking xidbflpbody answer set " << *flpbodyint);
 		if( flpbodyint->getStorage() == guessint->getStorage() )
 		{
+                  // remove positive guess external atoms,
+                  // otherwise the minimality check below will not work
+                  guessint->getStorage() -= factory.gpMask.mask()->getStorage();
+
 		  candidates.push_back(guessint);
 		  LOG(MODELB,"found (not yet minimalitychecked) FLP model " << *guessint);
-		  // we found one -> no need to check for more
-		  break;
+                  // TODO break was here, probably this is the bug?
 		}
 		else
 		{
@@ -949,3 +973,5 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 }
 
 DLVHEX_NAMESPACE_END
+
+// vim:ts=8:

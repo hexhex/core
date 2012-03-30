@@ -22,4 +22,5 @@ foo(X) :- &testConcat[Y,x](X), baz(Y), dom(X).
 % a :- c.
 
 % the result should be: {a,b} {d}
-% hence (projected to foo(xx), bar(xx), baz(xx), and d {foo(xx),bar(xx)} and {d}
+% hence (translated to foo(xx), bar(xx), baz(xx), and d) it should be
+% {foo(xx),bar(xx)} and {d}
