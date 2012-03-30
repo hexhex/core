@@ -699,6 +699,54 @@ bool BaseModelGenerator::isCompatibleSet(
 	return true;
 }
 
+Nogood BaseModelGenerator::constructFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		){
+
+	RegistryPtr reg = ctx.registry();
+
+	Nogood ng;
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (compatibleSet->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, compatibleSet->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		ng.insert(NogoodContainer::createLiteral(*en));
+		en++;
+	}
+
+	// add one atom which is in the compatible set but not in the flp model
+	en = projectedCompatibleSet->getStorage().first();
+	en_end = projectedCompatibleSet->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed FLP nogood " << ng);
+
+	return ng;
+}
+
 bool BaseModelGenerator::isSubsetMinimalFLPModel(
 		std::vector<ID>& innerEatoms,
 		InterpretationConstPtr compatibleSet,
@@ -709,6 +757,7 @@ bool BaseModelGenerator::isSubsetMinimalFLPModel(
 		std::vector<ID>& xidbflphead,
 		std::vector<ID>& xidbflpbody,
 		std::vector<ID>& gidb,
+		//const OrdinaryASPProgram& groundProgram,
 		ProgramCtx& ctx){
 
 	RegistryPtr reg = ctx.registry();
@@ -767,15 +816,17 @@ bool BaseModelGenerator::isSubsetMinimalFLPModel(
 			simulatedReduct.push_back(rid);
 		}
 
-		static const bool encodeMinimalityCheckIntoReduct = true;
+		static const bool encodeMinimalityCheckIntoReduct = false;
 
 		if (encodeMinimalityCheckIntoReduct){
 			// add minimality rules to flpbody program
 			std::map<ID, std::pair<int, ID> > shadowPredicates;
-			computeShadowPredicates(reg, postprocessedInput, simulatedReduct, shadowPredicates);
+			// predicate postfix for shadow predicates
+			std::string shadowpostfix;
+			computeShadowPredicates(reg, postprocessedInput, simulatedReduct, shadowPredicates, shadowpostfix);
 			Interpretation::Ptr shadowInterpretation(new Interpretation(reg));
 			addShadowInterpretation(reg, shadowPredicates, compatibleSet, shadowInterpretation);
-			createMinimalityRules(reg, shadowPredicates, simulatedReduct);
+			createMinimalityRules(reg, shadowPredicates, shadowpostfix, simulatedReduct);
 			reductEDB->add(*shadowInterpretation);
 		}
 
@@ -803,18 +854,34 @@ bool BaseModelGenerator::isSubsetMinimalFLPModel(
 				// check if the reduct model is smaller than modelCandidate
 				if (encodeMinimalityCheckIntoReduct){
 					// reduct model is a proper subset (this was already ensured by the program encoding)
-					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked against " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+
+/*
+					{
+						InterpretationPtr candidate(new Interpretation(*compatibleSet));
+						candidate->getStorage() -= gpMask.mask()->getStorage();
+						candidate->getStorage() -= gnMask.mask()->getStorage();
+						candidate->getStorage() -= postprocessedInput->getStorage();
+
+						flpbodyas->getStorage() -= gpMask.mask()->getStorage();
+						flpbodyas->getStorage() -= gnMask.mask()->getStorage();
+						flpbodyas->getStorage() -= fMask.mask()->getStorage();
+
+						constructFLPNogood(ctx, groundProgram, compatibleSet, candidate, flpbodyas);
+					}
+*/
+
 					return false;
 				}else{
 					// project both the model candidate and the reduct model to ordinary atoms
 					InterpretationPtr candidate(new Interpretation(*compatibleSet));
-					candidate->getStorage() -= (compatibleSet->getStorage() & gpMask.mask()->getStorage());
-					candidate->getStorage() -= (compatibleSet->getStorage() & gnMask.mask()->getStorage());
+					candidate->getStorage() -= gpMask.mask()->getStorage();
+					candidate->getStorage() -= gnMask.mask()->getStorage();
 					candidate->getStorage() -= postprocessedInput->getStorage();
 
-					flpbodyas->getStorage() -= (flpbodyas->getStorage() & gpMask.mask()->getStorage());
-					flpbodyas->getStorage() -= (flpbodyas->getStorage() & gnMask.mask()->getStorage());
-					flpbodyas->getStorage() -= (flpbodyas->getStorage() & fMask.mask()->getStorage());
+					flpbodyas->getStorage() -= gpMask.mask()->getStorage();
+					flpbodyas->getStorage() -= gnMask.mask()->getStorage();
+					flpbodyas->getStorage() -= fMask.mask()->getStorage();
 
 					DBGLOG(DBG, "Checking if reduct model " << *flpbodyas << " is a subset of model candidate " << *candidate);
 
@@ -822,7 +889,8 @@ bool BaseModelGenerator::isSubsetMinimalFLPModel(
 					     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
 						// found a smaller model of the reduct
 						flpm++;
-						DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+						DBGLOG(DBG, "Model candidate " << *candidate << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+//						constructFLPNogood(ctx, groundProgram, compatibleSet, candidate, flpbodyas);
 						return false;
 					}else{
 						DBGLOG(DBG, "Reduct model is no proper subset");
@@ -1262,7 +1330,8 @@ void BaseModelGenerator::computeShadowPredicates(
 	RegistryPtr reg,
 	InterpretationConstPtr edb,
 	const std::vector<ID>& idb,
-	std::map<ID, std::pair<int, ID> >& shadowPredicates){
+	std::map<ID, std::pair<int, ID> >& shadowPredicates,
+	std::string& shadowPostfix){
 
 	// collect predicates
 	std::set<std::pair<int, ID> > preds;
@@ -1296,7 +1365,7 @@ void BaseModelGenerator::computeShadowPredicates(
 	}
 
 	// create unique predicate suffix for shadow predicates
-	shadowpostfix = "_shadow";
+	shadowPostfix = "_shadow";
 	int idx = 0;
 	bool clash;
 	do{
@@ -1306,8 +1375,8 @@ void BaseModelGenerator::computeShadowPredicates(
 		typedef std::pair<int, ID> Pair;
 		BOOST_FOREACH (Pair p, preds){
 			std::string currentPred = reg->terms.getByID(p.second).getUnquotedString();
-			if (shadowpostfix.length() <= currentPred.length() &&						// currentPred is at least as long as shadowpostfix
-			    currentPred.substr(currentPred.length() - shadowpostfix.length()) == shadowpostfix){	// postfixes coincide
+			if (shadowPostfix.length() <= currentPred.length() &&						// currentPred is at least as long as shadowPostfix
+			    currentPred.substr(currentPred.length() - shadowPostfix.length()) == shadowPostfix){	// postfixes coincide
 				clash = true;
 				break;
 			}
@@ -1319,11 +1388,11 @@ void BaseModelGenerator::computeShadowPredicates(
 	// create shadow predicates
 	typedef std::pair<int, ID> Pair;
 	BOOST_FOREACH (Pair p, preds){
-		Term shadowTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, reg->terms.getByID(p.second).getUnquotedString() + shadowpostfix);
+		Term shadowTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, reg->terms.getByID(p.second).getUnquotedString() + shadowPostfix);
 		ID shadowID = reg->storeTerm(shadowTerm);
 		shadowPredicates[p.second] = Pair(p.first, shadowID);
 		DBGLOG(DBG, "Predicate " << reg->terms.getByID(p.second).getUnquotedString() << " [" << p.second << "] has shadow predicate " <<
-				reg->terms.getByID(p.second).getUnquotedString() + shadowpostfix << " [" << shadowID << "]");
+				reg->terms.getByID(p.second).getUnquotedString() + shadowPostfix << " [" << shadowID << "]");
 	}
 }
 
@@ -1348,13 +1417,14 @@ void BaseModelGenerator::addShadowInterpretation(
 void BaseModelGenerator::createMinimalityRules(
 	RegistryPtr reg,
 	std::map<ID, std::pair<int, ID> >& shadowPredicates,
+	std::string& shadowPostfix,
 	std::vector<ID>& idb){
 
 	// construct a propositional atom which does neither occur in the input program nor as a shadow predicate
-	// for this purpose we use the shadowpostfix alone:
+	// for this purpose we use the shadowPostfix alone:
 	// - it cannot be used by the input program (otherwise it would not be a postfix)
 	// - it cannot be used by the shadow atoms (otherwise an input atom would be the empty string, which is not possible)
-	Term smallerTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, shadowpostfix);
+	Term smallerTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, shadowPostfix);
 	OrdinaryAtom smallerAtom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	smallerAtom.tuple.push_back(reg->storeTerm(smallerTerm));
 	ID smallerAtomID = reg->storeOrdinaryGAtom(smallerAtom);

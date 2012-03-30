@@ -408,7 +408,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
 			DBGLOG(DBG, "FLP Check");
-			if (!isSubsetMinimalFLPModel(factory.innerEatoms, modelCandidate, postprocessedInput, factory.gpMask, factory.gnMask, factory.fMask, factory.xidbflphead, factory.xidbflpbody, factory.gidb, factory.ctx)) continue;
+			if (!isSubsetMinimalFLPModel(factory.innerEatoms, modelCandidate, postprocessedInput, factory.gpMask, factory.gnMask, factory.fMask, factory.xidbflphead, factory.xidbflpbody, factory.gidb, /*solver->getGroundProgram(),*/ factory.ctx)) continue;
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}

@@ -184,6 +184,14 @@ protected:
 		ProgramCtx& ctx,
 		NogoodContainerPtr nc);
 
+  virtual Nogood constructFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		);
+
   virtual bool isSubsetMinimalFLPModel(
 		std::vector<ID>& innerEatoms,
 		InterpretationConstPtr compatibleSet,
@@ -194,11 +202,9 @@ protected:
 		std::vector<ID>& xidbflphead,
 		std::vector<ID>& xidbflpbody,
 		std::vector<ID>& gidb,
+		//const OrdinaryASPProgram& groundProgram,
 		ProgramCtx& ctx);
 
-
-  // predicate postfix for shadow predicates
-  std::string shadowpostfix;
 
   // computes for each predicate p in idb/edb
   // a shadow predicate sp which does not yet occur
@@ -206,7 +212,8 @@ protected:
       RegistryPtr reg,
       InterpretationConstPtr edb,
       const std::vector<ID>& idb,
-      std::map<ID, std::pair<int, ID> >& shadowPredicates
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      std::string& shadowPostfix
       );
 
   // adds the shadow facts for some edb input to output
@@ -225,6 +232,7 @@ protected:
   void createMinimalityRules(
       RegistryPtr reg,
       std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      std::string& shadowPostfix,
       std::vector<ID>& idb);
 };
 
