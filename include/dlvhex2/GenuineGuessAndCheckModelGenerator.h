@@ -36,7 +36,7 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/ID.h"
-#include "dlvhex2/BaseModelGenerator.h"
+#include "dlvhex2/FLPModelGeneratorBase.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
@@ -45,10 +45,43 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class GenuineGuessAndCheckModelGeneratorFactory;
+// the factory
+class GenuineGuessAndCheckModelGeneratorFactory:
+  public FLPModelGeneratorFactoryBase,
+  public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
+{
+  // types
+public:
+  friend class GenuineGuessAndCheckModelGenerator;
+  typedef ComponentGraph::ComponentInfo ComponentInfo;
 
+  // storage
+protected:
+  // which solver shall be used for external evaluation?
+  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+
+  ProgramCtx& ctx;
+
+  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
+  #warning TODO see comment above about ComponentInfo copy construction bug
+
+  std::vector<ID> outerEatoms;
+
+public:
+  GenuineGuessAndCheckModelGeneratorFactory(
+      ProgramCtx& ctx, const ComponentInfo& ci,
+      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
+  virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
+
+  virtual ModelGeneratorPtr createModelGenerator(InterpretationConstPtr input);
+
+  virtual std::ostream& print(std::ostream& o) const;
+  virtual std::ostream& print(std::ostream& o, bool verbose) const;
+};
+
+// the model generator (accesses and uses the factory)
 class GenuineGuessAndCheckModelGenerator:
-  public BaseModelGenerator,
+  public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
   public LearningCallback
 {
@@ -85,70 +118,17 @@ public:
   virtual InterpretationPtr generateNextModel();
   virtual InterpretationPtr generateNextCompatibleModel();
 
+  virtual Nogood constructFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		);
+
   // TODO debug output?
   //virtual std::ostream& print(std::ostream& o) const
   //  { return o << "ModelGeneratorBase::print() not overloaded"; }
-};
-
-class GenuineGuessAndCheckModelGeneratorFactory:
-  public BaseModelGeneratorFactory,
-  public ostream_printable<GenuineGuessAndCheckModelGeneratorFactory>
-{
-  // types
-public:
-  friend class GenuineGuessAndCheckModelGenerator;
-  typedef ComponentGraph::ComponentInfo ComponentInfo;
-
-  // storage
-protected:
-  // which solver shall be used for external evaluation?
-  ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
-  ProgramCtx& ctx;
-  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
-
-  //
-  // see also comments in GenuineGuessAndCheckModelGenerator.cpp
-  //
-
-  // outer external atoms
-  std::vector<ID> outerEatoms;
-
-  // inner external atoms
-  std::vector<ID> innerEatoms;
-  // one guessing rule for each inner eatom
-  // (if one rule contains two inner eatoms, two guessing rules are created)
-  std::vector<ID> gidb;
-
-  // original idb (containing eatoms where all inputs are known
-  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
-  std::vector<ID> idb;
-  // idb rewritten with eatom replacement atoms
-  std::vector<ID> xidb;
-  // xidb rewritten for FLP calculation
-  std::vector<ID> xidbflphead;
-  std::vector<ID> xidbflpbody;
-
-  // cache: xidb+gidb
-  std::vector<ID> xgidb;
-
-  // bitmask for filtering out (positive and negative) guessed eatom replacement predicates
-  PredicateMask gpMask;
-  PredicateMask gnMask;
-  // bitmask for filtering out FLP predicates
-  PredicateMask fMask;
-
-public:
-  GenuineGuessAndCheckModelGeneratorFactory(
-      ProgramCtx& ctx, const ComponentInfo& ci,
-      ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
-  virtual ~GenuineGuessAndCheckModelGeneratorFactory() { }
-
-  virtual ModelGeneratorPtr createModelGenerator(
-    InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new GenuineGuessAndCheckModelGenerator(*this, input)); }
-
-  virtual std::ostream& print(std::ostream& o) const;
-  virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
 DLVHEX_NAMESPACE_END

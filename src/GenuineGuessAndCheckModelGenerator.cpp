@@ -95,19 +95,14 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
     ProgramCtx& ctx,
     const ComponentInfo& ci,
     ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig):
+  FLPModelGeneratorFactoryBase(ctx.registry()),
   externalEvalConfig(externalEvalConfig),
   ctx(ctx),
-  ci(ci)
+  ci(ci),
+  outerEatoms(ci.outerEatoms)
 {
   // this model generator can handle any components
   // (and there is quite some room for more optimization)
-
-  RegistryPtr reg = ctx.registry();
-  gpMask.setRegistry(reg);
-  gnMask.setRegistry(reg);
-  fMask.setRegistry(reg);
-
-  outerEatoms = ci.outerEatoms;
 
   // copy rules and constraints to idb
   // TODO we do not really need this except for debugging (tiny optimization possibility)
@@ -117,22 +112,18 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
 
   innerEatoms = ci.innerEatoms;
   // create guessing rules "gidb" for innerEatoms in all inner rules and constraints
-  createEatomGuessingRules(reg, idb, innerEatoms, gidb, gpMask, gnMask);
+  createEatomGuessingRules();
 
   // transform original innerRules and innerConstraints to xidb with only auxiliaries
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&BaseModelGeneratorFactory::convertRule, this, reg, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
-
-  // create cache
-  xgidb.insert(xgidb.end(), xidb.begin(), xidb.end());
-  xgidb.insert(xgidb.end(), gidb.begin(), gidb.end());
+      inserter, boost::bind(&BaseModelGeneratorFactory::convertRule, this, reg, _1));
 
   // transform xidb for flp calculation
-  createFLPRules(reg, xidb, xidbflphead, xidbflpbody, fMask);
+  createFLPRules();
 
   DBGLOG(DBG,"GenuineGuessAndCheckModelGeneratorFactory():");
   #ifndef NDEBUG
@@ -144,6 +135,13 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
     DBGLOG(DBG,s.str());
   }
   #endif
+}
+
+GenuineGuessAndCheckModelGeneratorFactory::ModelGeneratorPtr
+GenuineGuessAndCheckModelGeneratorFactory::createModelGenerator(
+    InterpretationConstPtr input)
+{ 
+  return ModelGeneratorPtr(new GenuineGuessAndCheckModelGenerator(*this, input));
 }
 
 std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(
@@ -213,12 +211,12 @@ std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(
 GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
-  BaseModelGenerator(input),
+  FLPModelGeneratorBase(factory, input),
   factory(factory)
 {
     DBGLOG(DBG, "Genuine GnC-ModelGenerator is instantiated for a " << (factory.ci.disjunctiveHeads ? "" : "non-") << "disjunctive component");
 
-    RegistryPtr reg = factory.ctx.registry();
+    RegistryPtr reg = factory.reg;
 
     // create new interpretation as copy
     if( input == 0 )
@@ -262,7 +260,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     {
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
-	OrdinaryASPProgram program(reg, factory.xgidb, postprocessedInput, factory.ctx.maxint);
+	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
+  // append gidb to xidb
+  program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
 //	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 //	if (factory.ctx.config.getOption("Instantiate")){
@@ -298,7 +298,7 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 // see description of algorithm on top of this file
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
-	if (solver == GenuineSolverPtr()) return InterpretationPtr();
+	if (!solver) return InterpretationPtr();
 
 	// for non-disjunctive components, generate one model and return it
 	// for disjunctive components, generate all modes, do minimality check, and return one model
@@ -385,31 +385,41 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleModel()
 {
-	RegistryPtr reg = factory.ctx.registry();
+	RegistryPtr reg = factory.reg;
 
 	// now we have postprocessed input in postprocessedInput
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgcsolve, "guess and check loop");
 
 	InterpretationPtr modelCandidate;
-	do{
+	do
+  {
 		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
-		if (modelCandidate == InterpretationPtr()) return modelCandidate;
+		if (modelCandidate == InterpretationPtr()) 
+      return modelCandidate;
 
 		DBGLOG_SCOPE(DBG,"gM", false);
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
 		//bool compatible = isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
-		bool compatible = isCompatibleSet(factory.innerEatoms, modelCandidate, postprocessedInput, factory.gpMask, factory.gnMask, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
+		bool compatible = isCompatibleSet(
+        modelCandidate, postprocessedInput, factory.ctx,
+        factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
 		DBGLOG(DBG, "Compatible: " << compatible);
-		if (!compatible) continue;
+		if (!compatible)
+      continue;
 
 		// FLP check
-		if (factory.ctx.config.getOption("FLPCheck")){
+		if (factory.ctx.config.getOption("FLPCheck"))
+    {
 			DBGLOG(DBG, "FLP Check");
-			if (!isSubsetMinimalFLPModel(factory.innerEatoms, modelCandidate, postprocessedInput, factory.gpMask, factory.gnMask, factory.fMask, factory.xidbflphead, factory.xidbflpbody, factory.gidb, /*solver->getGroundProgram(),*/ factory.ctx)) continue;
-		}else{
+			if( !isSubsetMinimalFLPModel(
+            modelCandidate, postprocessedInput, factory.ctx) )
+        continue;
+		}
+    else
+    {
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
 
@@ -421,12 +431,13 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 		DBGLOG(DBG,"= final model candidate " << *modelCandidate);
 		return modelCandidate;
-	}while(true);
+	}
+  while(true);
 }
 
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
 
-	RegistryPtr reg = factory.ctx.registry();
+	RegistryPtr reg = factory.reg;
 
 	// go through all external atoms
 	bool learned = false;
@@ -509,5 +520,54 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 	firstLearnCall = false;
 	return learned;
 }
+
+Nogood GenuineGuessAndCheckModelGenerator::constructFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		){
+
+	RegistryPtr reg = factory.reg;
+
+	Nogood ng;
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (compatibleSet->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, compatibleSet->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		ng.insert(NogoodContainer::createLiteral(*en));
+		en++;
+	}
+
+	// add one atom which is in the compatible set but not in the flp model
+	en = projectedCompatibleSet->getStorage().first();
+	en_end = projectedCompatibleSet->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed FLP nogood " << ng);
+
+	return ng;
+}
+
 
 DLVHEX_NAMESPACE_END

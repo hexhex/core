@@ -37,6 +37,7 @@ pkginclude_HEADERS = \
   EvalHeuristicTrivial.h \
   ExternalAtomTable.h \
   FinalEvalGraph.h \
+  FLPModelGeneratorBase.h \
   fwd.h \
   GraphvizHelpers.h \
   GuessAndCheckModelGenerator.h \

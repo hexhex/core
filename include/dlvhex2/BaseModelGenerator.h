@@ -25,7 +25,7 @@
  * @file   BaseModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Base class for model generators, implementing common functionality.
+ * @brief  Base class for model generator factories and model generators.
  */
 
 #ifndef BASE_MODEL_GENERATOR_HPP_INCLUDED__09112010
@@ -47,6 +47,32 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+//
+// a model generator factory provides model generators
+// for a certain types of interpretations
+//
+class BaseModelGeneratorFactory:
+  public ModelGeneratorFactoryBase<Interpretation>
+{
+  // methods
+public:
+  BaseModelGeneratorFactory() {}
+  virtual ~BaseModelGeneratorFactory() {}
+
+protected:
+  // rewrite all eatoms in body to auxiliary replacement atoms
+  // store into registry and return id
+  virtual ID convertRule(RegistryPtr reg, ID ruleid);
+  // rewrite all eatoms in body tuple to auxiliary replacement atoms
+  // store new body into convbody
+  // (works recursively for aggregate atoms,
+  // will create additional "auxiliary" aggregate atoms in registry)
+  virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
+};
+
+//
+// the base model generator
+//
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
@@ -56,6 +82,28 @@ public:
     ModelGeneratorBase<Interpretation>(input) {}
   virtual ~BaseModelGenerator() {}
 
+protected:
+  //
+  // ========== Global Learning ==========
+  //
+
+  // computes the set of predicate IDs which are relevant
+  // to a certain edb+idb
+  std::set<ID> getPredicates(const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb);
+
+  // restricts an interpretation to the atoms over specified predicates
+  InterpretationPtr restrictInterpretationToPredicates(const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates);
+
+  // converts an interpretation into a nogood
+  Nogood interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer);
+
+  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic);
+
+  //
+  // ========== External Atom Evaluation Helpers ==========
+  //
+
+public:
   // callback function object for handling external atom answer tuples
   struct ExternalAnswerTupleCallback
   {
@@ -94,44 +142,6 @@ protected:
     OrdinaryAtom replacement;
   };
 
-  // for usual model building where we want to collect all true answers
-  // as replacement atoms in an interpretation
-  struct VerifyExternalAnswerAgainstPosNegGuessInterpretationCB:
-    public BaseModelGenerator::ExternalAnswerTupleCallback
-  {
-    VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
-        InterpretationPtr guess_pos,
-        InterpretationPtr guess_neg);
-    virtual ~VerifyExternalAnswerAgainstPosNegGuessInterpretationCB() {}
-    // remembers eatom and prepares replacement.tuple[0]
-    virtual bool eatom(const ExternalAtom& eatom);
-    // remembers input
-    virtual bool input(const Tuple& input);
-    // creates replacement ogatom and activates respective bit in output interpretation
-    virtual bool output(const Tuple& output);
-  protected:
-    RegistryPtr reg;
-    InterpretationPtr guess_pos, guess_neg;
-    ID pospred, negpred;
-    OrdinaryAtom replacement;
-  };
-
-  // ========== Global Learning ==========
-
-  // computes the set of predicate IDs which are relevant
-  // to a certain edb+idb
-  std::set<ID> getPredicates(const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb);
-
-  // restricts an interpretation to the atoms over specified predicates
-  InterpretationPtr restrictInterpretationToPredicates(const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates);
-
-  // converts an interpretation into a nogood
-  Nogood interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer);
-
-  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic);
-
-  // ========== ==========
-
   // projects input interpretation for predicate inputs
   // calculates constant input tuples from auxiliary input predicates and from given constants
   // calls eatom function with each input tuple
@@ -156,9 +166,7 @@ protected:
     ProgramCtx* ctx = 0,
     NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
-  //
   // helper methods used by evaluateExternalAtom
-  //
 
   // returns false iff tuple does not unify with eatom output pattern
   // (the caller must decide whether to throw an exception or ignore the tuple)
@@ -174,106 +182,6 @@ protected:
   // calculate all tuples that are inputs to the eatom and store them into "inputs"
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
-
-  virtual bool isCompatibleSet(
-		std::vector<ID>& innerEatoms,
-		InterpretationConstPtr candidateCompatibleSet,
-		InterpretationConstPtr postprocessedInput,
-		PredicateMask& gpMask,
-		PredicateMask& gnMask,
-		ProgramCtx& ctx,
-		NogoodContainerPtr nc);
-
-  virtual Nogood constructFLPNogood(
-		ProgramCtx& ctx,
-		const OrdinaryASPProgram& groundProgram,
-		InterpretationConstPtr compatibleSet,
-		InterpretationConstPtr projectedCompatibleSet,
-		InterpretationConstPtr smallerFLPModel
-		);
-
-  virtual bool isSubsetMinimalFLPModel(
-		std::vector<ID>& innerEatoms,
-		InterpretationConstPtr compatibleSet,
-		InterpretationConstPtr postprocessedInput,
-		PredicateMask& gpMask,
-		PredicateMask& gnMask,
-		PredicateMask& fMask,
-		std::vector<ID>& xidbflphead,
-		std::vector<ID>& xidbflpbody,
-		std::vector<ID>& gidb,
-		//const OrdinaryASPProgram& groundProgram,
-		ProgramCtx& ctx);
-
-
-  // computes for each predicate p in idb/edb
-  // a shadow predicate sp which does not yet occur
-  void computeShadowPredicates(
-      RegistryPtr reg,
-      InterpretationConstPtr edb,
-      const std::vector<ID>& idb,
-      std::map<ID, std::pair<int, ID> >& shadowPredicates,
-      std::string& shadowPostfix
-      );
-
-  // adds the shadow facts for some edb input to output
-  void addShadowInterpretation(
-      RegistryPtr reg,
-      std::map<ID, std::pair<int, ID> >& shadowPredicates,
-      InterpretationConstPtr input,
-      InterpretationPtr output);
-
-  // computes for each pair of predicate p and shadow predicate sp
-  // of arity n rules:
-  //    :- p(X1, ..., Xn), not sp(X1, ..., Xn).
-  //    smaller :- not p(X1, ..., Xn), sp(X1, ..., Xn).
-  // and one rule
-  //    :- not smaller
-  void createMinimalityRules(
-      RegistryPtr reg,
-      std::map<ID, std::pair<int, ID> >& shadowPredicates,
-      std::string& shadowPostfix,
-      std::vector<ID>& idb);
-};
-
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
-class BaseModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<Interpretation>
-{
-  // methods
-public:
-  BaseModelGeneratorFactory() {}
-  virtual ~BaseModelGeneratorFactory() {}
-
-protected:
-  // rewrite all eatoms in body to auxiliary replacement atoms
-  // store into registry and return id
-  virtual ID convertRule(RegistryPtr reg, ID ruleid);
-  // rewrite all eatoms in body tuple to auxiliary replacement atoms
-  // store new body into convbody
-  // (works recursively for aggregate atoms,
-  // will create additional "auxiliary" aggregate atoms in registry)
-  virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
-
-
-  // methods
-  void createEatomGuessingRules(
-      RegistryPtr reg,
-      const std::vector<ID>& idb,
-      const std::vector<ID>& innerEatoms,
-      std::vector<ID>& gidb,
-      PredicateMask& gpmask,
-      PredicateMask& gnmask);
-
-  void createFLPRules(
-      RegistryPtr reg,
-      const std::vector<ID>& xidb,
-      std::vector<ID>& xidbflphead,
-      std::vector<ID>& xidbflpbody,
-      PredicateMask& fmask);
 };
 
 DLVHEX_NAMESPACE_END

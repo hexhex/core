@@ -64,6 +64,7 @@ libdlvhex2_base_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicShared.cpp \
     EvalHeuristicTrivial.cpp \
+    FLPModelGeneratorBase.cpp \
     GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
