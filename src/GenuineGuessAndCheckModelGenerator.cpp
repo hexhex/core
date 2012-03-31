@@ -118,9 +118,9 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   xidb.reserve(ci.innerRules.size() + ci.innerConstraints.size());
   std::back_insert_iterator<std::vector<ID> > inserter(xidb);
   std::transform(ci.innerRules.begin(), ci.innerRules.end(),
-      inserter, boost::bind(&BaseModelGeneratorFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
   std::transform(ci.innerConstraints.begin(), ci.innerConstraints.end(),
-      inserter, boost::bind(&BaseModelGeneratorFactory::convertRule, this, reg, _1));
+      inserter, boost::bind(&GenuineGuessAndCheckModelGeneratorFactory::convertRule, this, reg, _1));
 
   // transform xidb for flp calculation
   createFLPRules();
@@ -261,8 +261,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-  // append gidb to xidb
-  program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
+	// append gidb to xidb
+	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
 //	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
 //	if (factory.ctx.config.getOption("Instantiate")){
@@ -277,10 +277,6 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	if (factory.ctx.config.getOption("ExternalLearningPartial") /* && false partial learning is currently not thread safe with clasp */){
 		solver->addExternalLearner(this);
 	}
-
-//Nogood ng1;
-//ng1.insert(solver->createLiteral(11));
-//factory.ctx.globalNogoods.addNogood(ng1);
 
 	firstLearnCall = true;
     }
@@ -392,11 +388,11 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 	InterpretationPtr modelCandidate;
 	do
-  {
+	{
 		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if (modelCandidate == InterpretationPtr()) 
-      return modelCandidate;
+			return modelCandidate;
 
 		DBGLOG_SCOPE(DBG,"gM", false);
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
@@ -404,22 +400,17 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
 		//bool compatible = isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
 		bool compatible = isCompatibleSet(
-        modelCandidate, postprocessedInput, factory.ctx,
-        factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
+		modelCandidate, postprocessedInput, factory.ctx,
+		factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
 		DBGLOG(DBG, "Compatible: " << compatible);
-		if (!compatible)
-      continue;
+		if (!compatible) continue;
 
 		// FLP check
-		if (factory.ctx.config.getOption("FLPCheck"))
-    {
+		if (factory.ctx.config.getOption("FLPCheck")){
 			DBGLOG(DBG, "FLP Check");
-			if( !isSubsetMinimalFLPModel(
-            modelCandidate, postprocessedInput, factory.ctx) )
-        continue;
-		}
-    else
-    {
+			if( !isSubsetMinimalFLPModel(modelCandidate, postprocessedInput, factory.ctx, solver) )
+        			continue;
+		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
 
@@ -431,8 +422,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 
 		DBGLOG(DBG,"= final model candidate " << *modelCandidate);
 		return modelCandidate;
-	}
-  while(true);
+	}while(true);
 }
 
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){

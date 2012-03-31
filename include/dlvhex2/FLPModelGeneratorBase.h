@@ -146,7 +146,9 @@ protected:
   virtual bool isSubsetMinimalFLPModel(
 		InterpretationConstPtr compatibleSet,
 		InterpretationConstPtr postprocessedInput,
-		ProgramCtx& ctx);
+		ProgramCtx& ctx,
+		NogoodContainerPtr ngc = NogoodContainerPtr()
+		);
 
 
   // computes for each predicate p in idb/edb

@@ -749,6 +749,10 @@ void CDNLSolver::removeNogood(int nogoodIndex){
 	updateWatchingStructuresAfterRemoveNogood(nogoodIndex);
 }
 
+Nogood CDNLSolver::getNogood(int index){
+	return nogoodset.getNogood(index);
+}
+
 int CDNLSolver::getNogoodCount(){
 	return nogoodset.nogoods.size();
 }

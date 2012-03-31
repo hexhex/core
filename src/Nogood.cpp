@@ -139,6 +139,10 @@ int NogoodSet::addNogood(Nogood ng){
 	return index;
 }
 
+Nogood NogoodSet::getNogood(int index){
+	return nogoods[index];
+}
+
 void NogoodSet::removeNogood(int nogoodIndex){
 	nogoodsWithHash[nogoods[nogoodIndex].getHash()].erase(nogoodIndex);
 	freeIndices.push_back(nogoodIndex);

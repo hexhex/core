@@ -63,6 +63,7 @@ public:
 
 	int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
+	Nogood getNogood(int index);
 
 	std::ostream& print(std::ostream& o) const;
 };
@@ -71,6 +72,7 @@ class NogoodContainer{
 public:
 	virtual int addNogood(Nogood ng) = 0;
 	virtual void removeNogood(int index) = 0;
+	virtual Nogood getNogood(int index) = 0;
 	virtual int getNogoodCount() = 0;
 
 	static inline ID createLiteral(ID lit){

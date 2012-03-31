@@ -216,10 +216,6 @@ void BaseModelGenerator::globalConflictAnalysis(ProgramCtx& ctx, const std::vect
 	if (solver->getModelCount() == 0 && ctx.config.getOption("GlobalLearning")){
 		DBGLOG(DBG, "Contradiction on first model: Component is inconsistent wrt. input");
 
-BOOST_FOREACH (ID id, idb){
-DBGLOG(DBG, "Rule " << id);
-}
-
 		if (componentIsMonotonic){
 			DBGLOG(DBG, "Component is monotonic");
 			Nogood gng;

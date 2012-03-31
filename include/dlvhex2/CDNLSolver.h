@@ -201,6 +201,7 @@ public:
 	virtual InterpretationConstPtr getNextModel();
 	virtual int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
+	Nogood getNogood(int index);
 	int getNogoodCount();
 
 	std::vector<Nogood> getContradictoryNogoods();

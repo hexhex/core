@@ -715,6 +715,10 @@ int ClaspSolver::addNogood(Nogood ng){
 	return nogoods.size() - 1;
 }
 
+Nogood ClaspSolver::getNogood(int index){
+	return nogoods[index];
+}
+
 void ClaspSolver::removeNogood(int index){
 	// access nogoods
         boost::mutex::scoped_lock lock(nogoodsMutex);

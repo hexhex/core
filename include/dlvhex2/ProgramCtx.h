@@ -139,6 +139,10 @@ public:
       ns.removeNogood(index);
     }
 
+    Nogood getNogood(int index){
+      return ns.getNogood(index);
+    }
+
     int getNogoodCount(){
       DBGLOG(DBG, "Have " << ns.nogoods.size() << " global nogoods");
       return ns.nogoods.size();

@@ -144,6 +144,10 @@ int GenuineSolver::addNogood(Nogood ng){
 	return solver->addNogood(ng);
 }
 
+Nogood GenuineSolver::getNogood(int index){
+	return solver->getNogood(index);
+}
+
 void GenuineSolver::removeNogood(int index){
 	solver->removeNogood(index);
 }

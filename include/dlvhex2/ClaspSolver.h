@@ -173,6 +173,7 @@ public:
 
 	int addNogood(Nogood ng);
 	void removeNogood(int index);
+	Nogood getNogood(int index);
 	int getNogoodCount();
 
 	virtual InterpretationConstPtr getNextModel();

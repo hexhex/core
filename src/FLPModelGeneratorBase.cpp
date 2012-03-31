@@ -501,7 +501,8 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		InterpretationConstPtr compatibleSet,
 		InterpretationConstPtr postprocessedInput,
-		ProgramCtx& ctx)
+		ProgramCtx& ctx,
+		NogoodContainerPtr ngc)
 {
 	RegistryPtr& reg = factory.reg;
   std::vector<ID>& innerEatoms = factory.innerEatoms;
@@ -587,6 +588,13 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 		OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, ctx.maxint);
 		GenuineSolverPtr flpbodysolver = GenuineSolver::getInstance(ctx, flpbodyprogram);
+
+		// transfer learned nogoods to new solver
+		if (ngc != NogoodContainerPtr()){
+			for (int i = 0; i < ngc->getNogoodCount(); ++i){
+				flpbodysolver->addNogood(ngc->getNogood(i));
+			}
+		}
 
 		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
 		while(flpbodyas != InterpretationPtr())
