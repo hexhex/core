@@ -293,7 +293,7 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
-WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/basic.test"
+WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/basic.test \$(top_builddir)/examples/tests/basic_genuineii.test"
 AC_SUBST(WHICH_DLVHEX_TESTS)
 
 #
@@ -548,6 +548,7 @@ AC_CONFIG_FILES([
            dlvhex2.pc
            examples/Makefile
            examples/tests/basic.test
+           examples/tests/basic_genuineii.test
            examples/tests/libclingobackend.test
            include/Makefile
            include/common.h
