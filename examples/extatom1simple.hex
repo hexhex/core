@@ -41,6 +41,6 @@ guard(bar).
 % => no e-compatible classical model
 %
 %
-% => program has one answer sets:
+% => program has one answer set:
 % { a(foo), b(foo), guard(foo), guard(bar) }
 
