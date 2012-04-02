@@ -141,9 +141,11 @@ protected:
     ProgramCtx& ctx,
 		NogoodContainerPtr nc);
 
-  // checks whether a given model
-  // is 
-  virtual bool isSubsetMinimalFLPModel(
+  // checks whether a given model is subset-minimal
+  // OrdinaryASPSolverT must implement the OrdinaryASPSolver interface
+  // (e.g., GenuineSolver)
+  template<typename OrdinaryASPSolverT>
+  bool isSubsetMinimalFLPModel(
 		InterpretationConstPtr compatibleSet,
 		InterpretationConstPtr postprocessedInput,
 		ProgramCtx& ctx,
@@ -181,7 +183,8 @@ protected:
       std::vector<ID>& idb);
 };
 
-
 DLVHEX_NAMESPACE_END
+
+#include "dlvhex2/FLPModelGeneratorBase.tcc"
 
 #endif // FLP_MODEL_GENERATOR_BASE_HPP_INCLUDED__09112010

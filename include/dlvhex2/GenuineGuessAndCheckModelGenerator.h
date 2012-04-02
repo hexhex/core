@@ -65,6 +65,7 @@ protected:
   ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
   #warning TODO see comment above about ComponentInfo copy construction bug
 
+  // outer external atoms
   std::vector<ID> outerEatoms;
 
 public:
@@ -91,10 +92,12 @@ public:
 
   // storage
 protected:
+  // we store the factory again, because the base class stores it with the base type only!
   Factory& factory;
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
-  InterpretationPtr postprocessedInput;
+  InterpretationConstPtr postprocessedInput;
+  // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms
   InterpretationPtr mask;
   // result handle for retrieving set of minimal models of this eval unit
   ASPSolverManager::ResultsPtr currentResults;
@@ -125,10 +128,6 @@ public:
 		InterpretationConstPtr projectedCompatibleSet,
 		InterpretationConstPtr smallerFLPModel
 		);
-
-  // TODO debug output?
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorBase::print() not overloaded"; }
 };
 
 DLVHEX_NAMESPACE_END

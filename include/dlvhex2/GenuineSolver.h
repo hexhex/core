@@ -41,6 +41,7 @@
 #include "dlvhex2/Error.h"
 
 #include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/OrdinaryASPSolver.h"
 
 #include "dlvhex2/Nogood.h"
 
@@ -69,7 +70,7 @@ typedef GenuineGrounder::Ptr GenuineGrounderPtr;
 typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
 
 
-class GenuineGroundSolver : virtual public NogoodContainer{
+class GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
 public:
 	virtual std::string getStatistics() = 0;
 	virtual InterpretationConstPtr getNextModel() = 0;

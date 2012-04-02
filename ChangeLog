@@ -4,6 +4,26 @@
 
 2012-04-02  Peter Schueller  <ps@kr.tuwien.ac.at>
 
+	* include/dlvhex2/OrdinaryASPSolver.h: Introducing OrdinaryASPSolver to
+	unify FLP model checking, GenuineSolver is a direct implementation of
+	this interface.
+	Added new wrapper "ASMOrdinaryASPSolver" for ASPSolverManager in
+	GuessAndCheckModelGenerator which implements OrdinaryASPSolver.
+	Made GenuineGuessAndCheckModelGenerator::postprocessedInput a const
+	pointer as it should be.
+	Made FLPModelGeneratorBase::isSubsetMinimalFLPModel a template method and
+	moved to FLPModelGeneratorBase.tcc.
+	* include/dlvhex2/FLPModelGeneratorBase.tcc: Likewise.
+	* include/dlvhex2/GuessAndCheckModelGenerator.h: Likewise.
+	* include/dlvhex2/FLPModelGeneratorBase.h: Likewise.
+	* include/dlvhex2/GenuineSolver.h: Likewise.
+	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h: Likewise.
+	* include/dlvhex2/fwd.h: Likewise.
+	* include/dlvhex2/Makefile.am: Likewise.
+	* src/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/GenuineGuessAndCheckModelGenerator.cpp: Likewise.
+	* src/FLPModelGeneratorBase.cpp: Likewise.
+
 	* include/dlvhex2/ASPSolverManager.h: Unifying: replacing ASPProgram by
 	OrdinaryASPProgram.
 	* include/dlvhex2/ASPSolver.h: Likewise.

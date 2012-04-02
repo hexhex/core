@@ -208,6 +208,10 @@ std::ostream& GenuineGuessAndCheckModelGeneratorFactory::print(
   return o;
 }
 
+//
+// the model generator
+//
+
 GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     Factory& factory,
     InterpretationConstPtr input):
@@ -219,33 +223,33 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     RegistryPtr reg = factory.reg;
 
     // create new interpretation as copy
+    InterpretationPtr postprocInput;
     if( input == 0 )
     {
       // empty construction
-      postprocessedInput.reset(new Interpretation(reg));
+      postprocInput.reset(new Interpretation(reg));
     }
     else
     {
       // copy construction
-      postprocessedInput.reset(new Interpretation(*input));
+      postprocInput.reset(new Interpretation(*input));
     }
 
     // augment input with edb
     #warning perhaps we can pass multiple partially preprocessed input edb's to the external solver and save a lot of processing here
-    postprocessedInput->add(*factory.ctx.edb);
+    postprocInput->add(*factory.ctx.edb);
 
     // remember which facts we must remove
-    //InterpretationConstPtr
-    mask.reset(new Interpretation(*postprocessedInput));
+    mask.reset(new Interpretation(*postprocInput));
 
     // manage outer external atoms
     if( !factory.outerEatoms.empty() )
     {
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
-      IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
+      IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
       evaluateExternalAtoms(reg,
-          factory.outerEatoms, postprocessedInput, cb);
+          factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -255,8 +259,10 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
           "non-idb components! (use plain)");
     }
 
+    // assign to const member -> this value must stay the same from here on!
+    postprocessedInput = postprocInput;
+
     // evaluate edb+xidb+gidb
-    ASPSolverManager::ResultsPtr guessres;
     {
 	DBGLOG(DBG,"evaluating guessing program");
 	// no mask
@@ -294,7 +300,7 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 // see description of algorithm on top of this file
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 {
-	if (!solver) return InterpretationPtr();
+  assert(!!solver && "solver must be set here, it is set in constructor");
 
 	// for non-disjunctive components, generate one model and return it
 	// for disjunctive components, generate all modes, do minimality check, and return one model
@@ -391,14 +397,12 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 	{
 		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
-		if (modelCandidate == InterpretationPtr()) 
-			return modelCandidate;
+		if( !modelCandidate ) return modelCandidate;
 
 		DBGLOG_SCOPE(DBG,"gM", false);
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
-		//bool compatible = isCompatibleSet(modelCandidate, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
 		bool compatible = isCompatibleSet(
 		modelCandidate, postprocessedInput, factory.ctx,
 		factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
@@ -408,7 +412,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		// FLP check
 		if (factory.ctx.config.getOption("FLPCheck")){
 			DBGLOG(DBG, "FLP Check");
-			if( !isSubsetMinimalFLPModel(modelCandidate, postprocessedInput, factory.ctx, solver) )
+			if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
         			continue;
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
