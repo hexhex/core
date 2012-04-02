@@ -1,0 +1,42 @@
+
+%
+% first component:
+% testA returns "foo" if c is empty
+% testA returns "bar" if c has one member
+%
+a(X) :- &testA[c](X), guard(X).
+b(X) v c(X) :- a(X).
+
+%
+% EDB:
+%
+guard(foo).
+guard(bar).
+
+%
+% eatom guesses:
+% { &testA[c](foo), &testA[c](bar) }
+% => cannot be the case that c has one and no member in extension
+% => no e-compatible classical model
+%
+% { &testA[c](foo), not &testA[c](bar) }
+% => c has empty extension
+% => single e-compatible classical model { a(foo), b(foo) }
+% => reduct is a(foo) :- &testA[c](foo), guard(foo). b(foo) v c(foo) :- a(foo).
+% => answer set { a(foo), b(foo), guard(foo), guard(bar) }
+%
+% { not &testA[c](foo), &testA[c](bar) }
+% => c has one member in extension
+% => single e-compatible classical model { a(bar), c(bar) }
+% => reduct is a(bar) :- &testA[c](bar), guard(bar). b(bar) v c(bar) :- a(bar).
+% => answer set { a(bar), c(bar), guard(foo), guard(bar) }
+%
+% { not &testA[c](foo), not &testA[c](bar) }
+% => c has two members in extension
+% => no e-compatible classical model
+%
+%
+% => program has two answer sets:
+% { a(foo), b(foo), guard(foo), guard(bar) }
+% { a(bar), c(bar), guard(foo), guard(bar) }
+

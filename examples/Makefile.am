@@ -1,5 +1,6 @@
 EXTRA_DIST = \
     tests/basic.test \
+    tests/basic_genuineii.test \
     tests/libclingobackend.test \
     tests/README.txt \
     3col.hex \
@@ -19,6 +20,7 @@ EXTRA_DIST = \
     empty.hex \
     equality.hex \
     extatom1.hex \
+    extatom1simple.hex \
     extatom2.hex \
     extatom2dup.hex \
     extatom2safety.hex \
@@ -133,6 +135,7 @@ EXTRA_DIST = \
     tests/empty.out \
     tests/equality.out \
     tests/extatom1.out \
+    tests/extatom1simple.out \
     tests/extatom2.out \
     tests/extatom2dup.out \
     tests/extatom3.out \

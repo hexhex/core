@@ -14,6 +14,7 @@ comments.hex comments.out --solver=genuineii
 duplicaterule.asp duplicaterule.out --solver=genuineii
 equality.hex equality.out --solver=genuineii
 extatom1.hex extatom1.out --solver=genuineii
+extatom1simple.hex extatom1simple.out --solver=genuineii
 extatom2.hex extatom2.out --solver=genuineii
 extatom2safety.hex extatom2.out --solver=genuineii
 extatom3.hex extatom3.out --nofacts --solver=genuineii
