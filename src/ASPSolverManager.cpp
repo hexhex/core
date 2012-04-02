@@ -59,7 +59,7 @@ ASPSolverManager::ASPSolverManager()
 //! solve idb/edb and get result provider
 ASPSolverManager::ResultsPtr ASPSolverManager::solve(
     const SoftwareConfigurationBase& solver,
-    const ASPProgram& program) throw (FatalError)
+    const OrdinaryASPProgram& program) throw (FatalError)
 {
   DelegatePtr delegate = solver.createDelegate();
   delegate->useASTInput(program);

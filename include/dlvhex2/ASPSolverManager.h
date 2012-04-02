@@ -37,6 +37,7 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/ID.h"
+#include "dlvhex2/OrdinaryASPProgram.h"
 #include "dlvhex2/AnswerSet.h"
 #include "dlvhex2/Error.h"
 #include "dlvhex2/ConcurrentMessageQueueOwning.h"
@@ -50,24 +51,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 struct Registry;
 typedef boost::shared_ptr<Registry> RegistryPtr;
-
-// this is kind of a program context for pure (=non-HEX) ASPs
-struct ASPProgram
-{
-  RegistryPtr registry;
-  std::vector<ID> idb;
-  Interpretation::ConstPtr edb;
-  uint32_t maxint;
-  Interpretation::ConstPtr mask;
-
-  ASPProgram(
-      RegistryPtr registry,
-      const std::vector<ID>& idb,
-      Interpretation::ConstPtr edb,
-      uint32_t maxint = 0,
-      Interpretation::ConstPtr mask = Interpretation::ConstPtr()):
-    registry(registry), idb(idb), edb(edb), maxint(maxint), mask(mask) {}
-};
 
 class ASPSolverManager
 {
@@ -98,7 +81,7 @@ public:
   {
   public:
     virtual ~DelegateInterface() {}
-    virtual void useASTInput(const ASPProgram& program) = 0;
+    virtual void useASTInput(const OrdinaryASPProgram& program) = 0;
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg) = 0;
     virtual ResultsPtr getResults() = 0;
   };
@@ -164,7 +147,7 @@ public:
   //! solve idb/edb and get result provider
   ResultsPtr solve(
       const SoftwareConfigurationBase& solver,
-      const ASPProgram& program) throw (FatalError);
+      const OrdinaryASPProgram& program) throw (FatalError);
 
   //! solve program from input provider (i.e., an input stream)
   ResultsPtr solve(

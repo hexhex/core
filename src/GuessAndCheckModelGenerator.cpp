@@ -717,7 +717,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
     {
       DBGLOG(DBG,"evaluating guessing program");
       // no mask
-      ASPProgram program(reg,
+      OrdinaryASPProgram program(reg,
           factory.xgidb, postprocessedInput, factory.ctx.maxint);
       ASPSolverManager mgr;
       guessres = mgr.solve(*factory.externalEvalConfig, program);
@@ -815,7 +815,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
 		DBGLOG(DBG,"evaluating flp head program");
 
 		// here we can mask, we won't lose FLP heads
-		ASPProgram program(reg,
+		OrdinaryASPProgram program(reg,
 		    factory.xidbflphead, guessint, factory.ctx.maxint, mask);
 		ASPSolverManager mgr;
 		flpheadres = mgr.solve(*factory.externalEvalConfig, program);
@@ -857,7 +857,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
                 edbflpguess->getStorage() |= postprocessedInput->getStorage();
 
 		// here we mask, as guessint will also be masked for efficiency reasons
-		ASPProgram program(reg,
+		OrdinaryASPProgram program(reg,
 		    factory.xidbflpbody, edbflpguess, factory.ctx.maxint, mask);
 		ASPSolverManager mgr;
 		flpbodyres = mgr.solve(*factory.externalEvalConfig, program);

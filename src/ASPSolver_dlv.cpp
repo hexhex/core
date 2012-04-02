@@ -318,7 +318,7 @@ DLVSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg
 }
 
 void
-DLVSoftware::Delegate::useASTInput(const ASPProgram& program)
+DLVSoftware::Delegate::useASTInput(const OrdinaryASPProgram& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVSoftw:Delegate:useASTInput");
 

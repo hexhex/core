@@ -203,7 +203,7 @@ WellfoundedModelGenerator::generateNextModel()
       {
         // we don't use a mask here!
         // -> we receive all facts
-        ASPProgram program(reg,
+        OrdinaryASPProgram program(reg,
             factory.xidb, dst, factory.ctx.maxint);
         ASPSolverManager mgr;
         ASPSolverManager::ResultsPtr thisres =

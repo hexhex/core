@@ -355,14 +355,14 @@ struct ConcurrentQueueResultsImpl:
 public:
   MyClingoApp myclingo;
   ClingoSoftware::Options options;
-  ASPProgram program;
+  OrdinaryASPProgram program;
   bool shouldTerminate;
   boost::thread answerSetProcessingThread;
 
 public:
   ConcurrentQueueResultsImpl(
       const ClingoSoftware::Options& options,
-      const ASPProgram& program):
+      const OrdinaryASPProgram& program):
     myclingo(*this, shouldTerminate),
     ConcurrentQueueResults(),
     options(options),
@@ -488,7 +488,7 @@ ClingoSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr 
 */
 
 void
-ClingoSoftware::Delegate::useASTInput(const ASPProgram& program)
+ClingoSoftware::Delegate::useASTInput(const OrdinaryASPProgram& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware useASTInput");
 

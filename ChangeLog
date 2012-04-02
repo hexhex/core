@@ -2,6 +2,21 @@
 	
 	TODO describe Genuine solver changes
 
+2012-04-02  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/ASPSolverManager.h: Unifying: replacing ASPProgram by
+	OrdinaryASPProgram.
+	* include/dlvhex2/ASPSolver.h: Likewise.
+	* src/WellfoundedModelGenerator.cpp: Likewise.
+	* src/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/ASPSolver_libclingo.cpp: Likewise.
+	* src/ASPSolver_dlv.cpp: Likewise.
+	* src/MLPSolver.cpp: Likewise.
+	* src/ASPSolverManager.cpp: Likewise.
+	* src/ASPSolver.cpp: Likewise.
+	* src/PlainModelGenerator.cpp: Likewise.
+	* testsuite/TestASPSolver.cpp: Likewise.
+
 2012-03-28  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* include/dlvhex2/Logger.h: Mutex for more readable logs in debug mode.

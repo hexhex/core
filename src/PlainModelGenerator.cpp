@@ -189,7 +189,7 @@ PlainModelGenerator::generateNextModel()
 
       DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,
           "initiating external solver");
-      ASPProgram program(reg,
+      OrdinaryASPProgram program(reg,
           factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
       ASPSolverManager mgr;
       currentResults = mgr.solve(*factory.externalEvalConfig, program);
