@@ -1,2 +1,1 @@
 {a(foo), b(foo), guard(bar), guard(foo)}
-{a(bar), c(bar), guard(bar), guard(foo)}

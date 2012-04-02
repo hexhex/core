@@ -23,20 +23,24 @@ guard(bar).
 % => c has empty extension
 % => single e-compatible classical model { a(foo), b(foo) }
 % => reduct is a(foo) :- &testA[c](foo), guard(foo). b(foo) v c(foo) :- a(foo).
+% => classical models of reduct:
+%    { a(foo), b(foo), guard(foo), guard(bar) }
 % => answer set { a(foo), b(foo), guard(foo), guard(bar) }
 %
 % { not &testA[c](foo), &testA[c](bar) }
 % => c has one member in extension
 % => single e-compatible classical model { a(bar), c(bar) }
 % => reduct is a(bar) :- &testA[c](bar), guard(bar). b(bar) v c(bar) :- a(bar).
-% => answer set { a(bar), c(bar), guard(foo), guard(bar) }
+% => classical models of reduct:
+%    { a(bar), c(bar), guard(foo), guard(bar) } (here &testA[c](bar) is true)
+%    { guard(foo), guard(bar) }                 (here &testA[c](bar) is false)
+% => no answer set
 %
 % { not &testA[c](foo), not &testA[c](bar) }
 % => c has two members in extension
 % => no e-compatible classical model
 %
 %
-% => program has two answer sets:
+% => program has one answer sets:
 % { a(foo), b(foo), guard(foo), guard(bar) }
-% { a(bar), c(bar), guard(foo), guard(bar) }
 
