@@ -590,6 +590,57 @@ public:
   }
 };
 
+class TestNonmon2Atom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNonmon2Atom():
+    PluginAtom("testNonmon2", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (tu.size() != 1) throw PluginError("TestNonmon2Atom can only process input predicates with arity 1!");
+		tuples.push_back(tu);
+		en++;
+	}
+
+	Tuple t1, t2;
+	t1.push_back(ID::termFromInteger(1));
+	t2.push_back(ID::termFromInteger(2));
+
+	// {} -> {2}, {1} -> {2}, {2} -> {}, {1,2} -> {1,2}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t2);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t2);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+		answer.get().push_back(t1);
+		answer.get().push_back(t2);
+	}
+  }
+};
+
 class TestIdAtom:	// tests user-defined external learning
   public PluginAtom
 {
@@ -732,6 +783,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));

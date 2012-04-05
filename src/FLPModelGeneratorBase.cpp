@@ -498,12 +498,14 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 }
 
 #warning TODO could we move shadow predicates and mappings and rules to factory?
-void FLPModelGeneratorBase::computeShadowPredicates(
+void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 	RegistryPtr reg,
 	InterpretationConstPtr edb,
 	const std::vector<ID>& idb,
 	std::map<ID, std::pair<int, ID> >& shadowPredicates,
-	std::string& shadowPostfix){
+	std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
+	std::string& shadowPostfix,
+	std::string& unfoundedPostfix){
 
 	// collect predicates
 	std::set<std::pair<int, ID> > preds;
@@ -565,6 +567,35 @@ void FLPModelGeneratorBase::computeShadowPredicates(
 		shadowPredicates[p.second] = Pair(p.first, shadowID);
 		DBGLOG(DBG, "Predicate " << reg->terms.getByID(p.second).getUnquotedString() << " [" << p.second << "] has shadow predicate " <<
 				reg->terms.getByID(p.second).getUnquotedString() + shadowPostfix << " [" << shadowID << "]");
+	}
+
+	// create unfounded predicate suffix for shadow predicates
+	unfoundedPostfix = "_unfounded";
+	idx = 0;
+	do{
+		clash = false;
+
+		// check if the current postfix clashes with any of the predicates
+		typedef std::pair<int, ID> Pair;
+		BOOST_FOREACH (Pair p, preds){
+			std::string currentPred = reg->terms.getByID(p.second).getUnquotedString();
+			if (unfoundedPostfix.length() <= currentPred.length() &&						// currentPred is at least as long as shadowPostfix
+			    currentPred.substr(currentPred.length() - unfoundedPostfix.length()) == unfoundedPostfix){		// postfixes coincide
+				clash = true;
+				break;
+			}
+		}
+		std::stringstream ss;
+		ss << "_unfounded" << idx++;
+	}while(clash);
+
+	// create unfounded predicates
+	BOOST_FOREACH (Pair p, preds){
+		Term unfoundedTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, reg->terms.getByID(p.second).getUnquotedString() + unfoundedPostfix);
+		ID unfoundedID = reg->storeTerm(unfoundedTerm);
+		unfoundedPredicates[p.second] = Pair(p.first, unfoundedID);
+		DBGLOG(DBG, "Predicate " << reg->terms.getByID(p.second).getUnquotedString() << " [" << p.second << "] has unfounded predicate " <<
+				reg->terms.getByID(p.second).getUnquotedString() + unfoundedPostfix << " [" << unfoundedID << "]");
 	}
 }
 
@@ -661,6 +692,74 @@ void FLPModelGeneratorBase::createMinimalityRules(
 	Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT);
 	r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, smallerAtomID.address));
 	idb.push_back(reg->storeRule(r));
+}
+
+void FLPModelGeneratorBase::createFoundingRules(
+	RegistryPtr reg,
+	std::map<ID, std::pair<int, ID> >& shadowPredicates,
+	std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
+	std::vector<ID>& idb){
+
+	// We want to compute a _model_ of the reduct rather than an _answer set_,
+	// i.e., atoms are allowed to be _not_ founded.
+	// For this we introduce for each n-ary shadow predicate
+	//	ps(X1, ..., Xn)
+	// a rule
+	//	p(X1, ..., Xn) v p_unfounded(X1, ..., Xn) :- ps(X1, ..., Xn)
+	// which can be used to found an atom.
+	// (p_unfounded(X1, ..., Xn) encodes that the atom is not artificially founded)
+
+	typedef std::pair<ID, std::pair<int, ID> > Pair;
+	BOOST_FOREACH (Pair p, shadowPredicates){
+		OrdinaryAtom atom(ID::MAINKIND_ATOM);
+		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		atom.tuple.push_back(p.first);
+		for (int i = 0; i < p.second.first; ++i){
+			std::stringstream var;
+			var << "X" << i;
+			atom.tuple.push_back(reg->storeVariableTerm(var.str()));
+		}
+
+		// store original atom
+		ID origID;
+		if (p.second.first == 0){
+			origID = reg->storeOrdinaryGAtom(atom);
+		}else{
+			origID = reg->storeOrdinaryNAtom(atom);
+		}
+
+		// store unfounded atom
+		atom.kind = ID::MAINKIND_ATOM;
+		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		atom.tuple[0] = unfoundedPredicates[p.first].second;
+		ID unfoundedID;
+		if (p.second.first == 0){
+			unfoundedID = reg->storeOrdinaryGAtom(atom);
+		}else{
+			unfoundedID = reg->storeOrdinaryNAtom(atom);
+		}
+
+		// store shadow atom
+		atom.kind = ID::MAINKIND_ATOM;
+		if (p.second.first == 0) atom.kind |= ID::SUBKIND_ATOM_ORDINARYG; else atom.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+		atom.tuple[0] = p.second.second;
+		ID shadowID;
+		if (p.second.first == 0){
+			shadowID = reg->storeOrdinaryGAtom(atom);
+		}else{
+			shadowID = reg->storeOrdinaryNAtom(atom);
+		}
+		DBGLOG(DBG, "Using shadow predicate for " << p.first << " which is " << p.second.second << " and unfounded predicate which is " << unfoundedPredicates[p.first].second);
+
+		// for each shadow atom, either the original atom or the notfounded atom is derived
+		{
+			Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_RULE_DISJ);
+			r.head.push_back(origID);
+			r.head.push_back(unfoundedID);
+			r.body.push_back(shadowID);
+			idb.push_back(reg->storeRule(r));
+		}
+	}
 }
 
 DLVHEX_NAMESPACE_END

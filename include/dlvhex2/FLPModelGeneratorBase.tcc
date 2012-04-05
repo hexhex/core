@@ -141,19 +141,20 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			simulatedReduct.push_back(rid);
 		}
 
-		static const bool encodeMinimalityCheckIntoReduct = false;
+		static const bool encodeMinimalityCheckIntoReduct = true;
 
+		std::map<ID, std::pair<int, ID> > shadowPredicates, unfoundedPredicates;
+		// predicate postfix for shadow and unfounded predicates
+		std::string shadowpostfix, unfoundedpostfix;
+		computeShadowAndUnfoundedPredicates(reg, postprocessedInput, simulatedReduct, shadowPredicates, unfoundedPredicates, shadowpostfix, unfoundedpostfix);
+		Interpretation::Ptr shadowInterpretation(new Interpretation(reg));
+		addShadowInterpretation(reg, shadowPredicates, compatibleSet, shadowInterpretation);
 		if (encodeMinimalityCheckIntoReduct){
 			// add minimality rules to flpbody program
-			std::map<ID, std::pair<int, ID> > shadowPredicates;
-			// predicate postfix for shadow predicates
-			std::string shadowpostfix;
-			computeShadowPredicates(reg, postprocessedInput, simulatedReduct, shadowPredicates, shadowpostfix);
-			Interpretation::Ptr shadowInterpretation(new Interpretation(reg));
-			addShadowInterpretation(reg, shadowPredicates, compatibleSet, shadowInterpretation);
 			createMinimalityRules(reg, shadowPredicates, shadowpostfix, simulatedReduct);
-			reductEDB->add(*shadowInterpretation);
 		}
+		createFoundingRules(reg, shadowPredicates, unfoundedPredicates, simulatedReduct);
+		reductEDB->add(*shadowInterpretation);
 
 		ss << "simulatedReduct: IDB={";
 		printer.printmany(simulatedReduct, "\n");

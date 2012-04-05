@@ -155,12 +155,14 @@ protected:
 
   // computes for each predicate p in idb/edb
   // a shadow predicate sp which does not yet occur
-  void computeShadowPredicates(
+  void computeShadowAndUnfoundedPredicates(
       RegistryPtr reg,
       InterpretationConstPtr edb,
       const std::vector<ID>& idb,
       std::map<ID, std::pair<int, ID> >& shadowPredicates,
-      std::string& shadowPostfix
+      std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
+      std::string& shadowPostfix,
+      std::string& unfoundedPostfix
       );
 
   // adds the shadow facts for some edb input to output
@@ -180,6 +182,20 @@ protected:
       RegistryPtr reg,
       std::map<ID, std::pair<int, ID> >& shadowPredicates,
       std::string& shadowPostfix,
+      std::vector<ID>& idb);
+
+  // We want to compute a _model_ of the reduct rather than an _answer set_,
+  // i.e., atoms are allowed to be _not_ founded.
+  // For this we introduce for each n-ary shadow predicate
+  //	ps(X1, ..., Xn)
+  // a rule
+  //	p(X1, ..., Xn) v p_unfounded(X1, ..., Xn) :- ps(X1, ..., Xn)
+  // which can be used to found an atom.
+  // (p_unfounded(X1, ..., Xn) encodes that the atom is not artificially founded)
+  void createFoundingRules(
+      RegistryPtr reg,
+      std::map<ID, std::pair<int, ID> >& shadowPredicates,
+      std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
       std::vector<ID>& idb);
 };
 

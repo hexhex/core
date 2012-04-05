@@ -2,9 +2,9 @@ domain(a).
 domain(b).
 domain(c).
 domain(d).
-domain(e).
-domain(f).
-domain(g).
+%domain(e).
+%domain(f).
+%domain(g).
 %domain(h).
 %domain(i).
 
