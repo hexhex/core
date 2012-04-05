@@ -3,7 +3,7 @@
 % Here, the guessing program has the single model {p(1),p(2)}.
 % The reduct f P^{p(1),p(2)} = P has no smaller compatible set than {p(1),p(2)}.
 % However, it has the smaller model {p(2)} (which is no compatible set because it is not founded).
-% As answer sets are defined as subset-minimal models (not compatible sets) of the reduct,
+% As answer sets are defined as subset-minimal models (and not compatible sets) of the reduct,
 % {p(2)} invalidates {p(1),p(2)} as an answer set.
 
 dom(1).
