@@ -414,6 +414,9 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 			DBGLOG(DBG, "FLP Check");
 			if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
         			continue;
+
+//DBGLOG(DBG, "UFS Check");
+//getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}

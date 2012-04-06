@@ -152,6 +152,13 @@ protected:
 		NogoodContainerPtr ngc = NogoodContainerPtr()
 		);
 
+  // Returns an unfounded set of groundProgram wrt. compatibleSet;
+  // If the empty set is returned,
+  // then there does not exist a greater (nonempty) unfounded set.
+  std::vector<IDAddress> getUnfoundedSet(
+			ProgramCtx& ctx,
+			OrdinaryASPProgram groundProgram,
+			InterpretationConstPtr compatibleSet);
 
   // computes for each predicate p in idb/edb
   // a shadow predicate sp which does not yet occur

@@ -37,6 +37,8 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/ProgramCtx.h"
 
+#include "dlvhex2/CDNLSolver.h"
+
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
@@ -495,6 +497,128 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 		return false;
 	}
 	return true;
+}
+
+std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
+		ProgramCtx& ctx,
+		OrdinaryASPProgram groundProgram,
+		InterpretationConstPtr compatibleSet /* I */){
+
+	RegistryPtr reg = ctx.registry();
+
+	// problem instance
+	NogoodSet ns;
+
+	// facts cannot be in X
+	bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
+	while (en < en_end){
+		Nogood ng;
+		ng.insert(NogoodContainer::createLiteral(*en, false));
+		ns.addNogood(ng);
+		en++;
+	}
+
+	// create nogoods for all rules of the ground program
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// skip rules with unsatisfied body
+		bool unsatisfied = false;
+		BOOST_FOREACH (ID b, rule.body){
+			if (compatibleSet->getFact(b.address) != !b.isNaf()){
+				unsatisfied = true;
+				break;
+			}
+		}
+		if (unsatisfied) continue;
+
+		// create two unique predicates and atoms for this rule
+		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('k', ruleID));
+		OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
+		ID hr = reg->storeOrdinaryGAtom(hratom);
+		ID cr = reg->storeOrdinaryGAtom(cratom);
+
+		// hr is true iff one of the rule's head atoms is in X
+		{
+			Nogood ng;
+			ng.insert(NogoodContainer::createLiteral(hr.address, true));
+			BOOST_FOREACH (ID h, rule.head){
+				ng.insert(NogoodContainer::createLiteral(h.address, false));
+			}
+			ns.addNogood(ng);
+		}
+		{
+			BOOST_FOREACH (ID h, rule.head){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(hr.address, false));
+				ng.insert(NogoodContainer::createLiteral(h.address, true));
+				ns.addNogood(ng);
+			}
+		}
+
+		// the 3 conditions of the unfounded set definition
+		// (actually only 2, because rule satisfaction is already checked above)
+		{
+			// if hr is true, then either ...
+			Nogood ng;
+			ng.insert(NogoodContainer::createLiteral(hr.address, true));
+
+			// (condition 3) all head literals, which are true in the interpretation I, are in the unfounded set X
+			BOOST_FOREACH (ID h, rule.head){
+				if (compatibleSet->getFact(h.address)){
+					ng.insert(NogoodContainer::createLiteral(h.address, true));
+				}
+			}
+
+			// (condition 2) a body literal is false wrt "interpretation union negated unfounded set"
+			ng.insert(NogoodContainer::createLiteral(cr.address, false));
+			ns.addNogood(ng);
+		}
+		// (condition 2) a body literal is false wrt "interpretation union negated unfounded set" (I u -X)
+		{
+			// condition 2 is satisfied if a positive ordinary body literal is in the unfounded set
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isNaf() && !b.isAuxiliary()){
+					Nogood ng;
+					ng.insert(NogoodContainer::createLiteral(cr.address, false));
+					ng.insert(NogoodContainer::createLiteral(b.address, true));
+					ns.addNogood(ng);
+				}
+			}
+			// condition 2 is falsified if (i) no positive ordinary body literal is in the unfounded set, and (ii) the inputs to the external sources in (I u -X) coincide with I
+			Nogood ng;
+			ng.insert(NogoodContainer::createLiteral(cr.address, true));
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isNaf() && !b.isAuxiliary()){
+					ng.insert(NogoodContainer::createLiteral(b.address, false));
+				}
+			}
+			// todo: input to external atoms
+			ns.addNogood(ng);
+		}
+	}
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	BOOST_FOREACH (Nogood ng, ns.nogoods){
+		ss << ng << " ";
+	}
+	DBGLOG(DBG, "Solving the following UFS detection program: " << ss.str());
+#endif
+
+	// solve the problem description
+	CDNLSolver solver(ctx, ns);
+	InterpretationConstPtr model;
+	while ( (model = solver.getNextModel()) != InterpretationConstPtr()){
+		// check if the model is actually an unfounded set
+		DBGLOG(DBG, "Got UFS candidate: " << *model);
+	}
+
+	std::vector<IDAddress> ufs;
+	return ufs;
 }
 
 #warning TODO could we move shadow predicates and mappings and rules to factory?
