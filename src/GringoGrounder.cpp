@@ -188,7 +188,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG, indexToGroundAtomID[p].address));
+				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[p].isAuxiliary() ? ID::PROPERTY_AUX : 0), indexToGroundAtomID[p].address));
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
 				addSymbol(n);
@@ -199,7 +199,7 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | ID::NAF_MASK, indexToGroundAtomID[n].address));
+				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[n].isAuxiliary() ? ID::PROPERTY_AUX : 0) | ID::NAF_MASK, indexToGroundAtomID[n].address));
 			}
 
 			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;

@@ -547,6 +547,12 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 	// create nogoods for all rules of the ground program
 	BOOST_FOREACH (ID ruleID, idb){
+#ifndef NDEBUG
+		programstring.str("");
+		printer.print(ruleID);
+		DBGLOG(DBG, "Processing rule " << programstring.str());
+#endif
+
 		const Rule& rule = reg->rules.getByID(ruleID);
 
 		// skip rules with unsatisfied body
@@ -622,7 +628,38 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 					ng.insert(NogoodContainer::createLiteral(b.address, false));
 				}
 			}
-			// todo: input to external atoms
+			// for all inner external atoms which occur in this rule
+			DBGLOG(DBG, "Collecting the external atoms this rule depends on");
+			BOOST_FOREACH (ID extatId, factory.innerEatoms){
+				const ExternalAtom& extat = reg->eatoms.getByID(extatId);
+
+				ID eaaux = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
+				DBGLOG(DBG, "Comparing EA-Aux " << eaaux << " to rule body");
+				bool occurs = false;
+				BOOST_FOREACH (ID b, rule.body){
+					const OrdinaryAtom& ogatom = reg->ogatoms.getByID(b);
+					DBGLOG(DBG, "Comparing EA-Aux " << eaaux << " to atom " << ogatom << " (ID: " << b << ")");
+					if (ogatom.tuple[0] == eaaux){
+						occurs = true;
+						break;
+					}
+				}
+				// add the input to this external atom
+				if (occurs){
+					DBGLOG(DBG, "Depends on " << extatId);
+					InterpretationConstPtr extInput = extat.getPredicateInputMask();
+					DBGLOG(DBG, "Input is " << *extInput);
+
+					bm::bvector<>::enumerator en = extInput->getStorage().first();
+					bm::bvector<>::enumerator en_end = extInput->getStorage().end();
+					while (en < en_end){
+						if (compatibleSet->getFact(*en)){
+							ng.insert(NogoodContainer::createLiteral(*en, false));
+						}
+						en++;
+					}
+				}
+			}
 			ns.addNogood(ng);
 		}
 	}
