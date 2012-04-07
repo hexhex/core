@@ -38,6 +38,7 @@
 #include "dlvhex2/ProgramCtx.h"
 
 #include "dlvhex2/CDNLSolver.h"
+#include "dlvhex2/Printer.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -506,21 +507,46 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 	RegistryPtr reg = ctx.registry();
 
+	// remove external atom guessing rules from IDB
+	std::vector<ID> idb;
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		if (rule.head.size() == 2 && rule.head[0].isAuxiliary() && rule.head[1].isAuxiliary()){
+			// skip it
+		}else{
+			idb.push_back(ruleId);
+		}
+	}
+
+#ifndef NDEBUG
+	std::stringstream programstring;
+	RawPrinter printer(programstring, reg);
+	programstring << "EDB: " << *groundProgram.edb << std::endl;
+	programstring << "IDB:" << std::endl;
+	BOOST_FOREACH (ID ruleId, idb){
+		printer.print(ruleId);
+		programstring << std::endl;
+	}
+	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSet);
+#endif
+
 	// problem instance
 	NogoodSet ns;
 
 	// facts cannot be in X
-	bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
-	while (en < en_end){
-		Nogood ng;
-		ng.insert(NogoodContainer::createLiteral(*en, false));
-		ns.addNogood(ng);
-		en++;
+	{
+		bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
+		bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
+		while (en < en_end){
+			Nogood ng;
+			ng.insert(NogoodContainer::createLiteral(*en, true));
+			ns.addNogood(ng);
+			en++;
+		}
 	}
 
 	// create nogoods for all rules of the ground program
-	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+	BOOST_FOREACH (ID ruleID, idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
 		// skip rules with unsatisfied body
@@ -601,6 +627,21 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		}
 	}
 
+	// we want a UFS which intersects with I
+	{
+		Nogood ng;
+		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
+		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
+		while (en < en_end){
+			if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+				ng.insert(NogoodContainer::createLiteral(*en, false));
+			}
+			en++;
+		}
+		ns.addNogood(ng);
+	}
+
+
 #ifndef NDEBUG
 	std::stringstream ss;
 	BOOST_FOREACH (Nogood ng, ns.nogoods){
@@ -615,6 +656,64 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	while ( (model = solver.getNextModel()) != InterpretationConstPtr()){
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);
+
+		// compute I u -X
+		InterpretationPtr intr2 = InterpretationPtr(new Interpretation(reg));
+		intr2->add(*compatibleSet);
+		intr2->getStorage() -= model->getStorage();
+		DBGLOG(DBG, "I u -X: " << *intr2);
+
+		// evaluate exteral atoms wrt. compatibleSet and wrt. intr2
+		InterpretationPtr eaValuesWrtI = InterpretationPtr(new Interpretation(reg));
+		IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtI);
+		evaluateExternalAtoms(reg, factory.innerEatoms, compatibleSet, cb);
+
+		InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
+		cb = IntegrateExternalAnswerIntoInterpretationCB(eaValuesWrtIuNX);
+		evaluateExternalAtoms(reg, factory.innerEatoms, intr2, cb);
+
+		// replace old EA values by new ones
+		intr2->getStorage() -= eaValuesWrtI->getStorage();
+		intr2->add(*eaValuesWrtIuNX);
+		DBGLOG(DBG, "I u -X with EA values: " << *intr2);
+
+		// check for each rule with aux('c', ruleID) in model if condition 2 is indeed satisfied
+		bool isUfs = true;
+		BOOST_FOREACH (ID ruleID, idb){
+			OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
+			ID cr = reg->storeOrdinaryGAtom(cratom);
+
+			if (model->getFact(cr.address)){
+				const Rule& rule = reg->rules.getByID(ruleID);
+				bool bodyFalsified = false;
+				BOOST_FOREACH (ID b, rule.body){
+					if (intr2->getFact(b.address) != !b.isNaf()){
+						bodyFalsified = true;
+						break;
+					}
+				}
+				if (!bodyFalsified){
+					isUfs = false;
+					break;
+				}
+			}
+		}
+		if (isUfs){
+			DBGLOG(DBG, "Found UFS: " << *model);
+
+			std::vector<IDAddress> ufs;
+
+			bm::bvector<>::enumerator en = model->getStorage().first();
+			bm::bvector<>::enumerator en_end = model->getStorage().end();
+			while (en < en_end){
+				ufs.push_back(*en);
+				en++;
+			}
+			return ufs;
+		}else{
+			DBGLOG(DBG, "No UFS: " << *model);
+		}
 	}
 
 	std::vector<IDAddress> ufs;

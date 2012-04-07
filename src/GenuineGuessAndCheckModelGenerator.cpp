@@ -416,7 +416,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
         			continue;
 
 //DBGLOG(DBG, "UFS Check");
-//getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
+//std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
+//if (ufs.size() > 0) continue;
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
