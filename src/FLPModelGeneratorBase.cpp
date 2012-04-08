@@ -507,6 +507,19 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 	RegistryPtr reg = ctx.registry();
 
+	// remove auxiliaries from interpretation
+	InterpretationPtr intr = InterpretationPtr(new Interpretation(reg));
+	{
+		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
+		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
+		while (en < en_end){
+			if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+				intr->setFact(*en);
+			}
+			en++;
+		}
+	}
+
 	// remove external atom guessing rules from IDB
 	std::vector<ID> idb;
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
@@ -514,8 +527,8 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		if (rule.head.size() == 2 && rule.head[0].isAuxiliary() && rule.head[1].isAuxiliary()){
 			// skip it
 		}else{
-			idb.push_back(ruleId);
 		}
+			idb.push_back(ruleId);
 	}
 
 #ifndef NDEBUG
@@ -527,7 +540,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		printer.print(ruleId);
 		programstring << std::endl;
 	}
-	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSet);
+	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *intr);
 #endif
 
 	// problem instance
@@ -600,7 +613,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 			// (condition 3) all head literals, which are true in the interpretation I, are in the unfounded set X
 			BOOST_FOREACH (ID h, rule.head){
-				if (compatibleSet->getFact(h.address)){
+				if (intr->getFact(h.address)){
 					ng.insert(NogoodContainer::createLiteral(h.address, true));
 				}
 			}
@@ -653,7 +666,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 					bm::bvector<>::enumerator en = extInput->getStorage().first();
 					bm::bvector<>::enumerator en_end = extInput->getStorage().end();
 					while (en < en_end){
-						if (compatibleSet->getFact(*en)){
+						if (intr->getFact(*en)){
 							ng.insert(NogoodContainer::createLiteral(*en, false));
 						}
 						en++;
@@ -667,12 +680,10 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	// we want a UFS which intersects with I
 	{
 		Nogood ng;
-		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
-		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
+		bm::bvector<>::enumerator en = intr->getStorage().first();
+		bm::bvector<>::enumerator en_end = intr->getStorage().end();
 		while (en < en_end){
-			if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
-				ng.insert(NogoodContainer::createLiteral(*en, false));
-			}
+			ng.insert(NogoodContainer::createLiteral(*en, false));
 			en++;
 		}
 		ns.addNogood(ng);
@@ -696,21 +707,16 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 		// compute I u -X
 		InterpretationPtr intr2 = InterpretationPtr(new Interpretation(reg));
-		intr2->add(*compatibleSet);
+		intr2->add(*intr);
 		intr2->getStorage() -= model->getStorage();
 		DBGLOG(DBG, "I u -X: " << *intr2);
 
-		// evaluate exteral atoms wrt. compatibleSet and wrt. intr2
-		InterpretationPtr eaValuesWrtI = InterpretationPtr(new Interpretation(reg));
-		IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtI);
-		evaluateExternalAtoms(reg, factory.innerEatoms, compatibleSet, cb);
-
+		// evaluate exteral atoms wrt. intr2
 		InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
-		cb = IntegrateExternalAnswerIntoInterpretationCB(eaValuesWrtIuNX);
+		IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtIuNX);
 		evaluateExternalAtoms(reg, factory.innerEatoms, intr2, cb);
 
 		// replace old EA values by new ones
-		intr2->getStorage() -= eaValuesWrtI->getStorage();
 		intr2->add(*eaValuesWrtIuNX);
 		DBGLOG(DBG, "I u -X with EA values: " << *intr2);
 
