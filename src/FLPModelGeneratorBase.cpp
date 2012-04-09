@@ -805,7 +805,9 @@ void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 	}
 
 	// create unique predicate suffix for shadow predicates
-	shadowPostfix = "_shadow";
+  // (must not start with _ as it will be used by itself and
+  // constants starting with _ are forbidden in dlv as they are not c-identifiers)
+	shadowPostfix = "shadow";
 	int idx = 0;
 	bool clash;
 	do{
@@ -822,7 +824,7 @@ void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 			}
 		}
 		std::stringstream ss;
-		ss << "_shadow" << idx++;
+		ss << "shadow" << idx++;
 	}while(clash);
 
 	// create shadow predicates
@@ -852,7 +854,7 @@ void FLPModelGeneratorBase::computeShadowAndUnfoundedPredicates(
 			}
 		}
 		std::stringstream ss;
-		ss << "_unfounded" << idx++;
+		ss << "unfounded" << idx++;
 	}while(clash);
 
 	// create unfounded predicates
