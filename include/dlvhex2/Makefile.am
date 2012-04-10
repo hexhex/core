@@ -93,6 +93,7 @@ pkginclude_HEADERS = \
   Rule.h \
   RuleTable.h \
   StrongNegationPlugin.h \
+  SATSolver.h \
   SafetyChecker.h \
   Set.h \
   DynamicVector.h \

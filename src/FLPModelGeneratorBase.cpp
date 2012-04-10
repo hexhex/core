@@ -38,6 +38,8 @@
 #include "dlvhex2/ProgramCtx.h"
 
 #include "dlvhex2/CDNLSolver.h"
+#include "dlvhex2/ClaspSolver.h"
+#include "dlvhex2/SATSolver.h"
 #include "dlvhex2/Printer.h"
 
 DLVHEX_NAMESPACE_BEGIN
@@ -698,10 +700,24 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	DBGLOG(DBG, "Solving the following UFS detection program: " << ss.str());
 #endif
 
+/*
+NogoodSet ns2;
+Nogood ng1; ng1.insert(NogoodContainer::createLiteral(1)); ns2.addNogood(ng1);
+Nogood ng2; ng2.insert(NogoodContainer::createLiteral(2, false)); ns2.addNogood(ng2);
+//ClaspSolver csolver(ctx, ns2);
+SATSolverPtr ssolver = SATSolver::getInstance(ctx, ns2);
+while ( (model = ssolver->getNextModel()) != InterpretationConstPtr()){
+	DBGLOG(DBG, "SAT-NextModel: " << *model);
+}
+*/
+
+
 	// solve the problem description
-	CDNLSolver solver(ctx, ns);
+//	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
+	SATSolverPtr solver = SATSolverPtr(new CDNLSolver(ctx, ns));
 	InterpretationConstPtr model;
-	while ( (model = solver.getNextModel()) != InterpretationConstPtr()){
+
+	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);
 

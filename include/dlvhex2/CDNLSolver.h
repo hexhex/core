@@ -42,12 +42,13 @@
 #include "dlvhex2/Set.h"
 #include "dlvhex2/DynamicVector.h"
 #include "dlvhex2/Nogood.h"
+#include "dlvhex2/SATSolver.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-class CDNLSolver : virtual public NogoodContainer{
+class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver{
 protected:
 	struct SimpleHashIDAddress : public std::unary_function<IDAddress, std::size_t> {
 		inline std::size_t operator()(IDAddress const& ida) const{

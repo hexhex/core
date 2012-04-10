@@ -456,6 +456,26 @@ void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramB
 	}
 }
 
+void ClaspSolver::buildInitialSymbolTable(NogoodSet& ns){
+
+	DBGLOG(DBG, "Building atom index");
+
+	claspInstance.symTab().startInit();
+	BOOST_FOREACH (Nogood ng, ns.nogoods){
+		BOOST_FOREACH (ID lit, ng){
+			if (hexToClasp.find(lit.address) == hexToClasp.end()){
+				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
+				std::string str = idAddressToString(lit.address);
+				DBGLOG(DBG, "Clasp index of atom " << lit.address << " is " << c);
+				hexToClasp[lit.address] = Clasp::Literal(c, true);
+				claspToHex[Clasp::Literal(c, true)].push_back(lit.address);
+				claspInstance.symTab().addUnique(c, str.c_str()).lit = Clasp::Literal(c, true);
+			}
+		}
+	}
+	claspInstance.symTab().endInit();
+}
+
 void ClaspSolver::buildOptimizedSymbolTable(){
 
 	hexToClasp.clear();
@@ -614,10 +634,78 @@ bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program(p), sem_request(0), sem_answer(0), /*modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(false)
+bool ClaspSolver::sendNogoodSetToClasp(NogoodSet& ns){
+
+	const int false_ = 1;	// 1 is our constant "false"
+
+	buildInitialSymbolTable(ns);
+
+	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
+	bool initiallyInconsistent = false;
+
+	claspInstance.startAddConstraints();
+
+	BOOST_FOREACH (Nogood ng, ns.nogoods){
+
+#ifndef NDEBUG
+		std::stringstream ss;
+		ss << "{ ";
+		bool first = true;
+#endif
+
+		// only nogoods are relevant where all variables occur in this clasp instance
+		BOOST_FOREACH (ID lit, ng){
+			if (hexToClasp.find(lit.address) == hexToClasp.end()){
+				DBGLOG(DBG, "Skipping nogood because a literal is not in Clasp's literal list");
+				return false;
+			}
+		}
+
+		// translate dlvhex::Nogood to clasp clause
+		clauseCreator->start();
+		Set<uint32> pos;
+		Set<uint32> neg;
+		BOOST_FOREACH (ID lit, ng){
+			// avoid duplicate literals
+			// if the literal was already added with the same sign, skip it
+			// if it was added with different sign, cancel adding the clause
+			if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
+				if (pos.contains(hexToClasp[lit.address].var())) continue;
+				else if (neg.contains(hexToClasp[lit.address].var())) return false;
+				pos.insert(hexToClasp[lit.address].var());
+			}else{
+				if (neg.contains(hexToClasp[lit.address].var())) continue;
+				else if (pos.contains(hexToClasp[lit.address].var())) return false;
+				neg.insert(hexToClasp[lit.address].var());
+			}
+
+			// 1. cs.hexToClasp maps hex-atoms to clasp-literals
+			// 2. the sign must be changed if the hex-atom was default-negated (xor ^)
+			// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
+			Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
+			clauseCreator->add(clit);
+#ifndef NDEBUG
+			if (!first) ss << ", ";
+			first = false;
+			ss << (clit.sign() ? "" : "!") << clit.var();
+#endif
+		}
+
+#ifndef NDEBUG
+		ss << " }";
+#endif
+
+		DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
+		initiallyInconsistent |= !Clasp::ClauseCreator::create(*claspInstance.master(), clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order).ok;
+	}
+
+	return initiallyInconsistent;
+}
+
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), projectionMask(p.mask), /*program(p),*/ sem_request(0), sem_answer(0), /*modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(false)
 //, NUM_PREPAREMODELS(5)
 {
-	DBGLOG(DBG, "Starting ClaspSolver in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
+	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
@@ -640,6 +728,50 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), program
 		pb.writeProgram(prog);
 		DBGLOG(DBG, "Program in LParse format: " << prog.str());
 
+		// add enumerator
+		DBGLOG(DBG, "Adding enumerator");
+		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
+		claspInstance.enumerator()->enumerate(0);
+
+		// add propagator
+		DBGLOG(DBG, "Adding external propagator");
+		ExternalPropagator* ep = new ExternalPropagator(*this);
+		claspInstance.addPost(ep);
+
+		// endInit() must be called once before the search starts
+		DBGLOG(DBG, "Finalizing clasp initialization");
+		claspInstance.endInit();
+
+		DBGLOG(DBG, "Starting ClaspThread");
+
+		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
+	}
+
+	if (!strictSingleThreaded){
+		// We now return to dlvhex code which is not in this class.
+		// As we do not know what MainThread is doing there, ClaspThread must not access dlvhex data structures.
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+		sem_dlvhexDataStructures.wait();
+	}
+}
+
+
+ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(false)
+{
+	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
+	reg = ctx.registry();
+
+	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
+
+	bool initiallyInconsistent = sendNogoodSetToClasp(ns);
+	DBGLOG(DBG, "Initially inconsistent: " << initiallyInconsistent);
+
+	// if the program is initially inconsistent we do not need to do a search at all
+	modelCount = 0;
+	if (initiallyInconsistent){
+		endOfModels = true;
+		claspThread = NULL;
+	}else{
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
 		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
@@ -805,8 +937,8 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
 		answer->add(*intr);
 
-		if (program.mask != InterpretationConstPtr()){
-			answer->getStorage() -= program.mask->getStorage();
+		if (projectionMask != InterpretationConstPtr()){
+			answer->getStorage() -= projectionMask->getStorage();
 		}
 		DBGLOG(DBG, "Projected " << *intr << " to " << *answer);
 		return answer;

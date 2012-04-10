@@ -414,10 +414,15 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 			DBGLOG(DBG, "FLP Check");
 			if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
         			continue;
+		}else{
+			DBGLOG(DBG, "Skipping FLP Check");
+		}
 
-//DBGLOG(DBG, "UFS Check");
-//std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
-//if (ufs.size() > 0) continue;
+		// UFS check
+		if (factory.ctx.config.getOption("UFSCheck")){
+			DBGLOG(DBG, "UFS Check");
+			std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
+			if (ufs.size() > 0) continue;
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}

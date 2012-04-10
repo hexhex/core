@@ -88,6 +88,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProg
 	}
 }
 
+
 GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
 
 	switch (ctx.config.getOption("GenuineSolver")){

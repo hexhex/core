@@ -93,6 +93,7 @@ libdlvhex2_base_la_SOURCES = \
     ProgramCtx.cpp \
     Registry.cpp \
     SafetyChecker.cpp \
+    SATSolver.cpp \
     URLBuf.cpp
 
 # dlvhex MLP component

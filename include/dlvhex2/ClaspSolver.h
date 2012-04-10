@@ -44,6 +44,7 @@
 #include "dlvhex2/OrdinaryASPProgram.h"
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Set.h"
+#include "dlvhex2/SATSolver.h"
 
 #include <vector>
 #include <set>
@@ -72,7 +73,7 @@ DLVHEX_NAMESPACE_BEGIN
 // forward declaration
 class LearningCallback;
 
-class ClaspSolver : public GenuineGroundSolver{
+class ClaspSolver : public GenuineGroundSolver, public SATSolver{
 private:
 	class ClaspTermination : public std::runtime_error{
 	public:
@@ -112,6 +113,7 @@ private:
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
 	void buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
+	void buildInitialSymbolTable(NogoodSet& ns);
 	void buildOptimizedSymbolTable();
 
 	// itoa/atio wrapper
@@ -123,10 +125,12 @@ private:
 
 	// initialization
 	bool sendProgramToClasp(OrdinaryASPProgram& p);
+	bool sendNogoodSetToClasp(NogoodSet& ns);
 protected:
 	// structural program information
 	ProgramCtx& ctx;
-	OrdinaryASPProgram program;
+	InterpretationConstPtr projectionMask;
+//	OrdinaryASPProgram program;
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
@@ -164,6 +168,7 @@ protected:
 	int modelCount;
 public:
 	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
+	ClaspSolver(ProgramCtx& ctx, NogoodSet& ns);
 	virtual ~ClaspSolver();
 
 	virtual std::string getStatistics();
