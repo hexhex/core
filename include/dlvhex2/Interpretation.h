@@ -35,6 +35,7 @@
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/ModelGenerator.h"
 #include "dlvhex2/ID.h"
+#include "dlvhex2/Registry.h"
 #include <bm/bm.h>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
@@ -92,6 +93,12 @@ public:
   // dereferencing iterator gives IDAddress
   std::pair<TrueBitIterator, TrueBitIterator> trueBits() const
     { return std::make_pair(bits.first(), bits.end()); }
+
+  // helper function gives ordinary ground atom to true bit
+  const OrdinaryAtom& getAtomToBit(IDAddress addr) const
+    { return registry->ogatoms.getByAddress(addr); }
+  const OrdinaryAtom& getAtomToBit(TrueBitIterator it) const
+    { return registry->ogatoms.getByAddress(*it); }
 
   RegistryPtr getRegistry() const { return registry; }
 
