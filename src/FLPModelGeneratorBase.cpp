@@ -648,18 +648,35 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 			BOOST_FOREACH (ID extatId, factory.innerEatoms){
 				const ExternalAtom& extat = reg->eatoms.getByID(extatId);
 
-				ID eaaux = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
-				DBGLOG(DBG, "Comparing EA-Aux " << eaaux << " to rule body");
+				ID eaauxPos = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
+				ID eaauxNeg = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
+				bool sign;
+
+				DBGLOG(DBG, "Comparing EA-Aux " << eaauxPos << "/" << eaauxNeg	 << " to rule body");
 				bool occurs = false;
 				BOOST_FOREACH (ID b, rule.body){
 					const OrdinaryAtom& ogatom = reg->ogatoms.getByID(b);
-					DBGLOG(DBG, "Comparing EA-Aux " << eaaux << " to atom " << ogatom << " (ID: " << b << ")");
-					if (ogatom.tuple[0] == eaaux){
+					DBGLOG(DBG, "Comparing EA-Aux " << eaauxPos << "/" << eaauxNeg << " to atom " << ogatom << " (ID: " << b << ")");
+					// compare predicate
+					if (ogatom.tuple[0] == eaauxPos || ogatom.tuple[0] == eaauxNeg){
+						// compare parameters
 						occurs = true;
-						break;
+						for (int i = 0; i < extat.inputs.size(); ++i){
+							if (extat.inputs[i] != ogatom.tuple[1 + i]){
+								occurs = false;
+								break;
+							}
+						}
+						if (occurs){
+							sign = (ogatom.tuple[0] == eaauxPos);
+							break;
+						}
 					}
 				}
-				// add the input to this external atom
+				// add the input to this external atom iff
+				// (i) it is over an antimonotonic input predicate (neither monotonic nor antimonotonic)
+				// (ii) the external atom is positive and the input atom is over a monotonic predicate
+				// (iii) the external atom is negative and the input atom is over an antimonotonic predicate
 				if (occurs){
 					DBGLOG(DBG, "Depends on " << extatId);
 					InterpretationConstPtr extInput = extat.getPredicateInputMask();
@@ -668,8 +685,21 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 					bm::bvector<>::enumerator en = extInput->getStorage().first();
 					bm::bvector<>::enumerator en_end = extInput->getStorage().end();
 					while (en < en_end){
-						if (intr->getFact(*en)){
-							ng.insert(NogoodContainer::createLiteral(*en, false));
+						// check predicate of this atom
+						const OrdinaryAtom& inputAtom = reg->ogatoms.getByAddress(*en);
+						int parIndex = 0;
+						BOOST_FOREACH (ID p, extat.inputs){
+							if (p == inputAtom.tuple[0]) break;
+							parIndex++;
+						}
+						assert(parIndex < extat.inputs.size());
+						bool monotonic = extat.pluginAtom->isMonotonic(extat.useProp ? extat.prop : extat.pluginAtom->getExtSourceProperties(), parIndex);
+						bool antimonotonic = extat.pluginAtom->isAntimonotonic(extat.useProp ? extat.prop : extat.pluginAtom->getExtSourceProperties(), parIndex);
+
+						if ((!monotonic && !antimonotonic) || (monotonic && sign == true) || (antimonotonic && sign == false)){
+							if (intr->getFact(*en)){
+								ng.insert(NogoodContainer::createLiteral(*en, false));
+							}
 						}
 						en++;
 					}

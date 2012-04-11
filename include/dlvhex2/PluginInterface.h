@@ -994,6 +994,13 @@ public:
   bool isFullyLinear(const ExtSourceProperties& prop) const
     { return prop.fullylinear; }
 
+  /**
+   * @return external source properties associated with this plugin atom
+   */
+  const ExtSourceProperties& getExtSourceProperties(){
+    return prop;
+  }
+
   // Associate plugin atom with registry pointer.
   // (This implicitly calculates the predicate ID.)
 
