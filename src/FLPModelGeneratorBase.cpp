@@ -689,7 +689,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 						const OrdinaryAtom& inputAtom = reg->ogatoms.getByAddress(*en);
 						int parIndex = 0;
 						BOOST_FOREACH (ID p, extat.inputs){
-							if (p == inputAtom.tuple[0]) break;
+							if (extat.pluginAtom->getInputType(parIndex) == PluginAtom::PREDICATE && p == inputAtom.tuple[0]) break;
 							parIndex++;
 						}
 						assert(parIndex < extat.inputs.size());
