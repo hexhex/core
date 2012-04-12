@@ -588,7 +588,8 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  - Using the following solver backends:
  DLV: $DLVPATH
  DLVDB: $DLVDBPATH
- libclingo: $GRINGO_TRUNK_DIR
+ GRINGO_TRUNK_DIR: $GRINGO_TRUNK_DIR
+ CLASP_TRUNK_DIR: $CLASP_TRUNK_DIR
  libdlv: $DLVLIB
 
  - Using the following libraries:
