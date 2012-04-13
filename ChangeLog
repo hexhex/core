@@ -1,6 +1,27 @@
-2012-XX-XX  Christoph Redl   <redl@kr.tuwien.ac.at>
+2012-04-13  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/dlvhex.cpp: Change of default setting: no explicit minimality check by default (obsolete due to FLP check).
+	Add option "--ufslearn".
+	* include/dlvhex2/FLPModelGeneratorBase.h: Add an method for learning nogoods from UFS checks.
+	Move method for learning nogoods from failed FLP checks from GenuineGuessAndCheckModelGenerator.
+	* src/FLPModelGeneratorBase.cpp: Likewise
+	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h: Likewise
+	* src/GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* include/dlvhex2/ID.h:
+	Introduce property for external atom auxiliaries to distinct them from other auxiliaries
+	(needed by genuine solvers).
+	* include/dlvhex2/Registry.cpp: Update getAuxiliearyConstant accordingly.
+	* include/dlvhex2/OrdinaryAtomTable.h: Add method getIDByAddress.
+
+2012-04-11  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/FLPModelGeneratorBase.h: Exploit (anti-)monotonicity in UFS check.
+	* src/FLPModelGeneratorBase.cpp: Likewise.
+
+2012-04-06  Christoph Redl   <redl@kr.tuwien.ac.at>
 	
-	TODO describe Genuine solver changes
+	* include/dlvhex2/FLPModelGeneratorBase.h: Implement UFS-based FLP check
+	* src/FLPModelGeneratorBase.cpp: Likewise.
 
 2012-04-02  Peter Schueller  <ps@kr.tuwien.ac.at>
 

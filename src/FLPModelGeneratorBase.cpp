@@ -93,7 +93,7 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
 
       // prepare replacement atom
       OrdinaryAtom replacement(
-          ID::MAINKIND_ATOM | ID::PROPERTY_AUX);
+          ID::MAINKIND_ATOM | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
 
       // tuple: (replacement_predicate, inputs_as_in_inputtuple*, outputs*)
       // (build up incrementally)
@@ -502,6 +502,54 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 	return true;
 }
 
+Nogood FLPModelGeneratorBase::getFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		){
+
+	RegistryPtr reg = factory.reg;
+
+	Nogood ng;
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (compatibleSet->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, compatibleSet->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		ng.insert(NogoodContainer::createLiteral(*en));
+		en++;
+	}
+
+	// add one atom which is in the compatible set but not in the flp model
+	en = projectedCompatibleSet->getStorage().first();
+	en_end = projectedCompatibleSet->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed FLP nogood " << ng);
+
+	return ng;
+}
+
 std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		ProgramCtx& ctx,
 		OrdinaryASPProgram groundProgram,
@@ -515,7 +563,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
 		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
 		while (en < en_end){
-			if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 				intr->setFact(*en);
 			}
 			en++;
@@ -526,11 +574,11 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	std::vector<ID> idb;
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
-		if (rule.head.size() == 2 && rule.head[0].isAuxiliary() && rule.head[1].isAuxiliary()){
+		if (rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()){
 			// skip it
 		}else{
-		}
 			idb.push_back(ruleId);
+		}
 	}
 
 #ifndef NDEBUG
@@ -613,7 +661,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(hr.address, true));
 
-			// (condition 3) all head literals, which are true in the interpretation I, are in the unfounded set X
+			// (condition 3) a head literal, which is true in the interpretation I, is not in the unfounded set X
 			BOOST_FOREACH (ID h, rule.head){
 				if (intr->getFact(h.address)){
 					ng.insert(NogoodContainer::createLiteral(h.address, true));
@@ -628,7 +676,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		{
 			// condition 2 is satisfied if a positive ordinary body literal is in the unfounded set
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() && !b.isAuxiliary()){
+				if (!b.isNaf() && !b.isExternalAuxiliary()){
 					Nogood ng;
 					ng.insert(NogoodContainer::createLiteral(cr.address, false));
 					ng.insert(NogoodContainer::createLiteral(b.address, true));
@@ -639,7 +687,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(cr.address, true));
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() && !b.isAuxiliary()){
+				if (!b.isNaf() && !b.isExternalAuxiliary()){
 					ng.insert(NogoodContainer::createLiteral(b.address, false));
 				}
 			}
@@ -649,20 +697,21 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 				const ExternalAtom& extat = reg->eatoms.getByID(extatId);
 
 				ID eaauxPos = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
-				ID eaauxNeg = reg->getAuxiliaryConstantSymbol('r', extat.predicate);
+				ID eaauxNeg = reg->getAuxiliaryConstantSymbol('n', extat.predicate);
 				bool sign;
 
 				DBGLOG(DBG, "Comparing EA-Aux " << eaauxPos << "/" << eaauxNeg	 << " to rule body");
 				bool occurs = false;
 				BOOST_FOREACH (ID b, rule.body){
 					const OrdinaryAtom& ogatom = reg->ogatoms.getByID(b);
-					DBGLOG(DBG, "Comparing EA-Aux " << eaauxPos << "/" << eaauxNeg << " to atom " << ogatom << " (ID: " << b << ")");
+					DBGLOG(DBG, "Comparing External Atom with aux " << eaauxPos << "/" << eaauxNeg << " to atom " << ogatom << " (ID: " << b << ")");
 					// compare predicate
 					if (ogatom.tuple[0] == eaauxPos || ogatom.tuple[0] == eaauxNeg){
 						// compare parameters
 						occurs = true;
 						for (int i = 0; i < extat.inputs.size(); ++i){
-							if (extat.inputs[i] != ogatom.tuple[1 + i]){
+							if (extat.pluginAtom->getInputType(i) == PluginAtom::PREDICATE && extat.inputs[i] != ogatom.tuple[1 + i]){
+								DBGLOG(DBG, "Mismatch at parameter position " << i);
 								occurs = false;
 								break;
 							}
@@ -807,6 +856,70 @@ while ( (model = ssolver->getNextModel()) != InterpretationConstPtr()){
 
 	std::vector<IDAddress> ufs;
 	return ufs;
+}
+
+Nogood FLPModelGeneratorBase::getUFSNogood(
+		ProgramCtx& ctx,
+		std::vector<IDAddress> ufs,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr interpretation){
+
+	RegistryPtr reg = factory.reg;
+
+	Nogood ng;
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	bool first = true;
+	ss << "{ ";
+	BOOST_FOREACH (IDAddress adr, ufs){
+		ss << (!first ? ", " : "") << adr;
+		first = false;
+	}
+	ss << " }";
+	DBGLOG(DBG, "Constructing UFS nogood for UFS " << ss.str() << " wrt. " << *interpretation);
+#endif
+
+	// for each rule with unsatisfied body
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		BOOST_FOREACH (ID b, rule.body){
+			if (interpretation->getFact(b.address) != !b.isNaf()){
+				// take an unsatisfied body literal
+				ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
+				break;
+			}
+		}
+	}
+
+	// add the smaller FLP model (interpretation minus unfounded set), restricted to ordinary atoms
+	InterpretationPtr smallerFLPModel = InterpretationPtr(new Interpretation(*interpretation));
+	BOOST_FOREACH (IDAddress adr, ufs){
+		smallerFLPModel->clearFact(adr);
+	}
+	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
+	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
+	while (en < en_end){
+		if (!reg->ogatoms.getIDByTuple(reg->ogatoms.getByAddress(*en).tuple).isAuxiliary()){
+			ng.insert(NogoodContainer::createLiteral(*en));
+		}
+		en++;
+	}
+
+	// add one atom which is in the original interpretation but not in the flp model
+	en = interpretation->getStorage().first();
+	en_end = interpretation->getStorage().end();
+	while (en < en_end){
+		if (!smallerFLPModel->getFact(*en)){
+			ng.insert(NogoodContainer::createLiteral(*en));
+			break;
+		}
+		en++;
+	}
+
+	DBGLOG(DBG, "Constructed UFS nogood " << ng);
+
+	return ng;
 }
 
 #warning TODO could we move shadow predicates and mappings and rules to factory?

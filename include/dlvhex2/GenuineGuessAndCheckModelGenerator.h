@@ -120,14 +120,6 @@ public:
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
   virtual InterpretationPtr generateNextCompatibleModel();
-
-  virtual Nogood constructFLPNogood(
-		ProgramCtx& ctx,
-		const OrdinaryASPProgram& groundProgram,
-		InterpretationConstPtr compatibleSet,
-		InterpretationConstPtr projectedCompatibleSet,
-		InterpretationConstPtr smallerFLPModel
-		);
 };
 
 DLVHEX_NAMESPACE_END

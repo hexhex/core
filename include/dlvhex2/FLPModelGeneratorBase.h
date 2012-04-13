@@ -152,6 +152,16 @@ protected:
 		NogoodContainerPtr ngc = NogoodContainerPtr()
 		);
 
+  // constructs a nogood which describes the essence of a
+  // failed FLP check
+  Nogood getFLPNogood(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram,
+		InterpretationConstPtr compatibleSet,
+		InterpretationConstPtr projectedCompatibleSet,
+		InterpretationConstPtr smallerFLPModel
+		);
+
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
   // If the empty set is returned,
   // then there does not exist a greater (nonempty) unfounded set.
@@ -159,6 +169,13 @@ protected:
 			ProgramCtx& ctx,
 			OrdinaryASPProgram groundProgram,
 			InterpretationConstPtr compatibleSet);
+
+  // constructs a nogood which encodes the essence of an unfounded set
+  Nogood getUFSNogood(
+			ProgramCtx& ctx,
+			std::vector<IDAddress> ufs,
+			const OrdinaryASPProgram& groundProgram,
+			InterpretationConstPtr interpretation);
 
   // computes for each predicate p in idb/edb
   // a shadow predicate sp which does not yet occur

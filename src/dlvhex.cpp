@@ -146,7 +146,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
       << "                        ufs: Check if the candidate contains unfounded sets" << std::endl
       << "                        none: Disable the check" << std::endl
-      << "     --nomincheck     Disable minimality check in Guess-and-check model generator" << std::endl
+      << "     --ufslearn       Enable learning from UFS checks" << std::endl
+      << "     --mincheck       Enable explicit minimality check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -306,10 +307,11 @@ int main(int argc, char *argv[])
   pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
-  pctx.config.setOption("MinCheck", 1);
+  pctx.config.setOption("MinCheck", 0);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("UFSLearning", 0);
   pctx.config.setOption("ExternalLearningIOBehavior", 0);
   pctx.config.setOption("ExternalLearningMonotonicity", 0);
   pctx.config.setOption("ExternalLearningFunctionality", 0);
@@ -576,7 +578,8 @@ void processOptionsPrePlugin(
 //		{ "instantiate", no_argument, 0, 19 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "globlearn", optional_argument, 0, 21 },
-		{ "nomincheck", no_argument, 0, 22 },
+		{ "mincheck", no_argument, 0, 22 },
+		{ "ufslearn", no_argument, 0, 23 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -979,7 +982,11 @@ void processOptionsPrePlugin(
 			break;
 
 		case 22:
-			pctx.config.setOption("MinCheck", 0);
+			pctx.config.setOption("MinCheck", 1);
+			break;
+
+		case 23:
+			pctx.config.setOption("UFSLearning", 1);
 			break;
 
 		case '?':

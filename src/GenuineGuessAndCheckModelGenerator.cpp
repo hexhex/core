@@ -422,7 +422,15 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		if (factory.ctx.config.getOption("UFSCheck")){
 			DBGLOG(DBG, "UFS Check");
 			std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
-			if (ufs.size() > 0) continue;
+			if (ufs.size() > 0){
+				DBGLOG(DBG, "Got a UFS");
+				if (factory.ctx.config.getOption("UFSLearning")){
+					DBGLOG(DBG, "Learn from UFS");
+					Nogood ufsng = getUFSNogood(factory.ctx, ufs, solver->getGroundProgram(), modelCandidate);
+					solver->addNogood(ufsng);
+				}
+				continue;
+			}
 		}else{
 			DBGLOG(DBG, "Skipping FLP Check");
 		}
@@ -523,54 +531,5 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 	firstLearnCall = false;
 	return learned;
 }
-
-Nogood GenuineGuessAndCheckModelGenerator::constructFLPNogood(
-		ProgramCtx& ctx,
-		const OrdinaryASPProgram& groundProgram,
-		InterpretationConstPtr compatibleSet,
-		InterpretationConstPtr projectedCompatibleSet,
-		InterpretationConstPtr smallerFLPModel
-		){
-
-	RegistryPtr reg = factory.reg;
-
-	Nogood ng;
-
-	// for each rule with unsatisfied body
-	BOOST_FOREACH (ID ruleId, groundProgram.idb){
-		const Rule& rule = reg->rules.getByID(ruleId);
-		BOOST_FOREACH (ID b, rule.body){
-			if (compatibleSet->getFact(b.address) != !b.isNaf()){
-				// take an unsatisfied body literal
-				ng.insert(NogoodContainer::createLiteral(b.address, compatibleSet->getFact(b.address)));
-				break;
-			}
-		}
-	}
-
-	// add the smaller FLP model
-	bm::bvector<>::enumerator en = smallerFLPModel->getStorage().first();
-	bm::bvector<>::enumerator en_end = smallerFLPModel->getStorage().end();
-	while (en < en_end){
-		ng.insert(NogoodContainer::createLiteral(*en));
-		en++;
-	}
-
-	// add one atom which is in the compatible set but not in the flp model
-	en = projectedCompatibleSet->getStorage().first();
-	en_end = projectedCompatibleSet->getStorage().end();
-	while (en < en_end){
-		if (!smallerFLPModel->getFact(*en)){
-			ng.insert(NogoodContainer::createLiteral(*en));
-			break;
-		}
-		en++;
-	}
-
-	DBGLOG(DBG, "Constructed FLP nogood " << ng);
-
-	return ng;
-}
-
 
 DLVHEX_NAMESPACE_END

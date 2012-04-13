@@ -671,6 +671,40 @@ public:
   }
 };
 
+class TestNegAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNegAtom():
+    PluginAtom("neg", false)
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputConstant();
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (atom.tuple.size() != 2) throw PluginError("TestNegAtom can only process input predicates with arity 1!");
+		if (atom.tuple[1] == query.input[0]){
+			return;
+		}
+		en++;
+	}
+	Tuple tu;
+	tu.push_back(query.input[0]);
+	answer.get().push_back(tu);
+  }
+};
+
 class TestMinusOneAtom:
 	public ComfortPluginAtom
 {
@@ -785,6 +819,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestNegAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
