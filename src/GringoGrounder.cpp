@@ -188,7 +188,8 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[p].isAuxiliary() ? ID::PROPERTY_AUX : 0), indexToGroundAtomID[p].address));
+				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[p], false));
+//				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[p].isAuxiliary() ? ID::PROPERTY_AUX : 0), indexToGroundAtomID[p].address));
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
 				addSymbol(n);
@@ -199,7 +200,8 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 					throw GeneralError(ss.str());
 
 				}
-				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[n].isAuxiliary() ? ID::PROPERTY_AUX : 0) | ID::NAF_MASK, indexToGroundAtomID[n].address));
+				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[n], true));
+//				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[n].isAuxiliary() ? ID::PROPERTY_AUX : 0) | ID::NAF_MASK, indexToGroundAtomID[n].address));
 			}
 
 			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
@@ -268,7 +270,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	if( dlvhexId == ID_FAIL )
 	{
 		// parse groundatom, register and store
-		DBGLOG(DBG,"parsing clingo ground atom '" << atomstring << "'");
+		DBGLOG(DBG,"parsing gringo ground atom '" << atomstring << "'");
 		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 		ogatom.text = atomstring;
 		{
