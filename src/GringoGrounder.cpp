@@ -287,6 +287,7 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 				assert(id != ID_FAIL);
 				assert(!id.isVariableTerm());
 				if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
+				if( id.isExternalAuxiliary() ) ogatom.kind |= ID::PROPERTY_EXTERNALAUX;
 				ogatom.tuple.push_back(id);
 			}
 		}

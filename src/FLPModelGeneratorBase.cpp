@@ -609,6 +609,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	}
 
 	// create nogoods for all rules of the ground program
+	Nogood c2Relevance;
 	BOOST_FOREACH (ID ruleID, idb){
 #ifndef NDEBUG
 		programstring.str("");
@@ -756,6 +757,9 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 			}
 			ns.addNogood(ng);
 		}
+
+		// condition 2 needs to be relevant at least once
+		c2Relevance.insert(NogoodContainer::createLiteral(cr.address, false));
 	}
 
 	// we want a UFS which intersects with I
@@ -770,6 +774,8 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		ns.addNogood(ng);
 	}
 
+	// condition 2 needs to be relevant at least once
+	ns.addNogood(c2Relevance);
 
 #ifndef NDEBUG
 	std::stringstream ss;
