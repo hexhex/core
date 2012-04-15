@@ -917,7 +917,7 @@ public:
    * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
    *        for nonmonotonic ones all atoms are included..
    */
-  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop);
+  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, bool negateMonotonicity = false);
 
   /**
    * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;

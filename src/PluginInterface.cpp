@@ -482,7 +482,7 @@ void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, cons
 	}
 }
 
-Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop){
+Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, bool negateMonotonicity){
 
 	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
 	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
@@ -499,7 +499,7 @@ Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, c
 
 		// positive atoms are only required for non-antimonotonic input parameters
 		// negative atoms are only required for non-monotonic input parameters
-		if (query.interpretation->getFact(*en)){
+		if (query.interpretation->getFact(*en) != negateMonotonicity){
 			// positive
 			if (!isAntimonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
 				extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
