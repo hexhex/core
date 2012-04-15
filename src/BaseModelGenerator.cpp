@@ -324,46 +324,47 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 
 
 
-/* // TODO: work in progress
-
-	// iterate over negative output atoms
-	bm::bvector<>::enumerator en = inputi->getStorage().first();
-	bm::bvector<>::enumerator en_end = inputi->getStorage().end();
-	ID negOutPredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
-	ID posOutPredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
-	while (en < en_end){
-		const OrdinaryAtom& atom = reg->ogatoms.getByAddress(*en);
-		bool paramMatch = true;
-		for (int i = 1; i < 1 + eatom.inputs.size(); i++){
-			if (atom.tuple[i] != inputtuple[i - 1]){
-				paramMatch = false;
-				break;
+/*
+// TODO: work in progress
+	if (nogoods){ 
+		// iterate over negative output atoms
+		bm::bvector<>::enumerator en = inputi->getStorage().first();
+		bm::bvector<>::enumerator en_end = inputi->getStorage().end();
+		ID negOutPredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+		ID posOutPredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+		while (en < en_end){
+			const OrdinaryAtom& atom = reg->ogatoms.getByAddress(*en);
+			bool paramMatch = true;
+			for (int i = 1; i < 1 + eatom.inputs.size(); i++){
+				if (atom.tuple[i] != inputtuple[i - 1]){
+					paramMatch = false;
+					break;
+				}
 			}
+			if (paramMatch && atom.tuple[0] == negOutPredicate){
+				// check if this tuple is _not_ in the answer
+				Tuple t;
+				for (int i = 1 + eatom.inputs.size(); i < atom.tuple.size(); i++){
+					t.push_back(atom.tuple[i]);
+				}
+
+				if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()){
+					// construct positive output atom
+					OrdinaryAtom posatom = atom;
+					posatom.tuple[0] = posOutPredicate;
+					ID posAtomID = reg->storeOrdinaryGAtom(posatom);
+
+					// construct nogood
+					Nogood ng = pluginAtom->getInputNogood(ctx, nogoods, query, eatom.useProp ? eatom.prop : pluginAtom->getExtSourceProperties(), true);
+					ng.insert(NogoodContainer::createLiteral(posAtomID.address));
+					nogoods->addNogood(ng);
+					DBGLOG(DBG, "Learned negative nogood: " << ng);
+				}
+			}
+			en++;
 		}
-		if (paramMatch && atom.tuple[0] == negOutPredicate){
-			// check if this tuple is _not_ in the answer
-			Tuple t;
-			for (int i = 1 + eatom.inputs.size(); i < atom.tuple.size(); i++){
-				t.push_back(atom.tuple[i]);
-			}
-
-			if (std::find(answer.get().begin(), answer.get().end(), t) == answer.get().end()){
-				// construct positive output atom
-				OrdinaryAtom posatom = atom;
-				posatom.tuple[0] = posOutPredicate;
-				ID posAtomID = reg->storeOrdinaryGAtom(posatom);
-
-				// construct nogood
-				Nogood ng = pluginAtom->getInputNogood(ctx, nogoods, query, eatom.useProp ? eatom.prop : pluginAtom->getExtSourceProperties(), true);
-				ng.insert(NogoodContainer::createLiteral(posAtomID.address));
-				nogoods->addNogood(ng);
-				DBGLOG(DBG, "Learned negative nogood: " << ng);
-			}
-		}
-		en++;
 	}
 */
-
 
 
     if( !answer.get().empty() )
