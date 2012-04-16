@@ -392,6 +392,8 @@ void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogo
 
 void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule){
 
+	RegistryPtr reg = ctx->registry();
+
 	if (ctx != 0 && nogoods != NogoodContainerPtr()){
 		DBGLOG(DBG, "External Learning: Ground Rule");
 
@@ -402,7 +404,13 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 			const OrdinaryAtom& oat = ctx->registry()->ogatoms.getByID(hId);
 			Tuple t;
 			t.insert(t.end(), oat.tuple.begin() + 1, oat.tuple.end());
-			ng.insert(getOutputAtom(ctx, nogoods, query, t, false));
+			if (reg->terms.getByID(oat.tuple[0]).getUnquotedString() == "out"){
+				// output atom is positive, i.e. it must not be false
+				ng.insert(getOutputAtom(ctx, nogoods, query, t, false));
+			}else{
+				// output atom is negative, i.e. it must not be true
+				ng.insert(getOutputAtom(ctx, nogoods, query, t, true));
+			}
 		}
 		BOOST_FOREACH (ID bId, rule.body){
 			ng.insert(bId);
@@ -593,12 +601,12 @@ ID PluginAtom::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
 			return ID_FAIL;
 		}
 
-		// learning rules must use only predicates "out" (in head) and in[i] (in body)
+		// learning rules must use only predicates "out" or "nout" (in head) and in[i] (in body)
 		BOOST_FOREACH (ID hLit, r.head){
 			const OrdinaryAtom& oatom = hLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(hLit) : reg->onatoms.getByID(hLit);
 			std::string hPred = reg->terms.getByID(oatom.tuple[0]).getUnquotedString();
-			if (hPred != "out"){
-				DBGLOG(DBG, "Learning Rule Error: Head predicate of learning rule must be \"out\"");
+			if (hPred != "out" && hPred != "nout"){
+				DBGLOG(DBG, "Learning Rule Error: Head predicate of learning rule must be \"out\" or \"nout\"");
 				return ID_FAIL;
 			}
 		}
