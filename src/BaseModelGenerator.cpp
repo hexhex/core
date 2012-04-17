@@ -322,7 +322,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     pluginAtom->retrieveCached(query, answer, ctx, nogoods);
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
-    if (ctx->config.getOption("ExternalLearningNeg")){
+    if (ctx && ctx->config.getOption("ExternalLearningNeg")){
 	// learning of negative information
 	if (nogoods){ 
 		// iterate over negative output atoms

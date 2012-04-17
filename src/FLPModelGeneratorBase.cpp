@@ -798,8 +798,8 @@ while ( (model = ssolver->getNextModel()) != InterpretationConstPtr()){
 
 
 	// solve the problem description
-//	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
-	SATSolverPtr solver = SATSolverPtr(new CDNLSolver(ctx, ns));
+	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
+//	SATSolverPtr solver = SATSolverPtr(new CDNLSolver(ctx, ns));
 	InterpretationConstPtr model;
 
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){

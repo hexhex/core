@@ -257,7 +257,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 
 void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
 {
-	DBGLOG(DBG, "Retrieve with learning, pointer nogood container: " << (nogoods == NogoodContainerPtr() ? "not " : "") << "available" );
+	DBGLOG(DBG, "Retrieve with learning, pointer nogood container: " << (!nogoods ? "not " : "") << "available" );
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
 	// Cache answer for queries which were already done once:
@@ -272,7 +272,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 	///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
 
 	Answer& ans = queryAnswerCache[query];
-	if( ans.hasBeenUsed() )
+	if( ans.hasBeenUsed())
 	{
 		// answer was not default constructed
 		// -> use cache
@@ -302,7 +302,6 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, N
 	std::vector<Query> atomicQueries = splitQuery(ctx, query, prop);
 	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
 	BOOST_FOREACH (Query atomicQuery, atomicQueries){
-//		DBGLOG(DBG, "Evaluating atomic query (mask: " << *atomicQuery.predicateInputMask << ", interpretation: " << *atomicQuery.interpretation << ")");
 		Answer atomicAnswer;
 		retrieve(atomicQuery, atomicAnswer);
 
@@ -419,7 +418,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 
 void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
 
-	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+	if (ctx != 0 && nogoods){
 
 		if (ctx->config.getOption("ExternalLearningIOBehavior")){
 			DBGLOG(DBG, "External Learning: IOBehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
@@ -439,7 +438,7 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 
 void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
 
-	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+	if (ctx != 0 && nogoods){
 
 		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(prop)){
 			DBGLOG(DBG, "External Learning: Functionality");
@@ -470,7 +469,7 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 
 	RegistryPtr reg = ctx->registry();
 
-	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+	if (ctx != 0 && nogoods){
 		DBGLOG(DBG, "External Learning: Ground Rule");
 
 		const Rule& rule = ctx->registry()->rules.getByID(groundRule);
@@ -498,7 +497,7 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 
 void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
 
-	if (ctx != 0 && nogoods != NogoodContainerPtr()){
+	if (ctx != 0 && nogoods){
 		DBGLOG(DBG, "External Learning: Rule");
 
 		// prepare map for replacing body predicates:
