@@ -601,13 +601,21 @@ struct sem<HexGrammarSemantics::externalAtom>
             if (!found) throw SyntaxError("Property refers to invalid input parameter");
           }
           break;
-        case ExtSourceProperty::FULLYLINEAR:
-          DBGLOG(DBG, "External Atom is fully linear");
-          atom.prop.fullylinear = true;
+        case ExtSourceProperty::ATOMLEVELLINEAR:
+          DBGLOG(DBG, "External Atom is linear on atom level");
+          atom.prop.atomlevellinear = true;
           break;
-        case ExtSourceProperty::NONFULLYLINEAR:
-          DBGLOG(DBG, "External Atom is not fully linear");
-          atom.prop.fullylinear = false;
+        case ExtSourceProperty::NONATOMLEVELLINEAR:
+          DBGLOG(DBG, "External Atom is not linear on atom level");
+          atom.prop.atomlevellinear = false;
+          break;
+        case ExtSourceProperty::TUPLELEVELLINEAR:
+          DBGLOG(DBG, "External Atom is linear on tuple level");
+          atom.prop.tuplelevellinear = true;
+          break;
+        case ExtSourceProperty::NONTUPLELEVELLINEAR:
+          DBGLOG(DBG, "External Atom is not linear on tuple level");
+          atom.prop.tuplelevellinear = false;
           break;
       }
     }
@@ -677,8 +685,10 @@ struct sem<HexGrammarSemantics::extSourceProperty>
 		target = ExtSourceProperty(ExtSourceProperty::ANTIMONOTONIC, boost::fusion::at_c<1>(source));
         }else if (boost::fusion::at_c<0>(source) == "nonantimonotonic"){
 		target = ExtSourceProperty(ExtSourceProperty::NONANTIMONOTONIC, boost::fusion::at_c<1>(source));
-        }else if (boost::fusion::at_c<0>(source) == "fullylinear"){
-		target = ExtSourceProperty(ExtSourceProperty::FULLYLINEAR, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "fullylinear" || boost::fusion::at_c<0>(source) == "atomlevellinear"){
+		target = ExtSourceProperty(ExtSourceProperty::ATOMLEVELLINEAR, boost::fusion::at_c<1>(source));
+        }else if (boost::fusion::at_c<0>(source) == "tuplelevellinear"){
+		target = ExtSourceProperty(ExtSourceProperty::TUPLELEVELLINEAR, boost::fusion::at_c<1>(source));
 	}else{
 		throw SyntaxError("Property \"" + boost::fusion::at_c<0>(source) + "\" unrecognized");
 	}

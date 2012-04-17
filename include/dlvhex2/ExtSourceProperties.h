@@ -49,8 +49,10 @@ struct ExtSourceProperty
 		NONANTIMONOTONIC,
 		FUNCTIONAL,
 		NONFUNCTIONAL,
-		FULLYLINEAR,
-		NONFULLYLINEAR
+		ATOMLEVELLINEAR,
+		TUPLELEVELLINEAR,
+		NONATOMLEVELLINEAR,
+		NONTUPLELEVELLINEAR
 	};
 
 	Type type;
@@ -66,11 +68,13 @@ struct ExtSourceProperties
 	std::vector<int> monotonicInputPredicates;
 	std::vector<int> antimonotonicInputPredicates;
 	bool functional;
-	bool fullylinear;
+	bool atomlevellinear;
+	bool tuplelevellinear;
 
 	ExtSourceProperties(){
 		functional = false;
-		fullylinear = false;
+		atomlevellinear = false;
+		tuplelevellinear = false;
 	}
 };
 

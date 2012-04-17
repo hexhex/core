@@ -989,10 +989,16 @@ public:
     { return prop.functional; }
 
   /**
-   * @return full linearity
+   * @return linearity on atom level
    */
-  bool isFullyLinear(const ExtSourceProperties& prop) const
-    { return prop.fullylinear; }
+  bool isLinearOnAtomLevel(const ExtSourceProperties& prop) const
+    { return prop.atomlevellinear; }
+
+  /**
+   * @return linearity on tuple level
+   */
+  bool isLinearOnTupleLevel(const ExtSourceProperties& prop) const
+    { return prop.tuplelevellinear; }
 
   /**
    * @return external source properties associated with this plugin atom

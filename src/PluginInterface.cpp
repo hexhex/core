@@ -302,7 +302,7 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, N
 	std::vector<Query> atomicQueries = splitQuery(ctx, query, prop);
 	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
 	BOOST_FOREACH (Query atomicQuery, atomicQueries){
-		DBGLOG(DBG, "Evaluating atomic query");
+//		DBGLOG(DBG, "Evaluating atomic query (mask: " << *atomicQuery.predicateInputMask << ", interpretation: " << *atomicQuery.interpretation << ")");
 		Answer atomicAnswer;
 		retrieve(atomicQuery, atomicAnswer);
 
@@ -317,21 +317,97 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, N
 std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Query& query, const ExtSourceProperties& prop){
 
 	std::vector<Query> atomicQueries;
-	if (ctx != 0 && isFullyLinear(prop) && ctx->config.getOption("ExternalLearningLinearity")){
+	if (ctx != 0 && (isLinearOnAtomLevel(prop) || isLinearOnTupleLevel(prop)) && ctx->config.getOption("ExternalLearningLinearity")){
 
-		DBGLOG(DBG, "Splitting query by exploiting full linearity");
+		DBGLOG(DBG, "Splitting query by exploiting linearity");
 
-		bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
-		bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
-		while (en < en_end){
-			DBGLOG(DBG, "Creating partial query for input atom " << *en);
-			// create a partial query only for this input atom
-			Query qa = query;
-			qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
-			qa.predicateInputMask->setFact(*en);
-			atomicQueries.push_back(qa);
+		if (isLinearOnAtomLevel(prop)){
+			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+			while (en < en_end){
+				DBGLOG(DBG, "Creating partial query for input atom " << *en);
+				// create a partial query only for this input atom
+				Query qa = query;
+				qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
+				qa.predicateInputMask->setFact(*en);
+				atomicQueries.push_back(qa);
 
-			en++;
+				en++;
+			}
+		}
+		if (isLinearOnTupleLevel(prop)){
+			// collect all tuples
+			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
+
+			// extract tuples from atoms in input interpretation
+			std::set<Tuple> tuples;
+			while (en < en_end){
+				const OrdinaryAtom& atom = query.interpretation->getRegistry()->ogatoms.getByAddress(*en);
+
+				Tuple t;
+				for (int i = 1; i < atom.tuple.size(); i++){
+					t.push_back(atom.tuple[i]);
+				}
+				tuples.insert(t);
+
+				en++;
+			}
+
+			// check if all input atoms have the same arity
+			int arity = -1;
+			bool split = true;
+			BOOST_FOREACH (Tuple t, tuples){
+				if (arity != -1 && t.size() != arity){
+					split = false;
+					break;
+				}
+				arity = t.size();
+			}
+
+			if (split){
+				// create for each tuple a subquery
+				BOOST_FOREACH (Tuple t, tuples){
+					// create a partial query only for this input atom
+#ifndef NDEBUG
+					std::stringstream ss;
+					bool first = true;
+					BOOST_FOREACH (ID id, t){
+						if (!first) ss << ", ";
+						ss << id;
+						first = false;
+					}
+#endif
+					DBGLOG(DBG, "Creating partial query for input tuple " << ss.str());
+					Query qa = query;
+					qa.predicateInputMask = InterpretationPtr(new Interpretation(query.interpretation->getRegistry()));
+					for (int parIndex = 0; parIndex < qa.input.size(); parIndex++){
+						if (getInputType(parIndex) == PREDICATE){
+							// assemble input atom over this tuple and predicate parameter
+							OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+							atom.tuple.push_back(qa.input[parIndex]);
+							BOOST_FOREACH (ID p, t) atom.tuple.push_back(p);
+							ID atomID = query.interpretation->getRegistry()->storeOrdinaryGAtom(atom);
+							DBGLOG(DBG, "Input atom: " << atomID);
+							qa.predicateInputMask->setFact(atomID.address);
+						}
+					}
+					atomicQueries.push_back(qa);
+				}
+			}else{
+				DBGLOG(DBG, "Do not split query because not all input atoms have the same arity");
+				atomicQueries.push_back(query);
+			}
+		}
+
+		// for all atomic queries, remove input facts which are not in the predicate input
+		for (int i = 0; i < atomicQueries.size(); ++i){
+			Query& q = atomicQueries[i];
+			InterpretationPtr intr = InterpretationPtr(new Interpretation(q.interpretation->getRegistry()));
+			intr->add(*q.interpretation);
+			intr->getStorage() &= q.predicateInputMask->getStorage();
+			q.interpretation = intr;
+			DBGLOG(DBG, "Constructed atomic query (mask: " << *q.predicateInputMask << ", interpretation: " << *q.interpretation << ")");
 		}
 	}else{
 		DBGLOG(DBG, "Do not split query");
