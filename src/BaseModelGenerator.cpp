@@ -323,9 +323,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
 
-
-/*
-// TODO: work in progress
+	// learning of negative information
 	if (nogoods){ 
 		// iterate over negative output atoms
 		bm::bvector<>::enumerator en = inputi->getStorage().first();
@@ -364,7 +362,6 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 			en++;
 		}
 	}
-*/
 
 
     if( !answer.get().empty() )
