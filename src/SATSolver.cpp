@@ -12,13 +12,6 @@ DLVHEX_NAMESPACE_BEGIN
 SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns){
 
 	switch (ctx.config.getOption("GenuineSolver")){
-	case 1: case 2:	// internal grounder or Gringo + internal solver
-		{
-		DBGLOG(DBG, "Instantiating genuine sat solver with internal solver");
-		SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));
-		return ptr;
-		}
-		break;
 	case 3: case 4:	// internal grounder or Gringo + clasp
 #ifdef HAVE_LIBCLASP
 		{
@@ -29,6 +22,14 @@ SATSolverPtr SATSolver::getInstance(ProgramCtx& ctx, NogoodSet& ns){
 #else
 		throw GeneralError("No support for clasp compiled into this binary");
 #endif // HAVE_LIBCLINGO
+		break;
+	case 1: case 2:	// internal grounder or Gringo + internal solver
+	default:	// translation solver
+		{
+		DBGLOG(DBG, "Instantiating genuine sat solver with internal solver");
+		SATSolverPtr ptr = SATSolverPtr(new CDNLSolver(ctx, ns));
+		return ptr;
+		}
 		break;
 	}
 }
