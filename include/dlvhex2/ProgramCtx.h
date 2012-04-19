@@ -251,6 +251,17 @@ public:
   void evaluate();
   void postProcess();
 
+  // subprogram handling
+  class SubprogramAnswerSetCallback : public ModelCallback{
+  public:
+    std::vector<InterpretationPtr> answersets;
+    virtual bool operator()(AnswerSetPtr model);
+    virtual ~SubprogramAnswerSetCallback();
+  };
+  std::vector<InterpretationPtr> evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb);
+  std::vector<InterpretationPtr> evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts);
+  std::vector<InterpretationPtr> evaluateSubprogram(ProgramCtx& pc, bool parse);
+
 protected:
   // symbol storage of this program context
   // (this is a shared ptr because we might want
