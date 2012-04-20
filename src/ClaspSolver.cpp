@@ -800,6 +800,11 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns) : ctx(c), sem_request(0),
 
 ClaspSolver::~ClaspSolver(){
 
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
 	DBGLOG(DBG, "ClaspSolver Destructor");
 	{
 		// send termination request
