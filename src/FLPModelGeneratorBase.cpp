@@ -339,7 +339,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
   }
 }
 
-std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
+void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 			RegistryPtr reg,
 			ProgramCtx& ctx,
 			const std::vector<ID>& idb){
@@ -404,10 +404,7 @@ std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
 
 	// check for each e-edge x -> y if there is a path from y to x
 	// if yes, then y is a cyclic predicate input
-	std::vector<ID> cyclicPredicates;
 	BOOST_FOREACH (Edge e, externalEdges){
-		DBGLOG(DBG, "Checking cyclicity of " << e.first << " -> " << e.second);
-
 		std::vector<Graph::vertex_descriptor> reachable;
 		boost::breadth_first_search(predicateDepGraph, nodeMapping[e.second],
 			boost::visitor(
@@ -417,9 +414,11 @@ std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
 						std::back_inserter(reachable),
 						boost::on_discover_vertex())))); 
 
-		if (std::find(reachable.begin(), reachable.end(), nodeMapping[e.first]) != reachable.end()){
+		if (std::find(reachable.begin(), reachable.end(), nodeMapping[e.second]) != reachable.end()){
 			// yes, there is a cycle
-			cyclicPredicates.push_back(e.first);
+			if (std::find(cyclicInputPredicates.begin(), cyclicInputPredicates.end(), e.second) == cyclicInputPredicates.end()){
+				cyclicInputPredicates.push_back(e.second);
+			}
 		}
 	}
 
@@ -427,9 +426,14 @@ std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
 	dotss << "}";
 	DBGLOG(DBG, "Predicate dependency graph:" << std::endl << dotss.str());
 
-	BOOST_FOREACH (ID p, cyclicPredicates){
-		DBGLOG(DBG, "Cyclic input predicate: " << p);
+	std::stringstream ss;
+	bool first = true;
+	BOOST_FOREACH (ID p, cyclicInputPredicates){
+		if (!first) ss << ", ";
+		first = false;
+		ss << p;
 	}
+	DBGLOG(DBG, "Cyclic input predicates: " << ss.str());
 #endif
 
 	if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
@@ -441,7 +445,10 @@ std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
 		filev << dotss.str();
 	}
 
-	return cyclicPredicates;
+	cyclicInputPredicatesMask.setRegistry(reg);
+	BOOST_FOREACH (ID pred, cyclicInputPredicates){
+		cyclicInputPredicatesMask.addPredicate(pred);
+	}
 }
 
 //
@@ -886,6 +893,20 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 	// condition 2 needs to be relevant at least once
 	ns.addNogood(c2Relevance);
+
+	// an unfounded set must contain at least one atom over a cyclic input predicate
+	{
+		factory.cyclicInputPredicatesMask.updateMask();	// make sure that new atoms are detected
+		DBGLOG(DBG, "Cyclic input atoms: " << *factory.cyclicInputPredicatesMask.mask());
+		Nogood cyclicInputNogood;
+		bm::bvector<>::enumerator en = factory.cyclicInputPredicatesMask.mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = factory.cyclicInputPredicatesMask.mask()->getStorage().end();
+		while (en < en_end){
+			cyclicInputNogood.insert(NogoodContainer::createLiteral(*en, false));
+			en++;
+		}
+		ns.addNogood(cyclicInputNogood);
+	}
 
 #ifndef NDEBUG
 	std::stringstream ss;

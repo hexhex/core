@@ -126,7 +126,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   createFLPRules();
 
   // make an analysis of cyclic predicate input parameters
-  cyclicInputPredicates = getCyclicInputPredicates(reg, ctx, idb);
+  computeCyclicInputPredicates(reg, ctx, idb);
 
   DBGLOG(DBG,"GenuineGuessAndCheckModelGeneratorFactory():");
   #ifndef NDEBUG

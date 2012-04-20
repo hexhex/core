@@ -81,8 +81,9 @@ protected:
   // incrementally updated bitmask for FLP auxiliary predicates
   PredicateMask fMask;
 
-  // the cyclic predicate input parameters in this component
+  // the cyclic predicate input to external atoms in this component
   std::vector<ID> cyclicInputPredicates;
+  PredicateMask cyclicInputPredicatesMask;
 protected:
   // create guessing rules for external atom values
   void createEatomGuessingRules();
@@ -95,7 +96,7 @@ protected:
   void createFLPRules();
 
   // computes the set of predicates which occur in a cycle
-  std::vector<ID> getCyclicInputPredicates(
+  void computeCyclicInputPredicates(
 			RegistryPtr reg,
 			ProgramCtx& ctx,
 			const std::vector<ID>& idb);
