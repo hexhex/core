@@ -125,6 +125,9 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   // transform xidb for flp calculation
   createFLPRules();
 
+  // make an analysis of cyclic predicate input parameters
+  cyclicInputPredicates = getCyclicInputPredicates(reg, ctx, idb);
+
   DBGLOG(DBG,"GenuineGuessAndCheckModelGeneratorFactory():");
   #ifndef NDEBUG
   {
@@ -409,30 +412,37 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG(DBG, "Compatible: " << compatible);
 		if (!compatible) continue;
 
-		// FLP check
-		if (factory.ctx.config.getOption("FLPCheck")){
-			DBGLOG(DBG, "FLP Check");
-			if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
-        			continue;
+		// ensure minimality of the compatible set wrt. the reduct (if necessary)
+		if (factory.cyclicInputPredicates.size() == 0){
+			DBGLOG(DBG, "No cyclic input predicates --> No FLP/UFS check necessary");
 		}else{
-			DBGLOG(DBG, "Skipping FLP Check");
-		}
+			DBGLOG(DBG, "Cyclic input predicates --> FLP/UFS check necessary");
 
-		// UFS check
-		if (factory.ctx.config.getOption("UFSCheck")){
-			DBGLOG(DBG, "UFS Check");
-			std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
-			if (ufs.size() > 0){
-				DBGLOG(DBG, "Got a UFS");
-				if (factory.ctx.config.getOption("UFSLearning")){
-					DBGLOG(DBG, "Learn from UFS");
-					Nogood ufsng = getUFSNogood(factory.ctx, ufs, solver->getGroundProgram(), modelCandidate);
-					solver->addNogood(ufsng);
-				}
-				continue;
+			// Explicit FLP check
+			if (factory.ctx.config.getOption("FLPCheck")){
+				DBGLOG(DBG, "FLP Check");
+				if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
+					continue;
+			}else{
+				DBGLOG(DBG, "Skipping FLP Check");
 			}
-		}else{
-			DBGLOG(DBG, "Skipping FLP Check");
+
+			// UFS check
+			if (factory.ctx.config.getOption("UFSCheck")){
+				DBGLOG(DBG, "UFS Check");
+				std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
+				if (ufs.size() > 0){
+					DBGLOG(DBG, "Got a UFS");
+					if (factory.ctx.config.getOption("UFSLearning")){
+						DBGLOG(DBG, "Learn from UFS");
+						Nogood ufsng = getUFSNogood(factory.ctx, ufs, solver->getGroundProgram(), modelCandidate);
+						solver->addNogood(ufsng);
+					}
+					continue;
+				}
+			}else{
+				DBGLOG(DBG, "Skipping FLP Check");
+			}
 		}
 
 		// remove edb and the guess (from here we don't need the guess anymore)

@@ -42,6 +42,11 @@
 #include "dlvhex2/SATSolver.h"
 #include "dlvhex2/Printer.h"
 
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/visitors.hpp> 
+
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
@@ -332,6 +337,111 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
       throw FatalError("TODO: think about weak rules in G&C MG");
     }
   }
+}
+
+std::vector<ID> FLPModelGeneratorFactoryBase::getCyclicInputPredicates(
+			RegistryPtr reg,
+			ProgramCtx& ctx,
+			const std::vector<ID>& idb){
+
+#ifndef NDEBUG
+	std::stringstream dotss;
+	dotss << "digraph {";
+#endif
+
+	// construct predicate dependency graph
+	//   nodes are predicates IDs
+	//   edges are labeled with booleans (false: ordinary edge, true: external dependency)
+	typedef boost::adjacency_list< boost::vecS, boost::vecS, boost::directedS, ID, bool> Graph;
+	typedef std::pair<ID, ID> Edge;
+	Graph predicateDepGraph;
+
+	std::map<ID, Graph::vertex_descriptor> nodeMapping;
+	std::vector<Edge> externalEdges;
+
+	BOOST_FOREACH (ID ruleID, idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head){
+			const OrdinaryAtom& hAtom = h.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(h) : reg->onatoms.getByID(h);
+
+			// make sure that the node exist in the graph
+			if (nodeMapping.find(hAtom.tuple[0]) == nodeMapping.end()) nodeMapping[hAtom.tuple[0]] = boost::add_vertex(hAtom.tuple[0], predicateDepGraph);
+
+			BOOST_FOREACH (ID b, rule.body){
+				// ordinary edges
+				if (b.isOrdinaryAtom()){
+					const OrdinaryAtom& bAtom = reg->lookupOrdinaryAtom(b);
+
+					// make sure that the node exist in the graph
+					if (nodeMapping.find(bAtom.tuple[0]) == nodeMapping.end()) nodeMapping[bAtom.tuple[0]] = boost::add_vertex(bAtom.tuple[0], predicateDepGraph);
+
+					boost::add_edge(nodeMapping[hAtom.tuple[0]], nodeMapping[bAtom.tuple[0]], false, predicateDepGraph);
+					boost::add_edge(nodeMapping[bAtom.tuple[0]], nodeMapping[hAtom.tuple[0]], false, predicateDepGraph);
+#ifndef NDEBUG
+					dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << bAtom.tuple[0] << "\";" << std::endl;
+#endif
+				}
+				// external edges
+				if (b.isExternalAtom()){
+					const ExternalAtom& eAtom = reg->eatoms.getByID(b);
+					int i = 0;
+					BOOST_FOREACH (ID p, eAtom.inputs){
+						if (eAtom.pluginAtom->getInputType(i) == PluginAtom::PREDICATE){
+							if (nodeMapping.find(p) == nodeMapping.end()) nodeMapping[p] = boost::add_vertex(p, predicateDepGraph);
+
+							boost::add_edge(nodeMapping[hAtom.tuple[0]], nodeMapping[p], true, predicateDepGraph);
+							externalEdges.push_back(Edge(hAtom.tuple[0], p));
+#ifndef NDEBUG
+							dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << p << "\" [label=\"external\"];" << std::endl;
+#endif
+						}
+						i++;
+					}
+				}
+			}
+		}
+	}
+
+	// check for each e-edge x -> y if there is a path from y to x
+	// if yes, then y is a cyclic predicate input
+	std::vector<ID> cyclicPredicates;
+	BOOST_FOREACH (Edge e, externalEdges){
+		DBGLOG(DBG, "Checking cyclicity of " << e.first << " -> " << e.second);
+
+		std::vector<Graph::vertex_descriptor> reachable;
+		boost::breadth_first_search(predicateDepGraph, nodeMapping[e.second],
+			boost::visitor(
+				boost::make_bfs_visitor(
+					boost::write_property(
+						boost::identity_property_map(),
+						std::back_inserter(reachable),
+						boost::on_discover_vertex())))); 
+
+		if (std::find(reachable.begin(), reachable.end(), nodeMapping[e.first]) != reachable.end()){
+			// yes, there is a cycle
+			cyclicPredicates.push_back(e.first);
+		}
+	}
+
+#ifndef NDEBUG
+	dotss << "}";
+	DBGLOG(DBG, "Predicate dependency graph:" << std::endl << dotss.str());
+
+	BOOST_FOREACH (ID p, cyclicPredicates){
+		DBGLOG(DBG, "Cyclic input predicate: " << p);
+	}
+#endif
+
+	if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
+		std::stringstream fnamev;
+		static int cnt = 0;
+		fnamev << ctx.config.getStringOption("DebugPrefix") << "_CycInpGraph" << cnt++ << ".dot";
+		LOG(INFO,"dumping cyclic predicate input analysis graph " << fnamev.str());
+		std::ofstream filev(fnamev.str().c_str());
+		filev << dotss.str();
+	}
+
+	return cyclicPredicates;
 }
 
 //

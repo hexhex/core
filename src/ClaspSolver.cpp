@@ -280,7 +280,6 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 		cs.translatedNogoods = cs.nogoods.size();
 	}
-
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
@@ -829,38 +828,111 @@ std::string ClaspSolver::getStatistics(){
 }
 
 void ClaspSolver::addExternalLearner(LearningCallback* lb){
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
 	// access learner vector
-        boost::mutex::scoped_lock lock(learnerMutex);
-	learner.insert(lb);
+        {
+		boost::mutex::scoped_lock lock(learnerMutex);
+		learner.insert(lb);
+	}
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	}
 }
 
 void ClaspSolver::removeExternalLearner(LearningCallback* lb){
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
 	// access learner vector
-        boost::mutex::scoped_lock lock(learnerMutex);
-	learner.erase(lb);
+	{
+	        boost::mutex::scoped_lock lock(learnerMutex);
+		learner.erase(lb);
+	}
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	}
 }
 
 int ClaspSolver::addNogood(Nogood ng){
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
 	// access nogoods
-        boost::mutex::scoped_lock lock(nogoodsMutex);
-	nogoods.push_back(ng);
-	return nogoods.size() - 1;
+	int s;
+	{
+	        boost::mutex::scoped_lock lock(nogoodsMutex);
+		nogoods.push_back(ng);
+		s = nogoods.size() - 1;
+	}
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	}
+	return s;
 }
 
 Nogood ClaspSolver::getNogood(int index){
-	return nogoods[index];
+	Nogood ng;
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
+	{
+		// access nogoods
+        	boost::mutex::scoped_lock lock(nogoodsMutex);
+		ng = nogoods[index];
+	}
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	}
+
+	return ng;
 }
 
 void ClaspSolver::removeNogood(int index){
-	// access nogoods
         boost::mutex::scoped_lock lock(nogoodsMutex);
 	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
 }
 
 int ClaspSolver::getNogoodCount(){
-	// access nogoods
-        boost::mutex::scoped_lock lock(nogoodsMutex);
-	return nogoods.size();
+
+	int s;
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
+	{
+		// access nogoods
+	        boost::mutex::scoped_lock lock(nogoodsMutex);
+		s = nogoods.size();
+	}
+
+
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.wait();
+		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
+	}
+
+	return s;
 }
 
 InterpretationConstPtr ClaspSolver::getNextModel(){

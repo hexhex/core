@@ -192,6 +192,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
       << "                      Default is none, graph types are:" << std::endl
       << "                      dep    - Dependency Graph (once per program)" << std::endl
+      << "                      cycinp - Graph for analysis cyclic predicate inputs (once per G&C-eval unit)" << std::endl
       << "                      comp   - Component Graph (once per program)" << std::endl
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
@@ -327,6 +328,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("UseExtAtomCache",1);
   pctx.config.setOption("KeepNamespacePrefix",0);
   pctx.config.setOption("DumpDepGraph",0);
+  pctx.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
   pctx.config.setOption("DumpCompGraph",0);
   pctx.config.setOption("DumpEvalGraph",0);
   pctx.config.setOption("DumpModelGraph",0);
@@ -837,6 +839,10 @@ void processOptionsPrePlugin(
 							if( token == "dep" )
 							{
 								pctx.config.setOption("DumpDepGraph",1);
+							}
+							else if( token == "cycinp" )
+							{
+								pctx.config.setOption("DumpCyclicPredicateInputAnalysisGraph",1);
 							}
 							else if( token == "comp" )
 							{
