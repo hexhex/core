@@ -154,6 +154,9 @@ struct Registry:
   // (plugins may also want to use this method for their own auxiliaries)
   ID getAuxiliaryConstantSymbol(char type, ID id);
 
+  // maps an auxiliary constant symbol back to the ID behind
+  ID getIDByAuxiliaryConstantSymbol(ID auxConstantID);
+
   // get predicate mask to auxiliary ground atoms
   InterpretationConstPtr getAuxiliaryGroundAtomMask();
 
@@ -187,6 +190,9 @@ struct Registry:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+
+  // get the predicate of an ordinary or external atom
+  ID getPredicateOfAtom(ID atom);
 
   //
   // printing framework

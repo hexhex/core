@@ -104,6 +104,7 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
       // (build up incrementally)
       ID pospredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
       ID negpredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+
       replacement.tuple.push_back(pospredicate);
       gpMask.addPredicate(pospredicate);
       gnMask.addPredicate(negpredicate);

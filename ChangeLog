@@ -1,3 +1,8 @@
+2012-04-21  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/Registry.cpp: Implement reverse lookup for auxiliary constant symbols
+	* include/dlvhex2/h: Likewise
+
 2012-04-13  Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* src/dlvhex.cpp: Change of default setting: no explicit minimality check by default (obsolete due to FLP check).
