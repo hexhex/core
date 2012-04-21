@@ -51,7 +51,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-
 ProgramCtx::ProgramCtx():
 		maxint(0)
 {
@@ -228,9 +227,9 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 
 	DBGLOG(DBG, "Starting state pipeline " << (parse ? "with" : "without") << " parsing");
 	if (parse){
-		pc.changeState(StatePtr(new ConvertState()));
+//		pc.changeState(StatePtr(new ConvertState));
 	}else{
-		pc.changeState(StatePtr(new SafetyCheckState()));
+//		pc.changeState(StatePtr(new SafetyCheckState));
 	}
 
 	if (parse){
