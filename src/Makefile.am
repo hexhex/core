@@ -22,7 +22,7 @@ lib_LTLIBRARIES = \
   libdlvhex2-internalplugins.la
 
 # the dlvhex binary
-dlvhex2_SOURCES = dlvhex.cpp State.cpp
+dlvhex2_SOURCES = dlvhex.cpp
 
 #
 # -static: statically link libdlvhexbase
@@ -86,6 +86,8 @@ libdlvhex2_base_la_SOURCES = \
     InputProvider.cpp \
     Interpretation.cpp \
     Logger.cpp \
+    MLPSolver.cpp \
+    MLPSyntaxChecker.cpp \
     Nogood.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
@@ -94,12 +96,11 @@ libdlvhex2_base_la_SOURCES = \
     Registry.cpp \
     SafetyChecker.cpp \
     SATSolver.cpp \
+    State.cpp \
     URLBuf.cpp
 
 # dlvhex MLP component
-libdlvhex2_mlpsolver_la_SOURCES = \
-    MLPSolver.cpp \
-    MLPSyntaxChecker.cpp 
+libdlvhex2_mlpsolver_la_SOURCES =
 
 # dlvhex ASP component
 libdlvhex2_aspsolver_la_SOURCES = \
