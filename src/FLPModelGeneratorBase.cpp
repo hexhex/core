@@ -344,10 +344,8 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 			ProgramCtx& ctx,
 			const std::vector<ID>& idb){
 
-#ifndef NDEBUG
 	std::stringstream dotss;
 	dotss << "digraph {";
-#endif
 
 	// construct predicate dependency graph
 	//   nodes are predicates IDs
@@ -377,9 +375,11 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 
 					boost::add_edge(nodeMapping[hAtom.tuple[0]], nodeMapping[bAtom.tuple[0]], false, predicateDepGraph);
 					boost::add_edge(nodeMapping[bAtom.tuple[0]], nodeMapping[hAtom.tuple[0]], false, predicateDepGraph);
-#ifndef NDEBUG
-					dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << bAtom.tuple[0] << "\";" << std::endl;
-#endif
+
+
+					if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
+						dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << bAtom.tuple[0] << "\";" << std::endl;
+					}
 				}
 				// external edges
 				if (b.isExternalAtom()){
@@ -391,9 +391,10 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 
 							boost::add_edge(nodeMapping[hAtom.tuple[0]], nodeMapping[p], true, predicateDepGraph);
 							externalEdges.push_back(Edge(hAtom.tuple[0], p));
-#ifndef NDEBUG
-							dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << p << "\" [label=\"external\"];" << std::endl;
-#endif
+
+							if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
+								dotss << "\"" << hAtom.tuple[0] << "\" -> \"" << p << "\" [label=\"external\"];" << std::endl;
+							}
 						}
 						i++;
 					}
@@ -423,8 +424,6 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 	}
 
 #ifndef NDEBUG
-	dotss << "}";
-	DBGLOG(DBG, "Predicate dependency graph:" << std::endl << dotss.str());
 
 	std::stringstream ss;
 	bool first = true;
@@ -437,6 +436,8 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 #endif
 
 	if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
+		dotss << "}";
+
 		std::stringstream fnamev;
 		static int cnt = 0;
 		fnamev << ctx.config.getStringOption("DebugPrefix") << "_CycInpGraph" << cnt++ << ".dot";
