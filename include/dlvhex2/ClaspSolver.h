@@ -101,8 +101,11 @@ private:
 	private:
 		// reference to other class instance
 		ClaspSolver& cs;
+
+		InterpretationPtr previousInterpretation;
+		InterpretationPtr previousFactWasSet;
 	public:
-		ExternalPropagator(ClaspSolver& cs) : cs(cs){}
+		ExternalPropagator(ClaspSolver& cs) : cs(cs), previousInterpretation(InterpretationPtr()), previousFactWasSet(InterpretationPtr()){}
 		virtual bool propagate(Clasp::Solver& s);
 		virtual uint32 priority() const;
 	};

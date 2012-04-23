@@ -245,6 +245,19 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 				interpretation->setFact(adr);
 			}
 		}
+		// a fact changed iff
+		// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
+		// 2. it was set before and is still set but the truth value is different
+		InterpretationPtr changed = InterpretationPtr(new Interpretation(cs.reg));
+		if (!previousInterpretation || !previousFactWasSet){
+			changed = factWasSet;	// everything changed
+		}else{
+			changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
+			changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
+		}
+		DBGLOG(DBG, "Changed truth values: " << *changed);
+		previousInterpretation = interpretation;
+		previousFactWasSet = factWasSet;
 
 		DBGLOG(DBG, "Calling external learners");
 		bool learned = false;
