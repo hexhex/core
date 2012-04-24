@@ -143,6 +143,34 @@ protected:
     OrdinaryAtom replacement;
   };
 
+  struct VerifyExternalAtomCB:
+    public ExternalAnswerTupleCallback
+  {
+  protected:
+    const ExternalAtom& exatom;
+    const ExternalAtomMask& eaMask;
+    RegistryPtr reg;
+    ID pospred, negpred;
+    OrdinaryAtom replacement;
+    InterpretationPtr guess;
+    InterpretationPtr remainingguess;
+    bool verified;
+
+  public:
+    bool onlyNegativeAuxiliaries();
+
+    VerifyExternalAtomCB(InterpretationPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
+    virtual ~VerifyExternalAtomCB();
+    // remembers eatom and prepares replacement.tuple[0]
+    virtual bool eatom(const ExternalAtom& eatom);
+    // remembers input
+    virtual bool input(const Tuple& input);
+    // creates replacement ogatom and activates respective bit in output interpretation
+    virtual bool output(const Tuple& output);
+
+    bool verify();
+  };
+
   // checks whether guessed external atom truth values
   // and external atom computations coincide
   virtual bool isCompatibleSet(

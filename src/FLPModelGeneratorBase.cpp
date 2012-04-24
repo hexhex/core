@@ -569,6 +569,124 @@ output(const Tuple& output)
   return true;
 }
 
+
+FLPModelGeneratorBase::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX){
+
+	reg = eatom.pluginAtom->getRegistry();
+
+	pospred = reg->getAuxiliaryConstantSymbol('r', exatom.predicate);
+	negpred = reg->getAuxiliaryConstantSymbol('n', exatom.predicate);
+	replacement.tuple.resize(1);
+
+	remainingguess = InterpretationPtr(new Interpretation(reg));
+	remainingguess->add(*guess);
+	remainingguess->getStorage() &= eaMask.mask()->getStorage();
+}
+
+FLPModelGeneratorBase::VerifyExternalAtomCB::~VerifyExternalAtomCB(){
+}
+
+bool FLPModelGeneratorBase::VerifyExternalAtomCB::onlyNegativeAuxiliaries(){
+
+/*
+	if (!remainingguess){
+		return true;
+	}
+*/
+
+	bm::bvector<>::enumerator en = remainingguess->getStorage().first();
+	bm::bvector<>::enumerator en_end = remainingguess->getStorage().end();
+
+	while (en < en_end){
+		const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
+		if (oatom.tuple[0] == pospred){
+			DBGLOG(DBG, "Unfounded positive auxiliary detected: " << *en);
+			return false;
+		}
+		en++;
+	}
+	return true;
+}
+
+bool FLPModelGeneratorBase::VerifyExternalAtomCB::eatom(const ExternalAtom& exatom){
+
+	// this callback must not be used for evaluating multiple external atoms
+	assert(&exatom == &this->exatom);
+/*
+	// if we had a previous external atom, check if only negative auxiliaries are set
+	if (!onlyNegativeAuxiliaries()){
+		verified = false;
+		return false;
+	}
+
+	this->currentExternalAtom = &eatom;
+	this->reg = eatom.pluginAtom->getRegistry();
+	pospred = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+	negpred = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
+	replacement.tuple.resize(1);
+
+	remainingguess = InterpretationPtr(new Interpretation(reg));
+	remainingguess->add(*guess);
+	remainingguess->getStorage() &= eatom.getExternalAtomMask()->getStorage();
+	DBGLOG(DBG, "Remaining guess: " << *remainingguess);
+*/
+	return true;
+}
+
+bool FLPModelGeneratorBase::VerifyExternalAtomCB::input(const Tuple& input){
+
+	assert(replacement.tuple.size() >= 1);
+
+	// shorten
+	replacement.tuple.resize(1);
+
+	// add
+	replacement.tuple.insert(replacement.tuple.end(), input.begin(), input.end());
+
+	// never abort
+	return true;
+}
+
+bool FLPModelGeneratorBase::VerifyExternalAtomCB::output(const Tuple& output){
+
+	assert(replacement.tuple.size() >= 1);
+
+	// add, but remember size to reset it later
+	unsigned size = replacement.tuple.size();
+	replacement.tuple.insert(replacement.tuple.end(), output.begin(), output.end());
+
+	// build pos replacement, register, and clear the corresponding bit in guess_pos
+	replacement.tuple[0] = pospred;
+	ID idreplacement_pos = reg->storeOrdinaryGAtom(replacement);
+	replacement.tuple[0] = negpred;
+	ID idreplacement_neg = reg->storeOrdinaryGAtom(replacement);
+
+	// shorten it, s.t. we can add the next one
+	replacement.tuple.resize(size);
+
+	if(remainingguess->getFact(idreplacement_neg.address)){
+		DBGLOG(DBG, "Positive atom was guessed to be false: " << idreplacement_pos.address);
+		verified = false;
+		return false;
+	}else{
+		DBGLOG(DBG, "Positive atom was guessed correctly");
+		remainingguess->clearFact(idreplacement_pos.address);
+		return true;
+	}
+}
+
+bool FLPModelGeneratorBase::VerifyExternalAtomCB::verify(){
+
+	if (remainingguess){
+		if (!onlyNegativeAuxiliaries()){
+			verified = false;
+		}
+		remainingguess.reset();
+	}
+	return verified;
+}
+
+
 bool FLPModelGeneratorBase::isCompatibleSet(
 		InterpretationConstPtr candidateCompatibleSet,
 		InterpretationConstPtr postprocessedInput,

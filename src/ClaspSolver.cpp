@@ -260,10 +260,8 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		previousFactWasSet = factWasSet;
 
 		DBGLOG(DBG, "Calling external learners");
-		bool learned = false;
 		BOOST_FOREACH (LearningCallback* cb, cs.learner){
-			// we are currently not able to check what changed inside clasp, so assume that all facts changed
-			learned |= cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
+			cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
 		}
 
 		interpretation.reset();
@@ -714,7 +712,7 @@ bool ClaspSolver::sendNogoodSetToClasp(NogoodSet& ns){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), projectionMask(p.mask), /*program(p),*/ sem_request(0), sem_answer(0), /*modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedThreading) : ctx(c), projectionMask(p.mask), /*program(p),*/ sem_request(0), sem_answer(0), /*modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading)
 //, NUM_PREPAREMODELS(5)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
@@ -768,7 +766,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p) : ctx(c), project
 }
 
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();

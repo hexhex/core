@@ -89,7 +89,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProg
 }
 
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
@@ -103,7 +103,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, Ordinar
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp");
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p));
+		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, interleavedThreading));
 		return ptr;
 		}
 #else
@@ -113,11 +113,11 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, Ordinar
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading){
 	GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, p);
 	OrdinaryASPProgram gprog = grounder->getGroundProgram();
 
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog);
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog, interleavedThreading);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 

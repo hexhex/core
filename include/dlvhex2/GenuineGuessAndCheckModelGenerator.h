@@ -95,6 +95,12 @@ protected:
   // we store the factory again, because the base class stores it with the base type only!
   Factory& factory;
 
+  std::vector<ExternalAtomMask> eaMasks;
+  std::vector<bool> eaVerified;
+  std::vector<bool> eaEvaluated;
+  void unverifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
+  void verifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
+
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationConstPtr postprocessedInput;
   // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms

@@ -170,8 +170,14 @@ protected:
 	// statistics
 	int modelCount;
 public:
-	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
-	ClaspSolver(ProgramCtx& ctx, NogoodSet& ns);
+	// Interleaved threading allows clasp and dlvhex to run interleaved
+	// This allows in particular precomputing models, i.e. a model is possibly computed before it is requested
+	// Note: With interleaving, external learners may be called for future models. That is, models processed by
+	//       external learners might be different from the next model returned by getNextModel().
+	//       Therefore external learners MUST NOT store state information about the current interpretation
+	//       which is reused in getNextModel().
+	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading = true);
+	ClaspSolver(ProgramCtx& ctx, NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
 
 	virtual std::string getStatistics();

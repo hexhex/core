@@ -273,21 +273,22 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	// append gidb to xidb
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-//	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
-//	if (factory.ctx.config.getOption("Instantiate")){
-//		std::cout << "% Component " << &(factory.ci) << std::endl;
-//		std::cout << grounder->getGroundProgramString();
-//	}
-
-//	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
-//	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
-	solver = GenuineSolver::getInstance(factory.ctx, program);
+	solver = GenuineSolver::getInstance(factory.ctx, program, true);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	if (factory.ctx.config.getOption("ExternalLearningPartial") /* && false partial learning is currently not thread safe with clasp */){
 		solver->addExternalLearner(this);
 	}
 
 	firstLearnCall = true;
+    }
+    // create for each inner external atom a mask over all relevant atoms
+    eaMasks.resize(factory.innerEatoms.size());
+    int eaIndex = 0;
+    BOOST_FOREACH (ID eatom, factory.innerEatoms){
+      ExternalAtomMask& eaMask = eaMasks[eaIndex++];
+      eaMask.setEAtom(reg->eatoms.getByID(eatom), solver->getGroundProgram().idb);
+      eaVerified.push_back(false);
+      eaEvaluated.push_back(false);
     }
 }
 
@@ -314,7 +315,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	//	{} -> {}
 	//	{a} -> {a}
 	// Then {a} is a compatible model but no answer set.
-	// @TODO: find another criterion which allows for skipping the minimality check.
 	if (factory.ctx.config.getOption("MinCheck")){
 		DBGLOG(DBG, "Solving component with minimality check by GnC Model Generator");
 
@@ -406,6 +406,18 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
+/*
+// check if all external atoms have been verified
+bool verified = true;
+for (int i = 0; i < factory.innerEatoms.size(); ++i){
+if (!eaEvaluated[i] || !eaVerified[i]){
+	verified = false;
+	break;
+}
+}
+if (!verified) continue;
+*/
+
 		bool compatible = isCompatibleSet(
 		modelCandidate, postprocessedInput, factory.ctx,
 		factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
@@ -456,7 +468,61 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 	}while(true);
 }
 
+void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+
+	DBGLOG(DBG, "Unverifying External Atoms");
+	RegistryPtr reg = factory.reg;
+
+	// go through all external atoms which have been verified so far
+	int eaIndex = 0;
+	BOOST_FOREACH(ID eatomid, factory.innerEatoms)
+	{
+		if (eaEvaluated[eaIndex]){
+			// check if one of its relevant atoms has changed
+			eaMasks[eaIndex].updateMask();
+			if ((eaMasks[eaIndex].mask()->getStorage() & changed).count() > 0){
+				DBGLOG(DBG, "Unverifying " << eatomid);
+				eaVerified[eaIndex] = false;
+				eaEvaluated[eaIndex] = false;
+			}
+		}
+		eaIndex++;
+	}
+}
+
+void GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+
+	DBGLOG(DBG, "Verifying External Atoms");
+	RegistryPtr reg = factory.reg;
+
+	// go through all external atoms which have not been verified so far
+	int eaIndex = 0;
+	BOOST_FOREACH(ID eatomid, factory.innerEatoms)
+	{
+		if (!eaEvaluated[eaIndex]){
+			const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
+
+			eaMasks[eaIndex].updateMask();
+			if ((eaMasks[eaIndex].mask()->getStorage() & factWasSet).count() == eaMasks[eaIndex].mask()->getStorage().count()){
+				DBGLOG(DBG, "External Atom " << eatomid << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *eaMasks[eaIndex].mask());
+				VerifyExternalAtomCB vcb(partialInterpretation, eatom, eaMasks[eaIndex]);
+				evaluateExternalAtom(reg, eatom, partialInterpretation, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : NogoodContainerPtr());
+
+				bool verify = vcb.verify();
+				DBGLOG(DBG, "Verifying " << eatomid << " (Result: " << verify << ")");
+				eaVerified[eaIndex] = verify;
+				eaEvaluated[eaIndex] = true;
+			}
+		}
+
+		eaIndex++;
+	}
+}
+
 bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+
+//	unverifyExternalAtoms(partialInterpretation, factWasSet, changed);
+//	verifyExternalAtoms(partialInterpretation, factWasSet, changed);
 
 	RegistryPtr reg = factory.reg;
 
@@ -521,7 +587,6 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 
 			// check if at least one input fact changed (otherwise a reevaluation is pointless)
 			if (/* auxChanged || */ firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
-// eatom.getPredicateInputMask()->getStorage().count() == 0
 				DBGLOG(DBG, "Evaluating external atom");
 
 				InterpretationPtr eaResult(new Interpretation(reg));
@@ -529,7 +594,7 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 				int i = solver->getNogoodCount();
 				evaluateExternalAtom(reg, eatom, partialInterpretation, intcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : NogoodContainerPtr());
 				DBGLOG(DBG, "Output has size " << eaResult->getStorage().count());
-				if (solver->getNogoodCount() != i) learned = true;
+//				if (solver->getNogoodCount() != i) learned = true;
 			}else{
 				DBGLOG(DBG, "Do not evaluate external atom because input did not change");
 			}

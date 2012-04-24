@@ -916,14 +916,14 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 				DBGLOG(DBG, "No unfounded set exists");
 
 				DBGLOG(DBG, "Calling external learner");
-				bool learned = false;
+				int nogoodCount = getNogoodCount();
 				BOOST_FOREACH (LearningCallback* cb, learner){
 					DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-					learned |= cb->learn(interpretation, factWasSet, changed);
+					cb->learn(interpretation, factWasSet, changed);
 				}
 				changed.clear();
 
-				if (learned){
+				if (getNogoodCount() != nogoodCount){
 					DBGLOG(DBG, "Learned something");
 				}else{
 					DBGLOG(DBG, "Did not learn anything");

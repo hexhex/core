@@ -85,6 +85,21 @@ protected:
   boost::mutex updateMutex;
 };
 
+class ExternalAtomMask : public PredicateMask
+{
+private:
+  const ExternalAtom* eatom;
+  std::set<IDAddress> outputAtoms;
+  std::vector<Tuple> auxInputTuples;
+public:
+  ExternalAtomMask();
+  ~ExternalAtomMask();
+
+  void setEAtom(const ExternalAtom& eatom, const std::vector<ID>& groundidb);
+  bool matchOutputAtom(const Tuple& togatom);
+  void updateMask();
+};
+
 DLVHEX_NAMESPACE_END
 
 #endif // PREDICATEMASK_HPP_INCLUDED__27012011
