@@ -588,12 +588,6 @@ FLPModelGeneratorBase::VerifyExternalAtomCB::~VerifyExternalAtomCB(){
 
 bool FLPModelGeneratorBase::VerifyExternalAtomCB::onlyNegativeAuxiliaries(){
 
-/*
-	if (!remainingguess){
-		return true;
-	}
-*/
-
 	bm::bvector<>::enumerator en = remainingguess->getStorage().first();
 	bm::bvector<>::enumerator en_end = remainingguess->getStorage().end();
 

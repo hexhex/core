@@ -135,12 +135,10 @@ protected:
 	// structural program information
 	ProgramCtx& ctx;
 	InterpretationConstPtr projectionMask;
-//	OrdinaryASPProgram program;
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
 	static const int MODELQUEUE_MAXSIZE = 5;
-//	int NUM_PREPAREMODELS;
 	boost::mutex modelsMutex;	// exclusive access of preparedModels
 	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;
@@ -151,7 +149,6 @@ protected:
 	// more restrictive communication
 	bool strictSingleThreaded;
 	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
-//	bool modelRequest;
 
 	// external behavior learning
 	boost::mutex learnerMutex;	// exclusive access of learner

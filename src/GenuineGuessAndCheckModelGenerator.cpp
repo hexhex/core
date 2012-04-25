@@ -275,7 +275,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	solver = GenuineSolver::getInstance(factory.ctx, program, true);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
-	if (factory.ctx.config.getOption("ExternalLearningPartial") /* && false partial learning is currently not thread safe with clasp */){
+	if (factory.ctx.config.getOption("ExternalLearningPartial")){
 		solver->addExternalLearner(this);
 	}
 
@@ -426,6 +426,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
 
 		DBGLOG(DBG, "doing compatibility check for model candidate " << *modelCandidate);
+
 /*
 // check if all external atoms have been verified
 bool verified = true;
@@ -499,7 +500,7 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationCon
 	int eaIndex = 0;
 	BOOST_FOREACH(ID eatomid, factory.innerEatoms)
 	{
-		if (eaEvaluated[eaIndex]){
+//		if (eaEvaluated[eaIndex]){
 			// check if one of its relevant atoms has changed
 			eaMasks[eaIndex].updateMask();
 			if ((eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0){
@@ -507,7 +508,7 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationCon
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
 			}
-		}
+//		}
 		eaIndex++;
 	}
 }
@@ -554,6 +555,21 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 					solver->addNogood(ng);
 					return true;
 				}
+
+				// if verification failed, add corresponding nogood to backtrack
+				if (!verify){
+					eatom.updatePredicateInputMask();
+					bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
+					bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
+					Nogood ng;
+					while (en < en_end){
+						ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
+						en++;
+					}
+					ng.insert(NogoodContainer::createLiteral(vcb.getFalsifiedAtom()));
+					solver->addNogood(ng);
+					DBGLOG(DBG, "Verification of " << eatomid << " failed, learned nogood: " << ng);
+				}
 			}
 //		}
 
@@ -566,6 +582,7 @@ bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInt
 
 //	unverifyExternalAtoms(partialInterpretation, factWasSet, changed);
 //	return verifyExternalAtoms(partialInterpretation, factWasSet, changed);
+
 
 	RegistryPtr reg = factory.reg;
 
