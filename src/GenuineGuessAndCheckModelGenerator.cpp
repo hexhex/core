@@ -281,15 +281,10 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	firstLearnCall = true;
     }
+
     // create for each inner external atom a mask over all relevant atoms
-    eaMasks.resize(factory.innerEatoms.size());
-    int eaIndex = 0;
-    BOOST_FOREACH (ID eatom, factory.innerEatoms){
-      ExternalAtomMask& eaMask = eaMasks[eaIndex++];
-      eaMask.setEAtom(reg->eatoms.getByID(eatom), solver->getGroundProgram().idb);
-      eaVerified.push_back(false);
-      eaEvaluated.push_back(false);
-    }
+    // and an index mapping ground external auxiliaries to their external atoms
+    createEAMasks();
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -298,6 +293,31 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 		solver->removeExternalLearner(this);
 	}
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
+}
+
+void GenuineGuessAndCheckModelGenerator::createEAMasks(){
+
+	RegistryPtr reg = factory.reg;
+
+	eaMasks.resize(factory.innerEatoms.size());
+	int eaIndex = 0;
+	BOOST_FOREACH (ID eatom, factory.innerEatoms){
+		// create an EAMask for each inner external atom
+		ExternalAtomMask& eaMask = eaMasks[eaIndex++];
+		eaMask.setEAtom(reg->eatoms.getByID(eatom), solver->getGroundProgram().idb);
+		//      eaVerified.push_back(false);
+		//      eaEvaluated.push_back(false);
+
+		// map external auxiliaries back to their external atoms
+		bm::bvector<>::enumerator en = eaMask.mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = eaMask.mask()->getStorage().end();
+		while (en < en_end){
+			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+				auxToEA[*en].push_back(factory.innerEatoms[eaIndex]);
+			}
+			en++;
+		}
+	}
 }
 
 // generate and return next model, return null after last model
@@ -468,7 +488,8 @@ if (!verified) continue;
 	}while(true);
 }
 
-void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+/*
+void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	DBGLOG(DBG, "Unverifying External Atoms");
 	RegistryPtr reg = factory.reg;
@@ -480,7 +501,7 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(Interpretation::P
 		if (eaEvaluated[eaIndex]){
 			// check if one of its relevant atoms has changed
 			eaMasks[eaIndex].updateMask();
-			if ((eaMasks[eaIndex].mask()->getStorage() & changed).count() > 0){
+			if ((eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0){
 				DBGLOG(DBG, "Unverifying " << eatomid);
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
@@ -489,8 +510,9 @@ void GenuineGuessAndCheckModelGenerator::unverifyExternalAtoms(Interpretation::P
 		eaIndex++;
 	}
 }
+*/
 
-void GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	DBGLOG(DBG, "Verifying External Atoms");
 	RegistryPtr reg = factory.reg;
@@ -499,30 +521,50 @@ void GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(Interpretation::Ptr
 	int eaIndex = 0;
 	BOOST_FOREACH(ID eatomid, factory.innerEatoms)
 	{
-		if (!eaEvaluated[eaIndex]){
+//		if (!eaEvaluated[eaIndex]){
 			const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
 
 			eaMasks[eaIndex].updateMask();
-			if ((eaMasks[eaIndex].mask()->getStorage() & factWasSet).count() == eaMasks[eaIndex].mask()->getStorage().count()){
+
+			if ((eaMasks[eaIndex].mask()->getStorage() & factWasSet->getStorage()).count() == eaMasks[eaIndex].mask()->getStorage().count() &&	// we need all relevant atoms to be assigned before we can do the verification
+			    (eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0){  // reverification is only necessary if relevant atoms changed
 				DBGLOG(DBG, "External Atom " << eatomid << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *eaMasks[eaIndex].mask());
 				VerifyExternalAtomCB vcb(partialInterpretation, eatom, eaMasks[eaIndex]);
 				evaluateExternalAtom(reg, eatom, partialInterpretation, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : NogoodContainerPtr());
 
 				bool verify = vcb.verify();
 				DBGLOG(DBG, "Verifying " << eatomid << " (Result: " << verify << ")");
-				eaVerified[eaIndex] = verify;
-				eaEvaluated[eaIndex] = true;
+//				eaVerified[eaIndex] = verify;
+//				eaEvaluated[eaIndex] = true;
+
+				// the set of all atoms which are relevant to the external atoms form a nogood
+				if (!verify){
+					eatom.updatePredicateInputMask();
+					bm::bvector<>::enumerator en = eaMasks[eaIndex].mask()->getStorage().first();
+					bm::bvector<>::enumerator en_end = eaMasks[eaIndex].mask()->getStorage().end();
+//					bm::bvector<>::enumerator en = eatom.getPredicateInputMask()->getStorage().first();
+//					bm::bvector<>::enumerator en_end = eatom.getPredicateInputMask()->getStorage().end();
+					Nogood ng;
+					while (en < en_end){
+						ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
+						en++;
+					}
+//					ng.insert(NogoodContainer::createLiteral(vcb.getFalsifiedAtom()));
+					solver->addNogood(ng);
+					return true;
+				}
 			}
-		}
+//		}
 
 		eaIndex++;
 	}
+	return false;
 }
 
-bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed){
+bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 //	unverifyExternalAtoms(partialInterpretation, factWasSet, changed);
-//	verifyExternalAtoms(partialInterpretation, factWasSet, changed);
+//	return verifyExternalAtoms(partialInterpretation, factWasSet, changed);
 
 	RegistryPtr reg = factory.reg;
 
@@ -537,8 +579,8 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 		DBGLOG(DBG, "Checking if input for " << eatom << " is complete");
 
 #ifndef NDEBUG
-		bm::bvector<>::enumerator en = factWasSet.first();
-		bm::bvector<>::enumerator en_end = factWasSet.end();
+		bm::bvector<>::enumerator en = factWasSet->getStorage().first();
+		bm::bvector<>::enumerator en_end = factWasSet->getStorage().end();
 		std::stringstream ss;
 		ss << "Available input: { ";
 		bool first = true;
@@ -582,11 +624,11 @@ bool GenuineGuessAndCheckModelGenerator::learn(Interpretation::Ptr partialInterp
 
 		*/
 
-		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet).count() == eatom.getPredicateInputMask()->getStorage().count()){
+		if ((eatom.getPredicateInputMask()->getStorage() & factWasSet->getStorage()).count() == eatom.getPredicateInputMask()->getStorage().count()){
 			DBGLOG(DBG, "Input is complete");
 
 			// check if at least one input fact changed (otherwise a reevaluation is pointless)
-			if (/* auxChanged || */ firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed).count() > 0){
+			if (/* auxChanged || */ firstLearnCall || (eatom.getPredicateInputMask()->getStorage() & changed->getStorage()).count() > 0){
 				DBGLOG(DBG, "Evaluating external atom");
 
 				InterpretationPtr eaResult(new Interpretation(reg));

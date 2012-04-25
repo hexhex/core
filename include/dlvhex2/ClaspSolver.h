@@ -87,6 +87,7 @@ private:
 	//       allow for blocking return from ModelEnumerator::reportModel
 	//       without blocking the whole dlvhex instance.
 	boost::thread* claspThread;
+	bool claspStarted;
 
 	// answer set processing
 	struct ModelEnumerator : public Clasp::Enumerator::Report {
@@ -107,6 +108,7 @@ private:
 	public:
 		ExternalPropagator(ClaspSolver& cs) : cs(cs), previousInterpretation(InterpretationPtr()), previousFactWasSet(InterpretationPtr()){}
 		virtual bool propagate(Clasp::Solver& s);
+		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
 	};
 

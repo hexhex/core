@@ -41,6 +41,7 @@
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
 
+#include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -96,10 +97,11 @@ protected:
   Factory& factory;
 
   std::vector<ExternalAtomMask> eaMasks;
-  std::vector<bool> eaVerified;
-  std::vector<bool> eaEvaluated;
-  void unverifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
-  void verifyExternalAtoms(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
+  boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
+//  std::vector<bool> eaVerified;
+//  std::vector<bool> eaEvaluated;
+//  void unverifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationConstPtr postprocessedInput;
@@ -118,10 +120,11 @@ protected:
   // members
 //  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
   bool firstLearnCall;
-  bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed);
+  bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~GenuineGuessAndCheckModelGenerator();
+  void createEAMasks();
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

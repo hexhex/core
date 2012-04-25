@@ -260,9 +260,13 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 		previousFactWasSet = factWasSet;
 
 		DBGLOG(DBG, "Calling external learners");
+		bool conflict = false;
 		BOOST_FOREACH (LearningCallback* cb, cs.learner){
-			cb->learn(interpretation, factWasSet->getStorage(), factWasSet->getStorage());
+			conflict |= cb->learn(interpretation, factWasSet, changed);
 		}
+		// don't clear the changed literals if the external learner detected a conflict;
+		// the learner will probably need to recheck the literals in the next call
+		if (!conflict) changed->clear();
 
 		interpretation.reset();
 		factWasSet.reset();
@@ -294,6 +298,10 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
+}
+
+bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
+	return propagate(s);
 }
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{
@@ -712,8 +720,7 @@ bool ClaspSolver::sendNogoodSetToClasp(NogoodSet& ns){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedThreading) : ctx(c), projectionMask(p.mask), /*program(p),*/ sem_request(0), sem_answer(0), /*modelRequest(false),*/ terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading)
-//, NUM_PREPAREMODELS(5)
+ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedThreading) : ctx(c), projectionMask(p.mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -751,10 +758,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedT
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
 		claspInstance.endInit();
-
-		DBGLOG(DBG, "Starting ClaspThread");
-
-		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
 
 	if (!strictSingleThreaded){
@@ -766,7 +769,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedT
 }
 
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading)
+ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -795,10 +798,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns, bool interleavedThreading
 		// endInit() must be called once before the search starts
 		DBGLOG(DBG, "Finalizing clasp initialization");
 		claspInstance.endInit();
-
-		DBGLOG(DBG, "Starting ClaspThread");
-
-		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
 	}
 
 	if (!strictSingleThreaded){
@@ -952,6 +951,13 @@ int ClaspSolver::getNogoodCount(){
 }
 
 InterpretationConstPtr ClaspSolver::getNextModel(){
+
+	// make sure that clasp runs
+	if (!claspStarted && !endOfModels){
+		DBGLOG(DBG, "Starting ClaspThread");
+		claspThread = new boost::thread(boost::bind(&ClaspSolver::runClasp, this));
+		claspStarted = true;
+	}
 
 	InterpretationConstPtr nextModel;
 

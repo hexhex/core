@@ -53,7 +53,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 class LearningCallback{
 public:
-	virtual bool learn(Interpretation::Ptr partialInterpretation, const bm::bvector<>& factWasSet, const bm::bvector<>& changed) = 0;
+	virtual bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
 class GenuineGrounder{

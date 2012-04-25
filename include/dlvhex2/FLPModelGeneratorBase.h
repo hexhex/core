@@ -152,14 +152,15 @@ protected:
     RegistryPtr reg;
     ID pospred, negpred;
     OrdinaryAtom replacement;
-    InterpretationPtr guess;
+    InterpretationConstPtr guess;
     InterpretationPtr remainingguess;
     bool verified;
+    ID falsified;
 
   public:
     bool onlyNegativeAuxiliaries();
 
-    VerifyExternalAtomCB(InterpretationPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
+    VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& exatom, const ExternalAtomMask& eaMask);
     virtual ~VerifyExternalAtomCB();
     // remembers eatom and prepares replacement.tuple[0]
     virtual bool eatom(const ExternalAtom& eatom);
@@ -169,6 +170,7 @@ protected:
     virtual bool output(const Tuple& output);
 
     bool verify();
+    ID getFalsifiedAtom(); // returns a falsified atom (positive or negative auxiliary) if verify() returns false, and ID_FAIL otherwise
   };
 
   // checks whether guessed external atom truth values

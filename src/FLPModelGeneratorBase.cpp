@@ -570,7 +570,7 @@ output(const Tuple& output)
 }
 
 
-FLPModelGeneratorBase::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX){
+FLPModelGeneratorBase::VerifyExternalAtomCB::VerifyExternalAtomCB(InterpretationConstPtr guess, const ExternalAtom& eatom, const ExternalAtomMask& eaMask) : guess(guess), remainingguess(), verified(true), exatom(eatom), eaMask(eaMask), replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX), falsified(ID_FAIL){
 
 	reg = eatom.pluginAtom->getRegistry();
 
@@ -601,6 +601,7 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::onlyNegativeAuxiliaries(){
 		const OrdinaryAtom& oatom = reg->ogatoms.getByAddress(*en);
 		if (oatom.tuple[0] == pospred){
 			DBGLOG(DBG, "Unfounded positive auxiliary detected: " << *en);
+			falsified = reg->ogatoms.getIDByAddress(*en);
 			return false;
 		}
 		en++;
@@ -612,24 +613,7 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::eatom(const ExternalAtom& exat
 
 	// this callback must not be used for evaluating multiple external atoms
 	assert(&exatom == &this->exatom);
-/*
-	// if we had a previous external atom, check if only negative auxiliaries are set
-	if (!onlyNegativeAuxiliaries()){
-		verified = false;
-		return false;
-	}
 
-	this->currentExternalAtom = &eatom;
-	this->reg = eatom.pluginAtom->getRegistry();
-	pospred = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
-	negpred = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
-	replacement.tuple.resize(1);
-
-	remainingguess = InterpretationPtr(new Interpretation(reg));
-	remainingguess->add(*guess);
-	remainingguess->getStorage() &= eatom.getExternalAtomMask()->getStorage();
-	DBGLOG(DBG, "Remaining guess: " << *remainingguess);
-*/
 	return true;
 }
 
@@ -667,6 +651,7 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::output(const Tuple& output){
 	if(remainingguess->getFact(idreplacement_neg.address)){
 		DBGLOG(DBG, "Positive atom was guessed to be false: " << idreplacement_pos.address);
 		verified = false;
+		falsified = reg->ogatoms.getIDByAddress(idreplacement_neg.address);
 		return false;
 	}else{
 		DBGLOG(DBG, "Positive atom was guessed correctly");
@@ -684,6 +669,10 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::verify(){
 		remainingguess.reset();
 	}
 	return verified;
+}
+
+ID FLPModelGeneratorBase::VerifyExternalAtomCB::getFalsifiedAtom(){
+	return falsified;
 }
 
 
@@ -966,6 +955,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 				// (iii) the external atom is negative and the input atom is over an antimonotonic predicate
 				if (occurs){
 					DBGLOG(DBG, "Depends on " << extatId);
+					extat.updatePredicateInputMask();
 					InterpretationConstPtr extInput = extat.getPredicateInputMask();
 					DBGLOG(DBG, "Input is " << *extInput);
 

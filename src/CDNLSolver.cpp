@@ -185,7 +185,7 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 	}else{
 		DBGLOG(DBG, "Assigning " << litToString(fact) << "@" << dl);
 	}
-	factWasSet.set_bit(fact.address);			// fact was set
+	factWasSet->setFact(fact.address);			// fact was set
 	decisionlevel[fact.address] = dl;			// store decision level
 	//if (c > -1)
 	cause[fact.address] = c;				// store cause
@@ -206,7 +206,7 @@ void CDNLSolver::setFact(ID fact, int dl, int c = -1){
 
 void CDNLSolver::clearFact(IDAddress litadr){
 	DBGLOG(DBG, "Unassigning " << litadr << "@" << decisionlevel[litadr]);
-	factWasSet.clear_bit(litadr);
+	factWasSet->clearFact(litadr);
 	cause[litadr] = -1;
 	assignmentOrder.erase(litadr);
 
@@ -612,8 +612,9 @@ CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), con
 	resizeVectors();
 	initListOfAllFacts();
 
-	// create an interpretation
+	// create an interpretation and a storage for assigned facts (we need 3 values)
 	interpretation.reset(new Interpretation(ctx.registry()));
+	factWasSet.reset(new Interpretation(ctx.registry()));
 	currentDL = 0;
 	exhaustedDL = 0;
 

@@ -103,7 +103,7 @@ protected:
 	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 
 	// external learning
-	bm::bvector<> changed;
+	InterpretationPtr changed;
 	Set<LearningCallback*> learner;
 
 	// statistics

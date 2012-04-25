@@ -345,13 +345,13 @@ void InternalGroundASPSolver::initializeLists(){
 
 void InternalGroundASPSolver::setFact(ID fact, int dl, int cause = -1){
 	CDNLSolver::setFact(fact, dl, cause);
-	changed.set_bit(fact.address);
+	changed->setFact(fact.address);
 	updateUnfoundedSetStructuresAfterSetFact(fact);
 }
 
 void InternalGroundASPSolver::clearFact(IDAddress litadr){
 	CDNLSolver::clearFact(litadr);
-	changed.set_bit(litadr);
+	changed->setFact(litadr);
 	updateUnfoundedSetStructuresAfterClearFact(litadr);
 }
 
@@ -839,6 +839,7 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, OrdinaryASPProgr
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	reg = ctx.registry();
+	changed.reset(new Interpretation(ctx.registry()));
 
 	resizeVectors();
 	initializeLists();
@@ -878,9 +879,10 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 	}
 	firstmodel = false;
 
-	bool newUFSFound = false;
-	while (!complete() || newUFSFound){
-		newUFSFound = false;
+	bool anotherIterationEvenIfComplete = false;	// if set to true, the loop will run even if the interpretation is already complete
+							// (needed to check if newly added nogood (e.g. by external learners) are satisfied)
+	while (!complete() || anotherIterationEvenIfComplete){
+		anotherIterationEvenIfComplete = false;
 		if (!unitPropagation(violatedNogood)){
 			if (currentDL == 0){
 				// no answer set
@@ -910,7 +912,7 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 
 				Nogood loopNogood = getLoopNogood(ufs);
 				addNogood(loopNogood);
-				newUFSFound = true;
+				anotherIterationEvenIfComplete = true;
 			}else{
 				// no ufs
 				DBGLOG(DBG, "No unfounded set exists");
@@ -919,9 +921,11 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 				int nogoodCount = getNogoodCount();
 				BOOST_FOREACH (LearningCallback* cb, learner){
 					DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-					cb->learn(interpretation, factWasSet, changed);
+					anotherIterationEvenIfComplete |= cb->learn(interpretation, factWasSet, changed);
 				}
-				changed.clear();
+				// don't clear the changed literals if the external learner detected a conflict;
+				// the learner will probably need to recheck the literals in the next call
+				if (!anotherIterationEvenIfComplete) changed->clear();
 
 				if (getNogoodCount() != nogoodCount){
 					DBGLOG(DBG, "Learned something");

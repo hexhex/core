@@ -68,8 +68,8 @@ protected:
 	ProgramCtx& ctx;
 
 	// solver state information
-	Interpretation::Ptr interpretation;
-	bm::bvector<> factWasSet;
+	InterpretationPtr interpretation;
+	InterpretationPtr factWasSet;
 	DynamicVector<IDAddress, int> decisionlevel;
 //	std::vector<int> cause;
 //	DynamicVector<IDAddress, int> cause;
@@ -120,7 +120,7 @@ protected:
 
 	// members
 	inline bool assigned(IDAddress litadr){
-		return factWasSet.get_bit(litadr);
+		return factWasSet->getFact(litadr);
 	}
 
 	inline bool satisfied(ID lit){
@@ -142,7 +142,7 @@ protected:
 	}
 
 	inline bool complete(){
-		return factWasSet.count() == allFacts.size();
+		return factWasSet->getStorage().count() == allFacts.size();
 	}
 
 	// reasoning members
