@@ -444,6 +444,7 @@ if (!verified) continue;
 		DBGLOG(DBG, "Compatible: " << compatible);
 		if (!compatible) continue;
 
+
 		// ensure minimality of the compatible set wrt. the reduct (if necessary)
 		if (factory.cyclicInputPredicates.size() == 0){
 			DBGLOG(DBG, "No cyclic input predicates --> No FLP/UFS check necessary");
