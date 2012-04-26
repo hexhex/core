@@ -1587,8 +1587,10 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpret
 						}
 						impliedAtom = h;
 					}else{
-						DBGLOG(DBG, "Skipping choice rule " << ruleID << ": Head already satisfied");
-						break;
+						if (fixpoint->getFact(h.address)){
+							DBGLOG(DBG, "Skipping choice rule " << ruleID << ": Head already satisfied");
+							break;
+						}
 					}
 				}
 
