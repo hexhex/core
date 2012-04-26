@@ -1062,9 +1062,9 @@ void processOptionsPrePlugin(
 	if (!pctx.config.getOption("UFSCheck") && pctx.config.getOption("PartialUFSCheck")){
 		throw GeneralError("Partial UFS check can only be used if --flpcheck=ufs");
 	}
-	if (pctx.config.getOption("WellJustified") && pctx.config.getOption("PartialUFSCheck")){
-		throw GeneralError("Partial UFS check cannot be used with the well-justified semantics, which does not need a UFS check");
-	}
+//	if (pctx.config.getOption("WellJustified") && pctx.config.getOption("PartialUFSCheck")){
+//		throw GeneralError("Partial UFS check cannot be used with the well-justified semantics, which does not need a UFS check");
+//	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);
