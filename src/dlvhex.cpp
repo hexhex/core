@@ -199,6 +199,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
 }
@@ -344,6 +345,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
+  pctx.config.setOption("WellJustified",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 
 	// defaults of main
@@ -588,6 +590,7 @@ void processOptionsPrePlugin(
 		{ "mincheck", no_argument, 0, 22 },
 		{ "ufslearn", no_argument, 0, 23 },
 		{ "partial", optional_argument, 0, 24 },
+		{ "welljustified", optional_argument, 0, 25 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1045,14 +1048,22 @@ void processOptionsPrePlugin(
 			}
 			break;
 
+		case 25:
+			pctx.config.setOption("WellJustified", 1);
+			break;
+
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
 		}
 	}
 
+	// consistency of command-line parameters
 	if (!pctx.config.getOption("UFSCheck") && pctx.config.getOption("PartialUFSCheck")){
 		throw GeneralError("Partial UFS check can only be used if --flpcheck=ufs");
+	}
+	if (pctx.config.getOption("WellJustified") && pctx.config.getOption("PartialUFSCheck")){
+		throw GeneralError("Partial UFS check cannot be used with the well-justified semantics, which does not need a UFS check");
 	}
 
 	// configure plugin path

@@ -405,42 +405,52 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextCompatibleMode
 		// did we already verify during model construction?
 		if (!factory.ctx.config.getOption("PartialVerification")){
 			// no --> post-check
-			bool compatible = isCompatibleSet(
-			modelCandidate, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
+			bool compatible = isCompatibleSet(modelCandidate, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? solver : GenuineSolverPtr());
 			DBGLOG(DBG, "Compatible: " << compatible);
 			if (!compatible) continue;
 		}
 
-		// ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (factory.cyclicInputPredicates.size() == 0){
-			DBGLOG(DBG, "No cyclic input predicates --> No FLP/UFS check necessary");
-		}else{
-			DBGLOG(DBG, "Cyclic input predicates --> FLP/UFS check necessary");
-
-			// Explicit FLP check
-			if (factory.ctx.config.getOption("FLPCheck")){
-				DBGLOG(DBG, "FLP Check");
-				if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
-					continue;
+		if (factory.ctx.config.getOption("WellJustified")){
+			// fixpoint iteration
+			InterpretationPtr fixpoint = getFixpoint(modelCandidate, solver->getGroundProgram());
+			if ((fixpoint->getStorage() ^ modelCandidate->getStorage()).count() == 0){
+				DBGLOG(DBG, "Well-Justified FLP Semantics: Pass fixpoint test");
 			}else{
-				DBGLOG(DBG, "Skipping FLP Check");
+				DBGLOG(DBG, "Well-Justified FLP Semantics: Fail fixpoint test");
+				continue;
 			}
-
-			// UFS check
-			if (factory.ctx.config.getOption("UFSCheck")){
-				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
-				if (ufs.size() > 0){
-					DBGLOG(DBG, "Got a UFS");
-					if (factory.ctx.config.getOption("UFSLearning")){
-						DBGLOG(DBG, "Learn from UFS");
-						Nogood ufsng = getUFSNogood(factory.ctx, ufs, solver->getGroundProgram(), modelCandidate);
-						solver->addNogood(ufsng);
-					}
-					continue;
-				}
+		}else{
+			// ensure minimality of the compatible set wrt. the reduct (if necessary)
+			if (factory.cyclicInputPredicates.size() == 0){
+				DBGLOG(DBG, "No cyclic input predicates --> No FLP/UFS check necessary");
 			}else{
-				DBGLOG(DBG, "Skipping FLP Check");
+				DBGLOG(DBG, "Cyclic input predicates --> FLP/UFS check necessary");
+
+				// Explicit FLP check
+				if (factory.ctx.config.getOption("FLPCheck")){
+					DBGLOG(DBG, "FLP Check");
+					if( !isSubsetMinimalFLPModel<GenuineSolver>(modelCandidate, postprocessedInput, factory.ctx, solver) )
+						continue;
+				}else{
+					DBGLOG(DBG, "Skipping FLP Check");
+				}
+
+				// UFS check
+				if (factory.ctx.config.getOption("UFSCheck")){
+					DBGLOG(DBG, "UFS Check");
+					std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), modelCandidate);
+					if (ufs.size() > 0){
+						DBGLOG(DBG, "Got a UFS");
+						if (factory.ctx.config.getOption("UFSLearning")){
+							DBGLOG(DBG, "Learn from UFS");
+							Nogood ufsng = getUFSNogood(factory.ctx, ufs, solver->getGroundProgram(), modelCandidate);
+							solver->addNogood(ufsng);
+						}
+						continue;
+					}
+				}else{
+					DBGLOG(DBG, "Skipping FLP Check");
+				}
 			}
 		}
 

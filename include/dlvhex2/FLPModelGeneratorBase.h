@@ -276,6 +276,9 @@ protected:
       std::map<ID, std::pair<int, ID> >& shadowPredicates,
       std::map<ID, std::pair<int, ID> >& unfoundedPredicates,
       std::vector<ID>& idb);
+
+  // used for the well-justified semantics
+  InterpretationPtr getFixpoint(InterpretationPtr interpretation, const OrdinaryASPProgram& program);
 };
 
 DLVHEX_NAMESPACE_END
