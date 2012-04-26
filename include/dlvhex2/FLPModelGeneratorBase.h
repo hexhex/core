@@ -36,6 +36,8 @@
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/BaseModelGenerator.h"
 
+#include <boost/unordered_map.hpp>
+
 DLVHEX_NAMESPACE_BEGIN
 
 //
@@ -120,6 +122,12 @@ protected:
   // the factory storing our flp rewriting and external atom guessing and shared bitmasks
   FLPModelGeneratorFactoryBase& factory;
 
+  // back-mapping of (ground) external auxiliaries to their nonground external atoms
+  std::vector<ExternalAtomMask> eaMasks;
+  boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
+
+  // initializes eaMasks and auxToEA for a certain ground IDB
+  void createEAMasks(std::vector<ID> groundIDB);
 protected:
   // callback for checking whether external computations
   // reflect guesses of external atom truth values
@@ -205,10 +213,17 @@ protected:
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
   // If the empty set is returned,
   // then there does not exist a greater (nonempty) unfounded set.
+  // 
+  // The method supports also unfounded set detection over partial interpretations.
+  // For this purpose, skipProgram specifies all rules which shall be ignored
+  // in the search. The interpretation must be complete and compatible over the non-ignored part.
+  // Each detected unfounded set will remain an unfounded set for all possible
+  // completions of the interpretation.
   std::vector<IDAddress> getUnfoundedSet(
 			ProgramCtx& ctx,
 			OrdinaryASPProgram groundProgram,
-			InterpretationConstPtr compatibleSet);
+			InterpretationConstPtr compatibleSet,
+			std::set<ID> skipProgram = std::set<ID>());
 
   // constructs a nogood which encodes the essence of an unfounded set
   Nogood getUFSNogood(

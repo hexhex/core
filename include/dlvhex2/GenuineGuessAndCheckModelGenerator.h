@@ -96,11 +96,9 @@ protected:
   // we store the factory again, because the base class stores it with the base type only!
   Factory& factory;
 
-  std::vector<ExternalAtomMask> eaMasks;
-  boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
 //  std::vector<bool> eaVerified;
 //  std::vector<bool> eaEvaluated;
-//  void unverifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+//  bool isVerified(ID eaAux);
   bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
@@ -112,9 +110,6 @@ protected:
   std::list<InterpretationPtr> candidates;
 
   // internal solver
-//  InternalGroundASPSolverPtr igas;
-//  InternalGrounderPtr grounder;
-//  Interpretation* currentanswer;
   GenuineSolverPtr solver;
 
   // members
@@ -124,7 +119,6 @@ protected:
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~GenuineGuessAndCheckModelGenerator();
-  void createEAMasks();
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();

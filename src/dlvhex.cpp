@@ -131,7 +131,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user,partial]" << std::endl
+      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
       << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
@@ -139,7 +139,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        neg: Learn negative information" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
-      << "                        partial: Apply learning rules also when model is still partial" << std::endl
       << "                      By default, all options are enabled" << std::endl
       << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --flpcheck=[explicit,ufs,none]" << std::endl
@@ -147,7 +146,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
       << "                        ufs: Check if the candidate contains unfounded sets" << std::endl
       << "                        none: Disable the check" << std::endl
-      << "     --ufslearn       Enable learning from UFS checks" << std::endl
+      << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
+      << "     --partial=[ver,ufs]  (only useful for genuine solvers)" << std::endl
+      << "                      ver: Enable verification of external atoms before interpretation is complete" << std::endl
+      << "                      ufs: Enable UFS checks before interpretation is complete (only useful with --flpcheck=ufs)" << std::endl
       << "     --mincheck       Enable explicit minimality check in Guess-and-check model generator" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
@@ -320,7 +322,8 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningLinearity", 0);
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
-  pctx.config.setOption("ExternalLearningPartial", 0);
+  pctx.config.setOption("PartialVerification", 0);
+  pctx.config.setOption("PartialUFSCheck", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -584,6 +587,7 @@ void processOptionsPrePlugin(
 		{ "globlearn", optional_argument, 0, 21 },
 		{ "mincheck", no_argument, 0, 22 },
 		{ "ufslearn", no_argument, 0, 23 },
+		{ "partial", optional_argument, 0, 24 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -923,29 +927,33 @@ void processOptionsPrePlugin(
 						{
 							pctx.config.setOption("ExternalLearningIOBehavior", 1);
 						}
-						if( token == "monotonicity" )
+						else if( token == "monotonicity" )
 						{
 							pctx.config.setOption("ExternalLearningMonotonicity", 1);
 						}
-						if( token == "functionality" )
+						else if( token == "functionality" )
 						{
 							pctx.config.setOption("ExternalLearningFunctionality", 1);
 						}
-						if( token == "linearity" )
+						else if( token == "linearity" )
 						{
 							pctx.config.setOption("ExternalLearningLinearity", 1);
 						}
-                                                if( token == "neg" )
+                                                else if( token == "neg" )
 						{
 							pctx.config.setOption("ExternalLearningNeg", 1);
 						}
-                                                if( token == "user" )
+                                                else if( token == "user" )
 						{
 							pctx.config.setOption("ExternalLearningUser", 1);
 						}
-						if( token == "partial" )
+						else if( token == "partial" )
 						{
 							pctx.config.setOption("ExternalLearningPartial", 1);
+						}
+						else
+						{
+							throw GeneralError("Unknown learning option: \"" + token + "\"");
 						}
 					}
 				}else{
@@ -956,13 +964,12 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("ExternalLearningLinearity", 1);
 					pctx.config.setOption("ExternalLearningNeg", 1);
 					pctx.config.setOption("ExternalLearningUser", 1);
-					pctx.config.setOption("ExternalLearningPartial", 1);
 				}
 			}
 
 			pctx.config.setOption("ExternalLearning", 1);
 
-			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << ", partial: " << pctx.config.getOption("ExternalLearningPartial") << "]");
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
 /*
 		case 19:
@@ -1002,10 +1009,50 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("UFSLearning", 1);
 			break;
 
+		case 24:
+			{
+				if (optarg){
+					boost::char_separator<char> sep(",");
+					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+					boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+
+					for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+							f != tok.end(); ++f)
+					{
+						const std::string& token = *f;
+						if (token == "ver" )
+						{
+							pctx.config.setOption("PartialVerification", 1);
+						}
+						else if( token == "ufs" )
+						{
+							pctx.config.setOption("PartialUFSCheck", 1);
+						}
+						else
+						{
+							throw GeneralError("Unknown partial option: \"" + token + "\"");
+						}
+					}
+				}else{
+					// by default, turn off partial stuff
+					pctx.config.setOption("PartialVerification", 0);
+					pctx.config.setOption("PartialUFSCheck", 0);
+				}
+
+				if (!pctx.config.getOption("PartialVerification") && pctx.config.getOption("PartialUFSCheck")){
+					throw GeneralError("Partial UFS check can only be used if partial verification is on");
+				}
+			}
+			break;
+
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
 		}
+	}
+
+	if (!pctx.config.getOption("UFSCheck") && pctx.config.getOption("PartialUFSCheck")){
+		throw GeneralError("Partial UFS check can only be used if --flpcheck=ufs");
 	}
 
 	// configure plugin path

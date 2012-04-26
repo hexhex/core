@@ -323,37 +323,11 @@ void ExternalAtomMask::updateMask(){
           DBGLOG(DBG, "Output atom " << outputAtom << " does not match the external atom");
         }
       }
-/*
-      PredicateMask pm;
-      pm.setRegistry(eatom->pluginAtom->getRegistry());
-      pm.addPredicate(posreplacement);
-      pm.addPredicate(negreplacement);
-      pm.updateMask();
-      change->getStorage() |= pm.mask()->getStorage();
-    }else{
-      DBGLOG(DBG, "Auxiliary input did not change");
-*/
     }
-/*
-    // remove those where the input list does not match
-    en = change->getStorage().first();
-    en_end = change->getStorage().end();
-    while (en < en_end){
-      const OrdinaryAtom& oatom = eatom->pluginAtom->getRegistry()->ogatoms.getByAddress(*en);
-      // is it over the positive or negative replacement?
-      if (oatom.tuple[0] == posreplacement || oatom.tuple[0] == negreplacement){
-        if (matchOutputAtom(oatom.tuple)){
-          // ok, keep it
-          DBGLOG(DBG, "ogaom " << *en << " is output of external atom");
-        }else{
-          // atom does not belong to this external atom because input list does not match
-          DBGLOG(DBG, "ogaom " << *en << " is not output of external atom");
-          maski->clearFact(*en);
-        }
-      }
-      en++;
-    }
-*/
+}
+
+const std::vector<Tuple>& ExternalAtomMask::getAuxInputTuples() const{
+    return auxInputTuples;
 }
 
 DLVHEX_NAMESPACE_END

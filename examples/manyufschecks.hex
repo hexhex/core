@@ -1,0 +1,11 @@
+% If heuristics=old, then the external atom and the guess will be in one
+% G&C component and a separate UFS check is done for each guess.
+% Here --ufslearn helps a lot.
+
+dom(1).
+dom(2).
+
+p(X) :- &id[p](X), dom(X).
+
+g(a). g(b). g(c). g(d). g(e). g(f). g(g). g(h).
+yes(X) v no(X) :- g(X).

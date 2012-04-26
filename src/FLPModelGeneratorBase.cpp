@@ -464,6 +464,33 @@ FLPModelGeneratorBase::FLPModelGeneratorBase(
 {
 }
 
+void FLPModelGeneratorBase::createEAMasks(std::vector<ID> groundIDB){
+
+	RegistryPtr reg = factory.reg;
+
+	eaMasks.resize(factory.innerEatoms.size());
+	int eaIndex = 0;
+	BOOST_FOREACH (ID eatom, factory.innerEatoms){
+		// create an EAMask for each inner external atom
+		ExternalAtomMask& eaMask = eaMasks[eaIndex];
+		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundIDB);
+		eaMask.updateMask();
+		//      eaVerified.push_back(false);
+		//      eaEvaluated.push_back(false);
+
+		// map external auxiliaries back to their external atoms
+		bm::bvector<>::enumerator en = eaMask.mask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = eaMask.mask()->getStorage().end();
+		while (en < en_end){
+			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+				auxToEA[*en].push_back(factory.innerEatoms[eaIndex]);
+			}
+			en++;
+		}
+		eaIndex++;
+	}
+}
+
 FLPModelGeneratorBase::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
 VerifyExternalAnswerAgainstPosNegGuessInterpretationCB(
     InterpretationPtr _guess_pos,
@@ -662,6 +689,7 @@ bool FLPModelGeneratorBase::VerifyExternalAtomCB::verify(){
 		}
 		remainingguess.reset();
 	}
+
 	return verified;
 }
 
@@ -773,7 +801,8 @@ Nogood FLPModelGeneratorBase::getFLPNogood(
 std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		ProgramCtx& ctx,
 		OrdinaryASPProgram groundProgram,
-		InterpretationConstPtr compatibleSet /* I */){
+		InterpretationConstPtr compatibleSet /* I */,
+		std::set<ID> skipProgram){
 
 	RegistryPtr reg = ctx.registry();
 
@@ -790,11 +819,12 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		}
 	}
 
-	// remove external atom guessing rules from IDB
+	// remove external atom guessing rules and skipped rules from IDB
 	std::vector<ID> idb;
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
-		if (rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()){
+		if ((rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()) ||	// EA-guessing rule
+		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){				// ignored part of the program
 			// skip it
 		}else{
 			idb.push_back(ruleId);
@@ -1012,6 +1042,20 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		ns.addNogood(cyclicInputNogood);
 	}
 
+	// the ufs must not contain a head atom of an ignored rule
+	// (otherwise we cannot guarantee that the ufs remains an ufs for completed interpretations)
+	{
+		BOOST_FOREACH (ID ruleId, skipProgram){
+			const Rule& rule = reg->rules.getByID(ruleId);
+			BOOST_FOREACH (ID h, rule.head){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(h));
+				DBGLOG(DBG, "Adding nogood for skipped program: " << ng);
+				ns.addNogood(ng);
+			}
+		}
+	}
+
 #ifndef NDEBUG
 	std::stringstream ss;
 	BOOST_FOREACH (Nogood ng, ns.nogoods){
@@ -1020,21 +1064,8 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	DBGLOG(DBG, "Solving the following UFS detection program: " << ss.str());
 #endif
 
-/*
-NogoodSet ns2;
-Nogood ng1; ng1.insert(NogoodContainer::createLiteral(1)); ns2.addNogood(ng1);
-Nogood ng2; ng2.insert(NogoodContainer::createLiteral(2, false)); ns2.addNogood(ng2);
-//ClaspSolver csolver(ctx, ns2);
-SATSolverPtr ssolver = SATSolver::getInstance(ctx, ns2);
-while ( (model = ssolver->getNextModel()) != InterpretationConstPtr()){
-	DBGLOG(DBG, "SAT-NextModel: " << *model);
-}
-*/
-
-
 	// solve the problem description
 	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
-//	SATSolverPtr solver = SATSolverPtr(new CDNLSolver(ctx, ns));
 	InterpretationConstPtr model;
 
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
@@ -1079,7 +1110,7 @@ while ( (model = ssolver->getNextModel()) != InterpretationConstPtr()){
 			}
 		}
 		if (isUfs){
-			DBGLOG(DBG, "Found UFS: " << *model);
+			DBGLOG(DBG, "Found UFS: " << *model << " (interpretation: " << *compatibleSet << ")");
 
 			std::vector<IDAddress> ufs;
 
@@ -1108,6 +1139,9 @@ Nogood FLPModelGeneratorBase::getUFSNogood(
 	RegistryPtr reg = factory.reg;
 
 	Nogood ng;
+
+//	reduct-based stratey
+#if 0
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -1159,6 +1193,41 @@ Nogood FLPModelGeneratorBase::getUFSNogood(
 	}
 
 	DBGLOG(DBG, "Constructed UFS nogood " << ng);
+#endif
+
+	// UFS-based strategy
+#if 1
+	// find all rules r such that H(r) intersects with the unfounded set
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		bool intersects = false;
+		BOOST_FOREACH (ID h, rule.head){
+			if (std::find(ufs.begin(), ufs.end(), h.address) != ufs.end()){
+				intersects = true;
+				break;
+			}
+		}
+		if (!intersects) continue;
+
+		// collect the truth values of all atoms relevant to the rule body
+		BOOST_FOREACH (ID b, rule.body){
+			if (!b.isExternalAuxiliary()){
+				ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
+			}else{
+				const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[b.address][0]);
+				ea.updatePredicateInputMask();
+				bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+				bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+				while (en < en_end){
+					ng.insert(NogoodContainer::createLiteral(*en, interpretation->getFact(*en)));
+					en++;
+				}
+			}
+		}
+	}
+	DBGLOG(DBG, "Constructed UFS nogood " << ng);
+
+#endif
 
 	return ng;
 }

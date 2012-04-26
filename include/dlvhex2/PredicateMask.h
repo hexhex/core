@@ -98,6 +98,7 @@ public:
   void setEAtom(const ExternalAtom& eatom, const std::vector<ID>& groundidb);
   bool matchOutputAtom(const Tuple& togatom);
   void updateMask();
+  const std::vector<Tuple>& getAuxInputTuples() const;
 };
 
 DLVHEX_NAMESPACE_END
