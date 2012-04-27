@@ -1512,7 +1512,11 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpret
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID h, rule.head) allAtoms->setFact(h.address);
 		BOOST_FOREACH (ID b, rule.body) allAtoms->setFact(b.address);
-		remainingRules.insert(ruleID);
+		if (rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()){
+			// skip EA guessing rules
+		}else{
+			remainingRules.insert(ruleID);
+		}
 	}
 
 	// now construct the fixpoint
@@ -1521,14 +1525,15 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpret
 
 	// all false atoms and all facts are immediately set
 	assigned->getStorage() |= (interpretation->getStorage() ^ allAtoms->getStorage());
+	DBGLOG(DBG, "Initially false: " << *assigned);
 	assigned->getStorage() |= program.edb->getStorage();
 	fixpoint->getStorage() |= program.edb->getStorage();
-	DBGLOG(DBG, "Initially false: " << *assigned);
+	DBGLOG(DBG, "Initial interpretation: " << *fixpoint);
 
 	// fixpoint iteration
 	bool changed = true;
 	std::vector<bool> eaVerified;
-	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(i);
+	for (int i = 0; i < factory.innerEatoms.size(); ++i) eaVerified.push_back(false);
 	while (remainingRules.size() > 0 && changed){
 		changed = false;
 
@@ -1568,8 +1573,16 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpret
 			const Rule& rule = reg->rules.getByID(ruleID);
 			bool bodySatisfied = true;
 			BOOST_FOREACH (ID b, rule.body){
-				if (assigned->getFact(b.address) && (fixpoint->getFact(b.address) == b.isNaf())){
-					DBGLOG(DBG, "Atom " << b.address << " is " << (fixpoint->getFact(b.address) ? "true" : "false") << " but should be " << (b.isNaf() ? "false" : "true"));
+				if (assigned->getFact(b.address)){
+					if (fixpoint->getFact(b.address) == b.isNaf()){
+						DBGLOG(DBG, "Atom " << b.address << " is " << (fixpoint->getFact(b.address) ? "true" : "false") << " but should be " << (b.isNaf() ? "false" : "true"));
+						bodySatisfied = false;
+						break;
+					}else{
+						DBGLOG(DBG, "Satisfied atom " << b.address << " is " << (fixpoint->getFact(b.address) ? "true" : "false"));
+					}
+				}else{
+					DBGLOG(DBG, "Atom " << b.address << " is unassigned");
 					bodySatisfied = false;
 					break;
 				}
@@ -1608,6 +1621,16 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpret
 				}
 			}
 		}
+	}
+
+	// remove external auxiliaries
+	bm::bvector<>::enumerator en = fixpoint->getStorage().first();
+	bm::bvector<>::enumerator en_end = fixpoint->getStorage().end();
+	while (en < en_end){
+		if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+			fixpoint->clearFact(*en);
+		}
+		en++;
 	}
 
 	DBGLOG(DBG, "Fixpoint is: " << *fixpoint);
