@@ -91,30 +91,171 @@ class GenuineGuessAndCheckModelGenerator:
 public:
   typedef GenuineGuessAndCheckModelGeneratorFactory Factory;
 
+  // controls when external atoms are verified
+  enum EAVerificationMode{
+    // Verify all external atoms at the end, i.e., when a candidate compatible set was completed.
+    // Requires no external learner plugged into the solver.
+    post,
+
+    // Verify external atoms as soon as their input is complete and immediately backtrack if a guess was wrong.
+    // Requires an external learner plugged into the solver.
+    // Does not need to check if all external atoms were verified after completion of the candidate because
+    //   they are automatically verified. This allows for precomputing models in multithreaded mode.
+    immediate,
+
+    // Verify external atoms driven by a heuristic, i.e., they are optionally verified during solving.
+    // Requires an external learner plugged into the solver.
+    // After compltion of the candidate, it must be checked if all external atoms were verified.
+    //   This does _not_ allow for precomputing models in multithreaded mode because there is a tight dependency
+    //   between the external learner and the solver.
+    heuristics
+  };
+
+  // decides when to evaluate an external atom (if the solver runs in heuristics mode)
+  class ExternalAtomEvaluationHeuristics{
+  protected:
+    GenuineGuessAndCheckModelGenerator& mg;
+  public:
+   ExternalAtomEvaluationHeuristics(GenuineGuessAndCheckModelGenerator& mg);
+    /**
+     * Decides if the reasoner shall evaluate a given external atom at this point.
+     * @param eatom The external atom in question
+     * @param partialInterpretation The current (partial) interpretation
+     * @param factWasSet The current set of assigned atoms; if 0, then the interpretation is complete
+     * @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
+     * @return bool True if the heuristics suggests to evaluate the external atom, otherwise false
+     */
+    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
+  };
+
+  // decides when to evaluate an external atom (if the solver runs in heuristics mode)
+  class UnfoundedSetCheckHeuristics{
+  protected:
+    GenuineGuessAndCheckModelGenerator& mg;
+  public:
+   UnfoundedSetCheckHeuristics(GenuineGuessAndCheckModelGenerator& mg);
+    /**
+     * Decides if the reasoner shall do an unfounded set check at this point.
+     * @param groundIDB The IDB of the ground program
+     * @param partialInterpretation The current (partial) interpretation
+     * @param factWasSet The current set of assigned atoms; if 0, then the interpretation is complete
+     * @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
+     * @return std::pair<bool, std::vector<ID> >
+     *         The first component is true if the heuristics suggests to do an UFS check, otherwise false.
+     *         If true, then the second component is the set of rules which shall be ignored in the UFS check. The assignment must be complete for all non-ignored rules.
+     */
+    virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
+  };
+
+  class ExternalAtomEvaluationHeuristicsAlways : public ExternalAtomEvaluationHeuristics{
+  public:
+   ExternalAtomEvaluationHeuristicsAlways(GenuineGuessAndCheckModelGenerator& mg);
+    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  };
+
+  class UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
+  public:
+   UnfoundedSetCheckHeuristicsPost(GenuineGuessAndCheckModelGenerator& mg);
+   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  };
+
+  class UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
+  public:
+   UnfoundedSetCheckHeuristicsMax(GenuineGuessAndCheckModelGenerator& mg);
+   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  };
+
+  class UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
+  private:
+    int counter;
+  public:
+   UnfoundedSetCheckHeuristicsPeriodic(GenuineGuessAndCheckModelGenerator& mg);
+   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  };
+
   // storage
 protected:
   // we store the factory again, because the base class stores it with the base type only!
   Factory& factory;
 
-//  std::vector<bool> eaVerified;
-//  std::vector<bool> eaEvaluated;
-//  bool isVerified(ID eaAux);
-  bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  RegistryPtr reg;
+
+  EAVerificationMode eaVerificationMode;
+  std::vector<bool> eaVerified;
+  std::vector<bool> eaEvaluated;
+  boost::shared_ptr<ExternalAtomEvaluationHeuristics> externalAtomEvalHeuristics;
+  boost::shared_ptr<UnfoundedSetCheckHeuristics> ufsCheckHeuristics;
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationConstPtr postprocessedInput;
   // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms
   InterpretationPtr mask;
-  // result handle for retrieving set of minimal models of this eval unit
-  ASPSolverManager::ResultsPtr currentResults;
-  std::list<InterpretationPtr> candidates;
 
   // internal solver
   GenuineSolverPtr solver;
 
   // members
-//  bool learnFromExternalAtom(const ExternalAtom& eatom, InterpretationPtr input, InterpretationPtr output);
-  bool firstLearnCall;
+  /**
+   * Checks after completion of an assignment if it is compatible.
+   * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
+   *   of previously recorded verfication results are used to compute the return value.
+   */
+  bool finalCompatibilityCheck(InterpretationConstPtr modelCandidate);
+
+  /**
+   * Checks if a compatible set is a model, i.e., it does the FLP check.
+   * The details depend on the selected semantics (well-justified FLP or FLP) and the selected algorithm (explicit or ufs-based)
+   * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,
+   *   of previously recorded verfication results are used to compute the return value.
+   */
+  bool isModel(InterpretationConstPtr compatibleSet);
+
+  /**
+   * Makes an unfounded set check over a (possibly) partial interpretation if useful.
+   * @param partialInterpretation The current assignment
+   * @param factWasSet Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
+   * @return True if the current assignment contains an unfounded set which will be contained in any completion of the assignment, otherwise false.
+   */
+  bool partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+
+  /**
+   * Checks if an external atom auxiliary value can be taken for sure (i.e. it has already been verified against the external source).
+   * The internal check depends on the selected eaVerificationMode.
+   * @param eaAux The ID of the auxiliary in question
+   * @param factWasSet The set of atoms assigned so far
+   */
+  bool isVerified(ID eaAux, InterpretationConstPtr factWasSet);
+
+  /**
+   * Heuristically decides if and which external atoms we evaluate.
+   * @param partialInterpretation The current assignment
+   * @param factWasSet Currently assigned atoms
+   * @param changed The set of atoms with modified truth value since the last call
+   * @return bool True if evaluation yielded a conflict, otherwise false.
+   */
+  bool verifyExternalAtoms(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+
+  /**
+   * Evaluates the inner external atom with index eaIndex (if possible, i.e., if the input is complete).
+   * Learns nogoods if external learning is activated.
+   * Sets eaVerified and eaEvaluated if eaVerificationMode == mixed.	
+   * @param eaIndex The index of the external atom to verify
+   * @param partialInterpretation The current assignment
+   * @param factWasSet Currently assigned atoms (if 0, then the assignment is assumed to be complete)
+   * @param changed The set of atoms with modified truth value since the last call (if 0, then all atoms are assumed to have changed)
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   */
+  bool verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
+
+  /**
+   * Is called by the ASP solver in its propagation method.
+   * This function can add additional (learned) nogoods to the solver to force implications or tell the solver that the current assignment is conflicting.
+   * @param partialInterpretation The current assignment
+   * @param factWasSet Currently assigned atoms
+   * @param changed The set of atoms with modified truth value since the last call
+   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
+   */
   bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
@@ -122,7 +263,6 @@ public:
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
-  virtual InterpretationPtr generateNextCompatibleModel();
 };
 
 DLVHEX_NAMESPACE_END

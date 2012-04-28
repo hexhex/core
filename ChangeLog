@@ -1,3 +1,18 @@
+2012-04-28 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* dlvhex.cpp: Remove option "--mincheck"
+	* GuessAndCheckModelGenerator.cpp: Likewise.
+	* GuessAndCheckModelGenerator.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise;
+	Implement a framework for external atom evaluation heuristics
+	and UFS check heuristics.
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+
+2012-04-26 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* FLPModelGeneratorBase.h: Implement well-justified FLP semantics
+	* FLPModelGeneratorBase.cpp: Likewise
+
 2012-04-21  Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* src/Registry.cpp: Implement reverse lookup for auxiliary constant symbols

@@ -109,8 +109,10 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 		// here we can mask, we won't lose FLP heads
 		OrdinaryASPProgram flpheadprogram(reg, xidbflphead, compatibleSet, ctx.maxint);
+DBGLOG(DBG,"1: " << flpheadprogram.idb.size());
 		OrdinaryASPSolverTPtr flpheadsolver = OrdinaryASPSolverT::getInstance(ctx, flpheadprogram);
 
+DBGLOG(DBG,"2");
 		flpas = flpheadsolver->projectToOrdinaryAtoms(flpheadsolver->getNextModel());
 		if( flpas == InterpretationPtr() )
 		{

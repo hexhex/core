@@ -100,10 +100,6 @@ protected:
   // result handle for retrieving edb+xidb+gidb guesses of this eval unit
   ASPSolverManager::ResultsPtr guessres;
 
-  // result handle for retrieving set of minimal models of this eval unit
-  ASPSolverManager::ResultsPtr currentResults;
-  std::list<InterpretationPtr> candidates;
-
   // members
 public:
   GuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
@@ -111,7 +107,6 @@ public:
 
   // generate and return next model, return null after last model
   virtual InterpretationPtr generateNextModel();
-  virtual InterpretationPtr generateNextCompatibleModel();
 };
 
 DLVHEX_NAMESPACE_END

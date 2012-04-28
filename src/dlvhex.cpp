@@ -147,10 +147,15 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        ufs: Check if the candidate contains unfounded sets" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
-      << "     --partial=[ver,ufs]  (only useful for genuine solvers)" << std::endl
-      << "                      ver: Enable verification of external atoms before interpretation is complete" << std::endl
-      << "                      ufs: Enable UFS checks before interpretation is complete (only useful with --flpcheck=ufs)" << std::endl
-      << "     --mincheck       Enable explicit minimality check in Guess-and-check model generator" << std::endl
+      << "     --eaheuristics=[post,immediate,always]" << std::endl
+      << "                      Selects the heuristics for external atom evaluation" << std::endl
+      << "                      post: Evaluate only after a model candidate has been completed (bulitin)" << std::endl
+      << "                      immediate: Evaluate immediately after the input to an external atom is complete (bulitin)" << std::endl
+      << "                      always: Evaluate whenever the heuristics is asked (roughly the same as immediate, but using the heuristics infrastructure instead)" << std::endl
+      << "     --ufsheuristics=[post,max,periodic]" << std::endl
+      << "                      post: Do UFS check only over complete interpretations" << std::endl
+      << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
+      << "                      periodic: Do UFS check in periodic intervals" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -312,7 +317,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
-  pctx.config.setOption("MinCheck", 0);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -323,8 +327,8 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningLinearity", 0);
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
-  pctx.config.setOption("PartialVerification", 0);
-  pctx.config.setOption("PartialUFSCheck", 0);
+  pctx.config.setOption("VerificationHeuristics", 0);
+  pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -587,10 +591,10 @@ void processOptionsPrePlugin(
 //		{ "instantiate", no_argument, 0, 19 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "globlearn", optional_argument, 0, 21 },
-		{ "mincheck", no_argument, 0, 22 },
 		{ "ufslearn", no_argument, 0, 23 },
-		{ "partial", optional_argument, 0, 24 },
 		{ "welljustified", optional_argument, 0, 25 },
+		{ "eaevalheuristics", required_argument, 0, 26 },
+		{ "ufscheckheuristics", required_argument, 0, 27 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -950,10 +954,6 @@ void processOptionsPrePlugin(
 						{
 							pctx.config.setOption("ExternalLearningUser", 1);
 						}
-						else if( token == "partial" )
-						{
-							pctx.config.setOption("ExternalLearningPartial", 1);
-						}
 						else
 						{
 							throw GeneralError("Unknown learning option: \"" + token + "\"");
@@ -974,11 +974,7 @@ void processOptionsPrePlugin(
 
 			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
 			break;
-/*
-		case 19:
-			pctx.config.setOption("Instantiate", 1);
-			break;
-*/
+
 		case 20:
 			{
 				std::string check(optarg);
@@ -1004,52 +1000,56 @@ void processOptionsPrePlugin(
 			pctx.config.setOption("GlobalLearning", 1);
 			break;
 
-		case 22:
-			pctx.config.setOption("MinCheck", 1);
-			break;
-
 		case 23:
 			pctx.config.setOption("UFSLearning", 1);
 			break;
 
-		case 24:
+		case 25:
+			pctx.config.setOption("WellJustified", 1);
+			break;
+
+		case 26:
 			{
-				if (optarg){
-					boost::char_separator<char> sep(",");
-					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
-					boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
-
-					for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
-							f != tok.end(); ++f)
-					{
-						const std::string& token = *f;
-						if (token == "ver" )
-						{
-							pctx.config.setOption("PartialVerification", 1);
-						}
-						else if( token == "ufs" )
-						{
-							pctx.config.setOption("PartialUFSCheck", 1);
-						}
-						else
-						{
-							throw GeneralError("Unknown partial option: \"" + token + "\"");
-						}
-					}
-				}else{
-					// by default, turn off partial stuff
-					pctx.config.setOption("PartialVerification", 0);
-					pctx.config.setOption("PartialUFSCheck", 0);
+				std::string heur(optarg);
+				if (heur == "post")
+				{
+					pctx.config.setOption("VerificationHeuristics", 0);
 				}
-
-				if (!pctx.config.getOption("PartialVerification") && pctx.config.getOption("PartialUFSCheck")){
-					throw GeneralError("Partial UFS check can only be used if partial verification is on");
+				else if (heur == "immediate")
+				{
+					pctx.config.setOption("VerificationHeuristics", 1);
+				}
+				else if (heur == "always")
+				{
+					pctx.config.setOption("VerificationHeuristics", 2);
+				}
+				else
+				{
+					throw GeneralError(std::string("Unknown external atom evaluation heuristics: \"") + heur + std::string("\""));
 				}
 			}
 			break;
 
-		case 25:
-			pctx.config.setOption("WellJustified", 1);
+		case 27:
+			{
+				std::string heur(optarg);
+				if (heur == "post")
+				{
+					pctx.config.setOption("UFSCheckHeuristics", 0);
+				}
+				else if (heur == "max")
+				{
+					pctx.config.setOption("UFSCheckHeuristics", 1);
+				}
+				else if (heur == "periodic")
+				{
+					pctx.config.setOption("UFSCheckHeuristics", 2);
+				}
+				else
+				{
+					throw GeneralError(std::string("Unknown UFS check heuristics: \"") + heur + std::string("\""));
+				}
+			}
 			break;
 
 		case '?':
@@ -1057,14 +1057,6 @@ void processOptionsPrePlugin(
 			break;
 		}
 	}
-
-	// consistency of command-line parameters
-	if (!pctx.config.getOption("UFSCheck") && pctx.config.getOption("PartialUFSCheck")){
-		throw GeneralError("Partial UFS check can only be used if --flpcheck=ufs");
-	}
-//	if (pctx.config.getOption("WellJustified") && pctx.config.getOption("PartialUFSCheck")){
-//		throw GeneralError("Partial UFS check cannot be used with the well-justified semantics, which does not need a UFS check");
-//	}
 
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);

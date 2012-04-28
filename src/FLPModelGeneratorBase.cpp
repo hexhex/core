@@ -1502,7 +1502,7 @@ void FLPModelGeneratorBase::createFoundingRules(
 }
 
 
-InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationPtr interpretation, const OrdinaryASPProgram& program){
+InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr interpretation, const OrdinaryASPProgram& program){
 
 	RegistryPtr reg = interpretation->getRegistry();
 

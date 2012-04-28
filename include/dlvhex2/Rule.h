@@ -65,6 +65,8 @@ struct Rule:
   Rule(IDKind kind, ID weight, ID level):
     kind(kind), head(), body(), weight(weight), level(level)
       { assert(ID(kind,0).isRule()); }
+  inline bool isEAGuessingRule() const
+    { return head.size() == 2 && head[0].isExternalAuxiliary() && head[1].isExternalAuxiliary(); }
   std::ostream& print(std::ostream& o) const
     { o << "Rule(" << printvector(head) << " <- " << printvector(body);
       if( weight != ID_FAIL || level != ID_FAIL )
