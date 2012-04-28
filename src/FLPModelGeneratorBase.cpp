@@ -47,6 +47,8 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp> 
 
+#include <fstream>
+
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
