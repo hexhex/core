@@ -194,12 +194,21 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
         break;
       case 2:
         eaVerificationMode = heuristics;
-        DBGLOG(DBG, "EA-Verification Mode: heuristics");
+        DBGLOG(DBG, "EA-Verification Mode: heuristics always");
         for (int i = 0; i < factory.innerEatoms.size(); ++i){
           eaEvaluated.push_back(false);
           eaVerified.push_back(false);
         }
         externalAtomEvalHeuristics = boost::shared_ptr<ExternalAtomEvaluationHeuristics>(new ExternalAtomEvaluationHeuristicsAlways(*this));
+        break;
+      case 3:
+        eaVerificationMode = heuristics;
+        DBGLOG(DBG, "EA-Verification Mode: heuristics never");
+        for (int i = 0; i < factory.innerEatoms.size(); ++i){
+          eaEvaluated.push_back(false);
+          eaVerified.push_back(false);
+        }
+        externalAtomEvalHeuristics = boost::shared_ptr<ExternalAtomEvaluationHeuristics>(new ExternalAtomEvaluationHeuristicsNever(*this));
         break;
       default: assert(false);
     }
@@ -585,6 +594,13 @@ GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsAlways::Exte
 
 bool GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 	return true;
+}
+
+GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(GenuineGuessAndCheckModelGenerator& mg) : ExternalAtomEvaluationHeuristics(mg){
+}
+
+bool GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+	return false;
 }
 
 // ============================== Unfounded Set Check Heuristics ==============================

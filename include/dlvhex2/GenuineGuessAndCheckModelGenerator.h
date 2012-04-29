@@ -153,6 +153,12 @@ public:
     virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
   };
 
+  class ExternalAtomEvaluationHeuristicsNever : public ExternalAtomEvaluationHeuristics{
+  public:
+   ExternalAtomEvaluationHeuristicsNever(GenuineGuessAndCheckModelGenerator& mg);
+    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  };
+
   class UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
   public:
    UnfoundedSetCheckHeuristicsPost(GenuineGuessAndCheckModelGenerator& mg);

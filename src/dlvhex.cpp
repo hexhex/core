@@ -147,11 +147,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        ufs: Check if the candidate contains unfounded sets" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
-      << "     --eaheuristics=[post,immediate,always]" << std::endl
+      << "     --eaheuristics=[post,immediate,always,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
       << "                      post: Evaluate only after a model candidate has been completed (bulitin)" << std::endl
       << "                      immediate: Evaluate immediately after the input to an external atom is complete (bulitin)" << std::endl
       << "                      always: Evaluate whenever the heuristics is asked (roughly the same as immediate, but using the heuristics infrastructure instead)" << std::endl
+      << "                      never: Only evaluate at the end but not when the heuristics is asked (roughly the same as post, but using the heuristics infrastructure instead)" << std::endl
       << "     --ufsheuristics=[post,max,periodic]" << std::endl
       << "                      post: Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
@@ -1022,6 +1023,10 @@ void processOptionsPrePlugin(
 				else if (heur == "always")
 				{
 					pctx.config.setOption("VerificationHeuristics", 2);
+				}
+				else if (heur == "never")
+				{
+					pctx.config.setOption("VerificationHeuristics", 3);
 				}
 				else
 				{
