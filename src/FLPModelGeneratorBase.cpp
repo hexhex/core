@@ -800,49 +800,19 @@ Nogood FLPModelGeneratorBase::getFLPNogood(
 	return ng;
 }
 
-std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
+NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 		ProgramCtx& ctx,
 		OrdinaryASPProgram groundProgram,
+		std::vector<ID> ufsProgram,
 		InterpretationConstPtr compatibleSet /* I */,
+		InterpretationConstPtr compatibleSetWithoutAux,
 		std::set<ID> skipProgram){
 
 	RegistryPtr reg = ctx.registry();
 
-	// remove auxiliaries from interpretation
-	InterpretationPtr intr = InterpretationPtr(new Interpretation(reg));
-	{
-		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
-		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
-		while (en < en_end){
-			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
-				intr->setFact(*en);
-			}
-			en++;
-		}
-	}
-
-	// remove external atom guessing rules and skipped rules from IDB
-	std::vector<ID> idb;
-	BOOST_FOREACH (ID ruleId, groundProgram.idb){
-		const Rule& rule = reg->rules.getByID(ruleId);
-		if ((rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()) ||	// EA-guessing rule
-		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){				// ignored part of the program
-			// skip it
-		}else{
-			idb.push_back(ruleId);
-		}
-	}
-
 #ifndef NDEBUG
 	std::stringstream programstring;
 	RawPrinter printer(programstring, reg);
-	programstring << "EDB: " << *groundProgram.edb << std::endl;
-	programstring << "IDB:" << std::endl;
-	BOOST_FOREACH (ID ruleId, idb){
-		printer.print(ruleId);
-		programstring << std::endl;
-	}
-	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *intr);
 #endif
 
 	// problem instance
@@ -862,7 +832,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 	// create nogoods for all rules of the ground program
 	Nogood c2Relevance;
-	BOOST_FOREACH (ID ruleID, idb){
+	BOOST_FOREACH (ID ruleID, ufsProgram){
 #ifndef NDEBUG
 		programstring.str("");
 		printer.print(ruleID);
@@ -916,7 +886,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 
 			// (condition 3) a head literal, which is true in the interpretation I, is not in the unfounded set X
 			BOOST_FOREACH (ID h, rule.head){
-				if (intr->getFact(h.address)){
+				if (compatibleSetWithoutAux->getFact(h.address)){
 					ng.insert(NogoodContainer::createLiteral(h.address, true));
 				}
 			}
@@ -1000,7 +970,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 						bool antimonotonic = extat.pluginAtom->isAntimonotonic(extat.useProp ? extat.prop : extat.pluginAtom->getExtSourceProperties(), parIndex);
 
 						if ((!monotonic && !antimonotonic) || (monotonic && sign == true) || (antimonotonic && sign == false)){
-							if (intr->getFact(*en)){
+							if (compatibleSetWithoutAux->getFact(*en)){
 								ng.insert(NogoodContainer::createLiteral(*en, false));
 							}
 						}
@@ -1018,8 +988,8 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	// we want a UFS which intersects with I
 	{
 		Nogood ng;
-		bm::bvector<>::enumerator en = intr->getStorage().first();
-		bm::bvector<>::enumerator en_end = intr->getStorage().end();
+		bm::bvector<>::enumerator en = compatibleSetWithoutAux->getStorage().first();
+		bm::bvector<>::enumerator en_end = compatibleSetWithoutAux->getStorage().end();
 		while (en < en_end){
 			ng.insert(NogoodContainer::createLiteral(*en, false));
 			en++;
@@ -1063,8 +1033,143 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	BOOST_FOREACH (Nogood ng, ns.nogoods){
 		ss << ng << " ";
 	}
-	DBGLOG(DBG, "Solving the following UFS detection program: " << ss.str());
+	DBGLOG(DBG, "Constructed the following UFS detection program: " << ss.str());
 #endif
+
+	return ns;
+}
+
+bool FLPModelGeneratorBase::isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsProgram, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSetWithoutAux){
+
+	RegistryPtr reg = ctx.registry();
+
+	// check for each rule with aux('c', ruleID) = true if a positive ordinary body atom is in the unfounded set
+	// if not, then the rule has to be verified wrt. external atoms
+	std::vector<ID> verifyRule;
+	std::vector<ID> verifyEA;
+	BOOST_FOREACH (ID ruleID, ufsProgram){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
+		ID cr = reg->storeOrdinaryGAtom(cratom);
+
+		// was aux('c', ruleID) derived?
+		if (ufsCandidate->getFact(cr.address)){
+			// is a positive ordinary atom in the UFS?
+			bool c2satisfied = false;
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isExternalAuxiliary() && !b.isNaf() && ufsCandidate->getFact(b.address)){
+					c2satisfied = true;
+					break;
+				}
+			}
+			// if not, then satisfaction of condition 2 might be spurious, so we need to verify the condition
+			if (!c2satisfied){
+				DBGLOG(DBG, "Need to verify if condition 2 for " << ruleID << " is satisfied");
+				verifyRule.push_back(ruleID);
+				// we need to evaluate all external atoms involved in this rule
+				BOOST_FOREACH (ID b, rule.body){
+					if (b.isExternalAuxiliary()){
+						BOOST_FOREACH (ID ea, auxToEA[b.address]){
+							DBGLOG(DBG, "Need to evaluate EA " << ea);
+							verifyEA.push_back(ea);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// if no rule needs to be verified, then the candidate is for sure an unfounded set
+	if (verifyRule.size() == 0) return true;
+
+	// compute I u -X
+	InterpretationPtr intr2 = InterpretationPtr(new Interpretation(reg));
+	intr2->add(*compatibleSetWithoutAux);
+	intr2->getStorage() -= ufsCandidate->getStorage();
+	DBGLOG(DBG, "I u -X: " << *intr2);
+
+	// evaluate exteral atoms wrt. intr2
+	InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
+	IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtIuNX);
+	evaluateExternalAtoms(reg, verifyEA, intr2, cb);
+
+	// replace old EA values by new ones
+	intr2->add(*eaValuesWrtIuNX);
+	DBGLOG(DBG, "I u -X with EA values: " << *intr2);
+
+	// check for each rule which needs to be verified if condition 2 is indeed satisfied
+	bool isUfs = true;
+	BOOST_FOREACH (ID ruleID, verifyRule){
+		OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+		cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
+		ID cr = reg->storeOrdinaryGAtom(cratom);
+
+		if (ufsCandidate->getFact(cr.address)){
+			const Rule& rule = reg->rules.getByID(ruleID);
+			bool bodyFalsified = false;
+			BOOST_FOREACH (ID b, rule.body){
+				if (intr2->getFact(b.address) != !b.isNaf()){
+					bodyFalsified = true;
+					break;
+				}
+			}
+			if (!bodyFalsified){
+				isUfs = false;
+				break;
+			}
+		}
+	}
+
+	return isUfs;
+}
+
+std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
+		ProgramCtx& ctx,
+		OrdinaryASPProgram groundProgram,
+		InterpretationConstPtr compatibleSet /* I */,
+		std::set<ID> skipProgram){
+
+	RegistryPtr reg = ctx.registry();
+
+	// remove auxiliaries from interpretation
+	InterpretationPtr intr = InterpretationPtr(new Interpretation(reg));
+	{
+		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
+		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
+		while (en < en_end){
+			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+				intr->setFact(*en);
+			}
+			en++;
+		}
+	}
+
+	// remove external atom guessing rules and skipped rules from IDB
+	std::vector<ID> idb;
+	BOOST_FOREACH (ID ruleId, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleId);
+		if ((rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()) ||	// EA-guessing rule
+		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){				// ignored part of the program
+			// skip it
+		}else{
+			idb.push_back(ruleId);
+		}
+	}
+
+#ifndef NDEBUG
+	std::stringstream programstring;
+	RawPrinter printer(programstring, reg);
+	programstring << "EDB: " << *groundProgram.edb << std::endl;
+	programstring << "IDB:" << std::endl;
+	BOOST_FOREACH (ID ruleId, idb){
+		printer.print(ruleId);
+		programstring << std::endl;
+	}
+	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *intr);
+#endif
+
+	NogoodSet ns = getUFSDetectionProblem(ctx, groundProgram, idb, compatibleSet, intr, skipProgram);
 
 	// solve the problem description
 	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
@@ -1074,44 +1179,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);
 
-		// compute I u -X
-		InterpretationPtr intr2 = InterpretationPtr(new Interpretation(reg));
-		intr2->add(*intr);
-		intr2->getStorage() -= model->getStorage();
-		DBGLOG(DBG, "I u -X: " << *intr2);
-
-		// evaluate exteral atoms wrt. intr2
-		InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
-		IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtIuNX);
-		evaluateExternalAtoms(reg, factory.innerEatoms, intr2, cb);
-
-		// replace old EA values by new ones
-		intr2->add(*eaValuesWrtIuNX);
-		DBGLOG(DBG, "I u -X with EA values: " << *intr2);
-
-		// check for each rule with aux('c', ruleID) in model if condition 2 is indeed satisfied
-		bool isUfs = true;
-		BOOST_FOREACH (ID ruleID, idb){
-			OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-			cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
-			ID cr = reg->storeOrdinaryGAtom(cratom);
-
-			if (model->getFact(cr.address)){
-				const Rule& rule = reg->rules.getByID(ruleID);
-				bool bodyFalsified = false;
-				BOOST_FOREACH (ID b, rule.body){
-					if (intr2->getFact(b.address) != !b.isNaf()){
-						bodyFalsified = true;
-						break;
-					}
-				}
-				if (!bodyFalsified){
-					isUfs = false;
-					break;
-				}
-			}
-		}
-		if (isUfs){
+		if (isUnfoundedSet(ctx, idb, model, intr)){
 			DBGLOG(DBG, "Found UFS: " << *model << " (interpretation: " << *compatibleSet << ")");
 
 			std::vector<IDAddress> ufs;
