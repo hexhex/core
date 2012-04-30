@@ -80,6 +80,8 @@ public:
   void add(const Interpretation& other);
   void bit_and(const Interpretation& other);
 
+  Ptr getInterpretationWithoutExternalAtomAuxiliaries() const;
+
   inline void setFact(IDAddress id)
     { bits.set(id); }
   inline void clearFact(IDAddress id)

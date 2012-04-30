@@ -830,7 +830,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 		}
 	}
 
-	// create nogoods for all rules of the ground program
+	// create nogoods for all rules of the ufs program
 	Nogood c2Relevance;
 	BOOST_FOREACH (ID ruleID, ufsProgram){
 #ifndef NDEBUG
@@ -906,7 +906,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 					ns.addNogood(ng);
 				}
 			}
-			// condition 2 is falsified if (i) no positive ordinary body literal is in the unfounded set, and (ii) the inputs to the external sources in (I u -X) coincide with I
+			// condition 2 is falsified if (i) no positive ordinary body literal is in the unfounded set, and (ii) the relevant input atoms to the external sources in (I u -X) coincide with I
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(cr.address, true));
 			BOOST_FOREACH (ID b, rule.body){
@@ -946,7 +946,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 					}
 				}
 				// add the input to this external atom iff
-				// (i) it is over an antimonotonic input predicate (neither monotonic nor antimonotonic)
+				// (i) it is over a nonmonotonic input predicate (neither monotonic nor antimonotonic)
 				// (ii) the external atom is positive and the input atom is over a monotonic predicate
 				// (iii) the external atom is negative and the input atom is over an antimonotonic predicate
 				if (occurs){
@@ -1089,7 +1089,7 @@ bool FLPModelGeneratorBase::isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsP
 	intr2->getStorage() -= ufsCandidate->getStorage();
 	DBGLOG(DBG, "I u -X: " << *intr2);
 
-	// evaluate exteral atoms wrt. intr2
+	// evaluate (relevant) exteral atoms wrt. intr2
 	InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
 	IntegrateExternalAnswerIntoInterpretationCB cb(eaValuesWrtIuNX);
 	evaluateExternalAtoms(reg, verifyEA, intr2, cb);
@@ -1133,27 +1133,17 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	RegistryPtr reg = ctx.registry();
 
 	// remove auxiliaries from interpretation
-	InterpretationPtr intr = InterpretationPtr(new Interpretation(reg));
-	{
-		bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
-		bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
-		while (en < en_end){
-			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
-				intr->setFact(*en);
-			}
-			en++;
-		}
-	}
+	InterpretationPtr compatibleSetWithoutAux = compatibleSet->getInterpretationWithoutExternalAtomAuxiliaries();
 
 	// remove external atom guessing rules and skipped rules from IDB
-	std::vector<ID> idb;
+	std::vector<ID> ufsProgram;
 	BOOST_FOREACH (ID ruleId, groundProgram.idb){
 		const Rule& rule = reg->rules.getByID(ruleId);
-		if ((rule.head.size() == 2 && rule.head[0].isExternalAuxiliary() && rule.head[1].isExternalAuxiliary()) ||	// EA-guessing rule
-		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){				// ignored part of the program
+		if (rule.isEAGuessingRule() ||								// EA-guessing rule
+		    std::find(skipProgram.begin(), skipProgram.end(), ruleId) != skipProgram.end()){	// ignored part of the program
 			// skip it
 		}else{
-			idb.push_back(ruleId);
+			ufsProgram.push_back(ruleId);
 		}
 	}
 
@@ -1162,16 +1152,16 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	RawPrinter printer(programstring, reg);
 	programstring << "EDB: " << *groundProgram.edb << std::endl;
 	programstring << "IDB:" << std::endl;
-	BOOST_FOREACH (ID ruleId, idb){
+	BOOST_FOREACH (ID ruleId, ufsProgram){
 		printer.print(ruleId);
 		programstring << std::endl;
 	}
-	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *intr);
+	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSetWithoutAux);
 #endif
 
-	NogoodSet ns = getUFSDetectionProblem(ctx, groundProgram, idb, compatibleSet, intr, skipProgram);
+	NogoodSet ns = getUFSDetectionProblem(ctx, groundProgram, ufsProgram, compatibleSet, compatibleSetWithoutAux, skipProgram);
 
-	// solve the problem description
+	// solve the ufs problem
 	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
 	InterpretationConstPtr model;
 
@@ -1179,7 +1169,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);
 
-		if (isUnfoundedSet(ctx, idb, model, intr)){
+		if (isUnfoundedSet(ctx, ufsProgram, model, compatibleSetWithoutAux)){
 			DBGLOG(DBG, "Found UFS: " << *model << " (interpretation: " << *compatibleSet << ")");
 
 			std::vector<IDAddress> ufs;
@@ -1196,6 +1186,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 		}
 	}
 
+	// no ufs
 	std::vector<IDAddress> ufs;
 	return ufs;
 }

@@ -210,8 +210,13 @@ protected:
 		InterpretationConstPtr smallerFLPModel
 		);
 
-private:
-  // constructs the nogood set used for unfounded set detection
+  /**
+   * Constructs the nogood set used for unfounded set detection
+   * @param groundProgram Overall ground program
+   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
+   * @param compatibleSet A compatible set with external atom auxiliaries
+   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
+   */
   NogoodSet getUFSDetectionProblem(
 			ProgramCtx& ctx,
 			OrdinaryASPProgram groundProgram,
@@ -220,10 +225,14 @@ private:
 			InterpretationConstPtr compatibleSetWithoutAux,
 			std::set<ID> skipProgram);
 
-  // checks if an UFS candidate is actually an unfounded set
+  /**
+   * Checks if an UFS candidate is actually an unfounded set
+   * @param ctx ProgramContext
+   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
+   * @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem)
+   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
+   */
   bool isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsProgram, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSetWithoutAux);
-
-public:
 
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
   // If the empty set is returned,
