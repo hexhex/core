@@ -35,6 +35,7 @@ pkginclude_HEADERS = \
   EvalHeuristicOldDlvhex.h \
   EvalHeuristicShared.h \
   EvalHeuristicTrivial.h \
+  ExternalAtomEvaluationHeuristics.h \
   ExternalAtomTable.h \
   FinalEvalGraph.h \
   FLPModelGeneratorBase.h \
@@ -102,5 +103,6 @@ pkginclude_HEADERS = \
   Term.h \
   TermTable.h \
   URLBuf.h \
+  UnfoundedSetCheckHeuristics.h \
   GenuineWellfoundedModelGenerator.h \
   WellfoundedModelGenerator.h

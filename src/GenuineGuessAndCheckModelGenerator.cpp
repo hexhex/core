@@ -182,52 +182,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
     RegistryPtr reg = factory.reg;
 
-    // set external atom evaluation strategy
-    switch (factory.ctx.config.getOption("VerificationHeuristics")){
-      case 0:
-        eaVerificationMode = post;
-        DBGLOG(DBG, "EA-Verification Mode: post");
-        break;
-      case 1:
-        eaVerificationMode = immediate;
-        DBGLOG(DBG, "EA-Verification Mode: immediate");
-        break;
-      case 2:
-        eaVerificationMode = heuristics;
-        DBGLOG(DBG, "EA-Verification Mode: heuristics always");
-        for (int i = 0; i < factory.innerEatoms.size(); ++i){
-          eaEvaluated.push_back(false);
-          eaVerified.push_back(false);
-        }
-        externalAtomEvalHeuristics = boost::shared_ptr<ExternalAtomEvaluationHeuristics>(new ExternalAtomEvaluationHeuristicsAlways(*this));
-        break;
-      case 3:
-        eaVerificationMode = heuristics;
-        DBGLOG(DBG, "EA-Verification Mode: heuristics never");
-        for (int i = 0; i < factory.innerEatoms.size(); ++i){
-          eaEvaluated.push_back(false);
-          eaVerified.push_back(false);
-        }
-        externalAtomEvalHeuristics = boost::shared_ptr<ExternalAtomEvaluationHeuristics>(new ExternalAtomEvaluationHeuristicsNever(*this));
-        break;
-      default: assert(false);
-    }
-
-    switch (factory.ctx.config.getOption("UFSCheckHeuristics")){
-      case 0:
-        DBGLOG(DBG, "UFS Heuristics: post");
-        ufsCheckHeuristics = boost::shared_ptr<UnfoundedSetCheckHeuristics>(new UnfoundedSetCheckHeuristicsPost(*this));
-        break;
-      case 1:
-        DBGLOG(DBG, "UFS Heuristics: max");
-        ufsCheckHeuristics = boost::shared_ptr<UnfoundedSetCheckHeuristics>(new UnfoundedSetCheckHeuristicsMax(*this));
-        break;
-      case 2:
-        DBGLOG(DBG, "UFS Heuristics: periodic");
-        ufsCheckHeuristics = boost::shared_ptr<UnfoundedSetCheckHeuristics>(new UnfoundedSetCheckHeuristicsPeriodic(*this));
-        break;
-      default: assert(false);
-    }
+    setHeuristics();
 
     // create new interpretation as copy
     InterpretationPtr postprocInput;
@@ -295,6 +250,35 @@ GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
 		solver->removeExternalLearner(this);
 	}
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
+}
+
+void GenuineGuessAndCheckModelGenerator::setHeuristics(){
+
+    // set external atom evaluation strategy according to selected heuristics
+    switch (factory.ctx.config.getOption("VerificationHeuristics")){
+      // post and immediate are hardcoded
+      case 0:
+        eaVerificationMode = post;
+        DBGLOG(DBG, "EA-Verification Mode: post");
+        break;
+      case 1:
+        eaVerificationMode = immediate;
+        DBGLOG(DBG, "EA-Verification Mode: immediate");
+        break;
+      // other heuristics use the heuristics framework
+      case 2:
+        eaVerificationMode = heuristics;
+        DBGLOG(DBG, "EA-Verification Mode: heuristics");
+        for (int i = 0; i < factory.innerEatoms.size(); ++i){
+          eaEvaluated.push_back(false);
+          eaVerified.push_back(false);
+        }
+        externalAtomEvalHeuristics = factory.ctx.externalAtomEvaluationHeuristicsFactory->createHeuristics(this, reg);
+        break;
+      default: assert(false);
+    }
+    // create ufs check heuristics as selected
+    ufsCheckHeuristics = factory.ctx.unfoundedSetCheckHeuristicsFactory->createHeuristics(this, reg);
 }
 
 InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
@@ -573,6 +557,10 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	return false;
 }
 
+const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){
+	return solver->getGroundProgram();
+}
+
 bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	bool conflict = verifyExternalAtoms(partialInterpretation, factWasSet, changed);
@@ -581,101 +569,6 @@ bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInt
 	if (conflict) return true;
 
 	return partialUFSCheck(partialInterpretation, factWasSet, changed);
-}
-
-
-// ============================== External Atom Evaluation Heuristics ==============================
-
-GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristics::ExternalAtomEvaluationHeuristics(GenuineGuessAndCheckModelGenerator& mg) : mg(mg){
-}
-
-GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsAlways::ExternalAtomEvaluationHeuristicsAlways(GenuineGuessAndCheckModelGenerator& mg) : ExternalAtomEvaluationHeuristics(mg){
-}
-
-bool GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsAlways::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-	return true;
-}
-
-GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsNever::ExternalAtomEvaluationHeuristicsNever(GenuineGuessAndCheckModelGenerator& mg) : ExternalAtomEvaluationHeuristics(mg){
-}
-
-bool GenuineGuessAndCheckModelGenerator::ExternalAtomEvaluationHeuristicsNever::doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-	return false;
-}
-
-// ============================== Unfounded Set Check Heuristics ==============================
-
-GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristics::UnfoundedSetCheckHeuristics(GenuineGuessAndCheckModelGenerator& mg) : mg(mg){
-}
-
-GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsPost::UnfoundedSetCheckHeuristicsPost(GenuineGuessAndCheckModelGenerator& mg) : UnfoundedSetCheckHeuristics(mg){
-}
-
-std::pair<bool, std::set<ID> > GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsPost::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-	return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
-}
-
-GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsMax::UnfoundedSetCheckHeuristicsMax(GenuineGuessAndCheckModelGenerator& mg) : UnfoundedSetCheckHeuristics(mg){
-}
-
-std::pair<bool, std::set<ID> > GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsMax::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-
-	// partial UFS check
-	DBGLOG(DBG, "Doing partial UFS check over interpretation " << *partialInterpretation << " (assigned: " << *factWasSet << ")");
-	const std::vector<ID>& idb = mg.solver->getGroundProgram().idb;
-	std::set<ID> skipProgram;
-	BOOST_FOREACH (ID ruleID, idb){
-		// check if all atoms in the rule have been assigned
-		const Rule& rule = mg.reg->rules.getByID(ruleID);
-		if (rule.isEAGuessingRule()) continue;
-		bool assigned = true;
-		BOOST_FOREACH (ID h, rule.head){
-			if (!factWasSet->getFact(h.address)){
-				assigned = false;
-				break;
-			}
-		}
-		BOOST_FOREACH (ID b, rule.body){
-			if (!factWasSet->getFact(b.address)){
-				assigned = false;
-				break;
-			}
-			if (b.isExternalAuxiliary()){	
-				assigned = mg.isVerified(b, factWasSet);
-				break;
-			}
-		}
-		if (!assigned){
-			skipProgram.insert(ruleID);
-		}
-	}
-#ifndef NDEBUG
-	{
-		std::stringstream programstring;
-		RawPrinter printer(programstring, mg.reg);
-		programstring << "Skipped program:" << std::endl;
-		BOOST_FOREACH (ID ruleId, skipProgram){
-			printer.print(ruleId);
-			programstring << std::endl;
-		}
-		DBGLOG(DBG, programstring.str());
-	}
-#endif
-
-	return std::pair<bool, std::set<ID> >(true, skipProgram);
-}
-
-GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsPeriodic::UnfoundedSetCheckHeuristicsPeriodic(GenuineGuessAndCheckModelGenerator& mg) : UnfoundedSetCheckHeuristicsMax(mg), counter(0){
-}
-
-std::pair<bool, std::set<ID> > GenuineGuessAndCheckModelGenerator::UnfoundedSetCheckHeuristicsPeriodic::doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-	counter++;
-	if (counter >= 10){
-		counter = 0;
-		return UnfoundedSetCheckHeuristicsMax::doUFSCheck(partialInterpretation, factWasSet, changed);
-	}else{
-		return std::pair<bool, std::set<ID> >(false, std::set<ID>() );
-	}
 }
 
 DLVHEX_NAMESPACE_END

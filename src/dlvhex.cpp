@@ -59,6 +59,8 @@
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/OnlineModelBuilder.h"
 #include "dlvhex2/OfflineModelBuilder.h"
 
@@ -589,7 +591,6 @@ void processOptionsPrePlugin(
 		{ "split", no_argument, &longid, 16 },
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
-//		{ "instantiate", no_argument, 0, 19 },
 		{ "flpcheck", required_argument, 0, 20 },
 		{ "globlearn", optional_argument, 0, 21 },
 		{ "ufslearn", no_argument, 0, 23 },
@@ -598,6 +599,10 @@ void processOptionsPrePlugin(
 		{ "ufscheckheuristics", required_argument, 0, 27 },
 		{ NULL, 0, NULL, 0 }
 	};
+
+  // default settings
+  pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+  pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
@@ -902,24 +907,7 @@ void processOptionsPrePlugin(
 					break;
 				}
 			break;
-/*
-		case 17:
-				DBGLOG(DBG, "Using genuine solver");
-				if (optarg){
-					std::string oa(optarg);
-					if (oa == "internal"){
-						pctx.config.setOption("GenuineSolver", 1);
-					}else if(oa == "clingo"){
-						pctx.config.setOption("GenuineSolver", 2);
-					}else{
-						throw GeneralError(std::string("Genuine solver '") + oa + std::string("' not recognized"));
-					}
-				}else{
-					pctx.config.setOption("GenuineSolver", 1);
-				}
-				
-				break;
-*/
+
 		case 18:
 			{
 				if (optarg){
@@ -1022,11 +1010,13 @@ void processOptionsPrePlugin(
 				}
 				else if (heur == "always")
 				{
+					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
 					pctx.config.setOption("VerificationHeuristics", 2);
 				}
 				else if (heur == "never")
 				{
-					pctx.config.setOption("VerificationHeuristics", 3);
+					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+					pctx.config.setOption("VerificationHeuristics", 2);
 				}
 				else
 				{
@@ -1040,14 +1030,17 @@ void processOptionsPrePlugin(
 				std::string heur(optarg);
 				if (heur == "post")
 				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 					pctx.config.setOption("UFSCheckHeuristics", 0);
 				}
 				else if (heur == "max")
 				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsMaxFactory());
 					pctx.config.setOption("UFSCheckHeuristics", 1);
 				}
 				else if (heur == "periodic")
 				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPeriodicFactory());
 					pctx.config.setOption("UFSCheckHeuristics", 2);
 				}
 				else

@@ -81,11 +81,29 @@ public:
   virtual std::ostream& print(std::ostream& o, bool verbose) const;
 };
 
+class HeuristicsModelGeneratorInterface{
+public:
+	/**
+	* Checks if an external atom auxiliary value can be taken for sure (i.e. it has already been verified against the external source).
+	* The internal check depends on the selected eaVerificationMode.
+	* @param eaAux The ID of the auxiliary in question
+	* @param factWasSet The set of atoms assigned so far
+	*/
+	virtual bool isVerified(ID eaAux, InterpretationConstPtr factWasSet) = 0;
+
+	/**
+	* Returns the ground program in this component
+	* @return const std::vector<ID>& Reference to the ground program in this component
+	*/
+	virtual const OrdinaryASPProgram& getGroundProgram() = 0;
+};
+
 // the model generator (accesses and uses the factory)
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
-  public LearningCallback
+  public LearningCallback,
+  public HeuristicsModelGeneratorInterface
 {
   // types
 public:
@@ -111,74 +129,6 @@ public:
     heuristics
   };
 
-  // decides when to evaluate an external atom (if the solver runs in heuristics mode)
-  class ExternalAtomEvaluationHeuristics{
-  protected:
-    GenuineGuessAndCheckModelGenerator& mg;
-  public:
-   ExternalAtomEvaluationHeuristics(GenuineGuessAndCheckModelGenerator& mg);
-    /**
-     * Decides if the reasoner shall evaluate a given external atom at this point.
-     * @param eatom The external atom in question
-     * @param partialInterpretation The current (partial) interpretation
-     * @param factWasSet The current set of assigned atoms; if 0, then the interpretation is complete
-     * @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-     * @return bool True if the heuristics suggests to evaluate the external atom, otherwise false
-     */
-    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
-  };
-
-  // decides when to evaluate an external atom (if the solver runs in heuristics mode)
-  class UnfoundedSetCheckHeuristics{
-  protected:
-    GenuineGuessAndCheckModelGenerator& mg;
-  public:
-   UnfoundedSetCheckHeuristics(GenuineGuessAndCheckModelGenerator& mg);
-    /**
-     * Decides if the reasoner shall do an unfounded set check at this point.
-     * @param groundIDB The IDB of the ground program
-     * @param partialInterpretation The current (partial) interpretation
-     * @param factWasSet The current set of assigned atoms; if 0, then the interpretation is complete
-     * @param changed The set of atoms with a (possibly) modified truth value since the last call; if 0, then all atoms have changed
-     * @return std::pair<bool, std::vector<ID> >
-     *         The first component is true if the heuristics suggests to do an UFS check, otherwise false.
-     *         If true, then the second component is the set of rules which shall be ignored in the UFS check. The assignment must be complete for all non-ignored rules.
-     */
-    virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
-  };
-
-  class ExternalAtomEvaluationHeuristicsAlways : public ExternalAtomEvaluationHeuristics{
-  public:
-   ExternalAtomEvaluationHeuristicsAlways(GenuineGuessAndCheckModelGenerator& mg);
-    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
-  };
-
-  class ExternalAtomEvaluationHeuristicsNever : public ExternalAtomEvaluationHeuristics{
-  public:
-   ExternalAtomEvaluationHeuristicsNever(GenuineGuessAndCheckModelGenerator& mg);
-    virtual bool doEvaluate(const ExternalAtom& eatom, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
-  };
-
-  class UnfoundedSetCheckHeuristicsPost : public UnfoundedSetCheckHeuristics{
-  public:
-   UnfoundedSetCheckHeuristicsPost(GenuineGuessAndCheckModelGenerator& mg);
-   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
-  };
-
-  class UnfoundedSetCheckHeuristicsMax : public UnfoundedSetCheckHeuristics{
-  public:
-   UnfoundedSetCheckHeuristicsMax(GenuineGuessAndCheckModelGenerator& mg);
-   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
-  };
-
-  class UnfoundedSetCheckHeuristicsPeriodic : public UnfoundedSetCheckHeuristicsMax{
-  private:
-    int counter;
-  public:
-   UnfoundedSetCheckHeuristicsPeriodic(GenuineGuessAndCheckModelGenerator& mg);
-   virtual std::pair<bool, std::set<ID> > doUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
-  };
-
   // storage
 protected:
   // we store the factory again, because the base class stores it with the base type only!
@@ -189,8 +139,8 @@ protected:
   EAVerificationMode eaVerificationMode;
   std::vector<bool> eaVerified;
   std::vector<bool> eaEvaluated;
-  boost::shared_ptr<ExternalAtomEvaluationHeuristics> externalAtomEvalHeuristics;
-  boost::shared_ptr<UnfoundedSetCheckHeuristics> ufsCheckHeuristics;
+  ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
+  UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
   // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
   InterpretationConstPtr postprocessedInput;
@@ -255,6 +205,12 @@ protected:
   bool verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 
   /**
+   * Returns the ground program in this component
+   * @return const std::vector<ID>& Reference to the ground program in this component
+   */
+  const OrdinaryASPProgram& getGroundProgram();
+
+  /**
    * Is called by the ASP solver in its propagation method.
    * This function can add additional (learned) nogoods to the solver to force implications or tell the solver that the current assignment is conflicting.
    * @param partialInterpretation The current assignment
@@ -263,6 +219,9 @@ protected:
    * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
    */
   bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+
+  // initialization
+  void setHeuristics();
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~GenuineGuessAndCheckModelGenerator();

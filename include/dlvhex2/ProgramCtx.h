@@ -44,6 +44,8 @@
 #include "dlvhex2/FinalEvalGraph.h"
 #include "dlvhex2/EvalHeuristicBase.h"
 #include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/ModelBuilder.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Nogood.h"
@@ -98,6 +100,9 @@ public:
   EvalHeuristicPtr evalHeuristic;
   // factory for model builders
   ModelBuilderFactory modelBuilderFactory;
+  // factory for external atom evaluation heuristic and ufs check heuristic
+  ExternalAtomEvaluationHeuristicsFactoryPtr externalAtomEvaluationHeuristicsFactory;
+  UnfoundedSetCheckHeuristicsFactoryPtr unfoundedSetCheckHeuristicsFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 

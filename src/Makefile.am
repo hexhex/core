@@ -64,6 +64,7 @@ libdlvhex2_base_la_SOURCES = \
     EvalHeuristicOldDlvhex.cpp \
     EvalHeuristicShared.cpp \
     EvalHeuristicTrivial.cpp \
+    ExternalAtomEvaluationHeuristics.cpp \
     FLPModelGeneratorBase.cpp \
     GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
@@ -97,7 +98,8 @@ libdlvhex2_base_la_SOURCES = \
     SafetyChecker.cpp \
     SATSolver.cpp \
     State.cpp \
-    URLBuf.cpp
+    URLBuf.cpp \
+    UnfoundedSetCheckHeuristics.cpp
 
 # dlvhex MLP component
 libdlvhex2_mlpsolver_la_SOURCES =
