@@ -109,10 +109,8 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 		// here we can mask, we won't lose FLP heads
 		OrdinaryASPProgram flpheadprogram(reg, xidbflphead, compatibleSet, ctx.maxint);
-DBGLOG(DBG,"1: " << flpheadprogram.idb.size());
 		OrdinaryASPSolverTPtr flpheadsolver = OrdinaryASPSolverT::getInstance(ctx, flpheadprogram);
 
-DBGLOG(DBG,"2");
 		flpas = flpheadsolver->projectToOrdinaryAtoms(flpheadsolver->getNextModel());
 		if( flpas == InterpretationPtr() )
 		{
@@ -173,10 +171,12 @@ DBGLOG(DBG,"2");
           flpbodysolver, ngc->getNogood(i));
 			}
 		}
-
+//int i = 0;
 		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
 		while(flpbodyas != InterpretationPtr())
 		{
+//i++;
+//std::cout << "FLP: smaller model candidate " << *flpbodyas << std::endl;
 			// compatibility check
 			DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);
       NogoodContainerPtr bodySolverNogoods =
@@ -193,6 +193,8 @@ DBGLOG(DBG,"2");
 				if (encodeMinimalityCheckIntoReduct){
 					// reduct model is a proper subset (this was already ensured by the program encoding)
 					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check (checked against " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+
+//std::cout << "Enumerated " << i << " FLP candidates" << std::endl;
 
 /*
 					{
@@ -227,8 +229,10 @@ DBGLOG(DBG,"2");
 					     candidate->getStorage().count() > flpbodyas->getStorage().count()){				// proper subset property
 						// found a smaller model of the reduct
 						flpm++;
-						DBGLOG(DBG, "Model candidate " << *candidate << " failed FLP check (checked agains " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
-//						constructFLPNogood(ctx, groundProgram, compatibleSet, candidate, flpbodyas);
+						DBGLOG(DBG, "Model candidate " << *candidate << " failed FLP check (checked against " << flpm << " compatible reduct models before smaller one was found) because " << *flpbodyas << " is a subset");
+
+//std::cout << "Enumerated " << i << " FLP candidates" << std::endl;
+
 						return false;
 					}else{
 						DBGLOG(DBG, "Reduct model is no proper subset");
@@ -240,7 +244,9 @@ DBGLOG(DBG,"2");
 			DBGLOG(DBG, "Go to next model of reduct");
 			flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
 		}
+//std::cout << "Enumerated " << i << " FLP candidates" << std::endl;
 	}
+
 	DBGLOG(DBG, "Model candidate " << *compatibleSet << " passed FLP check (against " << flpm << " compatible reduct models)");			
 	return true;
 }

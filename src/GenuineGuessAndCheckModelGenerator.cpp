@@ -381,11 +381,13 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			// Explicit FLP check
 			if (factory.ctx.config.getOption("FLPCheck")){
 				DBGLOG(DBG, "FLP Check");
+//std::cout << "Doing FLP check for " << *compatibleSet << std::endl;
 				return isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, solver);
 			}
 
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
+//std::cout << "Doing UFS check for " << *compatibleSet << std::endl;
 				DBGLOG(DBG, "UFS Check");
 				std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), compatibleSet);
 				if (ufs.size() > 0){

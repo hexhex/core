@@ -830,6 +830,25 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 		}
 	}
 
+	// atoms not in I must not be true in the unfounded set
+	BOOST_FOREACH (ID ruleID, ufsProgram){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head){
+			if (!compatibleSet->getFact(h.address)){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(h.address, true));
+				ns.addNogood(ng);
+			}
+		}
+		BOOST_FOREACH (ID b, rule.body){
+			if (!compatibleSet->getFact(b.address)){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(b.address, true));
+				ns.addNogood(ng);
+			}
+		}
+	}
+
 	// create nogoods for all rules of the ufs program
 	Nogood c2Relevance;
 	BOOST_FOREACH (ID ruleID, ufsProgram){
@@ -893,6 +912,13 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 
 			// (condition 2) a body literal is false wrt "interpretation union negated unfounded set"
 			ng.insert(NogoodContainer::createLiteral(cr.address, false));
+			ns.addNogood(ng);
+		}
+		{
+			// if hr is false, then condition 2 does not matter, so do not enumerate the truth values in this case
+			Nogood ng;
+			ng.insert(NogoodContainer::createLiteral(hr.address, false));
+			ng.insert(NogoodContainer::createLiteral(cr.address, true));
 			ns.addNogood(ng);
 		}
 		// (condition 2) a body literal is false wrt "interpretation union negated unfounded set" (I u -X)
@@ -1164,11 +1190,12 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	// solve the ufs problem
 	SATSolverPtr solver = SATSolver::getInstance(ctx, ns);
 	InterpretationConstPtr model;
-
+//int i = 0;
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);
-
+//i++;
+//std::cout << "UFS candidate:" << *model << std::endl;
 		if (isUnfoundedSet(ctx, ufsProgram, model, compatibleSetWithoutAux)){
 			DBGLOG(DBG, "Found UFS: " << *model << " (interpretation: " << *compatibleSet << ")");
 
@@ -1180,12 +1207,14 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 				ufs.push_back(*en);
 				en++;
 			}
+//std::cout << "Enumerated " << i << " UFS candidates" << std::endl;
 			return ufs;
 		}else{
 			DBGLOG(DBG, "No UFS: " << *model);
 		}
 	}
 
+//std::cout << "Enumerated " << i << " UFS candidates" << std::endl;
 	// no ufs
 	std::vector<IDAddress> ufs;
 	return ufs;
