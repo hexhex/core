@@ -161,6 +161,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		ss << "}\nEDB=" << *reductEDB;
 		DBGLOG(DBG, "Evaluating simulated reduct: " << ss.str());
 
+//std::cout << ss.str() << std::endl << std::endl;
 		OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, ctx.maxint);
     OrdinaryASPSolverTPtr flpbodysolver = OrdinaryASPSolverT::getInstance(ctx, flpbodyprogram);
 

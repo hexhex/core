@@ -829,7 +829,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 			en++;
 		}
 	}
-
+/*
 	// atoms not in I must not be true in the unfounded set
 	BOOST_FOREACH (ID ruleID, ufsProgram){
 		const Rule& rule = reg->rules.getByID(ruleID);
@@ -848,7 +848,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 			}
 		}
 	}
-
+*/
 	// create nogoods for all rules of the ufs program
 	Nogood c2Relevance;
 	BOOST_FOREACH (ID ruleID, ufsProgram){
@@ -915,7 +915,7 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 			ns.addNogood(ng);
 		}
 		{
-			// if hr is false, then condition 2 does not matter, so do not enumerate the truth values in this case
+			// (o) if hr is false, then condition 2 does not matter, so do not enumerate the truth values in this case
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(hr.address, false));
 			ng.insert(NogoodContainer::createLiteral(cr.address, true));
@@ -929,6 +929,9 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 					Nogood ng;
 					ng.insert(NogoodContainer::createLiteral(cr.address, false));
 					ng.insert(NogoodContainer::createLiteral(b.address, true));
+
+					// this literal is very important: if the head is false, then do not derive T cr, otherwise we have a contradiction with the optimization (o)
+					ng.insert(NogoodContainer::createLiteral(hr.address, true));
 					ns.addNogood(ng);
 				}
 			}
@@ -1184,6 +1187,7 @@ std::vector<IDAddress> FLPModelGeneratorBase::getUnfoundedSet(
 	}
 	DBGLOG(DBG, "Computing unfounded set of program:" << std::endl << programstring.str() << std::endl << "with respect to interpretation" << std::endl << *compatibleSetWithoutAux);
 #endif
+//std::cout << programstring.str() << std::endl;
 
 	NogoodSet ns = getUFSDetectionProblem(ctx, groundProgram, ufsProgram, compatibleSet, compatibleSetWithoutAux, skipProgram);
 
