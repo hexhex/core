@@ -1100,8 +1100,10 @@ bool FLPModelGeneratorBase::isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsP
 				BOOST_FOREACH (ID b, rule.body){
 					if (b.isExternalAuxiliary()){
 						BOOST_FOREACH (ID ea, auxToEA[b.address]){
-							DBGLOG(DBG, "Need to evaluate EA " << ea);
-							verifyEA.push_back(ea);
+							if (std::find(verifyEA.begin(), verifyEA.end(), ea) == verifyEA.end()){
+								DBGLOG(DBG, "Need to evaluate EA " << ea);
+								verifyEA.push_back(ea);
+							}
 						}
 					}
 				}
@@ -1117,6 +1119,89 @@ bool FLPModelGeneratorBase::isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsP
 	intr2->add(*compatibleSetWithoutAux);
 	intr2->getStorage() -= ufsCandidate->getStorage();
 	DBGLOG(DBG, "I u -X: " << *intr2);
+
+
+
+std::vector<std::set<ID> > toFalsify;			// one element from each set needs to be falsified
+std::map<IDAddress, std::set<int> > toFalsifyIndex;	// stores for each address the vector elements where the address occurs
+BOOST_FOREACH (ID ruleID, verifyRule){
+	OrdinaryAtom cratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+	cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
+	ID cr = reg->storeOrdinaryGAtom(cratom);
+
+#ifndef NDEBUG
+	std::stringstream ss;
+#endif
+
+	std::set<ID> s;
+	if (ufsCandidate->getFact(cr.address)){
+		const Rule& rule = reg->rules.getByID(ruleID);
+		// collect auxiliaries
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isExternalAuxiliary()){
+				s.insert(b);
+#ifndef NDEBUG
+				ss << (b.isNaf() ? "-" : "") << b.address << " ";
+#endif
+				toFalsifyIndex[b.address].insert(toFalsify.size());
+			}
+		}
+	}
+#ifndef NDEBUG
+	DBGLOG(DBG, toFalsify.size() << ": { " << ss.str() << "}");
+#endif
+	toFalsify.push_back(s);
+}
+
+// evaluate one external atom after the other
+IntegrateExternalAnswerIntoInterpretationCB cbb(intr2);
+BOOST_FOREACH (ID eatomid, verifyEA){
+	DBGLOG(DBG, "Evaluating EA " << eatomid);
+	const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
+	evaluateExternalAtom(reg, eatom, intr2, cbb);
+
+	int eaIndex = -1;
+	for (int i = 0; i < factory.innerEatoms.size(); ++i) if (factory.innerEatoms[i] == eatomid) eaIndex = i;
+	assert(eaIndex != -1);
+
+	// go through the output atoms of this external atom
+	DBGLOG(DBG, "Going through output atoms of " << eatomid << " (index: " << eaIndex << ")");
+	eaMasks[eaIndex].updateMask();
+	bm::bvector<>::enumerator en = eaMasks[eaIndex].mask()->getStorage().first();
+	bm::bvector<>::enumerator en_end = eaMasks[eaIndex].mask()->getStorage().end();
+	Nogood ng;
+	while (en < en_end){
+		if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+			// go through all sets in toFalsify and check if the element was verified or falsified
+			DBGLOG(DBG, "Going through sets of auxiliary " << *en);
+			typedef std::set<ID> S;
+			BOOST_FOREACH (int setindex, toFalsifyIndex[*en]){
+				S& set = toFalsify[setindex];
+				DBGLOG(DBG, "Going through set with index " << setindex);
+				BOOST_FOREACH (ID elem, set){
+					if (elem.address == *en && elem.isNaf() != intr2->getFact(*en)){
+						DBGLOG(DBG, "Verified");
+						// verified: remove it from the set
+						set.erase(elem);
+						if (set.size() == 0) return false;	// at least one set is not falsified
+						break;
+					}
+					if (elem.address == *en && elem.isNaf() == intr2->getFact(*en)){
+						// falsified: remove the set
+						DBGLOG(DBG, "Falsified");
+						break;
+					}
+				}
+			}
+		}
+		en++;
+	}
+}
+return true;
+
+
+
+
 
 	// evaluate (relevant) exteral atoms wrt. intr2
 	InterpretationPtr eaValuesWrtIuNX = InterpretationPtr(new Interpretation(reg));
