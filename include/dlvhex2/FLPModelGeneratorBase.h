@@ -223,7 +223,8 @@ protected:
 			std::vector<ID> ufsProgram,
 			InterpretationConstPtr compatibleSet,
 			InterpretationConstPtr compatibleSetWithoutAux,
-			std::set<ID> skipProgram);
+			std::set<ID> skipProgram,
+			NogoodContainerPtr ngc = NogoodContainerPtr());
 
   /**
    * Checks if an UFS candidate is actually an unfounded set
@@ -232,7 +233,7 @@ protected:
    * @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem)
    * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
    */
-  bool isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsProgram, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSetWithoutAux);
+  bool isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsProgram, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux);
 
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
   // If the empty set is returned,
@@ -247,7 +248,8 @@ protected:
 			ProgramCtx& ctx,
 			OrdinaryASPProgram groundProgram,
 			InterpretationConstPtr compatibleSet,
-			std::set<ID> skipProgram = std::set<ID>());
+			std::set<ID> skipProgram = std::set<ID>(),
+			NogoodContainerPtr ngc = NogoodContainerPtr());
 
   // constructs a nogood which encodes the essence of an unfounded set
   Nogood getUFSNogood(

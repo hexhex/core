@@ -76,7 +76,7 @@ public:
 	virtual int getNogoodCount() = 0;
 
 	static inline ID createLiteral(ID lit){
-		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);
+		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address); //  | (lit.kind & ID::PROPERTY_MASK)
 	}
 	static inline ID createLiteral(IDAddress litadr, bool truthValue = true){
 		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (truthValue ? 0 : ID::NAF_MASK), litadr);

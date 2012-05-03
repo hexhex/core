@@ -389,7 +389,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("UFSCheck")){
 //std::cout << "Doing UFS check for " << *compatibleSet << std::endl;
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), compatibleSet);
+				std::vector<IDAddress> ufs = getUnfoundedSet(factory.ctx, solver->getGroundProgram(), compatibleSet, std::set<ID>(), solver);
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Got a UFS");
 					if (factory.ctx.config.getOption("UFSLearning")){
