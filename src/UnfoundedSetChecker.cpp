@@ -237,9 +237,9 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPart(){
 
 	DBGLOG(DBG, "Constructing optimization part of UFS detection problem");
 	constructUFSDetectionProblemOptimizationPartBasicRestrictToCompatibleSet();
-//	constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
+	constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
 	constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch();
-//	constructUFSDetectionProblemOptimizationPartEAEnforement();
+	constructUFSDetectionProblemOptimizationPartEAEnforement();
 }
 
 void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicRestrictToCompatibleSet(){
