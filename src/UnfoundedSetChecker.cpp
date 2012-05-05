@@ -236,13 +236,13 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPart(){
 
 	DBGLOG(DBG, "Constructing optimization part of UFS detection problem");
-	constructUFSDetectionProblemOptimizationPartBasicRestrictToCompatibleSet();
+	constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet();
 	constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
 	constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch();
 	constructUFSDetectionProblemOptimizationPartEAEnforement();
 }
 
-void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicRestrictToCompatibleSet(){
+void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet(){
 
 	// ordinary atoms not in I must not be in the unfounded set
 	DBGLOG(DBG, "O: Ordinary atoms not in I must not be in the unfounded set");

@@ -69,7 +69,7 @@ private:
   void constructUFSDetectionProblem();
   void constructUFSDetectionProblemNecessaryPart();
   void constructUFSDetectionProblemOptimizationPart();
-  void constructUFSDetectionProblemOptimizationPartBasicRestrictToCompatibleSet();
+  void constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet();
   void constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
   void constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch();
   void constructUFSDetectionProblemOptimizationPartEAEnforement();
