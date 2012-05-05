@@ -1,3 +1,12 @@
+2012-05-05 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/Nogood.cpp: Likewise
+	* include/dlvhex2/Nogood.h: New print methods
+	* src/UnfoundedSetChecker.cpp: Nogood exchange
+	between UFS detection and main search
+	* include/dlvhex2/UnfoundedSetChecker.h: Likewise
+	* include/dlvhex2/FLPModelGeneratorBase.tcc: small changes
+
 2012-04-28 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* dlvhex.cpp: Remove option "--mincheck"
