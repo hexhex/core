@@ -183,7 +183,14 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);
       NogoodContainerPtr bodySolverNogoods =
         ExternalSolverHelper<OrdinaryASPSolverT>::getNogoodContainer(flpbodysolver);
-			bool compatible = isCompatibleSet(flpbodyas, postprocessedInput, ctx, bodySolverNogoods);
+			bool compatible;
+			int ngCount = ngc ? ngc->getNogoodCount() : 0;
+			compatible = isCompatibleSet(flpbodyas, postprocessedInput, ctx, ngc);
+			if (ngc){
+				for (int i = ngCount; i < ngc->getNogoodCount(); ++i){
+					bodySolverNogoods->addNogood(ngc->getNogood(i));
+				}
+			}
 			DBGLOG(DBG, "Compatibility: " << compatible);
 
 			// remove input and shadow input (because it not contained in modelCandidate neither)
@@ -196,7 +203,6 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 					// reduct model is a proper subset (this was already ensured by the program encoding)
 					DBGLOG(DBG, "Model candidate " << *compatibleSet << " failed FLP check");
 					DBGLOG(DBG, "Enumerated " << flpm << " FLP models");
-
 /*
 					{
 						InterpretationPtr candidate(new Interpretation(*compatibleSet));
@@ -248,6 +254,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 	DBGLOG(DBG, "Model candidate " << *compatibleSet << " passed FLP check");			
 	DBGLOG(DBG, "Enumerated " << flpm << " FLP models");
+
 	return true;
 }
 

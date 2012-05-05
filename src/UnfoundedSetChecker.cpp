@@ -217,6 +217,20 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 			ufsDetectionProblem.addNogood(ng);
 		}
 	}
+
+	// the ufs must not contain a head atom of an ignored rule
+	// (otherwise we cannot guarantee that the ufs remains an ufs for completed interpretations)
+	DBGLOG(DBG, "N: Ignored rules");
+	{
+		BOOST_FOREACH (ID ruleId, skipProgram){
+			const Rule& rule = reg->rules.getByID(ruleId);
+			BOOST_FOREACH (ID h, rule.head){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(h));
+				ufsDetectionProblem.addNogood(ng);
+			}
+		}
+	}
 }
 
 void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPart(){
@@ -686,7 +700,34 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 
-	DBGLOG(DBG, "Checking if " << *ufsCandidate << " is an unfounded set");
+
+/*
+InterpretationPtr ufsc = InterpretationPtr(new Interpretation(reg));
+ufsc->getStorage() = ufsCandidate->getStorage();
+bm::bvector<>::enumerator en1 = ufsCandidate->getStorage().first();
+bm::bvector<>::enumerator en1_end = ufsCandidate->getStorage().end();
+while (en1 < en1_end){
+	if (reg->ogatoms.getIDByAddress(*en1).isAuxiliary() && !reg->ogatoms.getIDByAddress(*en1).isExternalAuxiliary()){
+		ufsc->clearFact(*en1);
+	}
+	en1++;
+}*/
+
+/*
+std::stringstream ss;
+RawPrinter printer(ss, reg);
+bool f = true;
+ss << "{ ";
+BOOST_FOREACH (IDAddress v, domain){
+	if (!f) ss << ", ";
+	ss << (ufsCandidate->getFact(v) ? "" : "-");
+	printer.print(reg->ogatoms.getIDByAddress(v));
+	f = false;
+}
+ss << " }";
+*/
+
+	DBGLOG(DBG, "Checking  " << *ufsCandidate << " is an unfounded set");
 
 	// check for each EA auxiliary in the UFS, if the atom is indeed unfounded
 	std::vector<IDAddress> auxiliariesToVerify;		// the auxiliaries which's falsity needs to be checked
@@ -751,7 +792,7 @@ return true;
 
 				std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
 				BOOST_FOREACH (Nogood tng, transformed){
-					ufsDetectionProblem.addNogood(tng);
+					solver->addNogood(tng);
 				}
 			}
 		}else{
@@ -1038,7 +1079,7 @@ std::vector<Nogood> UnfoundedSetChecker::nogoodTransformation(Nogood ng, Interpr
 std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 
 	// solve the ufs problem
-	SATSolverPtr solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
+	solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
 	InterpretationConstPtr model;
 
 	int mCnt = 0;
@@ -1062,16 +1103,17 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 				en++;
 			}
 
-//std::cout << "Enumerated " << mCnt << " UFS candidates" << std::endl;
 			DBGLOG(DBG, "Enumerated " << mCnt << " UFS candidates");
+
+			solver.reset();
 			return ufs;
 		}else{
 			DBGLOG(DBG, "No UFS: " << *model);
 		}
 	}
 
-//std::cout << "Enumerated " << mCnt << " UFS candidates" << std::endl;
 	DBGLOG(DBG, "Enumerated " << mCnt << " UFS candidates");
+	solver.reset();
 	// no ufs
 	std::vector<IDAddress> ufs;
 	return ufs;

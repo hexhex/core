@@ -39,6 +39,7 @@
 #include "dlvhex2/Printhelpers.h"
 #include <boost/foreach.hpp>
 #include "dlvhex2/Set.h"
+#include "dlvhex2/Registry.h"
 #include <boost/unordered_map.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -52,6 +53,7 @@ public:
 	bool operator==(const Nogood& ng2);
 	bool operator!=(const Nogood& ng2);
 	std::ostream& print(std::ostream& o) const;
+	std::string getStringRepresentation(RegistryPtr reg) const;
 	Nogood resolve(Nogood& ng2, IDAddress litadr);
 };
 
@@ -66,6 +68,7 @@ public:
 	Nogood getNogood(int index);
 
 	std::ostream& print(std::ostream& o) const;
+	std::string getStringRepresentation(RegistryPtr reg) const;
 };
 
 class NogoodContainer{

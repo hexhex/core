@@ -34,6 +34,7 @@
 #include <iostream>
 #include <sstream>
 #include "dlvhex2/Logger.h"
+#include "dlvhex2/Printer.h"
 #include <boost/functional/hash.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
@@ -93,14 +94,22 @@ std::ostream& Nogood::print(std::ostream& o) const{
 	return o;
 }
 
-std::ostream& NogoodSet::print(std::ostream& o) const{
-	o << "{ ";
-	for (std::vector<Nogood>::const_iterator it = nogoods.begin(); it != nogoods.end(); ++it){
-		if (it != nogoods.begin()) o << ", ";
-		o << (*it);
+std::string Nogood::getStringRepresentation(RegistryPtr reg) const{
+
+	std::stringstream ss;
+	RawPrinter printer(ss, reg);
+	ss << "{ ";
+	bool first = true;
+	BOOST_FOREACH (ID lit, *this){
+		if (!first){
+			ss << ", ";
+		}
+		first = false;
+		ss << (lit.isNaf() ? "-" : "");
+		printer.print(reg->ogatoms.getIDByAddress(lit.address));
 	}
-	o << " }";
-	return o;
+	ss << " }";
+	return ss.str();
 }
 
 Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr){
@@ -146,6 +155,30 @@ Nogood NogoodSet::getNogood(int index){
 void NogoodSet::removeNogood(int nogoodIndex){
 	nogoodsWithHash[nogoods[nogoodIndex].getHash()].erase(nogoodIndex);
 	freeIndices.push_back(nogoodIndex);
+}
+
+std::string NogoodSet::getStringRepresentation(RegistryPtr reg) const{
+
+	std::stringstream ss;
+	bool first = true;
+	BOOST_FOREACH (Nogood ng, nogoods){
+		if (!first){
+			ss << ", ";
+		}
+		first = false;
+		ss << ng.getStringRepresentation(reg);
+	}
+	return ss.str();
+}
+
+std::ostream& NogoodSet::print(std::ostream& o) const{
+	o << "{ ";
+	for (std::vector<Nogood>::const_iterator it = nogoods.begin(); it != nogoods.end(); ++it){
+		if (it != nogoods.begin()) o << ", ";
+		o << (*it);
+	}
+	o << " }";
+	return o;
 }
 
 DLVHEX_NAMESPACE_END

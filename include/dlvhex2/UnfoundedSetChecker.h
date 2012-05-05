@@ -61,6 +61,8 @@ private:
   std::set<IDAddress> domain; // domain of all problem variables
   std::vector<ID> ufsProgram;
 
+  SATSolverPtr solver; // defined while getUnfoundedSet() runs, otherwise 0
+
   /**
    * Constructs the nogood set used for unfounded set detection
    */
