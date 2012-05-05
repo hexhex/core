@@ -98,6 +98,10 @@ public:
 		ngg.removeNogood(index);
 	}
 
+	Nogood getNogood(int index){
+		return ngg.getNogood(index);
+	}
+
 	int getNogoodCount(){
 		return ngg.nogoods.size() - ngg.freeIndices.size();
 	}

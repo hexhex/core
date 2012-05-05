@@ -210,54 +210,6 @@ protected:
 		InterpretationConstPtr smallerFLPModel
 		);
 
-  /**
-   * Constructs the nogood set used for unfounded set detection
-   * @param groundProgram Overall ground program
-   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
-   * @param compatibleSet A compatible set with external atom auxiliaries
-   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
-   */
-  NogoodSet getUFSDetectionProblem(
-			ProgramCtx& ctx,
-			OrdinaryASPProgram groundProgram,
-			std::vector<ID> ufsProgram,
-			InterpretationConstPtr compatibleSet,
-			InterpretationConstPtr compatibleSetWithoutAux,
-			std::set<ID> skipProgram,
-			NogoodContainerPtr ngc = NogoodContainerPtr());
-
-  /**
-   * Checks if an UFS candidate is actually an unfounded set
-   * @param ctx ProgramContext
-   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
-   * @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem)
-   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
-   */
-  bool isUnfoundedSet(ProgramCtx& ctx, std::vector<ID> ufsProgram, InterpretationConstPtr ufsCandidate, InterpretationConstPtr compatibleSet, InterpretationConstPtr compatibleSetWithoutAux);
-
-  // Returns an unfounded set of groundProgram wrt. compatibleSet;
-  // If the empty set is returned,
-  // then there does not exist a greater (nonempty) unfounded set.
-  // 
-  // The method supports also unfounded set detection over partial interpretations.
-  // For this purpose, skipProgram specifies all rules which shall be ignored
-  // in the search. The interpretation must be complete and compatible over the non-ignored part.
-  // Each detected unfounded set will remain an unfounded set for all possible
-  // completions of the interpretation.
-  std::vector<IDAddress> getUnfoundedSet(
-			ProgramCtx& ctx,
-			OrdinaryASPProgram groundProgram,
-			InterpretationConstPtr compatibleSet,
-			std::set<ID> skipProgram = std::set<ID>(),
-			NogoodContainerPtr ngc = NogoodContainerPtr());
-
-  // constructs a nogood which encodes the essence of an unfounded set
-  Nogood getUFSNogood(
-			ProgramCtx& ctx,
-			std::vector<IDAddress> ufs,
-			const OrdinaryASPProgram& groundProgram,
-			InterpretationConstPtr interpretation);
-
   // computes for each predicate p in idb/edb
   // a shadow predicate sp which does not yet occur
   void computeShadowAndUnfoundedPredicates(

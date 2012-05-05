@@ -99,7 +99,8 @@ libdlvhex2_base_la_SOURCES = \
     SATSolver.cpp \
     State.cpp \
     URLBuf.cpp \
-    UnfoundedSetCheckHeuristics.cpp
+    UnfoundedSetCheckHeuristics.cpp \
+    UnfoundedSetChecker.cpp
 
 # dlvhex MLP component
 libdlvhex2_mlpsolver_la_SOURCES =

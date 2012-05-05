@@ -104,5 +104,6 @@ pkginclude_HEADERS = \
   TermTable.h \
   URLBuf.h \
   UnfoundedSetCheckHeuristics.h \
+  UnfoundedSetChecker.h \
   GenuineWellfoundedModelGenerator.h \
   WellfoundedModelGenerator.h

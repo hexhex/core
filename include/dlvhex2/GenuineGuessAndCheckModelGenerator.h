@@ -99,6 +99,7 @@ public:
 };
 
 // the model generator (accesses and uses the factory)
+class UnfoundedSetChecker;	// forward declaration
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
@@ -107,6 +108,7 @@ class GenuineGuessAndCheckModelGenerator:
 {
   // types
 public:
+  friend class UnfoundedSetChecker;
   typedef GenuineGuessAndCheckModelGeneratorFactory Factory;
 
   // controls when external atoms are verified
@@ -148,6 +150,7 @@ protected:
   InterpretationPtr mask;
 
   // internal solver
+  NogoodContainerPtr learnedEANogoods;
   GenuineSolverPtr solver;
 
   // members
