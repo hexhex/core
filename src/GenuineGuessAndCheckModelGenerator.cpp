@@ -319,11 +319,18 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 	// did we already verify during model construction or do we have to do the verification now?
 	bool compatible;
+	int ngCount;
 	switch (eaVerificationMode){
 	case post:
 		// no --> post-check
 		DBGLOG(DBG, "(eaVerificationMode == post) Doing Compatibility Check");
+		ngCount = learnedEANogoods ? learnedEANogoods->getNogoodCount() : 0;
 		compatible = isCompatibleSet(modelCandidate, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+		if (learnedEANogoods){
+			for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
+				solver->addNogood(learnedEANogoods->getNogood(i));
+			}
+		}
 		DBGLOG(DBG, "Compatible: " << compatible);
 		break;
 	case immediate:
