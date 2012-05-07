@@ -155,7 +155,8 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			createMinimalityRules(reg, shadowPredicates, shadowpostfix, simulatedReduct);
 		}
 		createFoundingRules(reg, shadowPredicates, unfoundedPredicates, simulatedReduct);
-		reductEDB->add(*shadowInterpretation);
+		reductEDB->add(*shadowInterpretation);		// make the FLP check know the compatible set in order to search for subsets
+		reductEDB->add(*postprocessedInput);		// facts are always in the reduct
 
 		ss << "simulatedReduct: IDB={";
 		printer.printmany(simulatedReduct, "\n");
