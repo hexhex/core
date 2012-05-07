@@ -150,10 +150,17 @@ protected:
   InterpretationPtr mask;
 
   // internal solver
-  NogoodContainerPtr learnedEANogoods;
+  NogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
+  int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
   GenuineSolverPtr solver;
 
   // members
+
+  /**
+   * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly
+   */
+  void transferLearnedEANogoods();
+
   /**
    * Checks after completion of an assignment if it is compatible.
    * Depending on the eaVerificationMode, the compatibility is either directly checked in this function,

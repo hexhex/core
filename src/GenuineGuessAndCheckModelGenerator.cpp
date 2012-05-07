@@ -236,6 +236,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	solver = GenuineSolver::getInstance(factory.ctx, program, eaVerificationMode != heuristics);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
+	learnedEANogoodsTransferredIndex = 0;
 	if (eaVerificationMode != post){
 		solver->addExternalLearner(this);
 	}
@@ -315,6 +316,14 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	}while(true);
 }
 
+void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
+
+	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
+		solver->addNogood(learnedEANogoods->getNogood(i));
+	}
+	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
+}
+
 bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationConstPtr modelCandidate){
 
 	// did we already verify during model construction or do we have to do the verification now?
@@ -324,13 +333,8 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 	case post:
 		// no --> post-check
 		DBGLOG(DBG, "(eaVerificationMode == post) Doing Compatibility Check");
-		ngCount = learnedEANogoods ? learnedEANogoods->getNogoodCount() : 0;
 		compatible = isCompatibleSet(modelCandidate, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-		if (learnedEANogoods){
-			for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
-				solver->addNogood(learnedEANogoods->getNogood(i));
-			}
-		}
+		transferLearnedEANogoods();
 		DBGLOG(DBG, "Compatible: " << compatible);
 		break;
 	case immediate:
@@ -391,11 +395,8 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("FLPCheck")){
 				DBGLOG(DBG, "FLP Check");
 				// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
-				int ngCount = learnedEANogoods->getNogoodCount();
 				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-				for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
-					solver->addNogood(learnedEANogoods->getNogood(i));
-				}
+				transferLearnedEANogoods();
 				return result;
 			}
 
@@ -403,12 +404,9 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("UFSCheck")){
 //std::cout << "Doing UFS check for " << *compatibleSet << std::endl;
 				DBGLOG(DBG, "UFS Check");
-				int ngCount = learnedEANogoods->getNogoodCount();
 				// do UFS check (possibly with nogood learning) and add the learned nogoods to the main search
 				UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-				for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
-					solver->addNogood(learnedEANogoods->getNogood(i));
-				}
+				transferLearnedEANogoods();
 				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Got a UFS");
@@ -439,11 +437,8 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 		if (decision.first){
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 
-			int ngCount = learnedEANogoods->getNogoodCount();
 			UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-			for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
-				solver->addNogood(learnedEANogoods->getNogood(i));
-			}
+			transferLearnedEANogoods();
 
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
@@ -556,11 +551,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 		}
 
 		// evaluate the external atom (and learn nogoods if external learning is used)
-		int ngCount = learnedEANogoods->getNogoodCount();
 		evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
-		for (int i = ngCount; i < learnedEANogoods->getNogoodCount(); ++i){
-			solver->addNogood(learnedEANogoods->getNogood(i));
-		}
+		transferLearnedEANogoods();
 
 		// remember the verification result
 		bool verify = vcb.verify();

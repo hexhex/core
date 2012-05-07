@@ -349,32 +349,47 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartEAEnforeme
 		cratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('c', ruleID));
 		ID cr = reg->storeOrdinaryGAtom(cratom);
 
-		Nogood ngnot;
+		// check if condition 1 applies for this rule
+		bool condition1 = false;
 		BOOST_FOREACH (ID b, rule.body){
-			if (!b.isNaf() && !b.isExternalAuxiliary() && compatibleSet->getFact(b.address)){
-				DBGLOG(DBG, "Binding positive body atom to c " << cr);
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(cr.address, true));
-				ng.insert(NogoodContainer::createLiteral(b.address, true));
-				ufsDetectionProblem.addNogood(ng);
-
-				ngnot.insert(NogoodContainer::createLiteral(b.address, false));
+			if (compatibleSet->getFact(b.address) != !b.isNaf()){
+				// yes: set aux('c', r) to false
+				condition1 = true;
+				Nogood falsifyCr;
+				falsifyCr.insert(NogoodContainer::createLiteral(cr.address, true));
+				ufsDetectionProblem.addNogood(falsifyCr);
+				break;
 			}
 		}
-		BOOST_FOREACH (ID h, rule.head){
-			if (compatibleSet->getFact(h.address)){
-				DBGLOG(DBG, "Binding head atom to c " << cr);
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(cr.address, true));
-				ng.insert(NogoodContainer::createLiteral(h.address, false));
-				ufsDetectionProblem.addNogood(ng);
 
-				ngnot.insert(NogoodContainer::createLiteral(h.address, true));
+		if (!condition1){
+			Nogood ngnot;
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isNaf() && !b.isExternalAuxiliary() && compatibleSet->getFact(b.address)){
+					DBGLOG(DBG, "Binding positive body atom to c " << cr);
+					Nogood ng;
+					ng.insert(NogoodContainer::createLiteral(cr.address, true));
+					ng.insert(NogoodContainer::createLiteral(b.address, true));
+					ufsDetectionProblem.addNogood(ng);
+
+					ngnot.insert(NogoodContainer::createLiteral(b.address, false));
+				}
 			}
+			BOOST_FOREACH (ID h, rule.head){
+				if (compatibleSet->getFact(h.address)){
+					DBGLOG(DBG, "Binding head atom to c " << cr);
+					Nogood ng;
+					ng.insert(NogoodContainer::createLiteral(cr.address, true));
+					ng.insert(NogoodContainer::createLiteral(h.address, false));
+					ufsDetectionProblem.addNogood(ng);
+
+					ngnot.insert(NogoodContainer::createLiteral(h.address, true));
+				}
+			}
+			DBGLOG(DBG, "Negated nogood for c " << cr);
+			ngnot.insert(NogoodContainer::createLiteral(cr.address, false));
+			ufsDetectionProblem.addNogood(ngnot);
 		}
-		DBGLOG(DBG, "Negated nogood for c " << cr);
-		ngnot.insert(NogoodContainer::createLiteral(cr.address, false));
-		ufsDetectionProblem.addNogood(ngnot);
 	}
 
 	// for all external atom auxiliaries
