@@ -76,6 +76,7 @@ protected:
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
+  friend class UnfoundedSetChecker;
   // members
 public:
   BaseModelGenerator(InterpretationConstPtr input):
