@@ -22,6 +22,7 @@ i=0
 for c in "${confs[@]}"
 do
 	timeout[$i]=0
+	header="$header   \"$c\""
 	let i=i+1
 done
 echo $header
