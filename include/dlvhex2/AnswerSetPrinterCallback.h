@@ -33,6 +33,7 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/PluginInterface.h"
+#include "dlvhex2/fwd.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -40,8 +41,11 @@ class AnswerSetPrinterCallback:
   public ModelCallback
 {
 public:
-  AnswerSetPrinterCallback();
+  AnswerSetPrinterCallback(ProgramCtx& ctx);
   virtual bool operator()(AnswerSetPtr model);
+
+protected:
+  PredicateMaskPtr filterpm;
 };
 
 DLVHEX_NAMESPACE_END

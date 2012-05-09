@@ -1,3 +1,9 @@
+2012-05-09  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/State.cpp: Reimplemented -filter option (closes #59).
+	* src/AnswerSetPrinterCallback.cpp: Likewise.
+	* include/dlvhex2/AnswerSetPrinterCallback.h: Likewise.
+
 2012-05-05 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* src/Nogood.cpp: Likewise

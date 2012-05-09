@@ -774,7 +774,7 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
   // default model outputting callback
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(*ctx));
   ctx->modelCallbacks.push_back(asprinter);
 
   // setup printing of auxiliaries
