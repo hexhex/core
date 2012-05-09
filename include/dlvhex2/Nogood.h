@@ -60,12 +60,13 @@ public:
 class NogoodSet : private ostream_printable<NogoodSet>{
 public:
 	std::vector<Nogood> nogoods;
-	std::vector<int> freeIndices;
+	Set<int> freeIndices;
 	boost::unordered_map<size_t, Set<int> > nogoodsWithHash;
 
 	int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
-	Nogood getNogood(int index);
+	Nogood getNogood(int index) const;
+	int getNogoodCount() const;
 
 	std::ostream& print(std::ostream& o) const;
 	std::string getStringRepresentation(RegistryPtr reg) const;
@@ -93,21 +94,13 @@ class SimpleNogoodContainer : public NogoodContainer{
 public:
 	NogoodSet ngg;
 
-	int addNogood(Nogood ng){
-		ngg.addNogood(ng);
-	}
+	int addNogood(Nogood ng);
+	void removeNogood(int index);
+	Nogood getNogood(int index);
+	int getNogoodCount();
 
-	void removeNogood(int index){
-		ngg.removeNogood(index);
-	}
-
-	Nogood getNogood(int index){
-		return ngg.getNogood(index);
-	}
-
-	int getNogoodCount(){
-		return ngg.nogoods.size() - ngg.freeIndices.size();
-	}
+	// reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
+	void defragment();
 };
 
 typedef NogoodContainer::Ptr NogoodContainerPtr;

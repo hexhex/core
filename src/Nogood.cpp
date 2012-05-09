@@ -140,21 +140,25 @@ int NogoodSet::addNogood(Nogood ng){
 		nogoods.push_back(ng);
 		index = nogoods.size() - 1;
 	}else{
-		int index = freeIndices[freeIndices.size() - 1];
+		int index = *freeIndices.begin();
 		nogoods[index] = ng;
-		freeIndices.pop_back();
+		freeIndices.erase(index);
 	}
 	nogoodsWithHash[ng.getHash()].insert(index);
 	return index;
 }
 
-Nogood NogoodSet::getNogood(int index){
+Nogood NogoodSet::getNogood(int index) const{
 	return nogoods[index];
 }
 
 void NogoodSet::removeNogood(int nogoodIndex){
 	nogoodsWithHash[nogoods[nogoodIndex].getHash()].erase(nogoodIndex);
-	freeIndices.push_back(nogoodIndex);
+	freeIndices.insert(nogoodIndex);
+}
+
+int NogoodSet::getNogoodCount() const{
+	return nogoods.size() - freeIndices.size();
 }
 
 std::string NogoodSet::getStringRepresentation(RegistryPtr reg) const{
@@ -179,6 +183,55 @@ std::ostream& NogoodSet::print(std::ostream& o) const{
 	}
 	o << " }";
 	return o;
+}
+
+int SimpleNogoodContainer::addNogood(Nogood ng){
+	ngg.addNogood(ng);
+}
+
+void SimpleNogoodContainer::removeNogood(int index){
+	ngg.removeNogood(index);
+}
+
+Nogood SimpleNogoodContainer::getNogood(int index){
+	return ngg.getNogood(index);
+}
+
+int SimpleNogoodContainer::getNogoodCount(){
+	return ngg.getNogoodCount();
+}
+
+// reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
+void SimpleNogoodContainer::defragment(){
+
+	int free = 0;
+	int used = ngg.nogoods.size() - 1;
+	while (free < used){
+		// let used point to the last element which is not free
+		while (used > 0 && ngg.freeIndices.count(used) > 0){
+			ngg.nogoods.pop_back();
+			used--;
+		}
+		// let free point to the next free index in the range 0-(ngg.nogoods.size()-1)
+		while (free < ngg.nogoods.size() - 1 && ngg.freeIndices.count(free) == 0) free++;
+		// move used to free
+		if (free < used){
+			ngg.nogoods[free] = ngg.nogoods[used];
+			ngg.nogoods.pop_back();
+			free++;
+			used--;
+		}
+	}
+	ngg.freeIndices.clear();
+/*
+	NogoodSet ngg2;
+	for (int i = 0; i < ngg.nogoods.size(); i++){
+		if (ngg.freeIndices.count(i) == 0){
+			ngg2.insert(ngg.getNogood(i));
+		}
+	}
+	ngg = ngg2;
+*/
 }
 
 DLVHEX_NAMESPACE_END
