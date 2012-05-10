@@ -446,15 +446,16 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 		if (decision.first){
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 
-			UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-			transferLearnedEANogoods();
+			UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+//			transferLearnedEANogoods();
 
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
 			if (ufs.size() > 0){
 				Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
+				int oldCount = solver->getNogoodCount();
 				solver->addNogood(ng);
-				return true;
+				return solver->getNogoodCount() > oldCount;
 			}
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");

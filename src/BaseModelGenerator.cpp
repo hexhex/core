@@ -243,6 +243,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
   LOG_SCOPE(PLUGIN,"eEA",false);
   DBGLOG(DBG,"= evaluateExternalAtom for " << eatom <<
       " with input interpretation " << *inputi);
+
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sideea,"evaluate external atom");
 	DLVHEX_BENCHMARK_REGISTER(sidier,"integrate external results");
 
