@@ -202,7 +202,7 @@ ProgramCtx::SubprogramAnswerSetCallback::~SubprogramAnswerSetCallback(){}
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb){
 
 	ProgramCtx pc = *this;
-	pc.changeRegistry(this->registry());
+//	pc.changeRegistry(this->registry());
 	pc.idb = idb;
 	pc.edb = InterpretationPtr(new Interpretation(*edb));
 
@@ -212,7 +212,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts){
 
 	ProgramCtx pc = *this;
-	pc.changeRegistry(this->registry());
+//	pc.changeRegistry(this->registry());
 	pc.idb.clear();
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
 	if( !!addFacts )
