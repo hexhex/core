@@ -722,9 +722,9 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   assert(!!ctx->evalHeuristic && "need configured heuristic");
   DBGLOG(DBG,"invoking build() on eval heuristic");
   ctx->evalHeuristic->build(*egbuilder);
-  DBGLOG(DBG,"destructing eval heuristic");
-  // destruct heuristic
-  ctx->evalHeuristic.reset();
+  // do not destruct heuristic because we might reuse it in evaluateSubprogram
+  //DBGLOG(DBG,"destructing eval heuristic");
+  //ctx->evalHeuristic.reset();
   // destruct eval graph builder
   egbuilder.reset();
 

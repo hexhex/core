@@ -223,8 +223,11 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bo
 	pc.depgraph.reset();
 //	pc.modelBuilderFactory = ctx->modelBuilderFactory;
 
-	DBGLOG(DBG, "Setting eval heuristics");
-	pc.evalHeuristic.reset(new EvalHeuristicEasy);
+  if( !pc.evalHeuristic )
+  {
+    DBGLOG(DBG, "Setting eval heuristics");
+    pc.evalHeuristic.reset(new EvalHeuristicEasy);
+  }
 
 	DBGLOG(DBG, "Starting state pipeline " << (parse ? "with" : "without") << " parsing");
 	if (parse){
