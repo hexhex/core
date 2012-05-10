@@ -477,7 +477,7 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 		const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[eaAux.address][0]);
 		ea.updatePredicateInputMask();
 		InterpretationConstPtr pm = ea.getPredicateInputMask();
-		if (pm && (factWasSet->getStorage() & pm->getStorage()).count() < pm->getStorage().count()){
+		if (pm && (factWasSet->getStorage() & programMask->getStorage() & pm->getStorage()).count() < (pm->getStorage() & programMask->getStorage()).count()){
 			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified because model generator runs in immediate-mode and input to " << auxToEA[eaAux.address][0] << " is incomplete");
 			return false;
 		}
