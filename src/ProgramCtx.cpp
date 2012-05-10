@@ -203,7 +203,8 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 	ProgramCtx pc = *this;
 	pc.idb.clear();
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
-	pc.edb->getStorage() |= addFacts->getStorage();
+	if( !!addFacts )
+		pc.edb->getStorage() |= addFacts->getStorage();
 	pc.changeRegistry(this->registry());
 	pc.inputProvider = ip;
 	ip.reset();
