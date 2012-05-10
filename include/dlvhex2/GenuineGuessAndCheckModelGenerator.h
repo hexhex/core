@@ -153,6 +153,7 @@ protected:
   NogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
   int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
   GenuineSolverPtr solver;
+  InterpretationPtr programMask;	// all atoms in the program
 
   // members
 

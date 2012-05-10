@@ -245,6 +245,15 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
     // create for each inner external atom a mask over all relevant atoms
     // and an index mapping ground external auxiliaries to their external atoms
     createEAMasks(solver->getGroundProgram().idb);
+
+    // create mask of all atoms in the program
+    programMask = InterpretationPtr(new Interpretation(reg));
+    programMask->add(*solver->getGroundProgram().edb);
+    BOOST_FOREACH (ID ruleID, solver->getGroundProgram().idb){
+        const Rule& rule = reg->rules.getByID(ruleID);
+        BOOST_FOREACH (ID h, rule.head) programMask->setFact(h.address);
+        BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
+    }
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -529,7 +538,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// 1. we need all relevant atoms to be assigned before we can do the verification
 	// 2. reverification is only necessary and useful if relevant atoms changed
-	if ((!factWasSet || ((eaMasks[eaIndex].mask()->getStorage() & factWasSet->getStorage()).count() == eaMasks[eaIndex].mask()->getStorage().count())) &&	// 1
+	if ((!factWasSet || ((eaMasks[eaIndex].mask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eaMasks[eaIndex].mask()->getStorage() & programMask->getStorage()).count())) &&	// 1
 	    (!changed || (eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
 		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *eaMasks[eaIndex].mask());
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
@@ -569,13 +578,16 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			bm::bvector<>::enumerator en_end = eaMasks[eaIndex].mask()->getStorage().end();
 			Nogood ng;
 			while (en < en_end){
-				ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
+				// atoms which do not occur in the program can never be true
+				if (programMask->getFact(*en)){
+					ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
+				}
 				en++;
 			}
 			// note: this nogoods _must_ be learned in immediate mode (but it is very useful also in heuristics mode), even if external learning is off,
 			// because the solver _must never_ generate conflicting assignments as there is no final compatibility check
-			solver->addNogood(ng);
-			return true;
+			int oldCount = solver->getNogoodCount();
+			return solver->addNogood(ng) >= oldCount;	// tell the solver if a new nogood was added
 		}
 	}
 	return false;

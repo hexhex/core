@@ -388,7 +388,10 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 							BOOST_FOREACH (ID p, t) atom.tuple.push_back(p);
 							ID atomID = query.interpretation->getRegistry()->storeOrdinaryGAtom(atom);
 							DBGLOG(DBG, "Input atom: " << atomID);
-							qa.predicateInputMask->setFact(atomID.address);
+// && query.interpretation->getFact(atomID.address)
+							if (query.eatom->getPredicateInputMask()->getFact(atomID.address)){
+								qa.predicateInputMask->setFact(atomID.address);
+							}
 						}
 					}
 					atomicQueries.push_back(qa);
