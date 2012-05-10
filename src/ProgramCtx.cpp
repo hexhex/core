@@ -134,7 +134,18 @@ void ProgramCtx::setupRegistry(
 
 void ProgramCtx::changeRegistry(RegistryPtr registry)
 {
-   _registry = registry;
+  // clear everything that depends on IDs of registry
+  idb.clear();
+  edb.reset();
+  idbList.clear();
+  edbList.clear();
+  pluginAtoms.clear();
+
+  // setup new registry
+  setupRegistry(registry);
+
+  // re-add plugin atoms (using new registry)
+  addPluginAtomsFromPluginContainer();
 }
 
 void ProgramCtx::setupPluginContainer(
@@ -191,9 +202,9 @@ ProgramCtx::SubprogramAnswerSetCallback::~SubprogramAnswerSetCallback(){}
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb){
 
 	ProgramCtx pc = *this;
+	pc.changeRegistry(this->registry());
 	pc.idb = idb;
 	pc.edb = InterpretationPtr(new Interpretation(*edb));
-	pc.changeRegistry(this->registry());
 
 	return evaluateSubprogram(pc, false);
 }
@@ -201,11 +212,11 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationCons
 std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts){
 
 	ProgramCtx pc = *this;
+	pc.changeRegistry(this->registry());
 	pc.idb.clear();
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
 	if( !!addFacts )
 		pc.edb->getStorage() |= addFacts->getStorage();
-	pc.changeRegistry(this->registry());
 	pc.inputProvider = ip;
 	ip.reset();
 

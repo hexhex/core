@@ -506,8 +506,8 @@ ID Registry::storeRule(Rule& rule)
 
 void Registry::setupAuxiliaryGroundAtomMask()
 {
-  assert(!pimpl->auxGroundAtomMask->mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
-  pimpl->auxGroundAtomMask->setRegistry(shared_from_this());
+  if( !pimpl->auxGroundAtomMask->mask() )
+    pimpl->auxGroundAtomMask->setRegistry(shared_from_this());
 }
 
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
