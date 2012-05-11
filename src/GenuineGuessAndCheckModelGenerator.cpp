@@ -233,7 +233,11 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	// append gidb to xidb
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-	solver = GenuineSolver::getInstance(factory.ctx, program, eaVerificationMode != heuristics);
+	solver = GenuineSolver::getInstance(	factory.ctx, program,
+						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
+						factory.cyclicInputPredicates.size() == 0	// let the solver do the UFS check only if we don't do it in this class
+												// (the check in this class subsumes the builtin check and we don't want to do it twice)
+						);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
 	learnedEANogoodsTransferredIndex = 0;
@@ -414,7 +418,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 //std::cout << "Doing UFS check for " << *compatibleSet << std::endl;
 				DBGLOG(DBG, "UFS Check");
 				// do UFS check (possibly with nogood learning) and add the learned nogoods to the main search
-				UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 				transferLearnedEANogoods();
 				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 				if (ufs.size() > 0){
@@ -446,7 +450,7 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 		if (decision.first){
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 
-			UnfoundedSetChecker ufsc(*this, factory.ctx, factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+			UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 //			transferLearnedEANogoods();
 
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();

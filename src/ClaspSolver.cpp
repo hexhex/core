@@ -42,6 +42,8 @@
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Set.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
+
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -434,25 +436,13 @@ std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> 
 void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
 
 	DBGLOG(DBG, "Building atom index");
-/*
-	// choice rules
-	int ruleIndex = -1;
-	BOOST_FOREACH (ID ruleID, p.idb){
-		ruleIndex++;
-		const Rule& rule = reg->rules.getByID(ruleID);
-		if (rule.head.size() > 1){
-			std::stringstream ss;
-			ss << "choicerule" << ruleIndex;
-			claspInstance.symTab().addUnique(2 + ruleIndex, ss.str().c_str());
-		}
-	}
-*/
+
 	// edb
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
 		if (hexToClasp.find(*en) == hexToClasp.end()){
-			uint32_t c = *en + p.idb.size() + 2; // pb.newAtom();
+			uint32_t c = *en + p.idb.size() + 2;
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
 			hexToClasp[*en] = Clasp::Literal(c, true);
 
@@ -467,7 +457,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
 			if (hexToClasp.find(h.address) == hexToClasp.end()){
-				uint32_t c = h.address + p.idb.size() + 2; // pb.newAtom();
+				uint32_t c = h.address + p.idb.size() + 2;
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
 				hexToClasp[h.address] = Clasp::Literal(c, true);
 
@@ -477,7 +467,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 		}
 		BOOST_FOREACH (ID b, rule.body){
 			if (hexToClasp.find(b.address) == hexToClasp.end()){
-				uint32_t c = b.address + p.idb.size() + 2; // pb.newAtom();
+				uint32_t c = b.address + p.idb.size() + 2;
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
 				hexToClasp[b.address] = Clasp::Literal(c, true);
 
@@ -1090,8 +1080,69 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 
 // ============================== DisjunctiveClaspSolver ==============================
 
+bool DisjunctiveClaspSolver::initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& p){
+
+	// construct a simple atom level dependency graph
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
+	typedef Graph::vertex_descriptor Node;
+	std::map<IDAddress, Node> depNodes;
+	Graph depGraph;
+
+	BOOST_FOREACH (ID ruleID, p.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// add an arc from all head literals to all positive body literals
+		BOOST_FOREACH (ID headLiteral, rule.head){
+			// all atoms are nodes
+			if (depNodes.find(headLiteral.address) == depNodes.end()){
+				depNodes[headLiteral.address] = boost::add_vertex(headLiteral.address, depGraph);
+			}
+
+			BOOST_FOREACH (ID bodyLiteral, rule.body){
+				if (!bodyLiteral.isNaf()){
+					if (depNodes.find(bodyLiteral.address) == depNodes.end()){
+						depNodes[bodyLiteral.address] = boost::add_vertex(bodyLiteral.address, depGraph);
+					}
+					boost::add_edge(depNodes[headLiteral.address], depNodes[bodyLiteral.address], depGraph);
+				}
+			}
+		}
+	}
+
+	// find strongly connected components in the dependency graph using boost
+	std::vector<int> componentMap(depNodes.size());
+	int num = boost::strong_components(depGraph, &componentMap[0]);
+
+	// translate into real map
+	std::vector<Set<IDAddress> > depSCC = std::vector<Set<IDAddress> >(num);
+	Node nodeNr = 0;
+	BOOST_FOREACH (int componentOfNode, componentMap){
+		depSCC[componentOfNode].insert(depGraph[nodeNr]);
+		nodeNr++;
+	}
+
+	// check for head-cycles
+	for (int compNr = 0; compNr < depSCC.size(); ++compNr){
+		BOOST_FOREACH (ID ruleID, p.idb){
+			int numberOfHeadLits = 0;
+			const Rule& r = reg->rules.getByID(ruleID);
+			BOOST_FOREACH (ID headLit, r.head){
+				if (depSCC[compNr].count(headLit.address) > 0) numberOfHeadLits++;
+			}
+			if (numberOfHeadLits > 1){
+				headCycles = true;
+				return true;
+			}
+		}
+	}
+	headCycles = false;
+	return false;
+}
+
 DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading) :
-	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules), program(p){
+	ClaspSolver(ctx, p, interleavedThreading, initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting),
+	program(p){
+//	headCycles(initHeadCycles(ctx.registry(), p)){
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
@@ -1100,110 +1151,26 @@ DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
 InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 
 	InterpretationConstPtr model = ClaspSolver::getNextModel();
-	bool ufsFound = true;
+	if (!headCycles) return model;
 
+	bool ufsFound = true;
 	while (model && ufsFound){
 		ufsFound = false;
+		UnfoundedSetChecker ufsc(ctx, program, model);
+		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+		if (ufs.size() > 0){
+			/*
+			std::stringstream ss;
+			for (int i = 0; i < ufs.size(); ++i) ss << ufs[i] << " ";
+			*/
+			Nogood ng = ufsc.getUFSNogood(ufs, model);
+			//std::cout << "Learned UFS nogood " << ng << " for ufs " << ss.str() << " wrt. " << *model << std::endl;
+			addNogood(ng);
 
-		// check if model contains an unfounded set
-		DBGLOG(DBG, "Constructing UFS detection problem");
-		NogoodSet ufsDetectionProblem;
-		DBGLOG(DBG, "N: Facts cannot be in the unfounded set");
-		// facts cannot be in X
-		{
-			bm::bvector<>::enumerator en = program.edb->getStorage().first();
-			bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
-			while (en < en_end){
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(*en, true));
-				ufsDetectionProblem.addNogood(ng);
-				en++;
-			}
-		}
-
-		// we want a UFS which intersects with model
-		DBGLOG(DBG, "N: Intersection with model");
-		{
-			Nogood ng;
-			bm::bvector<>::enumerator en = model->getStorage().first();
-			bm::bvector<>::enumerator en_end = model->getStorage().end();
-			while (en < en_end){
-				ng.insert(NogoodContainer::createLiteral(*en, false));
-				en++;
-			}
-			ufsDetectionProblem.addNogood(ng);
-		}
-
-		DBGLOG(DBG, "N: Rules");
-		BOOST_FOREACH (ID ruleID, program.idb){
-			const Rule& rule = reg->rules.getByID(ruleID);
-
-			// condition 1 is handled directly: skip rules with unsatisfied body
-			bool unsatisfied = false;
-			BOOST_FOREACH (ID b, rule.body){
-				if (model->getFact(b.address) != !b.isNaf()){
-					unsatisfied = true;
-					break;
-				}
-			}
-			if (unsatisfied) continue;
-
-			// create two unique predicates and atoms for this rule
-			OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-			hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('k', ruleID));
-			ID hr = reg->storeOrdinaryGAtom(hratom);
-
-			// hr is true iff one of the rule's head atoms is in X
-			{
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(hr.address, true));
-				BOOST_FOREACH (ID h, rule.head){
-					ng.insert(NogoodContainer::createLiteral(h.address, false));
-				}
-				ufsDetectionProblem.addNogood(ng);
-			}
-			{
-				BOOST_FOREACH (ID h, rule.head){
-					Nogood ng;
-					ng.insert(NogoodContainer::createLiteral(hr.address, false));
-					ng.insert(NogoodContainer::createLiteral(h.address, true));
-					ufsDetectionProblem.addNogood(ng);
-				}
-			}
-
-			{
-				Nogood ng;
-				// if hr is true, then it must not happen that neither Condition 2 nor Condition 3 is satisfied
-				ng.insert(NogoodContainer::createLiteral(hr.address, true));
-
-				// Condition 2: some positive body literal b, which is true in I, is false under I u -X
-				// That is: It must not happen that all positive body atoms, which are true in I, are not in the unfounded set
-				BOOST_FOREACH (ID b, rule.body){
-					if (!b.isNaf() && model->getFact(b.address)){
-						ng.insert(NogoodContainer::createLiteral(b.address, false));
-					}
-				}
-
-				// Condition 3: some head atom, which is true in I, is not in the unfounded set
-				// That is: It must not happen, that all positive head atoms, which are true in I, are in the unfounded set (then the condition is not satisfied)
-				BOOST_FOREACH (ID h, rule.head){
-					if (model->getFact(h.address)){
-						ng.insert(NogoodContainer::createLiteral(h.address, true));
-					}
-				}
-				ufsDetectionProblem.addNogood(ng);
-			}
-		}
-
-		DBGLOG(DBG, "Solving UFS detection problem");
-		ClaspSolver ufsSolver(ctx, ufsDetectionProblem, strictSingleThreaded);
-		if (ufsSolver.getNextModel()){
-			DBGLOG(DBG, "Found UFS");
 			ufsFound = true;
 			model = ClaspSolver::getNextModel();
 		}
 	}
-
 	return model;
 }
 

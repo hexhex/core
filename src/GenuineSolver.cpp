@@ -89,13 +89,13 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 }
 
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with internal solver");
-		GenuineGroundSolverPtr ptr(new InternalGroundDASPSolver(ctx, p));
+		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
 		return ptr;
 		}
 		break;
@@ -103,7 +103,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 #ifdef HAVE_LIBCLASP
 		{
 		DBGLOG(DBG, "Instantiating genuine solver with clasp");
-		GenuineGroundSolverPtr ptr(new ClaspSolver(ctx, p, interleavedThreading));
+		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
 		return ptr;
 		}
 #else
@@ -113,11 +113,11 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
 	GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, p);
 	const OrdinaryASPProgram& gprog = grounder->getGroundProgram();
 
-	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog, interleavedThreading);
+	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog, interleavedThreading, minCheck);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));
 }
 

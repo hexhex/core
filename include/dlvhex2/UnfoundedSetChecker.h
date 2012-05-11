@@ -40,19 +40,73 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#if 0
+
+// Unfounded set checker for programs without external sources
+class SimpleUnfoundedSetChecker{
+private:
+  ProgramCtx& ctx;
+  const OrdinaryASPProgram& groundProgram;
+  InterpretationConstPtr modelCandidate;
+  const std::set<ID>& skipProgram;
+  NogoodContainerPtr ngc;
+
+  RegistryPtr reg;
+  NogoodSet ufsDetectionProblem;
+  std::set<IDAddress> domain; // domain of all problem variables
+  std::vector<ID> ufsProgram;
+
+  SATSolverPtr solver; // defined while getUnfoundedSet() runs, otherwise 0
+
+  void constructUFSDetectionProblemNecessaryPart();
+public:
+  /**
+   * \brief Initialization
+   * @param groundProgram Overall ground program
+   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
+   * @param compatibleSet A compatible set with external atom auxiliaries
+   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
+   */
+  SimpleUnfoundedSetChecker(	
+			ProgramCtx& ctx,
+  			const OrdinaryASPProgram& groundProgram,
+			InterpretationConstPtr modelCandidate,
+			std::set<ID> skipProgram = std::set<ID>(),
+			NogoodContainerPtr ngc = NogoodContainerPtr());
+
+  // Returns an unfounded set of groundProgram wrt. modelCandidate;
+  // If the empty set is returned,
+  // then there does not exist a greater (nonempty) unfounded set.
+  // 
+  // The method supports also unfounded set detection over partial interpretations.
+  // For this purpose, skipProgram specifies all rules which shall be ignored
+  // in the search. The interpretation must be complete and compatible over the non-ignored part.
+  // Each detected unfounded set will remain an unfounded set for all possible
+  // completions of the interpretation.
+  std::vector<IDAddress> getUnfoundedSet();
+};
+#endif
+
 //
-// a model generator factory
-// that provides capability for true FLP reduct computation via rewriting, guessing, and checking
+// Unfounded set checker for HEX programs (with external atoms)
 //
 class UnfoundedSetChecker{
 private:
-  GenuineGuessAndCheckModelGenerator& ggncmg;
+  GenuineGuessAndCheckModelGenerator* ggncmg;
+
+  enum Mode{
+    // consider external atoms as ordinary ones
+    Ordinary,
+    // consider external atoms as such (requires ggncmg to be set)
+    WithExt
+  };
+  Mode mode;
 
   ProgramCtx& ctx;
   const OrdinaryASPProgram& groundProgram;
   InterpretationConstPtr compatibleSet;
   InterpretationConstPtr compatibleSetWithoutAux;
-  const std::vector<ID>& innerEatoms;
+  std::vector<ID> innerEatoms;
   const std::set<ID>& skipProgram;
   NogoodContainerPtr ngc;
 
@@ -88,11 +142,29 @@ public:
    * @param groundProgram Overall ground program
    * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
    * @param compatibleSet A compatible set with external atom auxiliaries
+   * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   */
+  UnfoundedSetChecker(	ProgramCtx& ctx,
+			const OrdinaryASPProgram& groundProgram,
+			InterpretationConstPtr interpretation,
+			std::set<ID> skipProgram = std::set<ID>(),
+			NogoodContainerPtr ngc = NogoodContainerPtr());
+
+  /**
+   * \brief Initialization
+   * @param ggncmg Reference to the G&C model generator for which this UnfoundedSetChecker runs
+   * @param ctx ProgramCtx
+   * @param groundProgram Overall ground program
+   * @param innerEatoms Inner external atoms in the component
+   * @param compatibleSet A compatible set with external atom auxiliaries
    * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
+   * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   * @param ngc Set of valid input-output relationships learned in the main search (to be extended by this UFS checker)
    */
   UnfoundedSetChecker(	
 			GenuineGuessAndCheckModelGenerator& ggncmg,
 			ProgramCtx& ctx,
+			const OrdinaryASPProgram& groundProgram,
 			const std::vector<ID>& innerEatoms,
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>(),

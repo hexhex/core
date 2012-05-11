@@ -213,6 +213,9 @@ typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
 class DisjunctiveClaspSolver : public ClaspSolver{
 private:
 	const OrdinaryASPProgram& program;
+	bool headCycles;
+
+	bool initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& program);
 public:
 	DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true);
 	virtual ~DisjunctiveClaspSolver();
