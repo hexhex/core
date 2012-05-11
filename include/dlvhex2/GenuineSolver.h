@@ -63,7 +63,7 @@ public:
 	typedef boost::shared_ptr<GenuineGrounder> Ptr;
 	typedef boost::shared_ptr<const GenuineGrounder> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program);
 };
 
 typedef GenuineGrounder::Ptr GenuineGrounderPtr;
@@ -82,7 +82,7 @@ public:
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program, bool interleavedThreading = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, bool interleavedThreading = true);
 };
 
 typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;
@@ -113,7 +113,7 @@ public:
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
 
-	static Ptr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading = true);
+	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true);
 };
 
 typedef GenuineSolver::Ptr GenuineSolverPtr;

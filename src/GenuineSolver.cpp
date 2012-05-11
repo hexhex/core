@@ -64,7 +64,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p){
+GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p){
 
 	switch(ctx.config.getOption("GenuineSolver")){
 	case 1: case 3:	// internal grounder + internal solver or clasp
@@ -89,7 +89,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, OrdinaryASPProg
 }
 
 
-GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading){
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading){
 
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
@@ -113,9 +113,9 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, Ordinar
 	}
 }
 
-GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading){
+GenuineSolverPtr GenuineSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading){
 	GenuineGrounderPtr grounder = GenuineGrounder::getInstance(ctx, p);
-	OrdinaryASPProgram gprog = grounder->getGroundProgram();
+	const OrdinaryASPProgram& gprog = grounder->getGroundProgram();
 
 	GenuineGroundSolverPtr gsolver = GenuineGroundSolver::getInstance(ctx, gprog, interleavedThreading);
 	return GenuineSolverPtr(new GenuineSolver(grounder, gsolver, grounder->getGroundProgram()));

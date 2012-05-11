@@ -1204,7 +1204,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 	return -1;
 }
 
-InternalGrounder::InternalGrounder(ProgramCtx& c, OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), groundProgram(p), ctx(c), optlevel(ol){
+InternalGrounder::InternalGrounder(ProgramCtx& c, const OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), groundProgram(p), ctx(c), optlevel(ol){
 
 	DBGLOG(DBG, "Starting grounding");
 

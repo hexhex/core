@@ -61,7 +61,7 @@ protected:
 public:
 	virtual std::string getStatistics();
 
-	InternalGroundDASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
+	InternalGroundDASPSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p);
 
 	virtual InterpretationConstPtr getNextModel();
 

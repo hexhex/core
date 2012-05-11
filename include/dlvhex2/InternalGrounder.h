@@ -155,7 +155,7 @@ protected:
 	};
 	int applyIntFunction(AppDir ad, ID op, int x, int y);
 public:
-	InternalGrounder(ProgramCtx& ctx, OrdinaryASPProgram& p, OptLevel = full);
+	InternalGrounder(ProgramCtx& ctx, const OrdinaryASPProgram& p, OptLevel = full);
 
 	const OrdinaryASPProgram& getGroundProgram();
 	const OrdinaryASPProgram& getNongroundProgram();

@@ -149,6 +149,8 @@ void AspOutPrinter::reportSolution(const Clasp::Solver&, const Clasp::Enumerator
 }
 */
 
+// ============================== ClaspSolver ==============================
+
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 
 	DBGLOG(DBG, "ClaspThread: Start producing a model");
@@ -429,16 +431,28 @@ std::vector<Nogood> ClaspSolver::convertClaspNogood(std::vector<std::vector<ID> 
 	return ret;
 }
 
-void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
+void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb){
 
 	DBGLOG(DBG, "Building atom index");
-
+/*
+	// choice rules
+	int ruleIndex = -1;
+	BOOST_FOREACH (ID ruleID, p.idb){
+		ruleIndex++;
+		const Rule& rule = reg->rules.getByID(ruleID);
+		if (rule.head.size() > 1){
+			std::stringstream ss;
+			ss << "choicerule" << ruleIndex;
+			claspInstance.symTab().addUnique(2 + ruleIndex, ss.str().c_str());
+		}
+	}
+*/
 	// edb
 	bm::bvector<>::enumerator en = p.edb->getStorage().first();
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
 		if (hexToClasp.find(*en) == hexToClasp.end()){
-			uint32_t c = *en + 2; // pb.newAtom();
+			uint32_t c = *en + p.idb.size() + 2; // pb.newAtom();
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
 			hexToClasp[*en] = Clasp::Literal(c, true);
 
@@ -453,7 +467,7 @@ void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramB
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
 			if (hexToClasp.find(h.address) == hexToClasp.end()){
-				uint32_t c = h.address + 2; // pb.newAtom();
+				uint32_t c = h.address + p.idb.size() + 2; // pb.newAtom();
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
 				hexToClasp[h.address] = Clasp::Literal(c, true);
 
@@ -463,7 +477,7 @@ void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramB
 		}
 		BOOST_FOREACH (ID b, rule.body){
 			if (hexToClasp.find(b.address) == hexToClasp.end()){
-				uint32_t c = b.address + 2; // pb.newAtom();
+				uint32_t c = b.address + p.idb.size() + 2; // pb.newAtom();
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
 				hexToClasp[b.address] = Clasp::Literal(c, true);
 
@@ -474,7 +488,7 @@ void ClaspSolver::buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramB
 	}
 }
 
-void ClaspSolver::buildInitialSymbolTable(NogoodSet& ns){
+void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 
 	DBGLOG(DBG, "Building atom index");
 
@@ -555,7 +569,7 @@ void ClaspSolver::runClasp(){
 	}
 }
 
-bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
+bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMode dm){
 
 	const int false_ = 1;	// 1 is our constant "false"
 
@@ -588,7 +602,10 @@ bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
+	int ruleIndex = -1;
 	BOOST_FOREACH (ID ruleId, p.idb){
+		ruleIndex++;
+
 		const Rule& rule = reg->rules.getByID(ruleId);
 #ifndef NDEBUG
 		programstring << (rule.head.size() == 0 ? "(constraint)" : "(rule)") << " ";
@@ -596,31 +613,62 @@ bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 		programstring << std::endl;
 #endif
 		if (rule.head.size() > 1){
-			// shifting
-			DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
-			for (int keep = 0; keep < rule.head.size(); ++keep){
-				pb.startRule(Clasp::BASICRULE);
-				int hi = 0;
-				BOOST_FOREACH (ID h, rule.head){
-					if (hi == keep){
-						// add literal to head
-						pb.addHead(hexToClasp[h.address].var());
+			if (dm == Shifting){
+				// shifting
+				DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
+				for (int keep = 0; keep < rule.head.size(); ++keep){
+					pb.startRule(Clasp::BASICRULE);
+					int hi = 0;
+					BOOST_FOREACH (ID h, rule.head){
+						if (hi == keep){
+							// add literal to head
+							pb.addHead(hexToClasp[h.address].var());
+						}
+						hi++;
 					}
-					hi++;
+					BOOST_FOREACH (ID b, rule.body){
+						// add literal to body
+						pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+					}
+					// shifted head atoms
+					hi = 0;
+					BOOST_FOREACH (ID h, rule.head){
+						if (hi != keep){
+							// add literal to head
+							pb.addToBody(hexToClasp[h.address].var(), false);
+						}
+						hi++;
+					}
+					pb.endRule();
+				}
+			}
+			if (dm == ChoiceRules){
+				DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
+				// derive head atoms
+				pb.startRule(Clasp::CHOICERULE);
+				BOOST_FOREACH (ID h, rule.head){
+					pb.addHead(hexToClasp[h.address].var());
 				}
 				BOOST_FOREACH (ID b, rule.body){
-					// add literal to body
 					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 				}
-				// shifted head atoms
-				hi = 0;
+				pb.endRule();
+
+				// derive special atom if at least one head atom is true
+				pb.startRule(Clasp::CONSTRAINTRULE, 1);
+				pb.addHead(2 + ruleIndex);
 				BOOST_FOREACH (ID h, rule.head){
-					if (hi != keep){
-						// add literal to head
-						pb.addToBody(hexToClasp[h.address].var(), false);
-					}
-					hi++;
+					pb.addToBody(hexToClasp[h.address].var(), true);
 				}
+				pb.endRule();
+
+				// forbid that the body is true if the special atom is false (i.e. no head atom is true)
+				pb.startRule(Clasp::BASICRULE);
+				pb.addHead(false_);
+				BOOST_FOREACH (ID b, rule.body){
+					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+				}
+				pb.addToBody(2 + ruleIndex, false);
 				pb.endRule();
 			}
 		}else{
@@ -652,7 +700,7 @@ bool ClaspSolver::sendProgramToClasp(OrdinaryASPProgram& p){
 	return initiallyInconsistent;
 }
 
-bool ClaspSolver::sendNogoodSetToClasp(NogoodSet& ns){
+bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	const int false_ = 1;	// 1 is our constant "false"
 
@@ -720,13 +768,13 @@ bool ClaspSolver::sendNogoodSetToClasp(NogoodSet& ns){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedThreading) : ctx(c), projectionMask(p.mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, const OrdinaryASPProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
 	clauseCreator = new Clasp::ClauseCreator(claspInstance.master());
-	bool initiallyInconsistent = sendProgramToClasp(p);
+	bool initiallyInconsistent = sendProgramToClasp(p, dm);
 	DBGLOG(DBG, "Initially inconsistent: " << initiallyInconsistent);
 
 	// if the program is initially inconsistent we do not need to do a search at all
@@ -769,7 +817,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, OrdinaryASPProgram& p, bool interleavedT
 }
 
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -1038,6 +1086,127 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 		return answer;
 	}
 }
+
+
+// ============================== DisjunctiveClaspSolver ==============================
+
+DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading) :
+	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules), program(p){
+}
+
+DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
+}
+
+InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
+
+	InterpretationConstPtr model = ClaspSolver::getNextModel();
+	bool ufsFound = true;
+
+	while (model && ufsFound){
+		ufsFound = false;
+
+		// check if model contains an unfounded set
+		DBGLOG(DBG, "Constructing UFS detection problem");
+		NogoodSet ufsDetectionProblem;
+		DBGLOG(DBG, "N: Facts cannot be in the unfounded set");
+		// facts cannot be in X
+		{
+			bm::bvector<>::enumerator en = program.edb->getStorage().first();
+			bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
+			while (en < en_end){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(*en, true));
+				ufsDetectionProblem.addNogood(ng);
+				en++;
+			}
+		}
+
+		// we want a UFS which intersects with model
+		DBGLOG(DBG, "N: Intersection with model");
+		{
+			Nogood ng;
+			bm::bvector<>::enumerator en = model->getStorage().first();
+			bm::bvector<>::enumerator en_end = model->getStorage().end();
+			while (en < en_end){
+				ng.insert(NogoodContainer::createLiteral(*en, false));
+				en++;
+			}
+			ufsDetectionProblem.addNogood(ng);
+		}
+
+		DBGLOG(DBG, "N: Rules");
+		BOOST_FOREACH (ID ruleID, program.idb){
+			const Rule& rule = reg->rules.getByID(ruleID);
+
+			// condition 1 is handled directly: skip rules with unsatisfied body
+			bool unsatisfied = false;
+			BOOST_FOREACH (ID b, rule.body){
+				if (model->getFact(b.address) != !b.isNaf()){
+					unsatisfied = true;
+					break;
+				}
+			}
+			if (unsatisfied) continue;
+
+			// create two unique predicates and atoms for this rule
+			OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
+			hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('k', ruleID));
+			ID hr = reg->storeOrdinaryGAtom(hratom);
+
+			// hr is true iff one of the rule's head atoms is in X
+			{
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(hr.address, true));
+				BOOST_FOREACH (ID h, rule.head){
+					ng.insert(NogoodContainer::createLiteral(h.address, false));
+				}
+				ufsDetectionProblem.addNogood(ng);
+			}
+			{
+				BOOST_FOREACH (ID h, rule.head){
+					Nogood ng;
+					ng.insert(NogoodContainer::createLiteral(hr.address, false));
+					ng.insert(NogoodContainer::createLiteral(h.address, true));
+					ufsDetectionProblem.addNogood(ng);
+				}
+			}
+
+			{
+				Nogood ng;
+				// if hr is true, then it must not happen that neither Condition 2 nor Condition 3 is satisfied
+				ng.insert(NogoodContainer::createLiteral(hr.address, true));
+
+				// Condition 2: some positive body literal b, which is true in I, is false under I u -X
+				// That is: It must not happen that all positive body atoms, which are true in I, are not in the unfounded set
+				BOOST_FOREACH (ID b, rule.body){
+					if (!b.isNaf() && model->getFact(b.address)){
+						ng.insert(NogoodContainer::createLiteral(b.address, false));
+					}
+				}
+
+				// Condition 3: some head atom, which is true in I, is not in the unfounded set
+				// That is: It must not happen, that all positive head atoms, which are true in I, are in the unfounded set (then the condition is not satisfied)
+				BOOST_FOREACH (ID h, rule.head){
+					if (model->getFact(h.address)){
+						ng.insert(NogoodContainer::createLiteral(h.address, true));
+					}
+				}
+				ufsDetectionProblem.addNogood(ng);
+			}
+		}
+
+		DBGLOG(DBG, "Solving UFS detection problem");
+		ClaspSolver ufsSolver(ctx, ufsDetectionProblem, strictSingleThreaded);
+		if (ufsSolver.getNextModel()){
+			DBGLOG(DBG, "Found UFS");
+			ufsFound = true;
+			model = ClaspSolver::getNextModel();
+		}
+	}
+
+	return model;
+}
+
 
 DLVHEX_NAMESPACE_END
 

@@ -74,6 +74,14 @@ DLVHEX_NAMESPACE_BEGIN
 class LearningCallback;
 
 class ClaspSolver : public GenuineGroundSolver, public SATSolver{
+public:
+	enum DisjunctionMode{
+		// shift disjunctions (answer sets are possibly lost)
+		Shifting,
+		// replace disjunctions by choice rules (may generates spurious answer sets if no additional unfounded set check is done)
+		ChoiceRules
+	};
+
 private:
 	class ClaspTermination : public std::runtime_error{
 	public:
@@ -117,8 +125,8 @@ private:
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
-	void buildInitialSymbolTable(OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
-	void buildInitialSymbolTable(NogoodSet& ns);
+	void buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::ProgramBuilder& pb);
+	void buildInitialSymbolTable(const NogoodSet& ns);
 	void buildOptimizedSymbolTable();
 
 	// itoa/atio wrapper
@@ -129,8 +137,8 @@ private:
 	void runClasp();
 
 	// initialization
-	bool sendProgramToClasp(OrdinaryASPProgram& p);
-	bool sendNogoodSetToClasp(NogoodSet& ns);
+	bool sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMode dm);
+	bool sendNogoodSetToClasp(const NogoodSet& ns);
 protected:
 	// structural program information
 	ProgramCtx& ctx;
@@ -175,8 +183,8 @@ public:
 	//       external learners might be different from the next model returned by getNextModel().
 	//       Therefore external learners MUST NOT store state information about the current interpretation
 	//       which is reused in getNextModel().
-	ClaspSolver(ProgramCtx& ctx, OrdinaryASPProgram& p, bool interleavedThreading = true);
-	ClaspSolver(ProgramCtx& ctx, NogoodSet& ns, bool interleavedThreading = true);
+	ClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
+	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
 
 	virtual std::string getStatistics();
@@ -199,6 +207,23 @@ public:
 
 typedef ClaspSolver::Ptr ClaspSolverPtr;
 typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
+
+// Extends the clasp solver with an unfounded set checker to be able to compute disjunctions.
+// Does NOT use ClaspD!
+class DisjunctiveClaspSolver : public ClaspSolver{
+private:
+	const OrdinaryASPProgram& program;
+public:
+	DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true);
+	virtual ~DisjunctiveClaspSolver();
+	virtual InterpretationConstPtr getNextModel();
+
+	typedef boost::shared_ptr<DisjunctiveClaspSolver> Ptr;
+	typedef boost::shared_ptr<const DisjunctiveClaspSolver> ConstPtr;
+};
+
+typedef DisjunctiveClaspSolver::Ptr DisjunctiveClaspSolverPtr;
+typedef DisjunctiveClaspSolver::ConstPtr DisjunctiveClaspSolverConstPtr;
 
 DLVHEX_NAMESPACE_END
 

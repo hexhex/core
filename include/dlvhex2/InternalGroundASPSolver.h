@@ -165,7 +165,7 @@ protected:
 public:
 	virtual std::string getStatistics();
 
-	InternalGroundASPSolver(ProgramCtx& ctx, OrdinaryASPProgram& p);
+	InternalGroundASPSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p);
 
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);
