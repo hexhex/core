@@ -40,53 +40,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-#if 0
-
-// Unfounded set checker for programs without external sources
-class SimpleUnfoundedSetChecker{
-private:
-  ProgramCtx& ctx;
-  const OrdinaryASPProgram& groundProgram;
-  InterpretationConstPtr modelCandidate;
-  const std::set<ID>& skipProgram;
-  NogoodContainerPtr ngc;
-
-  RegistryPtr reg;
-  NogoodSet ufsDetectionProblem;
-  std::set<IDAddress> domain; // domain of all problem variables
-  std::vector<ID> ufsProgram;
-
-  SATSolverPtr solver; // defined while getUnfoundedSet() runs, otherwise 0
-
-  void constructUFSDetectionProblemNecessaryPart();
-public:
-  /**
-   * \brief Initialization
-   * @param groundProgram Overall ground program
-   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
-   * @param compatibleSet A compatible set with external atom auxiliaries
-   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
-   */
-  SimpleUnfoundedSetChecker(	
-			ProgramCtx& ctx,
-  			const OrdinaryASPProgram& groundProgram,
-			InterpretationConstPtr modelCandidate,
-			std::set<ID> skipProgram = std::set<ID>(),
-			NogoodContainerPtr ngc = NogoodContainerPtr());
-
-  // Returns an unfounded set of groundProgram wrt. modelCandidate;
-  // If the empty set is returned,
-  // then there does not exist a greater (nonempty) unfounded set.
-  // 
-  // The method supports also unfounded set detection over partial interpretations.
-  // For this purpose, skipProgram specifies all rules which shall be ignored
-  // in the search. The interpretation must be complete and compatible over the non-ignored part.
-  // Each detected unfounded set will remain an unfounded set for all possible
-  // completions of the interpretation.
-  std::vector<IDAddress> getUnfoundedSet();
-};
-#endif
-
 //
 // Unfounded set checker for HEX programs (with external atoms)
 //
@@ -134,11 +87,14 @@ private:
    */
   bool isUnfoundedSet(InterpretationConstPtr ufsCandidate);
 
+  /**
+   * Transforms a nogood (valid input-output relationship of some external atom) learned in the main search for being used in the UFS search
+   */
   std::vector<Nogood> nogoodTransformation(Nogood ng, InterpretationConstPtr assignment);
 
 public:
   /**
-   * \brief Initialization
+   * \brief Initialization for UFS search considering external atoms as ordinary ones
    * @param groundProgram Overall ground program
    * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
    * @param compatibleSet A compatible set with external atom auxiliaries
@@ -151,7 +107,7 @@ public:
 			NogoodContainerPtr ngc = NogoodContainerPtr());
 
   /**
-   * \brief Initialization
+   * \brief Initialization for UFS search under consideration of the semantics of external atoms
    * @param ggncmg Reference to the G&C model generator for which this UnfoundedSetChecker runs
    * @param ctx ProgramCtx
    * @param groundProgram Overall ground program

@@ -1056,6 +1056,11 @@ void processOptionsPrePlugin(
 		}
 	}
 
+	// global constraints
+	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
+		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
+	}
+
 	// configure plugin path
 	configurePluginPath(config.optionPlugindir);
 

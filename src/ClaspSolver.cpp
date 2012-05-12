@@ -1159,14 +1159,8 @@ InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 		UnfoundedSetChecker ufsc(ctx, program, model);
 		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 		if (ufs.size() > 0){
-			/*
-			std::stringstream ss;
-			for (int i = 0; i < ufs.size(); ++i) ss << ufs[i] << " ";
-			*/
 			Nogood ng = ufsc.getUFSNogood(ufs, model);
-			//std::cout << "Learned UFS nogood " << ng << " for ufs " << ss.str() << " wrt. " << *model << std::endl;
 			addNogood(ng);
-
 			ufsFound = true;
 			model = ClaspSolver::getNextModel();
 		}
