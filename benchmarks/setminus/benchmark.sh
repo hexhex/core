@@ -33,7 +33,7 @@ do
 	echo -ne "$size:"
 
 	# write HEX program
-	prog="nsel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, sel](X). sel(X) :- domain(X), &testSetMinusNogoodBasedLearning[domain, nsel](X)."
+	prog="nsel(X) :- domain(X), &testSetMinus[domain, sel](X)<monotonic domain,antimonotonic sel>. sel(X) :- domain(X), &testSetMinus[domain, nsel](X)<monotonic domain, antimonotonic nsel>. :- sel(X), sel(Y), sel(Z), X != Y, X != Z, Y != Z."
 	for (( j = 1; j <= size; j++ ))
 	do
 		prog="domain($j). $prog"
@@ -52,6 +52,10 @@ do
 				output="---"
 				timeout[$i]=1
 			fi
+
+			# make sure that there are no zombie processes
+			pkill -9 -u $USER dlvhex2
+			pkill -9 -u $USER dlv
 		else
 			output="---"
 		fi
