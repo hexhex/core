@@ -235,8 +235,13 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	solver = GenuineSolver::getInstance(	factory.ctx, program,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
-						factory.cyclicInputPredicates.size() == 0	// let the solver do the UFS check only if we don't do it in this class
-												// (the check in this class subsumes the builtin check and we don't want to do it twice)
+						true /*factory.cyclicInputPredicates.size() == 0*/
+												// [let the solver do the UFS check only if we don't do it in this class
+												// (the check in this class subsumes the builtin check and we don't want to do it twice)]
+
+												// Edit: Actually, this check is always necessary because the UFS check with external atoms
+												// cannot detect the unfoundedness of a replacement atom. Therefore, an answer set may
+												// contain both the positive and the negative replacement atom.
 						);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
