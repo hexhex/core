@@ -1115,7 +1115,9 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 	int mCnt = 0;
 	DLVHEX_BENCHMARK_REGISTER(ufscandidates, "Investigated models of unfounded set detection program");
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
-		DLVHEX_BENCHMARK_COUNT(ufscandidates,1);
+		if (mode == WithExt){
+			DLVHEX_BENCHMARK_COUNT(ufscandidates,1);
+		}
 
 		// check if the model is actually an unfounded set
 		DBGLOG(DBG, "Got UFS candidate: " << *model);

@@ -420,7 +420,6 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
-//std::cout << "Doing UFS check for " << *compatibleSet << std::endl;
 				DBGLOG(DBG, "UFS Check");
 				// do UFS check (possibly with nogood learning) and add the learned nogoods to the main search
 				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
