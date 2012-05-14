@@ -781,7 +781,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 	Nogood ng;
 	while (en < en_end){
-		if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+		if (std::find(domain.begin(), domain.end(), *en) != domain.end() && reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 			auxiliariesToVerify.push_back(*en);
 			std::set<ID> s;
 			s.insert(ggncmg->auxToEA[*en].begin(), ggncmg->auxToEA[*en].end());

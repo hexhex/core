@@ -69,6 +69,10 @@ do
 				output=$4
 			fi
 			line="$line   $output"
+
+			# make sure that there are no zombies
+			pkill -9 -u $USER dlvhex2
+			pkill -9 -u $USER dlv
 		else
 			line="$line   $4"
 		fi
