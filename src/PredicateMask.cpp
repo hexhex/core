@@ -187,7 +187,7 @@ void ExternalAtomMask::setEAtom(const ExternalAtom& eatom, const std::vector<ID>
     }
     ID posreplacement = eatom.pluginAtom->getRegistry()->getAuxiliaryConstantSymbol('r', eatom.predicate);
     ID negreplacement = eatom.pluginAtom->getRegistry()->getAuxiliaryConstantSymbol('n', eatom.predicate);
-    // find all output atoms which possibly belong to this external atm
+    // find all output atoms which possibly belong to this external atom
     BOOST_FOREACH (ID rId, groundidb){
       const Rule& rule = eatom.pluginAtom->getRegistry()->rules.getByID(rId);
       BOOST_FOREACH (ID h, rule.head){
@@ -227,16 +227,37 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
 #ifndef NDEBUG
     std::stringstream ss;
     ss << "Comparing togatom tuple (";
-    for (int i = 0; i < eatom->inputs.size(); ++i){
-      ss << (i > 1 ? ", " : "") << togatom[1 + i];
+    for (int i = 0; i < togatom.size(); ++i){
+      ss << (i > 0 ? ", " : "");
+      if (togatom[i].isIntegerTerm()){
+        ss << togatom[i].address;
+      }else{
+        ss << eatom->pluginAtom->getRegistry()->terms.getByID(togatom[i]).symbol;
+      }
     }
-    ss << ") to external atom input (";
+    ss << ") to external atom " << eatom->pluginAtom->getRegistry()->terms.getByID(eatom->predicate).symbol << " (input: ";
     for (int i = 0; i < eatom->inputs.size(); ++i){
-      ss << (i > 0 ? ", " : "") << eatom->inputs[i];
+      ss << (i > 0 ? ", " : "");
+      if (eatom->inputs[i].isIntegerTerm()){
+        ss << eatom->inputs[i].address;
+      }else{
+        ss << eatom->pluginAtom->getRegistry()->terms.getByID(eatom->inputs[i]).symbol;
+      }
+    }
+    ss << "; output: ";
+    for (int i = 0; i < eatom->tuple.size(); ++i){
+      ss << (i > 0 ? ", " : "");
+      if (eatom->tuple[i].isIntegerTerm()){
+        ss << eatom->tuple[i].address;
+      }else{
+        ss << eatom->pluginAtom->getRegistry()->terms.getByID(eatom->tuple[i]).symbol;
+      }
     }
     ss << ")";
     DBGLOG(DBG, ss.str());
 #endif
+
+    std::map<ID, ID> varBinding;
 
     // check predicate and constant input
     for (int p = 0; p < eatom->inputs.size(); ++p){
@@ -249,25 +270,52 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
       }
     }
 
-    if (eatom->auxInputPredicate == ID_FAIL) return true;	// no auxiliary input
-
     // check auxiliary input
-    BOOST_FOREACH (Tuple tinp, auxInputTuples){
-      // check if tinp corresponds to togatom
-      bool match = true;
-      for (int i = 0; i < tinp.size(); ++i){
-        BOOST_FOREACH (unsigned pos, eatom->auxInputMapping[i]){
-          if (togatom[1 + pos] != tinp[i]){
-            match = false;
-            break;
+    bool inputmatch = false;
+    if (eatom->auxInputPredicate == ID_FAIL){
+      inputmatch = true;
+    }else{
+      BOOST_FOREACH (Tuple tinp, auxInputTuples){
+        // check if tinp corresponds to togatom
+        bool match = true;
+        for (int i = 0; i < tinp.size(); ++i){
+          BOOST_FOREACH (unsigned pos, eatom->auxInputMapping[i]){
+            if (togatom[1 + pos] != tinp[i]){
+              match = false;
+              break;
+            }
+            // remember matched variables
+            varBinding[eatom->inputs[pos]] = tinp[i];
+          }
+          if (!match) break;
+        }
+        if (match){
+          inputmatch = true;
+          break;
+        }
+      }
+      if (!inputmatch) DBGLOG(DBG, "Auxiliary input mismatch");
+    }
+    if (!inputmatch) return false;
+
+    // check output tuple
+    for (int o = 0; o < eatom->tuple.size(); ++o){
+      if (eatom->tuple[o].isVariableTerm()){
+        if (varBinding.find(eatom->tuple[o]) == varBinding.end()){
+          varBinding[eatom->tuple[o]] = togatom[eatom->inputs.size() + o];
+        }else{
+          if (varBinding[eatom->tuple[o]] != togatom[eatom->inputs.size() + o]){
+            return false;
           }
         }
-        if (!match) break;
+      }else if (eatom->tuple[o].isConstantTerm()){
+        if (togatom[eatom->inputs.size() + o] != eatom->tuple[0]){
+          return false;
+        }
+      }else{
+        assert(false);
       }
-      if (match) return true;
     }
-    DBGLOG(DBG, "Auxiliary input mismatch");
-    return false;
 }
 
   // this method ensures that the mask captures:
