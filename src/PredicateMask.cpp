@@ -316,6 +316,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
         assert(false);
       }
     }
+    return true;
 }
 
   // this method ensures that the mask captures:
