@@ -603,7 +603,7 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 		programstring << std::endl;
 #endif
 		if (rule.head.size() > 1){
-			if (dm == Shifting){
+			if (dm == Shifting || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
 				// shifting
 				DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
 				for (int keep = 0; keep < rule.head.size(); ++keep){
@@ -631,8 +631,7 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 					}
 					pb.endRule();
 				}
-			}
-			if (dm == ChoiceRules){
+			}else if (dm == ChoiceRules){
 				DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
 				// derive head atoms
 				pb.startRule(Clasp::CHOICERULE);
