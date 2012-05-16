@@ -165,7 +165,8 @@ PluginContainer::importPlugins()
       ///should gracefully resuscitate ourselves
       if (dlHandle == NULL)
 	{
-	  throw FatalError("Cannot open library " + *it + ": " + lt_dlerror());
+    std::cerr << "Warning: Cannot open library " + *it + ": " + lt_dlerror() << std::endl;
+    continue;
 	}
       
       t_import getplugin = (t_import) lt_dlsym(dlHandle, PLUGINIMPORTFUNCTIONSTRING);
