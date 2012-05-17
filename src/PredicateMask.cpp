@@ -308,7 +308,7 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
             return false;
           }
         }
-      }else if (eatom->tuple[o].isConstantTerm()){
+      }else if (eatom->tuple[o].isConstantTerm() || eatom->tuple[o].isIntegerTerm()){
         if (togatom[eatom->inputs.size() + o] != eatom->tuple[0]){
           return false;
         }
