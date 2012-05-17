@@ -302,14 +302,14 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
     for (int o = 0; o < eatom->tuple.size(); ++o){
       if (eatom->tuple[o].isVariableTerm()){
         if (varBinding.find(eatom->tuple[o]) == varBinding.end()){
-          varBinding[eatom->tuple[o]] = togatom[eatom->inputs.size() + o];
+          varBinding[eatom->tuple[o]] = togatom[1 + eatom->inputs.size() + o];
         }else{
-          if (varBinding[eatom->tuple[o]] != togatom[eatom->inputs.size() + o]){
+          if (varBinding[eatom->tuple[o]] != togatom[1 + eatom->inputs.size() + o]){
             return false;
           }
         }
       }else if (eatom->tuple[o].isConstantTerm() || eatom->tuple[o].isIntegerTerm()){
-        if (togatom[eatom->inputs.size() + o] != eatom->tuple[0]){
+        if (togatom[1 + eatom->inputs.size() + o] != eatom->tuple[o]){
           return false;
         }
       }else{
