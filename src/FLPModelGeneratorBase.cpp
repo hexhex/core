@@ -315,6 +315,18 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
       rflpbody.body = r.body;
       rflpbody.body.push_back(fid);
 
+/*
+// another encoding which is more efficient on some examples:
+IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
+Rule rflpbody(kind);
+rflpbody.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+rflpbody.body = r.body;
+rflpbody.body.push_back(fid);
+BOOST_FOREACH (ID h, r.head){
+	rflpbody.body.push_back(ID::literalFromAtom(h, true));
+}
+*/
+
       // store rules
       ID fheadrid = reg->storeRule(rflphead);
       xidbflphead.push_back(fheadrid);
