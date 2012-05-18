@@ -1120,6 +1120,7 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 
 	int mCnt = 0;
 
+  #ifdef DLVHEX_BENCHMARK
 	DLVHEX_BENCHMARK_REGISTER(ufscheck, "UFS Check");
 	DLVHEX_BENCHMARK_REGISTER(oufscheck, "Ordinary UFS Check");
 	if( mode == WithExt ) {
@@ -1135,6 +1136,7 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 			DLVHEX_BENCHMARK_STOP(oufscheck);
 		}
 	} BOOST_SCOPE_EXIT_END
+  #endif
 
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
 		if (mode == WithExt){

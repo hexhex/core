@@ -226,7 +226,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 						constructFLPNogood(ctx, groundProgram, compatibleSet, candidate, flpbodyas);
 					}
 */
-					DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfailedflpchecks, "Failed FLP Checks", 1)
+					DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfailedflpchecks, "Failed FLP Checks", 1);
 					return false;
 				}else{
 					// project both the model candidate and the reduct model to ordinary atoms
