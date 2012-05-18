@@ -301,7 +301,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
           ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflphead.head.push_back(fid);
       rflphead.body = r.body;
-
+/*
       IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
       if (r.head.size() == 0){
         kind |= ID::SUBKIND_RULE_CONSTRAINT;
@@ -314,18 +314,16 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
         rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
       rflpbody.body = r.body;
       rflpbody.body.push_back(fid);
-
-/*
-// another encoding which is more efficient on some examples:
-IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
-Rule rflpbody(kind);
-rflpbody.kind |= ID::SUBKIND_RULE_CONSTRAINT;
-rflpbody.body = r.body;
-rflpbody.body.push_back(fid);
-BOOST_FOREACH (ID h, r.head){
-	rflpbody.body.push_back(ID::literalFromAtom(h, true));
-}
 */
+      // another encoding which is more efficient on some examples:
+      IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
+      Rule rflpbody(kind);
+      rflpbody.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+      rflpbody.body = r.body;
+      rflpbody.body.push_back(fid);
+      BOOST_FOREACH (ID h, r.head){
+        rflpbody.body.push_back(ID::literalFromAtom(h, true));
+      }
 
       // store rules
       ID fheadrid = reg->storeRule(rflphead);

@@ -32,6 +32,10 @@
 #ifndef DLVHEX_FLPMODELGENERATORBASE_TCC_INCLUDED
 #define DLVHEX_FLPMODELGENERATORBASE_TCC_INCLUDED
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif // HAVE_CONFIG_H
+
 #include "dlvhex2/FLPModelGeneratorBase.h"
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Nogood.h"
@@ -78,6 +82,8 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		ProgramCtx& ctx,
 		NogoodContainerPtr ngc)
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sidflpcheck, "Explicit FLP Check");
+
   typedef boost::shared_ptr<OrdinaryASPSolverT> OrdinaryASPSolverTPtr;
 
 	RegistryPtr& reg = factory.reg;
@@ -220,7 +226,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 						constructFLPNogood(ctx, groundProgram, compatibleSet, candidate, flpbodyas);
 					}
 */
-
+					DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfailedflpchecks, "Failed FLP Checks", 1)
 					return false;
 				}else{
 					// project both the model candidate and the reduct model to ordinary atoms
@@ -242,6 +248,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 						DBGLOG(DBG, "Model candidate " << *candidate << " failed FLP check");
 						DBGLOG(DBG, "Enumerated " << flpm << " FLP models");
 
+						DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfailedflpchecks, "Failed FLP Checks", 1);
 						return false;
 					}else{
 						DBGLOG(DBG, "Reduct model is no proper subset");

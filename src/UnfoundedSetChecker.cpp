@@ -28,8 +28,6 @@
  * @brief  Unfounded set checker for programs with disjunctions and external atoms.
  */
 
-#define DLVHEX_BENCHMARK
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif // HAVE_CONFIG_H
@@ -1113,10 +1111,26 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 	InterpretationConstPtr model;
 
 	int mCnt = 0;
-	DLVHEX_BENCHMARK_REGISTER(ufscandidates, "Investigated models of unfounded set detection program");
+
+	DLVHEX_BENCHMARK_REGISTER(ufscheck, "UFS Check");
+	DLVHEX_BENCHMARK_REGISTER(oufscheck, "Ordinary UFS Check");
+	if( mode == WithExt ) {
+		DLVHEX_BENCHMARK_START(ufscheck);
+	}else{
+		DLVHEX_BENCHMARK_START(oufscheck);
+	}
+	BOOST_SCOPE_EXIT( (ufscheck)(oufscheck)(mode) )
+	{
+		if( mode == WithExt ) {
+			DLVHEX_BENCHMARK_STOP(ufscheck);
+		}else{
+			DLVHEX_BENCHMARK_STOP(oufscheck);
+		}
+	} BOOST_SCOPE_EXIT_END
+
 	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
 		if (mode == WithExt){
-			DLVHEX_BENCHMARK_COUNT(ufscandidates,1);
+			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Investigated number of UFS candidates", 1);
 		}
 
 		// check if the model is actually an unfounded set
@@ -1138,6 +1152,11 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 			DBGLOG(DBG, "Enumerated " << mCnt << " UFS candidates");
 
 			solver.reset();
+
+			if (mode == WithExt){
+				DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidfailedufscheckcount, "Failed UFS Checks", 1);
+			}
+
 			return ufs;
 		}else{
 			DBGLOG(DBG, "No UFS: " << *model);
