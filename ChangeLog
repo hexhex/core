@@ -1,3 +1,10 @@
+2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* PluginInterface.cpp Add nogood generalization
+	* PluginInterface.h Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp Likewise
+	* GenuineGuessAndCheckModelGenerator.h Likewise
+
 2012-05-09  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/State.cpp: Reimplemented -filter option (closes #59).
