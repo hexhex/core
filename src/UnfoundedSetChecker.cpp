@@ -807,7 +807,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	BOOST_FOREACH (Pair p, ggncmg->auxToEA){
 		IDAddress aux = p.first;
 		if (ufsCandidate->getFact(aux) != compatibleSet->getFact(aux)){
-			if (std::find(domain.begin(), domain.end(), aux) != domain.end() && reg->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
+			if (domain->getFact(aux) && reg->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
 				auxiliariesToVerify.push_back(aux);
 				std::set<ID> s;
 				s.insert(ggncmg->auxToEA[aux].begin(), ggncmg->auxToEA[aux].end());
