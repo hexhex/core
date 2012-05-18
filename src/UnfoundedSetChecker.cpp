@@ -765,16 +765,19 @@ NogoodSet FLPModelGeneratorBase::getUFSDetectionProblem(
 
 bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 
+//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(ssiufs1, "UnfoundedSetChecker::isUnfoundedSet1");
+
 	// ordinary mode generates only real unfounded sets, hence there is no check required
 	assert(mode == WithExt);
 
-	DBGLOG(DBG, "Checking  " << *ufsCandidate << " is an unfounded set");
+	DBGLOG(DBG, "Checking if " << *ufsCandidate << " is an unfounded set");
 
 	// check for each EA auxiliary in the UFS, if the atom is indeed unfounded
 	std::vector<IDAddress> auxiliariesToVerify;		// the auxiliaries which's falsity needs to be checked
 	std::vector<std::set<ID> > auxiliaryDependsOnEA;	// stores for each auxiliary A the external atoms which are remain to be evaluated before the truth/falsity of A is certain
 	std::map<ID, std::vector<int> > eaToAuxIndex;		// stores for each external atom index the indices in the above vector which depend on this external atom
 
+/*
 	// collect all external atom auxiliaries which changed their truth value from compatibleSet to ufsCandidate
 	// and insert them into the above data structures
 	DBGLOG(DBG, "Collecting auxiliaries with changed truth value");
@@ -799,6 +802,24 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
       en++;
     }
   }
+*/
+	typedef std::pair<IDAddress, std::vector<ID> > Pair;
+	BOOST_FOREACH (Pair p, ggncmg->auxToEA){
+		IDAddress aux = p.first;
+		if (ufsCandidate->getFact(aux) != compatibleSet->getFact(aux)){
+			if (std::find(domain.begin(), domain.end(), aux) != domain.end() && reg->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
+				auxiliariesToVerify.push_back(aux);
+				std::set<ID> s;
+				s.insert(ggncmg->auxToEA[aux].begin(), ggncmg->auxToEA[aux].end());
+				auxiliaryDependsOnEA.push_back(s);
+				BOOST_FOREACH (ID eaID, ggncmg->auxToEA[aux]){
+					eaToAuxIndex[eaID].push_back(auxiliaryDependsOnEA.size() - 1);
+				}
+			}
+		}
+	}
+
+//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(ssiufs2, "UnfoundedSetChecker::isUnfoundedSet2");
 
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
@@ -807,6 +828,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	eaResult->getStorage() -= ufsCandidate->getStorage();
 
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
+//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(ssiufs3, "UnfoundedSetChecker::isUnfoundedSet3");
 
 	// now evaluate one external atom after the other and check if the new truth value is justified
 	DBGLOG(DBG, "Evaluating external atoms");
