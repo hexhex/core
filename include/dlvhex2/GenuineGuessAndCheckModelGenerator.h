@@ -158,6 +158,11 @@ protected:
   // members
 
   /**
+   * Learns related nogoods
+   */
+  void generalizeNogood(Nogood ng);
+
+  /**
    * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly
    */
   void transferLearnedEANogoods();

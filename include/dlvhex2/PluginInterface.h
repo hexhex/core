@@ -879,6 +879,17 @@ public:
   virtual void retrieve(const Query&, Answer&) = 0;
   virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
+  /**
+   * \brief Tries to generalize learned nogoods to other external atoms (with possibly different parameters)
+   * but over the same external predicate.
+   *
+   * \@param ng A learned nogood with some external atom auxiliary over this external predicate
+   * \@param auxes Set of auxiliaries over this external predicate for which related nogoods shall be learned
+   * \@param ctx Program context
+   * \@param nogoods The nogood container where related nogoods shall be added
+   */
+  virtual void generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+
   // ========== External Learning Methods ==========
 
   /**

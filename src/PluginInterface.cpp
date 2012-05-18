@@ -419,6 +419,64 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 	return atomicQueries;
 }
 
+void PluginAtom::generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramCtx* ctx, NogoodContainerPtr nogoods){
+
+	DBGLOG(DBG, "PluginAtom::generalizeNogood");
+
+	// find the auxiliary in the nogood
+	ID patternID = ID_FAIL;
+	BOOST_FOREACH (ID l, ng){
+		const OrdinaryAtom& lAtom = ctx->registry()->ogatoms.getByAddress(l.address);
+
+		if (ctx->registry()->ogatoms.getIDByAddress(l.address).isExternalAuxiliary() && ctx->registry()->getIDByAuxiliaryConstantSymbol(lAtom.tuple[0]) == getPredicateID()){
+			patternID = l;
+			break;
+		}
+	}
+	assert(patternID != ID_FAIL);
+	DBGLOG(DBG, "patternID=" << patternID);
+	const OrdinaryAtom& pattern = ctx->registry()->ogatoms.getByAddress(patternID.address);
+
+	// for all related auxiliaries
+	BOOST_FOREACH (ID auxID, auxes){
+		DBGLOG(DBG, "Matching auxID=" << auxID << " (#parameters=" << inputType.size() << ")");
+		const OrdinaryAtom& aux = ctx->registry()->ogatoms.getByAddress(auxID.address);
+
+		// find a translation of the tuple of pattern to the tuple of aux
+		std::map<ID, std::vector<ID> > translation;
+		for (int p = 0; p < inputType.size(); ++p){
+			if (getInputType(p) == PREDICATE){
+				DBGLOG(DBG, pattern.tuple[p + 1] << " --> " << aux.tuple[p + 1]);
+				translation[pattern.tuple[p + 1]].push_back(aux.tuple[p + 1]);
+			}
+		}
+
+		// translate the nogood
+		Nogood translatedNG;
+		BOOST_FOREACH (ID lID, ng){
+			const OrdinaryAtom& l = ctx->registry()->ogatoms.getByAddress(lID.address);
+			if (lID != patternID){
+				assert(translation.find(l.tuple[0]) != translation.end());
+				for (int i = 0; i < translation[l.tuple[0]].size(); ++i){
+					OrdinaryAtom t = l;
+					t.tuple[0] = translation[l.tuple[0]][i];
+					translatedNG.insert(NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryGAtom(t).address, !lID.isNaf()));
+				}
+			}else{
+				OrdinaryAtom t = l;
+				for (int i = 1; i <= inputType.size(); ++i){
+					t.tuple[i] = aux.tuple[i];
+				}
+				translatedNG.insert(NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryGAtom(t).address, !lID.isNaf()));
+			}
+		}
+
+		// store the translated nogood
+		DBGLOG(DBG, "Adding generalized nogood " << translatedNG);
+		nogoods->addNogood(translatedNG);
+	}
+}
+
 void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
 
 	if (ctx != 0 && nogoods){
@@ -656,14 +714,16 @@ ID PluginAtom::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
 	ip->addStringInput(learningrule, "rule");
 //	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
 //	Logger::Instance().setPrintLevels(0);
-	ProgramCtx pc;
-	pc.changeRegistry(ctx->registry());
+	ProgramCtx pc = *ctx;
+//	pc.changeRegistry(ctx->registry());
+	pc.edb->getStorage().clear();
+	pc.idb.clear();
 	ModuleHexParser hp;
 	hp.parse(ip, pc);
 //	Logger::Instance().setPrintLevels(l);
 
 	if(pc.edb->getStorage().count() > 0){
-		DBGLOG(DBG, "Learning Rule Error: Learning rule must be be a fact");
+		DBGLOG(DBG, "Learning Rule Error: Learning rule must not be a fact");
 		return ID_FAIL;
 	}else if (pc.idb.size() != 1){
 		DBGLOG(DBG, "Error: Got " << pc.idb.size() << " rules; must be 1");

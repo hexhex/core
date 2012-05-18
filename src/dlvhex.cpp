@@ -141,6 +141,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        neg: Learn negative information" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
+      << "                        generalize: Generalize learned nogoods to other external atoms" << std::endl
       << "                      By default, all options are enabled" << std::endl
       << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --flpcheck=[explicit,ufs,none]" << std::endl
@@ -155,7 +156,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      immediate: Evaluate immediately after the input to an external atom is complete (bulitin)" << std::endl
       << "                      always: Evaluate whenever the heuristics is asked (roughly the same as immediate, but using the heuristics infrastructure instead)" << std::endl
       << "                      never: Only evaluate at the end but not when the heuristics is asked (roughly the same as post, but using the heuristics infrastructure instead)" << std::endl
-      << "     --ufsheuristics=[post,max,periodic]" << std::endl
+      << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
       << "                      post: Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
       << "                      periodic: Do UFS check in periodic intervals" << std::endl
@@ -330,6 +331,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningLinearity", 0);
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
+  pctx.config.setOption("ExternalLearningGeneralize", 0);
   pctx.config.setOption("VerificationHeuristics", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("Silent", 0);
@@ -943,6 +945,10 @@ void processOptionsPrePlugin(
 						{
 							pctx.config.setOption("ExternalLearningUser", 1);
 						}
+                                                else if( token == "generalize" )
+						{
+							pctx.config.setOption("ExternalLearningGeneralize", 1);
+						}
 						else
 						{
 							throw GeneralError("Unknown learning option: \"" + token + "\"");
@@ -956,6 +962,7 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("ExternalLearningLinearity", 1);
 					pctx.config.setOption("ExternalLearningNeg", 1);
 					pctx.config.setOption("ExternalLearningUser", 1);
+					pctx.config.setOption("ExternalLearningGeneralize", 1);
 				}
 			}
 

@@ -334,7 +334,58 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	}while(true);
 }
 
+void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
+
+	DBGLOG(DBG, "Generalizing " << ng);
+
+	// find the external atom related to this nogood
+	ID eaid = ID_FAIL;
+	BOOST_FOREACH (ID l, ng){
+		if (reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary()){
+			eaid = l;
+			break;
+		}
+	}
+	if (eaid == ID_FAIL) return;
+	assert(auxToEA[eaid.address].size() > 0);
+	DBGLOG(DBG, "External atom is " << auxToEA[eaid.address][0]);
+	const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[eaid.address][0]);
+	const OrdinaryAtom& patternAtom = reg->ogatoms.getByAddress(eaid.address);
+
+	// make a list of all auxiliaries over the same predicate
+	std::set<ID> auxes;
+	typedef std::pair<IDAddress, std::vector<ID> > Pair;
+	BOOST_FOREACH (Pair p, auxToEA){
+		const OrdinaryAtom& auxAtom = reg->ogatoms.getByAddress(p.first);
+		if (reg->getIDByAuxiliaryConstantSymbol(auxAtom.tuple[0]) == reg->getIDByAuxiliaryConstantSymbol(patternAtom.tuple[0])){
+			auxes.insert(reg->ogatoms.getIDByAddress(p.first));
+		}
+	}
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << "List of related auxiliaries: ";
+	bool first = true;
+	BOOST_FOREACH (ID aux, auxes){
+		if (!first) ss << ", ";
+		ss << aux;
+		first = false;
+	}
+	DBGLOG(DBG, ss.str());
+#endif
+
+	// learn related nogoods
+	ea.pluginAtom->generalizeNogood(ng, auxes, &factory.ctx, learnedEANogoods);
+}
+
 void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
+
+	if (factory.ctx.config.getOption("ExternalLearningGeneralize")){
+		int max = learnedEANogoods->getNogoodCount();
+		for (int i = learnedEANogoodsTransferredIndex; i < max; ++i){
+			generalizeNogood(learnedEANogoods->getNogood(i));
+		}
+	}
 
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
 		solver->addNogood(learnedEANogoods->getNogood(i));
