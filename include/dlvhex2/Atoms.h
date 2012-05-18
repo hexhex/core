@@ -218,7 +218,8 @@ public:
     inputs(inputs),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask(new PredicateMask)
+    inputMask(new PredicateMask),
+    useProp(false)
     { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
   ExternalAtom(IDKind kind):
     Atom(kind),
@@ -226,7 +227,8 @@ public:
     inputs(),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask(new PredicateMask)
+    inputMask(new PredicateMask),
+    useProp(false)
     { assert(ID(kind,0).isExternalAtom()); }
   ~ExternalAtom();
 
