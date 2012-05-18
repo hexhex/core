@@ -61,7 +61,8 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	compatibleSetWithoutAux(interpretation),
 	skipProgram(skipProgram),
 	ngc(ngc),
-	mode(Ordinary){
+	mode(Ordinary),
+  domain(new Interpretation(ctx.registry())){
 
 	reg = ctx.registry();
 
@@ -106,7 +107,8 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	compatibleSet(compatibleSet),
 	skipProgram(skipProgram),
 	ngc(ngc),
-	mode(WithExt){
+	mode(WithExt),
+  domain(new Interpretation(ctx.registry())){
 
 	reg = ctx.registry();
 
@@ -162,7 +164,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
 		bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
 		while (en < en_end){
-			domain.insert(*en);
+			domain->setFact(*en);
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(*en, true));
 			ufsDetectionProblem.addNogood(ng);
@@ -204,8 +206,8 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		if (unsatisfied) continue;
 
 		// Compute the set of problem variables
-		BOOST_FOREACH (ID h, rule.head) domain.insert(h.address);
-		BOOST_FOREACH (ID b, rule.body) domain.insert(b.address);
+		BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
+		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
 
 		// Create two unique predicates and atoms for this rule
 		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -330,7 +332,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicEAKno
 		while (en < en_end){
 			if (compatibleSet->getFact(*en)){
 				// T a \in I
-				if (std::find(domain.begin(), domain.end(), *en) == domain.end()){
+				if ( !domain->getFact(*en) ){
 					// atom is true for sure in I u -X
 				}else{
 					// atom might be true in I u -X
@@ -338,7 +340,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicEAKno
 				}
 			}else{
 				// F a \in I
-				if (std::find(domain.begin(), domain.end(), *en) == domain.end()){
+				if ( !domain->getFact(*en) ){
 					// atom is also false for sure in I u -X
 				}
 			}
@@ -355,7 +357,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicEAKno
 		while (en < en_end){
 			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 				// do not extend the variable domain (this is counterproductive)
-				if (std::find(domain.begin(), domain.end(), *en) != domain.end()){
+				if ( domain->getFact(*en) ){
 					Nogood ng = inputNogood;
 					ng.insert(NogoodContainer::createLiteral(*en, !compatibleSet->getFact(*en)));
 					ufsDetectionProblem.addNogood(ng);
@@ -782,18 +784,21 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 
 	Nogood ng;
-	while (en < en_end){
-		if (std::find(domain.begin(), domain.end(), *en) != domain.end() && reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
-			auxiliariesToVerify.push_back(*en);
-			std::set<ID> s;
-			s.insert(ggncmg->auxToEA[*en].begin(), ggncmg->auxToEA[*en].end());
-			auxiliaryDependsOnEA.push_back(s);
-			BOOST_FOREACH (ID eaID, ggncmg->auxToEA[*en]){
-				eaToAuxIndex[eaID].push_back(auxiliaryDependsOnEA.size() - 1);
-			}
-		}
-		en++;
-	}
+  {
+    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(dbgscope,"isUnfoundedSet preparation");
+    while (en < en_end){
+      if( domain->getFact(*en) && reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() ){
+        auxiliariesToVerify.push_back(*en);
+        std::set<ID> s;
+        s.insert(ggncmg->auxToEA[*en].begin(), ggncmg->auxToEA[*en].end());
+        auxiliaryDependsOnEA.push_back(s);
+        BOOST_FOREACH (ID eaID, ggncmg->auxToEA[*en]){
+          eaToAuxIndex[eaID].push_back(auxiliaryDependsOnEA.size() - 1);
+        }
+      }
+      en++;
+    }
+  }
 
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
@@ -832,10 +837,10 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 
 		// remove the external atom from the remaining lists
 		BOOST_FOREACH (int i, eaToAuxIndex[eaID]){
-			if (auxiliaryDependsOnEA[i].size() != 0){
+			if ( !auxiliaryDependsOnEA[i].empty() ){
 				auxiliaryDependsOnEA[i].erase(eaID);
 				// if no external atoms remain to be verified, then the truth/falsity of the auxiliary is finally known
-				if (auxiliaryDependsOnEA[i].size() == 0){
+				if ( auxiliaryDependsOnEA[i].empty() ){
 					// check if the auxiliary, which was assumed to be unfounded, is indeed _not_ in eaResult
 					if (eaResult->getFact(auxiliariesToVerify[i]) != ufsCandidate->getFact(auxiliariesToVerify[i])){
 						// wrong guess: the auxiliary is _not_ unfounded
@@ -847,7 +852,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 					}
 				}
 			}
-		}
+    }
 	}
 	DBGLOG(DBG, "Evaluated " << innerEatoms.size() << " of " << innerEatoms.size() << " external atoms");
 
@@ -1046,7 +1051,7 @@ std::vector<Nogood> UnfoundedSetChecker::nogoodTransformation(Nogood ng, Interpr
 			}
 
 			// do not add a nogood if it extends the variable domain (this is counterproductive)
-			if (std::find(domain.begin(), domain.end(), useID.address) == domain.end()){
+			if ( !domain->getFact(useID.address) ){
 				DBGLOG(DBG, "Skipping because " << useID.address << " expands the domain");
 				skip = true;
 				break;
@@ -1071,7 +1076,7 @@ std::vector<Nogood> UnfoundedSetChecker::nogoodTransformation(Nogood ng, Interpr
 					break;
 				}else{
 					// true in I --> nogood fires if X does not contain the atom
-					if (std::find(domain.begin(), domain.end(), id.address) != domain.end()){
+					if ( domain->getFact(id.address) ){
 						DBGLOG(DBG, "Inserting ordinary -" << id.address << " because it is true in I");
 						ngAdd.insert(NogoodContainer::createLiteral(id.address, false));
 					}else{
@@ -1082,7 +1087,7 @@ std::vector<Nogood> UnfoundedSetChecker::nogoodTransformation(Nogood ng, Interpr
 				// negative
 				if (assignment->getFact(id.address) == true){
 					// positive variant is true in I --> nogood fires if it is also in X
-					if (std::find(domain.begin(), domain.end(), id.address) == domain.end()){
+					if ( !domain->getFact(id.address) ){
 						DBGLOG(DBG, "Skipping because " << id.address << " can never be false under I u -X");
 						skip = true;
 						break;

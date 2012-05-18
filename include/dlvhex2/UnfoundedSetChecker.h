@@ -65,7 +65,7 @@ private:
 
   RegistryPtr reg;
   NogoodSet ufsDetectionProblem;
-  std::set<IDAddress> domain; // domain of all problem variables
+  InterpretationPtr domain; // domain of all problem variables
   std::vector<ID> ufsProgram;
 
   SATSolverPtr solver; // defined while getUnfoundedSet() runs, otherwise 0
