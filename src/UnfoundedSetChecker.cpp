@@ -141,6 +141,9 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 }
 
 void UnfoundedSetChecker::constructUFSDetectionProblem(){
+
+//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "UFS Detection Problem Construction");
+
 	constructUFSDetectionProblemNecessaryPart();
 	constructUFSDetectionProblemOptimizationPart();
 }
@@ -777,6 +780,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	changed->getStorage() = ufsCandidate->getStorage() ^ compatibleSet->getStorage();
 	bm::bvector<>::enumerator en = changed->getStorage().first();
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
+
 	Nogood ng;
 	while (en < en_end){
 		if (std::find(domain.begin(), domain.end(), *en) != domain.end() && reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
@@ -796,7 +800,6 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
 	eaResult->add(*compatibleSetWithoutAux);
 	eaResult->getStorage() -= ufsCandidate->getStorage();
-
 
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
 
