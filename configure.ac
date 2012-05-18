@@ -189,7 +189,7 @@ case "$dbgrelbench" in
 	optlevel="-O3"
   AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
            ["$DISTCHECK_CONFIGURE_FLAGS --enable-benchmark"])
-     ;&
+     ;;&
 
      *,*,*,true,*)
 	# do stuff that must be done for --enable-profiling here
@@ -197,7 +197,7 @@ case "$dbgrelbench" in
   CPPFLAGS="$CPPFLAGS -DNDEBUG"
 	optlevel="-O3"
 	prof="-pg"
-     ;&
+     ;;&
 
      *,true,*,*,*)
 	# do stuff that must be done for --enable-release here
@@ -206,7 +206,7 @@ case "$dbgrelbench" in
 	optlevel="-O3"
   AC_SUBST([DISTCHECK_CONFIGURE_FLAGS],
            ["$DISTCHECK_CONFIGURE_FLAGS --enable-release"])
-     ;&
+     ;;&
 
 esac
 
