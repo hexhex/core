@@ -297,6 +297,7 @@ void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, N
 
 	// decide which properties to use
 	ExtSourceProperties prop = this->prop;			// by default the settings of the plugin count
+  assert(query.eatom != 0);
 	if (query.eatom->useProp) prop = query.eatom->prop;	// this may be overridden by single external atoms
 
 	std::vector<Query> atomicQueries = splitQuery(ctx, query, prop);
