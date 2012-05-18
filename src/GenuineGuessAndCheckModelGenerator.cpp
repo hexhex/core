@@ -341,12 +341,13 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 	// find the external atom related to this nogood
 	ID eaid = ID_FAIL;
 	BOOST_FOREACH (ID l, ng){
-		if (reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary()){
+		if (reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary() && auxToEA.find(l.address) != auxToEA.end()){
 			eaid = l;
 			break;
 		}
 	}
 	if (eaid == ID_FAIL) return;
+
 	assert(auxToEA[eaid.address].size() > 0);
 	DBGLOG(DBG, "External atom is " << auxToEA[eaid.address][0]);
 	const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[eaid.address][0]);

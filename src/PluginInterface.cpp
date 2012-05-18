@@ -466,14 +466,18 @@ void PluginAtom::generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramC
 			}else{
 				OrdinaryAtom t = l;
 				for (int i = 1; i <= inputType.size(); ++i){
-					t.tuple[i] = aux.tuple[i];
+					if (getInputType(i - 1) == PREDICATE){
+						t.tuple[i] = aux.tuple[i];
+					}else{
+						t.tuple[i] = pattern.tuple[i];
+					}
 				}
 				translatedNG.insert(NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryGAtom(t).address, !lID.isNaf()));
 			}
 		}
 
 		// store the translated nogood
-		DBGLOG(DBG, "Adding generalized nogood " << translatedNG);
+		DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
 		nogoods->addNogood(translatedNG);
 	}
 }
