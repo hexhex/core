@@ -340,7 +340,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 					break;
 				}
 			}
-			if (paramMatch && atom.tuple[0] == negOutPredicate){
+			if (paramMatch && (atom.tuple[0] == negOutPredicate || atom.tuple[0] == posOutPredicate)){
 				// check if this tuple is _not_ in the answer
 				Tuple t;
 				for (int i = 1 + eatom.inputs.size(); i < atom.tuple.size(); i++){

@@ -336,7 +336,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 
-	DBGLOG(DBG, "Generalizing " << ng);
+	DBGLOG(DBG, "Generalizing " << ng.getStringRepresentation(reg));
 
 	// find the external atom related to this nogood
 	ID eaid = ID_FAIL;
