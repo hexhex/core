@@ -313,6 +313,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if( !modelCandidate ) return modelCandidate;
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 
 		DBGLOG_SCOPE(DBG,"gM", false);
 		DBGLOG(DBG,"= got guess model " << *modelCandidate);
@@ -389,6 +390,7 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 	}
 
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
 		solver->addNogood(learnedEANogoods->getNogood(i));
 	}
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
