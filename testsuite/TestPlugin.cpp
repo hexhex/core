@@ -791,6 +791,54 @@ public:
   }
 };
 
+class TestTransitiveClosureAtom:
+	public PluginAtom
+{
+public:
+	TestTransitiveClosureAtom():
+		// monotonic, as only constant inputs
+		PluginAtom("testTransitiveClosure", true)
+	{
+			addInputPredicate();
+			setOutputArity(2);
+
+			prop.monotonicInputPredicates.push_back(0);
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer)
+	{
+		assert(query.input.size() == 1);
+
+		std::set<ID> nodes;
+		std::set<std::pair<ID, ID> > edges;
+
+		bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+		while (en < en_end){
+			const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+
+			nodes.insert(ogatom.tuple[1]);
+			nodes.insert(ogatom.tuple[2]);
+			edges.insert(std::pair<ID, ID>(ogatom.tuple[1], ogatom.tuple[2]));
+			en++;
+		}
+
+		BOOST_FOREACH (ID n, nodes){
+			BOOST_FOREACH (ID m, nodes){
+				BOOST_FOREACH (ID o, nodes){
+					if (std::find(edges.begin(), edges.end(), std::pair<ID, ID>(n, m)) != edges.end() &&
+					    std::find(edges.begin(), edges.end(), std::pair<ID, ID>(m, o)) != edges.end()){
+						Tuple t;
+						t.push_back(n);
+						t.push_back(o);
+						answer.get().push_back(t);
+					}
+				}
+			}
+		}
+	}
+};
 
 class TestPlugin:
   public PluginInterface
@@ -823,6 +871,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}
