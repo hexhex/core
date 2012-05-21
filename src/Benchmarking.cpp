@@ -68,9 +68,9 @@ BenchmarkController::~BenchmarkController()
   }
 
   // hack for fast benchmarks
-  ID eeval = getInstrumentationID("PluginAtom  retrieve");
+  ID eeval = getInstrumentationID("evaluate external atom");
   const Stat& stat = instrumentations[eeval];
-  std::cerr << "#exteval " << stat.count << " timeexteval ";
+  std::cerr << stat.count << " ";
   printInSecs(std::cerr, stat.duration, 3);
   std::cerr << std::endl;
 }
