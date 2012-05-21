@@ -44,6 +44,8 @@
 
 #include <boost/foreach.hpp>
 
+dlvhex::ProgramCtx* globalpc;
+
 DLVHEX_NAMESPACE_BEGIN
 
 BaseModelGenerator::ExternalAnswerTupleCallback::
@@ -320,7 +322,11 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     // query
     PluginAtom::Query query(eatominp, inputtuple, eatom.tuple, &eatom);
     PluginAtom::Answer answer;
-    pluginAtom->retrieveCached(query, answer, ctx, nogoods);
+    assert(globalpc);
+    if( globalpc->config.getOption("UseExtAtomCache") )
+      pluginAtom->retrieveCached(query, answer, ctx, nogoods);
+    else
+      pluginAtom->retrieve(query, answer, ctx, nogoods);
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if (ctx && ctx->config.getOption("ExternalLearningNeg")){
