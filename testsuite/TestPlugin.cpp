@@ -791,6 +791,90 @@ public:
   }
 };
 
+class TestLessThanAtom:
+	public PluginAtom
+{
+public:
+  TestLessThanAtom():
+		PluginAtom("testLessThan", false)
+  {
+	addInputPredicate();
+	addInputPredicate();
+	setOutputArity(0);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	int a = 0;
+	int b = 0;
+	while (en < en_end){
+		
+		if (getRegistry()->ogatoms.getByAddress(*en).tuple[0] == query.input[0]){
+			a++;
+		}else{
+			b++;
+		}
+		en++;
+	}
+
+	if (a < b){
+		// succeed by returning an empty tuple
+		Tuple t;
+		answer.get().push_back(t);
+	}else{
+		// fail by returning no tuple
+	}
+  }
+};
+
+class TestEqualAtom:
+	public PluginAtom
+{
+public:
+  TestEqualAtom():
+		PluginAtom("testEqual", false)
+  {
+	addInputPredicate();
+	addInputPredicate();
+	setOutputArity(0);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	int a = 0;
+	int b = 0;
+	while (en < en_end){
+		
+		if (getRegistry()->ogatoms.getByAddress(*en).tuple[0] == query.input[0]){
+			a++;
+		}else{
+			b++;
+		}
+		en++;
+	}
+
+	if (a == b){
+		// succeed by returning an empty tuple
+		Tuple t;
+		answer.get().push_back(t);
+	}else{
+		// fail by returning no tuple
+	}
+  }
+};
+
 class TestTransitiveClosureAtom:
 	public PluginAtom
 {
@@ -840,6 +924,76 @@ public:
 	}
 };
 
+class TestCycleAtom:
+	public PluginAtom
+{
+public:
+	TestCycleAtom():
+		// monotonic, as only constant inputs
+		PluginAtom("testCycle", true)
+	{
+			addInputPredicate();
+			addInputConstant();
+			setOutputArity(0);
+
+			prop.monotonicInputPredicates.push_back(0);
+	}
+
+	bool dfscycle(bool directed, ID parent, ID node, std::map<ID, std::set<ID> >& outedges, std::map<ID, bool>& visited, std::set<std::pair<ID, ID> >& cycle){
+
+		// if the node was already visited in the dfs search, then we have a cycle
+		if (visited[node]) return true;
+
+		// otherwise: visit the node
+		visited[node] = true;
+
+		// visit all child nodes
+		BOOST_FOREACH (ID child, outedges[node]){
+			cycle.insert(std::pair<ID, ID>(node, child));
+			if (directed || child != parent){
+				if (dfscycle(directed, node, child, outedges, visited, cycle)) return true;
+			}
+			cycle.erase(std::pair<ID, ID>(node, child));
+		}
+
+		visited[node] = false;
+		return false;
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer)
+	{
+		assert(query.input.size() == 1);
+
+		Term dir(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "directed");
+		bool directed = query.input[1] == getRegistry()->storeTerm(dir);
+
+		std::set<ID> nodes;
+		std::map<ID, std::set<ID> > outedges;
+		std::map<ID, bool> visited;
+		std::set<std::pair<ID, ID> > cycle;
+
+		bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+		while (en < en_end){
+			const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+
+			nodes.insert(ogatom.tuple[1]);
+			nodes.insert(ogatom.tuple[2]);
+			outedges[ogatom.tuple[1]].insert(ogatom.tuple[2]);
+			if (!directed) outedges[ogatom.tuple[2]].insert(ogatom.tuple[1]);
+			en++;
+		}
+
+		BOOST_FOREACH (ID n, nodes){
+			if (dfscycle(directed, ID_FAIL, n, outedges, visited, cycle)){
+				Tuple t;
+				answer.get().push_back(t);
+			}
+		}
+	}
+};
+
 class TestPlugin:
   public PluginInterface
 {
@@ -871,7 +1025,10 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestLessThanAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestEqualAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

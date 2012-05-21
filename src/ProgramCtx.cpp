@@ -215,6 +215,7 @@ std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& 
 //	pc.changeRegistry(this->registry());
 	pc.idb.clear();
 	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
+	pc.config.setOption("NumberOfModels",0);
 	if( !!addFacts )
 		pc.edb->getStorage() |= addFacts->getStorage();
 	pc.inputProvider = ip;
