@@ -66,6 +66,13 @@ BenchmarkController::~BenchmarkController()
   {
     printInformation(st);
   }
+
+  // hack for fast benchmarks
+  ID eeval = getInstrumentationID("PluginAtom  retrieve");
+  const Stat& stat = instrumentations[eeval];
+  std::cerr << "#exteval " << stat.count << " timeexteval ";
+  printInSecs(std::cerr, stat.duration, 3);
+  std::cerr << std::endl;
 }
 
 namespace
