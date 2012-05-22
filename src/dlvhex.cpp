@@ -359,6 +359,9 @@ int main(int argc, char *argv[])
   pctx.config.setOption("SkipStrongSafetyCheck",0);
   pctx.config.setOption("WellJustified",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
+	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
+	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
+	pctx.config.setOption("ExplicitFLPStoreFirst",0); // perhaps only temporary
 
 	// defaults of main
 	Config config;
@@ -602,6 +605,9 @@ void processOptionsPrePlugin(
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
 		{ "ufscheckheuristics", required_argument, 0, 27 },
+		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
+		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
+		{ "explicitflpstorefirst", no_argument, 0, 30 }, // perhaps only temporary
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1059,6 +1065,10 @@ void processOptionsPrePlugin(
 				}
 			}
 			break;
+
+		case 28: pctx.config.setOption("BenchmarkEAstderr",1); break;
+		case 29: pctx.config.setOption("ExplicitFLPUnshift",1); break;
+		case 30: pctx.config.setOption("ExplicitFLPStoreFirst",1); break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);

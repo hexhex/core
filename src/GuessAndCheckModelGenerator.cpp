@@ -183,16 +183,12 @@ GuessAndCheckModelGeneratorFactory::GuessAndCheckModelGeneratorFactory(
   // transform xidb for flp calculation
   createFLPRules();
 
-  DBGLOG(DBG,"GuessAndCheckModelGeneratorFactory():");
-  #ifndef NDEBUG
+  // output rules
   {
-    DBGLOG_INDENT(DBG);
-    // verbose output
-    std::stringstream s;
+    std::ostringstream s;
     print(s, true);
-    DBGLOG(DBG,s.str());
+    LOG(DBG,"GuessAndCheckModelGeneratorFactory(): " << s.str());
   }
-  #endif
 }
 
 GuessAndCheckModelGeneratorFactory::ModelGeneratorPtr

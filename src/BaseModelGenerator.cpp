@@ -44,6 +44,8 @@
 
 #include <boost/foreach.hpp>
 
+#include <fstream>
+
 dlvhex::ProgramCtx* globalpc;
 
 DLVHEX_NAMESPACE_BEGIN

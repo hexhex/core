@@ -49,6 +49,11 @@
 
 #include <fstream>
 
+#if 1 // temporary for debugging
+extern dlvhex::ProgramCtx* globalpc;
+#endif
+
+
 DLVHEX_NAMESPACE_BEGIN
 
 FLPModelGeneratorFactoryBase::FLPModelGeneratorFactoryBase(
@@ -218,6 +223,7 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
  * * create rule <flpreplacement>(<allvariables>) :- <body> and store in xidbflphead
  * * create rule <head> :- <flpreplacement>(<allvariables>), <body> and store in xidbflpbody
  */
+
 void FLPModelGeneratorFactoryBase::createFLPRules()
 {
   DBGLOG_SCOPE(DBG,"cFLPR",false);
@@ -301,29 +307,43 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
           ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR | ID::PROPERTY_AUX);
       rflphead.head.push_back(fid);
       rflphead.body = r.body;
-/*
+      
+
+      // kind will be overwritten
+      Rule rflpbody(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
+      #if 1 // temporary, for debugging
+      assert(!!globalpc);
+      if( globalpc->config.getOption("ExplicitFLPUnshift") == 1 )
+      {
+      // original set of rules
       IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
       if (r.head.size() == 0){
         kind |= ID::SUBKIND_RULE_CONSTRAINT;
       }else{
         kind |= ID::SUBKIND_RULE_REGULAR;
       }
-      Rule rflpbody(kind);
+      rflpbody.kind = kind;
       rflpbody.head = r.head;
       if( rflpbody.head.size() > 1 )
         rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
       rflpbody.body = r.body;
       rflpbody.body.push_back(fid);
-*/
+      }
+      else
+      {
+      #endif
+      // optimized set of rules
       // another encoding which is more efficient on some examples:
       IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
-      Rule rflpbody(kind);
-      rflpbody.kind |= ID::SUBKIND_RULE_CONSTRAINT;
+      rflpbody.kind = kind | ID::SUBKIND_RULE_CONSTRAINT;
       rflpbody.body = r.body;
       rflpbody.body.push_back(fid);
       BOOST_FOREACH (ID h, r.head){
         rflpbody.body.push_back(ID::literalFromAtom(h, true));
       }
+      #if 1 // temporary, for debugging
+      }
+      #endif
 
       // store rules
       ID fheadrid = reg->storeRule(rflphead);

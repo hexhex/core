@@ -41,6 +41,8 @@
 #include "dlvhex2/Nogood.h"
 #include "dlvhex2/Benchmarking.h"
 
+#include <fstream>
+
 DLVHEX_NAMESPACE_BEGIN
 
 
@@ -169,7 +171,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		ss << "simulatedReduct: IDB={";
 		printer.printmany(simulatedReduct, "\n");
 		ss << "}\nEDB=" << *reductEDB;
-		DBGLOG(DBG, "Evaluating simulated reduct: " << ss.str());
+		LOG(DBG, "Evaluating simulated reduct: " << ss.str());
 
 		OrdinaryASPProgram flpbodyprogram(reg, simulatedReduct, reductEDB, ctx.maxint);
     OrdinaryASPSolverTPtr flpbodysolver = OrdinaryASPSolverT::getInstance(ctx, flpbodyprogram);
@@ -182,11 +184,33 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			}
 		}
 
+    #if 1
+    static bool first = true;
+    bool doit = false;
+    std::ofstream storefirstof;
+    if( first && ctx.config.getOption("ExplicitFLPStoreFirst") == 1 )
+    {
+      doit = true;
+      first = false;
+      storefirstof.open("explicitFLPFirstCheck.txt");
+      assert(storefirstof.good());
+      storefirstof << "reductEDB=\n" << *reductEDB << "\n";
+    }
+    #endif
+
 		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
 		DLVHEX_BENCHMARK_REGISTER(flpcandidates, "Investigated models of FLP reduct");
 		while(flpbodyas != InterpretationPtr())
 		{
 			DLVHEX_BENCHMARK_COUNT(flpcandidates,1);
+
+      #if 1
+      if( doit )
+      {
+        assert(storefirstof.good());
+        storefirstof << "flpbodyas=\n" << *flpbodyas << "\n";
+      }
+      #endif
 
 			// compatibility check
 			DBGLOG(DBG, "doing compatibility check for reduct model candidate " << *flpbodyas);

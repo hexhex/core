@@ -140,10 +140,7 @@ typedef boost::posix_time::time_duration Duration;
 
 class BenchmarkController
 {
-private:
-  // init, display start of benchmarking
-  BenchmarkController();
-
+public:
   struct Stat
   {
     std::string name;
@@ -155,16 +152,8 @@ private:
     Stat(const std::string& name);
   };
 
-  ID myID;
-  ID maxID;
-  std::vector<Stat> instrumentations;
-  std::map<std::string, ID> name2id;
 
-  std::ostream* output;
-  Count printSkip;
-
-	boost::mutex mutex;
-
+public:
   inline std::ostream& printInSecs(std::ostream& o, const Duration& d, int width=0) const;
 
   // print information about stat
@@ -204,6 +193,7 @@ public:
   inline std::ostream& printCount(std::ostream& out, ID id); // inline for performance
   // print only duration of ID
   inline std::ostream& printDuration(std::ostream& out, ID id); // inline for performance
+  inline const Stat& getStat(ID id) { return instrumentations[id]; }
 
   // 
   // record measured things
@@ -215,6 +205,20 @@ public:
   inline void stop(ID id); // inline for performance
   // record count (no time), print stats
   inline void count(ID id, Count increment=1); // inline for performance
+
+private:
+  // init, display start of benchmarking
+  BenchmarkController();
+
+  ID myID;
+  ID maxID;
+  std::vector<Stat> instrumentations;
+  std::map<std::string, ID> name2id;
+
+  std::ostream* output;
+  Count printSkip;
+
+	boost::mutex mutex;
 };
 
 //inline

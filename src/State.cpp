@@ -1033,6 +1033,16 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
+
+  if( ctx->config.getOption("BenchmarkEAstderr") == 1 )
+  {
+    benchmark::BenchmarkController& bmc = benchmark::BenchmarkController::Instance();
+    benchmark::ID eeval = bmc.getInstrumentationID("evaluate external atom");
+    const benchmark::BenchmarkController::Stat& stat = bmc.getStat(eeval);
+    std::cerr << stat.count << " ";
+    bmc.printInSecs(std::cerr, stat.duration, 3);
+    std::cerr << std::endl;
+  }
 }
 
 

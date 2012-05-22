@@ -66,13 +66,6 @@ BenchmarkController::~BenchmarkController()
   {
     printInformation(st);
   }
-
-  // hack for fast benchmarks
-  ID eeval = getInstrumentationID("evaluate external atom");
-  const Stat& stat = instrumentations[eeval];
-  std::cerr << stat.count << " ";
-  printInSecs(std::cerr, stat.duration, 3);
-  std::cerr << std::endl;
 }
 
 namespace
