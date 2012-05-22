@@ -288,7 +288,9 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPart(){
 	if (mode == WithExt){
 		constructUFSDetectionProblemOptimizationPartBasicEAKnowledge();
 		constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch();
-		constructUFSDetectionProblemOptimizationPartEAEnforement();
+
+		// use this optimization only if external learning is off; the two optimizations can influence each other and cause spurious contradictions
+		if (!ngc) constructUFSDetectionProblemOptimizationPartEAEnforement();
 	}
 }
 
