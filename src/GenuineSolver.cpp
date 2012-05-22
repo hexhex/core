@@ -141,7 +141,7 @@ InterpretationPtr GenuineSolver::projectToOrdinaryAtoms(InterpretationConstPtr i
 	return solver->projectToOrdinaryAtoms(inter);
 }
 
-int GenuineSolver::addNogood(Nogood ng){
+int GenuineSolver::addNogood(const Nogood& ng){
 	return solver->addNogood(ng);
 }
 

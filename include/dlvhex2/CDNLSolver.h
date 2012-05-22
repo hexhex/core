@@ -200,7 +200,7 @@ public:
 	ProgramCtx& getProgramContext();
 
 	virtual InterpretationConstPtr getNextModel();
-	virtual int addNogood(Nogood ng);
+	virtual int addNogood(const Nogood& ng);
 	void removeNogood(int nogoodIndex);
 	Nogood getNogood(int index);
 	int getNogoodCount();

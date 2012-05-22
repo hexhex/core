@@ -128,7 +128,7 @@ public:
     std::vector<NogoodContainerPtr> listeners;
 
   public:
-    int addNogood(Nogood ng){
+    int addNogood(const Nogood& ng){
       // notify all listeners about new nogoods
       DBGLOG(DBG, "Notifying " << listeners.size() << " listeners about new global nogood " << ng);
       BOOST_FOREACH (NogoodContainerPtr listener, listeners){

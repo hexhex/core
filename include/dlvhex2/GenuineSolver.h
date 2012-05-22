@@ -103,7 +103,7 @@ public:
 	InterpretationConstPtr getNextModel();
 	int getModelCount();
 	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter);
-	int addNogood(Nogood ng);
+	int addNogood(const Nogood& ng);
 	void removeNogood(int index);
 	Nogood getNogood(int index);
 	int getNogoodCount();

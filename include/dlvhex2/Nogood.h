@@ -46,15 +46,16 @@ DLVHEX_NAMESPACE_BEGIN
 
 class Nogood : public Set<ID>, public ostream_printable<Nogood>{
 private:
-	std::size_t hashValue;
+	mutable std::size_t hashValue;
+	void recomputeHash() const;
 public:
-	void recomputeHash();
-	size_t getHash();
-	bool operator==(const Nogood& ng2);
-	bool operator!=(const Nogood& ng2);
+  Nogood(): hashValue(0) {}
+	inline size_t getHash() const;
+	bool operator==(const Nogood& ng2) const;
+	bool operator!=(const Nogood& ng2) const;
 	std::ostream& print(std::ostream& o) const;
 	std::string getStringRepresentation(RegistryPtr reg) const;
-	Nogood resolve(Nogood& ng2, IDAddress litadr);
+	Nogood resolve(Nogood& ng2, IDAddress litadr) const;
 };
 
 class NogoodSet : private ostream_printable<NogoodSet>{
@@ -63,7 +64,7 @@ public:
 	Set<int> freeIndices;
 	boost::unordered_map<size_t, Set<int> > nogoodsWithHash;
 
-	int addNogood(Nogood ng);
+	int addNogood(const Nogood& ng);
 	void removeNogood(int nogoodIndex);
 	Nogood getNogood(int index) const;
 	int getNogoodCount() const;
@@ -74,7 +75,7 @@ public:
 
 class NogoodContainer{
 public:
-	virtual int addNogood(Nogood ng) = 0;
+	virtual int addNogood(const Nogood& ng) = 0;
 	virtual void removeNogood(int index) = 0;
 	virtual Nogood getNogood(int index) = 0;
 	virtual int getNogoodCount() = 0;
@@ -94,7 +95,7 @@ class SimpleNogoodContainer : public NogoodContainer{
 public:
 	NogoodSet ngg;
 
-	int addNogood(Nogood ng);
+	int addNogood(const Nogood& ng);
 	void removeNogood(int index);
 	Nogood getNogood(int index);
 	int getNogoodCount();

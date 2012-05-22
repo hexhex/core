@@ -192,7 +192,7 @@ public:
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);
 
-	int addNogood(Nogood ng);
+	int addNogood(const Nogood& ng);
 	void removeNogood(int index);
 	Nogood getNogood(int index);
 	int getNogoodCount();

@@ -45,7 +45,7 @@ DLVHEX_NAMESPACE_BEGIN
 //#define DBGLOGD(X,Y) DBGLOG(X,Y)
 #define DBGLOGD(X,Y) do{}while(false);
 
-void Nogood::recomputeHash(){
+void Nogood::recomputeHash() const {
 	hashValue = 0;
 	BOOST_FOREACH (ID lit, *this){
 		boost::hash_combine(hashValue, lit.kind);
@@ -53,14 +53,16 @@ void Nogood::recomputeHash(){
 	}
 }
 
-size_t Nogood::getHash(){
+size_t Nogood::getHash() const{
+  if( hashValue == 0 )
+    recomputeHash();
 	return hashValue;
 }
 
-bool Nogood::operator==(const Nogood& ng2){
+bool Nogood::operator==(const Nogood& ng2) const{
 
 	// compare hash value
-	if (hashValue != ng2.hashValue) return false;
+	if (getHash() != ng2.getHash()) return false;
 
 	// compare content
 	if (size() != ng2.size()) return false;
@@ -76,7 +78,7 @@ bool Nogood::operator==(const Nogood& ng2){
 	return true;
 }
 
-bool Nogood::operator!=(const Nogood& ng2){
+bool Nogood::operator!=(const Nogood& ng2) const{
 	return !(this->operator==(ng2));
 }
 
@@ -112,7 +114,7 @@ std::string Nogood::getStringRepresentation(RegistryPtr reg) const{
 	return ss.str();
 }
 
-Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr){
+Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr) const{
 	// resolvent = union of this and ng2 minus both polarities of the resolved literal
 	Nogood resolvent = *this;
 	resolvent.insert(ng2.begin(), ng2.end());
@@ -124,9 +126,8 @@ Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr){
 
 // ---------- Class NogoodSet ----------
 
-int NogoodSet::addNogood(Nogood ng){
+int NogoodSet::addNogood(const Nogood& ng){
 
-	ng.recomputeHash();
 	DBGLOG(DBG, "Hash of " << ng << " is " << ng.getHash());
 
 	// check if ng is already present
@@ -185,7 +186,7 @@ std::ostream& NogoodSet::print(std::ostream& o) const{
 	return o;
 }
 
-int SimpleNogoodContainer::addNogood(Nogood ng){
+int SimpleNogoodContainer::addNogood(const Nogood& ng){
 	ngg.addNogood(ng);
 }
 

@@ -727,7 +727,7 @@ InterpretationConstPtr CDNLSolver::getNextModel(){
 	return icp;
 }
 
-int CDNLSolver::addNogood(Nogood ng){
+int CDNLSolver::addNogood(const Nogood& ng){
 
 	// TODO: How to handle new facts?
 	BOOST_FOREACH (ID lit, ng){
