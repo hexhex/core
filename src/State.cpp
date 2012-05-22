@@ -1037,7 +1037,8 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   if( ctx->config.getOption("BenchmarkEAstderr") == 1 )
   {
     benchmark::BenchmarkController& bmc = benchmark::BenchmarkController::Instance();
-    benchmark::ID eeval = bmc.getInstrumentationID("evaluate external atom");
+    //benchmark::ID eeval = bmc.getInstrumentationID("evaluate external atom");
+    benchmark::ID eeval = bmc.getInstrumentationID("PluginAtom retrieve");
     const benchmark::BenchmarkController::Stat& stat = bmc.getStat(eeval);
     std::cerr << stat.count << " ";
     bmc.printInSecs(std::cerr, stat.duration, 3);

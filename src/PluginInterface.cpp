@@ -188,7 +188,7 @@ PluginAtom::checkOutputArity(const unsigned arity) const
 
 void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 {
-  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
+  DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom retrieveCached");
   // Cache answer for queries which were already done once:
   //
   // The most efficient way would be:
@@ -259,7 +259,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 {
 	DBGLOG(DBG, "Retrieve with learning, pointer nogood container: " << (!nogoods ? "not " : "") << "available" );
 
-	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom::retrieveCached");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom retrieveCached");
 	// Cache answer for queries which were already done once:
 	//
 	// The most efficient way would be:

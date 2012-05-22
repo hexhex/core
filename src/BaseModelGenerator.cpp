@@ -328,7 +328,10 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     if( globalpc->config.getOption("UseExtAtomCache") )
       pluginAtom->retrieveCached(query, answer, ctx, nogoods);
     else
+    {
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
       pluginAtom->retrieve(query, answer, ctx, nogoods);
+    }
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
     if (ctx && ctx->config.getOption("ExternalLearningNeg")){
