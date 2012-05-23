@@ -1162,7 +1162,11 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 	} BOOST_SCOPE_EXIT_END
   #endif
 
-	while ( (model = solver->getNextModel()) != InterpretationConstPtr()){
+	DLVHEX_BENCHMARK_REGISTER(sidufsenum, "UFS-Detection Problem Solving");
+	DLVHEX_BENCHMARK_START(sidufsenum);
+	model = solver->getNextModel();
+	DLVHEX_BENCHMARK_STOP(sidufsenum);
+	while ( model != InterpretationConstPtr()){
 		if (mode == WithExt){
 			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Investigated number of UFS candidates", 1);
 		}
@@ -1195,6 +1199,10 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 		}else{
 			DBGLOG(DBG, "No UFS: " << *model);
 		}
+
+		DLVHEX_BENCHMARK_START(sidufsenum);
+		model = solver->getNextModel();
+		DLVHEX_BENCHMARK_STOP(sidufsenum);
 	}
 
 	DBGLOG(DBG, "Enumerated " << mCnt << " UFS candidates");

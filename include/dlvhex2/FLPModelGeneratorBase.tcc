@@ -184,7 +184,10 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			}
 		}
 
+		DLVHEX_BENCHMARK_REGISTER(sidflpenum, "FLP-Reduct Solving");
+		DLVHEX_BENCHMARK_START(sidflpenum);
 		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+		DLVHEX_BENCHMARK_STOP(sidflpenum);
 		DLVHEX_BENCHMARK_REGISTER(flpcandidates, "Investigated models of FLP reduct");
 		while(flpbodyas != InterpretationPtr())
 		{
@@ -260,7 +263,9 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			}
 
 			DBGLOG(DBG, "Go to next model of reduct");
+			DLVHEX_BENCHMARK_START(sidflpenum);
 			flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+			DLVHEX_BENCHMARK_STOP(sidflpenum);
 		}
 	}
 
