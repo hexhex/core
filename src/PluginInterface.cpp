@@ -495,7 +495,7 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 			BOOST_FOREACH (ID oid, out){
 				Nogood extNg = extNgInput;
 				extNg.insert(oid);
-				DBGLOG(DBG, "Learned nogood " << extNg << " from input-output behavior");
+				DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(ctx->registry()) << " from input-output behavior");
 				nogoods->addNogood(extNg);
 			}
 		}

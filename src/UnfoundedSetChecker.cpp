@@ -378,7 +378,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartLearnedFro
 			DBGLOG(DBG, "Processing learned nogood " << ng);
 
 			std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-			BOOST_FOREACH (Nogood tng, transformed){
+			BOOST_FOREACH (const Nogood& tng, transformed){
 				ufsDetectionProblem.addNogood(tng);
 			}
 		}
@@ -849,7 +849,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 				DBGLOG(DBG, "Processing learned nogood " << ng);
 
 				std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-				BOOST_FOREACH (Nogood tng, transformed){
+				BOOST_FOREACH (const Nogood& tng, transformed){
 					solver->addNogood(tng);
 				}
 			}
@@ -1134,6 +1134,7 @@ std::vector<Nogood> UnfoundedSetChecker::nogoodTransformation(Nogood ng, Interpr
 	}
 }
 
+#warning use bitset here!
 std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 
 	// solve the ufs problem
