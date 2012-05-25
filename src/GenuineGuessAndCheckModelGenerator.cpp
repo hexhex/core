@@ -520,6 +520,7 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 			if (ufs.size() > 0){
 				Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
 				int oldCount = solver->getNogoodCount();
+				DBGLOG(DBG, "Adding UFS nogood: " << ng);
 				solver->addNogood(ng);
 				return solver->getNogoodCount() > oldCount;
 			}

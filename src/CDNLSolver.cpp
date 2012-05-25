@@ -100,6 +100,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 	long latestLitAssignmentOrderIndex;
 	int bt = 0;
 	do{
+		bool foundImpliedLit = false;
 		count = 0;
 		impliedLit = ID_FAIL;
 		latestLit = ID_FAIL;
@@ -119,6 +120,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 				count++;
 				if (!isDecisionLiteral(lit.address)){
 					impliedLit = lit.address;
+					foundImpliedLit = true;
 				}
 			}
 
@@ -131,11 +133,16 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 		if (count > 1){
 			// resolve the clause with multiple literals on top level
 			// with the cause of one of the implied literals
-			assert(impliedLit != ID_FAIL);
 
-			Nogood& c = nogoodset.nogoods[cause[impliedLit]];
-			touchVarsInNogood(c);
-			learnedNogood = resolve(learnedNogood, c, impliedLit);
+			// at DL=0 we might have multiple literals without a cause (they only spurious decision literals, actually they are facts)
+			if (!foundImpliedLit && latestDL == 0){
+				break;
+			}else{
+				assert(foundImpliedLit);
+				Nogood& c = nogoodset.nogoods[cause[impliedLit]];
+				touchVarsInNogood(c);
+				learnedNogood = resolve(learnedNogood, c, impliedLit);
+			}
 #ifndef NDEBUG
 	++cntResSteps;
 #endif
