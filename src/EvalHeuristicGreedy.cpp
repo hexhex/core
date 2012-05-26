@@ -47,6 +47,25 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+int EvalHeuristicGreedy::isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const{
+
+	// check if wellfounded model generator: must not be used (-1), can be used (0), must be used (+1)
+	if (ci.innerEatoms.empty()){
+		// no inner external atom, therefore wellfounded mg is not required: check if we CAN use it
+		// we must not use it for negation in cycles or disjunctive heads
+		if (ci.negationInCycles || ci.disjunctiveHeads) return -1;
+		else return 0;
+	}else{
+		// plain mg is not allowed
+		// if inner external atoms have no fixed domain, then we need the wellfounded mg
+		if (!ci.fixedDomain) return 1;
+		// we must not use it for nonmonotinic inner external atoms, for negation in cycles, or for disjunctive heads
+		else if (ci.innerEatomsNonmonotonic || ci.negationInCycles || ci.disjunctiveHeads) return -1;
+		// otherwise we CAN use it
+		return 0;
+	}
+}
+
 EvalHeuristicGreedy::EvalHeuristicGreedy():
   Base()
 {
@@ -490,7 +509,11 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
         if (!breakCycle){
-          if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(comp2).fixedDomain){
+          int wellfounded1 = isWellfoundedComponent(compgraph.propsOf(comp));
+          int wellfounded2 = isWellfoundedComponent(compgraph.propsOf(comp2));
+
+          // never merge a component which NEEDS the wellfounded mg with a component which MUST NOT use it
+          if (wellfounded1 != -wellfounded2){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
             }

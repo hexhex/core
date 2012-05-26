@@ -34,6 +34,7 @@
 
 #include "dlvhex2/EvalHeuristicBase.h"
 #include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/ComponentGraph.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -45,6 +46,8 @@ public:
   typedef EvalHeuristicBase<EvalGraphBuilder> Base;
 
   // methods
+private:
+  int isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const;
 public:
   EvalHeuristicGreedy();
   virtual ~EvalHeuristicGreedy();

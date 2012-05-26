@@ -79,6 +79,14 @@ bool CDNLSolver::unitPropagation(Nogood& violatedNogood){
 
 void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& backtrackDL){
 
+BOOST_FOREACH (ID id, violatedNogood){
+	if (!factWasSet->getFact(id.address)){
+		std::cout << "ERROR: Nogood not violated" << std::endl;
+		exit(0);
+	}
+}
+std::cout << "Analyzing violated nogood " << violatedNogood << std::endl;
+
 	DBGLOG(DBG,"Conflict detected, violated nogood: " << violatedNogood);
 
 #ifndef NDEBUG
@@ -133,7 +141,10 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 		if (count > 1){
 			// resolve the clause with multiple literals on top level
 			// with the cause of one of the implied literals
-
+if (!foundImpliedLit){
+std::cout << "ERROR: No implied lit" << std::endl;
+exit(0);
+}
 			// at DL=0 we might have multiple literals without a cause (they only spurious decision literals, actually they are facts)
 			if (!foundImpliedLit && latestDL == 0){
 				break;
