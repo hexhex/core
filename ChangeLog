@@ -1,5 +1,13 @@
 2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
 
+	* EvalHeuristicGreedy.cpp: Add heuristic optimized for being
+	used with EBL and UFL
+	* EvalHeuristicGreedy.h: Likewise
+	* ComponentGraph.cpp: Add ComponentInfo property "fixedDomain"
+	* ComponentGraph.h: Likewise
+
+2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
+
 	* PluginInterface.cpp Add nogood generalization
 	* PluginInterface.h Likewise
 	* GenuineGuessAndCheckModelGenerator.cpp Likewise

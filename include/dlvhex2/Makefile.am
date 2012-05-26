@@ -32,6 +32,7 @@ pkginclude_HEADERS = \
   EvalHeuristicBase.h \
   EvalHeuristicEasy.h \
   EvalHeuristicFromFile.h \
+  EvalHeuristicGreedy.h \
   EvalHeuristicOldDlvhex.h \
   EvalHeuristicShared.h \
   EvalHeuristicTrivial.h \

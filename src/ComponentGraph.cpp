@@ -451,6 +451,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
       ci.componentIsMonotonic = false;
     }
 
+    // compute if this component has a fixed domain
+    ci.fixedDomain = calculateFixedDomain(ci);
+
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
@@ -517,6 +520,148 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
       } // for each dependency of *itn
     } // collect dependencies outgoing from node *itn in SCC s
   } // create dependencies outgoing from SCC s
+}
+
+
+bool ComponentGraph::calculateFixedDomain(const ComponentInfo& ci)
+{
+	DBGLOG(DBG, "calculateFixedDomain");
+
+	// get rule heads here
+	// here we store the full atom IDs (we need to unify, the predicate is not sufficient)
+	std::set<ID> headAtomIDs;
+	// we only consider inner rules (constraints have no heads)
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+	
+		BOOST_FOREACH(ID hid, rule.head)
+		{
+			if( !hid.isOrdinaryAtom() )
+			{
+				continue;
+			}
+			headAtomIDs.insert(hid);
+		}
+	}
+
+	// now check output variables
+
+	// we again only consider inner rules (positive domain expansion feedback
+	// cannot happen through constraints as they cannot generate symbols)
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		if( !rid.doesRuleContainExtatoms() )
+		{
+			continue;
+		}
+
+		const Rule& rule = reg->rules.getByID(rid);
+
+		// find all variable outputs in all eatoms in this rule's body
+		std::set<ID> varsToCheck;
+		BOOST_FOREACH(ID lid, rule.body)
+		{
+			if( !lid.isExternalAtom() )
+				continue;
+
+			const ExternalAtom& eatom = reg->eatoms.getByID(lid);
+			BOOST_FOREACH(ID tid, eatom.tuple)
+			{
+				if( tid.isVariableTerm() )
+					varsToCheck.insert(tid);
+			}
+		}
+
+		// for each variable:
+		// if it is part of a positive body atom of r
+		// and this positive body atom of r does not unify with any rule head in c
+		// then e is safe
+		BOOST_FOREACH(ID vid, varsToCheck)
+		{
+			// check strong safety of variable vid
+			DBGLOG(DBG,"checking fixed domain of variable " << 
+					printToString<RawPrinter>(vid,reg));
+
+			bool variableSafe = false;
+			BOOST_FOREACH(ID lid, rule.body)
+			{
+				// skip negative bodies
+				if( lid.isNaf() )
+					continue;
+
+				// skip external atoms,
+				// they could but cannot in general be assumed to limit the domain
+				// (and that's the reason we need to check strong safety)
+				if( lid.isExternalAtom() )
+					continue;
+
+				// skip non-ordinary atoms
+				#warning can we use aggregates to limit the domain for strong safety?
+				#warning can we use builtin atoms to limit the domain for strong safety?
+				if( lid.isAggregateAtom() ||
+						lid.isBuiltinAtom() )
+					continue;
+
+				assert(lid.isOrdinaryAtom());
+
+				// check if this body literal contains the variable
+				// and does not unify with any head
+				// (only then the variable is safe)
+				bool containsVariable = false;
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(lid);
+				assert(!oatom.tuple.empty());
+				Tuple::const_iterator itv = oatom.tuple.begin();
+				itv++;
+				while( itv != oatom.tuple.end() )
+				{
+					if( *itv == vid )
+					{
+						containsVariable = true;
+						break;
+					}
+					itv++;
+				}
+
+				if( !containsVariable )
+				{
+					continue;
+				}
+
+				// oatom 'oatom' was retrieved using ID 'lid'
+				DBGLOG(DBG,"checking unifications of body literal " <<
+						printToString<RawPrinter>(lid, reg) << " with component rule heads");
+				bool doesNotUnify = true;
+				BOOST_FOREACH(ID hid, headAtomIDs)
+				{
+					DBGLOG(DBG,"checking against " <<
+							printToString<RawPrinter>(hid, reg));
+					assert(hid.isOrdinaryAtom());
+					const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+					if( oatom.unifiesWith(hoatom) )
+					{
+						DBGLOG(DBG,"unification successful "
+								"-> literal does not limit the domain");
+						doesNotUnify = false;
+						break;
+					}
+				}
+
+				if( doesNotUnify )
+				{
+					DBGLOG(DBG, "variable safe!");
+					variableSafe = true;
+					break;
+				}
+			}
+
+			if( !variableSafe )
+			{
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 // collapse components given in range into one new component
@@ -632,6 +777,7 @@ ComponentGraph::collapseComponents(
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 		ci.componentIsMonotonic &= cio.componentIsMonotonic;
+		ci.fixedDomain &= cio.fixedDomain;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -745,10 +891,14 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 			if( ci.negationInCycles )
 				o << "{rules contain negation in cycles}|";
 		}
-    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+    // TODO: Changed the || in the following two conditions to &&; please check!
+    if( !ci.innerEatoms.empty() && ci.innerEatomsNonmonotonic )
       o << "{inner eatoms nonmonotonic}|";
-    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+    if( !ci.outerEatoms.empty() && ci.outerEatomsNonmonotonic )
       o << "{outer eatoms nonmonotonic}|";
+
+    if( ci.fixedDomain )
+      o << "{fixed domain}|";
 		o << "}";
   }
   else

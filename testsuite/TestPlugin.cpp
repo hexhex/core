@@ -994,6 +994,42 @@ public:
 	}
 };
 
+class TestAppendAtom:
+	public PluginAtom
+{
+public:
+  TestAppendAtom():
+		PluginAtom("testAppend", true)
+  {
+	addInputPredicate();
+	addInputConstant();
+	setOutputArity(1);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		std::string str = getRegistry()->terms.getByID(getRegistry()->ogatoms.getByAddress(*en).tuple[1]).getUnquotedString();
+		str = str + getRegistry()->terms.getByID(query.input[1]).getUnquotedString();
+		Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, str);
+		ID idout = getRegistry()->storeTerm(term);
+		Tuple t;
+		t.push_back(idout);
+		answer.get().push_back(t);
+
+		en++;
+	}
+  }
+};
+
+
 class TestPlugin:
   public PluginInterface
 {
@@ -1029,6 +1065,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestEqualAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

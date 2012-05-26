@@ -58,6 +58,7 @@
 #include "dlvhex2/EvalHeuristicOldDlvhex.h"
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
+#include "dlvhex2/EvalHeuristicGreedy.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
 #include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
 #include "dlvhex2/UnfoundedSetCheckHeuristics.h"
@@ -187,6 +188,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
+			<< "                      greedy - heuristics with advantages for external behavior learning" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -688,6 +690,10 @@ void processOptionsPrePlugin(
 				else if( heuri == "easy" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+				}
+				else if( heuri == "greedy" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
