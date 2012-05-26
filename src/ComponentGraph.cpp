@@ -452,7 +452,7 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     }
 
     // compute if this component has a fixed domain
-    ci.fixedDomain = calculateFixedDomain(ci);
+    ci.innerEAFixedDomain = calculateInnerEAFixedDomain(ci);
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
@@ -523,9 +523,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 }
 
 
-bool ComponentGraph::calculateFixedDomain(const ComponentInfo& ci)
+bool ComponentGraph::calculateInnerEAFixedDomain(const ComponentInfo& ci)
 {
-	DBGLOG(DBG, "calculateFixedDomain");
+	DBGLOG(DBG, "calculateInnerEAFixedDomain");
 
 	// get rule heads here
 	// here we store the full atom IDs (we need to unify, the predicate is not sufficient)
@@ -777,7 +777,7 @@ ComponentGraph::collapseComponents(
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 		ci.componentIsMonotonic &= cio.componentIsMonotonic;
-		ci.fixedDomain &= cio.fixedDomain;
+		ci.innerEAFixedDomain &= cio.innerEAFixedDomain;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -897,8 +897,8 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
     if( !ci.outerEatoms.empty() && ci.outerEatomsNonmonotonic )
       o << "{outer eatoms nonmonotonic}|";
 
-    if( ci.fixedDomain )
-      o << "{fixed domain}|";
+    if( ci.innerEAFixedDomain )
+      o << "{inner EA fixed domain}|";
 		o << "}";
   }
   else

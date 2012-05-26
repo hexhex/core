@@ -79,14 +79,6 @@ bool CDNLSolver::unitPropagation(Nogood& violatedNogood){
 
 void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& backtrackDL){
 
-BOOST_FOREACH (ID id, violatedNogood){
-	if (!factWasSet->getFact(id.address)){
-		std::cout << "ERROR: Nogood not violated" << std::endl;
-		exit(0);
-	}
-}
-std::cout << "Analyzing violated nogood " << violatedNogood << std::endl;
-
 	DBGLOG(DBG,"Conflict detected, violated nogood: " << violatedNogood);
 
 #ifndef NDEBUG
