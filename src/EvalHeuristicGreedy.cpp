@@ -47,6 +47,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+/*
 int EvalHeuristicGreedy::isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const{
 
 	// check if wellfounded model generator: must not be used (-1), can be used (0), must be used (+1)
@@ -58,12 +59,28 @@ int EvalHeuristicGreedy::isWellfoundedComponent(const ComponentGraph::ComponentI
 	}else{
 		// plain mg is not allowed
 		// if inner external atoms have no fixed domain, then we need the wellfounded mg
-		if (!ci.innerEAFixedDomain) return 1;
+		if (!ci.fixedDomain) return 1;
 		// we must not use it for nonmonotinic inner external atoms, for negation in cycles, or for disjunctive heads
 		else if (ci.innerEatomsNonmonotonic || ci.negationInCycles || ci.disjunctiveHeads) return -1;
 		// otherwise we CAN use it
 		return 0;
 	}
+}
+*/
+
+bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const{
+
+	// if both components have a fixed domain we can safely merge them
+	// (both can be solved by guess&check mg)
+	if (ci1.fixedDomain && ci2.fixedDomain) return true;
+
+	// if both components are solved by wellfounded mg we merge them
+	// (the resulting component will still be wellfounded)
+	if (!ci1.innerEatomsNonmonotonic && !ci1.negationInCycles && !ci1.disjunctiveHeads &&
+	    !ci2.innerEatomsNonmonotonic && !ci2.negationInCycles && !ci2.disjunctiveHeads) return true;
+
+	// otherwise: don't merge them
+	return false;
 }
 
 EvalHeuristicGreedy::EvalHeuristicGreedy():
@@ -281,7 +298,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           if( good )
           {
             // never merge domain-expanding components with non-domain expanding ones
-            if (compgraph.propsOf(comp).innerEAFixedDomain == compgraph.propsOf(succ).innerEAFixedDomain){
+            if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(succ).fixedDomain){
               // collapse with this
               collapse.insert(succ);
               preds.insert(succ);
@@ -356,7 +373,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         }
         if( good ){
           // never merge domain-expanding components with non-domain expanding ones
-          if (compgraph.propsOf(comp).innerEAFixedDomain == compgraph.propsOf(succ).innerEAFixedDomain){
+          if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(succ).fixedDomain){
             collapse.insert(succ);
           }
         }
@@ -437,7 +454,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
 
         if( preds2 == preds ){
           // never merge domain-expanding components with non-domain expanding ones
-          if (compgraph.propsOf(comp).innerEAFixedDomain == compgraph.propsOf(comp2).innerEAFixedDomain){
+          if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(comp2).fixedDomain){
             collapse.insert(comp2);
           }
         }
@@ -509,11 +526,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
         }
         if (!breakCycle){
-          int wellfounded1 = isWellfoundedComponent(compgraph.propsOf(comp));
-          int wellfounded2 = isWellfoundedComponent(compgraph.propsOf(comp2));
-
-          // never merge a component which NEEDS the wellfounded mg with a component which MUST NOT use it
-          if (wellfounded1 != -wellfounded2){
+          if (mergeComponents(compgraph.propsOf(comp), compgraph.propsOf(comp2))){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
               collapse.insert(comp2);
             }

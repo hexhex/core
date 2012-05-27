@@ -133,10 +133,7 @@ void CDNLSolver::analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& ba
 		if (count > 1){
 			// resolve the clause with multiple literals on top level
 			// with the cause of one of the implied literals
-if (!foundImpliedLit){
-std::cout << "ERROR: No implied lit" << std::endl;
-exit(0);
-}
+
 			// at DL=0 we might have multiple literals without a cause (they only spurious decision literals, actually they are facts)
 			if (!foundImpliedLit && latestDL == 0){
 				break;

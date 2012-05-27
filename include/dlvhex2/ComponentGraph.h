@@ -89,7 +89,7 @@ public:
 		bool innerEatomsNonmonotonic;
 		bool outerEatomsNonmonotonic;
 		bool componentIsMonotonic;
-		bool innerEAFixedDomain;
+		bool fixedDomain;
 
 		// previous:
     //bool innerEatomsMonotonicAndOnlyPositiveCycles;
@@ -101,7 +101,7 @@ public:
 			innerEatomsNonmonotonic(false),
 	outerEatomsNonmonotonic(false),
 	componentIsMonotonic(true),
-	innerEAFixedDomain(true){}
+	fixedDomain(true){}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -243,7 +243,7 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
-  bool calculateInnerEAFixedDomain(const ComponentInfo& ci);
+  bool calculateFixedDomain(const ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

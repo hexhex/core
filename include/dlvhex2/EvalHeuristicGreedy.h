@@ -47,7 +47,8 @@ public:
 
   // methods
 private:
-  int isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const;
+//  int isWellfoundedComponent(const ComponentGraph::ComponentInfo& ci) const;
+  bool mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const;
 public:
   EvalHeuristicGreedy();
   virtual ~EvalHeuristicGreedy();
