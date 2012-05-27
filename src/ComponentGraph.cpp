@@ -527,6 +527,18 @@ bool ComponentGraph::calculateFixedDomain(const ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateFixedDomain");
 
+	// pure external components have only a fixed domain if the output of all outer external atoms
+	// contains no variables
+	if (ci.innerRules.empty() && !ci.outerEatoms.empty()){
+		BOOST_FOREACH (ID eaid, ci.outerEatoms){
+			const ExternalAtom& ea = reg->eatoms.getByID(eaid);
+			BOOST_FOREACH (ID ot, ea.tuple){
+				if (ot.isVariableTerm()) return false;
+			}
+		}
+		return true;
+	}
+
 	// get rule heads here
 	// here we store the full atom IDs (we need to unify, the predicate is not sufficient)
 	std::set<ID> headAtomIDs;
@@ -777,7 +789,8 @@ ComponentGraph::collapseComponents(
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
 		ci.componentIsMonotonic &= cio.componentIsMonotonic;
-		ci.fixedDomain &= cio.fixedDomain;
+		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
+														// because domain restriction is always done in successor components
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms

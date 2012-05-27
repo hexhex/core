@@ -70,6 +70,8 @@ int EvalHeuristicGreedy::isWellfoundedComponent(const ComponentGraph::ComponentI
 
 bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& ci1, const ComponentGraph::ComponentInfo& ci2) const{
 
+//	if (ci1.outerEatoms.empty() != ci2.outerEatoms.empty()) return false;
+
 	// if both components have a fixed domain we can safely merge them
 	// (both can be solved by guess&check mg)
 	if (ci1.fixedDomain && ci2.fixedDomain) return true;
@@ -232,7 +234,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   {
     didSomething = false;
 
-/*
   //
   // forall external components e:
   // merge with all rules that 
@@ -297,13 +298,10 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
           }
           if( good )
           {
-            // never merge domain-expanding components with non-domain expanding ones
-            if (compgraph.propsOf(comp).fixedDomain == compgraph.propsOf(succ).fixedDomain){
-              // collapse with this
-              collapse.insert(succ);
-              preds.insert(succ);
-              addedToCollapse = true;
-            }
+            // collapse with this
+            collapse.insert(succ);
+            preds.insert(succ);
+            addedToCollapse = true;
           }
         }
       }
@@ -322,7 +320,7 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
       }
     }
   }
-
+/*
   //
   // forall components with only inner rules or constraints:
   // merge with children that are no eatoms and do not depend on anything else
