@@ -326,7 +326,6 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 	ss << "{ ";
 	bool first = true;
 #endif
-
 	// only nogoods are relevant where all variables occur in this clasp instance
 	BOOST_FOREACH (ID lit, ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()){
@@ -357,6 +356,9 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 
 			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
 		}
+
+		// if this is requested, do not add conflict clauses which do not cause a conflict on the current decision level
+		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
 		if (onlyOnCurrentDL && !onCurrentDL){
 			DBGLOG(DBG, "Do not add " << ng << " because it is not conflicting on the current decision level");
 			return false;
