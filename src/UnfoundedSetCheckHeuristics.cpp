@@ -81,7 +81,7 @@ std::pair<bool, std::set<ID> > UnfoundedSetCheckHeuristicsMax::doUFSCheck(Interp
 			}
 			if (b.isExternalAuxiliary()){	
 				assigned = mg->isVerified(b, factWasSet);
-				break;
+				if (!assigned) break;
 			}
 		}
 		if (!assigned){

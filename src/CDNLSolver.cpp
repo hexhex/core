@@ -300,6 +300,7 @@ ID CDNLSolver::getGuess(){
 			}
 		}
 	}
+
 	DBGLOG(DBG, "Guessing " << litToString(mostActive) << " because it is globally active");
 	return mostActive;
 }

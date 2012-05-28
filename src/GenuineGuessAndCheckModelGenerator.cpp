@@ -504,24 +504,32 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 
 bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
+	if (!factory.ctx.config.getOption("UFSCheck")) return false;
+
 	// ufs check without nogood learning makes no sense if the interpretation is not complete
 	if (factory.ctx.config.getOption("UFSLearning")){
 
 		std::pair<bool, std::set<ID> > decision = ufsCheckHeuristics->doUFSCheck(partialInterpretation, factWasSet, changed);
 
 		if (decision.first){
-			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 
+			DBGLOG(DBG, "Heuristic decides to do an UFS check");
 			UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
-//			transferLearnedEANogoods();
 
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
+
 			if (ufs.size() > 0){
 				Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
 				int oldCount = solver->getNogoodCount();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
 				solver->addNogood(ng);
+
+				// check if nogood is violated
+				BOOST_FOREACH (ID l, ng){
+					if (!factWasSet->getFact(l.address) || l.isNaf() == partialInterpretation->getFact(l.address)) return false;
+				}
+
 				return solver->getNogoodCount() > oldCount;
 			}
 		}else{

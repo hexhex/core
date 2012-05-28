@@ -115,13 +115,14 @@ private:
 		InterpretationPtr previousFactWasSet;
 	public:
 		ExternalPropagator(ClaspSolver& cs) : cs(cs), previousInterpretation(InterpretationPtr()), previousFactWasSet(InterpretationPtr()){}
+		bool prop(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
 	};
 
 	// interface to clasp internals
-	bool addNogoodToClasp(Clasp::Solver& s, Nogood& ng);
+	bool addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL = false);
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);

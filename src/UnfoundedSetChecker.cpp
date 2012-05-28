@@ -274,7 +274,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 			const Rule& rule = reg->rules.getByID(ruleId);
 			BOOST_FOREACH (ID h, rule.head){
 				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(h));
+				ng.insert(NogoodContainer::createLiteral(h.address, true));
 				ufsDetectionProblem.addNogood(ng);
 			}
 		}

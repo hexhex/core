@@ -214,7 +214,9 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
-bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
+
+	bool inconsistent = false;
 
 	// thread-safe access of the learner vector
         boost::mutex::scoped_lock lock(cs.learnerMutex);
@@ -281,9 +283,9 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 			DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
 			cs.sem_dlvhexDataStructures.post();
 		}
-	}
 
-	bool inconsistent = false;
+//		inconsistent = conflict;
+	}
 
 	// add the produced nogoods to clasp
 	{
@@ -291,28 +293,33 @@ bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
 
 		DBGLOG(DBG, "External learners have produced " << (cs.nogoods.size() - cs.translatedNogoods) << " nogoods; transferring to clasp");
 		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
-			inconsistent |= cs.addNogoodToClasp(s, cs.nogoods[i]);
+			inconsistent |= cs.addNogoodToClasp(s, cs.nogoods[i], onlyOnCurrentDL);
 		}
-//		inconsistent |= s.hasConflict();	// for some strange reason, this is necessary because there might be a conflict even if adding the nogood was successful
-							// this is possibly due to conflicting derived nogoods!?
-//		inconsistent = s.hasConflict();
 
-		cs.translatedNogoods = cs.nogoods.size();
+		if (!onlyOnCurrentDL){
+			cs.translatedNogoods = cs.nogoods.size();
+		}
 	}
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
 
 	return !inconsistent;
 }
 
+bool ClaspSolver::ExternalPropagator::propagate(Clasp::Solver& s){
+	return prop(s);
+}
+
 bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
-	return propagate(s);
+	// in this method we must not add nogoods which cause no conflict on the current decision level!
+	// (see postcondition in clasp/constraint.h)
+	return prop(s, true);
 }
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_general;
 }
 
-bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng){
+bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -329,6 +336,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng){
 	}
 
 	// translate dlvhex::Nogood to clasp clause
+	bool onCurrentDL = false;
 	clauseCreator->start(Clasp::Constraint_t::learnt_other);
 	Set<uint32> pos;
 	Set<uint32> neg;
@@ -340,10 +348,18 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng){
 			if (pos.contains(hexToClasp[lit.address].var())) continue;
 			else if (neg.contains(hexToClasp[lit.address].var())) return false;
 			pos.insert(hexToClasp[lit.address].var());
+
+			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
 		}else{
 			if (neg.contains(hexToClasp[lit.address].var())) continue;
 			else if (pos.contains(hexToClasp[lit.address].var())) return false;
 			neg.insert(hexToClasp[lit.address].var());
+
+			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
+		}
+		if (onlyOnCurrentDL && !onCurrentDL){
+			DBGLOG(DBG, "Do not add " << ng << " because it is not conflicting on the current decision level");
+			return false;
 		}
 
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
@@ -362,9 +378,8 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng){
 	ss << " }";
 #endif
 
-	DBGLOG(DBG, "Adding nogood " << ng << " as clasp-clause " << ss.str());
+	DBGLOG(DBG, "Adding nogood " << ng << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
 
-//	return !clauseCreator->end().ok;
 	return !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok;
 }
 
