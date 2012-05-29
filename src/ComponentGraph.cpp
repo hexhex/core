@@ -904,7 +904,6 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 			if( ci.negationInCycles )
 				o << "{rules contain negation in cycles}|";
 		}
-    // TODO: Changed the || in the following two conditions to &&; please check!
     if( !ci.innerEatoms.empty() && ci.innerEatomsNonmonotonic )
       o << "{inner eatoms nonmonotonic}|";
     if( !ci.outerEatoms.empty() && ci.outerEatomsNonmonotonic )
