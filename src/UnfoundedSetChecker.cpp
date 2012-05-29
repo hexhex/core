@@ -43,6 +43,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp> 
+#include <boost/graph/strong_components.hpp>
 
 #include <fstream>
 
@@ -1365,6 +1366,104 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 	return ng;
 }
 
+UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
+		ProgramCtx& ctx,
+		const OrdinaryASPProgram& groundProgram) :
+			groundProgram(groundProgram){
+
+	// construct atom dependency graph
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+		const Rule& rule = ctx.registry()->rules.getByID(ruleID);
+
+		BOOST_FOREACH (ID h, rule.head){
+			if (depNodes.find(h.address) == depNodes.end()) depNodes[h.address] = boost::add_vertex(h.address, depGraph);
+		}
+		BOOST_FOREACH (ID b, rule.body){
+			if (depNodes.find(b.address) == depNodes.end()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
+		}
+
+		// add an arc from all head literals to all positive body literals
+		BOOST_FOREACH (ID h, rule.head){
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isNaf()){
+					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
+				}
+			}
+		}
+	}
+
+	// find strongly connected components in the dependency graph using boost
+	std::vector<int> componentMap(depNodes.size());
+	int num = boost::strong_components(depGraph, &componentMap[0]);
+
+	// translate into real map
+	depSCC = std::vector<Set<IDAddress> >(num);
+	Node nodeNr = 0;
+
+	BOOST_FOREACH (int componentOfNode, componentMap){
+		depSCC[componentOfNode].insert(depGraph[nodeNr]);
+		componentOfAtom[depGraph[nodeNr]] = componentOfNode;
+		nodeNr++;
+	}
+
+	// check if the components contain head-cycles and/or e-cycles
+	for (int comp = 0; comp < num; ++comp){
+		int hcf = true;
+		BOOST_FOREACH (ID ruleID, groundProgram.idb){
+			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
+			int intersectionCount = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+					intersectionCount++;
+				}
+				if (intersectionCount >= 2) break;
+			}
+			if (intersectionCount >= 2){
+				hcf = false;
+				break;
+			}
+		}
+		headCycles.push_back(!hcf);
+	}
+
+#ifndef NDEBUG
+	std::stringstream programstring;
+	{
+		RawPrinter printer(programstring, ctx.registry());
+		if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
+		programstring << "IDB:" << std::endl;
+		BOOST_FOREACH (ID ruleId, groundProgram.idb){
+			printer.print(ruleId);
+			programstring << std::endl;
+		}
+	}
+
+	std::stringstream sccstring;
+	{
+		RawPrinter printer(sccstring, ctx.registry());
+		int sai = 0;
+		BOOST_FOREACH (Set<IDAddress> sa, depSCC){
+			sccstring << "{ ";
+			bool first = true;
+			BOOST_FOREACH (IDAddress ida, sa){
+				if (!first) sccstring << ", ";
+				first = false;
+				printer.print(ctx.registry()->ogatoms.getIDByAddress(ida));
+			}
+			sccstring << " } (HC: " << headCycles[sai] << ") ";
+			sai++;
+		}
+	}
+
+	DBGLOG(DBG, "Program:" << std::endl << programstring.str() << std::endl << "has SCC-decomposition: " << sccstring.str());
+#endif
+}
+
+std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
+		InterpretationConstPtr interpretation,
+		std::set<ID> skipProgram,
+		NogoodContainerPtr ngc){
+}
 
 DLVHEX_NAMESPACE_END
 

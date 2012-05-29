@@ -1159,6 +1159,9 @@ DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryAS
 	ClaspSolver(ctx, p, interleavedThreading, initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting),
 	program(p){
 //	headCycles(initHeadCycles(ctx.registry(), p)){
+
+	UnfoundedSetCheckerManager ufscm(ctx, program);
+
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
@@ -1172,138 +1175,6 @@ InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 	bool ufsFound = true;
 	while (model && ufsFound){
 		ufsFound = false;
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-	NogoodSet ufsDetectionProblem;
-	DBGLOG(DBG, "Constructing necessary part of UFS detection problem");
-	DBGLOG(DBG, "N: Facts");
-	// facts cannot be in X
-	if (program.edb) {
-		bm::bvector<>::enumerator en = program.edb->getStorage().first();
-		bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
-		while (en < en_end){
-			Nogood ng;
-			ng.insert(NogoodContainer::createLiteral(*en, true));
-			ufsDetectionProblem.addNogood(ng);
-			en++;
-		}
-	}
-
-	// we want a UFS which intersects with I
-	DBGLOG(DBG, "N: Intersection with I");
-	{
-		Nogood ng;
-		bm::bvector<>::enumerator en = model->getStorage().first();
-		bm::bvector<>::enumerator en_end = model->getStorage().end();
-		while (en < en_end){
-			ng.insert(NogoodContainer::createLiteral(*en, false));
-			en++;
-		}
-		ufsDetectionProblem.addNogood(ng);
-	}
-
-	DBGLOG(DBG, "N: Rules");
-	BOOST_FOREACH (ID ruleID, program.idb){
-		const Rule& rule = reg->rules.getByID(ruleID);
-
-		// condition 1 is handled directly: skip rules with unsatisfied body
-		bool unsatisfied = false;
-		BOOST_FOREACH (ID b, rule.body){
-			if (model->getFact(b.address) != !b.isNaf()){
-				unsatisfied = true;
-				break;
-			}
-		}
-		if (unsatisfied) continue;
-
-		// Create two unique predicates and atoms for this rule
-		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
-		hratom.tuple.push_back(reg->getAuxiliaryConstantSymbol('k', ruleID));
-		ID hr = reg->storeOrdinaryGAtom(hratom);
-
-		// hr is true iff one of the rule's head atoms is in X
-		{
-			Nogood ng;
-			ng.insert(NogoodContainer::createLiteral(hr.address, true));
-			BOOST_FOREACH (ID h, rule.head){
-				ng.insert(NogoodContainer::createLiteral(h.address, false));
-			}
-			ufsDetectionProblem.addNogood(ng);
-		}
-		{
-			BOOST_FOREACH (ID h, rule.head){
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(hr.address, false));
-				ng.insert(NogoodContainer::createLiteral(h.address, true));
-				ufsDetectionProblem.addNogood(ng);
-			}
-		}
-
-		{
-			Nogood ng;
-			// if hr is true, then it must not happen that neither Condition 2 nor Condition 3 is satisfied
-			ng.insert(NogoodContainer::createLiteral(hr.address, true));
-
-			// Condition 2: some body literal b, which is true in I, is false under I u -X
-			// If b is ordinary (or considered to be ordinary), then this can only happen if b is positive because for a negative b, I \models b implies I u -X \models b
-			// if b is external, then it can be either positive or negative because due to nonmonotonicity we might have I \models b but I u -X \not\models b (even if b is negative)
-			// That is: It must not happen that
-			//	1. all ordinary positive body atoms, which are true in I, are not in the unfounded set; and
-			//	2. all external literals are true under I u -X 
-			BOOST_FOREACH (ID b, rule.body){
-				// ordinary literal
-				if (!b.isNaf() && model->getFact(b.address)){
-					ng.insert(NogoodContainer::createLiteral(b.address, false));
-				}
-			}
-
-			// Condition 3: some head atom, which is true in I, is not in the unfounded set
-			// That is: It must not happen, that all positive head atoms, which are true in I, are in the unfounded set (then the condition is not satisfied)
-			BOOST_FOREACH (ID h, rule.head){
-				if (model->getFact(h.address)){
-					ng.insert(NogoodContainer::createLiteral(h.address, true));
-				}
-			}
-			ufsDetectionProblem.addNogood(ng);
-		}
-	}
-
-	SATSolverPtr solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
-	if (solver->getNextModel()){
-		ufsFound = true;
-		model = ClaspSolver::getNextModel();
-	}
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 		UnfoundedSetChecker ufsc(ctx, program, model);
 		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
