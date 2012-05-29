@@ -45,6 +45,7 @@
 #include "dlvhex2/GenuineSolver.h"
 #include "dlvhex2/Set.h"
 #include "dlvhex2/SATSolver.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
 
 #include <vector>
 #include <set>
@@ -214,6 +215,7 @@ typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
 class DisjunctiveClaspSolver : public ClaspSolver{
 private:
 	const OrdinaryASPProgram& program;
+	UnfoundedSetCheckerManager ufscm;
 	bool headCycles;
 
 	bool initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& program);

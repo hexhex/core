@@ -149,18 +149,33 @@ public:
 
 class UnfoundedSetCheckerManager{
 private:
+	GenuineGuessAndCheckModelGenerator* ggncmg;
+	ProgramCtx& ctx;
+
 	const OrdinaryASPProgram& groundProgram;
+	std::vector<ID> innerEatoms;
+	std::vector<std::vector<ID> > programComponents;
 
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
 	boost::unordered_map<IDAddress, Node> depNodes;
 	Graph depGraph;
-	std::vector<Set<IDAddress> > depSCC;					// store for each component the contained atoms
-	boost::unordered_map<IDAddress, int> componentOfAtom;// store for each atom its component number
+	std::vector<Set<IDAddress> > depSCC;				// store for each component the contained atoms
+	boost::unordered_map<IDAddress, int> componentOfAtom;		// store for each atom its component number
+	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
 	std::vector<bool> headCycles;
 	std::vector<bool> eCycles;
 
+	void init();
+	void initHeadCycles();
+	void initECycles();
 public:
+	UnfoundedSetCheckerManager(
+			GenuineGuessAndCheckModelGenerator& ggncmg,
+			ProgramCtx& ctx,
+			std::vector<ID>& innerEatoms,
+			const OrdinaryASPProgram& groundProgram);
+
 	UnfoundedSetCheckerManager(
 			ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram);
@@ -169,7 +184,11 @@ public:
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
 			NogoodContainerPtr ngc = NogoodContainerPtr());
+
+	typedef boost::shared_ptr<UnfoundedSetCheckerManager> Ptr;
 };
+
+typedef UnfoundedSetCheckerManager::Ptr UnfoundedSetCheckerManagerPtr;
 
 DLVHEX_NAMESPACE_END
 

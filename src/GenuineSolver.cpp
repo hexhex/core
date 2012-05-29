@@ -94,7 +94,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	switch (ctx.config.getOption("GenuineSolver")){
 	case 1: case 2:	// internal grounder or Gringo + internal solver
 		{
-		DBGLOG(DBG, "Instantiating genuine solver with internal solver");
+		DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
 		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
 		return ptr;
 		}
@@ -102,7 +102,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 	case 3: case 4:	// internal grounder or Gringo + clasp
 #ifdef HAVE_LIBCLASP
 		{
-		DBGLOG(DBG, "Instantiating genuine solver with clasp");
+		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
 		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
 		return ptr;
 		}

@@ -1157,11 +1157,7 @@ bool DisjunctiveClaspSolver::initHeadCycles(RegistryPtr reg, const OrdinaryASPPr
 
 DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading) :
 	ClaspSolver(ctx, p, interleavedThreading, initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting),
-	program(p){
-//	headCycles(initHeadCycles(ctx.registry(), p)){
-
-	UnfoundedSetCheckerManager ufscm(ctx, program);
-
+	program(p), ufscm(ctx, program){
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
@@ -1176,11 +1172,14 @@ InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 	while (model && ufsFound){
 		ufsFound = false;
 
-		UnfoundedSetChecker ufsc(ctx, program, model);
-		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+		std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
+
+//		UnfoundedSetChecker ufsc(ctx, program, model);
+//		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 
 		if (ufs.size() > 0){
-			Nogood ng = ufsc.getUFSNogood(ufs, model);
+			Nogood ng; // = ufscm.getUFSNogood(ufs, model);
+//			Nogood ng = ufsc.getUFSNogood(ufs, model);
 			addNogood(ng);
 			ufsFound = true;
 			model = ClaspSolver::getNextModel();

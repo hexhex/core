@@ -231,7 +231,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	solver = GenuineSolver::getInstance(	factory.ctx, program,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
-						factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
+						false //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
 												// [let the solver do the UFS check only if we don't do it in this class
 												// (the check in this class subsumes the builtin check and we don't want to do it twice)]
 
@@ -263,6 +263,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
         BOOST_FOREACH (ID h, rule.head) programMask->setFact(h.address);
         BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
     }
+
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, solver->getGroundProgram()));
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){

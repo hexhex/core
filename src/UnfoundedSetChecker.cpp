@@ -165,7 +165,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
 		bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
 		while (en < en_end){
-			domain->setFact(*en);
+//			domain->setFact(*en);
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(*en, true));
 			ufsDetectionProblem.addNogood(ng);
@@ -206,9 +206,9 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		}
 		if (unsatisfied) continue;
 
-		// Compute the set of problem variables
+		// Compute the set of problem variables: this is the set of all atoms which (1) occur in the head of some rule; or (2) are external atom auxiliaries
 		BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
-		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
+		BOOST_FOREACH (ID b, rule.body) if (b.isExternalAuxiliary()) domain->setFact(b.address);
 
 		// Create two unique predicates and atoms for this rule
 		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -264,6 +264,15 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 				}
 			}
 			ufsDetectionProblem.addNogood(ng);
+		}
+
+		// the ufs must not contain an atom which does not occur in the head of some rule (such atoms are external to the component)
+		BOOST_FOREACH (ID b, rule.body){
+			if (!domain->getFact(b.address)){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(b.address, true));
+				ufsDetectionProblem.addNogood(ng);
+			}
 		}
 	}
 
@@ -1367,11 +1376,27 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
+		GenuineGuessAndCheckModelGenerator& ggncmg,
+		ProgramCtx& ctx,
+		std::vector<ID>& innerEatoms,
+		const OrdinaryASPProgram& groundProgram) :
+			ggncmg(&ggncmg), ctx(ctx), innerEatoms(innerEatoms), groundProgram(groundProgram){
+
+	init();
+}
+
+UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
 		const OrdinaryASPProgram& groundProgram) :
-			groundProgram(groundProgram){
+			ctx(ctx), ggncmg(0), groundProgram(groundProgram){
+
+	init();
+}
+
+void UnfoundedSetCheckerManager::init(){
 
 	// construct atom dependency graph
+	DBGLOG(DBG, "Contructing atom dependency graph");
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
 		const Rule& rule = ctx.registry()->rules.getByID(ruleID);
 
@@ -1382,17 +1407,49 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 			if (depNodes.find(b.address) == depNodes.end()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
 		}
 
-		// add an arc from all head literals to all positive body literals
+		// add an arc from all head atoms to all positive body literals
+		DBGLOG(DBG, "Adding ordinary edges");
 		BOOST_FOREACH (ID h, rule.head){
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf()){
+				if (!b.isNaf() || b.isExternalAuxiliary()){
+					DBGLOG(DBG, "Adding dependency from " << h.address << " to " << b.address);
 					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
+				}
+			}
+		}
+
+		// add an arc from all head atoms to atoms which are input to some external atom in the rule body
+		if (ggncmg){
+			DBGLOG(DBG, "Adding e-edges");
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isExternalAuxiliary()){
+					BOOST_FOREACH (ID eaID, ggncmg->auxToEA[b.address]){
+						const ExternalAtom& ea = ctx.registry()->eatoms.getByID(eaID);
+
+						ea.updatePredicateInputMask();
+						bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+						bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+						while (en < en_end){
+							if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
+
+							BOOST_FOREACH (ID h, rule.head){
+								DBGLOG(DBG, "Adding dependency from " << h.address << " to " << *en);
+								boost::add_edge(depNodes[h.address], depNodes[*en], depGraph);
+								externalEdges.push_back(std::pair<IDAddress, IDAddress>(h.address, *en));
+
+								DBGLOG(DBG, "Adding dependency from " << b.address << " to " << *en);
+								boost::add_edge(depNodes[b.address], depNodes[*en], depGraph);
+							}
+							en++;
+						}
+					}
 				}
 			}
 		}
 	}
 
 	// find strongly connected components in the dependency graph using boost
+	DBGLOG(DBG, "Computing strongly connected components");
 	std::vector<int> componentMap(depNodes.size());
 	int num = boost::strong_components(depGraph, &componentMap[0]);
 
@@ -1405,10 +1462,25 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		componentOfAtom[depGraph[nodeNr]] = componentOfNode;
 		nodeNr++;
 	}
+#ifndef NDEBUG
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		std::stringstream ss;
+		bool first = true;
+		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
+			if (!first) ss << ", ";
+			first = false;
+			ss << ida;
+		}
+		DBGLOG(DBG, "Component " << comp << ": " << ss.str());
+	}
+#endif
 
-	// check if the components contain head-cycles and/or e-cycles
-	for (int comp = 0; comp < num; ++comp){
-		int hcf = true;
+	// partition the program according to the strongly connected components
+	DBGLOG(DBG, "Partitioning program");
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		DBGLOG(DBG, "Partition " << comp);
+
+		std::vector<ID> currentComp;
 		BOOST_FOREACH (ID ruleID, groundProgram.idb){
 			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
 			int intersectionCount = 0;
@@ -1416,15 +1488,23 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
 					intersectionCount++;
 				}
-				if (intersectionCount >= 2) break;
+				if (intersectionCount >= 1) break;
 			}
-			if (intersectionCount >= 2){
-				hcf = false;
-				break;
+			if (intersectionCount >= 1){
+#ifndef NDEBUG
+				std::stringstream programstring;
+				RawPrinter printer(programstring, ctx.registry());
+				printer.print(ruleID);
+				DBGLOG(DBG, programstring.str());
+#endif
+				currentComp.push_back(ruleID);
 			}
 		}
-		headCycles.push_back(!hcf);
+		programComponents.push_back(currentComp);
 	}
+
+	initHeadCycles();
+	if (ggncmg) initECycles();
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -1450,7 +1530,11 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 				first = false;
 				printer.print(ctx.registry()->ogatoms.getIDByAddress(ida));
 			}
-			sccstring << " } (HC: " << headCycles[sai] << ") ";
+			if (ggncmg){
+				sccstring << " } (HC: " << headCycles[sai] << ", EC: " << eCycles[sai] << ") ";
+			}else{
+				sccstring << " } (HC: " << headCycles[sai] << ", EC: ---) ";
+			}
 			sai++;
 		}
 	}
@@ -1459,10 +1543,132 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 #endif
 }
 
+void UnfoundedSetCheckerManager::initHeadCycles(){
+
+	// check if the components contain head-cycles
+	DBGLOG(DBG, "Computing head-cycles of components");
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		int hcf = true;
+		BOOST_FOREACH (ID ruleID, programComponents[comp]){
+			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
+			int intersectionCount = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+					intersectionCount++;
+				}
+				if (intersectionCount >= 2) break;
+			}
+			if (intersectionCount >= 2){
+				hcf = false;
+				break;
+			}
+		}
+		headCycles.push_back(!hcf);
+	}
+}
+
+void UnfoundedSetCheckerManager::initECycles(){
+
+	assert(ggncmg);
+	DBGLOG(DBG, "Computing e-cycles of components");
+
+	std::stringstream dotss;
+	dotss << "digraph {";
+
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+
+		// check for each e-edge x -> y if there is a path from y to x
+		// if yes, then y is a cyclic predicate input
+		std::vector<IDAddress> cyclicInputAtoms;
+		typedef std::pair<IDAddress, IDAddress> Edge;
+		BOOST_FOREACH (Edge e, externalEdges){
+			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
+			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
+
+			std::vector<Graph::vertex_descriptor> reachable;
+			boost::breadth_first_search(depGraph, depNodes[e.second],
+				boost::visitor(
+					boost::make_bfs_visitor(
+						boost::write_property(
+							boost::identity_property_map(),
+							std::back_inserter(reachable),
+							boost::on_discover_vertex())))); 
+
+			if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
+				// yes, there is a cycle
+				if (std::find(cyclicInputAtoms.begin(), cyclicInputAtoms.end(), e.second) == cyclicInputAtoms.end()){
+					cyclicInputAtoms.push_back(e.second);
+				}
+			}
+		}
+		eCycles.push_back(cyclicInputAtoms.size() > 0);
+
+#ifndef NDEBUG
+
+		std::stringstream ss;
+		bool first = true;
+		BOOST_FOREACH (IDAddress a, cyclicInputAtoms){
+			if (!first) ss << ", ";
+			first = false;
+			ss << a;
+		}
+		DBGLOG(DBG, "Cyclic input atoms: " << ss.str());
+#endif
+
+		if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
+			dotss << "}";
+
+			std::stringstream fnamev;
+			static int cnt = 0;
+			fnamev << ctx.config.getStringOption("DebugPrefix") << "_CycInpGraph" << cnt++ << ".dot";
+			LOG(INFO,"dumping cyclic predicate input analysis graph " << fnamev.str());
+			std::ofstream filev(fnamev.str().c_str());
+			filev << dotss.str();
+		}
+/*
+		cyclicInputPredicatesMask.setRegistry(ctx.registry());
+		BOOST_FOREACH (ID pred, cyclicInputPredicates){
+			cyclicInputPredicatesMask.addPredicate(pred);
+		}
+*/
+	}
+}
+
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		InterpretationConstPtr interpretation,
 		std::set<ID> skipProgram,
 		NogoodContainerPtr ngc){
+
+	// search in each component for unfounded sets
+	DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		if (!headCycles[comp] && !eCycles[comp]){
+			DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
+			continue;
+		}
+
+		DBGLOG(DBG, "Checking for UFS in component " << comp);
+		OrdinaryASPProgram gp(ctx.registry(), programComponents[comp], groundProgram.edb);
+		if (ggncmg){
+//			UnfoundedSetChecker ufsc(ggncmg, ctx, gp, innerEatoms, interpretation, skipProgram, ngc);
+//			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+//			if (ufs.size() > 0){
+//				DBGLOG(DBG, "Found a UFS");
+//				return ufs;
+//			}
+		}else{
+			UnfoundedSetChecker ufsc(ctx, gp, interpretation, skipProgram, ngc);
+			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			if (ufs.size() > 0){
+				DBGLOG(DBG, "Found a UFS");
+				return ufs;
+			}
+		}
+	}
+
+	// no ufs found
+	DBGLOG(DBG, "No component contains a UFS");
+	return std::vector<IDAddress>();
 }
 
 DLVHEX_NAMESPACE_END
