@@ -152,7 +152,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblem(){
 //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "UFS Detection Problem Construction");
 
 	constructUFSDetectionProblemNecessaryPart();
-//	constructUFSDetectionProblemOptimizationPart();
+	constructUFSDetectionProblemOptimizationPart();
 }
 
 void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
@@ -1182,9 +1182,13 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
   #endif
 
 	DLVHEX_BENCHMARK_REGISTER(sidufsenum, "UFS-Detection Problem Solving");
-	DLVHEX_BENCHMARK_START(sidufsenum);
+	if (mode == WithExt){
+		DLVHEX_BENCHMARK_START(sidufsenum);
+	}
 	model = solver->getNextModel();
-	DLVHEX_BENCHMARK_STOP(sidufsenum);
+	if (mode == WithExt){
+		DLVHEX_BENCHMARK_STOP(sidufsenum);
+	}
 	while ( model != InterpretationConstPtr()){
 		if (mode == WithExt){
 			DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ufscandidates, "Investigated number of UFS candidates", 1);
@@ -1219,9 +1223,13 @@ std::vector<IDAddress> UnfoundedSetChecker::getUnfoundedSet(){
 			DBGLOG(DBG, "No UFS: " << *model);
 		}
 
-		DLVHEX_BENCHMARK_START(sidufsenum);
+		if (mode == WithExt){
+			DLVHEX_BENCHMARK_START(sidufsenum);
+		}
 		model = solver->getNextModel();
-		DLVHEX_BENCHMARK_STOP(sidufsenum);
+		if (mode == WithExt){
+			DLVHEX_BENCHMARK_STOP(sidufsenum);
+		}
 	}
 
 	DBGLOG(DBG, "Enumerated " << mCnt << " UFS candidates");
@@ -1407,11 +1415,21 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		if (ggncmg){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getGroundProgram(), innerEatoms, interpretation, skipProgram, InterpretationConstPtr(), ngc);
-			return ufsc.getUnfoundedSet();
+			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			if (ufs.size() > 0){
+				DBGLOG(DBG, "Found a UFS");
+				ufsnogood = ufsc.getUFSNogood(ufs, interpretation);
+			}
+			return ufs;
 		}else{
 			DBGLOG(DBG, "Checking UFS without considering external atoms");
 			UnfoundedSetChecker ufsc(ctx, agp.getGroundProgram(), interpretation, skipProgram, InterpretationConstPtr(), ngc);
-			return ufsc.getUnfoundedSet();
+			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			if (ufs.size() > 0){
+				DBGLOG(DBG, "Found a UFS");
+				ufsnogood = ufsc.getUFSNogood(ufs, interpretation);
+			}
+			return ufs;
 		}
 	}else{
 		// search in each component for unfounded sets
