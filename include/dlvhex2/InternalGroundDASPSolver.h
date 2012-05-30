@@ -39,12 +39,17 @@
 #include <boost/foreach.hpp>
 #include "dlvhex2/Printhelpers.h"
 #include "dlvhex2/InternalGroundASPSolver.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
 #include <boost/shared_ptr.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
 class InternalGroundDASPSolver : public InternalGroundASPSolver{
+private:
+	UnfoundedSetCheckerManager ufscm;
+
 protected:
+#if 0
 	std::vector<bool> hcf;
 
 	// statistics
@@ -57,11 +62,13 @@ protected:
 	// helper members
 	bool isCompHCF(int compNr);
 	Nogood getViolatedLoopNogood(const Set<ID>& ufs);
-
+#endif
 public:
+#if 0
 	virtual std::string getStatistics();
+#endif
 
-	InternalGroundDASPSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p);
+	InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
 
 	virtual InterpretationConstPtr getNextModel();
 

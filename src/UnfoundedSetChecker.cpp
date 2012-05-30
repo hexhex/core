@@ -1402,48 +1402,56 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		InterpretationConstPtr interpretation,
 		std::set<ID> skipProgram,
 		NogoodContainerPtr ngc){
-/*
-if (ggncmg){
-	DBGLOG(DBG, "Checking UFS under consideration of external atoms");
-	UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getGroundProgram(), innerEatoms, interpretation, skipProgram, InterpretationConstPtr(), ngc);
-	return ufsc.getUnfoundedSet();
-}else{
-	DBGLOG(DBG, "Checking UFS without considering external atoms");
-	UnfoundedSetChecker ufsc(ctx, agp.getGroundProgram(), interpretation, skipProgram, InterpretationConstPtr(), ngc);
-	return ufsc.getUnfoundedSet();
-}
-*/
-	// search in each component for unfounded sets
-	DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
-	for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-		if (!agp.hasHeadCycles(comp) && (!ggncmg || !agp.hasECycles(comp))){
-			DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
-			continue;
-		}
 
-		DBGLOG(DBG, "Checking for UFS in component " << comp);
-		if (ggncmg && agp.hasECycles(comp)){
+	if (ctx.config.getOption("UFSCheckMonolithic")){
+		if (ggncmg){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
-			UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getProgramOfComponent(comp), innerEatoms, interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
-			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
-			if (ufs.size() > 0){
-				DBGLOG(DBG, "Found a UFS");
-				return ufs;
-			}
+			UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getGroundProgram(), innerEatoms, interpretation, skipProgram, InterpretationConstPtr(), ngc);
+			return ufsc.getUnfoundedSet();
 		}else{
 			DBGLOG(DBG, "Checking UFS without considering external atoms");
-			UnfoundedSetChecker ufsc(ctx, agp.getProgramOfComponent(comp), interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
-			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
-			if (ufs.size() > 0){
-				DBGLOG(DBG, "Found a UFS");
-				return ufs;
+			UnfoundedSetChecker ufsc(ctx, agp.getGroundProgram(), interpretation, skipProgram, InterpretationConstPtr(), ngc);
+			return ufsc.getUnfoundedSet();
+		}
+	}else{
+		// search in each component for unfounded sets
+		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
+		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
+			if (!agp.hasHeadCycles(comp) && (!ggncmg || !agp.hasECycles(comp))){
+				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
+				continue;
+			}
+
+			DBGLOG(DBG, "Checking for UFS in component " << comp);
+			if (ggncmg && agp.hasECycles(comp)){
+				DBGLOG(DBG, "Checking UFS under consideration of external atoms");
+				UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getProgramOfComponent(comp), innerEatoms, interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
+				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+				if (ufs.size() > 0){
+					DBGLOG(DBG, "Found a UFS");
+					ufsnogood = ufsc.getUFSNogood(ufs, interpretation);
+					return ufs;
+				}
+			}else{
+				DBGLOG(DBG, "Checking UFS without considering external atoms");
+				UnfoundedSetChecker ufsc(ctx, agp.getProgramOfComponent(comp), interpretation, skipProgram, agp.getAtomsOfComponent(comp));
+				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+				if (ufs.size() > 0){
+					DBGLOG(DBG, "Found a UFS");
+					ufsnogood = ufsc.getUFSNogood(ufs, interpretation);
+					return ufs;
+				}
 			}
 		}
-	}
 
-	// no ufs found
-	DBGLOG(DBG, "No component contains a UFS");
-	return std::vector<IDAddress>();
+		// no ufs found
+		DBGLOG(DBG, "No component contains a UFS");
+		return std::vector<IDAddress>();
+	}
+}
+
+Nogood UnfoundedSetCheckerManager::getLastUFSNogood() const{
+	return ufsnogood;
 }
 
 DLVHEX_NAMESPACE_END

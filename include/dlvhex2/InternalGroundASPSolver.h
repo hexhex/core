@@ -41,6 +41,7 @@
 #include "dlvhex2/Printhelpers.h"
 #include "CDNLSolver.h"
 #include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 #include "dlvhex2/GenuineSolver.h"
 //#include <bm/bm.h>
 #include <boost/graph/graph_traits.hpp>
@@ -63,7 +64,7 @@ protected:
 
 protected:
 	// structural program information
-	OrdinaryASPProgram program;
+	AnnotatedGroundProgram program;
 	RegistryPtr reg;
 
 	Set<IDAddress> ordinaryFacts;
@@ -73,32 +74,19 @@ protected:
 										// dependency graph
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
-//	DynamicVector<IDAddress, Node> depNodes;
 	boost::unordered_map<IDAddress, Node, SimpleHashIDAddress> depNodes;
 	Graph depGraph;
 
 	std::vector<Set<IDAddress> > depSCC;					// store for each component the contained atoms
-//	std::vector<int> componentOfAtom;					// store for each atom its component number
-//	std::vector<IDAddress> bodyAtomOfRule;					// store for each rule the body atom
-//	DynamicVector<IDAddress, int> componentOfAtom;				// store for each atom its component number
-//	DynamicVector<IDAddress, IDAddress> bodyAtomOfRule;			// store for each rule the body atom
 	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> componentOfAtom;// store for each atom its component number
 	boost::unordered_map<IDAddress, IDAddress, SimpleHashIDAddress> bodyAtomOfRule;	// store for each rule the body atom
 
 
 	// data structures for unfounded set computation
 	Set<IDAddress> unfoundedAtoms;						// currently unfounded atoms
-//	std::vector<Set<ID> > rulesWithPosBodyLiteral;				// store for each literal the rules which contain it positively in their body
-//	std::vector<Set<ID> > rulesWithNegBodyLiteral;				// store for each literal the rules which contain it negatively in their body
-//	std::vector<Set<ID> > rulesWithPosHeadLiteral;				// store for each literal the rules which contain it (positively) in their head
-//	DynamicVector<IDAddress, Set<ID> > rulesWithPosBodyLiteral;		// store for each literal the rules which contain it positively in their body
-//	DynamicVector<IDAddress, Set<ID> > rulesWithNegBodyLiteral;		// store for each literal the rules which contain it negatively in their body
-//	DynamicVector<IDAddress, Set<ID> > rulesWithPosHeadLiteral;		// store for each literal the rules which contain it (positively) in their head
 	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosBodyLiteral;	// store for each literal the rules which contain it positively in their body
 	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithNegBodyLiteral;	// store for each literal the rules which contain it negatively in their body
 	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosHeadLiteral;	// store for each literal the rules which contain it (positively) in their head
-//	std::vector<Set<IDAddress> > foundedAtomsOfBodyAtom;			// store for each body atom the set of atoms which use the corresponding rule as source
-//	DynamicVector<IDAddress, Set<IDAddress> > foundedAtomsOfBodyAtom;	// store for each body atom the set of atoms which use the corresponding rule as source
 	boost::unordered_map<IDAddress, Set<IDAddress>, SimpleHashIDAddress > foundedAtomsOfBodyAtom;// store for each body atom the set of atoms which use the corresponding rule as source
 	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
 
@@ -140,7 +128,6 @@ protected:
 	Set<ID> getExternalSupport(const Set<ID>& s);
 	Set<ID> satisfiesIndependently(ID ruleID, const Set<ID>& y);
 	Nogood getLoopNogood(const Set<ID>& ufs);
-//	ID createNewAtom(std::string predName);
 	ID createNewAtom(ID predID);
 	ID createNewBodyAtom();
 	std::string toString(const Set<ID>& lits);
@@ -158,14 +145,14 @@ protected:
 	template <typename T>
 	inline Set<T> intersect(const Set<T>& a, const Set<T>& b){
 		Set<T> out;
-		std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), insert_set_iterator<T>(out)); //inserter(out, out.begin()));
+		std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), insert_set_iterator<T>(out));
 		return out;
 	}
 
 public:
 	virtual std::string getStatistics();
 
-	InternalGroundASPSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p);
+	InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
 
 	void addExternalLearner(LearningCallback* lb);
 	void removeExternalLearner(LearningCallback* lb);

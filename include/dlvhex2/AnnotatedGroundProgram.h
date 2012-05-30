@@ -62,7 +62,7 @@ class AnnotatedGroundProgram{
 
 	// back-mapping of (ground) external auxiliaries to their nonground external atoms
 	std::vector<ID> indexedEatoms;
-	std::vector<ExternalAtomMask> eaMasks;
+	std::vector<boost::shared_ptr<ExternalAtomMask> > eaMasks;
 	boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
 
 	// program decomposition and meta information
@@ -91,6 +91,7 @@ class AnnotatedGroundProgram{
 	void computeHeadCycles();
 	void computeECycles();
 public:
+	AnnotatedGroundProgram();
 	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
 
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);
@@ -101,6 +102,9 @@ public:
 	InterpretationConstPtr getAtomsOfComponent(int compNr) const;
 	int hasHeadCycles(int compNr) const;
 	int hasECycles(int compNr) const;
+
+	const std::vector<ID>& getAuxToEA(IDAddress ida) const;
+	boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex);
 
 	const OrdinaryASPProgram& getGroundProgram() const;
 };

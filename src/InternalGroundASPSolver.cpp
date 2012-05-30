@@ -93,7 +93,7 @@ Set<std::pair<ID, ID> > InternalGroundASPSolver::createShiftedProgram(){
 	DBGLOG(DBG, "Creating shifted program");
 
 	Set<std::pair<ID, ID> > shiftedProg;
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 
 		const Rule& r = reg->rules.getByID(ruleID);
 
@@ -145,7 +145,7 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 	// create for each real shifted rule the nogoods which associate the rule body with the body atom
 	// (shifted rules which were already present in the original program were already handled before)
 	BOOST_FOREACH (RulePair pair, shiftedProgram){
-		if (!contains(program.idb, pair.first)){
+		if (!contains(program.getGroundProgram().idb, pair.first)){
 			const Rule& r = reg->rules.getByID(pair.first);
 			createNogoodsForRuleBody(pair.second, r.body);
 		}
@@ -154,7 +154,7 @@ void InternalGroundASPSolver::createSingularLoopNogoods(){
 	// an atom must not be true if the bodies of all supporting shifted rules are false
 	BOOST_FOREACH (IDAddress litadr, ordinaryFacts){
 		// only for atoms which are no facts
-		if (!program.edb->getFact(litadr)){
+		if (!program.getGroundProgram().edb->getFact(litadr)){
 			Nogood supNogood;
 			supNogood.insert(createLiteral(litadr));
 
@@ -191,7 +191,7 @@ void InternalGroundASPSolver::resizeVectors(){
 void InternalGroundASPSolver::computeClarkCompletion(){
 
 	// compute completion
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 		ID ruleBodyAtomID = createNewBodyAtom();
 		bodyAtomOfRule[ruleID.address] = ruleBodyAtomID.address;
 		createNogoodsForRule(ruleBodyAtomID, ruleID);
@@ -205,8 +205,8 @@ void InternalGroundASPSolver::setEDB(){
 	DBGLOG(DBG, "Setting EDB");
 
 	// set all facts at decision level 0 without cause
-	bm::bvector<>::enumerator en = program.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
+	bm::bvector<>::enumerator en = program.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = program.getGroundProgram().edb->getStorage().end();
 
 	while (en < en_end){
 		if (ordinaryFacts.count(*en) > 0){
@@ -224,7 +224,7 @@ void InternalGroundASPSolver::computeDepGraph(){
 	}
 
 	// go through all rules
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
 		// add an arc from all head literals to all positive body literals
@@ -288,7 +288,7 @@ void InternalGroundASPSolver::initSourcePointers(){
 
 	// initially, all atoms in non-singular components, except facts, are unfounded
 	BOOST_FOREACH (IDAddress litadr, ordinaryFacts){
-		if (program.edb->getFact(litadr)){
+		if (program.getGroundProgram().edb->getFact(litadr)){
 			// store pseudo source rule ID_FAIL to mark that this is a fact and founded by itself
 			sourceRule[litadr] = ID_FAIL;
 		}else{
@@ -305,7 +305,7 @@ void InternalGroundASPSolver::initSourcePointers(){
 void InternalGroundASPSolver::initializeLists(){
 
 	// determine the set of all facts and a literal index
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 		const Rule& r = reg->rules.getByID(ruleID);
 
 		// remember this rule for each contained literal
@@ -328,8 +328,8 @@ void InternalGroundASPSolver::initializeLists(){
 	}
 
 	// include facts in the list of all literals
-	bm::bvector<>::enumerator en = program.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
+	bm::bvector<>::enumerator en = program.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = program.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		allFacts.insert(*en);
 		ordinaryFacts.insert(*en);
@@ -835,7 +835,7 @@ std::string InternalGroundASPSolver::getStatistics(){
 #endif
 }
 
-InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const OrdinaryASPProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0){
+InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0){
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	reg = ctx.registry();
@@ -963,8 +963,8 @@ InterpretationPtr InternalGroundASPSolver::projectToOrdinaryAtoms(Interpretation
 		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
 		answer->add(*intr);
 		answer->bit_and(*ordinaryFactsInt);
-		if (program.mask != InterpretationConstPtr()){
-			answer->getStorage() -= program.mask->getStorage();
+		if (program.getGroundProgram().mask != InterpretationConstPtr()){
+			answer->getStorage() -= program.getGroundProgram().mask->getStorage();
 		}
 //		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
 //		BOOST_FOREACH (IDAddress ordAt, ordinaryFacts){

@@ -145,10 +145,11 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        generalize: Generalize learned nogoods to other external atoms" << std::endl
       << "                      By default, all options are enabled" << std::endl
       << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
-      << "     --flpcheck=[explicit,ufs,none]" << std::endl
+      << "     --flpcheck=[explicit,ufs,ufsm,none]" << std::endl
       << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
       << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
-      << "                        ufs: Check if the candidate contains unfounded sets" << std::endl
+      << "                        ufs: Use unfounded sets for minimality checking" << std::endl
+      << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
       << "     --eaheuristics=[post,immediate,always,never]" << std::endl
@@ -326,6 +327,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
+  pctx.config.setOption("UFSCheckMonolithic", 0);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -997,6 +999,12 @@ void processOptionsPrePlugin(
 				{
 					pctx.config.setOption("FLPCheck", 0);
 					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 0);
+				}else if( check == "ufsm" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 1);
 				}else{
 					pctx.config.setOption("FLPCheck", 0);
 					pctx.config.setOption("UFSCheck", 0);

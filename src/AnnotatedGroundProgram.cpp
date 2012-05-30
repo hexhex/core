@@ -9,6 +9,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+AnnotatedGroundProgram::AnnotatedGroundProgram() : groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())){
+}
+
 AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
 	reg(reg), groundProgram(groundProgram), indexedEatoms(indexedEatoms){
 
@@ -21,7 +24,8 @@ void AnnotatedGroundProgram::createEAMasks(){
 	int eaIndex = 0;
 	BOOST_FOREACH (ID eatom, indexedEatoms){
 		// create an EAMask for each inner external atom
-		ExternalAtomMask& eaMask = eaMasks[eaIndex];
+		eaMasks[eaIndex] = boost::shared_ptr<ExternalAtomMask>(new ExternalAtomMask);
+		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
 		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
 		eaMask.updateMask();
 		eaIndex++;
@@ -33,7 +37,7 @@ void AnnotatedGroundProgram::mapAuxToEAtoms(){
 	int eaIndex = 0;
 	BOOST_FOREACH (ID eatom, indexedEatoms){
 		// create an EAMask for each inner external atom
-		ExternalAtomMask& eaMask = eaMasks[eaIndex];
+		ExternalAtomMask& eaMask = *eaMasks[eaIndex];
 		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
 		eaMask.updateMask();
 
@@ -324,6 +328,17 @@ int AnnotatedGroundProgram::hasHeadCycles(int compNr) const{
 int AnnotatedGroundProgram::hasECycles(int compNr) const{
 	assert(compNr >= 0 && compNr < depSCC.size());
 	return eCycles[compNr];
+}
+
+const std::vector<ID>& AnnotatedGroundProgram::getAuxToEA(IDAddress ida) const{
+	assert(auxToEA.find(ida) != auxToEA.end());
+	return auxToEA.at(ida);
+}
+
+boost::shared_ptr<ExternalAtomMask> AnnotatedGroundProgram::getEAMask(int eaIndex){
+	assert(eaIndex >= 0 && eaIndex < indexedEatoms.size());
+	eaMasks[eaIndex]->updateMask();
+	return eaMasks[eaIndex];
 }
 
 const OrdinaryASPProgram& AnnotatedGroundProgram::getGroundProgram() const{

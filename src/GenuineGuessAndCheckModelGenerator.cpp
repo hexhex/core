@@ -41,7 +41,6 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
-#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <bm/bmalgo.h>
 
@@ -232,7 +231,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	solver = GenuineSolver::getInstance(	factory.ctx, program,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
-						true //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
+						false //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
 												// [let the solver do the UFS check only if we don't do it in this class
 												// (the check in this class subsumes the builtin check and we don't want to do it twice)]
 
@@ -265,8 +264,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
         BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
     }
 
-AnnotatedGroundProgram agp(reg, solver->getGroundProgram(), factory.innerEatoms);
-    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, agp));
+    // initialize UFS checker
+    annotatedGroundProgram = AnnotatedGroundProgram(reg, solver->getGroundProgram(), factory.innerEatoms);
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, annotatedGroundProgram));
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -488,18 +488,18 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
 				// do UFS check (possibly with nogood learning) and add the learned nogoods to the main search
-//				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 
-				transferLearnedEANogoods();
 //				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+				transferLearnedEANogoods();
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Got a UFS");
 					if (factory.ctx.config.getOption("UFSLearning")){
 						DBGLOG(DBG, "Learn from UFS");
 //						Nogood ufsng = ufsc.getUFSNogood(ufs, compatibleSet);
-//						Nogood ufsng = ufscm->getUFSNogood(ufs, compatibleSet);
-//						solver->addNogood(ufsng);
+						Nogood ufsng = ufscm->getLastUFSNogood();
+						solver->addNogood(ufsng);
 					}
 					return false;
 				}else{
@@ -525,13 +525,15 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 		if (decision.first){
 
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
-			UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+			//UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, solver->projectToOrdinaryAtoms(partialInterpretation), decision.second, InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 
-			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			//std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
 
 			if (ufs.size() > 0){
-				Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
+				//Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
+				Nogood ng = ufscm->getLastUFSNogood();
 				int oldCount = solver->getNogoodCount();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
 				solver->addNogood(ng);

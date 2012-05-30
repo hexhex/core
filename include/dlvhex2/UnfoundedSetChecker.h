@@ -161,6 +161,8 @@ private:
 	std::vector<ID> innerEatoms;
 
 	AnnotatedGroundProgram agp;
+
+	Nogood ufsnogood;
 public:
 	UnfoundedSetCheckerManager(
 			GenuineGuessAndCheckModelGenerator& ggncmg,
@@ -176,6 +178,8 @@ public:
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
 			NogoodContainerPtr ngc = NogoodContainerPtr());
+
+	Nogood getLastUFSNogood() const;
 
 	typedef boost::shared_ptr<UnfoundedSetCheckerManager> Ptr;
 };

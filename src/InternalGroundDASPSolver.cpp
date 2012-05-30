@@ -44,6 +44,7 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+#if 0
 Set<ID> InternalGroundDASPSolver::getDisjunctiveUnfoundedSetForComponent(int compNr){
 
 	DBGLOG(DBG, "Checking if component " << compNr << " contains an unfounded set");
@@ -56,7 +57,7 @@ Set<ID> InternalGroundDASPSolver::getDisjunctiveUnfoundedSetForComponent(int com
 	NogoodSet subproblemUFSDetection;
 
 	// for all rules which are not satisfied independently from comp
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 		const Rule& r = reg->rules.getByID(ruleID);
 
 		Set<ID> indSat = satisfiesIndependently(ruleID, comp);
@@ -95,8 +96,8 @@ Set<ID> InternalGroundDASPSolver::getDisjunctiveUnfoundedSetForComponent(int com
 	}
 
 	// facts can never be in an unfounded set
-	bm::bvector<>::enumerator en = program.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = program.edb->getStorage().end();
+	bm::bvector<>::enumerator en = program.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = program.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		if (ordinaryFacts.count(*en) > 0){
 			Nogood singular;
@@ -138,7 +139,7 @@ Set<ID> InternalGroundDASPSolver::getDisjunctiveUnfoundedSetForComponent(int com
 bool InternalGroundDASPSolver::isCompHCF(int compNr){
 
 	// check if the component contains at least two distinct head literals of some rule
-	BOOST_FOREACH (ID ruleID, program.idb){
+	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
 		int numberOfHeadLits = 0;
 		const Rule& r = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID headLit, r.head){
@@ -198,18 +199,48 @@ std::string InternalGroundDASPSolver::getStatistics(){
 	return ss.str();
 #endif
 }
+#endif
 
-InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p) : InternalGroundASPSolver(ctx, p), cntModelCandidates(0), cntDUnfoundedSets(0){
+InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p) : InternalGroundASPSolver(ctx, p), ufscm(ctx, p)
+#if 0
+, cntModelCandidates(0), cntDUnfoundedSets(0)
+#endif
+{
 
+#if 0
 	// compute HCF status for all components
 	for (unsigned int compNr = 0; compNr < depSCC.size(); ++compNr){
 		hcf.push_back(isCompHCF(compNr));
 		DBGLOG(DBG, "HCF of component " << compNr << ": " << hcf[compNr]);
 	}
+#endif
 }
 
 InterpretationConstPtr InternalGroundDASPSolver::getNextModel(){
 
+	InterpretationConstPtr model = InternalGroundASPSolver::getNextModel();
+
+	bool ufsFound = true;
+	while (model && ufsFound){
+		ufsFound = false;
+
+		std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
+
+//		UnfoundedSetChecker ufsc(ctx, program, model);
+//		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+
+		if (ufs.size() > 0){
+			Nogood ng = ufscm.getLastUFSNogood(); // = ufscm.getUFSNogood(ufs, model);
+//			Nogood ng = ufsc.getUFSNogood(ufs, model);
+			addNogood(ng);
+			ufsFound = true;
+			model = InternalGroundASPSolver::getNextModel();
+		}
+	}
+	return model;
+
+
+#if 0
 	Set<ID> ufs(0, 1);
 	do{
 		// generate model candidate
@@ -262,6 +293,7 @@ InterpretationConstPtr InternalGroundDASPSolver::getNextModel(){
 			}
 		}
 	}while(true);
+#endif
 }
 
 DLVHEX_NAMESPACE_END

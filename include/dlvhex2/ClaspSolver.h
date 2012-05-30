@@ -186,7 +186,6 @@ public:
 	//       external learners might be different from the next model returned by getNextModel().
 	//       Therefore external learners MUST NOT store state information about the current interpretation
 	//       which is reused in getNextModel().
-	ClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
 	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
@@ -216,13 +215,10 @@ typedef ClaspSolver::ConstPtr ClaspSolverConstPtr;
 // Does NOT use ClaspD!
 class DisjunctiveClaspSolver : public ClaspSolver{
 private:
-	const OrdinaryASPProgram& program;
+	const AnnotatedGroundProgram& program;
 	UnfoundedSetCheckerManager ufscm;
-	bool headCycles;
 
-	bool initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& program);
 public:
-	DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true);
 	DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true);
 	virtual ~DisjunctiveClaspSolver();
 	virtual InterpretationConstPtr getNextModel();

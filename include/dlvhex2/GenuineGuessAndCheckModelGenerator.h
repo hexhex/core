@@ -40,6 +40,7 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -140,6 +141,8 @@ protected:
   Factory& factory;
 
   RegistryPtr reg;
+
+  AnnotatedGroundProgram annotatedGroundProgram;
 
   EAVerificationMode eaVerificationMode;
   std::vector<bool> eaVerified;

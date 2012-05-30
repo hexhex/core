@@ -775,11 +775,6 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const OrdinaryASPProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
-{
-	assert(false);
-}
-
 ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
@@ -1102,68 +1097,9 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 
 // ============================== DisjunctiveClaspSolver ==============================
 
-bool DisjunctiveClaspSolver::initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& p){
-
-	// construct a simple atom level dependency graph
-	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
-	typedef Graph::vertex_descriptor Node;
-	std::map<IDAddress, Node> depNodes;
-	Graph depGraph;
-
-	BOOST_FOREACH (ID ruleID, p.idb){
-		const Rule& rule = reg->rules.getByID(ruleID);
-
-		// add an arc from all head literals to all positive body literals
-		BOOST_FOREACH (ID headLiteral, rule.head){
-			// all atoms are nodes
-			if (depNodes.find(headLiteral.address) == depNodes.end()){
-				depNodes[headLiteral.address] = boost::add_vertex(headLiteral.address, depGraph);
-			}
-
-			BOOST_FOREACH (ID bodyLiteral, rule.body){
-				if (!bodyLiteral.isNaf()){
-					if (depNodes.find(bodyLiteral.address) == depNodes.end()){
-						depNodes[bodyLiteral.address] = boost::add_vertex(bodyLiteral.address, depGraph);
-					}
-					boost::add_edge(depNodes[headLiteral.address], depNodes[bodyLiteral.address], depGraph);
-				}
-			}
-		}
-	}
-
-	// find strongly connected components in the dependency graph using boost
-	std::vector<int> componentMap(depNodes.size());
-	int num = boost::strong_components(depGraph, &componentMap[0]);
-
-	// translate into real map
-	std::vector<Set<IDAddress> > depSCC = std::vector<Set<IDAddress> >(num);
-	Node nodeNr = 0;
-	BOOST_FOREACH (int componentOfNode, componentMap){
-		depSCC[componentOfNode].insert(depGraph[nodeNr]);
-		nodeNr++;
-	}
-
-	// check for head-cycles
-	for (int compNr = 0; compNr < depSCC.size(); ++compNr){
-		BOOST_FOREACH (ID ruleID, p.idb){
-			int numberOfHeadLits = 0;
-			const Rule& r = reg->rules.getByID(ruleID);
-			BOOST_FOREACH (ID headLit, r.head){
-				if (depSCC[compNr].count(headLit.address) > 0) numberOfHeadLits++;
-			}
-			if (numberOfHeadLits > 1){
-				headCycles = true;
-				return true;
-			}
-		}
-	}
-	headCycles = false;
-	return false;
-}
-
-DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading) :
-	ClaspSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p), interleavedThreading, /*initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting*/ ClaspSolver::ChoiceRules),
-	program(p), ufscm(ctx, AnnotatedGroundProgram(ctx.registry(), p)){
+DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading) :
+	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules),
+	program(p), ufscm(ctx, p){
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
@@ -1183,7 +1119,7 @@ InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 //		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 
 		if (ufs.size() > 0){
-			Nogood ng; // = ufscm.getUFSNogood(ufs, model);
+			Nogood ng = ufscm.getLastUFSNogood(); // = ufscm.getUFSNogood(ufs, model);
 //			Nogood ng = ufsc.getUFSNogood(ufs, model);
 			addNogood(ng);
 			ufsFound = true;
