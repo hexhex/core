@@ -346,22 +346,22 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 	// find the external atom related to this nogood
 	ID eaid = ID_FAIL;
 	BOOST_FOREACH (ID l, ng){
-		if (reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary() && auxToEA.find(l.address) != auxToEA.end()){
+		if (reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary() && annotatedGroundProgram.mapsAux(l.address)){
 			eaid = l;
 			break;
 		}
 	}
 	if (eaid == ID_FAIL) return;
 
-	assert(auxToEA[eaid.address].size() > 0);
-	DBGLOG(DBG, "External atom is " << auxToEA[eaid.address][0]);
-	const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[eaid.address][0]);
+	assert(annotatedGroundProgram.getAuxToEA(eaid.address).size() > 0);
+	DBGLOG(DBG, "External atom is " << annotatedGroundProgram.getAuxToEA(eaid.address)[0]);
+	const ExternalAtom& ea = reg->eatoms.getByID(annotatedGroundProgram.getAuxToEA(eaid.address)[0]);
 	const OrdinaryAtom& patternAtom = reg->ogatoms.getByAddress(eaid.address);
 
 	// make a list of all auxiliaries over the same predicate
 	std::set<ID> auxes;
 	typedef std::pair<IDAddress, std::vector<ID> > Pair;
-	BOOST_FOREACH (Pair p, auxToEA){
+	BOOST_FOREACH (Pair p, annotatedGroundProgram.getAuxToEA()){
 		const OrdinaryAtom& auxAtom = reg->ogatoms.getByAddress(p.first);
 		if (reg->getIDByAuxiliaryConstantSymbol(auxAtom.tuple[0]) == reg->getIDByAuxiliaryConstantSymbol(patternAtom.tuple[0])){
 			auxes.insert(reg->ogatoms.getIDByAddress(p.first));
@@ -566,20 +566,20 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 		ea.updatePredicateInputMask();
 		InterpretationConstPtr pm = ea.getPredicateInputMask();
 		if (pm && (factWasSet->getStorage() & programMask->getStorage() & pm->getStorage()).count() < (pm->getStorage() & programMask->getStorage()).count()){
-			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified because model generator runs in immediate-mode and input to " << auxToEA[eaAux.address][0] << " is incomplete");
+			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified because model generator runs in immediate-mode and input to " << annotatedGroundProgram.getAuxToEA(eaAux.address)[0] << " is incomplete");
 			return false;
 		}
 
-		DBGLOG(DBG, "Auxiliary " << eaAux.address << " is verified because model generator runs in immediate-mode and input to " << auxToEA[eaAux.address][0] << " is complete");
+		DBGLOG(DBG, "Auxiliary " << eaAux.address << " is verified because model generator runs in immediate-mode and input to " << annotatedGroundProgram.getAuxToEA(eaAux.address)[0] << " is complete");
 		return true;
 	}
 
 	assert(eaVerificationMode == heuristics);
-	assert(auxToEA[eaAux.address].size() > 0);
+	assert(annotatedGroundProgram.getAuxToEA(eaAux.address).size() > 0);
 
 	// check if at least one of the external atoms which can derive this auxiliary were verified
 	int eaIndex = 0;
-	BOOST_FOREACH (ID ea, auxToEA[eaAux.address]){
+	BOOST_FOREACH (ID ea, annotatedGroundProgram.getAuxToEA(eaAux.address)){
 		if (eaEvaluated[eaIndex] && eaVerified[eaIndex]){
 			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is verified by " << ea);
 			return true;
@@ -600,12 +600,11 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	for (int eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex)
 	{
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-		eaMasks[eaIndex].updateMask();
 
 		// if input to the external atom changed, it is not verified anymore
 		if (eaVerificationMode == heuristics && eaEvaluated[eaIndex]){
 			// check if one of its relevant atoms has changed
-			if ((eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0){
+			if ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & changed->getStorage()).count() > 0){
 				DBGLOG(DBG, "Unverifying " << factory.innerEatoms[eaIndex]);
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
@@ -627,15 +626,15 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// 1. we need all relevant atoms to be assigned before we can do the verification
 	// 2. reverification is only necessary and useful if relevant atoms changed
-	if ((!factWasSet || ((eaMasks[eaIndex].mask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (eaMasks[eaIndex].mask()->getStorage() & programMask->getStorage()).count())) &&	// 1
-	    (!changed || (eaMasks[eaIndex].mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
-		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *eaMasks[eaIndex].mask());
+	if ((!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & programMask->getStorage()).count())) &&	// 1
+	    (!changed || (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
+		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *(annotatedGroundProgram.getEAMask(eaIndex)->mask()));
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
-		VerifyExternalAtomCB vcb(partialInterpretation, eatom, eaMasks[eaIndex]);
+		VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
 		// make sure that ALL input auxiliary atoms are true, otherwise we might miss some output atoms and consider true output atoms wrongly as unfounded
 		InterpretationPtr evalIntr = InterpretationPtr(new Interpretation(*partialInterpretation));
-		BOOST_FOREACH (Tuple t, eaMasks[eaIndex].getAuxInputTuples()){
+		BOOST_FOREACH (Tuple t, annotatedGroundProgram.getEAMask(eaIndex)->getAuxInputTuples()){
 			OrdinaryAtom oa(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 			oa.tuple.push_back(eatom.auxInputPredicate);
 			oa.tuple.insert(oa.tuple.end(), t.begin(), t.end());
@@ -663,8 +662,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 		// in case of a conflict, the set of all atoms which are relevant to the external atom form a nogood
 		if (!verify){
 			eatom.updatePredicateInputMask();
-			bm::bvector<>::enumerator en = eaMasks[eaIndex].mask()->getStorage().first();
-			bm::bvector<>::enumerator en_end = eaMasks[eaIndex].mask()->getStorage().end();
+			bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+			bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
 			Nogood ng;
 			while (en < en_end){
 				// atoms which do not occur in the program can never be true

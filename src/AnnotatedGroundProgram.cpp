@@ -330,6 +330,14 @@ int AnnotatedGroundProgram::hasECycles(int compNr) const{
 	return eCycles[compNr];
 }
 
+bool AnnotatedGroundProgram::mapsAux(IDAddress ida) const{
+	return auxToEA.find(ida) != auxToEA.end();
+}
+
+const boost::unordered_map<IDAddress, std::vector<ID> >& AnnotatedGroundProgram::getAuxToEA() const{
+	return auxToEA;
+}
+
 const std::vector<ID>& AnnotatedGroundProgram::getAuxToEA(IDAddress ida) const{
 	assert(auxToEA.find(ida) != auxToEA.end());
 	return auxToEA.at(ida);

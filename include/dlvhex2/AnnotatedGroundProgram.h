@@ -103,6 +103,8 @@ public:
 	int hasHeadCycles(int compNr) const;
 	int hasECycles(int compNr) const;
 
+	bool mapsAux(IDAddress ida) const;
+	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;
 	const std::vector<ID>& getAuxToEA(IDAddress ida) const;
 	boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex);
 
