@@ -293,7 +293,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		bm::bvector<>::enumerator en = domain->getStorage().first();
 		bm::bvector<>::enumerator en_end = domain->getStorage().end();
 		while (en < en_end){
-			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() && !componentAtoms->getFact(*en)){
+			if ((!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() || mode == Ordinary) && !componentAtoms->getFact(*en)){
 				Nogood ng;
 				ng.insert(NogoodContainer::createLiteral(*en, true));
 				ufsDetectionProblem.addNogood(ng);
@@ -1388,294 +1388,53 @@ UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		GenuineGuessAndCheckModelGenerator& ggncmg,
 		ProgramCtx& ctx,
 		std::vector<ID>& innerEatoms,
-		const OrdinaryASPProgram& groundProgram) :
-			ggncmg(&ggncmg), ctx(ctx), innerEatoms(innerEatoms), groundProgram(groundProgram){
-
-	init();
+		const AnnotatedGroundProgram& agp) :
+			ggncmg(&ggncmg), ctx(ctx), innerEatoms(innerEatoms), agp(agp){
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
-		const OrdinaryASPProgram& groundProgram) :
-			ctx(ctx), ggncmg(0), groundProgram(groundProgram){
-
-	init();
-}
-
-void UnfoundedSetCheckerManager::init(){
-
-	// construct atom dependency graph
-	DBGLOG(DBG, "Contructing atom dependency graph");
-	BOOST_FOREACH (ID ruleID, groundProgram.idb){
-		const Rule& rule = ctx.registry()->rules.getByID(ruleID);
-
-		BOOST_FOREACH (ID h, rule.head){
-			if (depNodes.find(h.address) == depNodes.end()) depNodes[h.address] = boost::add_vertex(h.address, depGraph);
-		}
-		BOOST_FOREACH (ID b, rule.body){
-			if (depNodes.find(b.address) == depNodes.end() && !b.isExternalAuxiliary()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
-		}
-
-		// add an arc from all head atoms to all positive body literals
-		DBGLOG(DBG, "Adding ordinary edges");
-		BOOST_FOREACH (ID h, rule.head){
-			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() && !b.isExternalAuxiliary()){
-					DBGLOG(DBG, "Adding dependency from " << h.address << " to " << b.address);
-					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
-				}
-			}
-		}
-
-		// add an arc from all head atoms to atoms which are input to some external atom in the rule body
-		if (ggncmg){
-			DBGLOG(DBG, "Adding e-edges");
-			BOOST_FOREACH (ID b, rule.body){
-				if (b.isExternalAuxiliary()){
-					BOOST_FOREACH (ID eaID, ggncmg->auxToEA[b.address]){
-						const ExternalAtom& ea = ctx.registry()->eatoms.getByID(eaID);
-
-						ea.updatePredicateInputMask();
-						bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
-						bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
-						while (en < en_end){
-							if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
-
-							BOOST_FOREACH (ID h, rule.head){
-								if (!h.isExternalAuxiliary()){
-									DBGLOG(DBG, "Adding dependency from " << h.address << " to " << *en);
-									boost::add_edge(depNodes[h.address], depNodes[*en], depGraph);
-									externalEdges.push_back(std::pair<IDAddress, IDAddress>(h.address, *en));
-								}
-//								DBGLOG(DBG, "Adding dependency from " << b.address << " to " << *en);
-//								boost::add_edge(depNodes[b.address], depNodes[*en], depGraph);
-							}
-							en++;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// find strongly connected components in the dependency graph
-	DBGLOG(DBG, "Computing strongly connected components");
-	std::vector<int> componentMap(depNodes.size());
-	int num = boost::strong_components(depGraph, &componentMap[0]);
-
-	// translate into real map
-	depSCC = std::vector<Set<IDAddress> >(num);
-	Node nodeNr = 0;
-
-	BOOST_FOREACH (int componentOfNode, componentMap){
-		depSCC[componentOfNode].insert(depGraph[nodeNr]);
-		componentOfAtom[depGraph[nodeNr]] = componentOfNode;
-		nodeNr++;
-	}
-#ifndef NDEBUG
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		std::stringstream ss;
-		bool first = true;
-		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
-			if (!first) ss << ", ";
-			first = false;
-			ss << ida;
-		}
-		DBGLOG(DBG, "Component " << comp << ": " << ss.str());
-	}
-#endif
-
-	// partition the program according to the strongly connected components
-	DBGLOG(DBG, "Partitioning program");
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		DBGLOG(DBG, "Partition " << comp);
-
-		OrdinaryASPProgram componentProgram(ctx.registry(), std::vector<ID>(), groundProgram.edb);
-		InterpretationPtr componentAtoms = InterpretationPtr(new Interpretation(ctx.registry()));
-		ProgramComponent currentComp(componentAtoms, componentProgram);
-
-		// set all atoms of this component
-		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
-			componentAtoms->setFact(ida);
-		}
-
-		// compute the program partition
-		BOOST_FOREACH (ID ruleID, groundProgram.idb){
-			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
-			int intersectionCount = 0;
-			BOOST_FOREACH (ID h, rule.head){
-				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
-					intersectionCount++;
-				}
-				if (intersectionCount >= 1) break;
-			}
-			if (intersectionCount >= 1){
-#ifndef NDEBUG
-				std::stringstream programstring;
-				RawPrinter printer(programstring, ctx.registry());
-				printer.print(ruleID);
-				DBGLOG(DBG, programstring.str());
-#endif
-				currentComp.program.idb.push_back(ruleID);
-			}
-		}
-		programComponents.push_back(currentComp);
-	}
-
-	initHeadCycles();
-	if (ggncmg) initECycles();
-
-#ifndef NDEBUG
-	std::stringstream programstring;
-	{
-		RawPrinter printer(programstring, ctx.registry());
-		if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
-		programstring << "IDB:" << std::endl;
-		BOOST_FOREACH (ID ruleId, groundProgram.idb){
-			printer.print(ruleId);
-			programstring << std::endl;
-		}
-	}
-
-	std::stringstream sccstring;
-	{
-		RawPrinter printer(sccstring, ctx.registry());
-		int sai = 0;
-		BOOST_FOREACH (Set<IDAddress> sa, depSCC){
-			sccstring << "{ ";
-			bool first = true;
-			BOOST_FOREACH (IDAddress ida, sa){
-				if (!first) sccstring << ", ";
-				first = false;
-				printer.print(ctx.registry()->ogatoms.getIDByAddress(ida));
-			}
-			if (ggncmg){
-				sccstring << " } (HC: " << headCycles[sai] << ", EC: " << eCycles[sai] << ") ";
-			}else{
-				sccstring << " } (HC: " << headCycles[sai] << ", EC: ---) ";
-			}
-			sai++;
-		}
-	}
-
-	DBGLOG(DBG, "Program:" << std::endl << programstring.str() << std::endl << "has SCC-decomposition: " << sccstring.str());
-#endif
-}
-
-void UnfoundedSetCheckerManager::initHeadCycles(){
-
-	// check if the components contain head-cycles
-	DBGLOG(DBG, "Computing head-cycles of components");
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		int hcf = true;
-		BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
-			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
-			int intersectionCount = 0;
-			BOOST_FOREACH (ID h, rule.head){
-				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
-					intersectionCount++;
-				}
-				if (intersectionCount >= 2) break;
-			}
-			if (intersectionCount >= 2){
-				hcf = false;
-				break;
-			}
-		}
-		headCycles.push_back(!hcf);
-	}
-}
-
-void UnfoundedSetCheckerManager::initECycles(){
-
-	assert(ggncmg);
-	DBGLOG(DBG, "Computing e-cycles of components");
-
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-
-		// check for each e-edge x -> y if there is a path from y to x
-		// if yes, then y is a cyclic predicate input
-		std::vector<IDAddress> cyclicInputAtoms;
-		typedef std::pair<IDAddress, IDAddress> Edge;
-		BOOST_FOREACH (Edge e, externalEdges){
-			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
-			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
-
-			std::vector<Graph::vertex_descriptor> reachable;
-			boost::breadth_first_search(depGraph, depNodes[e.second],
-				boost::visitor(
-					boost::make_bfs_visitor(
-						boost::write_property(
-							boost::identity_property_map(),
-							std::back_inserter(reachable),
-							boost::on_discover_vertex())))); 
-
-			if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
-				// yes, there is a cycle
-				if (std::find(cyclicInputAtoms.begin(), cyclicInputAtoms.end(), e.second) == cyclicInputAtoms.end()){
-					cyclicInputAtoms.push_back(e.second);
-				}
-			}
-		}
-		eCycles.push_back(cyclicInputAtoms.size() > 0);
-
-#ifndef NDEBUG
-
-		std::stringstream ss;
-		bool first = true;
-		BOOST_FOREACH (IDAddress a, cyclicInputAtoms){
-			if (!first) ss << ", ";
-			first = false;
-			ss << a;
-		}
-		DBGLOG(DBG, "Cyclic input atoms: " << ss.str());
-#endif
-	}
-}
-
-bool UnfoundedSetCheckerManager::containsHeadCycles(ID ruleID){
-
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
-	}
-	return false;
+		const AnnotatedGroundProgram& agp) :
+			ctx(ctx), ggncmg(0), agp(agp){
 }
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		InterpretationConstPtr interpretation,
 		std::set<ID> skipProgram,
 		NogoodContainerPtr ngc){
-
+/*
+if (ggncmg){
+	DBGLOG(DBG, "Checking UFS under consideration of external atoms");
+	UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getGroundProgram(), innerEatoms, interpretation, skipProgram, InterpretationConstPtr(), ngc);
+	return ufsc.getUnfoundedSet();
+}else{
+	DBGLOG(DBG, "Checking UFS without considering external atoms");
+	UnfoundedSetChecker ufsc(ctx, agp.getGroundProgram(), interpretation, skipProgram, InterpretationConstPtr(), ngc);
+	return ufsc.getUnfoundedSet();
+}
+*/
 	// search in each component for unfounded sets
 	DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
-	for (int comp = 0; comp < depSCC.size(); ++comp){
-/*
-		if (!headCycles[comp] && (!ggncmg || !eCycles[comp])){
+	for (int comp = 0; comp < agp.getComponentCount(); ++comp){
+		if (!agp.hasHeadCycles(comp) && (!ggncmg || !agp.hasECycles(comp))){
 			DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
 			continue;
 		}
-*/
+
 		DBGLOG(DBG, "Checking for UFS in component " << comp);
-		if (ggncmg && eCycles[comp]){
+		if (ggncmg && agp.hasECycles(comp)){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
-			UnfoundedSetChecker ufsc(*ggncmg, ctx, programComponents[comp].program, innerEatoms, interpretation, skipProgram, programComponents[comp].componentAtoms, ngc);
+			UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getProgramOfComponent(comp), innerEatoms, interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			if (ufs.size() > 0){
-
-if (!headCycles[comp] && (!ggncmg || !eCycles[comp])) DBGLOG(DBG, "FOUND A UFS WHERE THERE SHOULD NOT BE ONE");
-
 				DBGLOG(DBG, "Found a UFS");
 				return ufs;
 			}
 		}else{
 			DBGLOG(DBG, "Checking UFS without considering external atoms");
-			UnfoundedSetChecker ufsc(ctx, programComponents[comp].program, interpretation, skipProgram, programComponents[comp].componentAtoms, ngc);
+			UnfoundedSetChecker ufsc(ctx, agp.getProgramOfComponent(comp), interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			if (ufs.size() > 0){
-
-if (!headCycles[comp] && (!ggncmg || !eCycles[comp])) DBGLOG(DBG, "FOUND A UFS WHERE THERE SHOULD NOT BE ONE");
-
-
 				DBGLOG(DBG, "Found a UFS");
 				return ufs;
 			}

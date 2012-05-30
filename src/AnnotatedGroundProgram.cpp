@@ -1,20 +1,40 @@
 #include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/Printer.h"
+
+#include <boost/graph/breadth_first_search.hpp>
+#include <boost/graph/visitors.hpp> 
+#include <boost/graph/strong_components.hpp>
+
+#include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram) :
-	reg(reg), groundProgram(groundProgram){
+AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
+	reg(reg), groundProgram(groundProgram), indexedEatoms(indexedEatoms){
 
+	initialize();
 }
 
 void AnnotatedGroundProgram::createEAMasks(){
-/*
-	eaMasks.resize(factory.innerEatoms.size());
+
+	eaMasks.resize(indexedEatoms.size());
 	int eaIndex = 0;
-	BOOST_FOREACH (ID eatom, factory.innerEatoms){
+	BOOST_FOREACH (ID eatom, indexedEatoms){
 		// create an EAMask for each inner external atom
 		ExternalAtomMask& eaMask = eaMasks[eaIndex];
-		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundIDB);
+		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
+		eaMask.updateMask();
+		eaIndex++;
+	}
+}
+
+void AnnotatedGroundProgram::mapAuxToEAtoms(){
+
+	int eaIndex = 0;
+	BOOST_FOREACH (ID eatom, indexedEatoms){
+		// create an EAMask for each inner external atom
+		ExternalAtomMask& eaMask = eaMasks[eaIndex];
+		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundProgram.idb);
 		eaMask.updateMask();
 
 		// map external auxiliaries back to their external atoms
@@ -22,13 +42,292 @@ void AnnotatedGroundProgram::createEAMasks(){
 		bm::bvector<>::enumerator en_end = eaMask.mask()->getStorage().end();
 		while (en < en_end){
 			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
-				auxToEA[*en].push_back(factory.innerEatoms[eaIndex]);
+				auxToEA[*en].push_back(indexedEatoms[eaIndex]);
 			}
 			en++;
 		}
 		eaIndex++;
 	}
-*/
+}
+
+void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
+	this->indexedEatoms = indexedEatoms;
+
+	initialize();
+}
+
+void AnnotatedGroundProgram::initialize(){
+
+	eaMasks.resize(0);
+	createEAMasks();
+	mapAuxToEAtoms();
+	computeAtomDependencyGraph();
+	computeStronglyConnectedComponents();
+	computeHeadCycles();
+	computeECycles();
+
+#ifndef NDEBUG
+	std::stringstream programstring;
+	{
+		RawPrinter printer(programstring, reg);
+		if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
+		programstring << "IDB:" << std::endl;
+		BOOST_FOREACH (ID ruleId, groundProgram.idb){
+			printer.print(ruleId);
+			programstring << std::endl;
+		}
+	}
+
+	std::stringstream sccstring;
+	{
+		RawPrinter printer(sccstring, reg);
+		int sai = 0;
+		BOOST_FOREACH (std::set<IDAddress> sa, depSCC){
+			sccstring << "{ ";
+			bool first = true;
+			BOOST_FOREACH (IDAddress ida, sa){
+				if (!first) sccstring << ", ";
+				first = false;
+				printer.print(reg->ogatoms.getIDByAddress(ida));
+			}
+			sccstring << " } (HC: " << headCycles[sai] << ", EC: " << eCycles[sai] << ") ";
+			sai++;
+		}
+	}
+
+	DBGLOG(DBG, "Program:" << std::endl << programstring.str() << std::endl << "has SCC-decomposition: " << sccstring.str());
+#endif
+}
+
+
+void AnnotatedGroundProgram::computeAtomDependencyGraph(){
+
+	// construct atom dependency graph
+	DBGLOG(DBG, "Contructing atom dependency graph");
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		BOOST_FOREACH (ID h, rule.head){
+			if (depNodes.find(h.address) == depNodes.end()) depNodes[h.address] = boost::add_vertex(h.address, depGraph);
+		}
+		BOOST_FOREACH (ID b, rule.body){
+			if (depNodes.find(b.address) == depNodes.end() && !b.isExternalAuxiliary()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
+		}
+
+		// add an arc from all head atoms to all positive body literals
+		DBGLOG(DBG, "Adding ordinary edges");
+		BOOST_FOREACH (ID h, rule.head){
+			BOOST_FOREACH (ID b, rule.body){
+				if (!b.isNaf() && !b.isExternalAuxiliary()){
+					DBGLOG(DBG, "Adding dependency from " << h.address << " to " << b.address);
+					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
+				}
+			}
+		}
+
+		// add an arc from all head atoms to atoms which are input to some external atom in the rule body
+		DBGLOG(DBG, "Adding e-edges");
+		BOOST_FOREACH (ID b, rule.body){
+			if (b.isExternalAuxiliary()){
+				BOOST_FOREACH (ID eaID, auxToEA[b.address]){
+					const ExternalAtom& ea = reg->eatoms.getByID(eaID);
+
+					ea.updatePredicateInputMask();
+					bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
+					bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
+					while (en < en_end){
+						if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
+
+						BOOST_FOREACH (ID h, rule.head){
+							if (!h.isExternalAuxiliary()){
+								DBGLOG(DBG, "Adding dependency from " << h.address << " to " << *en);
+								boost::add_edge(depNodes[h.address], depNodes[*en], depGraph);
+								externalEdges.push_back(std::pair<IDAddress, IDAddress>(h.address, *en));
+							}
+						}
+						en++;
+					}
+				}
+			}
+		}
+	}
+}
+
+void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
+
+	// find strongly connected components in the dependency graph
+	DBGLOG(DBG, "Computing strongly connected components");
+	std::vector<int> componentMap(depNodes.size());
+	int num = boost::strong_components(depGraph, &componentMap[0]);
+
+	// translate into real map
+	depSCC = std::vector<std::set<IDAddress> >(num);
+	Node nodeNr = 0;
+
+	BOOST_FOREACH (int componentOfNode, componentMap){
+		depSCC[componentOfNode].insert(depGraph[nodeNr]);
+		componentOfAtom[depGraph[nodeNr]] = componentOfNode;
+		nodeNr++;
+	}
+#ifndef NDEBUG
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		std::stringstream ss;
+		bool first = true;
+		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
+			if (!first) ss << ", ";
+			first = false;
+			ss << ida;
+		}
+		DBGLOG(DBG, "Component " << comp << ": " << ss.str());
+	}
+#endif
+
+	// partition the program according to the strongly connected components
+	DBGLOG(DBG, "Partitioning program");
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		DBGLOG(DBG, "Partition " << comp);
+
+		OrdinaryASPProgram componentProgram(reg, std::vector<ID>(), groundProgram.edb);
+		InterpretationPtr componentAtoms = InterpretationPtr(new Interpretation(reg));
+		ProgramComponent currentComp(componentAtoms, componentProgram);
+
+		// set all atoms of this component
+		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
+			componentAtoms->setFact(ida);
+		}
+
+		// compute the program partition
+		BOOST_FOREACH (ID ruleID, groundProgram.idb){
+			const Rule& rule = reg->rules.getByID(ruleID);
+			int intersectionCount = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+					intersectionCount++;
+				}
+				if (intersectionCount >= 1) break;
+			}
+			if (intersectionCount >= 1){
+#ifndef NDEBUG
+				std::stringstream programstring;
+				RawPrinter printer(programstring, reg);
+				printer.print(ruleID);
+				DBGLOG(DBG, programstring.str());
+#endif
+				currentComp.program.idb.push_back(ruleID);
+			}
+		}
+		programComponents.push_back(currentComp);
+	}
+}
+
+void AnnotatedGroundProgram::computeHeadCycles(){
+
+	// check if the components contain head-cycles
+	DBGLOG(DBG, "Computing head-cycles of components");
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		int hcf = true;
+		BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
+			const Rule& rule = reg->rules.getByID(ruleID);
+			int intersectionCount = 0;
+			BOOST_FOREACH (ID h, rule.head){
+				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+					intersectionCount++;
+				}
+				if (intersectionCount >= 2) break;
+			}
+			if (intersectionCount >= 2){
+				hcf = false;
+				break;
+			}
+		}
+		headCycles.push_back(!hcf);
+		DBGLOG(DBG, "Component " << comp << ": " << !hcf);
+	}
+}
+
+void AnnotatedGroundProgram::computeECycles(){
+
+	DBGLOG(DBG, "Computing e-cycles of components");
+
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+
+		// check for each e-edge x -> y if there is a path from y to x
+		// if yes, then y is a cyclic predicate input
+		std::vector<IDAddress> cyclicInputAtoms;
+		typedef std::pair<IDAddress, IDAddress> Edge;
+		BOOST_FOREACH (Edge e, externalEdges){
+			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.first) == depSCC[comp].end()) continue;
+			if (std::find(depSCC[comp].begin(), depSCC[comp].end(), e.second) == depSCC[comp].end()) continue;
+
+			std::vector<Graph::vertex_descriptor> reachable;
+			boost::breadth_first_search(depGraph, depNodes[e.second],
+				boost::visitor(
+					boost::make_bfs_visitor(
+						boost::write_property(
+							boost::identity_property_map(),
+							std::back_inserter(reachable),
+							boost::on_discover_vertex())))); 
+
+			if (std::find(reachable.begin(), reachable.end(), depNodes[e.second]) != reachable.end()){
+				// yes, there is a cycle
+				if (std::find(cyclicInputAtoms.begin(), cyclicInputAtoms.end(), e.second) == cyclicInputAtoms.end()){
+					cyclicInputAtoms.push_back(e.second);
+				}
+			}
+		}
+		eCycles.push_back(cyclicInputAtoms.size() > 0);
+
+#ifndef NDEBUG
+		std::stringstream ss;
+		bool first = true;
+		BOOST_FOREACH (IDAddress a, cyclicInputAtoms){
+			if (!first) ss << ", ";
+			first = false;
+			ss << a;
+		}
+		if (cyclicInputAtoms.size() > 0){
+			DBGLOG(DBG, "Component " << comp << ": 1 with cyclic input atoms " << ss.str());
+		}else{
+			DBGLOG(DBG, "Component " << comp << ": 0");
+		}
+#endif
+	}
+}
+
+bool AnnotatedGroundProgram::containsHeadCycles(ID ruleID) const{
+
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
+	}
+	return false;
+}
+
+int AnnotatedGroundProgram::getComponentCount() const{
+	return programComponents.size();
+}
+
+const OrdinaryASPProgram& AnnotatedGroundProgram::getProgramOfComponent(int compNr) const{
+	assert(compNr >= 0 && compNr < depSCC.size());
+	return programComponents[compNr].program;
+}
+
+InterpretationConstPtr AnnotatedGroundProgram::getAtomsOfComponent(int compNr) const{
+	assert(compNr >= 0 && compNr < depSCC.size());
+	return programComponents[compNr].componentAtoms;
+}
+
+int AnnotatedGroundProgram::hasHeadCycles(int compNr) const{
+	assert(compNr >= 0 && compNr < depSCC.size());
+	return headCycles[compNr];
+}
+
+int AnnotatedGroundProgram::hasECycles(int compNr) const{
+	assert(compNr >= 0 && compNr < depSCC.size());
+	return eCycles[compNr];
+}
+
+const OrdinaryASPProgram& AnnotatedGroundProgram::getGroundProgram() const{
+	return groundProgram;
 }
 
 DLVHEX_NAMESPACE_END

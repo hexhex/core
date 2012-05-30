@@ -41,6 +41,7 @@
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/InternalGroundDASPSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <bm/bmalgo.h>
 
@@ -231,7 +232,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 
 	solver = GenuineSolver::getInstance(	factory.ctx, program,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
-						false //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
+						true //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
 												// [let the solver do the UFS check only if we don't do it in this class
 												// (the check in this class subsumes the builtin check and we don't want to do it twice)]
 
@@ -264,7 +265,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
         BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
     }
 
-    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, solver->getGroundProgram()));
+AnnotatedGroundProgram agp(reg, solver->getGroundProgram(), factory.innerEatoms);
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, agp));
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){

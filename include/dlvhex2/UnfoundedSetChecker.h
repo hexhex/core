@@ -35,6 +35,7 @@
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/BaseModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <boost/unordered_map.hpp>
 
@@ -157,44 +158,19 @@ private:
 	GenuineGuessAndCheckModelGenerator* ggncmg;
 	ProgramCtx& ctx;
 
-	struct ProgramComponent{
-		InterpretationConstPtr componentAtoms;
-		OrdinaryASPProgram program;
-		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program){}
-	};
-
-	const OrdinaryASPProgram& groundProgram;
 	std::vector<ID> innerEatoms;
-	std::vector<ProgramComponent> programComponents;
 
-	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
-	typedef Graph::vertex_descriptor Node;
-	boost::unordered_map<IDAddress, Node> depNodes;
-	Graph depGraph;
-	std::vector<Set<IDAddress> > depSCC;				// store for each component the contained atoms
-	boost::unordered_map<IDAddress, int> componentOfAtom;		// store for each atom its component number
-	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
-	std::vector<bool> headCycles;
-	std::vector<bool> eCycles;
-
-	void init();
-	void initHeadCycles();
-	void initECycles();
+	AnnotatedGroundProgram agp;
 public:
 	UnfoundedSetCheckerManager(
 			GenuineGuessAndCheckModelGenerator& ggncmg,
 			ProgramCtx& ctx,
 			std::vector<ID>& innerEatoms,
-			const OrdinaryASPProgram& groundProgram);
+			const AnnotatedGroundProgram& agp);
 
 	UnfoundedSetCheckerManager(
 			ProgramCtx& ctx,
-			const OrdinaryASPProgram& groundProgram);
-
-	/**
-	 * Checks if a rule is involved in a component with head cycles
-	 */
-	bool containsHeadCycles(ID ruleID);
+			const AnnotatedGroundProgram& agp);
 
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr interpretation,

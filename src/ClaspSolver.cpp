@@ -43,6 +43,7 @@
 #include "dlvhex2/Printer.h"
 #include "dlvhex2/Set.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
@@ -576,7 +577,7 @@ void ClaspSolver::runClasp(){
 	}
 }
 
-bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMode dm){
+bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm){
 
 	const int false_ = 1;	// 1 is our constant "false"
 
@@ -584,7 +585,7 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 	pb.startProgram(claspInstance, eqOptions);
 	pb.setCompute(false_, false);
 
-	buildInitialSymbolTable(p, pb);
+	buildInitialSymbolTable(p.getGroundProgram(), pb);
 
 #ifndef NDEBUG
 	std::stringstream programstring;
@@ -593,8 +594,8 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 
 	// transfer edb
 	DBGLOG(DBG, "Sending EDB to clasp");
-	bm::bvector<>::enumerator en = p.edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
+	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
 	while (en < en_end){
 		// add fact
 		pb.startRule();
@@ -604,13 +605,13 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 		en++;
 	}
 #ifndef NDEBUG
-	programstring << *p.edb << std::endl;
+	programstring << *p.getGroundProgram().edb << std::endl;
 #endif
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
 	int ruleIndex = -1;
-	BOOST_FOREACH (ID ruleId, p.idb){
+	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
 		ruleIndex++;
 
 		const Rule& rule = reg->rules.getByID(ruleId);
@@ -620,7 +621,7 @@ bool ClaspSolver::sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMod
 		programstring << std::endl;
 #endif
 		if (rule.head.size() > 1){
-			if (dm == Shifting || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
+			if (dm == Shifting || !p.containsHeadCycles(ruleId) || rule.isEAGuessingRule()){	// EA-guessing rules cannot be involved in head cycles, therefore we can shift it
 				// shifting
 				DBGLOG(DBG, "Shifting disjunctive rule " << ruleId);
 				for (int keep = 0; keep < rule.head.size(); ++keep){
@@ -775,6 +776,11 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const OrdinaryASPProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
+{
+	assert(false);
+}
+
+ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -1156,8 +1162,8 @@ bool DisjunctiveClaspSolver::initHeadCycles(RegistryPtr reg, const OrdinaryASPPr
 }
 
 DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading) :
-	ClaspSolver(ctx, p, interleavedThreading, initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting),
-	program(p), ufscm(ctx, program){
+	ClaspSolver(ctx, AnnotatedGroundProgram(ctx.registry(), p), interleavedThreading, /*initHeadCycles(ctx.registry(), p) ? ClaspSolver::ChoiceRules : ClaspSolver::Shifting*/ ClaspSolver::ChoiceRules),
+	program(p), ufscm(ctx, AnnotatedGroundProgram(ctx.registry(), p)){
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
@@ -1166,7 +1172,6 @@ DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
 InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 
 	InterpretationConstPtr model = ClaspSolver::getNextModel();
-	if (!headCycles) return model;
 
 	bool ufsFound = true;
 	while (model && ufsFound){

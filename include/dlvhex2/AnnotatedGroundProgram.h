@@ -43,8 +43,13 @@
 #include "dlvhex2/OrdinaryASPProgram.h"
 #include "dlvhex2/PredicateMask.h"
 
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/shared_ptr.hpp>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+
 #include <vector>
 #include <list>
 
@@ -56,13 +61,48 @@ class AnnotatedGroundProgram{
 	OrdinaryASPProgram groundProgram;
 
 	// back-mapping of (ground) external auxiliaries to their nonground external atoms
+	std::vector<ID> indexedEatoms;
 	std::vector<ExternalAtomMask> eaMasks;
 	boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
 
-	void createEAMasks();
+	// program decomposition and meta information
+	struct ProgramComponent{
+		InterpretationConstPtr componentAtoms;
+		OrdinaryASPProgram program;
+		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program){}
+	};
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
+	typedef Graph::vertex_descriptor Node;
+	boost::unordered_map<IDAddress, Node> depNodes;
+	Graph depGraph;
+	std::vector<std::set<IDAddress> > depSCC;
+	boost::unordered_map<IDAddress, int> componentOfAtom;
+	std::vector<std::pair<IDAddress, IDAddress> > externalEdges;
+	std::vector<bool> headCycles;
+	std::vector<bool> eCycles;
+	std::vector<ProgramComponent> programComponents;
 
+	// initialization members
+	void createEAMasks();
+	void mapAuxToEAtoms();
+	void initialize();
+	void computeAtomDependencyGraph();
+	void computeStronglyConnectedComponents();
+	void computeHeadCycles();
+	void computeECycles();
 public:
-	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram);
+	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
+
+	void setIndexEAtoms(std::vector<ID> indexedEatoms);
+
+	bool containsHeadCycles(ID ruleID) const;
+	int getComponentCount() const;
+	const OrdinaryASPProgram& getProgramOfComponent(int compNr) const;
+	InterpretationConstPtr getAtomsOfComponent(int compNr) const;
+	int hasHeadCycles(int compNr) const;
+	int hasECycles(int compNr) const;
+
+	const OrdinaryASPProgram& getGroundProgram() const;
 };
 
 DLVHEX_NAMESPACE_END

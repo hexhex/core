@@ -46,6 +46,7 @@
 #include "dlvhex2/Set.h"
 #include "dlvhex2/SATSolver.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <vector>
 #include <set>
@@ -139,7 +140,7 @@ private:
 	void runClasp();
 
 	// initialization
-	bool sendProgramToClasp(const OrdinaryASPProgram& p, DisjunctionMode dm);
+	bool sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm);
 	bool sendNogoodSetToClasp(const NogoodSet& ns);
 protected:
 	// structural program information
@@ -186,6 +187,7 @@ public:
 	//       Therefore external learners MUST NOT store state information about the current interpretation
 	//       which is reused in getNextModel().
 	ClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
+	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
 
@@ -221,6 +223,7 @@ private:
 	bool initHeadCycles(RegistryPtr reg, const OrdinaryASPProgram& program);
 public:
 	DisjunctiveClaspSolver(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading = true);
+	DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true);
 	virtual ~DisjunctiveClaspSolver();
 	virtual InterpretationConstPtr getNextModel();
 
