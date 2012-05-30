@@ -54,6 +54,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 			const OrdinaryASPProgram& groundProgram,
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram,
+			InterpretationConstPtr componentAtoms,
 			NogoodContainerPtr ngc) :
 	ggncmg(0),
 	ctx(ctx),
@@ -61,6 +62,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	compatibleSet(interpretation),
 	compatibleSetWithoutAux(interpretation),
 	skipProgram(skipProgram),
+	componentAtoms(componentAtoms),
 	ngc(ngc),
 	mode(Ordinary),
   domain(new Interpretation(ctx.registry())){
@@ -100,6 +102,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 			const std::vector<ID>& innerEatoms,
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram,
+			InterpretationConstPtr componentAtoms,
 			NogoodContainerPtr ngc) :
 	ggncmg(&ggncmg),
 	innerEatoms(innerEatoms),
@@ -107,6 +110,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 	groundProgram(groundProgram),
 	compatibleSet(compatibleSet),
 	skipProgram(skipProgram),
+	componentAtoms(componentAtoms),
 	ngc(ngc),
 	mode(WithExt),
   domain(new Interpretation(ctx.registry())){
@@ -831,8 +835,6 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 		}
 	}
 
-//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(ssiufs2, "UnfoundedSetChecker::isUnfoundedSet2");
-
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
@@ -840,7 +842,6 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 	eaResult->getStorage() -= ufsCandidate->getStorage();
 
 	BaseModelGenerator::IntegrateExternalAnswerIntoInterpretationCB cb(eaResult);
-//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(ssiufs3, "UnfoundedSetChecker::isUnfoundedSet3");
 
 	// now evaluate one external atom after the other and check if the new truth value is justified
 	DBGLOG(DBG, "Evaluating external atoms");
@@ -1480,7 +1481,16 @@ void UnfoundedSetCheckerManager::init(){
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 		DBGLOG(DBG, "Partition " << comp);
 
-		std::vector<ID> currentComp;
+		OrdinaryASPProgram componentProgram(ctx.registry(), std::vector<ID>(), groundProgram.edb);
+		InterpretationPtr componentAtoms = InterpretationPtr(new Interpretation(ctx.registry()));
+		ProgramComponent currentComp(componentAtoms, componentProgram);
+
+		// set all atoms of this component
+		BOOST_FOREACH (IDAddress ida, depSCC[comp]){
+			componentAtoms->setFact(ida);
+		}
+
+		// compute the program partition
 		BOOST_FOREACH (ID ruleID, groundProgram.idb){
 			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
 			int intersectionCount = 0;
@@ -1497,7 +1507,7 @@ void UnfoundedSetCheckerManager::init(){
 				printer.print(ruleID);
 				DBGLOG(DBG, programstring.str());
 #endif
-				currentComp.push_back(ruleID);
+				currentComp.program.idb.push_back(ruleID);
 			}
 		}
 		programComponents.push_back(currentComp);
@@ -1549,7 +1559,7 @@ void UnfoundedSetCheckerManager::initHeadCycles(){
 	DBGLOG(DBG, "Computing head-cycles of components");
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 		int hcf = true;
-		BOOST_FOREACH (ID ruleID, programComponents[comp]){
+		BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
 			const Rule& rule = ctx.registry()->rules.getByID(ruleID);
 			int intersectionCount = 0;
 			BOOST_FOREACH (ID h, rule.head){
@@ -1648,7 +1658,6 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		}
 
 		DBGLOG(DBG, "Checking for UFS in component " << comp);
-		OrdinaryASPProgram gp(ctx.registry(), programComponents[comp], groundProgram.edb);
 		if (ggncmg){
 //			UnfoundedSetChecker ufsc(ggncmg, ctx, gp, innerEatoms, interpretation, skipProgram, ngc);
 //			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
@@ -1657,7 +1666,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 //				return ufs;
 //			}
 		}else{
-			UnfoundedSetChecker ufsc(ctx, gp, interpretation, skipProgram, ngc);
+			UnfoundedSetChecker ufsc(ctx, programComponents[comp].program, interpretation, skipProgram, programComponents[comp].componentAtoms, ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");

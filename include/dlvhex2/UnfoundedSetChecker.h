@@ -65,6 +65,7 @@ private:
   InterpretationConstPtr compatibleSetWithoutAux;
   std::vector<ID> innerEatoms;
   const std::set<ID>& skipProgram;
+  InterpretationConstPtr componentAtoms;
   NogoodContainerPtr ngc;
 
   RegistryPtr reg;
@@ -100,14 +101,16 @@ public:
   /**
    * \brief Initialization for UFS search considering external atoms as ordinary ones
    * @param groundProgram Overall ground program
-   * @param ufsProgram Part of groundProgram over which the ufs check is done (and over which the interpretation is expected to be complete)
+   * @param groundProgram Overall ground program
    * @param compatibleSet A compatible set with external atom auxiliaries
    * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
    */
   UnfoundedSetChecker(	ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram,
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
+			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
 			NogoodContainerPtr ngc = NogoodContainerPtr());
 
   /**
@@ -119,6 +122,7 @@ public:
    * @param compatibleSet A compatible set with external atom auxiliaries
    * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
    * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
+   * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
    * @param ngc Set of valid input-output relationships learned in the main search (to be extended by this UFS checker)
    */
   UnfoundedSetChecker(	
@@ -128,6 +132,7 @@ public:
 			const std::vector<ID>& innerEatoms,
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>(),
+			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
 			NogoodContainerPtr ngc = NogoodContainerPtr());
 
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
@@ -152,9 +157,15 @@ private:
 	GenuineGuessAndCheckModelGenerator* ggncmg;
 	ProgramCtx& ctx;
 
+	struct ProgramComponent{
+		InterpretationConstPtr componentAtoms;
+		OrdinaryASPProgram program;
+		ProgramComponent(InterpretationConstPtr componentAtoms, OrdinaryASPProgram& program) : componentAtoms(componentAtoms), program(program){}
+	};
+
 	const OrdinaryASPProgram& groundProgram;
 	std::vector<ID> innerEatoms;
-	std::vector<std::vector<ID> > programComponents;
+	std::vector<ProgramComponent> programComponents;
 
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
 	typedef Graph::vertex_descriptor Node;
