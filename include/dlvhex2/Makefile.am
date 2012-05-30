@@ -4,6 +4,7 @@
 pkgincludedir=$(includedir)/dlvhex2
 pkginclude_HEADERS = \
   AggregateAtomTable.h \
+  AnnotatedGroundProgram.h \
   AnswerSet.h \
   AnswerSetPrinterCallback.h \
   ASPSolver.h \

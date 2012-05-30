@@ -486,15 +486,18 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
 				// do UFS check (possibly with nogood learning) and add the learned nogoods to the main search
-				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+//				UnfoundedSetChecker ufsc(*this, factory.ctx, solver->getGroundProgram(), factory.innerEatoms, compatibleSet, std::set<ID>(), InterpretationConstPtr(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+
 				transferLearnedEANogoods();
-				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+//				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Got a UFS");
 					if (factory.ctx.config.getOption("UFSLearning")){
 						DBGLOG(DBG, "Learn from UFS");
-						Nogood ufsng = ufsc.getUFSNogood(ufs, compatibleSet);
-						solver->addNogood(ufsng);
+//						Nogood ufsng = ufsc.getUFSNogood(ufs, compatibleSet);
+//						Nogood ufsng = ufscm->getUFSNogood(ufs, compatibleSet);
+//						solver->addNogood(ufsng);
 					}
 					return false;
 				}else{

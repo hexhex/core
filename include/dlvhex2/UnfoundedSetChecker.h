@@ -191,6 +191,11 @@ public:
 			ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram);
 
+	/**
+	 * Checks if a rule is involved in a component with head cycles
+	 */
+	bool containsHeadCycles(ID ruleID);
+
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),

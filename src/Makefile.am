@@ -44,6 +44,7 @@ dlvhex2_LDADD = \
 # dlvhex API
 libdlvhex2_base_la_SOURCES = \
     AnswerSet.cpp \
+    AnnotatedGroundProgram.cpp \
     AnswerSetPrinterCallback.cpp \
     ASPSolverManager.cpp \
     Atoms.cpp \

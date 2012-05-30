@@ -152,7 +152,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblem(){
 //DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "UFS Detection Problem Construction");
 
 	constructUFSDetectionProblemNecessaryPart();
-	constructUFSDetectionProblemOptimizationPart();
+//	constructUFSDetectionProblemOptimizationPart();
 }
 
 void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
@@ -169,7 +169,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		bm::bvector<>::enumerator en = groundProgram.edb->getStorage().first();
 		bm::bvector<>::enumerator en_end = groundProgram.edb->getStorage().end();
 		while (en < en_end){
-//			domain->setFact(*en);
+			domain->setFact(*en);
 			Nogood ng;
 			ng.insert(NogoodContainer::createLiteral(*en, true));
 			ufsDetectionProblem.addNogood(ng);
@@ -184,7 +184,9 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 		bm::bvector<>::enumerator en = compatibleSetWithoutAux->getStorage().first();
 		bm::bvector<>::enumerator en_end = compatibleSetWithoutAux->getStorage().end();
 		while (en < en_end){
-			ng.insert(NogoodContainer::createLiteral(*en, false));
+			if (!componentAtoms || componentAtoms->getFact(*en)){
+				ng.insert(NogoodContainer::createLiteral(*en, false));
+			}
 			en++;
 		}
 		ufsDetectionProblem.addNogood(ng);
@@ -212,7 +214,7 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 
 		// Compute the set of problem variables: this is the set of all atoms which (1) occur in the head of some rule; or (2) are external atom auxiliaries
 		BOOST_FOREACH (ID h, rule.head) domain->setFact(h.address);
-		BOOST_FOREACH (ID b, rule.body) if (b.isExternalAuxiliary()) domain->setFact(b.address);
+		BOOST_FOREACH (ID b, rule.body) domain->setFact(b.address);
 
 		// Create two unique predicates and atoms for this rule
 		OrdinaryAtom hratom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX);
@@ -269,15 +271,6 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 			}
 			ufsDetectionProblem.addNogood(ng);
 		}
-
-		// the ufs must not contain an atom which does not occur in the head of some rule (such atoms are external to the component)
-		BOOST_FOREACH (ID b, rule.body){
-			if (!domain->getFact(b.address)){
-				Nogood ng;
-				ng.insert(NogoodContainer::createLiteral(b.address, true));
-				ufsDetectionProblem.addNogood(ng);
-			}
-		}
 	}
 
 	// the ufs must not contain a head atom of an ignored rule
@@ -291,6 +284,21 @@ void UnfoundedSetChecker::constructUFSDetectionProblemNecessaryPart(){
 				ng.insert(NogoodContainer::createLiteral(h.address, true));
 				ufsDetectionProblem.addNogood(ng);
 			}
+		}
+	}
+
+	// the ufs must not contain an atom which is external to the component
+	if (componentAtoms){
+		DBGLOG(DBG, "N: Restrict search to strongly connected component");
+		bm::bvector<>::enumerator en = domain->getStorage().first();
+		bm::bvector<>::enumerator en_end = domain->getStorage().end();
+		while (en < en_end){
+			if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary() && !componentAtoms->getFact(*en)){
+				Nogood ng;
+				ng.insert(NogoodContainer::createLiteral(*en, true));
+				ufsDetectionProblem.addNogood(ng);
+			}
+			en++;
 		}
 	}
 }
@@ -1405,14 +1413,14 @@ void UnfoundedSetCheckerManager::init(){
 			if (depNodes.find(h.address) == depNodes.end()) depNodes[h.address] = boost::add_vertex(h.address, depGraph);
 		}
 		BOOST_FOREACH (ID b, rule.body){
-			if (depNodes.find(b.address) == depNodes.end()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
+			if (depNodes.find(b.address) == depNodes.end() && !b.isExternalAuxiliary()) depNodes[b.address] = boost::add_vertex(b.address, depGraph);
 		}
 
 		// add an arc from all head atoms to all positive body literals
 		DBGLOG(DBG, "Adding ordinary edges");
 		BOOST_FOREACH (ID h, rule.head){
 			BOOST_FOREACH (ID b, rule.body){
-				if (!b.isNaf() || b.isExternalAuxiliary()){
+				if (!b.isNaf() && !b.isExternalAuxiliary()){
 					DBGLOG(DBG, "Adding dependency from " << h.address << " to " << b.address);
 					boost::add_edge(depNodes[h.address], depNodes[b.address], depGraph);
 				}
@@ -1434,12 +1442,13 @@ void UnfoundedSetCheckerManager::init(){
 							if (depNodes.find(*en) == depNodes.end()) depNodes[*en] = boost::add_vertex(*en, depGraph);
 
 							BOOST_FOREACH (ID h, rule.head){
-								DBGLOG(DBG, "Adding dependency from " << h.address << " to " << *en);
-								boost::add_edge(depNodes[h.address], depNodes[*en], depGraph);
-								externalEdges.push_back(std::pair<IDAddress, IDAddress>(h.address, *en));
-
-								DBGLOG(DBG, "Adding dependency from " << b.address << " to " << *en);
-								boost::add_edge(depNodes[b.address], depNodes[*en], depGraph);
+								if (!h.isExternalAuxiliary()){
+									DBGLOG(DBG, "Adding dependency from " << h.address << " to " << *en);
+									boost::add_edge(depNodes[h.address], depNodes[*en], depGraph);
+									externalEdges.push_back(std::pair<IDAddress, IDAddress>(h.address, *en));
+								}
+//								DBGLOG(DBG, "Adding dependency from " << b.address << " to " << *en);
+//								boost::add_edge(depNodes[b.address], depNodes[*en], depGraph);
 							}
 							en++;
 						}
@@ -1449,7 +1458,7 @@ void UnfoundedSetCheckerManager::init(){
 		}
 	}
 
-	// find strongly connected components in the dependency graph using boost
+	// find strongly connected components in the dependency graph
 	DBGLOG(DBG, "Computing strongly connected components");
 	std::vector<int> componentMap(depNodes.size());
 	int num = boost::strong_components(depGraph, &componentMap[0]);
@@ -1582,9 +1591,6 @@ void UnfoundedSetCheckerManager::initECycles(){
 	assert(ggncmg);
 	DBGLOG(DBG, "Computing e-cycles of components");
 
-	std::stringstream dotss;
-	dotss << "digraph {";
-
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 
 		// check for each e-edge x -> y if there is a path from y to x
@@ -1624,24 +1630,15 @@ void UnfoundedSetCheckerManager::initECycles(){
 		}
 		DBGLOG(DBG, "Cyclic input atoms: " << ss.str());
 #endif
-
-		if (ctx.config.getOption("DumpCyclicPredicateInputAnalysisGraph")){
-			dotss << "}";
-
-			std::stringstream fnamev;
-			static int cnt = 0;
-			fnamev << ctx.config.getStringOption("DebugPrefix") << "_CycInpGraph" << cnt++ << ".dot";
-			LOG(INFO,"dumping cyclic predicate input analysis graph " << fnamev.str());
-			std::ofstream filev(fnamev.str().c_str());
-			filev << dotss.str();
-		}
-/*
-		cyclicInputPredicatesMask.setRegistry(ctx.registry());
-		BOOST_FOREACH (ID pred, cyclicInputPredicates){
-			cyclicInputPredicatesMask.addPredicate(pred);
-		}
-*/
 	}
+}
+
+bool UnfoundedSetCheckerManager::containsHeadCycles(ID ruleID){
+
+	for (int comp = 0; comp < depSCC.size(); ++comp){
+		if (headCycles[comp] && std::find(programComponents[comp].program.idb.begin(), programComponents[comp].program.idb.end(), ruleID) != programComponents[comp].program.idb.end()) return true;
+	}
+	return false;
 }
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
@@ -1652,23 +1649,33 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	// search in each component for unfounded sets
 	DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
 	for (int comp = 0; comp < depSCC.size(); ++comp){
-		if (!headCycles[comp] && !eCycles[comp]){
+/*
+		if (!headCycles[comp] && (!ggncmg || !eCycles[comp])){
 			DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
 			continue;
 		}
-
+*/
 		DBGLOG(DBG, "Checking for UFS in component " << comp);
-		if (ggncmg){
-//			UnfoundedSetChecker ufsc(ggncmg, ctx, gp, innerEatoms, interpretation, skipProgram, ngc);
-//			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
-//			if (ufs.size() > 0){
-//				DBGLOG(DBG, "Found a UFS");
-//				return ufs;
-//			}
+		if (ggncmg && eCycles[comp]){
+			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
+			UnfoundedSetChecker ufsc(*ggncmg, ctx, programComponents[comp].program, innerEatoms, interpretation, skipProgram, programComponents[comp].componentAtoms, ngc);
+			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
+			if (ufs.size() > 0){
+
+if (!headCycles[comp] && (!ggncmg || !eCycles[comp])) DBGLOG(DBG, "FOUND A UFS WHERE THERE SHOULD NOT BE ONE");
+
+				DBGLOG(DBG, "Found a UFS");
+				return ufs;
+			}
 		}else{
+			DBGLOG(DBG, "Checking UFS without considering external atoms");
 			UnfoundedSetChecker ufsc(ctx, programComponents[comp].program, interpretation, skipProgram, programComponents[comp].componentAtoms, ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			if (ufs.size() > 0){
+
+if (!headCycles[comp] && (!ggncmg || !eCycles[comp])) DBGLOG(DBG, "FOUND A UFS WHERE THERE SHOULD NOT BE ONE");
+
+
 				DBGLOG(DBG, "Found a UFS");
 				return ufs;
 			}
