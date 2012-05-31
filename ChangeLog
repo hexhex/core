@@ -1,3 +1,15 @@
+2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* UnfoundedSetChecker.cpp: Split program for UFS checking into
+	strongly connected components.
+	* UnfoundedSetChecker.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+	* AnnotatedGroundProgram.cpp: Group meta information about
+	ground programs (head-cyles, e-cycles,
+	mapping of auxes to EAs, etc.) in class AnnotatedGroundProgram
+	* AnnotatedGroundProgram.h: Likewise
+
 2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* EvalHeuristicGreedy.cpp: Add heuristic optimized for being

@@ -88,6 +88,29 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 	}
 }
 
+GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading, bool minCheck){
+
+	switch (ctx.config.getOption("GenuineSolver")){
+	case 1: case 2:	// internal grounder or Gringo + internal solver
+		{
+		DBGLOG(DBG, "Instantiating genuine solver with internal solver (min-check: " << minCheck << ")");
+		GenuineGroundSolverPtr ptr(minCheck ? new InternalGroundDASPSolver(ctx, p) : new InternalGroundASPSolver(ctx, p));
+		return ptr;
+		}
+		break;
+	case 3: case 4:	// internal grounder or Gringo + clasp
+#ifdef HAVE_LIBCLASP
+		{
+		DBGLOG(DBG, "Instantiating genuine solver with clasp (min-check: " << minCheck << ")");
+		GenuineGroundSolverPtr ptr(minCheck ? new DisjunctiveClaspSolver(ctx, p, interleavedThreading) : new ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules));
+		return ptr;
+		}
+#else
+		throw GeneralError("No support for clasp compiled into this binary");
+#endif // HAVE_LIBCLINGO
+		break;
+	}
+}
 
 GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& p, bool interleavedThreading, bool minCheck){
 

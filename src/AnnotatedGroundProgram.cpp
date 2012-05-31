@@ -9,13 +9,31 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnnotatedGroundProgram::AnnotatedGroundProgram() : groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())){
+AnnotatedGroundProgram::AnnotatedGroundProgram() : groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), haveGrounding(false){
 }
 
 AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms) :
-	reg(reg), groundProgram(groundProgram), indexedEatoms(indexedEatoms){
+	reg(reg), groundProgram(groundProgram), indexedEatoms(indexedEatoms), haveGrounding(true){
 
 	initialize();
+}
+
+AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> indexedEatoms) :
+	reg(reg), groundProgram(OrdinaryASPProgram(RegistryPtr(), std::vector<ID>(), InterpretationConstPtr())), indexedEatoms(indexedEatoms), haveGrounding(false){
+
+	initialize();
+}
+
+void AnnotatedGroundProgram::createProgramMask(){
+
+	// create mask of all atoms in the program
+	programMask = InterpretationPtr(new Interpretation(reg));
+	programMask->add(*groundProgram.edb);
+	BOOST_FOREACH (ID ruleID, groundProgram.idb){
+	const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head) programMask->setFact(h.address);
+		BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
+	}
 }
 
 void AnnotatedGroundProgram::createEAMasks(){
@@ -63,43 +81,46 @@ void AnnotatedGroundProgram::setIndexEAtoms(std::vector<ID> indexedEatoms){
 void AnnotatedGroundProgram::initialize(){
 
 	eaMasks.resize(0);
+	if (haveGrounding) createProgramMask();
 	createEAMasks();
 	mapAuxToEAtoms();
-	computeAtomDependencyGraph();
-	computeStronglyConnectedComponents();
-	computeHeadCycles();
-	computeECycles();
+	if (haveGrounding) computeAtomDependencyGraph();
+	if (haveGrounding) computeStronglyConnectedComponents();
+	if (haveGrounding) computeHeadCycles();
+	if (haveGrounding) computeECycles();
 
 #ifndef NDEBUG
-	std::stringstream programstring;
-	{
-		RawPrinter printer(programstring, reg);
-		if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
-		programstring << "IDB:" << std::endl;
-		BOOST_FOREACH (ID ruleId, groundProgram.idb){
-			printer.print(ruleId);
-			programstring << std::endl;
-		}
-	}
-
-	std::stringstream sccstring;
-	{
-		RawPrinter printer(sccstring, reg);
-		int sai = 0;
-		BOOST_FOREACH (std::set<IDAddress> sa, depSCC){
-			sccstring << "{ ";
-			bool first = true;
-			BOOST_FOREACH (IDAddress ida, sa){
-				if (!first) sccstring << ", ";
-				first = false;
-				printer.print(reg->ogatoms.getIDByAddress(ida));
+	if (haveGrounding){
+		std::stringstream programstring;
+		{
+			RawPrinter printer(programstring, reg);
+			if (groundProgram.edb) programstring << "EDB: " << *groundProgram.edb << std::endl;
+			programstring << "IDB:" << std::endl;
+			BOOST_FOREACH (ID ruleId, groundProgram.idb){
+				printer.print(ruleId);
+				programstring << std::endl;
 			}
-			sccstring << " } (HC: " << headCycles[sai] << ", EC: " << eCycles[sai] << ") ";
-			sai++;
 		}
-	}
 
-	DBGLOG(DBG, "Program:" << std::endl << programstring.str() << std::endl << "has SCC-decomposition: " << sccstring.str());
+		std::stringstream sccstring;
+		{
+			RawPrinter printer(sccstring, reg);
+			int sai = 0;
+			BOOST_FOREACH (std::set<IDAddress> sa, depSCC){
+				sccstring << "{ ";
+				bool first = true;
+				BOOST_FOREACH (IDAddress ida, sa){
+					if (!first) sccstring << ", ";
+					first = false;
+					printer.print(reg->ogatoms.getIDByAddress(ida));
+				}
+				sccstring << " } (HC: " << headCycles[sai] << ", EC: " << eCycles[sai] << ") ";
+				sai++;
+			}
+		}
+
+		DBGLOG(DBG, "Program:" << std::endl << programstring.str() << std::endl << "has SCC-decomposition: " << sccstring.str());
+	}
 #endif
 }
 
@@ -361,6 +382,11 @@ const std::vector<ID>& AnnotatedGroundProgram::getIndexedEAtoms() const{
 ID AnnotatedGroundProgram::getIndexedEAtom(int index) const{
 	assert(index >= 0 && index < indexedEatoms.size());
 	return indexedEatoms[index];
+}
+
+InterpretationConstPtr AnnotatedGroundProgram::getProgramMask() const{
+	assert(!!programMask);
+	return programMask;
 }
 
 DLVHEX_NAMESPACE_END

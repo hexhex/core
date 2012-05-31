@@ -40,7 +40,7 @@
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 #include "dlvhex2/GenuineSolver.h"
-#include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/UnfoundedSetChecker.h"
 
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
@@ -100,9 +100,6 @@ public:
 };
 
 // the model generator (accesses and uses the factory)
-class UnfoundedSetChecker;								// forward declaration
-class UnfoundedSetCheckerManager;							// forward declaration
-typedef boost::shared_ptr<UnfoundedSetCheckerManager> UnfoundedSetCheckerManagerPtr;	// forward declaration
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
@@ -111,8 +108,6 @@ class GenuineGuessAndCheckModelGenerator:
 {
   // types
 public:
-  friend class UnfoundedSetChecker;
-  friend class UnfoundedSetCheckerManager;
   typedef GenuineGuessAndCheckModelGeneratorFactory Factory;
 
   // controls when external atoms are verified
@@ -142,8 +137,6 @@ protected:
 
   RegistryPtr reg;
 
-  AnnotatedGroundProgram annotatedGroundProgram;
-
   EAVerificationMode eaVerificationMode;
   std::vector<bool> eaVerified;
   std::vector<bool> eaEvaluated;
@@ -158,7 +151,8 @@ protected:
   // internal solver
   NogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
   int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
-  GenuineSolverPtr solver;
+  GenuineGrounderPtr grounder;
+  GenuineGroundSolverPtr solver;
   UnfoundedSetCheckerManagerPtr ufscm;
   InterpretationPtr programMask;	// all atoms in the program
 

@@ -229,7 +229,9 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	// append gidb to xidb
 	program.idb.insert(program.idb.end(), factory.gidb.begin(), factory.gidb.end());
 
-	solver = GenuineSolver::getInstance(	factory.ctx, program,
+	grounder = GenuineGrounder::getInstance(factory.ctx, program);
+        annotatedGroundProgram = AnnotatedGroundProgram(reg, grounder->getGroundProgram(), factory.innerEatoms);
+	solver = GenuineGroundSolver::getInstance(	factory.ctx, annotatedGroundProgram,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
 						false //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
 												// [let the solver do the UFS check only if we don't do it in this class
@@ -251,22 +253,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	}
     }
 
-    // create for each inner external atom a mask over all relevant atoms
-    // and an index mapping ground external auxiliaries to their external atoms
-    createEAMasks(solver->getGroundProgram().idb);
-
-    // create mask of all atoms in the program
-    programMask = InterpretationPtr(new Interpretation(reg));
-    programMask->add(*solver->getGroundProgram().edb);
-    BOOST_FOREACH (ID ruleID, solver->getGroundProgram().idb){
-        const Rule& rule = reg->rules.getByID(ruleID);
-        BOOST_FOREACH (ID h, rule.head) programMask->setFact(h.address);
-        BOOST_FOREACH (ID b, rule.body) programMask->setFact(b.address);
-    }
-
     // initialize UFS checker
-    annotatedGroundProgram = AnnotatedGroundProgram(reg, solver->getGroundProgram(), factory.innerEatoms);
-    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, factory.innerEatoms, annotatedGroundProgram));
+    ufscm = UnfoundedSetCheckerManagerPtr(new UnfoundedSetCheckerManager(*this, factory.ctx, annotatedGroundProgram));
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
@@ -454,7 +442,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 	// which semantics?
 	if (factory.ctx.config.getOption("WellJustified")){
 		// well-justified FLP: fixpoint iteration
-		InterpretationPtr fixpoint = getFixpoint(compatibleSet, solver->getGroundProgram());
+		InterpretationPtr fixpoint = getFixpoint(compatibleSet, grounder->getGroundProgram());
 		InterpretationPtr reference = InterpretationPtr(new Interpretation(*compatibleSet));
 		reference->getStorage() -= factory.gpMask.mask()->getStorage();
 		reference->getStorage() -= factory.gnMask.mask()->getStorage();
@@ -562,10 +550,10 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 	if (eaVerificationMode == immediate){
 		// if the input to the external atom behind the auxiliary is complete,
 		// then is was automatically verified due to verification strategy
-		const ExternalAtom& ea = reg->eatoms.getByID(auxToEA[eaAux.address][0]);
+		const ExternalAtom& ea = reg->eatoms.getByID(annotatedGroundProgram.getAuxToEA(eaAux.address)[0]);
 		ea.updatePredicateInputMask();
 		InterpretationConstPtr pm = ea.getPredicateInputMask();
-		if (pm && (factWasSet->getStorage() & programMask->getStorage() & pm->getStorage()).count() < (pm->getStorage() & programMask->getStorage()).count()){
+		if (pm && (factWasSet->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & pm->getStorage()).count() < (pm->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count()){
 			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified because model generator runs in immediate-mode and input to " << annotatedGroundProgram.getAuxToEA(eaAux.address)[0] << " is incomplete");
 			return false;
 		}
@@ -626,7 +614,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// 1. we need all relevant atoms to be assigned before we can do the verification
 	// 2. reverification is only necessary and useful if relevant atoms changed
-	if ((!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & programMask->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & programMask->getStorage()).count())) &&	// 1
+	if ((!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())) &&	// 1
 	    (!changed || (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
 		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *(annotatedGroundProgram.getEAMask(eaIndex)->mask()));
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
@@ -667,7 +655,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			Nogood ng;
 			while (en < en_end){
 				// atoms which do not occur in the program can never be true
-				if (programMask->getFact(*en)){
+				if (annotatedGroundProgram.getProgramMask()->getFact(*en)){
 					ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
 				}
 				en++;
@@ -682,7 +670,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){
-	return solver->getGroundProgram();
+	return grounder->getGroundProgram();
 }
 
 bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){

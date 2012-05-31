@@ -59,11 +59,15 @@ class AnnotatedGroundProgram{
 
 	RegistryPtr reg;
 	OrdinaryASPProgram groundProgram;
+	bool haveGrounding;	// true if groundProgram is initialized, otherwise false (then we have only information about ground external atoms in the program but not about the entire program)
 
 	// back-mapping of (ground) external auxiliaries to their nonground external atoms
 	std::vector<ID> indexedEatoms;
 	std::vector<boost::shared_ptr<ExternalAtomMask> > eaMasks;
 	boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
+
+	// index of all atoms in the program
+	InterpretationPtr programMask;
 
 	// program decomposition and meta information
 	struct ProgramComponent{
@@ -83,6 +87,7 @@ class AnnotatedGroundProgram{
 	std::vector<ProgramComponent> programComponents;
 
 	// initialization members
+	void createProgramMask();
 	void createEAMasks();
 	void mapAuxToEAtoms();
 	void initialize();
@@ -93,6 +98,7 @@ class AnnotatedGroundProgram{
 public:
 	AnnotatedGroundProgram();
 	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
+	AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> indexedEatoms);
 
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);
 
@@ -111,6 +117,7 @@ public:
 	const OrdinaryASPProgram& getGroundProgram() const;
 	const std::vector<ID>& getIndexedEAtoms() const;
 	ID getIndexedEAtom(int index) const;
+	InterpretationConstPtr getProgramMask() const;
 };
 
 DLVHEX_NAMESPACE_END

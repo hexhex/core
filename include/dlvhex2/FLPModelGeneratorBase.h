@@ -35,6 +35,7 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/BaseModelGenerator.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <boost/unordered_map.hpp>
 
@@ -122,12 +123,8 @@ protected:
   // the factory storing our flp rewriting and external atom guessing and shared bitmasks
   FLPModelGeneratorFactoryBase& factory;
 
-  // back-mapping of (ground) external auxiliaries to their nonground external atoms
-  std::vector<ExternalAtomMask> eaMasks;
-  boost::unordered_map<IDAddress, std::vector<ID> > auxToEA;
-
-  // initializes eaMasks and auxToEA for a certain ground IDB
-  void createEAMasks(std::vector<ID> groundIDB);
+  // meta information about the ground program of this model generator
+  AnnotatedGroundProgram annotatedGroundProgram;
 protected:
   // callback for checking whether external computations
   // reflect guesses of external atom truth values

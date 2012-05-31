@@ -41,6 +41,7 @@
 #include "dlvhex2/Error.h"
 
 #include "dlvhex2/OrdinaryASPProgram.h"
+#include "dlvhex2/AnnotatedGroundProgram.h"
 #include "dlvhex2/OrdinaryASPSolver.h"
 
 #include "dlvhex2/Nogood.h"
@@ -83,6 +84,7 @@ public:
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
 
 	static Ptr getInstance(ProgramCtx& ctx, const OrdinaryASPProgram& program, bool interleavedThreading = true, bool minCheck = true);
+	static Ptr getInstance(ProgramCtx& ctx, const AnnotatedGroundProgram& program, bool interleavedThreading = true, bool minCheck = true);
 };
 
 typedef GenuineGroundSolver::Ptr GenuineGroundSolverPtr;

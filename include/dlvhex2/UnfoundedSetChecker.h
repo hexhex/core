@@ -34,7 +34,6 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/BaseModelGenerator.h"
-#include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
 
 #include <boost/unordered_map.hpp>
@@ -50,7 +49,7 @@ DLVHEX_NAMESPACE_BEGIN
 //
 class UnfoundedSetChecker{
 private:
-  GenuineGuessAndCheckModelGenerator* ggncmg;
+  BaseModelGenerator* mg;
 
   enum Mode{
     // consider external atoms as ordinary ones
@@ -129,11 +128,10 @@ public:
    * @param ngc Set of valid input-output relationships learned in the main search (to be extended by this UFS checker)
    */
   UnfoundedSetChecker(	
-			GenuineGuessAndCheckModelGenerator& ggncmg,
+			BaseModelGenerator& mg,
 			ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram,
 			const AnnotatedGroundProgram& agp,
-//			const std::vector<ID>& innerEatoms,
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>(),
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
@@ -158,19 +156,15 @@ public:
 
 class UnfoundedSetCheckerManager{
 private:
-	GenuineGuessAndCheckModelGenerator* ggncmg;
 	ProgramCtx& ctx;
 
-	std::vector<ID> innerEatoms;
-
+	BaseModelGenerator* mg;
 	AnnotatedGroundProgram agp;
-
 	Nogood ufsnogood;
 public:
 	UnfoundedSetCheckerManager(
-			GenuineGuessAndCheckModelGenerator& ggncmg,
+			BaseModelGenerator& mg,
 			ProgramCtx& ctx,
-			std::vector<ID>& innerEatoms,
 			const AnnotatedGroundProgram& agp);
 
 	UnfoundedSetCheckerManager(

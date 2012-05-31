@@ -494,33 +494,7 @@ FLPModelGeneratorBase::FLPModelGeneratorBase(
   BaseModelGenerator(input),
   factory(factory)
 {
-}
-
-void FLPModelGeneratorBase::createEAMasks(std::vector<ID> groundIDB){
-
-	RegistryPtr reg = factory.reg;
-
-	eaMasks.resize(factory.innerEatoms.size());
-	int eaIndex = 0;
-	BOOST_FOREACH (ID eatom, factory.innerEatoms){
-		// create an EAMask for each inner external atom
-		ExternalAtomMask& eaMask = eaMasks[eaIndex];
-		eaMask.setEAtom(reg->eatoms.getByID(eatom), groundIDB);
-		eaMask.updateMask();
-		//      eaVerified.push_back(false);
-		//      eaEvaluated.push_back(false);
-
-		// map external auxiliaries back to their external atoms
-		bm::bvector<>::enumerator en = eaMask.mask()->getStorage().first();
-		bm::bvector<>::enumerator en_end = eaMask.mask()->getStorage().end();
-		while (en < en_end){
-			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
-				auxToEA[*en].push_back(factory.innerEatoms[eaIndex]);
-			}
-			en++;
-		}
-		eaIndex++;
-	}
+	annotatedGroundProgram = AnnotatedGroundProgram(factory.reg, factory.innerEatoms);
 }
 
 FLPModelGeneratorBase::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
@@ -1145,9 +1119,9 @@ InterpretationPtr FLPModelGeneratorBase::getFixpoint(InterpretationConstPtr inte
 				if ((eatom.getPredicateInputMask()->getStorage() & assigned->getStorage()).count() == eatom.getPredicateInputMask()->getStorage().count()){
 					DBGLOG(DBG, "external atom " << eatomID << " is verified");
 					// set all output atoms as verified
-					eaMasks[eaIndex].updateMask();
-					bm::bvector<>::enumerator en = eaMasks[eaIndex].mask()->getStorage().first();
-					bm::bvector<>::enumerator en_end = eaMasks[eaIndex].mask()->getStorage().end();
+					annotatedGroundProgram.getEAMask(eaIndex)->updateMask();
+					bm::bvector<>::enumerator en = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
+					bm::bvector<>::enumerator en_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
 					while (en < en_end){
 						if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 							DBGLOG(DBG, "External atom " << eatomID << " implies " << *en << "=" << interpretation->getFact(*en));

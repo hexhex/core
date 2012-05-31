@@ -56,7 +56,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 			std::set<ID> skipProgram,
 			InterpretationConstPtr componentAtoms,
 			NogoodContainerPtr ngc) :
-	ggncmg(0),
+	mg(0),
 	ctx(ctx),
 	groundProgram(groundProgram),
 	compatibleSet(interpretation),
@@ -96,7 +96,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 }
 
 UnfoundedSetChecker::UnfoundedSetChecker(
-			GenuineGuessAndCheckModelGenerator& ggncmg,
+			BaseModelGenerator& mg,
 			ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram,
 			const AnnotatedGroundProgram& agp,
@@ -104,7 +104,7 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 			std::set<ID> skipProgram,
 			InterpretationConstPtr componentAtoms,
 			NogoodContainerPtr ngc) :
-	ggncmg(&ggncmg),
+	mg(&mg),
 	ctx(ctx),
 	groundProgram(groundProgram),
 	agp(agp),
@@ -375,9 +375,9 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartBasicEAKno
 		}
 
 		// go through the output atoms
-		ggncmg->eaMasks[eaIndex].updateMask();
-		en = ggncmg->eaMasks[eaIndex].mask()->getStorage().first();
-		en_end = ggncmg->eaMasks[eaIndex].mask()->getStorage().end();
+		agp.getEAMask(eaIndex)->updateMask();
+		en = agp.getEAMask(eaIndex)->mask()->getStorage().first();
+		en_end = agp.getEAMask(eaIndex)->mask()->getStorage().end();
 		while (en < en_end){
 			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
 				// do not extend the variable domain (this is counterproductive)
@@ -521,9 +521,9 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 			if (domain->getFact(aux) && reg->ogatoms.getIDByAddress(aux).isExternalAuxiliary()){
 				auxiliariesToVerify.push_back(aux);
 				std::set<ID> s;
-				s.insert(ggncmg->auxToEA[aux].begin(), ggncmg->auxToEA[aux].end());
+				s.insert(agp.getAuxToEA(aux).begin(), agp.getAuxToEA(aux).end());
 				auxiliaryDependsOnEA.push_back(s);
-				BOOST_FOREACH (ID eaID, ggncmg->auxToEA[aux]){
+				BOOST_FOREACH (ID eaID, agp.getAuxToEA(aux)){
 					eaToAuxIndex[eaID].push_back(auxiliaryDependsOnEA.size() - 1);
 				}
 			}
@@ -550,7 +550,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 		if (ngc){
 			// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 			int oldNogoodCount = ngc->getNogoodCount();
-			ggncmg->evaluateExternalAtom(reg, eatom, eaResult, cb, &ctx, ngc);
+			mg->evaluateExternalAtom(reg, eatom, eaResult, cb, &ctx, ngc);
 			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 				const Nogood& ng = ngc->getNogood(i);
@@ -562,7 +562,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 				}
 			}
 		}else{
-			ggncmg->evaluateExternalAtom(reg, eatom, eaResult, cb);
+			mg->evaluateExternalAtom(reg, eatom, eaResult, cb);
 		}
 
 		// remove the external atom from the remaining lists
@@ -886,12 +886,12 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 					// therefore there must be another (external) atom which is false under I u -X
 					// ng.insert(NogoodContainer::createLiteral(b.address, interpretation->getFact(b.address)));
 				}else{
-					const ExternalAtom& ea = reg->eatoms.getByID(ggncmg->auxToEA[b.address][0]);
+					const ExternalAtom& ea = reg->eatoms.getByID(agp.getAuxToEA(b.address)[0]);
 					ea.updatePredicateInputMask();
 					bm::bvector<>::enumerator en = ea.getPredicateInputMask()->getStorage().first();
 					bm::bvector<>::enumerator en_end = ea.getPredicateInputMask()->getStorage().end();
 					while (en < en_end){
-						if (ggncmg->programMask->getFact(*en)){
+						if (agp.getProgramMask()->getFact(*en)){
 							ng.insert(NogoodContainer::createLiteral(*en, interpretation->getFact(*en)));
 						}
 						en++;
@@ -908,17 +908,16 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
-		GenuineGuessAndCheckModelGenerator& ggncmg,
+		BaseModelGenerator& mg,
 		ProgramCtx& ctx,
-		std::vector<ID>& innerEatoms,
 		const AnnotatedGroundProgram& agp) :
-			ggncmg(&ggncmg), ctx(ctx), innerEatoms(innerEatoms), agp(agp){
+			mg(&mg), ctx(ctx), agp(agp){
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
 		const AnnotatedGroundProgram& agp) :
-			ctx(ctx), ggncmg(0), agp(agp){
+			ctx(ctx), mg(0), agp(agp){
 }
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
@@ -927,9 +926,9 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		NogoodContainerPtr ngc){
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
-		if (ggncmg){
+		if (mg){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
-			UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getGroundProgram(), agp, interpretation, skipProgram, InterpretationConstPtr(), ngc);
+			UnfoundedSetChecker ufsc(*mg, ctx, agp.getGroundProgram(), agp, interpretation, skipProgram, InterpretationConstPtr(), ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 			if (ufs.size() > 0){
 				DBGLOG(DBG, "Found a UFS");
@@ -950,15 +949,15 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if (!agp.hasHeadCycles(comp) && (!ggncmg || !agp.hasECycles(comp))){
+			if (!agp.hasHeadCycles(comp) && (!mg || !agp.hasECycles(comp))){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
 				continue;
 			}
 
 			DBGLOG(DBG, "Checking for UFS in component " << comp);
-			if (ggncmg && agp.hasECycles(comp)){
+			if (mg && agp.hasECycles(comp)){
 				DBGLOG(DBG, "Checking UFS under consideration of external atoms");
-				UnfoundedSetChecker ufsc(*ggncmg, ctx, agp.getProgramOfComponent(comp), agp, interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
+				UnfoundedSetChecker ufsc(*mg, ctx, agp.getProgramOfComponent(comp), agp, interpretation, skipProgram, agp.getAtomsOfComponent(comp), ngc);
 				std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
 				if (ufs.size() > 0){
 					DBGLOG(DBG, "Found a UFS");
