@@ -109,6 +109,8 @@ public:
 	boost::shared_ptr<ExternalAtomMask> getEAMask(int eaIndex);
 
 	const OrdinaryASPProgram& getGroundProgram() const;
+	const std::vector<ID>& getIndexedEAtoms() const;
+	ID getIndexedEAtom(int index) const;
 };
 
 DLVHEX_NAMESPACE_END

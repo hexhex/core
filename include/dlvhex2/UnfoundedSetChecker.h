@@ -61,15 +61,18 @@ private:
   Mode mode;
 
   ProgramCtx& ctx;
+  RegistryPtr reg;
+
+  // problem specification
   const OrdinaryASPProgram& groundProgram;
+  AnnotatedGroundProgram agp;
   InterpretationConstPtr compatibleSet;
   InterpretationConstPtr compatibleSetWithoutAux;
-  std::vector<ID> innerEatoms;
   const std::set<ID>& skipProgram;
   InterpretationConstPtr componentAtoms;
   NogoodContainerPtr ngc;
 
-  RegistryPtr reg;
+  // ufs detection problem
   NogoodSet ufsDetectionProblem;
   InterpretationPtr domain; // domain of all problem variables
   std::vector<ID> ufsProgram;
@@ -90,6 +93,7 @@ private:
   /**
    * Checks if an UFS candidate is actually an unfounded set
    * @param ufsCandidate A candidate compatible set (solution to the nogood set created by getUFSDetectionProblem)
+   * @param bool True iff ufsCandidate is an unfounded set
    */
   bool isUnfoundedSet(InterpretationConstPtr ufsCandidate);
 
@@ -101,8 +105,7 @@ private:
 public:
   /**
    * \brief Initialization for UFS search considering external atoms as ordinary ones
-   * @param groundProgram Overall ground program
-   * @param groundProgram Overall ground program
+   * @param groundProgram Ground program over which the ufs check is done
    * @param compatibleSet A compatible set with external atom auxiliaries
    * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
    * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
@@ -118,10 +121,9 @@ public:
    * \brief Initialization for UFS search under consideration of the semantics of external atoms
    * @param ggncmg Reference to the G&C model generator for which this UnfoundedSetChecker runs
    * @param ctx ProgramCtx
-   * @param groundProgram Overall ground program
-   * @param innerEatoms Inner external atoms in the component
+   * @param groundProgram Ground program over which the ufs check is done
+   * @param agp Annotated version of the ground program; may be a superset of groundProgram, but must contain meta information about all external atoms in groundProgram
    * @param compatibleSet A compatible set with external atom auxiliaries
-   * @param compatibleSetWithoutAux The compatible set without external atom auxiliaries
    * @param skipProgram Part of groundProgram which is ignored in the unfounded set check
    * @param componentAtoms The atoms in the strongly connected component in the atom dependency graph; if 0, then all atoms in groundProgram are considered to be in the SCC
    * @param ngc Set of valid input-output relationships learned in the main search (to be extended by this UFS checker)
@@ -130,7 +132,8 @@ public:
 			GenuineGuessAndCheckModelGenerator& ggncmg,
 			ProgramCtx& ctx,
 			const OrdinaryASPProgram& groundProgram,
-			const std::vector<ID>& innerEatoms,
+			const AnnotatedGroundProgram& agp,
+//			const std::vector<ID>& innerEatoms,
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>(),
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),

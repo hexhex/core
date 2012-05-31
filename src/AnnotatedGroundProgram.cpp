@@ -353,5 +353,15 @@ const OrdinaryASPProgram& AnnotatedGroundProgram::getGroundProgram() const{
 	return groundProgram;
 }
 
+
+const std::vector<ID>& AnnotatedGroundProgram::getIndexedEAtoms() const{
+	return indexedEatoms;
+}
+
+ID AnnotatedGroundProgram::getIndexedEAtom(int index) const{
+	assert(index >= 0 && index < indexedEatoms.size());
+	return indexedEatoms[index];
+}
+
 DLVHEX_NAMESPACE_END
 
