@@ -149,8 +149,6 @@ UnfoundedSetChecker::UnfoundedSetChecker(
 
 void UnfoundedSetChecker::constructUFSDetectionProblem(){
 
-//DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidcc, "UFS Detection Problem Construction");
-
 	constructUFSDetectionProblemNecessaryPart();
 	constructUFSDetectionProblemOptimizationPart();
 }
@@ -532,6 +530,10 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 
 	// construct: compatibleSetWithoutAux - ufsCandidate
 	DBGLOG(DBG, "Constructing input interpretation for external atom evaluation");
+	InterpretationPtr eaInput = InterpretationPtr(new Interpretation(reg));
+	eaInput->add(*compatibleSet);	// do not remove auxiliaries here because this prevents negative learning!
+	eaInput->getStorage() -= ufsCandidate->getStorage();
+
 	InterpretationPtr eaResult = InterpretationPtr(new Interpretation(reg));
 	eaResult->add(*compatibleSetWithoutAux);
 	eaResult->getStorage() -= ufsCandidate->getStorage();
@@ -550,7 +552,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 		if (ngc){
 			// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 			int oldNogoodCount = ngc->getNogoodCount();
-			mg->evaluateExternalAtom(reg, eatom, eaResult, cb, &ctx, ngc);
+			mg->evaluateExternalAtom(reg, eatom, eaInput, cb, &ctx, ngc);
 			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 				const Nogood& ng = ngc->getNogood(i);
@@ -562,7 +564,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 				}
 			}
 		}else{
-			mg->evaluateExternalAtom(reg, eatom, eaResult, cb);
+			mg->evaluateExternalAtom(reg, eatom, eaInput, cb);
 		}
 
 		// remove the external atom from the remaining lists

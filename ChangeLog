@@ -1,7 +1,8 @@
 2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* UnfoundedSetChecker.cpp: Split program for UFS checking into
-	strongly connected components.
+	strongly connected components;
+	Implement "negative external learning" for UFS check
 	* UnfoundedSetChecker.h: Likewise
 	* GenuineGuessAndCheckModelGenerator.cpp: Likewise
 	* GenuineGuessAndCheckModelGenerator.h: Likewise
