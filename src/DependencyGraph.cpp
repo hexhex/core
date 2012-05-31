@@ -610,6 +610,7 @@ ID DependencyGraph::createAuxiliaryRuleHead(
   head.text = ss.str();
 
 	ID idhead = registry->onatoms.storeAndGetID(head);
+	idhead.kind |= ID::PROPERTY_EXTERNALINPUTAUX;
 	return idhead;
 }
 

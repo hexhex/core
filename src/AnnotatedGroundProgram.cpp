@@ -249,6 +249,7 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 
 	// check if the components contain head-cycles
 	DBGLOG(DBG, "Computing head-cycles of components");
+	headCyclesTotal = false;
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 		int hcf = true;
 		BOOST_FOREACH (ID ruleID, programComponents[comp].program.idb){
@@ -266,6 +267,7 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 			}
 		}
 		headCycles.push_back(!hcf);
+		headCyclesTotal |= headCycles[headCycles.size() - 1];
 		DBGLOG(DBG, "Component " << comp << ": " << !hcf);
 	}
 }
@@ -274,6 +276,7 @@ void AnnotatedGroundProgram::computeECycles(){
 
 	DBGLOG(DBG, "Computing e-cycles of components");
 
+	eCyclesTotal = false;
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 
 		// check for each e-edge x -> y if there is a path from y to x
@@ -301,6 +304,7 @@ void AnnotatedGroundProgram::computeECycles(){
 			}
 		}
 		eCycles.push_back(cyclicInputAtoms.size() > 0);
+		eCyclesTotal |= eCycles[eCycles.size() - 1];
 
 #ifndef NDEBUG
 		std::stringstream ss;
@@ -341,14 +345,22 @@ InterpretationConstPtr AnnotatedGroundProgram::getAtomsOfComponent(int compNr) c
 	return programComponents[compNr].componentAtoms;
 }
 
-int AnnotatedGroundProgram::hasHeadCycles(int compNr) const{
+bool AnnotatedGroundProgram::hasHeadCycles(int compNr) const{
 	assert(compNr >= 0 && compNr < depSCC.size());
 	return headCycles[compNr];
 }
 
-int AnnotatedGroundProgram::hasECycles(int compNr) const{
+bool AnnotatedGroundProgram::hasECycles(int compNr) const{
 	assert(compNr >= 0 && compNr < depSCC.size());
 	return eCycles[compNr];
+}
+
+bool AnnotatedGroundProgram::hasHeadCycles() const{
+	return headCyclesTotal;
+}
+
+bool AnnotatedGroundProgram::hasECycles() const{
+	return eCyclesTotal;
 }
 
 bool AnnotatedGroundProgram::mapsAux(IDAddress ida) const{

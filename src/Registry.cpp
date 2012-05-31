@@ -540,6 +540,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 
   // remember which auxiliaries represent in fact external atoms (used by genuine solvers)
   if (type == 'r' || type == 'n') term.kind |= ID(ID::PROPERTY_EXTERNALAUX, 0);
+  if (type == 'i') term.kind |= ID(ID::PROPERTY_EXTERNALINPUTAUX, 0);
 
   // register ID for symbol
   av.id = terms.getIDByString(term.symbol);

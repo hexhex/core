@@ -83,7 +83,7 @@ GenuineGuessAndCheckModelGeneratorFactory::GenuineGuessAndCheckModelGeneratorFac
   createFLPRules();
 
   // make an analysis of cyclic predicate input parameters
-  computeCyclicInputPredicates(reg, ctx, idb);
+//  computeCyclicInputPredicates(reg, ctx, idb);
 
   // output rules
   {
@@ -457,11 +457,11 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 		}
 	}else{
 		// FLP: ensure minimality of the compatible set wrt. the reduct (if necessary)
-		if (factory.cyclicInputPredicates.size() == 0){
-			DBGLOG(DBG, "No cyclic input predicates --> No FLP/UFS check necessary");
+		if (annotatedGroundProgram.hasHeadCycles() == 0 && annotatedGroundProgram.hasECycles() == 0){
+			DBGLOG(DBG, "No head- or e-cycles --> No FLP/UFS check necessary");
 			return true;
 		}else{
-			DBGLOG(DBG, "Cyclic input predicates --> FLP/UFS check necessary");
+			DBGLOG(DBG, "Head- or e-cycles --> FLP/UFS check necessary");
 
 			// Explicit FLP check
 			if (factory.ctx.config.getOption("FLPCheck")){

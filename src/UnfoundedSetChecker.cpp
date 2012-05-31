@@ -927,6 +927,11 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		std::set<ID> skipProgram,
 		NogoodContainerPtr ngc){
 
+	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles())){
+		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles not e-cycles");
+		return std::vector<IDAddress>();
+	}
+
 	if (ctx.config.getOption("UFSCheckMonolithic")){
 		if (mg){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");

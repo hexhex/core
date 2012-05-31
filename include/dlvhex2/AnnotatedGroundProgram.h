@@ -86,6 +86,9 @@ class AnnotatedGroundProgram{
 	std::vector<bool> eCycles;
 	std::vector<ProgramComponent> programComponents;
 
+	// meta information about the overall program
+	bool headCyclesTotal, eCyclesTotal;
+
 	// initialization members
 	void createProgramMask();
 	void createEAMasks();
@@ -106,8 +109,10 @@ public:
 	int getComponentCount() const;
 	const OrdinaryASPProgram& getProgramOfComponent(int compNr) const;
 	InterpretationConstPtr getAtomsOfComponent(int compNr) const;
-	int hasHeadCycles(int compNr) const;
-	int hasECycles(int compNr) const;
+	bool hasHeadCycles(int compNr) const;
+	bool hasECycles(int compNr) const;
+	bool hasHeadCycles() const;
+	bool hasECycles() const;
 
 	bool mapsAux(IDAddress ida) const;
 	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;

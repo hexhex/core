@@ -311,39 +311,39 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
 
       // kind will be overwritten
       Rule rflpbody(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-      #if 1 // temporary, for debugging
+
       assert(!!globalpc);
-      if( globalpc->config.getOption("ExplicitFLPUnshift") == 1 )
+      // Note: EA-aux input rules MUST NOT be shifted! This could eliminate models of the reduct
+      if( r.isEAAuxInputRule() || globalpc->config.getOption("ExplicitFLPUnshift") == 1 )
       {
-      // original set of rules
-      IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
-      if (r.head.size() == 0){
-        kind |= ID::SUBKIND_RULE_CONSTRAINT;
-      }else{
-        kind |= ID::SUBKIND_RULE_REGULAR;
-      }
-      rflpbody.kind = kind;
-      rflpbody.head = r.head;
-      if( rflpbody.head.size() > 1 )
-        rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
-      rflpbody.body = r.body;
-      rflpbody.body.push_back(fid);
+        // original set of rules
+        IDKind kind = ID::MAINKIND_RULE | ID::PROPERTY_AUX;
+        if (r.head.size() == 0){
+          kind |= ID::SUBKIND_RULE_CONSTRAINT;
+        }else{
+          kind |= ID::SUBKIND_RULE_REGULAR;
+        }
+        rflpbody.kind = kind;
+        rflpbody.head = r.head;
+        if( rflpbody.head.size() > 1 )
+          rflpbody.kind |= ID::PROPERTY_RULE_DISJ;
+        rflpbody.body = r.body;
+        rflpbody.body.push_back(fid);
       }
       else
       {
-      #endif
-      // optimized set of rules
-      // another encoding which is more efficient on some examples:
-      IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
-      rflpbody.kind = kind | ID::SUBKIND_RULE_CONSTRAINT;
-      rflpbody.body = r.body;
-      rflpbody.body.push_back(fid);
-      BOOST_FOREACH (ID h, r.head){
-        rflpbody.body.push_back(ID::literalFromAtom(h, true));
+        // optimized set of rules
+        // another encoding which is more efficient on some examples:
+        IDKind kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_CONSTRAINT | ID::PROPERTY_AUX;
+        rflpbody.kind = kind | ID::SUBKIND_RULE_CONSTRAINT;
+        rflpbody.body = r.body;
+        rflpbody.body.push_back(fid);
+        BOOST_FOREACH (ID h, r.head){
+          rflpbody.body.push_back(ID::literalFromAtom(h, true));
+        }
+        #if 1 // temporary, for debugging
       }
-      #if 1 // temporary, for debugging
-      }
-      #endif
+        #endif
 
       // store rules
       ID fheadrid = reg->storeRule(rflphead);
@@ -372,6 +372,7 @@ void FLPModelGeneratorFactoryBase::createFLPRules()
   }
 }
 
+#if 0
 void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 			RegistryPtr reg,
 			ProgramCtx& ctx,
@@ -484,6 +485,7 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 		cyclicInputPredicatesMask.addPredicate(pred);
 	}
 }
+#endif
 
 //
 // FLPModelGeneratorBase

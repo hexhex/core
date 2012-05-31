@@ -1,5 +1,11 @@
 2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
 
+	* ID.h: Introduce a property for external atom input auxiliaries
+	* Registry.h: Likewise
+	* Registry.cpp: Likewise
+	* DependencyGraph.cpp: Likewise
+	* FLPModelGeneratorBase.cpp: Modify explicit FLP check
+	such that EA input rules are _not_ shifted
 	* UnfoundedSetChecker.cpp: Split program for UFS checking into
 	strongly connected components;
 	Implement "negative external learning" for UFS check

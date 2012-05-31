@@ -84,9 +84,11 @@ protected:
   // incrementally updated bitmask for FLP auxiliary predicates
   PredicateMask fMask;
 
+#if 0
   // the cyclic predicate input to external atoms in this component
   std::vector<ID> cyclicInputPredicates;
   PredicateMask cyclicInputPredicatesMask;
+#endif
 protected:
   // create guessing rules for external atom values
   void createEatomGuessingRules();

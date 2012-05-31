@@ -460,7 +460,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 	bm::bvector<>::enumerator en_end = p.edb->getStorage().end();
 	while (en < en_end){
 		if (hexToClasp.find(*en) == hexToClasp.end()){
-			uint32_t c = *en + p.idb.size() + 2;
+			uint32_t c = *en + 2;
 			DBGLOG(DBG, "Clasp index of atom " << *en << " is " << c);
 			hexToClasp[*en] = Clasp::Literal(c, true);
 
@@ -475,7 +475,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 		const Rule& rule = reg->rules.getByID(ruleId);
 		BOOST_FOREACH (ID h, rule.head){
 			if (hexToClasp.find(h.address) == hexToClasp.end()){
-				uint32_t c = h.address + p.idb.size() + 2;
+				uint32_t c = h.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << h.address << " is " << c);
 				hexToClasp[h.address] = Clasp::Literal(c, true);
 
@@ -485,7 +485,7 @@ void ClaspSolver::buildInitialSymbolTable(const OrdinaryASPProgram& p, Clasp::Pr
 		}
 		BOOST_FOREACH (ID b, rule.body){
 			if (hexToClasp.find(b.address) == hexToClasp.end()){
-				uint32_t c = b.address + p.idb.size() + 2;
+				uint32_t c = b.address + 2;
 				DBGLOG(DBG, "Clasp index of atom " << b.address << " is " << c);
 				hexToClasp[b.address] = Clasp::Literal(c, true);
 
@@ -610,9 +610,16 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 	// transfer idb
 	DBGLOG(DBG, "Sending IDB to clasp");
-	int ruleIndex = -1;
+
+	// new clasp variables are located after all atom variables
+	OrdinaryAtomTable::AddressIterator it_begin;
+	OrdinaryAtomTable::AddressIterator it_end;
+	boost::tie(it_begin, it_end) = reg->ogatoms.getAllByAddress();
+	int nextVarIndex = 2 + (it_end - it_begin);
+
+	std::map<IDAddress, std::vector<int> > singletonNogoods; // check support of singletons using shifted rules
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
-		ruleIndex++;
+		int atLeastOneAtom = nextVarIndex++;
 
 		const Rule& rule = reg->rules.getByID(ruleId);
 #ifndef NDEBUG
@@ -651,6 +658,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 				}
 			}else if (dm == ChoiceRules){
 				DBGLOG(DBG, "Generating choice for disjunctive rule " << ruleId);
+				// ============================== Choice rule ==============================
 				// derive head atoms
 				pb.startRule(Clasp::CHOICERULE);
 				BOOST_FOREACH (ID h, rule.head){
@@ -663,7 +671,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 
 				// derive special atom if at least one head atom is true
 				pb.startRule(Clasp::CONSTRAINTRULE, 1);
-				pb.addHead(2 + ruleIndex);
+				pb.addHead(atLeastOneAtom);
 				BOOST_FOREACH (ID h, rule.head){
 					pb.addToBody(hexToClasp[h.address].var(), true);
 				}
@@ -675,7 +683,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 				BOOST_FOREACH (ID b, rule.body){
 					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 				}
-				pb.addToBody(2 + ruleIndex, false);
+				pb.addToBody(atLeastOneAtom, false);
 				pb.endRule();
 			}
 		}else{
@@ -693,6 +701,62 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 			}
 			pb.endRule();
 		}
+
+
+		// ============================== Singleton loop nogoods ==============================
+		// for non-shifted disjunctive rules, check support of singleton atoms
+		DBGLOG(DBG, "Generating singleton loop nogoods");
+		BOOST_FOREACH (ID h, rule.head){
+#if 0	// these constraints model nogoods which are necessary in theory; however, since we work with rules instead of nogoods they are implicitly fulfilled by foundedness
+			// derive shiftedBody iff all atoms in the shifted body are true
+			BOOST_FOREACH (ID b, rule.body){	// shiftedBody is false if a body literal is false
+				pb.startRule(Clasp::BASICRULE);
+				pb.addHead(false_);
+				pb.addToBody(nextVarIndex, true);
+				pb.addToBody(hexToClasp[b.address].var(), b.isNaf());
+				pb.endRule();
+			}
+			BOOST_FOREACH (ID hshifted, rule.head){
+				if (h != hshifted){		// shiftedBody is false if a head atom is true, i.e. a body literal in the shifted rule is false
+					pb.startRule(Clasp::BASICRULE);
+					pb.addHead(false_);
+					pb.addToBody(nextVarIndex, true);
+					pb.addToBody(hexToClasp[hshifted.address].var(), true);
+					pb.endRule();
+				pb.addToBody(nextVarIndex, true);
+				}
+			}
+#endif
+
+			// otherwise shiftedBody is true
+			pb.startRule(Clasp::BASICRULE);
+			pb.addHead(nextVarIndex);
+			BOOST_FOREACH (ID b, rule.body){
+				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
+			}
+			BOOST_FOREACH (ID hshifted, rule.head){
+				if (h != hshifted){
+					pb.addToBody(hexToClasp[hshifted.address].var(), false);
+				}
+			}
+			pb.endRule();
+
+			// remember supporting shifted rule
+			singletonNogoods[h.address].push_back(nextVarIndex++);
+		}
+	}
+
+	// ============================== Singleton loop nogoods ==============================
+	// an atom is not true if no supporting shifted rule fires
+	typedef std::pair<IDAddress, std::vector<int> > Pair;
+	BOOST_FOREACH (Pair p, singletonNogoods){
+		pb.startRule(Clasp::BASICRULE);
+		pb.addHead(false_);
+		pb.addToBody(hexToClasp[p.first].var(), true);
+		BOOST_FOREACH (int b, p.second){
+			pb.addToBody(b, false);
+		}
+		pb.endRule();
 	}
 
 #ifndef NDEBUG
