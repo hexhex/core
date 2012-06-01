@@ -1163,7 +1163,7 @@ InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr int
 
 DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading) :
 	ClaspSolver(ctx, p, interleavedThreading, ClaspSolver::ChoiceRules),
-	program(p), ufscm(ctx, p){
+	program(p), ufscm(ctx, p, true){
 }
 
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){

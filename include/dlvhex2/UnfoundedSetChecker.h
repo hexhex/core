@@ -161,15 +161,38 @@ private:
 	BaseModelGenerator* mg;
 	AnnotatedGroundProgram agp;
 	Nogood ufsnogood;
+
+	std::vector<bool> intersectsWithNonHCFDisjunctiveRules;
+
+	void computeChoiceRuleCompatibility(bool choiceRuleCompatible);
 public:
+	/**
+	 * Initializes the UFS checker with support for external atoms.
+	 * @param mg Reference to a model generator (used to evaluate the external atoms)
+	 * @param ctx ProgramCtx
+	 * @param agp Ground program with meta information used for optimized UFS checking
+	 * @param choiceRuleCompatible This parameter is necessary for the clasp backend, which implements non-head cycle free disjunctive rules using choice rules.
+	 *                             However, this transformation must be regarded in the optimization of UFS checking. More specifically, the UFS check MUST NOT BE SKIPPED
+	 *                             for HFC-free components if they contain such choice rules. For more information, see examples/trickyufs.hex.
+	 */
 	UnfoundedSetCheckerManager(
 			BaseModelGenerator& mg,
 			ProgramCtx& ctx,
-			const AnnotatedGroundProgram& agp);
+			const AnnotatedGroundProgram& agp,
+			bool choiceRuleCompatible = false);
 
+	/**
+	 * Initializes the UFS checker without support for external atoms (they are considered as ordinary ones).
+	 * @param ctx ProgramCtx
+	 * @param agp Ground program with meta information used for optimized UFS checking
+	 * @param choiceRuleCompatible This parameter is necessary for the clasp backend, which implements non-head cycle free disjunctive rules using choice rules.
+	 *                             However, this transformation must be regarded in the optimization of UFS checking. More specifically, the UFS check MUST NOT BE SKIPPED
+	 *                             for HFC-free components if they contain such choice rules. For more information, see examples/trickyufs.hex.
+	 */
 	UnfoundedSetCheckerManager(
 			ProgramCtx& ctx,
-			const AnnotatedGroundProgram& agp);
+			const AnnotatedGroundProgram& agp,
+			bool choiceRuleCompatible = false);
 
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr interpretation,

@@ -912,14 +912,60 @@ Nogood UnfoundedSetChecker::getUFSNogood(
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		BaseModelGenerator& mg,
 		ProgramCtx& ctx,
-		const AnnotatedGroundProgram& agp) :
+		const AnnotatedGroundProgram& agp,
+		bool choiceRuleCompatible) :
 			mg(&mg), ctx(ctx), agp(agp){
+
+	computeChoiceRuleCompatibility(choiceRuleCompatible);
 }
 
 UnfoundedSetCheckerManager::UnfoundedSetCheckerManager(
 		ProgramCtx& ctx,
-		const AnnotatedGroundProgram& agp) :
+		const AnnotatedGroundProgram& agp,
+		bool choiceRuleCompatible) :
 			ctx(ctx), mg(0), agp(agp){
+
+	computeChoiceRuleCompatibility(choiceRuleCompatible);
+}
+
+void UnfoundedSetCheckerManager::computeChoiceRuleCompatibility(bool choiceRuleCompatible){
+
+	for (int comp = 0; comp < agp.getComponentCount(); ++comp){
+		if (agp.hasHeadCycles(comp) || !choiceRuleCompatible){
+			intersectsWithNonHCFDisjunctiveRules.push_back(false);
+		}else{
+			// Check if the component contains a disjunctive non-HCF rule
+			// Note that this does not necessarily mean that the component is non-NCF!
+			// Example:
+			//    a v b v c.
+			//    a :- b.
+			//    b :- a.
+			//    a :- c.
+			//    d :- c.
+			//    c :- d.
+			// The program has the following components:
+			// {a, b} with rules  a v b v c.
+			//                    a :- b.
+			//                    b :- a.
+			//                    a :- c.
+			// {c, d} with rules  a v b v c.
+			//                    d :- c.
+			//                    c :- d.
+			// Note that the component {c, d} contains a Non-HCF disjunctive rule (a v b v c.), but is not Non-HCF itself.
+			// Therefore, the optimization would skip the UFS check for the component {c, d} (and do it for {a, b}).
+			// 
+			// If disjunctive rules are considered as such, this is sufficient because the (polynomial) UFS check implemented
+			// directly in the reasoner detects the unfounded set:
+			//    A candidate is {c, a, b, d}, but none of these atoms can use the rule a v b v c. as source because it is satisfied independently of {a}, {b} and {c}.
+			// However, if disjunctive rules are transformed to choice rules, then a v b v c. becomes 1{a, b, c} and MULTIPLE atoms may use it as source.
+			// 
+			// Therefore, the (exponential) UFS check in this class is not only necessary for Non-HCF-components, but also for HCF-components which contain disjunctive rules
+			// which also also in some other Non-HCF-components.
+			BOOST_FOREACH (ID ruleID, agp.getProgramOfComponent(comp).idb){
+				intersectsWithNonHCFDisjunctiveRules.push_back(agp.containsHeadCycles(ruleID));
+			}
+		}
+	}
 }
 
 std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
@@ -956,7 +1002,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		// search in each component for unfounded sets
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
-			if (!agp.hasHeadCycles(comp) && (!mg || !agp.hasECycles(comp))){
+			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp))){
 				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
 				continue;
 			}
