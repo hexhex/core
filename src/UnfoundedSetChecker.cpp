@@ -961,9 +961,14 @@ void UnfoundedSetCheckerManager::computeChoiceRuleCompatibility(bool choiceRuleC
 			// 
 			// Therefore, the (exponential) UFS check in this class is not only necessary for Non-HCF-components, but also for HCF-components which contain disjunctive rules
 			// which also also in some other Non-HCF-components.
+			bool dh = false;
 			BOOST_FOREACH (ID ruleID, agp.getProgramOfComponent(comp).idb){
-				intersectsWithNonHCFDisjunctiveRules.push_back(agp.containsHeadCycles(ruleID));
+				if (agp.containsHeadCycles(ruleID)){
+					dh = true;
+					break;
+				}
 			}
+			intersectsWithNonHCFDisjunctiveRules.push_back(dh);
 		}
 	}
 }
