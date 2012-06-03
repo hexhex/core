@@ -233,17 +233,10 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
         annotatedGroundProgram = AnnotatedGroundProgram(reg, grounder->getGroundProgram(), factory.innerEatoms);
 	solver = GenuineGroundSolver::getInstance(	factory.ctx, annotatedGroundProgram,
 						eaVerificationMode != heuristics,		// prefer multithreaded mode, but this is not possible in heuristics mode
-						false //factory.cyclicInputPredicates.size() == 0 || (!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck"))
-												// [let the solver do the UFS check only if we don't do it in this class
-												// (the check in this class subsumes the builtin check and we don't want to do it twice)]
-
-												// Edit: Actually, this check is always necessary because the UFS check with external atoms
-												// cannot detect the unfoundedness of a replacement atom. Therefore, an answer set may
-												// contain both the positive and the negative replacement atom.
-
-												// Edit 2: A modification in the UFS check allows now to find all relevant unfounded sets
-												// also if external atoms are handled as such (EA-guessing rules are shifted);
-												// therefore we only need a separate check if the check is not done in this class
+						!factory.ctx.config.getOption("FLPCheck") && !factory.ctx.config.getOption("UFSCheck")	// do the UFS check for disjunctions only if we don't do
+																	// a minimality check in this class;
+																	// this will not find unfounded sets due to external sources,
+																	// but at least unfounded sets due to disjunctions
 						);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
