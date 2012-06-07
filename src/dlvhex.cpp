@@ -979,7 +979,7 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("ExternalLearningLinearity", 1);
 					pctx.config.setOption("ExternalLearningNeg", 1);
 					pctx.config.setOption("ExternalLearningUser", 1);
-					pctx.config.setOption("ExternalLearningGeneralize", 1);
+					//pctx.config.setOption("ExternalLearningGeneralize", 1);	// do not activate by default (it is mostly counterproductive)
 				}
 			}
 
