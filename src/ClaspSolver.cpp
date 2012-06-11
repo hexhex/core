@@ -747,13 +747,17 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	}
 
 	// ============================== Singleton loop nogoods ==============================
+
 	// an atom is not true if no supporting shifted rule fires
 	typedef std::pair<IDAddress, std::vector<int> > Pair;
-	BOOST_FOREACH (Pair p, singletonNogoods){
+	BOOST_FOREACH (Pair pair, singletonNogoods){
+		// exception: facts are always true
+		if (p.getGroundProgram().edb->getFact(pair.first)) continue;
+
 		pb.startRule(Clasp::BASICRULE);
 		pb.addHead(false_);
-		pb.addToBody(hexToClasp[p.first].var(), true);
-		BOOST_FOREACH (int b, p.second){
+		pb.addToBody(hexToClasp[pair.first].var(), true);
+		BOOST_FOREACH (int b, pair.second){
 			pb.addToBody(b, false);
 		}
 		pb.endRule();
