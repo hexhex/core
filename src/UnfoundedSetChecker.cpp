@@ -984,7 +984,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 	}
 
 	if (ctx.config.getOption("UFSCheckMonolithic")){
-		if (mg){
+		if (mg && agp.hasECycles()){
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			UnfoundedSetChecker ufsc(*mg, ctx, agp.getGroundProgram(), agp, interpretation, skipProgram, InterpretationConstPtr(), ngc);
 			std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
