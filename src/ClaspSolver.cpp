@@ -295,9 +295,10 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		DBGLOG(DBG, "External learners have produced " << (cs.nogoods.size() - cs.translatedNogoods) << " nogoods; transferring to clasp");
 		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
 			inconsistent |= cs.addNogoodToClasp(s, cs.nogoods[i], onlyOnCurrentDL);
+			if (inconsistent) break;	// we must not add more clauses if we have already a conflict
 		}
 
-		if (!onlyOnCurrentDL){
+		if (!inconsistent && !onlyOnCurrentDL){
 			cs.translatedNogoods = cs.nogoods.size();
 		}
 	}
@@ -361,7 +362,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 		// if this is requested, do not add conflict clauses which do not cause a conflict on the current decision level
 		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
 		if (onlyOnCurrentDL && !onCurrentDL){
-			DBGLOG(DBG, "Do not add " << ng << " because it is not conflicting on the current decision level");
+			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level");
 			return false;
 		}
 
@@ -381,7 +382,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 	ss << " }";
 #endif
 
-	DBGLOG(DBG, "Adding nogood " << ng << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
+	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
 
 	return !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok;
 }

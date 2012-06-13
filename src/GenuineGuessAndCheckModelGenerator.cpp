@@ -651,7 +651,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	if ((!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())) &&	// 1
 	    (!changed || (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
 		InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
-		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *mask);
+		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", factWasSet: " << *factWasSet << ", mask: " << *mask);
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 		VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
@@ -699,7 +699,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			// note: this nogoods _must_ be learned in immediate mode (but it is very useful also in heuristics mode), even if external learning is off,
 			// because the solver _must never_ generate conflicting assignments as there is no final compatibility check
 			int oldCount = solver->getNogoodCount();
-			return solver->addNogood(ng) >= oldCount;	// tell the solver if a new nogood was added
+			int newCount = solver->addNogood(ng);
+			DBGLOG(DBG, "Conflict nogood: " << ng.getStringRepresentation(reg) << ", inconsistent: " << (newCount >= oldCount));
+			return newCount >= oldCount;	// tell the solver if a new nogood was added
 		}
 	}
 

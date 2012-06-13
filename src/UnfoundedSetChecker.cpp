@@ -397,11 +397,13 @@ void UnfoundedSetChecker::constructUFSDetectionProblemOptimizationPartLearnedFro
 		DBGLOG(DBG, "O: Adding valid input-output relationships from nogood container");
 		for (int i = 0; i < ngc->getNogoodCount(); ++i){
 			const Nogood& ng = ngc->getNogood(i);
-			DBGLOG(DBG, "Processing learned nogood " << ng);
+			if (ng.isGround()){
+				DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
 
-			std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-			BOOST_FOREACH (Nogood tng, transformed){
-				ufsDetectionProblem.addNogood(tng);
+				std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+				BOOST_FOREACH (Nogood tng, transformed){
+					ufsDetectionProblem.addNogood(tng);
+				}
 			}
 		}
 	}
@@ -557,7 +559,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 				const Nogood& ng = ngc->getNogood(i);
 				if (ng.isGround()){
-					DBGLOG(DBG, "Processing learned nogood " << ng);
+					DBGLOG(DBG, "Processing learned nogood " << ng.getStringRepresentation(reg));
 
 					std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
 					BOOST_FOREACH (Nogood tng, transformed){

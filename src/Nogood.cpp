@@ -185,6 +185,7 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 				}
 			}
 			DBGLOG(DBG, "Instance: " << instance);
+			if (!instance.isGround()) DBGLOG(DBG, "Note: Instance is not ground!");
 			return true;
 		}
 	}
