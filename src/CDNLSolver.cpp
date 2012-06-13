@@ -736,10 +736,10 @@ InterpretationConstPtr CDNLSolver::getNextModel(){
 }
 
 int CDNLSolver::addNogood(Nogood ng){
+	assert(ng.isGround());
 
-	// TODO: How to handle new facts?
+	// do not add nogoods which expand the domain
 	BOOST_FOREACH (ID lit, ng){
-	//	allFacts.insert(lit.address);
 		if (!allFacts.contains(lit.address)) return 0;
 	}
 

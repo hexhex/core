@@ -376,6 +376,11 @@ namespace
   }
 }
 
+ID Registry::storeOrdinaryAtom(OrdinaryAtom& oatom)
+{
+  return ((oatom.kind & ID::SUBKIND_MASK) == ID::SUBKIND_ATOM_ORDINARYG) ? storeOrdinaryAtomHelper(this, oatom, ogatoms) : storeOrdinaryAtomHelper(this, oatom, onatoms);
+}
+
 // ground version
 ID Registry::storeOrdinaryGAtom(OrdinaryAtom& ogatom)
 {

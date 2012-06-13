@@ -45,6 +45,9 @@ DLVHEX_NAMESPACE_BEGIN
 //#define DBGLOGD(X,Y) DBGLOG(X,Y)
 #define DBGLOGD(X,Y) do{}while(false);
 
+Nogood::Nogood() : ground(true){
+}
+
 void Nogood::recomputeHash(){
 	hashValue = 0;
 	BOOST_FOREACH (ID lit, *this){
@@ -106,7 +109,11 @@ std::string Nogood::getStringRepresentation(RegistryPtr reg) const{
 		}
 		first = false;
 		ss << (lit.isNaf() ? "-" : "");
-		printer.print(reg->ogatoms.getIDByAddress(lit.address));
+		if (lit.isOrdinaryGroundAtom()){
+			printer.print(reg->ogatoms.getIDByAddress(lit.address));
+		}else{
+			printer.print(reg->onatoms.getIDByAddress(lit.address));
+		}
 	}
 	ss << " }";
 	return ss.str();
@@ -120,6 +127,69 @@ Nogood Nogood::resolve(Nogood& ng2, IDAddress litadr){
 	resolvent.erase(NogoodContainer::createLiteral(litadr, false));
 	DBGLOG(DBG, "Resolution " << *this << " with " << ng2 << ": " << resolvent);
 	return resolvent;
+}
+
+void Nogood::insert(ID lit){
+	Set<ID>::insert(lit);
+	ground &= lit.isOrdinaryGroundAtom();
+}
+
+bool Nogood::isGround() const{
+	return ground;
+}
+
+bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
+
+	DBGLOG(DBG, "Matching " << *this << " with " << atomID);
+
+	const OrdinaryAtom& atom = reg->ogatoms.getByID(atomID);
+
+	// find an element in the nogood with unifies with atom
+	BOOST_FOREACH (ID natID, *this){
+		const OrdinaryAtom& nat = natID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(natID) : reg->onatoms.getByID(natID);
+
+		if (atom.unifiesWith(nat)){
+			DBGLOG(DBG, "Unifies with " << natID);
+
+			// compute unifier
+			std::map<ID, ID> unifier;
+			int i = 0;
+			BOOST_FOREACH (ID t, nat.tuple){
+				if (t.isVariableTerm()){
+					unifier[t] = atom.tuple[i];
+					DBGLOG(DBG, "Unifier: " << t << " --> " << atom.tuple[i]);
+				}
+				i++;
+			}
+
+			// apply unifier to the overall nogood
+			DBGLOG(DBG, "Applying unifier");
+			BOOST_FOREACH (ID natID2, *this){
+				if (natID2.isOrdinaryGroundAtom()){
+					instance.insert(natID2);
+				}else{
+					OrdinaryAtom nat2 = reg->onatoms.getByID(natID2);
+					bool ground = true;
+					for (int i = 0; i < nat2.tuple.size(); ++i){
+						if (unifier.find(nat2.tuple[i]) != unifier.end()){
+							DBGLOG(DBG, "Substituting " << nat2.tuple[i] << " by " << unifier[nat2.tuple[i]]);
+							nat2.tuple[i] = unifier[nat2.tuple[i]];
+						}
+						if (nat2.tuple[i].isVariableTerm()) ground = false;
+					}
+					if (ground){
+						nat2.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+						nat2.kind |= ID::SUBKIND_ATOM_ORDINARYG;
+					}
+					instance.insert(NogoodContainer::createLiteral(reg->storeOrdinaryAtom(nat2).address, !natID2.isNaf(), ground));
+				}
+			}
+			DBGLOG(DBG, "Instance: " << instance);
+			return true;
+		}
+	}
+	// no match
+	return false;
 }
 
 // ---------- Class NogoodSet ----------

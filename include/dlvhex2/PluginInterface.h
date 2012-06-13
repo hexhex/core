@@ -809,9 +809,11 @@ protected:
   /**
    * \brief Adds an input parameter of type PREDICATE.
    *
+   * @param nameIsRelevant If true, the name of the predicate parameter might influence the result,
+   *                       otherwise only its extension is relevant.
    * Only use in constructor!
    */
-  void addInputPredicate();
+  void addInputPredicate(bool nameIsRelevant = false);
 
   /**
    * \brief Adds an input parameter of type CONSTANT.
@@ -880,15 +882,13 @@ public:
   virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
   /**
-   * \brief Tries to generalize learned nogoods to other external atoms (with possibly different parameters)
-   * but over the same external predicate.
+   * \brief Tries to generalize learned nogoods to nonground nogoods.
    *
    * \@param ng A learned nogood with some external atom auxiliary over this external predicate
-   * \@param auxes Set of auxiliaries over this external predicate for which related nogoods shall be learned
    * \@param ctx Program context
    * \@param nogoods The nogood container where related nogoods shall be added
    */
-  virtual void generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+  virtual void generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
   // ========== External Learning Methods ==========
 
@@ -985,13 +985,15 @@ public:
    * @return monotonicity on parameter level
    */
   bool isMonotonic(const ExtSourceProperties& prop, int parameterIndex) const
-    { return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
+    { assert(inputType[parameterIndex] == PREDICATE);
+      return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
 
   /**
    * @return antimonotonicity on parameter level
    */
   bool isAntimonotonic(const ExtSourceProperties& prop, int parameterIndex) const
-    { return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
+    { assert(inputType[parameterIndex] == PREDICATE);
+      return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
 
   /**
    * @return functional
@@ -1010,6 +1012,13 @@ public:
    */
   bool isLinearOnTupleLevel(const ExtSourceProperties& prop) const
     { return prop.tuplelevellinear; }
+
+  /**
+   * @return bool True if the name of the predicate parameter with the given index is irrelevant
+   */
+  bool isIndependentOfPredicateParameterName(const ExtSourceProperties& prop, int parameterIndex) const
+    { assert(inputType[parameterIndex] == PREDICATE);
+      return std::find(prop.predicateParameterNameIndependence.begin(), prop.predicateParameterNameIndependence.end(), parameterIndex) != prop.predicateParameterNameIndependence.end(); }
 
   /**
    * @return external source properties associated with this plugin atom

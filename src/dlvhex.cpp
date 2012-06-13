@@ -134,7 +134,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
 //      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
-      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user]" << std::endl
+      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
       << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
       << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
       << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
@@ -142,8 +142,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
       << "                        neg: Learn negative information" << std::endl
       << "                        user: Apply user-defined rules for nogood learning" << std::endl
-      << "                        generalize: Generalize learned nogoods to other external atoms" << std::endl
-      << "                      By default, all options are enabled" << std::endl
+      << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
+      << "                      By default, all options except \"generalize\" are enabled" << std::endl
+      << "     --nongroundnogoods" << std::endl
+      << "                      Automatically instantiate learned nonground nogoods" << std::endl
       << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --flpcheck=[explicit,ufs,ufsm,none]" << std::endl
       << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
@@ -339,6 +341,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningNeg", 0);
   pctx.config.setOption("ExternalLearningUser", 0);
   pctx.config.setOption("ExternalLearningGeneralize", 0);
+  pctx.config.setOption("NongroundNogoodInstantiation", 0);
   pctx.config.setOption("VerificationHeuristics", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("Silent", 0);
@@ -612,6 +615,7 @@ void processOptionsPrePlugin(
 		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
 		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
+		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1084,6 +1088,8 @@ void processOptionsPrePlugin(
 		case 29: pctx.config.setOption("ExplicitFLPUnshift",1); break;
 
 		case 30: pctx.config.setOption("PrintLearnedNogoods",1); break;
+
+		case 31: pctx.config.setOption("NongroundNogoodInstantiation", 1); break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);

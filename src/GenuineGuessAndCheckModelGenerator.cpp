@@ -241,6 +241,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
 	learnedEANogoodsTransferredIndex = 0;
+	instantiatedNongroundNogoodsIndex = 0;
 	if (eaVerificationMode != post){
 		solver->addExternalLearner(this);
 	}
@@ -338,32 +339,66 @@ void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 	assert(annotatedGroundProgram.getAuxToEA(eaid.address).size() > 0);
 	DBGLOG(DBG, "External atom is " << annotatedGroundProgram.getAuxToEA(eaid.address)[0]);
 	const ExternalAtom& ea = reg->eatoms.getByID(annotatedGroundProgram.getAuxToEA(eaid.address)[0]);
-	const OrdinaryAtom& patternAtom = reg->ogatoms.getByAddress(eaid.address);
 
-	// make a list of all auxiliaries over the same predicate
-	std::set<ID> auxes;
-	typedef std::pair<IDAddress, std::vector<ID> > Pair;
-	BOOST_FOREACH (Pair p, annotatedGroundProgram.getAuxToEA()){
-		const OrdinaryAtom& auxAtom = reg->ogatoms.getByAddress(p.first);
-		if (reg->getIDByAuxiliaryConstantSymbol(auxAtom.tuple[0]) == reg->getIDByAuxiliaryConstantSymbol(patternAtom.tuple[0])){
-			auxes.insert(reg->ogatoms.getIDByAddress(p.first));
+	// learn related nonground nogoods
+	int oldCount = learnedEANogoods->getNogoodCount();
+	ea.pluginAtom->generalizeNogood(ng, &factory.ctx, learnedEANogoods);
+}
+
+void GenuineGuessAndCheckModelGenerator::instantiateNongroundNogoods(){
+
+	int max = learnedEANogoods->getNogoodCount();
+	for (int i = instantiatedNongroundNogoodsIndex; i < max; ++i){
+		Nogood ng = learnedEANogoods->getNogood(i);
+		if (ng.isGround()) continue;
+
+		DBGLOG(DBG, "Instantiating " << ng.getStringRepresentation(reg));
+
+		// find the external atom related to this nogood
+		ID eaid = ID_FAIL;
+		BOOST_FOREACH (ID l, ng){
+			if (l.isOrdinaryGroundAtom() ? reg->ogatoms.getIDByAddress(l.address).isExternalAuxiliary() : reg->onatoms.getIDByAddress(l.address).isExternalAuxiliary()){
+				eaid = l;
+				break;
+			}
 		}
-	}
+		const OrdinaryAtom& patternAtom = eaid.isOrdinaryGroundAtom() ? reg->ogatoms.getByAddress(eaid.address) : reg->onatoms.getByAddress(eaid.address);
+
+		// make a list of all auxiliaries over the same predicate
+		std::set<ID> auxes;
+		typedef std::pair<IDAddress, std::vector<ID> > Pair;
+		BOOST_FOREACH (Pair p, annotatedGroundProgram.getAuxToEA()){
+			const OrdinaryAtom& auxAtom = reg->ogatoms.getByAddress(p.first);
+			if (reg->getIDByAuxiliaryConstantSymbol(auxAtom.tuple[0]) == reg->getIDByAuxiliaryConstantSymbol(patternAtom.tuple[0])){
+				auxes.insert(reg->ogatoms.getIDByAddress(p.first));
+			}
+		}
 
 #ifndef NDEBUG
-	std::stringstream ss;
-	ss << "List of related auxiliaries: ";
-	bool first = true;
-	BOOST_FOREACH (ID aux, auxes){
-		if (!first) ss << ", ";
-		ss << aux;
-		first = false;
-	}
-	DBGLOG(DBG, ss.str());
+		std::stringstream ss;
+		ss << "List of related auxiliaries: ";
+		bool first = true;
+		BOOST_FOREACH (ID aux, auxes){
+			if (!first) ss << ", ";
+			ss << aux;
+			first = false;
+		}
+		DBGLOG(DBG, ss.str());
 #endif
 
-	// learn related nogoods
-	ea.pluginAtom->generalizeNogood(ng, auxes, &factory.ctx, learnedEANogoods);
+		// instantiate the learned nonground nogood
+		DBGLOG(DBG, "Instantiating new non-ground nogoods");
+		if (!ng.isGround()){
+			BOOST_FOREACH (ID aux, auxes){
+				Nogood instantiatedNG;
+				if (ng.match(reg, aux, instantiatedNG)){
+					DBGLOG(DBG, "Instantiated " << instantiatedNG.getStringRepresentation(reg) << " from " << ng.getStringRepresentation(reg));
+					learnedEANogoods->addNogood(instantiatedNG);
+				}
+			}
+		}
+	}
+	instantiatedNongroundNogoodsIndex = learnedEANogoods->getNogoodCount();
 }
 
 void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
@@ -373,6 +408,9 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 		for (int i = learnedEANogoodsTransferredIndex; i < max; ++i){
 			generalizeNogood(learnedEANogoods->getNogood(i));
 		}
+	}
+	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")){
+		instantiateNongroundNogoods();
 	}
 
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
@@ -385,7 +423,9 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 			}
 			std::cerr << "Learned nogood: " << learnedEANogoods->getNogood(i).getStringRepresentation(reg) << std::endl;
 		}
-		solver->addNogood(learnedEANogoods->getNogood(i));
+		if (learnedEANogoods->getNogood(i).isGround()){
+			solver->addNogood(learnedEANogoods->getNogood(i));
+		}
 	}
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
@@ -610,7 +650,8 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	// 2. reverification is only necessary and useful if relevant atoms changed
 	if ((!factWasSet || ((annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage() & factWasSet->getStorage()).count() == (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & annotatedGroundProgram.getProgramMask()->getStorage()).count())) &&	// 1
 	    (!changed || (annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage() & changed->getStorage()).count() > 0)){	// 2
-		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *(annotatedGroundProgram.getEAMask(eaIndex)->mask()));
+		InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
+		DBGLOG(DBG, "External Atom " << factory.innerEatoms[eaIndex] << " is ready for verification, interpretation: " << *partialInterpretation << ", mask: " << *mask);
 		const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 		VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
@@ -632,6 +673,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 		// evaluate the external atom (and learn nogoods if external learning is used)
 		evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
 		transferLearnedEANogoods();
+
 
 		// remember the verification result
 		bool verify = vcb.verify();
@@ -660,6 +702,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			return solver->addNogood(ng) >= oldCount;	// tell the solver if a new nogood was added
 		}
 	}
+
 	return false;
 }
 

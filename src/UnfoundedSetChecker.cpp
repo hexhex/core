@@ -556,11 +556,13 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 				const Nogood& ng = ngc->getNogood(i);
-				DBGLOG(DBG, "Processing learned nogood " << ng);
+				if (ng.isGround()){
+					DBGLOG(DBG, "Processing learned nogood " << ng);
 
-				std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
-				BOOST_FOREACH (Nogood tng, transformed){
-					solver->addNogood(tng);
+					std::vector<Nogood> transformed = nogoodTransformation(ng, compatibleSet);
+					BOOST_FOREACH (Nogood tng, transformed){
+						solver->addNogood(tng);
+					}
 				}
 			}
 		}else{

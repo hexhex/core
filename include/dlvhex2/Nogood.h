@@ -47,7 +47,9 @@ DLVHEX_NAMESPACE_BEGIN
 class Nogood : public Set<ID>, public ostream_printable<Nogood>{
 private:
 	std::size_t hashValue;
+	bool ground;
 public:
+	Nogood();
 	void recomputeHash();
 	size_t getHash();
 	bool operator==(const Nogood& ng2);
@@ -55,6 +57,14 @@ public:
 	std::ostream& print(std::ostream& o) const;
 	std::string getStringRepresentation(RegistryPtr reg) const;
 	Nogood resolve(Nogood& ng2, IDAddress litadr);
+	void insert(ID lit);
+	template <class InputIterator> void insert(InputIterator begin, InputIterator end){
+		for (InputIterator it = begin; it != end; ++it){
+			insert(*it);
+		}
+	}
+	bool isGround() const;
+	bool match(RegistryPtr reg, ID atomID, Nogood& instance) const;
 };
 
 class NogoodSet : private ostream_printable<NogoodSet>{
@@ -80,10 +90,18 @@ public:
 	virtual int getNogoodCount() = 0;
 
 	static inline ID createLiteral(ID lit){
-		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address); //  | (lit.kind & ID::PROPERTY_MASK)
+		if (lit.isOrdinaryGroundAtom()){
+			return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);
+		}else{
+			return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYN | (lit.isNaf() ? ID::NAF_MASK : 0), lit.address);
+		}
 	}
-	static inline ID createLiteral(IDAddress litadr, bool truthValue = true){
-		return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (truthValue ? 0 : ID::NAF_MASK), litadr);
+	static inline ID createLiteral(IDAddress litadr, bool truthValue = true, bool ground = true){
+		if (ground){
+			return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (truthValue ? 0 : ID::NAF_MASK), litadr);
+		}else{
+			return ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYN | (truthValue ? 0 : ID::NAF_MASK), litadr);
+		}
 	}
 
 	typedef boost::shared_ptr<NogoodContainer> Ptr;

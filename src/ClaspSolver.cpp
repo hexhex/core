@@ -1002,6 +1002,8 @@ void ClaspSolver::removeExternalLearner(LearningCallback* lb){
 }
 
 int ClaspSolver::addNogood(Nogood ng){
+	assert(ng.isGround());
+
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.post();
 		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");

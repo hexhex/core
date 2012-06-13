@@ -179,8 +179,9 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		// transfer learned nogoods to new solver
 		if (ngc != NogoodContainerPtr()){
 			for (int i = 0; i < ngc->getNogoodCount(); ++i){
-        ExternalSolverHelper<OrdinaryASPSolverT>::addNogood(
-          flpbodysolver, ngc->getNogood(i));
+				if (ngc->getNogood(i).isGround()){
+				        ExternalSolverHelper<OrdinaryASPSolverT>::addNogood(flpbodysolver, ngc->getNogood(i));
+				}
 			}
 		}
 
@@ -202,7 +203,9 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 			compatible = isCompatibleSet(flpbodyas, postprocessedInput, ctx, ngc);
 			if (ngc){
 				for (int i = ngCount; i < ngc->getNogoodCount(); ++i){
-					bodySolverNogoods->addNogood(ngc->getNogood(i));
+					if (ngc->getNogood(i).isGround()){
+						bodySolverNogoods->addNogood(ngc->getNogood(i));
+					}
 				}
 			}
 			DBGLOG(DBG, "Compatibility: " << compatible);

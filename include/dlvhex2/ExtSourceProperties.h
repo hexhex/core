@@ -67,6 +67,7 @@ struct ExtSourceProperties
 {
 	std::vector<int> monotonicInputPredicates;
 	std::vector<int> antimonotonicInputPredicates;
+	std::vector<int> predicateParameterNameIndependence;
 	bool functional;
 	bool atomlevellinear;
 	bool tuplelevellinear;

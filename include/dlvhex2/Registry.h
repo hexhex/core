@@ -103,6 +103,7 @@ struct Registry:
   // assume, that oatom.text is not initialized!
   // oatom.text will be modified
   //
+  ID storeOrdinaryAtom(OrdinaryAtom& ogatom);
   // ground version
   ID storeOrdinaryGAtom(OrdinaryAtom& ogatom);
   // nonground version

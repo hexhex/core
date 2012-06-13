@@ -126,7 +126,7 @@ PluginAtom::Answer::Answer():
 }
 
 void
-PluginAtom::addInputPredicate()
+PluginAtom::addInputPredicate(bool nameIsRelevant)
 {
 	// throw error if last input term was tuple
 	if (inputType.size() > 0)
@@ -134,6 +134,8 @@ PluginAtom::addInputPredicate()
 			throw GeneralError("Tuple inputs must be specified last in input list");
 
     inputType.push_back(PREDICATE);
+
+    if (!nameIsRelevant) prop.predicateParameterNameIndependence.push_back(inputType.size() - 1);
 }
 
 
@@ -420,7 +422,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 	return atomicQueries;
 }
 
-void PluginAtom::generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramCtx* ctx, NogoodContainerPtr nogoods){
+void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods){
 
 	DBGLOG(DBG, "PluginAtom::generalizeNogood");
 
@@ -437,6 +439,67 @@ void PluginAtom::generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramC
 	assert(patternID != ID_FAIL);
 	DBGLOG(DBG, "patternID=" << patternID);
 	const OrdinaryAtom& pattern = ctx->registry()->ogatoms.getByAddress(patternID.address);
+
+	// rewrite atoms of form aux(p1,p2,p3,...) to aux(X1,X2,X3,...) and remember the variables used for the predicates
+	std::map<ID, ID> translation;
+	for (int par = 0; par < inputType.size(); ++par){
+		if (getInputType(par) == PREDICATE && isIndependentOfPredicateParameterName(prop, par)){
+			if (translation.find(pattern.tuple[par + 1]) == translation.end()){
+				std::stringstream var;
+				var << "X" << (par + 1);
+				translation[pattern.tuple[par + 1]] = ctx->registry()->storeVariableTerm(var.str());
+				DBGLOG(DBG, "Mapping " << pattern.tuple[par + 1] << " to " << translation[pattern.tuple[par + 1]]);
+			}
+		}
+	}
+
+	// translate the nogood
+	Nogood translatedNG;
+	BOOST_FOREACH (ID lID, ng){
+		const OrdinaryAtom& l = ctx->registry()->ogatoms.getByAddress(lID.address);
+		if (lID != patternID){
+			OrdinaryAtom t = l;
+			if (translation.find(l.tuple[0]) != translation.end()){
+				t.tuple[0] = translation[l.tuple[0]];
+			}
+			if (t.tuple[0].isVariableTerm()){
+				t.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+				t.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+			}
+			ID id = NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryAtom(t).address, !lID.isNaf(), !t.tuple[0].isVariableTerm());
+			DBGLOG(DBG, "Adding translated literal " << id << " to nogood");
+			translatedNG.insert(id);
+		}else{
+			bool ground = true;
+			OrdinaryAtom t = l;
+			for (int i = 1; i <= inputType.size(); ++i){
+				if (getInputType(i - 1) == PREDICATE){
+					if (translation.find(pattern.tuple[i]) != translation.end()){
+						t.tuple[i] = translation[pattern.tuple[i]];
+					}
+					if (t.tuple[i].isVariableTerm()){
+						ground = false;
+					}
+				}else{
+					t.tuple[i] = pattern.tuple[i];
+				}
+			}
+			if (!ground){
+				t.kind &= (ID::ALL_ONES ^ ID::SUBKIND_MASK);
+				t.kind |= ID::SUBKIND_ATOM_ORDINARYN;
+			}
+			ID id = NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryAtom(t).address, !lID.isNaf(), ground);
+			DBGLOG(DBG, "Adding translated literal " << id << " to nogood");
+			translatedNG.insert(id);
+		}
+	}
+
+	// store the translated nogood
+	DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
+	nogoods->addNogood(translatedNG);
+
+/*
+return;
 
 	// for all related auxiliaries
 	BOOST_FOREACH (ID auxID, auxes){
@@ -480,6 +543,7 @@ void PluginAtom::generalizeNogood(Nogood ng, const std::set<ID>& auxes, ProgramC
 		DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
 		nogoods->addNogood(translatedNG);
 	}
+*/
 }
 
 void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){

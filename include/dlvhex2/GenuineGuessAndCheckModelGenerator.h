@@ -150,6 +150,7 @@ protected:
 
   // internal solver
   NogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
+  int instantiatedNongroundNogoodsIndex;// the highest index in learnedEANogoods which has already been transformed to ground instances 
   int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
   GenuineGrounderPtr grounder;
   GenuineGroundSolverPtr solver;
@@ -159,9 +160,14 @@ protected:
   // members
 
   /**
-   * Learns related nogoods
+   * Learns related nonground nogoods
    */
   void generalizeNogood(Nogood ng);
+
+  /**
+   * Instantiates learned nonground nogoods
+   */
+  void instantiateNongroundNogoods();
 
   /**
    * Transferes new nogoods from learnedEANogoods to the solver and updates learnedEANogoodsTransferredIndex accordingly

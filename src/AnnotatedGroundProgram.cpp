@@ -64,6 +64,7 @@ void AnnotatedGroundProgram::mapAuxToEAtoms(){
 		bm::bvector<>::enumerator en_end = eaMask.mask()->getStorage().end();
 		while (en < en_end){
 			if (reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+				DBGLOG(DBG, "Auxiliary " << *en << " maps to " << indexedEatoms[eaIndex]);
 				auxToEA[*en].push_back(indexedEatoms[eaIndex]);
 			}
 			en++;
