@@ -164,6 +164,8 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      post: Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
       << "                      periodic: Do UFS check in periodic intervals" << std::endl
+      << " --modelqueuesize=N   Size of the model queue, i.e. number of models which can be computed in parallel" << std::endl
+      << "                        (only useful for clasp solver)" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
@@ -344,6 +346,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("NongroundNogoodInstantiation", 0);
   pctx.config.setOption("VerificationHeuristics", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
+  pctx.config.setOption("ModelQueueSize", 5);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -616,6 +619,7 @@ void processOptionsPrePlugin(
 		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
 		{ "nongroundnogoods", no_argument, 0, 31 },
+		{ "modelqueuesize", required_argument, 0, 32 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -623,6 +627,7 @@ void processOptionsPrePlugin(
   pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
   pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
 
+  bool specifiedModelQueueSize = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -1091,6 +1096,28 @@ void processOptionsPrePlugin(
 
 		case 31: pctx.config.setOption("NongroundNogoodInstantiation", 1); break;
 
+		case 32:
+			{
+				int queuesize = 5;
+				try
+				{
+					if( optarg[0] == '=' )
+						queuesize = boost::lexical_cast<unsigned>(&optarg[1]);
+					else
+						queuesize = boost::lexical_cast<unsigned>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse size of model queue '" << optarg << "' - using default=" << queuesize << "!");
+				}
+				if (queuesize < 1){
+					throw GeneralError(std::string("Model queue size must be > 0"));
+				}
+				pctx.config.setOption("ModelQueueSize", queuesize); break;
+				specifiedModelQueueSize = true;
+			}
+			break;
+
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
@@ -1100,6 +1127,12 @@ void processOptionsPrePlugin(
 	// global constraints
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
 		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
+	}
+	if (specifiedModelQueueSize && pctx.config.getOption("VerificationHeuristics") == 2){
+		LOG(WARNING, "Selected verification heuristic is not compatible with model caching (modelqueuesize)");
+	}
+	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
+		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");
 	}
 
 	// configure plugin path

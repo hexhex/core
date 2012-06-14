@@ -149,7 +149,7 @@ protected:
 	RegistryPtr reg;
 
 	// communiaction between main thread and clasp thread
-	static const int MODELQUEUE_MAXSIZE = 5;
+	int modelqueueSize;
 	boost::mutex modelsMutex;	// exclusive access of preparedModels
 	boost::condition waitForQueueSpaceCondition, waitForModelCondition;
 	std::queue<InterpretationPtr> preparedModels;

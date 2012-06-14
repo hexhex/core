@@ -983,7 +983,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		NogoodContainerPtr ngc){
 
 	if (!agp.hasHeadCycles() && (!mg || !agp.hasECycles())){
-		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles not e-cycles");
+		DBGLOG(DBG, "Skipping UFS check program  it contains neither head-cycles nor e-cycles");
 		return std::vector<IDAddress>();
 	}
 
@@ -1012,7 +1012,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 		DBGLOG(DBG, "UnfoundedSetCheckerManager::getUnfoundedSet");
 		for (int comp = 0; comp < agp.getComponentCount(); ++comp){
 			if (!agp.hasHeadCycles(comp) && !intersectsWithNonHCFDisjunctiveRules[comp] && (!mg || !agp.hasECycles(comp))){
-				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles not e-cycles");
+				DBGLOG(DBG, "Skipping component " << comp << " because it contains neither head-cycles nor e-cycles");
 				continue;
 			}
 
