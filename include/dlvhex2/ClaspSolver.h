@@ -124,7 +124,7 @@ private:
 	};
 
 	// interface to clasp internals
-	bool addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL = false);
+	std::pair<bool, bool> addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL = false);
 	std::vector<std::vector<ID> > convertClaspNogood(Clasp::LearntConstraint& learnedConstraint);
 	std::vector<std::vector<ID> > convertClaspNogood(const Clasp::LitVec& litvec);
 	std::vector<Nogood> convertClaspNogood(std::vector<std::vector<ID> >& nogoods);
@@ -165,8 +165,7 @@ protected:
 	boost::mutex learnerMutex;	// exclusive access of learner
 	Set<LearningCallback*> learner;
 	boost::mutex nogoodsMutex;	// exclusive access of nogoods
-	std::vector<Nogood> nogoods;
-	int translatedNogoods;	// largest nogood index within nogoods which has already been translated and sent to clasp
+	std::queue<Nogood> nogoods;
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;

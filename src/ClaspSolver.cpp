@@ -217,8 +217,6 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
 
-	bool inconsistent = false;
-
 	// thread-safe access of the learner vector
         boost::mutex::scoped_lock lock(cs.learnerMutex);
 	if (cs.learner.size() != 0){
@@ -234,8 +232,6 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		// create an interpretation and a bitset of assigned values
 		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
 		InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-//		Interpretation::Storage interpretation;
-//		Interpretation::Storage factWasSet;
 
 		// translate clasp assignment to hex assignment
 		// get the symbol table from the solver
@@ -284,25 +280,26 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 			DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
 			cs.sem_dlvhexDataStructures.post();
 		}
-
-//		inconsistent = conflict;
 	}
 
 	// add the produced nogoods to clasp
+	bool inconsistent = false;
 	{
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
 
-		DBGLOG(DBG, "External learners have produced " << (cs.nogoods.size() - cs.translatedNogoods) << " nogoods; transferring to clasp");
-		for (int i = cs.translatedNogoods; i < cs.nogoods.size(); ++i){
-			inconsistent |= cs.addNogoodToClasp(s, cs.nogoods[i], onlyOnCurrentDL);
-			if (inconsistent) break;	// we must not add more clauses if we have already a conflict
-		}
+		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
 
-		if (!inconsistent && !onlyOnCurrentDL){
-			cs.translatedNogoods = cs.nogoods.size();
+		bool added = true;
+		while (cs.nogoods.size() > 0 && added && !inconsistent){
+			Nogood& ng = cs.nogoods.front();
+			std::pair<bool, bool> ret = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
+			added = ret.first;
+			inconsistent = ret.second; // we must not add more clauses if we have already a conflict
+			if (added) cs.nogoods.pop();
 		}
 	}
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
+	assert(!inconsistent || s.hasConflict());
 
 	return !inconsistent;
 }
@@ -321,7 +318,11 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_general;
 }
 
-bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
+/**
+ * Adds a nogood to the running clasp instance.
+ * @return std::pair<bool, bool> The first return value indicates if the nogood was actually added, the second is true iff adding has produced a conflict.
+ */
+std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
 
 #ifndef NDEBUG
 	std::stringstream ss;
@@ -332,7 +333,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 	BOOST_FOREACH (ID lit, ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()){
 			DBGLOG(DBG, "Skipping nogood because a literal is not in Clasp's literal list");
-			return false;
+			return std::pair<bool, bool>(false, false);
 		}
 	}
 
@@ -347,13 +348,13 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 		// if it was added with different sign, cancel adding the clause
 		if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
 			if (pos.contains(hexToClasp[lit.address].var())) continue;
-			else if (neg.contains(hexToClasp[lit.address].var())) return false;
+			else if (neg.contains(hexToClasp[lit.address].var())) return std::pair<bool, bool>(false, false);
 			pos.insert(hexToClasp[lit.address].var());
 
 			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
 		}else{
 			if (neg.contains(hexToClasp[lit.address].var())) continue;
-			else if (pos.contains(hexToClasp[lit.address].var())) return false;
+			else if (pos.contains(hexToClasp[lit.address].var())) return std::pair<bool, bool>(false, false);
 			neg.insert(hexToClasp[lit.address].var());
 
 			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
@@ -363,7 +364,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
 		if (onlyOnCurrentDL && !onCurrentDL){
 			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level");
-			return false;
+			return std::pair<bool, bool>(false, false);
 		}
 
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
@@ -384,7 +385,7 @@ bool ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurr
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
 
-	return !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok;
+	return std::pair<bool, bool>(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok);
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
@@ -844,7 +845,7 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	return initiallyInconsistent;
 }
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -893,7 +894,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 }
 
 
-ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), translatedNogoods(0), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
+ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false)
 {
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
@@ -1014,7 +1015,7 @@ int ClaspSolver::addNogood(Nogood ng){
 	int s;
 	{
 	        boost::mutex::scoped_lock lock(nogoodsMutex);
-		nogoods.push_back(ng);
+		nogoods.push(ng);
 		s = nogoods.size() - 1;
 	}
 
@@ -1036,7 +1037,8 @@ Nogood ClaspSolver::getNogood(int index){
 	{
 		// access nogoods
         	boost::mutex::scoped_lock lock(nogoodsMutex);
-		ng = nogoods[index];
+		throw std::runtime_error("Not implemented");
+//		ng = nogoods[index];
 	}
 
 	if (!strictSingleThreaded){
