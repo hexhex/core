@@ -206,8 +206,6 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 		cs.sem_request.wait();
 	}
 
-	// @TODO: find a breakout possibility to terminate only the current thread!
-	//        the following throw kills the whole application, which is not what we want
 	static const bool quickTerminationMethod = true;
 	if (quickTerminationMethod && cs.terminationRequest) throw ClaspSolver::ClaspTermination();
 }
@@ -289,6 +287,19 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 
 		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
 
+/*
+		bool alladded = true;
+		for (int i = cs.translatedNogoodsIndex; i < cs.nogoods.size(); ++i){
+			std::pair<bool, bool> ret = cs.addNogoodToClasp(s, cs.nogoods[i], onlyOnCurrentDL);
+			if (!ret.first) alladded = false;
+			inconsistent = ret.second;
+			if (inconsistent) break; // we must not add more clauses if we have already a conflict
+		}
+		if (alladded && !inconsistent){
+			cs.translatedNogoodsIndex = cs.nogoods.size();
+		}
+*/
+
 		bool added = true;
 		while (cs.nogoods.size() > 0 && added && !inconsistent){
 			Nogood& ng = cs.nogoods.front();
@@ -320,7 +331,10 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 
 /**
  * Adds a nogood to the running clasp instance.
- * @return std::pair<bool, bool> The first return value indicates if the nogood was actually added, the second is true iff adding has produced a conflict.
+ * @return std::pair<bool, bool>
+ *             The first return value indicates if the nogood was successfulle processed.
+ *               That is, it is true iff it was either added or excluded from being added, and false if it might be added at some future point
+               The second is true iff adding has produced a conflict
  */
 std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng, bool onlyOnCurrentDL){
 
@@ -333,7 +347,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 	BOOST_FOREACH (ID lit, ng){
 		if (hexToClasp.find(lit.address) == hexToClasp.end()){
 			DBGLOG(DBG, "Skipping nogood because a literal is not in Clasp's literal list");
-			return std::pair<bool, bool>(false, false);
+			return std::pair<bool, bool>(true, false);
 		}
 	}
 
@@ -348,23 +362,22 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 		// if it was added with different sign, cancel adding the clause
 		if (!(hexToClasp[lit.address].sign() ^ lit.isNaf())){
 			if (pos.contains(hexToClasp[lit.address].var())) continue;
-			else if (neg.contains(hexToClasp[lit.address].var())) return std::pair<bool, bool>(false, false);
+			else if (neg.contains(hexToClasp[lit.address].var())){
+				DBGLOG(DBG, "Dropping tautological nogood");
+				return std::pair<bool, bool>(true, false);
+			}
 			pos.insert(hexToClasp[lit.address].var());
 
 			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
 		}else{
 			if (neg.contains(hexToClasp[lit.address].var())) continue;
-			else if (pos.contains(hexToClasp[lit.address].var())) return std::pair<bool, bool>(false, false);
+			else if (pos.contains(hexToClasp[lit.address].var())){
+				DBGLOG(DBG, "Dropping tautological nogood");
+				return std::pair<bool, bool>(true, false);
+			}
 			neg.insert(hexToClasp[lit.address].var());
 
 			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
-		}
-
-		// if this is requested, do not add conflict clauses which do not cause a conflict on the current decision level
-		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
-		if (onlyOnCurrentDL && !onCurrentDL){
-			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level");
-			return std::pair<bool, bool>(false, false);
 		}
 
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
@@ -372,6 +385,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 		// 3. the overall sign must be changed (negation !) because we work with nogoods and clasp works with clauses
 		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
 		clauseCreator->add(clit);
+
 #ifndef NDEBUG
 		if (!first) ss << ", ";
 		first = false;
@@ -379,13 +393,19 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 #endif
 	}
 
+	// if requested, do not add conflict clauses which do not cause a conflict on the current decision level
+	// (if this method is called by isModel() then is must not cause conflicts except on the top level)
+	if (onlyOnCurrentDL && !onCurrentDL){
+		DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level");
+		return std::pair<bool, bool>(false, false);
+	}
+
 #ifndef NDEBUG
 	ss << " }";
 #endif
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
-
-	return std::pair<bool, bool>(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order | Clasp::ClauseCreator::clause_not_sat, Clasp::Constraint_t::learnt_other).ok);
+	return std::pair<bool, bool>(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok);
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
@@ -1016,6 +1036,7 @@ int ClaspSolver::addNogood(Nogood ng){
 	{
 	        boost::mutex::scoped_lock lock(nogoodsMutex);
 		nogoods.push(ng);
+		//nogoods.push_back(ng);
 		s = nogoods.size() - 1;
 	}
 

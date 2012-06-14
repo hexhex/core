@@ -166,6 +166,8 @@ protected:
 	Set<LearningCallback*> learner;
 	boost::mutex nogoodsMutex;	// exclusive access of nogoods
 	std::queue<Nogood> nogoods;
+	//std::vector<Nogood> nogoods;
+	//int translatedNogoodsIndex;	// highest index in nogoods which has already been translated to clasp
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
