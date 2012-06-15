@@ -412,6 +412,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
 	std::pair<bool, bool> ret(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok);
+
 	return ret;
 }
 

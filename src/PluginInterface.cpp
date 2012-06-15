@@ -561,7 +561,7 @@ void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPt
 			BOOST_FOREACH (ID oid, out){
 				Nogood extNg = extNgInput;
 				extNg.insert(oid);
-				DBGLOG(DBG, "Learned nogood " << extNg << " from input-output behavior");
+				DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(ctx->registry()) << " from input-output behavior");
 				nogoods->addNogood(extNg);
 			}
 		}
@@ -588,7 +588,7 @@ void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogo
 						Nogood excludeOthers;
 						excludeOthers.insert(uniqueOut);
 						excludeOthers.insert(id);
-						DBGLOG(DBG, "Learned nogood " << excludeOthers << " from functionality");
+						DBGLOG(DBG, "Learned nogood " << excludeOthers.getStringRepresentation(ctx->registry()) << " from functionality");
 						nogoods->addNogood(excludeOthers);
 					}
 				}
@@ -622,7 +622,7 @@ void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods
 		BOOST_FOREACH (ID bId, rule.body){
 			ng.insert(bId);
 		}
-		DBGLOG(DBG, "Learned nogood " << ng << " from rule");
+		DBGLOG(DBG, "Learned nogood " << ng.getStringRepresentation(ctx->registry()) << " from rule");
 		nogoods->addNogood(ng);
 	}
 }

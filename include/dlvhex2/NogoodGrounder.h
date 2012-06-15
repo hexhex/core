@@ -90,7 +90,9 @@ public:
  */
 class LazyNogoodGrounder : public NogoodGrounder{
 private:
-	int instantiatedNongroundNogoodsIndex;
+	int watchedNogoodsCount;
+	std::vector<std::pair<ID, int> > watchedLiterals;
+	std::set<std::pair<IDAddress, int> > alreadyCompared;	// store which atom was already compared to which nonground nogood
 public:
 	LazyNogoodGrounder(RegistryPtr reg, NogoodContainerPtr watched, NogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
