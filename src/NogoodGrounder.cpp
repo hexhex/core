@@ -59,6 +59,64 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 		Nogood ng = watched->getNogood(i);
 		if (ng.isGround()) continue;
 
+		DBGLOG(DBG, "Searching for watched literal in nogood " << i);
+		int maxBoundVariables = 0;
+		ID watchedLit = ID_FAIL;
+		BOOST_FOREACH (ID lit, ng){
+			if (lit.isOrdinaryGroundAtom()) continue;
+
+			const OrdinaryAtom& atom = reg->onatoms.getByID(lit);
+
+			std::set<ID> distinctVar;
+			int var = 0;
+			BOOST_FOREACH (ID p, atom.tuple){
+				if (p.isVariableTerm()){
+					if (std::find(distinctVar.begin(), distinctVar.end(), p) == distinctVar.end()){
+						distinctVar.insert(p);
+						var++;
+					}
+				}
+			}
+
+			if (var > maxBoundVariables){
+				maxBoundVariables = var;
+				watchedLit = lit;
+			}
+		}
+		assert (watchedLit != ID_FAIL);
+
+		// watch the atom and the corresponding nogood
+		DBGLOG(DBG, "Watching literal " << watchedLit << " in nogood " << i);
+		const OrdinaryAtom& watchedAtom = reg->onatoms.getByAddress(watchedLit.address);
+
+		// For each atom A of the program, check if the watched literal unifies with A
+		bm::bvector<>::enumerator en = agp.getProgramMask()->getStorage().first();
+		bm::bvector<>::enumerator en_end = agp.getProgramMask()->getStorage().end();
+
+		DBGLOG(DBG, "Searching for unifying program atoms");
+		while (en < en_end){
+
+			DBGLOG(DBG, "Checking atom " << *en);
+
+			const OrdinaryAtom& currentAtom = reg->ogatoms.getByAddress(*en);
+			if (currentAtom.unifiesWith(watchedAtom)){
+				Nogood instantiatedNG;
+				ng.match(reg, reg->ogatoms.getIDByAddress(*en), instantiatedNG);
+				DBGLOG(DBG, "Instantiated " << instantiatedNG.getStringRepresentation(reg) << " from " << ng.getStringRepresentation(reg));
+
+				if (instantiatedNG.isGround()){
+					destination->addNogood(instantiatedNG);
+				}else{
+					watched->addNogood(instantiatedNG);
+				}
+			}
+
+			en++;
+		}
+
+
+
+/*
 		DBGLOG(DBG, "Instantiating " << ng.getStringRepresentation(reg));
 
 		// find the external atom related to this nogood
@@ -105,8 +163,9 @@ void ImmediateNogoodGrounder::update(InterpretationConstPtr partialInterpretatio
 				}
 			}
 		}
+*/
 	}
-	instantiatedNongroundNogoodsIndex = watched->getNogoodCount();
+	instantiatedNongroundNogoodsIndex = max;
 }
 
 LazyNogoodGrounder::LazyNogoodGrounder(RegistryPtr reg, NogoodContainerPtr watched, NogoodContainerPtr destination, AnnotatedGroundProgram& agp) :

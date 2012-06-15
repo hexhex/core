@@ -241,7 +241,8 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 	factory.ctx.globalNogoods.addNogoodListener(solver);
 	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
 	learnedEANogoodsTransferredIndex = 0;
-	nogoodGrounder = NogoodGrounderPtr(new LazyNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
+	nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
+
 	if (eaVerificationMode != post){
 		solver->addExternalLearner(this);
 	}
