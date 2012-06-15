@@ -424,6 +424,8 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 
 void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods){
 
+	if (!ng.isGround()) return;
+
 	DBGLOG(DBG, "PluginAtom::generalizeNogood");
 
 	// find the auxiliary in the nogood
@@ -496,6 +498,11 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 
 	// store the translated nogood
 	DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
+
+if (!ng.isGround()){
+	std::cerr << "Generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")" << std::endl;
+}
+
 	nogoods->addNogood(translatedNG);
 
 /*

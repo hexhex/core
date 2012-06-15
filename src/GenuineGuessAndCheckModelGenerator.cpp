@@ -324,6 +324,8 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 
 void GenuineGuessAndCheckModelGenerator::generalizeNogood(Nogood ng){
 
+	if (!ng.isGround()) return;
+
 	DBGLOG(DBG, "Generalizing " << ng.getStringRepresentation(reg));
 
 	// find the external atom related to this nogood
@@ -692,6 +694,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			while (en < en_end){
 				// atoms which do not occur in the program can never be true
 				if (annotatedGroundProgram.getProgramMask()->getFact(*en)){
+					assert(factWasSet->getFact(*en));
 					ng.insert(NogoodContainer::createLiteral(*en, partialInterpretation->getFact(*en)));
 				}
 				en++;
@@ -699,9 +702,9 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 			// note: this nogoods _must_ be learned in immediate mode (but it is very useful also in heuristics mode), even if external learning is off,
 			// because the solver _must never_ generate conflicting assignments as there is no final compatibility check
 			int oldCount = solver->getNogoodCount();
-			int newCount = solver->addNogood(ng);
-			DBGLOG(DBG, "Conflict nogood: " << ng.getStringRepresentation(reg) << ", inconsistent: " << (newCount >= oldCount));
-			return newCount >= oldCount;	// tell the solver if a new nogood was added
+			int newIndex = solver->addNogood(ng);
+			DBGLOG(DBG, "Conflict nogood: " << ng.getStringRepresentation(reg) << ", inconsistent: " << (newIndex >= oldCount));
+			return newIndex >= oldCount;	// tell the solver if a new nogood was added
 		}
 	}
 

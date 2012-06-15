@@ -246,6 +246,7 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 				interpretation->setFact(adr);
 			}
 		}
+
 		// a fact changed iff
 		// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
 		// 2. it was set before and is still set but the truth value is different
@@ -299,7 +300,6 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 			cs.translatedNogoodsIndex = cs.nogoods.size();
 		}
 */
-
 		bool added = true;
 		while (cs.nogoods.size() > 0 && added && !inconsistent){
 			Nogood& ng = cs.nogoods.front();
@@ -386,6 +386,12 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
 		clauseCreator->add(clit);
 
+		// if requested, do not add clauses which do not cause a conflict on the current decision level
+		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
+		if (onlyOnCurrentDL && !s.isFalse(clit)){
+			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
+			return std::pair<bool, bool>(false, false);
+		}
 #ifndef NDEBUG
 		if (!first) ss << ", ";
 		first = false;
@@ -405,7 +411,8 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 #endif
 
 	DBGLOG(DBG, "Adding nogood " << ng.getStringRepresentation(reg) << (onlyOnCurrentDL ? " at current DL " : "") << " as clasp-clause " << ss.str());
-	return std::pair<bool, bool>(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok);
+	std::pair<bool, bool> ret(true, !Clasp::ClauseCreator::create(s, clauseCreator->lits(), Clasp::ClauseCreator::clause_known_order, Clasp::Constraint_t::learnt_other).ok);
+	return ret;
 }
 
 std::vector<std::vector<ID> > ClaspSolver::convertClaspNogood(Clasp::LearntConstraint& learnedConstraint){
