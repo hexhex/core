@@ -498,11 +498,6 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 
 	// store the translated nogood
 	DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
-
-if (!ng.isGround()){
-	std::cerr << "Generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")" << std::endl;
-}
-
 	nogoods->addNogood(translatedNG);
 
 /*
