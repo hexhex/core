@@ -92,6 +92,7 @@ libdlvhex2_base_la_SOURCES = \
     MLPSolver.cpp \
     MLPSyntaxChecker.cpp \
     Nogood.cpp \
+    NogoodGrounder.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \

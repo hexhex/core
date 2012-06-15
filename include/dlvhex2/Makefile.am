@@ -73,6 +73,7 @@ pkginclude_HEADERS = \
   Module.h \
   ModuleAtomTable.h \
   ModuleTable.h \
+  NogoodGrounder.h \
   OfflineModelBuilder.h \
   OnlineModelBuilder.h \
   OrdinaryAtomTable.h \
