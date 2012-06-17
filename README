@@ -27,6 +27,24 @@ This file provides some hints how to install and run dlvhex.
     your path so that it is executable on your system (don't forget to
     "chmod +x" it!).  dlvhex is looking for `dlv', so you might want
     to rename the downloaded binary or create a softlink to it.
+*** libgringo / libclasp
+    You can use libgringo / libclasp to use them as genuine grounder resp. solver.
+
+    You might want to use the script checkout_build_potassco.sh in this package
+    to prepare gringo and clasp libraries to be used by dlvhex.
+
+    If something fails, see the following information.
+
+    Use the configure option
+    `--with-libgringo=<gringo-trunk-dir>' resp.
+    `--with-libclasp=<clasp-trunk-dir>' to specify the directory
+    where you have built clingo-app resp. clasp.app.
+
+    IMPORTANT:
+    - use the same boost library as dlvhex, 1.43 works for us
+    - you might need to hack CMakeLists.txt to accept your boost version
+    - CMakeLists.txt should be modified to force the usage of multithreaded boost
+      (change OFF to ON in the respective line) because dlvhex requires multithreaded boost libraries
 *** libclingo
     Alternatively, you can use libclingo as background model
     builder. Use the configure option
@@ -51,22 +69,10 @@ This file provides some hints how to install and run dlvhex.
     IMPORTANT:
     - use the same boost library as dlvhex, 1.43 works for us
     - you might need to hack CMakeLists.txt to accept your boost version
-*** libgringo / libclasp
-    You can use libgringo / libclasp to use them as genuine grounder resp. solver.
-    Use the configure option
-    `--with-libgringo=<gringo-trunk-dir>' resp.
-    `--with-libclasp=<clasp-trunk-dir>' to specify the directory
-    where you have built clingo-app resp. clasp.app.
-
-    IMPORTANT:
-    - use the same boost library as dlvhex, 1.43 works for us
-    - you might need to hack CMakeLists.txt to accept your boost version
-    - CMakeLists.txt should be modified to force the usage of multithreaded boost
-      (change OFF to ON in the respective line) because dlvhex requires multithreaded boost libraries
 *** DLVDB
     FIXME
 *** libdlv
-    FIXME
+    currently unsupported
 *** boost
     Boost is a collection of portable C++ source libraries, which are
     intended to be widely useful, and usable across a broad spectrum

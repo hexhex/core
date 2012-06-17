@@ -36,6 +36,7 @@ SUBDIRS = libltdl examples include src testsuite
 EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
+    checkout_build_potassco.sh \
     dlvhex2.pc.in \
     doxygen.am \
     doxygen.cfg

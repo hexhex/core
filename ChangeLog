@@ -1,3 +1,8 @@
+2012-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* checkout_build_potassco.sh: Added script to checkout and build
+	parts of potassco such that it can be used by dlvhex.
+
 2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* ID.h: Introduce a property for external atom input auxiliaries
