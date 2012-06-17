@@ -53,13 +53,22 @@ Logger& Logger::Instance()
 
 boost::mutex& Logger::Mutex()
 {
-#ifndef NDEBUG
   if( mutex == 0 )
-    mutex = new boost::mutex();
-  return *mutex;
-#else
-  throw std::runtime_error("do not use logging mutex in NDEBUG mode!");
+  {
+#ifdef NDEBUG
+    // rationale behind this message: if we use NDEBUG in dlvhex,
+    // this message will never appear (because Logger.h does not use the mutex).
+    // if we use NDEBUG in dlvhex but DEBUG in plugin, this appears and
+    // this might hit performance therefore we give a warning (once)
+    if( Logger::Instance().shallPrint(Logger::WARNING) ) {
+      Logger::Instance().stream() <<
+        "Logger (performance) warning: use NDEBUG "
+        "to deactivate logging mutex in plugin!" << std::endl;
+    }
 #endif
+    mutex = new boost::mutex();
+  }
+  return *mutex;
 }
 
 void Logger::setPrintLevels(Levels levels)

@@ -2,6 +2,9 @@
 
 	* checkout_build_potassco.sh: Added script to checkout and build
 	parts of potassco such that it can be used by dlvhex.
+	* src/Logger.cpp: Fixed problem of NDEBUG dlvhex vs DEBUG plugin
+	builds, now the worst thing that happens is a warning and possibly
+	slightly reduced performance in the plugin.
 
 2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
 
