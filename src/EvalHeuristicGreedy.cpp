@@ -234,6 +234,8 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
   {
     didSomething = false;
 
+//compgraph.writeGraphViz(std::cout, true);
+
   //
   // forall external components e:
   // merge with all rules that 
@@ -500,6 +502,19 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
         Component comp2 = *cit2;
         DBGLOG(DBG,"checking other component " << comp2);
 
+	// only merge nodes with successors, but not with predecessors
+/*
+        ComponentSet c2preds;
+        transitivePredecessorComponents(compgraph, comp, c2preds);
+        if (std::find(c2preds.begin(), c2preds.end(), comp2) != c2preds.end()){
+          DBGLOG(DBG, "" << comp2 << " is a predecessor -> skip");
+          cit2++;
+          continue;
+        }
+*/
+
+        bool breakCycle = false;
+
         // check if there is a path of length >=2 from comp2 to comp
         // that is, there is a path from a predecessor of comp2 to comp
         ComponentSet preds2;
@@ -511,7 +526,6 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
             preds2.insert(compgraph.targetOf(*pit));
           }
         }
-        bool breakCycle = false;
         BOOST_FOREACH (Component comp2s, preds2){
 
           ComponentSet reachable;
@@ -523,6 +537,31 @@ void EvalHeuristicGreedy::build(EvalGraphBuilder& builder)
             break;
           }
         }
+
+        // check if there is a path of length >=2 from comp to comp2
+        // that is, there is a path from a predecessor of comp to comp2
+        ComponentSet preds;
+        {
+          ComponentGraph::PredecessorIterator pit, pit_end;
+          for(boost::tie(pit, pit_end) = compgraph.getDependencies(comp);
+              pit != pit_end; ++pit)
+          {
+            preds.insert(compgraph.targetOf(*pit));
+          }
+        }
+        BOOST_FOREACH (Component comps, preds){
+
+          ComponentSet reachable;
+          transitivePredecessorComponents(compgraph, comps, reachable);
+
+          if (std::find(reachable.begin(), reachable.end(), comp2) != reachable.end() && comps != comp2){ // path of length >=2
+            DBGLOG(DBG, "do not merge because this would break a cycle");
+            breakCycle = true;
+            break;
+          }
+        }
+
+	// if this is the case, then do not merge
         if (!breakCycle){
           if (mergeComponents(compgraph.propsOf(comp), compgraph.propsOf(comp2))){
             if (std::find(collapse.begin(), collapse.end(), comp2) == collapse.end()){
