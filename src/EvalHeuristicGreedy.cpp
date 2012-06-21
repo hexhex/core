@@ -78,8 +78,8 @@ bool EvalHeuristicGreedy::mergeComponents(const ComponentGraph::ComponentInfo& c
 
 	// if both components are solved by wellfounded mg we merge them
 	// (the resulting component will still be wellfounded)
-	if (!ci1.innerEatomsNonmonotonic && !ci1.negationInCycles && !ci1.disjunctiveHeads &&
-	    !ci2.innerEatomsNonmonotonic && !ci2.negationInCycles && !ci2.disjunctiveHeads) return true;
+	if (!ci1.innerEatomsNonmonotonic && !ci1.negationInCycles && !ci1.disjunctiveHeads && ci1.innerEatoms.size() > 0 &&
+	    !ci2.innerEatomsNonmonotonic && !ci2.negationInCycles && !ci2.disjunctiveHeads && ci2.innerEatoms.size() > 0) return true;
 
 	// otherwise: don't merge them
 	return false;
