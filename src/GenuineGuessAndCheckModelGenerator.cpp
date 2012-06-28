@@ -474,7 +474,6 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
 
 			if (ufs.size() > 0){
-				//Nogood ng = ufsc.getUFSNogood(ufs, partialInterpretation);
 				Nogood ng = ufscm->getLastUFSNogood();
 				int oldCount = solver->getNogoodCount();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
@@ -500,13 +499,14 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 	assert(annotatedGroundProgram.getAuxToEA(eaAux.address).size() > 0);
 
 	// check if at least one of the external atoms which can derive this auxiliary were verified
-	int eaIndex = 0;
 	BOOST_FOREACH (ID ea, annotatedGroundProgram.getAuxToEA(eaAux.address)){
+		int eaIndex = 0;
+		while (factory.innerEatoms[eaIndex] != ea) eaIndex++;
+
 		if (eaEvaluated[eaIndex] && eaVerified[eaIndex]){
 			DBGLOG(DBG, "Auxiliary " << eaAux.address << " is verified by " << ea);
 			return true;
 		}
-		eaIndex++;
 	}
 	DBGLOG(DBG, "Auxiliary " << eaAux.address << " is not verified");
 	return false;
@@ -535,6 +535,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	bm::bvector<>::enumerator en = changed->getStorage().first();
 	bm::bvector<>::enumerator en_end = changed->getStorage().end();
 
+	bool conflict = false;
 	while (en < en_end){
 		DBGLOG(DBG, "Processing watches for atom " << *en);
 
@@ -566,7 +567,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 						const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 						if (externalAtomEvalHeuristics->doEvaluate(eatom, partialInterpretation, factWasSet, changed)){
 							// evaluate it
-							verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed);
+							conflict |= (verifyExternalAtom(eaIndex, partialInterpretation, factWasSet, changed));
 						}
 					}else{
 						// find a new yet unassigned atom to watch
@@ -582,7 +583,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 		en++;
 	}
 
-	return false;
+	return conflict;
 }
 
 bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
@@ -623,7 +624,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	eaVerified[eaIndex] = verify;
 	eaEvaluated[eaIndex] = true;
 
-	return false;
+	return !verify;
 }
 
 const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram(){
