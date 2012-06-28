@@ -154,12 +154,10 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
       << "                        none: Disable the check" << std::endl
       << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
-      << "     --eaheuristics=[post,immediate,always,never]" << std::endl
+      << "     --eaheuristics=[always,never]" << std::endl
       << "                      Selects the heuristics for external atom evaluation" << std::endl
-      << "                      post: Evaluate only after a model candidate has been completed (bulitin)" << std::endl
-      << "                      immediate: Evaluate immediately after the input to an external atom is complete (bulitin)" << std::endl
-      << "                      always: Evaluate whenever the heuristics is asked (roughly the same as immediate, but using the heuristics infrastructure instead)" << std::endl
-      << "                      never: Only evaluate at the end but not when the heuristics is asked (roughly the same as post, but using the heuristics infrastructure instead)" << std::endl
+      << "                      always: Evaluate whenever possible" << std::endl
+      << "                      never: Only evaluate at the end" << std::endl
       << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
       << "                      post: Do UFS check only over complete interpretations" << std::endl
       << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
@@ -344,7 +342,6 @@ int main(int argc, char *argv[])
   pctx.config.setOption("ExternalLearningUser", 0);
   pctx.config.setOption("ExternalLearningGeneralize", 0);
   pctx.config.setOption("NongroundNogoodInstantiation", 0);
-  pctx.config.setOption("VerificationHeuristics", 0);
   pctx.config.setOption("UFSCheckHeuristics", 0);
   pctx.config.setOption("ModelQueueSize", 5);
   pctx.config.setOption("Silent", 0);
@@ -1039,23 +1036,13 @@ void processOptionsPrePlugin(
 		case 26:
 			{
 				std::string heur(optarg);
-				if (heur == "post")
-				{
-					pctx.config.setOption("VerificationHeuristics", 0);
-				}
-				else if (heur == "immediate")
-				{
-					pctx.config.setOption("VerificationHeuristics", 1);
-				}
-				else if (heur == "always")
+				if (heur == "always")
 				{
 					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
-					pctx.config.setOption("VerificationHeuristics", 2);
 				}
 				else if (heur == "never")
 				{
 					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
-					pctx.config.setOption("VerificationHeuristics", 2);
 				}
 				else
 				{
@@ -1127,9 +1114,6 @@ void processOptionsPrePlugin(
 	// global constraints
 	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
 		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
-	}
-	if (specifiedModelQueueSize && pctx.config.getOption("VerificationHeuristics") == 2){
-		LOG(WARNING, "Selected verification heuristic is not compatible with model caching (modelqueuesize)");
 	}
 	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
 		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");

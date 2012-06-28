@@ -111,8 +111,10 @@ public:
 	InterpretationConstPtr getAtomsOfComponent(int compNr) const;
 	bool hasHeadCycles(int compNr) const;
 	bool hasECycles(int compNr) const;
+	bool hasECycles(int compNr, InterpretationConstPtr intr) const;
 	bool hasHeadCycles() const;
 	bool hasECycles() const;
+	bool hasECycles(InterpretationConstPtr intr) const;
 
 	bool mapsAux(IDAddress ida) const;
 	const boost::unordered_map<IDAddress, std::vector<ID> >& getAuxToEA() const;

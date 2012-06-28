@@ -4,6 +4,7 @@
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/visitors.hpp> 
 #include <boost/graph/strong_components.hpp>
+#include <boost/graph/filtered_graph.hpp>
 
 #include <boost/foreach.hpp>
 
@@ -356,8 +357,102 @@ bool AnnotatedGroundProgram::hasECycles(int compNr) const{
 	return eCycles[compNr];
 }
 
+namespace{
+
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, IDAddress> Graph;
+typedef Graph::vertex_descriptor Node;
+
+struct edge_filter {
+	const std::set<Node>& skipnodes;
+
+	edge_filter(std::set<Node>& skipnodes) : skipnodes(skipnodes) { }
+
+	template <typename Edge>
+	bool operator()(const Edge& e) const {
+		return true;
+	}
+};
+
+struct vertex_filter {
+	const std::set<Node>& skipnodes;
+
+	vertex_filter(std::set<Node>& skipnodes) : skipnodes(skipnodes) { }
+
+	template <typename Vertex>
+	bool operator()(const Vertex& v) const {
+		return std::find(skipnodes.begin(), skipnodes.end(), v) == skipnodes.end();
+	}
+};
+
+}
+
+bool AnnotatedGroundProgram::hasECycles(int compNr, InterpretationConstPtr intr) const{
+
+	// make a copy of the dependency graph
+	Graph depGraph2;
+	boost::copy_graph(depGraph, depGraph2);
+
+	// remove atoms which are not in intr and corresponding edges
+	std::set<Node> skipnodes;
+	BOOST_FOREACH (IDAddress adr, depSCC[compNr]){
+		if (!intr->getFact(adr)) skipnodes.insert(depNodes.at(adr));
+	}
+	boost::graph_traits<Graph>::edge_iterator vi, vi_end;
+	std::vector<Graph::edge_descriptor> delEdges;
+	for (tie(vi, vi_end) = edges(depGraph2); vi != vi_end; vi++){
+		if (std::find(skipnodes.begin(), skipnodes.end(), source(*vi, depGraph2)) != skipnodes.end() ||
+		    std::find(skipnodes.begin(), skipnodes.end(), target(*vi, depGraph2)) != skipnodes.end()){
+			delEdges.push_back(*vi);
+		}
+	}
+	BOOST_FOREACH (Graph::edge_descriptor e, delEdges){
+		remove_edge(e, depGraph2);
+	}
+	BOOST_FOREACH (Node n, skipnodes){
+		remove_vertex(n, depGraph2);
+	}
+
+	// make a BFS in the reduced graph
+	typedef std::pair<IDAddress, IDAddress> Edge;
+	BOOST_FOREACH (Edge e, externalEdges){
+		if (!intr->getFact(e.first)) continue;
+		if (!intr->getFact(e.second)) continue;
+		if (std::find(depSCC[compNr].begin(), depSCC[compNr].end(), e.first) == depSCC[compNr].end()) continue;
+		if (std::find(depSCC[compNr].begin(), depSCC[compNr].end(), e.second) == depSCC[compNr].end()) continue;
+
+		std::vector<Graph::vertex_descriptor> reachable;
+		boost::breadth_first_search(depGraph2, depNodes.at(e.second),
+			boost::visitor(
+				boost::make_bfs_visitor(
+					boost::write_property(
+						boost::identity_property_map(),
+						std::back_inserter(reachable),
+						boost::on_discover_vertex())))); 
+
+		if (std::find(reachable.begin(), reachable.end(), depNodes.at(e.second)) != reachable.end()){
+			// yes, there is a cycle
+			return true;
+		}
+	}
+	if (hasHeadCycles(compNr)){
+		DBGLOG(DBG, "Component " << compNr << " has no e-cycle wrt. interpretation, although it has in general e-cycles");
+	}
+
+	return false;
+}
+
 bool AnnotatedGroundProgram::hasHeadCycles() const{
 	return headCyclesTotal;
+}
+
+bool AnnotatedGroundProgram::hasECycles(InterpretationConstPtr intr) const{
+	for (int i = 0; i < depSCC.size(); ++i){
+		if (hasECycles(i, intr)) return true;
+	}
+	if (hasHeadCycles()){
+		DBGLOG(DBG, "Program has no e-cycle wrt. interpretation, although it has in general e-cycles");
+	}
+	return false;
 }
 
 bool AnnotatedGroundProgram::hasECycles() const{
