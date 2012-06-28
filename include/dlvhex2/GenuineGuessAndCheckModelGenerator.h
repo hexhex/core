@@ -111,26 +111,6 @@ class GenuineGuessAndCheckModelGenerator:
 public:
   typedef GenuineGuessAndCheckModelGeneratorFactory Factory;
 
-  // controls when external atoms are verified
-  enum EAVerificationMode{
-    // Verify all external atoms at the end, i.e., when a candidate compatible set was completed.
-    // Requires no external learner plugged into the solver.
-    post,
-
-    // Verify external atoms as soon as their input is complete and immediately backtrack if a guess was wrong.
-    // Requires an external learner plugged into the solver.
-    // Does not need to check if all external atoms were verified after completion of the candidate because
-    //   they are automatically verified. This allows for precomputing models in multithreaded mode.
-    immediate,
-
-    // Verify external atoms driven by a heuristic, i.e., they are optionally verified during solving.
-    // Requires an external learner plugged into the solver.
-    // After compltion of the candidate, it must be checked if all external atoms were verified.
-    //   This does _not_ allow for precomputing models in multithreaded mode because there is a tight dependency
-    //   between the external learner and the solver.
-    heuristics
-  };
-
   // storage
 protected:
   // we store the factory again, because the base class stores it with the base type only!
@@ -138,9 +118,10 @@ protected:
 
   RegistryPtr reg;
 
-  EAVerificationMode eaVerificationMode;
   std::vector<bool> eaVerified;
   std::vector<bool> eaEvaluated;
+  boost::unordered_map<IDAddress, std::vector<int> > unverifyWatchList;
+  boost::unordered_map<IDAddress, std::vector<int> > verifyWatchList;
   ExternalAtomEvaluationHeuristicsPtr externalAtomEvalHeuristics;
   UnfoundedSetCheckHeuristicsPtr ufsCheckHeuristics;
 
@@ -202,6 +183,15 @@ protected:
    * @param factWasSet The set of atoms assigned so far
    */
   bool isVerified(ID eaAux, InterpretationConstPtr factWasSet);
+
+  /**
+   * Finds a new atom in the scope of an external atom which shall be watched wrt. an interpretation.
+   * @pre Some atom in the scope of the external atom is yet unassigned
+   * @param eaIndex The index of the inner external atom
+   * @param factWasSet An interpretation indicating which atoms are currently assigned; can be 0 to indicate that the assignment is complete
+   * @return IDAddress An atom to watch
+   */
+  IDAddress getWatchedLiteral(int eaIndex, InterpretationConstPtr factWasSet);
 
   /**
    * Heuristically decides if and which external atoms we evaluate.
