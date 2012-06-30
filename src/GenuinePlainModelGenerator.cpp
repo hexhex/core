@@ -165,24 +165,6 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
 	factory.ctx.globalNogoods.addNogoodListener(solver);
-	firstModel = true;
-
-//Nogood ng1;
-//ng1.insert(solver->createLiteral(29));
-//factory.ctx.globalNogoods.addNogood(ng1);
-
-//	grounder = InternalGrounderPtr(new InternalGrounder(factory.ctx, program));
-//	if (factory.ctx.config.getOption("Instantiate")){
-//		std::cout << "% Component " << &(factory.ci) << std::endl;
-//		std::cout << "% Nonground Program " << &(factory.ci) << std::endl;
-//		std::cout << grounder->getNongroundProgramString();
-//		std::cout << "% Ground Program " << &(factory.ci) << std::endl;
-//		std::cout << grounder->getGroundProgramString();
-//	}
-
-//	OrdinaryASPProgram gprogram = grounder->getGroundProgram();
-//	igas = InternalGroundDASPSolverPtr(new InternalGroundDASPSolver(factory.ctx, gprogram));
-//	currentanswer = 0;
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
@@ -201,59 +183,6 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	// remove edb from result
 	InterpretationPtr modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
-
-	// learn global nogoods
-	if (modelCandidate == InterpretationPtr()){
-		globalConflictAnalysis(factory.ctx, factory.idb, solver, factory.ci.componentIsMonotonic);
-
-
-
-
-
-
-if (firstModel){
-
-/*
-HittingSetDetector<int>::Hypergraph hg;
-HittingSetDetector<int>::Hyperedge e1; e1.push_back(0); e1.push_back(2); hg.push_back(e1);
-HittingSetDetector<int>::Hyperedge e2; e2.push_back(0); e2.push_back(7); hg.push_back(e2);
-HittingSetDetector<int>::Hyperedge e3; e3.push_back(6); e3.push_back(2); hg.push_back(e3);
-HittingSetDetector<int>::Hyperedge e4; e4.push_back(6); e4.push_back(7); hg.push_back(e4);
-std::vector<int> hs = HittingSetDetector<int>::getHittingSet(hg);
-*/
-
-/*
-std::cout << "Hitting set: ";
-BOOST_FOREACH (int x, hs){
-	 std::cout << " " << x;
-}
-std::cout << std::endl;
-*/
-
-
-
-
-
-
-/*
-static bool an = true;
-if (an){
-DBGLOG(DBG, "Conflict on first model: Analyzing inconsistency");
-
-OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint);
-InconsistencyAnalyzer ia(factory.ctx);
-Nogood ng = ia.explainInconsistency(program, postprocessedInput);
-factory.ctx.globalNogoods.addNogood(ng);
-}
-an = false;
-*/
-
-
-}
-
-
-	}
-	firstModel = false;
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;

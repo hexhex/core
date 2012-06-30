@@ -1,3 +1,15 @@
+2012-06-30 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* FLPModelGeneratorBase.h: Implement relaxed notion of strong
+	safety; see option --autostrongsafety
+	* FLPModelGeneratorBase.tcc: Likewise
+	* FLPModelGeneratorBase.cpp: Likewise
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* GuessAndCheckModelGenerator.h: Likewise
+	* GuessAndCheckModelGenerator.cpp: Likewise
+	* dlvhex.cpp: Likewise
+
 2012-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* checkout_build_potassco.sh: Added script to checkout and build

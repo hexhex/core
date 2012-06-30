@@ -213,6 +213,80 @@ void FLPModelGeneratorFactoryBase::createEatomGuessingRules()
   }
 }
 
+void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, std::vector<ID>& idb){
+
+	// construct the positive subprogram where all default-negated atoms and strongly safe external atoms are removed
+	DBGLOG(DBG, "createDomainExplorationProgram");
+	std::vector<ID> innerEatoms;
+	BOOST_FOREACH (ID ruleid, idb){
+		const Rule& rule = reg->rules.getByID(ruleid);
+
+		BOOST_FOREACH (ID hid, rule.head){
+
+			Rule positiverule = rule;
+			positiverule.head.clear();
+			positiverule.head.push_back(hid);
+			positiverule.body.clear();
+			BOOST_FOREACH (ID b, rule.body){
+				if (b.isNaf()){
+					// remove non-stratified default-negated literals
+					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
+					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
+						continue;
+					}
+				}else if (b.isExternalAtom()){
+					bool stronglysafe = true;
+					const ExternalAtom& ea = reg->eatoms.getByID(b);
+					BOOST_FOREACH (ID o, ea.tuple){
+						if (o.isVariableTerm() &&
+						      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
+						       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
+							stronglysafe = false;
+							break;
+						}
+					}
+					if (stronglysafe){
+						DBGLOG(DBG, "Remove external atom " << b << " because it is strongly safe");
+						continue;
+					}
+					if (ci.stratifiedLiterals.find(ruleid) == ci.stratifiedLiterals.end() ||
+					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
+						std::stringstream ss;
+						ss << "Could not determine the domain of external atom " << b << " because it is unstratified and not strongly safe";
+						throw GeneralError(ss.str());
+					}
+					positiverule.body.push_back(b);
+					deidbInnerEatoms.push_back(b);
+				}else{
+					positiverule.body.push_back(b);
+				}
+			}
+			ID rid = convertRule(reg, reg->storeRule(positiverule));
+#ifndef NDEBUG
+			{
+			std::stringstream s;
+			RawPrinter printer(s, reg);
+			printer.print(rid);
+			DBGLOG(DBG,s.str());
+			}
+#endif
+			deidb.push_back(rid);
+		}
+	}
+#ifndef NDEBUG
+
+	DBGLOG(DBG,"Positive program:");
+	BOOST_FOREACH (ID ruleid, deidb){
+		{
+		std::stringstream s;
+		RawPrinter printer(s, reg);
+		printer.print(ruleid);
+		DBGLOG(DBG,s.str());
+		}
+	}
+#endif
+}
+
 /**
  * for each rule in xidb
  * * keep disjunctive facts: copy ID to xidbflphead and xidbflpbody

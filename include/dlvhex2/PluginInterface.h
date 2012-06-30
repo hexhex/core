@@ -996,6 +996,13 @@ public:
       return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
 
   /**
+   * @return nonmonotonicity on parameter level
+   */
+  bool isNonmonotonic(const ExtSourceProperties& prop, int parameterIndex) const
+    { assert(inputType[parameterIndex] == PREDICATE);
+      return !isMonotonic(prop, parameterIndex) && !isAntimonotonic(prop, parameterIndex); }
+
+  /**
    * @return functional
    */
   bool isFunctional(const ExtSourceProperties& prop) const

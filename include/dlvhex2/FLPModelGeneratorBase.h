@@ -58,7 +58,8 @@ protected:
   // for getting auxiliaries and registering FLP replacements
   RegistryPtr reg;
 
-  // original idb (may contain eatoms where all inputs are known
+  // original idb, possibly augmented with domain predicates
+  // (may contain eatoms where all inputs are known
   // -> auxiliary input rules of these eatoms must be in predecessor unit!)
   std::vector<ID> idb;
 
@@ -71,6 +72,10 @@ protected:
 
   // idb rewritten with eatom replacement atoms
   std::vector<ID> xidb;
+
+  // IDB for domain exploration (equivalent to xidb, except that it does not contain domain predicates)
+  std::vector<ID> deidbInnerEatoms;
+  std::vector<ID> deidb;
 
   // xidb rewritten for FLP calculation
   std::vector<ID> xidbflphead; // rewriting to find out which body is satisfied -> creates heads
@@ -92,6 +97,9 @@ protected:
 protected:
   // create guessing rules for external atom values
   void createEatomGuessingRules();
+
+  // initializes deidb and innerEatoms
+  void createDomainExplorationProgram(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, std::vector<ID>& idb);
 
   // create rules from xidb
   // * for evaluating which bodies are satisfied -> xidbflphead
@@ -198,6 +206,10 @@ protected:
 		ProgramCtx& ctx,
 		NogoodContainerPtr ngc = NogoodContainerPtr()
 		);
+
+  // computes an overestimate of the domains of all inner external atoms which are not strongly safe
+  template<typename OrdinaryASPSolverT>
+  InterpretationConstPtr computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb);
 
   // constructs a nogood which describes the essence of a
   // failed FLP check

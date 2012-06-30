@@ -146,7 +146,6 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "                      By default, all options except \"generalize\" are enabled" << std::endl
       << "     --nongroundnogoods" << std::endl
       << "                      Automatically instantiate learned nonground nogoods" << std::endl
-      << "     --globlearn      Enable global learning, i.e., nogood propagation over multiple evaluation units" << std::endl
       << "     --flpcheck=[explicit,ufs,ufsm,none]" << std::endl
       << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
       << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
@@ -170,6 +169,9 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
+      << "     --autostrongsafety" << std::endl
+      << "                      Tries to automatically establish strong safety where the property is violated" << std::endl
+      << "                      (only useful with --weaksafety)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -326,7 +328,6 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
-  pctx.config.setOption("GlobalLearning", 0);
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
   pctx.config.setOption("UFSCheckMonolithic", 0);
@@ -364,6 +365,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
+  pctx.config.setOption("AutoStrongSafety",0);
   pctx.config.setOption("WellJustified",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
@@ -607,7 +609,6 @@ void processOptionsPrePlugin(
 		{ "dumpevalplan", required_argument, &longid, 17 },
 		{ "extlearn", optional_argument, 0, 18 },
 		{ "flpcheck", required_argument, 0, 20 },
-		{ "globlearn", optional_argument, 0, 21 },
 		{ "ufslearn", no_argument, 0, 23 },
 		{ "welljustified", optional_argument, 0, 25 },
 		{ "eaevalheuristics", required_argument, 0, 26 },
@@ -617,6 +618,7 @@ void processOptionsPrePlugin(
 		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
+		{ "autostrongsafety", no_argument, 0, 33 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1021,10 +1023,6 @@ void processOptionsPrePlugin(
 
 			break;
 
-		case 21:
-			pctx.config.setOption("GlobalLearning", 1);
-			break;
-
 		case 23:
 			pctx.config.setOption("UFSLearning", 1);
 			break;
@@ -1104,6 +1102,8 @@ void processOptionsPrePlugin(
 				specifiedModelQueueSize = true;
 			}
 			break;
+
+		case 33: pctx.config.setOption("AutoStrongSafety", 1); break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);

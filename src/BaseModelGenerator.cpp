@@ -61,7 +61,7 @@ IntegrateExternalAnswerIntoInterpretationCB(
     InterpretationPtr outputi):
   outputi(outputi),
   reg(outputi->getRegistry()),
-  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX)
+  replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX)
 {
 }
 
@@ -116,120 +116,6 @@ output(const Tuple& output)
 
   // never abort
   return true;
-}
-
-std::set<ID> BaseModelGenerator::getPredicates(
-    const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb)
-{
-	std::set<ID> preds;
-
-	// collects edb predicates
-	bm::bvector<>::enumerator en = edb->getStorage().first();
-	bm::bvector<>::enumerator en_end = edb->getStorage().end();
-	while (en < en_end){
-		// check if the predicate is relevant
-		const OrdinaryAtom& ogatom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		preds.insert(ogatom.tuple.front());
-		en++;
-	}
-
-	// collects idb predicates
-	BOOST_FOREACH (ID ruleID, idb){
-		assert(ruleID.isRule());
-		const Rule& rule = reg->rules.getByID(ruleID);
-
-		// head
-		BOOST_FOREACH (ID atomID, rule.head){
-			const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
-			preds.insert(atom.tuple.front());
-		}
-
-		// body
-		BOOST_FOREACH (ID atomID, rule.body){
-			if (atomID.isOrdinaryAtom()){
-				const OrdinaryAtom& atom = atomID.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(atomID) : reg->onatoms.getByID(atomID);
-				preds.insert(atom.tuple.front());
-			}
-			if (atomID.isExternalAtom()){
-				const ExternalAtom& atom = reg->eatoms.getByID(atomID);
-				// go through predicate input parameters
-				int i = 0;
-				BOOST_FOREACH (ID param, atom.tuple){
-					if (atom.pluginAtom->getInputType(i++) == PluginAtom::PREDICATE){
-						preds.insert(param);
-					}
-				}
-			}
-		}
-	}
-
-#ifndef NDEBUG
-	std::stringstream ss;
-	ss << "Relevant predicates: ";
-	bool first = true;
-	BOOST_FOREACH (ID p, preds){
-		if (!first) ss << ", ";
-		first = false;
-		ss << p;
-	}
-	DBGLOG(DBG, ss.str());
-#endif
-
-	return preds;
-}
-
-InterpretationPtr BaseModelGenerator::restrictInterpretationToPredicates(
-    const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates)
-{
-	InterpretationPtr ointr = InterpretationPtr(new Interpretation(reg));
-
-	// go through ground atoms in interpretation
-	bm::bvector<>::enumerator en = intr->getStorage().first();
-	bm::bvector<>::enumerator en_end = intr->getStorage().end();
-	while (en < en_end){
-		// check if the predicate is relevant
-		const OrdinaryAtom& atom = reg->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
-		if (std::find(predicates.begin(), predicates.end(), atom.tuple.front()) != predicates.end()){
-			// yes, set the atom
-			ointr->setFact(*en);
-		}
-		en++;
-	}
-	return ointr;
-}
-
-Nogood BaseModelGenerator::interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer){
-
-	Nogood ng;
-
-	// go through ground atoms in interpretation
-	bm::bvector<>::enumerator en = intr->getStorage().first();
-	bm::bvector<>::enumerator en_end = intr->getStorage().end();
-	while (en < en_end){
-		// add the atom to the nogood
-		ng.insert(ngContainer.createLiteral(*en));
-		en++;
-	}
-
-	return ng;
-}
-
-void BaseModelGenerator::globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic){
-
-	DBGLOG(DBG, "Global conflict analysis");
-	if (solver->getModelCount() == 0 && ctx.config.getOption("GlobalLearning")){
-		DBGLOG(DBG, "Contradiction on first model: Component is inconsistent wrt. input");
-
-		if (componentIsMonotonic){
-			DBGLOG(DBG, "Component is monotonic");
-			Nogood gng;
-			if (input != InterpretationConstPtr()){
-				gng = interpretationToNogood(restrictInterpretationToPredicates(ctx.registry(), input, getPredicates(ctx.registry(), ctx.edb, idb)), ctx.globalNogoods);
-			}
-			DBGLOG(DBG, "Generating global nogood " << gng);
-			ctx.globalNogoods.addNogood(gng);
-		}
-	}
 }
 
 // projects input interpretation
@@ -674,6 +560,49 @@ void BaseModelGeneratorFactory::convertRuleBody(
       convbody.push_back(*itlit);
     }
   }
+}
+
+// adds for all external atoms with output variables which fail the strong safety check
+// a domain predicate to the rule body
+ID BaseModelGeneratorFactory::addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid)
+{
+  if( !ruleid.doesRuleContainExtatoms() )
+  {
+    DBGLOG(DBG,"not processing rule " << ruleid << " (does not contain extatoms)");
+    return ruleid;
+  }
+
+  const Rule& rule = reg->rules.getByID(ruleid);
+  Rule ruledom = rule;
+  BOOST_FOREACH (ID b, rule.body){
+    if (!b.isNaf() && b.isExternalAtom()){
+      const ExternalAtom& ea = reg->eatoms.getByID(b);
+      BOOST_FOREACH (ID o, ea.tuple){
+        if (o.isVariableTerm() &&
+	      (ci.stronglySafeVariables.find(ruleid) == ci.stronglySafeVariables.end() ||
+	       std::find(ci.stronglySafeVariables.at(ruleid).begin(), ci.stronglySafeVariables.at(ruleid).end(), o) == ci.stronglySafeVariables.at(ruleid).end())){
+          OrdinaryAtom oatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+          oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('d', b));
+          BOOST_FOREACH (ID o2, ea.tuple){
+            oatom.tuple.push_back(o2);
+          }
+          ruledom.body.push_back(reg->storeOrdinaryNAtom(oatom));
+          break;
+        }
+      }
+    }
+  }
+  ID ruledomid = reg->storeRule(ruledom);
+#ifndef NDEBUG
+  {
+  std::stringstream s;
+  RawPrinter printer(s, reg);
+  printer.print(ruledomid);
+  DBGLOG(DBG,"rewriting rule " << s.str() << " from " << rule <<
+  " with id " << ruleid << " to rule with domain predicates");
+  }
+#endif
+  return ruledomid;
 }
 
 // get rule

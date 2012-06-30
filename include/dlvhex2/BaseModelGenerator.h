@@ -41,6 +41,7 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Nogood.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/ComponentGraph.h"
 
 #include <list>
 #include "dlvhex2/CDNLSolver.h"
@@ -60,6 +61,8 @@ public:
   virtual ~BaseModelGeneratorFactory() {}
 
 protected:
+  // adds domain predicates to rule bodies in order to make external atoms groundable
+  virtual ID addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid);
   // rewrite all eatoms in body to auxiliary replacement atoms
   // store into registry and return id
   virtual ID convertRule(RegistryPtr reg, ID ruleid);
@@ -84,22 +87,6 @@ public:
   virtual ~BaseModelGenerator() {}
 
 protected:
-  //
-  // ========== Global Learning ==========
-  //
-
-  // computes the set of predicate IDs which are relevant
-  // to a certain edb+idb
-  std::set<ID> getPredicates(const RegistryPtr reg, InterpretationConstPtr edb, const std::vector<ID>& idb);
-
-  // restricts an interpretation to the atoms over specified predicates
-  InterpretationPtr restrictInterpretationToPredicates(const RegistryPtr reg, InterpretationConstPtr intr, const std::set<ID>& predicates);
-
-  // converts an interpretation into a nogood
-  Nogood interpretationToNogood(InterpretationConstPtr intr, NogoodContainer& ngContainer);
-
-  void globalConflictAnalysis(ProgramCtx& ctx, const std::vector<ID>& idb, GenuineSolverPtr solver, bool componentIsMonotonic);
-
   //
   // ========== External Atom Evaluation Helpers ==========
   //

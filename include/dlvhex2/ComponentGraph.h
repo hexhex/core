@@ -78,9 +78,12 @@ public:
     #endif
 
     std::vector<ID> outerEatoms;
+
     std::vector<ID> innerRules;
     std::vector<ID> innerEatoms;
     std::vector<ID> innerConstraints;
+    boost::unordered_map<ID, std::set<ID> > stronglySafeVariables;
+    boost::unordered_map<ID, std::set<ID> > stratifiedLiterals;
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
@@ -243,7 +246,8 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
-  bool calculateFixedDomain(const ComponentInfo& ci);
+  bool calculateFixedDomain(ComponentInfo& ci);
+  bool calculateStratificationInfo(ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

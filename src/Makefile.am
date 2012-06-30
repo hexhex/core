@@ -82,7 +82,6 @@ libdlvhex2_base_la_SOURCES = \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
-    InconsistencyAnalyzer.cpp \
     InternalGroundASPSolver.cpp \
     InternalGroundDASPSolver.cpp \
     InternalGrounder.cpp \

@@ -232,6 +232,7 @@ protected:
 
   // initialization
   void setHeuristics();
+
 public:
   GenuineGuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
   virtual ~GenuineGuessAndCheckModelGenerator();

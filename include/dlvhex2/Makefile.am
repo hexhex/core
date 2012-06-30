@@ -49,7 +49,6 @@ pkginclude_HEADERS = \
   GenuineSolver.h \
   HexGrammar.h \
   HexGrammar.tcc \
-  InconsistencyAnalyzer.h \
   InternalGroundASPSolver.h \
   InternalGroundDASPSolver.h \
   InternalGrounder.h \

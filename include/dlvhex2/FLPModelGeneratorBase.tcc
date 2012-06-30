@@ -278,6 +278,104 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 	return true;
 }
 
+template<typename OrdinaryASPSolverT>
+InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates(ProgramCtx& ctx, InterpretationConstPtr edb){
+
+	typedef boost::shared_ptr<OrdinaryASPSolverT> OrdinaryASPSolverTPtr;
+
+	// compute the fixpoint of the positive program wrt. edb
+	DBGLOG(DBG, "Computing fixpoint of extensions of domain predicates");
+	std::vector<InterpretationPtr> ints(2);
+	unsigned current = 0;
+	ints[0] = InterpretationPtr(new Interpretation(*edb));
+	ints[1] = InterpretationPtr(new Interpretation(*edb));
+	do
+	{
+		InterpretationPtr src = ints[current];
+		InterpretationPtr dst = ints[1-current];
+		DBGLOG(DBG, "Loop with src=" << *src << " and dst=" << *dst);
+
+		// evaluate inner external atoms
+		IntegrateExternalAnswerIntoInterpretationCB cb(dst);
+		BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
+			const ExternalAtom& ea = factory.reg->eatoms.getByID(eaid);
+
+			// remove all atoms over antimonotonic parameters from the input interpretation (both in standard and in higher-order notation)
+			// in order to maximize the output
+			InterpretationPtr input(new Interpretation(factory.reg));
+			input->add(*src);
+			bm::bvector<>::enumerator en = input->getStorage().first();
+			bm::bvector<>::enumerator en_end = input->getStorage().end();
+			while (en < en_end){
+				const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
+
+				for (int i = 0; i < ea.inputs.size(); ++i){
+					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
+					    ea.pluginAtom->isAntimonotonic(ea.useProp ? ea.prop : ea.pluginAtom->getExtSourceProperties(), i) &&
+					    ogatom.tuple[0] == ea.inputs[i]){
+						input->clearFact(*en);
+					}
+				}
+				en++;
+			}
+
+			DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
+			evaluateExternalAtom(factory.reg, ea, input, cb);
+		}
+
+		// solve program
+		OrdinaryASPProgram program(factory.reg, factory.deidb, dst, ctx.maxint);
+		OrdinaryASPSolverTPtr solver = OrdinaryASPSolverT::getInstance(ctx, program);
+
+		InterpretationPtr model = solver->projectToOrdinaryAtoms(solver->getNextModel());
+		assert(model != InterpretationPtr());
+		InterpretationPtr model2 = solver->projectToOrdinaryAtoms(solver->getNextModel());
+		assert(model2 == InterpretationPtr());
+		dst->getStorage().swap(model->getStorage());
+
+		int cmpresult = dst->getStorage().compare(src->getStorage());
+		if( cmpresult == 0 )
+		{
+			DBGLOG(DBG, "Reached fixpoint: " << *dst);
+			break;
+		}
+
+		// switch interpretations
+		current = 1 - current;
+	}while(true);
+
+	// create explicit representation of domain predicate extensions
+	DBGLOG(DBG, "Creating extension of domain predicates");
+	InterpretationPtr domintr = InterpretationPtr(new Interpretation(factory.reg));
+
+	bm::bvector<>::enumerator en = ints[current]->getStorage().first();
+	bm::bvector<>::enumerator en_end = ints[current]->getStorage().end();
+	while (en < en_end){
+		ID id = factory.reg->ogatoms.getIDByAddress(*en);
+		if (id.isExternalAuxiliary()){
+			DBGLOG(DBG, "Converting atom with address " << *en);
+
+			const OrdinaryAtom& ogatom = factory.reg->ogatoms.getByAddress(*en);
+			BOOST_FOREACH (ID eaid, factory.deidbInnerEatoms){
+				const ExternalAtom ea = factory.reg->eatoms.getByID(eaid);
+				if (ea.predicate == factory.reg->getIDByAuxiliaryConstantSymbol(ogatom.tuple[0])){
+
+					OrdinaryAtom domatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYN | ID::PROPERTY_AUX);
+					domatom.tuple.push_back(factory.reg->getAuxiliaryConstantSymbol('d', eaid));
+					for (int i = 1 + ea.inputs.size(); i < ogatom.tuple.size(); ++i){
+						domatom.tuple.push_back(ogatom.tuple[i]);
+					}
+					domintr->setFact(factory.reg->storeOrdinaryGAtom(domatom).address);
+				}
+			}
+		}
+		en++;
+	}
+	DBGLOG(DBG, "Domain extension interpretation: " << *domintr);
+
+	return domintr;
+}
+
 DLVHEX_NAMESPACE_END
 
 #endif // DLVHEX_FLPMODELGENERATORBASE_TCC_INCLUDED

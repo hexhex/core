@@ -454,6 +454,9 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     // compute if this component has a fixed domain
     ci.fixedDomain = calculateFixedDomain(ci);
 
+    // compute stratification of default-negated literals and predicate input parameters
+    calculateStratificationInfo(ci);
+
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
     DBGLOG(DBG,"-> innerConstraints " << printrange(ci.innerConstraints));
@@ -523,9 +526,11 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 }
 
 
-bool ComponentGraph::calculateFixedDomain(const ComponentInfo& ci)
+bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
 {
 	DBGLOG(DBG, "calculateFixedDomain");
+
+	bool fd = true;
 
 	// pure external components have only a fixed domain if the output of all outer external atoms
 	// contains no variables
@@ -669,11 +674,91 @@ bool ComponentGraph::calculateFixedDomain(const ComponentInfo& ci)
 
 			if( !variableSafe )
 			{
-				return false;
+				// check if the variable occurs in an external atom with unstratified nonmonotonic parameters
+				bool nonmonotonicEA = false;
+				BOOST_FOREACH(ID lid, rule.body)
+				{
+					if(!lid.isNaf() && lid.isExternalAtom()){
+						if (ci.stratifiedLiterals.find(rid) == ci.stratifiedLiterals.end() ||
+						    std::find(ci.stratifiedLiterals.at(rid).begin(), ci.stratifiedLiterals.at(rid).end(), lid) == ci.stratifiedLiterals.at(rid).end()){
+							nonmonotonicEA = true;
+							break;
+						}
+					}
+				}
+
+				fd = false;
+			}else{
+				DBGLOG(DBG, "Variable " << vid << " is strongly safe in rule " << rid << " (" << &ci << ")");
+				ci.stronglySafeVariables[rid].insert(vid);
 			}
 		}
 	}
-	return true;
+	return fd;
+}
+
+bool ComponentGraph::calculateStratificationInfo(ComponentInfo& ci)
+{
+	DBGLOG(DBG, "calculateStratificationInfo");
+
+	// get the head atoms of all rules in this component
+	std::set<ID> headAtomIDs;
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+		
+		BOOST_FOREACH(ID hid, rule.head)
+		{
+			if (!hid.isOrdinaryAtom()) continue;
+			headAtomIDs.insert(hid);
+		}
+	}
+
+	// for all default-negated literals and predicate input parameters in this component
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+		
+		BOOST_FOREACH(ID bid, rule.body)
+		{
+			// default-negated literals
+			if (!bid.isExternalAtom() && bid.isNaf()){
+				// does it unify with a head atom in this component?
+				bool stratified = true;
+				BOOST_FOREACH (ID hid, headAtomIDs){
+					const OrdinaryAtom& boatom = reg->lookupOrdinaryAtom(bid);
+					const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+					if (boatom.unifiesWith(hoatom)){
+						stratified = false;
+						break;
+					}
+				}
+				if (stratified){
+					ci.stratifiedLiterals[rid].insert(bid);
+				}
+			}
+			// predicate input parameters
+			if (bid.isExternalAtom() && !bid.isNaf()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(bid);
+				bool stratified = true;
+				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
+					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.pluginAtom->isNonmonotonic(eatom.useProp ? eatom.prop : eatom.pluginAtom->getExtSourceProperties(), p)){
+						// is this predicate defined in this component?
+						BOOST_FOREACH (ID hid, headAtomIDs){
+							const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+							if (hoatom.tuple[0] == eatom.inputs[p]){
+								stratified = false;
+								break;
+							}
+						}
+					}
+				}
+				if (stratified){
+					ci.stratifiedLiterals[rid].insert(bid);
+				}
+			}
+		}
+	}
 }
 
 // collapse components given in range into one new component
@@ -784,6 +869,18 @@ ComponentGraph::collapseComponents(
     // inner constraints stay inner constraints
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    // information about strongly safe variables and stratified literals
+		typedef std::pair<ID, std::set<ID> > Pair;
+		BOOST_FOREACH (Pair p, cio.stronglySafeVariables){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stronglySafeVariables[p.first].insert(id);
+			}
+		}
+		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stratifiedLiterals[p.first].insert(id);
+			}
+		}
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;

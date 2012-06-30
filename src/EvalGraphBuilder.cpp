@@ -204,10 +204,24 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
     // inner constraints stay inner constraints
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    // information about strongly safe variables and stratified literals
+		typedef std::pair<ID, std::set<ID> > Pair;
+		BOOST_FOREACH (Pair p, cio.stronglySafeVariables){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stronglySafeVariables[p.first].insert(id);
+			}
+		}
+		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stratifiedLiterals[p.first].insert(id);
+			}
+		}
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+    ci.fixedDomain |= cio.fixedDomain;
+    ci.componentIsMonotonic |= cio.componentIsMonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
