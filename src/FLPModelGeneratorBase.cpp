@@ -234,6 +234,7 @@ void FLPModelGeneratorFactoryBase::createDomainExplorationProgram(const Componen
 					    std::find(ci.stratifiedLiterals.at(ruleid).begin(), ci.stratifiedLiterals.at(ruleid).end(), b) == ci.stratifiedLiterals.at(ruleid).end()){
 						continue;
 					}
+					positiverule.body.push_back(b);
 				}else if (b.isExternalAtom()){
 					bool stronglysafe = true;
 					const ExternalAtom& ea = reg->eatoms.getByID(b);
