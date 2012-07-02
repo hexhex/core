@@ -396,7 +396,14 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 
 	compatible = true;
 	for (int eaIndex = 0; eaIndex < factory.innerEatoms.size(); ++eaIndex){
-		if (eaEvaluated[eaIndex] == false || eaVerified[eaIndex] == false){
+		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == true){
+		}
+		if (eaEvaluated[eaIndex] == true && eaVerified[eaIndex] == false){
+			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " was evaluated but falsified");
+			compatible = false;
+			break;
+		}
+		if (eaEvaluated[eaIndex] == false){
 			// try to verify
 			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
 			verifyExternalAtom(eaIndex, modelCandidate);
@@ -557,22 +564,26 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 	while (en < en_end){
 		DBGLOG(DBG, "Processing watches for atom " << *en);
 
-		// unverify external atoms which watch this atom
+		// unverify/unfalsify external atoms which watch this atom
 		BOOST_FOREACH (int eaIndex, unverifyWatchList[*en]){
-			DBGLOG(DBG, "Checking if " << eaIndex << " is verified");
-			if (eaVerified[eaIndex]){
-				DBGLOG(DBG, "Unverifying atom " << factory.innerEatoms[eaIndex]);
+			DBGLOG(DBG, "Checking if " << eaIndex << " is marked as evaluated");
+			if (eaEvaluated[eaIndex]){
+				DBGLOG(DBG, "Unverifying/Unfalsifying atom " << factory.innerEatoms[eaIndex]);
 				// unverify
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
-
 				if (!factWasSet->getFact(*en)){
 					// watch a yet unassigned atom such that the external atom depends on it
 					verifyWatchList[getWatchedLiteral(eaIndex, factWasSet)].push_back(eaIndex);
 				}
 			}
 		}
+		en++;
+	}
 
+	en = changed->getStorage().first();
+	en_end = changed->getStorage().end();
+	while (en < en_end){
 		// for all external atoms which watch this atom
 		if (factWasSet->getFact(*en)){
 			BOOST_FOREACH (int eaIndex, verifyWatchList[*en]){
@@ -611,7 +622,6 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// prepare EA evaluation
 	InterpretationConstPtr mask = (annotatedGroundProgram.getEAMask(eaIndex)->mask());
-	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex]);
 	const ExternalAtom& eatom = reg->eatoms.getByID(factory.innerEatoms[eaIndex]);
 	VerifyExternalAtomCB vcb(partialInterpretation, eatom, *(annotatedGroundProgram.getEAMask(eaIndex)));
 
@@ -631,6 +641,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 	}
 
 	// evaluate the external atom (and learn nogoods if external learning is used)
+	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
 	evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
 	if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
