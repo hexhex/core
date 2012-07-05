@@ -340,6 +340,7 @@ void ExternalAtomMask::updateMask(){
     change->getStorage() |= maski->getStorage();
     PredicateMask::updateMask();
     change->getStorage() ^= maski->getStorage();
+    boost::mutex::scoped_lock lock(updateMutex);
 
     if (change->getStorage().count() == 0) return;
 

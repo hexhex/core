@@ -215,9 +215,9 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
 
-	// thread-safe access of the learner vector
-        boost::mutex::scoped_lock lock(cs.learnerMutex);
-	if (cs.learner.size() != 0){
+	// thread-safe access of the propagator vector
+        boost::mutex::scoped_lock lock(cs.propagatorMutex);
+	if (cs.propagator.size() != 0){
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
 		// because only in this case we know what MainThread is doing and which dlvhex data structures it accesses.
 		// Otherwise we could have a lot of unsynchronized data accesses.
@@ -261,13 +261,13 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		previousInterpretation = interpretation;
 		previousFactWasSet = factWasSet;
 
-		DBGLOG(DBG, "Calling external learners");
+		DBGLOG(DBG, "Calling external propagators");
 		bool conflict = false;
-		BOOST_FOREACH (LearningCallback* cb, cs.learner){
-			conflict |= cb->learn(interpretation, factWasSet, changed);
+		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
+			conflict |= cb->propagate(interpretation, factWasSet, changed);
 		}
-		// don't clear the changed literals if the external learner detected a conflict;
-		// the learner will probably need to recheck the literals in the next call
+		// don't clear the changed literals if the external propagator detected a conflict;
+		// the propagator will probably need to recheck the literals in the next call
 		if (!conflict) changed->clear();
 
 		interpretation.reset();
@@ -288,18 +288,6 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 
 		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
 
-/*
-		bool alladded = true;
-		for (int i = cs.translatedNogoodsIndex; i < cs.nogoods.size(); ++i){
-			std::pair<bool, bool> ret = cs.addNogoodToClasp(s, cs.nogoods[i], onlyOnCurrentDL);
-			if (!ret.first) alladded = false;
-			inconsistent = ret.second;
-			if (inconsistent) break; // we must not add more clauses if we have already a conflict
-		}
-		if (alladded && !inconsistent){
-			cs.translatedNogoodsIndex = cs.nogoods.size();
-		}
-*/
 		bool added = true;
 		while (cs.nogoods.size() > 0 && added && !inconsistent){
 			Nogood& ng = cs.nogoods.front();
@@ -531,7 +519,8 @@ void ClaspSolver::buildInitialSymbolTable(const NogoodSet& ns){
 	DBGLOG(DBG, "Building atom index");
 
 	claspInstance.symTab().startInit();
-	BOOST_FOREACH (Nogood ng, ns.nogoods){
+	for (int i = 0; i < ns.getNogoodCount(); i++){
+		const Nogood& ng = ns.getNogood(i);
 		BOOST_FOREACH (ID lit, ng){
 			if (hexToClasp.find(lit.address) == hexToClasp.end()){
 				uint32_t c = claspInstance.addVar(Clasp::Var_t::atom_var); //lit.address + 2;
@@ -816,7 +805,8 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	claspInstance.startAddConstraints();
 
-	BOOST_FOREACH (Nogood ng, ns.nogoods){
+	for (int i = 0; i < ns.getNogoodCount(); i++){
+		const Nogood& ng = ns.getNogood(i);
 
 #ifndef NDEBUG
 		std::stringstream ss;
@@ -871,6 +861,21 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	}
 
 	return initiallyInconsistent;
+}
+
+InterpretationPtr ClaspSolver::outputProjection(InterpretationConstPtr intr){
+	if (intr == InterpretationConstPtr()){
+		return InterpretationPtr();
+	}else{
+		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
+		answer->add(*intr);
+
+		if (projectionMask != InterpretationConstPtr()){
+			answer->getStorage() -= projectionMask->getStorage();
+		}
+		DBGLOG(DBG, "Projected " << *intr << " to " << *answer);
+		return answer;
+	}
 }
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
@@ -976,7 +981,7 @@ ClaspSolver::~ClaspSolver(){
 	}
 
 	// is clasp still active?
-	while (getNextModel() != InterpretationConstPtr());
+	while (getNextModel() != InterpretationPtr());
 	DBGLOG(DBG, "Joining ClaspThread");
 	if (claspThread) claspThread->join();
 
@@ -987,15 +992,7 @@ ClaspSolver::~ClaspSolver(){
 	if (claspThread) delete claspThread;
 }
 
-std::string ClaspSolver::getStatistics(){
-	std::stringstream ss;
-	ss <<	"Guesses: " << claspInstance.master()->stats.choices << std::endl <<
-		"Conflicts: " << claspInstance.master()->stats.conflicts << std::endl <<
-		"Models: " << claspInstance.master()->stats.models;
-	return ss.str();
-}
-
-void ClaspSolver::addExternalLearner(LearningCallback* lb){
+void ClaspSolver::addPropagator(PropagatorCallback* pb){
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.post();
 		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
@@ -1003,8 +1000,8 @@ void ClaspSolver::addExternalLearner(LearningCallback* lb){
 
 	// access learner vector
         {
-		boost::mutex::scoped_lock lock(learnerMutex);
-		learner.insert(lb);
+		boost::mutex::scoped_lock lock(propagatorMutex);
+		propagator.insert(pb);
 	}
 
 	if (!strictSingleThreaded){
@@ -1013,16 +1010,16 @@ void ClaspSolver::addExternalLearner(LearningCallback* lb){
 	}
 }
 
-void ClaspSolver::removeExternalLearner(LearningCallback* lb){
+void ClaspSolver::removePropagator(PropagatorCallback* pb){
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.post();
 		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
 	}
 
-	// access learner vector
+	// access propagator vector
 	{
-	        boost::mutex::scoped_lock lock(learnerMutex);
-		learner.erase(lb);
+	        boost::mutex::scoped_lock lock(propagatorMutex);
+		propagator.erase(pb);
 	}
 
 	if (!strictSingleThreaded){
@@ -1031,7 +1028,7 @@ void ClaspSolver::removeExternalLearner(LearningCallback* lb){
 	}
 }
 
-int ClaspSolver::addNogood(Nogood ng){
+void ClaspSolver::addNogood(Nogood ng){
 	assert(ng.isGround());
 
 	if (!strictSingleThreaded){
@@ -1040,74 +1037,18 @@ int ClaspSolver::addNogood(Nogood ng){
 	}
 
 	// access nogoods
-	int s;
 	{
 	        boost::mutex::scoped_lock lock(nogoodsMutex);
 		nogoods.push(ng);
-		//nogoods.push_back(ng);
-		s = nogoods.size() - 1;
 	}
 
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.wait();
 		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
 	}
-	return s;
 }
 
-Nogood ClaspSolver::getNogood(int index){
-	Nogood ng;
-
-	if (!strictSingleThreaded){
-		sem_dlvhexDataStructures.post();
-		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
-	}
-
-	{
-		// access nogoods
-        	boost::mutex::scoped_lock lock(nogoodsMutex);
-		throw std::runtime_error("Not implemented");
-//		ng = nogoods[index];
-	}
-
-	if (!strictSingleThreaded){
-		sem_dlvhexDataStructures.wait();
-		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
-	}
-
-	return ng;
-}
-
-void ClaspSolver::removeNogood(int index){
-        boost::mutex::scoped_lock lock(nogoodsMutex);
-	throw std::runtime_error("ClaspSolver::removeNogood not implemented");
-}
-
-int ClaspSolver::getNogoodCount(){
-
-	int s;
-
-	if (!strictSingleThreaded){
-		sem_dlvhexDataStructures.post();
-		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
-	}
-
-	{
-		// access nogoods
-	        boost::mutex::scoped_lock lock(nogoodsMutex);
-		s = nogoods.size();
-	}
-
-
-	if (!strictSingleThreaded){
-		sem_dlvhexDataStructures.wait();
-		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
-	}
-
-	return s;
-}
-
-InterpretationConstPtr ClaspSolver::getNextModel(){
+InterpretationPtr ClaspSolver::getNextModel(){
 
 	// make sure that clasp runs
 	if (!claspStarted && !endOfModels){
@@ -1138,7 +1079,7 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 			if (preparedModels.size() == 0){
 				// all prepared models are exhausted and also clasp has no more models
 				DBGLOG(DBG, "End of models");
-				nextModel = InterpretationConstPtr();
+				nextModel = InterpretationPtr();
 			}else{
 				// return next prepared model
 				nextModel = preparedModels.front();
@@ -1174,27 +1115,21 @@ InterpretationConstPtr ClaspSolver::getNextModel(){
 		}
 	}
 
-	return nextModel;
+	return outputProjection(nextModel);
 }
 
 int ClaspSolver::getModelCount(){
 	return modelCount;
 }
 
-InterpretationPtr ClaspSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){
-	if (intr == InterpretationConstPtr()){
-		return InterpretationPtr();
-	}else{
-		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
-		answer->add(*intr);
-
-		if (projectionMask != InterpretationConstPtr()){
-			answer->getStorage() -= projectionMask->getStorage();
-		}
-		DBGLOG(DBG, "Projected " << *intr << " to " << *answer);
-		return answer;
-	}
+std::string ClaspSolver::getStatistics(){
+	std::stringstream ss;
+	ss <<	"Guesses: " << claspInstance.master()->stats.choices << std::endl <<
+		"Conflicts: " << claspInstance.master()->stats.conflicts << std::endl <<
+		"Models: " << claspInstance.master()->stats.models;
+	return ss.str();
 }
+
 
 
 // ============================== DisjunctiveClaspSolver ==============================
@@ -1207,9 +1142,9 @@ DisjunctiveClaspSolver::DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedG
 DisjunctiveClaspSolver::~DisjunctiveClaspSolver(){
 }
 
-InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
+InterpretationPtr DisjunctiveClaspSolver::getNextModel(){
 
-	InterpretationConstPtr model = ClaspSolver::getNextModel();
+	InterpretationPtr model = ClaspSolver::getNextModel();
 
 	bool ufsFound = true;
 	while (model && ufsFound){
@@ -1217,12 +1152,8 @@ InterpretationConstPtr DisjunctiveClaspSolver::getNextModel(){
 
 		std::vector<IDAddress> ufs = ufscm.getUnfoundedSet(model);
 
-//		UnfoundedSetChecker ufsc(ctx, program, model);
-//		std::vector<IDAddress> ufs = ufsc.getUnfoundedSet();
-
 		if (ufs.size() > 0){
-			Nogood ng = ufscm.getLastUFSNogood(); // = ufscm.getUFSNogood(ufs, model);
-//			Nogood ng = ufsc.getUFSNogood(ufs, model);
+			Nogood ng = ufscm.getLastUFSNogood();
 			addNogood(ng);
 			ufsFound = true;
 			model = ClaspSolver::getNextModel();

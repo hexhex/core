@@ -255,12 +255,11 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 																	// this will not find unfounded sets due to external sources,
 																	// but at least unfounded sets due to disjunctions
 						);
-	factory.ctx.globalNogoods.addNogoodListener(solver);
-	learnedEANogoods = NogoodContainerPtr(new SimpleNogoodContainer());
+	learnedEANogoods = SimpleNogoodContainerPtr(new SimpleNogoodContainer());
 	learnedEANogoodsTransferredIndex = 0;
 	nogoodGrounder = NogoodGrounderPtr(new ImmediateNogoodGrounder(factory.ctx.registry(), learnedEANogoods, learnedEANogoods, annotatedGroundProgram));
 
-	solver->addExternalLearner(this);
+	solver->addPropagator(this);
     }
 
     setHeuristics();
@@ -272,8 +271,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
 }
 
 GenuineGuessAndCheckModelGenerator::~GenuineGuessAndCheckModelGenerator(){
-	factory.ctx.globalNogoods.removeNogoodListener(solver);
-	solver->removeExternalLearner(this);
+	solver->removePropagator(this);
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
@@ -312,7 +310,7 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 	InterpretationPtr modelCandidate;
 	do
 	{
-		modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
+		modelCandidate = solver->getNextModel();
 		DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 		if( !modelCandidate ) return modelCandidate;
 		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
@@ -329,7 +327,6 @@ InterpretationPtr GenuineGuessAndCheckModelGenerator::generateNextModel()
 		// remove edb and the guess (from here we don't need the guess anymore)
 		modelCandidate->getStorage() -= factory.gpMask.mask()->getStorage();
 		modelCandidate->getStorage() -= factory.gnMask.mask()->getStorage();
-
 		modelCandidate->getStorage() -= mask->getStorage();
 
 		DBGLOG(DBG,"= final model " << *modelCandidate);
@@ -450,7 +447,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			if (factory.ctx.config.getOption("FLPCheck")){
 				DBGLOG(DBG, "FLP Check");
 				// do FLP check (possibly with nogood learning) and add the learned nogoods to the main search
-				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+				bool result = isSubsetMinimalFLPModel<GenuineSolver>(compatibleSet, postprocessedInput, factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 				if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
 				if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
 				transferLearnedEANogoods();
@@ -460,7 +457,7 @@ bool GenuineGuessAndCheckModelGenerator::isModel(InterpretationConstPtr compatib
 			// UFS check
 			if (factory.ctx.config.getOption("UFSCheck")){
 				DBGLOG(DBG, "UFS Check");
-				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+				std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(compatibleSet, std::set<ID>(), factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 				if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
 				if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(compatibleSet);
 				transferLearnedEANogoods();
@@ -495,12 +492,11 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 		if (decision.first){
 
 			DBGLOG(DBG, "Heuristic decides to do an UFS check");
-			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : GenuineSolverPtr());
+			std::vector<IDAddress> ufs = ufscm->getUnfoundedSet(partialInterpretation, decision.second, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : SimpleNogoodContainerPtr());
 			DBGLOG(DBG, "UFS result: " << (ufs.size() == 0 ? "no" : "") << " UFS found (interpretation: " << *partialInterpretation << ", assigned: " << *factWasSet << ")");
 
 			if (ufs.size() > 0){
 				Nogood ng = ufscm->getLastUFSNogood();
-				int oldCount = solver->getNogoodCount();
 				DBGLOG(DBG, "Adding UFS nogood: " << ng);
 				solver->addNogood(ng);
 
@@ -509,7 +505,7 @@ bool GenuineGuessAndCheckModelGenerator::partialUFSCheck(InterpretationConstPtr 
 					if (!factWasSet->getFact(l.address) || l.isNaf() == partialInterpretation->getFact(l.address)) return false;
 				}
 
-				return solver->getNogoodCount() > oldCount;
+				return true;
 			}
 		}else{
 			DBGLOG(DBG, "Heuristic decides not to do an UFS check");
@@ -660,7 +656,7 @@ const OrdinaryASPProgram& GenuineGuessAndCheckModelGenerator::getGroundProgram()
 	return grounder->getGroundProgram();
 }
 
-bool GenuineGuessAndCheckModelGenerator::learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+bool GenuineGuessAndCheckModelGenerator::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	bool conflict = verifyExternalAtoms(partialInterpretation, factWasSet, changed);
 

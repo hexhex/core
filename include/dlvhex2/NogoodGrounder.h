@@ -46,8 +46,8 @@ DLVHEX_NAMESPACE_BEGIN
 class NogoodGrounder{
 protected:
 	RegistryPtr reg;
-	NogoodContainerPtr watched;
-	NogoodContainerPtr destination;
+	SimpleNogoodContainerPtr watched;
+	SimpleNogoodContainerPtr destination;
 	AnnotatedGroundProgram& agp;
 public:
 	/**
@@ -58,7 +58,7 @@ public:
 	 * @param destination The container where the resulting nogoods shall be added (possibly the same as watched)
 	 * @param agp The ground program for which the nogoods shall be learned
 	 */
-	NogoodGrounder(RegistryPtr reg, NogoodContainerPtr watched, NogoodContainerPtr destination, AnnotatedGroundProgram& agp);
+	NogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 
 	/**
 	 * Makes another grounding step
@@ -80,7 +80,7 @@ class ImmediateNogoodGrounder : public NogoodGrounder{
 private:
 	int instantiatedNongroundNogoodsIndex;
 public:
-	ImmediateNogoodGrounder(RegistryPtr reg, NogoodContainerPtr watched, NogoodContainerPtr destination, AnnotatedGroundProgram& agp);
+	ImmediateNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 };
 
@@ -94,7 +94,7 @@ private:
 	std::vector<std::pair<ID, int> > watchedLiterals;
 	std::set<std::pair<IDAddress, int> > alreadyCompared;	// store which atom was already compared to which nonground nogood
 public:
-	LazyNogoodGrounder(RegistryPtr reg, NogoodContainerPtr watched, NogoodContainerPtr destination, AnnotatedGroundProgram& agp);
+	LazyNogoodGrounder(RegistryPtr reg, SimpleNogoodContainerPtr watched, SimpleNogoodContainerPtr destination, AnnotatedGroundProgram& agp);
 	void update(InterpretationConstPtr partialInterpretation = InterpretationConstPtr(), InterpretationConstPtr factWasSet = InterpretationConstPtr(), InterpretationConstPtr changed = InterpretationConstPtr());
 };
 

@@ -39,6 +39,7 @@
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/GenuineWellfoundedModelGenerator.h"
 #include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
+#include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"

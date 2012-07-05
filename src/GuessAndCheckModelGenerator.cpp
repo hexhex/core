@@ -117,27 +117,17 @@ public:
   }
 
   // get next model
-	virtual InterpretationConstPtr getNextModel()
+	virtual InterpretationPtr getNextModel()
   {
     AnswerSetPtr as = results->getNextAnswerSet();
-    if( !!as )
-      return as->interpretation;
-    else
-      return InterpretationConstPtr();
-  }
-
-  // projects to ordinary atoms and to program.mask
-	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr intr)
-  {
-    if (intr == InterpretationConstPtr()){
-      return InterpretationPtr();
-    }else{
-      InterpretationPtr answer = InterpretationPtr(new Interpretation(intr->getRegistry()));
-      answer->add(*intr);
+    if( !!as ){
+      InterpretationPtr answer = InterpretationPtr(new Interpretation(*(as->interpretation)));
       if (mask != InterpretationConstPtr()){
         answer->getStorage() -= mask->getStorage();
       }
       return answer;
+    }else{
+      return InterpretationPtr();
     }
   }
 };
@@ -373,7 +363,7 @@ InterpretationPtr GuessAndCheckModelGenerator::generateNextModel()
         "cannot use external learning in (non-genuine) GuessAndCheckModelGenerator");
 		bool compatible = isCompatibleSet(
         modelCandidate, postprocessedInput, factory.ctx,
-        NogoodContainerPtr());
+        SimpleNogoodContainerPtr());
 		DBGLOG(DBG, "Compatible: " << compatible);
 		if (!compatible) continue;
 

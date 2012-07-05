@@ -48,6 +48,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declaration
+class PropagatorCallback;
+
 class CDNLSolver : virtual public NogoodContainer, virtual public SATSolver{
 protected:
 	struct SimpleHashIDAddress : public std::unary_function<IDAddress, std::size_t> {
@@ -66,13 +69,12 @@ protected:
 	NogoodSet nogoodset;
 	Set<IDAddress> allFacts;
 	ProgramCtx& ctx;
+	SimpleNogoodContainer nogoodsToAdd;
 
 	// solver state information
 	InterpretationPtr interpretation;
 	InterpretationPtr factWasSet;
 	DynamicVector<IDAddress, int> decisionlevel;
-//	std::vector<int> cause;
-//	DynamicVector<IDAddress, int> cause;
 	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> cause;
 	int currentDL;
 	OrderedSet<IDAddress, SimpleHashIDAddress> assignmentOrder;
@@ -82,14 +84,6 @@ protected:
 	DynamicVector<int, ID> decisionLiteralOfDecisionLevel;
 
 	// watching data structures for efficient unit propagation
-//	std::vector<Set<int> > nogoodsOfPosLiteral;
-//	std::vector<Set<int> > nogoodsOfNegLiteral;
-//	std::vector<Set<int> > watchingNogoodsOfPosLiteral;
-//	std::vector<Set<int> > watchingNogoodsOfNegLiteral;
-//	DynamicVector<IDAddress, Set<int> > nogoodsOfPosLiteral;
-//	DynamicVector<IDAddress, Set<int> > nogoodsOfNegLiteral;
-//	DynamicVector<IDAddress, Set<int> > watchingNogoodsOfPosLiteral;
-//	DynamicVector<IDAddress, Set<int> > watchingNogoodsOfNegLiteral;
 	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > nogoodsOfPosLiteral;
 	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > nogoodsOfNegLiteral;
 	boost::unordered_map<IDAddress, Set<int>, SimpleHashIDAddress > watchingNogoodsOfPosLiteral;
@@ -100,10 +94,6 @@ protected:
 
 	// variable selection heuristics
 	int conflicts;
-//	std::vector<int> varCounterPos;
-//	std::vector<int> varCounterNeg;
-//	DynamicVector<IDAddress, int> varCounterPos;
-//	DynamicVector<IDAddress, int> varCounterNeg;
 	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterPos;
 	boost::unordered_map<IDAddress, int, SimpleHashIDAddress> varCounterNeg;
 	std::vector<int> recentConflicts;
@@ -145,8 +135,10 @@ protected:
 		return factWasSet->getStorage().count() == allFacts.size();
 	}
 
+
 	// reasoning members
 	bool unitPropagation(Nogood& violatedNogood);
+	void loadAddedNogoods();
 	void analysis(Nogood& violatedNogood, Nogood& learnedNogood, int& backtrackDL);
 	Nogood resolve(Nogood& ng1, Nogood& ng2, IDAddress litadr);
 	virtual void setFact(ID fact, int dl, int cause);
@@ -168,6 +160,10 @@ protected:
 
 	// members for variable selection heuristics
 	void touchVarsInNogood(Nogood& ng);
+
+	// external learning
+	InterpretationPtr changed;
+	Set<PropagatorCallback*> propagator;
 
 	// initialization members
 	void initListOfAllFacts();
@@ -193,17 +189,7 @@ protected:
 		return assignmentOrder.getInsertionIndex(adr);
 	}
 
-public:
-	virtual std::string getStatistics();
-
-	CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
-	ProgramCtx& getProgramContext();
-
-	virtual InterpretationConstPtr getNextModel();
-	virtual int addNogood(Nogood ng);
-	void removeNogood(int nogoodIndex);
-	Nogood getNogood(int index);
-	int getNogoodCount();
+	int addNogoodAndUpdateWatchingStructures(Nogood ng);
 
 	std::vector<Nogood> getContradictoryNogoods();
 	inline bool isDecisionLiteral(IDAddress litaddr){
@@ -214,6 +200,14 @@ public:
 		}
 	}
 	Nogood getCause(IDAddress adr);
+public:
+	CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
+
+	virtual void addPropagator(PropagatorCallback* pb);
+	virtual void removePropagator(PropagatorCallback* pb);
+	virtual InterpretationPtr getNextModel();
+	virtual void addNogood(Nogood ng);
+	virtual std::string getStatistics();
 
 	typedef boost::shared_ptr<CDNLSolver> Ptr;
 	typedef boost::shared_ptr<const CDNLSolver> ConstPtr;

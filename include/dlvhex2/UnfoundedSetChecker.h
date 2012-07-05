@@ -69,7 +69,7 @@ private:
   InterpretationConstPtr compatibleSetWithoutAux;
   const std::set<ID>& skipProgram;
   InterpretationConstPtr componentAtoms;
-  NogoodContainerPtr ngc;
+  SimpleNogoodContainerPtr ngc;
 
   // ufs detection problem
   NogoodSet ufsDetectionProblem;
@@ -114,7 +114,7 @@ public:
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
-			NogoodContainerPtr ngc = NogoodContainerPtr());
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
   /**
    * \brief Initialization for UFS search under consideration of the semantics of external atoms
@@ -135,7 +135,7 @@ public:
 			InterpretationConstPtr compatibleSet,
 			std::set<ID> skipProgram = std::set<ID>(),
 			InterpretationConstPtr componentAtoms = InterpretationConstPtr(),
-			NogoodContainerPtr ngc = NogoodContainerPtr());
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
   // Returns an unfounded set of groundProgram wrt. compatibleSet;
   // If the empty set is returned,
@@ -197,7 +197,7 @@ public:
 	std::vector<IDAddress> getUnfoundedSet(
 			InterpretationConstPtr interpretation,
 			std::set<ID> skipProgram = std::set<ID>(),
-			NogoodContainerPtr ngc = NogoodContainerPtr());
+			SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr());
 
 	Nogood getLastUFSNogood() const;
 

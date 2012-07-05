@@ -345,13 +345,11 @@ void InternalGroundASPSolver::initializeLists(){
 
 void InternalGroundASPSolver::setFact(ID fact, int dl, int cause = -1){
 	CDNLSolver::setFact(fact, dl, cause);
-	changed->setFact(fact.address);
 	updateUnfoundedSetStructuresAfterSetFact(fact);
 }
 
 void InternalGroundASPSolver::clearFact(IDAddress litadr){
 	CDNLSolver::clearFact(litadr);
-	changed->setFact(litadr);
 	updateUnfoundedSetStructuresAfterClearFact(litadr);
 }
 
@@ -423,7 +421,6 @@ void InternalGroundASPSolver::getInitialNewlyUnfoundedAtomsAfterSetFact(ID fact,
 						//       or we can use the decision level (would be much more efficient)
 						if (satisfied(createLiteral(otherHeadLit.address)) &&
 						    getAssignmentOrderIndex(otherHeadLit.address) > getAssignmentOrderIndex(fact.address)
-//						    decisionlevel[otherHeadLit.address] > decisionlevel[fact.address]
 						){
 							DBGLOGD(DBG, "" << otherHeadLit.address << " is initially unfounded because " << otherHeadLit.address <<
 								" occurs in the head of its source rule and became true on a lower decision level");
@@ -589,7 +586,6 @@ bool InternalGroundASPSolver::useAsNewSourceForHeadAtom(IDAddress headAtom, ID s
 					//       or we can use the decision level (would be much more efficient)
 					if (
 					    getAssignmentOrderIndex(otherHeadLit.address) < getAssignmentOrderIndex(headAtom)
-//					    decisionlevel[otherHeadLit.address] < headLitDecisionLevel
 					){
 						DBGLOG(DBG, "No: Head literal " << otherHeadLit.address << " was set to true on a lower decision level");
 						return false;
@@ -756,16 +752,6 @@ Nogood InternalGroundASPSolver::getLoopNogood(const Set<ID>& ufs){
 	return loopNogood;
 }
 
-/*
-ID InternalGroundASPSolver::createNewAtom(std::string predName){
-	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-	Term predTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, predName);
-	ID predID = reg->storeTerm(predTerm);
-	atom.tuple.push_back(predID);
-	return createLiteral(reg->storeOrdinaryGAtom(atom).address);
-}
-*/
-
 ID InternalGroundASPSolver::createNewAtom(ID predID){
 	OrdinaryAtom atom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 	atom.tuple.push_back(predID);
@@ -777,7 +763,6 @@ ID InternalGroundASPSolver::createNewBodyAtom(){
 	bodyPred << bodyAtomPrefix << bodyAtomNumber;
 	DBGLOG(DBG, "Creating body atom " << bodyPred);
 	bodyAtomNumber++;
-//	ID bodyAtom = createNewAtom(bodyPred.str());
 	ID bodyAtom = createNewAtom(reg->getNewConstantTerm("body"));
 	allFacts.insert(bodyAtom.address);
 	return bodyAtom;
@@ -821,25 +806,25 @@ std::string InternalGroundASPSolver::toString(const std::vector<IDAddress>& lits
 	return ss.str();
 }
 
-std::string InternalGroundASPSolver::getStatistics(){
+InterpretationPtr InternalGroundASPSolver::outputProjection(InterpretationConstPtr intr){
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	ss	<< CDNLSolver::getStatistics() << std::endl
-		<< "Detected unfounded sets: " << cntDetectedUnfoundedSets;
-	return ss.str();
-#else
-	std::stringstream ss;
-	ss << "Only available in debug mode";
-	return ss.str();
-#endif
+	if (intr == InterpretationPtr()){
+		return InterpretationPtr();
+	}else{
+		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
+		answer->add(*intr);
+		answer->bit_and(*ordinaryFactsInt);
+		if (program.getGroundProgram().mask != InterpretationConstPtr()){
+			answer->getStorage() -= program.getGroundProgram().mask->getStorage();
+		}
+		return answer;
+	}
 }
 
 InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0){
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
 	reg = ctx.registry();
-	changed.reset(new Interpretation(ctx.registry()));
 
 	resizeVectors();
 	initializeLists();
@@ -853,26 +838,21 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
 	setEDB();
 }
 
-void InternalGroundASPSolver::addExternalLearner(LearningCallback* lb){
-	learner.insert(lb);
+void InternalGroundASPSolver::addPropagator(PropagatorCallback* pb){
+	propagator.insert(pb);
 }
 
-void InternalGroundASPSolver::removeExternalLearner(LearningCallback* lb){
-	learner.erase(lb);
+void InternalGroundASPSolver::removePropagator(PropagatorCallback* pb){
+	propagator.erase(pb);
 }
 
-InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
+InterpretationPtr InternalGroundASPSolver::getNextModel(){
 
 	Nogood violatedNogood;
 
 	if (!firstmodel && complete()){
-/*
-		if (!handlePreviousModel()){
-			return InterpretationConstPtr();
-		}
-*/
 		if (currentDL == 0){
-			return InterpretationConstPtr();
+			return InterpretationPtr();
 		}else{
 			flipDecisionLiteral();
 		}
@@ -886,7 +866,7 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 		if (!unitPropagation(violatedNogood)){
 			if (currentDL == 0){
 				// no answer set
-				return InterpretationConstPtr();
+				return InterpretationPtr();
 			}else{
 				if (currentDL > exhaustedDL){
 					DBGLOG(DBG, "Conflict analysis");
@@ -894,7 +874,7 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 					Nogood learnedNogood;
 					int k = currentDL;
 					analysis(violatedNogood, learnedNogood, k);
-					recentConflicts.push_back(addNogood(learnedNogood));
+					recentConflicts.push_back(addNogoodAndUpdateWatchingStructures(learnedNogood));
 					currentDL = k > exhaustedDL ? k : exhaustedDL;	// do not jump below exhausted level, this could lead to regeneration of models
 					backtrack(currentDL);
 				}else{
@@ -911,23 +891,26 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 #endif
 
 				Nogood loopNogood = getLoopNogood(ufs);
-				addNogood(loopNogood);
+				addNogoodAndUpdateWatchingStructures(loopNogood);
 				anotherIterationEvenIfComplete = true;
 			}else{
 				// no ufs
 				DBGLOG(DBG, "No unfounded set exists");
 
 				DBGLOG(DBG, "Calling external learner");
-				int nogoodCount = getNogoodCount();
-				BOOST_FOREACH (LearningCallback* cb, learner){
+				int nogoodCount = nogoodset.getNogoodCount();
+				BOOST_FOREACH (PropagatorCallback* cb, propagator){
 					DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-					anotherIterationEvenIfComplete |= cb->learn(interpretation, factWasSet, changed);
+					anotherIterationEvenIfComplete |= cb->propagate(interpretation, factWasSet, changed);
 				}
+				// add new nogoods
+				loadAddedNogoods();
+
 				// don't clear the changed literals if the external learner detected a conflict;
 				// the learner will probably need to recheck the literals in the next call
 				if (!anotherIterationEvenIfComplete) changed->clear();
 
-				if (getNogoodCount() != nogoodCount){
+				if (nogoodset.getNogoodCount() != nogoodCount){
 					DBGLOG(DBG, "Learned something");
 				}else{
 					DBGLOG(DBG, "Did not learn anything");
@@ -946,7 +929,7 @@ InterpretationConstPtr InternalGroundASPSolver::getNextModel(){
 	}
 
 
-	InterpretationConstPtr icp(interpretation);
+	InterpretationPtr icp = outputProjection(interpretation);
 	modelCount++;
 	return icp;
 }
@@ -955,23 +938,18 @@ int InternalGroundASPSolver::getModelCount(){
 	return modelCount;
 }
 
-InterpretationPtr InternalGroundASPSolver::projectToOrdinaryAtoms(InterpretationConstPtr intr){
+std::string InternalGroundASPSolver::getStatistics(){
 
-	if (intr == InterpretationConstPtr()){
-		return InterpretationPtr();
-	}else{
-		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
-		answer->add(*intr);
-		answer->bit_and(*ordinaryFactsInt);
-		if (program.getGroundProgram().mask != InterpretationConstPtr()){
-			answer->getStorage() -= program.getGroundProgram().mask->getStorage();
-		}
-//		InterpretationPtr answer = InterpretationPtr(new Interpretation(reg));
-//		BOOST_FOREACH (IDAddress ordAt, ordinaryFacts){
-//			if (intr->getFact(ordAt)) answer->setFact(ordAt);
-//		}
-		return answer;
-	}
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss	<< CDNLSolver::getStatistics() << std::endl
+		<< "Detected unfounded sets: " << cntDetectedUnfoundedSets;
+	return ss.str();
+#else
+	std::stringstream ss;
+	ss << "Only available in debug mode";
+	return ss.str();
+#endif
 }
 
 DLVHEX_NAMESPACE_END

@@ -164,11 +164,9 @@ GenuinePlainModelGenerator::GenuinePlainModelGenerator(
 	OrdinaryASPProgram program(reg, factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
 
 	solver = GenuineSolver::getInstance(factory.ctx, program);
-	factory.ctx.globalNogoods.addNogoodListener(solver);
 }
 
 GenuinePlainModelGenerator::~GenuinePlainModelGenerator(){
-	factory.ctx.globalNogoods.removeNogoodListener(solver);
 	DBGLOG(DBG, "Final Statistics:" << std::endl << solver->getStatistics());
 }
 
@@ -182,7 +180,7 @@ GenuinePlainModelGenerator::generateNextModel()
 	RegistryPtr reg = factory.ctx.registry();
 
 	// remove edb from result
-	InterpretationPtr modelCandidate = solver->projectToOrdinaryAtoms(solver->getNextModel());
+	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;

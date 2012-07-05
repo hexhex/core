@@ -104,7 +104,7 @@ public:
 class GenuineGuessAndCheckModelGenerator:
   public FLPModelGeneratorBase,
   public ostream_printable<GenuineGuessAndCheckModelGenerator>,
-  public LearningCallback,
+  public PropagatorCallback,
   public HeuristicsModelGeneratorInterface
 {
   // types
@@ -131,13 +131,13 @@ protected:
   InterpretationPtr mask;
 
   // internal solver
-  NogoodGrounderPtr nogoodGrounder;	// grounder for nonground nogoods
-  NogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
-  int learnedEANogoodsTransferredIndex;	// the highest index in learnedEANogoods which has already been transferred to the solver
+  NogoodGrounderPtr nogoodGrounder;		// grounder for nonground nogoods
+  SimpleNogoodContainerPtr learnedEANogoods;	// all nogoods learned from EA evaluations
+  int learnedEANogoodsTransferredIndex;		// the highest index in learnedEANogoods which has already been transferred to the solver
   GenuineGrounderPtr grounder;
   GenuineGroundSolverPtr solver;
   UnfoundedSetCheckerManagerPtr ufscm;
-  InterpretationPtr programMask;	// all atoms in the program
+  InterpretationPtr programMask;		// all atoms in the program
 
   // members
 
@@ -228,7 +228,7 @@ protected:
    * @param changed The set of atoms with modified truth value since the last call
    * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
    */
-  bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  bool propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 
   // initialization
   void setHeuristics();

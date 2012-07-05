@@ -785,7 +785,7 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 		InterpretationConstPtr candidateCompatibleSet,
 		InterpretationConstPtr postprocessedInput,
     ProgramCtx& ctx,
-		NogoodContainerPtr nc){
+		SimpleNogoodContainerPtr nc){
 	RegistryPtr& reg = factory.reg;
   PredicateMask& gpMask = factory.gpMask;
   PredicateMask& gnMask = factory.gnMask;
@@ -821,7 +821,7 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 	if( !evaluateExternalAtoms(
         reg, factory.innerEatoms,
         candidateCompatibleSet, cb,
-        &ctx, ctx.config.getOption("ExternalLearning") ? nc : GenuineSolverPtr()))
+        &ctx, ctx.config.getOption("ExternalLearning") ? nc : SimpleNogoodContainerPtr()))
   {
 		return false;
 	}

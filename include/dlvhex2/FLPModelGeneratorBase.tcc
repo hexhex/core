@@ -70,9 +70,9 @@ struct ExternalSolverHelper<GenuineSolver>
   static NogoodContainerPtr getNogoodContainer(
     boost::shared_ptr<GenuineSolver> solverPtr)
       { return solverPtr; }
-  static int addNogood(
+  static void addNogood(
     boost::shared_ptr<GenuineSolver> solverPtr, Nogood ng)
-      { return solverPtr->addNogood(ng); }
+      { solverPtr->addNogood(ng); }
 };
 
 }
@@ -82,7 +82,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		InterpretationConstPtr compatibleSet,
 		InterpretationConstPtr postprocessedInput,
 		ProgramCtx& ctx,
-		NogoodContainerPtr ngc)
+		SimpleNogoodContainerPtr ngc)
 {
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE_TPL(sidflpcheck, "Explicit FLP Check");
 
@@ -120,7 +120,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 		OrdinaryASPProgram flpheadprogram(reg, xidbflphead, compatibleSet, ctx.maxint);
 		OrdinaryASPSolverTPtr flpheadsolver = OrdinaryASPSolverT::getInstance(ctx, flpheadprogram);
 
-		flpas = flpheadsolver->projectToOrdinaryAtoms(flpheadsolver->getNextModel());
+		flpas = flpheadsolver->getNextModel();
 		if( flpas == InterpretationPtr() )
 		{
 			DBGLOG(DBG, "FLP head program yielded no answer set");
@@ -187,7 +187,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 		DLVHEX_BENCHMARK_REGISTER(sidflpenum, "FLP-Reduct Solving");
 		DLVHEX_BENCHMARK_START(sidflpenum);
-		InterpretationPtr flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+		InterpretationPtr flpbodyas = flpbodysolver->getNextModel();
 		DLVHEX_BENCHMARK_STOP(sidflpenum);
 		DLVHEX_BENCHMARK_REGISTER(flpcandidates, "Investigated models of FLP reduct");
 		while(flpbodyas != InterpretationPtr())
@@ -267,7 +267,7 @@ bool FLPModelGeneratorBase::isSubsetMinimalFLPModel(
 
 			DBGLOG(DBG, "Go to next model of reduct");
 			DLVHEX_BENCHMARK_START(sidflpenum);
-			flpbodyas = flpbodysolver->projectToOrdinaryAtoms(flpbodysolver->getNextModel());
+			flpbodyas = flpbodysolver->getNextModel();
 			DLVHEX_BENCHMARK_STOP(sidflpenum);
 		}
 	}
@@ -327,9 +327,9 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 		OrdinaryASPProgram program(factory.reg, factory.deidb, dst, ctx.maxint);
 		OrdinaryASPSolverTPtr solver = OrdinaryASPSolverT::getInstance(ctx, program);
 
-		InterpretationPtr model = solver->projectToOrdinaryAtoms(solver->getNextModel());
+		InterpretationPtr model = solver->getNextModel();
 		assert(model != InterpretationPtr());
-		InterpretationPtr model2 = solver->projectToOrdinaryAtoms(solver->getNextModel());
+		InterpretationPtr model2 = solver->getNextModel();
 		assert(model2 == InterpretationPtr());
 		dst->getStorage().swap(model->getStorage());
 

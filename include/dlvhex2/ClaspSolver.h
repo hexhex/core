@@ -73,7 +73,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 // forward declaration
-class LearningCallback;
+class PropagatorCallback;
 
 class ClaspSolver : public GenuineGroundSolver, public SATSolver{
 public:
@@ -142,6 +142,10 @@ private:
 	// initialization
 	bool sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm);
 	bool sendNogoodSetToClasp(const NogoodSet& ns);
+
+	// output filtering
+	InterpretationPtr outputProjection(InterpretationConstPtr intr);
+
 protected:
 	// structural program information
 	ProgramCtx& ctx;
@@ -162,12 +166,10 @@ protected:
 	boost::interprocess::interprocess_semaphore sem_request, sem_answer;
 
 	// external behavior learning
-	boost::mutex learnerMutex;	// exclusive access of learner
-	Set<LearningCallback*> learner;
+	boost::mutex propagatorMutex;	// exclusive access of propagator
+	Set<PropagatorCallback*> propagator;
 	boost::mutex nogoodsMutex;	// exclusive access of nogoods
 	std::queue<Nogood> nogoods;
-	//std::vector<Nogood> nogoods;
-	//int translatedNogoodsIndex;	// highest index in nogoods which has already been translated to clasp
 
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
@@ -191,19 +193,12 @@ public:
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
 
-	virtual std::string getStatistics();
-
-	void addExternalLearner(LearningCallback* lb);
-	void removeExternalLearner(LearningCallback* lb);
-
-	int addNogood(Nogood ng);
-	void removeNogood(int index);
-	Nogood getNogood(int index);
-	int getNogoodCount();
-
-	virtual InterpretationConstPtr getNextModel();
+	virtual void addPropagator(PropagatorCallback* pb);
+	virtual void removePropagator(PropagatorCallback* pb);
+	virtual void addNogood(Nogood ng);
+	virtual InterpretationPtr getNextModel();
 	virtual int getModelCount();
-	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr intr);
+	virtual std::string getStatistics();
 
 	typedef boost::shared_ptr<ClaspSolver> Ptr;
 	typedef boost::shared_ptr<const ClaspSolver> ConstPtr;
@@ -222,7 +217,8 @@ private:
 public:
 	DisjunctiveClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true);
 	virtual ~DisjunctiveClaspSolver();
-	virtual InterpretationConstPtr getNextModel();
+
+	virtual InterpretationPtr getNextModel();
 
 	typedef boost::shared_ptr<DisjunctiveClaspSolver> Ptr;
 	typedef boost::shared_ptr<const DisjunctiveClaspSolver> ConstPtr;

@@ -36,13 +36,18 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+// forward declaration
+class PropagatorCallback;
+
 class ProgramCtx;
 class SATSolver : virtual public NogoodContainer{
 public:
 	typedef boost::shared_ptr<SATSolver> Ptr;
 	typedef boost::shared_ptr<const SATSolver> ConstPtr;
 
-	virtual InterpretationConstPtr getNextModel() = 0;
+	virtual void addPropagator(PropagatorCallback* pb) = 0;
+	virtual void removePropagator(PropagatorCallback* pb) = 0;
+	virtual InterpretationPtr getNextModel() = 0;
 
 	static Ptr getInstance(ProgramCtx& ctx, NogoodSet& ns);
 };

@@ -83,7 +83,7 @@ GenuineGrounderPtr GenuineGrounder::getInstance(ProgramCtx& ctx, const OrdinaryA
 		}
 #else
 		throw GeneralError("No support for gringo compiled into this binary");
-#endif // HAVE_LIBCLINGO
+#endif // HAVE_LIBGRINGO
 		break;
 	}
 }
@@ -107,7 +107,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const A
 		}
 #else
 		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLINGO
+#endif // HAVE_LIBCLASP
 		break;
 	}
 }
@@ -131,7 +131,7 @@ GenuineGroundSolverPtr GenuineGroundSolver::getInstance(ProgramCtx& ctx, const O
 		}
 #else
 		throw GeneralError("No support for clasp compiled into this binary");
-#endif // HAVE_LIBCLINGO
+#endif // HAVE_LIBCLASP
 		break;
 	}
 }
@@ -152,7 +152,7 @@ const OrdinaryASPProgram& GenuineSolver::getGroundProgram(){
 	return gprog;
 }
 
-InterpretationConstPtr GenuineSolver::getNextModel(){
+InterpretationPtr GenuineSolver::getNextModel(){
 	return solver->getNextModel();
 }
 
@@ -160,32 +160,16 @@ int GenuineSolver::getModelCount(){
 	return solver->getModelCount();
 }
 
-InterpretationPtr GenuineSolver::projectToOrdinaryAtoms(InterpretationConstPtr inter){
-	return solver->projectToOrdinaryAtoms(inter);
+void GenuineSolver::addNogood(Nogood ng){
+	solver->addNogood(ng);
 }
 
-int GenuineSolver::addNogood(Nogood ng){
-	return solver->addNogood(ng);
+void GenuineSolver::addPropagator(PropagatorCallback* pb){
+	solver->addPropagator(pb);
 }
 
-Nogood GenuineSolver::getNogood(int index){
-	return solver->getNogood(index);
-}
-
-void GenuineSolver::removeNogood(int index){
-	solver->removeNogood(index);
-}
-
-int GenuineSolver::getNogoodCount(){
-	return solver->getNogoodCount();
-}
-
-void GenuineSolver::addExternalLearner(LearningCallback* lb){
-	solver->addExternalLearner(lb);
-}
-
-void GenuineSolver::removeExternalLearner(LearningCallback* lb){
-	solver->removeExternalLearner(lb);
+void GenuineSolver::removePropagator(PropagatorCallback* pb){
+	solver->removePropagator(pb);
 }
 
 DLVHEX_NAMESPACE_END

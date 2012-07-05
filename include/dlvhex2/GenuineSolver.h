@@ -52,9 +52,9 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class LearningCallback{
+class PropagatorCallback{
 public:
-	virtual bool learn(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
+	virtual bool propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
 class GenuineGrounder{
@@ -74,11 +74,10 @@ typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
 class GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
 public:
 	virtual std::string getStatistics() = 0;
-	virtual InterpretationConstPtr getNextModel() = 0;
+	virtual InterpretationPtr getNextModel() = 0;
 	virtual int getModelCount() = 0;
-	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
-	virtual void addExternalLearner(LearningCallback* lb) = 0;
-	virtual void removeExternalLearner(LearningCallback* lb) = 0;
+	virtual void addPropagator(PropagatorCallback* pb) = 0;
+	virtual void removePropagator(PropagatorCallback* pb) = 0;
 
 	typedef boost::shared_ptr<GenuineGroundSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineGroundSolver> ConstPtr;
@@ -102,15 +101,11 @@ public:
 	const OrdinaryASPProgram& getGroundProgram();
 
 	std::string getStatistics();
-	InterpretationConstPtr getNextModel();
+	InterpretationPtr getNextModel();
 	int getModelCount();
-	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter);
-	int addNogood(Nogood ng);
-	void removeNogood(int index);
-	Nogood getNogood(int index);
-	int getNogoodCount();
-	void addExternalLearner(LearningCallback* lb);
-	void removeExternalLearner(LearningCallback* lb);
+	void addNogood(Nogood ng);
+	void addPropagator(PropagatorCallback* pb);
+	void removePropagator(PropagatorCallback* pb);
 
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;

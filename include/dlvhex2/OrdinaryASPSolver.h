@@ -47,10 +47,7 @@ public:
   // static OrdinaryASPSolverPtr getInstance(ProgramCtx& ctx, OrdinaryASPProgram& program);
 
   // get next model
-	virtual InterpretationConstPtr getNextModel() = 0;
-
-  // projects to ordinary atoms and to program.mask
-	virtual InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr inter) = 0;
+	virtual InterpretationPtr getNextModel() = 0;
 };
 typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
 

@@ -194,7 +194,7 @@ protected:
 		InterpretationConstPtr candidateCompatibleSet,
 		InterpretationConstPtr postprocessedInput,
     ProgramCtx& ctx,
-		NogoodContainerPtr nc);
+		SimpleNogoodContainerPtr nc);
 
   // checks whether a given model is subset-minimal
   // OrdinaryASPSolverT must implement the OrdinaryASPSolver interface
@@ -204,7 +204,7 @@ protected:
 		InterpretationConstPtr compatibleSet,
 		InterpretationConstPtr postprocessedInput,
 		ProgramCtx& ctx,
-		NogoodContainerPtr ngc = NogoodContainerPtr()
+		SimpleNogoodContainerPtr ngc = SimpleNogoodContainerPtr()
 		);
 
   // computes an overestimate of the domains of all inner external atoms which are not strongly safe

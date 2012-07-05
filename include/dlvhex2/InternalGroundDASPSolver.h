@@ -48,29 +48,9 @@ class InternalGroundDASPSolver : public InternalGroundASPSolver{
 private:
 	UnfoundedSetCheckerManager ufscm;
 
-protected:
-#if 0
-	std::vector<bool> hcf;
-
-	// statistics
-	long cntModelCandidates;
-	long cntDUnfoundedSets;
-
-	// unfounded set members
-	Set<ID> getDisjunctiveUnfoundedSetForComponent(int compNr);
-
-	// helper members
-	bool isCompHCF(int compNr);
-	Nogood getViolatedLoopNogood(const Set<ID>& ufs);
-#endif
 public:
-#if 0
-	virtual std::string getStatistics();
-#endif
-
 	InternalGroundDASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
-
-	virtual InterpretationConstPtr getNextModel();
+	virtual InterpretationPtr getNextModel();
 
 	typedef boost::shared_ptr<InternalGroundDASPSolver> Ptr;
 	typedef boost::shared_ptr<const InternalGroundDASPSolver> ConstPtr;

@@ -68,14 +68,19 @@ public:
 };
 
 class NogoodSet : private ostream_printable<NogoodSet>{
-public:
+private:
 	std::vector<Nogood> nogoods;
 	Set<int> freeIndices;
 	boost::unordered_map<size_t, Set<int> > nogoodsWithHash;
 
+	// reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
+	void defragment();
+public:
 	int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
-	Nogood getNogood(int index) const;
+	void removeNogood(Nogood ng);
+	Nogood& getNogood(int index);
+	const Nogood& getNogood(int index) const;
 	int getNogoodCount() const;
 
 	std::ostream& print(std::ostream& o) const;
@@ -84,10 +89,7 @@ public:
 
 class NogoodContainer{
 public:
-	virtual int addNogood(Nogood ng) = 0;
-	virtual void removeNogood(int index) = 0;
-	virtual Nogood getNogood(int index) = 0;
-	virtual int getNogoodCount() = 0;
+	virtual void addNogood(Nogood ng) = 0;
 
 	static inline ID createLiteral(ID lit){
 		if (lit.isOrdinaryGroundAtom()){
@@ -108,21 +110,26 @@ public:
 	typedef boost::shared_ptr<const NogoodContainer> ConstPtr;
 };
 
-class SimpleNogoodContainer : public NogoodContainer{
-public:
-	NogoodSet ngg;
-
-	int addNogood(Nogood ng);
-	void removeNogood(int index);
-	Nogood getNogood(int index);
-	int getNogoodCount();
-
-	// reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
-	void defragment();
-};
-
 typedef NogoodContainer::Ptr NogoodContainerPtr;
 typedef NogoodContainer::ConstPtr NogoodContainerConstPtr;
+
+class SimpleNogoodContainer : public NogoodContainer{
+private:
+	boost::mutex mutex;	// exclusive access
+	NogoodSet ngg;
+public:
+	void addNogood(Nogood ng);
+	void removeNogood(Nogood ng);
+	Nogood& getNogood(int index);
+	int getNogoodCount();
+	void clear();
+
+	typedef boost::shared_ptr<SimpleNogoodContainer> Ptr;
+	typedef boost::shared_ptr<const SimpleNogoodContainer> ConstPtr;
+};
+
+typedef SimpleNogoodContainer::Ptr SimpleNogoodContainerPtr;
+typedef SimpleNogoodContainer::ConstPtr SimpleNogoodContainerConstPtr;
 
 DLVHEX_NAMESPACE_END
 

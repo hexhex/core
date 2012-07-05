@@ -121,60 +121,6 @@ public:
   Interpretation::Ptr edb; 
   std::vector<InterpretationPtr> edbList;
 
-  // global learning
-  class GlobalNogoodRepository : public NogoodContainer{
-  private:
-    NogoodSet ns;
-    std::vector<NogoodContainerPtr> listeners;
-
-  public:
-    int addNogood(Nogood ng){
-      // notify all listeners about new nogoods
-      DBGLOG(DBG, "Notifying " << listeners.size() << " listeners about new global nogood " << ng);
-      BOOST_FOREACH (NogoodContainerPtr listener, listeners){
-        listener->addNogood(ng);
-      }
-
-      // record global nogood
-      return ns.addNogood(ng);
-    }
-
-    void removeNogood(int index){
-      DBGLOG(DBG, "Removing global nogood " << ns.nogoods[index]);
-      ns.removeNogood(index);
-    }
-
-    Nogood getNogood(int index){
-      return ns.getNogood(index);
-    }
-
-    int getNogoodCount(){
-      DBGLOG(DBG, "Have " << ns.nogoods.size() << " global nogoods");
-      return ns.nogoods.size();
-    }
-
-    void addNogoodListener(NogoodContainerPtr nc, bool copyExistingNogoods = true){
-      DBGLOG(DBG, "Adding global nogood listener");
-      listeners.push_back(nc);
-
-      // notify about existing nogoods
-      if(copyExistingNogoods){
-        DBGLOG(DBG, "Notifying new listener about " << ns.nogoods.size() << " existing global nogoods");
-        BOOST_FOREACH (Nogood ng, ns.nogoods){
-          nc->addNogood(ng);
-        }
-      }
-    }
-
-    void removeNogoodListener(NogoodContainerPtr nc){
-      DBGLOG(DBG, "Removing global nogood listener");
-      while (std::find(listeners.begin(), listeners.end(), nc) != listeners.end()){
-        listeners.erase(std::find(listeners.begin(), listeners.end(), nc));
-      }
-    }
-  };
-  GlobalNogoodRepository globalNogoods;
-
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 

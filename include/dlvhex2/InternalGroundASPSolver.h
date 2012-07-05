@@ -50,9 +50,6 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-// forward declaration
-class LearningCallback;
-
 class InternalGroundASPSolver : public CDNLSolver, public GenuineGroundSolver{
 private:
 	std::string bodyAtomPrefix;
@@ -89,10 +86,6 @@ protected:
 	boost::unordered_map<IDAddress, Set<ID>, SimpleHashIDAddress > rulesWithPosHeadLiteral;	// store for each literal the rules which contain it (positively) in their head
 	boost::unordered_map<IDAddress, Set<IDAddress>, SimpleHashIDAddress > foundedAtomsOfBodyAtom;// store for each body atom the set of atoms which use the corresponding rule as source
 	boost::unordered_map<IDAddress, ID, SimpleHashIDAddress> sourceRule;	// store for each atom a source rule (if available); for facts, ID_FAIL will be stored
-
-	// external learning
-	InterpretationPtr changed;
-	Set<LearningCallback*> learner;
 
 	// statistics
 	long cntDetectedUnfoundedSets;
@@ -149,17 +142,15 @@ protected:
 		return out;
 	}
 
+	InterpretationPtr outputProjection(InterpretationConstPtr intr);	// projects dummy atoms for rule bodies away
 public:
-	virtual std::string getStatistics();
-
 	InternalGroundASPSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p);
 
-	void addExternalLearner(LearningCallback* lb);
-	void removeExternalLearner(LearningCallback* lb);
-
-	virtual InterpretationConstPtr getNextModel();
+	virtual void addPropagator(PropagatorCallback* pb);
+	virtual void removePropagator(PropagatorCallback* pb);
+	virtual InterpretationPtr getNextModel();
 	virtual int getModelCount();
-	InterpretationPtr projectToOrdinaryAtoms(InterpretationConstPtr intr);
+	virtual std::string getStatistics();
 
 	typedef boost::shared_ptr<InternalGroundASPSolver> Ptr;
 	typedef boost::shared_ptr<const InternalGroundASPSolver> ConstPtr;
