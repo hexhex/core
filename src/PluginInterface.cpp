@@ -221,6 +221,8 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
 	  std::cerr << "|" << query.getInputTuple() << "|" << query.getPatternTuple() << ">";
 #endif
 
+  boost::mutex::scoped_lock lock(cacheMutex);
+
   //LOG("before queryAnswerCache");
   Answer& ans = queryAnswerCache[query];
   //LOG("after queryAnswerCache");
@@ -272,6 +274,8 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 	// The currently implemented "poor (wo)man's version" is:
 	// * store answers in cache with queries as keys, disregard relations between patterns
 	///@todo: efficiency could be increased for certain programs by considering pattern relationships as indicated above
+
+	boost::mutex::scoped_lock lock(cacheMutex);
 
 	Answer& ans = queryAnswerCache[query];
 	if( ans.hasBeenUsed())

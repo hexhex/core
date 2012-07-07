@@ -328,8 +328,13 @@ EvalGraphBuilder::createEvalUnit(
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
         if (ctx.config.getOption("GenuineSolver") > 0){
-          uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
-                ctx, ci, externalEvalConfig));
+          if (ctx.config.getOption("MultiThreading")){
+            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
+                  ctx, ci, externalEvalConfig));
+          }else{
+            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+                  ctx, ci, externalEvalConfig));
+          }
         }else{
           uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
                 ctx, ci, externalEvalConfig));

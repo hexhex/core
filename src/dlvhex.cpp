@@ -172,6 +172,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --autostrongsafety" << std::endl
       << "                      Tries to automatically establish strong safety where the property is violated" << std::endl
       << "                      (only useful with --weaksafety)" << std::endl
+      << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -366,6 +367,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
   pctx.config.setOption("AutoStrongSafety",0);
+  pctx.config.setOption("MultiThreading",0);
   pctx.config.setOption("WellJustified",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
@@ -619,6 +621,7 @@ void processOptionsPrePlugin(
 		{ "nongroundnogoods", no_argument, 0, 31 },
 		{ "modelqueuesize", required_argument, 0, 32 },
 		{ "autostrongsafety", no_argument, 0, 33 },
+		{ "multithreading", no_argument, 0, 34 },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -1104,6 +1107,8 @@ void processOptionsPrePlugin(
 			break;
 
 		case 33: pctx.config.setOption("AutoStrongSafety", 1); break;
+
+		case 34: pctx.config.setOption("MultiThreading", 1); break;
 
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);

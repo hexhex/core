@@ -332,7 +332,7 @@ InterpretationPtr GenuineGuessAndCheckModelGeneratorAsync::generateNextModel()
 
 		// return the next model
 		modelCandidate = verifiedModels.front();
-		DBGLOG(DBG, "Got a HEX model: " << *modelCandidate);
+		if (modelCandidate) DBGLOG(DBG, "Got a HEX model: " << *modelCandidate);
 		verifiedModels.pop();
 
 		return modelCandidate;
@@ -349,11 +349,11 @@ void GenuineGuessAndCheckModelGeneratorAsync::produceOrdinaryModels(){
 		// more models or end of models?
 		if (modelCandidate){
 			DBGLOG(DBG, "Got a model of the ordinary ASP program: " << *modelCandidate);
-			boost::mutex::scoped_lock lock(ordinaryModelsMutex);
+			boost::mutex::scoped_lock omlock(ordinaryModelsMutex);
 
 			// if the model queue is full, wait for more space
 			while (ordinaryModels.size() >= factory.ctx.config.getOption("ModelQueueSize")){
-				waitForOrdinaryModelsQueueSpaceCondition.wait(lock);
+				waitForOrdinaryModelsQueueSpaceCondition.wait(omlock);
 			}
 
 			// store the new model and notify the verification thread that there is a new model
@@ -361,7 +361,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::produceOrdinaryModels(){
 			waitForOrdinaryModelsCondition.notify_all();
 		}else{
 			// end of models: add a "dummy model" (InterpretationPtr()) to indicate end of models and notify the verification thread
-			boost::mutex::scoped_lock lock(ordinaryModelsMutex);
+			boost::mutex::scoped_lock omlock(ordinaryModelsMutex);
 			ordinaryModels.push(std::pair<InterpretationPtr, std::pair<std::vector<bool>, std::vector<bool> > >(InterpretationPtr(), std::pair<std::vector<bool>, std::vector<bool> >(std::vector<bool>(), std::vector<bool>())));
 			waitForOrdinaryModelsCondition.notify_all();
 			break;
@@ -495,28 +495,28 @@ bool GenuineGuessAndCheckModelGeneratorAsync::finalCompatibilityCheck(Interpreta
 			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
 
 			// evaluate the EA in a separate thread
-//			boost::thread* thread = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::finalExternalAtomEvaluation, this, eaIndex, modelCandidate, &eaVerified));
-//			eaEvalThreads.push_back(std::pair<int, boost::thread*>(eaIndex, thread));
-eaVerified[eaIndex] = !verifyExternalAtom(eaIndex, modelCandidate);
+			boost::thread* thread = new boost::thread(boost::bind(&GenuineGuessAndCheckModelGeneratorAsync::finalExternalAtomEvaluation, this, eaIndex, modelCandidate, &eaVerified));
+			eaEvalThreads.push_back(std::pair<int, boost::thread*>(eaIndex, thread));
+//eaVerified[eaIndex] = !verifyExternalAtom(eaIndex, modelCandidate);
 
 			eaEvaluated[eaIndex] = true;
-
+/*
 			if (eaVerified[eaIndex] == false){
 				compatible = false;
 				break;
 			}
-
+*/
 		}
 	}
-/*
+
 	// wait for all threads to termimnate and read their verification result
-	for (int i = 0; i < 0*eaEvalThreads.size(); ++i){
+	for (int i = 0; i < eaEvalThreads.size(); ++i){
 		eaEvalThreads[i].second->join();
 		if (eaVerified[eaEvalThreads[i].first] == false){
 			compatible = false;
 		}
 	}
-*/
+
 	DBGLOG(DBG, "Compatible: " << compatible);
 
 	return compatible;
@@ -747,9 +747,9 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 	}
 
 	// evaluate the external atom (and learn nogoods if external learning is used)
-	static boost::mutex mx;
+//	static boost::mutex mx;
 	{
-		boost::mutex::scoped_lock lock(mx);	// @TODO: This should not be necessary if BaseModelGenerator supports the simultanous evaluation of multiple external atoms,
+//		boost::mutex::scoped_lock lock(mx);	// @TODO: This should not be necessary if BaseModelGenerator supports the simultanous evaluation of multiple external atoms,
 							//        but curretly this leads to memory corruption
 		DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
 		evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
@@ -772,7 +772,7 @@ const OrdinaryASPProgram& GenuineGuessAndCheckModelGeneratorAsync::getGroundProg
 }
 
 bool GenuineGuessAndCheckModelGeneratorAsync::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
-return false;
+
 	bool conflict = verifyExternalAtoms(partialInterpretation, factWasSet, changed);
 
 	// UFS check requires a conflict-free interpretation

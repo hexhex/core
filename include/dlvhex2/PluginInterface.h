@@ -190,6 +190,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <map>
 #include <string>
@@ -1113,6 +1114,7 @@ protected:
   // Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
   QueryAnswerCache queryAnswerCache;
+  boost::mutex cacheMutex;
 
   /// \brief output tuples generated so far (used for learning for
   //         functional sources)
