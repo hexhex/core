@@ -227,6 +227,7 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 		}
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
+
 		// create an interpretation and a bitset of assigned values
 		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
 		InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
@@ -258,18 +259,15 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 			changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
 		}
 		DBGLOG(DBG, "Changed truth values: " << *changed);
-		previousInterpretation = interpretation;
-		previousFactWasSet = factWasSet;
 
 		DBGLOG(DBG, "Calling external propagators");
 		bool conflict = false;
 		BOOST_FOREACH (PropagatorCallback* cb, cs.propagator){
-			conflict |= cb->propagate(interpretation, factWasSet, changed);
+			cb->propagate(interpretation, factWasSet, changed);
 		}
-		// don't clear the changed literals if the external propagator detected a conflict;
-		// the propagator will probably need to recheck the literals in the next call
-		if (!conflict) changed->clear();
 
+		previousInterpretation = interpretation;
+		previousFactWasSet = factWasSet;
 		interpretation.reset();
 		factWasSet.reset();
 

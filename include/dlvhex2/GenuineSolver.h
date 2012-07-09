@@ -54,7 +54,7 @@ DLVHEX_NAMESPACE_BEGIN
 
 class PropagatorCallback{
 public:
-	virtual bool propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
+	virtual void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed) = 0;
 };
 
 class GenuineGrounder{

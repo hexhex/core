@@ -901,14 +901,13 @@ InterpretationPtr InternalGroundASPSolver::getNextModel(){
 				int nogoodCount = nogoodset.getNogoodCount();
 				BOOST_FOREACH (PropagatorCallback* cb, propagator){
 					DBGLOG(DBG, "Calling external learners with interpretation: " << *interpretation);
-					anotherIterationEvenIfComplete |= cb->propagate(interpretation, factWasSet, changed);
+					cb->propagate(interpretation, factWasSet, changed);
 				}
 				// add new nogoods
+				int ngc = nogoodset.getNogoodCount();
 				loadAddedNogoods();
-
-				// don't clear the changed literals if the external learner detected a conflict;
-				// the learner will probably need to recheck the literals in the next call
-				if (!anotherIterationEvenIfComplete) changed->clear();
+				if (ngc != nogoodset.getNogoodCount()) anotherIterationEvenIfComplete = true;
+				changed->clear();
 
 				if (nogoodset.getNogoodCount() != nogoodCount){
 					DBGLOG(DBG, "Learned something");

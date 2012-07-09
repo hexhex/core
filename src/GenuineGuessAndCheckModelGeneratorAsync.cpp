@@ -771,14 +771,14 @@ const OrdinaryASPProgram& GenuineGuessAndCheckModelGeneratorAsync::getGroundProg
 	return grounder->getGroundProgram();
 }
 
-bool GenuineGuessAndCheckModelGeneratorAsync::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
+void GenuineGuessAndCheckModelGeneratorAsync::propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed){
 
 	bool conflict = verifyExternalAtoms(partialInterpretation, factWasSet, changed);
 
 	// UFS check requires a conflict-free interpretation
-	if (conflict) return true;
+	if (conflict) return;
 
-	return partialUFSCheck(partialInterpretation, factWasSet, changed);
+	partialUFSCheck(partialInterpretation, factWasSet, changed);
 }
 
 DLVHEX_NAMESPACE_END

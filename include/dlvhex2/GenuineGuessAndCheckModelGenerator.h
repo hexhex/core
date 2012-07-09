@@ -226,9 +226,8 @@ protected:
    * @param partialInterpretation The current assignment
    * @param factWasSet Currently assigned atoms
    * @param changed The set of atoms with modified truth value since the last call
-   * @return bool True if the assignment is conflicting wrt. this external atom, otherwise false
    */
-  bool propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
+  void propagate(InterpretationConstPtr partialInterpretation, InterpretationConstPtr factWasSet, InterpretationConstPtr changed);
 
   // initialization
   void setHeuristics();
