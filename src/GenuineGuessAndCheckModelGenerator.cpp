@@ -376,7 +376,6 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 			}else{
 				if (i == 0) std::cerr << "( NOTE: With i-backend, learned nogoods become effective AFTER the next model was printed ! )" << std::endl << std::endl;
 			}
-			std::cerr << "Learned nogood: " << learnedEANogoods->getNogood(i).getStringRepresentation(reg) << std::endl;
 		}
 		if (learnedEANogoods->getNogood(i).isGround()){
 			solver->addNogood(learnedEANogoods->getNogood(i));
@@ -404,6 +403,7 @@ bool GenuineGuessAndCheckModelGenerator::finalCompatibilityCheck(InterpretationC
 			// try to verify
 			DBGLOG(DBG, "External atom " << factory.innerEatoms[eaIndex] << " is not verified, trying to do this now");
 			verifyExternalAtom(eaIndex, modelCandidate);
+			eaEvaluated[eaIndex] = true;
 			DBGLOG(DBG, "Verification result: " << eaVerified[eaIndex]);
 
 			if (eaVerified[eaIndex] == false){
@@ -533,13 +533,13 @@ bool GenuineGuessAndCheckModelGenerator::isVerified(ID eaAux, InterpretationCons
 	return false;
 }
 
-IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr factWasSet){
+IDAddress GenuineGuessAndCheckModelGenerator::getWatchedLiteral(int eaIndex, InterpretationConstPtr search, bool truthValue){
 
 	bm::bvector<>::enumerator eaDepAtoms = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().first();
 	bm::bvector<>::enumerator eaDepAtoms_end = annotatedGroundProgram.getEAMask(eaIndex)->mask()->getStorage().end();
 
 	while (eaDepAtoms < eaDepAtoms_end){
-		if (!factWasSet->getFact(*eaDepAtoms)){
+		if (search->getFact(*eaDepAtoms) == truthValue){
 			DBGLOG(DBG, "Found watch " << *eaDepAtoms << " for atom " << factory.innerEatoms[eaIndex]);
 			return *eaDepAtoms;
 		}
@@ -568,9 +568,13 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 				// unverify
 				eaVerified[eaIndex] = false;
 				eaEvaluated[eaIndex] = false;
+
 				if (!factWasSet->getFact(*en)){
 					// watch a yet unassigned atom such that the external atom depends on it
-					verifyWatchList[getWatchedLiteral(eaIndex, factWasSet)].push_back(eaIndex);
+					verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
+				}else{
+					// watch a changed atom
+					verifyWatchList[getWatchedLiteral(eaIndex, changed, true)].push_back(eaIndex);
 				}
 			}
 		}
@@ -596,7 +600,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtoms(InterpretationConst
 						}
 					}else{
 						// find a new yet unassigned atom to watch
-						verifyWatchList[getWatchedLiteral(eaIndex, factWasSet)].push_back(eaIndex);
+						verifyWatchList[getWatchedLiteral(eaIndex, factWasSet, false)].push_back(eaIndex);
 					}
 				}
 
