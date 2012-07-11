@@ -95,12 +95,7 @@ void PredicateMask::addPredicate(ID pred)
 
 void PredicateMask::updateMask()
 {
-try{
   DBGLOG_VSCOPE(DBG,"PM::uM",this,false);
-}catch(std::out_of_range oor){
-std::cerr << "out of range!!" << std::endl;
-exit(1);
-}
   DBGLOG(DBG,"= PredicateMask::updateMask for predicates " <<
       printset(predicates));
 
@@ -337,7 +332,6 @@ bool ExternalAtomMask::matchOutputAtom(const Tuple& togatom){
   // 2. if an auxiliary input atom was added, consider all ogatoms over the positive or negative replacement as new
   // 3. for all new ogatoms over the positive or negative replacement, check if the input list matches (if not: remove the atom from the mask)
 void ExternalAtomMask::updateMask(){
-try{
     assert(eatom);
     DBGLOG(DBG, "ExternalAtomMask::updateMask");
 
@@ -380,10 +374,6 @@ try{
         }
       }
     }
-}catch(std::out_of_range oor){
-std::cerr << "out of range!!" << std::endl;
-exit(1);
-}
 }
 
 const std::vector<Tuple>& ExternalAtomMask::getAuxInputTuples() const{
