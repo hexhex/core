@@ -638,6 +638,11 @@ public:
   struct DLVHEX_EXPORT Query
   {
     /**
+	 * \brief Reference to the active program context.
+	 */
+    const ProgramCtx* ctx;
+
+    /**
 	 * \brief Bitset of ground atoms representing current (partial) model.
 	 *
 	 * Partial model contains bits about all atoms relevant for the computation,
@@ -668,32 +673,44 @@ public:
     Tuple pattern;
     const ExternalAtom* eatom;
     InterpretationPtr predicateInputMask;
-    std::map<ID, int> inputPredicateTable; // stores for each predicate term ID the index of the corresponding parameter in input
 
     /**
      * \brief Construct query.
      */
-    Query(InterpretationConstPtr interpretation,
+    Query(const ProgramCtx* ctx,
+          InterpretationConstPtr interpretation,
           const Tuple& input,
           const Tuple& pattern,
           const ExternalAtom* ea = 0,
           const InterpretationPtr predicateInputMask = InterpretationPtr()):
+      ctx(ctx),
       interpretation(interpretation),
       input(input),
       pattern(pattern),
       eatom(ea),
       predicateInputMask(predicateInputMask)
     {
-      builtInputPredicateTable();
     }
+/*
+    Query(InterpretationConstPtr interpretation,
+          const Tuple& input,
+          const Tuple& pattern,
+          const ExternalAtom* ea = 0,
+          const InterpretationPtr predicateInputMask = InterpretationPtr()):
+      ctx(0),
+      interpretation(interpretation),
+      input(input),
+      pattern(pattern),
+      eatom(ea),
+      predicateInputMask(predicateInputMask)
+    {
+    }
+*/
 
     /**
 	 * Equality for hashing the query for caching query results.
 	 */
     bool operator==(const Query& other) const;
-
-    // stores for each predicate term ID the index of the corresponding parameter in input
-    void builtInputPredicateTable();
   };
 
   /**
@@ -801,9 +818,15 @@ protected:
    * - you must call setOutputArity().
    */
   PluginAtom(const std::string& predicate, bool monotonic):
-    predicate(predicate),
-    monotonic(monotonic)
-    {}
+    predicate(predicate)/*,
+    monotonic(monotonic)*/
+    { prop.pa = this;
+      if (monotonic){
+        for (int i = 0; i < inputType.size(); ++i){
+          if (inputType[i] == PREDICATE) prop.monotonicInputPredicates.push_back(i);
+        }
+      }
+    }
 
   // The following functions are to be used in the constructor only.
 
@@ -866,7 +889,7 @@ public:
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
-  virtual void retrieveCached(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+  virtual void retrieveCached(const Query&, Answer&, NogoodContainerPtr nogoods);
 
   /**
    * \brief Retrieve answer to a query (external computation happens here).
@@ -880,10 +903,10 @@ public:
    * - variables in pattern must be replaced by constants in answer tuples
    */
   virtual void retrieve(const Query&, Answer&) = 0;
-  virtual void retrieve(const Query&, Answer&, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+  virtual void retrieve(const Query&, Answer&, NogoodContainerPtr nogoods);
 
   /**
-   * \brief Tries to generalize learned nogoods to nonground nogoods.
+   * \brief Tries to generalize learned nogoods to nonground nogoods. Should only be overridden by experienced users.
    *
    * \@param ng A learned nogood with some external atom auxiliary over this external predicate
    * \@param ctx Program context
@@ -891,65 +914,15 @@ public:
    */
   virtual void generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods);
 
-  // ========== External Learning Methods ==========
-
   /**
    * \brief Splits a non-atomic query up into a set of atomic queries, such that the result of the
    *        composed query corresponds to the union of the results to the atomic queries.
+   *        Should only be overridden by experienced users.
+   * \@param q A query
+   * \@param prop External source properties
+   * \@return std::vector<Query> A set of subqueries
    */
-  virtual std::vector<Query> splitQuery(ProgramCtx* ctx, const Query& q, const ExtSourceProperties& prop);
-
-  /**
-   * \brief Learns nogoods which encode that the input from query implies the output in answer.
-   */
-  void learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
-
-  /**
-   * \brief Learns nogoods which encode that the output in answer must not occur simultanously with previous answers (for the same input).
-   */
-  void learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer);
-
-  /**
-   * \brief Learns nogoods according to some rule of kind "out(a) :- in1(a), not in2(a).", where in[i] refers to the i-th input parameter to
-   *        the external atom. Such a rule encodes that, whenever a is in the extension of the 1-st input parameter, but not in the extension
-   *        of the second, it will always be in the output. The learning rule must be ground.
-   */
-  void learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule);
-
-  /**
-   * \brief Learns nogoods according to some rule of kind "out(X) :- in1(X), not in2(X).", where in[i] refers to the i-th input parameter to
-   *        the external atom. Such a rule encodes that, whenever X is in the extension of the 1-st input parameter, but not in the extension
-   *        of the second, it will always be in the output.
-   */
-  void learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rule);
-
-  // ========== External Learning Helper Methods ==========
-
-  /**
-   * \brief Construct a nogood consisting of all input atoms from query. For monotonic parameters only the positive atoms will be included,
-   *        for nonmonotonic ones all atoms are included..
-   */
-  Nogood getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, bool negateMonotonicity = false);
-
-  /**
-   * \brief Construct a set of output (replacement) atoms corresponding to the output rules in answer;
-   *        sign indicates if the positive or negative version of the replacement atom is used.
-   */
-  Set<ID> getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign);
-
-  /**
-   * \brief Construct an output (replacement) atom corresponding to the answer tuple t;
-   *        sign indicates if the positive or negative version of the replacement atom is used.
-   */
-  ID getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple t, bool sign);
-
-  /**
-   * \brief Parses a learning rule, checks if it is valid learning rule (i.e. it is of the kind as described in the explanation of learnFromRule),
-   *        and returns its ID; if the parser or the validity check fails, ID_FAIL is returned.
-   */
-  ID getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule);
-
-  // ==========  ==========
+  virtual std::vector<Query> splitQuery(const Query& q, const ExtSourceProperties& prop);
 
   /**
    * \brief Returns the type of the input argument specified by position
@@ -979,59 +952,15 @@ public:
    *
    * Should not be overridden.
    */
+/*
   bool isMonotonic() const
     { return monotonic; }
-
-  /**
-   * @return monotonicity on parameter level
-   */
-  bool isMonotonic(const ExtSourceProperties& prop, int parameterIndex) const
-    { assert(inputType[parameterIndex] == PREDICATE);
-      return std::find(prop.monotonicInputPredicates.begin(), prop.monotonicInputPredicates.end(), parameterIndex) != prop.monotonicInputPredicates.end(); }
-
-  /**
-   * @return antimonotonicity on parameter level
-   */
-  bool isAntimonotonic(const ExtSourceProperties& prop, int parameterIndex) const
-    { assert(inputType[parameterIndex] == PREDICATE);
-      return std::find(prop.antimonotonicInputPredicates.begin(), prop.antimonotonicInputPredicates.end(), parameterIndex) != prop.antimonotonicInputPredicates.end(); }
-
-  /**
-   * @return nonmonotonicity on parameter level
-   */
-  bool isNonmonotonic(const ExtSourceProperties& prop, int parameterIndex) const
-    { assert(inputType[parameterIndex] == PREDICATE);
-      return !isMonotonic(prop, parameterIndex) && !isAntimonotonic(prop, parameterIndex); }
-
-  /**
-   * @return functional
-   */
-  bool isFunctional(const ExtSourceProperties& prop) const
-    { return prop.functional; }
-
-  /**
-   * @return linearity on atom level
-   */
-  bool isLinearOnAtomLevel(const ExtSourceProperties& prop) const
-    { return prop.atomlevellinear; }
-
-  /**
-   * @return linearity on tuple level
-   */
-  bool isLinearOnTupleLevel(const ExtSourceProperties& prop) const
-    { return prop.tuplelevellinear; }
-
-  /**
-   * @return bool True if the name of the predicate parameter with the given index is irrelevant
-   */
-  bool isIndependentOfPredicateParameterName(const ExtSourceProperties& prop, int parameterIndex) const
-    { assert(inputType[parameterIndex] == PREDICATE);
-      return std::find(prop.predicateParameterNameIndependence.begin(), prop.predicateParameterNameIndependence.end(), parameterIndex) != prop.predicateParameterNameIndependence.end(); }
+*/
 
   /**
    * @return external source properties associated with this plugin atom
    */
-  const ExtSourceProperties& getExtSourceProperties(){
+  const ExtSourceProperties& getExtSourceProperties() const{
     return prop;
   }
 
@@ -1084,7 +1013,7 @@ public:
    */
   const std::string& getPredicate() const
     { return predicate; }
-  
+
 protected:
   // Predicate of the atom as it appears in HEX programs
   // (without leading &)
@@ -1099,7 +1028,7 @@ protected:
   ID predicateID;
 
   // whether the function is monotonic or nonmonotonic
-  bool monotonic;
+//  bool monotonic;	// is now part of ExtSourceProperties
 
   /// \brief general properties of the external source (may be overridden on atom-level)
   ExtSourceProperties prop;
@@ -1127,7 +1056,12 @@ protected:
 
   // Registry associated with this atom
   RegistryPtr registry;
+
+private:
+  PluginAtom(const PluginAtom& pa){}
+  const PluginAtom& operator=(const PluginAtom& pa){ return *this; }
 };
+
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 // hash function for QueryAnswerCache

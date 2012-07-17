@@ -561,7 +561,8 @@ void DependencyGraphFull::createExternalConstantInputDependencies(
 				Node extnode = getNode(ID::atomFromLiteral(*itext));
 
 				// add negative dependency if nonmonotonic
-				if( !pluginAtom->isMonotonic() )
+				if (eatom.getExtSourceProperties().isMonotonic())
+//				if( !pluginAtom->isMonotonic() )
 				{
 					DBGLOG(DBG,"storing nonmonotonic dependency " << itrule->id << " -> " << *itext);
 

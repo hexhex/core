@@ -217,7 +217,7 @@ GenuineGuessAndCheckModelGeneratorAsync::GenuineGuessAndCheckModelGeneratorAsync
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
-      evaluateExternalAtoms(reg,
+      evaluateExternalAtoms(factory.ctx,
           factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
@@ -749,12 +749,9 @@ bool GenuineGuessAndCheckModelGeneratorAsync::verifyExternalAtom(int eaIndex, In
 	}
 
 	// evaluate the external atom (and learn nogoods if external learning is used)
-//	static boost::mutex mx;
 	{
-//		boost::mutex::scoped_lock lock(mx);	// @TODO: This should not be necessary if BaseModelGenerator supports the simultanous evaluation of multiple external atoms,
-							//        but curretly this leads to memory corruption
 		DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
-		evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+		evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
 	}
 
 	// transfer learned nogoods to solver

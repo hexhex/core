@@ -819,9 +819,9 @@ bool FLPModelGeneratorBase::isCompatibleSet(
 	// (dependencies to edb are not modelled in the dependency graph)
 	// therefore we did not mask the guess program before
 	if( !evaluateExternalAtoms(
-        reg, factory.innerEatoms,
+        ctx, factory.innerEatoms,
         candidateCompatibleSet, cb,
-        &ctx, ctx.config.getOption("ExternalLearning") ? nc : SimpleNogoodContainerPtr()))
+        ctx.config.getOption("ExternalLearning") ? nc : SimpleNogoodContainerPtr()))
   {
 		return false;
 	}

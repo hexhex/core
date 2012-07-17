@@ -76,9 +76,10 @@ Configuration::Configuration()
 
 
 unsigned
-Configuration::getOption(const std::string& option)
+Configuration::getOption(const std::string& option) const
 {
-    return optionMap[option];
+    return optionMap.find(option) != optionMap.end() ? optionMap.at(option) : 0;
+//    return optionMap[option];
 }
 
 bool

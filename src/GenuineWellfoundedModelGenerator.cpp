@@ -165,7 +165,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 			// augment input with result of external atom evaluation
 			// use newint as input and as output interpretation
 			IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
-			evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, cb);
+			evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocessedInput, cb);
 			DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
 			  "outer external atom computations");
 			DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -200,7 +200,7 @@ GenuineWellfoundedModelGenerator::generateNextModel()
 
 			// evaluate inner external atoms
 			IntegrateExternalAnswerIntoInterpretationCB cb(dst);
-			evaluateExternalAtoms(reg, factory.innerEatoms, src, cb);
+			evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
 			DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
 
 			// solve program

@@ -554,7 +554,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 		if (ngc){
 			// evaluate the external atom with learned, and add the learned nogoods in transformed form to the UFS detection problem
 			int oldNogoodCount = ngc->getNogoodCount();
-			mg->evaluateExternalAtom(reg, eatom, eaInput, cb, &ctx, ngc);
+			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb, ngc);
 			DBGLOG(DBG, "O: Adding new valid input-output relationships from nogood container");
 			for (int i = oldNogoodCount; i < ngc->getNogoodCount(); ++i){
 				const Nogood& ng = ngc->getNogood(i);
@@ -568,7 +568,7 @@ bool UnfoundedSetChecker::isUnfoundedSet(InterpretationConstPtr ufsCandidate){
 				}
 			}
 		}else{
-			mg->evaluateExternalAtom(reg, eatom, eaInput, cb);
+			mg->evaluateExternalAtom(ctx, eatom, eaInput, cb);
 		}
 
 		// remove the external atom from the remaining lists

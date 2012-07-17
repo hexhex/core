@@ -308,7 +308,7 @@ GuessAndCheckModelGenerator::GuessAndCheckModelGenerator(
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
-      evaluateExternalAtoms(reg,
+      evaluateExternalAtoms(factory.ctx,
           factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");

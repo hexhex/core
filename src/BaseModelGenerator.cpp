@@ -41,6 +41,7 @@
 #include "dlvhex2/PluginInterface.h"
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/Atoms.h"
+#include "dlvhex2/ExternalLearningHelper.h"
 
 #include <boost/foreach.hpp>
 
@@ -123,11 +124,10 @@ output(const Tuple& output)
 // reintegrates output tuples as auxiliary atoms into outputi
 // (inputi and outputi may point to the same interpretation)
 
-bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
+bool BaseModelGenerator::evaluateExternalAtom(ProgramCtx& ctx,
   const ExternalAtom& eatom,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
-  ProgramCtx* ctx,
   NogoodContainerPtr nogoods) const
 {
   LOG_SCOPE(PLUGIN,"eEA",false);
@@ -151,11 +151,11 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 
   // project interpretation for predicate inputs
   InterpretationConstPtr eatominp =
-    projectEAtomInputInterpretation(reg, eatom, inputi);
+    projectEAtomInputInterpretation(ctx.registry(), eatom, inputi);
 
   // build input tuples
   std::list<Tuple> inputs;
-  buildEAtomInputTuples(reg, eatom, inputi, inputs);
+  buildEAtomInputTuples(ctx.registry(), eatom, inputi, inputs);
 
   if( Logger::Instance().shallPrint(Logger::PLUGIN) )
   {
@@ -164,7 +164,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     BOOST_FOREACH(const Tuple& t, inputs)
     {
       std::stringstream s;
-      RawPrinter printer(s, reg);
+      RawPrinter printer(s, ctx.registry());
       s << "[";
       printer.printmany(t,",");
       s << "] ";
@@ -172,7 +172,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     }
     {
       std::stringstream s;
-      RawPrinter printer(s, reg);
+      RawPrinter printer(s, ctx.registry());
       s << "(";
       printer.printmany(eatom.tuple,",");
       s << ")";
@@ -198,7 +198,7 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     std::string sinput;
     {
       std::stringstream s;
-      RawPrinter printer(s, reg);
+      RawPrinter printer(s, ctx.registry());
       s << "[";
       printer.printmany(inputtuple,",");
       s << "]";
@@ -208,30 +208,30 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
     #endif
 
     // query
-    PluginAtom::Query query(eatominp, inputtuple, eatom.tuple, &eatom);
+    PluginAtom::Query query(&ctx, eatominp, inputtuple, eatom.tuple, &eatom);
     PluginAtom::Answer answer;
     assert(globalpc);
     if( globalpc->config.getOption("UseExtAtomCache") ){
-      pluginAtom->retrieveCached(query, answer, ctx, nogoods);
+      pluginAtom->retrieveCached(query, answer, nogoods);
     }
     else
     {
       DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
-      pluginAtom->retrieve(query, answer, ctx, nogoods);
+      pluginAtom->retrieve(query, answer, nogoods);
     }
     LOG(PLUGIN,"got " << answer.get().size() << " answer tuples");
 
-    if (ctx && ctx->config.getOption("ExternalLearningNeg")){
+    if (query.ctx->config.getOption("ExternalLearningNeg")){
 	// learning of negative information
 	if (nogoods){ 
 		// iterate over negative output atoms
 		bm::bvector<>::enumerator en = inputi->getStorage().first();
 		bm::bvector<>::enumerator en_end = inputi->getStorage().end();
-		ID negOutPredicate = reg->getAuxiliaryConstantSymbol('n', eatom.predicate);
-		ID posOutPredicate = reg->getAuxiliaryConstantSymbol('r', eatom.predicate);
+		ID negOutPredicate = ctx.registry()->getAuxiliaryConstantSymbol('n', eatom.predicate);
+		ID posOutPredicate = ctx.registry()->getAuxiliaryConstantSymbol('r', eatom.predicate);
 		while (en < en_end){
-			const OrdinaryAtom& atom = reg->ogatoms.getByAddress(*en);
+			const OrdinaryAtom& atom = ctx.registry()->ogatoms.getByAddress(*en);
 			bool paramMatch = true;
 			for (int i = 1; i < 1 + eatom.inputs.size(); i++){
 				if (atom.tuple[i] != inputtuple[i - 1]){
@@ -250,10 +250,10 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 					// construct positive output atom
 					OrdinaryAtom posatom = atom;
 					posatom.tuple[0] = posOutPredicate;
-					ID posAtomID = reg->storeOrdinaryGAtom(posatom);
+					ID posAtomID = ctx.registry()->storeOrdinaryGAtom(posatom);
 
 					// construct nogood
-					Nogood ng = pluginAtom->getInputNogood(ctx, nogoods, query, eatom.useProp ? eatom.prop : pluginAtom->getExtSourceProperties(), true);
+					Nogood ng = ExternalLearningHelper::getInputNogood(query, eatom.getExtSourceProperties(), true);
 					ng.insert(NogoodContainer::createLiteral(posAtomID.address));
 					nogoods->addNogood(ng);
 					DBGLOG(DBG, "Learned negative nogood: " << ng);
@@ -281,13 +281,13 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
       if( Logger::Instance().shallPrint(Logger::PLUGIN) )
       {
         std::stringstream s;
-        RawPrinter printer(s, reg);
+        RawPrinter printer(s, ctx.registry());
         s << "(";
         printer.printmany(t,",");
         s << ")";
         LOG(PLUGIN,"got answer tuple " << s.str());
       }
-      if( !verifyEAtomAnswerTuple(reg, eatom, t) )
+      if( !verifyEAtomAnswerTuple(ctx.registry(), eatom, t) )
       {
         LOG(WARNING,"external atom " << eatom << " returned tuple " <<
             printrange(t) << " which does not match output pattern (skipping)");
@@ -308,17 +308,16 @@ bool BaseModelGenerator::evaluateExternalAtom(RegistryPtr reg,
 
 // calls evaluateExternalAtom for each atom in eatoms
 
-bool BaseModelGenerator::evaluateExternalAtoms(RegistryPtr reg,
+bool BaseModelGenerator::evaluateExternalAtoms(ProgramCtx& ctx,
   const std::vector<ID>& eatoms,
   InterpretationConstPtr inputi,
   ExternalAnswerTupleCallback& cb,
-  ProgramCtx* ctx,
   NogoodContainerPtr nogoods) const
 {
   BOOST_FOREACH(ID eatomid, eatoms)
   {
-    const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
-    if( !evaluateExternalAtom(reg, eatom, inputi, cb, ctx, nogoods) )
+    const ExternalAtom& eatom = ctx.registry()->eatoms.getByID(eatomid);
+    if( !evaluateExternalAtom(ctx, eatom, inputi, cb, nogoods) )
     {
       LOG(DBG,"callbacks aborted evaluateExternalAtoms");
       return false;

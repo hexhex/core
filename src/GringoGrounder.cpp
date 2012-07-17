@@ -68,11 +68,23 @@ void GringoGrounder::Printer::print(ID id){
 		printmany(r.head, " | ");
 		if( !r.body.empty() )
 		{
-		out << " :- ";
-		printmany(r.body, ", ");
+			out << " :- ";
+			BOOST_FOREACH (ID b, r.body){
+				if (b.isAggregateAtom()) throw GeneralError("Gringo-based grounder does not support aggregate atoms");
+			}
+			printmany(r.body, ", ");
 		}
 		out << ".";
 	}else{
+		if (id.isRule()){
+			if (id.isWeakConstraint()) throw GeneralError("Gringo-based grounder does not support weak constraints");
+			if (id.isConstraint()){
+				const Rule& r = registry->rules.getByID(id);
+				BOOST_FOREACH (ID b, r.body){
+					if (b.isAggregateAtom()) throw GeneralError("Gringo-based grounder does not support aggregate atoms");
+				}
+			}
+		}
 		Base::print(id);
 	}
 }
@@ -189,7 +201,6 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 
 				}
 				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[p], false));
-//				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[p].isAuxiliary() ? ID::PROPERTY_AUX : 0), indexToGroundAtomID[p].address));
 			}
 			BOOST_FOREACH (uint32_t n, lpr.neg){
 				addSymbol(n);
@@ -201,7 +212,6 @@ void GringoGrounder::GroundHexProgramBuilder::doFinalize(){
 
 				}
 				r.body.push_back(ID::literalFromAtom(indexToGroundAtomID[n], true));
-//				r.body.push_back(ID(ID::MAINKIND_LITERAL | ID::SUBKIND_ATOM_ORDINARYG | (indexToGroundAtomID[n].isAuxiliary() ? ID::PROPERTY_AUX : 0) | ID::NAF_MASK, indexToGroundAtomID[n].address));
 			}
 
 			if (r.head.size() == 0) r.kind |= ID::SUBKIND_RULE_CONSTRAINT;
@@ -299,50 +309,8 @@ void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(const AtomRe
 	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << atom.first << " and dlvhex-ID " << dlvhexId);
 }
 
-/*
-void GringoGrounder::GroundHexProgramBuilder::printSymbolTableEntry(uint32_t index, const std::string &atomstring){
-
-	ID dlvhexId = ctx.registry()->ogatoms.getIDByString(atomstring);
-
-	if( dlvhexId == ID_FAIL )
-	{
-		// parse groundatom, register and store
-		DBGLOG(DBG,"parsing clingo ground atom '" << atomstring << "'");
-		OrdinaryAtom ogatom(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
-		ogatom.text = atomstring;
-		{
-			// create ogatom.tuple
-			boost::char_separator<char> sep(",()");
-			typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
-			tokenizer tok(ogatom.text, sep);
-			for(tokenizer::iterator it = tok.begin(); it != tok.end(); ++it)
-			{
-				DBGLOG(DBG,"got token '" << *it << "'");
-				Term term(ID::MAINKIND_TERM, *it);
-				// the following takes care of int vs const/string
-				ID id = ctx.registry()->storeTerm(term);
-				assert(id != ID_FAIL);
-				assert(!id.isVariableTerm());
-				if( id.isAuxiliary() ) ogatom.kind |= ID::PROPERTY_AUX;
-				ogatom.tuple.push_back(id);
-			}
-		}
-		dlvhexId = ctx.registry()->ogatoms.storeAndGetID(ogatom);
-	}
-
-	indexToGroundAtomID[index] = dlvhexId;
-	DBGLOG(DBG, "Got atom " << atomstring << " with Gringo-ID " << index << " and dlvhex-ID " << dlvhexId);
-}
-*/
-
 void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const AtomRef &atom, uint32_t arity, const std::string &name){
 }
-
-/*
-void GringoGrounder::GroundHexProgramBuilder::printExternalTableEntry(const Symbol &symbol){
-	// @TODO
-}
-*/
 
 uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 	return symbols_++;
@@ -350,7 +318,6 @@ uint32_t GringoGrounder::GroundHexProgramBuilder::symbol(){
 
 Output *GringoGrounder::output()
 {
-//	return new LparseOutput(std::cout, gringo.disjShift);
 	return new GroundHexProgramBuilder(ctx, groundProgram);
 }
 
@@ -366,118 +333,84 @@ Streams::StreamPtr GringoGrounder::constStream() const
 	return Streams::StreamPtr(constants.release());
 }
 
-/*
-void GringoGrounder::groundStep(Grounder &g, IncConfig &cfg, int step, int goal)
-{
-	cfg.incStep     = step;
-	if(generic.verbose > 2)
-	{
-		std::cerr << "% grounding cumulative " << cfg.incStep << " ..." << std::endl;
-	}
-	g.ground(*cumulative_);
-	g.groundForget(cfg.incStep);
-	if(goal <= step + cfg.maxVolStep-1)
-	{
-		if(generic.verbose > 2)
-		{
-			std::cerr << "% grounding volatile " << cfg.incStep << " ..." << std::endl;
-		}
-		g.ground(*volatile_);
-	}
-}
-
-void GringoGrounder::groundBase(Grounder &g, IncConfig &cfg, int start, int end, int goal)
-{
-	if(generic.verbose > 2)
-	{
-		std::cerr << "% grounding base ..." << std::endl;
-	}
-	g.ground(*base_);
-	goal = std::max(end, goal);
-	for(int i = start; i <= end; i++) { groundStep(g, cfg, i, goal); }
-}
-
-void GringoGrounder::createModules(Grounder &g)
-{
-	base_       = g.createModule();
-	cumulative_ = g.createModule();
-	volatile_   = g.createModule();
-	volatile_->parent(cumulative_);
-	cumulative_->parent(base_);
-}
-*/
-
 int GringoGrounder::doRun()
 {
 	// redirect std::cerr output to temporary string because gringo spams std:cerr with lots of useless warnings
 	std::stringstream errstr;
 	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());
 
-	std::ostringstream programStream;
-	Printer printer(programStream, ctx.registry());
+	try{
+		std::ostringstream programStream;
+		Printer printer(programStream, ctx.registry());
 
-	// print nonground program
-	if( nongroundProgram.edb != 0 )
-	{
-		// print edb interpretation as facts
-		nongroundProgram.edb->printAsFacts(programStream);
-		programStream << "\n";
-	}
-	printer.printmany(nongroundProgram.idb, "\n");
-	programStream << std::endl;
-	DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
+		// print nonground program
+		if( nongroundProgram.edb != 0 )
+		{
+			// print edb interpretation as facts
+			nongroundProgram.edb->printAsFacts(programStream);
+			programStream << "\n";
+		}
+		printer.printmany(nongroundProgram.idb, "\n");
+		programStream << std::endl;
+		DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
 
-	// grounding
-	std::auto_ptr<Output> o(output());
-	Streams inputStreams;
-	inputStreams.appendStream(std::auto_ptr<std::istream>(new std::stringstream(programStream.str())), "program");
-	if(gringo.groundInput)
-	{
-		Storage   s(o.get());
-		Converter c(o.get(), inputStreams);
+		// grounding
+		std::auto_ptr<Output> o(output());
+		Streams inputStreams;
+		inputStreams.appendStream(std::auto_ptr<std::istream>(new std::stringstream(programStream.str())), "program");
+		if(gringo.groundInput)
+		{
+			Storage   s(o.get());
+			Converter c(o.get(), inputStreams);
 
-		(void)s;
-		o->initialize();
-		c.parse();
-		o->finalize();
-	}
-	else
-	{
-		IncConfig config;
-		Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
-		Parser    p(&g, config, inputStreams, gringo.compat);
+			(void)s;
+			o->initialize();
+			c.parse();
+			o->finalize();
+		}
+		else
+		{
+			IncConfig config;
+			Grounder  g(o.get(), generic.verbose > 2, gringo.termExpansion(config));
+			Parser    p(&g, config, inputStreams, gringo.compat);
 
-		config.incBegin = 1;
-		config.incEnd   = config.incBegin + gringo.ifixed;
-		config.incBase  = gringo.ibase;
+			config.incBegin = 1;
+			config.incEnd   = config.incBegin + gringo.ifixed;
+			config.incBase  = gringo.ibase;
 
-		o->initialize();
-		p.parse();
-		g.analyze(gringo.depGraph, gringo.stats);
-		g.ground();
-		o->finalize();
-	}
+			o->initialize();
+			p.parse();
+			g.analyze(gringo.depGraph, gringo.stats);
+			g.ground();
+			o->finalize();
+		}
 
-	// print ground program
+		// print ground program
 #ifdef NDEBUG
-	programStream.str("");
-	if( groundProgram.edb != 0 )
-	{
-		// print edb interpretation as facts
-		groundProgram.edb->printAsFacts(programStream);
-		programStream << "\n";
-	}
-	printer.printmany(groundProgram.idb, "\n");
-	programStream << std::endl;
-	DBGLOG(DBG, "Got the following ground program from Gringo: " << programStream.str());
+		programStream.str("");
+		if( groundProgram.edb != 0 )
+		{
+			// print edb interpretation as facts
+			groundProgram.edb->printAsFacts(programStream);
+			programStream << "\n";
+		}
+		printer.printmany(groundProgram.idb, "\n");
+		programStream << std::endl;
+		DBGLOG(DBG, "Got the following ground program from Gringo: " << programStream.str());
 #endif
 
-	// restore cerr output
-	std::cerr.rdbuf(origcerr);
+		// restore cerr output
+		std::cerr.rdbuf(origcerr);
 
-	DBGLOG(DBG, errstr.str());
+		DBGLOG(DBG, errstr.str());
 
-	return EXIT_SUCCESS;
+		return EXIT_SUCCESS;
+	}catch(...){
+		// restore cerr output
+		std::cerr.rdbuf(origcerr);
+
+		throw;
+	}
 }
 
 ProgramOptions::PosOption GringoGrounder::getPositionalParser() const

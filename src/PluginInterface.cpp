@@ -42,16 +42,13 @@
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/GenuineSolver.h"
-#include "dlvhex2/InternalGrounder.h"
 #include "dlvhex2/Term.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Term.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Benchmarking.h"
 #include "dlvhex2/HexParser.h"
-
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/lexical_cast.hpp>
+#include "dlvhex2/ExternalLearningHelper.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -80,14 +77,6 @@ bool PluginAtom::Query::operator==(const Query& other) const
         (interpretation != 0 && other.interpretation != 0 &&
          *interpretation == *other.interpretation)
       );
-}
-
-void PluginAtom::Query::builtInputPredicateTable(){
-
-	int index = 0;
-	BOOST_FOREACH (ID inp, input){
-		inputPredicateTable[inp] = index++;
-	}
 }
 
 // hash function for QueryAnswerCache
@@ -259,9 +248,9 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer)
   }
 }
 
-void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
+void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
 {
-	DBGLOG(DBG, "Retrieve with learning, pointer nogood container: " << (!nogoods ? "not " : "") << "available" );
+	DBGLOG(DBG, "Retrieve with learning, pointer to nogood container: " << (!nogoods ? "not " : "") << "available" );
 
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidrc,"PluginAtom retrieveCached");
 	// Cache answer for queries which were already done once:
@@ -291,7 +280,7 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
-			retrieve(query, ans, ctx, nogoods);
+			retrieve(query, ans, nogoods);
 			// if there was no answer, perhaps it has never been used, so we use it manually
 			ans.use();
 		}
@@ -299,35 +288,32 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, ProgramCtx* 
 	}
 }
 
-void PluginAtom::retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods){
+void PluginAtom::retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods){
 
-	// decide which properties to use
-	ExtSourceProperties prop = this->prop;			// by default the settings of the plugin count
-  assert(query.eatom != 0);
-	if (query.eatom->useProp) prop = query.eatom->prop;	// this may be overridden by single external atoms
+	const ExtSourceProperties& prop = query.eatom->getExtSourceProperties();
 
-	std::vector<Query> atomicQueries = splitQuery(ctx, query, prop);
+	std::vector<Query> atomicQueries = splitQuery(query, prop);
 	DBGLOG(DBG, "Got " << atomicQueries.size() << " atomic queries");
 	BOOST_FOREACH (Query atomicQuery, atomicQueries){
 		Answer atomicAnswer;
 		retrieve(atomicQuery, atomicAnswer);
 
-		learnFromInputOutputBehavior(ctx, nogoods, atomicQuery, prop, atomicAnswer);
-		learnFromFunctionality(ctx, nogoods, atomicQuery, prop, answer);
+		ExternalLearningHelper::learnFromInputOutputBehavior(atomicQuery, atomicAnswer, prop, nogoods);
+		ExternalLearningHelper::learnFromFunctionality(atomicQuery, atomicAnswer, prop, otuples, nogoods);
 
 		// overall answer is the union of the atomic answers
 		answer.get().insert(answer.get().end(), atomicAnswer.get().begin(), atomicAnswer.get().end());
 	}
 }
 
-std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Query& query, const ExtSourceProperties& prop){
+std::vector<PluginAtom::Query> PluginAtom::splitQuery(const Query& query, const ExtSourceProperties& prop){
 
 	std::vector<Query> atomicQueries;
-	if (ctx != 0 && (isLinearOnAtomLevel(prop) || isLinearOnTupleLevel(prop)) && ctx->config.getOption("ExternalLearningLinearity")){
+	if ((prop.isLinearOnAtomLevel() || prop.isLinearOnTupleLevel()) && query.ctx->config.getOption("ExternalLearningLinearity")){
 
 		DBGLOG(DBG, "Splitting query by exploiting linearity");
 
-		if (isLinearOnAtomLevel(prop)){
+		if (prop.isLinearOnAtomLevel()){
 			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
 			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
 			while (en < en_end){
@@ -341,7 +327,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 				en++;
 			}
 		}
-		if (isLinearOnTupleLevel(prop)){
+		if (prop.isLinearOnTupleLevel()){
 			// collect all tuples
 			bm::bvector<>::enumerator en = query.eatom->getPredicateInputMask()->getStorage().first();
 			bm::bvector<>::enumerator en_end = query.eatom->getPredicateInputMask()->getStorage().end();
@@ -395,7 +381,7 @@ std::vector<PluginAtom::Query> PluginAtom::splitQuery(ProgramCtx* ctx, const Que
 							BOOST_FOREACH (ID p, t) atom.tuple.push_back(p);
 							ID atomID = query.interpretation->getRegistry()->storeOrdinaryGAtom(atom);
 							DBGLOG(DBG, "Input atom: " << atomID);
-// && query.interpretation->getFact(atomID.address)
+
 							if (query.eatom->getPredicateInputMask()->getFact(atomID.address)){
 								qa.predicateInputMask->setFact(atomID.address);
 							}
@@ -449,7 +435,7 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 	// rewrite atoms of form aux(p1,p2,p3,...) to aux(X1,X2,X3,...) and remember the variables used for the predicates
 	std::map<ID, ID> translation;
 	for (int par = 0; par < inputType.size(); ++par){
-		if (getInputType(par) == PREDICATE && isIndependentOfPredicateParameterName(prop, par)){
+		if (getInputType(par) == PREDICATE && prop.isIndependentOfPredicateParameterName(par)){
 			if (translation.find(pattern.tuple[par + 1]) == translation.end()){
 				std::stringstream var;
 				var << "X" << (par + 1);
@@ -503,344 +489,6 @@ void PluginAtom::generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr
 	// store the translated nogood
 	DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
 	nogoods->addNogood(translatedNG);
-
-/*
-return;
-
-	// for all related auxiliaries
-	BOOST_FOREACH (ID auxID, auxes){
-		DBGLOG(DBG, "Matching auxID=" << auxID << " (#parameters=" << inputType.size() << ")");
-		const OrdinaryAtom& aux = ctx->registry()->ogatoms.getByAddress(auxID.address);
-
-		// find a translation of the tuple of pattern to the tuple of aux
-		std::map<ID, std::vector<ID> > translation;
-		for (int p = 0; p < inputType.size(); ++p){
-			if (getInputType(p) == PREDICATE){
-				DBGLOG(DBG, pattern.tuple[p + 1] << " --> " << aux.tuple[p + 1]);
-				translation[pattern.tuple[p + 1]].push_back(aux.tuple[p + 1]);
-			}
-		}
-
-		// translate the nogood
-		Nogood translatedNG;
-		BOOST_FOREACH (ID lID, ng){
-			const OrdinaryAtom& l = ctx->registry()->ogatoms.getByAddress(lID.address);
-			if (lID != patternID){
-				assert(translation.find(l.tuple[0]) != translation.end());
-				for (int i = 0; i < translation[l.tuple[0]].size(); ++i){
-					OrdinaryAtom t = l;
-					t.tuple[0] = translation[l.tuple[0]][i];
-					translatedNG.insert(NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryGAtom(t).address, !lID.isNaf()));
-				}
-			}else{
-				OrdinaryAtom t = l;
-				for (int i = 1; i <= inputType.size(); ++i){
-					if (getInputType(i - 1) == PREDICATE){
-						t.tuple[i] = aux.tuple[i];
-					}else{
-						t.tuple[i] = pattern.tuple[i];
-					}
-				}
-				translatedNG.insert(NogoodContainer::createLiteral(ctx->registry()->storeOrdinaryGAtom(t).address, !lID.isNaf()));
-			}
-		}
-
-		// store the translated nogood
-		DBGLOG(DBG, "Adding generalized nogood " << translatedNG.getStringRepresentation(ctx->registry()) << " (from " << ng.getStringRepresentation(ctx->registry()) << ")");
-		nogoods->addNogood(translatedNG);
-	}
-*/
-}
-
-void PluginAtom::learnFromInputOutputBehavior(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
-
-	if (ctx != 0 && nogoods){
-
-		if (ctx->config.getOption("ExternalLearningIOBehavior")){
-			DBGLOG(DBG, "External Learning: IOBehavior" << (ctx->config.getOption("ExternalLearningMonotonicity") ? " by exploiting monotonicity" : ""));
-
-			Nogood extNgInput = getInputNogood(ctx, nogoods, query, prop);
-
-			Set<ID> out = getOutputAtoms(ctx, nogoods, query, answer, false);
-			BOOST_FOREACH (ID oid, out){
-				Nogood extNg = extNgInput;
-				extNg.insert(oid);
-				DBGLOG(DBG, "Learned nogood " << extNg.getStringRepresentation(ctx->registry()) << " from input-output behavior");
-				nogoods->addNogood(extNg);
-			}
-		}
-	}
-}
-
-void PluginAtom::learnFromFunctionality(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, const Answer& answer){
-
-	if (ctx != 0 && nogoods){
-
-		if (ctx->config.getOption("ExternalLearningFunctionality") && isFunctional(prop)){
-			DBGLOG(DBG, "External Learning: Functionality");
-
-			// there is a unique output
-			const std::vector<Tuple>& otuples = answer.get();
-
-			if (otuples.size() > 0){
-				ID uniqueOut = getOutputAtom(ctx, nogoods, query, otuples[0], true);
-
-				// go through all output tuples which have been generated so far
-				BOOST_FOREACH (Tuple t, this->otuples){
-					ID id = getOutputAtom(ctx, nogoods, query, t, true);
-					if (id != uniqueOut){
-						Nogood excludeOthers;
-						excludeOthers.insert(uniqueOut);
-						excludeOthers.insert(id);
-						DBGLOG(DBG, "Learned nogood " << excludeOthers.getStringRepresentation(ctx->registry()) << " from functionality");
-						nogoods->addNogood(excludeOthers);
-					}
-				}
-			}
-		}
-	}
-}
-
-void PluginAtom::learnFromGroundRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID groundRule){
-
-	RegistryPtr reg = ctx->registry();
-
-	if (ctx != 0 && nogoods){
-		DBGLOG(DBG, "External Learning: Ground Rule");
-
-		const Rule& rule = ctx->registry()->rules.getByID(groundRule);
-
-		Nogood ng;
-		BOOST_FOREACH (ID hId, rule.head){
-			const OrdinaryAtom& oat = ctx->registry()->ogatoms.getByID(hId);
-			Tuple t;
-			t.insert(t.end(), oat.tuple.begin() + 1, oat.tuple.end());
-			if (reg->terms.getByID(oat.tuple[0]).getUnquotedString() == "out"){
-				// output atom is positive, i.e. it must not be false
-				ng.insert(getOutputAtom(ctx, nogoods, query, t, false));
-			}else{
-				// output atom is negative, i.e. it must not be true
-				ng.insert(getOutputAtom(ctx, nogoods, query, t, true));
-			}
-		}
-		BOOST_FOREACH (ID bId, rule.body){
-			ng.insert(bId);
-		}
-		DBGLOG(DBG, "Learned nogood " << ng.getStringRepresentation(ctx->registry()) << " from rule");
-		nogoods->addNogood(ng);
-	}
-}
-
-void PluginAtom::learnFromRule(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, ID rid){
-
-	if (ctx != 0 && nogoods){
-		DBGLOG(DBG, "External Learning: Rule");
-
-		// prepare map for replacing body predicates:
-		// "in[i+1]" is replaced by the predicate passed as parameter number "i"
-		std::map<ID, ID> predReplacementMap;
-		for (int p = 0; p < query.input.size(); p++){
-			std::stringstream inPredStr;
-			inPredStr << "in" << (p + 1);
-			Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
-			ID inPredID = ctx->registry()->storeTerm(inPredTerm);
-			predReplacementMap[inPredID] = query.input[p];
-		}
-
-		DBGLOG(DBG, "Rewriting rule");
-		const Rule& rule = ctx->registry()->rules.getByID(rid);
-
-		Rule rrule(ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR);
-		rrule.head = rule.head;
-		BOOST_FOREACH (ID batom, rule.body){
-
-			const OrdinaryAtom& oatom = batom.isOrdinaryGroundAtom() ? ctx->registry()->ogatoms.getByID(batom) : ctx->registry()->onatoms.getByID(batom);
-
-			// replace predicate name by parameter from query.input
-			OrdinaryAtom roatom = oatom;
-			bool found = false;
-			for (int inp = 0; inp < query.input.size(); inp++){
-				std::stringstream inPredStr;
-				inPredStr << "in" << (inp + 1);
-				Term inPredTerm(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, inPredStr.str());
-				ID inPredID = ctx->registry()->storeTerm(inPredTerm);
-
-				if (roatom.tuple[0] == inPredID){
-					roatom.tuple[0] = query.input[inp];
-					found = true;
-					break;
-				}
-			}
-			assert(found);
-
-			ID batomId = batom.isOrdinaryGroundAtom() ? ctx->registry()->storeOrdinaryGAtom(roatom) : ctx->registry()->storeOrdinaryNAtom(roatom);
-			ID mask(ID::MAINKIND_LITERAL, 0);
-			if (batom.isNaf()) mask = mask | ID(ID::NAF_MASK, 0);
-			if (batom.isOrdinaryGroundAtom()) mask = mask | ID(ID::SUBKIND_ATOM_ORDINARYG, 0);
-			if (batom.isOrdinaryNongroundAtom()) mask = mask | ID(ID::SUBKIND_ATOM_ORDINARYN, 0);
-			rrule.body.push_back(ID(mask.kind, batomId.address));
-		}
-		ID rruleId = ctx->registry()->storeRule(rrule);
-
-		DBGLOG(DBG, "Building ASP Program");
-		InterpretationConstPtr edb = query.interpretation;
-		std::vector<ID> idb;
-		idb.push_back(rruleId);
-		OrdinaryASPProgram program(ctx->registry(), idb, edb);
-
-		DBGLOG(DBG, "Grounding learning rule");
-		GenuineGrounderPtr grounder = GenuineGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
-		const OrdinaryASPProgram& gprogram = grounder->getGroundProgram();
-//		InternalGrounderPtr ig = InternalGrounderPtr(new InternalGrounder(*ctx, program, InternalGrounder::builtin));
-//		OrdinaryASPProgram gprogram = ig->getGroundProgram();
-
-		DBGLOG(DBG, "Generating nogoods for all ground rules");
-		BOOST_FOREACH (ID rid, gprogram.idb){
-			learnFromGroundRule(ctx, nogoods, query, rid);
-		}
-	}
-}
-
-Nogood PluginAtom::getInputNogood(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const ExtSourceProperties& prop, bool negateMonotonicity){
-
-	// find relevant input: by default, the predicate mask of the external source counts; this can however be overridden for queries
-	bm::bvector<>::enumerator en = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().first() : query.predicateInputMask->getStorage().first();
-	bm::bvector<>::enumerator en_end = query.predicateInputMask == InterpretationPtr() ? query.eatom->getPredicateInputMask()->getStorage().end() : query.predicateInputMask->getStorage().end();
-
-	Nogood extNgInput;
-
-	while (en < en_end){
-		// get the predicate of the current input atom
-		ID pred = query.interpretation->getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en)).tuple[0];
-
-		// find the parameter index of this atom
-		int index = query.inputPredicateTable.find(pred)->second;
-
-		// positive atoms are only required for non-antimonotonic input parameters
-		// negative atoms are only required for non-monotonic input parameters
-		if (query.interpretation->getFact(*en) != negateMonotonicity){
-			// positive
-			if (!isAntimonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
-				extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
-			}
-		}else{
-			// negative
-			if (!isMonotonic(prop, index) || !ctx->config.getOption("ExternalLearningMonotonicity")){
-				extNgInput.insert(nogoods->createLiteral(*en, query.interpretation->getFact(*en)));
-			}
-		}
-
-		en++;
-	}
-
-	return extNgInput;
-}
-
-Set<ID> PluginAtom::getOutputAtoms(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, const Answer& answer, bool sign){
-
-	Set<ID> out;
-
-	// construct replacement atom
-	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
-	replacement.tuple.resize(1);
-	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
-	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
-	int s = replacement.tuple.size();
-
-	const std::vector<Tuple>& otuples = answer.get();
-	BOOST_FOREACH (Tuple otuple, otuples){
-		// remember that otuple was generated
-		this->otuples.push_back(otuple);
-
-		replacement.tuple.resize(s);
-		// add current output
-		replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
-		// get ID of this replacement atom
-		ID idreplacement = nogoods->createLiteral(registry->storeOrdinaryGAtom(replacement));
-		out.insert(idreplacement);
-	}
-
-	return out;
-}
-
-ID PluginAtom::getOutputAtom(ProgramCtx* ctx, NogoodContainerPtr nogoods, const Query& query, Tuple otuple, bool sign){
-
-	// construct replacement atom with input from query
-	OrdinaryAtom replacement(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG | ID::PROPERTY_AUX | ID::PROPERTY_EXTERNALAUX);
-	replacement.tuple.resize(1);
-	replacement.tuple[0] = registry->getAuxiliaryConstantSymbol(sign ? 'r' : 'n', query.eatom->predicate);
-	replacement.tuple.insert(replacement.tuple.end(), query.input.begin(), query.input.end());
-	int s = replacement.tuple.size();
-
-	// add output tuple
-	replacement.tuple.insert(replacement.tuple.end(), otuple.begin(), otuple.end());
-
-	ID idreplacement = nogoods->createLiteral(registry->storeOrdinaryGAtom(replacement));
-	return idreplacement;
-}
-
-ID PluginAtom::getIDOfLearningRule(ProgramCtx* ctx, std::string learningrule){
-
-	RegistryPtr reg = ctx->registry();
-
-	// parse rule
-	DBGLOG(DBG, "Parsing learning rule " << learningrule);
-	InputProviderPtr ip(new InputProvider());
-	ip->addStringInput(learningrule, "rule");
-//	Logger::Levels l = Logger::Instance().getPrintLevels();	// workaround: verbose causes the parse call below to fail (registry pointer is 0)
-//	Logger::Instance().setPrintLevels(0);
-	ProgramCtx pc = *ctx;
-//	pc.changeRegistry(ctx->registry());
-	pc.edb->getStorage().clear();
-	pc.idb.clear();
-	ModuleHexParser hp;
-	hp.parse(ip, pc);
-//	Logger::Instance().setPrintLevels(l);
-
-	if(pc.edb->getStorage().count() > 0){
-		DBGLOG(DBG, "Learning Rule Error: Learning rule must not be a fact");
-		return ID_FAIL;
-	}else if (pc.idb.size() != 1){
-		DBGLOG(DBG, "Error: Got " << pc.idb.size() << " rules; must be 1");
-		return ID_FAIL;
-	}else{
-		DBGLOG(DBG, "Got 1 learning rule");
-		ID rid = pc.idb[0];
-		const Rule& r = reg->rules.getByID(rid);
-
-		// learning rules must not be constraints or disjunctive
-		if (r.head.size() != 1){
-			DBGLOG(DBG, "Learning Rule Error: Learning rule is not ordinary (head size must be 1)");
-			return ID_FAIL;
-		}
-
-		// learning rules must use only predicates "out" or "nout" (in head) and in[i] (in body)
-		BOOST_FOREACH (ID hLit, r.head){
-			const OrdinaryAtom& oatom = hLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(hLit) : reg->onatoms.getByID(hLit);
-			std::string hPred = reg->terms.getByID(oatom.tuple[0]).getUnquotedString();
-			if (hPred != "out" && hPred != "nout"){
-				DBGLOG(DBG, "Learning Rule Error: Head predicate of learning rule must be \"out\" or \"nout\"");
-				return ID_FAIL;
-			}
-		}
-		BOOST_FOREACH (ID bLit, r.body){
-			const OrdinaryAtom& oatom = bLit.isOrdinaryGroundAtom() ? reg->ogatoms.getByID(bLit) : reg->onatoms.getByID(bLit);
-			std::string bPred = reg->terms.getByID(oatom.tuple[0]).getUnquotedString();
-
-			try {    
-				if (boost::starts_with(bPred, "in")){
-					boost::lexical_cast<int>(bPred.c_str() + 2);
-				}else{
-					throw std::bad_cast();
-				}
-			} catch (std::bad_cast){
-				DBGLOG(DBG, "Learning Rule Error: Body predicates must be of kind \"in[integer]\"");
-				return ID_FAIL;
-			}
-		}
-
-		return rid;
-	}
 }
 
 PluginAtom::InputType

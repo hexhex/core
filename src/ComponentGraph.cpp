@@ -307,7 +307,8 @@ namespace
 		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
 		assert(!!eatom.pluginAtom);
 		PluginAtom* pa = eatom.pluginAtom;
-		if( pa->isMonotonic() )
+		if( eatom.getExtSourceProperties().isMonotonic() )
+//		if( pa->isMonotonic() )
 		{
 			DBGLOG(DBG,"  eatom " << eatomid << " is monotonic");
 			return true;
@@ -742,7 +743,7 @@ bool ComponentGraph::calculateStratificationInfo(ComponentInfo& ci)
 				const ExternalAtom& eatom = reg->eatoms.getByID(bid);
 				bool stratified = true;
 				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
-					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.pluginAtom->isNonmonotonic(eatom.useProp ? eatom.prop : eatom.pluginAtom->getExtSourceProperties(), p)){
+					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)){
 						// is this predicate defined in this component?
 						BOOST_FOREACH (ID hid, headAtomIDs){
 							const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);

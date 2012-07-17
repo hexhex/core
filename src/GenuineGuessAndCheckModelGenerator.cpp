@@ -217,7 +217,7 @@ GenuineGuessAndCheckModelGenerator::GenuineGuessAndCheckModelGenerator(
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocInput);
-      evaluateExternalAtoms(reg,
+      evaluateExternalAtoms(factory.ctx,
           factory.outerEatoms, postprocInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer external atom computations");
@@ -642,7 +642,7 @@ bool GenuineGuessAndCheckModelGenerator::verifyExternalAtom(int eaIndex, Interpr
 
 	// evaluate the external atom (and learn nogoods if external learning is used)
 	DBGLOG(DBG, "Verifying external Atom " << factory.innerEatoms[eaIndex] << " under " << *evalIntr);
-	evaluateExternalAtom(reg, eatom, evalIntr, vcb, &factory.ctx, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
+	evaluateExternalAtom(factory.ctx, eatom, evalIntr, vcb, factory.ctx.config.getOption("ExternalLearning") ? learnedEANogoods : NogoodContainerPtr());
 	if (factory.ctx.config.getOption("ExternalLearningGeneralize")) generalizeNogoods();
 	if (factory.ctx.config.getOption("NongroundNogoodInstantiation")) nogoodGrounder->update(partialInterpretation, factWasSet, changed);
 	transferLearnedEANogoods();

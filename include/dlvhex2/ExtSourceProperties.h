@@ -63,8 +63,17 @@ struct ExtSourceProperty
 	ExtSourceProperty(Type t) : type(t), param(ID_FAIL){}
 };
 
+// stores properties of an external source on one of two levels:
+// 1. on the level of plugin atoms
+// 2. on the level of individual external atoms
+class ExternalAtom;	// fwd declaration
+class PluginAtom;	// fwd declaration
 struct ExtSourceProperties
 {
+	// exactly one of the following pointers will be NULL
+	ExternalAtom* ea;	// pointer to the external atom to which this property structure belongs to
+	PluginAtom* pa;		// pointer to the plugin atom to which this property structure belongs to;
+
 	std::vector<int> monotonicInputPredicates;
 	std::vector<int> antimonotonicInputPredicates;
 	std::vector<int> predicateParameterNameIndependence;
@@ -72,11 +81,64 @@ struct ExtSourceProperties
 	bool atomlevellinear;
 	bool tuplelevellinear;
 
-	ExtSourceProperties(){
+	ExtSourceProperties() : ea(0), pa(0){
 		functional = false;
 		atomlevellinear = false;
 		tuplelevellinear = false;
 	}
+
+	/**
+	* @return overall monotonicity
+	*/
+	bool isMonotonic() const;
+
+	/**
+	* @return overall antimonotonicity
+	*/
+	bool isAntimonotonic() const;
+
+	/**
+	* @return monotonicity on parameter level
+	*/
+	bool isMonotonic(int parameterIndex) const
+	{ return std::find(monotonicInputPredicates.begin(), monotonicInputPredicates.end(), parameterIndex) != monotonicInputPredicates.end(); }
+
+	/**
+	* @return antimonotonicity on parameter level
+	*/
+	bool isAntimonotonic(int parameterIndex) const
+	{ return std::find(antimonotonicInputPredicates.begin(), antimonotonicInputPredicates.end(), parameterIndex) != antimonotonicInputPredicates.end(); }
+
+	/**
+	* @return nonmonotonicity on parameter level
+	*/
+	bool isNonmonotonic(int parameterIndex) const
+	{ return !isMonotonic(parameterIndex) && !isAntimonotonic(parameterIndex); }
+
+	/**
+	* @return functional
+	*/
+	bool isFunctional() const
+	{ return functional; }
+
+	/**
+	* @return linearity on atom level
+	*/
+	bool isLinearOnAtomLevel() const
+	{ return atomlevellinear; }
+
+	/**
+	* @return linearity on tuple level
+	*/
+	bool isLinearOnTupleLevel() const
+	{ return tuplelevellinear; }
+
+	/**
+	* @return bool True if the name of the predicate parameter with the given index is irrelevant
+	*/
+	bool isIndependentOfPredicateParameterName(int parameterIndex) const
+	{ return std::find(predicateParameterNameIndependence.begin(), predicateParameterNameIndependence.end(), parameterIndex) != predicateParameterNameIndependence.end(); }
+
 };
 
 DLVHEX_NAMESPACE_END

@@ -220,7 +220,7 @@ public:
     auxInputPredicate(ID_FAIL),
     inputMask(new PredicateMask),
     useProp(false)
-    { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
+    { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); prop.ea = this; }
   ExternalAtom(IDKind kind):
     Atom(kind),
     predicate(ID_FAIL),
@@ -229,8 +229,35 @@ public:
     auxInputPredicate(ID_FAIL),
     inputMask(new PredicateMask),
     useProp(false)
-    { assert(ID(kind,0).isExternalAtom()); }
+    { assert(ID(kind,0).isExternalAtom()); prop.ea = this; }
   ~ExternalAtom();
+
+  ExternalAtom(const ExternalAtom& ea) : Atom(ea){
+    predicate = ea.predicate;
+    inputs = ea.inputs;
+    pluginAtom = ea.pluginAtom;
+    auxInputPredicate = ea.auxInputPredicate;
+    auxInputMapping = ea.auxInputMapping;
+    inputMask = ea.inputMask;
+    prop = ea.prop;
+    useProp = ea.useProp;
+    prop.ea = this; // use the containing external atom
+  }
+
+  void operator=(const ExternalAtom& ea){
+    Atom::operator=(ea);
+    predicate = ea.predicate;
+    inputs = ea.inputs;
+    pluginAtom = ea.pluginAtom;
+    auxInputPredicate = ea.auxInputPredicate;
+    auxInputMapping = ea.auxInputMapping;
+    inputMask = ea.inputMask;
+    prop = ea.prop;
+    useProp = ea.useProp;
+    prop.ea = this; // use the containing external atom
+  }
+
+  const ExtSourceProperties& getExtSourceProperties() const;
 
   std::ostream& print(std::ostream& o) const;
 

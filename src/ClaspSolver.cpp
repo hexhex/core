@@ -638,6 +638,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	BOOST_FOREACH (ID ruleId, p.getGroundProgram().idb){
 		int atLeastOneAtom = nextVarIndex++;
 
+		if (ruleId.isWeakConstraint()) throw GeneralError("clasp-based solver does not support weak constraints");
 		const Rule& rule = reg->rules.getByID(ruleId);
 #ifndef NDEBUG
 		programstring << (rule.head.size() == 0 ? "(constraint)" : "(rule)") << " ";
@@ -659,7 +660,8 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 						hi++;
 					}
 					BOOST_FOREACH (ID b, rule.body){
-						// add literal to body
+						// add literal to body	BOOST_FOREACH(ID bodyLit, ruleBody){
+						if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
 						pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 					}
 					// shifted head atoms
@@ -682,6 +684,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 					pb.addHead(hexToClasp[h.address].var());
 				}
 				BOOST_FOREACH (ID b, rule.body){
+					if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
 					pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 				}
 				pb.endRule();
@@ -714,6 +717,7 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 			}
 			BOOST_FOREACH (ID b, rule.body){
 				// add literal to body
+				if (b.isAggregateAtom()) throw GeneralError("clasp-based solver does not support aggregate atoms");
 				pb.addToBody(hexToClasp[b.address].var(), !b.isNaf());
 			}
 			pb.endRule();

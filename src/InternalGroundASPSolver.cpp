@@ -65,6 +65,10 @@ void InternalGroundASPSolver::createNogoodsForRule(ID ruleBodyAtomID, ID ruleID)
 // 2. body must not be true if a literal is false
 void InternalGroundASPSolver::createNogoodsForRuleBody(ID ruleBodyAtomID, const Tuple& ruleBody){
 
+	BOOST_FOREACH(ID bodyLit, ruleBody){
+		if (bodyLit.isAggregateAtom()) throw GeneralError("Internal solver does not support aggregate atoms");
+	}
+
 	// 1. body must not be false if all literals are true
 	Nogood bodySatIfLitSat;
 	BOOST_FOREACH(ID bodyLit, ruleBody){
@@ -192,6 +196,8 @@ void InternalGroundASPSolver::computeClarkCompletion(){
 
 	// compute completion
 	BOOST_FOREACH (ID ruleID, program.getGroundProgram().idb){
+		if (ruleID.isWeakConstraint()) throw GeneralError("Internal solver does not support weak constraints");
+
 		ID ruleBodyAtomID = createNewBodyAtom();
 		bodyAtomOfRule[ruleID.address] = ruleBodyAtomID.address;
 		createNogoodsForRule(ruleBodyAtomID, ruleID);

@@ -37,6 +37,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/ComfortPluginInterface.h"
 #include "dlvhex2/Term.h"
 #include "dlvhex2/Registry.h"
@@ -382,7 +383,7 @@ public:
 	}
   }
 
-  virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
   {
 	static std::map<std::string, ID> ruleIDs;
 
@@ -413,8 +414,8 @@ public:
 			answer.get().push_back(t);
 
 			// Test: Learning based on direct definition of nogoods
-			if (nogoods != NogoodContainerPtr() && ctx != 0){
-				if (ctx->config.getOption("ExternalLearningUser")){
+			if (nogoods != NogoodContainerPtr()){
+				if (query.ctx->config.getOption("ExternalLearningUser")){
 					// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
 					OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
 					at1.tuple.push_back(query.input[0]);
@@ -426,7 +427,7 @@ public:
 					Nogood nogood;
 					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
 					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
-					nogood.insert(getOutputAtom(ctx, nogoods, query, t, false));
+					nogood.insert(ExternalLearningHelper::getOutputAtom(query, t, false));
 					nogoods->addNogood(nogood);
 
 					DBGLOG(DBG, "Learned user-defined nogood: " << nogood);
@@ -444,8 +445,12 @@ public:
 class TestSetMinusRuleBasedLearningAtom:	// tests user-defined external learning
   public PluginAtom
 {
+private:
+  ProgramCtx* ctx;
+
 public:
-  TestSetMinusRuleBasedLearningAtom():
+  TestSetMinusRuleBasedLearningAtom(ProgramCtx* ctx):
+    ctx(ctx),
     PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
     #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
   {
@@ -486,7 +491,7 @@ public:
 	}
   }
 
-  virtual void retrieve(const Query& query, Answer& answer, ProgramCtx* ctx, NogoodContainerPtr nogoods)
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
   {
 	static std::map<std::string, ID> ruleIDs;
 
@@ -513,19 +518,19 @@ public:
 	}
 
 	// Test: Rule-based learning
-	if (nogoods != NogoodContainerPtr() && ctx != 0){
+	if (nogoods != NogoodContainerPtr()){
 		if (ctx->config.getOption("ExternalLearningUser")){
 			std::string rule = "out(X) :- in1(X), not in2(X).";
 
 			if (ruleIDs.find(rule) == ruleIDs.end()){
-				ruleIDs[rule] = getIDOfLearningRule(ctx, rule);
+				ruleIDs[rule] = ExternalLearningHelper::getIDOfLearningRule(ctx, rule);
 			}
 			ID rid = ruleIDs[rule];
 			if (rid == ID_FAIL){
 				DBGLOG(DBG, "Could not learn from rule because parsing failed");
 				exit(0);
 			}else{
-				learnFromRule(ctx, nogoods, query, rid);
+				ExternalLearningHelper::learnFromRule(query, rid, ctx, nogoods);
 			}
 		}
 	}
@@ -1040,7 +1045,7 @@ public:
     setNameVersion("dlvhex-testplugin", 0, 0, 1);
   }
 
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const
+  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
 
@@ -1053,7 +1058,7 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
-	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));

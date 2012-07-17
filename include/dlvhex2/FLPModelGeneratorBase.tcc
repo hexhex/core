@@ -311,7 +311,7 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 
 				for (int i = 0; i < ea.inputs.size(); ++i){
 					if (ea.pluginAtom->getInputType(i) == PluginAtom::PREDICATE &&
-					    ea.pluginAtom->isAntimonotonic(ea.useProp ? ea.prop : ea.pluginAtom->getExtSourceProperties(), i) &&
+					    ea.getExtSourceProperties().isAntimonotonic(i) &&
 					    ogatom.tuple[0] == ea.inputs[i]){
 						input->clearFact(*en);
 					}
@@ -320,7 +320,7 @@ InterpretationConstPtr FLPModelGeneratorBase::computeExtensionOfDomainPredicates
 			}
 
 			DBGLOG(DBG, "Evaluating external atom " << eaid << " under " << *input);
-			evaluateExternalAtom(factory.reg, ea, input, cb);
+			evaluateExternalAtom(ctx, ea, input, cb);
 		}
 
 		// solve program

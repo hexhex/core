@@ -70,7 +70,7 @@ public:
 	 * Return the value of the specified option identifier.
 	 */
 	unsigned
-	getOption(const std::string&);
+	getOption(const std::string&) const;
 
 	/**
 	 * @brief Check if the specified verbose action can be carried out.

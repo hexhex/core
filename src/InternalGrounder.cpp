@@ -197,7 +197,6 @@ void InternalGrounder::buildPredicateIndex(){
 void InternalGrounder::loadStratum(int index){
 
 	DBGLOG(DBG, "Loading stratum " << index);
-//	nonGroundRules = rulesOfStratum[index];
 	nonGroundRules.clear();
 	nonGroundRules.insert(nonGroundRules.begin(), rulesOfStratum[index].begin(), rulesOfStratum[index].end());
 	buildPredicateIndex();
@@ -301,6 +300,7 @@ void InternalGrounder::groundRule(ID ruleID, Substitution& s, std::vector<ID>& g
 
 		// go through all (positive) body atoms
 		for (std::vector<ID>::const_iterator it = body.begin(); it != body.end(); ){
+			if (it->isAggregateAtom()) throw GeneralError("Error: Internal grounder does not support aggregate atoms");
 
 			int bodyLitIndex = it - body.begin();
 			ID bodyLiteralID = *it;
@@ -484,7 +484,7 @@ void InternalGrounder::buildGroundInstance(ID ruleID, Substitution s, std::vecto
 		setToTrue(groundedHead[0]);
 	}else{
 		// build rule
-		Rule groundedRule(kind, groundedHead, groundedBody);
+		Rule groundedRule(kind, groundedHead, groundedBody, rule.weight, rule.level);
 
 		// avoid duplicate entries (they cause the registry to crash)
 		ID id = reg->rules.getIDByElement(groundedRule);
@@ -848,6 +848,7 @@ ID InternalGrounder::getPredicateOfAtom(ID atomID){
 		const BuiltinAtom& atom = reg->batoms.getByID(atomID);
 		return atom.front();
 	}
+	if (atomID.isAggregateAtom()) throw GeneralError("Error: Internal grounder does not support aggregate atoms");
 
 	return ID_FAIL;
 }
@@ -989,30 +990,6 @@ int InternalGrounder::getClosestBinder(std::vector<ID>& body, int litIndex, std:
 	return cb;
 }
 
-/*
-std::set<ID> InternalGrounder::getDepVars(std::vector<ID>& body, int litIndex){
-
-	std::set<ID> vars;
-	reg->getVariablesInID(body[litIndex], vars);
-	for (int i = litIndex + 1; i < body.size(); ++i){
-		std::set<ID> v2;
-		reg->getVariablesInID(body[i], v2);
-		// check if v2 contains some variable in vars
-		bool depending = false;
-		BOOST_FOREACH (ID v, v2){
-			if (vars.count(v) > 0){
-				depending = true;
-				break;
-			}
-		}
-		if (depending){
-			reg->getVariablesInID(body[i], vars);
-		}
-	}
-	return vars;
-}
-*/
-
 std::set<ID> InternalGrounder::getFreeVars(std::vector<ID>& body, int litIndex){
 
 	std::set<ID> vars;
@@ -1055,23 +1032,6 @@ std::set<ID> InternalGrounder::getOutputVariables(ID ruleID){
 
 	return outputVars;
 }
-
-/*
-bool InternalGrounder::depends(std::vector<ID>& body, int lit1, int lit2){
-
-	if (lit1 == -1 || lit2 == -1) return false;
-	if (lit1 > lit2) return false;
-
-	std::set<ID> depVars = getDepVars(body, lit1);
-	std::set<ID> vars2;
-	reg->getVariablesInID(body[lit2], vars2);
-	BOOST_FOREACH (ID v2, vars2){
-		if (depVars.count(v2) > 0) return true;
-	}
-	return false;
-}
-*/
-
 
 std::vector<ID> InternalGrounder::reorderRuleBody(ID ruleID){
 

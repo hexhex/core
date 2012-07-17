@@ -137,21 +137,19 @@ protected:
   // (inputi and outputi may point to the same interpretation)
   //
   // returns false if process was aborted by callback, true otherwise
-  virtual bool evaluateExternalAtom(RegistryPtr reg,
+  virtual bool evaluateExternalAtom(ProgramCtx& ctx,
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    ProgramCtx* ctx = 0,
     NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
   //
   // returns false if process was aborted by callback, true otherwise
-  virtual bool evaluateExternalAtoms(RegistryPtr reg,
+  virtual bool evaluateExternalAtoms(ProgramCtx& ctx,
     const std::vector<ID>& eatoms,
     InterpretationConstPtr inputi,
     ExternalAnswerTupleCallback& cb,
-    ProgramCtx* ctx = 0,
     NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
   // helper methods used by evaluateExternalAtom

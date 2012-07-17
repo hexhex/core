@@ -164,7 +164,7 @@ PlainModelGenerator::generateNextModel()
         // augment input with result of external atom evaluation
         // use newint as input and as output interpretation
         IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-        evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
+        evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
         DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
             "outer eatom computations");
         DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);

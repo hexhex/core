@@ -278,7 +278,8 @@ void DependencyGraph::createNodesAndIntraRuleDependenciesForBody(
     // add dependency from rule to external atom depending on monotonicity
     // (positiveExternal vs negativeExternal vs both)
 
-    bool monotonic = pluginAtom->isMonotonic();
+//    bool monotonic = pluginAtom->isMonotonic();
+    bool monotonic = eatom.getExtSourceProperties().isMonotonic();
 
     // store dependency
     DBGLOG(DBG,"storing dependency: " << idrule << " -> " << idat <<

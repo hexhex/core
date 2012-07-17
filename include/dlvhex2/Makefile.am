@@ -39,6 +39,7 @@ pkginclude_HEADERS = \
   EvalHeuristicTrivial.h \
   ExternalAtomEvaluationHeuristics.h \
   ExternalAtomTable.h \
+  ExternalLearningHelper.h \
   FinalEvalGraph.h \
   FLPModelGeneratorBase.h \
   FLPModelGeneratorBase.tcc \
