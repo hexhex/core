@@ -399,6 +399,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::verifyModels(){
 		}
 
 		DBGLOG_SCOPE(DBG,"gM", false);
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(ssidmodelcandidates, "Candidate compatible sets", 1);
 		DBGLOG(DBG, "Doing final compatibility check for model candidate " << *modelCandidate.first);
 		if (!finalCompatibilityCheck(modelCandidate.first, modelCandidate.second.first, modelCandidate.second.second)) continue;
 
