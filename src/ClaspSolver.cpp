@@ -44,6 +44,7 @@
 #include "dlvhex2/Set.h"
 #include "dlvhex2/UnfoundedSetChecker.h"
 #include "dlvhex2/AnnotatedGroundProgram.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
@@ -156,17 +157,12 @@ void AspOutPrinter::reportSolution(const Clasp::Solver&, const Clasp::Enumerator
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 
+	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
 	DBGLOG(DBG, "ClaspThread: Start producing a model");
-
-//	cs.sem_dlvhexDataStructures.wait();
-//	DBGLOG(DBG, "ClaspThread: Entering code which needs exclusive access to dlvhex data structures");
 
 	// create a model
 	// this line does not need exclusive access to dlvhex data structures as it sets only a reference to the registry, but does not access it
 	InterpretationPtr model = InterpretationPtr(new Interpretation(cs.reg));
-
-//	DBGLOG(DBG, "ClaspThread: Leaving code which needs exclusive access to dlvhex data structures");
-//	cs.sem_dlvhexDataStructures.post();
 
 	// get the symbol table from the solver
 	const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
@@ -189,7 +185,9 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 			boost::mutex::scoped_lock lock(cs.modelsMutex);
 			while(cs.preparedModels.size() >= cs.modelqueueSize){
 				DBGLOG(DBG, "Model queue is full; Waiting for models to be retrieved by MainThread");
+				DLVHEX_BENCHMARK_STOP(sidsolvertime);
 				cs.waitForQueueSpaceCondition.wait(lock);
+				DLVHEX_BENCHMARK_START(sidsolvertime);
 			}
 
 			DBGLOG(DBG, "Adding new model to model queue");
@@ -203,7 +201,9 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 		DBGLOG(DBG, "Notifying MainThread about new model");
 		cs.sem_answer.post();
 		DBGLOG(DBG, "ClaspThread: Waiting for further model requests");
+		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 		cs.sem_request.wait();
+		DLVHEX_BENCHMARK_START(sidsolvertime);
 	}
 
 	static const bool quickTerminationMethod = true;
@@ -565,6 +565,7 @@ IDAddress ClaspSolver::stringToIDAddress(std::string str){
 }
 
 void ClaspSolver::runClasp(){
+	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
 
 	DBGLOG(DBG, "ClaspThread: Initialization");
 	if (strictSingleThreaded){
@@ -573,10 +574,14 @@ void ClaspSolver::runClasp(){
 	}
 
 	try{
+		DLVHEX_BENCHMARK_START(sidsolvertime);
 		Clasp::solve(claspInstance, params);
+		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 	}catch(ClaspSolver::ClaspTermination){
+		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 		DBGLOG(DBG, "Clasp was requested to terminate before all models were enumerated");
 	}catch(...){
+		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 		throw;
 	}
 
@@ -882,6 +887,7 @@ InterpretationPtr ClaspSolver::outputProjection(InterpretationConstPtr intr){
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool interleavedThreading, DisjunctionMode dm) : ctx(c), projectionMask(p.getGroundProgram().mask), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	DBGLOG(DBG, "Starting ClaspSolver (ASP) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 
@@ -931,6 +937,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThreading) : ctx(c), sem_request(0), sem_answer(0), terminationRequest(false), endOfModels(false), sem_dlvhexDataStructures(1), strictSingleThreaded(!interleavedThreading), claspStarted(false), modelqueueSize(c.config.getOption("ModelQueueSize"))
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	DBGLOG(DBG, "Starting ClaspSolver (SAT) in " << (strictSingleThreaded ? "single" : "multi") << "threaded mode");
 	reg = ctx.registry();
 

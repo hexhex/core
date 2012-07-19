@@ -43,6 +43,7 @@
 #include <gringo/lparseoutput.h>
 #include <gringo/reifiedoutput.h>
 #include "dlvhex2/Rule.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <boost/tokenizer.hpp>
 
@@ -335,6 +336,8 @@ Streams::StreamPtr GringoGrounder::constStream() const
 
 int GringoGrounder::doRun()
 {
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgroundertime, "Grounder time");
+
 	// redirect std::cerr output to temporary string because gringo spams std:cerr with lots of useless warnings
 	std::stringstream errstr;
 	std::streambuf* origcerr = std::cerr.rdbuf(errstr.rdbuf());

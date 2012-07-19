@@ -28,9 +28,14 @@
  * @brief SAT solver based on conflict-driven nogood learning.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "dlvhex2/CDNLSolver.h"
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/Benchmarking.h"
 
 #include <iostream>
 #include <sstream>
@@ -637,6 +642,7 @@ std::string CDNLSolver::getStatistics(){
 
 CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), conflicts(0), cntAssignments(0), cntGuesses(0), cntBacktracks(0), cntResSteps(0), cntDetectedConflicts(0), tmpWatched(2, 1){
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	resizeVectors();
 	initListOfAllFacts();
 
@@ -705,6 +711,7 @@ void CDNLSolver::flipDecisionLiteral(){
 }
 
 InterpretationPtr CDNLSolver::getNextModel(){
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 
 	Nogood violatedNogood;
 

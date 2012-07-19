@@ -28,7 +28,9 @@
  * @brief Grounder for disjunctive logic programs.
  */
 
-#define DLVHEX_BENCHMARK
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
@@ -1138,7 +1140,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 		case x_op_y_eq_ret:
 			switch (op.address){
 				case ID::TERM_BUILTIN_ADD: return x + y;
-				case ID::TERM_BUILTIN_MUL: DBGLOG(DBG, "!!!"); return x * y;
+				case ID::TERM_BUILTIN_MUL: return x * y;
 				case ID::TERM_BUILTIN_SUB: return x - y;
 				case ID::TERM_BUILTIN_DIV: return x / y;
 				case ID::TERM_BUILTIN_MOD: return x % y;
@@ -1167,6 +1169,7 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 InternalGrounder::InternalGrounder(ProgramCtx& c, const OrdinaryASPProgram& p, OptLevel ol) : inputprogram(p), groundProgram(p), ctx(c), optlevel(ol){
 
 	DBGLOG(DBG, "Starting grounding");
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidgroundertime, "Grounder time");
 
 	reg = ctx.registry();
 

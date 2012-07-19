@@ -28,7 +28,9 @@
  * @brief Implementation of the model generator for "GuessAndCheck" components.
  */
 
-#define DLVHEX_BENCHMARK
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
 #include "dlvhex2/Logger.h"
@@ -457,7 +459,7 @@ void GenuineGuessAndCheckModelGeneratorAsync::generalizeNogoods(){
 void GenuineGuessAndCheckModelGeneratorAsync::transferLearnedEANogoods(){
 
 	for (int i = learnedEANogoodsTransferredIndex; i < learnedEANogoods->getNogoodCount(); ++i){
-		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned EA-Nogoods", 1);
+		DLVHEX_BENCHMARK_REGISTER_AND_COUNT(sidcompatiblesets, "Learned IO-Nogoods", 1);
 		if (factory.ctx.config.getOption("PrintLearnedNogoods")){
 			if (factory.ctx.config.getOption("GenuineSolver") >= 3){
 				if (i == 0) std::cerr << "( NOTE: With clasp backend, learned nogoods become effective with a delay because of multithreading! )" << std::endl << std::endl;

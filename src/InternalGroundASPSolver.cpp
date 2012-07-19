@@ -28,12 +28,19 @@
  * @brief ASP solver based on conflict-driven nogood learning.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "dlvhex2/InternalGroundASPSolver.h"
 
 #include <iostream>
 #include <sstream>
+
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/Benchmarking.h"
+
 #include <boost/foreach.hpp>
 #include <boost/graph/strong_components.hpp>
 
@@ -830,6 +837,7 @@ InterpretationPtr InternalGroundASPSolver::outputProjection(InterpretationConstP
 InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedGroundProgram& p) : CDNLSolver(c, NogoodSet()), program(p), bodyAtomPrefix(std::string("body_")), bodyAtomNumber(0), firstmodel(true), cntDetectedUnfoundedSets(0), modelCount(0){
 	DBGLOG(DBG, "Internal Ground ASP Solver Init");
 
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	reg = ctx.registry();
 
 	resizeVectors();
@@ -853,7 +861,7 @@ void InternalGroundASPSolver::removePropagator(PropagatorCallback* pb){
 }
 
 InterpretationPtr InternalGroundASPSolver::getNextModel(){
-
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	Nogood violatedNogood;
 
 	if (!firstmodel && complete()){

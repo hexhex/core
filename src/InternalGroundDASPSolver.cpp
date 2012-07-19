@@ -28,7 +28,9 @@
  * @brief Extension of InternalGroundASPSolver to disjunctive programs.
  */
 
-#define DLVHEX_BENCHMARK
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "dlvhex2/PlainModelGenerator.h"
 #include "dlvhex2/Logger.h"
@@ -50,6 +52,7 @@ InternalGroundDASPSolver::InternalGroundDASPSolver(ProgramCtx& ctx, const Annota
 InterpretationPtr InternalGroundDASPSolver::getNextModel(){
 
 	InterpretationPtr model = InternalGroundASPSolver::getNextModel();
+	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 
 	bool ufsFound = true;
 	while (model && ufsFound){
