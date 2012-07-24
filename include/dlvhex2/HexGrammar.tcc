@@ -67,7 +67,7 @@ HexParserSkipperGrammar<Iterator>::HexParserSkipperGrammar():
     = ascii::space
     | qi::lexeme[ qi::char_('%') > *(qi::char_ - qi::eol) ];
 
-  #ifdef BOOST_SPIRIT_DEBUG
+  #ifdef BOOST_SPIRIT_DEBUG_WS
   BOOST_SPIRIT_DEBUG_NODE(ws);
   #endif
 }
@@ -1161,14 +1161,11 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = *(toplevel);
 
   // TODO will weak constraints go into toplevelExt?
-  // TODO queries go into toplevelExt
   // TODO namespaces go into toplevelExt
   toplevelExt
     = qi::eps(false);
-  // TODO strong negation goes into bodyAtomExt
   bodyAtomExt
     = qi::eps(false);
-  // TODO strong negation goes into HeadAtomExt
   // TODO action atoms go into HeadAtomExt
   headAtomExt
     = qi::eps(false);
