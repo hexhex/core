@@ -40,8 +40,6 @@
 #include "dlvhex2/PluginInterface.h"
 #include "dlvhex2/Benchmarking.h"
 
-#include "dlvhex2/InconsistencyAnalyzer.h"
-
 #include <boost/foreach.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
