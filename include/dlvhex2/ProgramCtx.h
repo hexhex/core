@@ -129,6 +129,13 @@ public:
   template<typename PluginT>
   typename PluginT::CtxData& getPluginData();
 
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::Environment if it is not yet stored in ProgramCtx
+  template<typename PluginT>
+  typename PluginT::Environment& getPluginEnvironment();
+  template<typename PluginT>
+  const typename PluginT::Environment& getPluginEnvironment() const;
+
   // TODO: add visibility policy (as in clasp)
 
   DependencyGraphPtr depgraph;
@@ -227,6 +234,11 @@ protected:
   typedef std::map<std::string, boost::shared_ptr<PluginData> > PluginDataContainer;
   PluginDataContainer pluginData;
 
+  // environment associated with one specific plugin
+  // externally we see this as a non-const reference, the shared_ptr is totally internal
+  typedef std::map<std::string, boost::shared_ptr<PluginEnvironment> > PluginEnvironmentContainer;
+  PluginEnvironmentContainer pluginEnvironment;
+
   // atoms usable for evaluation (loaded from plugins or manually added)
   PluginAtomMap pluginAtoms;
 };
@@ -248,6 +260,43 @@ typename PluginT::CtxData& ProgramCtx::getPluginData()
   }
   typename PluginT::CtxData* pret =
     dynamic_cast<typename PluginT::CtxData*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
+
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::Environment if it is not yet stored in ProgramCtx
+template<typename PluginT>
+typename PluginT::Environment& ProgramCtx::getPluginEnvironment()
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginEnvironmentContainer::const_iterator it =
+    pluginEnvironment.find(pluginTypeName);
+  if( it == pluginEnvironment.end() )
+  {
+    it = pluginEnvironment.insert(std::make_pair(
+          pluginTypeName,
+          boost::shared_ptr<PluginEnvironment>(new typename PluginT::Environment))
+        ).first;
+  }
+  typename PluginT::Environment* pret =
+    dynamic_cast<typename PluginT::Environment*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
+
+template<typename PluginT>
+const typename PluginT::Environment& ProgramCtx::getPluginEnvironment() const
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginEnvironmentContainer::const_iterator it =
+    pluginEnvironment.find(pluginTypeName);
+  if( it == pluginEnvironment.end() )
+  {
+    throw std::runtime_error("Cannot use getPluginEnvironment const before using not const");
+  }
+  const typename PluginT::Environment* pret =
+    dynamic_cast<const typename PluginT::Environment*>(it->second.get());
   assert(!!pret);
   return *pret;
 }

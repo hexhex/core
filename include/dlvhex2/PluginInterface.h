@@ -469,6 +469,24 @@ public:
 typedef boost::shared_ptr<PluginData> PluginDataPtr;
 
 /**
+ * \brief Base class for plugin-specific storage in ProgramCtx
+ *
+ * Concrete usage pattern:
+ * * derive from this in YourPluginClass::Environment
+ * * default construct this with ProgramCtx::getPluginEnvironment<YourPluginClass>
+ * * obtain where needed via ProgramCtx::getPluginEnvironment<YourPluginClass>
+ *
+ */
+class PluginEnvironment
+{
+public:
+    PluginEnvironment() {}
+  virtual ~PluginEnvironment() {}
+};
+typedef boost::shared_ptr<PluginEnvironment> PluginEnvironmentPtr;
+
+
+/**
  * \brief Interface class for external Atoms.
  *
  * \ingroup pluginframework

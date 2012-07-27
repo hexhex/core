@@ -67,6 +67,8 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is a constant term)
  * 'h': Higher order auxiliary (HigherOrderPlugin)
  *      (source ID is an integer (arity))
+ * 'a': Action auxiliary (ActionPlugin)
+ *      (source ID is the ID of the name of the action)
  */
 
 namespace
