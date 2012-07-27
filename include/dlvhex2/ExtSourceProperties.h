@@ -34,13 +34,17 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ID.h"
+#include "dlvhex2/Printhelpers.h"
 
 #include <vector>
 #include <string>
 
 DLVHEX_NAMESPACE_BEGIN
 
-struct ExtSourceProperty
+#warning TODO what is the difference/intended usage of ExtSourceProperty vs ExtSourceProperties? (the names are not very intuitive)
+
+struct ExtSourceProperty:
+  private ostream_printable<ExtSourceProperty> 
 {
 	enum Type{
 		MONOTONIC,
@@ -61,6 +65,9 @@ struct ExtSourceProperty
 	ExtSourceProperty(){}
 	ExtSourceProperty(Type t, ID p) : type(t), param(p){}
 	ExtSourceProperty(Type t) : type(t), param(ID_FAIL){}
+  
+  std::ostream& print(std::ostream& o) const
+    { return o << "ExtSourceProperty(type=" << type << ",param=" << param << ")"; }
 };
 
 // stores properties of an external source on one of two levels:
