@@ -1131,7 +1131,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
 
   rule
     = (
-        (headAtom % qi::no_skip[qi::char_('v') >> ascii::space]) >>
+        (headAtom % qi::no_skip[*ascii::space >> qi::char_('v') >> ascii::space]) >>
        -(
           qi::lit(":-") >
           (bodyLiteral % qi::char_(','))
