@@ -66,6 +66,7 @@
 #include "clasp/solver.h"
 #include "clasp/literal.h"
 #include "clasp/program_builder.h"
+#include "clasp/minimize_constraint.h"
 #include "clasp/unfounded_check.h"
 #include "clasp/model_enumerators.h"
 #include "clasp/solve_algorithms.h"
@@ -174,6 +175,8 @@ protected:
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
 	Clasp::ProgramBuilder pb;
+	Clasp::MinimizeBuilder minb;
+	Clasp::MinimizeConstraint* minc;
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
