@@ -1,3 +1,13 @@
+2012-08-02 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* AggregatePlugin.h: Implement first version of a new (internal)
+	plugin as an extension of the existing aggregate-plugin.
+	It realizes possibly nested DLV aggregates
+	(using the usual syntax) by a rewriting to external atoms;
+	this allows for using DLV aggregates also with clasp and internal
+	solver backend
+	* AggregatePlugin.cpp: Likewise
+
 2012-06-30 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* FLPModelGeneratorBase.h: Implement relaxed notion of strong

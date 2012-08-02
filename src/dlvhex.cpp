@@ -67,6 +67,7 @@
 
 // internal plugins
 #include "dlvhex2/QueryPlugin.h"
+#include "dlvhex2/AggregatePlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
 
@@ -391,6 +392,8 @@ int main(int argc, char *argv[])
 		{
 			PluginInterfacePtr queryPlugin(new QueryPlugin);
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			PluginInterfacePtr aggregatePlugin(new AggregatePlugin);
+			pctx.pluginContainer()->addInternalPlugin(aggregatePlugin);
 			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
 			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
 			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);

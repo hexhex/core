@@ -670,17 +670,28 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitu
 
 	if (startSearchIndex > 0) return -1;
 
-	bool cmp;
-	switch (atom.tuple[0].address){
-		case ID::TERM_BUILTIN_EQ: cmp = (atom.tuple[1].address == atom.tuple[2].address); break;
-		case ID::TERM_BUILTIN_NE: cmp = (atom.tuple[1].address != atom.tuple[2].address); break;
-		case ID::TERM_BUILTIN_LT: cmp = (atom.tuple[1].address < atom.tuple[2].address); break;
-		case ID::TERM_BUILTIN_LE: cmp = (atom.tuple[1].address <= atom.tuple[2].address); break;
-		case ID::TERM_BUILTIN_GT: cmp = (atom.tuple[1].address > atom.tuple[2].address); break;
-		case ID::TERM_BUILTIN_GE: cmp = (atom.tuple[1].address >= atom.tuple[2].address); break;
+	if (atom.tuple[1].isVariableTerm() && atom.tuple[2].isVariableTerm()){
+		return -1;
+	}else if ((atom.tuple[1].isConstantTerm() || atom.tuple[1].isIntegerTerm()) && atom.tuple[2].isVariableTerm() && atom.tuple[0].address == ID::TERM_BUILTIN_EQ){
+		s[atom.tuple[2]] = atom.tuple[1];
+		return 1;
+	}else if ((atom.tuple[2].isConstantTerm() || atom.tuple[2].isIntegerTerm()) && atom.tuple[1].isVariableTerm() && atom.tuple[0].address == ID::TERM_BUILTIN_EQ){
+		s[atom.tuple[1]] = atom.tuple[2];
+		return 1;
+	}else{
+		// all values are fixed
+		bool cmp;
+		switch (atom.tuple[0].address){
+			case ID::TERM_BUILTIN_EQ: cmp = (atom.tuple[1].address == atom.tuple[2].address); break;
+			case ID::TERM_BUILTIN_NE: cmp = (atom.tuple[1].address != atom.tuple[2].address); break;
+			case ID::TERM_BUILTIN_LT: cmp = (atom.tuple[1].address < atom.tuple[2].address); break;
+			case ID::TERM_BUILTIN_LE: cmp = (atom.tuple[1].address <= atom.tuple[2].address); break;
+			case ID::TERM_BUILTIN_GT: cmp = (atom.tuple[1].address > atom.tuple[2].address); break;
+			case ID::TERM_BUILTIN_GE: cmp = (atom.tuple[1].address >= atom.tuple[2].address); break;
+		}
+		if (cmp) return 1;
+		else return -1;
 	}
-	if (cmp) return 1;
-	else return -1;
 }
 
 int InternalGrounder::matchNextFromExtensionBuiltinTernary(ID literalID, Substitution& s, int startSearchIndex){

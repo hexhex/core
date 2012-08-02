@@ -43,6 +43,7 @@ dlvhex2_LDADD = \
 
 # dlvhex API
 libdlvhex2_base_la_SOURCES = \
+    AggregatePlugin.cpp \
     AnswerSet.cpp \
     AnnotatedGroundProgram.cpp \
     AnswerSetPrinterCallback.cpp \

@@ -60,10 +60,6 @@ DLVHEX_NAMESPACE_BEGIN
 
 void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Clasp::Enumerator&){
 
-/*
-std::cerr << "SUM: " << cs.minc->sum(cs.hexToClasp[1].var()) << std::endl;
-cs.minc->commitCurrent(s);
-*/
 	DLVHEX_BENCHMARK_REGISTER(sidsolvertime, "Solver time");
 	DBGLOG(DBG, "ClaspThread: Start producing a model");
 
@@ -115,6 +111,22 @@ cs.minc->commitCurrent(s);
 
 	static const bool quickTerminationMethod = true;
 	if (quickTerminationMethod && cs.terminationRequest) throw ClaspSolver::ClaspTermination();
+
+
+/*
+std::cerr << "SUM: " << cs.minc->sum(cs.hexToClasp[1].var()) << std::endl;
+cs.minc->commitCurrent(s);
+*/
+//std::cerr << cs.minc->sum(0) << std::endl;
+//std::cerr << cs.minc->sum(1) << std::endl;
+
+//cs.minb.setOptimum(0, 1);
+//cs.minc = cs.minb.buildAndAttach(cs.claspInstance, Clasp::MinimizeMode_t::enumerate);
+
+//cs.minc->shared()->setOptimum(newopt);
+//cs.minc->commitCurrent(*cs.claspInstance.master());
+//std::cerr << "IN: " << cs.minc->integrateNext(*cs.claspInstance.master()) << std::endl;
+
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
@@ -705,14 +717,6 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	// rebuild the symbol table as it might have changed due to optimization
 	buildOptimizedSymbolTable();
 
-/*
-	Clasp::WeightLitVec min;
-	min.push_back( Clasp::WeightLiteral(Clasp::Literal(hexToClasp[1].var(), true), 1) );		
-	minb.addRule(min);
-std::cerr << "init minc" << std::endl;
-	minc = minb.buildAndAttach(claspInstance);
-*/
-
 	return initiallyInconsistent;
 }
 
@@ -825,10 +829,17 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		std::stringstream prog;
 		pb.writeProgram(prog);
 		DBGLOG(DBG, "Program in LParse format: " << prog.str());
-
+/*
+Clasp::WeightLitVec min;
+min.push_back( Clasp::WeightLiteral(Clasp::Literal(hexToClasp[1].var(), hexToClasp[1].sign()), 3) );		
+//min.push_back( Clasp::WeightLiteral(Clasp::Literal(hexToClasp[2].var(), hexToClasp[2].sign()), 5) );		
+minb.addRule(min);
+minb.setOptimum(0, 3);
+minc = minb.buildAndAttach(claspInstance, Clasp::MinimizeMode_t::enumerate);
+*/
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
-		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
+		claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
 
 		// add propagator
