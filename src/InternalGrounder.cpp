@@ -626,6 +626,7 @@ int InternalGrounder::matchNextFromExtensionBuiltin(ID literalID, Substitution& 
 		case ID::TERM_BUILTIN_LE:
 		case ID::TERM_BUILTIN_GT:
 		case ID::TERM_BUILTIN_GE:
+		case ID::TERM_BUILTIN_SUCC:
 			return matchNextFromExtensionBuiltinBinary(literalID, s, startSearchIndex);
 
 		case ID::TERM_BUILTIN_ADD:
@@ -677,6 +678,13 @@ int InternalGrounder::matchNextFromExtensionBuiltinBinary(ID literalID, Substitu
 		return 1;
 	}else if ((atom.tuple[2].isConstantTerm() || atom.tuple[2].isIntegerTerm()) && atom.tuple[1].isVariableTerm() && atom.tuple[0].address == ID::TERM_BUILTIN_EQ){
 		s[atom.tuple[1]] = atom.tuple[2];
+		return 1;
+	}else if (atom.tuple[1].isIntegerTerm() && atom.tuple[2].isVariableTerm() && atom.tuple[0].address == ID::TERM_BUILTIN_SUCC){
+		s[atom.tuple[2]] = ID::termFromInteger(atom.tuple[1].address + 1);
+		return 1;
+	}else if (atom.tuple[1].isVariableTerm() && atom.tuple[2].isIntegerTerm() && atom.tuple[0].address == ID::TERM_BUILTIN_SUCC){
+		if (atom.tuple[2].address == 0) return -1;
+		s[atom.tuple[1]] = ID::termFromInteger(atom.tuple[2].address - 1);
 		return 1;
 	}else{
 		// all values are fixed
@@ -1153,22 +1161,32 @@ int InternalGrounder::applyIntFunction(AppDir ad, ID op, int x, int y){
 				case ID::TERM_BUILTIN_ADD: return x + y;
 				case ID::TERM_BUILTIN_MUL: return x * y;
 				case ID::TERM_BUILTIN_SUB: return x - y;
-				case ID::TERM_BUILTIN_DIV: return x / y;
-				case ID::TERM_BUILTIN_MOD: return x % y;
+				case ID::TERM_BUILTIN_DIV:
+					if (y == 0) return -1;
+					return x / y;
+				case ID::TERM_BUILTIN_MOD:
+					if (y == 0) return -1;
+					return x % y;
 			}
 			break;
 		case x_op_ret_eq_y:
 			switch (op.address){
 				case ID::TERM_BUILTIN_ADD: return y - x;
-				case ID::TERM_BUILTIN_MUL: if (y % x == 0) return y / x;
+				case ID::TERM_BUILTIN_MUL:
+					if (x == 0) return -1;
+					if (y % x == 0) return y / x;
 				case ID::TERM_BUILTIN_SUB: return x - y;
-				case ID::TERM_BUILTIN_DIV: if (x % y == 0) return x / y;
+				case ID::TERM_BUILTIN_DIV:
+					if (y == 0) return -1;
+					if (x % y == 0) return x / y;
 			}
 			break;
 		case ret_op_y_eq_x:
 			switch (op.address){
 				case ID::TERM_BUILTIN_ADD: return x - y;
-				case ID::TERM_BUILTIN_MUL: if (x % y == 0) return x / y;
+				case ID::TERM_BUILTIN_MUL:
+					if (y == 0) return -1;
+					if (x % y == 0) return x / y;
 				case ID::TERM_BUILTIN_SUB: return x + y;
 				case ID::TERM_BUILTIN_DIV: return x * y;
 			}
