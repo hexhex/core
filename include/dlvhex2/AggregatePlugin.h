@@ -40,43 +40,43 @@ class AggregatePlugin:
   public PluginInterface
 {
 public:
-  // stored in ProgramCtx, accessed using getPluginData<HigherOrderPlugin>()
-  class CtxData:
-    public PluginData
-  {
-  public:
-    // whether plugin is enabled
-    bool enabled;
+	// stored in ProgramCtx, accessed using getPluginData<HigherOrderPlugin>()
+	class CtxData:
+	public PluginData
+	{
+		public:
+		// whether plugin is enabled
+		bool enabled;
 
-    // maximum input arity used
-    int maxArity;
+		// maximum input arity used
+		int maxArity;
 
-    CtxData();
-    virtual ~CtxData() {};
-  };
+		CtxData();
+		virtual ~CtxData() {};
+	};
 
 public:
-  AggregatePlugin();
-  virtual ~AggregatePlugin();
+	AggregatePlugin();
+	virtual ~AggregatePlugin();
 
 	// output help message for this plugin
 	virtual void printUsage(std::ostream& o) const;
 
-  // accepted options: --higherorder-enable
-  //
+	// accepted options: --aggregate-enable
+	//
 	// processes options for this plugin, and removes recognized options from pluginOptions
-  // (do not free the pointers, the const char* directly come from argv)
+	// (do not free the pointers, the const char* directly come from argv)
 	virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx&);
 
-  // rewrite program: rewrite aggregate atoms to external atoms
-  virtual PluginRewriterPtr createRewriter(ProgramCtx&);
+	// rewrite program: rewrite aggregate atoms to external atoms
+	virtual PluginRewriterPtr createRewriter(ProgramCtx&);
 
-  // register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
-  virtual void setupProgramCtx(ProgramCtx&);
+	// register model callback which transforms all auxn(p,t1,...,tn) back to p(t1,...,tn)
+	virtual void setupProgramCtx(ProgramCtx&);
 
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
+	virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const;
 
-  // no atoms!
+	// no atoms!
 };
 
 DLVHEX_NAMESPACE_END

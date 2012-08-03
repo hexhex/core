@@ -49,7 +49,7 @@
 DLVHEX_NAMESPACE_BEGIN
 
 AggregatePlugin::CtxData::CtxData():
-	enabled(false), maxArity(10)
+	enabled(false), maxArity(0)
 {
 }
 
@@ -117,6 +117,7 @@ class AggregateRewriter:
 {
 private:
 	AggregatePlugin::CtxData& ctxdata;
+	std::vector<ID> newIdb;
 	void rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const Rule& rule);
 
 	std::string aggregateFunctionToExternalAtomName(ID aggFunction);
@@ -124,7 +125,8 @@ public:
 	AggregateRewriter(AggregatePlugin::CtxData& ctxdata) : ctxdata(ctxdata) {}
 	virtual ~AggregateRewriter() {}
 
-  virtual void rewrite(ProgramCtx& ctx);
+	virtual void prepareRewrittenProgram(ProgramCtx& ctx);
+	virtual void rewrite(ProgramCtx& ctx);
 };
 
 std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunction){
@@ -135,7 +137,7 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 		case ID::TERM_BUILTIN_AGGMIN: return "min";
 		case ID::TERM_BUILTIN_AGGMAX: return "max";
 		case ID::TERM_BUILTIN_AGGSUM: return "sum";
-//		case ID::TERM_BUILTIN_AGGTIMES: return "times";
+		case ID::TERM_BUILTIN_AGGTIMES: return "times";
 		case ID::TERM_BUILTIN_AGGAVG: return "avg";
 //		case ID::TERM_BUILTIN_AGGANY: return "any";
 		default: assert(false);
@@ -143,6 +145,8 @@ std::string AggregateRewriter::aggregateFunctionToExternalAtomName(ID aggFunctio
 }
 
 void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const Rule& rule){
+
+	RegistryPtr reg = ctx.registry();
 
 	// take the rule head as it is
 	Rule newRule = rule;
@@ -152,10 +156,10 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 	std::string prefix = "F";	// function value
 	std::set<ID> vars;
 	BOOST_FOREACH (ID b, rule.body){
-		ctx.registry()->getVariablesInID(b, vars);
+		reg->getVariablesInID(b, vars);
 	}
 	BOOST_FOREACH (ID v, vars){
-		std::string currentVar = ctx.registry()->terms.getByID(v).getUnquotedString();
+		std::string currentVar = reg->terms.getByID(v).getUnquotedString();
 		while (prefix.length() <= currentVar.length() &&
 		    currentVar.substr(0, prefix.length()) == prefix){
 			prefix = prefix + "F";
@@ -168,7 +172,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 	BOOST_FOREACH (ID b, rule.body){
 		if (b.isAggregateAtom()){
 			DBGLOG(DBG, "Rewriting aggregate atom " << b);
-			const AggregateAtom& aatom = ctx.registry()->aatoms.getByID(b);
+			const AggregateAtom& aatom = reg->aatoms.getByID(b);
 
 			// Construct the external atom predicate input by a rule of the following type:
 			// A. Single head atom
@@ -185,13 +189,13 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			// collect all variables from the conjunction of the symbolic set
 			std::set<ID> conjSymSetVars;
 			BOOST_FOREACH (ID cs, aatom.literals){
-				ctx.registry()->getVariablesInID(cs, conjSymSetVars);
+				reg->getVariablesInID(cs, conjSymSetVars);
 			}
 
 			// collect all variables from the remaining body of the rule
 			std::set<ID> bodyVars;
 			BOOST_FOREACH (ID rb, rule.body){
-				if (rb != b) ctx.registry()->getVariablesInID(rb, bodyVars);
+				if (rb != b) reg->getVariablesInID(rb, bodyVars);
 			}
 
 			// construct the input rule
@@ -201,7 +205,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			// A.
 			DBGLOG(DBG, "Constructing input rule head");
 			//   1.
-			oatom.tuple.push_back(ctx.registry()->getAuxiliaryConstantSymbol('a', b));
+			oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('a', b));
 			//   2.
 			std::vector<ID> bodyVarsOfSymbolicSet;
 			BOOST_FOREACH (ID c, conjSymSetVars){
@@ -215,17 +219,20 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			BOOST_FOREACH (ID c, aatom.variables){
 				oatom.tuple.push_back(c);
 			}
-			inputRule.head.push_back(ctx.registry()->storeOrdinaryNAtom(oatom));
+			inputRule.head.push_back(reg->storeOrdinaryNAtom(oatom));
 			// B.
 			DBGLOG(DBG, "Constructing input rule body");
 			// 1.
 			inputRule.body = aatom.literals;
+			BOOST_FOREACH (ID l, aatom.literals){
+				if (l.isExternalAtom()) inputRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+			}
 			// 2.
 			BOOST_FOREACH (ID bb, rule.body){
 				if (bb == b) continue;
 
 				std::set<ID> bbVars;
-				ctx.registry()->getVariablesInID(bb, bbVars);
+				reg->getVariablesInID(bb, bbVars);
 				BOOST_FOREACH (ID v, conjSymSetVars){
 					if (std::find(bbVars.begin(), bbVars.end(), v) != bbVars.end()) inputRule.body.push_back(bb);
 				}
@@ -248,19 +255,25 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			eaName << aggregateFunctionToExternalAtomName(aatom.tuple[2]);
 			eaName << bodyVarsOfSymbolicSet.size();
 			Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
-			eaReplacement.predicate = ctx.registry()->storeTerm(exPred);
-			eaReplacement.inputs.push_back(ctx.registry()->getAuxiliaryConstantSymbol('a', b));
+			eaReplacement.predicate = reg->storeTerm(exPred);
+			eaReplacement.inputs.push_back(reg->getAuxiliaryConstantSymbol('a', b));
 			eaReplacement.inputs.push_back(ID::termFromInteger(bodyVarsOfSymbolicSet.size()));
 			BOOST_FOREACH (ID t, bodyVarsOfSymbolicSet){
 				eaReplacement.tuple.push_back(t);
 			}
-			std::stringstream var;
-			var << prefix << aggIndex++;
-			ID valueVariable = ctx.registry()->storeVariableTerm(var.str());
+			ID valueVariable;
+			// in case of = comparison, reuse the existing variable
+			if (aatom.tuple[1].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[0];
+			else if (aatom.tuple[3].address == ID::TERM_BUILTIN_EQ) valueVariable = aatom.tuple[4];
+			else{
+				std::stringstream var;
+				var << prefix << aggIndex++;
+				valueVariable = reg->storeVariableTerm(var.str());
+			}
 			eaReplacement.tuple.push_back(valueVariable);
 
 			// store external atom and add its ID to the rule body
-			newRule.body.push_back(ID::posLiteralFromAtom(ctx.registry()->eatoms.storeAndGetID(eaReplacement)));
+			newRule.body.push_back(b.isNaf() ? ID::nafLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)) : ID::posLiteralFromAtom(reg->eatoms.storeAndGetID(eaReplacement)));
 
 			// add (at most) two atoms reflecting the original left and right comparator
 			if (aatom.tuple[0] != ID_FAIL){
@@ -268,14 +281,14 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 				bi.tuple.push_back(aatom.tuple[1]);
 				bi.tuple.push_back(aatom.tuple[0]);
 				bi.tuple.push_back(valueVariable);
-				newRule.body.push_back(ID::posLiteralFromAtom(ctx.registry()->batoms.storeAndGetID(bi)));
+				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
 			if (aatom.tuple[4] != ID_FAIL){
 				BuiltinAtom bi(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_BUILTIN);
 				bi.tuple.push_back(aatom.tuple[3]);
 				bi.tuple.push_back(valueVariable);
 				bi.tuple.push_back(aatom.tuple[4]);
-				newRule.body.push_back(ID::posLiteralFromAtom(ctx.registry()->batoms.storeAndGetID(bi)));
+				newRule.body.push_back(ID::posLiteralFromAtom(reg->batoms.storeAndGetID(bi)));
 			}
 
 			// make the rule know that it contains an external atom
@@ -287,28 +300,33 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 	}
 
 	// add the new rule to the IDB
-	ID newRuleID = ctx.registry()->storeRule(newRule);
+	ID newRuleID = reg->storeRule(newRule);
 	idb.push_back(newRuleID);
 }
 
-void AggregateRewriter::rewrite(ProgramCtx& ctx)
+void AggregateRewriter::prepareRewrittenProgram(ProgramCtx& ctx)
 {
 	// go through all rules
-	std::vector<ID> newIdb;
+	newIdb.clear();
 	BOOST_FOREACH (ID rid, ctx.idb){
 		rewriteRule(ctx, newIdb, ctx.registry()->rules.getByID(rid));
 	}
-	ctx.idb.swap(newIdb);
 
 #ifndef NDEBUG
 	std::stringstream programstring;
 	RawPrinter printer(programstring, ctx.registry());
-	BOOST_FOREACH (ID ruleId, ctx.idb){
+	BOOST_FOREACH (ID ruleId, newIdb){
 		printer.print(ruleId);
 		programstring << std::endl;
 	}
 	DBGLOG(DBG, "Aggregate-free rewritten program:" << std::endl << programstring.str());
 #endif
+}
+
+void AggregateRewriter::rewrite(ProgramCtx& ctx)
+{
+	prepareRewrittenProgram(ctx);
+	ctx.idb = newIdb;
 }
 
 } // anonymous namespace
@@ -352,6 +370,8 @@ class AggAtom : public PluginAtom
 
 		AggAtom(std::string aggFunction, int arity) : PluginAtom(getName(aggFunction, arity), false), arity(arity)
 		{
+			prop.functional = true;
+
 			addInputPredicate();
 			addInputConstant();
 
@@ -465,6 +485,23 @@ class SumAtom : public AggAtom
 		SumAtom(int arity) : AggAtom("sum", arity) {}
 };
 
+class TimesAtom : public AggAtom
+{
+	private:
+		virtual void compute(const std::vector<Tuple>& input, unsigned int* returnValue, bool* defined){
+
+			*defined = false;
+			*returnValue = 1;
+			BOOST_FOREACH (Tuple t, input){
+				*returnValue *= t[0].address;
+				*defined = true;
+			}
+		}
+
+	public:
+		TimesAtom(int arity) : AggAtom("times", arity) {}
+};
+
 class AvgAtom : public AggAtom
 {
 	private:
@@ -505,7 +542,10 @@ class CountAtom : public AggAtom
 std::vector<PluginAtomPtr> AggregatePlugin::createAtoms(ProgramCtx& ctx) const{
 	std::vector<PluginAtomPtr> ret;
 
+	// we have to do the program rewriting already here because it creates some side information that we need
 	AggregatePlugin::CtxData& ctxdata = ctx.getPluginData<AggregatePlugin>();
+	AggregateRewriter ar(ctxdata);
+	ar.prepareRewrittenProgram(ctx);
 
 	// return smart pointer with deleter (i.e., delete code compiled into this plugin)
 	DBGLOG(DBG, "Adding aggregate external atoms with an input arity of up to " << ctxdata.maxArity);
@@ -513,6 +553,7 @@ std::vector<PluginAtomPtr> AggregatePlugin::createAtoms(ProgramCtx& ctx) const{
 		ret.push_back(PluginAtomPtr(new MaxAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new MinAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new SumAtom(i), PluginPtrDeleter<PluginAtom>()));
+		ret.push_back(PluginAtomPtr(new TimesAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new AvgAtom(i), PluginPtrDeleter<PluginAtom>()));
 		ret.push_back(PluginAtomPtr(new CountAtom(i), PluginPtrDeleter<PluginAtom>()));
 	}
@@ -525,13 +566,13 @@ DLVHEX_NAMESPACE_END
 // this would be the code to use this plugin as a "real" plugin in a .so file
 // but we directly use it in dlvhex.cpp
 #if 0
-HigherOrderPlugin theHigherOrderPlugin;
+AggregatePlugin theAggregatePlugin;
 
 // return plain C type s.t. all compilers and linkers will like this code
 extern "C"
 void * PLUGINIMPORTFUNCTION()
 {
-	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theHigherOrderPlugin);
+	return reinterpret_cast<void*>(& DLVHEX_NAMESPACE theAggregatePlugin);
 }
 
 #endif

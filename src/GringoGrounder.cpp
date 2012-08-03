@@ -63,29 +63,63 @@ namespace
 DLVHEX_NAMESPACE_BEGIN
 
 void GringoGrounder::Printer::print(ID id){
-	if(id.isRule() && id.isRegularRule()){
-		// disjunction in rule heads is | not v
+	if(id.isRule()){
+		if (id.isWeakConstraint()) throw GeneralError("Gringo-based grounder does not support weak constraints");
+
 		const Rule& r = registry->rules.getByID(id);
+
+		// check if there is an unsatisfied ground atom
+		BOOST_FOREACH (ID b, r.body){
+			if (b.isBuiltinAtom()){
+				const BuiltinAtom& bi = registry->batoms.getByID(b);
+				if (bi.tuple.size() == 3 && bi.tuple[0] == ID::TERM_BUILTIN_EQ){
+					if ((bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
+						if (bi.tuple[1] != bi.tuple[2]){
+							// skip rule
+							return;
+						}
+					}
+				}
+			}
+		}
+
+		// disjunction in rule heads is | not v
 		printmany(r.head, " | ");
 		if( !r.body.empty() )
 		{
 			out << " :- ";
+			bool first = true;
 			BOOST_FOREACH (ID b, r.body){
 				if (b.isAggregateAtom()) throw GeneralError("Gringo-based grounder does not support aggregate atoms");
+				// gringo does not accept equalities of type constant=Variable, so reverse them
+				// also remove equlities between equal ground terms
+				if (b.isBuiltinAtom()){
+					const BuiltinAtom& bi = registry->batoms.getByID(b);
+					if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && (bi.tuple[2].isConstantTerm() || bi.tuple[2].isIntegerTerm())){
+						if (bi.tuple[0].address == ID::TERM_BUILTIN_EQ && bi.tuple[1] == bi.tuple[2] ||
+						    bi.tuple[0].address == ID::TERM_BUILTIN_NE && bi.tuple[1] != bi.tuple[2]){
+							// skip
+							continue;
+						}
+					}else if (bi.tuple.size() == 3 && (bi.tuple[1].isConstantTerm() || bi.tuple[1].isIntegerTerm()) && bi.tuple[2].isVariableTerm()){
+						BuiltinAtom bi2 = bi;
+						bi2.tuple[1] = bi.tuple[2];
+						bi2.tuple[2] = bi.tuple[1];
+						if (!first) out << ", ";
+						first = false;
+						print(b.isNaf() ? ID::nafLiteralFromAtom(registry->batoms.storeAndGetID(bi2)) : ID::posLiteralFromAtom(registry->batoms.storeAndGetID(bi2)));
+						continue;
+					}
+				}
+
+				if (!first) out << ", ";
+				first = false;
+				print(b);
 			}
-			printmany(r.body, ", ");
+//printmany(r.body, ", ");
 		}
 		out << ".";
 	}else{
-		if (id.isRule()){
-			if (id.isWeakConstraint()) throw GeneralError("Gringo-based grounder does not support weak constraints");
-			if (id.isConstraint()){
-				const Rule& r = registry->rules.getByID(id);
-				BOOST_FOREACH (ID b, r.body){
-					if (b.isAggregateAtom()) throw GeneralError("Gringo-based grounder does not support aggregate atoms");
-				}
-			}
-		}
 		Base::print(id);
 	}
 }
@@ -356,6 +390,7 @@ int GringoGrounder::doRun()
 		printer.printmany(nongroundProgram.idb, "\n");
 		programStream << std::endl;
 		DBGLOG(DBG, "Sending the following input to Gringo: " << programStream.str());
+//std::cout << ">> " << programStream.str() << std::endl;
 
 		// grounding
 		std::auto_ptr<Output> o(output());

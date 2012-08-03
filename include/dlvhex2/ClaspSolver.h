@@ -177,6 +177,7 @@ protected:
 	Clasp::ProgramBuilder pb;
 	Clasp::MinimizeBuilder minb;
 	Clasp::MinimizeConstraint* minc;
+	Clasp::SharedMinimizeData* sharedMinimizeData;
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;

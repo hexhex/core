@@ -244,6 +244,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 							newsafevars.insert(atom.tuple[2]);
 							transfer = true;
 							break;
+						}else{
+							transfer = true;
+							break;
 						}
 					}
 					if( !atom.tuple[2].isVariableTerm() ||
@@ -254,6 +257,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 						{
 							// first is something that can be made safe
 							newsafevars.insert(atom.tuple[1]);
+							transfer = true;
+							break;
+						}else{
 							transfer = true;
 							break;
 						}
