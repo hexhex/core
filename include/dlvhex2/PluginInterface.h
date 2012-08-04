@@ -1060,7 +1060,9 @@ protected:
 
   // Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
+  typedef boost::unordered_map<const Query, SimpleNogoodContainerPtr> QueryNogoodCache;
   QueryAnswerCache queryAnswerCache;
+  QueryNogoodCache queryNogoodCache;
   boost::mutex cacheMutex;
 
   /// \brief output tuples generated so far (used for learning for
