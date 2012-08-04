@@ -273,19 +273,21 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 		answer = ans;
 
 		// check if there are cached nogoods
-		SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
-		if (cachedNogoods){
-			// return cached nogoods
-			for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
-		}else{
-			// answer is cached but no nogoods: reevaluate and return nogoods
-			queryAnswerCache[query] = Answer();
-			Answer& ans2 = queryAnswerCache[query];
-			cachedNogoods.reset(new SimpleNogoodContainer());
-			retrieve(query, ans2, cachedNogoods);
-			ans2.use();
-			answer = ans2;	// ans2 should be the same as ans
-			for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+		if (nogoods){
+			SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
+			if (cachedNogoods){
+				// return cached nogoods
+				for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+			}else{
+				// answer is cached but no nogoods: reevaluate and return nogoods
+				queryAnswerCache[query] = Answer();
+				Answer& ans2 = queryAnswerCache[query];
+				cachedNogoods.reset(new SimpleNogoodContainer());
+				retrieve(query, ans2, cachedNogoods);
+				ans2.use();
+				answer = ans2;	// ans2 should be the same as ans
+				for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+			}
 		}
 	}
 	else
@@ -295,12 +297,16 @@ void PluginAtom::retrieveCached(const Query& query, Answer& answer, NogoodContai
 		{
 			DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidr,"PluginAtom retrieve");
 
-			SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
-			assert(!cachedNogoods);
+			if (nogoods){
+				SimpleNogoodContainerPtr& cachedNogoods = queryNogoodCache[query];
+				assert(!cachedNogoods);
 
-			cachedNogoods.reset(new SimpleNogoodContainer());
-			retrieve(query, ans, cachedNogoods);
-			for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+				cachedNogoods.reset(new SimpleNogoodContainer());
+				retrieve(query, ans, cachedNogoods);
+				for (int i = 0; i < cachedNogoods->getNogoodCount(); ++i) nogoods->addNogood(cachedNogoods->getNogood(i));
+			}else{
+				retrieve(query, ans, NogoodContainerPtr());
+			}
 
 			// if there was no answer, perhaps it has never been used, so we use it manually
 			ans.use();
