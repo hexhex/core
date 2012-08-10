@@ -53,6 +53,7 @@ struct Predicate:
     { return o << "Predicate(" << symbol << " / " << arity << ")"; }
 };
 
+#warning see warning in PredicateTable.h
 const Predicate PREDICATE_FAIL(ID::MAINKIND_TERM | ID::SUBKIND_TERM_PREDICATE, "", -1);
 
 DLVHEX_NAMESPACE_END

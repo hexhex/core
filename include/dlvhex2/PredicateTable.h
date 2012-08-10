@@ -156,6 +156,7 @@ const Predicate& PredicateTable::getByString(const std::string& str) const throw
   ReadLock lock(mutex);
   const PredicateNameIndex& sidx = container.get<impl::PredicateNameTag>();
   PredicateNameIndex::const_iterator it = sidx.find(str);
+  #warning this looks fishy, and PREDICATE_FAIL is not used anywhere else, when can this happen and if it is intended to fail, why don't we return a pointer or throw an exception?
   if( it == sidx.end() )
     return PREDICATE_FAIL;
   else
