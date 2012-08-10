@@ -1,6 +1,9 @@
 # -*- org -*-
 #+STARTUP: showall
 
+DLVHEX Core
+===========
+
 This file provides some hints how to install and run dlvhex.
 
 * You just want to use the binary
@@ -52,9 +55,9 @@ This file provides some hints how to install and run dlvhex.
     where you have built clingo-app.
 
     How to build a working clingo-app:
-    - checkout 3.0.3 tag of gringo
-      $ svn co https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-3.0.3
-      $ cd gringo-3.0.3
+    - checkout 3.0.4 tag of gringo
+      $ svn co https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-3.0.4
+      $ cd gringo-3.0.4
     - create release directory
       $ mkdir -p build/release
     - cmake (specify your boost root)
@@ -64,11 +67,13 @@ This file provides some hints how to install and run dlvhex.
 
     Now configure dlvhex with
 
-    $ ./configure --with-libclingo=/path/to/gringo-3.0.3
+    $ ./configure --with-libclingo=/path/to/gringo-3.0.4
 
     IMPORTANT:
     - use the same boost library as dlvhex, 1.43 works for us
     - you might need to hack CMakeLists.txt to accept your boost version
+
+    There is also a script which does everything automatically: checkout_build_potassco.sh
 *** DLVDB
     FIXME
 *** libdlv

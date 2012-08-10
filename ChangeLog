@@ -1,3 +1,9 @@
+2012-08-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update libclingo version.
+
+	* AUTHORS: Add Christoph Redl.
+
 2012-08-02 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* AggregatePlugin.h: Implement first version of a new (internal)
