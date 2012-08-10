@@ -25,7 +25,7 @@
  * @file   BaseModelGenerator.h
  * @author Peter Schueller <ps@kr.tuwien.ac.at>
  * 
- * @brief  Base class for model generators, implementing common functionality.
+ * @brief  Base class for model generator factories and model generators.
  */
 
 #ifndef BASE_MODEL_GENERATOR_HPP_INCLUDED__09112010
@@ -37,20 +37,61 @@
 #include "dlvhex2/Interpretation.h"
 #include "dlvhex2/ASPSolverManager.h"
 #include "dlvhex2/Atoms.h"
+#include "dlvhex2/ID.h"
+#include "dlvhex2/Registry.h"
+#include "dlvhex2/Nogood.h"
+#include "dlvhex2/GenuineSolver.h"
+#include "dlvhex2/ComponentGraph.h"
 
 #include <list>
+#include "dlvhex2/CDNLSolver.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
+//
+// a model generator factory provides model generators
+// for a certain types of interpretations
+//
+class BaseModelGeneratorFactory:
+  public ModelGeneratorFactoryBase<Interpretation>
+{
+  // methods
+public:
+  BaseModelGeneratorFactory() {}
+  virtual ~BaseModelGeneratorFactory() {}
+
+protected:
+  // adds domain predicates to rule bodies in order to make external atoms groundable
+  virtual ID addDomainPredicatesWhereNecessary(const ComponentGraph::ComponentInfo& ci, RegistryPtr reg, ID ruleid);
+  // rewrite all eatoms in body to auxiliary replacement atoms
+  // store into registry and return id
+  virtual ID convertRule(RegistryPtr reg, ID ruleid);
+  // rewrite all eatoms in body tuple to auxiliary replacement atoms
+  // store new body into convbody
+  // (works recursively for aggregate atoms,
+  // will create additional "auxiliary" aggregate atoms in registry)
+  virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
+};
+
+//
+// the base model generator
+//
 class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
+  friend class UnfoundedSetChecker;
   // members
 public:
   BaseModelGenerator(InterpretationConstPtr input):
     ModelGeneratorBase<Interpretation>(input) {}
   virtual ~BaseModelGenerator() {}
 
+protected:
+  //
+  // ========== External Atom Evaluation Helpers ==========
+  //
+
+public:
   // callback function object for handling external atom answer tuples
   struct ExternalAnswerTupleCallback
   {
@@ -96,22 +137,22 @@ protected:
   // (inputi and outputi may point to the same interpretation)
   //
   // returns false if process was aborted by callback, true otherwise
-  virtual bool evaluateExternalAtom(RegistryPtr reg,
+  virtual bool evaluateExternalAtom(ProgramCtx& ctx,
     const ExternalAtom& eatom,
     InterpretationConstPtr inputi,
-    ExternalAnswerTupleCallback& cb) const;
+    ExternalAnswerTupleCallback& cb,
+    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
   // calls evaluateExternalAtom for each atom in eatoms
   //
   // returns false if process was aborted by callback, true otherwise
-  virtual bool evaluateExternalAtoms(RegistryPtr reg,
+  virtual bool evaluateExternalAtoms(ProgramCtx& ctx,
     const std::vector<ID>& eatoms,
     InterpretationConstPtr inputi,
-    ExternalAnswerTupleCallback& cb) const;
+    ExternalAnswerTupleCallback& cb,
+    NogoodContainerPtr nogoods = NogoodContainerPtr()) const;
 
-  //
   // helper methods used by evaluateExternalAtom
-  //
 
   // returns false iff tuple does not unify with eatom output pattern
   // (the caller must decide whether to throw an exception or ignore the tuple)
@@ -127,29 +168,6 @@ protected:
   // calculate all tuples that are inputs to the eatom and store them into "inputs"
   virtual void buildEAtomInputTuples(RegistryPtr reg,
     const ExternalAtom& eatom, InterpretationConstPtr i, std::list<Tuple>& inputs) const;
-};
-
-//
-// a model generator factory provides model generators
-// for a certain types of interpretations
-//
-class BaseModelGeneratorFactory:
-  public ModelGeneratorFactoryBase<Interpretation>
-{
-  // methods
-public:
-  BaseModelGeneratorFactory() {}
-  virtual ~BaseModelGeneratorFactory() {}
-
-protected:
-  // rewrite all eatoms in body to auxiliary replacement atoms
-  // store into registry and return id
-  virtual ID convertRule(RegistryPtr reg, ID ruleid);
-  // rewrite all eatoms in body tuple to auxiliary replacement atoms
-  // store new body into convbody
-  // (works recursively for aggregate atoms,
-  // will create additional "auxiliary" aggregate atoms in registry)
-  virtual void convertRuleBody(RegistryPtr reg, const Tuple& body, Tuple& convbody);
 };
 
 DLVHEX_NAMESPACE_END

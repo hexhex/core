@@ -1,0 +1,9 @@
+% This example demonstrates that the old implementation of the FLP check is wrong.
+% &id[p](a) evaluates to true iff p(a) is true.
+% Here, the guessing program has one model: {p(a)} (which is also subset-minimal as it is the only one)
+% The reduct f P^{p(a)} = { p(a) :- &id[p](a). } has a smaller model {}.
+% As the old implementation checks only if a candidate is a model of the reduct,
+% but not if it is a subset-minimal model, the FLP check is wrongly passed.
+
+p(a) :- &id[p](a).
+:- not p(a).

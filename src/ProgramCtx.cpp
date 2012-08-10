@@ -42,6 +42,7 @@
 #include "dlvhex2/PluginContainer.h"
 #include "dlvhex2/State.h"
 //#include "dlvhex2/DLVProcess.h"
+#include "dlvhex2/EvalHeuristicEasy.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -49,7 +50,6 @@
 #include <iostream>
 
 DLVHEX_NAMESPACE_BEGIN
-
 
 ProgramCtx::ProgramCtx():
 		maxint(0)
@@ -134,7 +134,18 @@ void ProgramCtx::setupRegistry(
 
 void ProgramCtx::changeRegistry(RegistryPtr registry)
 {
-   _registry = registry;
+  // clear everything that depends on IDs of registry
+  idb.clear();
+  edb.reset();
+  idbList.clear();
+  edbList.clear();
+  pluginAtoms.clear();
+
+  // setup new registry
+  setupRegistry(registry);
+
+  // re-add plugin atoms (using new registry)
+  addPluginAtomsFromPluginContainer();
 }
 
 void ProgramCtx::setupPluginContainer(
@@ -178,6 +189,99 @@ void ProgramCtx::createEvalGraph() { state->createEvalGraph(this); }
 void ProgramCtx::setupProgramCtx() { state->setupProgramCtx(this); }
 void ProgramCtx::evaluate() { state->evaluate(this); }
 void ProgramCtx::postProcess() { state->postProcess(this); }
+
+// ============================== subprogram handling ==============================
+
+bool ProgramCtx::SubprogramAnswerSetCallback::operator()(AnswerSetPtr model){
+	answersets.push_back(model->interpretation);
+	return true;
+}
+
+ProgramCtx::SubprogramAnswerSetCallback::~SubprogramAnswerSetCallback(){}
+
+std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb){
+
+	ProgramCtx pc = *this;
+//	pc.changeRegistry(this->registry());
+	pc.idb = idb;
+	pc.edb = InterpretationPtr(new Interpretation(*edb));
+
+	return evaluateSubprogram(pc, false);
+}
+
+std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts){
+
+	ProgramCtx pc = *this;
+//	pc.changeRegistry(this->registry());
+	pc.idb.clear();
+	pc.edb = InterpretationPtr(new Interpretation(this->registry()));
+	pc.config.setOption("NumberOfModels",0);
+	if( !!addFacts )
+		pc.edb->getStorage() |= addFacts->getStorage();
+	pc.inputProvider = ip;
+	ip.reset();
+
+	return evaluateSubprogram(pc, true);
+}
+
+std::vector<InterpretationPtr> ProgramCtx::evaluateSubprogram(ProgramCtx& pc, bool parse){
+
+	DBGLOG(DBG, "Resetting context");
+	pc.state.reset();
+	pc.modelBuilder.reset();
+	pc.parser.reset();
+	pc.evalgraph.reset();
+	pc.compgraph.reset();
+	pc.depgraph.reset();
+//	pc.modelBuilderFactory = ctx->modelBuilderFactory;
+
+  if( !pc.evalHeuristic )
+  {
+    DBGLOG(DBG, "Setting eval heuristics");
+    pc.evalHeuristic.reset(new EvalHeuristicEasy);
+  }
+
+	DBGLOG(DBG, "Starting state pipeline " << (parse ? "with" : "without") << " parsing");
+	if (parse){
+		pc.changeState(StatePtr(new ConvertState));
+	}else{
+		pc.changeState(StatePtr(new SafetyCheckState));
+	}
+
+	if (parse){
+		pc.convert();
+		pc.parse();
+	}
+
+	DBGLOG(DBG, "Associate PluginAtom instances with ExternalAtom instances");
+	pc.associateExtAtomsWithPluginAtoms(pc.idb, true);
+
+	pc.safetyCheck();
+	pc.createDependencyGraph();
+	pc.optimizeEDBDependencyGraph();
+	pc.createComponentGraph();
+	pc.createEvalGraph();
+	pc.setupProgramCtx();
+
+	DBGLOG(DBG, "Setting AnswerSetCallback");
+	pc.modelCallbacks.clear();
+	pc.finalCallbacks.clear();
+	SubprogramAnswerSetCallback* spasc = new SubprogramAnswerSetCallback();
+	ModelCallbackPtr spascp = ModelCallbackPtr(spasc);
+	pc.modelCallbacks.push_back(spascp);
+
+	DBGLOG(DBG, "Evaluate subprogram");
+	pc.evaluate();
+	std::vector<InterpretationPtr> result;
+	BOOST_FOREACH (InterpretationPtr intr, spasc->answersets){
+		result.push_back(intr);
+	}
+
+	return result;
+}
+
+// ============================== end subprogram handling ==============================
+
 
 #if 0
 PluginAtomPtr

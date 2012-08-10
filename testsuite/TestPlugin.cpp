@@ -37,15 +37,18 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#include "dlvhex2/ExternalLearningHelper.h"
 #include "dlvhex2/ComfortPluginInterface.h"
 #include "dlvhex2/Term.h"
 #include "dlvhex2/Registry.h"
+#include "dlvhex2/ProgramCtx.h"
 
 #include <boost/foreach.hpp>
 
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <map>
 
 #include <cstdio>
 #include <cassert>
@@ -225,6 +228,8 @@ public:
   {
     addInputTuple();
     setOutputArity(1);
+
+    prop.functional = true;
   }
 
   virtual void retrieve(const Query& query, Answer& answer)
@@ -333,6 +338,377 @@ public:
   }
 };
 
+class TestSetMinusNogoodBasedLearningAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestSetMinusNogoodBasedLearningAtom():
+    PluginAtom("testSetMinusNogoodBasedLearning", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	assert(false);	// this method should never be called
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+		}
+	}
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+	static std::map<std::string, ID> ruleIDs;
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+
+			// Test: Learning based on direct definition of nogoods
+			if (nogoods != NogoodContainerPtr()){
+				if (query.ctx->config.getOption("ExternalLearningUser")){
+					// learn that presence of t in query.input[0] and absence in query.input[1] implies presence in output
+					OrdinaryAtom at1(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+					at1.tuple.push_back(query.input[0]);
+					for (int i = 0; i < t.size(); ++i) at1.tuple.push_back(t[i]);
+					OrdinaryAtom at2(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG);
+					at2.tuple.push_back(query.input[1]);
+					for (int i = 0; i < t.size(); ++i) at2.tuple.push_back(t[i]);
+
+					Nogood nogood;
+					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at1).address, true));
+					nogood.insert(NogoodContainer::createLiteral(getRegistry()->storeOrdinaryGAtom(at2).address, false));
+					nogood.insert(ExternalLearningHelper::getOutputAtom(query, t, false));
+					nogoods->addNogood(nogood);
+
+					DBGLOG(DBG, "Learned user-defined nogood: " << nogood);
+				}else{
+					DBGLOG(DBG, "No user-defined learning");
+				}
+			}else{
+				DBGLOG(DBG, "No user-defined learning");
+			}
+		}
+	}
+  }
+};
+
+class TestSetMinusRuleBasedLearningAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+private:
+  ProgramCtx* ctx;
+
+public:
+  TestSetMinusRuleBasedLearningAtom(ProgramCtx* ctx):
+    ctx(ctx),
+    PluginAtom("testSetMinusRuleBasedLearning", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	assert(false);	// this method should never be called
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+		}
+	}
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer, NogoodContainerPtr nogoods)
+  {
+	static std::map<std::string, ID> ruleIDs;
+
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples1;
+	std::vector<Tuple> tuples2;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (atom.tuple[0] == query.input[0]){
+			tuples1.push_back(tu);
+		}
+		if (atom.tuple[0] == query.input[1]){
+			tuples2.push_back(tu);
+		}
+		en++;
+	}
+
+	// Test: Rule-based learning
+	if (nogoods != NogoodContainerPtr()){
+		if (ctx->config.getOption("ExternalLearningUser")){
+			std::string rule = "out(X) :- in1(X), not in2(X).";
+
+			if (ruleIDs.find(rule) == ruleIDs.end()){
+				ruleIDs[rule] = ExternalLearningHelper::getIDOfLearningRule(ctx, rule);
+			}
+			ID rid = ruleIDs[rule];
+			if (rid == ID_FAIL){
+				DBGLOG(DBG, "Could not learn from rule because parsing failed");
+				exit(0);
+			}else{
+				ExternalLearningHelper::learnFromRule(query, rid, ctx, nogoods);
+			}
+		}
+	}
+
+	BOOST_FOREACH (Tuple t, tuples1){
+		if (std::find(tuples2.begin(), tuples2.end(), t) == tuples2.end()){
+			answer.get().push_back(t);
+		}
+	}
+  }
+};
+
+class TestNonmonAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNonmonAtom():
+    PluginAtom("testNonmon", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (tu.size() != 1) throw PluginError("TestNonmonAtom can only process input predicates with arity 1!");
+		tuples.push_back(tu);
+		en++;
+	}
+
+	Tuple t1, t2;
+	t1.push_back(ID::termFromInteger(1));
+	t2.push_back(ID::termFromInteger(2));
+
+	// {} -> {2}, {1} -> {1}, {2} -> {1}, {1,2} -> {1,2}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t2);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t1);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+		answer.get().push_back(t1);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+		answer.get().push_back(t1);
+		answer.get().push_back(t2);
+	}
+  }
+};
+
+class TestNonmon2Atom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNonmon2Atom():
+    PluginAtom("testNonmon2", false) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	std::vector<Tuple> tuples;
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		Tuple tu;
+		for (int i = 1; i < atom.tuple.size(); ++i){
+			tu.push_back(atom.tuple[i]);
+		}
+		if (tu.size() != 1) throw PluginError("TestNonmon2Atom can only process input predicates with arity 1!");
+		tuples.push_back(tu);
+		en++;
+	}
+
+	Tuple t1, t2;
+	t1.push_back(ID::termFromInteger(1));
+	t2.push_back(ID::termFromInteger(2));
+
+	// {} -> {2}, {1} -> {2}, {2} -> {}, {1,2} -> {1,2}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t2);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) == tuples.end()){
+		answer.get().push_back(t2);
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) == tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+	}
+	if (std::find(tuples.begin(), tuples.end(), t1) != tuples.end() && std::find(tuples.begin(), tuples.end(), t2) != tuples.end()){
+		answer.get().push_back(t1);
+		answer.get().push_back(t2);
+	}
+  }
+};
+
+class TestIdAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestIdAtom():
+    PluginAtom("id", true) // monotonic, and no predicate inputs anyway
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (atom.tuple.size() != 2) throw PluginError("TestIdAtom can only process input predicates with arity 1!");
+		Tuple tu;
+		tu.push_back(atom.tuple[1]);
+		answer.get().push_back(tu);
+		en++;
+	}
+  }
+};
+
+class TestNegAtom:	// tests user-defined external learning
+  public PluginAtom
+{
+public:
+  TestNegAtom():
+    PluginAtom("neg", false)
+    #warning TODO if a plugin atom has only onstant inputs, is it always monotonic? if yes, automate this, at least create a warning
+  {
+    addInputConstant();
+    addInputPredicate();
+    setOutputArity(1);
+  }
+
+  virtual void retrieve(const Query& query, Answer& answer)
+  {
+	// find relevant input
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		const OrdinaryAtom& atom = getRegistry()->ogatoms.getByID(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *en));
+		if (atom.tuple.size() != 2) throw PluginError("TestNegAtom can only process input predicates with arity 1!");
+		if (atom.tuple[1] == query.input[0]){
+			return;
+		}
+		en++;
+	}
+	Tuple tu;
+	tu.push_back(query.input[0]);
+	answer.get().push_back(tu);
+  }
+};
 
 class TestMinusOneAtom:
 	public ComfortPluginAtom
@@ -420,6 +796,244 @@ public:
   }
 };
 
+class TestLessThanAtom:
+	public PluginAtom
+{
+public:
+  TestLessThanAtom():
+		PluginAtom("testLessThan", false)
+  {
+	addInputPredicate();
+	addInputPredicate();
+	setOutputArity(0);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	int a = 0;
+	int b = 0;
+	while (en < en_end){
+		
+		if (getRegistry()->ogatoms.getByAddress(*en).tuple[0] == query.input[0]){
+			a++;
+		}else{
+			b++;
+		}
+		en++;
+	}
+
+	if (a < b){
+		// succeed by returning an empty tuple
+		Tuple t;
+		answer.get().push_back(t);
+	}else{
+		// fail by returning no tuple
+	}
+  }
+};
+
+class TestEqualAtom:
+	public PluginAtom
+{
+public:
+  TestEqualAtom():
+		PluginAtom("testEqual", false)
+  {
+	addInputPredicate();
+	addInputPredicate();
+	setOutputArity(0);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	int a = 0;
+	int b = 0;
+	while (en < en_end){
+		
+		if (getRegistry()->ogatoms.getByAddress(*en).tuple[0] == query.input[0]){
+			a++;
+		}else{
+			b++;
+		}
+		en++;
+	}
+
+	if (a == b){
+		// succeed by returning an empty tuple
+		Tuple t;
+		answer.get().push_back(t);
+	}else{
+		// fail by returning no tuple
+	}
+  }
+};
+
+class TestTransitiveClosureAtom:
+	public PluginAtom
+{
+public:
+	TestTransitiveClosureAtom():
+		// monotonic, as only constant inputs
+		PluginAtom("testTransitiveClosure", true)
+	{
+			addInputPredicate();
+			setOutputArity(2);
+
+			prop.monotonicInputPredicates.push_back(0);
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer)
+	{
+		assert(query.input.size() == 1);
+
+		std::set<ID> nodes;
+		std::set<std::pair<ID, ID> > edges;
+
+		bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+		while (en < en_end){
+			const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+
+			nodes.insert(ogatom.tuple[1]);
+			nodes.insert(ogatom.tuple[2]);
+			edges.insert(std::pair<ID, ID>(ogatom.tuple[1], ogatom.tuple[2]));
+			en++;
+		}
+
+		BOOST_FOREACH (ID n, nodes){
+			BOOST_FOREACH (ID m, nodes){
+				BOOST_FOREACH (ID o, nodes){
+					if (std::find(edges.begin(), edges.end(), std::pair<ID, ID>(n, m)) != edges.end() &&
+					    std::find(edges.begin(), edges.end(), std::pair<ID, ID>(m, o)) != edges.end()){
+						Tuple t;
+						t.push_back(n);
+						t.push_back(o);
+						answer.get().push_back(t);
+					}
+				}
+			}
+		}
+	}
+};
+
+class TestCycleAtom:
+	public PluginAtom
+{
+public:
+	TestCycleAtom():
+		// monotonic, as only constant inputs
+		PluginAtom("testCycle", true)
+	{
+			addInputPredicate();
+			addInputConstant();
+			setOutputArity(0);
+
+			prop.monotonicInputPredicates.push_back(0);
+	}
+
+	bool dfscycle(bool directed, ID parent, ID node, std::map<ID, std::set<ID> >& outedges, std::map<ID, bool>& visited, std::set<std::pair<ID, ID> >& cycle){
+
+		// if the node was already visited in the dfs search, then we have a cycle
+		if (visited[node]) return true;
+
+		// otherwise: visit the node
+		visited[node] = true;
+
+		// visit all child nodes
+		BOOST_FOREACH (ID child, outedges[node]){
+			cycle.insert(std::pair<ID, ID>(node, child));
+			if (directed || child != parent){
+				if (dfscycle(directed, node, child, outedges, visited, cycle)) return true;
+			}
+			cycle.erase(std::pair<ID, ID>(node, child));
+		}
+
+		visited[node] = false;
+		return false;
+	}
+
+	virtual void
+	retrieve(const Query& query, Answer& answer)
+	{
+		assert(query.input.size() == 1);
+
+		Term dir(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, "directed");
+		bool directed = query.input[1] == getRegistry()->storeTerm(dir);
+
+		std::set<ID> nodes;
+		std::map<ID, std::set<ID> > outedges;
+		std::map<ID, bool> visited;
+		std::set<std::pair<ID, ID> > cycle;
+
+		bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+		bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+		while (en < en_end){
+			const OrdinaryAtom& ogatom = getRegistry()->ogatoms.getByAddress(*en);
+
+			nodes.insert(ogatom.tuple[1]);
+			nodes.insert(ogatom.tuple[2]);
+			outedges[ogatom.tuple[1]].insert(ogatom.tuple[2]);
+			if (!directed) outedges[ogatom.tuple[2]].insert(ogatom.tuple[1]);
+			en++;
+		}
+
+		BOOST_FOREACH (ID n, nodes){
+			if (dfscycle(directed, ID_FAIL, n, outedges, visited, cycle)){
+				Tuple t;
+				answer.get().push_back(t);
+			}
+		}
+	}
+};
+
+class TestAppendAtom:
+	public PluginAtom
+{
+public:
+  TestAppendAtom():
+		PluginAtom("testAppend", true)
+  {
+	addInputPredicate();
+	addInputConstant();
+	setOutputArity(1);
+
+	prop.antimonotonicInputPredicates.push_back(0);
+  }
+
+  virtual void
+  retrieve(const Query& query, Answer& answer)
+  {
+	bm::bvector<>::enumerator en = query.interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = query.interpretation->getStorage().end();
+
+	while (en < en_end){
+
+		std::string str = getRegistry()->terms.getByID(getRegistry()->ogatoms.getByAddress(*en).tuple[1]).getUnquotedString();
+		str = str + getRegistry()->terms.getByID(query.input[1]).getUnquotedString();
+		Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, str);
+		ID idout = getRegistry()->storeTerm(term);
+		Tuple t;
+		t.push_back(idout);
+		answer.get().push_back(t);
+
+		en++;
+	}
+  }
+};
+
 
 class TestPlugin:
   public PluginInterface
@@ -431,7 +1045,7 @@ public:
     setNameVersion("dlvhex-testplugin", 0, 0, 1);
   }
 
-  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx&) const
+  virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
     std::vector<PluginAtomPtr> ret;
 
@@ -443,9 +1057,20 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestZeroArityAtom("testZeroArity1", true), PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestConcatAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestSetMinusAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusNogoodBasedLearningAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestSetMinusRuleBasedLearningAtom(&ctx), PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestNonmonAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestNonmon2Atom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestIdAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestNegAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestMinusOneAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestEvenAtom, PluginPtrDeleter<PluginAtom>()));
 	  ret.push_back(PluginAtomPtr(new TestOddAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestLessThanAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestEqualAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestTransitiveClosureAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestCycleAtom, PluginPtrDeleter<PluginAtom>()));
+	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
 	}

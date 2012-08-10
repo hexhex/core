@@ -1,0 +1,3 @@
+[submodule "dlvhex-common"]
+	path = dlvhex-common
+	url = https://github.com/hexhex/build.git

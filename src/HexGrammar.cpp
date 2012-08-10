@@ -34,7 +34,10 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+// spirit parser node debugging
 //#define BOOST_SPIRIT_DEBUG
+// spirit parser node debugging for whitespace parser (comments and spaces)
+//#define BOOST_SPIRIT_DEBUG_WS
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/HexGrammar.h"

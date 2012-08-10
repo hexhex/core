@@ -39,11 +39,32 @@
 #include "dlvhex2/AnswerSet.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/Printer.h"
+#include "dlvhex2/ProgramCtx.h"
+#include "dlvhex2/PredicateMask.h"
 
 DLVHEX_NAMESPACE_BEGIN
 
-AnswerSetPrinterCallback::AnswerSetPrinterCallback()
+AnswerSetPrinterCallback::AnswerSetPrinterCallback(ProgramCtx& ctx)
 {
+  RegistryPtr reg = ctx.registry();
+
+  if( !ctx.config.getFilters().empty() )
+  {
+    filterpm.reset(new PredicateMask);
+
+    // setup mask with registry
+    filterpm->setRegistry(reg);
+
+    // setup mask with predicates
+    std::vector<std::string>::const_iterator it;
+    for(it = ctx.config.getFilters().begin();
+        it != ctx.config.getFilters().end(); ++it)
+    {
+      // retrieve/register ID for this constant
+      ID pred = reg->storeConstantTerm(*it);
+      filterpm->addPredicate(pred);
+    }
+  }
 }
 
 bool AnswerSetPrinterCallback::operator()(
@@ -54,21 +75,38 @@ bool AnswerSetPrinterCallback::operator()(
   // uses the Registry to print the interpretation, including
   // possible influence from AuxiliaryPrinter objects (if any are registered)
 
+  Interpretation::Storage::enumerator it, it_end;
+
   RegistryPtr reg = as->interpretation->getRegistry();
-  const Interpretation::Storage& bits = as->interpretation->getStorage();
+  Interpretation::Storage filteredbits; // must be in this scope!
+  if( !filterpm )
+  {
+    const Interpretation::Storage& bits =
+      as->interpretation->getStorage();
+    it = bits.first();
+    it_end = bits.end();
+  }
+  else
+  {
+    filterpm->updateMask();
+    filteredbits =
+      as->interpretation->getStorage() & filterpm->mask()->getStorage();
+    it = filteredbits.first();
+    it_end = filteredbits.end();
+  }
+
   std::ostream& o = std::cout;
 
   #warning TODO think about more efficient printing
   o << '{';
-  Interpretation::Storage::enumerator it = bits.first();
-  if( it != bits.end() )
+  if( it != it_end )
   {
     bool gotOutput =
       reg->printAtomForUser(o, *it);
     //DBGLOG(DBG,"printed with prefix ''  and output " << gotOutput << " " <<
     //    printToString<RawPrinter>(ID(ID::MAINKIND_ATOM | ID::SUBKIND_ATOM_ORDINARYG, *it), reg));
     it++;
-    for(; it != bits.end(); ++it)
+    for(; it != it_end; ++it)
     {
       if( gotOutput )
       {
@@ -86,7 +124,9 @@ bool AnswerSetPrinterCallback::operator()(
       }
     }
   }
-  o << '}' << std::endl;
+  o << '}';
+  as->printWeightVector(o);
+  o << std::endl;
 
   // never abort
   return true;

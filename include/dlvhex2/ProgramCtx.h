@@ -44,8 +44,11 @@
 #include "dlvhex2/FinalEvalGraph.h"
 #include "dlvhex2/EvalHeuristicBase.h"
 #include "dlvhex2/EvalGraphBuilder.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/ModelBuilder.h"
 #include "dlvhex2/Registry.h"
+#include "dlvhex2/Nogood.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/functional/factory.hpp>
@@ -97,6 +100,9 @@ public:
   EvalHeuristicPtr evalHeuristic;
   // factory for model builders
   ModelBuilderFactory modelBuilderFactory;
+  // factory for external atom evaluation heuristic and ufs check heuristic
+  ExternalAtomEvaluationHeuristicsFactoryPtr externalAtomEvaluationHeuristicsFactory;
+  UnfoundedSetCheckHeuristicsFactoryPtr unfoundedSetCheckHeuristicsFactory;
 
   ASPSolverManager::SoftwareConfigurationPtr aspsoftware;
 
@@ -118,10 +124,21 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
+  // stores the weight vector of the best known model
+  // if the vector is empty, then there was no solution so far
+  std::vector<int> currentOptimum;
+
   // used by plugins to store specific plugin data in ProgramCtx
   // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
   template<typename PluginT>
   typename PluginT::CtxData& getPluginData();
+
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::Environment if it is not yet stored in ProgramCtx
+  template<typename PluginT>
+  typename PluginT::Environment& getPluginEnvironment();
+  template<typename PluginT>
+  const typename PluginT::Environment& getPluginEnvironment() const;
 
   // TODO: add visibility policy (as in clasp)
 
@@ -196,6 +213,17 @@ public:
   void evaluate();
   void postProcess();
 
+  // subprogram handling
+  class SubprogramAnswerSetCallback : public ModelCallback{
+  public:
+    std::vector<InterpretationPtr> answersets;
+    virtual bool operator()(AnswerSetPtr model);
+    virtual ~SubprogramAnswerSetCallback();
+  };
+  std::vector<InterpretationPtr> evaluateSubprogram(InterpretationConstPtr edb, std::vector<ID>& idb);
+  std::vector<InterpretationPtr> evaluateSubprogram(InputProviderPtr& ip, InterpretationConstPtr addFacts);
+  std::vector<InterpretationPtr> evaluateSubprogram(ProgramCtx& pc, bool parse);
+
 protected:
   // symbol storage of this program context
   // (this is a shared ptr because we might want
@@ -209,6 +237,11 @@ protected:
   // externally we see this as a non-const reference, the shared_ptr is totally internal
   typedef std::map<std::string, boost::shared_ptr<PluginData> > PluginDataContainer;
   PluginDataContainer pluginData;
+
+  // environment associated with one specific plugin
+  // externally we see this as a non-const reference, the shared_ptr is totally internal
+  typedef std::map<std::string, boost::shared_ptr<PluginEnvironment> > PluginEnvironmentContainer;
+  PluginEnvironmentContainer pluginEnvironment;
 
   // atoms usable for evaluation (loaded from plugins or manually added)
   PluginAtomMap pluginAtoms;
@@ -231,6 +264,43 @@ typename PluginT::CtxData& ProgramCtx::getPluginData()
   }
   typename PluginT::CtxData* pret =
     dynamic_cast<typename PluginT::CtxData*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
+
+  // used by plugins to store specific plugin data in ProgramCtx
+  // default constructs PluginT::Environment if it is not yet stored in ProgramCtx
+template<typename PluginT>
+typename PluginT::Environment& ProgramCtx::getPluginEnvironment()
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginEnvironmentContainer::const_iterator it =
+    pluginEnvironment.find(pluginTypeName);
+  if( it == pluginEnvironment.end() )
+  {
+    it = pluginEnvironment.insert(std::make_pair(
+          pluginTypeName,
+          boost::shared_ptr<PluginEnvironment>(new typename PluginT::Environment))
+        ).first;
+  }
+  typename PluginT::Environment* pret =
+    dynamic_cast<typename PluginT::Environment*>(it->second.get());
+  assert(!!pret);
+  return *pret;
+}
+
+template<typename PluginT>
+const typename PluginT::Environment& ProgramCtx::getPluginEnvironment() const
+{
+  const std::string pluginTypeName(typeid(PluginT).name());
+  PluginEnvironmentContainer::const_iterator it =
+    pluginEnvironment.find(pluginTypeName);
+  if( it == pluginEnvironment.end() )
+  {
+    throw std::runtime_error("Cannot use getPluginEnvironment const before using not const");
+  }
+  const typename PluginT::Environment* pret =
+    dynamic_cast<const typename PluginT::Environment*>(it->second.get());
   assert(!!pret);
   return *pret;
 }

@@ -1,3 +1,198 @@
+2012-08-10  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* generator/: renamed to mlp-generator/ as this directory is only
+	relevant for MLPs.
+	* mlp-generator/: Likewise.
+
+	* src/ResultContainer.cpp: Removing deprecated file.
+
+2012-08-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
+
+	* README: Update libclingo version.
+
+	* AUTHORS: Add Christoph Redl.
+
+2012-08-02 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* AggregatePlugin.h: Implement first version of a new (internal)
+	plugin as an extension of the existing aggregate-plugin.
+	It realizes possibly nested DLV aggregates
+	(using the usual syntax) by a rewriting to external atoms;
+	this allows for using DLV aggregates also with clasp and internal
+	solver backend
+	* AggregatePlugin.cpp: Likewise
+
+2012-06-30 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* FLPModelGeneratorBase.h: Implement relaxed notion of strong
+	safety; see option --autostrongsafety
+	* FLPModelGeneratorBase.tcc: Likewise
+	* FLPModelGeneratorBase.cpp: Likewise
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* GuessAndCheckModelGenerator.h: Likewise
+	* GuessAndCheckModelGenerator.cpp: Likewise
+	* dlvhex.cpp: Likewise
+
+2012-06-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* checkout_build_potassco.sh: Added script to checkout and build
+	parts of potassco such that it can be used by dlvhex.
+	* src/Logger.cpp: Fixed problem of NDEBUG dlvhex vs DEBUG plugin
+	builds, now the worst thing that happens is a warning and possibly
+	slightly reduced performance in the plugin.
+
+2012-05-31 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* ID.h: Introduce a property for external atom input auxiliaries
+	* Registry.h: Likewise
+	* Registry.cpp: Likewise
+	* DependencyGraph.cpp: Likewise
+	* FLPModelGeneratorBase.cpp: Modify explicit FLP check
+	such that EA input rules are _not_ shifted
+	* UnfoundedSetChecker.cpp: Split program for UFS checking into
+	strongly connected components;
+	Implement "negative external learning" for UFS check
+	* UnfoundedSetChecker.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+	* AnnotatedGroundProgram.cpp: Group meta information about
+	ground programs (head-cyles, e-cycles,
+	mapping of auxes to EAs, etc.) in class AnnotatedGroundProgram
+	* AnnotatedGroundProgram.h: Likewise
+
+2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* EvalHeuristicGreedy.cpp: Add heuristic optimized for being
+	used with EBL and UFL
+	* EvalHeuristicGreedy.h: Likewise
+	* ComponentGraph.cpp: Add ComponentInfo property "fixedDomain"
+	* ComponentGraph.h: Likewise
+
+2012-05-18 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* PluginInterface.cpp Add nogood generalization
+	* PluginInterface.h Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp Likewise
+	* GenuineGuessAndCheckModelGenerator.h Likewise
+
+2012-05-09  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/State.cpp: Reimplemented -filter option (closes #59).
+	* src/AnswerSetPrinterCallback.cpp: Likewise.
+	* include/dlvhex2/AnswerSetPrinterCallback.h: Likewise.
+
+2012-05-05 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/Nogood.cpp: Likewise
+	* include/dlvhex2/Nogood.h: New print methods
+	* src/UnfoundedSetChecker.cpp: Nogood exchange
+	between UFS detection and main search
+	* include/dlvhex2/UnfoundedSetChecker.h: Likewise
+	* include/dlvhex2/FLPModelGeneratorBase.tcc: small changes
+
+2012-04-28 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* dlvhex.cpp: Remove option "--mincheck"
+	* GuessAndCheckModelGenerator.cpp: Likewise.
+	* GuessAndCheckModelGenerator.h: Likewise
+	* GenuineGuessAndCheckModelGenerator.cpp: Likewise;
+	Implement a framework for external atom evaluation heuristics
+	and UFS check heuristics.
+	* GenuineGuessAndCheckModelGenerator.h: Likewise
+
+2012-04-26 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* FLPModelGeneratorBase.h: Implement well-justified FLP semantics
+	* FLPModelGeneratorBase.cpp: Likewise
+
+2012-04-21  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/Registry.cpp: Implement reverse lookup for auxiliary constant symbols
+	* include/dlvhex2/h: Likewise
+
+2012-04-13  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* src/dlvhex.cpp: Change of default setting: no explicit minimality check by default (obsolete due to FLP check).
+	Add option "--ufslearn".
+	* include/dlvhex2/FLPModelGeneratorBase.h: Add an method for learning nogoods from UFS checks.
+	Move method for learning nogoods from failed FLP checks from GenuineGuessAndCheckModelGenerator.
+	* src/FLPModelGeneratorBase.cpp: Likewise
+	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h: Likewise
+	* src/GenuineGuessAndCheckModelGenerator.cpp: Likewise
+	* include/dlvhex2/ID.h:
+	Introduce property for external atom auxiliaries to distinct them from other auxiliaries
+	(needed by genuine solvers).
+	* include/dlvhex2/Registry.cpp: Update getAuxiliearyConstant accordingly.
+	* include/dlvhex2/OrdinaryAtomTable.h: Add method getIDByAddress.
+
+2012-04-11  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* include/dlvhex2/FLPModelGeneratorBase.h: Exploit (anti-)monotonicity in UFS check.
+	* src/FLPModelGeneratorBase.cpp: Likewise.
+
+2012-04-06  Christoph Redl   <redl@kr.tuwien.ac.at>
+	
+	* include/dlvhex2/FLPModelGeneratorBase.h: Implement UFS-based FLP check
+	* src/FLPModelGeneratorBase.cpp: Likewise.
+
+2012-04-02  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/OrdinaryASPSolver.h: Introducing OrdinaryASPSolver to
+	unify FLP model checking, GenuineSolver is a direct implementation of
+	this interface.
+	Added new wrapper "ASMOrdinaryASPSolver" for ASPSolverManager in
+	GuessAndCheckModelGenerator which implements OrdinaryASPSolver.
+	Made GenuineGuessAndCheckModelGenerator::postprocessedInput a const
+	pointer as it should be.
+	Made FLPModelGeneratorBase::isSubsetMinimalFLPModel a template method and
+	moved to FLPModelGeneratorBase.tcc.
+	* include/dlvhex2/FLPModelGeneratorBase.tcc: Likewise.
+	* include/dlvhex2/GuessAndCheckModelGenerator.h: Likewise.
+	* include/dlvhex2/FLPModelGeneratorBase.h: Likewise.
+	* include/dlvhex2/GenuineSolver.h: Likewise.
+	* include/dlvhex2/GenuineGuessAndCheckModelGenerator.h: Likewise.
+	* include/dlvhex2/fwd.h: Likewise.
+	* include/dlvhex2/Makefile.am: Likewise.
+	* src/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/GenuineGuessAndCheckModelGenerator.cpp: Likewise.
+	* src/FLPModelGeneratorBase.cpp: Likewise.
+
+	* include/dlvhex2/ASPSolverManager.h: Unifying: replacing ASPProgram by
+	OrdinaryASPProgram.
+	* include/dlvhex2/ASPSolver.h: Likewise.
+	* src/WellfoundedModelGenerator.cpp: Likewise.
+	* src/GuessAndCheckModelGenerator.cpp: Likewise.
+	* src/ASPSolver_libclingo.cpp: Likewise.
+	* src/ASPSolver_dlv.cpp: Likewise.
+	* src/MLPSolver.cpp: Likewise.
+	* src/ASPSolverManager.cpp: Likewise.
+	* src/ASPSolver.cpp: Likewise.
+	* src/PlainModelGenerator.cpp: Likewise.
+	* testsuite/TestASPSolver.cpp: Likewise.
+
+2012-03-28  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/Logger.h: Mutex for more readable logs in debug mode.
+	* src/Logger.cpp: Likewise.
+
+2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* include/dlvhex2/HexGrammar.tcc: Ensuring that after parsing the
+	IDs in idb are unique (workaround).
+	* src/HexParser.cpp: Likewise.
+
+2012-03-17  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* configure.ac: Fixing help message.
+
+	* include/dlvhex2/EvalHeuristicShared.h: Fixing --disable-shared build.
+	* src/Makefile.am: Likewise.
+	* src/EvalHeuristicShared.cpp: Likewise (new file).
+
+	* src/dlvhex.cpp: Loading plugins before failing if no input file. (This has
+	the benefit of giving a help message for all plugins even with no input file.)
+
 2012-03-11  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	Release version 2.0.0.
@@ -49,6 +244,10 @@
 	* testsuite/Makefile.am: Likewise.
 	* testsuite/run_TestDLVProcess.sh: Likewise (workaround to make it work,
 	should be solved properly but there is no documentation how to do it in boost).
+
+2012-02-21  Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* Merge trunk 3246-3554 into refactoring branch
 
 2012-02-01  Peter Schueller  <ps@kr.tuwien.ac.at>
 

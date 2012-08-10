@@ -1,0 +1,10 @@
+dom(a).
+dom(b).
+dom(c).
+dom(d).
+dom(e).
+dom(f).
+dom(g).
+dom(h).
+
+p(X) :- not &neg[X, p](X), dom(X).

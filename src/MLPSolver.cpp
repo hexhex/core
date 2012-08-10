@@ -1582,7 +1582,7 @@ bool MLPSolver::comp(ValueCallsType C)
               // try to get the answer set:	
 
               ASPSolverManager::ResultsPtr res;
-	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
+	      OrdinaryASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 
               // recording time to call DLV
               if ( recordingTime == 1 )
@@ -1694,7 +1694,7 @@ bool MLPSolver::comp(ValueCallsType C)
               // try to get the answer set:	
 
               ASPSolverManager::ResultsPtr res;
-	      ASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
+	      OrdinaryASPProgram program(registrySolver, idbRewrite, edbRewrite, 0);
 
               // recording time to call DLV
               if ( recordingTime == 1 )
@@ -1879,7 +1879,7 @@ bool MLPSolver::comp(ValueCallsType C)
 
           ASPSolverManager::ResultsPtr res;
 	  
-	  ASPProgram program(registrySolver, bottom, edbRewrite, 0);
+	  OrdinaryASPProgram program(registrySolver, bottom, edbRewrite, 0);
 
           // recording time to call DLV
           if ( recordingTime == 1 )

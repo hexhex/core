@@ -39,11 +39,36 @@ namespace
   Logger* instance = 0;
 }
 
+namespace
+{
+  boost::mutex* mutex = 0;
+}
+
 Logger& Logger::Instance()
 {
   if( instance == 0 )
     instance = new Logger();
   return *instance;
+}
+
+boost::mutex& Logger::Mutex()
+{
+  if( mutex == 0 )
+  {
+#ifdef NDEBUG
+    // rationale behind this message: if we use NDEBUG in dlvhex,
+    // this message will never appear (because Logger.h does not use the mutex).
+    // if we use NDEBUG in dlvhex but DEBUG in plugin, this appears and
+    // this might hit performance therefore we give a warning (once)
+    if( Logger::Instance().shallPrint(Logger::WARNING) ) {
+      Logger::Instance().stream() <<
+        "Logger (performance) warning: use NDEBUG "
+        "to deactivate logging mutex in plugin!" << std::endl;
+    }
+#endif
+    mutex = new boost::mutex();
+  }
+  return *mutex;
 }
 
 void Logger::setPrintLevels(Levels levels)
@@ -59,3 +84,6 @@ void Logger::setPrintLevelWidth(int width)
   levelwidth = width;
 }
 
+Logger::Levels Logger::getPrintLevels() const{
+  return printlevels;
+}

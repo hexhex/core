@@ -151,6 +151,13 @@ void ModuleHexParser::parse(InputProviderPtr in, ProgramCtx& ctx)
     LOG(ERROR,"---------" << std::string(usedLeft, '-') << "^");
     throw SyntaxError("Could not parse complete input!");
   }
+
+  // workaround: making IDs in idb unique
+  #warning we should probably also do this for MLP, at the same time we should probably generalize MLP better
+  #warning we should use std::set<ID> for IDB
+  std::set<ID> uniqueidb(ctx.idb.begin(), ctx.idb.end());
+  ctx.idb.clear();
+  ctx.idb.insert(ctx.idb.end(), uniqueidb.begin(), uniqueidb.end());
 }
 
 DLVHEX_NAMESPACE_END

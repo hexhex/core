@@ -103,6 +103,7 @@ struct Registry:
   // assume, that oatom.text is not initialized!
   // oatom.text will be modified
   //
+  ID storeOrdinaryAtom(OrdinaryAtom& ogatom);
   // ground version
   ID storeOrdinaryGAtom(OrdinaryAtom& ogatom);
   // nonground version
@@ -131,6 +132,9 @@ struct Registry:
   // assume term.kind is at least MAINKIND_TERM and term.symbol is fully initialized
   ID storeTerm(Term& term);
 
+  // create a globally new constand term (new ID and new text)
+  ID getNewConstantTerm(std::string prefix = "unnamed");
+
   // check if rule is contained in registry
   // if yes return integer id
   // otherwise store and return new id
@@ -150,6 +154,12 @@ struct Registry:
   // see Registry.cpp for documentation of types used internally in dlvhex
   // (plugins may also want to use this method for their own auxiliaries)
   ID getAuxiliaryConstantSymbol(char type, ID id);
+
+  // maps an auxiliary constant symbol back to the ID behind
+  ID getIDByAuxiliaryConstantSymbol(ID auxConstantID);
+
+  // maps an auxiliary constant symbol back to the type behind
+  char getTypeByAuxiliaryConstantSymbol(ID auxConstantID);
 
   // get predicate mask to auxiliary ground atoms
   InterpretationConstPtr getAuxiliaryGroundAtomMask();
@@ -184,6 +194,9 @@ struct Registry:
   // (returns even local variables for aggregates)
   // tuple t contains IDs of literals or atoms
   void getVariablesInTuple(const Tuple& t, std::set<ID>& out) const;
+
+  // get the predicate of an ordinary or external atom
+  ID getPredicateOfAtom(ID atom);
 
   //
   // printing framework

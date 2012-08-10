@@ -130,6 +130,10 @@ ExternalAtom::~ExternalAtom()
 {
 }
 
+const ExtSourceProperties& ExternalAtom::getExtSourceProperties() const{
+	return useProp ? prop : pluginAtom->getExtSourceProperties();
+}
+
 std::ostream& ExternalAtom::print(std::ostream& o) const
 {
   return o <<

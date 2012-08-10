@@ -722,9 +722,9 @@ void CreateEvalGraphState::createEvalGraph(ProgramCtx* ctx)
   assert(!!ctx->evalHeuristic && "need configured heuristic");
   DBGLOG(DBG,"invoking build() on eval heuristic");
   ctx->evalHeuristic->build(*egbuilder);
-  DBGLOG(DBG,"destructing eval heuristic");
-  // destruct heuristic
-  ctx->evalHeuristic.reset();
+  // do not destruct heuristic because we might reuse it in evaluateSubprogram
+  //DBGLOG(DBG,"destructing eval heuristic");
+  //ctx->evalHeuristic.reset();
   // destruct eval graph builder
   egbuilder.reset();
 
@@ -774,7 +774,7 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"setupProgramCtx");
 
   // default model outputting callback
-  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback);
+  ModelCallbackPtr asprinter(new AnswerSetPrinterCallback(*ctx));
   ctx->modelCallbacks.push_back(asprinter);
 
   // setup printing of auxiliaries
@@ -878,6 +878,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
       // copy interpretation! (callbacks can modify it)
       answerset->interpretation->getStorage() = interpretation->getStorage();
+      answerset->computeWeightVector();
 
       // add EDB if configured that way
       if( !ctx->config.getOption("NoFacts") )
@@ -886,22 +887,28 @@ EvaluateState::evaluate(ProgramCtx* ctx)
           ctx->edb->getStorage();
       }
 
-      BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-      {
-        bool aborthere = !(*mcb)(answerset);
-        abort |= aborthere;
-        if( aborthere )
-          LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-      }
-
-      #ifndef NDEBUG
-      //mb.printEvalGraphModelGraph(std::cerr);
-      #endif
+      // cost check
+      // compare the solution to the best known model
       gotModel = true;
-      if( mcountLimit != 0 && mcount >= mcountLimit )
-      {
-        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-        break;
+      if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum)){
+	ctx->currentOptimum = answerset->getWeightVector();
+
+        BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+        {
+          bool aborthere = !(*mcb)(answerset);
+          abort |= aborthere;
+          if( aborthere )
+            LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+        }
+
+        #ifndef NDEBUG
+        //mb.printEvalGraphModelGraph(std::cerr);
+        #endif
+        if( mcountLimit != 0 && mcount >= mcountLimit )
+        {
+          LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+          break;
+        }
       }
     }
   }
@@ -1033,6 +1040,17 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
   // use base State class with no failureState -> calling it will always throw an exception
   boost::shared_ptr<State> next(new State);
   changeState(ctx, next);
+
+  if( ctx->config.getOption("BenchmarkEAstderr") == 1 )
+  {
+    benchmark::BenchmarkController& bmc = benchmark::BenchmarkController::Instance();
+    //benchmark::ID eeval = bmc.getInstrumentationID("evaluate external atom");
+    benchmark::ID eeval = bmc.getInstrumentationID("PluginAtom retrieve");
+    const benchmark::BenchmarkController::Stat& stat = bmc.getStat(eeval);
+    std::cerr << stat.count << " ";
+    bmc.printInSecs(std::cerr, stat.duration, 3);
+    std::cerr << std::endl;
+  }
 }
 
 

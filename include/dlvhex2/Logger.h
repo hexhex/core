@@ -34,6 +34,15 @@
 #include <boost/optional.hpp>
 #include <boost/cstdint.hpp>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/tss.hpp>
+
+#ifndef NDEBUG
+# define LOG_SCOPED_LOCK(varname) boost::mutex::scoped_lock varname(Logger::Mutex());
+#else
+# define LOG_SCOPED_LOCK(varname) do { } while(false)
+#endif
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -59,7 +68,8 @@ public:
 
 private:
   std::ostream& out;
-  std::string indent;
+//  std::string indent;
+  boost::thread_specific_ptr<std::string> indent;
   Levels printlevels;
   // width of field for level printing, if 0, level is not printed
   int levelwidth;
@@ -69,7 +79,7 @@ private:
   // default output is all output levels, change this later with printlevels() = ...
   // default output is i hex character of level printed, change this later with levelwidth() = ...
   Logger():
-    out(std::cerr), indent(), printlevels(~static_cast<Levels>(0)), levelwidth(1) {}
+    out(std::cerr), printlevels(~static_cast<Levels>(0)), levelwidth(1) {}
 
   ~Logger()
     {
@@ -82,20 +92,24 @@ private:
 
 public:
   static Logger& Instance();
+  static boost::mutex& Mutex();
 
   inline std::ostream& stream()
     { return out; }
 
   void setPrintLevels(Levels levels);
   void setPrintLevelWidth(int width);
+  Levels getPrintLevels() const;
 
   // this method does not ask shallPrint!
   inline void startline(Levels forlevel)
     {
-      if( levelwidth == 0 )
-        out << indent;
-      else
-        out << std::hex << std::setw(levelwidth) << forlevel << std::dec << " " << indent;
+      if (!indent.get()) indent.reset(new std::string(""));
+      if( levelwidth == 0 ){
+        out << *indent;
+      }else{
+        out << std::hex << std::setw(levelwidth) << forlevel << std::dec << " " << *indent;
+      }
     }
 
   inline bool shallPrint(Levels forlevel)
@@ -133,35 +147,45 @@ public:
   public:
     // generic
     Closure(Logger& l, Levels level, const std::string& str, bool message):
-      l(l), level(level), cutoff(l.indent.size()), message(message)
+      l(l), level(level), message(message)
     {
+      if (!l.indent.get()) l.indent.reset(new std::string(""));
+      cutoff = l.indent->size();
+
       if( l.shallPrint(level) )
       {
-        l.indent += str + " ";
+        LOG_SCOPED_LOCK(lock);
+        *l.indent += str + " ";
         sayHello();
       }
     }
 
     // with value (converted/reinterpret-casted to const void* const)
     Closure(Logger& l, Levels level, const std::string& str, const void* const val, bool message):
-      l(l), level(level), cutoff(l.indent.size()), message(message)
+      l(l), level(level), message(message)
     {
+      if (!l.indent.get()) l.indent.reset(new std::string(""));
+      cutoff = l.indent->size();
+
       if( l.shallPrint(level) )
       {
+        LOG_SCOPED_LOCK(lock);
         std::stringstream ss;
         ss << str << "/" << val << " ";
-        l.indent += ss.str();
+        *l.indent += ss.str();
         sayHello();
       }
     }
 
     ~Closure()
     {
+      if (!l.indent.get()) l.indent.reset(new std::string(""));
       if( l.shallPrint(level) )
       {
+        LOG_SCOPED_LOCK(lock);
         sayGoodbye();
         // restore indentation level
-        l.indent.erase(cutoff);
+        l.indent->erase(cutoff);
       }
     }
   };
@@ -178,7 +202,8 @@ public:
 
 // the following will always be realized
 //#ifndef NDEBUG
-#  define LOG(level,streamout) do { if( Logger::Instance().shallPrint(Logger:: level) ) { \
+#  define LOG(level,streamout) do { LOG_SCOPED_LOCK(lock); \
+     if( Logger::Instance().shallPrint(Logger:: level) ) { \
        Logger::Instance().startline(Logger:: level); \
        Logger::Instance().stream() << streamout << std::endl; \
      } } while(false);

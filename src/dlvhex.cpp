@@ -58,14 +58,19 @@
 #include "dlvhex2/EvalHeuristicOldDlvhex.h"
 #include "dlvhex2/EvalHeuristicTrivial.h"
 #include "dlvhex2/EvalHeuristicEasy.h"
+#include "dlvhex2/EvalHeuristicGreedy.h"
 #include "dlvhex2/EvalHeuristicFromFile.h"
+#include "dlvhex2/ExternalAtomEvaluationHeuristics.h"
+#include "dlvhex2/UnfoundedSetCheckHeuristics.h"
 #include "dlvhex2/OnlineModelBuilder.h"
 #include "dlvhex2/OfflineModelBuilder.h"
 
 // internal plugins
 #include "dlvhex2/QueryPlugin.h"
+#include "dlvhex2/AggregatePlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
+#include "dlvhex2/WeakConstraintPlugin.h"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -130,12 +135,46 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
   //
   //      123456789-123456789-123456789-123456789-123456789-123456789-123456789-123456789-
   out << "     --               Parse from stdin." << std::endl
+//      << "     --instantiate    Generate ground program without evaluating (only useful with --genuinesolver)" << std::endl
+      << "     --extlearn[=iobehavior,monotonicity,functionality,linearity,neg,user,generalize]" << std::endl
+      << "                      Learn nogoods from external atom evaluation (only useful with --solver=genuineii or --solver=genuinegi)" << std::endl
+      << "                        iobehavior: Apply generic rules to learn input-output behavior" << std::endl
+      << "                        monotonicity: Apply special rules for monotonic and antimonotonic external atoms (only useful with iobehavior)" << std::endl
+      << "                        functionality: Apply special rules for functional external atoms" << std::endl
+      << "                        linearity: Apply special rules for external atoms which are linear in all(!) predicate parameters" << std::endl
+      << "                        neg: Learn negative information" << std::endl
+      << "                        user: Apply user-defined rules for nogood learning" << std::endl
+      << "                        generalize: Generalize learned ground nogoods to nonground nogoods" << std::endl
+      << "                      By default, all options except \"generalize\" are enabled" << std::endl
+      << "     --nongroundnogoods" << std::endl
+      << "                      Automatically instantiate learned nonground nogoods" << std::endl
+      << "     --flpcheck=[explicit,ufs,ufsm,none]" << std::endl
+      << "                      Sets the strategy used to check if a candidate is a subset-minimal model of the reduct" << std::endl
+      << "                        explicit (default): Compute the reduct and compare its models with the candidate" << std::endl
+      << "                        ufs: Use unfounded sets for minimality checking" << std::endl
+      << "                        ufsm: (monolithic) Use unfounded sets for minimality checking; do not decompose the program for UFS checking" << std::endl
+      << "                        none: Disable the check" << std::endl
+      << "     --ufslearn       Enable learning from UFS checks (only useful with --flpcheck=ufs)" << std::endl
+      << "     --eaheuristics=[always,never]" << std::endl
+      << "                      Selects the heuristics for external atom evaluation" << std::endl
+      << "                      always: Evaluate whenever possible" << std::endl
+      << "                      never: Only evaluate at the end" << std::endl
+      << "     --ufscheckheuristics=[post,max,periodic]" << std::endl
+      << "                      post: Do UFS check only over complete interpretations" << std::endl
+      << "                      max: Do UFS check as frequent as possible and over maximal subprograms" << std::endl
+      << "                      periodic: Do UFS check in periodic intervals" << std::endl
+      << " --modelqueuesize=N   Size of the model queue, i.e. number of models which can be computed in parallel" << std::endl
+      << "                        (only useful for clasp solver)" << std::endl
       << " -s, --silent         Do not display anything than the actual result." << std::endl
       << "     --mlp            Use dlvhex+mlp solver (modular nonmonotonic logic programs)" << std::endl
       << "     --forget         Forget previous instantiations that are not involved in current computation (mlp setting)." << std::endl
       << "     --split          Use instantiation splitting techniques" << std::endl
     //        << "--strongsafety     Check rules also for strong safety." << std::endl
       << "     --weaksafety     Skip strong safety check." << std::endl
+      << "     --autostrongsafety" << std::endl
+      << "                      Tries to automatically establish strong safety where the property is violated" << std::endl
+      << "                      (only useful with --weaksafety)" << std::endl
+      << "     --multithreading Parallelizes model candidate computation and external atom verification (experimental)" << std::endl
       << " -p, --plugindir=DIR  Specify additional directory where to look for plugin" << std::endl
       << "                      libraries (additionally to the installation plugin-dir" << std::endl
       << "                      and $HOME/.dlvhex/plugins). Start with ! to reset the" << std::endl
@@ -149,12 +188,15 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --noeval         Just parse the program, don't evaluate it (only useful" << std::endl
       << "                      with --verbose)." << std::endl
       << "     --keepnsprefix   Keep specified namespace-prefixes in the result." << std::endl
-      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo)" << std::endl
+      << "     --solver=S       Use S as ASP engine, where S is one of (dlv,dlvdb,libdlv,libclingo,genuineii,genuinegi,genuineic,genuinegc)" << std::endl
+      << "                        (genuineii=(i)nternal grounder and (i)nternal solver; genuinegi=(g)ringo grounder and (i)nternal solver" << std::endl
+      << "                         genuineic=(i)nternal grounder and (c)lasp solver; genuinegc=(g)ringo grounder and (c)lasp solver)" << std::endl
       << "     --nofacts        Do not output EDB facts" << std::endl
       << " -e, --heuristics=H   Use H as evaluation heuristics, where H is one of" << std::endl
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
+			<< "                      greedy - heuristics with advantages for external behavior learning" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -171,10 +213,12 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
       << "     --graphviz=G     Specify comma separated list of graph types to export as .dot files." << std::endl
       << "                      Default is none, graph types are:" << std::endl
       << "                      dep    - Dependency Graph (once per program)" << std::endl
+      << "                      cycinp - Graph for analysis cyclic predicate inputs (once per G&C-eval unit)" << std::endl
       << "                      comp   - Component Graph (once per program)" << std::endl
       << "                      eval   - Evaluation Graph (once per program)" << std::endl
       << "                      model  - Model Graph (once per program, after end of computation)" << std::endl
       << "                      imodel - Individual Model Graph (once per model)" << std::endl
+      << "     --welljustified  Uses well-justified FLP semantics instead of FLP semantics for G&C components (only useful with genuine solvers)" << std::endl
       << "     --keepauxpreds   Keep auxiliary predicates in answer sets" << std::endl
       << "     --version        Show version information." << std::endl;
 }
@@ -238,6 +282,8 @@ struct Config
 
 void processOptionsPrePlugin(int argc, char** argv, Config& config, ProgramCtx& pctx);
 
+extern dlvhex::ProgramCtx* globalpc = 0;
+
 int main(int argc, char *argv[])
 {
   const char* whoAmI = argv[0];
@@ -248,6 +294,7 @@ int main(int argc, char *argv[])
 
 	// program context
   ProgramCtx pctx;
+	globalpc = &pctx;
 	{
 		RegistryPtr registry(new Registry);
 		PluginContainerPtr pcp(new PluginContainer);
@@ -284,6 +331,23 @@ int main(int argc, char *argv[])
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
+  pctx.config.setOption("FLPCheck", 1);
+  pctx.config.setOption("UFSCheck", 0);
+  pctx.config.setOption("UFSCheckMonolithic", 0);
+  pctx.config.setOption("GenuineSolver", 0);
+  pctx.config.setOption("Instantiate", 0);
+  pctx.config.setOption("ExternalLearning", 0);
+  pctx.config.setOption("UFSLearning", 0);
+  pctx.config.setOption("ExternalLearningIOBehavior", 0);
+  pctx.config.setOption("ExternalLearningMonotonicity", 0);
+  pctx.config.setOption("ExternalLearningFunctionality", 0);
+  pctx.config.setOption("ExternalLearningLinearity", 0);
+  pctx.config.setOption("ExternalLearningNeg", 0);
+  pctx.config.setOption("ExternalLearningUser", 0);
+  pctx.config.setOption("ExternalLearningGeneralize", 0);
+  pctx.config.setOption("NongroundNogoodInstantiation", 0);
+  pctx.config.setOption("UFSCheckHeuristics", 0);
+  pctx.config.setOption("ModelQueueSize", 5);
   pctx.config.setOption("Silent", 0);
   pctx.config.setOption("Verbose", 0);
   pctx.config.setOption("WeakAllModels", 0);
@@ -291,6 +355,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("UseExtAtomCache",1);
   pctx.config.setOption("KeepNamespacePrefix",0);
   pctx.config.setOption("DumpDepGraph",0);
+  pctx.config.setOption("DumpCyclicPredicateInputAnalysisGraph",0);
   pctx.config.setOption("DumpCompGraph",0);
   pctx.config.setOption("DumpEvalGraph",0);
   pctx.config.setOption("DumpModelGraph",0);
@@ -303,7 +368,13 @@ int main(int argc, char *argv[])
   pctx.config.setOption("Forget", 0);
   pctx.config.setOption("Split", 0);
   pctx.config.setOption("SkipStrongSafetyCheck",0);
+  pctx.config.setOption("AutoStrongSafety",0);
+  pctx.config.setOption("MultiThreading",0);
+  pctx.config.setOption("WellJustified",0);
 	pctx.config.setOption("DumpEvaluationPlan",0);
+	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
+	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
+	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
 
 	// defaults of main
 	Config config;
@@ -322,10 +393,14 @@ int main(int argc, char *argv[])
 		{
 			PluginInterfacePtr queryPlugin(new QueryPlugin);
 			pctx.pluginContainer()->addInternalPlugin(queryPlugin);
+			PluginInterfacePtr aggregatePlugin(new AggregatePlugin);
+			pctx.pluginContainer()->addInternalPlugin(aggregatePlugin);
 			PluginInterfacePtr strongNegationPlugin(new StrongNegationPlugin);
 			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
 			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);
 			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
+			PluginInterfacePtr weakConstraintPlugin(new WeakConstraintPlugin);
+			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 		}
 
 		// before anything else we dump the logo
@@ -352,9 +427,6 @@ int main(int argc, char *argv[])
 			benchmark::BenchmarkController::finish();
 		}
 		BOOST_SCOPE_EXIT_END
-
-		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
-			throw UsageError("no input specified!");
 
 		// startup statemachine
 		pctx.changeState(StatePtr(new ShowPluginsState));
@@ -392,6 +464,10 @@ int main(int argc, char *argv[])
 		}
 		// use configured plugins to obtain plugin atoms
 		pctx.addPluginAtomsFromPluginContainer();
+
+		// now we check if we got input
+		if( !pctx.inputProvider || !pctx.inputProvider->hasContent() )
+			throw UsageError("no input specified!");
 
 		// convert input (only done if at least one plugin provides a converter)
 		pctx.convert();
@@ -539,9 +615,27 @@ void processOptionsPrePlugin(
 		{ "forget", no_argument, &longid, 15 },
 		{ "split", no_argument, &longid, 16 },
 		{ "dumpevalplan", required_argument, &longid, 17 },
+		{ "extlearn", optional_argument, 0, 18 },
+		{ "flpcheck", required_argument, 0, 20 },
+		{ "ufslearn", no_argument, 0, 23 },
+		{ "welljustified", optional_argument, 0, 25 },
+		{ "eaevalheuristics", required_argument, 0, 26 },
+		{ "ufscheckheuristics", required_argument, 0, 27 },
+		{ "benchmarkeastderr", no_argument, 0, 28 }, // perhaps only temporary
+		{ "explicitflpunshift", no_argument, 0, 29 }, // perhaps only temporary
+		{ "printlearnednogoodsstderr", no_argument, 0, 30 }, // perhaps only temporary
+		{ "nongroundnogoods", no_argument, 0, 31 },
+		{ "modelqueuesize", required_argument, 0, 32 },
+		{ "autostrongsafety", no_argument, 0, 33 },
+		{ "multithreading", no_argument, 0, 34 },
 		{ NULL, 0, NULL, 0 }
 	};
 
+  // default settings
+  pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+  pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
+
+  bool specifiedModelQueueSize = false;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1)
 	{
 		switch (ch)
@@ -615,6 +709,10 @@ void processOptionsPrePlugin(
 				else if( heuri == "easy" )
 				{
 					pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+				}
+				else if( heuri == "greedy" )
+				{
+					pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
 				}
 				else if( heuri.substr(0,7) == "manual:" )
 				{
@@ -737,6 +835,34 @@ void processOptionsPrePlugin(
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
 						}
+						else if( solver == "genuineii" )
+						{
+							pctx.config.setOption("GenuineSolver", 1);
+						}
+						else if( solver == "genuinegi" )
+						{
+							#if defined(HAVE_LIBGRINGO)
+							pctx.config.setOption("GenuineSolver", 2);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuineic" )
+						{
+							#if defined(HAVE_LIBCLASP)
+							pctx.config.setOption("GenuineSolver", 3);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
+						else if( solver == "genuinegc" )
+						{
+							#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+							pctx.config.setOption("GenuineSolver", 4);
+							#else
+							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
+							#endif
+						}
 						else
 						{
 							throw UsageError("unknown solver backend '" + solver +"' specified!");
@@ -766,6 +892,10 @@ void processOptionsPrePlugin(
 							if( token == "dep" )
 							{
 								pctx.config.setOption("DumpDepGraph",1);
+							}
+							else if( token == "cycinp" )
+							{
+								pctx.config.setOption("DumpCyclicPredicateInputAnalysisGraph",1);
 							}
 							else if( token == "comp" )
 							{
@@ -814,10 +944,190 @@ void processOptionsPrePlugin(
 				}
 			break;
 
+		case 18:
+			{
+				if (optarg){
+					boost::char_separator<char> sep(",");
+					std::string oa(optarg); // g++ 3.3 is unable to pass that at the ctor line below
+					boost::tokenizer<boost::char_separator<char> > tok(oa, sep);
+
+					for(boost::tokenizer<boost::char_separator<char> >::const_iterator f = tok.begin();
+							f != tok.end(); ++f)
+					{
+						const std::string& token = *f;
+						if (token == "iobehavior" )
+						{
+							pctx.config.setOption("ExternalLearningIOBehavior", 1);
+						}
+						else if( token == "monotonicity" )
+						{
+							pctx.config.setOption("ExternalLearningMonotonicity", 1);
+						}
+						else if( token == "functionality" )
+						{
+							pctx.config.setOption("ExternalLearningFunctionality", 1);
+						}
+						else if( token == "linearity" )
+						{
+							pctx.config.setOption("ExternalLearningLinearity", 1);
+						}
+                                                else if( token == "neg" )
+						{
+							pctx.config.setOption("ExternalLearningNeg", 1);
+						}
+                                                else if( token == "user" )
+						{
+							pctx.config.setOption("ExternalLearningUser", 1);
+						}
+                                                else if( token == "generalize" )
+						{
+							pctx.config.setOption("ExternalLearningGeneralize", 1);
+						}
+						else
+						{
+							throw GeneralError("Unknown learning option: \"" + token + "\"");
+						}
+					}
+				}else{
+					// by default, turn on all external learning rules
+					pctx.config.setOption("ExternalLearningIOBehavior", 1);
+					pctx.config.setOption("ExternalLearningMonotonicity", 1);
+					pctx.config.setOption("ExternalLearningFunctionality", 1);
+					pctx.config.setOption("ExternalLearningLinearity", 1);
+					pctx.config.setOption("ExternalLearningNeg", 1);
+					pctx.config.setOption("ExternalLearningUser", 1);
+					//pctx.config.setOption("ExternalLearningGeneralize", 1);	// do not activate by default (it is mostly counterproductive)
+				}
+			}
+
+			pctx.config.setOption("ExternalLearning", 1);
+
+			DBGLOG(DBG, "External learning: " << pctx.config.getOption("ExternalLearning") << " [iobehavior: " << pctx.config.getOption("ExternalLearningIOBehavior") << " [monotonicity: " << pctx.config.getOption("ExternalLearningMonotonicity") << ", functionlity: " << pctx.config.getOption("ExternalLearningFunctionality") << ", linearity: " << pctx.config.getOption("ExternalLearningLinearity") << ", user-defined: " << pctx.config.getOption("ExternalLearningUser") << "]");
+			break;
+
+		case 20:
+			{
+				std::string check(optarg);
+				if( check == "explicit" )
+				{
+					pctx.config.setOption("FLPCheck", 1);
+					pctx.config.setOption("UFSCheck", 0);
+				}else if( check == "ufs" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 0);
+				}else if( check == "ufsm" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 1);
+				}else{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 0);
+				}
+
+				LOG(INFO,"FLP Check: " << pctx.config.getOption("FLPCheck") << "; UFS Check: " << pctx.config.getOption("UFSCheck"));
+			}
+
+			break;
+
+		case 23:
+			pctx.config.setOption("UFSLearning", 1);
+			break;
+
+		case 25:
+			pctx.config.setOption("WellJustified", 1);
+			break;
+
+		case 26:
+			{
+				std::string heur(optarg);
+				if (heur == "always")
+				{
+					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsAlwaysFactory());
+				}
+				else if (heur == "never")
+				{
+					pctx.externalAtomEvaluationHeuristicsFactory.reset(new ExternalAtomEvaluationHeuristicsNeverFactory());
+				}
+				else
+				{
+					throw GeneralError(std::string("Unknown external atom evaluation heuristics: \"") + heur + std::string("\""));
+				}
+			}
+			break;
+
+		case 27:
+			{
+				std::string heur(optarg);
+				if (heur == "post")
+				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPostFactory());
+					pctx.config.setOption("UFSCheckHeuristics", 0);
+				}
+				else if (heur == "max")
+				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsMaxFactory());
+					pctx.config.setOption("UFSCheckHeuristics", 1);
+				}
+				else if (heur == "periodic")
+				{
+					pctx.unfoundedSetCheckHeuristicsFactory.reset(new UnfoundedSetCheckHeuristicsPeriodicFactory());
+					pctx.config.setOption("UFSCheckHeuristics", 2);
+				}
+				else
+				{
+					throw GeneralError(std::string("Unknown UFS check heuristics: \"") + heur + std::string("\""));
+				}
+			}
+			break;
+
+		case 28: pctx.config.setOption("BenchmarkEAstderr",1); break;
+		case 29: pctx.config.setOption("ExplicitFLPUnshift",1); break;
+
+		case 30: pctx.config.setOption("PrintLearnedNogoods",1); break;
+
+		case 31: pctx.config.setOption("NongroundNogoodInstantiation", 1); break;
+
+		case 32:
+			{
+				int queuesize = 5;
+				try
+				{
+					if( optarg[0] == '=' )
+						queuesize = boost::lexical_cast<unsigned>(&optarg[1]);
+					else
+						queuesize = boost::lexical_cast<unsigned>(optarg);
+				}
+				catch(const boost::bad_lexical_cast& e)
+				{
+					LOG(ERROR,"could not parse size of model queue '" << optarg << "' - using default=" << queuesize << "!");
+				}
+				if (queuesize < 1){
+					throw GeneralError(std::string("Model queue size must be > 0"));
+				}
+				pctx.config.setOption("ModelQueueSize", queuesize); break;
+				specifiedModelQueueSize = true;
+			}
+			break;
+
+		case 33: pctx.config.setOption("AutoStrongSafety", 1); break;
+
+		case 34: pctx.config.setOption("MultiThreading", 1); break;
+
 		case '?':
 			config.pluginOptions.push_back(argv[optind - 1]);
 			break;
 		}
+	}
+
+	// global constraints
+	if (pctx.config.getOption("UFSCheck") && !pctx.config.getOption("GenuineSolver")){
+		LOG(WARNING, "Unfounded Set Check is only supported for genuine solvers; will behave like flpcheck=none");
+	}
+	if (specifiedModelQueueSize && pctx.config.getOption("GenuineSolver") <= 2){
+		LOG(WARNING, "Model caching (modelqueuesize) is only compatible with clasp backend");
 	}
 
 	// configure plugin path

@@ -36,6 +36,10 @@
 #include "dlvhex2/PlainModelGenerator.h"
 #include "dlvhex2/WellfoundedModelGenerator.h"
 #include "dlvhex2/GuessAndCheckModelGenerator.h"
+#include "dlvhex2/GenuinePlainModelGenerator.h"
+#include "dlvhex2/GenuineWellfoundedModelGenerator.h"
+#include "dlvhex2/GenuineGuessAndCheckModelGenerator.h"
+#include "dlvhex2/GenuineGuessAndCheckModelGeneratorAsync.h"
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/Registry.h"
 #include "dlvhex2/ProgramCtx.h"
@@ -201,10 +205,24 @@ void EvalGraphBuilder::calculateNewEvalUnitInfos(
     // inner constraints stay inner constraints
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    // information about strongly safe variables and stratified literals
+		typedef std::pair<ID, std::set<ID> > Pair;
+		BOOST_FOREACH (Pair p, cio.stronglySafeVariables){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stronglySafeVariables[p.first].insert(id);
+			}
+		}
+		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stratifiedLiterals[p.first].insert(id);
+			}
+		}
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+    ci.fixedDomain |= cio.fixedDomain;
+    ci.componentIsMonotonic |= cio.componentIsMonotonic;
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -282,8 +300,13 @@ EvalGraphBuilder::createEvalUnit(
     {
       // no inner external atoms -> plain model generator factory
       LOG(DBG,"configuring plain model generator factory for eval unit " << u);
-      uprops.mgf.reset(new PlainModelGeneratorFactory(
-            ctx, ci, externalEvalConfig));
+      if (ctx.config.getOption("GenuineSolver") > 0){
+        uprops.mgf.reset(new GenuinePlainModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }else{
+        uprops.mgf.reset(new PlainModelGeneratorFactory(
+              ctx, ci, externalEvalConfig));
+      }
     }
     else
     {
@@ -292,15 +315,30 @@ EvalGraphBuilder::createEvalUnit(
         // inner external atoms and only in positive cycles and monotonic and no disjunctive rules
 				// -> wellfounded/fixpoint model generator factory
         LOG(DBG,"configuring wellfounded model generator factory for eval unit " << u);
-        uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          uprops.mgf.reset(new GenuineWellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }else{
+          uprops.mgf.reset(new WellfoundedModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
       }
       else
       {
         // everything else -> guess and check model generator factory
         LOG(DBG,"configuring guess and check model generator factory for eval unit " << u);
-        uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
-              ctx, ci, externalEvalConfig));
+        if (ctx.config.getOption("GenuineSolver") > 0){
+          if (ctx.config.getOption("MultiThreading")){
+            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorAsyncFactory(
+                  ctx, ci, externalEvalConfig));
+          }else{
+            uprops.mgf.reset(new GenuineGuessAndCheckModelGeneratorFactory(
+                  ctx, ci, externalEvalConfig));
+          }
+        }else{
+          uprops.mgf.reset(new GuessAndCheckModelGeneratorFactory(
+                ctx, ci, externalEvalConfig));
+        }
       }
     }
   }

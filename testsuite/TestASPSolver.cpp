@@ -82,8 +82,7 @@ void testSimple()
   //
 
   SolverSoftwareConfiguration config;
-//prs  ASPProgram program(ctx.registry(), ctx.idbList.front(), ctx.edbList.front(), 0);
-  ASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
+  OrdinaryASPProgram program(ctx.registry(), ctx.idb, ctx.edb, 0);
 
   ASPSolverManager mgr;
   LOG(INFO,"calling solve");

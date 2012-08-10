@@ -31,11 +31,11 @@
 #ifndef CAUALGORITHMS_HPP_INCLUDED__28092010
 #define CAUALGORITHMS_HPP_INCLUDED__28092010
 
-#include "dlvhex2/Logger.h"
-#include "dlvhex2/Printhelpers.h"
-#include "dlvhex2/EvalGraph.h"
-#include "dlvhex2/ModelGraph.h"
-#include "dlvhex2/ModelGenerator.h"
+#include "Logger.h"
+#include "Printhelpers.h"
+#include "EvalGraph.h"
+#include "ModelGraph.h"
+#include "ModelGenerator.h"
 
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/two_bit_color_map.hpp>

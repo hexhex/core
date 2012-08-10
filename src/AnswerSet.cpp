@@ -37,12 +37,86 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
+void AnswerSet::computeWeightVector(){
+
+	weightVector = std::vector<int>();
+	weightVector.push_back(0);
+
+	RegistryPtr reg = interpretation->getRegistry();
+
+	// go through all atoms
+	bm::bvector<>::enumerator en = interpretation->getStorage().first();
+	bm::bvector<>::enumerator en_end = interpretation->getStorage().end();
+
+	while (en < en_end){
+		ID id = reg->ogatoms.getIDByAddress(*en);
+		const OrdinaryAtom oatom = reg->ogatoms.getByAddress(*en);
+		if (id.isAuxiliary()){
+			if (reg->getTypeByAuxiliaryConstantSymbol(oatom.tuple[0]) == 'w'){
+				// tuple[1] and tuple[2] encode weight and level
+				assert (oatom.tuple[1].isIntegerTerm());
+				assert (oatom.tuple[2].isIntegerTerm());
+
+				// make sure that the weight vector is long enough
+				while (weightVector.size() < oatom.tuple[2].address + 1 || weightVector.size() == 0) weightVector.push_back(0);
+
+				weightVector[oatom.tuple[2].address] += oatom.tuple[1].address;
+			}
+		}
+		en++;
+	}
+}
+
+std::vector<int> AnswerSet::getWeightVector(){
+	return weightVector;
+}
+
+bool AnswerSet::betterThan(std::vector<int>& cwv){
+	int i = 0;
+	while (i < weightVector.size() && i < cwv.size()){
+		if (weightVector[i] < cwv[i]) return true;
+		if (cwv[i] < weightVector[i]) return false;
+		i++;
+	}
+	// levels which exist in both vectors have the same cost value
+	// check if one of the vectors has cost values on higher levels
+	if (weightVector.size() < cwv.size()){
+		for (i = weightVector.size(); i < cwv.size(); ++i)
+			if (cwv[i] > 0) return true;
+	}
+	if (cwv.size() < weightVector.size()){
+		for (i = cwv.size(); i < weightVector.size(); ++i)
+			if (weightVector[i] > 0) return false;
+	}
+	// no: same solution quality
+	return true;
+}
+
+std::ostream& AnswerSet::printWeightVector(std::ostream& o) const{
+  if (weightVector.size() > 0){
+	bool first = true;
+	for (int level = 0; level < weightVector.size(); ++level){
+		if (weightVector[level] > 0){
+			o << (first ? " <" : ",");
+			o << "[" << weightVector[level] << ":" << level << "]";
+			first = false;
+		}
+	}
+	if (!first) o << ">";
+  }
+  return o;
+}
+
 std::ostream& AnswerSet::print(std::ostream& o) const
 {
   // use ", " with space here! (compatibility)
   interpretation->print(o, "{", ", ", "}");
-  if( costWeight != -1 || costLevel != -1 )
-    o << ",weight=" << costWeight << ",level=" << costLevel;
+  if (weightVector.size() > 0){
+	printWeightVector(o);
+  }else{
+    if( costWeight != -1 || costLevel != -1 )
+      o << ",weight=" << costWeight << ",level=" << costLevel;
+  }
   return o;
 }
 

@@ -109,7 +109,7 @@ DLVLibSoftware::Delegate::~Delegate()
 }
 
 void
-DLVLibSoftware::Delegate::useASTInput(const ASPProgram& program)
+DLVLibSoftware::Delegate::useASTInput(const OrdinaryASPProgram& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"DLVLibSoftware::Delegate::useASTInput");
 

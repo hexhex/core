@@ -355,14 +355,14 @@ struct ConcurrentQueueResultsImpl:
 public:
   MyClingoApp myclingo;
   ClingoSoftware::Options options;
-  ASPProgram program;
+  OrdinaryASPProgram program;
   bool shouldTerminate;
   boost::thread answerSetProcessingThread;
 
 public:
   ConcurrentQueueResultsImpl(
       const ClingoSoftware::Options& options,
-      const ASPProgram& program):
+      const OrdinaryASPProgram& program):
     myclingo(*this, shouldTerminate),
     ConcurrentQueueResults(),
     options(options),
@@ -479,14 +479,16 @@ ClingoSoftware::Delegate::~Delegate()
 {
 }
 
+/*
 void
 ClingoSoftware::Delegate::useInputProviderInput(InputProvider& inp, RegistryPtr reg)
 {
   throw std::runtime_error("TODO implement ClingoSoftware::Delegate::useInputProviderInput(const InputProvider& inp, RegistryPtr reg)");
 }
+*/
 
 void
-ClingoSoftware::Delegate::useASTInput(const ASPProgram& program)
+ClingoSoftware::Delegate::useASTInput(const OrdinaryASPProgram& program)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"ClingoSoftware useASTInput");
 

@@ -78,9 +78,12 @@ public:
     #endif
 
     std::vector<ID> outerEatoms;
+
     std::vector<ID> innerRules;
     std::vector<ID> innerEatoms;
     std::vector<ID> innerConstraints;
+    boost::unordered_map<ID, std::set<ID> > stronglySafeVariables;
+    boost::unordered_map<ID, std::set<ID> > stratifiedLiterals;
 
     // this is determined by calculateComponents
     // and used for selecting model generator factories
@@ -88,6 +91,9 @@ public:
 		bool negationInCycles;
 		bool innerEatomsNonmonotonic;
 		bool outerEatomsNonmonotonic;
+		bool componentIsMonotonic;
+		bool fixedDomain;
+
 		// previous:
     //bool innerEatomsMonotonicAndOnlyPositiveCycles;
 		// := (!innerEatomsNonmonotonic && !negationInCycles && !disjunctiveHeads)
@@ -96,7 +102,9 @@ public:
       disjunctiveHeads(false),
 			negationInCycles(false),
 			innerEatomsNonmonotonic(false),
-			outerEatomsNonmonotonic(false) {}
+	outerEatomsNonmonotonic(false),
+	componentIsMonotonic(true),
+	fixedDomain(true){}
     std::ostream& print(std::ostream& o) const;
   };
 
@@ -238,6 +246,8 @@ protected:
 protected:
   // helpers for constructor
   void calculateComponents(const DependencyGraph& dg);
+  bool calculateFixedDomain(ComponentInfo& ci);
+  bool calculateStratificationInfo(ComponentInfo& ci);
 };
 
 DLVHEX_NAMESPACE_END

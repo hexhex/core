@@ -76,7 +76,7 @@ struct DLVSoftware:
 
     Delegate(const Options& options);
     virtual ~Delegate();
-    virtual void useASTInput(const ASPProgram& program);
+    virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 
@@ -105,7 +105,7 @@ struct DLVLibSoftware:
 
     Delegate(const Options& options);
     virtual ~Delegate();
-    virtual void useASTInput(const ASPProgram& program);
+    virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 
@@ -176,7 +176,7 @@ struct ClingoSoftware:
 
     Delegate(const Options& options);
     virtual ~Delegate();
-    virtual void useASTInput(const ASPProgram& program);
+    virtual void useASTInput(const OrdinaryASPProgram& program);
     virtual void useInputProviderInput(InputProvider& inp, RegistryPtr reg);
     virtual ASPSolverManager::ResultsPtr getResults();
 

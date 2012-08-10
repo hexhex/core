@@ -184,6 +184,22 @@ void Interpretation::bit_and(const Interpretation& other)
   bits &= other.bits;
 }
 
+InterpretationPtr Interpretation::getInterpretationWithoutExternalAtomAuxiliaries() const{
+
+	// create interpretation without aux bits, but otherwise equivalent to this one
+	InterpretationPtr out = InterpretationPtr(new Interpretation(registry));
+
+	bm::bvector<>::enumerator en = getStorage().first();
+	bm::bvector<>::enumerator en_end = getStorage().end();
+	while (en < en_end){
+		if (!registry->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+			out->setFact(*en);
+		}
+		en++;
+	}
+	return out;
+}
+
 bool Interpretation::operator==(const Interpretation& other) const
 {
   return bits == other.bits;

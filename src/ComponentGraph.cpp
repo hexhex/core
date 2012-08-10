@@ -86,11 +86,13 @@ ComponentGraph::ComponentGraph(const DependencyGraph& dg, RegistryPtr reg):
   #endif
   cg()
 {
+  DBGLOG(DBG, "Building component graph");
   calculateComponents(dg);
 }
 
 ComponentGraph::~ComponentGraph()
 {
+  DBGLOG(DBG, "Destructing component graph " << this);
 }
 
 namespace
@@ -305,7 +307,8 @@ namespace
 		const ExternalAtom& eatom = reg->eatoms.getByID(eatomid);
 		assert(!!eatom.pluginAtom);
 		PluginAtom* pa = eatom.pluginAtom;
-		if( pa->isMonotonic() )
+		if( eatom.getExtSourceProperties().isMonotonic() )
+//		if( pa->isMonotonic() )
 		{
 			DBGLOG(DBG,"  eatom " << eatomid << " is monotonic");
 			return true;
@@ -364,6 +367,8 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     NodeVector innerEatomNodes;
     sccToComponent[s] = c;
     ComponentInfo& ci = propsOf(c);
+    ci.componentIsMonotonic = true; // assume it's monotonic
+
     // collect rule and eatom ids in scc
     for(NodeSet::const_iterator itn = nodes.begin();
         itn != nodes.end(); ++itn)
@@ -390,6 +395,12 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 				{
 					assert(false);
 				}
+
+		// check if the rule uses default negation
+		const Rule& r = reg->rules.getByID(id);
+		BOOST_FOREACH (ID b, r.body){
+			if (b.isNaf()) ci.componentIsMonotonic = false;
+		}
       }
       else if( id.isExternalAtom() )
       {
@@ -436,6 +447,16 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
 		{
 			ci.negationInCycles = true;
 		}
+    // components are never monotonic if they contain disjunctions or nonmonotonic external atoms
+    if (ci.disjunctiveHeads || ci.innerEatomsNonmonotonic || ci.outerEatomsNonmonotonic){
+      ci.componentIsMonotonic = false;
+    }
+
+    // compute if this component has a fixed domain
+    ci.fixedDomain = calculateFixedDomain(ci);
+
+    // compute stratification of default-negated literals and predicate input parameters
+    calculateStratificationInfo(ci);
 
     DBGLOG(DBG,"-> outerEatoms " << printrange(ci.outerEatoms));
     DBGLOG(DBG,"-> innerRules " << printrange(ci.innerRules));
@@ -444,7 +465,8 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
     DBGLOG(DBG,"-> disjunctiveHeads=" << ci.disjunctiveHeads <<
 				" negationInCycles=" << ci.negationInCycles <<
 				" innerEatomsNonmonotonic=" << ci.innerEatomsNonmonotonic <<
-				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic);
+				" outerEatomsNonmonotonic=" << ci.outerEatomsNonmonotonic <<
+				" componentIsMonotonic=" << ci.componentIsMonotonic);
 
 		assert(( ci.outerEatoms.empty() ||
 				    (ci.innerRules.empty() && ci.innerConstraints.empty() && ci.innerEatoms.empty())) &&
@@ -502,6 +524,242 @@ void ComponentGraph::calculateComponents(const DependencyGraph& dg)
       } // for each dependency of *itn
     } // collect dependencies outgoing from node *itn in SCC s
   } // create dependencies outgoing from SCC s
+}
+
+
+bool ComponentGraph::calculateFixedDomain(ComponentInfo& ci)
+{
+	DBGLOG(DBG, "calculateFixedDomain");
+
+	bool fd = true;
+
+	// pure external components have only a fixed domain if the output of all outer external atoms
+	// contains no variables
+	if (ci.innerRules.empty() && !ci.outerEatoms.empty()){
+		BOOST_FOREACH (ID eaid, ci.outerEatoms){
+			const ExternalAtom& ea = reg->eatoms.getByID(eaid);
+			BOOST_FOREACH (ID ot, ea.tuple){
+				if (ot.isVariableTerm()) return false;
+			}
+		}
+		return true;
+	}
+
+	// get rule heads here
+	// here we store the full atom IDs (we need to unify, the predicate is not sufficient)
+	std::set<ID> headAtomIDs;
+	// we only consider inner rules (constraints have no heads)
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+	
+		BOOST_FOREACH(ID hid, rule.head)
+		{
+			if( !hid.isOrdinaryAtom() )
+			{
+				continue;
+			}
+			headAtomIDs.insert(hid);
+		}
+	}
+
+	// now check output variables
+
+	// we again only consider inner rules (positive domain expansion feedback
+	// cannot happen through constraints as they cannot generate symbols)
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		if( !rid.doesRuleContainExtatoms() )
+		{
+			continue;
+		}
+
+		const Rule& rule = reg->rules.getByID(rid);
+
+		// find all variable outputs in all eatoms in this rule's body
+		std::set<ID> varsToCheck;
+		BOOST_FOREACH(ID lid, rule.body)
+		{
+			if( !lid.isExternalAtom() )
+				continue;
+
+			const ExternalAtom& eatom = reg->eatoms.getByID(lid);
+			BOOST_FOREACH(ID tid, eatom.tuple)
+			{
+				if( tid.isVariableTerm() )
+					varsToCheck.insert(tid);
+			}
+		}
+
+		// for each variable:
+		// if it is part of a positive body atom of r
+		// and this positive body atom of r does not unify with any rule head in c
+		// then e is safe
+		BOOST_FOREACH(ID vid, varsToCheck)
+		{
+			// check strong safety of variable vid
+			DBGLOG(DBG,"checking fixed domain of variable " << 
+					printToString<RawPrinter>(vid,reg));
+
+			bool variableSafe = false;
+			BOOST_FOREACH(ID lid, rule.body)
+			{
+				// skip negative bodies
+				if( lid.isNaf() )
+					continue;
+
+				// skip external atoms,
+				// they could but cannot in general be assumed to limit the domain
+				// (and that's the reason we need to check strong safety)
+				if( lid.isExternalAtom() )
+					continue;
+
+				// skip non-ordinary atoms
+				#warning can we use aggregates to limit the domain for strong safety?
+				#warning can we use builtin atoms to limit the domain for strong safety?
+				if( lid.isAggregateAtom() ||
+						lid.isBuiltinAtom() )
+					continue;
+
+				assert(lid.isOrdinaryAtom());
+
+				// check if this body literal contains the variable
+				// and does not unify with any head
+				// (only then the variable is safe)
+				bool containsVariable = false;
+				const OrdinaryAtom& oatom = reg->lookupOrdinaryAtom(lid);
+				assert(!oatom.tuple.empty());
+				Tuple::const_iterator itv = oatom.tuple.begin();
+				itv++;
+				while( itv != oatom.tuple.end() )
+				{
+					if( *itv == vid )
+					{
+						containsVariable = true;
+						break;
+					}
+					itv++;
+				}
+
+				if( !containsVariable )
+				{
+					continue;
+				}
+
+				// oatom 'oatom' was retrieved using ID 'lid'
+				DBGLOG(DBG,"checking unifications of body literal " <<
+						printToString<RawPrinter>(lid, reg) << " with component rule heads");
+				bool doesNotUnify = true;
+				BOOST_FOREACH(ID hid, headAtomIDs)
+				{
+					DBGLOG(DBG,"checking against " <<
+							printToString<RawPrinter>(hid, reg));
+					assert(hid.isOrdinaryAtom());
+					const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+					if( oatom.unifiesWith(hoatom) )
+					{
+						DBGLOG(DBG,"unification successful "
+								"-> literal does not limit the domain");
+						doesNotUnify = false;
+						break;
+					}
+				}
+
+				if( doesNotUnify )
+				{
+					DBGLOG(DBG, "variable safe!");
+					variableSafe = true;
+					break;
+				}
+			}
+
+			if( !variableSafe )
+			{
+				// check if the variable occurs in an external atom with unstratified nonmonotonic parameters
+				bool nonmonotonicEA = false;
+				BOOST_FOREACH(ID lid, rule.body)
+				{
+					if(!lid.isNaf() && lid.isExternalAtom()){
+						if (ci.stratifiedLiterals.find(rid) == ci.stratifiedLiterals.end() ||
+						    std::find(ci.stratifiedLiterals.at(rid).begin(), ci.stratifiedLiterals.at(rid).end(), lid) == ci.stratifiedLiterals.at(rid).end()){
+							nonmonotonicEA = true;
+							break;
+						}
+					}
+				}
+
+				fd = false;
+			}else{
+				DBGLOG(DBG, "Variable " << vid << " is strongly safe in rule " << rid << " (" << &ci << ")");
+				ci.stronglySafeVariables[rid].insert(vid);
+			}
+		}
+	}
+	return fd;
+}
+
+bool ComponentGraph::calculateStratificationInfo(ComponentInfo& ci)
+{
+	DBGLOG(DBG, "calculateStratificationInfo");
+
+	// get the head atoms of all rules in this component
+	std::set<ID> headAtomIDs;
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+		
+		BOOST_FOREACH(ID hid, rule.head)
+		{
+			if (!hid.isOrdinaryAtom()) continue;
+			headAtomIDs.insert(hid);
+		}
+	}
+
+	// for all default-negated literals and predicate input parameters in this component
+	BOOST_FOREACH(ID rid, ci.innerRules)
+	{
+		const Rule& rule = reg->rules.getByID(rid);
+		
+		BOOST_FOREACH(ID bid, rule.body)
+		{
+			// default-negated literals
+			if (!bid.isExternalAtom() && bid.isNaf()){
+				// does it unify with a head atom in this component?
+				bool stratified = true;
+				BOOST_FOREACH (ID hid, headAtomIDs){
+					const OrdinaryAtom& boatom = reg->lookupOrdinaryAtom(bid);
+					const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+					if (boatom.unifiesWith(hoatom)){
+						stratified = false;
+						break;
+					}
+				}
+				if (stratified){
+					ci.stratifiedLiterals[rid].insert(bid);
+				}
+			}
+			// predicate input parameters
+			if (bid.isExternalAtom() && !bid.isNaf()){
+				const ExternalAtom& eatom = reg->eatoms.getByID(bid);
+				bool stratified = true;
+				for (int p = 0; p < eatom.inputs.size() && stratified; ++p){
+					if (eatom.pluginAtom->getInputType(p) == PluginAtom::PREDICATE && eatom.getExtSourceProperties().isNonmonotonic(p)){
+						// is this predicate defined in this component?
+						BOOST_FOREACH (ID hid, headAtomIDs){
+							const OrdinaryAtom& hoatom = reg->lookupOrdinaryAtom(hid);
+							if (hoatom.tuple[0] == eatom.inputs[p]){
+								stratified = false;
+								break;
+							}
+						}
+					}
+				}
+				if (stratified){
+					ci.stratifiedLiterals[rid].insert(bid);
+				}
+			}
+		}
+	}
 }
 
 // collapse components given in range into one new component
@@ -612,10 +870,25 @@ ComponentGraph::collapseComponents(
     // inner constraints stay inner constraints
 		ci.innerConstraints.insert(ci.innerConstraints.end(),
 				cio.innerConstraints.begin(), cio.innerConstraints.end());
+    // information about strongly safe variables and stratified literals
+		typedef std::pair<ID, std::set<ID> > Pair;
+		BOOST_FOREACH (Pair p, cio.stronglySafeVariables){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stronglySafeVariables[p.first].insert(id);
+			}
+		}
+		BOOST_FOREACH (Pair p, cio.stratifiedLiterals){
+			BOOST_FOREACH (ID id, p.second){
+				ci.stratifiedLiterals[p.first].insert(id);
+			}
+		}
 
     ci.disjunctiveHeads |= cio.disjunctiveHeads;
     ci.negationInCycles |= cio.negationInCycles;
 		ci.innerEatomsNonmonotonic |= cio.innerEatomsNonmonotonic;
+		ci.componentIsMonotonic &= cio.componentIsMonotonic;
+		if (!(!cio.outerEatoms.empty() && cio.innerRules.empty())) ci.fixedDomain &= cio.fixedDomain;	// pure external components shall have no influence on this property
+														// because domain restriction is always done in successor components
 
     // if *ito does not depend on any component in originals
     // then outer eatoms stay outer eatoms
@@ -729,10 +1002,13 @@ void ComponentGraph::writeGraphVizComponentLabel(std::ostream& o, Component c, u
 			if( ci.negationInCycles )
 				o << "{rules contain negation in cycles}|";
 		}
-    if( !ci.innerEatoms.empty() || ci.innerEatomsNonmonotonic )
+    if( !ci.innerEatoms.empty() && ci.innerEatomsNonmonotonic )
       o << "{inner eatoms nonmonotonic}|";
-    if( !ci.outerEatoms.empty() || ci.outerEatomsNonmonotonic )
+    if( !ci.outerEatoms.empty() && ci.outerEatomsNonmonotonic )
       o << "{outer eatoms nonmonotonic}|";
+
+    if( ci.fixedDomain )
+      o << "{fixed domain}|";
 		o << "}";
   }
   else
@@ -825,6 +1101,7 @@ ComponentGraph::ComponentGraph(const ComponentGraph& other):
   #endif
 	cg(other.cg)
 {
+  DBGLOG(DBG, "Building component graph");
 }
 
 // for explicit cloning of the graph

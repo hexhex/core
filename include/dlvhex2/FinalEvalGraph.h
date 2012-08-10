@@ -35,7 +35,7 @@
 #include "dlvhex2/Interpretation.h"
 #include "dlvhex2/ModelGenerator.h"
 #include "dlvhex2/EvalGraph.h"
-//#include "dlvhex2/ComponentGraph.hpp"
+//#include "dlvhex2/ComponentGraph.h"
 
 #include <boost/shared_ptr.hpp>
 

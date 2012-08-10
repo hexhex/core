@@ -36,6 +36,7 @@
 #include "dlvhex2/Logger.h"
 #include "dlvhex2/ID.h"
 #include "dlvhex2/PredicateMask.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -206,6 +207,10 @@ struct ExternalAtom:
   //
   mutable boost::shared_ptr<PredicateMask> inputMask;
 
+  // properties of this external atom
+  ExtSourceProperties prop;
+  bool useProp;
+
 public:
   ExternalAtom(IDKind kind, ID predicate, const Tuple& inputs, const Tuple& outputs):
     Atom(kind, outputs),
@@ -213,17 +218,46 @@ public:
     inputs(inputs),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask(new PredicateMask)
-    { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); }
+    inputMask(new PredicateMask),
+    useProp(false)
+    { assert(ID(kind,0).isExternalAtom()); assert(predicate.isConstantTerm()); prop.ea = this; }
   ExternalAtom(IDKind kind):
     Atom(kind),
     predicate(ID_FAIL),
     inputs(),
     pluginAtom(),
     auxInputPredicate(ID_FAIL),
-    inputMask(new PredicateMask)
-    { assert(ID(kind,0).isExternalAtom()); }
+    inputMask(new PredicateMask),
+    useProp(false)
+    { assert(ID(kind,0).isExternalAtom()); prop.ea = this; }
   ~ExternalAtom();
+
+  ExternalAtom(const ExternalAtom& ea) : Atom(ea){
+    predicate = ea.predicate;
+    inputs = ea.inputs;
+    pluginAtom = ea.pluginAtom;
+    auxInputPredicate = ea.auxInputPredicate;
+    auxInputMapping = ea.auxInputMapping;
+    inputMask = ea.inputMask;
+    prop = ea.prop;
+    useProp = ea.useProp;
+    prop.ea = this; // use the containing external atom
+  }
+
+  void operator=(const ExternalAtom& ea){
+    Atom::operator=(ea);
+    predicate = ea.predicate;
+    inputs = ea.inputs;
+    pluginAtom = ea.pluginAtom;
+    auxInputPredicate = ea.auxInputPredicate;
+    auxInputMapping = ea.auxInputMapping;
+    inputMask = ea.inputMask;
+    prop = ea.prop;
+    useProp = ea.useProp;
+    prop.ea = this; // use the containing external atom
+  }
+
+  const ExtSourceProperties& getExtSourceProperties() const;
 
   std::ostream& print(std::ostream& o) const;
 

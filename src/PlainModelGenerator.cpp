@@ -164,7 +164,7 @@ PlainModelGenerator::generateNextModel()
         // augment input with result of external atom evaluation
         // use newint as input and as output interpretation
         IntegrateExternalAnswerIntoInterpretationCB cb(newint);
-        evaluateExternalAtoms(reg, factory.eatoms, newint, cb);
+        evaluateExternalAtoms(factory.ctx, factory.eatoms, newint, cb);
         DLVHEX_BENCHMARK_REGISTER(sidcountexternalanswersets,
             "outer eatom computations");
         DLVHEX_BENCHMARK_COUNT(sidcountexternalanswersets,1);
@@ -189,7 +189,7 @@ PlainModelGenerator::generateNextModel()
 
       DLVHEX_BENCHMARK_REGISTER_AND_START(sidaspsolve,
           "initiating external solver");
-      ASPProgram program(reg,
+      OrdinaryASPProgram program(reg,
           factory.xidb, postprocessedInput, factory.ctx.maxint, mask);
       ASPSolverManager mgr;
       currentResults = mgr.solve(*factory.externalEvalConfig, program);

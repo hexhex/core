@@ -161,7 +161,7 @@ WellfoundedModelGenerator::generateNextModel()
       // augment input with result of external atom evaluation
       // use newint as input and as output interpretation
       IntegrateExternalAnswerIntoInterpretationCB cb(postprocessedInput);
-      evaluateExternalAtoms(reg, factory.outerEatoms, postprocessedInput, cb);
+      evaluateExternalAtoms(factory.ctx, factory.outerEatoms, postprocessedInput, cb);
       DLVHEX_BENCHMARK_REGISTER(sidcountexternalatomcomps,
           "outer eatom computations");
       DLVHEX_BENCHMARK_COUNT(sidcountexternalatomcomps,1);
@@ -196,14 +196,14 @@ WellfoundedModelGenerator::generateNextModel()
 
       // evaluate inner external atoms
       IntegrateExternalAnswerIntoInterpretationCB cb(dst);
-      evaluateExternalAtoms(reg, factory.innerEatoms, src, cb);
+      evaluateExternalAtoms(factory.ctx, factory.innerEatoms, src, cb);
       DBGLOG(DBG,"after evaluateExternalAtoms: dst is " << *dst);
 
       // solve program
       {
         // we don't use a mask here!
         // -> we receive all facts
-        ASPProgram program(reg,
+        OrdinaryASPProgram program(reg,
             factory.xidb, dst, factory.ctx.maxint);
         ASPSolverManager mgr;
         ASPSolverManager::ResultsPtr thisres =

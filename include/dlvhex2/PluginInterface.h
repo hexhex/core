@@ -185,13 +185,20 @@
 #include "dlvhex2/ID.h"
 #include "dlvhex2/Atoms.h"
 #include "dlvhex2/Error.h"
+#include "dlvhex2/CDNLSolver.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <map>
 #include <string>
 #include <iosfwd>
+#include <algorithm>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 /**
  * Definitions for C ABI interface for dlvhex plugins.
@@ -220,6 +227,9 @@
  */
 #define PLUGINABIVERSIONFUNCTION getDlvhex2ABIVersion
 #define PLUGINABIVERSIONFUNCTIONSTRING "getDlvhex2ABIVersion"
+
+#define PLUGINVERSIONFUNCTION getDlvhexPluginVersion
+#define PLUGINVERSIONFUNCTIONSTRING "getDlvhexPluginVersion"
 #define PLUGINIMPORTFUNCTION importPlugin
 #define PLUGINIMPORTFUNCTIONSTRING "importPlugin"
 #define IMPLEMENT_PLUGINABIVERSIONFUNCTION \
@@ -459,6 +469,24 @@ public:
 typedef boost::shared_ptr<PluginData> PluginDataPtr;
 
 /**
+ * \brief Base class for plugin-specific storage in ProgramCtx
+ *
+ * Concrete usage pattern:
+ * * derive from this in YourPluginClass::Environment
+ * * default construct this with ProgramCtx::getPluginEnvironment<YourPluginClass>
+ * * obtain where needed via ProgramCtx::getPluginEnvironment<YourPluginClass>
+ *
+ */
+class PluginEnvironment
+{
+public:
+    PluginEnvironment() {}
+  virtual ~PluginEnvironment() {}
+};
+typedef boost::shared_ptr<PluginEnvironment> PluginEnvironmentPtr;
+
+
+/**
  * \brief Interface class for external Atoms.
  *
  * \ingroup pluginframework
@@ -628,6 +656,11 @@ public:
   struct DLVHEX_EXPORT Query
   {
     /**
+	 * \brief Reference to the active program context.
+	 */
+    const ProgramCtx* ctx;
+
+    /**
 	 * \brief Bitset of ground atoms representing current (partial) model.
 	 *
 	 * Partial model contains bits about all atoms relevant for the computation,
@@ -656,16 +689,41 @@ public:
 	 * &extatom[a,b](X,c,X,d) the pattern is <X,c,X,d>.
 	 */
     Tuple pattern;
+    const ExternalAtom* eatom;
+    InterpretationPtr predicateInputMask;
 
     /**
      * \brief Construct query.
      */
-    Query(InterpretationConstPtr interpretation,
+    Query(const ProgramCtx* ctx,
+          InterpretationConstPtr interpretation,
           const Tuple& input,
-          const Tuple& pattern):
+          const Tuple& pattern,
+          const ExternalAtom* ea = 0,
+          const InterpretationPtr predicateInputMask = InterpretationPtr()):
+      ctx(ctx),
       interpretation(interpretation),
       input(input),
-      pattern(pattern) {}
+      pattern(pattern),
+      eatom(ea),
+      predicateInputMask(predicateInputMask)
+    {
+    }
+/*
+    Query(InterpretationConstPtr interpretation,
+          const Tuple& input,
+          const Tuple& pattern,
+          const ExternalAtom* ea = 0,
+          const InterpretationPtr predicateInputMask = InterpretationPtr()):
+      ctx(0),
+      interpretation(interpretation),
+      input(input),
+      pattern(pattern),
+      eatom(ea),
+      predicateInputMask(predicateInputMask)
+    {
+    }
+*/
 
     /**
 	 * Equality for hashing the query for caching query results.
@@ -778,17 +836,26 @@ protected:
    * - you must call setOutputArity().
    */
   PluginAtom(const std::string& predicate, bool monotonic):
-    predicate(predicate),
-    monotonic(monotonic) { }
+    predicate(predicate)/*,
+    monotonic(monotonic)*/
+    { prop.pa = this;
+      if (monotonic){
+        for (int i = 0; i < inputType.size(); ++i){
+          if (inputType[i] == PREDICATE) prop.monotonicInputPredicates.push_back(i);
+        }
+      }
+    }
 
   // The following functions are to be used in the constructor only.
 
   /**
    * \brief Adds an input parameter of type PREDICATE.
    *
+   * @param nameIsRelevant If true, the name of the predicate parameter might influence the result,
+   *                       otherwise only its extension is relevant.
    * Only use in constructor!
    */
-  void addInputPredicate();
+  void addInputPredicate(bool nameIsRelevant = false);
 
   /**
    * \brief Adds an input parameter of type CONSTANT.
@@ -840,6 +907,7 @@ public:
    * overridden.
    */
   virtual void retrieveCached(const Query&, Answer&);
+  virtual void retrieveCached(const Query&, Answer&, NogoodContainerPtr nogoods);
 
   /**
    * \brief Retrieve answer to a query (external computation happens here).
@@ -853,8 +921,30 @@ public:
    * - variables in pattern must be replaced by constants in answer tuples
    */
   virtual void retrieve(const Query&, Answer&) = 0;
+  virtual void retrieve(const Query&, Answer&, NogoodContainerPtr nogoods);
 
   /**
+   * \brief Tries to generalize learned nogoods to nonground nogoods. Should only be overridden by experienced users.
+   *
+   * \@param ng A learned nogood with some external atom auxiliary over this external predicate
+   * \@param ctx Program context
+   * \@param nogoods The nogood container where related nogoods shall be added
+   */
+  virtual void generalizeNogood(Nogood ng, ProgramCtx* ctx, NogoodContainerPtr nogoods);
+
+  /**
+   * \brief Splits a non-atomic query up into a set of atomic queries, such that the result of the
+   *        composed query corresponds to the union of the results to the atomic queries.
+   *        Should only be overridden by experienced users.
+   * \@param q A query
+   * \@param prop External source properties
+   * \@return std::vector<Query> A set of subqueries
+   */
+  virtual std::vector<Query> splitQuery(const Query& q, const ExtSourceProperties& prop);
+
+  /**
+   * \brief Returns the type of the input argument specified by position
+   * (starting with 0). Returns TUPLE for TUPLE input arguments (variably many).
    * \brief Returns the type of the input argument specified by position.
    *
    * Should not be overridden.
@@ -875,12 +965,25 @@ public:
     { return inputType; }
 
   /**
+   * @return general monotonicity
    * \brief Return monotonicity of atom.
    *
    * Should not be overridden.
    */
+/*
   bool isMonotonic() const
     { return monotonic; }
+*/
+
+  /**
+   * @return external source properties associated with this plugin atom
+   */
+  const ExtSourceProperties& getExtSourceProperties() const{
+    return prop;
+  }
+
+  // Associate plugin atom with registry pointer.
+  // (This implicitly calculates the predicate ID.)
 
   /**
    * \brief Associate plugin atom with registry pointer.
@@ -928,7 +1031,7 @@ public:
    */
   const std::string& getPredicate() const
     { return predicate; }
-  
+
 protected:
   // Predicate of the atom as it appears in HEX programs
   // (without leading &)
@@ -943,8 +1046,12 @@ protected:
   ID predicateID;
 
   // whether the function is monotonic or nonmonotonic
-  bool monotonic;
+//  bool monotonic;	// is now part of ExtSourceProperties
 
+  /// \brief general properties of the external source (may be overridden on atom-level)
+  ExtSourceProperties prop;
+
+  /// \brief Type of each input argument (only last may be TUPLE).
   // type of each input argument (only last may be TUPLE).
   std::vector<InputType> inputType;
 
@@ -953,11 +1060,28 @@ protected:
 
   // Query/Answer cache
   typedef boost::unordered_map<const Query, Answer> QueryAnswerCache;
+  typedef boost::unordered_map<const Query, SimpleNogoodContainerPtr> QueryNogoodCache;
   QueryAnswerCache queryAnswerCache;
+  QueryNogoodCache queryNogoodCache;
+  boost::mutex cacheMutex;
+
+  /// \brief output tuples generated so far (used for learning for
+  //         functional sources)
+  std::vector<Tuple> otuples;
+
+  /// \brief Registry associated with this atom
+  //
+  // This association cannot be done by the plugin itself, it is done by
+  // the PluginContainer loading or receiving the plugin.
 
   // Registry associated with this atom
   RegistryPtr registry;
+
+private:
+  PluginAtom(const PluginAtom& pa){}
+  const PluginAtom& operator=(const PluginAtom& pa){ return *this; }
 };
+
 typedef boost::shared_ptr<PluginAtom> PluginAtomPtr;
 typedef boost::weak_ptr<PluginAtom> PluginAtomWeakPtr;
 // hash function for QueryAnswerCache

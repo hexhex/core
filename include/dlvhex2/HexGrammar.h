@@ -54,6 +54,7 @@
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
 #include "dlvhex2/ID.h"
+#include "dlvhex2/ExtSourceProperties.h"
 
 #if BOOST_VERSION == 104700
 // workaround for spirit 1.47 issue with optional< optional<T> >
@@ -191,10 +192,12 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(builtinTernaryPrefix, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(aggregateAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(externalAtom, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(extSourceProperty, ExtSourceProperty);
   DLVHEX_DEFINE_SEMANTIC_ACTION(mlpModuleAtom, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(weakconstraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleName, std::string);
   DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleHeader, const boost::spirit::unused_type);
@@ -250,10 +253,10 @@ struct HexGrammarBase
   typename Rule<uint32_t>::type
     posinteger;
   typename Rule<ID>::type
-    term, pred, externalAtom, externalAtomPredicate, 
+    term, pred, externalAtom, externalAtomPredicate,
     mlpModuleAtom, mlpModuleAtomPredicate, predDecl,
     classicalAtomPredicate, classicalAtom, builtinAtom, aggregateAtom,
-    bodyAtom, bodyLiteral, headAtom, rule, constraint;
+    bodyAtom, bodyLiteral, headAtom, rule, constraint, weakconstraint;
   typename Rule<std::vector<ID> >::type
     terms, preds, predList;
   typename Rule<boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> > >::type
@@ -261,6 +264,10 @@ struct HexGrammarBase
   // rules that are extended by modules
   typename Rule<ID>::type
     toplevelExt, bodyAtomExt, headAtomExt, termExt;
+  typename Rule<std::vector<ExtSourceProperty> >::type
+    externalAtomProperties;
+  typename Rule<ExtSourceProperty>::type
+    externalAtomProperty;
   // symbol tables
   boost::spirit::qi::symbols<char, ID>
     builtinOpsUnary, builtinOpsBinary, builtinOpsTernary, builtinOpsAgg;

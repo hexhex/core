@@ -100,6 +100,10 @@ public:
   // assert that address exists in table
 	inline const OrdinaryAtom& getByAddress(IDAddress addr) const throw ();
 
+  // retrieve ID by address (ignore kind)
+  // assert that address exists in table
+	inline ID getIDByAddress(IDAddress addr) const throw ();
+
 	// given string, look if already stored
 	// if no, return ID_FAIL, otherwise return ID
 	inline ID getIDByString(const std::string& text) const throw();
@@ -155,6 +159,16 @@ OrdinaryAtomTable::getByAddress(
   // the following check only works for random access indices, but here it is ok
   assert( addr < idx.size() );
   return idx.at(addr);
+}
+
+// retrieve ID by address
+// assert that address exists in table
+ID
+OrdinaryAtomTable::getIDByAddress(
+    IDAddress addr) const throw ()
+{
+  const OrdinaryAtom& atom = getByAddress(addr);
+  return ID(atom.kind, addr);
 }
 
 

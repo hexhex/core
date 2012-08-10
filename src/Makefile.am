@@ -22,7 +22,7 @@ lib_LTLIBRARIES = \
   libdlvhex2-internalplugins.la
 
 # the dlvhex binary
-dlvhex2_SOURCES = dlvhex.cpp State.cpp
+dlvhex2_SOURCES = dlvhex.cpp
 
 #
 # -static: statically link libdlvhexbase
@@ -43,48 +43,74 @@ dlvhex2_LDADD = \
 
 # dlvhex API
 libdlvhex2_base_la_SOURCES = \
+    AggregatePlugin.cpp \
     AnswerSet.cpp \
+    AnnotatedGroundProgram.cpp \
     AnswerSetPrinterCallback.cpp \
     ASPSolverManager.cpp \
     Atoms.cpp \
     BaseModelGenerator.cpp \
     Benchmarking.cpp \
     CAUAlgorithms.cpp \
+    CDNLSolver.cpp \
+    ClaspSolver.cpp \
     ComfortPluginInterface.cpp \
     ComponentGraph.cpp \
     Configuration.cpp \
     DependencyGraph.cpp \
-		DumpingEvalGraphBuilder.cpp \
+    DumpingEvalGraphBuilder.cpp \
     Error.cpp \
     EvalGraphBuilder.cpp \
     EvalHeuristicEasy.cpp \
     EvalHeuristicFromFile.cpp \
+    EvalHeuristicGreedy.cpp \
     EvalHeuristicOldDlvhex.cpp \
+    EvalHeuristicShared.cpp \
     EvalHeuristicTrivial.cpp \
-		GraphvizHelpers.cpp \
+    ExternalAtomEvaluationHeuristics.cpp \
+    ExternalLearningHelper.cpp \
+    ExtSourceProperties.cpp \
+    FLPModelGeneratorBase.cpp \
+    GraphvizHelpers.cpp \
     PlainAuxPrinter.cpp \
     PlainModelGenerator.cpp \
+    GenuinePlainModelGenerator.cpp \
     PredicateMask.cpp \
     WellfoundedModelGenerator.cpp \
+    GenuineWellfoundedModelGenerator.cpp \
     GuessAndCheckModelGenerator.cpp \
+    GenuineGuessAndCheckModelGenerator.cpp \
+    GenuineGuessAndCheckModelGeneratorAsync.cpp \
+    GenuineSolver.cpp \
+    GringoGrounder.cpp \
     HexGrammar.cpp \
     HexParser.cpp \
     ID.cpp \
+    InternalGroundASPSolver.cpp \
+    InternalGroundDASPSolver.cpp \
+    InternalGrounder.cpp \
     InputProvider.cpp \
     Interpretation.cpp \
     Logger.cpp \
+    MLPSolver.cpp \
+    MLPSyntaxChecker.cpp \
+    Nogood.cpp \
+    NogoodGrounder.cpp \
     PluginContainer.cpp \
     PluginInterface.cpp \
     Printer.cpp \
     ProgramCtx.cpp \
     Registry.cpp \
     SafetyChecker.cpp \
-    URLBuf.cpp
+    SATSolver.cpp \
+    State.cpp \
+    URLBuf.cpp \
+    UnfoundedSetCheckHeuristics.cpp \
+    UnfoundedSetChecker.cpp \
+    WeakConstraintPlugin.cpp
 
 # dlvhex MLP component
-libdlvhex2_mlpsolver_la_SOURCES = \
-    MLPSolver.cpp \
-    MLPSyntaxChecker.cpp 
+libdlvhex2_mlpsolver_la_SOURCES =
 
 # dlvhex ASP component
 libdlvhex2_aspsolver_la_SOURCES = \

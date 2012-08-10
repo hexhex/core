@@ -47,6 +47,7 @@
 #include <boost/range/join.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/bimap/bimap.hpp>
 
 DLVHEX_NAMESPACE_BEGIN
 
@@ -66,6 +67,11 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is a constant term)
  * 'h': Higher order auxiliary (HigherOrderPlugin)
  *      (source ID is an integer (arity))
+ * 'a': Action auxiliary (ActionPlugin)
+ *      (source ID is the ID of the name of the action)
+ * 'd': domain predicates for auto strong safety
+ * 'g': aggregate input (internal AggregatePlugin)
+ * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  */
 
 namespace
@@ -80,6 +86,11 @@ struct AuxiliaryKey
     type(type), id(id) {}
 	inline bool operator==(const AuxiliaryKey& k2) const
     { return type == k2.type && id == k2.id; }
+
+
+	inline bool operator<(const AuxiliaryKey& k2) const
+    { // order by type, or by id if types are equal
+      return type == k2.type ? id < k2.id : type < k2.type; }
 };
 
 std::size_t hash_value(const AuxiliaryKey& key)
@@ -99,10 +110,17 @@ struct AuxiliaryValue
   ID id;
   AuxiliaryValue(const std::string& symbol, ID id):
     symbol(symbol), id(id) {}
+
+	inline bool operator<(const AuxiliaryValue& v2) const
+    { // lookup by ID
+      return id < v2.id; }
 };
 
-typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
+typedef boost::bimaps::bimap<AuxiliaryKey, AuxiliaryValue>
   AuxiliaryStorage;
+typedef AuxiliaryStorage::value_type AuxiliaryStorageTranslation;
+//typedef boost::unordered_map<AuxiliaryKey, AuxiliaryValue>
+//  AuxiliaryStorage;
 
 } // namespace {
 
@@ -318,6 +336,17 @@ void Registry::getVariablesInTuple(const Tuple& t, std::set<ID>& out) const
   }
 }
 
+// get the predicate of an ordinary or external atom
+ID Registry::getPredicateOfAtom(ID atom){
+	if (atom.isOrdinaryAtom()){
+		return lookupOrdinaryAtom(atom).tuple[0];
+	}else if (atom.isExternalAtom()){
+		return eatoms.getByID(atom).predicate;
+	}else{
+		assert(false);
+	}
+}
+
 namespace
 {
   // assume, that oatom.id and oatom.tuple is initialized!
@@ -350,6 +379,11 @@ namespace
     }
     return ret;
   }
+}
+
+ID Registry::storeOrdinaryAtom(OrdinaryAtom& oatom)
+{
+  return ((oatom.kind & ID::SUBKIND_MASK) == ID::SUBKIND_ATOM_ORDINARYG) ? storeOrdinaryAtomHelper(this, oatom, ogatoms) : storeOrdinaryAtomHelper(this, oatom, onatoms);
 }
 
 // ground version
@@ -450,6 +484,20 @@ ID Registry::storeTerm(Term& term)
   return storeConstOrVarTerm(term);
 }
 
+ID Registry::getNewConstantTerm(std::string prefix)
+{
+  static long nr = 0;
+  std::stringstream ss;
+  do{
+    ss.str("");
+    ss << prefix << nr;
+    nr++;
+  }while(terms.getIDByString(ss.str()) != ID_FAIL);
+  DBGLOG(DBG, "Creating new term with name '" << ss.str() << "'");
+  Term term(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, ss.str());
+  return storeTerm(term);
+}
+
 // check if rule is contained in registry
 // if yes return integer id
 // otherwise store and return new id
@@ -468,8 +516,8 @@ ID Registry::storeRule(Rule& rule)
 
 void Registry::setupAuxiliaryGroundAtomMask()
 {
-  assert(!pimpl->auxGroundAtomMask->mask() && "must not call setupAuxiliaryGroundAtomMask twice!");
-  pimpl->auxGroundAtomMask->setRegistry(shared_from_this());
+  if( !pimpl->auxGroundAtomMask->mask() )
+    pimpl->auxGroundAtomMask->setRegistry(shared_from_this());
 }
 
 ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
@@ -481,9 +529,9 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
 
   // lookup auxiliary
   AuxiliaryKey key(type,id);
-  AuxiliaryStorage::const_iterator it =
-    pimpl->auxSymbols.find(key);
-  if( it != pimpl->auxSymbols.end() )
+  AuxiliaryStorage::left_const_iterator it =
+    pimpl->auxSymbols.left.find(key);
+  if( it != pimpl->auxSymbols.left.end() )
   {
     DBGLOG(DBG,"found " << it->second.id);
     return it->second.id;
@@ -500,6 +548,10 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
       ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT | ID::PROPERTY_AUX,
       av.symbol);
 
+  // remember which auxiliaries represent in fact external atoms (used by genuine solvers)
+  if (type == 'r' || type == 'n') term.kind |= ID(ID::PROPERTY_EXTERNALAUX, 0);
+  if (type == 'i') term.kind |= ID(ID::PROPERTY_EXTERNALINPUTAUX, 0);
+
   // register ID for symbol
   av.id = terms.getIDByString(term.symbol);
   if( av.id != ID_FAIL)
@@ -508,7 +560,7 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   av.id = terms.storeAndGetID(term);
 
   // register auxiliary
-  pimpl->auxSymbols.insert(std::make_pair(key, av));
+  pimpl->auxSymbols.insert(AuxiliaryStorageTranslation(key, av));
 
   // update predicate mask
   pimpl->auxGroundAtomMask->addPredicate(av.id);
@@ -517,6 +569,39 @@ ID Registry::getAuxiliaryConstantSymbol(char type, ID id)
   DBGLOG(DBG,"returning id " << av.id << " for aux symbol " << av.symbol);
   return av.id;
 }
+
+// maps an auxiliary constant symbol back to the ID behind
+ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID){
+
+  // lookup ID of auxiliary
+  DBGLOG(DBG,"getIDByAuxiliaryConstantSymbol for " << auxConstantID);
+  AuxiliaryStorage::right_const_iterator it =
+    pimpl->auxSymbols.right.find(AuxiliaryValue("", auxConstantID));
+  if( it != pimpl->auxSymbols.right.end() )
+  {
+    DBGLOG(DBG,"found " << it->first.id);
+    return it->second.id;
+  }else{
+    return ID_FAIL;
+  }
+}
+
+// maps an auxiliary constant symbol back to the type behind
+char Registry::getTypeByAuxiliaryConstantSymbol(ID auxConstantID){
+
+  // lookup ID of auxiliary
+  DBGLOG(DBG,"getTypeByAuxiliaryConstantSymbol for " << auxConstantID);
+  AuxiliaryStorage::right_const_iterator it =
+    pimpl->auxSymbols.right.find(AuxiliaryValue("", auxConstantID));
+  if( it != pimpl->auxSymbols.right.end() )
+  {
+    DBGLOG(DBG,"found " << it->first.id);
+    return it->second.type;
+  }else{
+    return ' ' /* fail */;
+  }
+}
+
 
 // get predicate mask to auxiliary ground atoms
 InterpretationConstPtr Registry::getAuxiliaryGroundAtomMask()

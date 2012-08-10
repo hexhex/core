@@ -227,12 +227,15 @@ typedef GenericDepGraphCompGraphFixture<ProgramExt1ProgramCtxFixture>
 // implementation
 //
 
+extern dlvhex::ProgramCtx* globalpc;
+
 ProgramExt1ProgramCtxFixture::ProgramExt1ProgramCtxFixture():
   papCount(new TestPluginAtomCount),
   papReach(new TestPluginAtomReach)
 {
   using namespace dlvhex;
   ctx.setupRegistry(RegistryPtr(new Registry));
+  globalpc = &ctx;
 
   ctx.addPluginAtom(papCount);
   ctx.addPluginAtom(papReach);

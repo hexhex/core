@@ -1,0 +1,9 @@
+% specific head literal parser test
+
+q.
+
+a v b :- q.
+c v -d :- q.
+-b v -c :- q.
+-b v -c v -d v e :- q.
+a v -b v -c v -d v e :- q.

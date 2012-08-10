@@ -244,6 +244,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 							newsafevars.insert(atom.tuple[2]);
 							transfer = true;
 							break;
+						}else{
+							transfer = true;
+							break;
 						}
 					}
 					if( !atom.tuple[2].isVariableTerm() ||
@@ -254,6 +257,9 @@ bool transferSafeLiteralsAndNewlySafeVariables(
 						{
 							// first is something that can be made safe
 							newsafevars.insert(atom.tuple[1]);
+							transfer = true;
+							break;
+						}else{
 							transfer = true;
 							break;
 						}
@@ -555,6 +561,11 @@ StrongSafetyChecker::operator() () const throw (SyntaxError)
 		// ignore components without inner eatoms
 		// (they are automatically strongly safe)
 		if( ci.innerEatoms.empty() )
+			continue;
+
+		// ignore components without nonmonotonic inner external atoms, negation in cycles and disjunctive heads
+		// (they will be solved by the WellfoundedModelGenerator and do not need strong safety)
+		if( !ci.innerEatomsNonmonotonic && !ci.negationInCycles && !ci.disjunctiveHeads )
 			continue;
 
 		// check if any external atom has output variables

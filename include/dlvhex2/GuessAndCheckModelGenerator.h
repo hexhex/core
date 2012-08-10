@@ -35,8 +35,8 @@
 
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/fwd.h"
+#include "dlvhex2/FLPModelGeneratorBase.h"
 #include "dlvhex2/ID.h"
-#include "dlvhex2/BaseModelGenerator.h"
 #include "dlvhex2/ComponentGraph.h"
 #include "dlvhex2/PredicateMask.h"
 
@@ -44,40 +44,8 @@
 
 DLVHEX_NAMESPACE_BEGIN
 
-class GuessAndCheckModelGeneratorFactory;
-
-class GuessAndCheckModelGenerator:
-  public BaseModelGenerator,
-  public ostream_printable<GuessAndCheckModelGenerator>
-{
-  // types
-public:
-  typedef GuessAndCheckModelGeneratorFactory Factory;
-
-  // storage
-protected:
-  Factory& factory;
-
-  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
-  InterpretationConstPtr postprocessedInput;
-  // result handle for retrieving set of minimal models of this eval unit
-  ASPSolverManager::ResultsPtr currentResults;
-
-  // members
-public:
-  GuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
-  virtual ~GuessAndCheckModelGenerator() {}
-
-  // generate and return next model, return null after last model
-  virtual InterpretationPtr generateNextModel();
-
-  // TODO debug output?
-  //virtual std::ostream& print(std::ostream& o) const
-  //  { return o << "ModelGeneratorBase::print() not overloaded"; }
-};
-
 class GuessAndCheckModelGeneratorFactory:
-  public BaseModelGeneratorFactory,
+  public FLPModelGeneratorFactoryBase,
   public ostream_printable<GuessAndCheckModelGeneratorFactory>
 {
   // types
@@ -89,38 +57,14 @@ public:
 protected:
   // which solver shall be used for external evaluation?
   ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig;
+
   ProgramCtx& ctx;
 
-  //
-  // see also comments in GuessAndCheckModelGenerator.cpp
-  //
+  ComponentInfo ci;  // should be a reference, but there is currently a bug in the copy constructor of ComponentGraph: it seems that the component info is shared between different copies of a component graph, hence it is deallocated when one of the copies dies.
+  #warning TODO see comment above about ComponentInfo copy construction bug
 
   // outer external atoms
   std::vector<ID> outerEatoms;
-
-  // inner external atoms
-  std::vector<ID> innerEatoms;
-  // one guessing rule for each inner eatom
-  // (if one rule contains two inner eatoms, two guessing rules are created)
-  std::vector<ID> gidb;
-
-  // original idb (containing eatoms where all inputs are known
-  // -> auxiliary input rules of these eatoms must be in predecessor unit!)
-  std::vector<ID> idb;
-  // idb rewritten with eatom replacement atoms
-  std::vector<ID> xidb;
-  // xidb rewritten for FLP calculation
-  std::vector<ID> xidbflphead;
-  std::vector<ID> xidbflpbody;
-
-  // cache: xidb+gidb
-  std::vector<ID> xgidb;
-
-  // bitmask for filtering out (positive and negative) guessed eatom replacement predicates
-  PredicateMask gpMask;
-  PredicateMask gnMask;
-  // bitmask for filtering out FLP predicates
-  PredicateMask fMask;
 
   // methods
 public:
@@ -129,12 +73,40 @@ public:
       ASPSolverManager::SoftwareConfigurationPtr externalEvalConfig);
   virtual ~GuessAndCheckModelGeneratorFactory() {}
 
-  virtual ModelGeneratorPtr createModelGenerator(
-    InterpretationConstPtr input)
-    { return ModelGeneratorPtr(new GuessAndCheckModelGenerator(*this, input)); }
+  virtual ModelGeneratorPtr createModelGenerator(InterpretationConstPtr input);
 
   virtual std::ostream& print(std::ostream& o) const;
   virtual std::ostream& print(std::ostream& o, bool verbose) const;
+};
+
+class GuessAndCheckModelGenerator:
+  public FLPModelGeneratorBase,
+  public ostream_printable<GuessAndCheckModelGenerator>
+{
+  // types
+public:
+  typedef GuessAndCheckModelGeneratorFactory Factory;
+
+  // storage
+protected:
+  // we store the factory again, because the base class stores it with the base type only!
+  Factory& factory;
+
+  // edb + original (input) interpretation plus auxiliary atoms for evaluated external atoms
+  InterpretationConstPtr postprocessedInput;
+  // non-external fact input, i.e., postprocessedInput before evaluating outer eatoms
+  InterpretationPtr mask;
+
+  // result handle for retrieving edb+xidb+gidb guesses of this eval unit
+  ASPSolverManager::ResultsPtr guessres;
+
+  // members
+public:
+  GuessAndCheckModelGenerator(Factory& factory, InterpretationConstPtr input);
+  virtual ~GuessAndCheckModelGenerator() {}
+
+  // generate and return next model, return null after last model
+  virtual InterpretationPtr generateNextModel();
 };
 
 DLVHEX_NAMESPACE_END

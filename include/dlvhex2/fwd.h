@@ -72,6 +72,11 @@ class Interpretation;
 typedef boost::shared_ptr<const Interpretation> InterpretationConstPtr;
 typedef boost::shared_ptr<Interpretation> InterpretationPtr;
 
+struct OrdinaryASPProgram;
+
+struct OrdinaryASPSolver;
+typedef boost::shared_ptr<OrdinaryASPSolver> OrdinaryASPSolverPtr;
+
 struct OrdinaryAtom;
 
 class PluginData;

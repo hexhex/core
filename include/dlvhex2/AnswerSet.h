@@ -53,11 +53,22 @@ public:
   InterpretationPtr interpretation;
   int costWeight;
   int costLevel;
+  std::vector<int> weightVector;
+
+  // weight vector handling
+  void computeWeightVector();
+  std::vector<int> getWeightVector();
+  bool betterThan(std::vector<int>& cwv);
+  std::ostream& printWeightVector(std::ostream& o) const;
 
   AnswerSet(RegistryPtr registry):
-    interpretation(new Interpretation(registry)), costWeight(-1), costLevel(-1) {}
+    interpretation(new Interpretation(registry)), costWeight(-1), costLevel(-1) {
+    computeWeightVector();
+  }
   AnswerSet(InterpretationPtr interpretation):
-    interpretation(interpretation), costWeight(-1), costLevel(-1) {}
+    interpretation(interpretation), costWeight(-1), costLevel(-1) {
+    computeWeightVector();
+  }
   virtual ~AnswerSet() {}
 
   virtual std::ostream& print(std::ostream& o) const;
