@@ -158,6 +158,9 @@ struct Registry:
   // maps an auxiliary constant symbol back to the ID behind
   ID getIDByAuxiliaryConstantSymbol(ID auxConstantID);
 
+  // maps an auxiliary constant symbol back to the type behind
+  char getTypeByAuxiliaryConstantSymbol(ID auxConstantID);
+
   // get predicate mask to auxiliary ground atoms
   InterpretationConstPtr getAuxiliaryGroundAtomMask();
 

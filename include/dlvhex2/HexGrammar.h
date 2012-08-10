@@ -197,6 +197,7 @@ public:
   DLVHEX_DEFINE_SEMANTIC_ACTION(bodyLiteral, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(rule, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(constraint, ID);
+  DLVHEX_DEFINE_SEMANTIC_ACTION(weakconstraint, ID);
   DLVHEX_DEFINE_SEMANTIC_ACTION(add, const boost::spirit::unused_type);
   DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleName, std::string);
   DLVHEX_DEFINE_SEMANTIC_ACTION(addMLPModuleHeader, const boost::spirit::unused_type);
@@ -255,7 +256,7 @@ struct HexGrammarBase
     term, pred, externalAtom, externalAtomPredicate,
     mlpModuleAtom, mlpModuleAtomPredicate, predDecl,
     classicalAtomPredicate, classicalAtom, builtinAtom, aggregateAtom,
-    bodyAtom, bodyLiteral, headAtom, rule, constraint;
+    bodyAtom, bodyLiteral, headAtom, rule, constraint, weakconstraint;
   typename Rule<std::vector<ID> >::type
     terms, preds, predList;
   typename Rule<boost::fusion::vector3<ID, std::vector<ID>, std::vector<ID> > >::type

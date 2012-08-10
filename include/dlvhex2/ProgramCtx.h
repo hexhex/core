@@ -124,6 +124,10 @@ public:
   // maxint setting, this is ID_FAIL if it is not specified, an integer term otherwise
   uint32_t maxint;
 
+  // stores the weight vector of the best known model
+  // if the vector is empty, then there was no solution so far
+  std::vector<int> currentOptimum;
+
   // used by plugins to store specific plugin data in ProgramCtx
   // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx
   template<typename PluginT>

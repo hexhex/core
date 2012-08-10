@@ -111,4 +111,5 @@ pkginclude_HEADERS = \
   UnfoundedSetCheckHeuristics.h \
   UnfoundedSetChecker.h \
   GenuineWellfoundedModelGenerator.h \
+  WeakConstraintPlugin.h \
   WellfoundedModelGenerator.h

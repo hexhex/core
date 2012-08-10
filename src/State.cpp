@@ -878,6 +878,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
       // copy interpretation! (callbacks can modify it)
       answerset->interpretation->getStorage() = interpretation->getStorage();
+      answerset->computeWeightVector();
 
       // add EDB if configured that way
       if( !ctx->config.getOption("NoFacts") )
@@ -886,22 +887,28 @@ EvaluateState::evaluate(ProgramCtx* ctx)
           ctx->edb->getStorage();
       }
 
-      BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-      {
-        bool aborthere = !(*mcb)(answerset);
-        abort |= aborthere;
-        if( aborthere )
-          LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-      }
-
-      #ifndef NDEBUG
-      //mb.printEvalGraphModelGraph(std::cerr);
-      #endif
+      // cost check
+      // compare the solution to the best known model
       gotModel = true;
-      if( mcountLimit != 0 && mcount >= mcountLimit )
-      {
-        LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-        break;
+      if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum)){
+	ctx->currentOptimum = answerset->getWeightVector();
+
+        BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+        {
+          bool aborthere = !(*mcb)(answerset);
+          abort |= aborthere;
+          if( aborthere )
+            LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+        }
+
+        #ifndef NDEBUG
+        //mb.printEvalGraphModelGraph(std::cerr);
+        #endif
+        if( mcountLimit != 0 && mcount >= mcountLimit )
+        {
+          LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+          break;
+        }
       }
     }
   }

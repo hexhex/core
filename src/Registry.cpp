@@ -69,6 +69,9 @@ DLVHEX_NAMESPACE_BEGIN
  *      (source ID is an integer (arity))
  * 'a': Action auxiliary (ActionPlugin)
  *      (source ID is the ID of the name of the action)
+ * 'd': domain predicates for auto strong safety
+ * 'g': aggregate input (internal AggregatePlugin)
+ * 'w': used for rewritten weak constraints (internal WeakConstraintPlugin)
  */
 
 namespace
@@ -582,6 +585,23 @@ ID Registry::getIDByAuxiliaryConstantSymbol(ID auxConstantID){
     return ID_FAIL;
   }
 }
+
+// maps an auxiliary constant symbol back to the type behind
+char Registry::getTypeByAuxiliaryConstantSymbol(ID auxConstantID){
+
+  // lookup ID of auxiliary
+  DBGLOG(DBG,"getTypeByAuxiliaryConstantSymbol for " << auxConstantID);
+  AuxiliaryStorage::right_const_iterator it =
+    pimpl->auxSymbols.right.find(AuxiliaryValue("", auxConstantID));
+  if( it != pimpl->auxSymbols.right.end() )
+  {
+    DBGLOG(DBG,"found " << it->first.id);
+    return it->second.type;
+  }else{
+    return ' ' /* fail */;
+  }
+}
+
 
 // get predicate mask to auxiliary ground atoms
 InterpretationConstPtr Registry::getAuxiliaryGroundAtomMask()

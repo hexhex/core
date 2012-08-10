@@ -836,6 +836,37 @@ struct sem<HexGrammarSemantics::constraint>
   }
 };
 
+template<>
+struct sem<HexGrammarSemantics::weakconstraint>
+{
+  void operator()(
+    HexGrammarSemantics& mgr,
+    const boost::fusion::vector2<
+      const std::vector<dlvhex::ID>&,
+      const boost::optional<boost::fusion::vector2<ID, ID> >& >& source,
+    ID& target)
+  {
+    Rule r(ID::MAINKIND_RULE | ID::SUBKIND_RULE_WEAKCONSTRAINT);
+    r.body = boost::fusion::at_c<0>(source);
+    if (!!boost::fusion::at_c<1>(source)){
+	r.weight = boost::fusion::at_c<0>(boost::fusion::at_c<1>(source).get());
+	r.level = boost::fusion::at_c<1>(boost::fusion::at_c<1>(source).get());
+    }else{
+        r.weight = ID::termFromInteger(1);
+        r.level = ID::termFromInteger(1);
+    }
+    mgr.markExternalPropertyIfExternalBody(mgr.ctx.registry(), r);
+    mgr.markModulePropertyIfModuleBody(mgr.ctx.registry(), r);
+    ID existing = mgr.ctx.registry()->rules.getIDByElement(r);
+    if( existing == ID_FAIL )
+    {
+      target = mgr.ctx.registry()->storeRule(r);
+      DBGLOG(DBG,"created weak constraint " << r << " with id " << target);
+    }
+    else
+      target = ID_FAIL;
+  }
+};
 
 template<>
 struct sem<HexGrammarSemantics::addMLPModuleName>
@@ -1144,6 +1175,13 @@ HexGrammarBase(HexGrammarSemantics& sem):
         (bodyLiteral % qi::char_(',')) >>
         qi::lit('.')
       ) [ Sem::constraint(sem) ];
+  weakconstraint
+    = (
+        qi::lit(":~") >>
+        (bodyLiteral % qi::char_(',')) >>
+        qi::lit('.') >>
+        -(qi::lit("[") >> term >> qi::lit(":") >> term >> qi::lit("]"))
+      ) [ Sem::weakconstraint(sem) ];
   toplevelBuiltin
     = (qi::lit("#maxint") > qi::lit('=') > qi::ulong_ >> qi::lit('.') > qi::eps)
         [ Sem::maxint(sem) ];
@@ -1151,6 +1189,8 @@ HexGrammarBase(HexGrammarSemantics& sem):
     = (rule > qi::eps)
         [ Sem::add(sem) ]
     | (constraint > qi::eps)
+        [ Sem::add(sem) ]
+    | (weakconstraint > qi::eps)
         [ Sem::add(sem) ]
     | (mlpModuleHeader > qi::eps)
     | (toplevelBuiltin > qi::eps)
@@ -1195,6 +1235,7 @@ HexGrammarBase(HexGrammarSemantics& sem):
   BOOST_SPIRIT_DEBUG_NODE(headAtom);
   BOOST_SPIRIT_DEBUG_NODE(rule);
   BOOST_SPIRIT_DEBUG_NODE(constraint);
+  BOOST_SPIRIT_DEBUG_NODE(weakconstraint);
   BOOST_SPIRIT_DEBUG_NODE(terms);
   BOOST_SPIRIT_DEBUG_NODE(aggregateTerm);
   BOOST_SPIRIT_DEBUG_NODE(toplevelExt);

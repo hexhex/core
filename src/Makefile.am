@@ -106,7 +106,8 @@ libdlvhex2_base_la_SOURCES = \
     State.cpp \
     URLBuf.cpp \
     UnfoundedSetCheckHeuristics.cpp \
-    UnfoundedSetChecker.cpp
+    UnfoundedSetChecker.cpp \
+    WeakConstraintPlugin.cpp
 
 # dlvhex MLP component
 libdlvhex2_mlpsolver_la_SOURCES =

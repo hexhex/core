@@ -124,7 +124,9 @@ bool AnswerSetPrinterCallback::operator()(
       }
     }
   }
-  o << '}' << std::endl;
+  o << '}';
+  as->printWeightVector(o);
+  o << std::endl;
 
   // never abort
   return true;

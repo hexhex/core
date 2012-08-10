@@ -70,6 +70,7 @@
 #include "dlvhex2/AggregatePlugin.h"
 #include "dlvhex2/StrongNegationPlugin.h"
 #include "dlvhex2/HigherOrderPlugin.h"
+#include "dlvhex2/WeakConstraintPlugin.h"
 
 #include <getopt.h>
 #include <sys/types.h>
@@ -398,6 +399,8 @@ int main(int argc, char *argv[])
 			pctx.pluginContainer()->addInternalPlugin(strongNegationPlugin);
 			PluginInterfacePtr higherOrderPlugin(new HigherOrderPlugin);
 			pctx.pluginContainer()->addInternalPlugin(higherOrderPlugin);
+			PluginInterfacePtr weakConstraintPlugin(new WeakConstraintPlugin);
+			pctx.pluginContainer()->addInternalPlugin(weakConstraintPlugin);
 		}
 
 		// before anything else we dump the logo
