@@ -4,6 +4,8 @@
 	relevant for MLPs.
 	* mlp-generator/: Likewise.
 
+	* src/ResultContainer.cpp: Removing deprecated file.
+
 2012-08-10  Thomas Krennwallner  <tkren@kr.tuwien.ac.at>
 
 	* README: Update libclingo version.
