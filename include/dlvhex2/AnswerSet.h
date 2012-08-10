@@ -57,7 +57,7 @@ public:
 
   // weight vector handling
   void computeWeightVector();
-  std::vector<int> getWeightVector();
+  std::vector<int>& getWeightVector();
   bool betterThan(std::vector<int>& cwv);
   std::ostream& printWeightVector(std::ostream& o) const;
 

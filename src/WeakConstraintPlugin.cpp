@@ -91,6 +91,7 @@ void WeakConstraintPlugin::processOptions(
 		if( str == "--weak-enable" )
 		{
 			ctxdata.enabled = true;
+			ctx.onlyBestModels = true;
 			processed = true;
 		}
 

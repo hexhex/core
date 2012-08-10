@@ -127,6 +127,7 @@ public:
   // stores the weight vector of the best known model
   // if the vector is empty, then there was no solution so far
   std::vector<int> currentOptimum;
+  bool onlyBestModels;	// if true, only optimal models will be output, otherwise optimal ones may be preceded by suboptimal ones
 
   // used by plugins to store specific plugin data in ProgramCtx
   // default constructs PluginT::CtxData if it is not yet stored in ProgramCtx

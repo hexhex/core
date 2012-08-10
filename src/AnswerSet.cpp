@@ -67,7 +67,7 @@ void AnswerSet::computeWeightVector(){
 	}
 }
 
-std::vector<int> AnswerSet::getWeightVector(){
+std::vector<int>& AnswerSet::getWeightVector(){
 	return weightVector;
 }
 
