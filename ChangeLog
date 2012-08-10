@@ -1,3 +1,9 @@
+2012-08-10 Christoph Redl   <redl@kr.tuwien.ac.at>
+
+	* WeakConstraintPlugin.h: Implement weak constraints as plugin
+	(internal)
+	* WeakConstraintPlugin.cpp: Likewise
+
 2012-08-10  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* generator/: renamed to mlp-generator/ as this directory is only
