@@ -67,19 +67,14 @@ void AnswerSet::computeWeightVector(){
 	}
 }
 
-std::vector<int> AnswerSet::getWeightVector(){
+std::vector<int>& AnswerSet::getWeightVector(){
 	return weightVector;
 }
 
 bool AnswerSet::betterThan(std::vector<int>& cwv){
-	int i = 0;
-	while (i < weightVector.size() && i < cwv.size()){
-		if (weightVector[i] < cwv[i]) return true;
-		if (cwv[i] < weightVector[i]) return false;
-		i++;
-	}
-	// levels which exist in both vectors have the same cost value
+
 	// check if one of the vectors has cost values on higher levels
+	int i;
 	if (weightVector.size() < cwv.size()){
 		for (i = weightVector.size(); i < cwv.size(); ++i)
 			if (cwv[i] > 0) return true;
@@ -88,7 +83,16 @@ bool AnswerSet::betterThan(std::vector<int>& cwv){
 		for (i = cwv.size(); i < weightVector.size(); ++i)
 			if (weightVector[i] > 0) return false;
 	}
-	// no: same solution quality
+
+	// compare the costs on all levels which are present in both weight vectors
+	i = (weightVector.size() < cwv.size() ? weightVector.size() : cwv.size()) - 1;
+	while (i >= 0){
+		if (weightVector[i] < cwv[i]) return true;
+		if (cwv[i] < weightVector[i]) return false;
+		i--;
+	}
+
+	// same solution quality
 	return true;
 }
 

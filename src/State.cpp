@@ -835,6 +835,7 @@ EvaluateState::evaluate(ProgramCtx* ctx)
   bool abort = false;
   bool gotModel;
   unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
+  std::vector<AnswerSetPtr> bestModels;	// model cache for weight minimization
   do
   {
     gotModel = false;
@@ -872,7 +873,6 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       writeGraphVizFunctors(func, func, smodel.str());
       */
       #endif
-      mcount++;
 
       // model callbacks
       AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
@@ -893,13 +893,26 @@ EvaluateState::evaluate(ProgramCtx* ctx)
       if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum)){
 	ctx->currentOptimum = answerset->getWeightVector();
 
-        BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-        {
-          bool aborthere = !(*mcb)(answerset);
-          abort |= aborthere;
-          if( aborthere )
-            LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-        }
+	if (ctx->onlyBestModels){
+		// cache models and decide at the end upon optimality
+
+		// is the new model better than the best known one?
+		if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector())){
+			bestModels.clear();
+			mcount = 0;
+		}
+		bestModels.push_back(answerset);
+	}else{
+		// process models directly
+		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+		{
+		  bool aborthere = !(*mcb)(answerset);
+		  abort |= aborthere;
+		  if( aborthere )
+		    LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+		}
+	}
+        mcount++;
 
         #ifndef NDEBUG
         //mb.printEvalGraphModelGraph(std::cerr);
@@ -913,6 +926,19 @@ EvaluateState::evaluate(ProgramCtx* ctx)
     }
   }
   while( gotModel && !abort );
+
+  // process cached models
+  if (ctx->onlyBestModels){
+	BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
+		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+		{
+		  bool aborthere = !(*mcb)(answerset);
+		  abort |= aborthere;
+		  if( aborthere )
+		    LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+		}
+	}
+  }
 
   LOG(INFO,"got " << mcount << " models");
   if( abort )

@@ -567,11 +567,11 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 //
 
 FLPModelGeneratorBase::FLPModelGeneratorBase(
-    FLPModelGeneratorFactoryBase& factory, InterpretationConstPtr input):
+    FLPModelGeneratorFactoryBase& _factory, InterpretationConstPtr input):
   BaseModelGenerator(input),
-  factory(factory)
+  factory(_factory),
+  annotatedGroundProgram(_factory.reg, _factory.innerEatoms)
 {
-	annotatedGroundProgram = AnnotatedGroundProgram(factory.reg, factory.innerEatoms);
 }
 
 FLPModelGeneratorBase::VerifyExternalAnswerAgainstPosNegGuessInterpretationCB::
