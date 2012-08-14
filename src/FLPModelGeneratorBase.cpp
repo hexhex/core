@@ -567,10 +567,10 @@ void FLPModelGeneratorFactoryBase::computeCyclicInputPredicates(
 //
 
 FLPModelGeneratorBase::FLPModelGeneratorBase(
-    FLPModelGeneratorFactoryBase& factory, InterpretationConstPtr input):
+    FLPModelGeneratorFactoryBase& _factory, InterpretationConstPtr input):
   BaseModelGenerator(input),
-  factory(factory),
-  annotatedGroundProgram(factory.reg, factory.innerEatoms)
+  factory(_factory),
+  annotatedGroundProgram(_factory.reg, _factory.innerEatoms)
 {
 }
 
