@@ -1,0 +1,7 @@
+testsuite/*.dot
+*.o
+*.la
+*.lo
+*~
+.deps
+.libs
