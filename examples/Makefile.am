@@ -58,6 +58,8 @@ EXTRA_DIST = \
     strongnegation_asp3.hex \
     strongnegation_asp4.hex \
     strongnegation_asp5.hex \
+    strongnegation_asp6.hex \
+    strongnegation_asp7.hex \
     variable_predicate_inputs.hex \
     weak1.hex \
     weak2.hex \
@@ -169,6 +171,8 @@ EXTRA_DIST = \
     tests/strongnegation_asp3.out \
     tests/strongnegation_asp4.out \
     tests/strongnegation_asp5.out \
+    tests/strongnegation_asp6.out \
+    tests/strongnegation_asp7.out \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \
