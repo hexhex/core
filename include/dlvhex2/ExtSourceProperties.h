@@ -73,7 +73,7 @@ struct ExtSourceProperty:
 // stores properties of an external source on one of two levels:
 // 1. on the level of plugin atoms
 // 2. on the level of individual external atoms
-class ExternalAtom;	// fwd declaration
+struct ExternalAtom;	// fwd declaration
 class PluginAtom;	// fwd declaration
 struct ExtSourceProperties
 {
