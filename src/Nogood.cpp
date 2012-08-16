@@ -60,6 +60,14 @@ size_t Nogood::getHash(){
 	return hashValue;
 }
 
+const Nogood& Nogood::operator=(const Nogood& other)
+{
+  this->Set<ID>::operator=(other);
+  hashValue = other.hashValue;
+  ground = other.ground;
+  return *this;
+}
+
 bool Nogood::operator==(const Nogood& ng2){
 
 	// compare hash value
@@ -194,6 +202,15 @@ bool Nogood::match(RegistryPtr reg, ID atomID, Nogood& instance) const{
 }
 
 // ---------- Class NogoodSet ----------
+
+const NogoodSet& NogoodSet::operator=(const NogoodSet& other)
+{
+  nogoods = other.nogoods;
+  freeIndices = other.freeIndices;
+  nogoodsWithHash = other.nogoodsWithHash;
+  
+  return *this;
+}
 
 // reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
 void NogoodSet::defragment(){

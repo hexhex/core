@@ -25,6 +25,29 @@ AnnotatedGroundProgram::AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> 
 	initialize();
 }
 
+const AnnotatedGroundProgram&
+AnnotatedGroundProgram::operator=(
+    const AnnotatedGroundProgram& other)
+{
+	reg = other.reg;
+	groundProgram = other.groundProgram;
+	haveGrounding = other.haveGrounding;
+	indexedEatoms = other.indexedEatoms;
+	eaMasks = other.eaMasks;
+	auxToEA = other.auxToEA;
+	programMask = other.programMask;
+	depGraph = other.depGraph;
+	depSCC = other.depSCC;
+	componentOfAtom = other.componentOfAtom;
+	externalEdges = other.externalEdges;
+	headCycles = other.headCycles;
+	eCycles = other.eCycles;
+	programComponents = other.programComponents;
+	headCyclesTotal = other.headCyclesTotal;
+  eCyclesTotal = other.eCyclesTotal;
+  return *this;
+}
+
 void AnnotatedGroundProgram::createProgramMask(){
 
 	// create mask of all atoms in the program

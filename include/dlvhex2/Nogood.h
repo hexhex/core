@@ -52,6 +52,7 @@ public:
 	Nogood();
 	void recomputeHash();
 	size_t getHash();
+  const Nogood& operator=(const Nogood& other);
 	bool operator==(const Nogood& ng2);
 	bool operator!=(const Nogood& ng2);
 	std::ostream& print(std::ostream& o) const;
@@ -76,6 +77,7 @@ private:
 	// reorders the nogoods such that there are no free indices in the range 0-(getNogoodCount()-1)
 	void defragment();
 public:
+  const NogoodSet& operator=(const NogoodSet& other);
 	int addNogood(Nogood ng);
 	void removeNogood(int nogoodIndex);
 	void removeNogood(Nogood ng);

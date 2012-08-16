@@ -103,6 +103,8 @@ public:
 	AnnotatedGroundProgram(RegistryPtr reg, const OrdinaryASPProgram& groundProgram, std::vector<ID> indexedEatoms = std::vector<ID>());
 	AnnotatedGroundProgram(RegistryPtr reg, std::vector<ID> indexedEatoms);
 
+  const AnnotatedGroundProgram& operator=(const AnnotatedGroundProgram& other);
+
 	void setIndexEAtoms(std::vector<ID> indexedEatoms);
 
 	bool containsHeadCycles(ID ruleID) const;
