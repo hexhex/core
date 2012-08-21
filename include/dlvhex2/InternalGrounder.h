@@ -98,6 +98,7 @@ protected:
 
 	// initialization members
 	void computeDepGraph();
+	ID preprocessRule(ID ruleID);
 	void computeStrata();
 
 	void buildPredicateIndex();
