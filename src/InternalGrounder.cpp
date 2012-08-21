@@ -103,6 +103,78 @@ void InternalGrounder::computeDepGraph(){
 	}
 }
 
+ID InternalGrounder::preprocessRule(ID ruleID){
+
+	const Rule& rule = reg->rules.getByID(ruleID);
+	Rule newrule = rule;
+	newrule.body.clear();
+
+	// find length of the longest variable name
+	std::set<ID> vars;
+	BOOST_FOREACH (ID a, rule.body){
+		reg->getVariablesInID(a, vars);
+	}
+	int vlen = 0;
+	std::stringstream prefix;
+	BOOST_FOREACH (ID v, vars){
+		int s = reg->terms.getByID(v).symbol.size();
+		vlen = s > vlen ? s : vlen;
+	}
+	prefix << "Anonymous";
+	for (int i = 0; i < vlen - 8; i++) prefix << "_";
+
+	// replace anonymous variables by unique variable symbols
+	int varIndex = 1;
+	BOOST_FOREACH (ID a, rule.body){
+		// check if the literals contains an anonamous variable
+		vars.clear();
+		reg->getVariablesInID(a, vars);
+		bool av = false;
+		BOOST_FOREACH (ID v, vars){
+			if (v.isAnonymousVariable()){
+				av = true;
+				break;
+			}
+		}
+		if (av){
+			// replace all anonamous variables by ordinary ones ("_N" with N>=0)
+			if (a.isOrdinaryAtom()){
+				OrdinaryAtom oa = reg->lookupOrdinaryAtom(a);
+				for (int i = 1; i < oa.tuple.size(); ++i){
+					if (oa.tuple[i].isAnonymousVariable()){
+						std::stringstream newVar;
+						newVar << prefix.str() << varIndex++;
+						oa.tuple[i] = reg->storeVariableTerm(newVar.str());
+					}
+				}
+				newrule.body.push_back(ID::literalFromAtom(reg->storeOrdinaryAtom(oa), a.isNaf()));
+			}else if (a.isExternalAtom()){
+				ExternalAtom ea = reg->eatoms.getByID(a);
+				for (int i = 0; i < ea.inputs.size(); ++i){
+					if (ea.inputs[i].isAnonymousVariable()){
+						std::stringstream newVar;
+						newVar << prefix.str() << varIndex++;
+						ea.inputs[i] = reg->storeVariableTerm(newVar.str());
+					}
+				}
+				for (int i = 0; i < ea.tuple.size(); ++i){
+					if (ea.tuple[i].isAnonymousVariable()){
+						std::stringstream newVar;
+						newVar << prefix.str() << varIndex++;
+						ea.tuple[i] = reg->storeVariableTerm(newVar.str());
+					}
+				}
+				newrule.body.push_back(ID::literalFromAtom(reg->eatoms.storeAndGetID(ea), a.isNaf()));
+			}else{
+				assert(false && "Unknown literal type");
+			}
+		}else{
+			newrule.body.push_back(a);
+		}
+	}
+	return reg->storeRule(newrule);
+}
+
 void InternalGrounder::computeStrata(){
 
 	// find strongly connected components in the dependency graph using boost
@@ -174,7 +246,7 @@ void InternalGrounder::computeStrata(){
 	// arrange the rules accordingly
 	rulesOfStratum = std::vector<std::set<ID> >(compOrdering.size());
 	BOOST_FOREACH (ID ruleID, inputprogram.idb){
-		rulesOfStratum[getStratumOfRule(ruleID)].insert(ruleID);
+		rulesOfStratum[getStratumOfRule(ruleID)].insert(preprocessRule(ruleID));
 	}
 }
 
