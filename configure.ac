@@ -298,9 +298,9 @@ AC_SUBST(WHICH_DLVHEX_TESTS)
 
 #
 # third-party solver integration
-# * dlv as executable
+# * dlv as executable (full features but inefficient)
 # * dlv as shared library (libdlv (nonfunctional))
-# * clingo as shared library (preliminary)
+# * clingo as shared library (limited language features but efficient)
 #
 
 EXTSOLVER_LIBS=
@@ -403,9 +403,8 @@ if test "x${with_libclingo_support}" != xfalse; then
   extsolver_found=true
 fi
 
-
 #
-# libclasp (see README)
+# libclasp activation (see README)
 #
 # NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
 #       otherwise we link against the clasp library included in gringo (which is the wrong version);
@@ -416,6 +415,44 @@ AC_ARG_WITH([libclasp],
                   where you have built clasp-app of tag/clasp-2.0.5]),
   [with_libclasp_support=$withval],
   [with_libclasp_support=false])
+#
+# libgringo activation (see README)
+#
+AC_ARG_WITH([libgringo],
+  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
+                 [use gringo as genuine grounder, you need to specify the directory
+                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
+  [with_libgringo_support=$withval],
+  [with_libgringo_support=false])
+
+#
+# default checkout, build, configure for clasp + gringo setting
+#
+AC_ARG_WITH([buildclaspgringo],
+  [AS_HELP_STRING([--without-buildclaspgringo],
+    [disable checkout, build, and configuration for clasp-2.0.5 and gringo-3.0.3])],
+    [],
+    [with_buildclaspgringo=yes])
+
+AM_CONDITIONAL([DO_BUILDCLASPGRINGO],[test ! "x${with_buildclaspgringo}" != xno])
+if test "x$with_buildclaspgringo" != xno; then
+  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], ["buildclaspgringo"])
+  AC_SUBST([DO_BUILDCLASPGRINGO], ["yes"])
+  AC_MSG_NOTICE([going to checkout, build, and configure for clasp and gringo])
+  with_libclasp_support=$ac_pwd/buildclaspgringo/clasp/
+  with_libgringo_support=$ac_pwd/buildclaspgringo/gringo/
+else
+  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], [""])
+  AC_SUBST([DO_BUILDCLASPGRINGO], ["no"])
+fi
+
+#
+# libclasp configuration
+#
+# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
+#       otherwise we link against the clasp library included in gringo (which is the wrong version);
+#       (ld processes search pathes in the specified order)
+#
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBCLASP],[test "x${with_libclasp_support}" != xfalse])
 if test "x${with_libclasp_support}" != xfalse; then
@@ -433,14 +470,8 @@ if test "x${with_libclasp_support}" != xfalse; then
 fi
 
 #
-# libgringo (see README)
+# libgringo configuration
 #
-AC_ARG_WITH([libgringo],
-  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
-                 [use gringo as genuine grounder, you need to specify the directory
-                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
-  [with_libgringo_support=$withval],
-  [with_libgringo_support=false])
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
 if test "x${with_libgringo_support}" != xfalse; then
@@ -546,6 +577,7 @@ DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [doc])
 AC_CONFIG_FILES([
            Makefile
            dlvhex2.pc
+           buildclaspgringo/Makefile
            examples/Makefile
            examples/tests/basic.test
            examples/tests/basic_genuineii.test

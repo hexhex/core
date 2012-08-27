@@ -196,7 +196,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
-			<< "                      greedy - heuristics with advantages for external behavior learning" << std::endl
+			<< "                      greedy - (default) heuristics with advantages for external behavior learning" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -326,8 +326,8 @@ int main(int argc, char *argv[])
 		#endif
 	#endif
 
-	// default eval heuristic = "easy" heuristic
-	pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+	// default eval heuristic = "greedy" heuristic
+	pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
@@ -375,6 +375,12 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
 	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
+
+	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
+	// but if we have genuinegc, take genuinegc as default
+	#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+	pctx.config.setOption("GenuineSolver", 4);
+	#endif
 
 	// defaults of main
 	Config config;
