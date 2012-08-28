@@ -33,9 +33,12 @@ else
 	echo "checking out gringo";
   svn co $POTASSCO_REPOROOT/tags/gringo-3.0.4 gringo
   mkdir -p gringo/build/release
-  echo "patching gringo (for multithreaded and clang++)"
+  echo "patching gringo (for multithreaded)"
   patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
     { echo "gringo patching failed!"; exit -1; }
+  #echo "patching gringo (for clang)"
+  #patch -d gringo -p0 <gringo/patches/patch-clang.diff ||
+  #  { echo "gringo patching failed!"; exit -1; }
 fi
 
 echo "making gringo"
