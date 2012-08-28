@@ -13,3 +13,5 @@ all-local:
     $(SHELL) $(top_srcdir)/checkout_build_potassco.sh ; \
 	fi
 
+
+EXTRA_DIST = gringo.patch
