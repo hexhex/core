@@ -32,12 +32,10 @@ if test -e gringo; then
 else
 	echo "checking out gringo";
   svn co $POTASSCO_REPOROOT/tags/gringo-3.0.4 gringo
-	pushd gringo
-		mkdir -p build/release
-		echo "patching CMakeLists.txt"
-		sed -i 's/^set(Boost_USE_MULTITHREADED .*)$/set(Boost_USE_MULTITHREADED ON)/' CMakeLists.txt ||
-			{ echo "gringo patching failed!"; exit -1; }
-	popd
+  mkdir -p gringo/build/release
+  echo "patching gringo (for multithreaded and clang++)"
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
+    { echo "gringo patching failed!"; exit -1; }
 fi
 
 echo "making gringo"

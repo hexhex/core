@@ -257,6 +257,14 @@ if test "x$enable_debug" = "xtrue"; then
 fi
 AC_CACHE_SAVE
 
+# save --with-boost result (which contains BOOST_ROOT if it was used) for nested clasp/gringo build
+
+NESTED_BOOSTROOT=""
+if test "x$with_boost" != xno -a "x$with_boost" != xyes -a "x$with_boost" != x; then
+  NESTED_BOOSTROOT=$with_boost
+fi
+AC_SUBST([NESTED_BOOSTROOT])
+
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
 # overridden by setting SYS_PLUGIN_DIR=... at configure-time
