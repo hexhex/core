@@ -1046,7 +1046,7 @@ public:
 
   virtual void operator()()
 	{
-		std::cout << "TestFinalCallback::operator()() first" << first << std::endl;
+		std::cout << "TestFinalCallback::operator()()" << std::endl;
 		if( first )
 		{
 			// repeat
