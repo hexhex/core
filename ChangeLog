@@ -1,3 +1,15 @@
+2012-09-03  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* src/State.cpp: Added possibility to repeat evaluation.
+	* src/dlvhex.cpp: Likewise.
+	* examples/tests/basic.test.in: Likewise.
+	* examples/tests/testrepetition.stdout: Likewise.
+	* testsuite/TestPlugin.cpp: Likewise.
+
+2012-08-16  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* examples/Makefile.am: fixing make distcheck
+
 2012-08-10 Christoph Redl   <redl@kr.tuwien.ac.at>
 
 	* WeakConstraintPlugin.h: Implement weak constraints as plugin
@@ -27,6 +39,16 @@
 	this allows for using DLV aggregates also with clasp and internal
 	solver backend
 	* AggregatePlugin.cpp: Likewise
+
+2012-07-28  Stefano Germano <stefanogermano0@gmail.com>
+
+	Acthex related infrastructure:
+
+	* include/dlvhex2/ProgramCtx.h: PluginEnvironmentContainer that
+	contains the Environments and a new function getPluginEnvironment
+	* include/dlvhex2/PluginInterface.h: base class PluginEnvironment
+	for environments
+	* src/Registry.cpp: new auxiliary constant symbol 'a' for Action
 
 2012-06-30 Christoph Redl   <redl@kr.tuwien.ac.at>
 

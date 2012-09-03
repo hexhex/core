@@ -363,6 +363,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("KeepAuxiliaryPredicates",0);
   pctx.config.setOption("NoFacts",0);
   pctx.config.setOption("NumberOfModels",0);
+  pctx.config.setOption("RepeatEvaluation",0);
   pctx.config.setOption("NMLP", 0);
   pctx.config.setOption("MLP", 0);
   pctx.config.setOption("Forget", 0);
@@ -1210,7 +1211,7 @@ void configurePluginPath(std::string& userPlugindir)
 	userPlugindir = searchpath.str();
 }
 
-/* vim: set noet sw=2 ts=2 tw=80: */
+/* vim: set expandtab sw=2 ts=2 tw=80: */
 
 // Local Variables:
 // mode: C++
