@@ -87,6 +87,7 @@ tertop.hex tertop.out
 variable_predicate_inputs.hex variable_predicate_inputs.stderr
 wellfounded1.hex wellfounded1.out --nofacts
 wellfounded2.hex wellfounded2.out --nofacts
+empty.hex testrepetition.stdout --testplugin-test-repetition
 module-Inconsistent.mlp module-Inconsistent.out --mlp
 module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp
 module-EvenOdd.mlp module-EvenOdd.out --mlp

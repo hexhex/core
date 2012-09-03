@@ -1034,16 +1034,88 @@ public:
   }
 };
 
+class TestFinalCallback:
+	public FinalCallback
+{
+public:
+	TestFinalCallback(ProgramCtx& ctx):
+		ctx(ctx),
+		first(true)
+	{
+	}
+
+  virtual void operator()()
+	{
+		std::cout << "TestFinalCallback::operator()() first" << first << std::endl;
+		if( first )
+		{
+			// repeat
+			ctx.config.setOption("RepeatEvaluation",1);
+		}
+		else
+		{
+			// don't repeat again
+		}
+		first = false;
+	}
+
+private:
+	ProgramCtx& ctx;
+	bool first;
+};
 
 class TestPlugin:
   public PluginInterface
 {
+public:
+	struct CtxData:
+		public PluginData
+	{
+	public:
+		bool testRepetition;
+
+	public:
+		CtxData():
+			testRepetition(false) {}
+		virtual ~CtxData() {}
+	};
+
 public:
   TestPlugin():
     PluginInterface()
   {
     setNameVersion("dlvhex-testplugin", 0, 0, 1);
   }
+
+  virtual void processOptions(std::list<const char*>& pluginOptions, ProgramCtx& ctx)
+	{
+		TestPlugin::CtxData& pcd = ctx.getPluginData<TestPlugin>();
+
+		typedef std::list<const char*>::iterator Iterator;
+		Iterator it;
+		#warning create (or reuse, maybe from potassco?) cmdline option processing facility
+		it = pluginOptions.begin();
+		while( it != pluginOptions.end() )
+		{
+			bool processed = false;
+			const std::string str(*it);
+			if( str == "--testplugin-test-repetition" )
+			{
+				pcd.testRepetition = true;
+				std::cerr << "going to test repetition" << std::endl;
+				processed = true;
+			}
+
+			if( processed )
+			{
+				it = pluginOptions.erase(it);
+			}
+			else
+			{
+				it++;
+			}
+		}
+	}
 
   virtual std::vector<PluginAtomPtr> createAtoms(ProgramCtx& ctx) const
   {
@@ -1073,6 +1145,17 @@ public:
 	  ret.push_back(PluginAtomPtr(new TestAppendAtom, PluginPtrDeleter<PluginAtom>()));
 
     return ret;
+	}
+
+  virtual void setupProgramCtx(ProgramCtx& ctx)
+	{
+		TestPlugin::CtxData& pcd = ctx.getPluginData<TestPlugin>();
+
+		if( pcd.testRepetition )
+		{
+			ctx.finalCallbacks.push_back(
+					FinalCallbackPtr(new TestFinalCallback(ctx)));
+		}
 	}
 };
 
