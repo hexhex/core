@@ -10,7 +10,8 @@ all-local:
 		BOOST_ROOT=$(NESTED_BOOSTROOT) \
     CXX=$(CXX) \
     CC=$(CC) \
-    $(SHELL) $(top_srcdir)/checkout_build_potassco.sh ; \
+    USING_CLANG=$(using_clang) \
+    $(SHELL) $(top_srcdir)/build_potassco.sh ; \
 	fi
 
 

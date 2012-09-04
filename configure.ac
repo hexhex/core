@@ -78,15 +78,18 @@ AC_LANG_POP()
 fi
 
 
+using_clang=no
 # check for clang
 case $CXX in
    clang*)
      CXXFLAGS="$CXXFLAGS -ferror-limit=2"
+     using_clang=yes
      # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)
    ;;
 esac
+AC_SUBST([using_clang])
 
 AC_CACHE_SAVE
 

@@ -36,7 +36,9 @@ DIST_SUBDIRS = buildclaspgringo ${SUBDIRS}
 EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
-    checkout_build_potassco.sh \
+    clasp-2.0.5-source.tar.gz \
+    gringo-3.0.4-source.tar.gz \
+    build_potassco.sh \
     dlvhex2.pc.in \
     doxygen.am \
     doxygen.cfg
