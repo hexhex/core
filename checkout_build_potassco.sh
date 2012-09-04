@@ -1,3 +1,6 @@
+# note: this method is deprecated, we now download the tarballs in
+# bootstrap.sh and use build_potassco.sh (saves time and bandwidth)
+
 POTASSCO_REPOROOT=https://potassco.svn.sourceforge.net/svnroot/potassco/
 
 if test -e clasp; then
