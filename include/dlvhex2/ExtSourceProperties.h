@@ -56,7 +56,9 @@ struct ExtSourceProperty:
 		ATOMLEVELLINEAR,
 		TUPLELEVELLINEAR,
 		NONATOMLEVELLINEAR,
-		NONTUPLELEVELLINEAR
+		NONTUPLELEVELLINEAR,
+		USES_ENVIRONMENT,
+		DOESN_T_USE_ENVIRONMENT
 	};
 
 	Type type;
@@ -87,11 +89,13 @@ struct ExtSourceProperties
 	bool functional;
 	bool atomlevellinear;
 	bool tuplelevellinear;
+	bool usesEnvironment;
 
 	ExtSourceProperties() : ea(0), pa(0){
 		functional = false;
 		atomlevellinear = false;
 		tuplelevellinear = false;
+		usesEnvironment = false;
 	}
 
 	/**
@@ -145,6 +149,12 @@ struct ExtSourceProperties
 	*/
 	bool isIndependentOfPredicateParameterName(int parameterIndex) const
 	{ return std::find(predicateParameterNameIndependence.begin(), predicateParameterNameIndependence.end(), parameterIndex) != predicateParameterNameIndependence.end(); }
+
+	/**
+	* @return true if this Atom uses Environment
+	*/
+	bool doesItUseEnvironment() const
+	{ return usesEnvironment; }
 
 };
 

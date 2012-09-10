@@ -422,6 +422,17 @@ void ProgramCtx::setupByPlugins()
   }
 }
 
+// reset the cache of Plugins that use Environment
+void ProgramCtx::resetCacheOfPlugins()
+{
+	typedef std::pair<std::string, PluginAtomPtr> pairPluginAtomMap;
+	BOOST_FOREACH(pairPluginAtomMap p, pluginAtoms)
+		if(p.second->getExtSourceProperties().doesItUseEnvironment())
+			p.second->resetCache();
+}
+
+
+
 DLVHEX_NAMESPACE_END
 
 // Local Variables:

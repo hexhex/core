@@ -1032,6 +1032,14 @@ public:
   const std::string& getPredicate() const
     { return predicate; }
 
+  /**
+   * \brief Erase all elements from queryAnswerCache and queryNogoodCache
+   */
+  void resetCache() {
+	  queryAnswerCache.clear();
+	  queryNogoodCache.clear();
+  }
+
 protected:
   // Predicate of the atom as it appears in HEX programs
   // (without leading &)
