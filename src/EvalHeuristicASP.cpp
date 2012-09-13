@@ -133,6 +133,7 @@ void EvalHeuristicASP::build(EvalGraphBuilder& builder)
   //  put in program file
   inp->addFileInput(scriptname);
 
+#ifdef HAVE_DLV
   // send it to DLV aspsolver
   #warning we could use the general solver used in dlvhex, but this means we need encodings for all heuristics for all solvers
   {
@@ -164,6 +165,9 @@ void EvalHeuristicASP::build(EvalGraphBuilder& builder)
     }
     #endif
   }
+#else
+  throw std::runtime_error("no usable asp solver configured, please implement ASPSolverManager for gringo+clasp or use dlv or integrate libclingo");
+#endif
 }
 
 namespace

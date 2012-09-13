@@ -320,7 +320,10 @@ int main(int argc, char *argv[])
 				pctx.setASPSoftware(
 					ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
 				#else
-					#error no asp software configured! configure.ac should not allow this to happen!
+					#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+					#else
+						#error no asp software configured! configure.ac should not allow this to happen!
+					#endif
 				#endif
 			#endif
 		#endif
