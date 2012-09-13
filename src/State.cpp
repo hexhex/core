@@ -787,25 +787,6 @@ void SetupProgramCtxState::setupProgramCtx(ProgramCtx* ctx)
   // let plugins setup the program ctx (removing the default hooks is permitted)
   ctx->setupByPlugins();
 
-  #warning TODO higher order was here
-  /*
-  // if we solve using DLV, automagically set higher order mode
-  // (this has to be done globally for the global solver configuration,
-  // it can be done locally for other usages of ASPSolver(Manager))
-  ASPSolverManager::SoftwareConfigurationPtr aspsoftware = ctx->getASPSoftware();
-  typedef ASPSolverManager::SoftwareConfiguration<ASPSolver::DLVSoftware> DLVConfiguration;
-  boost::shared_ptr<DLVConfiguration> dlvconfiguration =
-    boost::dynamic_pointer_cast<DLVConfiguration>(aspsoftware);
-  if( dlvconfiguration != 0 )
-  {
-    if( ctx->getIDB()->isHigherOrder() )
-    {
-      dlvconfiguration->options.rewriteHigherOrder = true;
-      dlvconfiguration->options.dropPredicates = true;
-    }
-  }
-  */
-
   StatePtr next(new EvaluateState);
   changeState(ctx, next);
 }
