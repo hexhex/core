@@ -230,6 +230,8 @@ void NogoodSet::defragment(){
 		if (free < used){
 			nogoods[free] = nogoods[used];
 			nogoods.pop_back();
+			nogoodsWithHash[nogoods[free].getHash()].erase(used);
+			nogoodsWithHash[nogoods[free].getHash()].insert(free);
 			free++;
 			used--;
 		}
