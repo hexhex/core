@@ -99,6 +99,9 @@ ProgramCtx::~ProgramCtx()
   DBGLOG(DBG,"resetting pluginData");
   pluginData.clear();
 
+  DBGLOG(DBG,"resetting pluginEnvironment");
+  pluginEnvironment.clear();
+
   DBGLOG(DBG,"resetting registry, usage count was " << _registry.use_count() << " (it should be 2)");
 	if( Logger::Instance().shallPrint(Logger::DBG) )
 		_registry->print(Logger::Instance().stream()) << std::endl;
@@ -418,6 +421,17 @@ void ProgramCtx::setupByPlugins()
 	  plugin->setupProgramCtx(*this);
   }
 }
+
+// reset the cache of Plugins that use Environment
+void ProgramCtx::resetCacheOfPlugins()
+{
+	typedef std::pair<std::string, PluginAtomPtr> pairPluginAtomMap;
+	BOOST_FOREACH(pairPluginAtomMap p, pluginAtoms)
+		if(p.second->getExtSourceProperties().doesItUseEnvironment())
+			p.second->resetCache();
+}
+
+
 
 DLVHEX_NAMESPACE_END
 

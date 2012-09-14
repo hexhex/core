@@ -821,147 +821,175 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"evaluate()");
 
-  LOG(INFO,"creating model builder");
-  {
-    DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
-    ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(*ctx->evalgraph));
-  }
-  ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
-
-  // get model and call all callbacks
-  // abort if one callback returns false
-  DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
-  unsigned mcount = 0;
-  bool abort = false;
-  bool gotModel;
-  unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
-  std::vector<AnswerSetPtr> bestModels;	// model cache for weight minimization
   do
   {
-    gotModel = false;
-    DBGLOG(DBG,"requesting imodel");
-    DLVHEX_BENCHMARK_START(sidgetnextmodel);
-    OptionalModel om = mb.getNextIModel(ctx->ufinal);
-    DLVHEX_BENCHMARK_STOP(sidgetnextmodel);
-    if( !!om )
+    LOG(INFO,"creating model builder");
     {
-      Model m = om.get();
-      InterpretationConstPtr interpretation =
-        mb.getModelGraph().propsOf(m).interpretation;
+      DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidmb, "create model builder");
+      ctx->modelBuilder = ModelBuilderPtr(ctx->modelBuilderFactory(*ctx->evalgraph));
+    }
+    ModelBuilder<FinalEvalGraph>& mb = *ctx->modelBuilder;
 
-      // if the program is empty, we may get a NULL interpretation
-      if( !interpretation )
+    // get model and call all callbacks
+    // abort if one callback returns false
+    DLVHEX_BENCHMARK_REGISTER(sidgetnextmodel, "evaluate::get next model");
+    unsigned mcount = 0;
+    bool abort = false;
+    bool gotModel;
+    unsigned mcountLimit = ctx->config.getOption("NumberOfModels");
+    std::vector<AnswerSetPtr> bestModels;	// model cache for weight minimization
+    do
+    {
+      gotModel = false;
+      DBGLOG(DBG,"requesting imodel");
+      DLVHEX_BENCHMARK_START(sidgetnextmodel);
+      OptionalModel om = mb.getNextIModel(ctx->ufinal);
+      DLVHEX_BENCHMARK_STOP(sidgetnextmodel);
+      if( !!om )
       {
-        assert(mb.getModelGraph().propsOf(m).dummy == true);
-        interpretation.reset(new Interpretation(ctx->registry()));
-      }
+        Model m = om.get();
+        InterpretationConstPtr interpretation =
+          mb.getModelGraph().propsOf(m).interpretation;
 
-      if( ctx->config.getOption("DumpIModelGraph") )
-      {
-        throw std::runtime_error("DumpIModelGraph  not implemented!");
-        #warning TODO individual eval/model graphviz output
-      }
-      #ifndef NDEBUG
-      DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
-      /*
-      std::set<Model> onlyFor;
-      onlyFor.insert(m.get());
-      GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
-          true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
-      std::stringstream smodel;
-      smodel << fname << "PlainHEXOnlineModel" << mcount;
-      writeGraphVizFunctors(func, func, smodel.str());
-      */
-      #endif
-
-      // model callbacks
-      AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
-      // copy interpretation! (callbacks can modify it)
-      answerset->interpretation->getStorage() = interpretation->getStorage();
-      answerset->computeWeightVector();
-
-      // add EDB if configured that way
-      if( !ctx->config.getOption("NoFacts") )
-      {
-        answerset->interpretation->getStorage() |=
-          ctx->edb->getStorage();
-      }
-
-      // cost check
-      // compare the solution to the best known model
-      gotModel = true;
-      if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum)){
-	ctx->currentOptimum = answerset->getWeightVector();
-
-	if (ctx->onlyBestModels){
-		// cache models and decide at the end upon optimality
-
-		// is the new model better than the best known one?
-		if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector())){
-			bestModels.clear();
-			mcount = 0;
-		}
-		bestModels.push_back(answerset);
-	}else{
-		// process models directly
-		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-		{
-		  bool aborthere = !(*mcb)(answerset);
-		  abort |= aborthere;
-		  if( aborthere )
-		    LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-		}
-	}
-        mcount++;
-
-        #ifndef NDEBUG
-        //mb.printEvalGraphModelGraph(std::cerr);
-        #endif
-        if( mcountLimit != 0 && mcount >= mcountLimit )
+        // if the program is empty, we may get a NULL interpretation
+        if( !interpretation )
         {
-          LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
-          break;
+          assert(mb.getModelGraph().propsOf(m).dummy == true);
+          interpretation.reset(new Interpretation(ctx->registry()));
+        }
+
+        if( ctx->config.getOption("DumpIModelGraph") )
+        {
+          throw std::runtime_error("DumpIModelGraph  not implemented!");
+          #warning TODO individual eval/model graphviz output
+        }
+        #ifndef NDEBUG
+        DBGLOG(DBG,"got model#" << mcount << ":" << *interpretation);
+        /*
+        std::set<Model> onlyFor;
+        onlyFor.insert(m.get());
+        GraphVizFunc func = boost::bind(&writeEgMgGraphViz<MyModelGraph>, _1,
+            true, boost::cref(mb.getEvalGraph()), boost::cref(mb.getModelGraph()), onlyFor);
+        std::stringstream smodel;
+        smodel << fname << "PlainHEXOnlineModel" << mcount;
+        writeGraphVizFunctors(func, func, smodel.str());
+        */
+        #endif
+
+        // model callbacks
+        AnswerSetPtr answerset(new AnswerSet(ctx->registry()));
+        // copy interpretation! (callbacks can modify it)
+        answerset->interpretation->getStorage() = interpretation->getStorage();
+        answerset->computeWeightVector();
+
+        // add EDB if configured that way
+        if( !ctx->config.getOption("NoFacts") )
+        {
+          answerset->interpretation->getStorage() |=
+            ctx->edb->getStorage();
+        }
+
+        // cost check
+        // compare the solution to the best known model
+        gotModel = true;
+        if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum))
+        {
+          ctx->currentOptimum = answerset->getWeightVector();
+
+          if (ctx->onlyBestModels)
+          {
+            // cache models and decide at the end upon optimality
+
+            // is the new model better than the best known one?
+            if (bestModels.size() > 0 && !bestModels[0]->betterThan(answerset->getWeightVector()))
+            {
+                    bestModels.clear();
+                    mcount = 0;
+            }
+            bestModels.push_back(answerset);
+          }
+          else
+          {
+            // process models directly
+            BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+            {
+              bool aborthere = !(*mcb)(answerset);
+              abort |= aborthere;
+              if( aborthere )
+                LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+            }
+          }
+          mcount++;
+
+          #ifndef NDEBUG
+          //mb.printEvalGraphModelGraph(std::cerr);
+          #endif
+          if( mcountLimit != 0 && mcount >= mcountLimit )
+          {
+            LOG(INFO,"breaking model enumeration loop because already enumerated " << mcount << " models!");
+            break;
+          }
         }
       }
     }
-  }
-  while( gotModel && !abort );
+    while( gotModel && !abort );
 
-  // process cached models
-  if (ctx->onlyBestModels){
-	BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
-		BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
-		{
-		  bool aborthere = !(*mcb)(answerset);
-		  abort |= aborthere;
-		  if( aborthere )
-		    LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
-		}
-	}
-  }
+    // process cached models
+    if (ctx->onlyBestModels){
+      BOOST_FOREACH (AnswerSetPtr answerset, bestModels){
+        BOOST_FOREACH(ModelCallbackPtr mcb, ctx->modelCallbacks)
+        {
+          bool aborthere = !(*mcb)(answerset);
+          abort |= aborthere;
+          if( aborthere )
+            LOG(DBG,"callback '" << typeid(*mcb).name() << "' signalled abort at model " << mcount);
+        }
+      }
+    }
 
-  LOG(INFO,"got " << mcount << " models");
-  if( abort )
-  {
-    LOG(INFO,"model building was aborted by callback");
-  }
-  else
-  {
-    if( mcountLimit == 0 )
+    LOG(INFO,"got " << mcount << " models");
+    if( abort )
     {
-      LOG(INFO,"model building finished after enumerating all models");
+      LOG(INFO,"model building was aborted by callback");
     }
     else
     {
-      LOG(INFO,"model building finished after enumerating " << mcountLimit << " models");
+      if( mcountLimit == 0 )
+      {
+        LOG(INFO,"model building finished after enumerating all models");
+      }
+      else
+      {
+        LOG(INFO,"model building finished after enumerating " << mcountLimit << " models");
+      }
     }
-  }
 
-  if( ctx->config.getOption("DumpModelGraph") )
-  {
-    throw std::runtime_error("DumpModelGraph  not implemented!");
-    #warning TODO overall eval/model graphviz output
+    if( ctx->config.getOption("DumpModelGraph") )
+    {
+      throw std::runtime_error("DumpModelGraph  not implemented!");
+      #warning TODO overall eval/model graphviz output
+    }
+
+    // call final callbacks
+    BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
+    {
+      DBGLOG(DBG,"calling final callback " << printptr(fcb));
+      (*fcb)();
+    }
+
+    // if repetition counter is set, decrease it and repeat
+    unsigned repeatEvaluation = ctx->config.getOption("RepeatEvaluation");
+    if( repeatEvaluation > 0 )
+    {
+      LOG(INFO,"repeating evaluation because RepeatEvaluation=" << repeatEvaluation);
+      ctx->config.setOption("RepeatEvaluation", repeatEvaluation-1);
+      continue;
+    }
+
+    // default: do not repeat
+    break;
   }
+  while(true);
 
   #if 0
   #ifndef NDEBUG
@@ -1028,6 +1056,14 @@ EvaluateState::evaluate(ProgramCtx* ctx)
 
   #endif
 
+  #warning TODO dlt was here
+  ///@todo quick hack for dlt
+  //   if (optiondlt)
+  //     {
+  //       ctx->getResultContainer()->filterOutDLT();
+  //     }
+
+
   #if 0
     std::cerr << "TIMING " << fname << " " << heurimode << " " << mbmode << " " << backend << " " <<
       ctx->evalgraph.countEvalUnits() << " evalunits " << ctx->evalgraph.countEvalUnitDeps() << " evalunitdeps " << mcount << " models ";
@@ -1043,20 +1079,6 @@ MANDATORY_STATE_CONSTRUCTOR(PostProcessState);
 void PostProcessState::postProcess(ProgramCtx* ctx)
 {
   DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sid,"postProcess");
-
-  // call final callbacks
-  BOOST_FOREACH(FinalCallbackPtr fcb, ctx->finalCallbacks)
-  {
-    DBGLOG(DBG,"calling final callback " << printptr(fcb));
-    (*fcb)();
-  }
-
-  #warning TODO dlt was here
-  ///@todo quick hack for dlt
-  //   if (optiondlt)
-  //     {
-  //       ctx->getResultContainer()->filterOutDLT();
-  //     }
 
 	// cleanup some stuff that is better not automatically destructed
 	DBGLOG(DBG,"usage count of model builder before reset is " <<
@@ -1081,6 +1103,8 @@ void PostProcessState::postProcess(ProgramCtx* ctx)
 
 
 DLVHEX_NAMESPACE_END
+
+// vim:ts=4:
 
 // Local Variables:
 // mode: C++

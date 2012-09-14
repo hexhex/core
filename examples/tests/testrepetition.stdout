@@ -1,0 +1,1 @@
+0 grep -c "^TestFinalCallback::operator()()$" |grep -q "^2$"

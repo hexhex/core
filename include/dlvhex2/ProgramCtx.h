@@ -192,6 +192,9 @@ public:
   // setup this ProgramCtx (using setupProgramCtx() for of all plugins)
   void setupByPlugins();
 
+  // reset the cache of Plugins that use Environment
+  void resetCacheOfPlugins();
+
   //
   // state processing
   // the following functions are given in intended order of calling
