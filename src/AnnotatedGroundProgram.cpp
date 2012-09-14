@@ -234,9 +234,12 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 
 	// partition the program according to the strongly connected components
 	DBGLOG(DBG, "Partitioning program");
-	std::vector<const Rule*> groundRules;
+	std::map<IDAddress, std::vector<ID> > rulesWithHeadAtom;
 	BOOST_FOREACH (ID ruleID, groundProgram.idb){
-		groundRules.push_back(&(reg->rules.getByID(ruleID)));
+		const Rule& rule = reg->rules.getByID(ruleID);
+		BOOST_FOREACH (ID h, rule.head){
+			rulesWithHeadAtom[h.address].push_back(ruleID);
+		}
 	}
 	for (int comp = 0; comp < depSCC.size(); ++comp){
 		DBGLOG(DBG, "Partition " << comp);
@@ -251,26 +254,20 @@ void AnnotatedGroundProgram::computeStronglyConnectedComponents(){
 		}
 
 		// compute the program partition
-		for (int ruleNr = 0; ruleNr < groundRules.size(); ++ruleNr){
-			const Rule* rule = groundRules[ruleNr];
-			ID ruleID = groundProgram.idb[ruleNr];
-			int intersectionCount = 0;
-
-			BOOST_FOREACH (ID h, rule->head){
-				if (componentAtoms->getFact(h.address)){
-					intersectionCount++;
-					break;
-				}
-			}
-			if (intersectionCount >= 1){
+		bm::bvector<>::enumerator en = componentAtoms->getStorage().first();
+		bm::bvector<>::enumerator en_end = componentAtoms->getStorage().end();
+		while (en < en_end){
+			BOOST_FOREACH (ID ruleID, rulesWithHeadAtom[*en]){
 #ifndef NDEBUG
 				std::stringstream programstring;
 				RawPrinter printer(programstring, reg);
 				printer.print(ruleID);
 				DBGLOG(DBG, programstring.str());
 #endif
+
 				currentComp.program.idb.push_back(ruleID);
 			}
+			en++;
 		}
 
 		programComponents.push_back(currentComp);
@@ -288,7 +285,8 @@ void AnnotatedGroundProgram::computeHeadCycles(){
 			const Rule& rule = reg->rules.getByID(ruleID);
 			int intersectionCount = 0;
 			BOOST_FOREACH (ID h, rule.head){
-				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+//				if (std::find(depSCC[comp].begin(), depSCC[comp].end(), h.address) != depSCC[comp].end()){
+				if (programComponents[comp].componentAtoms->getFact(h.address)){
 					intersectionCount++;
 				}
 				if (intersectionCount >= 2) break;
