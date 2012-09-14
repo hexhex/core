@@ -205,7 +205,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			// A.
 			DBGLOG(DBG, "Constructing input rule head");
 			//   1.
-			oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('a', b));
+			oatom.tuple.push_back(reg->getAuxiliaryConstantSymbol('g', b));
 			//   2.
 			std::vector<ID> bodyVarsOfSymbolicSet;
 			BOOST_FOREACH (ID c, conjSymSetVars){
@@ -256,7 +256,7 @@ void AggregateRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, const
 			eaName << bodyVarsOfSymbolicSet.size();
 			Term exPred(ID::MAINKIND_TERM | ID::SUBKIND_TERM_CONSTANT, eaName.str());
 			eaReplacement.predicate = reg->storeTerm(exPred);
-			eaReplacement.inputs.push_back(reg->getAuxiliaryConstantSymbol('a', b));
+			eaReplacement.inputs.push_back(reg->getAuxiliaryConstantSymbol('g', b));
 			eaReplacement.inputs.push_back(ID::termFromInteger(bodyVarsOfSymbolicSet.size()));
 			BOOST_FOREACH (ID t, bodyVarsOfSymbolicSet){
 				eaReplacement.tuple.push_back(t);
