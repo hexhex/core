@@ -111,22 +111,25 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 
 	static const bool quickTerminationMethod = true;
 	if (quickTerminationMethod && cs.terminationRequest) throw ClaspSolver::ClaspTermination();
-
-/*
-//Clasp::wsum_t newopt[1];
-//newopt[0] = 1;
-//cs.sharedMinimizeData->setOptimum(newopt);
-cs.minb.setOptimum(0, 1);
-cs.minc->restoreOptimum();
-cs.minc->integrateNext(*cs.claspInstance.master());
-std::cerr << "SUM: " << cs.minc->sum(0) << std::endl;
-*/
 }
 
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
+
+/*
+static int cc = 0;
+cc++;
+
+if (cc == 4){
+Clasp::wsum_t newopt[1];
+newopt[0] = 1;
+cs.sharedMinimizeData->setOptimum(newopt);
+cs.minc->restoreOptimum();
+if (!cs.minc->integrateNext(s)) return false;
+}
+*/
 
 	// thread-safe access of the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
@@ -744,7 +747,7 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 	}
 
 	// add the minimize statements to clasp
-	for (int level = 0; level < minimizeStatements.size(); ++level){
+	for (int level = minimizeStatements.size() - 1; level >= 0; --level){
 #ifndef NDEBUG
 		std::stringstream ss;
 		ss << "Minimize statement at level " << level << ": ";
@@ -760,11 +763,13 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 	std::stringstream ss;
 	ss << "Setting optimum upper bound: ";
 #endif
-	for (int l = 0; l < ctx.currentOptimum.size(); ++l){
+	for (int l = minimizeStatements.size() - 1; l >= 0; --l){
+		if (ctx.currentOptimum.size() > l){
 #ifndef NDEBUG
-		ss << l << ":" << ctx.currentOptimum[l] << " ";
+			ss << l << ":" << ctx.currentOptimum[l] << " ";
 #endif
-		minb.setOptimum(l, ctx.currentOptimum[l]);
+			minb.setOptimum(l, ctx.currentOptimum[l]);
+		}
 	}
 	sharedMinimizeData = minb.build(claspInstance);
 
@@ -773,6 +778,15 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 #endif
 	minc = sharedMinimizeData->attach(*claspInstance.master(), true);
 	sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
+
+/*
+Clasp::wsum_t newopt[2];
+newopt[0] = 1;
+newopt[1] = 1;
+sharedMinimizeData->setOptimum(newopt);
+minc->restoreOptimum();
+minc->integrateNext(*claspInstance.master());
+*/
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){

@@ -135,7 +135,11 @@ void WeakRewriter::rewriteRule(ProgramCtx& ctx, std::vector<ID>& idb, ID ruleID)
 
 	// take the rule as it is, but change the rule type
 	Rule newRule = rule;
-	newRule.kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR;
+	newRule.kind &= (ID::ALL_ONES ^ ID::SUBKIND_RULE_WEAKCONSTRAINT);
+	newRule.kind |= ID::SUBKIND_RULE_REGULAR;
+//	newRule.kind = ID::MAINKIND_RULE | ID::SUBKIND_RULE_REGULAR;
+//	if (ruleID.doesRuleContainExtatoms()) newRule.kind |= ID::PROPERTY_RULE_EXTATOMS;
+//	if (ruleID.doesRuleContainModatoms()) newRule.kind |= ID::PROPERTY_RULE_MODATOMS;
 
 	// if it is a weak constraint, add a head atom
 	if (ruleID.isWeakConstraint()){
