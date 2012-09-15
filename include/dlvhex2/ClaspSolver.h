@@ -142,6 +142,7 @@ private:
 
 	// initialization
 	bool sendProgramToClasp(const AnnotatedGroundProgram& p, DisjunctionMode dm);
+	void addMinimizeConstraints(const AnnotatedGroundProgram& p);
 	bool sendNogoodSetToClasp(const NogoodSet& ns);
 
 	// output filtering

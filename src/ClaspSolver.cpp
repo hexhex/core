@@ -714,6 +714,67 @@ bool ClaspSolver::sendProgramToClasp(const AnnotatedGroundProgram& p, Disjunctio
 	return initiallyInconsistent;
 }
 
+void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
+
+	// one minimize statement for each level
+	std::vector<Clasp::WeightLitVec> minimizeStatements;
+#ifndef NDEBUG
+	std::vector<std::vector<IDAddress> > minimizeStatementsHex;
+#endif
+
+	// construct the minimize statements for each level
+	BOOST_FOREACH (ID ruleID, p.getGroundProgram().idb){
+		const Rule& rule = reg->rules.getByID(ruleID);
+
+		// check if this is a weight rule
+		if (rule.head.size() == 1){
+			const OrdinaryAtom& weightAtom = reg->ogatoms.getByID(rule.head[0]);
+			if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
+
+				int level = weightAtom.tuple[2].address - 1;
+				while (minimizeStatements.size() <= level) minimizeStatements.push_back(Clasp::WeightLitVec());
+				minimizeStatements[level].push_back(Clasp::WeightLiteral(Clasp::Literal(hexToClasp[rule.head[0].address].var(), hexToClasp[rule.head[0].address].sign()), weightAtom.tuple[1].address));
+
+#ifndef NDEBUG
+				while (minimizeStatementsHex.size() <= level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+				minimizeStatementsHex[level].push_back(rule.head[0].address);
+#endif
+			}
+		}
+	}
+
+	// add the minimize statements to clasp
+	for (int level = 0; level < minimizeStatements.size(); ++level){
+#ifndef NDEBUG
+		std::stringstream ss;
+		ss << "Minimize statement at level " << level << ": ";
+		for (int l = 0; l < minimizeStatementsHex[level].size(); ++l){
+			ss << (l > 0 ? ", " : "") << minimizeStatementsHex[level][l];
+		}
+		DBGLOG(DBG, ss.str());
+#endif
+		minb.addRule(minimizeStatements[level]);
+	}
+
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << "Setting optimum upper bound: ";
+#endif
+	for (int l = 0; l < ctx.currentOptimum.size(); ++l){
+#ifndef NDEBUG
+		ss << l << ":" << ctx.currentOptimum[l] << " ";
+#endif
+		minb.setOptimum(l, ctx.currentOptimum[l]);
+	}
+	sharedMinimizeData = minb.build(claspInstance);
+
+#ifndef NDEBUG
+	DBGLOG(DBG, ss.str());
+#endif
+	minc = sharedMinimizeData->attach(*claspInstance.master(), true);
+	sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
+}
+
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 
 	const int false_ = 1;	// 1 is our constant "false"
@@ -824,15 +885,8 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		pb.writeProgram(prog);
 		DBGLOG(DBG, "Program in LParse format: " << prog.str());
 
-/*
-Clasp::WeightLitVec min;
-min.push_back( Clasp::WeightLiteral(Clasp::Literal(hexToClasp[0].var(), hexToClasp[0].sign()), 5) );
-min.push_back( Clasp::WeightLiteral(Clasp::Literal(hexToClasp[1].var(), hexToClasp[1].sign()), 3) );
-minb.addRule(min);
-sharedMinimizeData = minb.build(claspInstance);
-minc = sharedMinimizeData->attach(*claspInstance.master(), true);
-sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
-*/
+		// respect weak constraints
+		addMinimizeConstraints(p);
 
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
