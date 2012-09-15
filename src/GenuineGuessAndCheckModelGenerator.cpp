@@ -383,6 +383,7 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 			solver->addNogood(learnedEANogoods->getNogood(i));
 		}
 	}
+	learnedEANogoods->forgetLeastFrequentlyAdded();
 	learnedEANogoodsTransferredIndex = learnedEANogoods->getNogoodCount();
 }
 

@@ -229,7 +229,9 @@ void NogoodSet::defragment(){
 		// move used to free
 		if (free < used){
 			nogoods[free] = nogoods[used];
+			addCount[free] = addCount[used];
 			nogoods.pop_back();
+			addCount.pop_back();
 			nogoodsWithHash[nogoods[free].getHash()].erase(used);
 			nogoodsWithHash[nogoods[free].getHash()].insert(free);
 			free++;
@@ -246,17 +248,22 @@ int NogoodSet::addNogood(Nogood ng){
 
 	// check if ng is already present
 	BOOST_FOREACH (int i, nogoodsWithHash[ng.getHash()]){
-		if (nogoods[i] == ng) return i;
+		if (nogoods[i] == ng){
+			addCount[i]++;
+			return i;
+		}
 	}
 
 	// nogood is not present
 	int index;
 	if (freeIndices.size() == 0){
 		nogoods.push_back(ng);
+		addCount.push_back(1);
 		index = nogoods.size() - 1;
 	}else{
 		int index = *freeIndices.begin();
 		nogoods[index] = ng;
+		addCount[index] = 1;
 		freeIndices.erase(index);
 	}
 	nogoodsWithHash[ng.getHash()].insert(index);
@@ -272,9 +279,10 @@ const Nogood& NogoodSet::getNogood(int index) const{
 }
 
 void NogoodSet::removeNogood(int nogoodIndex){
+	addCount[nogoodIndex] = 0;
 	nogoodsWithHash[nogoods[nogoodIndex].getHash()].erase(nogoodIndex);
 	freeIndices.insert(nogoodIndex);
-	defragment();	// make sure that the nogood vector does not contain free slots
+//	defragment();	// make sure that the nogood vector does not contain free slots
 }
 
 void NogoodSet::removeNogood(Nogood ng){
@@ -293,6 +301,21 @@ void NogoodSet::removeNogood(Nogood ng){
 
 int NogoodSet::getNogoodCount() const{
 	return nogoods.size() - freeIndices.size();
+}
+
+void NogoodSet::forgetLeastFrequentlyAdded(){
+
+	int mac = 0;
+	for (int i = 0; i < nogoods.size(); i++){
+		mac = mac > addCount[i] ? mac : addCount[i];
+	}
+	// delete those with an add count of less than 20% of the maximum add count
+	for (int i = 0; i < nogoods.size(); i++){
+		if (addCount[i] < mac * 0.05){
+			DBGLOG(DBG, "Forgetting nogood ");
+			removeNogood(i);
+		}
+	}
 }
 
 std::string NogoodSet::getStringRepresentation(RegistryPtr reg) const{
@@ -342,6 +365,13 @@ int SimpleNogoodContainer::getNogoodCount(){
 void SimpleNogoodContainer::clear(){
 	boost::mutex::scoped_lock lock(mutex);
 	ngg = NogoodSet();
+}
+
+void SimpleNogoodContainer::forgetLeastFrequentlyAdded(){
+	DBGLOG(DBG, "Nogood count before forgetting " << ngg.getNogoodCount());
+	ngg.forgetLeastFrequentlyAdded();
+	ngg.defragment();
+	DBGLOG(DBG, "Nogood count after forgetting " << ngg.getNogoodCount());
 }
 
 DLVHEX_NAMESPACE_END
