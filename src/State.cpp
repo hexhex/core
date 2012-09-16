@@ -895,6 +895,11 @@ EvaluateState::evaluate(ProgramCtx* ctx)
         if (ctx->currentOptimum.size() == 0 || answerset->betterThan(ctx->currentOptimum))
         {
           ctx->currentOptimum = answerset->getWeightVector();
+#ifndef NDEBUG
+          std::stringstream ss;
+          answerset->printWeightVector(ss);
+          DBGLOG(DBG, "New global optimum: " << ss.str());
+#endif
 
           if (ctx->onlyBestModels)
           {

@@ -201,6 +201,7 @@ public:
 	virtual void addPropagator(PropagatorCallback* pb);
 	virtual void removePropagator(PropagatorCallback* pb);
 	virtual void addNogood(Nogood ng);
+	void setOptimum(std::vector<int>& optimum);
 	virtual InterpretationPtr getNextModel();
 	virtual int getModelCount();
 	virtual std::string getStatistics();

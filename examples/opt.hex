@@ -1,0 +1,24 @@
+% This example tests an optimization of the implementation of weak constraints.
+% With easy heuristics we have two eval units:
+
+% Unit 1:
+p(a) v p(b).
+:~ p(a). [1:1]
+
+% Unit 2:
+str(Y) :- p(X), &testConcat[X, x](Y).
+q(Y) v r(Y) :- str(Y).
+:~ q(bx). [2:1]
+
+% With --solver=genuinegc,
+% the first enumerated models are {p(a),q(ax)} and {p(a),r(ax)} with cost <[1:1]>.
+% This sets the global optimum to <[1:1]>.
+
+% Then next output model of unit 1 ({p(b)}) is fed into unit 2.
+% However, when unit 2 is reinstantiated for the next input model, it
+% loads the current global <[1:1]> as upper bound for the unit
+% (the costs of a partial model of a single unit cannot be higher than
+%  the current global optimum), which excludes the guess {p(bx)}.
+
+% The only remaining model is {p(b),r(bx)}.
+% The optimization eliminates 1 out of 4 guesses in advance.

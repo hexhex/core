@@ -122,12 +122,11 @@ bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentD
 static int cc = 0;
 cc++;
 
-if (cc == 4){
-Clasp::wsum_t newopt[1];
-newopt[0] = 1;
-cs.sharedMinimizeData->setOptimum(newopt);
-cs.minc->restoreOptimum();
-if (!cs.minc->integrateNext(s)) return false;
+if (cc == 2){
+std::vector<int> opt;
+opt.push_back(0);
+opt.push_back(1);
+cs.setOptimum(opt);
 }
 */
 
@@ -726,6 +725,21 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 #endif
 
 	// construct the minimize statements for each level
+	bm::bvector<>::enumerator en = p.getGroundProgram().edb->getStorage().first();
+	bm::bvector<>::enumerator en_end = p.getGroundProgram().edb->getStorage().end();
+	while (en < en_end){
+		const OrdinaryAtom& weightAtom = reg->ogatoms.getByAddress(*en);
+		if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
+			int level = weightAtom.tuple[2].address;
+			while (minimizeStatements.size() <= level) minimizeStatements.push_back(Clasp::WeightLitVec());
+			minimizeStatements[level].push_back(Clasp::WeightLiteral(Clasp::Literal(hexToClasp[*en].var(), hexToClasp[*en].sign()), weightAtom.tuple[1].address));
+#ifndef NDEBUG
+			while (minimizeStatementsHex.size() <= level) minimizeStatementsHex.push_back(std::vector<IDAddress>());
+			minimizeStatementsHex[level].push_back(*en);
+#endif
+		}
+		en++;
+	}
 	BOOST_FOREACH (ID ruleID, p.getGroundProgram().idb){
 		const Rule& rule = reg->rules.getByID(ruleID);
 
@@ -734,7 +748,7 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 			const OrdinaryAtom& weightAtom = reg->ogatoms.getByID(rule.head[0]);
 			if (weightAtom.tuple[0].isAuxiliary() && reg->getTypeByAuxiliaryConstantSymbol(weightAtom.tuple[0]) == 'w'){
 
-				int level = weightAtom.tuple[2].address - 1;
+				int level = weightAtom.tuple[2].address;
 				while (minimizeStatements.size() <= level) minimizeStatements.push_back(Clasp::WeightLitVec());
 				minimizeStatements[level].push_back(Clasp::WeightLiteral(Clasp::Literal(hexToClasp[rule.head[0].address].var(), hexToClasp[rule.head[0].address].sign()), weightAtom.tuple[1].address));
 
@@ -759,34 +773,13 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 		minb.addRule(minimizeStatements[level]);
 	}
 
-#ifndef NDEBUG
-	std::stringstream ss;
-	ss << "Setting optimum upper bound: ";
-#endif
-	for (int l = minimizeStatements.size() - 1; l >= 0; --l){
-		if (ctx.currentOptimum.size() > l){
-#ifndef NDEBUG
-			ss << l << ":" << ctx.currentOptimum[l] << " ";
-#endif
-			minb.setOptimum(l, ctx.currentOptimum[l]);
-		}
-	}
+	DBGLOG(DBG, "Constructing minimize constraint");
 	sharedMinimizeData = minb.build(claspInstance);
-
-#ifndef NDEBUG
-	DBGLOG(DBG, ss.str());
-#endif
-	minc = sharedMinimizeData->attach(*claspInstance.master(), true);
 	sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
+	minc = sharedMinimizeData->attach(*claspInstance.master(), true);
 
-/*
-Clasp::wsum_t newopt[2];
-newopt[0] = 1;
-newopt[1] = 1;
-sharedMinimizeData->setOptimum(newopt);
-minc->restoreOptimum();
-minc->integrateNext(*claspInstance.master());
-*/
+	// use the current optimum as upper bound for this unit
+	setOptimum(ctx.currentOptimum);
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
@@ -899,9 +892,6 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 		pb.writeProgram(prog);
 		DBGLOG(DBG, "Program in LParse format: " << prog.str());
 
-		// respect weak constraints
-		addMinimizeConstraints(p);
-
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
 		claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
@@ -910,6 +900,10 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 claspInstance.enumerator()->setMinimize(sharedMinimizeData);
 std::cerr << "Optimize: " << claspInstance.enumerator()->optimize();
 */
+
+		// respect weak constraints
+		addMinimizeConstraints(p);
+
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
 		ExternalPropagator* ep = new ExternalPropagator(*this);
@@ -1049,6 +1043,75 @@ void ClaspSolver::addNogood(Nogood ng){
 		sem_dlvhexDataStructures.wait();
 		DBGLOG(DBG, "MainThread: Entering code which needs exclusive access to dlvhex data structures");
 	}
+}
+
+void ClaspSolver::setOptimum(std::vector<int>& optimum){
+
+	// This method helps the reasoner to eliminate non-optimal partial models in advance
+	// by setting the internal upper bound to a given value.
+	//
+	// Warning: A call of this method is just a hint for the reasoner, i.e.,
+	//          it is not guaranteed that the solver will no longer create models with higher cost.
+	//
+	// This is because clasp does not allow to decrease the upper bound if the new bound is violated
+	// by the current assignment. Therefore, the new optimum is only integrated into the clasp instance
+	// if it is compatible with the assignment.
+
+	// transform optimum vector to clasp-internal representation
+	int optlen = minb.numRules() < optimum.size() ? minb.numRules() : optimum.size();
+	DBGLOG(DBG, "Transforming optimum (length: " << optlen << ") to clasp-internal representation");
+	Clasp::wsum_t* newopt = new Clasp::wsum_t[optlen];
+	for (int l = optlen - 1; l >= 0; --l){
+		newopt[l] = optimum[optlen - 1 - l];
+	}
+
+	// check if the new upper bound is compatible with the current assignment
+	DBGLOG(DBG, "Ensure that current assignment is compatible with the new optimum");
+	bool violated = true;
+	while (violated){
+		violated = false;
+		for (int i = 0; i < optlen; ++i){
+			if (newopt[i] > minc->sum(i)) break;
+			if (newopt[i] < minc->sum(i)){
+				violated = true;
+				break;
+			}
+		}
+		if (!violated) break;
+
+		delete []newopt;
+		return;
+/*
+		DBGLOG(DBG, "Backtrack because current assignment violates optimum");
+		uint32 dl = claspInstance.master()->decisionLevel();
+		if (dl == claspInstance.master()->rootLevel()){
+			DBGLOG(DBG, "Stop backtracking because root level reached");
+			claspInstance.master()->setStopConflict();
+			delete []newopt;
+			return;
+		}
+claspInstance.master()->undoUntil(dl - 1, true);
+*/
+	}
+
+	// send the new upper bound to clasp
+	DBGLOG(DBG, "Current assignment is compatible with the new optimum");
+#ifndef NDEBUG
+	std::stringstream ss;
+	ss << "Setting optimum upper bound: ";
+#endif
+	for (int l = 0; l < optlen; ++l){
+#ifndef NDEBUG
+		ss << l << ":" << newopt[l] << " ";
+#endif
+	}
+	if (optlen > 0) sharedMinimizeData->setOptimum(newopt);	
+#ifndef NDEBUG
+	DBGLOG(DBG, ss.str());
+#endif
+	minc->restoreOptimum();
+	minc->integrateNext(*claspInstance.master());
+	delete []newopt;
 }
 
 InterpretationPtr ClaspSolver::getNextModel(){
