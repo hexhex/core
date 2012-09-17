@@ -114,10 +114,11 @@ private:
 		// reference to other class instance
 		ClaspSolver& cs;
 
-		InterpretationPtr previousInterpretation;
-		InterpretationPtr previousFactWasSet;
+		InterpretationPtr interpretation, previousInterpretation;
+		InterpretationPtr factWasSet, previousFactWasSet;
+		InterpretationPtr changed;
 	public:
-		ExternalPropagator(ClaspSolver& cs) : cs(cs), previousInterpretation(InterpretationPtr()), previousFactWasSet(InterpretationPtr()){}
+		ExternalPropagator(ClaspSolver& cs);
 		bool prop(Clasp::Solver& s, bool onlyOnCurrentDL = false);
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
@@ -201,7 +202,7 @@ public:
 	virtual void addPropagator(PropagatorCallback* pb);
 	virtual void removePropagator(PropagatorCallback* pb);
 	virtual void addNogood(Nogood ng);
-	void setOptimum(std::vector<int>& optimum);
+	virtual void setOptimum(std::vector<int>& optimum);
 	virtual InterpretationPtr getNextModel();
 	virtual int getModelCount();
 	virtual std::string getStatistics();

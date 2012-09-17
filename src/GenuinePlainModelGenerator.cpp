@@ -177,7 +177,7 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	RegistryPtr reg = factory.ctx.registry();
 
-	// remove edb from result
+//solver->setOptimum(factory.ctx.currentOptimum);
 	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());

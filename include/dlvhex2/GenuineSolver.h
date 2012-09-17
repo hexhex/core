@@ -23,7 +23,7 @@
 
 
 /**
- * @file   GenuineSolver.hpp
+ * @file   GenuineSolver.h
  * @author Christoph Redl
  * @date   Thu 02 16:00:00 CET 2012
  * 
@@ -74,6 +74,7 @@ typedef GenuineGrounder::ConstPtr GenuineGrounderConstPtr;
 class GenuineGroundSolver : virtual public NogoodContainer, public OrdinaryASPSolver{
 public:
 	virtual std::string getStatistics() = 0;
+	virtual void setOptimum(std::vector<int>& optimum) = 0;
 	virtual InterpretationPtr getNextModel() = 0;
 	virtual int getModelCount() = 0;
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
@@ -101,6 +102,7 @@ public:
 	const OrdinaryASPProgram& getGroundProgram();
 
 	std::string getStatistics();
+	void setOptimum(std::vector<int>& optimum);
 	InterpretationPtr getNextModel();
 	int getModelCount();
 	void addNogood(Nogood ng);

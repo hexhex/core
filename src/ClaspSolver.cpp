@@ -116,21 +116,17 @@ void ClaspSolver::ModelEnumerator::reportModel(const Clasp::Solver& s, const Cla
 void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const Clasp::Enumerator&, bool complete){
 }
 
+ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
+	interpretation = InterpretationPtr(new Interpretation(cs.reg));
+	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
+	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
+	changed = InterpretationPtr(new Interpretation(cs.reg));
+}
+
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
 
-/*
-static int cc = 0;
-cc++;
-
-if (cc == 2){
-std::vector<int> opt;
-opt.push_back(0);
-opt.push_back(1);
-cs.setOptimum(opt);
-}
-*/
-
-	// thread-safe access of the propagator vector
+	// thread-safe access to the propagator vector
         boost::mutex::scoped_lock lock(cs.propagatorMutex);
 	if (cs.propagator.size() != 0){
 		// Wait until MainThread executes code of this class (in particular: getNextModel() ),
@@ -143,12 +139,10 @@ cs.setOptimum(opt);
 
 		DBGLOG(DBG, "Translating clasp assignment to HEX-interpretation");
 
-		// create an interpretation and a bitset of assigned values
-		InterpretationPtr interpretation = InterpretationPtr(new Interpretation(cs.reg));
-		InterpretationPtr factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-
 		// translate clasp assignment to hex assignment
 		// get the symbol table from the solver
+		interpretation->clear();
+		factWasSet->clear();
 		const Clasp::SymbolTable& symTab = s.sharedContext()->symTab();
 		for (Clasp::SymbolTable::const_iterator it = symTab.begin(); it != symTab.end(); ++it) {
 			// bitset of all assigned values
@@ -166,13 +160,9 @@ cs.setOptimum(opt);
 		// a fact changed iff
 		// 1. (a) it was previously set but is not set now, or (b) it was previously not set but is set now; or
 		// 2. it was set before and is still set but the truth value is different
-		InterpretationPtr changed = InterpretationPtr(new Interpretation(cs.reg));
-		if (!previousInterpretation || !previousFactWasSet){
-			changed = factWasSet;	// everything changed
-		}else{
-			changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
-			changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
-		}
+		changed->clear();
+		changed->getStorage() |= (factWasSet->getStorage() ^ previousFactWasSet->getStorage());
+		changed->getStorage() |= (factWasSet->getStorage() & previousFactWasSet->getStorage() & (interpretation->getStorage() ^ previousInterpretation->getStorage()));
 		DBGLOG(DBG, "Changed truth values: " << *changed);
 
 		DBGLOG(DBG, "Calling external propagators");
@@ -181,10 +171,8 @@ cs.setOptimum(opt);
 			cb->propagate(interpretation, factWasSet, changed);
 		}
 
-		previousInterpretation = interpretation;
-		previousFactWasSet = factWasSet;
-		interpretation.reset();
-		factWasSet.reset();
+		previousInterpretation->getStorage() = interpretation->getStorage();
+		previousFactWasSet->getStorage() = factWasSet->getStorage();
 
 		// Now MainThread is allowed to access arbitrary code again, because we continue executing Clasp code,
 		// which cannot interfere with dlvhex.
@@ -194,20 +182,20 @@ cs.setOptimum(opt);
 		}
 	}
 
-	// add the produced nogoods to clasp
+	// add the new nogoods to clasp
 	bool inconsistent = false;
 	{
 	        boost::mutex::scoped_lock lock(cs.nogoodsMutex);
 
 		DBGLOG(DBG, "External learners have produced " << cs.nogoods.size() << " nogoods; transferring to clasp");
 
-		bool added = true;
-		while (cs.nogoods.size() > 0 && added && !inconsistent){
+		bool processed = true;
+		while (cs.nogoods.size() > 0 && processed && !inconsistent){
 			Nogood& ng = cs.nogoods.front();
 			std::pair<bool, bool> ret = cs.addNogoodToClasp(s, ng, onlyOnCurrentDL);
-			added = ret.first;
+			processed = ret.first;
 			inconsistent = ret.second; // we must not add more clauses if we have already a conflict
-			if (added) cs.nogoods.pop();
+			if (processed) cs.nogoods.pop();
 		}
 	}
 	DBGLOG(DBG, "Result: " << (inconsistent ? "" : "not ") << "inconsistent");
@@ -233,7 +221,7 @@ uint32 ClaspSolver::ExternalPropagator::priority() const{
 /**
  * Adds a nogood to the running clasp instance.
  * @return std::pair<bool, bool>
- *             The first return value indicates if the nogood was successfulle processed.
+ *             The first return value indicates if the nogood was successfully processed.
  *               That is, it is true iff it was either added or excluded from being added, and false if it might be added at some future point
                The second is true iff adding has produced a conflict
  */
@@ -253,7 +241,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 	}
 
 	// translate dlvhex::Nogood to clasp clause
-	bool onCurrentDL = false;
+	bool conflictOnLowerDL = true;
 	clauseCreator->start(Clasp::Constraint_t::learnt_other);
 	Set<uint32> pos;
 	Set<uint32> neg;
@@ -269,7 +257,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 			}
 			pos.insert(hexToClasp[lit.address].var());
 
-			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
+			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) conflictOnLowerDL = false;
 		}else{
 			if (neg.contains(hexToClasp[lit.address].var())) continue;
 			else if (pos.contains(hexToClasp[lit.address].var())){
@@ -278,7 +266,7 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 			}
 			neg.insert(hexToClasp[lit.address].var());
 
-			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) onCurrentDL = true;
+			if (s.level(hexToClasp[lit.address].var()) == s.decisionLevel()) conflictOnLowerDL = false;
 		}
 
 		// 1. cs.hexToClasp maps hex-atoms to clasp-literals
@@ -287,12 +275,15 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
 		clauseCreator->add(clit);
 
-		// if requested, do not add clauses which do not cause a conflict on the current decision level
-		// (if this method is called by isModel() then is must not cause conflicts except on the top level)
-		if (onlyOnCurrentDL && !s.isFalse(clit)){
-			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
-			return std::pair<bool, bool>(false, false);
-		}
+		// non-conflicting clauses can always be added
+		if (!s.isFalse(clit)) conflictOnLowerDL = false;
+
+//		// if requested, do not add clauses which do not cause a conflict on the current decision level
+//		// (if this method is called by isModel() then we must not cause conflicts except on the top level)
+//		if (onlyOnCurrentDL && !s.isFalse(clit)){
+//			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
+//			return std::pair<bool, bool>(false, false);
+//		}
 #ifndef NDEBUG
 		if (!first) ss << ", ";
 		first = false;
@@ -300,10 +291,10 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 #endif
 	}
 
-	// if requested, do not add conflict clauses which do not cause a conflict on the current decision level
-	// (if this method is called by isModel() then is must not cause conflicts except on the top level)
-	if (onlyOnCurrentDL && !onCurrentDL){
-		DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level");
+	// if requested, do not add conflict clauses which cause a conflict on a decision level lower than the current one
+	// (if this method is called by isModel() then we must not cause conflicts except on the top level)
+	if (onlyOnCurrentDL && conflictOnLowerDL){
+		DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is conflicting on a lower decision level");
 		return std::pair<bool, bool>(false, false);
 	}
 
@@ -759,6 +750,7 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 			}
 		}
 	}
+//	if (minimizeStatements.size() == 0) return;
 
 	// add the minimize statements to clasp
 	for (int level = minimizeStatements.size() - 1; level >= 0; --level){
@@ -775,11 +767,14 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 
 	DBGLOG(DBG, "Constructing minimize constraint");
 	sharedMinimizeData = minb.build(claspInstance);
-	sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
-	minc = sharedMinimizeData->attach(*claspInstance.master(), true);
+	minc = 0;
+	if (!!sharedMinimizeData){
+		sharedMinimizeData->setMode(Clasp::MinimizeMode_t::enumerate, true);
+		minc = sharedMinimizeData->attach(*claspInstance.master(), true);
 
-	// use the current optimum as upper bound for this unit
-	setOptimum(ctx.currentOptimum);
+		// use the current optimum as upper bound for this unit
+		setOptimum(ctx.currentOptimum);
+	}
 }
 
 bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
@@ -894,7 +889,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
-		claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
+		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
 /*
 claspInstance.enumerator()->setMinimize(sharedMinimizeData);
@@ -1047,6 +1042,8 @@ void ClaspSolver::addNogood(Nogood ng){
 
 void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
+	if (!minc) return;
+
 	// This method helps the reasoner to eliminate non-optimal partial models in advance
 	// by setting the internal upper bound to a given value.
 	//
@@ -1081,6 +1078,7 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 
 		delete []newopt;
 		return;
+
 /*
 		DBGLOG(DBG, "Backtrack because current assignment violates optimum");
 		uint32 dl = claspInstance.master()->decisionLevel();
@@ -1090,7 +1088,7 @@ void ClaspSolver::setOptimum(std::vector<int>& optimum){
 			delete []newopt;
 			return;
 		}
-claspInstance.master()->undoUntil(dl - 1, true);
+		claspInstance.master()->undoUntil(dl - 1, true);
 */
 	}
 

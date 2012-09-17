@@ -860,6 +860,10 @@ void InternalGroundASPSolver::removePropagator(PropagatorCallback* pb){
 	propagator.erase(pb);
 }
 
+void InternalGroundASPSolver::setOptimum(std::vector<int>& optimum){
+	// not supported: ignore the call
+}
+
 InterpretationPtr InternalGroundASPSolver::getNextModel(){
 	DLVHEX_BENCHMARK_REGISTER_AND_SCOPE(sidsolvertime, "Solver time");
 	Nogood violatedNogood;

@@ -152,6 +152,10 @@ const OrdinaryASPProgram& GenuineSolver::getGroundProgram(){
 	return gprog;
 }
 
+void GenuineSolver::setOptimum(std::vector<int>& optimum){
+	solver->setOptimum(optimum);
+}
+
 InterpretationPtr GenuineSolver::getNextModel(){
 	return solver->getNextModel();
 }
