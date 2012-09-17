@@ -275,15 +275,15 @@ std::pair<bool, bool> ClaspSolver::addNogoodToClasp(Clasp::Solver& s, Nogood& ng
 		Clasp::Literal clit = Clasp::Literal(hexToClasp[lit.address].var(), !(hexToClasp[lit.address].sign() ^ lit.isNaf()));
 		clauseCreator->add(clit);
 
-		// non-conflicting clauses can always be added
-		if (!s.isFalse(clit)) conflictOnLowerDL = false;
+//		// non-conflicting clauses can always be added
+//		if (!s.isFalse(clit)) conflictOnLowerDL = false;
 
-//		// if requested, do not add clauses which do not cause a conflict on the current decision level
-//		// (if this method is called by isModel() then we must not cause conflicts except on the top level)
-//		if (onlyOnCurrentDL && !s.isFalse(clit)){
-//			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
-//			return std::pair<bool, bool>(false, false);
-//		}
+		// if requested, do not add clauses which do not cause a conflict on the current decision level
+		// (if this method is called by isModel() then we must not cause conflicts except on the top level)
+		if (onlyOnCurrentDL && !s.isFalse(clit)){
+			DBGLOG(DBG, "Do not add " << ng.getStringRepresentation(reg) << " because it is not conflicting on the current decision level (it is not conflicting at all)");
+			return std::pair<bool, bool>(false, false);
+		}
 #ifndef NDEBUG
 		if (!first) ss << ", ";
 		first = false;
