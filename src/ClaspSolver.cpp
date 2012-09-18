@@ -481,7 +481,7 @@ void ClaspSolver::runClasp(){
 
 	try{
 		DLVHEX_BENCHMARK_START(sidsolvertime);
-		Clasp::solve(claspInstance, params);
+		Clasp::solve(claspInstance, params, assumptions);
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 	}catch(ClaspSolver::ClaspTermination){
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
@@ -889,7 +889,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
-		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
+		claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
 /*
 claspInstance.enumerator()->setMinimize(sharedMinimizeData);
@@ -982,6 +982,41 @@ ClaspSolver::~ClaspSolver(){
 
 	DBGLOG(DBG, "Deleting ClaspThread");
 	if (claspThread) delete claspThread;
+}
+
+void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
+
+	// shutdown
+	if (!strictSingleThreaded){
+		sem_dlvhexDataStructures.post();
+		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
+	}
+
+	DBGLOG(DBG, "ClaspSolver Destructor");
+	{
+		// send termination request
+		boost::mutex::scoped_lock lock(modelsMutex);
+		terminationRequest = true;
+	}
+
+	// is clasp still active?
+	while (getNextModel() != InterpretationPtr());
+	DBGLOG(DBG, "Joining ClaspThread");
+	if (claspThread) claspThread->join();
+
+	DBGLOG(DBG, "Deleting ClaspThread");
+	if (claspThread) delete claspThread;
+
+	// restart
+	claspStarted = false;
+	endOfModels = false;
+	terminationRequest = false;
+
+	this->assumptions.clear();
+	BOOST_FOREACH (ID a, assumptions){
+		Clasp::Literal al = Clasp::Literal(hexToClasp[a.address].var(), hexToClasp[a.address].sign() ^ a.isNaf());
+		this->assumptions.push_back(al);
+	}
 }
 
 void ClaspSolver::addPropagator(PropagatorCallback* pb){

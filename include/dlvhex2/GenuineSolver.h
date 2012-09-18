@@ -109,6 +109,9 @@ public:
 	void addPropagator(PropagatorCallback* pb);
 	void removePropagator(PropagatorCallback* pb);
 
+	inline GenuineGrounderPtr getGenuineGrounder(){ return grounder; }
+	inline GenuineGroundSolverPtr getGenuineGroundSolver(){ return solver; }
+
 	typedef boost::shared_ptr<GenuineSolver> Ptr;
 	typedef boost::shared_ptr<const GenuineSolver> ConstPtr;
 

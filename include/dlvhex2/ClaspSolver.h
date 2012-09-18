@@ -177,6 +177,7 @@ protected:
 	// interface to clasp internals
 	Clasp::SharedContext claspInstance;
 	Clasp::ProgramBuilder pb;
+	Clasp::LitVec assumptions;
 	Clasp::MinimizeBuilder minb;
 	Clasp::MinimizeConstraint* minc;
 	Clasp::SharedMinimizeData* sharedMinimizeData;
@@ -198,6 +199,7 @@ public:
 	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
+	void restartWithAssumptions(const std::vector<ID>& assumptions);
 
 	virtual void addPropagator(PropagatorCallback* pb);
 	virtual void removePropagator(PropagatorCallback* pb);

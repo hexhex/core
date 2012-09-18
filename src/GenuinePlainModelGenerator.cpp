@@ -28,7 +28,9 @@
  * @brief Implementation of the model generator for "Plain" components.
  */
 
-#define DLVHEX_BENCHMARK
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "dlvhex2/GenuinePlainModelGenerator.h"
 #include "dlvhex2/InternalGrounder.h"
@@ -39,6 +41,7 @@
 #include "dlvhex2/ProgramCtx.h"
 #include "dlvhex2/PluginInterface.h"
 #include "dlvhex2/Benchmarking.h"
+#include "dlvhex2/ClaspSolver.h"
 
 #include <boost/foreach.hpp>
 
@@ -178,6 +181,18 @@ GenuinePlainModelGenerator::generateNextModel()
 	RegistryPtr reg = factory.ctx.registry();
 
 //solver->setOptimum(factory.ctx.currentOptimum);
+/*
+//if (!modelCandidate){
+static int i = 0;
+if (i++ == 1){
+std::vector<ID> ass;
+ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 1));
+dynamic_cast<ClaspSolver*>(solver->getGenuineGroundSolver().get())->restartWithAssumptions(ass);
+//modelCandidate = solver->getNextModel();
+}
+//}
+*/
+
 	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
