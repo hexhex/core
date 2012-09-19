@@ -117,11 +117,7 @@ void ClaspSolver::ModelEnumerator::reportSolution(const Clasp::Solver& s, const 
 }
 
 ClaspSolver::ExternalPropagator::ExternalPropagator(ClaspSolver& cs) : cs(cs){
-	interpretation = InterpretationPtr(new Interpretation(cs.reg));
-	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
-	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
-	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
-	changed = InterpretationPtr(new Interpretation(cs.reg));
+	reset();
 }
 
 bool ClaspSolver::ExternalPropagator::prop(Clasp::Solver& s, bool onlyOnCurrentDL){
@@ -216,6 +212,14 @@ bool ClaspSolver::ExternalPropagator::isModel(Clasp::Solver& s){
 
 uint32 ClaspSolver::ExternalPropagator::priority() const{
 	return Clasp::PostPropagator::priority_general;
+}
+
+void ClaspSolver::ExternalPropagator::reset(){
+	interpretation = InterpretationPtr(new Interpretation(cs.reg));
+	previousInterpretation = InterpretationPtr(new Interpretation(cs.reg));
+	factWasSet = InterpretationPtr(new Interpretation(cs.reg));
+	previousFactWasSet = InterpretationPtr(new Interpretation(cs.reg));
+	changed = InterpretationPtr(new Interpretation(cs.reg));
 }
 
 /**
@@ -482,6 +486,7 @@ void ClaspSolver::runClasp(){
 	try{
 		DLVHEX_BENCHMARK_START(sidsolvertime);
 		Clasp::solve(claspInstance, params, assumptions);
+		//Clasp::solve(claspInstance, params, assumptions);
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
 	}catch(ClaspSolver::ClaspTermination){
 		DLVHEX_BENCHMARK_STOP(sidsolvertime);
@@ -492,7 +497,6 @@ void ClaspSolver::runClasp(){
 	}
 
 	DBGLOG(DBG, "Clasp terminated");
-
 	{
 		DBGLOG(DBG, "Notifying MainThread about end of models");
 		boost::mutex::scoped_lock lock(modelsMutex);
@@ -750,7 +754,6 @@ void ClaspSolver::addMinimizeConstraints(const AnnotatedGroundProgram& p){
 			}
 		}
 	}
-//	if (minimizeStatements.size() == 0) return;
 
 	// add the minimize statements to clasp
 	for (int level = minimizeStatements.size() - 1; level >= 0; --level){
@@ -889,19 +892,15 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const AnnotatedGroundProgram& p, bool in
 
 		// add enumerator
 		DBGLOG(DBG, "Adding enumerator");
-		claspInstance.addEnumerator(new Clasp::RecordEnumerator(new ModelEnumerator(*this)));
+		claspInstance.addEnumerator(new Clasp::BacktrackEnumerator(0, new ModelEnumerator(*this)));
 		claspInstance.enumerator()->enumerate(0);
-/*
-claspInstance.enumerator()->setMinimize(sharedMinimizeData);
-std::cerr << "Optimize: " << claspInstance.enumerator()->optimize();
-*/
 
 		// respect weak constraints
-		addMinimizeConstraints(p);
+//		addMinimizeConstraints(p);
 
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
-		ExternalPropagator* ep = new ExternalPropagator(*this);
+		ep = new ExternalPropagator(*this);
 		claspInstance.addPost(ep);
 
 		// endInit() must be called once before the search starts
@@ -942,7 +941,7 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 
 		// add propagator
 		DBGLOG(DBG, "Adding external propagator");
-		ExternalPropagator* ep = new ExternalPropagator(*this);
+		ep = new ExternalPropagator(*this);
 		claspInstance.addPost(ep);
 
 		// endInit() must be called once before the search starts
@@ -959,6 +958,13 @@ ClaspSolver::ClaspSolver(ProgramCtx& c, const NogoodSet& ns, bool interleavedThr
 }
 
 ClaspSolver::~ClaspSolver(){
+	shutdownClasp();
+
+	DBGLOG(DBG, "Deleting ClauseCreator");
+	delete clauseCreator;
+}
+
+void ClaspSolver::shutdownClasp(){
 
 	if (!strictSingleThreaded){
 		sem_dlvhexDataStructures.post();
@@ -976,9 +982,6 @@ ClaspSolver::~ClaspSolver(){
 	while (getNextModel() != InterpretationPtr());
 	DBGLOG(DBG, "Joining ClaspThread");
 	if (claspThread) claspThread->join();
-
-	DBGLOG(DBG, "Deleting ClauseCreator");
-	delete clauseCreator;
 
 	DBGLOG(DBG, "Deleting ClaspThread");
 	if (claspThread) delete claspThread;
@@ -986,31 +989,14 @@ ClaspSolver::~ClaspSolver(){
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
-	// shutdown
-	if (!strictSingleThreaded){
-		sem_dlvhexDataStructures.post();
-		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
-	}
-
-	DBGLOG(DBG, "ClaspSolver Destructor");
-	{
-		// send termination request
-		boost::mutex::scoped_lock lock(modelsMutex);
-		terminationRequest = true;
-	}
-
-	// is clasp still active?
-	while (getNextModel() != InterpretationPtr());
-	DBGLOG(DBG, "Joining ClaspThread");
-	if (claspThread) claspThread->join();
-
-	DBGLOG(DBG, "Deleting ClaspThread");
-	if (claspThread) delete claspThread;
+	shutdownClasp();
 
 	// restart
 	claspStarted = false;
 	endOfModels = false;
 	terminationRequest = false;
+	assert(!!ep);
+	ep->reset();
 
 	this->assumptions.clear();
 	BOOST_FOREACH (ID a, assumptions){

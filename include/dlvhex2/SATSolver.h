@@ -45,6 +45,7 @@ public:
 	typedef boost::shared_ptr<SATSolver> Ptr;
 	typedef boost::shared_ptr<const SATSolver> ConstPtr;
 
+	virtual void restartWithAssumptions(const std::vector<ID>& assumptions) = 0;
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
 	virtual InterpretationPtr getNextModel() = 0;

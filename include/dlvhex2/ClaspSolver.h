@@ -123,6 +123,7 @@ private:
 		virtual bool propagate(Clasp::Solver& s);
 		virtual bool isModel(Clasp::Solver& s);
 		virtual uint32 priority() const;
+		void reset();
 	};
 
 	// interface to clasp internals
@@ -184,6 +185,7 @@ protected:
 	Clasp::ProgramBuilder::EqOptions eqOptions;
 	Clasp::SolveParams params;
 	Clasp::ClauseCreator* clauseCreator;
+	ExternalPropagator* ep;
 	std::map<IDAddress, Clasp::Literal> hexToClasp;	// reverse index is not possible as multiple HEX IDs may be mapped to the same clasp ID
 	std::map<Clasp::Literal, std::vector<IDAddress> > claspToHex;
 
@@ -199,8 +201,9 @@ public:
 	ClaspSolver(ProgramCtx& ctx, const AnnotatedGroundProgram& p, bool interleavedThreading = true, DisjunctionMode dm = Shifting);
 	ClaspSolver(ProgramCtx& ctx, const NogoodSet& ns, bool interleavedThreading = true);
 	virtual ~ClaspSolver();
-	void restartWithAssumptions(const std::vector<ID>& assumptions);
+	void shutdownClasp();
 
+	void restartWithAssumptions(const std::vector<ID>& assumptions);
 	virtual void addPropagator(PropagatorCallback* pb);
 	virtual void removePropagator(PropagatorCallback* pb);
 	virtual void addNogood(Nogood ng);

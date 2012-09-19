@@ -77,6 +77,7 @@ public:
 	virtual void setOptimum(std::vector<int>& optimum) = 0;
 	virtual InterpretationPtr getNextModel() = 0;
 	virtual int getModelCount() = 0;
+	virtual void restartWithAssumptions(const std::vector<ID>& assumptions) = 0;
 	virtual void addPropagator(PropagatorCallback* pb) = 0;
 	virtual void removePropagator(PropagatorCallback* pb) = 0;
 
@@ -106,6 +107,7 @@ public:
 	InterpretationPtr getNextModel();
 	int getModelCount();
 	void addNogood(Nogood ng);
+	void restartWithAssumptions(const std::vector<ID>& assumptions);
 	void addPropagator(PropagatorCallback* pb);
 	void removePropagator(PropagatorCallback* pb);
 

@@ -80,6 +80,8 @@ class BaseModelGenerator:
   public ModelGeneratorBase<Interpretation>
 {
   friend class UnfoundedSetChecker;
+  friend class EncodingBasedUnfoundedSetChecker;
+  friend class AssumptionBasedUnfoundedSetChecker;
   // members
 public:
   BaseModelGenerator(InterpretationConstPtr input):

@@ -852,6 +852,10 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
 	setEDB();
 }
 
+void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
+	CDNLSolver::restartWithAssumptions(assumptions);
+}
+
 void InternalGroundASPSolver::addPropagator(PropagatorCallback* pb){
 	propagator.insert(pb);
 }

@@ -203,6 +203,7 @@ protected:
 public:
 	CDNLSolver(ProgramCtx& ctx, NogoodSet ns);
 
+	virtual void restartWithAssumptions(const std::vector<ID>& assumptions);
 	virtual void addPropagator(PropagatorCallback* pb);
 	virtual void removePropagator(PropagatorCallback* pb);
 	virtual InterpretationPtr getNextModel();

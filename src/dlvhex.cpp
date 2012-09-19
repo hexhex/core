@@ -334,6 +334,7 @@ int main(int argc, char *argv[])
   pctx.config.setOption("FLPCheck", 1);
   pctx.config.setOption("UFSCheck", 0);
   pctx.config.setOption("UFSCheckMonolithic", 0);
+  pctx.config.setOption("UFSCheckAssumptionBased", 0);
   pctx.config.setOption("GenuineSolver", 0);
   pctx.config.setOption("Instantiate", 0);
   pctx.config.setOption("ExternalLearning", 0);
@@ -1018,11 +1019,26 @@ void processOptionsPrePlugin(
 					pctx.config.setOption("FLPCheck", 0);
 					pctx.config.setOption("UFSCheck", 1);
 					pctx.config.setOption("UFSCheckMonolithic", 0);
+					pctx.config.setOption("UFSCheckAssumptionBased", 0);
 				}else if( check == "ufsm" )
 				{
 					pctx.config.setOption("FLPCheck", 0);
 					pctx.config.setOption("UFSCheck", 1);
 					pctx.config.setOption("UFSCheckMonolithic", 1);
+					pctx.config.setOption("UFSCheckAssumptionBased", 0);
+
+				}else if( check == "aufs" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 0);
+					pctx.config.setOption("UFSCheckAssumptionBased", 1);
+				}else if( check == "aufsm" )
+				{
+					pctx.config.setOption("FLPCheck", 0);
+					pctx.config.setOption("UFSCheck", 1);
+					pctx.config.setOption("UFSCheckMonolithic", 1);
+					pctx.config.setOption("UFSCheckAssumptionBased", 1);
 				}else{
 					pctx.config.setOption("FLPCheck", 0);
 					pctx.config.setOption("UFSCheck", 0);

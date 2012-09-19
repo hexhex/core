@@ -180,20 +180,23 @@ GenuinePlainModelGenerator::generateNextModel()
 
 	RegistryPtr reg = factory.ctx.registry();
 
+	InterpretationPtr modelCandidate = solver->getNextModel();
+
 //solver->setOptimum(factory.ctx.currentOptimum);
 /*
-//if (!modelCandidate){
 static int i = 0;
-if (i++ == 1){
-std::vector<ID> ass;
-ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, 1));
-dynamic_cast<ClaspSolver*>(solver->getGenuineGroundSolver().get())->restartWithAssumptions(ass);
-//modelCandidate = solver->getNextModel();
+if (!modelCandidate){
+//	i = (i + 1) % 3;
+	//if (i++ == 1){
+
+	std::vector<ID> ass;
+//	ass.push_back(ID(ID::MAINKIND_LITERAL | ID::NAF_MASK, i));
+	solver->restartWithAssumptions(ass);
+
+	modelCandidate = solver->getNextModel();
 }
 //}
 */
-
-	InterpretationPtr modelCandidate = solver->getNextModel();
 
 	DBGLOG(DBG, "Statistics:" << std::endl << solver->getStatistics());
 	return modelCandidate;

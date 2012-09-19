@@ -656,6 +656,25 @@ CDNLSolver::CDNLSolver(ProgramCtx& c, NogoodSet ns) : ctx(c), nogoodset(ns), con
 	initWatchingStructures();
 };
 
+void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
+
+	// reset
+	DBGLOG(DBG, "Resetting solver");
+	interpretation.reset(new Interpretation(ctx.registry()));
+	factWasSet.reset(new Interpretation(ctx.registry()));
+	changed.reset(new Interpretation(ctx.registry()));
+	currentDL = 0;
+	exhaustedDL = 0;
+
+	initWatchingStructures();
+
+	// set assumptions at DL=0
+	DBGLOG(DBG, "Setting assumptions");
+	BOOST_FOREACH (ID a, assumptions){
+		setFact(a, 0);
+	}
+}
+
 void CDNLSolver::addPropagator(PropagatorCallback* pb){
 	propagator.insert(pb);
 }

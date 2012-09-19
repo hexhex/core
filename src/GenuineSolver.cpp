@@ -168,6 +168,10 @@ void GenuineSolver::addNogood(Nogood ng){
 	solver->addNogood(ng);
 }
 
+void GenuineSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
+	solver->restartWithAssumptions(assumptions);
+}
+
 void GenuineSolver::addPropagator(PropagatorCallback* pb){
 	solver->addPropagator(pb);
 }
