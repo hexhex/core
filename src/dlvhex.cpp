@@ -813,6 +813,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_DLV)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -823,6 +824,7 @@ void processOptionsPrePlugin(
 							#warning reactivate dlvhdb
 							//pctx.setASPSoftware(
 							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -832,6 +834,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_LIBDLV)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -841,6 +844,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_LIBCLINGO)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
