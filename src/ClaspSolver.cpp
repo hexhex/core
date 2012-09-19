@@ -789,6 +789,7 @@ bool ClaspSolver::sendNogoodSetToClasp(const NogoodSet& ns){
 	DBGLOG(DBG, "Sending NogoodSet to clasp: " << ns);
 	bool initiallyInconsistent = false;
 
+	//claspInstance.requestTagLiteral();
 	claspInstance.startAddConstraints();
 
 	for (int i = 0; i < ns.getNogoodCount(); i++){
@@ -971,7 +972,7 @@ void ClaspSolver::shutdownClasp(){
 		DBGLOG(DBG, "MainThread: Leaving code which needs exclusive access to dlvhex data structures");
 	}
 
-	DBGLOG(DBG, "ClaspSolver Destructor");
+	DBGLOG(DBG, "Shutdown ClaspSolver");
 	{
 		// send termination request
 		boost::mutex::scoped_lock lock(modelsMutex);
@@ -989,7 +990,7 @@ void ClaspSolver::shutdownClasp(){
 
 void ClaspSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
-	shutdownClasp();
+	if (claspStarted) shutdownClasp();
 
 	// restart
 	claspStarted = false;

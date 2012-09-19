@@ -666,6 +666,7 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 	// for all external atom auxiliaries
 	std::set<IDAddress> eaAuxes;
 	boost::unordered_map<IDAddress, std::vector<ID> > eaAuxToRule;
+/*
 	bm::bvector<>::enumerator en = compatibleSet->getStorage().first();
 	bm::bvector<>::enumerator en_end = compatibleSet->getStorage().end();
 	while (en < en_end){
@@ -674,10 +675,16 @@ void EncodingBasedUnfoundedSetChecker::constructUFSDetectionProblemOptimizationP
 		}
 		en++;
 	}
+*/
 	BOOST_FOREACH (ID ruleID, ufsProgram){
 		const Rule& rule = reg->rules.getByID(ruleID);
 		BOOST_FOREACH (ID b, rule.body){
 			if (b.isExternalAuxiliary()){
+//				OrdinaryAtom ogatom = reg->ogatoms.getByAddress(b.address);
+//				if (reg->getTypeByAuxiliaryConstantSymbol(ogatom.tuple[0]) == 'n'){
+//					ogatom.tuple[0] = reg->getAuxiliaryConstantSymbol('p', reg->getTypeByAuxiliaryConstantSymbol(ogatom.tuple[0]));
+//				}
+
 				eaAuxes.insert(b.address);
 				eaAuxToRule[b.address].push_back(ruleID);
 			}
@@ -1197,6 +1204,7 @@ void AssumptionBasedUnfoundedSetChecker::constructUFSDetectionProblemAndInstanti
 	}
 
 	// finally, instantiate the solver for the constructed search problem
+	DBGLOG(DBG, "Unfounded Set Detection Problem: " << ufsDetectionProblem);
 	solver = SATSolver::getInstance(ctx, ufsDetectionProblem);
 }
 
@@ -1216,9 +1224,11 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 	en_end = domain->getStorage().end();
 	DBGLOG(DBG, "A: Intersection of U with I");
 	while (en < en_end){
-		// do not set an atom which is false in I
-		if (!compatibleSet->getFact(*en)){
-			assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
+		// do not set an ordinary atom which is false in I
+		if (!reg->ogatoms.getIDByAddress(*en).isExternalAuxiliary()){
+			if (!compatibleSet->getFact(*en)){
+				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(*en)));
+			}
 		}
 		en++;
 	}
@@ -1389,6 +1399,8 @@ void AssumptionBasedUnfoundedSetChecker::learnNogoodsFromMainSearch(){
 }
 
 std::vector<IDAddress> AssumptionBasedUnfoundedSetChecker::getUnfoundedSet(InterpretationConstPtr compatibleSet, std::set<ID> skipProgram){
+
+	DBGLOG(DBG, "Performing UFS Check wrt. " << *compatibleSet);
 
 	// learn from main search
 	learnNogoodsFromMainSearch();
@@ -1601,7 +1613,7 @@ std::vector<IDAddress> UnfoundedSetCheckerManager::getUnfoundedSet(
 			DBGLOG(DBG, "Checking UFS under consideration of external atoms");
 			if (preparedUnfoundedSetCheckers.size() == 0){
 				preparedUnfoundedSetCheckers.insert(std::pair<int, UnfoundedSetCheckerPtr>
-					(0, instantiateUnfoundedSetChecker(ctx, agp.getGroundProgram(), InterpretationConstPtr(), ngc))
+					(0, instantiateUnfoundedSetChecker(*mg, ctx, agp.getGroundProgram(), agp, InterpretationConstPtr(), ngc))
 				);
 			}
 			UnfoundedSetCheckerPtr ufsc = preparedUnfoundedSetCheckers.find(0)->second;

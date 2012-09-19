@@ -853,7 +853,34 @@ InternalGroundASPSolver::InternalGroundASPSolver(ProgramCtx& c, const AnnotatedG
 }
 
 void InternalGroundASPSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
-	CDNLSolver::restartWithAssumptions(assumptions);
+
+	// reset
+	std::vector<IDAddress> toClear;
+	bm::bvector<>::enumerator en = factWasSet->getStorage().first();
+	bm::bvector<>::enumerator en_end = factWasSet->getStorage().end();
+	while (en < en_end){
+		toClear.push_back(*en);
+		en++;
+	}
+	BOOST_FOREACH (IDAddress adr, toClear) clearFact(adr);
+/*
+
+	DBGLOG(DBG, "Resetting solver");
+	interpretation.reset(new Interpretation(ctx.registry()));
+	factWasSet.reset(new Interpretation(ctx.registry()));
+	changed.reset(new Interpretation(ctx.registry()));
+	currentDL = 0;
+	exhaustedDL = 0;
+
+	initWatchingStructures();
+*/
+	// set assumptions at DL=0
+	DBGLOG(DBG, "Setting assumptions");
+	BOOST_FOREACH (ID a, assumptions){
+		setFact(a, 0);
+	}
+
+	setEDB();
 }
 
 void InternalGroundASPSolver::addPropagator(PropagatorCallback* pb){

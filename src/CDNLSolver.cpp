@@ -329,6 +329,10 @@ void CDNLSolver::initWatchingStructures(){
 	nogoodsOfPosLiteral.clear();
 	nogoodsOfNegLiteral.clear();
 
+	// reset unit and contradictory nogoods
+	unitNogoods.clear();
+	contradictoryNogoods.clear();
+
 	// each nogood watches (at most) two of its literals
 	for (unsigned int nogoodNr = 0; nogoodNr < nogoodset.getNogoodCount(); ++nogoodNr){
 		updateWatchingStructuresAfterAddNogood(nogoodNr);
@@ -660,6 +664,15 @@ void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 
 	// reset
 	DBGLOG(DBG, "Resetting solver");
+	std::vector<IDAddress> toClear;
+	bm::bvector<>::enumerator en = factWasSet->getStorage().first();
+	bm::bvector<>::enumerator en_end = factWasSet->getStorage().end();
+	while (en < en_end){
+		toClear.push_back(*en);
+		en++;
+	}
+	BOOST_FOREACH (IDAddress adr, toClear) clearFact(adr);
+/*
 	interpretation.reset(new Interpretation(ctx.registry()));
 	factWasSet.reset(new Interpretation(ctx.registry()));
 	changed.reset(new Interpretation(ctx.registry()));
@@ -667,11 +680,11 @@ void CDNLSolver::restartWithAssumptions(const std::vector<ID>& assumptions){
 	exhaustedDL = 0;
 
 	initWatchingStructures();
-
+*/
 	// set assumptions at DL=0
 	DBGLOG(DBG, "Setting assumptions");
 	BOOST_FOREACH (ID a, assumptions){
-		setFact(a, 0);
+		setFact(createLiteral(a.address, !a.isNaf()), 0);
 	}
 }
 
