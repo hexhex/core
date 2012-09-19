@@ -304,7 +304,7 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
-WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/basic.test \$(top_builddir)/examples/tests/basic_genuineii.test"
+WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/libgenuineiibackend.test"
 AC_SUBST(WHICH_DLVHEX_TESTS)
 
 #
@@ -341,6 +341,7 @@ else
   extsolver_found=true
   AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
   AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/dlvbackend.test"
 fi
 
 
@@ -354,6 +355,7 @@ else
   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
   EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
   extsolver_found=true
+  AC_MSG_WARN([support for libdlv is very preliminary!])
 fi
 # TODO and check if it exists
 dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
@@ -499,6 +501,11 @@ if test "x${with_libgringo_support}" != xfalse; then
   extsolver_found=true
 fi
 
+if test "x${with_libclasp_support}" != xfalse && test "x${with_libgringo_support}" != xfalse; then
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libgenuinegcbackend.test"
+fi
+
+
 # TODO libclingo search for lib, test lib, set lib variables from these checks
 # (at the moment we rely on the user to correctly give directory)
 
@@ -590,8 +597,9 @@ AC_CONFIG_FILES([
            dlvhex2.pc
            buildclaspgringo/Makefile
            examples/Makefile
-           examples/tests/basic.test
-           examples/tests/basic_genuineii.test
+           examples/tests/genuineiibackend.test
+           examples/tests/dlvbackend.test
+           examples/tests/genuinegcbackend.test
            examples/tests/libclingobackend.test
            include/Makefile
            include/common.h
@@ -648,5 +656,8 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  Profiling: $enable_profiling
  Debug: $enable_debug
  Extra-Debug: $enable_extradebug
+
+ - Testsuites:
+ $WHICH_DLVHEX_TESTS
 
 EOF

@@ -1,6 +1,7 @@
 EXTRA_DIST = \
-    tests/basic.test \
-    tests/basic_genuineii.test \
+    tests/dlvbackend.test \
+    tests/genuineiibackend.test \
+    tests/genuinegcbackend.test \
     tests/libclingobackend.test \
     tests/README.txt \
     3col.hex \
