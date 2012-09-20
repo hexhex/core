@@ -387,8 +387,8 @@ void GenuineGuessAndCheckModelGenerator::transferLearnedEANogoods(){
 	// for assumption-based UFS checkers we can delete them as soon as nogoods were added both to the main search and to the UFS search
 	if (factory.ctx.config.getOption("UFSCheckAssumptionBased")){
 		// assumption-based
-//		ufscm->learnNogoodsFromMainSearch();
-//		learnedEANogoods->clear();
+		ufscm->learnNogoodsFromMainSearch();
+		learnedEANogoods->clear();
 	}else{
 		// encoding-based
 		learnedEANogoods->forgetLeastFrequentlyAdded();

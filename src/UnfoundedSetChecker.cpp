@@ -1242,7 +1242,7 @@ void AssumptionBasedUnfoundedSetChecker::setAssumptions(InterpretationConstPtr c
 		BOOST_FOREACH (ID ruleId, skipProgram){
 			const Rule& rule = reg->rules.getByID(ruleId);
 			BOOST_FOREACH (ID h, rule.head){
-				assumptions.push_back(ID::posLiteralFromAtom(reg->ogatoms.getIDByAddress(h.address)));
+				assumptions.push_back(ID::nafLiteralFromAtom(reg->ogatoms.getIDByAddress(h.address)));
 			}
 		}
 	}
@@ -1313,7 +1313,7 @@ AssumptionBasedUnfoundedSetChecker::AssumptionBasedUnfoundedSetChecker(
 std::vector<Nogood> AssumptionBasedUnfoundedSetChecker::nogoodTransformation(Nogood ng, InterpretationConstPtr assignment){
 
 	// this transformation must not depend on the compatible set
-	assert(!assignment);
+	//assert(!assignment);
 
 	bool skip = false;
 	Nogood ngAdd;
