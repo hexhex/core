@@ -88,23 +88,23 @@ variable_predicate_inputs.hex variable_predicate_inputs.stderr --solver=libcling
 wellfounded1.hex wellfounded1.out --nofacts --solver=libclingo
 wellfounded2.hex wellfounded2.out --nofacts --solver=libclingo
 empty.hex testrepetition.stdout --testplugin-test-repetition --solver=libclingo
-module-Inconsistent.mlp module-Inconsistent.out --mlp --solver=libclingo
-module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp --solver=libclingo
-module-EvenOdd.mlp module-EvenOdd.out --mlp --solver=libclingo
-module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp --solver=libclingo
-module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp --solver=libclingo
-module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp --solver=libclingo
-module-Reachability.mlp module-Reachability.out --mlp --solver=libclingo
-module-Cardinality.mlp module-Cardinality.out --mlp --solver=libclingo
-module-ABBA.mlp module-ABBA.out --mlp --solver=libclingo
-module-Disjunction.mlp module-Disjunction.out --mlp --solver=libclingo
-module-Negation.mlp module-Negation.out --mlp --solver=libclingo
-module-Indirection.mlp module-Indirection.out --mlp --solver=libclingo
-module-AFin.mlp module-AFin.out --mlp --solver=libclingo
-module-Cs.mlp module-Cs.out --mlp --solver=libclingo
-module-i-Stratified.mlp module-i-Stratified.out --mlp --solver=libclingo
-module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp --solver=libclingo
-module-Hanoi.mlp module-Hanoi.out --mlp --solver=libclingo
-module-Complex.mlp module-Complex.out --mlp --solver=libclingo
-module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=libclingo
-module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=libclingo --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Inconsistent.mlp module-Inconsistent.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Reachability.mlp module-Reachability.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Cardinality.mlp module-Cardinality.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-ABBA.mlp module-ABBA.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Disjunction.mlp module-Disjunction.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Negation.mlp module-Negation.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Indirection.mlp module-Indirection.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-AFin.mlp module-AFin.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Cs.mlp module-Cs.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-i-Stratified.mlp module-i-Stratified.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Hanoi.mlp module-Hanoi.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Complex.mlp module-Complex.out --mlp --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=libclingo
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=libclingo --solver=libclingo
