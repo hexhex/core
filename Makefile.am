@@ -30,8 +30,10 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
-SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} libltdl examples include src testsuite
-DIST_SUBDIRS = buildclaspgringo ${SUBDIRS}
+SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} \
+  libltdl examples include src testsuite
+DIST_SUBDIRS = buildclaspgringo \
+  libltdl examples include src testsuite
 
 EXTRA_DIST = \
     bm3.7.0 \
