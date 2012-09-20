@@ -1,0 +1,60 @@
+
+if test -e clasp; then
+	if test -d clasp; then
+		echo "clasp directory exists, assuming we have a configured clasp"
+    echo "(remove the directory and restart make if this not the case)"
+	else
+		echo "clasp exists but is no directory!";
+		exit -1;
+	fi
+else
+	echo "unpacking clasp"
+  tar xzf ${TOP_SRCDIR}/clasp-2.0.5-source.tar.gz --transform 's/clasp-2.0.5/clasp/'
+	echo "configuring clasp"
+	mkdir -p clasp/build/release
+	(
+    cd clasp
+		./configure.sh || { echo "configuring clasp failed!"; exit -1; }
+  )
+fi
+
+if test -e gringo; then
+	if test -d gringo; then
+		echo "gringo directory exists, assuming we have a configured gringo"
+    echo "(remove the directory and restart make if this not the case)"
+	else
+		echo "gringo exists but is no directory!";
+		exit -1;
+	fi
+else
+	echo "unpacking gringo"
+  tar xzf ${TOP_SRCDIR}/gringo-3.0.4-source.tar.gz --transform 's/gringo-3.0.4-source/gringo/'
+  echo "patching gringo (for multithreaded)"
+  patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo.patch ||
+    { echo "gringo patching failed!"; exit -1; }
+  echo "using clang: ${USING_CLANG}"
+  if test "xyes" == "x${USING_CLANG}"; then
+    echo "patching gringo (for clang)"
+    patch -d gringo -p0 <$TOP_SRCDIR/buildclaspgringo/gringo-clang.patch ||
+      { echo "gringo patching failed!"; exit -1; }
+  fi
+  mkdir -p gringo/build/release
+fi
+
+echo "making clasp"
+make -C clasp/build/release VERBOSE=1 ||
+  { echo "building clasp failed!"; exit -1; }
+
+
+echo "making gringo"
+(
+  cd gringo/build/release
+  cmake ../../ -DCMAKE_CXX_FLAGS=-Wall -DCMAKE_BUILD_TYPE=release -DWITH_LUA=none ||
+    { echo "gringo cmake failed!"; exit -1; }
+  make gringo-app clingo-app VERBOSE=1 ||
+    { echo "gringo make failed!"; exit -1; }
+)
+
+# now it should also be possible to do the following:
+#./configure --with-libclasp=`pwd`/clasp/ --with-libgringo=`pwd`/gringo/
+

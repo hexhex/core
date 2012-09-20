@@ -78,15 +78,18 @@ AC_LANG_POP()
 fi
 
 
+using_clang=no
 # check for clang
 case $CXX in
    clang*)
      CXXFLAGS="$CXXFLAGS -ferror-limit=2"
+     using_clang=yes
      # TODO check if boost >= 1.46, clang only works with this
    ;;
    *)
    ;;
 esac
+AC_SUBST([using_clang])
 
 AC_CACHE_SAVE
 
@@ -257,6 +260,14 @@ if test "x$enable_debug" = "xtrue"; then
 fi
 AC_CACHE_SAVE
 
+# save --with-boost result (which contains BOOST_ROOT if it was used) for nested clasp/gringo build
+
+NESTED_BOOSTROOT=""
+if test "x$with_boost" != xno -a "x$with_boost" != xyes -a "x$with_boost" != x; then
+  NESTED_BOOSTROOT=$with_boost
+fi
+AC_SUBST([NESTED_BOOSTROOT])
+
 #
 # the default system-wide plugin dir ${pkglibdir}/plugins can be
 # overridden by setting SYS_PLUGIN_DIR=... at configure-time
@@ -293,14 +304,14 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
-WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/basic.test \$(top_builddir)/examples/tests/basic_genuineii.test"
+WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/genuineiibackend.test"
 AC_SUBST(WHICH_DLVHEX_TESTS)
 
 #
 # third-party solver integration
-# * dlv as executable
+# * dlv as executable (full features but inefficient)
 # * dlv as shared library (libdlv (nonfunctional))
-# * clingo as shared library (preliminary)
+# * clingo as shared library (limited language features but efficient)
 #
 
 EXTSOLVER_LIBS=
@@ -326,10 +337,13 @@ fi
 
 if test "$DLVPATH" = notfound; then
   AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
+  AM_CONDITIONAL([HAVE_DLV],[/bin/false])
 else
   extsolver_found=true
   AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
+  AM_CONDITIONAL([HAVE_DLV],[/bin/true])
   AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/dlvbackend.test"
 fi
 
 
@@ -343,6 +357,7 @@ else
   AC_DEFINE([HAVE_LIBDLV], [1], [Defined if we found libdlv.])
   EXTSOLVER_LIBS="${EXTSOLVER_LIBS} -l${DLVLIB} -ldl -lpthread"
   extsolver_found=true
+  AC_MSG_WARN([support for libdlv is very preliminary!])
 fi
 # TODO and check if it exists
 dnl AC_CHECK_LIB($DLVLIB, [create_program_handler], [
@@ -403,9 +418,8 @@ if test "x${with_libclingo_support}" != xfalse; then
   extsolver_found=true
 fi
 
-
 #
-# libclasp (see README)
+# libclasp activation (see README)
 #
 # NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
 #       otherwise we link against the clasp library included in gringo (which is the wrong version);
@@ -416,6 +430,44 @@ AC_ARG_WITH([libclasp],
                   where you have built clasp-app of tag/clasp-2.0.5]),
   [with_libclasp_support=$withval],
   [with_libclasp_support=false])
+#
+# libgringo activation (see README)
+#
+AC_ARG_WITH([libgringo],
+  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
+                 [use gringo as genuine grounder, you need to specify the directory
+                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
+  [with_libgringo_support=$withval],
+  [with_libgringo_support=false])
+
+#
+# default checkout, build, configure for clasp + gringo setting
+#
+AC_ARG_WITH([buildclaspgringo],
+  [AS_HELP_STRING([--without-buildclaspgringo],
+    [disable checkout, build, and configuration for clasp-2.0.5 and gringo-3.0.3])],
+    [],
+    [with_buildclaspgringo=yes])
+
+AM_CONDITIONAL([DO_BUILDCLASPGRINGO],[test ! "x${with_buildclaspgringo}" != xno])
+if test "x$with_buildclaspgringo" != xno; then
+  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], ["buildclaspgringo"])
+  AC_SUBST([DO_BUILDCLASPGRINGO], ["yes"])
+  AC_MSG_NOTICE([going to checkout, build, and configure for clasp and gringo])
+  with_libclasp_support=$ac_pwd/buildclaspgringo/clasp/
+  with_libgringo_support=$ac_pwd/buildclaspgringo/gringo/
+else
+  AC_SUBST([BUILDCLASPGRINGOSUBDIRS], [""])
+  AC_SUBST([DO_BUILDCLASPGRINGO], ["no"])
+fi
+
+#
+# libclasp configuration
+#
+# NOTE: It is very IMPORTANT that the libclasp section comes before the libgringo section;
+#       otherwise we link against the clasp library included in gringo (which is the wrong version);
+#       (ld processes search pathes in the specified order)
+#
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBCLASP],[test "x${with_libclasp_support}" != xfalse])
 if test "x${with_libclasp_support}" != xfalse; then
@@ -433,14 +485,8 @@ if test "x${with_libclasp_support}" != xfalse; then
 fi
 
 #
-# libgringo (see README)
+# libgringo configuration
 #
-AC_ARG_WITH([libgringo],
-  AS_HELP_STRING([--with-libgringo=<gringo-trunk-directory>],
-                 [use gringo as genuine grounder, you need to specify the directory
-                  where you have built gringo-app of tag/gringo-3.0.3 without lua/luasql]),
-  [with_libgringo_support=$withval],
-  [with_libgringo_support=false])
 # conditions in makefiles
 AM_CONDITIONAL([HAVE_LIBGRINGO],[test "x${with_libgringo_support}" != xfalse])
 if test "x${with_libgringo_support}" != xfalse; then
@@ -456,6 +502,11 @@ if test "x${with_libgringo_support}" != xfalse; then
   EXTSOLVER_CPPFLAGS="${EXTSOLVER_CPPFLAGS} -I${GRINGO_TRUNK_DIR}/libprogram_opts/ -I${GRINGO_TRUNK_DIR}/libgringo/ -I${GRINGO_TRUNK_DIR}/app/"
   extsolver_found=true
 fi
+
+if test "x${with_libclasp_support}" != xfalse && test "x${with_libgringo_support}" != xfalse; then
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/genuinegcbackend.test"
+fi
+
 
 # TODO libclingo search for lib, test lib, set lib variables from these checks
 # (at the moment we rely on the user to correctly give directory)
@@ -546,9 +597,11 @@ DX_INIT_DOXYGEN([dlvhex], [doxygen.cfg], [doc])
 AC_CONFIG_FILES([
            Makefile
            dlvhex2.pc
+           buildclaspgringo/Makefile
            examples/Makefile
-           examples/tests/basic.test
-           examples/tests/basic_genuineii.test
+           examples/tests/genuineiibackend.test
+           examples/tests/dlvbackend.test
+           examples/tests/genuinegcbackend.test
            examples/tests/libclingobackend.test
            include/Makefile
            include/common.h
@@ -605,5 +658,8 @@ $PACKAGE_TARNAME $PACKAGE_VERSION configuration:
  Profiling: $enable_profiling
  Debug: $enable_debug
  Extra-Debug: $enable_extradebug
+
+ - Testsuites:
+ $WHICH_DLVHEX_TESTS
 
 EOF

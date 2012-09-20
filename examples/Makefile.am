@@ -1,6 +1,7 @@
 EXTRA_DIST = \
-    tests/basic.test \
-    tests/basic_genuineii.test \
+    tests/dlvbackend.test \
+    tests/genuineiibackend.test \
+    tests/genuinegcbackend.test \
     tests/libclingobackend.test \
     tests/README.txt \
     3col.hex \
@@ -173,6 +174,7 @@ EXTRA_DIST = \
     tests/strongnegation_asp5.out \
     tests/strongnegation_asp6.out \
     tests/strongnegation_asp7.out \
+    tests/testrepetition.stdout \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \

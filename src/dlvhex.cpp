@@ -196,7 +196,7 @@ printUsage(std::ostream &out, const char* whoAmI, bool full)
 			<< "                      old - old dlvhex behavior" << std::endl
 			<< "                      trivial - use component graph as eval graph (much overhead)" << std::endl
 			<< "                      easy - simple heuristics, used for LPNMR2011" << std::endl
-			<< "                      greedy - heuristics with advantages for external behavior learning" << std::endl
+			<< "                      greedy - (default) heuristics with advantages for external behavior learning" << std::endl
 			<< "                      manual:<file> - read 'collapse <idxs> share <idxs>' commands from <file>" << std::endl
 			<< "                        where component indices <idx> are from '--graphviz=comp'" << std::endl
 			<< "                      asp:<script> - use asp program <script> as eval heuristic" << std::endl
@@ -320,14 +320,17 @@ int main(int argc, char *argv[])
 				pctx.setASPSoftware(
 					ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
 				#else
-					#error no asp software configured! configure.ac should not allow this to happen!
+					#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+					#else
+						#error no asp software configured! configure.ac should not allow this to happen!
+					#endif
 				#endif
 			#endif
 		#endif
 	#endif
 
-	// default eval heuristic = "easy" heuristic
-	pctx.evalHeuristic.reset(new EvalHeuristicEasy);
+	// default eval heuristic = "greedy" heuristic
+	pctx.evalHeuristic.reset(new EvalHeuristicGreedy);
 	// default model builder = "online" model builder
 	pctx.modelBuilderFactory = boost::factory<OnlineModelBuilder<FinalEvalGraph>*>();
 
@@ -377,6 +380,12 @@ int main(int argc, char *argv[])
 	pctx.config.setOption("BenchmarkEAstderr",0); // perhaps only temporary
 	pctx.config.setOption("ExplicitFLPUnshift",0); // perhaps only temporary
 	pctx.config.setOption("PrintLearnedNogoods",0); // perhaps only temporary
+
+	#warning TODO cleanup the setASPSoftware vs nGenuineSolver thing
+	// but if we have genuinegc, take genuinegc as default
+	#if defined(HAVE_LIBGRINGO) && defined(HAVE_LIBCLASP)
+	pctx.config.setOption("GenuineSolver", 4);
+	#endif
 
 	// defaults of main
 	Config config;
@@ -805,6 +814,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_DLV)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -815,6 +825,7 @@ void processOptionsPrePlugin(
 							#warning reactivate dlvhdb
 							//pctx.setASPSoftware(
 							//	ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVDBSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -824,6 +835,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_LIBDLV)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::DLVLibSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif
@@ -833,6 +845,7 @@ void processOptionsPrePlugin(
 							#if defined(HAVE_LIBCLINGO)
 							pctx.setASPSoftware(
 								ASPSolverManager::SoftwareConfigurationPtr(new ASPSolver::ClingoSoftware::Configuration));
+              pctx.config.setOption("GenuineSolver", 0);
 							#else
 							throw GeneralError("sorry, no support for solver backend '"+solver+"' compiled into this binary");
 							#endif

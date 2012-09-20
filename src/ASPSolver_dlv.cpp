@@ -34,6 +34,8 @@
 #  include "config.h"
 #endif
 
+#ifdef HAVE_DLV
+
 #include "dlvhex2/ASPSolver.h"
 #include "dlvhex2/PlatformDefinitions.h"
 #include "dlvhex2/Benchmarking.h"
@@ -405,6 +407,8 @@ DLVSoftware::Delegate::getResults()
 } // namespace ASPSolver
 
 DLVHEX_NAMESPACE_END
+
+#endif // HAVE_DLV
 
 /* vim: set noet sw=2 ts=8 tw=80: */
 // Local Variables:

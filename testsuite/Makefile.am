@@ -28,14 +28,11 @@ check-examples:
 	fi
 
 AUTOMATED_TEST_PROGS = \
-  TestASPSolver \
-  TestEvalEndToEnd \
   TestEvalHeuristic \
   TestComponentGraph \
   TestDependencyGraph \
   TestHexParser \
   TestHexParserModule \
-  TestMLPSolver \
   TestTables \
   TestModelGraph \
   TestEvalGraph \
@@ -44,14 +41,26 @@ AUTOMATED_TEST_PROGS = \
 
 check_PROGRAMS =  \
   $(AUTOMATED_TEST_PROGS) \
-  TestTestPluginStatic \
-  TestPlainHEX \
-  TestDLVProcess
+  TestTestPluginStatic
 
 TESTS = \
   run-dlvhex-tests.sh \
-  $(AUTOMATED_TEST_PROGS) \
-  run_TestDLVProcess.sh
+  $(AUTOMATED_TEST_PROGS)
+
+if HAVE_DLV
+check_PROGRAMS += \
+  TestASPSolver \
+  TestMLPSolver \
+  TestDLVProcess \
+  TestEvalEndToEnd \
+  TestPlainHEX
+TESTS += \
+  TestASPSolver \
+  TestMLPSolver \
+  run_TestDLVProcess.sh \
+  TestEvalEndToEnd
+endif
+
 
 TESTS_ENVIRONMENT = \
   TOP_BUILDDIR=$(top_srcdir) \

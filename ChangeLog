@@ -1,3 +1,12 @@
+2012-09-04  Peter Schueller  <ps@kr.tuwien.ac.at>
+
+	* bootstrap-extra.sh: Downloading gringo and clasp tarballs to ship them with dlvhex source.
+	* configure.ac: Unpacking and building gringo and clasp within dlvhex to make them easier to use.
+	* build_potassco.sh: Likewise.
+	* buildclaspgringo/Makefile.am: Likewise.
+	* buildclaspgringo/gringo-clang.patch: Copying patch for gringo for clang from
+	https://potassco.svn.sourceforge.net/svnroot/potassco/tags/gringo-3.0.4/patches/patch-clang.diff
+
 2012-09-03  Peter Schueller  <ps@kr.tuwien.ac.at>
 
 	* src/State.cpp: Added possibility to repeat evaluation.

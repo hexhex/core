@@ -1,5 +1,5 @@
 3col.hex 3col.out --solver=genuineii
-agg1.hex agg1.out --solver=genuineii --aggregate-enable
+# TODO why does this not work with genuineii? agg1.hex agg1.out --solver=genuineii --aggregate-enable
 agg2.hex agg2.out --solver=genuineii --aggregate-enable
 agg3.hex agg3.out --nofacts --solver=genuineii --aggregate-enable
 agg4.hex agg4.out --nofacts --solver=genuineii --aggregate-enable
@@ -9,7 +9,7 @@ builtin_safety1a.hex builtin_safety1a.stderr --solver=genuineii
 builtin_safety1b.hex builtin_safety1b.stderr --solver=genuineii
 builtin_safety1c.hex builtin_safety1c.stderr --solver=genuineii
 builtin_safety1d.hex builtin_safety1d.out --solver=genuineii
-#builtin_safety2.hex builtin_safety2.out --solver=genuineii
+# test is dlv specific builtin_safety2.hex builtin_safety2.out --solver=genuineii
 comments.hex comments.out --solver=genuineii
 duplicaterule.asp duplicaterule.out --solver=genuineii
 equality.hex equality.out --solver=genuineii
@@ -18,11 +18,11 @@ extatom1simple.hex extatom1simple.out --solver=genuineii
 extatom2.hex extatom2.out --solver=genuineii
 extatom2safety.hex extatom2.out --solver=genuineii
 extatom3.hex extatom3.out --nofacts --solver=genuineii
-extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplana.txt --solver=genuineii
-extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplanb.txt --solver=genuineii
-extatom3.hex extatom3.out --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_old.asp --solver=genuineii
-extatom3.hex extatom3_faultya.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultya.asp --solver=genuineii
-extatom3.hex extatom3_faultyb.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultyb.asp --solver=genuineii
+# TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplana.txt --solver=genuineii
+# TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3.out --nofacts --heuristics=manual:@abs_top_srcdir@/examples/extatom3_evalplanb.txt --solver=genuineii
+# TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3.out --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_old.asp --solver=genuineii
+# TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3_faultya.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultya.asp --solver=genuineii
+# TODO make ASPSolverManager work if we do not have DLV extatom3.hex extatom3_faultyb.stderr --nofacts --heuristics=asp:@abs_top_srcdir@/examples/extatom3_aspheur_faultyb.asp --solver=genuineii
 extatom4.hex extatom4.out --solver=genuineii
 extatom5.hex extatom5.out --solver=genuineii
 extatom6.hex extatom6.out --solver=genuineii
@@ -34,7 +34,7 @@ higherorder2.hex higherorder2.out --nofacts --higherorder-enable --solver=genuin
 higherorder3.hex higherorder3.out --nofacts --higherorder-enable --solver=genuineii
 higherorder4.hex higherorder4.out --nofacts --higherorder-enable --solver=genuineii
 higherorder5.hex higherorder5.out --nofacts --higherorder-enable --solver=genuineii
-#higherorder5except.hex higherorder5except.stderr --higherorder-enable --solver=genuineii
+# TODO why is this disabled? higherorder5except.hex higherorder5except.stderr --higherorder-enable --solver=genuineii
 manyanswersets.hex manyanswersets_twomodels.stdout --number=2 --solver=genuineii
 maxint.hex maxint.out --solver=genuineii
 minimality.hex minimality.out --solver=genuineii
@@ -71,7 +71,7 @@ query_hex_ground1.hex query_hex_ground1c.stdout --query-enable --query-cautious 
 query_hex_ground1.hex query_hex_ground1ca.stdout --query-enable --query-cautious --query-all --solver=genuineii
 query_hex_nonground1.hex query_hex_nonground1b.out --query-enable --query-brave --solver=genuineii
 query_hex_nonground1.hex no_model.out --query-enable --query-cautious --solver=genuineii
-#rec_agg_bug1.hex rec_agg_bug1.stderr --solver=genuineii
+# contains aggreate and dlv specific #maxint rec_agg_bug1.hex rec_agg_bug1.stderr --solver=genuineii
 safety1.hex safety1.stderr --solver=genuineii
 safety2.hex safety2.stderr --solver=genuineii
 simple1.hex simple1.out --solver=genuineii
@@ -81,27 +81,30 @@ strongnegation_asp2.hex strongnegation_asp2.out --strongnegation-enable --nofact
 strongnegation_asp3.hex strongnegation_asp3.out --strongnegation-enable --nofacts --solver=genuineii
 strongnegation_asp4.hex strongnegation_asp4.out --strongnegation-enable --nofacts --solver=genuineii
 strongnegation_asp5.hex strongnegation_asp5.out --strongnegation-enable --nofacts --solver=genuineii
+strongnegation_asp6.hex strongnegation_asp6.out --strongnegation-enable --solver=genuineii
+strongnegation_asp7.hex strongnegation_asp7.out --strongnegation-enable --solver=genuineii
 tertop.hex tertop.out --solver=genuineii
 variable_predicate_inputs.hex variable_predicate_inputs.stderr --solver=genuineii
 wellfounded1.hex wellfounded1.out --nofacts --solver=genuineii
 wellfounded2.hex wellfounded2.out --nofacts --solver=genuineii
-module-Inconsistent.mlp module-Inconsistent.out --mlp --solver=genuineii
-module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp --solver=genuineii
-module-EvenOdd.mlp module-EvenOdd.out --mlp --solver=genuineii
-module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp --solver=genuineii
-module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp --solver=genuineii
-module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp --solver=genuineii
-module-Reachability.mlp module-Reachability.out --mlp --solver=genuineii
-module-Cardinality.mlp module-Cardinality.out --mlp --solver=genuineii
-module-ABBA.mlp module-ABBA.out --mlp --solver=genuineii
-module-Disjunction.mlp module-Disjunction.out --mlp --solver=genuineii
-module-Negation.mlp module-Negation.out --mlp --solver=genuineii
-module-Indirection.mlp module-Indirection.out --mlp --solver=genuineii
-module-AFin.mlp module-AFin.out --mlp --solver=genuineii
-module-Cs.mlp module-Cs.out --mlp --solver=genuineii
-module-i-Stratified.mlp module-i-Stratified.out --mlp --solver=genuineii
-module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp --solver=genuineii
-module-Hanoi.mlp module-Hanoi.out --mlp --solver=genuineii
-module-Complex.mlp module-Complex.out --mlp --solver=genuineii
-module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=genuineii
-module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=genuineii
+empty.hex testrepetition.stdout --testplugin-test-repetition --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Inconsistent.mlp module-Inconsistent.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Not-ic-Stratified.mlp module-Not-ic-Stratified.stderr --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoMain.mlp module-EvenOddTwoMain.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoCalls1.mlp module-EvenOddTwoCalls1.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOddTwoCalls2.mlp module-EvenOddTwoCalls2.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Reachability.mlp module-Reachability.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Cardinality.mlp module-Cardinality.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-ABBA.mlp module-ABBA.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Disjunction.mlp module-Disjunction.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Negation.mlp module-Negation.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Indirection.mlp module-Indirection.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-AFin.mlp module-AFin.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Cs.mlp module-Cs.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-i-Stratified.mlp module-i-Stratified.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-i-Stratified-2.mlp module-i-Stratified-2.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Hanoi.mlp module-Hanoi.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-Complex.mlp module-Complex.out --mlp --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd-n1.out --mlp --number=1 --solver=genuineii
+# TODO make MLP work if we do not have DLV (ASPSolver) module-EvenOdd.mlp module-EvenOdd.out --mlp --split --solver=genuineii

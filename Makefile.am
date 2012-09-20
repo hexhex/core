@@ -30,13 +30,18 @@ uninstall-local:
 	cd $(DESTDIR)/$(docdir) && rm -rf html
 	-rm -rf $(DESTDIR)/$(pkgincludedir)/bm$(BM_VERSION)
 
-
-SUBDIRS = libltdl examples include src testsuite
+SUBDIRS = ${BUILDCLASPGRINGOSUBDIRS} \
+  libltdl examples include src testsuite
+DIST_SUBDIRS = buildclaspgringo \
+  libltdl examples include src testsuite
 
 EXTRA_DIST = \
     bm3.7.0 \
     COPYING.LESSER \
-    checkout_build_potassco.sh \
+    COPYING.clasp.gringo \
+    clasp-2.0.5-source.tar.gz \
+    gringo-3.0.4-source.tar.gz \
+    build_potassco.sh \
     dlvhex2.pc.in \
     doxygen.am \
     doxygen.cfg

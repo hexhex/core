@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./TestDLVProcess --catch_system_errors=no
+test -x TestDLVProcess && ./TestDLVProcess --catch_system_errors=no
 
