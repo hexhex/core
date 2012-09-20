@@ -174,6 +174,7 @@ EXTRA_DIST = \
     tests/strongnegation_asp5.out \
     tests/strongnegation_asp6.out \
     tests/strongnegation_asp7.out \
+    tests/testrepetition.stdout \
     tests/weak1.out \
     tests/weak1r.out \
     tests/weak2.out \

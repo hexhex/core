@@ -304,7 +304,7 @@ AC_SUBST(userplugindir)
 CPPFLAGS="$CPPFLAGS -DUSER_PLUGIN_DIR='\"$userplugindir\"'"
 
 
-WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/libgenuineiibackend.test"
+WHICH_DLVHEX_TESTS="\$(top_builddir)/examples/tests/genuineiibackend.test"
 AC_SUBST(WHICH_DLVHEX_TESTS)
 
 #
@@ -337,9 +337,11 @@ fi
 
 if test "$DLVPATH" = notfound; then
   AC_MSG_WARN([dlv not found. Download it at http://www.dlvsystem.com/])
+  AM_CONDITIONAL([HAVE_DLV],[/bin/false])
 else
   extsolver_found=true
   AC_DEFINE([HAVE_DLV], [1], [Defined if we found dlv.])
+  AM_CONDITIONAL([HAVE_DLV],[/bin/true])
   AC_DEFINE_UNQUOTED(DLVPATH,"$DLVPATH",[Path of DLV executable])
   WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/dlvbackend.test"
 fi
@@ -502,7 +504,7 @@ if test "x${with_libgringo_support}" != xfalse; then
 fi
 
 if test "x${with_libclasp_support}" != xfalse && test "x${with_libgringo_support}" != xfalse; then
-  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/libgenuinegcbackend.test"
+  WHICH_DLVHEX_TESTS="${WHICH_DLVHEX_TESTS} \$(top_builddir)/examples/tests/genuinegcbackend.test"
 fi
 
 
