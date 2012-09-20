@@ -179,36 +179,42 @@ private:
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemNecessaryPart(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPart(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartRestrictToCompatibleSet(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartBasicEAKnowledge(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartLearnedFromMainSearch(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
 	std::vector<ID>& ufsProgram);
   void constructUFSDetectionProblemOptimizationPartEAEnforement(
 	NogoodSet& ufsDetectionProblem,
+	int& auxatomcnt,
 	InterpretationConstPtr compatibleSet,
 	InterpretationConstPtr compatibleSetWithoutAux,
 	std::set<ID>& skipProgram,
@@ -244,6 +250,8 @@ private:
 	boost::unordered_map<IDAddress, IDAddress> interpretationShadow;
 	// a special atom "a_j" for each atom "a" in the program, representing the truth value of "a" in I u -X
 	boost::unordered_map<IDAddress, IDAddress> residualShadow;
+	// a special atom "a_f" for each atom "a" in the program, representing a change from of the truth value of a from true in I to false in I u -X
+	boost::unordered_map<IDAddress, IDAddress> becomeFalse;
 
 	// counter for auxiliary atoms
 	int atomcnt;
@@ -256,9 +264,12 @@ private:
 	void constructUFSDetectionProblemCreateAuxAtoms();			// sets up interpretationShadow and residualShadow
 	void constructUFSDetectionProblemDefineResidualShadow(NogoodSet& ns);	// Defines: a_r = a_i \and -a,
 										// where a_r = residualShadow[a] and a_i = interpretationShadow[a]
+	void constructUFSDetectionProblemDefineBecomeFalse(NogoodSet& ns);	// Defines: a_f = a_i \and a,
+										// where a_f = becomeFalse[a] and a_i = interpretationShadow[a]
 	void constructUFSDetectionProblemRule(NogoodSet& ns, ID ruleID);	// Encodes a given program rule
 	void constructUFSDetectionProblemNonempty(NogoodSet& ns);		// Encodes that we are looking for a nonempty unfounded set
 	void constructUFSDetectionProblemRestrictToSCC(NogoodSet& ns);		// Restricts the search to the current strongly connected component
+	void constructUFSDetectionProblemBasicEABehavior(NogoodSet& ns);	// Optimization: Basic behavior of external atoms
 
 	/**
 	* Constructs the nogood set used for unfounded set detection and instantiates the solver
